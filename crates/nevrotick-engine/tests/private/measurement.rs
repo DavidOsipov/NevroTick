@@ -6,8 +6,11 @@ use std::time::{Duration, Instant, UNIX_EPOCH};
 use garde::Validate;
 use ntp_wire::{RawHeader, decode_fixed_header};
 use time_domain::{
-    MAX_COORDINATE_TICKS, MIN_COORDINATE_TICKS, UtcCoordinateQ32, exchange_arithmetic,
+    MAX_COORDINATE_TICKS, MIN_COORDINATE_TICKS, RationalSign, RoundedRationalSeconds,
+    UtcCoordinateQ32, exchange_arithmetic,
 };
+
+use crate::relative::{RelativeMeasurementRefusal, phase_difference};
 
 use super::{
     ExperimentalProfile, MAX_DECLARED_RESIDUAL_NS, MeasurementRefusal, NANOS_PER_SECOND,
@@ -1026,7 +1029,7 @@ fn nominal_seconds_preserve_corrected_capture_units_and_signed_rtt()
         header(BASE_BITS + 429, BASE_BITS + 429, 6)?,
     )?;
     let phase = measured.nominal_phase().seconds()?;
-    assert_eq!(phase.sign(), time_domain::RationalSign::Negative);
+    assert_eq!(phase.sign(), RationalSign::Negative);
     assert_eq!(phase.numerator_magnitude(), 993_459_200);
     assert_eq!(phase.denominator().get(), 8_589_934_592_000_000_000);
     assert_eq!(phase.seconds().to_bits(), 0xbddf_ca6a_f2bd_215e);
@@ -1035,25 +1038,15 @@ fn nominal_seconds_preserve_corrected_capture_units_and_signed_rtt()
         0x3a80_0000_0000_0000
     );
     let zero = measured.nominal_round_trip().seconds()?;
-    assert_eq!(zero.sign(), time_domain::RationalSign::Positive);
+    assert_eq!(zero.sign(), RationalSign::Positive);
     assert_eq!(zero.numerator_magnitude(), 0);
     assert_eq!(zero.denominator().get(), 4_294_967_296_000_000_000);
     assert_eq!(zero.seconds().to_bits(), 0);
     assert_eq!(zero.absolute_roundoff_seconds().to_bits(), 0);
 
     for (send_ns, receive_ns, sign, seconds_bits) in [
-        (
-            0,
-            100,
-            time_domain::RationalSign::Positive,
-            0x3e7a_d7f2_9abc_af48,
-        ),
-        (
-            200,
-            100,
-            time_domain::RationalSign::Negative,
-            0xbe7a_d7f2_9abc_af48,
-        ),
+        (0, 100, RationalSign::Positive, 0x3e7a_d7f2_9abc_af48),
+        (200, 100, RationalSign::Negative, 0xbe7a_d7f2_9abc_af48),
     ] {
         let send = capture(start, 0, BASE, send_ns)?;
         let receive = capture(start, 0, BASE, receive_ns)?;
@@ -1093,9 +1086,221 @@ fn nominal_seconds_checks_scale_and_retains_the_signed_integer_endpoint()
         Err(MeasurementRefusal::Arithmetic)
     ));
     let endpoint = super::nominal_seconds(i128::MIN, 1)?;
-    assert_eq!(endpoint.sign(), time_domain::RationalSign::Negative);
+    assert_eq!(endpoint.sign(), RationalSign::Negative);
     assert_eq!(endpoint.numerator_magnitude(), 1_u128 << 127);
     assert_eq!(endpoint.seconds().to_bits(), 0xc7e0_0000_0000_0000);
     assert_eq!(endpoint.absolute_roundoff_seconds().to_bits(), 0);
+    Ok(())
+}
+
+/// Independent checked-coordinate recipe for one raw numerical nominal result.
+/// These inputs prove neither real capture association nor a common-era observation.
+struct NominalRelativeFixture {
+    /// Literal real-T1/peer-T2/peer-T3/local-T4 numeric coordinates in Q32 ticks.
+    coordinates: [i128; 4],
+    /// Literal admitted raw remainder pair; genuine wall-capture provenance is absent.
+    remainders: [u32; 2],
+    /// Independently calculated corrected nominal phase numerator.
+    phase: i128,
+    /// Independently calculated corrected signed raw-RTT numerator.
+    round_trip: i128,
+}
+
+/// One raw numerator tick, constructed by the checked arithmetic owner.
+const RELATIVE_ONE_TICK: NominalRelativeFixture = NominalRelativeFixture {
+    coordinates: [0, 1, 0, 0],
+    remainders: [999_999_999, 0],
+    phase: 1,
+    round_trip: 1,
+};
+
+/// Adjacent two-tick result using the same coordinates and a distinct raw remainder.
+const RELATIVE_TWO_TICKS: NominalRelativeFixture = NominalRelativeFixture {
+    coordinates: [0, 1, 0, 0],
+    remainders: [999_999_998, 0],
+    phase: 2,
+    round_trip: 2,
+};
+
+/// Large raw numerical anchor, exactly 2^120+1, not a captured measurement.
+const RELATIVE_LARGE_ANCHOR: NominalRelativeFixture = NominalRelativeFixture {
+    coordinates: [
+        -332_306_998_946_228_968_225_951_765,
+        332_306_998_946_228_968_225_951_766,
+        332_306_998_946_228_968_225_951_765,
+        -332_306_998_946_228_968_225_951_765,
+    ],
+    remainders: [719_655_423, 0],
+    phase: 1_329_227_995_784_915_872_903_807_060_280_344_577,
+    round_trip: 280_344_577,
+};
+
+/// Adjacent large raw numerical row, exactly 2^120+2, with the same coordinates.
+const RELATIVE_LARGE_ROW: NominalRelativeFixture = NominalRelativeFixture {
+    coordinates: [
+        -332_306_998_946_228_968_225_951_765,
+        332_306_998_946_228_968_225_951_766,
+        332_306_998_946_228_968_225_951_765,
+        -332_306_998_946_228_968_225_951_765,
+    ],
+    remainders: [719_655_422, 0],
+    phase: 1_329_227_995_784_915_872_903_807_060_280_344_578,
+    round_trip: 280_344_578,
+};
+
+/// Positive 2^126+1 input within the raw nominal numeric envelope.
+const RELATIVE_POSITIVE_WIDE: NominalRelativeFixture = NominalRelativeFixture {
+    coordinates: [
+        -21_267_647_932_558_653_966_460_912_964,
+        21_267_647_932_558_653_966_460_912_965,
+        21_267_647_932_558_653_966_460_912_965,
+        -21_267_647_932_558_653_966_460_912_964,
+    ],
+    remainders: [57_947_135, 0],
+    phase: 85_070_591_730_234_615_865_843_651_857_942_052_865,
+    round_trip: -57_947_135,
+};
+
+/// Negative -(2^126+1) input, independently constructed through checked coordinates.
+const RELATIVE_NEGATIVE_WIDE: NominalRelativeFixture = NominalRelativeFixture {
+    coordinates: [
+        21_267_647_932_558_653_966_460_912_965,
+        -21_267_647_932_558_653_966_460_912_963,
+        -21_267_647_932_558_653_966_460_912_964,
+        21_267_647_932_558_653_966_460_912_965,
+    ],
+    remainders: [942_052_865, 0],
+    phase: -85_070_591_730_234_615_865_843_651_857_942_052_865,
+    round_trip: 57_947_135,
+};
+
+/// Produce a nominal phase only through both real checked numerical owners.
+/// The raw remainders intentionally make no wall-capture/source identity claim.
+/// # Errors
+/// Propagate checked coordinate/exchange/nominal construction failure as arithmetic.
+/// # Panics
+/// Panic if either independently calculated exact nominal result changes.
+fn nominal_relative_fixture(
+    fixture: &NominalRelativeFixture,
+) -> Result<super::NominalPhaseNs, RelativeMeasurementRefusal> {
+    let [t1, t2, t3, t4] = fixture.coordinates.map(UtcCoordinateQ32::new);
+    let arithmetic = exchange_arithmetic(
+        t1.map_err(|_| RelativeMeasurementRefusal::Arithmetic)?,
+        t2.map_err(|_| RelativeMeasurementRefusal::Arithmetic)?,
+        t3.map_err(|_| RelativeMeasurementRefusal::Arithmetic)?,
+        t4.map_err(|_| RelativeMeasurementRefusal::Arithmetic)?,
+    )
+    .map_err(|_| RelativeMeasurementRefusal::Arithmetic)?;
+    let (phase, round_trip) = nominal_arithmetic(arithmetic, fixture.remainders)
+        .map_err(|_| RelativeMeasurementRefusal::Arithmetic)?;
+    assert_eq!(phase.numerator(), fixture.phase);
+    assert_eq!(round_trip.numerator(), fixture.round_trip);
+    Ok(phase)
+}
+
+/// Compare independent phase-difference tuple and rounding facts without an oracle call.
+/// # Panics
+/// Panic if retained units, sign, magnitude, output bits or arithmetic bound changes.
+fn assert_relative_phase(
+    value: &RoundedRationalSeconds,
+    sign: RationalSign,
+    magnitude: u128,
+    seconds_bits: u64,
+    bound_bits: u64,
+) {
+    assert_eq!(value.sign(), sign);
+    assert_eq!(value.numerator_magnitude(), magnitude);
+    assert_eq!(value.denominator().get(), 8_589_934_592_000_000_000);
+    assert_eq!(value.seconds().to_bits(), seconds_bits);
+    assert_eq!(value.absolute_roundoff_seconds().to_bits(), bound_bits);
+}
+
+/// Independent ordered neighbors establish self-minus-anchor sign and canonical zero.
+/// # Errors
+/// Propagate a valid checked nominal fixture or relative conversion refusal.
+/// # Panics
+/// Panic if one-tick direction, retained tuple, result or bound changes.
+#[test]
+fn relative_phase_direction_preserves_checked_nominal_ticks()
+-> Result<(), RelativeMeasurementRefusal> {
+    let anchor = nominal_relative_fixture(&RELATIVE_ONE_TICK)?;
+    let row = nominal_relative_fixture(&RELATIVE_TWO_TICKS)?;
+    for (row, anchor, sign, value) in [
+        (row, anchor, RationalSign::Positive, 0x3c01_2e0b_e826_d695),
+        (anchor, row, RationalSign::Negative, 0xbc01_2e0b_e826_d695),
+    ] {
+        let difference = phase_difference(row.numerator(), anchor.numerator())?;
+        assert_relative_phase(&difference, sign, 1, value, 0x38b0_0000_0000_0000);
+    }
+    let zero = phase_difference(anchor.numerator(), anchor.numerator())?;
+    assert_relative_phase(&zero, RationalSign::Positive, 0, 0, 0);
+    Ok(())
+}
+
+/// Large absolute projections collapse while exact pre-conversion anchoring retains a tick.
+/// # Errors
+/// Propagate a valid checked fixture, absolute conversion or relative refusal.
+/// # Panics
+/// Panic if anchoring happens after operand rounding or sign/bound is lost.
+#[test]
+fn relative_phase_anchoring_precedes_large_absolute_rounding()
+-> Result<(), RelativeMeasurementRefusal> {
+    let anchor = nominal_relative_fixture(&RELATIVE_LARGE_ANCHOR)?;
+    let row = nominal_relative_fixture(&RELATIVE_LARGE_ROW)?;
+    let anchor_seconds = anchor
+        .seconds()
+        .map_err(|_| RelativeMeasurementRefusal::Arithmetic)?;
+    let row_seconds = row
+        .seconds()
+        .map_err(|_| RelativeMeasurementRefusal::Arithmetic)?;
+    assert_eq!(anchor_seconds.seconds().to_bits(), 0x4381_2e0b_e826_d695);
+    assert_eq!(row_seconds.seconds().to_bits(), 0x4381_2e0b_e826_d695);
+    assert_eq!(
+        anchor_seconds.seconds().to_bits(),
+        row_seconds.seconds().to_bits()
+    );
+    for (row, anchor, sign, value) in [
+        (row, anchor, RationalSign::Positive, 0x3c01_2e0b_e826_d695),
+        (anchor, row, RationalSign::Negative, 0xbc01_2e0b_e826_d695),
+    ] {
+        let difference = phase_difference(row.numerator(), anchor.numerator())?;
+        assert_relative_phase(&difference, sign, 1, value, 0x38b0_0000_0000_0000);
+    }
+    Ok(())
+}
+
+/// Both checked nominal operands fit i128 while their signed difference need not.
+/// # Errors
+/// Propagate a valid checked fixture or relative conversion refusal.
+/// # Panics
+/// Panic if the 2^127+2 difference overflows, truncates or reverses direction.
+#[test]
+fn relative_phase_difference_exceeds_i128_without_losing_sign()
+-> Result<(), RelativeMeasurementRefusal> {
+    let positive = nominal_relative_fixture(&RELATIVE_POSITIVE_WIDE)?;
+    let negative = nominal_relative_fixture(&RELATIVE_NEGATIVE_WIDE)?;
+    for (row, anchor, sign, value) in [
+        (
+            positive,
+            negative,
+            RationalSign::Positive,
+            0x43f1_2e0b_e826_d695,
+        ),
+        (
+            negative,
+            positive,
+            RationalSign::Negative,
+            0xc3f1_2e0b_e826_d695,
+        ),
+    ] {
+        let difference = phase_difference(row.numerator(), anchor.numerator())?;
+        assert_relative_phase(
+            &difference,
+            sign,
+            170_141_183_460_469_231_731_687_303_715_884_105_730,
+            value,
+            0x40a0_0000_0000_0000,
+        );
+    }
     Ok(())
 }

@@ -7,7 +7,11 @@ description: "Implement or review NevroTick Windows service identities, effectiv
 
 Read [the security contract](../CONTRACT.md), architecture sections 4, 10–11 and 15, and [native proof requirements](../references/native-proof.md) for OS qualification.
 
-For SCM/service hardening, use the [service adapter guide](../../implementation/implement-rust/references/windows-service-adapters.md), especially its [object/operation access matrix](../../implementation/implement-rust/references/windows-service-adapters.md#freeze-the-object-and-operation-access-matrix) and [per-service recovery matrix](../../implementation/implement-rust/references/windows-service-adapters.md#freeze-service-configuration-and-recovery-behavior). Keep installer/helper configuration authority separate from runtime status reporting; verify effective rights and recovery behavior under actual accounts.
+For SCM/service work, use [implement-windows-service](../../implementation/implement-windows-service/SKILL.md)
+for lifecycle routing and the service guide's [object/operation access matrix](../../implementation/implement-rust/references/windows-service-adapters.md#freeze-the-object-and-operation-access-matrix)
+and [per-service recovery matrix](../../implementation/implement-rust/references/windows-service-adapters.md#freeze-service-configuration-and-recovery-behavior).
+Keep installer/helper configuration authority separate from runtime status
+reporting; verify effective rights and recovery behavior under actual accounts.
 
 Apply [management admission and recovery](../../../../docs/windows-time-architecture.md#421-service-management-admission-and-administrative-recovery).
 SCM rights authorize principals, not EXE names; record exact normal/admin routes

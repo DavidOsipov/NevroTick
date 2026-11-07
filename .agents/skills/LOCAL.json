@@ -46,6 +46,11 @@
       "name": "maintain-windows-metadata",
       "target": "implementation/maintain-windows-metadata/SKILL.md",
       "origin": "locally-authored"
+    },
+    {
+      "name": "implement-windows-service",
+      "target": "implementation/implement-windows-service/SKILL.md",
+      "origin": "locally-authored"
     }
   ]
 }

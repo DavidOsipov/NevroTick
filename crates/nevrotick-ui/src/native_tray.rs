@@ -463,6 +463,23 @@ impl TrayBridge {
             self.cleanup_failed.store(true, Ordering::Release);
         }
     }
+    /// Record the actual destruction result for this worker's one returned popup.
+    /// A later successful cleanup cannot resolve an earlier failed destruction.
+    ///
+    /// # Errors
+    /// Failed or previously unconfirmed cleanup stays latched across event drains
+    /// and window restoration; this acknowledgement never retries a native call.
+    #[cfg(any(windows, test))]
+    fn acknowledge_popup_cleanup(&self, removed: bool) -> Result<(), TrayError> {
+        if !removed {
+            self.cleanup_failed.store(true, Ordering::Release);
+        }
+        if self.cleanup_failed.load(Ordering::Acquire) {
+            Err(TrayError::CleanupUnconfirmed)
+        } else {
+            Ok(())
+        }
+    }
     /// Coalesce a typed event and notify outside the state lock.
     #[cfg(any(windows, test))]
     fn publish(&self, action: Option<TrayItemId>, failure: bool, loss: bool) {
@@ -769,6 +786,65 @@ mod tests {
         assert_eq!(bridge.availability(), AdapterAvailability::Unavailable);
         assert!(bridge.drain()?.restore.is_some());
         assert_eq!(bridge.availability(), AdapterAvailability::Unavailable);
+        Ok(())
+    }
+    /// Failed popup destruction outlives its delivered notice and window restoration.
+    ///
+    /// # Errors
+    /// Propagates an unexpected checked fixture or bridge admission failure.
+    ///
+    /// # Panics
+    /// Fails if draining, restoration or later successful cleanup erases uncertainty.
+    #[test]
+    fn popup_cleanup_failure_survives_notice_drain_and_successful_neighbors()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let (bridge, wake) = bridge(true)?;
+        bridge.registered.store(true, Ordering::Release);
+        assert_eq!(bridge.availability(), AdapterAvailability::Ready);
+        assert_eq!(
+            bridge.acknowledge_popup_cleanup(false),
+            Err(TrayError::CleanupUnconfirmed)
+        );
+        bridge.publish(None, true, false);
+        assert_eq!(wake.count.load(Ordering::SeqCst), 1);
+        assert!(bridge.drain()?.native_failure);
+        assert!(!bridge.drain()?.native_failure);
+        assert!(bridge.cleanup_failed.load(Ordering::Acquire));
+        assert_eq!(bridge.availability(), AdapterAvailability::Unavailable);
+
+        bridge.publish(None, false, true);
+        let restore = bridge.drain()?.restore.ok_or("loss missing")?;
+        bridge.acknowledge_restored_window(restore)?;
+        bridge.registered.store(true, Ordering::Release);
+        assert_eq!(
+            bridge.acknowledge_popup_cleanup(true),
+            Err(TrayError::CleanupUnconfirmed)
+        );
+        assert!(bridge.cleanup_failed.load(Ordering::Acquire));
+        assert_eq!(bridge.availability(), AdapterAvailability::Unavailable);
+        Ok(())
+    }
+    /// Actual successful popup destruction preserves readiness and ordinary cleanup.
+    ///
+    /// # Errors
+    /// Propagates an unexpected checked fixture or bridge admission failure.
+    ///
+    /// # Panics
+    /// Fails if a healthy native result creates a false cleanup obligation or notice.
+    #[test]
+    fn successful_popup_cleanup_preserves_ready_observer() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let (bridge, wake) = bridge(true)?;
+        bridge.registered.store(true, Ordering::Release);
+        assert_eq!(bridge.acknowledge_popup_cleanup(true), Ok(()));
+        assert!(!bridge.cleanup_failed.load(Ordering::Acquire));
+        assert_eq!(bridge.availability(), AdapterAvailability::Ready);
+        assert_eq!(wake.count.load(Ordering::SeqCst), 0);
+        assert!(!bridge.drain()?.native_failure);
+        bridge.publish(None, true, false);
+        assert!(bridge.drain()?.native_failure);
+        assert!(!bridge.cleanup_failed.load(Ordering::Acquire));
+        assert_eq!(bridge.availability(), AdapterAvailability::Ready);
         Ok(())
     }
     /// Old registration is insufficient while a new native projection has no ack.

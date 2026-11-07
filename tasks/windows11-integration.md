@@ -34,6 +34,18 @@ document concrete exclusions instead of silently retaining a weaker profile.
 Final PE/DLL/runtime/CPU-startup observations remain pending under the existing
 native hold; this amendment grants no Windows execution or release approval.
 
+**Primary coordinator checkpoint, 7 November 2026:** the latest pull and
+[bounded reference-bridge exit](engine-transport-pilot.md#common-run-reference-bridge--final-qualification-and-next-action)
+preserve the W11-W01–W11-W10 ownership map in §4.12, as amended by §4.17 and
+later task-specific records. W11-W01 remains partially prepared under §4.26;
+the bridge adds no packet timestamp or Windows mapping evidence. W11-W02–W11-W05
+and W11-W08 retain their phase owners and native hold; W11-W06/W11-W07 remain
+conditional on their named DNS baselines; W11-W09 retains D2/D3 re-entry. Selected
+W11-W10 MSIX preparation and David's Store attempt retain §4.17's owners and
+next actions. The next pure Core conditioning contract changes no Windows adapter,
+package or service. The §4.4/§4.31/§4.32 refinements and all execution holds remain
+with those existing owners; no new source card or native result is claimed.
+
 ## 1. Authority, scope and reconciliation
 
 **UI amendment — 5 November 2026:** [OD-13](../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
@@ -343,6 +355,18 @@ retrieval; DNS-C14/17 when the DNS service participates.
 
 ### W11-W05 Observe effective SCM, maintenance and process policy
 
+**Service metadata refinement, 7 November 2026:** consume [metadata §12.2](../docs/plans/windows-package-metadata.md#122-scm-labels-localization-and-installed-propagation)
+with W11-W10 before dependent service authoring/provisioning. Source preparation
+is ready; native work remains held. Freeze stable technical identity separately
+from display/purpose text and intended/next-run/runtime observations. Qualify
+actual selected MSIX propagation rather than assuming either direct XML fields
+or a post-install setter. Pair correct labels and legitimate update/rollback
+with missing/wrong MUI resource, denied read, null/empty update distinctions and
+stale package paths. Keep stored references and resolved locale/text distinct.
+Query rights confer no change authority; no privilege/account/startup/recovery
+change follows from a request for richer metadata. Reuse the current lifecycle,
+CHECK-18/23/27 and W11-W10 readback owners; the final provisioning bridge remains open.
+
 **Owner/stage:** platform/security/lifecycle; P0/P3, P4 cleanup and P6 complete MSIX.
 **Prerequisites:** existing token/object, mitigation, mandatory-state and
 [installation research](../docs/plans/windows11-integration.md#4-make-installation-and-service-state-reflect-actual-windows-behavior).
@@ -366,6 +390,37 @@ security and intended elevated recovery without a healthy UI/service. Existing
 hardening §9.9/§9.11 and CHECK-1/2/13/15/18/23/27 retain acceptance. Descriptor, signature or package-family match proves no application exclusivity. Source
 research grants no native execution, new service identity, topology or dependency;
 current priority and holds remain unchanged.
+
+**7 November additional service practices:** the
+[reviewed follow-up](../docs/plans/windows11-integration-follow-up.md#additional-service-practices--7-november-2026)
+and dedicated [Windows service skill](../.agents/skills/implementation/implement-windows-service/SKILL.md)
+refine this existing assignment; they establish no runtime defect or native pass.
+**Disposition:** source preparation ready when the existing S0.2/S0.3/P3/P4/P6
+owner reaches it; native execution held. Before dependent implementation, carry
+the applicable rows into that owner's bounded card:
+
+| Existing owner / checks | Paired observation and next action |
+| --- | --- |
+| Startup/configuration; CHECK-1/2/13/15/27 | Freeze process arguments, transient SCM arguments, native metadata/decoding and protected durable policy separately. Pair ordinary installed start/recovery with conflicting, malformed/excessive options; no role/root/endpoint/maintenance/clock-authority override or dependence on prior transient input. |
+| Broker/lifecycle/mandatory state; CHECK-1/5/12/13/15/27 | Freeze the existing mutex's namespace, creation/open rights, owner/DACL, lifetime, native-thread owner and task serialization. Pair trusted creation/open with precreation, wrong type, denial and cross-session cases; test both abandonment with a surviving handle and fresh recreation after last-handle loss. Reconcile current controller, journal, generation and consumed allowance before effects; retain any reservation-availability limit. |
+| Per-role startup with W11-W08/ST-W07; CHECK-16/17/21/27 | Record effective process/thread error policy, owner and phase. Pair ordinary start/useful diagnostics with selected critical-error failures through startup/work/stop; no modal wait. Keep WER invocation, UI, queue/upload and collector/privacy policy distinct, preserving administrator policy. |
+| Startup/configuration with SEC-A02; CHECK-15/17/21/27 | Inventory actual environment/profile/dependency inputs. Pair correct account/no-login startup and forced spill with missing, inaccessible, overridden or redirected paths; verify protected authority and actual live-file custody rather than a temp-path string. |
+| Actual dependency owner; CHECK-13/21/27 | Only if reached, freeze complete policy/installer/SCM/native-provider waits. Pair healthy ordering with delayed/held dependency; bounded progress/failure and later recovery preserve truthful readiness and no clock effects before required policy admission. |
+
+No namespace API, account/wrapper, temp API, watchdog, restart constants or new
+acceptance IDs are adopted. Current Core/N3 work remains next; this source-only
+integration changes no execution hold or formal post-V1 deferral.
+
+**Documentation/skill checks, 7 November 2026:** the 66-skill pack check and new
+skill validator pass; 1,530 local-link/heading checks across 15 affected Markdown
+files and scoped whitespace checks pass. Three independent source-only scenario
+exercises covered startup/coordination, errors/native-job cancellation and
+maintenance/recovery; the exercised skill SHA-256 is
+`029ca3f356255beba19d4c2aa219e90868a6a0b53897d705452b79af9b0b4d34`.
+A separate fresh-context source review accepted the integrated documentation
+with no material findings, including the process/thread API documentation
+discrepancy. These are instruction/document checks, not native service tests or
+product qualification. Concurrent Core/N3 changes retain their own evidence.
 
 **Clock-limit preparation:** [§4.31](#431-clock-correction-limits-preparation--5-november-2026)
 keeps actual native-job completion, broker cleanup, durable late outcomes and
@@ -507,6 +562,20 @@ does not qualify optional-storage roots or a different cryptographic operation.
 
 ### W11-W08 Trace native behavior and qualify one fault profile
 
+**Diagnostic metadata refinement, 7 November 2026:** [metadata §12.3](../docs/plans/windows-package-metadata.md#123-artifact-and-diagnostic-projections)
+and [catalogue C](../docs/supporting-reviews/windows-service-metadata-catalogue.md#appendix-c-diagnostics-and-performance-counters)
+refine this assignment with W11-W10/P6. Before dependent resource authoring,
+freeze stable decoding identity, event ID/version/typed payload and actual resource
+paths, message/help/locale mapping and operation correlation. Preserve XML/native
+domain discrepancies for admitted compiler/readback qualification. Pair a known
+owned rendered event with missing/wrong resource, schema/version and locale cases;
+inspect installed publisher metadata separately from current channel policy.
+Privacy, finite retention/sink failure and ST-W07 sensitive-output cases remain
+required. TraceLogging alone proves no durable Event Log catalogue; PerfLib stays
+optional. Source/schema inventory is complete within its declared scopes; product
+values, compilation, registration/rendering and native cases remain open/held
+under existing CHECK-17/21/27 and package readback gates.
+
 **Owner/stage:** diagnostics/QA and the affected component's existing phase.
 **Prerequisites:** typed redaction/session policy and
 [diagnostic research](../docs/plans/windows11-integration.md#7-diagnose-actual-windows-behavior-and-inject-native-failures).
@@ -536,6 +605,12 @@ synthetic secrets remain absent. For crash privacy, identify each collector:
 process WER/NOHEAP choices do not establish control of independent LocalDumps or
 every debugger path. Reuse [ST-W07](windows-protected-storage.md#st-w07-verify-sensitive-memory-lifetime-and-actual-output-privacy)
 for admitted dummy-secret checks; do not alter administrator dump policy here.
+
+With W11-W05, apply the [7 November service-error refinement](../docs/plans/windows11-integration-follow-up.md#effective-noninteractive-error-behavior):
+useful diagnostics must survive the selected unattended failure paths. Effective
+error handling, WER invocation, UI and queue/upload choices are separate from
+collector confidentiality; no-UI alone closes no privacy case. Native cases
+retain this assignment's phase and hold.
 
 **Controls/exit:** actual allowed diagnostics remain useful and synthetic secret/
 domain markers remain absent. Trace loss is reported. A selected allocation,
@@ -573,6 +648,155 @@ proof. **Mapping:** CHECK-14/17/22; ST-T01/14 when storage status/privacy is rea
 UI-M0 D1/D2/D3 remain Deferred; this task activates none of them.
 
 ### W11-W10 Re-enter conditional mechanisms only for a concrete need
+
+**Adopted metadata delivery controls, 7 November 2026:** David authorized the
+reviewed website-pipeline techniques under [metadata §13.5](../docs/plans/windows-package-metadata.md#135-adopted-metadata-delivery-controls--7-november-2026).
+This extends the existing source-tool assignment, without importing website
+code/data, creating another authority or admitting a cross-project dependency.
+The metadata owner adds strict ORCID/ISNI check-character validation and
+source-derived per-component/field/artifact obligations with independent parsed
+source-output checks. Keep pending values empty, public/private destinations
+explicit, known-valid controls and stale-tree rejection. Field-disposition counts
+remain distinct from actual delivery and native qualification.
+
+| Disposition and existing owner | Next action and independent exit |
+| --- | --- |
+| Completed bounded source-tool controls, MD-P1–MD-P3 metadata owner | Checksum and semantic delivery implementation passed the source receipt below. Preserve direct-model/real-CLI healthy controls and rejection of wrong check digits, missing/extra/duplicate bindings, same-count wrong values/owners and unintended public fields. This source result does not complete the dependent build/native rows. |
+| Pending real consumer, MD-P4 build/component owner | Wire the frozen generation into actual resource consumers; independently read linked resources. Run cold → consumed-input change → warm → clean control, check rerun rules and actual selected compiler/SDK/target/profile identity. Preserve intentional per-component/version/licence differences. |
+| Pending dependent package/native work, MD-P4–MD-P5 W11-W05/W11-W08/W11-W10 | Check namespace references/collisions when real identities exist; exact package/export allowlists exclude internal authoring and private values. Retain accidental-copy/private-sentinel controls, actual signed/submitted/Store/installed identities and independent resource readback. Existing prerequisites and execution holds remain. |
+
+**Adoption source receipt, 7 November 2026:** the dirty working-tree candidate
+at `df6e28a4641f2f046373a9c5640aa60736716a22` passed the configured metadata suite:
+**183 tests, 59.779 seconds, no failures, errors or skips**, on Linux/WSL with
+Python 3.12.3. The new checksum and delivery controls add 28 tests. The actual
+source CLI validated, generated and checked 15 files: 14 independently interpreted
+payloads plus the external receipt. `field-coverage.json.delivery` records 160
+selected source bindings, all 14 artifact contracts and explicit unexecuted
+compiled/native/package observations. Its locators are semantic identity
+selectors, not generic JSON Pointers. The receipt now hashes eight pipeline
+modules; source facts, empty unknowns and the UTF-8 policy remain unchanged.
+Release-mode validation still refuses this source candidate as required.
+
+The first integrated run exposed one copied-runner fixture that omitted the new
+`delivery.py` dependency and failed before healthy generation. Adding that module
+to the fixture preserved its healthy and stale-code assertions; the focused case
+then passed before the complete green rerun. Preserve both run logs. Independent
+review accepted a healthy payload and rejected seven faulty inputs, including
+same-count ownership, duplicate/private fields and unclaimed source text. The
+66-skill inventory, both changed skill validators and 596 local documentation
+links passed; source/test hashes and the initial staged index remained unchanged
+during final verification. Evidence and candidate hashes are retained under
+`/tmp/nevrotick-metadata-adoption-20261107-a3iaks61/`, with the independent controls
+under `/tmp/nevrotick-delivery-independent-20261107-w1g5cfoi/`.
+
+No Cargo/resource compilation, native Windows, service, clock, package, signing,
+Store or formal execution occurred. The preceding source receipts retain only
+their exact historical candidates.
+This assignment leaves the current Core queue, selected MSIX route, Windows stop,
+separate fuzz hold, storage pause and post-V1 formal deferral unchanged.
+
+**Complete metadata register extension, 7 November 2026:** David requested the
+full reviewed field scope after the initial prototype subset, research for unknown
+facts, empty unanswered values and strict UTF-8 without emoji/hidden characters.
+Apply [metadata §13.4](../docs/plans/windows-package-metadata.md#134-complete-field-register-and-source-text-policy--7-november-2026)
+to the existing `metadata/` owner. The code-owned field registry defines the full
+expected scoped set and applicability; the single TOML record supplies values and
+dispositions. Preserve aliases as derivations, not competing edited facts.
+Public author IDs, current rights/asset/source/locale references and intended
+platform facts use repository evidence; unknown Store/service/provider/signing
+identities remain empty. Generic Windows documentation cannot establish those
+project assignments. Full coverage means every scoped field is dispositioned;
+it does not authorize generic SDK configuration or enable conditional facilities.
+The Unicode property data is pinned and offline. Check raw text/comments and
+decoded TOML escapes while retaining ordinary international letters. The existing
+CI job and source-tool acceptance remain; MD-P4–MD-P5/native/release holds persist.
+
+**Complete-register source receipt, 7 November 2026:** the single 152,296-byte
+TOML record now carries 731 exact field dispositions: 551 catalogue rows
+(SCM 88, artifact/distribution 267, diagnostics 196) plus 180 shared/component
+entries. Authored statuses are 21 populated, 123 derived, 180 pending and
+407 not applicable. Resolution yields 63 nonempty values; 261 pending or
+not-yet-resolvable derived entries remain empty. These mixed categories are
+coverage accounting, not a product-readiness percentage or 731 static values.
+
+Repository/owner evidence supplies author IDs, actual rights/asset/locale paths,
+the published documentation locator and referenced lockfile path. The lockfile
+reference proves neither an actual build nor a complete shipped graph. Unknown
+Store/service/provider/signer identities and unsupported destinations stay empty.
+Code-owned derivations prevent duplicate edited aliases. Generic native/schema,
+behavioral, runtime and conditional catalogue rows are covered dispositions, not
+new SDK setters; concrete native grammar remains with its existing owner.
+
+Final verification: 155 tests passed with no skips/errors in 47.643 s using
+Python 3.12.3/Linux; real `validate`, 15-file `generate` and read-only `check`
+passed, while release mode correctly refused. Independent review reconciled all
+551 catalogue identities and compared the pinned Unicode 18 repertoire across
+all 1,114,112 code points without discrepancy. Raw/comment/escaped emoji, hidden
+characters, invalid encoding and BOM refuse beside valid international controls.
+Three bounded repairs have discriminating controls: shared Store additional-term
+limits, hardware-entry limits and current English-only locale facts. The initial
+152-case run had one stale CSV fixture expectation; the corrected exact-field
+oracle preserves cardinality and multiline-literal checks. No implementation
+rejection was weakened to satisfy that fixture.
+
+The existing 66-skill package validation and source/link/whitespace checks passed.
+Evidence is under `/tmp/nevrotick-metadata-complete-20261107-jszqzdva`, including
+`tests-final-155.log` and the final generated tree. Current source artifacts
+require fresh generation with the expanded code-owned contract; no old source
+or output compatibility is claimed for this unreleased authoring schema.
+Next remains the existing MD-P4 consumer/emitted-resource adoption and MD-P5
+native/signing/delivery qualification. No Cargo graph, product runtime, Windows
+configuration, Store account or signing/publication state changed in this work.
+
+
+**Owner-authorized metadata pipeline, 7 November 2026:** David requested planning
+and parallel implementation, with an easily found high-level directory. Use
+[metadata/](../metadata/README.md) and the [canonical five-stage plan](../docs/plans/windows-package-metadata.md#13-metadata-pipeline-implementation--7-november-2026),
+superseding the earlier illustrative `packaging/product.toml` location. The
+coordinator owns integration; separate workers own strict source/checked model,
+deterministic generators/CLI, and independent admission/output-custody tests.
+MD-P1–MD-P3 implement the portable source-tool slice now; MD-P4–MD-P5 retain actual
+compile/link/native/signing/delivery owners and holds. These are task-local stage
+labels, not new CHECK IDs or a prerequisite to the current Core/N3 checkpoint.
+
+Expected source-tool exit: one editable TOML record, exact existing Cargo fact
+derivation without Cargo execution, code-owned release prerequisites, checked
+immutable public projection inputs, literal-safe fixed outputs, atomic complete
+publication, and read-only stale/tampered/extra-file rejection. Unknown future
+identities remain pending with owner/next action; removing their rows cannot
+authorize a release. CI uses the already-required workflow-policy job. Preserve
+staged/concurrent work and record integrated candidate/results here at handoff.
+
+**MD-P1–MD-P3 source-tool receipt, 7 November 2026:** the validator, immutable
+model, deterministic generator, isolated-import CLI and source CI steps are
+implemented in `metadata/`. The current source resolves four exact product/Cargo
+snapshots, five roles (two emittable prototypes) and six explicit pending owners.
+Real `validate`, fresh `generate` and read-only `check` passed for the 12-file
+tree; release validation and stale pre-repair output correctly refused. The final
+106-test suite passed with no skips in 10.729 s on Python 3.12.3/Linux. Existing
+security helper controls passed 24 tests; configured actionlint/ShellCheck/pedantic
+offline zizmor passed two workflows with two healthy/three rejection controls.
+
+Independent review found three additional boundaries, repaired with behavioral
+RED/healthy/GREEN controls: XML-forbidden characters, equality-spoofed scalar
+models and staging cleanup when the child-directory open fails. Focused fresh
+re-review accepted the repairs. The diagnostic pending-owner omission also has
+RED/GREEN evidence. Earlier missing-module/RC-observer/fixture-selector failures
+were harness issues; nonzero prototype revision support was an explicit source
+contract refinement, not a claimed pre-existing product defect. Parent-directory
+custody fixes passed their controlled cases without a historical RED claim.
+
+Candidate evidence and generated source are retained under
+`/tmp/nevrotick-metadata-pipeline-20261107-uy9iekfa`; final test log is
+`/tmp/nevrotick-metadata-tests-final-106.log`. This is Linux build-host source
+qualification, not an admitted Cargo/product graph, compiled Rust/RC, complete
+MSIX/event catalogue, installed/Store-delivered metadata or release approval.
+The release mode intentionally remains closed for this prototype schema.
+Next: MD-P4 owners wire reached real consumers to a frozen generated tree and
+independent emitted-resource readers before their existing component/package
+slice; MD-P5 retains all native, account/provisioning, signing and delivery gates.
+The current Core queue and all other execution holds remain unchanged.
+
 
 The [conditional research](../docs/plans/windows11-integration.md#9-conditional-mechanisms-worth-understanding)
 and [second-pass reserves](../docs/plans/windows11-integration-follow-up.md#6-conditional-mechanisms)
@@ -626,6 +850,30 @@ the production record/schema, generator, package and native evidence remain open
 Next W11-W10/P6 action is to populate the current field register and resolve its
 required-stage inputs before implementing the admitted build/readback path.
 The current Core priority and native/fuzz/storage holds remain unchanged.
+
+**Service/artifact/diagnostics catalogue, 7 November 2026:** [metadata §12](../docs/plans/windows-package-metadata.md#12-service-and-diagnostics-metadata-refinement--7-november-2026)
+now retains the reviewed bounded field catalogue once. The metadata/service and
+package-QA skills route field kind, applicability, stable identity, resource/locale
+projection and independent readers through this existing owner. SCM update wording
+and package-ledger declaration wording were corrected during integration; unknown
+service names, provider GUIDs, release/Store identity and public endpoints remain
+pending rather than plausible placeholders. Proposed engine/broker wording is not
+approved shipping behavior. Resolve each selected field as populated, derived,
+pending with owner or not applicable with reason. This is documentation/source
+preparation only, not a completed product register or resource generator.
+Next action remains the field-register resolution above, now including SCM/MUI
+servicing and event-resource rendering with W11-W05/W11-W08. Preserve authored,
+generated, embedded, installed, signed/submitted and Store-delivered observations
+and existing CHECK-18/20/23/26/27. No current Core prerequisite, new service,
+provider/counter set, dependency, native probe, signing or publication is selected.
+
+Metadata integration checks, 7 November 2026: 66-skill metadata/UI/inventory/link
+check passed; 1,222 local path/heading checks and the illustrative TOML parse passed.
+Three separate SCM/artifact/diagnostics source reviews informed integration;
+diagnostics compared 187 XML members across 37 published schema pages with no
+member mismatch. A fresh-context three-scenario skill exercise found no
+decision-changing gap. These are source/instruction checks, not measured workflow
+improvement, a resolved product register or artifact/native qualification.
 
 Skill delivery validation: the package checker passed for 65 registered skills;
 the skill-creator validator and TOML/JSON example parsing passed, and added

@@ -408,10 +408,10 @@ and again at closeout when relevant evidence has changed.
 
 | Phase | Before implementation or investigation | Required testing skills for its exits |
 | --- | --- | --- |
-| **P0 — foundations** | [plan-architecture], [plan-threat-model]; S0.1: [dependency-updates], [security-build-deployment], [security-crypto-secrets]; S0.2/4: [security-windows-privileges] and service adapter reference; S0.3: [security-local-ipc]; S0.5: [implement-native-ui], [security-native-ui]; S0.6: [security-build-deployment]; S0.7: affected security owner. | [qa-static-checks] for graph/tool gates; [qa-security-boundaries], [qa-integration-tests], [qa-state-concurrency-lifecycle], [qa-fault-recovery] for native experiments; [qa-performance-resources] for baseline budgets; S0.5 [qa-accessibility]/[qa-visual-dpi]; S0.6 [qa-package-artifacts]. Review source-only S0.1 as source evidence, not a native pass. |
+| **P0 — foundations** | [plan-architecture], [plan-threat-model]; S0.1: [dependency-updates], [security-build-deployment], [security-crypto-secrets]; S0.2/4: [security-windows-privileges] and [implement-windows-service] for SCM/lifecycle; S0.3: [security-local-ipc]; S0.5: [implement-native-ui], [security-native-ui]; S0.6: [security-build-deployment]; S0.7: affected security owner. | [qa-static-checks] for graph/tool gates; [qa-security-boundaries], [qa-integration-tests], [qa-state-concurrency-lifecycle], [qa-fault-recovery] for native experiments; [qa-performance-resources] for baseline budgets; S0.5 [qa-accessibility]/[qa-visual-dpi]; S0.6 [qa-package-artifacts]. Review source-only S0.1 as source evidence, not a native pass. |
 | **P1 — deterministic core** | [security-protocol-inputs], [security-build-deployment]; [dependency-updates] for new graph; Chrony port/simulator and numerical/protocol references. [plan-architecture] fixes domain/state owners; section 3 contracts apply throughout. | [qa-unit-tests], [qa-component-tests], [qa-contract-tests], [qa-property-based-testing], [qa-golden-fixture-parity], [qa-adversarial-inputs], [qa-structured-fuzzing], [qa-static-checks], [qa-coverage-gap-analysis], [qa-mutation-testing]; [qa-model-based-testing] for abstract discipline/holdover transitions. Apply numerical/resource measurements to actual core workloads. |
 | **P2 — NTP/NTS acquisition** | [security-protocol-inputs], [security-crypto-secrets], [security-privacy-logging], [dependency-updates]; [plan-threat-model] for destinations/trust/recovery; [security-windows-privileges] for service/native retrieval owners; Rust/Windows boundary reference for native jobs. | [qa-component-tests], [qa-contract-tests], [qa-integration-tests], [qa-security-boundaries], [qa-adversarial-inputs], [qa-structured-fuzzing], [qa-golden-fixture-parity] for protocol/crypto vectors, [qa-state-concurrency-lifecycle], [qa-fault-recovery], [qa-performance-resources], [qa-static-checks]. Preserve critical-file coverage/mutation gates. |
-| **P3 — services, IPC, persistence** | [security-windows-privileges], [security-local-ipc], [security-protocol-inputs], [security-privacy-logging], [evolve-data-contracts]; service adapter, strict boundary and Windows-memory references. | [qa-contract-tests], [qa-integration-tests], [qa-security-boundaries], [qa-state-concurrency-lifecycle], [qa-fault-recovery], [qa-adversarial-inputs], [qa-performance-resources], [qa-static-checks]; [qa-structured-fuzzing] for actual framing/decoding. |
+| **P3 — services, IPC, persistence** | [implement-windows-service], [security-windows-privileges], [security-local-ipc], [security-protocol-inputs], [security-privacy-logging], [evolve-data-contracts]; service adapter, strict boundary and Windows-memory references. | [qa-contract-tests], [qa-integration-tests], [qa-security-boundaries], [qa-state-concurrency-lifecycle], [qa-fault-recovery], [qa-adversarial-inputs], [qa-performance-resources], [qa-static-checks]; [qa-structured-fuzzing] for actual framing/decoding. |
 | **P4 — real Windows discipline** | [security-windows-privileges], [security-local-ipc], [security-protocol-inputs], [security-privacy-logging], [security-build-deployment] for takeover/restoration; [security-crypto-secrets] for newly connected recovery/cache paths; service adapter, Chrony accounting, Windows evidence and Windows-memory references. | [qa-integration-tests], [qa-contract-tests], [qa-state-concurrency-lifecycle], [qa-fault-recovery], [qa-security-boundaries], [qa-model-based-testing], [qa-e2e-tests], [qa-performance-resources]. Use [qa-package-artifacts] for installed handover/lifecycle effects. |
 | **P5 — production UI** | [implement-native-ui], [security-native-ui], [security-local-ipc], [security-privacy-logging]; [security-windows-privileges] for helper flows; [evolve-data-contracts] for live snapshot/settings compatibility; design/brand references and D1–D3 re-entry rules. | [qa-component-tests], [qa-contract-tests], [qa-integration-tests], [qa-e2e-tests], [qa-accessibility], [qa-visual-dpi], [qa-i18n-localization], [qa-performance-resources], [qa-security-boundaries]. Restore full requirements at their triggers; none are retroactive UI-M0 blockers. |
 | **P6 — hardened complete package** | [security-build-deployment], [security-windows-privileges], [security-local-ipc], [security-crypto-secrets], [dependency-updates], [evolve-data-contracts] for version/migration/rollback; [security-privacy-logging] for packaged event resources; signing and mitigation authorities. | [qa-package-artifacts], [qa-security-boundaries], [qa-integration-tests], [qa-e2e-tests], [qa-fault-recovery], [qa-state-concurrency-lifecycle], [qa-static-checks], [qa-performance-resources], [qa-black-box-acceptance]. |
@@ -441,7 +441,8 @@ tool on every change.
 | Concrete compiler diagnostic, borrow/drop issue, or Send/Sync problem | Respectively [rust-compiler-errors], [rust-borrow-semantics], [rust-send-sync]. Do not change architecture just to silence the compiler. |
 | Available admitted native Windows UI automation | [winapp-ui-automation]; automation supplements actual keyboard/Narrator observations. Do not install a tool just to follow a preferred path. |
 | Owned Windows Sandbox configuration or Windows/WSL-to-guest control | [manage-windows-sandbox](../../.agents/skills/environment/manage-windows-sandbox/SKILL.md). Check the incident and task holds before any Windows command, including preflight or launch. The skill does not clear a hold, admit a blocked artifact or qualify guest/product recovery. |
-| SCM, native handles, callbacks, FFI or cancellation | [Service adapter guide](../../.agents/skills/implementation/implement-rust/references/windows-service-adapters.md), [Rust/Windows boundaries](../../.agents/skills/implementation/implement-rust/references/rust-windows.md), [Windows memory diagnostics](../../.agents/skills/testing/references/windows-memory.md). |
+| SCM service creation, management, hardening, logging or optimization | [implement-windows-service] and relevant [service adapter details](../../.agents/skills/implementation/implement-rust/references/windows-service-adapters.md), [Rust/Windows boundaries](../../.agents/skills/implementation/implement-rust/references/rust-windows.md), [Windows memory diagnostics](../../.agents/skills/testing/references/windows-memory.md). |
+| Other native handles, callbacks, FFI or cancellation | [Rust/Windows boundaries](../../.agents/skills/implementation/implement-rust/references/rust-windows.md) and relevant [Windows memory diagnostics](../../.agents/skills/testing/references/windows-memory.md); service mechanics apply only when that owner is reached. |
 | Optional NTS/DNS persistence, root protection or fallback | [Protected-storage plan](windows-protected-storage.md), [upstream lessons](windows-protected-storage-upstream-lessons.md), [security-crypto-secrets], [security-windows-privileges], [security-privacy-logging] and [evolve-data-contracts]; apply [qa-contract-tests], [qa-security-boundaries], [qa-state-concurrency-lifecycle] and [qa-fault-recovery] at the stage-specific exits in section 8.4. Native memory/resource and package checks join when those environments are admitted. |
 | Numerical/protocol oracle or native acceptance | [Numerical/protocol truth](../../.agents/skills/testing/references/numerical-protocol.md), [Windows evidence](../../.agents/skills/testing/references/windows-evidence.md), as applicable. |
 | Authorized stage/commit preparation | [qa-pre-commit]. A phase pass itself grants no commit, push, signing or release authorization. |
@@ -646,6 +647,15 @@ elevated recovery. Include same-user foreign clients, prior-handle authority and
 recovery without a healthy UI/service under hardening §9.9/§9.11. Preserve public-operation
 policy, phase order and all execution holds.
 
+Apply the [additional service-practices refinement](windows11-integration-follow-up.md#additional-service-practices--7-november-2026)
+through [implement-windows-service] and the existing W11-W05 card before its
+dependent adapter: separate process/SCM/durable-policy inputs; effective
+noninteractive error behavior; existing mutex realization and crash/thread
+reconciliation; actual environment/profile/temp provenance; reachable startup
+wait cycles only where present. W11-W08/ST-W07 and SEC-A02 retain diagnostics,
+privacy and live-spill evidence. These source-ready refinements add no acceptance
+IDs, runtime vulnerability claim, selected API/account/wrapper or native permission.
+
 | Acceptance | Required Windows observation | Mapping |
 | --- | --- | --- |
 | Service isolation | Actual engine/UI tokens cannot set time or inject/write into the broker; broker has only qualified rights and no external network role. No LocalSystem shortcut. Valid permitted broker operation remains possible in the owned fixture. | CHECK-1/2/27 |
@@ -781,9 +791,44 @@ mappings, and independent emitted/installed readback. W11-W10 owns this work
 within the existing package checks; MSI mappings remain conditional reference.
 Use [maintain-windows-metadata](../../.agents/skills/implementation/maintain-windows-metadata/SKILL.md)
 for the source → observation → reviewed record → generated output → independent
-readback procedure. Its references and example records prepare the method; the
-production record/schema, generator, actual artifacts and native observations
-remain future work under the same W11-W10/P6 owners and execution holds.
+readback procedure. Its references and example records prepare the method;
+the amendment below implements the bounded source record/generator. Complete
+release metadata, actual build artifacts and native observations remain future
+work under the same W11-W10/P6 owners and execution holds.
+
+**7 November implementation amendment:** the owner-authorized
+[metadata/ pipeline](../../metadata/README.md) and [five-stage contract](windows-package-metadata.md#13-metadata-pipeline-implementation--7-november-2026)
+implement source admission, deterministic projection/check and focused CI now
+(MD-P1–MD-P3). Existing actual build/consumer adoption and native/signing/delivery
+stages remain MD-P4–MD-P5 under these same owners. The single authored source is
+`metadata/product.toml`; versions/licenses/repository retain existing authorities.
+Pending identities and prototype scope cannot be removed by data to authorize a
+release. This work adds no prerequisite to §7's current Core/N3 task.
+The [complete-register amendment](windows-package-metadata.md#134-complete-field-register-and-source-text-policy--7-november-2026)
+extends this same implementation with exact field dispositions across the reviewed
+SCM/artifact/diagnostic and shared project scopes. Unanswered values remain empty;
+UTF-8/raw/decoded text checks reject emoji and hidden controls. Internal complete
+register/coverage reports and explicit public projection allowlists retain separate
+purposes. Actual consumer/native/signing/delivery stages remain MD-P4–MD-P5.
+
+The [adopted delivery controls](windows-package-metadata.md#135-adopted-metadata-delivery-controls--7-november-2026)
+add semantic identifier checks and source-derived destination obligations to this
+same source-tool owner. At MD-P4, qualify independent emitted-resource readback,
+consumed-input warm-build invalidation and actual selected compiler/SDK/target/
+profile identity before accepting the reached consumer integration. MD-P4–MD-P5
+package owners also reconcile
+the exact allowed payload and private-authoring exclusions, namespace references
+and final signed/Store/installed observations. The existing W11-W10 receipt owns
+actual execution; none of these planned exits is a native pass or a new Core task.
+
+The [7 November service/diagnostic metadata refinement](windows-package-metadata.md#12-service-and-diagnostics-metadata-refinement--7-november-2026)
+adds bounded field dispositions, actual SCM/MUI propagation and servicing,
+conditional signature/native-manifest descriptions, and installed event-resource
+readback. W11-W05 retains service configuration effects; W11-W08 retains diagnostic
+semantics/privacy. Before the dependent package slice, resolve applicable values
+and independent readers in the existing register; source catalogue coverage does
+not complete a generator, installed resource or release gate. This adds no new
+provider, account, privilege, counter set, packaging route or Core prerequisite.
 
 Deliver the owner-selected complete hardened MSIX containing UI, engine, broker,
 helper and all required payloads. Follow the [MSIX plan](windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners)
@@ -911,32 +956,108 @@ The task retains failed attempts and the merged370-input candidate. This child
 supplies the pure reweighting operation; it selects no physical uncertainty model
 and authorizes no history insertion. Continue the existing contract below.
 
-**Next executable product task:** freeze the existing
-[observation-to-Core admission contract](../../tasks/engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission).
-Keep genuine date/scale provenance, reference instant, exact Q33 conversion
-residuals, signed raw RTT versus adjusted delay/root/capture uncertainty, justified
-divisor and the actual checked receiver explicit. The
+**Completed exact-nominal child:** the existing
 [current refinement](../../tasks/engine-transport-pilot.md#admission-contract-refinement--6-november-2026)
 fixes midpoint/residual and source-quality population semantics. Its
 [exact nominal representation child](../../tasks/engine-transport-pilot.md#exact-nominal-representation-activation)
-now passes53 ordinary/53 optimized tests,22 doctests, both-target graph/type
-checks, current per-file coverage and the complete338-variant mutation gate.
+passed53 ordinary/53 optimized tests,22 doctests, both-target graph/type
+checks, per-file coverage and the complete338-variant mutation gate on its
+recorded source.
 Its [terminal record](../../tasks/engine-transport-pilot.md#exact-nominal-terminal-qualification--6-november-2026)
 retains raw outcomes and two exact equality exclusions without kill credit.
-Next freeze production normalization/conditioning and the checked receiver under
-that same contract; retain exact phase anchors and half-nanosecond references.
-The active [exact rational seconds child](../../tasks/s1.2-regression-readiness.md#exact-rational-seconds-normalization--6-november-2026)
-implements a shared once-rounded representation and real engine adapters; focused
-ordinary/optimized/public-consumer checks pass, while its stable critical-owner
-qualification remains underway. It does not insert observations into history.
-David's subsequent compiler/dependency request activates the existing
+
+**Completed two-owner child — 7 November 2026:** the
+[exact rational-seconds/measurement checkpoint](../../tasks/s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners)
+qualifies the shared once-rounded representation and real nominal adapters on
+the374-input `cb2925bb...` map. Converter coverage is240/243 lines and its103
+variants are70 caught,28 unviable and five independently justified equivalent
+misses; measurement coverage is352/355 lines and its99 variants are70 caught,
+26 unviable and three independently justified equivalent misses. Both have zero
+timeouts or unresolved survivors and adjusted viable scores70/70; equivalences
+receive no kill credit. Raw `cargo-mutants` exit2 and all counts remain retained.
+The first engine-v1 attempt remains incomplete because `Cargo.toml` changed its
+minimum from1.99.1 to1.99 during execution. Restoring1.99.1 recovered the qualified
+converter's exact inputs; engine-v2 then passed fresh custody and qualification.
+These are selected Linux conversion/measurement gates, not the full engine
+manifest, bridge, production history, native Windows, P1 or release qualification.
+The existing
 [source-readiness dependency refresh](../../tasks/s0.1-source-readiness.md#owner-requested-dependency-refresh--6-november-2026)
-before further dependent qualification: preserve the1.99.1 minimum, review the
-latest direct/transitive graph and retain local repairs, exact grants and fresh
-two-target advisory/feature checks. The preceding rational campaign's final
-custody rejected a concurrent manifest change; its retained raw outcomes are not
-a current-candidate pass. Reconcile the refreshed graph and numeric gate before
-the [reviewed common-run reference/anchoring bridge](../../tasks/engine-transport-pilot.md#next-bounded-bridge-common-run-reference-and-exact-anchoring--6-november-2026).
+retains its completed graph/source-grant, fresh advisory, ordinary and cross-check
+scopes; the numeric receipts above bind that refreshed graph.
+
+**Completed bounded bridge — 7 November 2026:** the
+[common-run reference bridge's final record](../../tasks/engine-transport-pilot.md#common-run-reference-bridge--final-qualification-and-next-action)
+closes the selected GNU-hosted exit on376-input `46513296...`: ordinaryv6 passes
+134 ordinary/135 optimized tests,64 doctests, compiler/Clippy/rustdoc, CLI export
+and unchanged bookends. Library coverage is861/895 lines and211 variants are
+95 caught,114 unviable and two exact equivalent misses, with no timeouts;
+raw95/97 and adjusted95/95 remain distinct. Relative coverage is179/182 and
+58 variants are36 caught/22 unviable, with no misses/timeouts. Equivalences receive
+no kill credit. The task preserves failed attempts, bounded process-supervision
+controls and173 post-repair Python controls. Across the latest pull, reviewed
+unchanged compiled inputs, locked features, vendor and tool bytes support scoped
+reuse of these receipts, not a fresh whole-candidate execution pass. Current201
+Python controls and strict workspace checks pass; fresh two-package Windows-target
+compiler/Clippy checks pass with unchanged bookends, without linking or native
+Windows qualification. Carry the Windows-conditional commit-order repair with
+its missing native evidence. The genuine run origin, separate request identities,
+half-nanosecond references and exact self-minus-anchor differences establish an
+experimental cross-source view, not a same-source history or fit.
+
+The [N1b conditioned-window final exit](../../tasks/engine-transport-pilot.md#n1b-final-qualification--two-selected-core-owners)
+now qualifies its two selected Core owners on380-input `7a7d1b7b...`:363
+ordinary/363 optimized tests,61 doctests, compiler/Clippy/rustdoc, two-target
+checks, actual validation controls and96.528%/98.214% executable-line coverage.
+Complete270-variant accounting retains137 caught,128 compiler/lint-unviable and
+five exact reviewed equivalents, with no timeout or unresolved survivor. Manual
+equivalents get no kill credit; raw native2/2 and the earlier ten-worker disk
+cancellation remain retained. The source-bound post-run adjudication and
+independent final audit supply the bounded exit, not a new raw native-zero pass.
+
+The [N2a final two-owner exit](../../tasks/engine-transport-pilot.md#n2a-final-qualification--two-selected-core-owners)
+now completes its pure Linux scope on385-input `2fc732f1...`:396 ordinary/396
+optimized tests,88 doctests and both executable-line gates. All304 variants
+reconcile as181 behavioral caught,121 compiler/lint-unviable and two reviewed
+equivalents, without unresolved survivor or timeout; native2/0 remains visible.
+Both new regressions kill their exact former survivors. Six actual producer
+controls retain scoped historical reuse and no generated kill credit. The final
+join and independent review retain earlier failed attempts and resource history.
+
+The [N3a final two-owner exit](../../tasks/engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners)
+now qualifies its bounded controlled Linux scope on407-input `e71aab7...`:
+91 ordinary/91 optimized tests,42 doctests, external contracts and both line gates.
+Fresh library214 joins143 explicitly reviewed unchanged-series outcomes from
+`25654289...`; this is357 accounted variants, not357 fresh executions. There are
+188 meaningful catches,165 compiler-unviable cases and four reviewed equivalents,
+with no unresolved survivor or timeout. Equivalents receive no kill credit.
+Independent review closes the former fixture-only deadline catch through an
+actual predeadline assertion; all prior failures and scoped control reuse remain.
+
+**Next executable product task:** settle and independently review the four
+transaction choices in the existing
+[same-source receiving-contract card](../../tasks/engine-transport-pilot.md#conditional-next-product-contract-after-n2s-finite-exit).
+Name the actual private completion-to-row capability, per-report versus
+cross-report accumulation/reference chart, atomic capacity/eviction outcome and
+final serialized revision/context/quality/age guard. Distinguish0/1/2-row
+collection from fit publication. Existing source review finds those choices and
+actual provenance/quality suppliers unsettled; Rust integration, production
+history and an Engine-to-Core Cargo edge remain held. Operation-local borrowed
+fit evaluation is suitable, but declarations and retained report lifetime do not
+supply private producer association. No quality defaults or fabricated suppliers
+follow from the completed acquisition slice.
+
+The qualified acquisition retains its original scope:
+It selects three planned sequential attempts to one controlled loopback
+peer, an actual shared origin and consume-once terminal delivery. Numerical
+refusal must not restore a consumed request. Retain original capture/age and
+distinct request/source identities, bounded resources and explicit unavailable
+production admission; no engine-to-Core graph edge or fabricated quality input
+follows. Retain N1/N2's original-row associations, exact anchors, conversion
+bounds, dyadic scales and whole-window divisors for their later real receiver.
+The actual production receiver remains open; existing history remains fixture-only.
+Keep genuine date/scale provenance, signed raw RTT versus adjusted delay/root/
+capture uncertainty, justified whole-window divisors and current publication
+guards explicit.
 Production history insertion remains held until the complete contract and its
 prerequisites are settled. Preserve the 90% executable-line and 95% per-file
 viable-mutation gates, existing budgets, nonempty denominators and independent
@@ -948,14 +1069,15 @@ truth includes exact dyadic cases, actual captured-clock reconstruction and the
 shared diagnostic writer checked against the same real-UDP report, including
 coherent-substitution faults. Full leap/scale admission, DNS/KoD scheduling,
 statistical uncertainty/divisors, NTS and native Windows evidence remain later
-owners. No new model, runtime framework or formal campaign is needed for this gate.
+owners. This is bounded acquisition/receiver work; it does not activate production history or a
+new runtime framework/formal campaign.
 
 Mandatory garde-backed/private construction, checked arithmetic, independent
 unit/property/boundary tests, 90% security-primitive coverage, 95% per-critical-file
 mutation, source/graph/security/native/package/release gates remain required.
 Existing Windows/S134, separate AES fuzz, optional-storage and UI-M0 D1–D3 holds
 remain unchanged. OD-05's complete hardened MSIX and David's release authority
-remain unchanged. The selected next child is the bounded S2.1 measurement above;
+remain unchanged. The selected next child remains in the existing observation-to-Core receiver chain;
 remaining Core discipline/holdover stays in its existing P1 parent. Formal
 obligations remain post-V1.
 
@@ -1845,6 +1967,25 @@ default approval, residual-risk acceptance or release qualification.
 
 ### 8.5 Windows 11 integration research and qualification
 
+**Service metadata, 7 November 2026:** the [canonical refinement](windows-package-metadata.md#12-service-and-diagnostics-metadata-refinement--7-november-2026)
+and its single conditional field catalogue enrich existing W11-W10/P6,
+W11-W05 and W11-W08 assignments. Documentation/skill preparation is complete;
+the product field register, authoritative pending inputs, admitted generation and
+actual artifact/installed/delivered readback remain open at their existing stages.
+Carry applicable fields before related service/package/diagnostic implementation.
+The next executable task, CHECK identities, optional PerfLib/provenance status and
+all execution holds remain unchanged.
+
+**Additional service practices, 7 November 2026:** the
+[reviewed follow-up](windows11-integration-follow-up.md#additional-service-practices--7-november-2026)
+and [W11-W05 task rows](../../tasks/windows11-integration.md#w11-w05-observe-effective-scm-maintenance-and-process-policy)
+route startup inputs, effective unattended errors, mutex crash/thread semantics,
+ambient path evidence and conditional dependency waits to S0.2/S0.3/P3/P4/P6.
+[implement-windows-service] is the dedicated entry point; W11-W08/ST-W07 retain
+collector/privacy cases and SEC-A02 actual temporary-file custody. Source
+preparation is ready at those existing stages; native qualification remains held.
+The next executable Core/N3 task in §7 and all other holds are unchanged.
+
 **Two-family scope, 5 November 2026:** [OD-14](../nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope)
 and [W11 §4.32](../../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
 route Windows 11 26H2 x64 and Server 2025 x64 Desktop Experience through existing
@@ -2363,6 +2504,7 @@ this documentation-only change.
 [implement-native-ui]: ../../.agents/skills/implementation/implement-native-ui/SKILL.md
 [implement-rust]: ../../.agents/skills/implementation/implement-rust/SKILL.md
 [implement-rust-contracts]: ../../.agents/skills/implementation/implement-rust-contracts/SKILL.md
+[implement-windows-service]: ../../.agents/skills/implementation/implement-windows-service/SKILL.md
 [optimize-rust-performance]: ../../.agents/skills/implementation/optimize-rust-performance/SKILL.md
 [plan-architecture]: ../../.agents/skills/planning/plan-architecture/SKILL.md
 [plan-code-change]: ../../.agents/skills/planning/plan-code-change/SKILL.md

@@ -19,6 +19,7 @@ import struct
 import sys
 import time
 import tomllib
+from typing import NamedTuple
 
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
@@ -5087,12 +5088,12 @@ def unviable_compile_failure(outcome, output):
 
 def observe_mutation_outcome(report, path, label, outcome, reserved):
     """Qualify one already-charged raw outcome without inventing observations."""
-    relative = Path(outcome.get("log_path", ""))
+    relative = COMMON.analysis_output_path(outcome.get("log_path", ""))
     if relative.is_absolute() or ".." in relative.parts or relative == Path("."):
         raise Incomplete("Core per-file mutation log escapes its owned path.")
     log = path.parent / relative
-    if log.exists() and not log.resolve(strict=True).is_relative_to(path.parent.resolve(strict=True)):
-        raise Incomplete("Core per-file mutation log resolves outside its owned path.")
+    if log.is_symlink():
+        raise Incomplete("Core per-file mutation log cannot use links.")
     baseline = outcome.get("scenario") == "Baseline"
     summary = outcome.get('summary')
     if baseline and summary != 'Success':
@@ -5102,8 +5103,13 @@ def observe_mutation_outcome(report, path, label, outcome, reserved):
     if not baseline and summary == 'Timeout' and not log.exists():
         reserved['observation_status'] = 'timeout-log-missing'
         return
-    text = log.read_bytes().decode('utf-8')
-    reserved['raw_log_sha256'] = PRODUCT.sha256(log)
+    raw = COMMON.read_analysis_bytes(log, maximum=COMMON.ANALYSIS_LOG_MAX_BYTES)
+    try:
+        text = raw.decode('utf-8')
+    except UnicodeError as error:
+        raise Incomplete('Core mutation log is not strict UTF-8.') from error
+    log_digest = hashlib.sha256(raw).hexdigest()
+    reserved['raw_log_sha256'] = log_digest
     if not baseline and summary == 'Timeout':
         # An absent prefix is incomplete, not an observed zero or a healthy run.
         test_header = (r'(?m)^\*\*\* cargo test --verbose --package=time-core@0\.0\.0 '
@@ -5153,7 +5159,7 @@ def observe_mutation_outcome(report, path, label, outcome, reserved):
         reserved.update({'charged_fit_work_upper': 0, 'point_admissions_upper': 0,
                          'observation_status': 'unviable-compile-only',
                          'execution': 'descriptive compiler failure; no behavioral kill',
-                         'raw_log_sha256': PRODUCT.sha256(log)})
+                         'raw_log_sha256': log_digest})
         reserved.pop('observation_pending')
         refresh_accounting(report)
         return
@@ -5199,7 +5205,7 @@ def observe_mutation_outcome(report, path, label, outcome, reserved):
                               event_zero_prefix=event_zero_prefix)
     reserved['observed_counts'] = account_literal_doctests(observed)
     reserved['observation_pending'] = False
-    reserved['raw_log_sha256'] = PRODUCT.sha256(log)
+    reserved['raw_log_sha256'] = log_digest
     if caught:
         reserved['counter_observation_scope'] = 'failed-test prefix; raw sign receipts unqualified'
         report.setdefault('mutation_counter_prefix_observations', []).append(label)
@@ -5229,7 +5235,7 @@ def mutation_accounting(report, work):
             missing.append(subject)
             unprocessed.remove(subject)
             continue
-        value = json.loads(path.read_text())
+        value = COMMON.read_analysis_json(path)
         if not isinstance(value, dict):
             raise Incomplete("Core per-file raw mutation report must be an object.")
         symbols = {"CaughtMutant": "K", "MissedMutant": "M", "Unviable": "U", "Timeout": "T"}
@@ -7714,8 +7720,15 @@ def read_window_variance_policy(root):
     return policy
 
 
-def window_variance_test_execution(text, *, doctests):
-    """Require real named healthy tests and source-owned legal/privacy doctests."""
+def successful_test_records(text, *, label):
+    """Read complete unique native successes; summaries alone establish no execution.
+
+    Bounded callers supply captured raw text. Known source telemetry may split a
+    named test from its completion, but cannot replace that completion or its
+    exact successful summary. This pure parser grants no source/selection credit.
+    """
+    if type(text) is not str or type(label) is not str or not label:
+        raise Incomplete("Native test parsing requires text and an owning label.")
     records, pending = [], None
     header = re.compile(r"test ([^\r\n]+?) \.\.\. (.*)")
     trace = re.compile(r"(?:CORE_[A-Z0-9_]+|S13_[A-Z0-9_]+|SELECTION_HELPER_PROFILE)(?:[ \t].*)?")
@@ -7725,7 +7738,7 @@ def window_variance_test_execution(text, *, doctests):
                 records.append(pending)
                 pending = None
             elif trace.fullmatch(line) is None:
-                raise Incomplete("Window-variance native test lacks its named successful completion.")
+                raise Incomplete(label + " native test lacks its named successful completion.")
             continue
         match = header.fullmatch(line)
         if match is not None:
@@ -7734,17 +7747,24 @@ def window_variance_test_execution(text, *, doctests):
             elif trace.fullmatch(match[2]) is not None:
                 pending = match[1]
             else:
-                raise Incomplete("Window-variance native test record has no successful outcome.")
+                raise Incomplete(label + " native test record has no successful outcome.")
         elif line in {"ok", "FAILED", "ignored"}:
-            raise Incomplete("Window-variance native completion lacks its test identity.")
+            raise Incomplete(label + " native completion lacks its test identity.")
     if pending is not None:
-        raise Incomplete("Window-variance native test completion is truncated.")
+        raise Incomplete(label + " native test completion is truncated.")
     summaries = [line for line in text.splitlines() if line.startswith("test result:")]
     pattern = r"test result: ok\. (\d+) passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;.*"
     counts = [re.fullmatch(pattern, line) for line in summaries]
     if (not summaries or any(match is None for match in counts) or len(records) != len(set(records))
-            or sum(int(match[1]) for match in counts if match is not None) != len(records)
-            or not WINDOW_VARIANCE_REQUIRED_TESTS <= set(records)):
+            or sum(int(match[1]) for match in counts if match is not None) != len(records)):
+        raise Incomplete(label + " execution lacks complete required actual passing test records.")
+    return records
+
+
+def window_variance_test_execution(text, *, doctests):
+    """Require real named healthy tests and source-owned legal/privacy doctests."""
+    records = successful_test_records(text, label="Window-variance")
+    if not WINDOW_VARIANCE_REQUIRED_TESTS <= set(records):
         raise Incomplete("Window-variance execution lacks complete required actual passing test records.")
     docs = [name for name in records if re.fullmatch(
         r"[^\r\n]+\.rs - (?:[^\r\n]+ )?\(line [1-9][0-9]*\)(?: - compile fail)?", name)]
@@ -7771,20 +7791,20 @@ def window_variance_test_execution(text, *, doctests):
 def window_variance_baseline(work):
     """Read the actual owned tool baseline, without crediting listing or setup."""
     directory = work / "mutation" / WINDOW_VARIANCE_SUBJECT / "mutants.out"
-    outcomes = native_receipt_document(directory / "outcomes.json")
+    outcomes = COMMON.read_analysis_json(directory / "outcomes.json", maximum=64 * 1024 * 1024)
     rows = [row for row in outcomes.get("outcomes", [])
             if type(row) is dict and row.get("scenario") == "Baseline"]
     if len(rows) != 1 or rows[0].get("summary") != "Success":
         raise Incomplete("Window-variance mutation needs exactly one successful native baseline.")
-    relative = Path(rows[0].get("log_path", ""))
+    relative = COMMON.analysis_output_path(rows[0].get("log_path", ""))
     if relative.is_absolute() or not relative.parts or ".." in relative.parts:
         raise Incomplete("Window-variance baseline log escapes owned output.")
     path = directory / relative
-    if path != path.resolve(strict=True):
+    if path.is_symlink():
         raise Incomplete("Window-variance baseline log cannot use links.")
-    raw = ANALYSIS.read_once(path, maximum=16 * 1024 * 1024)
+    raw = COMMON.read_analysis_bytes(path, maximum=16 * 1024 * 1024)
     return {**window_variance_test_execution(raw.decode("utf-8"), doctests=True),
-            "log_sha256": PRODUCT.sha256(path)}
+            "log_sha256": hashlib.sha256(raw).hexdigest()}
 
 
 def enumerate_window_variance(session, policy, report):
@@ -7849,7 +7869,7 @@ def execute_window_variance(args, report):
                        "--", "--test-threads=1"]
             raw = session.run("coverage", command, policy["coverage_wall_seconds"])
             report["coverage_execution"] = window_variance_test_execution(raw, doctests=False)
-            coverage = json.loads((session.work / "coverage.json").read_text())
+            coverage = COMMON.read_analysis_json(session.work / "coverage.json")
             report["coverage"] = {WINDOW_VARIANCE_SUBJECT: COMMON.coverage_counts(
                 WINDOW_VARIANCE_SCOPE, coverage, "/work/source/" + WINDOW_VARIANCE_FILE)}
         if args.lane in {"mutation", "all"}:
@@ -7887,10 +7907,470 @@ def main_window_variance(args):
     return 0 if report["status"] in {"enumerated", "passed"} else 1
 
 
+CONDITIONED_WINDOW_SUBJECT = "conditioned_window"
+CONDITIONED_WINDOW_POLICY = "policy/conditioned-window-analysis.json"
+CONDITIONED_WINDOW_FILE = "crates/time-core/src/conditioned_window.rs"
+CONDITIONED_WINDOW_TEST_FILE = "crates/time-core/tests/conditioned_window.rs"
+CONDITIONED_WINDOW_SUBJECTS = {
+    CONDITIONED_WINDOW_SUBJECT: CONDITIONED_WINDOW_FILE,
+    WINDOW_VARIANCE_SUBJECT: WINDOW_VARIANCE_FILE,
+}
+CONDITIONED_WINDOW_SCOPE = COMMON.Scope(
+    "time-core", tuple(CONDITIONED_WINDOW_SUBJECTS.items()), CONDITIONED_WINDOW_POLICY)
+CONDITIONED_WINDOW_BOUND_INPUTS = (
+    *WINDOW_VARIANCE_BOUND_INPUTS,
+    CONDITIONED_WINDOW_FILE, CONDITIONED_WINDOW_TEST_FILE,
+    "crates/time-core/tests/private/conditioned_window.rs",
+    "crates/time-domain/src/rational_seconds.rs",
+    "scripts/tests/test_conditioned_window_analysis.py",
+)
+CONDITIONED_WINDOW_FIXED = {
+    "schema_version": 1, "package": "time-core",
+    "critical_files": list(CONDITIONED_WINDOW_SUBJECTS.values()),
+    "tool_admission_profile": "full",
+    "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+    "baseline_wall_seconds": 300, "coverage_wall_seconds": 300,
+    "enumeration_wall_seconds": 240, "mutation_wall_seconds": 1200,
+    "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+    "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
+    "mutation_jobs": 8, "mutation_process_limit": 512, "mutation_message_format": "json",
+    "mutation_minimum_free_bytes": 5 * 1024 ** 3,
+    "maximum_mutants": 512, "maximum_listed_per_file": 512, "maximum_listed_total": 1024,
+}
+# Freeze independent source-owned cases/examples after the implementation is
+# complete; policy-only names cannot replace these required controls.
+CONDITIONED_WINDOW_REQUIRED_TESTS = frozenset({
+    "distinct_declared_labels_and_observation_key_retain_their_exact_fields",
+    "diagnostics_redact_payloads_and_preserve_typed_causes",
+    "frozen_exact_and_ieee_conditioning_facts",
+    "insufficient_counts_retain_anchors_rows_precision_and_divisors",
+    "maximum_and_one_over_counts_preserve_original_population",
+    "row_constructor_enforces_reference_and_distance_rules",
+    "invalid_precision_precedes_all_row_membership_checks",
+    "positive_precision_extremes_reach_the_prepared_receiver",
+    "every_context_label_is_checked_before_duplicate_order_and_quality",
+    "duplicate_and_nonincreasing_reference_errors_have_defined_precedence",
+    "uncapped_and_subnormal_quality_vectors_are_retained_unchanged",
+    "quality_failures_are_preserved_for_one_two_and_three_rows",
+    "rounded_reference_collisions_reject_early_and_late_without_partial_payload",
+    "conditioned_window::tests::raw_row_rules_reject_with_full_domain_legal_neighbors",
+    "conditioned_window::tests::raw_count_precision_and_membership_rules_are_mandatory",
+    "conditioned_window::tests::integer_ceiling_exponent_endpoints_and_exact_neighbors",
+    "conditioned_window::tests::scale_output_rules_enforce_the_frozen_integer_envelope",
+    "conditioned_window::tests::exact_binary_scaling_preserves_literal_bits",
+    "conditioned_window::tests::exact_binary_scaling_refuses_loss_and_invalid_inputs",
+    "conditioned_window::tests::transformed_coordinate_faults_cannot_publish_without_validation",
+    "conditioned_window::tests::transformed_bound_faults_cannot_publish_without_validation",
+    "conditioned_window::tests::transformed_divisor_faults_cannot_publish_without_validation",
+    "conditioned_window::tests::insufficient_extrema_retain_only_original_quality_metadata",
+})
+CONDITIONED_WINDOW_REQUIRED_DOCTESTS = (
+    (CONDITIONED_WINDOW_FILE, "conditioned_window::DeclaredObservationContext", True, 2),
+    (CONDITIONED_WINDOW_FILE, "conditioned_window::ExactObservationRow", False, 1),
+    (CONDITIONED_WINDOW_FILE, "conditioned_window::ExactObservationRow", True, 4),
+    (CONDITIONED_WINDOW_FILE, "conditioned_window::PreparedConditionedPoint", True, 2),
+    (CONDITIONED_WINDOW_FILE, "conditioned_window::PreparedConditionedBatch", True, 4),
+    (CONDITIONED_WINDOW_FILE, "conditioned_window::InsufficientConditionedBatch", True, 3),
+    (CONDITIONED_WINDOW_FILE, "conditioned_window::prepare_conditioned_batch", False, 1),
+    (CONDITIONED_WINDOW_FILE, "conditioned_window::prepare_conditioned_batch", True, 2),
+)
+
+
+# N2 owns new gates and bindings; historical N1 policy/receipts stay unchanged.
+CONDITIONED_FIT_SUBJECT = "conditioned_fit"
+CONDITIONED_FIT_POLICY = "policy/conditioned-fit-analysis.json"
+CONDITIONED_FIT_SUBJECTS = {
+    CONDITIONED_FIT_SUBJECT: "crates/time-core/src/conditioned_fit.rs",
+    "conditioned_arithmetic": "crates/time-core/src/conditioned_fit/arithmetic.rs",
+}
+CONDITIONED_FIT_SCOPE = COMMON.Scope(
+    "time-core", tuple(CONDITIONED_FIT_SUBJECTS.items()), CONDITIONED_FIT_POLICY)
+CONDITIONED_FIT_BOUND_INPUTS = (
+    *CONDITIONED_WINDOW_BOUND_INPUTS,
+    *CONDITIONED_FIT_SUBJECTS.values(),
+    "crates/time-core/tests/conditioned_fit.rs",
+    "crates/time-core/tests/private/conditioned_fit.rs",
+    "crates/time-core/tests/private/conditioned_arithmetic.rs",
+    "scripts/tests/test_conditioned_fit_analysis.py",
+    "tasks/s0.1-chrony-ledger.json",
+)
+CONDITIONED_FIT_FIXED = {
+    **CONDITIONED_WINDOW_FIXED,
+    "critical_files": list(CONDITIONED_FIT_SUBJECTS.values()),
+}
+# Frozen from independently authored controls and the actual healthy ordinary run.
+# Empty or missing minima fail closed; policies cannot supply their meaning.
+CONDITIONED_FIT_REQUIRED_TESTS = frozenset({
+    'all_large_divisor_suffixes_keep_original_sse_scale',
+    'conditioned_fit::arithmetic::tests::interval_exact_identities_preserve_zero_one_and_independence',
+    'conditioned_fit::arithmetic::tests::interval_failures_keep_positive_margin_and_finite_outward_bounds',
+    'conditioned_fit::arithmetic::tests::interval_four_corners_and_square_use_exact_sign_geometry',
+    'conditioned_fit::arithmetic::tests::interval_primitive_bits_match_frozen_outward_facts',
+    'conditioned_fit::arithmetic::tests::interval_subtraction_preserves_nonsingleton_zero_endpoints',
+    'conditioned_fit::arithmetic::tests::point_failures_distinguish_overflow_denominator_and_underflow',
+    'conditioned_fit::arithmetic::tests::point_primitives_preserve_rounded_bits_and_legal_zero',
+    'conditioned_fit::arithmetic::tests::private_arithmetic_debug_and_errors_redact_numeric_payloads',
+    'conditioned_fit::arithmetic::tests::raw_interval_guard_covers_fields_order_and_canonical_zero',
+    'conditioned_fit::arithmetic::tests::raw_point_admission_is_mandatory_with_subnormal_neighbors',
+    'conditioned_fit::arithmetic::tests::scalar_hull_and_outward_error_cover_zero_cancellation_and_outside_points',
+    'conditioned_fit::arithmetic::tests::scalar_raw_faults_cannot_bypass_mandatory_output_admission',
+    'conditioned_fit::tests::diagnostic_projection_preserves_all_causes_without_numeric_payloads',
+    'conditioned_fit::tests::late_lifting_refusals_follow_normalized_success_without_partial_publication',
+    'conditioned_fit::tests::lift_power_validation_is_mandatory_with_exact_endpoint_controls',
+    'conditioned_fit::tests::local_index_context_rejects_suffix_count_with_last_valid_neighbor',
+    'conditioned_fit::tests::real_constant_fit_retains_actual_borrows_and_exact_zero_results',
+    'conditioned_fit::tests::suffix_range_admission_is_mandatory_at_the_actual_consumer',
+    'conditioned_fit::tests::unit_wrappers_preserve_checked_fields_and_redact_debug',
+    'frozen_tiny_geometry_underflow_unresolved_and_healthy_neighbors',
+    'huge_anchor_adjacent_half_ticks_keep_small_relative_correction',
+    'huge_anchor_constant_phase_keeps_exact_anchor_and_zero_corrections',
+    'late_sse_lifting_underflow_is_atomic',
+    'maximum_population_exact_dyadic_line',
+    'negative_phase_and_rate_preserve_weighted_sse',
+    'nonconstant_zero_covariance_is_not_point_underflow',
+    'nondyadic_subnormal_precision_reports_original_geometry_index',
+    'one_legal_subnormal_precision_has_a_healthy_line',
+    'rounded_perfect_line_keeps_original_rational_curvature_in_error_bounds',
+    'suffix_preserves_full_population_quality_chart_and_rows',
+    'suffix_range_short_results_and_all_getter_boundaries',
+    'three_point_nonunit_exact_facts_and_lifting',
+})
+CONDITIONED_FIT_REQUIRED_DOCTESTS = (
+    ('crates/time-core/src/conditioned_fit.rs', 'conditioned_fit::ConditionedFit', True, 4),
+    ('crates/time-core/src/conditioned_fit.rs', 'conditioned_fit::ConditionedNormalizedEstimate', True, 3),
+    ('crates/time-core/src/conditioned_fit.rs', 'conditioned_fit::ConditionedPhaseSeconds', True, 3),
+    ('crates/time-core/src/conditioned_fit.rs', 'conditioned_fit::ConditionedRateRatio', True, 4),
+    ('crates/time-core/src/conditioned_fit.rs', 'conditioned_fit::ConditionedSuffix', True, 5),
+    ('crates/time-core/src/conditioned_fit.rs', 'conditioned_fit::ConditionedWeightedSecondsSquared', True, 3),
+    ('crates/time-core/src/conditioned_fit.rs', 'conditioned_fit::InsufficientConditionedSuffix', True, 4),
+    ('crates/time-core/src/conditioned_fit.rs', 'conditioned_fit::fit_conditioned_suffix', False, 1),
+)
+
+
+class ConditionedAnalysisRole(NamedTuple):
+    """Code-owned selection data; policy cannot choose owners or execution targets."""
+
+    selector: str
+    label: str
+    scope: COMMON.Scope
+    fixed: dict[str, object]
+    bound_inputs: tuple[str, ...]
+    required_tests: frozenset[str]
+    required_doctests: tuple[tuple[str, str, bool, int], ...]
+    coverage_tests: tuple[str, ...]
+
+
+def _conditioned_window_role() -> ConditionedAnalysisRole:
+    """Resolve N1's current globals at invocation, preserving existing controls."""
+    if not CONDITIONED_WINDOW_REQUIRED_TESTS or not CONDITIONED_WINDOW_REQUIRED_DOCTESTS:
+        raise Incomplete("Conditioned-window source-owned test/doctest inventory is not frozen.")
+    return ConditionedAnalysisRole(
+        CONDITIONED_WINDOW_SUBJECT, "Conditioned-window", CONDITIONED_WINDOW_SCOPE,
+        CONDITIONED_WINDOW_FIXED, CONDITIONED_WINDOW_BOUND_INPUTS,
+        CONDITIONED_WINDOW_REQUIRED_TESTS | WINDOW_VARIANCE_REQUIRED_TESTS,
+        (*CONDITIONED_WINDOW_REQUIRED_DOCTESTS,
+         *((WINDOW_VARIANCE_FILE, owner, negative, count)
+           for owner, negative, count in WINDOW_VARIANCE_REQUIRED_DOCTESTS)),
+        ("conditioned_window", "window_variance"))
+
+
+def _conditioned_fit_role() -> ConditionedAnalysisRole:
+    """Resolve only the new fit/arithmetic selection; import no historical credit."""
+    return ConditionedAnalysisRole(
+        CONDITIONED_FIT_SUBJECT, "Conditioned-fit", CONDITIONED_FIT_SCOPE,
+        CONDITIONED_FIT_FIXED, CONDITIONED_FIT_BOUND_INPUTS,
+        CONDITIONED_FIT_REQUIRED_TESTS, CONDITIONED_FIT_REQUIRED_DOCTESTS,
+        ("conditioned_fit",))
+
+
+def _conditioned_inventory_bindings(policy, role, *, required=False):
+    """Admit no review yet or both exact nonempty inventories within one cap."""
+    bindings = policy.get("mutation_inventories")
+    if type(bindings) is not dict:
+        raise Incomplete(f"{role.label} inventory bindings must be an object.")
+    if not bindings and not required:
+        return bindings
+    if set(bindings) != set(role.scope.select("all")):
+        raise Incomplete(f"{role.label} mutation requires both reviewed owner inventories.")
+    total = 0
+    for row in bindings.values():
+        if (type(row) is not dict or set(row) != {"count", "sha256"}
+                or type(row["count"]) is not int or not 0 < row["count"] <= policy["maximum_mutants"]
+                or type(row["sha256"]) is not str or re.fullmatch(r"[0-9a-f]{64}", row["sha256"]) is None):
+            raise Incomplete(f"{role.label} inventory needs positive counts and exact SHA-256s.")
+        total += row["count"]
+    if total > policy["maximum_mutants"]:
+        raise Incomplete(f"{role.label} combined inventory exceeds the 512-mutant campaign cap.")
+    return bindings
+
+
+def _conditioned_test_inventories(policy, role):
+    """Require frozen exact native identities plus code-owned minimum controls."""
+    inventories = policy.get("test_inventories")
+    if (not role.required_tests or not role.required_doctests
+            or type(inventories) is not dict or set(inventories) != {"baseline", "coverage"}):
+        raise Incomplete(f"{role.label} source-owned test/doctest inventory is not frozen.")
+    for names in inventories.values():
+        if (type(names) is not list or not 0 < len(names) <= 4096
+                or any(type(name) is not str or not 0 < len(name) <= 512
+                       or "\n" in name or "\r" in name for name in names)
+                or names != sorted(set(names))):
+            raise Incomplete(f"{role.label} test inventories require bounded sorted unique native names.")
+    coverage, baseline = set(inventories["coverage"]), set(inventories["baseline"])
+    if (not (role.required_tests) <= coverage
+            or not coverage <= baseline or any(" (line " in name for name in coverage)):
+        raise Incomplete(f"{role.label} inventories omit selected ordinary/private controls.")
+    docs = [name for name in baseline if " (line " in name]
+    groups = role.required_doctests
+    for filename, owner, negative, count in groups:
+        pattern = (re.escape(filename) + r" - " + re.escape(owner)
+                   + r" \(line [1-9][0-9]*\)" + (r" - compile fail" if negative else ""))
+        if sum(re.fullmatch(pattern, name) is not None for name in docs) != count:
+            raise Incomplete(f"{role.label} inventory omits reviewed source-owned legal/privacy doctests.")
+    selected_docs = [name for name in docs if any(name.startswith(filename + " - ")
+                     for filename in role.scope.select("all").values())]
+    if len(selected_docs) != sum(group[3] for group in groups):
+        raise Incomplete(f"{role.label} inventory adds an unreviewed source-owned doctest.")
+    return inventories
+
+
+def _read_conditioned_policy(root, role):
+    """Admit this exact two-owner child; never import historical scope or scores."""
+    policy = inventory_document(root / role.scope.policy)
+    extra = {"source_file_count", "candidate_sha256", "inputs_sha256", "mutation_inventories",
+             "mutation_equivalences", "test_inventories", "scope"}
+    if (type(policy) is not dict or set(policy) != set(role.fixed) | extra
+            or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                   for key, value in role.fixed.items())
+            or type(policy.get("source_file_count")) is not int
+            or not 0 < policy["source_file_count"] <= 4096
+            or type(policy.get("scope")) is not str or not 0 < len(policy["scope"]) <= 2048):
+        raise Incomplete(f"Unreviewed {role.label.lower()} scope, profile, threshold or budget.")
+    _, identity = PRODUCT.admit_product(root)
+    if (len(identity) != policy["source_file_count"]
+            or type(policy.get("candidate_sha256")) is not str
+            or policy["candidate_sha256"] != COMMON.canonical_sha256(identity)):
+        raise Incomplete(f"{role.label} requires its exact complete product candidate.")
+    pins = policy["inputs_sha256"]
+    if (type(pins) is not dict or set(pins) != set(role.bound_inputs)
+            or any(type(digest) is not str or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+                   or PRODUCT.sha256(root / name) != digest for name, digest in pins.items())):
+        raise Incomplete(f"{role.label} protected source/helper bindings changed.")
+    manifest = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
+    for filename in role.scope.select("all").values():
+        if (manifest.get("critical_files", []).count(filename) != 1
+                or sum(row.get("package") == "time-core" and filename in row.get("files", [])
+                       for row in manifest.get("security_modules", [])) != 1):
+            raise Incomplete(f"{role.label} needs one exact critical/security entry per owner.")
+        if re.search(r"#\s*\[\s*test\s*\]", (root / filename).read_text()):
+            raise Incomplete(f"{role.label} production coverage cannot contain inline test bodies.")
+    _conditioned_test_inventories(policy, role)
+    _conditioned_inventory_bindings(policy, role)
+    COMMON.admit_mutation_equivalences(root, role.scope, policy)
+    return policy
+
+
+def _conditioned_test_execution(text, policy, role, *, doctests):
+    """Compare actual successes with the complete frozen native selection."""
+    if type(doctests) is not bool:
+        raise Incomplete(f"{role.label} doctest selection must be Boolean.")
+    inventories = _conditioned_test_inventories(policy, role)
+    records = successful_test_records(text, label=role.label)
+    normalized = [name.removeprefix("/work/source/") for name in records]
+    lane = "baseline" if doctests else "coverage"
+    if sorted(normalized) != inventories[lane]:
+        raise Incomplete(f"{role.label} actual passing identities differ from the exact frozen " + lane + " inventory.")
+    return {"tests_executed": len(records), "ordinary_tests": sum(" (line " not in name for name in normalized),
+            "doctests": sum(" (line " in name for name in normalized),
+            "inventory_sha256": COMMON.canonical_sha256(inventories[lane]),
+            "required_tests": sorted(role.required_tests)}
+
+
+def _conditioned_baseline(work, policy, subject, role):
+    """Read one actual successful owned baseline through strict raw-log custody."""
+    if subject not in role.scope.select("all"):
+        raise Incomplete(f"{role.label} baseline owner is unknown.")
+    directory = work / "mutation" / subject / "mutants.out"
+    outcomes = COMMON.read_analysis_json(directory / "outcomes.json", maximum=64 * 1024 * 1024)
+    if type(outcomes) is not dict or type(outcomes.get("outcomes")) is not list:
+        raise Incomplete(f"{role.label} baseline outcomes require an actual outcome array.")
+    rows = [row for row in outcomes.get("outcomes", [])
+            if type(row) is dict and row.get("scenario") == "Baseline"]
+    if len(rows) != 1 or rows[0].get("summary") != "Success":
+        raise Incomplete(f"{role.label} mutation needs exactly one successful native baseline per owner.")
+    relative = COMMON.analysis_output_path(rows[0].get("log_path", ""))
+    if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+        raise Incomplete(f"{role.label} baseline log escapes owned output.")
+    path = directory / relative
+    raw = COMMON.read_analysis_bytes(path, maximum=16 * 1024 * 1024)
+    return {**_conditioned_test_execution(raw.decode("utf-8"), policy, role, doctests=True),
+            "log_sha256": hashlib.sha256(raw).hexdigest()}
+
+
+def _enumerate_conditioned(session, policy, report, role):
+    """Discover both bounded inventories without granting campaign admission."""
+    discovery = COMMON.enumerate_mutation_inventories(
+        role.scope, role.scope.select("all"), policy, session.tools,
+        session.run, report, deadline=time.monotonic() + policy["enumeration_wall_seconds"],
+        maximum_per_file=policy["maximum_listed_per_file"], maximum_total=policy["maximum_listed_total"])
+    report["listed_inventories"] = discovery.inventories
+    report["listed_inventory_bindings"] = {
+        name: {"count": len(inventory), "sha256": COMMON.canonical_sha256({
+            identifier: {key: value for key, value in item.items() if key != "diff"}
+            for identifier, item in inventory.items()})}
+        for name, inventory in discovery.inventories.items()}
+    report.update(listed_total=discovery.total, campaign_cap_exceeded=discovery.campaign_budget_exceeded,
+                  campaign_admission=False, qualification_passed=False)
+
+
+def _execute_conditioned(args, report, role, *, read_policy):
+    """Run this two-owner child through unchanged shared custody and gate machinery."""
+    if (args.subject != role.selector
+            or args.lane not in {"baseline", "enumerate", "coverage", "mutation", "all"}
+            or args.tool_admission_profile != "full"
+            or any(getattr(args, name, None) for name in
+                   ("inventory_admission", "cohort_plan", "cohort_id", "cohort_receipt"))):
+        raise Incomplete(f"{role.label} requires its two-owner full-profile role.")
+    policy = read_policy(ROOT)
+    if args.lane in {"mutation", "all"}:
+        _conditioned_inventory_bindings(policy, role, required=True)
+        COMMON._require_private_output(ROOT, args.output_dir)
+        if shutil.disk_usage(args.output_dir.parent).free < policy["mutation_minimum_free_bytes"]:
+            raise Incomplete(f"{role.label} eight-worker mutation requires at least five GiB free before admission.")
+    session_args = argparse.Namespace(**vars(args))
+    if args.lane in {"enumerate", "baseline"}:
+        session_args.lane = "mutation" if args.lane == "enumerate" else "contracts"
+    report.update(subjects=dict(role.scope.select("all")), candidate_sha256=policy["candidate_sha256"],
+                  qualification_passed=False, historical_family_bindings_reused=False)
+    session = COMMON.Session(ROOT, session_args, report, role.scope, policy,
+                             role.bound_inputs)
+    try:
+        if (len(session.product_identity) != policy["source_file_count"]
+                or COMMON.canonical_sha256(session.product_identity) != policy["candidate_sha256"]
+                or inventory_document(session.source / role.scope.policy) != policy
+                or any(PRODUCT.sha256(session.source / name) != policy["inputs_sha256"][name]
+                       for name in role.bound_inputs)):
+            raise Incomplete(f"Captured {role.label.lower()} candidate/policy/protected inputs differ.")
+        if args.lane == "enumerate":
+            _enumerate_conditioned(session, policy, report, role)
+        if args.lane in {"baseline", "all"}:
+            raw = session.run("baseline", ["cargo", "test", "--package", "time-core", "--frozen",
+                              "--jobs", "6", "--", "--test-threads=1"], policy["baseline_wall_seconds"])
+            report["baseline_execution"] = _conditioned_test_execution(raw, policy, role, doctests=True)
+        if args.lane in {"coverage", "all"}:
+            command = [str(session.tools / "cargo-llvm-cov"), "llvm-cov", "--package", "time-core",
+                       "--frozen", "--jobs", "6", "--lib",
+                       *(arg for target in role.coverage_tests for arg in ("--test", target)), "--json", "--output-path", "/work/coverage.json",
+                       "--failure-mode", "any", "--ignore-filename-regex",
+                       "(^|/)tests/|/rustlib/src/rust/library/", "--", "--test-threads=1"]
+            raw = session.run("coverage", command, policy["coverage_wall_seconds"])
+            report["coverage_execution"] = _conditioned_test_execution(raw, policy, role, doctests=False)
+            coverage = COMMON.read_analysis_json(session.work / "coverage.json")
+            report["coverage"] = {name: COMMON.coverage_counts(
+                role.scope, coverage, "/work/source/" + filename)
+                for name, filename in role.scope.select("all").items()}
+        if args.lane in {"mutation", "all"}:
+            def run(label, command, timeout, **options):
+                raw = session.run(label, command, timeout, **options)
+                if label.startswith("mutation-campaign:"):
+                    name = label.removeprefix("mutation-campaign:")
+                    report.setdefault("baseline_executions", {})[name] = _conditioned_baseline(
+                        session.work, policy, name, role)
+                return raw
+            COMMON.run_analysis_lanes(role.scope, role.scope.select("all"), policy,
+                                      session.work, session.tools, run, report, "mutation")
+    finally:
+        session.finish()
+    if args.lane != "enumerate":
+        report["qualification_passed"] = True
+
+
+def _main_conditioned(args, role, *, execute_role):
+    """Report this bounded child without promoting prior Core or native receipts."""
+    report = {"status": "incomplete", "selected_lane": args.lane,
+              "scope": "Pure " + role.label.lower() + " two-owner " + args.lane,
+              "qualification_passed": False, "native_qualification": "not performed"}
+    try:
+        if args.vendor_dir is None:
+            args.vendor_dir = Path(json.loads(PRODUCT.POINTER.read_text())["vendor_dir"])
+        execute_role(args, report)
+        report["status"] = "enumerated" if args.lane == "enumerate" else "passed"
+    except REPORT_FAILURES as error:
+        report["qualification_passed"] = False
+        report["error"] = str(error)
+    if report.get("owned_output") == str(args.output_dir):
+        (args.output_dir / "verification.json").write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
+    print(report["status"].upper() + ": " + report["scope"], flush=True)
+    if report.get("error"):
+        print(report["error"], file=sys.stderr)
+    return 0 if report["status"] in {"enumerated", "passed"} else 1
+
+def conditioned_window_inventory_bindings(policy, *, required=False):
+    """Retain the N1 public admission adapter and its call-time globals."""
+    return _conditioned_inventory_bindings(policy, _conditioned_window_role(), required=required)
+
+
+def conditioned_window_test_inventories(policy):
+    """Retain N1's source-owned ordinary/private/doctest selection."""
+    return _conditioned_test_inventories(policy, _conditioned_window_role())
+
+
+def read_conditioned_window_policy(root):
+    """Admit N1 with its unchanged historical policy schema and exact owners."""
+    return _read_conditioned_policy(root, _conditioned_window_role())
+
+
+def conditioned_window_test_execution(text, policy, *, doctests):
+    """Compare N1 successes with its exact native inventory."""
+    return _conditioned_test_execution(text, policy, _conditioned_window_role(), doctests=doctests)
+
+
+def conditioned_window_baseline(work, policy, subject):
+    """Read N1's actual baseline through the unchanged bounded custody reader."""
+    return _conditioned_baseline(work, policy, subject, _conditioned_window_role())
+
+
+def enumerate_conditioned_window(session, policy, report):
+    """Retain N1's bounded listing entry point without campaign admission."""
+    return _enumerate_conditioned(session, policy, report, _conditioned_window_role())
+
+
+def execute_conditioned_window(args, report):
+    """Retain the public N1 executor and runtime policy-reader injection seam."""
+    return _execute_conditioned(args, report, _conditioned_window_role(),
+                                read_policy=read_conditioned_window_policy)
+
+
+def main_conditioned_window(args):
+    """Keep N1 reporting and dispatch independent of the new N2 role."""
+    return _main_conditioned(args, _conditioned_window_role(), execute_role=execute_conditioned_window)
+
+
+def read_conditioned_fit_policy(root):
+    """Admit fresh N2 candidate, helper, test and mutant identities only."""
+    return _read_conditioned_policy(root, _conditioned_fit_role())
+
+
+def execute_conditioned_fit(args, report):
+    """Run N2 through the existing shared custody and per-owner gates."""
+    return _execute_conditioned(args, report, _conditioned_fit_role(),
+                                read_policy=read_conditioned_fit_policy)
+
+
+def main_conditioned_fit(args):
+    """Report unqualified/incomplete N2 without altering historical receipts."""
+    return _main_conditioned(args, _conditioned_fit_role(), execute_role=execute_conditioned_fit)
+
+
+
 def execute(args, report):
     """Run only selected current-admitted rows; preserve partial raw observations."""
     if args.subject == WINDOW_VARIANCE_SUBJECT:
         return execute_window_variance(args, report)
+    if args.subject == CONDITIONED_WINDOW_SUBJECT:
+        return execute_conditioned_window(args, report)
+    if args.subject == CONDITIONED_FIT_SUBJECT:
+        return execute_conditioned_fit(args, report)
     if args.lane not in {'inventory', 'contracts', 'coverage', 'mutation', 'cohort-union'}:
         raise Incomplete('Unsupported checkpoint lane; optional fuzz/all execution is not admitted.')
     requested_profile = getattr(args, "tool_admission_profile", "full")
@@ -8024,8 +8504,8 @@ def native_receipt_text(report):
 def main(argv=None):
     """Fresh owned outputs, fixed scopes and nonzero incomplete status only."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--lane", choices=("inventory", "contracts", "coverage", "mutation", "cohort-union", "enumerate", "all"), default="coverage")
-    parser.add_argument("--subject", choices=(*SUBJECTS, WINDOW_VARIANCE_SUBJECT, "all"), default="all")
+    parser.add_argument("--lane", choices=("inventory", "contracts", "baseline", "coverage", "mutation", "cohort-union", "enumerate", "all"), default="coverage")
+    parser.add_argument("--subject", choices=(*SUBJECTS, WINDOW_VARIANCE_SUBJECT, CONDITIONED_WINDOW_SUBJECT, CONDITIONED_FIT_SUBJECT, "all"), default="all")
     parser.add_argument("--inventory-admission", type=Path)
     parser.add_argument('--cohort-plan', type=Path)
     parser.add_argument('--cohort-id')
@@ -8036,6 +8516,12 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.subject == WINDOW_VARIANCE_SUBJECT:
         return main_window_variance(args)
+    if args.subject == CONDITIONED_WINDOW_SUBJECT:
+        return main_conditioned_window(args)
+    if args.subject == CONDITIONED_FIT_SUBJECT:
+        return main_conditioned_fit(args)
+    if args.lane == "baseline":
+        parser.error("--lane baseline belongs only to --subject conditioned_window/conditioned_fit")
     if args.lane in {"enumerate", "all"}:
         parser.error("--lane enumerate/all belongs only to --subject window_variance")
     if args.tool_admission_profile == "stable-core" and args.lane not in {"inventory", "contracts", "coverage", "mutation"}:

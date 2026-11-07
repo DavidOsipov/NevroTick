@@ -849,8 +849,11 @@ fn icon_event(bridge: &TrayBridge, wparam: WPARAM, lparam: LPARAM) {
 /// Own popup resources until `TrackPopupMenuEx` returns, including stop/reentrancy.
 ///
 /// # Errors
-/// Native menu failure submits no action and keeps the existing observer state.
+/// Native menu failure submits no action. Unconfirmed cleanup prevents another popup.
 fn popup(bridge: &TrayBridge, wparam: WPARAM) -> Result<(), StartError> {
+    if bridge.cleanup_failed.load(Ordering::Acquire) {
+        return Err(StartError::Cleanup);
+    }
     if bridge.menu_open.swap(true, Ordering::AcqRel) {
         return Ok(());
     }
@@ -925,9 +928,11 @@ fn popup_inner(bridge: &TrayBridge, wparam: WPARAM) -> Result<(), StartError> {
     };
     // SAFETY: synchronous popup returned, so this worker can release its unique menu exactly once.
     let removed = unsafe { DestroyMenu(menu) } != 0;
+    let cleanup = bridge.acknowledge_popup_cleanup(removed);
     // SAFETY: this fixed wake has no pointer or action payload; it supports normal foreground-menu dismissal.
     let _dismiss = unsafe { PostMessageW(hwnd(bridge), WM_NULL, 0, 0) };
-    if !build_ok || !foreground || !removed {
+    cleanup.map_err(|_| StartError::Cleanup)?;
+    if !build_ok || !foreground {
         return Err(StartError::Native);
     }
     if bridge.stopping.load(Ordering::Acquire) || bridge.update_pending.load(Ordering::Acquire) {

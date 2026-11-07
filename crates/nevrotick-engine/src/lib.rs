@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Controlled loopback transport experiment; native qualification is incomplete.
-//! Exactly two distinct controlled peers; one query per association; no retries.
+//! The pilot queries two distinct controlled peers once. The additive series
+//! makes three sequential attempts to one controlled peer; neither API retries.
 //! `prepare()` performs synchronous OS entropy and bind work BEFORE active control.
 //! It has no bounded RNG/startup-stop claim. The private async owner is driven
 //! by one current-thread runtime with I/O/time enabled and `max_blocking_threads(2)`.
@@ -11,10 +12,19 @@
 #![forbid(unsafe_code)]
 
 mod measurement;
+mod relative;
+mod series;
 
 pub use measurement::{
     ExperimentalMeasurement, ExperimentalProfile, MeasurementRefusal, NominalPhaseNs,
     NominalRoundTripNs,
+};
+pub use relative::{
+    ExperimentalReferenceNs, ExperimentalRelativeMeasurement, RelativeMeasurementRefusal,
+};
+pub use series::{
+    PreparedSeries, SeriesAttempt, SeriesConfig, SeriesEnd, SeriesNotStartedCause, SeriesReport,
+    execute_series, prepare_series,
 };
 
 use ntp_wire::{FrameLimits, RawHeader, frame_no_legacy_mac_datagram};
@@ -475,6 +485,13 @@ impl SoftwareClock {
     }
 }
 
+/// Historical origin shared by requests in one actual private execution.
+/// Retention carries no socket/runtime, clock mapping, generation or authority.
+struct RunClockContext {
+    /// Actual `execute` start, captured before runtime construction and native I/O.
+    origin: Instant,
+}
+
 /// Read-only transport observations and explicitly conditional nominal arithmetic.
 /// Neither raw header retention nor a measurement grants sample/trust authority.
 pub struct TransportFacts {
@@ -498,6 +515,8 @@ pub struct TransportFacts {
     local: SocketAddr,
     /// Historical socket/request identity; retaining it retains no native handle.
     identity: Arc<()>,
+    /// Shared historical run origin, distinct from this request/socket identity.
+    run_context: Arc<RunClockContext>,
     /// One terminal conditional measurement or diagnosed semantic refusal.
     measurement: Result<ExperimentalMeasurement, MeasurementRefusal>,
     /// Original independent date/model declaration, retained even on refusal.
@@ -532,6 +551,21 @@ impl TransportFacts {
     #[must_use]
     pub fn same_exchange(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.identity, &other.identity)
+    }
+
+    /// Borrow an exact relative view of two successful measurements from this run.
+    ///
+    /// Differences are self minus anchor. Neither selecting an anchor nor returning
+    /// this view refreshes acquisition age, supplies source agreement or admits
+    /// history, physical UTC accuracy, authentication or a clock operation.
+    ///
+    /// # Errors
+    /// Preserve distinct-run, original measurement, reference or arithmetic refusal.
+    pub fn relative_to<'a>(
+        &'a self,
+        anchor: &'a Self,
+    ) -> Result<ExperimentalRelativeMeasurement<'a>, RelativeMeasurementRefusal> {
+        ExperimentalRelativeMeasurement::new(self, anchor)
     }
 
     /// Borrow conditional nominal arithmetic or its bounded refusal.
@@ -657,7 +691,7 @@ impl TerminalOutcome {
 /// A completed result remains historical after later stop/invalidation; it
 /// confers no current confidence, sample eligibility or authentication authority.
 pub struct SlotReport {
-    /// Zero-based association index, exactly zero or one.
+    /// Zero-based association index: zero or one for a pilot; zero through two for a series.
     slot: u8,
     /// Actual bound local endpoint.
     local: SocketAddr,
@@ -722,7 +756,7 @@ impl SlotReport {
         }
     }
 
-    /// Return the fixed zero-or-one association index.
+    /// Return the fixed request index: 0..2 for a pilot or 0..3 for a series.
     #[must_use]
     pub fn slot(&self) -> u8 {
         self.slot
@@ -841,6 +875,8 @@ struct LiveSlot {
     packet: [u8; PACKET_BYTES],
     /// Unique prepared socket/request lifetime, never inferred from an address.
     identity: Arc<()>,
+    /// Immutable actual-run identity and common origin for this execution's requests.
+    run_context: Arc<RunClockContext>,
     /// This prepared request's immutable experimental model and date declaration.
     profile: Option<ExperimentalProfile>,
     /// One-way sending/pending/terminal state.
@@ -861,7 +897,10 @@ impl LiveSlot {
     ///
     /// # Errors
     /// Return the captured native registration error.
-    fn from_prepared(value: PreparedSlot) -> Result<Self, PilotError> {
+    fn from_prepared(
+        value: PreparedSlot,
+        run_context: Arc<RunClockContext>,
+    ) -> Result<Self, PilotError> {
         let socket = UdpSocket::from_std(value.socket)
             .map_err(|e| PilotError::Registration(IoCause::capture(&e)))?;
         Ok(Self {
@@ -870,6 +909,7 @@ impl LiveSlot {
             local: value.local,
             packet: value.packet,
             identity: value.identity,
+            run_context,
             profile: value.profile,
             phase: Phase::Sending,
             sent: false,
@@ -915,8 +955,11 @@ impl LiveSlot {
     /// Consume a terminal owner and drop its unique Rust socket ownership.
     ///
     /// # Errors
-    /// Reject a nonterminal internal state instead of manufacturing successful output.
+    /// Reject a nonterminal state or an index outside the bounded pilot/series report.
     fn into_report(self, slot: u8) -> Result<SlotReport, PilotError> {
+        if slot > 2 {
+            return Err(PilotError::InternalState);
+        }
         let Phase::Done(outcome) = self.phase else {
             return Err(PilotError::InternalState);
         };
@@ -1123,6 +1166,8 @@ pub enum Rejection {
 struct StagedReply {
     /// The precise native socket/request owner that admitted this candidate.
     identity: Arc<()>,
+    /// Actual run identity retained across staging and checked again at commit.
+    run_context: Arc<RunClockContext>,
     /// Checked actual peer and local endpoints retained with that identity.
     peer: SocketAddr,
     /// The original socket endpoint; numeric reuse alone supplies no identity.
@@ -1190,6 +1235,7 @@ fn stage_reply(
     }
     Ok(StagedReply {
         identity: Arc::clone(&slot.identity),
+        run_context: Arc::clone(&slot.run_context),
         peer: source,
         local: slot.local,
         header,
@@ -1280,11 +1326,18 @@ struct ReadDatagram<'a> {
 /// the datagram while preserving its pending slot and prior rejection cause.
 fn commit_reply(slot: &mut LiveSlot, candidate: &StagedReply, processing: Instant) {
     if !Arc::ptr_eq(&slot.identity, &candidate.identity)
+        || !Arc::ptr_eq(&slot.run_context, &candidate.run_context)
         || slot.peer != candidate.peer
         || slot.local != candidate.local
         || slot.profile != candidate.profile
         || !matches!(slot.phase, Phase::Pending(_))
     {
+        return;
+    }
+    // Windows can clamp a tiny negative checked duration to zero. Ordering must
+    // reject that raw predecessor before accepting any computed age.
+    if processing < candidate.read.mono_after {
+        slot.rejected += 1;
         return;
     }
     let Some(age) = processing.checked_duration_since(candidate.read.mono_after) else {
@@ -1309,6 +1362,7 @@ fn commit_reply(slot: &mut LiveSlot, candidate: &StagedReply, processing: Instan
                 peer: candidate.peer,
                 local: candidate.local,
                 identity: Arc::clone(&candidate.identity),
+                run_context: Arc::clone(&candidate.run_context),
                 measurement: candidate
                     .measurement
                     .map(|value| value.with_acquisition_age(age)),
@@ -1450,8 +1504,12 @@ impl PreparedPilot {
     /// Return fixed setup/state failures; all terminal outcomes preserve the one-query contract.
     async fn run_inner(mut self, started: Instant) -> Result<PilotReport, PilotError> {
         let header_limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
+        let run_context = Arc::new(RunClockContext { origin: started });
         let [a, b] = self.slots;
-        let mut slots = [LiveSlot::from_prepared(a)?, LiveSlot::from_prepared(b)?];
+        let mut slots = [
+            LiveSlot::from_prepared(a, Arc::clone(&run_context))?,
+            LiveSlot::from_prepared(b, run_context)?,
+        ];
         let mut buffers = [[0_u8; RECEIVE_BYTES]; 2];
         let deadline = started
             .checked_add(self.timeout)

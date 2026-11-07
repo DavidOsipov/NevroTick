@@ -1,6 +1,7 @@
 # Primary sources
 
-Reviewed 5 November 2026 (UTC). This is an original local workflow: no upstream
+Reviewed 5 November 2026 (UTC); service/artifact refinements checked 7 November
+2026. This is an original local workflow: no upstream
 implementation or third-party skill is vendored. Research used Microsoft Learn,
 GitHub, Context7, Firecrawl developer search/page extraction and web search/open.
 Indexed snippets and generated extraction answers were discovery aids; current
@@ -57,6 +58,29 @@ NevroTick. A helper name or README example does not qualify exact emitted fields
 cross-compilation, Unicode, license compatibility or a native build. No framework
 performance claim follows from this research.
 
+## Bounded service and artifact catalogue
+
+The [canonical metadata map](../../../../../docs/plans/windows-package-metadata.md)
+owns applicability and links the [retained catalogue](../../../../../docs/supporting-reviews/windows-service-metadata-catalogue.md).
+Its SCM, artifact and diagnostics appendices enumerate only their declared dated
+structures/schema nodes. Read the affected appendix, not every schema. Counts
+overlap across representations and do not measure implemented product coverage.
+
+| Primary source | Refinement and limit |
+| --- | --- |
+| [VS_FIXEDFILEINFO](https://learn.microsoft.com/en-us/windows/win32/api/verrsrc/ns-verrsrc-vs_fixedfileinfo) | User-mode application versus driver classification, subtype and truthful flags; INFOINFERRED is not embedded resource content |
+| [Application manifests](https://learn.microsoft.com/en-us/windows/win32/sbscs/application-manifests), [native manifest schema](https://learn.microsoft.com/en-us/windows/win32/sbscs/manifest-file-schema) | Overview/schema differ on optional description and identity details; selected SDK/output qualification remains necessary |
+| [SignTool](https://learn.microsoft.com/en-us/windows/win32/seccrypto/signtool) | Sign-time content description/URL and verify-time display; no signing-route adoption or trust pass |
+| [MSIX Packaging Tool conversion](https://learn.microsoft.com/en-us/windows/msix/packaging-tool/create-app-package) | Services report exposes editable display name/description; actual chosen pipeline and installed propagation remain unqualified |
+| [Store privacy/support](https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/msix/support-info) | Policy URL/text and separate regulatory contact context; no permission to supply private data or submit |
+| [MSI settings identifier](https://learn.microsoft.com/en-us/windows/win32/msi/msiarpsettingsidentifier) | Conditional literal registry-location list, non-null if present; MSI remains a later owner-selected route |
+
+The catalogue's Microsoft SDK snapshot is a research anchor, not the selected
+build SDK. Refresh complete schema imports, inherited groups and choice
+substitutions against the actually admitted toolchain; preview/internal fields
+and mere schema presence establish neither product applicability nor OS/Store
+support. No native checks were run for these source refinements.
+
 ## Standards and local owners
 
 | Source | Use and limit |
@@ -66,6 +90,46 @@ performance claim follows from this research.
 | [SBOM policy](../../../../../policy/sbom.toml), [wrapper](../../../../../scripts/generate-sbom.py) | Current frozen crate-inventory owner, target/features/custody and known completeness limits |
 | [Metadata field contract](../../../../../docs/plans/windows-package-metadata.md), [package QA](../../../testing/qa-package-artifacts/SKILL.md) | Full field map and independent final artifact/native validation |
 | [Release provenance policy](../../../../../docs/plans/release-provenance.md) | Enhanced public attestations/reproducibility remain optional under OD-05 §7.5 |
+| [ORCID identifier structure](https://support.orcid.org/hc/en-us/articles/360006897674-Structure-of-the-ORCID-Identifier) | MOD 11-2 check character, numeric/`X` examples and the separate registry assignment authority; checksum consistency is not ownership authentication |
+
+## Implemented source-tool owners
+
+Use these current local owners to resolve implementation questions; do not
+reconstruct behavior from a historical receipt or the sibling implementation.
+
+| Local source | Scope |
+| --- | --- |
+| [Pipeline usage](../../../../../metadata/README.md), [test entry](../../../../../metadata/tests/README.md) | Supported POSIX source CLI, immutable fresh outputs, current configured regressions and later-stage limits |
+| [Admission](../../../../../metadata/pipeline/contract.py), [registry](../../../../../metadata/pipeline/fields.py), [text policy and data provenance](../../../../../metadata/text-policy.md) | Exact source grammar, semantic IDs/aliases, checksums and pinned raw/decoded Unicode admission |
+| [Independent delivery reader](../../../../../metadata/pipeline/delivery.py), [generation/custody](../../../../../metadata/pipeline/generate.py) | Source expectations, declared literal readers, mandatory observation, code/input receipts and publication/check ownership |
+| [Delivery tests](../../../../../metadata/tests/test_delivery.py), [identifier tests](../../../../../metadata/tests/test_identifiers.py), [pipeline tests](../../../../../metadata/tests/test_pipeline.py) | Healthy/faulty real entry points, bypass controls and source/receipt/custody invariants; no native readback claim |
+
+The [operations and report guide](generation-and-verification.md#maintain-the-portable-pipeline)
+maps these owners to maintenance work. The canonical plan and W11-W10 task
+retain acceptance and candidate-specific results; source files are not a new
+release policy or proof of every product consumer.
+
+## Adopted sibling-pipeline techniques
+
+The [7 November adopted controls](../../../../../docs/plans/windows-package-metadata.md#135-adopted-metadata-delivery-controls--7-november-2026)
+follow a source review of the dirty `personal-website-templated-1` working tree
+at `6530d3a8d44cbe4f829b1e09edd3a1c90cffc087`. The review evidence lives under
+`/tmp/nevrotick-metadata-comparison-20261107-2p4rmzhn`; HEAD alone does not
+identify those uncommitted source bytes. Useful navigation locators within that
+checkout are `src/schemas/person-data.ts`,
+`scripts/lib/citation-release-requirements.ts`,
+`scripts/lib/citation-release-output.ts`, `scripts/lib/image-representation.ts`,
+`src/integrations/image-service-cache-identity.ts` and
+`src/tests/citation-release-build-cache.test.ts`.
+
+These supply design examples for identifier semantics, source-derived delivery
+obligations, actual-byte readback, producer identity and warm-build invalidation.
+Their tests were inspected rather than rerun for the comparison. NevroTick's
+original Python implementation and independent controls retain their own
+source/evidence owners; no sibling source is vendored or required at build time.
+Do not copy its broader schemas, permissive normalization, warning-only
+missing-output path, producer-generated golden expectations or cache database.
+Its person/job-title, licence and support facts are not NevroTick authorities.
 
 Engineering recommendations in this skill include TOML for reviewed intent,
 JSON for observations, field-specific authority, semantic-diff promotion and

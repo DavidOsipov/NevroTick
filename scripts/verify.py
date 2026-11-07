@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import shutil
 import socket
+import stat
 import sys
 import tempfile
 import time
@@ -68,7 +69,8 @@ POINTER = Path.home() / ".local/share/nevrotick/ui-m0.json"
 SOURCE_FILES = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rustfmt.toml", "clippy.toml",
                 "deny.toml", ".cargo/config.toml", ".config/nextest.toml")
 CHECKER_FILES = ("scripts/verify.py", "scripts/check-environment.py", "scripts/check-strict.py",
-                 "scripts/slint_dependency_profile.py", "scripts/slint_linux_sdk.py")
+                 "scripts/slint_dependency_profile.py", "scripts/slint_linux_sdk.py",
+                 "scripts/tests/test_verify_vendor_admission.py")
 UI_TEXT_CHECKER_FILES = ("scripts/check-ui-text.py", "scripts/check_ui_text_coverage.py",
                          "scripts/ui_source_io.py",
                          "scripts/slint_text_graph.py", "scripts/ui_text_bindings.py", "scripts/protected_json.py",
@@ -85,6 +87,22 @@ UI_TEXT_CHECKER_FILES = ("scripts/check-ui-text.py", "scripts/check_ui_text_cove
 
 UI_NATIVE_INPUT_CHECKER_FILES = ("scripts/native_input_source.py",
                                  "scripts/tests/test_native_input_source.py")
+
+# Vendor-specific host-admission ceilings, before isolated build execution.
+# The reviewed534-package graph has2.66MB checksum metadata (largest191KB),
+# 31,563 tree entries and566MB source/metadata bytes. These are fixed ceilings,
+# not values inferred from an untrusted vendor tree or its checksum records.
+MAX_VENDOR_PACKAGES = 1024
+MAX_VENDOR_METADATA_BYTES = 256 * 1024
+MAX_VENDOR_METADATA_TOTAL = 8 * 1024 * 1024
+MAX_VENDOR_ENTRIES = 65_536
+MAX_VENDOR_PACKAGE_ENTRIES = 8192
+MAX_VENDOR_DEPTH = 16
+MAX_VENDOR_PATH_BYTES = 1024
+MAX_VENDOR_FILE_BYTES = 64 * 1024 * 1024
+MAX_VENDOR_TOTAL_BYTES = 1024 * 1024 * 1024
+MAX_VENDOR_MAP_ENTRIES = 4096
+MAX_VENDOR_JSON_TOKENS = 16_384
 
 def sha256(path: Path) -> str:
     """Hash a regular input without loading its complete content."""
@@ -287,9 +305,13 @@ def admit_patched_source(root: Path, record: dict) -> dict[str, str]:
     if any(path.is_symlink() for path in (root / "third-party", directory)):
         raise ENV.Incomplete("Linked patched-source ancestors are not admitted.")
     files = inventory(directory)
-    preserved = SLINT.PATCH_PRESERVED_FILES if is_spin else SLINT.ACCESSKIT_PRESERVED_FILES
+    preserved, modified = {
+        SLINT.PATCH_NAME: (SLINT.PATCH_PRESERVED_FILES, SLINT.PATCH_MODIFIED_FILES),
+        SLINT.ACCESSKIT_NAME: (SLINT.ACCESSKIT_PRESERVED_FILES, SLINT.ACCESSKIT_MODIFIED_FILES),
+        SLINT.CONSUMER_NAME: (SLINT.CONSUMER_PRESERVED_FILES, SLINT.CONSUMER_MODIFIED_FILES),
+    }[record["name"]]
     expected_files = (SLINT.PATCH_MODIFIED_FILES | set(preserved) | {".gitignore", "Makefile.toml", "README.md"}
-                      if is_spin else SLINT.ACCESSKIT_MODIFIED_FILES | set(preserved))
+                      if is_spin else modified | set(preserved))
     digest = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     if (set(files) != expected_files or digest != record["files_sha256"]
             or any(files.get(name) != value for name, value in record["modified_files_sha256"].items())
@@ -298,7 +320,7 @@ def admit_patched_source(root: Path, record: dict) -> dict[str, str]:
     manifest = tomllib.loads((directory / "Cargo.toml").read_text())
     if not is_spin:
         upstream = tomllib.loads((directory / "Cargo.toml.upstream").read_text())
-        upstream["package"]["license"] = SLINT.ACCESSKIT_UPSTREAM["license"]
+        upstream["package"]["license"] = record["license"]
         if manifest != upstream:
             raise ENV.Incomplete("The AccessKit manifest may only change its exact composite source licence.")
     else:
@@ -326,7 +348,9 @@ def validate_patched_lock(packages: list[dict], patches: list[dict]) -> None:
     expected = {SLINT.PATCH_NAME: {"name": SLINT.PATCH_NAME, "version": "0.1.1"},
                 SLINT.ACCESSKIT_NAME: {"name": SLINT.ACCESSKIT_NAME, "version": "0.34.0",
                     "dependencies": ["accesskit", "accesskit_consumer", "hashbrown 0.16.1",
-                                     "static_assertions", "windows", "windows-core"]}}
+                                     "static_assertions", "windows", "windows-core"]},
+                SLINT.CONSUMER_NAME: {"name": SLINT.CONSUMER_NAME, "version": "0.38.0",
+                    "dependencies": ["accesskit", "hashbrown 0.16.1"]}}
     names = {record["name"] for record in patches}
     actual = [package for package in packages if package["name"] in names]
     if (len(actual) != len(names) or {package["name"] for package in actual} != names
@@ -626,18 +650,182 @@ def product_nextest(base: str) -> str:
     return result
 
 
+def vendor_scan(directory: Path, wanted: set[str]) -> dict[str, os.stat_result]:
+    """Bound the entire vendor namespace and declared bytes before content I/O."""
+    if directory.is_symlink() or not directory.is_dir():
+        raise ENV.Incomplete("Missing regular input directory.")
+    files, packages, stack = {}, set(), []
+    entries = total_bytes = metadata_bytes = 0
+    with os.scandir(directory) as children:
+        for child in children:
+            entries += 1
+            if (entries > MAX_VENDOR_ENTRIES or len(packages) >= MAX_VENDOR_PACKAGES
+                    or child.name not in wanted):
+                raise ENV.Incomplete("Vendor directory has missing or unexpected packages.")
+            if not child.is_dir(follow_symlinks=False):
+                raise ENV.Incomplete("Linked or special input is not admitted.")
+            packages.add(child.name)
+            stack.append((Path(child.path), child.name, 0))
+    if packages != wanted:
+        raise ENV.Incomplete("Vendor directory has missing or unexpected packages.")
+    package_entries = dict.fromkeys(packages, 0)
+    while stack:
+        folder, package, depth = stack.pop()
+        with os.scandir(folder) as children:
+            for child in children:
+                entries += 1
+                package_entries[package] += 1
+                if (entries > MAX_VENDOR_ENTRIES
+                        or package_entries[package] > MAX_VENDOR_PACKAGE_ENTRIES):
+                    raise ENV.Incomplete("Vendor traversal exceeds its entry bound.")
+                if depth + 1 > MAX_VENDOR_DEPTH:
+                    raise ENV.Incomplete("Vendor traversal exceeds its depth bound.")
+                path = Path(child.path)
+                relative = path.relative_to(directory / package).as_posix()
+                if len(relative.encode("utf-8")) > MAX_VENDOR_PATH_BYTES:
+                    raise ENV.Incomplete("Vendor relative path exceeds its byte bound.")
+                observed = child.stat(follow_symlinks=False)
+                if stat.S_ISDIR(observed.st_mode):
+                    stack.append((path, package, depth + 1))
+                elif stat.S_ISREG(observed.st_mode):
+                    total_bytes += observed.st_size
+                    if observed.st_size > MAX_VENDOR_FILE_BYTES or total_bytes > MAX_VENDOR_TOTAL_BYTES:
+                        raise ENV.Incomplete("Vendor source exceeds its file or aggregate byte bound.")
+                    if relative == ".cargo-checksum.json":
+                        metadata_bytes += observed.st_size
+                        if observed.st_size > MAX_VENDOR_METADATA_BYTES:
+                            raise ENV.Incomplete("Vendor checksum metadata exceeds its byte bound.")
+                        if metadata_bytes > MAX_VENDOR_METADATA_TOTAL:
+                            raise ENV.Incomplete("Vendor checksum metadata exceeds its aggregate byte bound.")
+                    files[package + "/" + relative] = observed
+                else:
+                    raise ENV.Incomplete("Linked or special input is not admitted.")
+    if any(package + "/.cargo-checksum.json" not in files for package in packages):
+        raise ENV.Incomplete("Vendor package is missing its checksum metadata.")
+    return files
+
+
+def vendor_stamp(observed: os.stat_result) -> tuple[int, ...]:
+    """Bind an opened regular input to the preflight inode and read bookends."""
+    return (observed.st_dev, observed.st_ino, observed.st_mode, observed.st_size,
+            observed.st_mtime_ns, observed.st_ctime_ns)
+
+
+def vendor_file(path: Path, expected: os.stat_result, *, capture: bool) -> tuple[str, bytes]:
+    """Hash at most the preflight byte reservation; retain only bounded metadata."""
+    descriptor = os.open(path, os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        before = os.fstat(descriptor)
+        if not stat.S_ISREG(before.st_mode) or vendor_stamp(before) != vendor_stamp(expected):
+            raise ENV.Incomplete("Vendor input changed after bounded preflight.")
+        remaining, digest, chunks = expected.st_size, hashlib.sha256(), []
+        with os.fdopen(descriptor, "rb", closefd=False) as stream:
+            while True:
+                block = stream.read(min(1024 * 1024, remaining + 1))
+                if not block:
+                    break
+                if len(block) > remaining:
+                    raise ENV.Incomplete("Vendor input exceeded its reserved byte bound.")
+                remaining -= len(block)
+                digest.update(block)
+                if capture:
+                    chunks.append(block)
+        if remaining or vendor_stamp(os.fstat(descriptor)) != vendor_stamp(before):
+            raise ENV.Incomplete("Vendor input changed during bounded hashing.")
+        return digest.hexdigest(), b"".join(chunks)
+    finally:
+        os.close(descriptor)
+
+
+def vendor_inventory(directory: Path, wanted: set[str]) -> tuple[dict[str, str], dict[str, bytes]]:
+    """Preflight aggregate work, then hash those exact files within reservations."""
+    files = vendor_scan(directory, wanted)
+    identities, metadata = {}, {}
+    for relative, observed in files.items():
+        capture = relative.endswith("/.cargo-checksum.json") and relative.count("/") == 1
+        identities[relative], raw = vendor_file(directory / relative, observed, capture=capture)
+        if capture:
+            metadata[relative.split("/", 1)[0]] = raw
+    return identities, metadata
+
+
+def vendor_record(raw: bytes) -> dict:
+    """Strictly admit the closed Cargo checksum shape under byte/depth/work bounds."""
+    if type(raw) is not bytes or len(raw) > MAX_VENDOR_METADATA_BYTES:
+        raise ENV.Incomplete("Vendor checksum metadata exceeds its byte bound.")
+    depth = tokens = 0
+    inside = escaped = False
+    for byte in raw:
+        if inside:
+            if escaped:
+                escaped = False
+            elif byte == 92:
+                escaped = True
+            elif byte == 34:
+                inside = False
+        elif byte == 34:
+            inside = True
+            tokens += 1
+        elif byte in (123, 91):
+            depth += 1
+            tokens += 1
+            if depth > 2:
+                raise ENV.Incomplete("Vendor checksum metadata exceeds its depth bound.")
+        elif byte in (125, 93):
+            depth -= 1
+            if depth < 0:
+                raise ENV.Incomplete("Malformed vendor checksum metadata nesting.")
+        if tokens > MAX_VENDOR_JSON_TOKENS:
+            raise ENV.Incomplete("Vendor checksum metadata exceeds its token bound.")
+    if inside or depth:
+        raise ENV.Incomplete("Malformed vendor checksum metadata nesting.")
+
+    def unique_fields(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ENV.Incomplete("Duplicate vendor checksum metadata field.")
+            result[key] = value
+        return result
+
+    def invalid_number(_value):
+        raise ENV.Incomplete("Unselected vendor checksum metadata number.")
+
+    try:
+        record = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_fields,
+                            parse_int=invalid_number, parse_float=invalid_number, parse_constant=invalid_number)
+    except (ValueError, UnicodeError, RecursionError) as error:
+        raise ENV.Incomplete("Invalid bounded vendor checksum JSON.") from error
+    if (type(record) is not dict or set(record) != {"package", "files"}
+            or type(record["package"]) is not str or not re.fullmatch(r"[0-9a-f]{64}", record["package"])
+            or type(record["files"]) is not dict or not 0 < len(record["files"]) <= MAX_VENDOR_MAP_ENTRIES):
+        raise ENV.Incomplete("Vendor checksum metadata has an unadmitted shape.")
+    for relative, checksum in record["files"].items():
+        try:
+            encoded_path = relative.encode("utf-8")
+        except UnicodeError as error:
+            raise ENV.Incomplete("Vendor checksum file map has an unadmitted path or digest.") from error
+        if (not relative or len(encoded_path) > MAX_VENDOR_PATH_BYTES or "\\" in relative
+                or relative.startswith("/") or any(part in {"", ".", ".."} for part in relative.split("/"))
+                or any(ord(character) < 32 for character in relative)
+                or len(relative.split("/")) > MAX_VENDOR_DEPTH
+                or type(checksum) is not str or not re.fullmatch(r"[0-9a-f]{64}", checksum)):
+            raise ENV.Incomplete("Vendor checksum file map has an unadmitted path or digest.")
+    return record
+
+
 def admit_vendor(directory: Path, policy: dict) -> dict[str, str]:
     """Verify each vendored file against its reviewed package and Cargo checksum map."""
     records = policy["packages"] + policy.get("metadata_only_packages", [])
     wanted = {f"{p['name']}-{p['version']}": p for p in records}
     if len(wanted) != len(records):
         raise ENV.Incomplete("Vendor package roles are duplicated.")
-    if not directory.is_dir() or {p.name for p in directory.iterdir()} != set(wanted):
-        raise ENV.Incomplete("Vendor directory has missing or unexpected packages.")
+    identities, metadata = vendor_inventory(directory, set(wanted))
     for name, admission in wanted.items():
-        package = directory / name
-        files = inventory(package)
-        record = json.loads((package / ".cargo-checksum.json").read_text())
+        prefix = name + "/"
+        files = {relative.removeprefix(prefix): checksum for relative, checksum in identities.items()
+                 if relative.startswith(prefix)}
+        record = vendor_record(metadata[name])
         if record.get("package") != admission["checksum"]:
             raise ENV.Incomplete("Vendor archive identity differs from the admitted lock graph.")
         files.pop(".cargo-checksum.json", None)
@@ -653,9 +841,11 @@ def admit_vendor(directory: Path, policy: dict) -> dict[str, str]:
         relative = bypass["path"]
         if (matched is None or not re.fullmatch(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*", relative)
                 or any(part in {".", ".."} for part in relative.split("/"))
-                or sha256(directory / (matched["name"] + "-" + matched["version"]) / relative) != bypass["sha256"]):
+                or identities.get(matched["name"] + "-" + matched["version"] + "/" + relative) != bypass["sha256"]):
             raise ENV.Incomplete("An exact archive-file bypass does not match the admitted source bytes.")
-    return inventory(directory)
+    if vendor_inventory(directory, set(wanted))[0] != identities:
+        raise ENV.Incomplete("Vendor inputs changed during admission.")
+    return identities
 
 
 def admit_tools(root: Path, toolchain: Path, extension: Path | None, lane: str) -> dict:

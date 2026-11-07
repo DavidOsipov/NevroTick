@@ -27,11 +27,13 @@ compat-1-18 for portable model/binding tests, without a desktop backend.
 
 The optional patched_packages field admits dependency-free spin_on 0.1.1 at
 third-party/spin_on, optionally followed by the exact Windows-only
-accesskit_windows 0.34.0 derivative at third-party/accesskit_windows. Original
+accesskit_windows 0.34.0 derivative at third-party/accesskit_windows, then the
+accesskit_consumer 0.38.0 derivative at third-party/accesskit_consumer. Original
 archive/file-map/revision and actual derivative/file-change pins are distinct;
 no registry checksum is assigned to modified bytes. Spin product contexts remain
 host-only, with its standalone target test scope. AccessKit has only the existing
-Windows GUI normal target role and no standalone scope. features/metadata_features
+Windows GUI normal target role and no standalone scope; consumer additionally
+retains its existing empty-feature inert Linux metadata observation. features/metadata_features
 include explicit non-first-party identities; local_features still contains the six product
 owners. Optional archive_file_bypasses bind literal paths and SHA-256 values.
 They grant no execution and do not replace separate build/proc-macro admission.
@@ -53,7 +55,7 @@ import re
 
 # Exact private build/test cohort. Source, role and primary-grant evidence is
 # recorded in S0.5; supplemental conveyance obligations remain explicitly open.
-REVIEWED_POLICY_SHA256: str | None = "c1735811cefab5f108906b44c40bb634a18bed3490a253e724bc429c4a6dc5cf"
+REVIEWED_POLICY_SHA256: str | None = "11d1fb54cbf5dc253198662dc780be60f5f07b43708bb10eb1adbeb571beae1b"
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 TARGETS = (HOST_TARGET, WINDOWS_TARGET)
@@ -109,13 +111,46 @@ ACCESSKIT_PRESERVED_FILES = {'.cargo_vcs_info.json': '7b556e30d8d54e863f20727b95
  'src/tests/subclassed.rs': '0987f1d442d1b57657f17fac6a9623ae012603531f47afcb31ff6ca73cb8e932',
  'src/util.rs': 'dab7b1ffeccd6124cfc0dea6ff237e3ac9ba3661c0e23e04a1e433a596490656',
  'src/window_handle.rs': 'dec1d78c81784a18c50f066e89d57d0fe02a7c9199a11e47a0833f8b9113d8c2'}
-PATCH_NAME_SETS = ((), (PATCH_NAME,), (PATCH_NAME, ACCESSKIT_NAME))
+# Consumer word-navigation repair retains the same Windows GUI-normal role.
+# Its upstream dual grant remains available; original regression tests add GPL3.
+CONSUMER_NAME = "accesskit_consumer"
+CONSUMER_ID = "accesskit_consumer@0.38.0"
+CONSUMER_PATH = "third-party/accesskit_consumer"
+CONSUMER_UPSTREAM = {
+    "name": CONSUMER_NAME, "version": "0.38.0", "path": CONSUMER_PATH,
+    "license": "(MIT OR Apache-2.0) AND GPL-3.0-only", "selected_license": "MIT AND GPL-3.0-only",
+    "build_script": False, "proc_macro": False, "links": None,
+    "upstream_checksum": "5d10a236f96f87d70732e44520046785431ef01d5bcd6b041317bfadd2f88245",
+    "upstream_files_sha256": "fc9e9ee737b62b4b529977e0dc67e6991e9791995d2659bfb31b36282ea7e784",
+    "upstream_revision": "c88605b96d04431f9c3c792464a0f2f253480e94",
+}
+CONSUMER_MODIFIED_FILES = {"Cargo.toml", "NEVROTICK-PATCH.md", "src/text.rs",
+                           "src/text/nevrotick_word_navigation_tests.rs"}
+CONSUMER_PRESERVED_FILES = {
+    ".cargo_vcs_info.json": "3272bb704f4ccc9eda927d7b19878684fee12ada387116f5331d1c2e6e95e892",
+    "CHANGELOG.md": "0ffc9d467103c82daf85b8e106aea98cebf4ee6a9ab4a836fea987c2e6dea1c5",
+    "Cargo.lock": "9580cbac5eb8941265e14a9b648d42e894f63f7735fefbc0d8a3131e88c27d47",
+    "Cargo.toml.orig": "4b531b28c87e4e0b463da36f5163318163a240611ca92c5f8d96aa74f6ce8646",
+    "Cargo.toml.upstream": "f75c77dc052103040d9ff95469fe50f94cd327b147fec851a8cb709c8a379774",
+    "LICENSE-APACHE": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+    "LICENSE-GPL-3.0-only": "b6a8bf63ae2c95b0aa256ee774680d7bd18f21f457da75466f7610b3b16acc4e",
+    "LICENSE-MIT": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+    "README.md": "28c871133e9adeb24b4140a520614cee08713c35e2e2688f4a2fed7d4e62b472",
+    "src/filters.rs": "7ed1578cac719bfaf02c96aa3fd9adc070b487eef9126d8da2b5bc611b66c6f4",
+    "src/iterators.rs": "241345c892b481f075826cebc9ce9a0d68ee3b88bfa49668ed99388e61031f38",
+    "src/lib.rs": "11bf579ec7ff5251ff8646b2008d327db47fad4cfd586c7745076c5710e0fc7c",
+    "src/node.rs": "99e7ebd71e596c68b822eaab9443f93d533092f7953d79e859149ae5260ad841",
+    "src/tree.rs": "11bd99118f37469144807416d4430893de938b1533f36d067c04e36235367f9a",
+}
+WINDOWS_PATCHES = ((ACCESSKIT_NAME, ACCESSKIT_ID), (CONSUMER_NAME, CONSUMER_ID))
+PATCH_NAME_SETS = ((), (PATCH_NAME,), (PATCH_NAME, ACCESSKIT_NAME),
+                   (PATCH_NAME, ACCESSKIT_NAME, CONSUMER_NAME))
 
 
 def patch_names(policy: dict) -> tuple[str, ...]:
     """Select only the closed ordered path-patch cohort; never arbitrary names."""
     patches = policy.get("patched_packages", [])
-    if type(patches) is not list or len(patches) > 2 or any(type(item) is not dict for item in patches):
+    if type(patches) is not list or len(patches) > 3 or any(type(item) is not dict for item in patches):
         raise Incomplete("Only the exact Spin and optional Windows AccessKit patches are admitted.")
     names = tuple(item.get("name") for item in patches)
     if names not in PATCH_NAME_SETS:
@@ -220,13 +255,15 @@ def selected_records(policy: dict) -> dict[str, dict]:
 
 
 def validate_path_patch(patch: dict) -> None:
-    """Bind each of the two exact derivatives to separate immutable provenance."""
+    """Bind each of the three exact derivatives to separate immutable provenance."""
     if type(patch) is not dict:
         raise Incomplete("Path patch provenance or exact modified-file inventory changed.")
     if patch.get("name") == PATCH_NAME:
         upstream, modified = PATCH_UPSTREAM, PATCH_MODIFIED_FILES
     elif patch.get("name") == ACCESSKIT_NAME:
         upstream, modified = ACCESSKIT_UPSTREAM, ACCESSKIT_MODIFIED_FILES
+    elif patch.get("name") == CONSUMER_NAME:
+        upstream, modified = CONSUMER_UPSTREAM, CONSUMER_MODIFIED_FILES
     else:
         raise Incomplete("Unknown local path-patch identity.")
     if (set(patch) != set(upstream) | {"files_sha256", "modified_files_sha256"}
@@ -360,12 +397,16 @@ def validate_policy_shape(policy: dict) -> None:
         scopes = row["package_scopes"]
         if PATCH_NAME in names and features.get(PATCH_ID) != {"host": [[]]}:
             raise Incomplete("The spin_on patch may only enter the product's host-tool graph.")
-        if ACCESSKIT_NAME in names:
+        for patch_name, patch_id in WINDOWS_PATCHES:
+            if patch_name not in names:
+                continue
             if target == WINDOWS_TARGET:
-                if features.get(ACCESSKIT_ID) != {"target": [[]]} or metadata.get(ACCESSKIT_ID) != []:
+                if features.get(patch_id) != {"target": [[]]} or metadata.get(patch_id) != []:
                     raise Incomplete("The AccessKit patch is only an empty-feature Windows GUI target dependency.")
-            elif ACCESSKIT_ID in features or ACCESSKIT_ID in metadata:
+            elif patch_id in features or (patch_name == ACCESSKIT_NAME and patch_id in metadata):
                 raise Incomplete("The Windows AccessKit patch has no Linux selected or metadata role.")
+            elif patch_name == CONSUMER_NAME and metadata.get(patch_id) != []:
+                raise Incomplete("The consumer patch retains only its empty-feature inert Linux metadata role.")
         if type(scopes) is not dict or set(scopes) != set(package_scopes(policy)):
             raise Incomplete("Every package selection needs its own reviewed feature contexts.")
         for name, scope in scopes.items():
@@ -389,8 +430,9 @@ def validate_policy_shape(policy: dict) -> None:
                 if (scope["features"].get("slint@1.18.1") != {"target": [runtime]}
                         or scope["features"].get("slint-build@1.18.1") != {"host": [["compat-1-18"]]}):
                     raise Incomplete("GUI package scope lacks its exact runtime/build profile.")
-                if ACCESSKIT_NAME in names and target == WINDOWS_TARGET and scope["features"].get(ACCESSKIT_ID) != {"target": [[]]}:
-                    raise Incomplete("Windows GUI scope lacks its exact AccessKit target dependency.")
+                for patch_name, patch_id in WINDOWS_PATCHES:
+                    if patch_name in names and target == WINDOWS_TARGET and scope["features"].get(patch_id) != {"target": [[]]}:
+                        raise Incomplete("Windows GUI scope lacks its exact AccessKit target dependency.")
             elif any(key.split("@", 1)[0].startswith(("slint", "i-slint-")) for key in scope["features"]):
                 raise Incomplete("Slint dependencies must remain isolated from pure/engine package selections.")
             elif patched_ids & set(scope["features"]):
@@ -574,7 +616,7 @@ def validate_tree(target: str, output: str, policy: dict, *, scope: str = "works
                 del builds[previous]
         kind = builds.get(depth - 1, "normal") if depth else "normal"
         role = "host" if macro or depth and (stack[depth - 1]["role"] == "host" or kind == "build") else "target"
-        if key == ACCESSKIT_ID and key in patches and (role != "target" or kind != "normal" or not depth):
+        if key in {patch_id for _, patch_id in WINDOWS_PATCHES} and key in patches and (role != "target" or kind != "normal" or not depth):
             raise Incomplete("The patched Windows AccessKit occurrence must retain its normal target edge.")
         context = (key, tuple(features), role)
         occurrence = {"context": context, "role": role, "children": [], "duplicate": bool(duplicate), "sections": set()}

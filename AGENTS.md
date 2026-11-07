@@ -397,7 +397,7 @@ no new report tree or orchestration campaign.
 | --- | --- |
 | Uncertain scope, stages or ownership | [plan-code-change](.agents/skills/planning/plan-code-change/SKILL.md); architecture/threat/review skills when their decisions change. |
 | Rust logic, concurrency or Windows adapters | [implement-rust](.agents/skills/implementation/implement-rust/SKILL.md), including conditional SCM/chrony/simulator references. |
-| Windows service architecture, SCM lifecycle or recovery | [Service adapter guide](.agents/skills/implementation/implement-rust/references/windows-service-adapters.md), with per-service recovery and object-access matrices; [Windows privileges](.agents/skills/security/security-windows-privileges/SKILL.md) for authority. |
+| Windows service creation, SCM lifecycle, management, hardening, logging or optimization | [implement-windows-service](.agents/skills/implementation/implement-windows-service/SKILL.md), routing detailed service/recovery/access matrices and the relevant security/QA owner. |
 | Function/module contracts, wire admission and domain invariants | [implement-rust-contracts](.agents/skills/implementation/implement-rust-contracts/SKILL.md). |
 | Wire, persisted-state or semantic compatibility | [evolve-data-contracts](.agents/skills/implementation/evolve-data-contracts/SKILL.md). |
 | Native UI and accessibility | [implement-native-ui](.agents/skills/implementation/implement-native-ui/SKILL.md), [implement-slint](.agents/skills/implementation/implement-slint/SKILL.md) for toolkit mechanisms, then applicable accessibility/DPI checks. |

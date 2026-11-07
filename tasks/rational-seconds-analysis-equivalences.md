@@ -199,3 +199,44 @@ allocation behavior. Different targets/features/generated validation require
 their configured reconciliation. No result here establishes physical clock
 accuracy, provenance, production eligibility, regression readiness, native
 Windows behavior, full S1.2/P1 or release qualification.
+
+## Refreshed graph revalidation — 6 November 2026
+
+Reviewer `/root/rational_equivalence_review` completed a bounded independent
+revalidation against the refreshed 374-input product map
+`cb2925bb1288a0d844ec7ce702ffa88a0155be4530dd851dda7e06d20fad25f3`.
+The retained dependency-qualification source map has that canonical digest;
+all 374 current files match its recorded hashes. The converter remains exactly
+`2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438`.
+This is continuation of the named review, not a claim of a new fresh-context
+reviewer or an executed product/formal proof.
+
+The refresh changes seven locked package versions and adopts Rustup 1.29.3 while
+retaining the selected Rust 1.99.1 compiler/MSRV. Comparing current lock records
+with `ce4efa5` confirms that Garde 0.23.0, its derive crate, Syn 2.0.119 and their
+supporting closure retain the same versions, checksums and dependency records.
+Tokio-macros now selects Syn 3; it does not change this pure converter's helpers
+or their raw-domain arithmetic, validation order, return/error or effect paths.
+
+The five named arguments remain independently justified on their original full
+helper domains: normalized quotient/remainder/denominator guards are redundant
+after the actual checked arithmetic; exponent and fraction bits are disjoint;
+the local raw-sign guard makes the current publication sign words disjoint
+before any Garde validation/allocation. This last argument still includes every
+raw floating bit pattern and metadata combination. The old publication variant
+at432:59 remains **not E**: its raw-negative-zero report-allocation difference
+is not erased by this graph refresh or by equal final error values. The two
+raw `roundoff_rule` conjunction variants remain non-equivalent and require
+actual current kills, not an E disposition.
+
+The retained `rational-seconds-enumeration-v2` contains 103 descriptors. Its four
+normalization/significand descriptor hashes still match the four values above.
+Its guarded publication descriptor at437:59 has SHA256
+`153b16aa43b0fce1c3f2c1e6d1ceae7e6308a8b47c9232161c60e03982c092d9`
+under the same canonical complete-descriptor encoding excluding native `diff`.
+These are retained enumeration observations, not fresh mutation execution on
+the refreshed graph. The coordinator must still match fresh complete
+descriptors, candidate/source/review hashes, actual outcomes and all other
+configured gates before scoring. No kill credit or historical score transfers;
+earlier v1/v2 incomplete campaigns remain incomplete. This revalidation ran no
+Cargo, native Windows, solver or formal job and changes no execution hold.

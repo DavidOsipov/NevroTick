@@ -21,6 +21,16 @@ ST-W01–ST-W07 retain their recorded source-only/phase-gated dispositions. The
 storage pause, separate mandatory-state owner and scoped Windows/fuzz holds
 remain. The [task index](README.md) supplies navigation without reopening work.
 
+**Primary coordinator checkpoint, 7 November 2026:** after the latest pull and
+the [bounded reference-bridge exit](engine-transport-pilot.md#common-run-reference-bridge--final-qualification-and-next-action),
+the coordinator rechecked §6.5–§6.7 and the imported ST-W queue. ST-W01 remains
+ready source-only and unexecuted; ST-W02 waits for its frozen contracts and
+authorized slice. ST-W03–ST-W07 retain their named filesystem, CNG, mitigation,
+IPC-completion and privacy owners, phase triggers and next actions in §6.6,
+subject to the MSIX supersession above. The next pure Core conditioning contract
+introduces no storage adapter or experiment. No assignment or execution hold is
+lifted by this checkpoint.
+
 ## 1. Authority, scope and reconciliation
 
 Read [AGENTS.md](../AGENTS.md), the [documentation guide](../docs/README.md),
@@ -273,6 +283,11 @@ Use [memory and output lessons](../docs/plans/windows-protected-storage-upstream
 real native custody. Existing `secrecy`/`zeroize` policy remains the starting point.
 Guarded arenas and WER exclusion are conditional implementation candidates;
 neither authorizes new privilege, global paging changes or raw dump collection.
+The [7 November service-error refinement](../docs/plans/windows11-integration-follow-up.md#effective-noninteractive-error-behavior)
+adds no collector: coordinate with W11-W05/W11-W08 so effective unattended error
+handling preserves useful diagnostics while WER invocation, UI, queue/upload and
+LocalDumps/debugger confidentiality remain separate. No-UI proves no dump safety;
+retain this task's reached-path prerequisites and native hold.
 Use synthetic secrets and domain/cookie markers in actual permitted support,
 log, temporary and backup outputs, with useful allowed fields beside exclusions.
 

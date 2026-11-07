@@ -1,7 +1,8 @@
 # NevroTick: Microsoft Learn follow-up for Windows 11 integration
 
-**Document:** NV-WIN11-RESEARCH-002, revision 1.0<br>
+**Document:** NV-WIN11-RESEARCH-002, revision 1.1<br>
 **Date:** 3 November 2026 (Asia/Tbilisi)<br>
+**Updated:** 7 November 2026; additional service-practices review<br>
 **Owner:** David Osipov<br>
 **Status:** Source research and future qualification guidance; no implementation or native result.
 
@@ -250,8 +251,9 @@ inheritance rather than assuming either universal protection or none.
 W11-W05's future S0.6/P6 cases should inspect the authored MSI, valid installation,
 reinstall/repair, conflicting or invalid descriptors, parent-before-child order,
 rollback and later replacement. Existing CHECK-1/13/15/23 apply. This candidate
-supports the complete-MSI/minimal-custom-action direction without choosing a
-new installer or changing public-property authority.
+supports declarative permissions if David later selects the retained MSI
+alternative. Current OD-05 selects complete hardened MSIX; this research chooses
+no other installer and changes no public-property authority.
 
 ### SCM observer APIs have different callback lifetimes
 
@@ -275,6 +277,122 @@ start/stop/config/delete-recreate, zero-mask, callback-held-during-unsubscribe a
 UI/helper-close cases should show bounded reconciliation, no deadlock and no
 handle preventing uninstall, with healthy reconnection. W11-W05 owns lifecycle;
 live UI consumption remains D2. Existing CHECK-13/14/23/27 retain their scopes.
+
+### Additional service practices — 7 November 2026
+
+The owner supplied a reviewed service handoff against `df6e28a4641f2f046373a9c5640aa60736716a22`.
+The integration re-read the maintained service contracts and checked the linked
+Microsoft and pinned upstream sources. **Disposition:** three valid contract
+refinements, one environment-source enrichment and one conditional dependency
+example; no confirmed NevroTick runtime vulnerability or native pass. Existing
+CHECK identities, W11-W05/W11-W08/W11-W10, SEC-A02 and ST-W07 retain ownership.
+Use [implement-windows-service](../../.agents/skills/implementation/implement-windows-service/SKILL.md)
+for the workflow and its linked service guide for detailed cases. No wrapper,
+account, service topology, watchdog, namespace API or dependency is selected.
+
+#### Separate argument channels
+
+[Service Entry Point](https://learn.microsoft.com/en-us/windows/win32/services/service-entry-point)
+distinguishes process `ImagePath` arguments from
+[StartServiceW](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-startservicew)
+arguments delivered to
+[ServiceMain](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nc-winsvc-lpservice_main_functionw).
+The latter requires `SERVICE_START`. Callback/service-name wording and actual
+wrapper conversion must determine valid bounds and decoding; do not assume a
+fixed nonempty product-options vector. Pinned
+[Mullvad service code](https://github.com/mullvad/mullvadvpn-app/blob/95bc5f5cdeca6f7624b4a76499a5cc86f9480f80/mullvad-daemon/src/system_service.rs#L61-L111)
+ignores callback options and obtains configuration separately; that is an example,
+not the only valid disposition. Architecture §12.2 now separates both channels
+from protected durable policy. W11-W05 pairs ordinary start/recovery with
+conflicting, malformed and excessive options without adding a general CLI route.
+
+#### Effective noninteractive error behavior
+
+[SetErrorMode](https://learn.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-seterrormode)
+distinguishes critical-error dialogs, WER invocation and WER UI. Its
+`SEM_NOGPFAULTERRORBOX` suppresses invocation, not just UI. The
+[WerSetFlags page](https://learn.microsoft.com/en-us/windows/win32/api/werapi/nf-werapi-wersetflags)
+omits `WER_FAULT_REPORTING_NO_UI` from its table; the pinned
+[Microsoft SDK header](https://github.com/microsoft/win32metadata/blob/15fc870a5e96df7c560877ff30136c0fb5a21e9b/generation/WinSDK/RecompiledIdlHeaders/um/WerApi.h#L34-L67)
+defines it separately from queue/upload and heap flags. Establish selected
+bindings and installed behavior rather than copying numbers. Account for parent
+inheritance and thread overrides. Microsoft's preference for
+[SetThreadErrorMode](https://learn.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-setthreaderrormode)
+for local changes does not prove coverage of every service/native worker thread.
+Neither a ritual process setter nor disabling WER is adopted.
+
+**Documentation discrepancy:** the process API page describes
+`SEM_NOGPFAULTERRORBOX` as suppressing WER invocation, while the thread API page
+describes suppression of the WER dialog. Preserve that difference in the selected
+API/bindings record and qualify effective behavior; neither prose establishes
+collector privacy or justifies transplanting the process policy to a thread.
+
+The handoff's inspected Rust 1.99.1
+[runtime](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/library/std/src/rt.rs#L87-L120)
+and [Windows initialization](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/library/std/src/sys/pal/windows/mod.rs#L42-L52)
+do not establish those flags; compiletest/tool settings are not application
+startup evidence. That negative source observation does not determine the final
+SCM/CRT/dependency-effective mode. Architecture §§12.3/15.4 require an owned
+per-role record and actual bounded critical-error progress while preserving
+useful diagnostics. W11-W08/ST-W07 retain independent collector/privacy cases.
+
+#### Existing mutex realization and recovery
+
+[CreateMutexW](https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-createmutexw)
+distinguishes creation from existing-object open, which ignores a proposed new
+descriptor/initial-owner request and requests `MUTEX_ALL_ACCESS`. A
+[rights-selecting API](https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-createmutexexw)
+is available, without being selected here. Wrong object types can collide, names
+can be precreated and closing the last handle destroys the object.
+[Abandoned waits](https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitforsingleobject)
+grant ownership with potentially inconsistent protected state;
+[release](https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-releasemutex)
+is native-thread-specific and acquisition is recursive. **Inference:** after
+last-handle destruction, recreation need not report abandonment. Therefore
+architecture §11.1 requires reconciliation on both recovery paths, with no
+correction-budget refund or fresh clock authority inferred from the object.
+
+[Global/session namespaces](https://learn.microsoft.com/en-us/windows/win32/termserv/kernel-object-namespaces)
+define scope, not access control. Services normally use the global namespace;
+do not import the global file-mapping/symbolic-link privilege rule into mutex
+creation. [Private namespaces](https://learn.microsoft.com/en-us/windows/win32/sync/object-namespaces)
+still require access restrictions; matching a boundary alone does not secure an
+existing namespace. "Private mutex" selects no particular namespace mechanism.
+Qualify cross-session ownership, creation/open/collision/denial, abandonment and
+fresh recreation, plus native-thread/logical-task serialization, under W11-W05.
+
+#### Ambient paths and conditional startup cycles
+
+[GetTempPath2W](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-gettemppath2w)
+uses different SYSTEM/non-SYSTEM selection: `SystemTemp` can override SYSTEM's
+default; non-SYSTEM uses `TMP`, `TEMP`, `USERPROFILE`, then the Windows directory.
+The result is not checked for existence/access and preserves symbolic links.
+[Redirected drives](https://learn.microsoft.com/en-us/windows/win32/services/services-and-redirected-drives)
+are logon scoped. Pinned Mullvad
+[settings](https://github.com/mullvad/mullvadvpn-app/blob/95bc5f5cdeca6f7624b4a76499a5cc86f9480f80/mullvad-paths/src/settings.rs#L4-L24)
+and [RPC path](https://github.com/mullvad/mullvadvpn-app/blob/95bc5f5cdeca6f7624b4a76499a5cc86f9480f80/mullvad-paths/src/rpc_socket.rs#L3-L17)
+illustrate actual overrides to inventory, not vulnerabilities or defaults to copy.
+Enrich SEC-A02 with actual environment/profile/path provenance, no-login/failure
+cases and live spill custody under the selected account. No new temp API, blanket
+environment clearing or assumed ordinary-caller control follows.
+
+Pinned Tailscale
+[startup](https://github.com/tailscale/tailscale/blob/b31eb1c9bc582b9251d515ef634cfc99e1fc44e4/cmd/tailscaled/tailscaled_windows.go#L77-L90)
+and [policy-lock implementation](https://github.com/tailscale/tailscale/blob/b31eb1c9bc582b9251d515ef634cfc99e1fc44e4/util/winutil/gp/policylock_windows.go#L60-L77)
+avoid a GPSI/install/start policy-lock cycle; Microsoft's
+[policy-lock contract](https://learn.microsoft.com/en-us/windows/win32/api/userenv/nf-userenv-entercriticalpolicysection)
+supplies the synchronization context. This proves their concrete example, not
+the same MSIX cycle here. If actual startup reaches such waits, challenge the
+complete graph, including native/provider dependencies, with a healthy ordering
+and delayed/held dependency. Preserve bounded progress and truthful readiness;
+do not report Running early or enable clock effects with unknown required policy.
+
+Session 0, ordinary startup/stop/restart, unavailable log sinks, WER privacy,
+sleep/restore generations and protected load paths were already covered. Do not
+add duplicate features, arbitrary scripts, a child watchdog, automatic reboot,
+sample timeouts or a blanket ban on system calls in ServiceMain. The current
+Core task and all native/fuzz/storage/UI holds remain; formal execution remains
+post-V1. Source preparation is ready at the existing stage, native cases held.
 
 ## 4. Diagnostics, replacement and protected storage
 
@@ -506,10 +624,10 @@ They add source details and cases, not acceptance IDs or a parallel backlog.
 | W11-W02 | Actual I/O-wait timeout and unattended/hibernate resume cases alongside the existing sleep model. |
 | W11-W03 | DNS immediate/pending completion, NRPT precedence and exact field preservation. Keep private-name routing and DoQ pins. |
 | W11-W04 | COM ownership if WSH is selected; existing identity and network-confinement evidence remains. |
-| W11-W05 | Compare declarative MSI ACLs and managed service state; select an SCM observer with its actual callback lifetime. |
+| W11-W05 | Compare declarative MSI ACLs only for a later selected MSI alternative, managed service state and an SCM observer's actual callback lifetime. Apply the 7 November argument/error/mutex/environment refinements and conditional startup-wait cases before their dependent adapters. |
 | W11-W06 | Compare native global/interface hints with destination-aware COM information for the selected optional workload. |
 | W11-W07 | No new hashing/provider requirement; the prior eligible-workload and measured batching gates remain. |
-| W11-W08 | ETW emission authorization versus session/file access, and collector-specific crash privacy. |
+| W11-W08 | ETW emission authorization versus session/file access, collector-specific crash privacy and useful diagnostics alongside effective unattended error behavior. |
 | W11-W09 | Carry observer/privacy semantics into deferred D2/D3 consumers only at their existing triggers. |
 | W11-W10 | Keep VBS claims, side-channel fields, UDP batching and VM-generation access conditional. |
 | ST-W01/02/03 | Refine the existing construction/outcome/directory card with the ReplaceFile matrix, managed-state lifetime and MSI inheritance where selected. |

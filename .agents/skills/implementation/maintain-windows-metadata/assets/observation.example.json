@@ -28,7 +28,7 @@
     "user_scope": null
   },
   "field": {
-    "id": "component.ui.pe.product-name",
+    "id": "component.ui.pe.ProductName",
     "surface": "pe-version-api",
     "raw_value": null,
     "normalized_value": null,

@@ -1910,6 +1910,42 @@
       "upstream_execution": false,
       "code_imported": false,
       "release_or_product_claim": false
+    },
+    {
+      "task": "N2a conditioned suffix and enclosed affine fit",
+      "status": "source authored; selected ordinary Linux and Windows-target compiler checks passed; coverage/mutation qualification pending",
+      "destination": "crates/time-core/src/conditioned_fit.rs",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "task_record": "tasks/engine-transport-pilot.md#n2a-concrete-contract--conditioned-suffix-and-enclosed-affine-fit",
+      "selected_source_files": ["regress.c"],
+      "selected_source_sha256": {
+        "regress.c": "bcd30c41f1a5c6c528adf199b6ef5215f62cc4c9078a82152a86ea90e46453f7"
+      },
+      "selected_statements": [
+        {"function": "RGR_WeightedRegression", "lines": "69-93", "retained": "inverse-divisor affine coefficient and weighted SSE equations"},
+        {"function": "RGR_FindBestRegression", "lines": "252-269", "retained": "coefficient context only"}
+      ],
+      "historical_source_review_preserved": true,
+      "license": "GPL-2.0-only",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003",
+        "Copyright (C) Miroslav Lichvar  2011, 2016-2017"
+      ],
+      "copying_sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
+      "reviewed_contract_task_sha256": "7bf6e5dc3beac9194947a8413d9366aaa9fc72b1a015ed9a9a4ae77fec0cd2b5",
+      "evidence_directory": "/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/n2-oracles-v1",
+      "deliberate_deviations": [
+        "actual N1 batch/suffix borrows preserve full-chart scale, row association and original divisors",
+        "full finite/subnormal arithmetic, once-saved reciprocal and centered response in five geometry-first ordered passes",
+        "exact-original-rational enclosures and atomic checked normalized/physical lifting; exact newest anchor remains separate",
+        "no degrees-of-freedom variance, confidence/skew, runs/history, production source authority, native or clock effects"
+      ],
+      "implementation_candidate": "0a6f101e9d019ec209ec4d3940cc48abf0a242b66c50ce99591b1e91b84bb06c",
+      "ordinary_receipt_sha256": "6283fa64725c2670a1e6f58d6cbb5b88b939298287ab2bb28c93521f872946db",
+      "upstream_execution": false,
+      "code_imported": false,
+      "selected_equations_adapted": true,
+      "release_or_product_claim": false
     }
   ]
 }

@@ -37,14 +37,21 @@ This patch proves no complete native input security, Windows qualification or
 permission to distribute the package.
 
 The range-comparison repair prevents recursive acquisition of one range's state
-read lock. Compare and the same-object CompareEndpoints branch use range_state's
-shared read-pair helper: identical locks supply one guard to both projections;
-distinct locks retain both guards until comparison finishes. This preserves the
-existing context/type checks, endpoint errors and simultaneous distinct-range
-snapshot. It avoids a queued writer blocking a second read while the first read
-prevents that writer from progressing. Portable controls include this exact helper
-in the existing GUI test scope, with a real queued writer and a bounded second-read
-probe. They do not execute COM, qualify Windows scheduling or lift native holds.
+read lock and inconsistent acquisition of distinct owners. Compare and the
+same-object CompareEndpoints branch use range_state's shared read-pair helper:
+identical locks supply one guard to both projections; distinct locks are acquired
+in increasing live-owner-address order and retain both guards until comparison
+finishes. The comparison still receives its original left/right operands. The
+addresses select only a lock order during these borrows, not COM or persistent
+identity. This preserves existing context/type checks, endpoint errors and the
+simultaneous distinct-range snapshot. It avoids both a queued writer blocking a
+recursive read and opposing comparisons retaining different first read guards
+while queued writers exclude their second reads. Portable controls include this
+exact helper in the existing GUI test scope, real queued writers, bounded
+second-read probes, reversed operand order and poison/unwind guard release. A
+forced blocked probe may reject the comparison; it does not establish successful
+concurrent comparison under writer contention. These controls do not execute COM,
+qualify Windows scheduling or lift native holds.
 
 Original MIT/Apache and Chromium BSD notices remain intact. LICENSE-MIT,
 LICENSE-APACHE and LICENSE.chromium are retained from the same immutable

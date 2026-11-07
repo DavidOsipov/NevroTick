@@ -69,6 +69,19 @@ checked arithmetic, independent tests/property/boundary cases, the existing
 90%/95% thresholds, security/native/package/release gates and all execution holds
 remain required. No general parent below is activated by this note.
 
+**N3a checkpoint — 7 November 2026:** the
+[selected Linux engine exit](engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners)
+is qualified on407-input `e71aab7...`, with214 fresh library outcomes and143
+explicitly reused receiver outcomes. This closes the controlled acquisition
+child only. The next
+[existing receiving-contract card](engine-transport-pilot.md#conditional-next-product-contract-after-n2s-finite-exit)
+must settle private producer-to-row binding, per-report/cross-report collection
+and fit insufficiency, atomic capacity/eviction, and final serialized authority.
+Its actual generation/date/scale/quality suppliers and Engine-to-Core/history
+implementation remain held; declared labels, retained lifetimes and empty input
+supply neither authority nor a precision default. Preserve all separate phase
+and execution holds.
+
 ### Product guarantees still open
 
 **Owner-requested debt, 6 November 2026; review baseline:**
@@ -111,6 +124,17 @@ in `crates/nevrotick-engine/src/measurement.rs`. Its declared clock/date model,
 capture/conversion residuals and actual domain-to-result composition are newly
 affected post-V1 obligations under that engine owner. The original review baseline
 predates this addition; existing domain proofs do not qualify the new consumer.
+
+The [common-run reference/anchoring bridge](engine-transport-pilot.md#bridge-source-activation--7-november-2026)
+adds `nevrotick-engine/src/relative.rs` and the actual run-context producer in
+`src/lib.rs`. After V1, this same guarantee must cover their complete checked
+chain: actual shared-origin identity, explicit capture ordering, exact whole/half
+midpoints, self-minus-anchor phase/reference differences and the once-rounded
+seconds/error result. Include independent omitted-context, omitted-validation,
+lost-half and subtract-after-rounding controls. The current ordinary tests and
+manual arithmetic arguments are not machine-checked proofs; this records debt
+and starts no formal job. Cross-peer experimental views still establish no
+same-source history, physical calibration or authenticated eligibility.
 
 The [exact nominal representation child](engine-transport-pilot.md#exact-nominal-representation-activation)
 adds source-bound decimal-remainder composition to this same guarantee. Retain

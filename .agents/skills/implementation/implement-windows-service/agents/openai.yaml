@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement Windows Services"
+  short_description: "Build, harden and manage Windows service lifecycles"
+  default_prompt: "Use $implement-windows-service to create, harden or change NevroTick Windows service startup, management, diagnostics, performance and recovery under the existing task and execution scope."

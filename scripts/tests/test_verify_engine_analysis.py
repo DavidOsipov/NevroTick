@@ -26,7 +26,7 @@ def independent_digest(value):
 
 def literal_execution(*, doctests):
     """Literal native libtest records, independent of the runner's required-name set."""
-    text = """running 46 tests
+    text = """running 59 tests
 test processing_guard_tests::processing_uses_fresh_deadline_and_current_control ... ok
 test processing_guard_tests::terminal_io_causes_and_send_history_remain_distinct ... ok
 test processing_guard_tests::configuration_enforces_endpoint_and_timeout_boundaries ... ok
@@ -73,7 +73,20 @@ test measurement::tests::nominal_result_garde_enforces_both_strict_numerator_bou
 test measurement::tests::nominal_arithmetic_retains_full_coordinate_domain_without_i64_projection ... ok
 test measurement::tests::nominal_seconds_preserve_corrected_capture_units_and_signed_rtt ... ok
 test measurement::tests::nominal_seconds_checks_scale_and_retains_the_signed_integer_endpoint ... ok
-test result: ok. 46 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test processing_guard_tests::public_execute_relative_view_retains_actual_common_run_and_refusals ... ok
+test measurement::tests::relative_phase_direction_preserves_checked_nominal_ticks ... ok
+test measurement::tests::relative_phase_anchoring_precedes_large_absolute_rounding ... ok
+test measurement::tests::relative_phase_difference_exceeds_i128_without_losing_sign ... ok
+test relative::tests::midpoint_bounds_preserve_half_nanoseconds_and_integer_endpoints ... ok
+test relative::tests::midpoint_publication_enforces_raw_association_and_garde_rule ... ok
+test relative::tests::duration_nanoseconds_admits_full_u64_and_rejects_next_tick ... ok
+test relative::tests::reference_instants_check_order_before_duration_conversion ... ok
+test relative::tests::relative_reference_differences_keep_direction_and_half_ticks ... ok
+test relative::tests::relative_phase_raw_i128_endpoints_keep_u128_magnitude ... ok
+test relative::tests::shared_origin_distinguishes_equal_values_from_run_identity ... ok
+test relative::tests::relative_seconds_scale_requires_nonzero_with_healthy_neighbors ... ok
+test relative::tests::relative_diagnostics_preserve_fixed_text_and_original_causes ... ok
+test result: ok. 59 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
 running 4 tests
 test argument_guard_tests::pair_budget_admits_six_and_preserves_exhausted_failure ... ok
 test argument_guard_tests::argument_text_preserves_exact_byte_boundaries_and_original_borrows ... ok
@@ -90,7 +103,7 @@ test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 """
     if doctests:
         text += """   Doc-tests nevrotick_engine
-running 22 tests
+running 33 tests
 test crates/nevrotick-engine/src/lib.rs - Config::new (line 168) ... ok
 test crates/nevrotick-engine/src/lib.rs - ControlSchedule::new (line 1238) ... ok
 test crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 91) ... ok
@@ -113,7 +126,18 @@ test crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripN
 test crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 680) - compile fail ... ok
 test crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 690) - compile fail ... ok
 test crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 700) - compile fail ... ok
-test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 90) ... ok
+test crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 101) - compile fail ... ok
+test crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 106) - compile fail ... ok
+test crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 111) - compile fail ... ok
+test crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 116) - compile fail ... ok
+test crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 155) ... ok
+test crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 169) - compile fail ... ok
+test crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 185) - compile fail ... ok
+test crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 192) - compile fail ... ok
+test crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 197) - compile fail ... ok
+test crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 204) - compile fail ... ok
+test result: ok. 33 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 """
     return text
 
@@ -125,6 +149,7 @@ def literal_inventories():
         ("library", "crates/nevrotick-engine/src/lib.rs"),
         ("cli", "crates/nevrotick-engine/src/bin/nevrotick-observe.rs"),
         ("measurement", "crates/nevrotick-engine/src/measurement.rs"),
+        ("relative", "crates/nevrotick-engine/src/relative.rs"),
     ]:
         name = subject + " synthetic fault"
         result[subject] = {name: {
@@ -145,15 +170,16 @@ class EngineAnalysisTests(unittest.TestCase):
         for owner in ("NominalPhaseNs", "NominalRoundTripNs"):
             line = next(row for row in healthy.splitlines()
                         if "measurement::" + owner + " " in row and "compile fail" in row)
-            bad = healthy.replace(line + "\n", "", 1).replace("ok. 22 passed;", "ok. 21 passed;")
+            bad = healthy.replace(line + "\n", "", 1).replace("ok. 33 passed;", "ok. 32 passed;")
             with self.subTest(owner=owner), self.assertRaisesRegex(MODULE.Incomplete, "construction/privacy"):
                 MODULE.validate_test_execution(bad, doctests=True)
-        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=True)["doctests"], 22)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=True)["doctests"], 33)
 
-    def test_three_source_owners_have_exact_selections_and_command_targets(self):
+    def test_four_source_owners_have_exact_selections_and_command_targets(self):
         expected = {"library": "crates/nevrotick-engine/src/lib.rs",
                     "cli": "crates/nevrotick-engine/src/bin/nevrotick-observe.rs",
-                    "measurement": "crates/nevrotick-engine/src/measurement.rs"}
+                    "measurement": "crates/nevrotick-engine/src/measurement.rs",
+                    "relative": "crates/nevrotick-engine/src/relative.rs"}
         self.assertEqual(MODULE.SCOPE.select("all"), expected)
         for subject, filename in expected.items():
             self.assertEqual(MODULE.SCOPE.select(subject), {subject: filename})
@@ -189,14 +215,20 @@ class EngineAnalysisTests(unittest.TestCase):
 
     def test_new_analysis_files_are_outside_the_current_product_census(self):
         _, identity = MODULE.PRODUCT.admit_product(ROOT)
-        # The new Core module/test extend the product map; the separate frozen
-        # 168-input constructor role remains fail-closed until explicitly rebound.
-        self.assertEqual(len(identity), 374)
+        # Current-source assertions follow the separately frozen series profile;
+        # historical constructor/equivalence cohorts retain their original scope.
+        self.assertEqual(len(identity), MODULE.SERIES_FIXED_POLICY["source_file_count"])
+        self.assertIn("scripts/tests/test_verify_vendor_admission.py", identity)
         self.assertIn("crates/time-core/src/window_variance.rs", identity)
         self.assertIn("crates/time-core/tests/window_variance.rs", identity)
         self.assertIn("crates/nevrotick-engine/src/measurement.rs", identity)
+        self.assertIn("crates/nevrotick-engine/src/relative.rs", identity)
+        self.assertIn("crates/nevrotick-engine/tests/private/relative.rs", identity)
+        self.assertIn("crates/nevrotick-engine/src/series.rs", identity)
+        self.assertIn("crates/nevrotick-engine/tests/private/series.rs", identity)
+        self.assertIn("crates/nevrotick-engine/tests/series.rs", identity)
         for name in ["scripts/verify-engine-analysis.py", "scripts/tests/test_verify_engine_analysis.py",
-                     "policy/engine-analysis.json"]:
+                     "policy/engine-analysis.json", MODULE.SERIES_POLICY, MODULE.SERIES_TESTS]:
             self.assertNotIn(name, identity)
 
     def test_healthy_policy_is_full_profile_and_campaign_initially_held(self):
@@ -205,7 +237,7 @@ class EngineAnalysisTests(unittest.TestCase):
             policy = self.admit_fixture(root, identity)
         self.assertEqual(policy["critical_files"], [
             "crates/nevrotick-engine/src/lib.rs", "crates/nevrotick-engine/src/bin/nevrotick-observe.rs",
-            "crates/nevrotick-engine/src/measurement.rs"])
+            "crates/nevrotick-engine/src/measurement.rs", "crates/nevrotick-engine/src/relative.rs"])
         self.assertEqual(policy["mutation_inventories"], {})
         self.assertEqual(policy["mutation_equivalences"], [])
         self.assertEqual(policy["tool_admission_profile"], "full")
@@ -258,7 +290,8 @@ class EngineAnalysisTests(unittest.TestCase):
         """No product or equivalence-admission mocks stand in for the healthy control."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); policy, _ = self.equivalence_fixture(root)
-            self.assertEqual(len(MODULE.PRODUCT.admit_product(root)[1]), 374)
+            self.assertEqual(MODULE.PRODUCT.admit_product(root)[1],
+                             MODULE.PRODUCT.admit_product(ROOT)[1])
             self.assertEqual(MODULE.read_policy(root), policy)
             self.assertEqual(MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SCOPE, policy),
                              policy["mutation_equivalences"])
@@ -298,6 +331,120 @@ class EngineAnalysisTests(unittest.TestCase):
             self.write_policy(root, healthy)
             self.assertEqual(MODULE.read_policy(root), healthy)
 
+    def test_zero_sign_equivalence_scope_is_an_exact_optional_third_case(self):
+        """Synthetic scope controls; actual source/review custody is checked separately."""
+        entries = [
+            {"id": identifier, "mutant": {
+                "file": "crates/nevrotick-engine/src/measurement.rs",
+                "function": {"function_name": owner}, "genre": "BinaryOperator",
+                "replacement": replacement},
+             "proof": {"path": "tasks/engine-analysis-equivalences.md"}}
+            for identifier, owner, replacement in [
+                ("ENGINE-COHERENCE-LOWER-EQUALITY", "coherence_residual", "<="),
+                ("ENGINE-COHERENCE-UPPER-EQUALITY", "coherence_residual", ">="),
+                ("ENGINE-NOMINAL-ZERO-SIGN", "nominal_seconds", "<="),
+            ]
+        ]
+        MODULE.validate_equivalence_scope([])
+        MODULE.validate_equivalence_scope(entries[:2])
+        MODULE.validate_equivalence_scope(entries)
+        for change in ("zero_only", "missing_lower", "missing_upper", "duplicate", "foreign_id",
+                       "function", "file", "operator", "genre", "proof_path"):
+            bad = copy.deepcopy(entries)
+            if change == "zero_only": bad = bad[2:]
+            if change == "missing_lower": bad.pop(0)
+            if change == "missing_upper": bad.pop(1)
+            if change == "duplicate": bad.append(copy.deepcopy(bad[2]))
+            if change == "foreign_id": bad[2]["id"] = "ENGINE-UNREVIEWED-ZERO"
+            if change == "function": bad[2]["mutant"]["function"]["function_name"] = "coherence_residual"
+            if change == "file": bad[2]["mutant"]["file"] = "crates/nevrotick-engine/src/lib.rs"
+            if change == "operator": bad[2]["mutant"]["replacement"] = ">="
+            if change == "genre": bad[2]["mutant"]["genre"] = "FnValue"
+            if change == "proof_path": bad[2]["proof"]["path"] = "tasks/foreign.md"
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_equivalence_scope(bad)
+
+    @staticmethod
+    def commit_fallback_entries():
+        """Literal native descriptor identities; not a semantic-equivalence oracle."""
+        filename = "crates/nevrotick-engine/src/lib.rs"
+        entries = []
+        for identifier, replacement in (
+            ("ENGINE-COMMIT-DURATION-FALLBACK-SUB", "-="),
+            ("ENGINE-COMMIT-DURATION-FALLBACK-MUL", "*="),
+        ):
+            entries.append({"id": identifier,
+                "source_sha256": "6f3c6eb2f491de7f27a89f8fba84556e818874a9c875643b08081206f5dd4d46",
+                "mutant": {
+                "name": f"{filename}:1335:23: replace += with {replacement} in commit_reply",
+                "package": "nevrotick-engine", "file": filename,
+                "function": {"function_name": "commit_reply", "return_type": "",
+                             "span": {"start": {"line": 1315, "column": 1},
+                                      "end": {"line": 1364, "column": 2}}},
+                "span": {"start": {"line": 1335, "column": 23},
+                         "end": {"line": 1335, "column": 25}},
+                "replacement": replacement, "genre": "BinaryOperator"},
+                "proof": {"path": "tasks/engine-analysis-equivalences.md"}})
+        return entries
+
+    def test_commit_fallback_scope_requires_complete_exact_native_pair(self):
+        entries = self.commit_fallback_entries()
+        failure = None
+        try:
+            MODULE.validate_equivalence_scope(entries)
+        except MODULE.Incomplete as error:
+            failure = str(error)
+        self.assertIsNone(failure, "Both exact reviewed fallback descriptors must be admitted.")
+        for change in ("single", "duplicate", "foreign_id", "function", "file", "operator",
+                       "genre", "proof_path", "reachable_counter", "function_span", "source", "mixed"):
+            bad = copy.deepcopy(entries)
+            if change == "single": bad.pop()
+            elif change == "duplicate": bad.append(copy.deepcopy(bad[0]))
+            elif change == "foreign_id": bad[0]["id"] = "ENGINE-UNREVIEWED-FALLBACK"
+            elif change == "function": bad[0]["mutant"]["function"]["function_name"] = "stage_reply"
+            elif change == "file": bad[0]["mutant"]["file"] = "crates/nevrotick-engine/src/measurement.rs"
+            elif change == "operator": bad[0]["mutant"]["replacement"] = "+="
+            elif change == "genre": bad[0]["mutant"]["genre"] = "FnValue"
+            elif change == "proof_path": bad[0]["proof"]["path"] = "tasks/foreign.md"
+            elif change == "reachable_counter":
+                mutant = bad[0]["mutant"]
+                mutant["name"] = mutant["name"].replace(":1335:", ":1331:")
+                mutant["span"]["start"]["line"] = 1331
+                mutant["span"]["end"]["line"] = 1331
+            elif change == "function_span": bad[0]["mutant"]["function"]["span"]["end"]["line"] += 1
+            elif change == "source": bad[0]["source_sha256"] = "a" * 64
+            else:
+                bad.append({"id": "ENGINE-COHERENCE-LOWER-EQUALITY"})
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_equivalence_scope(bad)
+
+    def test_commit_fallback_review_uses_actual_product_and_shared_custody(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            policy, proof = self.equivalence_fixture(root)
+            entries = self.commit_fallback_entries()
+            proof.write_text("# Synthetic fallback admission controls, not product qualification\n" +
+                             "".join("\n## " + item["id"] + "\nSynthetic review fixture.\n" for item in entries))
+            for entry in entries:
+                entry.update(candidate_sha256=policy["candidate_sha256"],
+                             source_sha256=MODULE.PRODUCT.sha256(root / entry["mutant"]["file"]),
+                             requirement="CHECK-6/25/27",
+                             rationale="Synthetic exact native-descriptor custody control.")
+                entry["proof"].update(sha256=MODULE.PRODUCT.sha256(proof), section=entry["id"],
+                                      reviewer="independent synthetic control",
+                                      verdict="independently-justified-equivalent")
+            policy["mutation_equivalences"] = entries
+            self.write_policy(root, policy)
+            historical_source = self.commit_fallback_entries()[0]["source_sha256"]
+            if entries[0]["source_sha256"] == historical_source:
+                self.assertEqual(MODULE.read_policy(root), policy)
+                self.assertEqual(MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SCOPE, policy), entries)
+            else:
+                # A copied current tree is not the historical reviewed library.
+                # Relabelling its source/candidate cannot reuse old native spans.
+                with self.assertRaisesRegex(MODULE.Incomplete, "exact source and native descriptor"):
+                    MODULE.read_policy(root)
+
     def test_engine_equivalence_review_bytes_and_missing_sections_cannot_drift(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); policy, proof = self.equivalence_fixture(root)
@@ -332,17 +479,19 @@ class EngineAnalysisTests(unittest.TestCase):
                 with self.subTest(key=key), self.assertRaises(MODULE.Incomplete):
                     self.admit_fixture(root, identity)
 
-    def test_critical_measurement_scope_rejects_missing_extra_and_redirected_selection(self):
+    def test_measurement_and_relative_scope_reject_missing_extra_and_redirected_selection(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp); healthy, identity = self.fixture(root)
-            for change in ("missing", "extra", "redirected"):
-                bad = copy.deepcopy(healthy)
-                if change == "missing": bad["critical_files"].remove("crates/nevrotick-engine/src/measurement.rs")
-                elif change == "extra": bad["critical_files"].append("crates/nevrotick-engine/src/foreign.rs")
-                else: bad["critical_files"][-1] = "crates/nevrotick-engine/src/foreign.rs"
-                self.write_policy(root, bad)
-                with self.subTest(change=change), self.assertRaisesRegex(MODULE.Incomplete, "scope"):
-                    self.admit_fixture(root, identity)
+            for filename in ("crates/nevrotick-engine/src/measurement.rs",
+                             "crates/nevrotick-engine/src/relative.rs"):
+                for change in ("missing", "extra", "redirected"):
+                    bad = copy.deepcopy(healthy)
+                    if change == "missing": bad["critical_files"].remove(filename)
+                    elif change == "extra": bad["critical_files"].append("crates/nevrotick-engine/src/foreign.rs")
+                    else: bad["critical_files"][bad["critical_files"].index(filename)] = "crates/nevrotick-engine/src/foreign.rs"
+                    self.write_policy(root, bad)
+                    with self.subTest(filename=filename, change=change), self.assertRaisesRegex(MODULE.Incomplete, "scope"):
+                        self.admit_fixture(root, identity)
 
     def test_candidate_drift_and_refreshed_local_pins_do_not_evade_whole_candidate(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -375,6 +524,54 @@ class EngineAnalysisTests(unittest.TestCase):
             with self.assertRaisesRegex(MODULE.Incomplete, "matching critical/security owner"):
                 self.admit_fixture(root, identity)
 
+    def test_relative_owner_requires_one_critical_and_security_registration_after_repinning(self):
+        """A fresh manifest pin cannot authorize an absent or ambiguous owner."""
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); healthy, identity = self.fixture(root)
+            self.assertEqual(self.admit_fixture(root, identity), healthy)
+            path = root / "policy/verification-manifest.toml"
+            original = path.read_text()
+            critical = '    "crates/nevrotick-engine/src/relative.rs",\n'
+            security = next(line + "\n" for line in original.splitlines()
+                            if 'name = "engine-experimental-relative-measurement"' in line)
+            self.assertEqual(original.count(critical), 1)
+            for change in ("critical_missing", "critical_duplicate", "critical_redirected",
+                           "security_missing", "security_duplicate", "security_redirected", "security_package"):
+                if change == "critical_missing": changed = original.replace(critical, "", 1)
+                elif change == "critical_duplicate": changed = original.replace(critical, critical * 2, 1)
+                elif change == "critical_redirected": changed = original.replace(critical, critical.replace("relative.rs", "foreign.rs"), 1)
+                elif change == "security_missing": changed = original.replace(security, "", 1)
+                elif change == "security_duplicate": changed = original.replace(security, security * 2, 1)
+                elif change == "security_redirected": changed = original.replace(security, security.replace("relative.rs", "foreign.rs"), 1)
+                else: changed = original.replace(security, security.replace('package = "nevrotick-engine"', 'package = "wrong"'), 1)
+                path.write_text(changed)
+                bad = copy.deepcopy(healthy)
+                bad["inputs_sha256"]["policy/verification-manifest.toml"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                self.write_policy(root, bad)
+                with self.subTest(change=change), self.assertRaisesRegex(MODULE.Incomplete, "matching critical/security owner"):
+                    self.admit_fixture(root, identity)
+            path.write_text(original)
+            self.write_policy(root, healthy)
+            self.assertEqual(self.admit_fixture(root, identity), healthy)
+
+    def test_relative_private_tests_require_exact_protected_bytes_and_path(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); healthy, identity = self.fixture(root)
+            name = "crates/nevrotick-engine/tests/private/relative.rs"
+            self.assertIn(name, healthy["inputs_sha256"])
+            path = root / name; original = path.read_bytes()
+            for change in ("missing", "redirected", "content"):
+                bad = copy.deepcopy(healthy)
+                if change == "missing": bad["inputs_sha256"].pop(name)
+                elif change == "redirected": bad["inputs_sha256"][name.replace("relative.rs", "foreign.rs")] = bad["inputs_sha256"].pop(name)
+                else: path.write_bytes(original + b"\n// changed protected test bytes\n")
+                self.write_policy(root, bad)
+                with self.subTest(change=change), self.assertRaisesRegex(MODULE.Incomplete, "bindings changed"):
+                    self.admit_fixture(root, identity)
+                path.write_bytes(original)
+            self.write_policy(root, healthy)
+            self.assertEqual(self.admit_fixture(root, identity), healthy)
+
     def test_json_rejects_duplicates_nonfinite_overflow_link_and_size(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp); path = root / "input.json"
@@ -387,24 +584,25 @@ class EngineAnalysisTests(unittest.TestCase):
             linked = root / "linked.json"; linked.symlink_to(path)
             with self.assertRaises(MODULE.Incomplete): MODULE.read_json(linked)
 
-    def test_campaign_bindings_must_cover_three_nonempty_exact_inventories(self):
+    def test_campaign_bindings_must_cover_four_nonempty_exact_inventories(self):
         policy = copy.deepcopy(MODULE.FIXED_POLICY)
         for bindings in [{}, {"library": {"count": 1, "sha256": "a" * 64}},
                          {name: {"count": count, "sha256": "a" * 64}
-                          for name, count in [("library", 1), ("cli", 1), ("measurement", 0)]},
+                          for name, count in [("library", 1), ("cli", 1), ("measurement", 0), ("relative", 1)]},
                          {name: {"count": True, "sha256": "a" * 64}
-                          for name in ["library", "cli", "measurement"]},
+                          for name in ["library", "cli", "measurement", "relative"]},
                          {name: {"count": 1, "sha256": "not-a-hash"}
-                          for name in ["library", "cli", "measurement"]}]:
+                          for name in ["library", "cli", "measurement", "relative"]}]:
             policy["mutation_inventories"] = bindings
             with self.subTest(bindings=bindings), self.assertRaises(MODULE.Incomplete):
                 MODULE.inventory_bindings(policy, required=True)
-        healthy = {name: {"count": 1, "sha256": "a" * 64} for name in ["library", "cli", "measurement"]}
+        healthy = {name: {"count": 1, "sha256": "a" * 64} for name in ["library", "cli", "measurement", "relative"]}
         policy["mutation_inventories"] = healthy
-        self.assertEqual(len(MODULE.inventory_bindings(policy, required=True)), 3)
-        for change in ("missing", "extra", "redirected"):
+        self.assertEqual(len(MODULE.inventory_bindings(policy, required=True)), 4)
+        for change in ("missing", "missing_relative", "extra", "redirected"):
             bad = copy.deepcopy(healthy)
             if change == "missing": bad.pop("measurement")
+            elif change == "missing_relative": bad.pop("relative")
             elif change == "extra": bad["foreign"] = {"count": 1, "sha256": "a" * 64}
             else: bad["redirected"] = bad.pop("measurement")
             policy["mutation_inventories"] = bad
@@ -417,7 +615,7 @@ class EngineAnalysisTests(unittest.TestCase):
         policy["mutation_inventories"] = {
             name: {"count": 1, "sha256": independent_digest(items)} for name, items in observed.items()}
         self.assertEqual(set(MODULE.COMMON.admit_reviewed_mutation_inventories(MODULE.SCOPE, policy, observed)),
-                         {"library", "cli", "measurement"})
+                         {"library", "cli", "measurement", "relative"})
         changed = copy.deepcopy(observed); changed["library"]["library synthetic fault"]["diff"] = "rendering only"
         MODULE.COMMON.admit_reviewed_mutation_inventories(MODULE.SCOPE, policy, changed)
         changed["library"]["library synthetic fault"]["function"]["return_type"] = "u8"
@@ -433,14 +631,75 @@ class EngineAnalysisTests(unittest.TestCase):
 
     def test_baseline_has_healthy_coverage_and_full_cargo_neighbors(self):
         self.assertEqual(MODULE.validate_test_execution(literal_execution(doctests=False), doctests=False)
-                         ["tests_executed"], 55)
+                         ["tests_executed"], 68)
         full = MODULE.validate_test_execution(literal_execution(doctests=True), doctests=True)
-        self.assertEqual((full["tests_executed"], full["doctests"]), (77, 22))
+        self.assertEqual((full["tests_executed"], full["doctests"]), (101, 33))
+
+    def test_relative_bridge_cases_reject_individual_omissions_with_consistent_counts(self):
+        """Independent literal cases require the real bridge and each numeric boundary."""
+        healthy = literal_execution(doctests=False)
+        required = (
+            "processing_guard_tests::public_execute_relative_view_retains_actual_common_run_and_refusals",
+            "measurement::tests::relative_phase_direction_preserves_checked_nominal_ticks",
+            "measurement::tests::relative_phase_anchoring_precedes_large_absolute_rounding",
+            "measurement::tests::relative_phase_difference_exceeds_i128_without_losing_sign",
+            "relative::tests::midpoint_bounds_preserve_half_nanoseconds_and_integer_endpoints",
+            "relative::tests::midpoint_publication_enforces_raw_association_and_garde_rule",
+            "relative::tests::duration_nanoseconds_admits_full_u64_and_rejects_next_tick",
+            "relative::tests::reference_instants_check_order_before_duration_conversion",
+            "relative::tests::relative_reference_differences_keep_direction_and_half_ticks",
+            "relative::tests::relative_phase_raw_i128_endpoints_keep_u128_magnitude",
+            "relative::tests::shared_origin_distinguishes_equal_values_from_run_identity",
+            "relative::tests::relative_seconds_scale_requires_nonzero_with_healthy_neighbors",
+            "relative::tests::relative_diagnostics_preserve_fixed_text_and_original_causes",
+        )
+        self.assertEqual(len(required), 13)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 68)
+        for name in required:
+            record = "test " + name + " ... ok\n"
+            self.assertEqual(healthy.count(record), 1)
+            bad = healthy.replace(record, "", 1).replace("running 59 tests", "running 58 tests", 1)
+            bad = bad.replace("59 passed;", "58 passed;", 1)
+            with self.subTest(name=name), self.assertRaisesRegex(MODULE.Incomplete, "required actual"):
+                MODULE.validate_test_execution(bad, doctests=False)
+
+    def test_relative_doctests_require_both_legal_views_and_all_nine_privacy_failures(self):
+        """Missing cases still fail when the native doctest counts agree with the log."""
+        healthy = literal_execution(doctests=True)
+        docs = [line for line in healthy.splitlines()
+                if line.startswith("test crates/nevrotick-engine/src/relative.rs - ")]
+        self.assertEqual(len(docs), 11)
+        self.assertEqual(sum("relative::ExperimentalReferenceNs " in line and "compile fail" not in line
+                             for line in docs), 1)
+        self.assertEqual(sum("relative::ExperimentalReferenceNs " in line and "compile fail" in line
+                             for line in docs), 4)
+        self.assertEqual(sum("relative::ExperimentalRelativeMeasurement " in line and "compile fail" not in line
+                             for line in docs), 1)
+        self.assertEqual(sum("relative::ExperimentalRelativeMeasurement " in line and "compile fail" in line
+                             for line in docs), 5)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=True)["doctests"], 33)
+        for line in docs:
+            bad = healthy.replace(line + "\n", "", 1).replace("running 33 tests", "running 32 tests", 1)
+            bad = bad.replace("33 passed;", "32 passed;", 1)
+            with self.subTest(omitted=line), self.assertRaisesRegex(MODULE.Incomplete, "construction/privacy"):
+                MODULE.validate_test_execution(bad, doctests=True)
+        for change, before, after in (
+            ("file", "src/relative.rs - relative::ExperimentalReferenceNs",
+             "src/lib.rs - relative::ExperimentalReferenceNs"),
+            ("owner", "relative::ExperimentalRelativeMeasurement (line 204)",
+             "relative::ExperimentalReferenceNs (line 204)"),
+            ("compile_failure", "relative::ExperimentalRelativeMeasurement (line 204) - compile fail",
+             "relative::ExperimentalRelativeMeasurement (line 204)"),
+        ):
+            self.assertEqual(healthy.count(before), 1 if change != "file" else 5)
+            bad = healthy.replace(before, after, 1)
+            with self.subTest(change=change), self.assertRaisesRegex(MODULE.Incomplete, "construction/privacy"):
+                MODULE.validate_test_execution(bad, doctests=True)
 
     def test_constructor_and_guard_alternatives_cannot_be_omitted_from_baseline(self):
         """A healthy full transcript discriminates the earlier seven-case baseline."""
         healthy = literal_execution(doctests=False)
-        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 55)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 68)
         added = (
             "processing_guard_tests::configuration_enforces_endpoint_and_timeout_boundaries",
             "processing_guard_tests::control_schedule_preserves_legal_zero_and_maximum_delays",
@@ -450,14 +709,14 @@ class EngineAnalysisTests(unittest.TestCase):
             "processing_guard_tests::literal_header_rejections_preserve_the_actual_pending_neighbor",
         )
         for name in added:
-            text = healthy.replace("test " + name + " ... ok\n", "").replace("46 passed;", "45 passed;", 1)
+            text = healthy.replace("test " + name + " ... ok\n", "").replace("59 passed;", "58 passed;", 1)
             with self.subTest(name=name), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_test_execution(text, doctests=False)
 
     def test_argument_budget_cases_cannot_be_omitted_from_baseline(self):
         """Checked resource owners require their actual native unit records."""
         healthy = literal_execution(doctests=False)
-        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 55)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 68)
         for name in (
             "argument_guard_tests::pair_budget_admits_six_and_preserves_exhausted_failure",
             "argument_guard_tests::argument_text_preserves_exact_byte_boundaries_and_original_borrows",
@@ -498,16 +757,16 @@ class EngineAnalysisTests(unittest.TestCase):
             "measurement::tests::nominal_seconds_checks_scale_and_retains_the_signed_integer_endpoint",
         )
         for name in required:
-            text = healthy.replace("test " + name + " ... ok\n", "").replace("46 passed;", "45 passed;", 1)
+            text = healthy.replace("test " + name + " ... ok\n", "").replace("59 passed;", "58 passed;", 1)
             with self.subTest(name=name), self.assertRaisesRegex(MODULE.Incomplete, "required actual"):
                 MODULE.validate_test_execution(text, doctests=False)
 
     def test_measurement_doctests_require_success_and_all_private_construction_failures(self):
         healthy = literal_execution(doctests=True)
-        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=True)["doctests"], 22)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=True)["doctests"], 33)
         docs = [line for line in healthy.splitlines() if line.startswith("test crates/")]
         for line in docs:
-            text = healthy.replace(line + "\n", "").replace("22 passed;", "21 passed;", 1)
+            text = healthy.replace(line + "\n", "").replace("33 passed;", "32 passed;", 1)
             with self.subTest(omitted=line), self.assertRaisesRegex(MODULE.Incomplete, "doctest"):
                 MODULE.validate_test_execution(text, doctests=True)
         for text in (
@@ -525,7 +784,7 @@ class EngineAnalysisTests(unittest.TestCase):
     def test_library_native_result_alternatives_cannot_be_omitted(self):
         """Every newly required admission/completion owner has a native record."""
         healthy = literal_execution(doctests=False)
-        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 55)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 68)
         for name in (
             "processing_guard_tests::entropy_admission_checks_each_half_and_exact_request_bytes",
             "processing_guard_tests::local_endpoint_admission_requires_both_loopback_and_nonzero_port",
@@ -536,7 +795,7 @@ class EngineAnalysisTests(unittest.TestCase):
             "processing_guard_tests::commit_processing_accepts_equal_read_and_rejects_its_predecessor",
             "processing_guard_tests::completed_cleanup_results_preserve_primary_and_each_independent_error",
         ):
-            text = healthy.replace("test " + name + " ... ok\n", "").replace("46 passed;", "45 passed;", 1)
+            text = healthy.replace("test " + name + " ... ok\n", "").replace("59 passed;", "58 passed;", 1)
             with self.subTest(name=name), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_test_execution(text, doctests=False)
 
@@ -548,7 +807,7 @@ test execute_rejects_entered_runtime_without_nested_runtime_creation ... ok
 test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 """
         for text in [old, old + "\n".join(MODULE.REQUIRED_TESTS),
-                     literal_execution(doctests=False).replace("46 passed;", "0 passed;", 1)]:
+                     literal_execution(doctests=False).replace("59 passed;", "0 passed;", 1)]:
             with self.subTest(text=text[:40]), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_test_execution(text, doctests=False)
 
@@ -569,11 +828,38 @@ test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
             path = directory / "outcomes.json"
             path.write_text(json.dumps({"outcomes": [{"scenario": "Baseline", "summary": "Success",
                                                     "duration": 0.25, "log_path": "log/baseline.log"}]}))
-            self.assertEqual(MODULE.validate_baseline(work, "library")["tests_executed"], 77)
+            self.assertEqual(MODULE.validate_baseline(work, "library")["tests_executed"], 101)
             bad = json.loads(path.read_text()); bad["outcomes"][0]["log_path"] = "../escape.log"
             path.write_text(json.dumps(bad))
             with self.assertRaisesRegex(MODULE.Incomplete, "escapes"):
                 MODULE.validate_baseline(work, "library")
+
+    def test_baseline_hash_uses_retained_bytes_without_reopening_the_log(self):
+        """The baseline digest and validated transcript identify one snapshot."""
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp); directory = work / "mutation/library/mutants.out"
+            (directory / "log").mkdir(parents=True)
+            raw = literal_execution(doctests=True).encode("utf-8")
+            baseline = directory / "log/baseline.log"
+            baseline.write_bytes(raw)
+            (directory / "outcomes.json").write_text(json.dumps({"outcomes": [
+                {"scenario": "Baseline", "summary": "Success", "duration": 0.25,
+                 "log_path": "log/baseline.log"}]}))
+            resolved = []
+            original_resolve = Path.resolve
+            def observe_resolve(path, *arguments, **options):
+                resolved.append(path)
+                return original_resolve(path, *arguments, **options)
+            with patch.object(MODULE.PRODUCT, "sha256", wraps=MODULE.PRODUCT.sha256) as hashing, \
+                    patch.object(Path, "resolve", observe_resolve):
+                result = MODULE.validate_baseline(work, "library")
+            self.assertEqual(result["tests_executed"], 101)
+            self.assertEqual(result["log_sha256"], hashlib.sha256(raw).hexdigest())
+            self.assertFalse(any(call.args and call.args[0] == baseline
+                                 for call in hashing.call_args_list),
+                             "The admitted baseline bytes must not be reopened for hashing.")
+            self.assertNotIn(baseline, resolved,
+                             "Generated paths must not follow links before bounded admission.")
 
     def test_mutation_without_review_fails_before_any_session_or_command(self):
         policy = copy.deepcopy(MODULE.FIXED_POLICY); policy["mutation_inventories"] = {}
@@ -617,10 +903,10 @@ test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
                     patch.object(MODULE.COMMON, "run_analysis_lanes") as campaign:
                 MODULE.execute(args, report)
                 campaign.assert_not_called()
-        self.assertEqual(len(calls), 3)
+        self.assertEqual(len(calls), 4)
         self.assertTrue(all(command[-2:] == ["--list", "--json"] and "--baseline" not in command
                             for _, command, _ in calls))
-        self.assertEqual(report["listed_total"], 3)
+        self.assertEqual(report["listed_total"], 4)
         self.assertFalse(report["campaign_admission"])
         self.assertFalse(report["qualification_passed"])
         self.assertEqual(finished, [True])
@@ -771,13 +1057,15 @@ test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
         self.assertEqual(observed[0]["status"], "enumerated")
         self.assertFalse(observed[0]["qualification_passed"])
 
-    def test_cli_selector_routes_measurement_without_changing_profile_or_lane(self):
-        def selected(args, report):
-            self.assertEqual((args.lane, args.subject, args.tool_admission_profile),
-                             ("coverage", "measurement", "full"))
-        with patch.object(MODULE, "execute", side_effect=selected), patch("sys.stdout", new_callable=io.StringIO):
-            self.assertEqual(MODULE.main(["--lane", "coverage", "--subject", "measurement",
-                                          "--vendor-dir", "/admitted/vendor", "--output-dir", "/owned/output"]), 0)
+    def test_cli_selectors_route_measurement_and_relative_without_changing_profile_or_lane(self):
+        for subject in ("measurement", "relative"):
+            def selected(args, report):
+                self.assertEqual((args.lane, args.subject, args.tool_admission_profile),
+                                 ("coverage", subject, "full"))
+            with self.subTest(subject=subject), patch.object(MODULE, "execute", side_effect=selected), \
+                    patch("sys.stdout", new_callable=io.StringIO):
+                self.assertEqual(MODULE.main(["--lane", "coverage", "--subject", subject,
+                                              "--vendor-dir", "/admitted/vendor", "--output-dir", "/owned/output"]), 0)
 
 
 class EngineExternalContractTests(unittest.TestCase):

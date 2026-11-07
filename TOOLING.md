@@ -1072,6 +1072,26 @@ scope; a compiler accepting an option establishes no performance benefit.
 
 ## Starting implementation
 
+The [top-level metadata pipeline](metadata/README.md) owns the single editable
+[product record](metadata/product.toml) and portable generation/readback tools.
+Use the [metadata plan's stages](docs/plans/windows-package-metadata.md#13-metadata-pipeline-implementation--7-november-2026)
+and W11-W10/P6; source generation does not establish linked, installed or released
+metadata. Python 3.11+ standard-library tools add no Cargo/dependency execution:
+
+```sh
+python3 -I -B metadata/pipeline/__main__.py validate --root .
+python3 -I -X dev -Werror -B -m unittest discover -s metadata/tests -v
+```
+
+Generate/check use a separately owned external output directory as described in
+the pipeline README. Their fixed output receipt and read-only check bind the
+actual source/generator bytes. Current source facts and pending future values
+stay distinct; release-mode validation rejects unresolved required identities.
+The required `workflow-policy` job runs source validation and focused tests.
+These checks do not claim a sandbox for malicious Cargo dependencies, sign or
+install anything, or waive the existing native/package and release gates.
+
+
 The current HTML design reference is [v0.4](docs/nevrotick-design-v0.4/README.md).
 Its local build and model tests use `node build.cjs` and
 `node --test tests/*.test.cjs` from that bundle, without npm dependencies.
@@ -1220,6 +1240,56 @@ candidates. The [S1.2 task](tasks/s1.2-regression-readiness.md#source-quality-wi
 owns actual results and exact equivalence review. This pure numeric owner adds no
 production history, source eligibility or physical uncertainty qualification.
 
+N1 conditioned-window preparation uses the additive Core
+`--subject conditioned_window` role and its separate
+[policy](policy/conditioned-window-analysis.json). It selects both the new
+conditioned-window module and the reused window-variance owner. Freeze the
+complete product/protected-input identities and actual ordinary/private/doctest
+inventories, enumerate both complete mutation inventories with `--lane enumerate`,
+review and bind their descriptors, then use `--lane all` under the full tool
+admission profile and a fresh external Linux output. The role retains per-owner
+90% executable-line and 95% viable-mutation gates and six build jobs. N1 now uses
+eight mutation workers after the observed ten-worker disk overrun, with a
+five-GiB free-space admission floor and no inherited equivalences. The
+[existing N1 task](tasks/engine-transport-pilot.md#n1b-correction-review-and-source-implementation--7-november-2026)
+owns actual results; installing the role or passing an individual lane supplies
+no complete N1, fit/history, production, native or release qualification.
+
+N2 conditioned affine fitting uses the separate Core `--subject conditioned_fit`
+role and [policy](policy/conditioned-fit-analysis.json). It reuses the same sealed
+custodian through a code-owned two-file selection for `conditioned_fit.rs` and
+`conditioned_fit/arithmetic.rs`; N1's policy and receipts remain historical.
+The N2 role freezes 33 new controls, the actual 154-test selected coverage cohort
+and 484 ordinary/doctest baseline identities. Enumerate complete inventories with
+`--lane enumerate`, review and bind both descriptor maps before mutation, and
+retain 90% executable-line/95% viable-mutation gates independently per file.
+Coverage selects `--lib --test conditioned_fit`; mutation retains eight outer,
+one inner worker, the 512-task profile, existing finite budgets and five-GiB free
+preflight. Use a fresh external Linux directory and the full admission profile.
+The [N2a final record](tasks/engine-transport-pilot.md#n2a-final-qualification--two-selected-core-owners)
+owns the completed selected Linux qualification, exact two reviewed equivalents,
+scoped producer-control reuse and raw native2/0. Its historical candidate bindings
+remain exact; a role, ordinary pass or enumeration alone supplies no full
+numerical, production, native or release qualification.
+
+The qualified [N3a series checkpoint](tasks/engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners)
+uses `verify-engine-analysis.py --profile series --subject all`, with the separate
+[series policy](policy/series-analysis.json). It selects exactly the library and
+series owners, freezes91 ordinary/42 doctest/133 baseline identities and23 N3
+controls, and preserves fourteen external probes plus nine N3 doctest examples. Use
+`--lane contracts`, `coverage` or `enumerate` with full admission, the admitted
+vendor and a fresh external output. Review/bind both complete actual descriptor
+inventories before `mutation` or `all`; empty inventories refuse those lanes.
+The role retains90% executable-line/95% viable-mutation gates per file, six build
+jobs, eight outer/one inner mutation jobs,512 processes, existing finite budgets
+and a five-GiB free-space preflight. Keep the two validator-omission controls and
+ungenerated-function map separate from generated scores. Legacy engine policies,
+inventories and exclusions remain historical. A passing lane supplies only its
+declared host evidence. The final selected Linux exit joins fresh library214
+with143 explicitly reviewed unchanged-series outcomes; it does not claim357
+fresh executions. Production history, NTS, Windows and release qualification
+remain separate gates.
+
 The pure fixture core uses [verify-core-analysis.py](scripts/verify-core-analysis.py)
 and [time-core-analysis.json](policy/time-core-analysis.json). Its recorded
 six-owner checkpoint covers regression, residuals, normalization, history, runs
@@ -1248,15 +1318,34 @@ workspace and optimized checks. Follow the exact candidate and scope in those
 receipts; neither tool admission nor these pure
 fixtures establish production, native Windows or release qualification.
 
-**Current engine analysis — 6 November 2026:** the existing wrapper selects
-`library`, `cli`, `measurement` or `all`. Use `--lane enumerate`, bind the complete
-reviewed inventories, then `--lane all` for sequential coverage and mutation on
-one full-profile source/tool snapshot. Explicit vendor and fresh external Linux
-output remain required; failed coverage or final custody prevents qualification.
-The [exact nominal task](tasks/engine-transport-pilot.md#exact-nominal-representation-activation)
-owns current source, graph, contract/doctest and per-file results. Historical
-policies/receipts and the inert168-input constructor role retain their original
-scopes. No threshold, worker/process budget or native gate changes.
+**Current engine analysis — 7 November 2026:** the existing wrapper selects
+`--subject library`, `cli`, `measurement`, `relative` or `all`. `--lane enumerate`
+lists only the selected owners and supplies no campaign pass. Collect and bind
+the complete reviewed inventories required for all four policy owners, then use
+`--lane all` for sequential coverage and mutation
+on one full-profile source/tool snapshot; `--subject all` selects all four files.
+Explicit vendor and fresh external Linux output remain required; failed coverage
+or final custody prevents qualification. Each changed critical owner retains its
+own90% line/95% viable-mutation gate; no favorable aggregate replaces it.
+
+The [bridge final qualification record](tasks/engine-transport-pilot.md#common-run-reference-bridge--final-qualification-and-next-action)
+closes the selected library/relative exit on376-input `46513296...`: ordinaryv6
+passes compiler/Clippy,134 ordinary/135 optimized tests,64 doctests, rustdoc,
+CLI export and unchanged bookends. Library coverage is861/895 lines;211 variants
+are95 caught,114 unviable and two exact equivalent misses, zero timeouts
+(raw95/97, adjusted95/95). Relative coverage is179/182;58 variants are36 caught
+and22 unviable, with no misses/timeouts. Equivalences receive no kill credit.
+These GNU-hosted observations are reused after reviewing unchanged compiled
+inputs, locked features, vendor and tool bytes across the latest pull; they are
+not a newly executed whole-candidate pass. Fresh two-package Windows-target
+compiler/Clippy checks pass with unchanged bookends; no link or native Windows
+qualification follows. Next use the existing production-normalization/conditioning
+contract, with its actual receiver still fixture-only.
+The [two selected numerical owners](tasks/s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners)
+qualified their prior `cb2925bb...` scope on7 November; their scores do not transfer
+to other owners. Historical policies/receipts and the inert168-input
+constructor role retain their original scopes. No threshold, worker/process
+budget or native gate changes.
 
 **Historical engine analysis admission, 1 November 2026:**
 [verify-engine-analysis.py](scripts/verify-engine-analysis.py) and

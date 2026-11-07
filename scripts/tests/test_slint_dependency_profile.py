@@ -95,6 +95,52 @@ def add_patch(policy):
     return policy
 
 
+def fixture_accesskit_patches():
+    """Independent exact upstream identities; synthetic derivative hashes grant no execution."""
+    return [
+        {"name": "accesskit_windows", "version": "0.34.0", "path": "third-party/accesskit_windows",
+         "license": "MIT AND BSD-3-Clause AND GPL-3.0-only",
+         "selected_license": "MIT AND BSD-3-Clause AND GPL-3.0-only", "build_script": False,
+         "proc_macro": False, "links": None,
+         "upstream_checksum": "106c2b961215864d1c2e703ee63269c25c4e80a577ffb2c1017b9c17dcdf83a1",
+         "upstream_files_sha256": "7b5aa35d98dbf1c4ba0d311f591de9486000b84f97190462de4266542d0306e7",
+         "upstream_revision": "c88605b96d04431f9c3c792464a0f2f253480e94", "files_sha256": "3" * 64,
+         "modified_files_sha256": {name: "4" * 64 for name in
+             ("Cargo.toml", "NEVROTICK-PATCH.md", "src/lib.rs", "src/node.rs", "src/range_state.rs",
+              "src/text.rs", "src/value_input.rs")}},
+        {"name": "accesskit_consumer", "version": "0.38.0", "path": "third-party/accesskit_consumer",
+         "license": "(MIT OR Apache-2.0) AND GPL-3.0-only", "selected_license": "MIT AND GPL-3.0-only",
+         "build_script": False, "proc_macro": False, "links": None,
+         "upstream_checksum": "5d10a236f96f87d70732e44520046785431ef01d5bcd6b041317bfadd2f88245",
+         "upstream_files_sha256": "fc9e9ee737b62b4b529977e0dc67e6991e9791995d2659bfb31b36282ea7e784",
+         "upstream_revision": "c88605b96d04431f9c3c792464a0f2f253480e94", "files_sha256": "5" * 64,
+         "modified_files_sha256": {name: "6" * 64 for name in
+             ("Cargo.toml", "NEVROTICK-PATCH.md", "src/text.rs", "src/text/nevrotick_word_navigation_tests.rs")}},
+    ]
+
+
+def add_accesskit_patches(policy):
+    add_patch(policy)
+    policy["patched_packages"].extend(fixture_accesskit_patches())
+    row = policy["rows"][WINDOWS]
+    for key in ("accesskit_windows@0.34.0", "accesskit_consumer@0.38.0"):
+        row["features"][key] = {"target": [[]]}
+        row["metadata_features"][key] = []
+        row["package_scopes"]["nevrotick-ui"]["features"][key] = {"target": [[]]}
+    policy["rows"][HOST]["metadata_features"]["accesskit_consumer@0.38.0"] = []
+    return policy
+
+
+def accesskit_patch_tree(output, target=HOST):
+    output = patch_tree(output)
+    if target == WINDOWS:
+        line = "|-- slint v1.18.1|" + ",".join(RUNTIME_FEATURES) + "\n"
+        output = output.replace(line, line +
+            "|   `-- accesskit_windows v0.34.0 (/work/fixture/third-party/accesskit_windows)|\n"
+            "|       `-- accesskit_consumer v0.38.0 (/work/fixture/third-party/accesskit_consumer)|\n")
+    return output
+
+
 def patch_tree(output):
     return output.replace("|-- slint-build v1.18.1|compat-1-18\n",
                           "|-- slint-build v1.18.1|compat-1-18\n"
@@ -195,6 +241,11 @@ def fixture_metadata(policy, target=HOST):
         edge("slint-build@1.18.1", "spin_on@0.1.1")
     if "accesskit_windows@0.34.0" in by_key:
         edge("slint@1.18.1", "accesskit_windows@0.34.0")
+    if "accesskit_consumer@0.38.0" in by_key:
+        if "accesskit_windows@0.34.0" in by_key:
+            edge("accesskit_windows@0.34.0", "accesskit_consumer@0.38.0")
+        else:
+            edge("slint@1.18.1", "accesskit_consumer@0.38.0", optional=True)
     return {"packages": packages, "resolve": {"nodes": nodes, "root": None},
             "workspace_members": locals_, "workspace_default_members": locals_, "workspace_root": "/work/fixture"}
 
@@ -362,6 +413,136 @@ class SlintProfileControls(unittest.TestCase):
             refresh()
             with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "preserved upstream rights"):
                 VERIFY.admit_patched_source(root, record)
+
+    def test_consumer_patch_preserves_windows_gui_graph_and_separate_source_identity(self):
+        policy = add_accesskit_patches(copy.deepcopy(self.policy))
+        with patch.object(PROFILE, "REVIEWED_POLICY_SHA256", PROFILE.canonical_policy_sha256(policy)):
+            PROFILE.validate_policy(policy)
+            for target in (HOST, WINDOWS):
+                trees = {name: accesskit_patch_tree(output, target)
+                         for name, output in fixture_package_trees(target).items()}
+                trees["spin_on"] = "spin_on v0.1.1 (/work/fixture/third-party/spin_on)|\n"
+                data = fixture_metadata(policy, target)
+                output = accesskit_patch_tree(fixture_tree(target), target)
+                projected = PROFILE.selected_metadata(target, json.dumps(data), output, policy,
+                                                      package_trees=trees)
+                self.assertEqual(len(projected["workspace_members"]), 6)
+                consumer = [package for package in projected["packages"]
+                            if package["name"] == "accesskit_consumer"]
+                self.assertEqual(len(consumer), int(target == WINDOWS))
+                if target == HOST:
+                    continue
+                self.assertIsNone(consumer[0]["source"])
+                self.assertEqual(consumer[0]["license"], "(MIT OR Apache-2.0) AND GPL-3.0-only")
+                for variant in ("registry-source", "wrong-path", "weaker-license"):
+                    changed = copy.deepcopy(data)
+                    package = next(p for p in changed["packages"] if p["name"] == "accesskit_consumer")
+                    if variant == "registry-source":
+                        package["source"] = PROFILE.REGISTRY
+                    elif variant == "wrong-path":
+                        package["manifest_path"] = "/work/fixture/third-party/another/Cargo.toml"
+                    else:
+                        package["license"] = "MIT OR Apache-2.0"
+                    with self.subTest(variant=variant), self.assertRaises(PROFILE.Incomplete):
+                        PROFILE.validate_metadata(target, json.dumps(changed), policy)
+                consumer_line = "|       `-- accesskit_consumer v0.38.0 (/work/fixture/third-party/accesskit_consumer)|\n"
+                for kind in ("build", "dev"):
+                    changed = output.replace(consumer_line, "|       [" + kind + "-dependencies]\n" + consumer_line)
+                    with self.subTest(kind=kind), self.assertRaises(PROFILE.Incomplete):
+                        PROFILE.validate_tree(target, changed, policy)
+
+    def test_consumer_patch_provenance_cohort_and_role_changes_fail_closed(self):
+        policy = add_accesskit_patches(copy.deepcopy(self.policy))
+        PROFILE.validate_policy_shape(policy)
+        for mutate in (
+            lambda p: p["patched_packages"][2].update(path="third-party/another"),
+            lambda p: p["patched_packages"][2].update(checksum="0" * 64),
+            lambda p: p["patched_packages"][2].update(upstream_checksum="0" * 64),
+            lambda p: p["patched_packages"][2].update(selected_license="MIT"),
+            lambda p: p["patched_packages"][2]["modified_files_sha256"].pop("src/text/nevrotick_word_navigation_tests.rs"),
+            lambda p: p["patched_packages"].reverse(),
+            lambda p: p["patched_packages"].pop(1),
+            lambda p: p["patched_packages"].append(copy.deepcopy(p["patched_packages"][2])),
+            lambda p: p["rows"][HOST]["metadata_features"].update({"accesskit_consumer@0.38.0": ["unreviewed"]}),
+            lambda p: p["rows"][HOST]["features"].update({"accesskit_consumer@0.38.0": {"target": [[]]}}),
+            lambda p: p["rows"][WINDOWS]["features"]["accesskit_consumer@0.38.0"].update(host=[[]]),
+            lambda p: p["rows"][WINDOWS]["package_scopes"]["nevrotick-ui"]["features"].pop("accesskit_consumer@0.38.0"),
+            lambda p: p["rows"][WINDOWS]["package_scopes"]["time-core"]["features"].update(
+                {"accesskit_consumer@0.38.0": {"target": [[]]}}),
+        ):
+            changed = copy.deepcopy(policy)
+            mutate(changed)
+            with self.assertRaises(PROFILE.Incomplete):
+                PROFILE.validate_policy_shape(changed)
+
+    def test_consumer_patch_lock_retains_only_its_original_normal_edges(self):
+        patches = [fixture_path_patch(), *fixture_accesskit_patches()]
+        packages = [
+            {"name": "spin_on", "version": "0.1.1"},
+            {"name": "accesskit_windows", "version": "0.34.0",
+             "dependencies": ["accesskit", "accesskit_consumer", "hashbrown 0.16.1", "static_assertions", "windows", "windows-core"]},
+            {"name": "accesskit_consumer", "version": "0.38.0", "dependencies": ["accesskit", "hashbrown 0.16.1"]},
+        ]
+        VERIFY.validate_patched_lock(packages, patches)
+        for mutation in ({"checksum": "0" * 64}, {"source": PROFILE.REGISTRY},
+                         {"dependencies": ["accesskit", "hashbrown 0.16.1", "unreviewed"]}):
+            changed = copy.deepcopy(packages)
+            changed[2].update(mutation)
+            with self.subTest(mutation=mutation), self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.validate_patched_lock(changed, patches)
+
+    def test_consumer_source_preserves_upstream_manifest_notices_and_unmodified_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            directory = root / "third-party/accesskit_consumer"
+            shutil.copytree(ROOT / "third-party/accesskit_consumer", directory)
+            record = fixture_accesskit_patches()[1]
+
+            def refresh():
+                files = {path.relative_to(directory).as_posix(): VERIFY.sha256(path)
+                         for path in directory.rglob("*") if path.is_file()}
+                record["files_sha256"] = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+                record["modified_files_sha256"] = {name: files[name] for name in record["modified_files_sha256"]}
+
+            refresh()
+            self.assertEqual(len(VERIFY.admit_patched_source(root, record)), 18)
+            for name in ("LICENSE-MIT", "LICENSE-APACHE", "LICENSE-GPL-3.0-only", "Cargo.toml.orig",
+                         "Cargo.toml.upstream", "Cargo.lock", "src/tree.rs"):
+                path = directory / name
+                original = path.read_bytes()
+                path.write_bytes(original + b"\nchanged\n")
+                refresh()
+                with self.subTest(name=name), self.assertRaises(VERIFY.ENV.Incomplete):
+                    VERIFY.admit_patched_source(root, record)
+                path.write_bytes(original)
+            manifest = directory / "Cargo.toml"
+            healthy = manifest.read_text()
+            self.assertIn('version = "0.24.1"', healthy)
+            manifest.write_text(healthy.replace('version = "0.24.1"', 'version = "0.24.2"'))
+            refresh()
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "manifest may only change"):
+                VERIFY.admit_patched_source(root, record)
+            manifest.write_text(healthy)
+            refresh()
+            VERIFY.admit_patched_source(root, record)
+            (directory / "src/text.rs").write_text("// unreviewed replacement\n")
+            with self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.admit_patched_source(root, record)
+
+    def test_consumer_grant_and_commands_remain_bounded_to_existing_gui_selection(self):
+        policy = add_accesskit_patches(copy.deepcopy(self.policy))
+        with patch.object(PROFILE, "REVIEWED_POLICY_SHA256", PROFILE.canonical_policy_sha256(policy)):
+            for target in (HOST, WINDOWS):
+                generated = tomllib.loads(VERIFY.product_deny((ROOT / "deny.toml").read_text(), policy, target))
+                self.assertEqual(generated["licenses"]["allow"], ["GPL-2.0-only"])
+                consumers = [item for item in generated["licenses"]["exceptions"]
+                             if item["crate"] == "accesskit_consumer@0.38.0"]
+                self.assertEqual(consumers, [{"crate": "accesskit_consumer@0.38.0", "allow": ["MIT", "GPL-3.0-only"]}]
+                                 if target == WINDOWS else [])
+            for lane in ("portable", "windows", "dependencies"):
+                self.assertEqual(VERIFY.commands(lane, schema_version=3, patched_packages=("spin_on", "accesskit_windows")),
+                                 VERIFY.commands(lane, schema_version=3,
+                                                 patched_packages=("spin_on", "accesskit_windows", "accesskit_consumer")))
 
     def test_archive_bypasses_bind_exact_paths_and_bytes_without_shortcuts(self):
         policy = copy.deepcopy(self.policy)

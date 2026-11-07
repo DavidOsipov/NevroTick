@@ -19,6 +19,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import sys
 import time
 import tomllib
@@ -103,6 +104,169 @@ PRODUCT = load_module("portable_product_admission", ROOT / "scripts/verify.py")
 PREPARE = load_module("portable_archive_admission", ROOT / "scripts/prepare-product.py")
 RUNTIME = ANALYSIS.RUNTIME
 Incomplete = ANALYSIS.Incomplete
+ANALYSIS_JSON_MAX_BYTES = 64 * 1024 * 1024
+ANALYSIS_LOG_MAX_BYTES = 16 * 1024 * 1024
+ANALYSIS_JSON_MAX_DEPTH = 64
+ANALYSIS_JSON_MAX_MARKERS = 4_000_000
+ANALYSIS_PATH_MAX_BYTES = 4096
+ANALYSIS_PATH_MAX_COMPONENTS = 64
+
+
+def analysis_output_path(value: str | Path) -> Path:
+    """Bound raw UTF-8 path text before encoding/splitting, without any I/O.
+
+    Relative output names are admitted here so their callers can retain their
+    existing escape checks; the file reader separately requires absolute paths.
+    """
+    if isinstance(value, str):
+        text = value
+    elif isinstance(value, Path):
+        text = str(value)
+    else:
+        raise Incomplete("Analysis output path must be text or a Path.")
+    if len(text) > ANALYSIS_PATH_MAX_BYTES:
+        raise Incomplete("Analysis output path exceeds its byte bound.")
+    try:
+        encoded = text.encode("utf-8")
+    except UnicodeError as error:
+        raise Incomplete("Analysis output path is not strict UTF-8.") from error
+    if len(encoded) > ANALYSIS_PATH_MAX_BYTES:
+        raise Incomplete("Analysis output path exceeds its byte bound.")
+    path = Path(text)
+    if len(path.parts) - bool(path.anchor) > ANALYSIS_PATH_MAX_COMPONENTS:
+        raise Incomplete("Analysis output path exceeds its component bound.")
+    return path
+
+
+def read_analysis_bytes(path: Path, *, maximum: int) -> bytes:
+    """Snapshot one bounded, owned regular output through nonlinked directories.
+
+    Callers select their fixed private output paths and retain any relative-path
+    escape guards. Byte/component limits apply before opening any descriptor.
+    Directory descriptors pin every component from /; attachment
+    rechecks reject replacement while the leaf is read. No FIFO/device is read,
+    even after a race. The returned bytes, including their digest if needed, own
+    the observation; reopening the path would create a different observation.
+    """
+    path = analysis_output_path(path)
+    if (not path.is_absolute() or ".." in path.parts or len(path.parts) < 2
+            or type(maximum) is not int or not 0 < maximum <= ANALYSIS_JSON_MAX_BYTES):
+        raise Incomplete("Analysis output requires an absolute bounded file path.")
+    descriptors = []
+    bindings = []
+
+    def identity(item):
+        return (item.st_dev, item.st_ino, item.st_mode, item.st_uid, item.st_gid,
+                item.st_nlink, item.st_size, item.st_mtime_ns, item.st_ctime_ns)
+
+    try:
+        flags = os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW | os.O_NONBLOCK
+        directories = flags | os.O_DIRECTORY
+        descriptors.append(os.open("/", directories))
+        for name in path.parts[1:-1]:
+            parent = descriptors[-1]
+            descriptor = os.open(name, directories, dir_fd=parent)
+            descriptors.append(descriptor)
+            bindings.append((parent, name, os.fstat(descriptor)))
+        parent = descriptors[-1]
+        descriptor = os.open(path.name, flags, dir_fd=parent)
+        descriptors.append(descriptor)
+        before = os.fstat(descriptor)
+        if (not stat.S_ISREG(before.st_mode) or before.st_uid != os.geteuid()
+                or before.st_nlink != 1 or before.st_size > maximum):
+            raise Incomplete("Analysis output must be one owned bounded regular file.")
+        chunks, size = [], 0
+        while size <= maximum:
+            chunk = os.read(descriptor, min(64 * 1024, maximum + 1 - size))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            size += len(chunk)
+        after = os.fstat(descriptor)
+        attached = os.stat(path.name, dir_fd=parent, follow_symlinks=False)
+        if (size > maximum or size != before.st_size or identity(before) != identity(after)
+                or identity(after) != identity(attached)):
+            raise Incomplete("Analysis output changed during its bounded read.")
+        for parent, name, opened in bindings:
+            attached = os.stat(name, dir_fd=parent, follow_symlinks=False)
+            if (not stat.S_ISDIR(attached.st_mode)
+                    or (attached.st_dev, attached.st_ino) != (opened.st_dev, opened.st_ino)):
+                raise Incomplete("Analysis output directory changed during its bounded read.")
+        return b"".join(chunks)
+    except (OSError, ValueError, UnicodeError) as error:
+        raise Incomplete("Analysis output is unavailable or violates file custody.") from error
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+def read_analysis_text(path: Path, *, maximum: int = ANALYSIS_LOG_MAX_BYTES) -> str:
+    """Decode only the immutable bounded snapshot, with strict UTF-8 admission."""
+    try:
+        return read_analysis_bytes(path, maximum=maximum).decode("utf-8")
+    except UnicodeError as error:
+        raise Incomplete("Analysis output is not strict UTF-8 text.") from error
+
+
+def read_analysis_json(path: Path, *, maximum: int = ANALYSIS_JSON_MAX_BYTES) -> dict:
+    """Admit finite strict analyzer JSON after bounding bytes and parser work.
+
+    The pre-scan ignores punctuation inside strings and caps container depth and
+    structural markers before json.loads can allocate nested containers/items.
+    Byte and marker bounds also cap string/whitespace scanning and total nodes.
+    Native file/count/phase/descriptor semantics remain with their existing gates.
+    """
+    text = read_analysis_text(path, maximum=maximum)
+    depth = markers = 0
+    quoted = escaped = False
+    for character in text:
+        if quoted:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                quoted = False
+        elif character == '"':
+            quoted = True
+        else:
+            if character in "[{":
+                depth += 1
+            elif character in "]}":
+                depth -= 1
+            if character in "[]{},:":
+                markers += 1
+            if depth < 0 or depth > ANALYSIS_JSON_MAX_DEPTH or markers > ANALYSIS_JSON_MAX_MARKERS:
+                raise Incomplete("Analysis JSON exceeds its structural work or depth bound.")
+
+    def pairs(items):
+        result = {}
+        for key, value in items:
+            if key in result:
+                raise Incomplete("Analysis JSON contains a duplicate field.")
+            result[key] = value
+        return result
+
+    def invalid_constant(_token):
+        raise Incomplete("Analysis JSON contains a nonfinite number.")
+
+    def number(token, *, floating):
+        if len(token) > 128:
+            raise Incomplete("Analysis JSON number exceeds its token bound.")
+        value = float(token) if floating else int(token)
+        if floating and not math.isfinite(value):
+            invalid_constant(token)
+        return value
+
+    try:
+        value = json.loads(text, object_pairs_hook=pairs, parse_constant=invalid_constant,
+                           parse_int=lambda token: number(token, floating=False),
+                           parse_float=lambda token: number(token, floating=True))
+    except (ValueError, UnicodeError, RecursionError) as error:
+        raise Incomplete("Analysis output is not one complete strict JSON object.") from error
+    if not isinstance(value, dict):
+        raise Incomplete("Analysis output JSON must be an object.")
+    return value
 
 
 class Scope(NamedTuple):
@@ -304,8 +468,10 @@ def admit_mutation_equivalences(root: Path, scope: Scope, policy: dict) -> list[
         if (not exact_mutant_span(mutant["span"]) or not isinstance(function, dict)
                 or set(function) != {"function_name", "return_type", "span"}
                 or not exact_mutant_span(function["span"])
-                or any(not isinstance(function[key], str) or not 0 < len(function[key]) <= 4096
-                       for key in ("function_name", "return_type"))
+                or not isinstance(function["function_name"], str)
+                or not 0 < len(function["function_name"]) <= 4096
+                # Native cargo-mutants uses an empty return type for implicit unit.
+                or not isinstance(function["return_type"], str) or len(function["return_type"]) > 4096
                 or not isinstance(mutant["genre"], str) or not 0 < len(mutant["genre"]) <= 4096
                 or not isinstance(mutant["replacement"], str) or len(mutant["replacement"]) > 4096
                 # cargo-mutants represents unary-operator deletion with an empty replacement.
@@ -1087,7 +1253,7 @@ def run_analysis_lanes(scope, subjects, policy, work, tools, run, report, lane):
                    "--fail-under-file-lines", "90"]
         command.extend(coverage_test_args)
         text = run("coverage", command, policy["coverage_wall_seconds"])
-        coverage = json.loads((work / "coverage.json").read_text())
+        coverage = read_analysis_json(work / "coverage.json")
         executed = test_count(text)
         report["coverage"] = {
             name: {**coverage_counts(scope, coverage, "/work/source/" + filename),
@@ -1120,18 +1286,17 @@ def run_analysis_lanes(scope, subjects, policy, work, tools, run, report, lane):
                  "--output", "/work/mutation/" + name], remaining_timeout(deadline, policy["mutation_wall_seconds"]),
                 mutation_subject=name)
             outcome_directory = work / "mutation" / name / "mutants.out"
-            outcomes = json.loads((outcome_directory / "outcomes.json").read_text())
+            outcomes = read_analysis_json(outcome_directory / "outcomes.json")
             selected_equivalences = [entry for entry in equivalences if entry["mutant"]["file"] == filename]
             result = mutation_counts(scope, outcomes, inventories[name], filename,
                                      native_exit_code=campaign["exit_code"], equivalences=selected_equivalences,
                                      defer_gate=True)
             baseline = next(item for item in outcomes["outcomes"] if item["scenario"] == "Baseline")
-            relative_log = Path(baseline["log_path"])
-            if relative_log.is_absolute() or ".." in relative_log.parts:
+            relative_log = analysis_output_path(baseline["log_path"])
+            if relative_log.is_absolute() or not relative_log.parts or ".." in relative_log.parts:
                 raise Incomplete("Mutation baseline log escapes its owned output directory.")
             baseline_log = outcome_directory / relative_log
-            PRODUCT.sha256(baseline_log)
-            result["baseline_tests_executed"] = test_count(baseline_log.read_text())
+            result["baseline_tests_executed"] = test_count(read_analysis_text(baseline_log))
             report["mutation"][name] = result
         failed = [name for name, result in report["mutation"].items() if not result["gate_passed"]]
         if failed:

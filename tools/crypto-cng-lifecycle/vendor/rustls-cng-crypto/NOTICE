@@ -25,6 +25,17 @@ The redundant parentheses around dyn ActiveKeyExchange in src/kx.rs are removed
 for a warning-clean local-path build; the trait object and operation are unchanged.
 Its imports also follow the caller's pinned formatter configuration.
 
+TLS 1.2 descriptor correction: src/tls12.rs binds
+TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 to AES_256_GCM (32-byte keys),
+instead of the upstream AES_128_GCM (16-byte keys), as required by RFC 5289
+section 3.2. src/tls12/tests.rs retains descriptor/key-block-shape regressions
+and AES-128/RSA/TLS-1.3 neighbors for a later admitted provider test lane.
+The Linux source-only checks in ../../tests/test_cipher_suite_mappings.py
+exercise advertised identity -> AEAD binding -> declared key size, with faulty
+binding/key-size controls. They execute no Rust or Windows CNG operation.
+The held lifecycle fixture keeps provider defaults/TLS 1.2 disabled; no feature,
+dependency, native-execution or product/provider-adoption gate is changed.
+
 Immutable upstream input file hashes (before the stated derivative edits):
 de0cbf0accb514e63ad6ae049dc82887fb1a0efc8b59da83fce421306f8873a5  .cargo_vcs_info.json
 d3f483fa1c97701f12ead96172e3579c03d5bc3ef50013df2c243193e202f899  Cargo.toml

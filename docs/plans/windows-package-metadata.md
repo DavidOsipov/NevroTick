@@ -1,8 +1,9 @@
 # Windows product and package metadata
 
 **Owner requirement and research:** 5 November 2026, Asia/Tbilisi.<br>
-**Status:** accepted objective; proposed implementation contract. No metadata
-generator, release identity or package is implemented by this document.<br>
+**Status:** accepted objective; the [owner-authorized pipeline](#13-metadata-pipeline-implementation--7-november-2026)
+implements source-tool preparation. Actual linked/installed metadata, release
+identity and complete package qualification remain open.<br>
 **Owners:** OD-05, P6, W11-W10 with build/release, branding/localization and the
 existing CHECK-18/20/23/26/27 owners. Service descriptions also involve W11-W05.
 
@@ -94,11 +95,13 @@ writer for our executable's `ProductVersion`. [WINDOWS-METADATA] [WINDOWS-VERSIO
 
 ## 4. Shared maintained record and provenance of values
 
-**Proposed implementation:** a versioned, machine-readable source such as
-`packaging/product.toml`, with per-component records and localization resources.
-The filename/serialization is a proposal; do not create a second independent
-version authority. The existing Cargo/release versions remain inputs until a
-reviewed release-version policy establishes their relationship.
+**Selected implementation location, 7 November 2026:** the versioned
+[metadata/product.toml](../../metadata/product.toml) is the single human-edited
+source, with code-owned component/locale extensions when needed. This supersedes
+the earlier illustrative `packaging/product.toml` path. Do not create a second
+independent version authority. Existing Cargo/release versions remain inputs until
+a reviewed release-version policy establishes their relationship. Section 13
+defines the implementation stages and actual consumer/qualification boundaries.
 The [metadata workflow skill](../../.agents/skills/implementation/maintain-windows-metadata/SKILL.md)
 and [section 11](#11-harvesting-storage-and-use-workflow--5-november-2026)
 provide the reusable collection, authority, storage and use procedure; this
@@ -369,14 +372,19 @@ actual readback needs; do not add a new general Windows manager or duplicate
 the existing signing/SBOM/package validation infrastructure.
 
 **Exit for this research:** the correct surfaces, fields, API coverage and traps
-are documented. **Implementation exit remains open:** an admitted generator,
-actual emitted artifacts and selected installed observations must substantiate
-completeness. No installer, registry, service, certificate or Store account was
+are documented. **Implementation exit remains open:** section 13 now supplies
+the bounded source generator; actual build/linked artifacts and selected installed
+observations must still substantiate complete metadata. No installer, registry,
+service, certificate or Store account was
 modified in this research; no package build or installation was run. Delegated
 research attempts returned no usable review, so this is coordinator research,
 not independently reviewed implementation evidence.
 
 ## 11. Harvesting, storage and use workflow — 5 November 2026
+
+This dated research describes the method. The [7 November implementation](#13-metadata-pipeline-implementation--7-november-2026)
+now owns the source-tool record and generator in `metadata/`; actual consumers
+and artifact/native qualification remain the later existing stages.
 
 The follow-up research used Microsoft Learn, GitHub, Context7, Firecrawl developer
 search/page extraction and web retrieval. The new
@@ -390,7 +398,7 @@ within OD-05 §7.6; no collector or production metadata source is implemented he
 | Stage | Recommended method | Required distinction |
 | --- | --- | --- |
 | Harvest | Repository/Cargo/license/brand records first; admitted frozen Cargo/SBOM tooling; read-only PE/MSIX/MSI interfaces; existing authorized Store exports | Tool-observed or imported values remain candidates until reconciled with the correct field authority |
-| Store intent | Versioned TOML, proposed `packaging/product.toml`, component and locale records; reference existing Cargo/release/license owners | One authority per fact; no duplicate manually edited release versions or implicit Cargo custom-metadata inheritance |
+| Store intent | Selected `metadata/product.toml` under section 13, with owned component/locale extensions; reference existing Cargo/release/license owners | One authority per fact; no duplicate manually edited release versions or implicit Cargo custom-metadata inheritance |
 | Store observations | Versioned JSON in existing candidate evidence, bound to input hashes, collector, time, stage, locale/context, raw value and outcome | Intended, generated, embedded, Windows-resolved, installed, submitted and delivered values are different evidence |
 | Use | Generate per-component RC resources, selected package inputs, localization, About/diagnostics and Store CSV projections | Explicit schemas, destination escaping and version/locale mapping; no invented identities or added capabilities |
 | Verify | Compare independent readers against reviewed expectations, then observe native installed surfaces at their existing gate | Generated inputs, parser success, native display, signature trust and actual Store delivery prove different properties |
@@ -434,6 +442,340 @@ and stale candidates. Example records are illustrative contracts, not an adopted
 schema implementation or passing release evidence. W11-W10/P6 and existing
 CHECK-18/20/23/26/27 retain implementation and verification ownership; all current
 execution holds and optional enhanced-provenance policy remain.
+
+## 12. Service and diagnostics metadata refinement — 7 November 2026
+
+The [bounded field catalogue](../supporting-reviews/windows-service-metadata-catalogue.md)
+retains the reviewed SCM, artifact/distribution and diagnostics inventories once.
+This contract remains the authority for applicability and the shared field map;
+the catalogue supplies conditional schema detail, source links and exclusions.
+Its 88 SCM/package-service rows and 196 diagnostics rows include representation,
+behavior, security and runtime members. Artifact counts overlap across surfaces.
+None is a target number of product fields to populate or features to enable.
+Refresh the admitted SDK/schema/compiler at the implementation stage.
+
+### 12.1 Field coverage and useful values
+
+Retain each scoped field's semantic meaning and kind: descriptive, technical
+identity, behavior/security, compiler/format data or runtime observation. Extend
+the section 4 register with its exact `field_path`, source locator, applicability,
+type/limits, derivation, locale/fallback, target projection, owner, required stage
+and independent reader. Catalogue recommendation labels do not substitute for a
+product-specific populated/derived/pending/justified-absence disposition. Reserved
+members, pointers, counts, unsupported options and preview attributes need their
+appropriate treatment rather than plausible invented values.
+
+`NevroTick` and publisher display name `David Osipov` remain established facts.
+Use role-accurate descriptions for actual shipped components. The catalogue's
+engine/broker labels and descriptions are proposals; freeze them against actual
+release behavior without implying that prototypes already implement that behavior.
+Technical SCM names, release numbering, Store/certificate identity, provider GUIDs,
+supported locales and maintained support/privacy/help URLs remain with their
+existing authorities. Do not create convincing placeholders or a second version
+source. All mandatory pending inputs remain visible before their dependent gate.
+
+### 12.2 SCM labels, localization and installed propagation
+
+Technical service name, display name and `SERVICE_DESCRIPTIONW.lpDescription`
+are separate fields. Preserve their own limits and update rules: display name
+has a 256-character limit; description uses the documented REG_SZ capacity, not
+that display-name limit. For a description update, null means unchanged and an
+empty string deletes it. Query failure, missing value, valid empty value and
+unresolved localization are different observations. Configuration readback needs
+the actual query rights; metadata inspection does not grant change rights.
+
+SCM indirect resources such as `@<protected-PE-path>,-<stringID>` and package
+`ms-resource:` references are different mechanisms. Record the stored reference,
+resource candidate/path/hash, requested/resolved locale and text separately.
+Qualify ordinary install and legitimate update/rollback: a valid old reference
+can become dangling after resource replacement. Do not assume a UI locale,
+package PRI or PE language block automatically supplies every other surface.
+
+The documented `desktop6:Service` and direct `desktop7:Service` definitions lack
+display-name/description attributes, while the Packaging Tool conversion report
+exposes these values. Trace the selected supported authoring/provisioning route
+and inspect actual installed SCM values; neither impossibility nor a setter-only
+implementation follows. This does not grant runtime configuration authority or
+resolve the held service-account/provisioning bridge. [The SCM catalogue](../supporting-reviews/windows-service-metadata-catalogue.md#appendix-a-scm-and-packaged-services)
+retains the primary sources and per-field domains.
+
+Keep intended configuration, queried next-run configuration and actual runtime
+status separate. Status/PID is a state-dependent snapshot, not stable product
+identity, executable authentication, service readiness or clock-effect authority.
+Behavior/security settings retain W11-W05 ownership. In particular, when no
+required-privilege list is configured SCM uses token defaults; omitting an update
+preserves existing configuration. Do not reset privileges to fill metadata.
+
+### 12.3 Artifact and diagnostic projections
+
+An ordinary user-mode service EXE is `VFT_APP` with subtype zero; driver subtype
+`VFT2_DRV_SYSTEM` is inapplicable. Keep compiler-owned version-resource layout
+separate from authored strings. A native application-manifest description is
+optional under its actual schema; SCM, VERSIONINFO, native manifest, MSIX and
+signature descriptions are different projections. Where the selected signing
+route supports them, Authenticode content description and information URL are
+useful conditional fields. Verify their retention in the final artifact; a label
+does not prove signer trust. [Artifact catalogue](../supporting-reviews/windows-service-metadata-catalogue.md#appendix-b-pe-manifests-packages-signing-and-distribution).
+
+For the already-selected diagnostic surface, record stable provider/decoding
+identity, event ID/version and payload layout, localized provider/channel/event
+labels, resource/message/parameter paths and applicable help link. Validate both
+schema and native/compiler domains; for example, the published event XML value
+type is wider than native `EVENT_DESCRIPTOR.Id`. Product version is not event
+schema version. Preserve the catalogue's documented type/prose discrepancies
+for selected-compiler/readback qualification rather than inventing corrections.
+Resolve actual installed publisher metadata and render known owned events under
+admitted locales, beside missing-resource/schema-mismatch controls. TraceLogging
+does not automatically install a durable Event Log catalogue; PerfLib V2 remains
+optional. No new provider, channel, counter set or telemetry follows. [Diagnostics catalogue](../supporting-reviews/windows-service-metadata-catalogue.md#appendix-c-diagnostics-and-performance-counters).
+
+A public build-information projection is conditional on an existing About or
+support need. Allowlist truthful component/version, revision/source-state,
+target/CPU floor, actual toolchain/profile/features and owned schema versions.
+Unknown source state is not clean. Keep source/build/publication/observation times
+distinct and dynamic PID/readiness/time quality in bounded runtime diagnostics.
+Final signed/delivered hashes belong in an external receipt; self-reported hashes
+do not independently authenticate a binary and cannot solve a self-hash cycle.
+Reuse existing SBOM/notice/custody owners; optional public provenance stays optional.
+
+### 12.4 Existing owners and exits
+
+W11-W10/P6 owns field-register resolution and admitted generation/readback through
+CHECK-18/20/23/26/27. W11-W05 owns service configuration, rights, localization
+servicing and lifecycle effects. W11-W08 owns diagnostic schema/resource/rendering
+semantics with the existing privacy/retention owners and CHECK-17/21/27; ST-W07
+retains reached sensitive-output cases. These refine existing assignments before
+dependent work, adding no acceptance IDs or prerequisite to the current Core queue.
+
+This research update completed documentation integration, not the full product
+field register. Section 13 now implements a bounded source record and generator;
+complete release records, resources, signing and native installed/delivered
+verification remain open under their existing gates. Source review and valid
+schemas prove none of those stages. Current execution holds, complete MSIX scope,
+conditional MSI reference status and OD-10's post-V1 formal deferral remain.
+
+## 13. Metadata pipeline implementation — 7 November 2026
+
+David authorized planning and implementation of the shared metadata pipeline,
+then selected an easily discoverable high-level directory. The implementation
+owner is **`metadata/`**: [editable product record](../../metadata/product.toml),
+[pipeline and usage](../../metadata/README.md), generator/validator and tests.
+This replaces the illustrative `packaging/product.toml` location above; the
+existing Cargo/release/license authorities continue to own their actual facts.
+The authored format is TOML, with strict bounded validation before projection.
+No runtime metadata service or product runtime parser is introduced.
+The current no-follow filesystem adapter requires a POSIX build host with the
+necessary directory-descriptor operations. Linux is the exercised host; native
+Windows Python custody is not qualified and unsupported hosts fail closed.
+Generated files can later enter the existing Windows build/package owners.
+
+### 13.1 Complete data path and trust boundaries
+
+```mermaid
+flowchart LR
+    A[Reviewed product.toml] --> C[Bounded strict admission]
+    B[Existing Cargo and frozen build facts] --> C
+    C --> D[Immutable checked metadata]
+    D --> E[Deterministic destination generators]
+    E --> F[Owned generated tree and input receipt]
+    F --> G[Build and package consumers]
+    G --> H[Independent final and installed readback]
+```
+
+The source model rejects unknown keys/types, duplicates, unsupported values,
+invalid paths/identities, resource-budget violations and inconsistent component
+facts. Derive versions, repository and licenses from bounded reads of actual Cargo
+sources without executing Cargo, dependencies, build scripts or proc macros.
+Review the semantic public values once; generated output is never another edited
+authority. Keep prototype/experiment and future service roles explicit.
+For this source-only prototype mapping, numeric file versions use checked Cargo
+major/minor/patch plus an authored fourth-word revision in `0..=65535` (default
+zero). Reject booleans, negatives and overflow; preserve readable SemVer. This
+does not select the held production release/package version mapping.
+
+Treat metadata as hostile data even when committed or previously accepted. Read
+only bounded regular inputs through a no-follow custody check; retain exact bytes
+and their digests. Decode into immutable checked values and preserve the contract
+at public generation entry points, including direct-construction bypass cases.
+Project explicit allowed fields through destination-specific Rust/RC/XML/CSV/JSON
+encoders. Never interpret metadata as code, commands, templates or callbacks.
+File paths/identifiers and output names do not come from arbitrary interpolation.
+
+Freeze all consumed source identities, including the applicable Cargo manifests
+and generator/contract source. Declare the approved fact derivations and actual
+destination limits. Generated public metadata excludes machine-local paths,
+usernames, secrets, runtime authority and fabricated source/build timestamps.
+An external output receipt hashes generated files; no final self-hash is embedded.
+
+Generate into a separately owned output directory with bounded fixed contents.
+Reject source-tree overlap, foreign/existing output adoption and link/special-file
+traversal. Publish a complete new tree atomically; failure preserves prior valid
+output. `check` is read-only and rejects missing, changed, additional or unsafe
+entries. A local digest or isolated Python import mode alone does not authenticate
+inputs or contain a malicious dependency. Enforced build isolation, independently
+protected expectations/checkers and final artifact custody retain their existing
+build/release owners; this portable tool does not qualify that entire environment.
+
+### 13.2 Execution stages and observable exits
+
+The labels below are task-local implementation stages, not new acceptance IDs.
+Use CHECK-18/20/23/26/27 and the service/diagnostics owners already mapped above.
+
+| Stage | Owner and implementation | Independent exit and retained limit |
+| --- | --- | --- |
+| MD-P1: authored record and admission | Metadata owner implements the single TOML record, strict bounded schema/checked construction, inert Cargo fact adapters and explicit pending dispositions. | Real current component facts resolve; unknown/duplicate/wrong-type/oversized/unsafe inputs are refused beside valid neighbors. Pending values carry owner/next action. Source mode may report pending future release fields; release mode fails closed on them. |
+| MD-P2: deterministic projections and check | Build metadata owner implements generated Rust constants, per-current-component VERSIONINFO RC, public descriptors and applicable package/service/event/Store authoring projections. | Same inputs produce identical content; source edits change affected projections; check detects corruption, extras and stale source/generator identities without writing. Literal hostile text stays data. No fake complete MSIX, registered event catalogue or service resource is emitted for unresolved identities. |
+| MD-P3: configured entry points and regression checks | Coordinator integrates the portable CLI, focused tests, CI source checks, skill usage and current task. | Real CLI entry points operate on owned temporary fixtures, both success and failure paths execute, failed publication preserves prior state, and the CI job is already part of the required gate. Rust/RC files are generated source, not linked/native qualification. |
+| MD-P4: actual consumer/build adoption | Existing S0.5/build/P3/W11-W05/W11-W08/W11-W10 owners adopt reached generated inputs before their dependent component/package slice. | Actual compile/link/package consumers use the frozen tree, reject stale/missing metadata and independently inspect emitted resources. No new dependency or unrelated Cargo graph change is admitted by this plan. Missing component source and pending native execution remain explicit. |
+| MD-P5: native, signing and delivered readback | Existing W11-W10/P6 and W11-W05/W11-W08 owners, followed by David's release authority. | Inspect installed labels/resources/locales and lifecycle, finalize before signing, then separately verify signed/submitted and Store-delivered bytes. Existing identity/provisioning, native/security/package gates and execution holds remain. |
+
+Implement MD-P1–MD-P3 now in the portable source-tool scope. Plan MD-P4–MD-P5
+through the existing phases as real consumers and authoritative release inputs
+become available. Do not call generated authoring data a completed integration,
+use a pending marker as a shipping value, or label prototype output as a release.
+MSI and PerfLib stay conditional. The ordinary Core/N3 queue, x86-64-v3 baseline,
+maximum-compatible hardening and post-V1 formal deferral remain unchanged.
+
+### 13.3 Verification and coordinator handoff
+
+Separate workers own admission/source, projection/CLI and independent tests;
+the coordinator owns cross-worker interfaces, configured integration and final
+candidate reconciliation. Preserve shared staged/concurrent work. Before handoff,
+freeze the exact integrated sources, run focused raw-admission and CLI controls,
+inspect generated outputs independently and obtain a source/security review.
+Challenge direct API bypasses, source replacement/growth, unsafe paths, output
+tampering, stale source/contract/generator identity and useful neighboring text.
+
+Record actual results and remaining stage owners in the existing
+[W11-W10 assignment](../../tasks/windows11-integration.md#w11-w10-re-enter-conditional-mechanisms-only-for-a-concrete-need).
+No formal, Cargo, Windows, service, clock, signing or publication operation is
+required to qualify this portable source-tool slice. Such later gates remain
+open until their real consumers and authorized environments execute them.
+
+### 13.4 Complete field register and source text policy — 7 November 2026
+
+David requested extending the prototype record to the full reviewed metadata
+scope, researching unknowns and leaving unanswered values empty. The earlier
+MD-P1–MD-P3 receipt qualifies the initial subset, not complete field coverage.
+Extend the existing `metadata/` implementation and W11-W10 assignment; no second
+authoritative value file or parallel package plan is introduced.
+
+The code-owned registry must enumerate the declared SCM, artifact/distribution
+and diagnostic catalogue field scopes, plus the shared project/author/rights,
+public destinations, asset/localization, platform and build/release fields in
+section 4. Each registry key has a type, surface, applicability/authority owner
+and permitted derivation. The authored TOML supplies exactly that field set, with
+value, populated/derived/pending/not-applicable status, source locator and reason.
+The registry owns the contract, not a second copy of editable product values.
+Reject omitted/unknown keys, incompatible status/value pairs and forged typed
+models. A populated value must meet its destination's constraints; blank is not
+a populated value and never counts as production readiness.
+
+Populate facts established by current repository/owner authorities. Research
+uncertain API/schema rules against primary sources; do not infer project-specific
+Store assignments, provider GUIDs, signer identity or service names from generic
+Windows documentation. When evidence cannot establish a value, retain `value = ""`
+with its pending owner/source/reason. Derived facts reference their existing
+authority instead of another manual copy. Runtime, compiler/layout/reserved and
+unselected MSI/PerfLib members retain explicit non-authorable/conditional
+dispositions. Catalogue completeness remains bounded by its named types and
+schemas; unexpanded extension trees and all Windows APIs are not new scope.
+
+Generate a complete internal field register and a coverage/pending report. Use
+explicit public/destination allowlists for actual Rust/RC/XML/JSON/CSV projections;
+do not ship regulatory/private contacts, operational policy or the entire authoring
+record automatically. Filled descriptive fields must reach their supported
+projection. Empty unresolved values remain visibly unresolved and must not become
+package/service/provider identities. Fields coupled to behavior, privileges,
+classification flags or optional facilities retain their original owners and
+must not activate those features through decorative metadata.
+
+The `product.toml` text contract is strict UTF-8 without a BOM. Check raw text,
+including comments, and all decoded keys/string values so TOML escapes cannot
+bypass it. Pin the Unicode property data and its provenance in the build tool;
+perform no runtime download. Reject Extended_Pictographic/Emoji_Presentation,
+regional-indicator/keycap emoji and their variation/tag/joiner components, default
+ignorables, controls/format characters, surrogates, private-use/unassigned code
+points, noncharacters and Unicode line/paragraph separators. ASCII tab/LF/CR
+remain syntax whitespace; decoded fields retain their own single/multiline rules.
+Ordinary assigned international letters, combining marks, numbers and allowed
+punctuation remain valid. This is a text policy, not ASCII-only input, Unicode
+normalization, confusable detection or authentication of a publisher's identity.
+The broad pictographic exclusion also rejects text-style copyright/trademark
+symbols; use plain words such as `Copyright` instead.
+
+Separate workers own the registry/record/checked schema, Unicode policy/data/tests
+and projection/regression integration. The coordinator researches outstanding
+facts, reconciles interfaces and scopes, and obtains final independent review.
+Acceptance requires independent catalogue-to-register reconciliation, raw/escaped
+emoji and malformed UTF-8 rejection with valid international neighbors, empty
+unknown preservation, complete field omission/unknown/status rejection, selective
+destination propagation, source/data receipt coverage and the existing custody
+regressions. Reuse the current required CI job and the existing CHECK owners.
+Native consumers, full MSIX/event authoring, signing/installed/delivered checks,
+the current Core queue and all execution holds retain MD-P4–MD-P5's boundaries.
+
+### 13.5 Adopted metadata delivery controls — 7 November 2026
+
+David authorized adopting the useful mechanisms from the reviewed sibling
+website pipeline. Extend this same source-tool and W11-W10/P6 chain; do not add
+a parallel metadata authority, website build dependency or runtime validator.
+The comparison used the dirty `personal-website-templated-1` working tree at
+`6530d3a8d44cbe4f829b1e09edd3a1c90cffc087`, especially its person-data admission,
+citation release requirements/output checks, image-representation reader and
+cold/warm build controls. Source inspection and those historical tests do not
+establish current NevroTick build or native qualification. Transfer the designs,
+not unreviewed source code or website-specific biography, licence or support facts.
+
+**Source admission and delivery, MD-P1–MD-P3:** validate ORCID and ISNI check
+characters as well as their exact admitted spelling. Preserve empty pending
+values and the existing text policy; reject invalid identifiers rather than
+normalizing them. A valid checksum establishes transcription consistency, not
+registration, ownership or publisher authentication. [ORCID's primary contract](https://support.orcid.org/hc/en-us/articles/360006897674-Structure-of-the-ORCID-Identifier)
+defines its MOD 11-2 check character and separately reserves assignment to its
+registry. Keep public-constructor and real-CLI bad-check-character controls beside
+known valid numeric and `X` examples.
+
+Derive source-delivery obligations from the admitted semantic record and the
+code-owned destination contract. Each reached obligation identifies its source,
+component, artifact, locator, required representation and intended absence rules.
+Check independently parsed JSON/XML/CSV and the supported Rust/RC source literals
+against those obligations before accepting a generated tree. Keep exact byte and
+custody checks too: semantic agreement does not establish unchanged bytes, and
+regenerating the same formatter alone can repeat a mapping defect. Record the
+bounded source-delivery result separately from the 731 field dispositions;
+catalogue-reference, pending and intentionally excluded fields are not missing
+public payloads. Missing, extra, duplicated, wrong-component or wrong-value
+bindings must fail even when counts agree. The source observer is not a compiler
+or a PE/MSIX/installed resource reader.
+
+The existing MD-P4–MD-P5 owners adopt these concrete exits before dependent work:
+
+| Stage and existing owner | Required observable exit |
+| --- | --- |
+| MD-P4, component/build owner | Select required component/field/locale/resource bindings from the admitted contract and inspect the actual linked PE and other reached compiled/package resources with independent readers. Include absent resources, equal-count wrong-component/version/locale and mutually consistent declarations that disagree with emitted bytes. A successful compiler or generated summary cannot replace readback. |
+| MD-P4, Cargo/resource build owner | Exercise a cold build, change a consumed metadata/Cargo/generator input without an unrelated source edit, run a warm build, then compare the affected decoded metadata with a clean-build control. Verify every consumed-file and approved environment rerun rule, including additions/removals where applicable. A separate selected-tool/configuration change checks that producer identity and admission invalidate the previous result; no stale output can pass merely because source hashes were recorded. |
+| MD-P4, build/package owner | Bind observations to the actual selected resource compiler, linker, SDK, target, profile, generator and relevant configuration identities. Use admitted tool records and exact consumed bytes where applicable; version strings and ambient environment discovery alone are not executable custody. Keep the existing source receipt and later artifact observation distinct, with one frozen generation per build. |
+| MD-P4–MD-P5, package/export owner | Use an exact approved payload allowlist. Internal field/coverage registers, authoring records, private contact/regulatory values and unselected source inputs are not automatically shipped. Challenge accidental whole-directory copying and a private sentinel beside a healthy package/export. Inspect actual final payload paths and contents, not only the public source projection. |
+| MD-P4–MD-P5, W11-W05/W11-W08/W11-W10 identity owners | When actual SCM names, package/application identities, resource keys or provider GUIDs are selected, validate references and collisions using each namespace's real comparison rules. A display-name match cannot select another role; intended shared identities need an explicit contract. Do not impose global uniqueness across unrelated namespaces or invent values to exercise the check. |
+| MD-P5, package/native/release owner | Finalize generated resources, compile/link and package before signing; any later mutation produces a new candidate. Independently inspect the exact signed/submitted and Store-delivered artifacts, then installed/resolved values in their actual contexts. Keep local, submitted, delivered and installed observations distinct. Existing signing, trust, lifecycle and release-authority checks remain. |
+
+The independent controls must distinguish a healthy complete result from missing
+or empty output, wrong ownership with unchanged counts, stale generations and
+unintended private exports. Never auto-update expected facts from the producer
+to make a failed comparison pass. Producer-generated golden files and same-helper
+parity may support regression/delivery evidence, but independent literal
+requirements and actual artifact readers establish the claimed semantics.
+Website warning-only missing-output paths, permissive/autofix modes and mutable
+cache/database machinery are not adopted. The current pipeline already publishes
+a fresh complete tree with source/code receipts; no caching or new hashing
+algorithm is needed for this extension.
+
+The coordinator records actual source-tool results in the existing W11-W10
+receipt. MD-P4–MD-P5 stay open until their real consumers and authorized
+environments execute these exits. This amendment adds no prerequisite to the
+current Core/N3 queue, no stronger public attestation requirement, no package
+route change and no exception to Windows, fuzz, storage, UI or formal-work holds.
 
 ## Primary sources
 

@@ -1,0 +1,972 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Edit reviewed descriptive metadata here; generated projections are not authorities.
+# Cargo owns actual component versions, licences and the repository URL.
+# This source describes current prototypes, not a qualified Windows release.
+schema_version = 1
+
+[product]
+name = "NevroTick"
+publisher = "David Osipov"
+description = "A Windows time synchronization client under development."
+homepage = ""
+
+[platform]
+target = "x86_64-pc-windows-msvc"
+cpu_floor = "x86-64-v3"
+
+[version_policy]
+# Prototype-only numeric mapping: Cargo major.minor.patch plus this revision.
+# A release mapping and full product qualification remain explicitly pending.
+file_version_revision = 0
+
+[components.ui]
+role = "ui"
+state = "fixture"
+display_name = "NevroTick"
+description = "Fixture-only NevroTick UI-M0 prototype"
+cargo_manifest = "crates/nevrotick-ui/Cargo.toml"
+binary_name = "nevrotick-ui"
+
+[components.observe]
+role = "observer"
+state = "experiment"
+display_name = "NevroTick Observe"
+description = "Bounded unauthenticated, observe-only transport experiment"
+cargo_manifest = "crates/nevrotick-engine/Cargo.toml"
+binary_name = "nevrotick-observe"
+
+[components.engine]
+role = "engine"
+state = "planned"
+display_name = "NevroTick Synchronization Engine"
+description = "Planned synchronization service; not implemented or qualified"
+
+[components.broker]
+role = "broker"
+state = "planned"
+display_name = "NevroTick Clock Broker"
+description = "Planned privileged clock broker; not implemented or qualified"
+
+[components.helper]
+role = "helper"
+state = "planned"
+display_name = "NevroTick Administration Helper"
+description = "Planned lifecycle helper; not implemented or qualified"
+
+[[pending]]
+path = "release.version"
+owner = "W11-W10/P6"
+reason = "The approved release-to-Windows version mapping is unresolved."
+required_stage = "release"
+next_action = "Freeze the release version mapping before release generation."
+
+[[pending]]
+path = "package.identity"
+owner = "W11-W10/P6"
+reason = "Final Store-assigned package and certificate identity is unresolved."
+required_stage = "release"
+next_action = "Record the assigned identity through the existing package owner."
+
+[[pending]]
+path = "services.identities"
+owner = "W11-W05"
+reason = "Stable SCM names and supported service provisioning are unqualified."
+required_stage = "release"
+next_action = "Resolve the existing provisioning and identity contract."
+
+[[pending]]
+path = "diagnostics.provider"
+owner = "W11-W08"
+reason = "Provider identity, event schema and installed resources are unresolved."
+required_stage = "release"
+next_action = "Freeze the owned event and installed-resource contract."
+
+[[pending]]
+path = "public.destinations"
+owner = "W11-W10/P6"
+reason = "Maintained product support, privacy and help destinations are unresolved."
+required_stage = "release"
+next_action = "Validate the public endpoints and their purpose before publication."
+
+[[pending]]
+path = "release.qualification"
+owner = "W11-W10/P6"
+reason = "Complete artifact, installed and delivered qualification remains open."
+required_stage = "release"
+next_action = "Complete the existing native and package qualification gates."
+
+# Complete reviewed field register. Unknown values stay empty.
+# A blank is not a production value: status/source/reason retain its disposition.
+# Runtime/format/conditional records document applicability without enabling it.
+# catalogue.<section> keys refer to docs/supporting-reviews/windows-service-metadata-catalogue.md.
+# Derived records have an empty authored value; the loader resolves existing facts.
+[fields]
+
+# project.author
+"project.author.name" = { value = "", status = "derived", source = "product.publisher", reason = "Derived from the existing admitted authority." }
+"project.author.role" = { value = "AI-Driven B2B Lead Product Manager", status = "populated", source = "README.md#author", reason = "Reviewed existing project fact." }
+"project.author.website" = { value = "https://david-osipov.vision/", status = "populated", source = "README.md#author", reason = "Reviewed existing project fact." }
+"project.author.email" = { value = "personal@david-osipov.vision", status = "populated", source = "README.md#author", reason = "Reviewed existing project fact." }
+"project.author.isni" = { value = "0000 0005 1802 960X", status = "populated", source = "README.md#author", reason = "Reviewed existing project fact." }
+"project.author.orcid" = { value = "0009-0005-2713-9242", status = "populated", source = "README.md#author", reason = "Reviewed existing project fact." }
+"project.author.viaf" = { value = "139173726847611590332", status = "populated", source = "README.md#author", reason = "Reviewed existing project fact." }
+"project.author.wikidata" = { value = "Q130604188", status = "populated", source = "README.md#author", reason = "Reviewed existing project fact." }
+
+# project.urls
+"project.urls.repository" = { value = "", status = "derived", source = "product.repository", reason = "Derived from the existing admitted authority." }
+"project.urls.homepage" = { value = "", status = "derived", source = "product.homepage", reason = "Derived from the existing admitted authority." }
+"project.urls.documentation" = { value = "https://github.com/DavidOsipov/NevroTick/blob/main/docs/README.md", status = "populated", source = "GitHub project documentation inspected 2026-11-07", reason = "Reviewed existing project fact." }
+"project.urls.support" = { value = "", status = "pending", source = "docs/plans/windows-package-metadata.md#4-shared-maintained-record-and-provenance-of-values", reason = "No verified maintained endpoint selected for this purpose." }
+"project.urls.privacy" = { value = "", status = "pending", source = "docs/plans/windows-package-metadata.md#4-shared-maintained-record-and-provenance-of-values", reason = "No verified maintained endpoint selected for this purpose." }
+"project.urls.license" = { value = "", status = "pending", source = "docs/plans/windows-package-metadata.md#4-shared-maintained-record-and-provenance-of-values", reason = "No verified maintained endpoint selected for this purpose." }
+"project.urls.release_notes" = { value = "", status = "pending", source = "docs/plans/windows-package-metadata.md#4-shared-maintained-record-and-provenance-of-values", reason = "No verified maintained endpoint selected for this purpose." }
+"project.urls.event_help" = { value = "", status = "pending", source = "docs/plans/windows-package-metadata.md#4-shared-maintained-record-and-provenance-of-values", reason = "No verified maintained endpoint selected for this purpose." }
+"project.urls.update" = { value = "", status = "pending", source = "docs/plans/windows-package-metadata.md#4-shared-maintained-record-and-provenance-of-values", reason = "No verified maintained endpoint selected for this purpose." }
+
+# project.contacts
+"project.contacts.support_email" = { value = "", status = "pending", source = "", reason = "Public personal attribution is not a product support or regulatory commitment." }
+"project.contacts.support_phone" = { value = "", status = "pending", source = "", reason = "Public personal attribution is not a product support or regulatory commitment." }
+"project.contacts.support_info" = { value = "", status = "pending", source = "", reason = "Public personal attribution is not a product support or regulatory commitment." }
+"project.contacts.regulatory_email" = { value = "", status = "pending", source = "", reason = "Public personal attribution is not a product support or regulatory commitment." }
+"project.contacts.regulatory_phone" = { value = "", status = "pending", source = "", reason = "Public personal attribution is not a product support or regulatory commitment." }
+"project.contacts.regulatory_address" = { value = "", status = "pending", source = "", reason = "Public personal attribution is not a product support or regulatory commitment." }
+"project.contacts.regulatory_suite" = { value = "", status = "pending", source = "", reason = "Public personal attribution is not a product support or regulatory commitment." }
+"project.contacts.regulatory_city" = { value = "", status = "pending", source = "", reason = "Public personal attribution is not a product support or regulatory commitment." }
+"project.contacts.regulatory_state" = { value = "", status = "pending", source = "", reason = "Public personal attribution is not a product support or regulatory commitment." }
+"project.contacts.regulatory_country" = { value = "", status = "pending", source = "", reason = "Public personal attribution is not a product support or regulatory commitment." }
+"project.contacts.regulatory_postal_code" = { value = "", status = "pending", source = "", reason = "Public personal attribution is not a product support or regulatory commitment." }
+
+# project.rights
+"project.rights.core_license" = { value = "", status = "derived", source = "component.observe.license", reason = "Derived from the existing admitted authority." }
+"project.rights.gui_license" = { value = "", status = "derived", source = "component.ui.license", reason = "Derived from the existing admitted authority." }
+"project.rights.core_license_file" = { value = "crates/ntp-wire/COPYING", status = "populated", source = "README.md#license-and-acknowledgements", reason = "Reviewed existing project fact." }
+"project.rights.gui_license_file" = { value = "crates/nevrotick-ui/LICENSE", status = "populated", source = "README.md#license-and-acknowledgements", reason = "Reviewed existing project fact." }
+"project.rights.gui_provenance" = { value = "crates/nevrotick-ui/LICENSING.md", status = "populated", source = "README.md#license-and-acknowledgements", reason = "Reviewed existing project fact." }
+"project.rights.brand_license" = { value = "docs/NevroTick-AVIF-kit-v1/BRAND-LICENSE.txt", status = "populated", source = "README.md#license-and-acknowledgements", reason = "Reviewed existing project fact." }
+"project.rights.copyright" = { value = "", status = "pending", source = "", reason = "Exact first-party and retained upstream copyright statements require review." }
+"project.rights.trademarks" = { value = "", status = "not-applicable", source = "", reason = "No applicable reviewed trademark statement has been selected." }
+"project.rights.third_party_notices" = { value = "", status = "pending", source = "", reason = "Complete shipped native, Rust and asset notices remain with release inventory owners." }
+
+# project.assets
+"project.assets.manifest" = { value = "docs/NevroTick-AVIF-kit-v1/manifest.json", status = "populated", source = "AGENTS.md#current-ui-milestone", reason = "Reviewed existing project fact." }
+"project.assets.brand_readme" = { value = "docs/NevroTick-AVIF-kit-v1/README.md", status = "populated", source = "AGENTS.md#current-ui-milestone", reason = "Reviewed existing project fact." }
+"project.assets.source_attribution" = { value = "crates/nevrotick-ui/ui/assets/BRAND-LICENSE.txt", status = "populated", source = "README.md#license-and-acknowledgements", reason = "Reviewed existing project fact." }
+"project.assets.fixture_image" = { value = "crates/nevrotick-ui/ui/assets/head.png", status = "populated", source = "crates/nevrotick-ui/ui/assets/README.md", reason = "Reviewed existing project fact." }
+"project.assets.icon_source" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
+"project.assets.package_logo" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
+"project.assets.store_logo" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
+"project.assets.screenshots" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
+"project.assets.trailer" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
+"project.assets.additional_store_assets" = { value = "", status = "pending", source = "", reason = "Final destination-specific owned asset is not yet selected or generated." }
+
+# project.localization
+"project.localization.adopted_locales" = { value = "en", status = "populated", source = "docs/plans/ui-localization.md", reason = "Reviewed existing project fact." }
+"project.localization.fallback_locale" = { value = "en", status = "populated", source = "docs/plans/ui-localization.md", reason = "Reviewed existing project fact." }
+"project.localization.catalogue_source" = { value = "crates/nevrotick-ui/src/localization/contract-source.json", status = "populated", source = "docs/plans/ui-localization.md", reason = "Reviewed existing project fact." }
+"project.localization.service_mui" = { value = "", status = "pending", source = "", reason = "Per-surface resource and admitted locale mapping remains unqualified." }
+"project.localization.pe_translations" = { value = "", status = "pending", source = "", reason = "Per-surface resource and admitted locale mapping remains unqualified." }
+"project.localization.msix_pri" = { value = "", status = "pending", source = "", reason = "Per-surface resource and admitted locale mapping remains unqualified." }
+"project.localization.store_locales" = { value = "", status = "pending", source = "", reason = "Per-surface resource and admitted locale mapping remains unqualified." }
+
+# project.platform
+"project.platform.target" = { value = "", status = "derived", source = "platform.target", reason = "Derived from the existing admitted authority." }
+"project.platform.cpu_floor" = { value = "", status = "derived", source = "platform.cpu_floor", reason = "Derived from the existing admitted authority." }
+"project.platform.support_profiles" = { value = "Windows 11 26H2 x64; Windows Server 2025 x64 Desktop Experience", status = "populated", source = "docs/nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope", reason = "Reviewed existing project fact." }
+"project.platform.minimum_os" = { value = "", status = "pending", source = "", reason = "Actual numeric applicability or observed qualification is not established." }
+"project.platform.tested_os" = { value = "", status = "pending", source = "", reason = "Actual numeric applicability or observed qualification is not established." }
+"project.platform.device_family" = { value = "", status = "pending", source = "", reason = "Actual numeric applicability or observed qualification is not established." }
+"project.platform.minimum_installer_version" = { value = "", status = "pending", source = "", reason = "Actual numeric applicability or observed qualification is not established." }
+"project.platform.recommended_memory" = { value = "", status = "pending", source = "", reason = "Actual numeric applicability or observed qualification is not established." }
+
+# project.release
+"project.release.channel" = { value = "", status = "pending", source = "", reason = "Approved release inputs remain unresolved; current components are prototypes." }
+"project.release.version" = { value = "", status = "pending", source = "", reason = "Approved release inputs remain unresolved; current components are prototypes." }
+"project.release.notes" = { value = "", status = "pending", source = "", reason = "Approved release inputs remain unresolved; current components are prototypes." }
+"project.release.product_version_mapping" = { value = "", status = "pending", source = "", reason = "Approved release inputs remain unresolved; current components are prototypes." }
+"project.release.release_date" = { value = "", status = "pending", source = "", reason = "Approved release inputs remain unresolved; current components are prototypes." }
+
+# project.build
+"project.build.source_revision" = { value = "", status = "derived", source = "existing frozen build/release receipt", reason = "Actual build-stage fact belongs in an external frozen observation, not manually invented metadata." }
+"project.build.source_state" = { value = "", status = "derived", source = "existing frozen build/release receipt", reason = "Actual build-stage fact belongs in an external frozen observation, not manually invented metadata." }
+"project.build.toolchain" = { value = "", status = "derived", source = "existing frozen build/release receipt", reason = "Actual build-stage fact belongs in an external frozen observation, not manually invented metadata." }
+"project.build.profile" = { value = "", status = "derived", source = "existing frozen build/release receipt", reason = "Actual build-stage fact belongs in an external frozen observation, not manually invented metadata." }
+"project.build.features" = { value = "", status = "derived", source = "existing frozen build/release receipt", reason = "Actual build-stage fact belongs in an external frozen observation, not manually invented metadata." }
+"project.build.source_time" = { value = "", status = "derived", source = "existing frozen build/release receipt", reason = "Actual build-stage fact belongs in an external frozen observation, not manually invented metadata." }
+"project.build.build_time" = { value = "", status = "derived", source = "existing frozen build/release receipt", reason = "Actual build-stage fact belongs in an external frozen observation, not manually invented metadata." }
+"project.build.publication_time" = { value = "", status = "derived", source = "existing frozen build/release receipt", reason = "Actual build-stage fact belongs in an external frozen observation, not manually invented metadata." }
+"project.build.final_hash" = { value = "", status = "derived", source = "existing frozen build/release receipt", reason = "Actual build-stage fact belongs in an external frozen observation, not manually invented metadata." }
+"project.build.sbom" = { value = "", status = "derived", source = "existing frozen build/release receipt", reason = "Actual build-stage fact belongs in an external frozen observation, not manually invented metadata." }
+"project.build.lockfile" = { value = "Cargo.lock", status = "populated", source = "Cargo.toml workspace and tracked Cargo.lock", reason = "Reviewed existing project fact." }
+"project.build.schema_versions" = { value = "", status = "derived", source = "existing frozen build/release receipt", reason = "Actual build-stage fact belongs in an external frozen observation, not manually invented metadata." }
+
+# project.store
+"project.store.product_name" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.description_long" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.description_short" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.features" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.keywords" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.category" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.subcategory" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.secondary_category" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.short_title" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.sort_title" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.voice_title" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.whats_new" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.age_rating" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.privacy_declaration" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.privacy_policy_text" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.hardware_minimum" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.hardware_recommended" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.system_requirements" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.copyright_trademark" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.additional_license_terms" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.published_by" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.use_uploaded_images" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.game_settings" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.display_mode" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+"project.store.product_declarations" = { value = "", status = "pending", source = "", reason = "Store-specific reviewed content or account declaration is unresolved." }
+
+# project.signing
+"project.signing.publisher_subject" = { value = "", status = "pending", source = "", reason = "Actual selected signing route and artifact observation own this value." }
+"project.signing.content_description" = { value = "", status = "pending", source = "", reason = "Actual selected signing route and artifact observation own this value." }
+"project.signing.information_url" = { value = "", status = "pending", source = "", reason = "Actual selected signing route and artifact observation own this value." }
+"project.signing.timestamp_authority" = { value = "", status = "pending", source = "", reason = "Actual selected signing route and artifact observation own this value." }
+"project.signing.certificate_fingerprint" = { value = "", status = "pending", source = "", reason = "Actual selected signing route and artifact observation own this value." }
+"project.signing.signer_route" = { value = "", status = "pending", source = "", reason = "Actual selected signing route and artifact observation own this value." }
+
+# component.ui
+"component.ui.pe.Comments" = { value = "", status = "derived", source = "component.ui.description", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.ui.pe.CompanyName" = { value = "", status = "derived", source = "product.publisher", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.ui.pe.FileDescription" = { value = "", status = "derived", source = "component.ui.description", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.ui.pe.FileVersion" = { value = "", status = "derived", source = "component.ui.version", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.ui.pe.InternalName" = { value = "", status = "derived", source = "component.ui.binary_name", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.ui.pe.OriginalFilename" = { value = "", status = "derived", source = "component.ui.original_filename", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.ui.pe.ProductName" = { value = "", status = "derived", source = "product.name", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.ui.pe.ProductVersion" = { value = "", status = "derived", source = "component.ui.version", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.ui.pe.LegalCopyright" = { value = "", status = "pending", source = "", reason = "Exact component and retained upstream copyright text is unresolved." }
+"component.ui.pe.LegalTrademarks" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+"component.ui.pe.PrivateBuild" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+"component.ui.pe.SpecialBuild" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+
+# component.observe
+"component.observe.pe.Comments" = { value = "", status = "derived", source = "component.observe.description", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.observe.pe.CompanyName" = { value = "", status = "derived", source = "product.publisher", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.observe.pe.FileDescription" = { value = "", status = "derived", source = "component.observe.description", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.observe.pe.FileVersion" = { value = "", status = "derived", source = "component.observe.version", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.observe.pe.InternalName" = { value = "", status = "derived", source = "component.observe.binary_name", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.observe.pe.OriginalFilename" = { value = "", status = "derived", source = "component.observe.original_filename", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.observe.pe.ProductName" = { value = "", status = "derived", source = "product.name", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.observe.pe.ProductVersion" = { value = "", status = "derived", source = "component.observe.version", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.observe.pe.LegalCopyright" = { value = "", status = "pending", source = "", reason = "Exact component and retained upstream copyright text is unresolved." }
+"component.observe.pe.LegalTrademarks" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+"component.observe.pe.PrivateBuild" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+"component.observe.pe.SpecialBuild" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+
+# component.engine
+"component.engine.pe.Comments" = { value = "", status = "derived", source = "component.engine.description", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.engine.pe.CompanyName" = { value = "", status = "derived", source = "product.publisher", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.engine.pe.FileDescription" = { value = "", status = "derived", source = "component.engine.description", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.engine.pe.FileVersion" = { value = "", status = "derived", source = "component.engine.version", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.engine.pe.InternalName" = { value = "", status = "derived", source = "component.engine.binary_name", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.engine.pe.OriginalFilename" = { value = "", status = "derived", source = "component.engine.original_filename", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.engine.pe.ProductName" = { value = "", status = "derived", source = "product.name", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.engine.pe.ProductVersion" = { value = "", status = "derived", source = "component.engine.version", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.engine.pe.LegalCopyright" = { value = "", status = "pending", source = "", reason = "Exact component and retained upstream copyright text is unresolved." }
+"component.engine.pe.LegalTrademarks" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+"component.engine.pe.PrivateBuild" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+"component.engine.pe.SpecialBuild" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+
+# component.broker
+"component.broker.pe.Comments" = { value = "", status = "derived", source = "component.broker.description", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.broker.pe.CompanyName" = { value = "", status = "derived", source = "product.publisher", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.broker.pe.FileDescription" = { value = "", status = "derived", source = "component.broker.description", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.broker.pe.FileVersion" = { value = "", status = "derived", source = "component.broker.version", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.broker.pe.InternalName" = { value = "", status = "derived", source = "component.broker.binary_name", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.broker.pe.OriginalFilename" = { value = "", status = "derived", source = "component.broker.original_filename", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.broker.pe.ProductName" = { value = "", status = "derived", source = "product.name", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.broker.pe.ProductVersion" = { value = "", status = "derived", source = "component.broker.version", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.broker.pe.LegalCopyright" = { value = "", status = "pending", source = "", reason = "Exact component and retained upstream copyright text is unresolved." }
+"component.broker.pe.LegalTrademarks" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+"component.broker.pe.PrivateBuild" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+"component.broker.pe.SpecialBuild" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+
+# component.helper
+"component.helper.pe.Comments" = { value = "", status = "derived", source = "component.helper.description", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.helper.pe.CompanyName" = { value = "", status = "derived", source = "product.publisher", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.helper.pe.FileDescription" = { value = "", status = "derived", source = "component.helper.description", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.helper.pe.FileVersion" = { value = "", status = "derived", source = "component.helper.version", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.helper.pe.InternalName" = { value = "", status = "derived", source = "component.helper.binary_name", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.helper.pe.OriginalFilename" = { value = "", status = "derived", source = "component.helper.original_filename", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.helper.pe.ProductName" = { value = "", status = "derived", source = "product.name", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.helper.pe.ProductVersion" = { value = "", status = "derived", source = "component.helper.version", reason = "Per-component source projection; planned roles have no emitted binary facts." }
+"component.helper.pe.LegalCopyright" = { value = "", status = "pending", source = "", reason = "Exact component and retained upstream copyright text is unresolved." }
+"component.helper.pe.LegalTrademarks" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+"component.helper.pe.PrivateBuild" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+"component.helper.pe.SpecialBuild" = { value = "", status = "not-applicable", source = "", reason = "No corresponding reviewed trademark or private/special build classification applies." }
+
+# component.engine
+"component.engine.scm.name" = { value = "", status = "pending", source = "", reason = "Final technical identity or protected MUI reference remains unassigned." }
+"component.engine.scm.display_name" = { value = "", status = "derived", source = "component.engine.display_name", reason = "Planned role description; no installed service or effect authority." }
+"component.engine.scm.description" = { value = "", status = "derived", source = "component.engine.description", reason = "Planned role description; no installed service or effect authority." }
+"component.engine.scm.display_resource" = { value = "", status = "pending", source = "", reason = "Final technical identity or protected MUI reference remains unassigned." }
+"component.engine.scm.description_resource" = { value = "", status = "pending", source = "", reason = "Final technical identity or protected MUI reference remains unassigned." }
+
+# component.broker
+"component.broker.scm.name" = { value = "", status = "pending", source = "", reason = "Final technical identity or protected MUI reference remains unassigned." }
+"component.broker.scm.display_name" = { value = "", status = "derived", source = "component.broker.display_name", reason = "Planned role description; no installed service or effect authority." }
+"component.broker.scm.description" = { value = "", status = "derived", source = "component.broker.description", reason = "Planned role description; no installed service or effect authority." }
+"component.broker.scm.display_resource" = { value = "", status = "pending", source = "", reason = "Final technical identity or protected MUI reference remains unassigned." }
+"component.broker.scm.description_resource" = { value = "", status = "pending", source = "", reason = "Final technical identity or protected MUI reference remains unassigned." }
+
+# catalogue.A.5.CreateServiceW
+"catalogue.A.5.CreateServiceW.lpServiceName" = { value = "", status = "derived", source = "per-service:name", reason = "Alias of the single owned semantic authority; not independently editable." }
+
+# catalogue.A.5.QUERY_SERVICE_CONFIGW
+"catalogue.A.5.QUERY_SERVICE_CONFIGW.dwServiceType" = { value = "", status = "not-applicable", source = "catalogue:A.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.5.QUERY_SERVICE_CONFIGW.dwStartType" = { value = "", status = "not-applicable", source = "catalogue:A.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.5.QUERY_SERVICE_CONFIGW.dwErrorControl" = { value = "", status = "not-applicable", source = "catalogue:A.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.5.QUERY_SERVICE_CONFIGW.lpBinaryPathName" = { value = "", status = "not-applicable", source = "catalogue:A.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.5.QUERY_SERVICE_CONFIGW.lpLoadOrderGroup" = { value = "", status = "not-applicable", source = "catalogue:A.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.5.QUERY_SERVICE_CONFIGW.dwTagId" = { value = "", status = "not-applicable", source = "catalogue:A.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.5.QUERY_SERVICE_CONFIGW.lpDependencies" = { value = "", status = "not-applicable", source = "catalogue:A.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.5.QUERY_SERVICE_CONFIGW.lpServiceStartName" = { value = "", status = "not-applicable", source = "catalogue:A.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.5.QUERY_SERVICE_CONFIGW.lpDisplayName" = { value = "", status = "derived", source = "per-service:display_name", reason = "Alias of the single owned semantic authority; not independently editable." }
+
+# catalogue.A.7.SERVICE_DESCRIPTIONW
+"catalogue.A.7.SERVICE_DESCRIPTIONW.lpDescription" = { value = "", status = "derived", source = "per-service:description", reason = "Alias of the single owned semantic authority; not independently editable." }
+
+# catalogue.A.7.SERVICE_FAILURE_ACTIONSW
+"catalogue.A.7.SERVICE_FAILURE_ACTIONSW.dwResetPeriod" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SERVICE_FAILURE_ACTIONSW.lpRebootMsg" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SERVICE_FAILURE_ACTIONSW.lpCommand" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SERVICE_FAILURE_ACTIONSW.cActions" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SERVICE_FAILURE_ACTIONSW.lpsaActions" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.7.SC_ACTION
+"catalogue.A.7.SC_ACTION.Type" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SC_ACTION.Delay" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.7.SERVICE_DELAYED_AUTO_START_INFO
+"catalogue.A.7.SERVICE_DELAYED_AUTO_START_INFO.fDelayedAutostart" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.7.SERVICE_FAILURE_ACTIONS_FLAG
+"catalogue.A.7.SERVICE_FAILURE_ACTIONS_FLAG.fFailureActionsOnNonCrashFailures" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.7.SERVICE_SID_INFO
+"catalogue.A.7.SERVICE_SID_INFO.dwServiceSidType" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.7.SERVICE_REQUIRED_PRIVILEGES_INFOW
+"catalogue.A.7.SERVICE_REQUIRED_PRIVILEGES_INFOW.pmszRequiredPrivileges" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.7.SERVICE_PRESHUTDOWN_INFO
+"catalogue.A.7.SERVICE_PRESHUTDOWN_INFO.dwPreshutdownTimeout" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.7.SERVICE_PREFERRED_NODE_INFO
+"catalogue.A.7.SERVICE_PREFERRED_NODE_INFO.usPreferredNode" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SERVICE_PREFERRED_NODE_INFO.fDelete" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.7.SERVICE_LAUNCH_PROTECTED_INFO
+"catalogue.A.7.SERVICE_LAUNCH_PROTECTED_INFO.dwLaunchProtected" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.7.SERVICE_TRIGGER_INFO
+"catalogue.A.7.SERVICE_TRIGGER_INFO.cTriggers" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SERVICE_TRIGGER_INFO.pTriggers" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SERVICE_TRIGGER_INFO.pReserved" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.7.SERVICE_TRIGGER
+"catalogue.A.7.SERVICE_TRIGGER.dwTriggerType" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SERVICE_TRIGGER.dwAction" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SERVICE_TRIGGER.pTriggerSubtype" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SERVICE_TRIGGER.cDataItems" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SERVICE_TRIGGER.pDataItems" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.7.SERVICE_TRIGGER_SPECIFIC_DATA_ITEM
+"catalogue.A.7.SERVICE_TRIGGER_SPECIFIC_DATA_ITEM.dwDataType" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SERVICE_TRIGGER_SPECIFIC_DATA_ITEM.cbData" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.7.SERVICE_TRIGGER_SPECIFIC_DATA_ITEM.pData" = { value = "", status = "not-applicable", source = "catalogue:A.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.8.SERVICE_STATUS_PROCESS
+"catalogue.A.8.SERVICE_STATUS_PROCESS.dwServiceType" = { value = "", status = "not-applicable", source = "catalogue:A.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.8.SERVICE_STATUS_PROCESS.dwCurrentState" = { value = "", status = "not-applicable", source = "catalogue:A.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.8.SERVICE_STATUS_PROCESS.dwControlsAccepted" = { value = "", status = "not-applicable", source = "catalogue:A.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.8.SERVICE_STATUS_PROCESS.dwWin32ExitCode" = { value = "", status = "not-applicable", source = "catalogue:A.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.8.SERVICE_STATUS_PROCESS.dwServiceSpecificExitCode" = { value = "", status = "not-applicable", source = "catalogue:A.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.8.SERVICE_STATUS_PROCESS.dwCheckPoint" = { value = "", status = "not-applicable", source = "catalogue:A.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.8.SERVICE_STATUS_PROCESS.dwWaitHint" = { value = "", status = "not-applicable", source = "catalogue:A.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.8.SERVICE_STATUS_PROCESS.dwProcessId" = { value = "", status = "not-applicable", source = "catalogue:A.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.8.SERVICE_STATUS_PROCESS.dwServiceFlags" = { value = "", status = "not-applicable", source = "catalogue:A.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.9.1
+"catalogue.A.9.1.desktop6:Service/@Name" = { value = "", status = "derived", source = "per-service:name", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.A.9.1.desktop6:Service/@StartupType" = { value = "", status = "not-applicable", source = "catalogue:A.9.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.1.desktop6:Service/@StartAccount" = { value = "", status = "not-applicable", source = "catalogue:A.9.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.1.desktop6:Service/@Arguments" = { value = "", status = "not-applicable", source = "catalogue:A.9.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.1.desktop6:Service/desktop6:Dependencies" = { value = "", status = "not-applicable", source = "catalogue:A.9.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.1.desktop6:Service/desktop6:TriggerEvents" = { value = "", status = "not-applicable", source = "catalogue:A.9.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.1.desktop6:Dependencies/desktop6:DependentService" = { value = "", status = "not-applicable", source = "catalogue:A.9.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.1.desktop6:DependentService/@Name" = { value = "", status = "not-applicable", source = "catalogue:A.9.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.9.2
+"catalogue.A.9.2.desktop6:TriggerEvents/desktop6:TriggerCustom" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop6:TriggerEvents/desktop10:PredefinedTriggerEvents" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop6:TriggerCustom/@Action" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop6:TriggerCustom/@Subtype" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop6:TriggerCustom/desktop6:StringData" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop6:TriggerCustom/desktop6:BinaryData" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop6:TriggerCustom/desktop6:LevelData" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop6:TriggerCustom/desktop6:KeywordAnyData" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop6:TriggerCustom/desktop6:KeywordAllData" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop10:PredefinedTriggerEvents/@Action" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop10:PredefinedTriggerEvents/@Subtype" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop10:PredefinedTriggerEvents/@TriggerType" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop10:PredefinedTriggerEvents/desktop10:StringData" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop10:PredefinedTriggerEvents/desktop10:BinaryData" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop10:PredefinedTriggerEvents/desktop10:LevelData" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop10:PredefinedTriggerEvents/desktop10:KeywordAnyData" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.2.desktop10:PredefinedTriggerEvents/desktop10:KeywordAllData" = { value = "", status = "not-applicable", source = "catalogue:A.9.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.9.3
+"catalogue.A.9.3.desktop6:StringData/desktop6:DataItem" = { value = "", status = "not-applicable", source = "catalogue:A.9.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.3.desktop6:DataItem/@Value" = { value = "", status = "not-applicable", source = "catalogue:A.9.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.3.desktop6:BinaryData/@File" = { value = "", status = "not-applicable", source = "catalogue:A.9.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.3.desktop6:LevelData/@Value" = { value = "", status = "not-applicable", source = "catalogue:A.9.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.3.desktop6:KeywordAnyData/@Value" = { value = "", status = "not-applicable", source = "catalogue:A.9.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.3.desktop6:KeywordAllData/@Value" = { value = "", status = "not-applicable", source = "catalogue:A.9.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.3.desktop10:StringData/desktop6:DataItem" = { value = "", status = "not-applicable", source = "catalogue:A.9.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.3.desktop10:BinaryData/@File" = { value = "", status = "not-applicable", source = "catalogue:A.9.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.3.desktop10:LevelData/@Value" = { value = "", status = "not-applicable", source = "catalogue:A.9.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.3.desktop10:KeywordAnyData/@Value" = { value = "", status = "not-applicable", source = "catalogue:A.9.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.3.desktop10:KeywordAllData/@Value" = { value = "", status = "not-applicable", source = "catalogue:A.9.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.A.9.4
+"catalogue.A.9.4.desktop7:Service/@Name" = { value = "", status = "derived", source = "per-service:name", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.A.9.4.desktop7:Service/@StartupType" = { value = "", status = "not-applicable", source = "catalogue:A.9.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.4.desktop7:Service/@StartAccount" = { value = "", status = "not-applicable", source = "catalogue:A.9.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.4.desktop7:Service/@Arguments" = { value = "", status = "not-applicable", source = "catalogue:A.9.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.4.desktop7:Service/desktop7:Dependencies" = { value = "", status = "not-applicable", source = "catalogue:A.9.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.A.9.4.desktop7:Service/desktop7:TriggerEvents" = { value = "", status = "not-applicable", source = "catalogue:A.9.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.B.4.1
+"catalogue.B.4.1.String[Comments].Value" = { value = "", status = "derived", source = "per-component:Comments", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.4.1.String[CompanyName].Value" = { value = "", status = "derived", source = "per-component:CompanyName", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.4.1.String[FileDescription].Value" = { value = "", status = "derived", source = "per-component:FileDescription", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.4.1.String[FileVersion].Value" = { value = "", status = "derived", source = "per-component:FileVersion", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.4.1.String[InternalName].Value" = { value = "", status = "derived", source = "per-component:InternalName", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.4.1.String[LegalCopyright].Value" = { value = "", status = "derived", source = "per-component:LegalCopyright", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.4.1.String[LegalTrademarks].Value" = { value = "", status = "derived", source = "per-component:LegalTrademarks", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.4.1.String[OriginalFilename].Value" = { value = "", status = "derived", source = "per-component:OriginalFilename", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.4.1.String[PrivateBuild].Value" = { value = "", status = "derived", source = "per-component:PrivateBuild", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.4.1.String[ProductName].Value" = { value = "", status = "derived", source = "per-component:ProductName", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.4.1.String[ProductVersion].Value" = { value = "", status = "derived", source = "per-component:ProductVersion", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.4.1.String[SpecialBuild].Value" = { value = "", status = "derived", source = "per-component:SpecialBuild", reason = "Alias of the single owned semantic authority; not independently editable." }
+
+# catalogue.B.4.2
+"catalogue.B.4.2.VS_FIXEDFILEINFO.dwSignature" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VS_FIXEDFILEINFO.dwStrucVersion" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VS_FIXEDFILEINFO.dwFileVersionMS" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VS_FIXEDFILEINFO.dwFileVersionLS" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VS_FIXEDFILEINFO.dwProductVersionMS" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VS_FIXEDFILEINFO.dwProductVersionLS" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VS_FIXEDFILEINFO.dwFileFlagsMask" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VS_FIXEDFILEINFO.dwFileFlags" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VS_FIXEDFILEINFO.dwFileOS" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VS_FIXEDFILEINFO.dwFileType" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VS_FIXEDFILEINFO.dwFileSubtype" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VS_FIXEDFILEINFO.dwFileDateMS" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VS_FIXEDFILEINFO.dwFileDateLS" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VERSIONINFO.FILEVERSION" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VERSIONINFO.PRODUCTVERSION" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VERSIONINFO.FILEFLAGSMASK" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VERSIONINFO.FILEFLAGS" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VERSIONINFO.FILEOS" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VERSIONINFO.FILETYPE" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VERSIONINFO.FILESUBTYPE" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.2.VERSIONINFO.resourceID" = { value = "", status = "not-applicable", source = "catalogue:B.4.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.B.4.3
+"catalogue.B.4.3.VS_VERSIONINFO.wLength" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.VS_VERSIONINFO.wValueLength" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.VS_VERSIONINFO.wType" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.VS_VERSIONINFO.szKey" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.VS_VERSIONINFO.Padding1" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.VS_VERSIONINFO.Value" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.VS_VERSIONINFO.Padding2" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.VS_VERSIONINFO.Children" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.StringFileInfo.wLength" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.StringFileInfo.wValueLength" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.StringFileInfo.wType" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.StringFileInfo.szKey" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.StringFileInfo.Padding" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.StringFileInfo.Children" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.StringTable.wLength" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.StringTable.wValueLength" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.StringTable.wType" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.StringTable.szKey" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.StringTable.Padding" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.StringTable.Children" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.String.wLength" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.String.wValueLength" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.String.wType" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.String.szKey" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.String.Padding" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.String.Value" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.VarFileInfo.wLength" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.VarFileInfo.wValueLength" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.VarFileInfo.wType" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.VarFileInfo.szKey" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.VarFileInfo.Padding" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.VarFileInfo.Children" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.Var.wLength" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.Var.wValueLength" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.Var.wType" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.Var.szKey" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.Var.Padding" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.Var.Value" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.Var.Value[i].lowWord" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.3.Var.Value[i].highWord" = { value = "", status = "not-applicable", source = "catalogue:B.4.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.B.4.4
+"catalogue.B.4.4.PE resource type RT_VERSION" = { value = "", status = "not-applicable", source = "catalogue:B.4.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.4.PE resource type RT_GROUP_ICON" = { value = "", status = "not-applicable", source = "catalogue:B.4.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.4.PE resource type RT_ICON" = { value = "", status = "not-applicable", source = "catalogue:B.4.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.4.PE icon group/name/ID" = { value = "", status = "pending", source = "catalogue:B.4.4", reason = "Await reviewed applicable product value." }
+"catalogue.B.4.4.PE resource type RT_MANIFEST" = { value = "", status = "not-applicable", source = "catalogue:B.4.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.4.4.RT_MANIFEST resource ID" = { value = "", status = "pending", source = "catalogue:B.4.4", reason = "Await reviewed applicable product value." }
+"catalogue.B.4.4.Recorded PDB location" = { value = "", status = "pending", source = "catalogue:B.4.4", reason = "Await reviewed applicable product value." }
+
+# catalogue.B.5.assembly/@manifestVersion
+"catalogue.B.5.assembly/@manifestVersion" = { value = "", status = "not-applicable", source = "catalogue:B.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.B.5.assembly/assemblyIdentity/@type
+"catalogue.B.5.assembly/assemblyIdentity/@type" = { value = "", status = "pending", source = "catalogue:B.5", reason = "Await reviewed applicable product value." }
+
+# catalogue.B.5.assembly/assemblyIdentity/@name
+"catalogue.B.5.assembly/assemblyIdentity/@name" = { value = "", status = "pending", source = "catalogue:B.5", reason = "Await reviewed applicable product value." }
+
+# catalogue.B.5.assembly/assemblyIdentity/@language
+"catalogue.B.5.assembly/assemblyIdentity/@language" = { value = "", status = "pending", source = "catalogue:B.5", reason = "Await reviewed applicable product value." }
+
+# catalogue.B.5.assembly/assemblyIdentity/@processorArchitecture
+"catalogue.B.5.assembly/assemblyIdentity/@processorArchitecture" = { value = "", status = "pending", source = "catalogue:B.5", reason = "Await reviewed applicable product value." }
+
+# catalogue.B.5.assembly/assemblyIdentity/@version
+"catalogue.B.5.assembly/assemblyIdentity/@version" = { value = "", status = "pending", source = "catalogue:B.5", reason = "Await reviewed applicable product value." }
+
+# catalogue.B.5.assembly/assemblyIdentity/@publicKeyToken
+"catalogue.B.5.assembly/assemblyIdentity/@publicKeyToken" = { value = "", status = "pending", source = "catalogue:B.5", reason = "Await reviewed applicable product value." }
+
+# catalogue.B.5.assembly/description
+"catalogue.B.5.assembly/description" = { value = "", status = "pending", source = "catalogue:B.5", reason = "Await reviewed applicable product value." }
+
+# catalogue.B.6.1
+"catalogue.B.6.1.Package/Identity/@Name" = { value = "", status = "pending", source = "catalogue:B.6.1", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.1.Package/Identity/@ProcessorArchitecture" = { value = "", status = "pending", source = "catalogue:B.6.1", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.1.Package/Identity/@Publisher" = { value = "", status = "pending", source = "catalogue:B.6.1", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.1.Package/Identity/@Version" = { value = "", status = "pending", source = "catalogue:B.6.1", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.1.Package/Identity/@ResourceId" = { value = "", status = "pending", source = "catalogue:B.6.1", reason = "Await reviewed applicable product value." }
+
+# catalogue.B.6.2
+"catalogue.B.6.2.Package/Properties/Framework" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/DisplayName" = { value = "", status = "derived", source = "product.name", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.6.2.Package/Properties/PublisherDisplayName" = { value = "", status = "derived", source = "product.publisher", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.6.2.Package/Properties/Description" = { value = "", status = "derived", source = "product.description", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.6.2.Package/Properties/Logo" = { value = "", status = "derived", source = "field:project.assets.package_logo", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.6.2.Package/Properties/ResourcePackage" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/uap:SupportedUsers" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/uap6:AllowExecution" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/desktop6:RegistryWriteVirtualization" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/desktop6:FileSystemWriteVirtualization" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/virtualization:FileSystemWriteVirtualization" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/virtualization:RegistryWriteVirtualization" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/rescap6:ModificationPackage" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/uap10:AllowExternalContent" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/uap10:PackageIntegrity" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/uap13:AutoUpdate" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/uap15:DependencyTarget" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/uap16:UpdateWhileInUse" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/uap17:UpdateWhileInUse" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/heap:HeapPolicy" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/deployment2:StageWhileInUse" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/trustedlaunch:TrustedLaunch" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/accesscontrol:AccessControl" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.2.Package/Properties/appdata:ApplicationData" = { value = "", status = "pending", source = "catalogue:B.6.2", reason = "Await reviewed applicable product value." }
+
+# catalogue.B.6.3
+"catalogue.B.6.3.Application/@Id" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@Executable" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@EntryPoint" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@StartPage" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@ResourceGroup" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@desktop4:Subsystem" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@iot2:Subsystem" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@uap10:Subsystem" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@desktop4:SupportsMultipleInstances" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@iot2:SupportsMultipleInstances" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@uap10:SupportsMultipleInstances" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@uap11:CurrentDirectoryPath" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@uap11:Parameters" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@previewsecurity:TrustLevel" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@uap10:TrustLevel" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@uap10:RuntimeBehavior" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@uap10:HostId" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@uap10:Parameters" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@previewsecurity2:RuntimeBehavior" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@uap16:BaseNamedObjectsIsolation" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@uap17:BaseNamedObjectsIsolation" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@desktop11:AppLifecycleBehavior" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@previewappcompat:CompatMode" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.3.Application/@previewappcompat:Scope" = { value = "", status = "not-applicable", source = "catalogue:B.6.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.B.6.4
+"catalogue.B.6.4.Application/uap:VisualElements" = { value = "", status = "not-applicable", source = "catalogue:B.6.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.4.Application/uap3:VisualElements" = { value = "", status = "not-applicable", source = "catalogue:B.6.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.4.Application/uap:ApplicationContentUriRules" = { value = "", status = "not-applicable", source = "catalogue:B.6.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.4.Application/Extensions" = { value = "", status = "not-applicable", source = "catalogue:B.6.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.4.Application/uap7:Properties" = { value = "", status = "not-applicable", source = "catalogue:B.6.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.B.6.5
+"catalogue.B.6.5.uap:VisualElements/@DisplayName" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.5.uap:VisualElements/@Description" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.5.uap:VisualElements/@BackgroundColor" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.5.uap:VisualElements/@Square150x150Logo" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.5.uap:VisualElements/@Square44x44Logo" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.5.uap:VisualElements/@AppListEntry" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.5.uap:VisualElements/uap:DefaultTile" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.5.uap:VisualElements/uap:LockScreen" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.5.uap:VisualElements/uap:SplashScreen" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.5.uap:VisualElements/uap:InitialRotationPreference" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
+"catalogue.B.6.5.uap3:VisualElements/@VisualGroup" = { value = "", status = "pending", source = "catalogue:B.6.5", reason = "Await reviewed applicable product value." }
+
+# catalogue.B.6.6
+"catalogue.B.6.6.Package/Resources/Resource/@Language" = { value = "", status = "not-applicable", source = "catalogue:B.6.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.6.Package/Resources/Resource/@uap:Scale" = { value = "", status = "not-applicable", source = "catalogue:B.6.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.6.Package/Resources/Resource/@uap:DXFeatureLevel" = { value = "", status = "not-applicable", source = "catalogue:B.6.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.6.Package/Dependencies/TargetDeviceFamily/@Name" = { value = "", status = "not-applicable", source = "catalogue:B.6.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.6.Package/Dependencies/TargetDeviceFamily/@MinVersion" = { value = "", status = "not-applicable", source = "catalogue:B.6.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.6.Package/Dependencies/TargetDeviceFamily/@MaxVersionTested" = { value = "", status = "not-applicable", source = "catalogue:B.6.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.6.6.Package/@IgnorableNamespaces" = { value = "", status = "not-applicable", source = "catalogue:B.6.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.B.7.SignTool
+"catalogue.B.7.SignTool.sign./d" = { value = "", status = "pending", source = "catalogue:B.7", reason = "Await reviewed applicable product value." }
+"catalogue.B.7.SignTool.sign./du" = { value = "", status = "pending", source = "catalogue:B.7", reason = "Await reviewed applicable product value." }
+
+# catalogue.B.8.1
+"catalogue.B.8.1.MSI.Property.ProductName" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.Manufacturer" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ProductVersion" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ProductLanguage" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ProductCode" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.UpgradeCode" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPAUTHORIZEDCDFPREFIX" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPCOMMENTS" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPCONTACT" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPINSTALLLOCATION" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPHELPLINK" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPHELPTELEPHONE" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPNOMODIFY" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPNOREMOVE" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPNOREPAIR" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPPRODUCTICON" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPREADME" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPSIZE" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPSYSTEMCOMPONENT" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPURLINFOABOUT" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.ARPURLUPDATEINFO" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.1.MSI.Property.MSIARPSETTINGSIDENTIFIER" = { value = "", status = "not-applicable", source = "catalogue:B.8.1", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.B.8.2
+"catalogue.B.8.2.MSI.Uninstall.DisplayName" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.DisplayVersion" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.Publisher" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.VersionMinor" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.VersionMajor" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.Version" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.HelpLink" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.HelpTelephone" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.InstallDate" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.InstallLocation" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.InstallSource" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.URLInfoAbout" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.URLUpdateInfo" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.AuthorizedCDFPrefix" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.Comments" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.Contact" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.EstimatedSize" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.Language" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.ModifyPath" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.Readme" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.UninstallString" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.2.MSI.Uninstall.SettingsIdentifier" = { value = "", status = "not-applicable", source = "catalogue:B.8.2", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.B.8.3
+"catalogue.B.8.3.MSI.Summary.Codepage" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.Title" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.Subject" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.Author" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.Keywords" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.Comments" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.Template" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.LastSavedBy" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.RevisionNumber" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.LastPrinted" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.CreateTimeDate" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.LastSaveTimeDate" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.PageCount" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.WordCount" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.CharacterCount" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.CreatingApplication" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.B.8.3.MSI.Summary.Security" = { value = "", status = "not-applicable", source = "catalogue:B.8.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.B.9.1
+"catalogue.B.9.1.StoreListing[locale].Language" = { value = "", status = "derived", source = "per-listing:Language", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Product name" = { value = "", status = "derived", source = "field:project.store.product_name", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Description" = { value = "", status = "derived", source = "field:project.store.description_long", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].What's new in this version" = { value = "", status = "derived", source = "field:project.store.whats_new", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Product features" = { value = "", status = "derived", source = "field:project.store.features", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Screenshots" = { value = "", status = "derived", source = "field:project.assets.screenshots", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Store logos" = { value = "", status = "derived", source = "field:project.assets.store_logo", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Use only uploaded Store images" = { value = "", status = "derived", source = "field:project.store.use_uploaded_images", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Trailers" = { value = "", status = "derived", source = "field:project.assets.trailer", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Additional assets" = { value = "", status = "derived", source = "field:project.assets.additional_store_assets", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Short title" = { value = "", status = "derived", source = "field:project.store.short_title", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Sort title" = { value = "", status = "derived", source = "field:project.store.sort_title", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Voice title" = { value = "", status = "derived", source = "field:project.store.voice_title", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Short description" = { value = "", status = "derived", source = "field:project.store.description_short", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Additional system requirements.Minimum hardware" = { value = "", status = "derived", source = "field:project.store.hardware_minimum", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing[locale].Additional system requirements.Recommended hardware" = { value = "", status = "derived", source = "field:project.store.hardware_recommended", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreAdditional.Keywords" = { value = "", status = "derived", source = "field:project.store.keywords", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreAdditional.Copyright and trademark info" = { value = "", status = "derived", source = "field:project.store.copyright_trademark", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreAdditional.Additional license terms" = { value = "", status = "derived", source = "field:project.store.additional_license_terms", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreAdditional.Developed by" = { value = "", status = "derived", source = "field:project.author.name", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.1.StoreListing.Published by" = { value = "", status = "derived", source = "field:project.store.published_by", reason = "Alias of the single owned semantic authority; not independently editable." }
+
+# catalogue.B.9.2
+"catalogue.B.9.2.StoreProperties.Category" = { value = "", status = "derived", source = "field:project.store.category", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreProperties.Subcategory/genre" = { value = "", status = "derived", source = "field:project.store.subcategory", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreProperties.Secondary category" = { value = "", status = "derived", source = "field:project.store.secondary_category", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreProperties.Accesses, collects or transmits personal information" = { value = "", status = "derived", source = "field:project.store.privacy_declaration", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreProperties.Privacy policy URL" = { value = "", status = "derived", source = "field:project.urls.privacy", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreProperties.Privacy policy text" = { value = "", status = "derived", source = "field:project.store.privacy_policy_text", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreSupport.Website" = { value = "", status = "derived", source = "field:project.urls.homepage", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreSupport.Support contact info" = { value = "", status = "derived", source = "field:project.contacts.support_info", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreRegulatory.Phone number" = { value = "", status = "derived", source = "field:project.contacts.regulatory_phone", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreRegulatory.Address" = { value = "", status = "derived", source = "field:project.contacts.regulatory_address", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreRegulatory.Apartment / Suite" = { value = "", status = "derived", source = "field:project.contacts.regulatory_suite", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreRegulatory.City" = { value = "", status = "derived", source = "field:project.contacts.regulatory_city", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreRegulatory.State / Province" = { value = "", status = "derived", source = "field:project.contacts.regulatory_state", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreRegulatory.Country" = { value = "", status = "derived", source = "field:project.contacts.regulatory_country", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreRegulatory.Postal code" = { value = "", status = "derived", source = "field:project.contacts.regulatory_postal_code", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreProperties.System requirements" = { value = "", status = "derived", source = "field:project.store.system_requirements", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreProperties.Game settings" = { value = "", status = "derived", source = "field:project.store.game_settings", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreProperties.Display mode" = { value = "", status = "derived", source = "field:project.store.display_mode", reason = "Alias of the single owned semantic authority; not independently editable." }
+"catalogue.B.9.2.StoreProperties.Product declarations" = { value = "", status = "derived", source = "field:project.store.product_declarations", reason = "Alias of the single owned semantic authority; not independently editable." }
+
+# catalogue.C.3.EM
+"catalogue.C.3.EM.ProviderType/@name" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ProviderType/@guid" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ProviderType/@resourceFileName" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ProviderType/@messageFileName" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ProviderType/@parameterFileName" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ProviderType/@helpLink" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ProviderType/@symbol" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ProviderType/@message" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ProviderType/@source" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ProviderType/@warnOnApplicationCompatibilityError" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ProviderType/channels" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ProviderType/levels" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ProviderType/tasks" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ProviderType/opcodes" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ProviderType/keywords" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ProviderType/maps" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ProviderType/namedQueries" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ProviderType/templates" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ProviderType/events" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ProviderType/filters" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ProviderType/*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ProviderType/@*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelListType/importChannel" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelListType/channel" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelListType/*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelListType/@*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ImportChannelType/@chid" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ImportChannelType/@name" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ImportChannelType/@symbol" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ChannelType/@name" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ChannelType/@chid" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelType/@type" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelType/@symbol" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ChannelType/@access" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ChannelType/@isolation" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ChannelType/@enabled" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelType/@value" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelType/@message" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ChannelType/logging" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelType/publishing" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelLoggingType/autoBackup" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelLoggingType/retention" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelLoggingType/maxSize" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelLoggingType/*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelLoggingType/@*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelPublishingType/level" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelPublishingType/keywords" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelPublishingType/controlGuid" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelPublishingType/bufferSize" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelPublishingType/minBuffers" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelPublishingType/fileMax" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelPublishingType/maxBuffers" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelPublishingType/latency" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelPublishingType/clockType" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelPublishingType/sidType" = { value = "", status = "pending", source = "catalogue:C.3", reason = "Await reviewed applicable product value." }
+"catalogue.C.3.EM.ChannelPublishingType/*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.3.EM.ChannelPublishingType/@*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.3", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.C.4.EM
+"catalogue.C.4.EM.EventDefinitionType/@value" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.EventDefinitionType/@level" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.EventDefinitionType/@template" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.EventDefinitionType/@channel" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.EventDefinitionType/@keywords" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.EventDefinitionType/@task" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.EventDefinitionType/@opcode" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.EventDefinitionType/@symbol" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.EventDefinitionType/@version" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.EventDefinitionType/@message" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.EventDefinitionType/@notLogged" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.LevelType/@name" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.LevelType/@symbol" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.LevelType/@value" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.LevelType/@message" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.TaskType/@name" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.TaskType/@symbol" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.TaskType/@value" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.TaskType/@eventGUID" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.TaskType/@message" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.TaskType/opcodes" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.TaskType/@*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.OpcodeType/@name" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.OpcodeType/@symbol" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.OpcodeType/@value" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.OpcodeType/@mofValue" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.OpcodeType/@message" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.OpcodeType/@*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.KeywordType/@name" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.KeywordType/@symbol" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.KeywordType/@mask" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.KeywordType/@message" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.KeywordType/@*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.MapType/valueMap" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.MapType/bitMap" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.ValueMapType/@name" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.ValueMapType/@symbol" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.ValueMapType/map" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.ValueMapValueType/@value" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.ValueMapValueType/@message" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.ValueMapValueType/@symbol" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.BitMapType/@name" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.BitMapType/@symbol" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.BitMapType/map" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.BitMapValueType/@value" = { value = "", status = "not-applicable", source = "catalogue:C.4", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.4.EM.BitMapValueType/@message" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+"catalogue.C.4.EM.BitMapValueType/@symbol" = { value = "", status = "pending", source = "catalogue:C.4", reason = "Await reviewed applicable product value." }
+
+# catalogue.C.5.EM
+"catalogue.C.5.EM.TemplateItemType/@tid" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.TemplateItemType/@name" = { value = "", status = "pending", source = "catalogue:C.5", reason = "Await reviewed applicable product value." }
+"catalogue.C.5.EM.TemplateItemType/data" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.TemplateItemType/struct" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.TemplateItemType/binary" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.TemplateItemType/UserData" = { value = "", status = "pending", source = "catalogue:C.5", reason = "Await reviewed applicable product value." }
+"catalogue.C.5.EM.TemplateItemType/binary/@name" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.DataDefinitionType/@name" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.DataDefinitionType/@inType" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.DataDefinitionType/@outType" = { value = "", status = "pending", source = "catalogue:C.5", reason = "Await reviewed applicable product value." }
+"catalogue.C.5.EM.DataDefinitionType/@map" = { value = "", status = "pending", source = "catalogue:C.5", reason = "Await reviewed applicable product value." }
+"catalogue.C.5.EM.DataDefinitionType/@length" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.DataDefinitionType/@count" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.DataDefinitionType/@*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.StructDefinitionType/@name" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.StructDefinitionType/@length" = { value = "", status = "pending", source = "catalogue:C.5", reason = "Await reviewed applicable product value." }
+"catalogue.C.5.EM.StructDefinitionType/@count" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.StructDefinitionType/data" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.StructDefinitionType/@*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.LocalizationType/@fallbackCulture" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.LocalizationType/resources" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.LocalizationType/*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.LocalizationType/@*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.LocalizationType/resources/@culture" = { value = "", status = "pending", source = "catalogue:C.5", reason = "Await reviewed applicable product value." }
+"catalogue.C.5.EM.LocalizationType/resources/stringTable" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.LocalizationType/resources/@*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.StringTableType/string" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.StringTableType/@*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.5.EM.StringTableType/string/@id" = { value = "", status = "pending", source = "catalogue:C.5", reason = "Await reviewed applicable product value." }
+"catalogue.C.5.EM.StringTableType/string/@value" = { value = "", status = "pending", source = "catalogue:C.5", reason = "Await reviewed applicable product value." }
+"catalogue.C.5.EM.StringTableType/string/@stringType" = { value = "", status = "not-applicable", source = "catalogue:C.5", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.C.6.EM
+"catalogue.C.6.EM.FilterListType/filter" = { value = "", status = "not-applicable", source = "catalogue:C.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.6.EM.FilterType/@value" = { value = "", status = "not-applicable", source = "catalogue:C.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.6.EM.FilterType/@version" = { value = "", status = "not-applicable", source = "catalogue:C.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.6.EM.FilterType/@name" = { value = "", status = "not-applicable", source = "catalogue:C.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.6.EM.FilterType/@symbol" = { value = "", status = "pending", source = "catalogue:C.6", reason = "Await reviewed applicable product value." }
+"catalogue.C.6.EM.FilterType/@message" = { value = "", status = "pending", source = "catalogue:C.6", reason = "Await reviewed applicable product value." }
+"catalogue.C.6.EM.FilterType/@tid" = { value = "", status = "not-applicable", source = "catalogue:C.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.6.EM.XmlType/*{##other}" = { value = "", status = "not-applicable", source = "catalogue:C.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.6.EM.LevelListType/level" = { value = "", status = "not-applicable", source = "catalogue:C.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.6.EM.TaskListType/task" = { value = "", status = "not-applicable", source = "catalogue:C.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.6.EM.OpcodeListType/opcode" = { value = "", status = "not-applicable", source = "catalogue:C.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.6.EM.KeywordListType/keyword" = { value = "", status = "not-applicable", source = "catalogue:C.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.6.EM.TemplateListType/template" = { value = "", status = "not-applicable", source = "catalogue:C.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.6.EM.DefinitionType/event" = { value = "", status = "not-applicable", source = "catalogue:C.6", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.6.EM.DefinitionType/task" = { value = "", status = "pending", source = "catalogue:C.6", reason = "Await reviewed applicable product value." }
+
+# catalogue.C.7.NATIVE
+"catalogue.C.7.NATIVE.EVENT_DESCRIPTOR/Id" = { value = "", status = "pending", source = "catalogue:C.7", reason = "Await reviewed applicable product value." }
+"catalogue.C.7.NATIVE.EVENT_DESCRIPTOR/Version" = { value = "", status = "pending", source = "catalogue:C.7", reason = "Await reviewed applicable product value." }
+"catalogue.C.7.NATIVE.EVENT_DESCRIPTOR/Channel" = { value = "", status = "pending", source = "catalogue:C.7", reason = "Await reviewed applicable product value." }
+"catalogue.C.7.NATIVE.EVENT_DESCRIPTOR/Level" = { value = "", status = "pending", source = "catalogue:C.7", reason = "Await reviewed applicable product value." }
+"catalogue.C.7.NATIVE.EVENT_DESCRIPTOR/Opcode" = { value = "", status = "pending", source = "catalogue:C.7", reason = "Await reviewed applicable product value." }
+"catalogue.C.7.NATIVE.EVENT_DESCRIPTOR/Task" = { value = "", status = "pending", source = "catalogue:C.7", reason = "Await reviewed applicable product value." }
+"catalogue.C.7.NATIVE.EVENT_DESCRIPTOR/Keyword" = { value = "", status = "pending", source = "catalogue:C.7", reason = "Await reviewed applicable product value." }
+
+# catalogue.C.7.RUNTIME
+"catalogue.C.7.RUNTIME.EventWriteTransfer-correlation/ActivityId" = { value = "", status = "not-applicable", source = "catalogue:C.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.7.RUNTIME.EventWriteTransfer-correlation/RelatedActivityId" = { value = "", status = "not-applicable", source = "catalogue:C.7", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+
+# catalogue.C.8.PERF
+"catalogue.C.8.PERF.provider/@symbol" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.provider/@callback" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.provider/@providerGuid" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.provider/@applicationIdentity" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.provider/@providerType" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.provider/@providerName" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.provider/@resourceBase" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.provider/counterSet" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counterSet/@symbol" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counterSet/@guid" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counterSet/@uri" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counterSet/@name" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counterSet/@description" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counterSet/@instances" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counterSet/structs" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counterSet/counter" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@symbol" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@id" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@uri" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@name" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@description" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@type" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@baseID" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@detailLevel" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@defaultScale" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@aggregate" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@perfTimeID" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@perfFreqID" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@multiCounterID" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@struct" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/@field" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counter/counterAttributes" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counterAttributes/counterAttribute" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.counterAttribute/@name" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.structs/struct" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.struct/@name" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }
+"catalogue.C.8.PERF.struct/@type" = { value = "", status = "not-applicable", source = "catalogue:C.8", reason = "Not a current authored value; retain the owning format, runtime or feature contract." }

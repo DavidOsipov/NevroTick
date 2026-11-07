@@ -87,6 +87,18 @@ for an observed order failure, including joint predecessors. Nextest's separate
 processes cannot establish shared-process independence; a fresh victim process
 can still exercise a reused parent runner, file or other actual shared owner.
 
+For separately copied Rust source variants, isolate Cargo artifacts as well as
+source. Give each healthy, altered and restored source fixture an explicit fresh
+`--target-dir` outside its sealed input tree. Commands for one unchanged fixture
+may share its target directory. A shared target plus copied source timestamps
+can reuse a healthy executable even when the altered source has a different
+digest. Clippy checking the altered source does not establish which source the
+later test executable contains. Record the actual test executable's target path
+and bind it to the intended fixture; require the named behavioral failure and
+healthy/restored controls. A new path or binary digest alone proves no semantic
+discrimination. Keep a cache-reuse failure as incomplete harness evidence and
+rerun the affected controls after repairing artifact isolation.
+
 Register owned fallback cleanup promptly and check restoration before that cleanup
 masks a leak. In Python, `addCleanup` runs even if `setUp` fails; `tearDown` need
 not. Avoid whole-suite randomization that changes class/module fixture lifetimes

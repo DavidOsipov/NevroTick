@@ -1,8 +1,9 @@
 # Record and storage
 
-Use this reference for the metadata model and maintenance rules. These are
-recommended authoring/evidence conventions, not a claim that the product record
-or generator already exists. The [canonical plan](../../../../../docs/plans/windows-package-metadata.md#4-shared-maintained-record-and-provenance-of-values)
+Use this reference for the metadata model and maintenance rules. The selected
+[metadata/ pipeline](../../../../../metadata/README.md) implements the bounded
+source record and projections; later observation/build/native conventions still
+need their own stage evidence. The [canonical plan](../../../../../docs/plans/windows-package-metadata.md#4-shared-maintained-record-and-provenance-of-values)
 owns the product fields and current pending facts.
 
 ## Contents
@@ -17,7 +18,7 @@ owns the product fields and current pending facts.
 
 | Record | Recommended representation | Owner and purpose |
 | --- | --- | --- |
-| Reviewed product/component intent | Versioned TOML, proposed `packaging/product.toml`, plus component/locale files when needed | Human-reviewed names, descriptions, rights references, public destinations and field dispositions |
+| Reviewed product/component intent | Selected [metadata/product.toml](../../../../../metadata/product.toml), with component/locale extensions only under its owned schema | Human-reviewed names, descriptions, rights references, public destinations and field dispositions |
 | Frozen build/release inputs | Existing candidate receipt, extended with metadata-input and generator identities | Actual Cargo/release mapping, toolchain, target/features and input digests |
 | Harvested observations | Versioned JSON records with raw evidence references | What a particular collector observed from a particular input/context |
 | Generated projections | RC/XML/RESW/PRI/selected installer authoring, About data and listing exports | Deterministic products of reviewed intent and frozen facts; not separately edited authorities |
@@ -57,9 +58,22 @@ or Store identity decisions by itself.
 
 ## Define a field contract
 
-Start from [the TOML example](../assets/field-register.example.toml), which shows
-record shape only. Expand it from the canonical field map; do not treat its few
-rows as a complete product inventory or ship it as a real release input.
+The selected [complete record](../../../../../metadata/product.toml) carries the
+code-owned registry's exact key set. Its empty unanswered values are intentional:
+retain pending source/reason and the registry owner; a blank is not populated.
+The registry defines the contract/applicability, while the TOML remains the single
+editable value source. Reject missing/unknown keys and conflicting copied aliases.
+Use [the text policy](../../../../../metadata/text-policy.md) for strict UTF-8,
+raw/comment and decoded-escape emoji/control rejection. It preserves ordinary
+international text without silently stripping or normalizing it.
+
+
+Edit the selected complete record for actual values. Use
+[the TOML example](../assets/field-register.example.toml) only as a design worksheet
+when defining a new field contract. Its illustrative `[[fields]]` array is not
+the implemented input schema: real `product.toml` uses the code-owned `[fields]`
+table and exact required key set. Do not replace that source with the worksheet,
+copy its placeholder identities into it or introduce a competing value authority.
 
 For each semantic field, record:
 
@@ -67,19 +81,45 @@ For each semantic field, record:
   destination field/resource key, and the existing acceptance/stage owner.
 - Type and constraints: Unicode/encoding, target-defined length unit and limits,
   allowed formats/ranges, supported schema version and localization/fallback rule.
+- Kind and applicability: authored description, stable technical identity,
+  behavioral/security setting, generated format member or runtime observation;
+  selected component/route/schema and the reason an optional entry is reached.
 - Authority and provenance: source kind, repository path/section or external
   identity/export, source revision/digest, review owner/date and derivation ID.
 - Disposition: `populated` with a reviewed value; `derived` with named inputs and
   transformation; `pending` with a responsible owner/next action; or
   `not-applicable` with a concrete reason. Do not collapse these into empty text.
-- Required stage and export policy: public artifact/listing, internal evidence
-  or private source. Keep a dedicated allowlist for each output consumer.
+- Required stage, independent reader and export policy: public artifact/listing,
+  internal evidence or private source. Keep a dedicated allowlist for each output
+  consumer; name how its actual representation will be observed.
 
 Keep the semantic product value separate from surface-specific formatting.
 For example, one product description may have a reviewed short variant for a
 constrained field; do not truncate a long description blindly or confuse it with
 each component's role description. Locale keys and component IDs form part of
 identity. Define explicit fallback instead of mixing languages within one row.
+
+Use exact namespace identities and field paths; XML prefixes are aliases. Keep
+catalogue rows, aliases and alternative projections distinct from unique semantic
+facts. Generated padding, lengths and reserved values need a format owner, not
+invented friendly values. Preview/internal schema members remain conditional or
+inapplicable; refresh selected SDK/compiler support before authoring them. A
+reasoned disposition does not authorize a behavior, provider or integration.
+
+Preserve stable service, package, application and provider identities over routine
+rebuilds and translations. Generate a new identity only through its actual owner
+and compatibility decision. Display names and descriptions never establish an
+executable's identity, authorization or signature trust.
+
+Validate identifier meaning at its admitted boundary: ORCID and ISNI need valid
+check characters as well as the exact selected spelling. Preserve empty pending
+fields and reject invalid values; do not silently trim, rewrite or truncate.
+A checksum does not establish registry assignment or ownership. When technical
+identities become populated, check references and collisions within each actual
+SCM/package/application/provider/resource namespace using its comparison rules.
+Record intentional sharing; a common display name cannot choose another role.
+Do not require global uniqueness across unrelated namespaces or copy personal
+website facts over NevroTick's accepted authorities.
 
 Use a versioned build-time schema/validator for owned records. Reject unknown
 owned keys, duplicate IDs, unresolved required values, invalid destinations,
@@ -104,6 +144,11 @@ then extend the existing candidate receipt rather than creating competing logs.
 Its `example_only` marker and `not-run` outcome intentionally prevent it from
 being mistaken for successful evidence. Real successful records require actual
 input/output digests and an observed value, not placeholder hashes.
+This proposed observation shape is also distinct from generated `metadata.json`,
+`field-coverage.json` and `receipt.json`; the source CLI does not admit it as a
+product input or verify native observations. Reuse canonical registry field IDs
+such as `component.ui.pe.ProductName`; give a genuinely new observed field its
+owned contract instead of silently changing spelling or creating an alias.
 
 Bind the record to the exact artifact, component, stage and reader. Preserve
 raw typed values or bounded raw-evidence references, separately recorded derived

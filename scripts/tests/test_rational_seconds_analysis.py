@@ -24,6 +24,20 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
+def synthetic_product(root):
+    """Supply an unexecuted product envelope, not historical Cargo admission.
+
+    Real files remain observable for missing/extra/content controls. Tool helpers
+    stay outside this product map so their independent protected-byte guard runs.
+    """
+    paths = [root / name for name in ("Cargo.toml", "Cargo.lock", "policy/verification-manifest.toml")]
+    paths += list((root / "crates/time-domain").rglob("*"))
+    paths += list((root / "synthetic-product").rglob("*"))
+    identity = {path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in paths if path.is_file()}
+    return {"scope": "unexecuted synthetic admitted-product provider"}, identity
+
+
 def literal_execution(*, doctests):
     """Literal records for seven raw guards, six public cases and five examples."""
     text = """running 7 tests
@@ -57,18 +71,14 @@ test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 
 class RationalSecondsAnalysisTests(unittest.TestCase):
-    """Actual isolated source admission plus positive and intended rejection controls."""
+    """Synthetic product envelopes with actual protected-byte/rejection controls."""
 
     def fixture(self, root):
-        _, identity = MODULE.PRODUCT.admit_product(ROOT)
-        names = set(identity) | set(MODULE.RATIONAL_SECONDS_BOUND_INPUTS) | {MODULE.RATIONAL_SECONDS_POLICY}
+        """Exercise the policy reader without relabelling today's graph as374."""
+        names = set(MODULE.RATIONAL_SECONDS_BOUND_INPUTS)
         for name in sorted(names):
             target = root / name; target.parent.mkdir(parents=True, exist_ok=True)
-            if (ROOT / name).is_file():
-                shutil.copyfile(ROOT / name, target)
-            else:
-                # Python-only source-custody control, never compiled or claimed as a product result.
-                target.write_text("// Synthetic unexecuted source-admission fixture.\n")
+            shutil.copyfile(ROOT / name, target)
         manifest = root / "policy/verification-manifest.toml"
         text = manifest.read_text()
         if MODULE.RATIONAL_SECONDS_FILE not in text:
@@ -78,7 +88,18 @@ class RationalSecondsAnalysisTests(unittest.TestCase):
             text = text.replace("critical_files = [", 'critical_files = [\n    "'
                                 + MODULE.RATIONAL_SECONDS_FILE + '",', 1)
             manifest.write_text(text)
+        # Exactly374 is a unit envelope. These inert files and the delegated
+        # provider never represent an executed or historically admitted product.
+        padding = root / "synthetic-product"; padding.mkdir()
+        _, identity = synthetic_product(root)
+        for index in range(374 - len(identity)):
+            (padding / f"input-{index:03}.txt").write_text(f"Unexecuted synthetic input {index}.\n")
+        def admitted_product(actual_root):
+            self.assertEqual(Path(actual_root).resolve(), root.resolve())
+            return synthetic_product(root)
+        self.enterContext(patch.object(MODULE.PRODUCT, "admit_product", side_effect=admitted_product))
         _, identity = MODULE.PRODUCT.admit_product(root)
+        self.assertEqual(len(identity), 374)
         policy = {**copy.deepcopy(MODULE.RATIONAL_SECONDS_FIXED),
                   "candidate_sha256": digest(identity),
                   "inputs_sha256": {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
@@ -91,7 +112,7 @@ class RationalSecondsAnalysisTests(unittest.TestCase):
     def write(self, root, policy):
         (root / MODULE.RATIONAL_SECONDS_POLICY).write_text(json.dumps(policy))
 
-    def test_scope_and_healthy_complete_candidate_use_real_product_admission(self):
+    def test_scope_and_healthy_synthetic_product_envelope(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); policy = self.fixture(root)
             self.assertEqual(len(MODULE.PRODUCT.admit_product(root)[1]), 374)
@@ -101,6 +122,14 @@ class RationalSecondsAnalysisTests(unittest.TestCase):
             self.assertNotIn("rational_seconds", MODULE.SUBJECTS)
             self.assertEqual(MODULE.SCOPE.policy, "policy/time-domain-analysis.json")
             self.assertEqual(json.loads((ROOT / "policy/time-domain-analysis.json").read_text())["source_file_count"], 166)
+
+    def test_real_current_product_cannot_claim_historical_374_input_profile(self):
+        """The unmocked current graph remains outside the historical role."""
+        _, identity = MODULE.PRODUCT.admit_product(ROOT)
+        self.assertGreater(len(identity), 374)
+        self.assertEqual(MODULE.RATIONAL_SECONDS_FIXED["source_file_count"], 374)
+        with self.assertRaisesRegex(MODULE.Incomplete, "374-input product"):
+            MODULE.read_rational_seconds_policy(ROOT)
 
     def test_scope_thresholds_profiles_budgets_types_and_unknown_fields_cannot_change(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -287,7 +316,8 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
             self.assertEqual(MODULE.rational_seconds_baseline(work)["tests_executed"], 18)
             for malformed in ([], {"outcomes": None}, {"outcomes": {}}):
                 path.write_text(json.dumps(malformed))
-                with self.subTest(malformed=malformed), self.assertRaisesRegex(MODULE.Incomplete, "invalid shape"):
+                with self.subTest(malformed=malformed), self.assertRaisesRegex(
+                        MODULE.Incomplete, "invalid shape|JSON must be an object"):
                     MODULE.rational_seconds_baseline(work)
             for rows in ([], [baseline, baseline], [{**baseline, "summary": "Failure"}],
                          [{**baseline, "log_path": "../escape.log"}],

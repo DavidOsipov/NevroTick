@@ -6,10 +6,36 @@ P0–P7 and stage meanings; the plan owns ordering/readiness; linked tasks own
 bounded work and candidate-specific evidence. This index does not certify exits.
 
 **Current continuation:** use [plan §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-and the engine's [next source checkpoint](engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission).
-The [pure-leap qualification](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026)
-is its completed predecessor. Historical
-checkpoint numbers and passes never replace the current candidate or next action.
+and the engine's
+[receiving-contract card](engine-transport-pilot.md#conditional-next-product-contract-after-n2s-finite-exit)
+to settle four explicit identity/accumulation/capacity/commit choices and held
+suppliers before Rust integration. The
+[N3a final exit](engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners)
+qualifies its selected Linux scope on407-input `e71aab7...`:91 ordinary/91
+optimized tests,42 doctests, external contracts, both line gates and357 accounted
+variants (214 fresh library plus143 explicitly reused receiver outcomes).
+Four reviewed equivalents receive no kill credit; no unresolved survivor or
+timeout remains. Production history and the Engine-to-Core edge stay held. The
+[N2a final exit](engine-transport-pilot.md#n2a-final-qualification--two-selected-core-owners)
+completes its selected pure Linux scope on385-input `2fc732f1...`:396 ordinary/396
+optimized tests,88 doctests, both line gates and304 variants with two reviewed
+equivalents, no unresolved survivor/timeout and raw native2/0 retained. Historical
+producer controls have explicit scoped reuse, not fresh current-candidate faults.
+The [N1b conditioned-window exit](engine-transport-pilot.md#n1b-final-qualification--two-selected-core-owners)
+completes its selected two-owner Linux scope on380-input `7a7d1b7b...`, with
+ordinary/optimized/doctest, coverage, validation and reviewed mutation gates;
+its raw failures/equivalence/resource history remains explicit. It inserts no
+production history and supplies no genuine source or physical authority.
+The [two-owner numerical qualification](s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners)
+completed its `cb2925bb...` Linux scope on7 November, following the
+[pure-leap checkpoint](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026).
+The [common-run bridge exit](engine-transport-pilot.md#common-run-reference-bridge--final-qualification-and-next-action)
+now passes ordinary host checks and both per-file gates on its recorded
+`46513296...` snapshot. Scoped reuse across the latest pull follows unchanged
+compiled-input/graph/vendor/tool review, rather than a new whole-candidate pass.
+Fresh two-package Windows-target compiler/Clippy checks supply no link/native
+Windows evidence. The actual receiver remains fixture-only; production history,
+physical/date/source/policy admission, NTS and full P1/product acceptance remain open.
 **Deferred** below means a recorded parent, not ready for implementation; expand
 only its next activated child under the [grouped backlog](development-backlog.md).
 Role owners identify engineering responsibility, not assigned people.
@@ -62,7 +88,7 @@ retain their existing prerequisites and re-entry gates.
 | P1 S1.3 | [Selection/principal/combination](s1.3-source-selection-readiness.md); numerical Core | [Actual source-counter invariant](s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026) passed five full raw2^80/three-defect/restored jobs,145 properties and291 Python checks;32 inputs/nine executed Python sources bound. Earlier ordinal/append-depth/rational evidence remains preserved. [Complete constructor source preparation](s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026) now has six genuine Garde-backed Cargo projects,14 authenticated vendor packages,51 source checks and independent review; zero compiler/proof commands, execution unready. Source-specific admission/target/allocator/drop/unwinding/constructor proof, transactional lifecycle, prefix/depth/topology/whole-selection, held fraction models/bridge/import/addition, Garde admission, `EndpointParts`, complete enclosure and Core/P1 remain open. All holds and the full P0–P7 objective remain. |
 | P1 S1.4 | [Core completion parent](development-backlog.md#p1-core-completion), [leap entry table](s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint); Core/domain | Abstract discipline/holdover parent remains deferred. The separate pure-leap owner has completed its recorded final host qualification; preserve current receipts and continue with the observation-to-Core contract under plan §7. Formal obligations are post-V1. Later protocol/native scopes remain open. |
 | P1 S1.5 | [Core completion / verifier maintenance](development-backlog.md#p1-core-completion); tooling/dependency/QA | Cross-cutting verification and eventual phase closure; existing actual gates remain mandatory. Deferred maintenance is not a new implementation prerequisite. |
-| P2 S2.1–S2.4 | [Acquisition parent](development-backlog.md#p2-acquisition); engine/protocol/security | Deferred real UDP/DNS → NTS → qualified reuse/recovery → adversarial closure. The [ordinary S2.2 card](engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026) prepares fresh KE/protected UDP/actual Core composition; graph/trust/contracts and implementation evidence remain open. Reuse the engine, protocol and crypto owners without inheriting production qualification. |
+| P2 S2.1–S2.4 | [Acquisition parent](development-backlog.md#p2-acquisition), [observation-to-Core contract](engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission); engine/protocol/security | The common-run bridge, N1b and N2a have completed their selected host exits. N3a's finite same-source acquisition/consume-once receiver now passes its ordinary checkpoint; complete its separate contract/coverage/mutation and validator-mechanism gates. Production history remains unimplemented and existing history fixture-only. Full UDP/DNS → NTS → qualified reuse/recovery → adversarial closure retains its deferred parent gates. The [ordinary S2.2 card](engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026) prepares fresh KE/protected UDP/actual Core composition; graph/trust/contracts and implementation evidence remain open. Reuse existing owners without inheriting production qualification. |
 | P3 S3.1–S3.4 | [Service-boundary parent](development-backlog.md#p3-service-boundary); platform/IPC/security/Core | Deferred final services → authenticated handlers → mandatory state → simulated-backend integration. W11/ST-W assignments refine these owners; optional storage retains its separate pause. |
 | P4 S4.1–S4.5 | [Clock parent](development-backlog.md#p4-clock-integration); clock/platform/security/QA | Deferred measured backend/accounting → finite policy → power generations → ownership/recovery → soak; relevant P0/P3 evidence and bounded native admission precede effects. |
 | P5 S5.1–S5.4 | [Production-UI parent](development-backlog.md#p5-production-ui); UI/accessibility/platform | Deferred Slint status → settings/helper → diagnostics/tray → accessibility/resources, consuming the admitted adapter and its exact feature graph. Restore D2 before live status/commands and D1/D3 at their preview/qualification triggers. |

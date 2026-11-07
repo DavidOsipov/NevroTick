@@ -165,7 +165,7 @@ fn admit_count(count: usize) -> Result<(), WindowVarianceError> {
 /// All raw binary64 values are accepted by this predicate. Finite values strictly
 /// above zero pass, including subnormals; both zeros, negatives and nonfinite
 /// values fail. The same rule owns precision and every peer-distance admission.
-fn positive_finite_seconds(value: f64) -> bool {
+pub(crate) fn positive_finite_seconds(value: f64) -> bool {
     value.is_finite() && value > 0.0
 }
 

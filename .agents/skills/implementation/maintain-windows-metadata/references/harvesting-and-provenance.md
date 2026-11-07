@@ -18,9 +18,11 @@ owns the Windows field inventory.
 | Question | Preferred harvest | Limit to retain |
 | --- | --- | --- |
 | What should this release say? | Accepted owner/project records, exact Cargo/license/brand sources, approved descriptions and translations | Design intent does not prove generated or shipped content |
+| What did a source generation consume and promise? | Actual generated source tree, its receipt and source-delivery contract, checked against current admitted inputs | Source hashes and required bindings establish neither compiled resource delivery nor native/signature observations |
 | Which Rust packages and declared metadata are involved? | Frozen Cargo JSON and the existing SBOM wrapper | Resolver inventory is not a complete build-unit or packaged-file inventory |
 | What is embedded in a particular file/package? | Exact hashed file, admitted PE/resource reader, read-only Appx/MSI interfaces | Metadata is untrusted data, not publisher authentication |
 | What does Windows present for an installed candidate? | Package/Installer registration and scoped actual UI/resource observations | User, machine, OS, locale, resource packs and cache context affect presentation |
+| Which service/event metadata is actually registered? | Scoped admitted SCM or publisher-metadata reader for the exact installed candidate | Stable identity, raw resource reference, resolved message and current runtime state are separate observations |
 | What identity/listing did the Store assign or retain? | Existing authorized Partner Center identity record and listing export | Keep assigned identity, submission, published listing and delivered bytes distinct |
 | What is a field/API allowed to mean? | Microsoft Learn, Cargo documentation and pinned upstream implementation | Search results locate sources; they do not approve product values |
 
@@ -135,6 +137,17 @@ ProductCode, user SID and installation context with `MsiGetProductInfoExW`.
 Machine context requires a null user SID; another user's context has access
 restrictions. Do not elevate a collector merely to make a missing value disappear.
 Retain access-denied, absent, unsupported and successful empty-value outcomes.
+
+For service labels and event resources, preserve both stored references and
+resolved values under each admitted locale. SCM MUI `@<PE-path>,-<stringID>` and
+MSIX `ms-resource:` references use different resolution paths. The absence of
+direct DisplayName/Description attributes on `desktop6:Service` does not prove
+that packaged labels are impossible or setter-only: trace the selected authoring
+pipeline through actual installed results. Registration readback alone cannot
+prove event rendering, service purpose, management authority or servicing safety.
+Keep service configuration and runtime status in distinct typed observations;
+do not persist a transient PID/state as static product metadata. W11-W05 owns
+reached service checks and W11-W08 owns diagnostics readback.
 
 Avoid `Win32_Product`, including WMI/CIM/PowerShell wrappers: queries can cause
 Windows Installer consistency checks and repairs. An apparent inventory command

@@ -4,9 +4,42 @@
 use super::*;
 use std::collections::BTreeMap;
 use std::error::Error;
+use std::fs::{self, File, OpenOptions};
+use std::io::Read;
+use std::path::PathBuf;
+use std::process::{Child, Command, ExitStatus, Stdio};
 
 /// Maximum fixture I/O wait; unrelated to the processing deadline under test.
 const IO_LIMIT: Duration = Duration::from_secs(2);
+
+/// Register a fixture pair under one private origin before either native send.
+/// This is fixture construction, not the public execute-origin integration test.
+///
+/// # Errors
+/// Preserve actual registration failure without cloning or replacing a socket.
+fn live_pair(prepared: [PreparedSlot; 2]) -> Result<[LiveSlot; 2], PilotError> {
+    let context = Arc::new(RunClockContext {
+        origin: Instant::now(),
+    });
+    let [first, second] = prepared;
+    Ok([
+        LiveSlot::from_prepared(first, Arc::clone(&context))?,
+        LiveSlot::from_prepared(second, context)?,
+    ])
+}
+
+/// Register a single fixture request with an origin captured before its send.
+///
+/// # Errors
+/// Preserve the actual native registration failure.
+fn live_slot(prepared: PreparedSlot) -> Result<LiveSlot, PilotError> {
+    LiveSlot::from_prepared(
+        prepared,
+        Arc::new(RunClockContext {
+            origin: Instant::now(),
+        }),
+    )
+}
 
 /// Independently expected lifecycle, payload and rejection-history outcomes.
 #[derive(Clone, Copy)]
@@ -340,6 +373,7 @@ fn snapshot_facts(slot: &LiveSlot) -> Result<TransportFacts, Box<dyn Error>> {
         peer: facts.peer,
         local: facts.local,
         identity: Arc::clone(&facts.identity),
+        run_context: Arc::clone(&facts.run_context),
         measurement: facts.measurement,
         profile: facts.profile,
     })
@@ -489,7 +523,7 @@ fn processing_uses_fresh_deadline_and_current_control() -> Result<(), Box<dyn Er
         let Fixture { prepared, peers } = fixture()?;
         runtime.block_on(async {
             let [a, b] = prepared;
-            let mut slots = [LiveSlot::from_prepared(a)?, LiveSlot::from_prepared(b)?];
+            let mut slots = live_pair([a, b])?;
             let [a, b] = peers;
             let peers = [UdpSocket::from_std(a)?, UdpSocket::from_std(b)?];
             let send_deadline = Instant::now()
@@ -762,7 +796,7 @@ fn terminal_io_causes_and_send_history_remain_distinct() -> Result<(), Box<dyn E
         let Fixture { prepared, peers } = fixture()?;
         runtime.block_on(async {
             let [a, b] = prepared;
-            let mut slots = [LiveSlot::from_prepared(a)?, LiveSlot::from_prepared(b)?];
+            let mut slots = live_pair([a, b])?;
             let [a, b] = peers;
             let peers = [UdpSocket::from_std(a)?, UdpSocket::from_std(b)?];
             let deadline = Instant::now()
@@ -1232,7 +1266,7 @@ fn literal_header_rejections_preserve_the_actual_pending_neighbor() -> Result<()
         .build()?;
     runtime.block_on(async {
         let [a, b] = prepared;
-        let mut slots = [LiveSlot::from_prepared(a)?, LiveSlot::from_prepared(b)?];
+        let mut slots = live_pair([a, b])?;
         let [peer, _other_peer] = peers;
         let peer = UdpSocket::from_std(peer)?;
         let deadline = Instant::now()
@@ -1492,7 +1526,7 @@ fn completed_send_results_preserve_rearm_causes_and_one_way_history() -> Result<
         } = fixture()?;
         runtime.block_on(async {
             let [prepared, _neighbor] = prepared;
-            let mut slot = LiveSlot::from_prepared(prepared)?;
+            let mut slot = live_slot(prepared)?;
             let bracket = SendBracket {
                 before: SoftwareClock::capture(),
                 after: SoftwareClock::capture(),
@@ -1551,7 +1585,7 @@ async fn check_receive_cap(
     count: u16,
 ) -> Result<(), Box<dyn Error>> {
     let [a, b] = prepared;
-    let mut slots = [LiveSlot::from_prepared(a)?, LiveSlot::from_prepared(b)?];
+    let mut slots = live_pair([a, b])?;
     assert!(!slots[0].can_receive());
     let [a, b] = peers;
     let peers = [UdpSocket::from_std(a)?, UdpSocket::from_std(b)?];
@@ -1669,7 +1703,7 @@ async fn check_retired_selected_read(
     peers: [StdSocket; 2],
 ) -> Result<(), Box<dyn Error>> {
     let [a, b] = prepared;
-    let mut slots = [LiveSlot::from_prepared(a)?, LiveSlot::from_prepared(b)?];
+    let mut slots = live_pair([a, b])?;
     let [a, b] = peers;
     let peers = [UdpSocket::from_std(a)?, UdpSocket::from_std(b)?];
     let deadline = Instant::now()
@@ -1680,6 +1714,20 @@ async fn check_retired_selected_read(
         epoch: 0,
     });
     let control = ControlHandle { sender };
+    // These freshly registered owners have no sends or reads. Check the quiet
+    // predeadline boundary before a peer wait can hide premature retirement.
+    refresh_owner(&mut slots, &mut receiver, deadline);
+    if Instant::now() >= deadline {
+        return Err(io::Error::other("quiet owner fixture deadline elapsed").into());
+    }
+    for slot in &slots {
+        assert!(matches!(&slot.phase, Phase::Sending));
+        assert_eq!(
+            (slot.send_attempts, slot.received, slot.rejected),
+            (0, 0, 0)
+        );
+        assert!(!slot.sent);
+    }
     let saved_neighbor = commit_neighbor(&mut slots, &peers[1], &mut receiver, deadline).await?;
     let query = two_origin_rejections(&mut slots, &peers[0], &mut receiver, deadline).await?;
     let selected = response(&slots[0], &peers[0], &query, 15, false).await?;
@@ -1750,7 +1798,7 @@ async fn check_typed_oversize_accounting(
     peers: [StdSocket; 2],
 ) -> Result<(), Box<dyn Error>> {
     let [a, b] = prepared;
-    let mut slots = [LiveSlot::from_prepared(a)?, LiveSlot::from_prepared(b)?];
+    let mut slots = live_pair([a, b])?;
     let [a, b] = peers;
     let peers = [UdpSocket::from_std(a)?, UdpSocket::from_std(b)?];
     let deadline = Instant::now()
@@ -1840,10 +1888,10 @@ fn selected_read_accounting_survives_retirement_and_typed_oversize() -> Result<(
 async fn check_commit_processing_boundaries(
     prepared: [PreparedSlot; 2],
     peers: [StdSocket; 2],
-    equal: bool,
+    offset_ns: i8,
 ) -> Result<(), Box<dyn Error>> {
     let [a, b] = prepared;
-    let mut slots = [LiveSlot::from_prepared(a)?, LiveSlot::from_prepared(b)?];
+    let mut slots = live_pair([a, b])?;
     let [a, b] = peers;
     let peers = [UdpSocket::from_std(a)?, UdpSocket::from_std(b)?];
     let deadline = Instant::now()
@@ -1871,30 +1919,39 @@ async fn check_commit_processing_boundaries(
         .mono_after
         .checked_sub(Duration::from_nanos(1))
         .ok_or_else(|| io::Error::other("actual read has no checked predecessor"))?;
+    assert!(earlier < datagram.read.mono_after);
+    let processing = match offset_ns {
+        -1 => earlier,
+        0 => datagram.read.mono_after,
+        1 => datagram
+            .read
+            .mono_after
+            .checked_add(Duration::from_nanos(1))
+            .ok_or(PilotError::DeadlineOverflow)?,
+        _ => return Err(io::Error::other("unsupported processing boundary fixture").into()),
+    };
     let selected = classify_read_result(
         NativeDatagramPlatform::current(),
         Ok((datagram.length, datagram.source)),
     );
     assert!(charge_selected_datagram(&mut slots[0], &selected));
     assert_eq!((slots[0].received, slots[0].rejected), (3, 2));
-    commit_reply(
-        &mut slots[0],
-        &staged,
-        if equal {
-            datagram.read.mono_after
-        } else {
-            earlier
-        },
-    );
+    commit_reply(&mut slots[0], &staged, processing);
     assert_eq!(slots[0].last_rejection, Some(Rejection::Origin));
-    if equal {
+    if offset_ns >= 0 {
         assert_eq!(
             slots[0].terminal().and_then(TerminalOutcome::stratum),
             Some(15)
         );
         assert_eq!((slots[0].received, slots[0].rejected), (3, 2));
         let facts = snapshot_facts(&slots[0])?;
-        assert_eq!(facts.processing, datagram.read.mono_after);
+        assert_eq!(facts.processing, processing);
+        assert_eq!(
+            facts
+                .processing
+                .checked_duration_since(datagram.read.mono_after),
+            Some(Duration::from_nanos(u64::from(offset_ns.unsigned_abs())))
+        );
         assert_eq!(facts.read_return.mono, datagram.read.mono);
         assert_eq!(facts.read_return.utc, datagram.read.utc);
         assert_eq!(facts.send_before.mono, staged.sent.before.mono);
@@ -1925,9 +1982,11 @@ fn commit_processing_accepts_equal_read_and_rejects_its_predecessor() -> Result<
         .enable_time()
         .max_blocking_threads(2)
         .build()?;
-    for equal in [false, true] {
+    for offset_ns in [-1, 0, 1] {
         let Fixture { prepared, peers } = fixture()?;
-        runtime.block_on(check_commit_processing_boundaries(prepared, peers, equal))?;
+        runtime.block_on(check_commit_processing_boundaries(
+            prepared, peers, offset_ns,
+        ))?;
     }
     Ok(())
 }
@@ -1949,6 +2008,7 @@ fn check_independent_staged_context_guards(
     processing: Instant,
 ) -> Result<(), MeasurementRefusal> {
     let original_identity = Arc::clone(&candidate.identity);
+    let original_run = Arc::clone(&candidate.run_context);
     let original_peer = candidate.peer;
     let original_local = candidate.local;
     let original_profile = candidate.profile;
@@ -1960,10 +2020,11 @@ fn check_independent_staged_context_guards(
         slot.send_attempts,
         slot.last_rejection,
     );
-    for (field, identity, peer, local, profile) in [
+    for (field, identity, run, peer, local, profile) in [
         (
             "identity",
             Arc::new(()),
+            Arc::clone(&original_run),
             original_peer,
             original_local,
             original_profile,
@@ -1971,6 +2032,7 @@ fn check_independent_staged_context_guards(
         (
             "peer",
             Arc::clone(&original_identity),
+            Arc::clone(&original_run),
             neighbor.peer,
             original_local,
             original_profile,
@@ -1978,6 +2040,7 @@ fn check_independent_staged_context_guards(
         (
             "local",
             Arc::clone(&original_identity),
+            Arc::clone(&original_run),
             original_peer,
             neighbor.local,
             original_profile,
@@ -1985,17 +2048,30 @@ fn check_independent_staged_context_guards(
         (
             "profile",
             Arc::clone(&original_identity),
+            Arc::clone(&original_run),
             original_peer,
             original_local,
             alternate_profile,
         ),
+        (
+            "run",
+            Arc::clone(&original_identity),
+            Arc::new(RunClockContext {
+                origin: original_run.origin,
+            }),
+            original_peer,
+            original_local,
+            original_profile,
+        ),
     ] {
         candidate.identity = identity;
+        candidate.run_context = run;
         candidate.peer = peer;
         candidate.local = local;
         candidate.profile = profile;
         let differences = [
             !Arc::ptr_eq(&slot.identity, &candidate.identity),
+            !Arc::ptr_eq(&slot.run_context, &candidate.run_context),
             slot.peer != candidate.peer,
             slot.local != candidate.local,
             slot.profile != candidate.profile,
@@ -2021,6 +2097,7 @@ fn check_independent_staged_context_guards(
         );
     }
     candidate.identity = original_identity;
+    candidate.run_context = original_run;
     candidate.peer = original_peer;
     candidate.local = original_local;
     candidate.profile = original_profile;
@@ -2048,10 +2125,7 @@ fn staged_reply_cannot_cross_socket_owner_or_commit_twice() -> Result<(), Box<dy
     let Fixture { prepared, peers } = fixture()?;
     runtime.block_on(async {
         let [first, second] = prepared;
-        let mut slots = [
-            LiveSlot::from_prepared(first)?,
-            LiveSlot::from_prepared(second)?,
-        ];
+        let mut slots = live_pair([first, second])?;
         let [first, second] = peers;
         let peers = [UdpSocket::from_std(first)?, UdpSocket::from_std(second)?];
         let deadline = Instant::now()
@@ -2113,6 +2187,565 @@ fn staged_reply_cannot_cross_socket_owner_or_commit_twice() -> Result<(), Box<dy
     })
 }
 
+/// Select only this existing test in the current worker-built test executable.
+const RELATIVE_EXECUTE_TEST: &str =
+    "processing_guard_tests::public_execute_relative_view_retains_actual_common_run_and_refusals";
+/// Closed child-only switch; the parent never mutates its process environment.
+const RELATIVE_EXECUTE_WORKER: &str = "NEVROTICK_RELATIVE_EXECUTE_WORKER";
+/// Exact admitted cargo-llvm-cov profile template in the owned Linux namespace.
+/// Its `%p` separates parent/child files; profiles remain outside capture cleanup.
+const RELATIVE_COVERAGE_PROFILE: &str = "/work/target/llvm-cov-target/source-%p-%m.profraw";
+/// Bound the complete two-run fixture even if mutated terminal logic never retires.
+const RELATIVE_EXECUTE_WALL: Duration = Duration::from_secs(5);
+/// Bound each kill/reap observation attempt before releasing owned captures.
+const RELATIVE_REAP_WALL: Duration = Duration::from_millis(500);
+/// Maximum retained bytes per stream; metadata polling is sampling, not a quota.
+const RELATIVE_OUTPUT_LIMIT: u64 = 16_384;
+
+/// One exact child and its exclusive file-backed captures, following the CLI tests.
+/// File-backed captures need no pipe-reader thread. Success observes child exit.
+/// A cleanup failure retains the captures and remains a test failure; the outer
+/// configured PID namespace is final custody if native kill/reap itself fails.
+struct RelativeExecuteChild {
+    /// Current test executable handle, retained until actual exit is observed.
+    child: Option<Child>,
+    /// Exclusively created directory; never an input or recursive deletion path.
+    directory: PathBuf,
+    /// Whole-child deadline origin, including process creation.
+    started: Instant,
+    /// Explicit cleanup succeeded; suppress redundant fallback work.
+    cleaned: bool,
+}
+
+impl RelativeExecuteChild {
+    /// Select the same named test once, with only the closed flag and admitted
+    /// per-process coverage destination forwarded after clearing the environment.
+    /// # Errors
+    /// Preserve executable, exclusive-directory, capture or native spawn failure.
+    fn spawn() -> Result<Self, Box<dyn Error>> {
+        let executable = std::env::current_exe()?;
+        let profile = std::env::var_os("LLVM_PROFILE_FILE");
+        if let Some(value) = &profile
+            && value != RELATIVE_COVERAGE_PROFILE
+        {
+            return Err(io::Error::other("relative worker coverage path is not admitted").into());
+        }
+        let directory =
+            std::env::temp_dir().join(format!("nevrotick-relative-execute-{}", std::process::id()));
+        let builder = fs::DirBuilder::new();
+        #[cfg(unix)]
+        let builder = {
+            use std::os::unix::fs::DirBuilderExt;
+            let mut builder = builder;
+            builder.mode(0o700);
+            builder
+        };
+        builder.create(&directory)?;
+        let mut owned = Self {
+            child: None,
+            directory,
+            started: Instant::now(),
+            cleaned: false,
+        };
+        let capture = |name: &str| {
+            if !matches!(name, "stdout" | "stderr") {
+                return Err(io::Error::other("invalid relative capture name"));
+            }
+            OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(owned.directory.join(name))
+        };
+        let stdout = capture("stdout")?;
+        let stderr = capture("stderr")?;
+        let mut command = Command::new(executable);
+        command
+            .args([
+                "--exact",
+                RELATIVE_EXECUTE_TEST,
+                "--test-threads=1",
+                "--nocapture",
+                "--color=never",
+            ])
+            .env_clear()
+            .env(RELATIVE_EXECUTE_WORKER, "1")
+            .current_dir(&owned.directory)
+            .stdin(Stdio::null())
+            .stdout(Stdio::from(stdout))
+            .stderr(Stdio::from(stderr));
+        if let Some(profile) = profile {
+            command.env("LLVM_PROFILE_FILE", profile);
+        }
+        owned.child = Some(command.spawn()?);
+        Ok(owned)
+    }
+
+    /// Observe actual exit and sampled output within the whole-child wall bound.
+    /// # Errors
+    /// Reject expiry/output overflow or preserve native metadata/wait failure.
+    fn wait(&mut self) -> io::Result<ExitStatus> {
+        loop {
+            if self.started.elapsed() >= RELATIVE_EXECUTE_WALL {
+                return Err(io::Error::other(
+                    "relative execute worker deadline exceeded",
+                ));
+            }
+            for name in ["stdout", "stderr"] {
+                if fs::metadata(self.directory.join(name))?.len() > RELATIVE_OUTPUT_LIMIT {
+                    return Err(io::Error::other(
+                        "relative execute worker output exceeds cap",
+                    ));
+                }
+            }
+            if let Some(status) = self
+                .child
+                .as_mut()
+                .ok_or_else(|| io::Error::other("missing owned relative execute worker"))?
+                .try_wait()?
+            {
+                return Ok(status);
+            }
+            std::thread::sleep(Duration::from_millis(1));
+        }
+    }
+
+    /// Stop and reap only this exact child before releasing any owned capture.
+    /// # Errors
+    /// Preserve kill/wait failures or report incomplete finite reap observation.
+    fn stop(&mut self) -> io::Result<()> {
+        let Some(child) = self.child.as_mut() else {
+            return Ok(());
+        };
+        if child.try_wait()?.is_some() {
+            return Ok(());
+        }
+        if let Err(error) = child.kill()
+            && child.try_wait()?.is_none()
+        {
+            return Err(error);
+        }
+        let began = Instant::now();
+        loop {
+            if child.try_wait()?.is_some() {
+                return Ok(());
+            }
+            if began.elapsed() >= RELATIVE_REAP_WALL {
+                return Err(io::Error::other(
+                    "relative execute worker reap deadline exceeded",
+                ));
+            }
+            std::thread::sleep(Duration::from_millis(1));
+        }
+    }
+
+    /// Read at most the declared capture bound after exit; never wait on a pipe.
+    /// # Errors
+    /// Preserve read/UTF-8 failure or reject an over-budget final stream.
+    fn read(&self, name: &str) -> Result<String, Box<dyn Error>> {
+        if !matches!(name, "stdout" | "stderr") {
+            return Err(io::Error::other("invalid relative capture name").into());
+        }
+        let mut bytes = Vec::new();
+        File::open(self.directory.join(name))?
+            .take(RELATIVE_OUTPUT_LIMIT + 1)
+            .read_to_end(&mut bytes)?;
+        if u64::try_from(bytes.len())? > RELATIVE_OUTPUT_LIMIT {
+            return Err(
+                io::Error::other("relative execute worker final output exceeds cap").into(),
+            );
+        }
+        Ok(String::from_utf8(bytes)?)
+    }
+
+    /// Remove only the two fixed owned files and empty directory after actual reap.
+    /// # Errors
+    /// Preserve cleanup failures; ignore only an absent partial-setup capture.
+    fn cleanup(&mut self) -> io::Result<()> {
+        self.stop()?;
+        self.child = None;
+        for name in ["stdout", "stderr"] {
+            match fs::remove_file(self.directory.join(name)) {
+                Ok(()) => (),
+                Err(error) if error.kind() == io::ErrorKind::NotFound => (),
+                Err(error) => return Err(error),
+            }
+        }
+        fs::remove_dir(&self.directory)?;
+        self.cleaned = true;
+        Ok(())
+    }
+
+    /// Require one actual named pass, preserving primary and cleanup failures.
+    /// Successful inner libtest rows stay private to avoid double-counting tests.
+    /// # Errors
+    /// Reject nonzero/zero/wrong selection, timeout, capture or cleanup failure.
+    fn finish(mut self) -> Result<(), Box<dyn Error>> {
+        let observed = self.wait();
+        let stopped = self.stop();
+        let result: Result<(), Box<dyn Error>> = (|| {
+            if let Err(cleanup) = stopped {
+                return Err(format!(
+                    "relative worker observation {observed:?}; kill/reap failed: {cleanup}"
+                )
+                .into());
+            }
+            let stdout = self.read("stdout")?;
+            let stderr = self.read("stderr")?;
+            let status = observed.map_err(|error| {
+                format!("{error}; relative worker stdout={stdout:?}; stderr={stderr:?}")
+            })?;
+            require_relative_execute_success(status, &stdout, &stderr)
+        })();
+        let cleanup = self.cleanup();
+        match (result, cleanup) {
+            (Ok(()), Ok(())) => Ok(()),
+            (Err(error), Ok(())) => Err(error),
+            (Ok(()), Err(error)) => Err(error.into()),
+            (Err(primary), Err(cleanup)) => {
+                Err(format!("{primary}; relative worker cleanup also failed: {cleanup}").into())
+            }
+        }
+    }
+}
+
+impl Drop for RelativeExecuteChild {
+    /// Attempt bounded fallback cleanup on setup errors or unwinding. Report any
+    /// native kill/reap failure; final custody remains with the outer PID namespace.
+    fn drop(&mut self) {
+        if !self.cleaned
+            && let Err(error) = self.cleanup()
+        {
+            eprintln!("relative execute worker cleanup incomplete: {error}");
+        }
+    }
+}
+
+/// Reject zero/wrong/extra libtest selection despite a successful native exit.
+/// # Errors
+/// Return bounded captured diagnostics unless exactly this one test passed.
+fn require_relative_execute_success(
+    status: ExitStatus,
+    stdout: &str,
+    stderr: &str,
+) -> Result<(), Box<dyn Error>> {
+    if u64::try_from(stdout.len())? > RELATIVE_OUTPUT_LIMIT
+        || u64::try_from(stderr.len())? > RELATIVE_OUTPUT_LIMIT
+    {
+        return Err(io::Error::other("relative execute transcript exceeds cap").into());
+    }
+    let tests: Vec<_> = stdout
+        .lines()
+        .filter(|line| line.starts_with("test "))
+        .collect();
+    let selected_once = stdout
+        .lines()
+        .filter(|line| line.starts_with("running "))
+        .eq(["running 1 test"]);
+    if let [test, summary] = tests.as_slice()
+        && status.success()
+        && stderr.is_empty()
+        && selected_once
+        && *test == format!("test {RELATIVE_EXECUTE_TEST} ... ok")
+        && summary.starts_with("test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; ")
+        && summary.contains(" filtered out; finished in ")
+    {
+        return Ok(());
+    }
+    Err(format!(
+        "relative execute worker did not pass exactly one named test ({status}); stdout={stdout:?}; stderr={stderr:?}"
+    ).into())
+}
+
+/// Reply once to the actual query using two independently declared peer timestamps.
+/// The owned peer has a finite native read timeout and is dropped on every exit.
+/// # Errors
+/// Preserve native I/O failure or reject an incomplete/unexpected query or send.
+fn serve_relative_peer(peer: StdSocket) -> io::Result<()> {
+    peer.set_nonblocking(false)?;
+    peer.set_read_timeout(Some(IO_LIMIT))?;
+    let mut query = [0_u8; RECEIVE_BYTES];
+    let (length, client) = peer.recv_from(&mut query)?;
+    if length != PACKET_BYTES || query[0] != 0x23 {
+        return Err(io::Error::other("relative fixture query mismatch"));
+    }
+    let mut reply = [0_u8; PACKET_BYTES];
+    reply[0] = 0x24;
+    reply[1] = 1;
+    reply[24..32].copy_from_slice(&query[40..48]);
+    reply[32..40].copy_from_slice(&0xee6b_2800_1000_0000_u64.to_be_bytes());
+    reply[40..48].copy_from_slice(&0xee6b_2800_2000_0000_u64.to_be_bytes());
+    if peer.send_to(&reply, client)? != PACKET_BYTES {
+        return Err(io::Error::other("relative fixture incomplete peer send"));
+    }
+    drop(peer);
+    Ok(())
+}
+
+/// Drive public execution from genuine prepared sockets without manufacturing facts.
+/// Private preparation permits repeated isolated runs in this test process; actual
+/// `execute` owns each origin/runtime and both bounded peer threads are joined,
+/// including on execution failure. No public time service or clock write is used.
+/// # Errors
+/// Preserve fixture, peer, execution or join failure after joining both peers.
+/// # Panics
+/// Fail if returned contexts precede the outside start or postdate their first send.
+fn execute_relative_fixture(
+    profiles: [Option<ExperimentalProfile>; 2],
+) -> Result<PilotReport, Box<dyn Error>> {
+    let Fixture {
+        mut prepared,
+        peers,
+    } = fixture()?;
+    for (slot, profile) in prepared.iter_mut().zip(profiles) {
+        slot.profile = profile;
+    }
+    let (sender, control) = watch::channel(Control {
+        stop: false,
+        epoch: 0,
+    });
+    let pilot = PreparedPilot {
+        slots: prepared,
+        timeout: IO_LIMIT,
+        control,
+        control_handle: ControlHandle { sender },
+    };
+    let [first, second] = peers;
+    let before_execute = Instant::now();
+    let report = std::thread::scope(|scope| {
+        let first = scope.spawn(move || serve_relative_peer(first));
+        let second = scope.spawn(move || serve_relative_peer(second));
+        let result = execute(pilot, ControlSchedule::new(None, None)?);
+        let first_result = first.join();
+        let second_result = second.join();
+        for peer_result in [first_result, second_result] {
+            peer_result.map_err(|_| io::Error::other("relative fixture peer panicked"))??;
+        }
+        Ok::<_, Box<dyn Error>>(result?)
+    })?;
+    for slot in report.slots() {
+        let facts = slot
+            .facts()
+            .ok_or_else(|| io::Error::other("relative header absent"))?;
+        assert!(before_execute <= facts.run_context.origin);
+        assert!(facts.run_context.origin <= facts.send_before.monotonic());
+    }
+    Ok(report)
+}
+
+/// Derive midpoint half-ticks directly from original captures and the actual origin.
+/// This independent u128 sum does not use the production subtract/halve algorithm.
+/// # Errors
+/// Preserve unexpected reversed source instants.
+/// # Panics
+/// Fail if the public whole/half pair differs from the original-capture sum.
+fn observed_reference_ticks(
+    facts: &TransportFacts,
+    reference: ExperimentalReferenceNs,
+) -> Result<u128, Box<dyn Error>> {
+    let lower = facts
+        .send_before
+        .monotonic()
+        .checked_duration_since(facts.run_context.origin)
+        .ok_or_else(|| io::Error::other("relative send before origin"))?
+        .as_nanos();
+    let upper = facts
+        .read_return
+        .monotonic()
+        .checked_duration_since(facts.run_context.origin)
+        .ok_or_else(|| io::Error::other("relative read before origin"))?
+        .as_nanos();
+    let sum = lower + upper;
+    assert_eq!(u128::from(reference.whole_nanoseconds()), sum / 2);
+    assert_eq!(u128::from(reference.has_half_nanosecond()), sum % 2);
+    Ok(sum)
+}
+
+/// Check a retained signed tuple against independently derived original inputs.
+/// # Panics
+/// Fail if direction, unsigned magnitude or exact original denominator changes.
+fn assert_observed_difference(
+    value: time_domain::RoundedRationalSeconds,
+    row: i128,
+    anchor: i128,
+    denominator: u64,
+) {
+    let sign = if row < anchor {
+        time_domain::RationalSign::Negative
+    } else {
+        time_domain::RationalSign::Positive
+    };
+    assert_eq!(value.sign(), sign);
+    assert_eq!(value.numerator_magnitude(), row.abs_diff(anchor));
+    assert_eq!(value.denominator().get(), denominator);
+}
+
+/// Actual consumers preserve distinct-run and original row/anchor refusal identity.
+/// # Errors
+/// Preserve fixture/transport failure or unexpected missing refusal/facts.
+/// # Panics
+/// Fail on lost cause, row-first precedence or changed original acquisition age.
+fn check_relative_refusals(
+    row: &TransportFacts,
+    profile: ExperimentalProfile,
+) -> Result<(), Box<dyn Error>> {
+    let other = execute_relative_fixture([None, Some(profile)])?;
+    let unavailable = other.slots()[0]
+        .facts()
+        .ok_or_else(|| io::Error::other("unavailable row absent"))?;
+    let available = other.slots()[1]
+        .facts()
+        .ok_or_else(|| io::Error::other("available anchor absent"))?;
+    assert!(matches!(
+        row.relative_to(available),
+        Err(RelativeMeasurementRefusal::DifferentRun)
+    ));
+    assert!(matches!(
+        unavailable.relative_to(available),
+        Err(RelativeMeasurementRefusal::RowMeasurement(
+            MeasurementRefusal::Unavailable
+        ))
+    ));
+    assert!(matches!(
+        available.relative_to(unavailable),
+        Err(RelativeMeasurementRefusal::AnchorMeasurement(
+            MeasurementRefusal::Unavailable
+        ))
+    ));
+    assert!(matches!(
+        unavailable.measurement(),
+        Err(MeasurementRefusal::Unavailable)
+    ));
+    assert!(matches!(
+        unavailable.relative_to(unavailable),
+        Err(RelativeMeasurementRefusal::RowMeasurement(
+            MeasurementRefusal::Unavailable
+        ))
+    ));
+    for reason in [
+        unavailable.relative_to(available).err(),
+        available.relative_to(unavailable).err(),
+    ] {
+        let reason = reason.ok_or_else(|| io::Error::other("relative refusal missing"))?;
+        assert_eq!(
+            reason
+                .source()
+                .and_then(|source| source.downcast_ref::<MeasurementRefusal>()),
+            Some(&MeasurementRefusal::Unavailable)
+        );
+    }
+    assert_eq!(
+        available.measurement()?.acquisition_age(),
+        available
+            .processing
+            .checked_duration_since(available.read_return.mono_after)
+            .ok_or_else(|| io::Error::other("relative retained age reversed"))?
+    );
+    Ok(())
+}
+
+/// Actual public execution connects both original requests to one retained chart.
+/// Independent peer literals/original wall nanoseconds determine the phase truth;
+/// numeric-only extreme cases remain separately identified in private unit tests.
+/// # Errors
+/// Preserve real fixture/transport, conditional measurement or reference failures.
+/// # Panics
+/// Fail on context/request conflation, wrong units/direction, renewed ages,
+/// changed original facts, cross-run acceptance or lost measurement refusals.
+#[test]
+fn public_execute_relative_view_retains_actual_common_run_and_refusals()
+-> Result<(), Box<dyn Error>> {
+    match std::env::var_os(RELATIVE_EXECUTE_WORKER) {
+        None => return RelativeExecuteChild::spawn()?.finish(),
+        Some(value) if value == "1" => (),
+        Some(_) => return Err(io::Error::other("invalid relative execute worker flag").into()),
+    }
+    let profile = ExperimentalProfile::new(2_272_060_800, 6_311_433_599, 30_000_000_000)?;
+    let report = execute_relative_fixture([Some(profile); 2])?;
+    let row = report.slots()[0]
+        .facts()
+        .ok_or_else(|| io::Error::other("row absent"))?;
+    let anchor = report.slots()[1]
+        .facts()
+        .ok_or_else(|| io::Error::other("anchor absent"))?;
+    check_observed_measurement(row)?;
+    check_observed_measurement(anchor)?;
+    assert!(!row.same_exchange(anchor));
+    assert_ne!(row.peer_endpoint(), anchor.peer_endpoint());
+    assert_ne!(row.local_endpoint(), anchor.local_endpoint());
+    assert!(Arc::ptr_eq(&row.run_context, &anchor.run_context));
+    let ages = [
+        row.measurement()?.acquisition_age(),
+        anchor.measurement()?.acquisition_age(),
+    ];
+    let view = row.relative_to(anchor)?;
+    assert_eq!(
+        format!("{view:?}"),
+        "ExperimentalRelativeMeasurement { .. }"
+    );
+    assert_eq!(
+        format!("{:?}", view.row_reference()),
+        "ExperimentalReferenceNs { .. }"
+    );
+    assert!(std::ptr::eq(view.row(), row));
+    assert!(std::ptr::eq(view.anchor(), anchor));
+    let row_ticks = observed_reference_ticks(row, view.row_reference())?;
+    let anchor_ticks = observed_reference_ticks(anchor, view.anchor_reference())?;
+    assert_observed_difference(
+        view.reference_delta_seconds(),
+        i128::try_from(row_ticks)?,
+        i128::try_from(anchor_ticks)?,
+        2_000_000_000,
+    );
+    let nominal = |facts: &TransportFacts| -> Result<i128, Box<dyn Error>> {
+        let (_, _, send) = observed_wall_coordinates(facts.send_before.utc)?;
+        let (_, _, read) = observed_wall_coordinates(facts.read_return.utc)?;
+        Ok(
+            (17_179_869_184_268_435_456_i128 + 17_179_869_184_536_870_912_i128) * 1_000_000_000
+                - (send + read) * 4_294_967_296,
+        )
+    };
+    assert_observed_difference(
+        view.phase_delta_seconds(),
+        nominal(row)?,
+        nominal(anchor)?,
+        8_589_934_592_000_000_000,
+    );
+    let reversed = anchor.relative_to(row)?;
+    assert_observed_difference(
+        reversed.phase_delta_seconds(),
+        nominal(anchor)?,
+        nominal(row)?,
+        8_589_934_592_000_000_000,
+    );
+    assert_observed_difference(
+        reversed.reference_delta_seconds(),
+        i128::try_from(anchor_ticks)?,
+        i128::try_from(row_ticks)?,
+        2_000_000_000,
+    );
+    let self_view = row.relative_to(row)?;
+    for zero in [
+        self_view.phase_delta_seconds(),
+        self_view.reference_delta_seconds(),
+    ] {
+        assert_eq!(zero.sign(), time_domain::RationalSign::Positive);
+        assert_eq!(zero.numerator_magnitude(), 0);
+        assert_eq!(zero.seconds().to_bits(), 0);
+        assert_eq!(zero.absolute_roundoff_seconds().to_bits(), 0);
+    }
+    assert_eq!(
+        [
+            row.measurement()?.acquisition_age(),
+            anchor.measurement()?.acquisition_age()
+        ],
+        ages
+    );
+    assert_eq!(row.experimental_profile(), Some(profile));
+    assert_eq!(anchor.experimental_profile(), Some(profile));
+    check_relative_refusals(row, profile)?;
+    Ok(())
+}
+
 /// Every ordinary header field survives a real native read, staging and report.
 /// High-bit root fields remain uninterpreted raw bits, not signed delay values.
 ///
@@ -2131,7 +2764,7 @@ fn complete_header_survives_actual_staging_and_terminal_projection() -> Result<(
     let Fixture { prepared, peers } = fixture()?;
     runtime.block_on(async {
         let [first, second] = prepared;
-        let mut slot = LiveSlot::from_prepared(first)?;
+        let mut slot = live_slot(first)?;
         drop(second);
         let [peer, unused] = peers;
         drop(unused);
@@ -2578,7 +3211,7 @@ fn real_udp_measurement_matches_independent_captured_coordinates() -> Result<(),
     let Fixture { prepared, peers } = fixture()?;
     runtime.block_on(async {
         let [first, second] = prepared;
-        let mut slot = LiveSlot::from_prepared(first)?;
+        let mut slot = live_slot(first)?;
         drop(second);
         slot.profile = Some(ExperimentalProfile::new(
             2_272_060_800,
@@ -2640,7 +3273,7 @@ fn measurement_refusal_consumes_the_correlated_request_once() -> Result<(), Box<
     let Fixture { prepared, peers } = fixture()?;
     runtime.block_on(async {
         let [first, second] = prepared;
-        let mut slot = LiveSlot::from_prepared(first)?;
+        let mut slot = live_slot(first)?;
         drop(second);
         let [peer, unused] = peers;
         drop(unused);
@@ -2701,7 +3334,7 @@ fn measurement_refusal_consumes_the_correlated_request_once() -> Result<(), Box<
 fn stopped_report(prepared: [PreparedSlot; 2]) -> Result<PilotReport, PilotError> {
     let started = Instant::now();
     let [a, b] = prepared;
-    let mut slots = [LiveSlot::from_prepared(a)?, LiveSlot::from_prepared(b)?];
+    let mut slots = live_pair([a, b])?;
     retire_for_control(
         &mut slots,
         Control {

@@ -84,9 +84,10 @@ Windows adapters need small reviewed unsafe contracts. UI/engine have no
 clock-setting privilege.
 
 For Windows service registration, SCM callbacks/status, account isolation or
-stop/restart changes, read [the service adapter guide](references/windows-service-adapters.md)
-directly. Record separate engine/broker recovery settings and an operation/access
-matrix before qualifying native behavior; wrapper examples establish neither.
+stop/restart changes, use [implement-windows-service](../implement-windows-service/SKILL.md)
+and its relevant [service adapter details](references/windows-service-adapters.md).
+That leaf owns the service workflow, including management, diagnostics and
+measured optimization; keep separate engine/broker recovery and access records.
 
 For compiler/runner/feature changes or review-feedback intake, read
 [execution evidence](references/execution-evidence.md) before selecting commands.

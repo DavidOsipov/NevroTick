@@ -5,6 +5,28 @@ conditional reference, not whole file. Repository architecture outranks external
 examples. Documentation adaptation performed no Cargo graph, Rust build, parser
 experiment or Windows UI execution.
 
+## Windows service workflow — 7 November 2026
+
+The same-day metadata handoff extends [maintain-windows-metadata](maintain-windows-metadata/SKILL.md)
+and service/package-QA routing. The [reviewed bounded catalogue](../../../docs/supporting-reviews/windows-service-metadata-catalogue.md)
+retains Microsoft field/schema sources once, with the canonical metadata plan
+owning applicability. Separate reviewers checked SCM, artifact/distribution and
+diagnostic scopes; ambiguous required-privilege omission wording and a package
+ledger's declaration/reference wording were corrected. Source/schema evidence
+does not qualify generated, signed, installed or Store-delivered resources.
+No donor code, dependency, identity or new metadata service was adopted.
+
+
+The original local [implement-windows-service](implement-windows-service/SKILL.md)
+routes the existing [SCM/native procedure](implement-rust/references/windows-service-adapters.md),
+canonical service/error/resource contracts and current W11 owners. Reviewed the
+owner-supplied handoff against `df6e28a4641f2f046373a9c5640aa60736716a22` and
+verified consequential Microsoft and pinned upstream claims; the maintained
+[research refinement](../../../docs/plans/windows11-integration-follow-up.md#additional-service-practices--7-november-2026)
+retains direct sources, API discrepancies, inference and conditional applicability.
+No upstream implementation was copied, dependency selected or native execution
+performed. Register this leaf in `LOCAL.json`; it has no invented donor provenance.
+
 ## Defensive Rust patterns — 6 November 2026
 
 Reviewed [Corrode's defensive-programming article](https://corrode.dev/blog/defensive-programming/)

@@ -93,7 +93,7 @@ Quick navigation: [architecture](#3-component-architecture-and-authority), [NTS 
 **Implementation summary; historical main baseline, 5 November 2026:** the
 initial capsule was reconciled against
 [main at `5e98c79`](https://github.com/DavidOsipov/NevroTick/commit/5e98c79901c90de77db6c6047cb483ec10b8cbd5).
-The maintained table includes later 6 November engine and GUI source amendments;
+The maintained table includes later 6–7 November engine and GUI source amendments;
 that old pin does not identify their candidates. The [workspace manifest](../Cargo.toml),
 [lockfile](../Cargo.lock) and current source contain six members. Source presence
 and task qualification are separate: linked tasks retain exact candidates,
@@ -106,8 +106,8 @@ qualify the combined integration candidate.
 | [ntp-wire](../crates/ntp-wire/Cargo.toml) | Bounded NTP decoding/framing, inert NTS-KE processing and NTS envelope/plaintext readers | [Header](../tasks/s1.1-header.md), [framing](../tasks/s1.1-framing.md) and [protocol](../tasks/s0.1-protocol-comparison.md) tasks; no TLS/AEAD, authenticated acquisition or sample authority |
 | [time-domain](../crates/time-domain/Cargo.toml) | Checked timestamps, eras, exchange arithmetic, rounding, distinct clock domains and pure leap knowledge/interpretation | [S1.1c](../tasks/s1.1-time-domain.md) and [S1.4](../tasks/s1.4-leap-policy.md); scoped arithmetic/knowledge evidence establishes no production eligibility or clock effects |
 | [ntp-exchange](../crates/ntp-exchange/Cargo.toml) | Single-slot unauthenticated fixture association and deterministic scenarios | [Association](../tasks/s1.1-exchange-association.md) and [harness](../tasks/s1.1-deterministic-harness.md) tasks; no production acquisition |
-| [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness and modeled correction accounting | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md); [settled-rate qualification](../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners) completed its selected four-owner Linux fixture scope, not full P1 |
-| [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback UDP observer, explicit conditional software-clock measurements, retained exact nominal values/shared rational-seconds conversion and `nevrotick-observe` CLI | Recorded [three-owner measurement](../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026) and [exact-nominal](../tasks/engine-transport-pilot.md#exact-nominal-terminal-qualification--6-november-2026) host qualification apply to their named candidates. [Numerical critical-owner qualification on the refreshed graph](../tasks/s0.1-source-readiness.md#refreshed-graph-and-current-evidence) and native Windows qualification remain open; unauthenticated observations remain ineligible for clock control |
+| [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness, modeled correction accounting and pure conditioned-window/affine fitting | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md) retain fixture evidence. [Settled-rate](../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners), [N1b](../tasks/engine-transport-pilot.md#n1b-final-qualification--two-selected-core-owners) and [N2a](../tasks/engine-transport-pilot.md#n2a-final-qualification--two-selected-core-owners) complete their exact selected Linux scopes; full P1 and production history remain open |
+| [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback observer and additive three-attempt same-source series with consume-once private receiver; conditional software-clock measurements, exact nominal values and common-origin relative views; `nevrotick-observe` remains the two-peer CLI | Recorded [measurement](../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026), [exact-nominal](../tasks/engine-transport-pilot.md#exact-nominal-terminal-qualification--6-november-2026), [rational-seconds](../tasks/s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners) and [common-run bridge](../tasks/engine-transport-pilot.md#common-run-reference-bridge--final-qualification-and-next-action) receipts retain their exact scopes. [N3a final qualification](../tasks/engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners) completes its selected Linux scope on407-input `e71aab7...`:91 ordinary/91 optimized tests,42 doctests, external contracts, both line gates and357 accounted variants (214 fresh library plus143 explicitly reused receiver outcomes; four reviewed equivalents, no unresolved survivor or timeout). The existing receiving-contract card retains its four transaction choices and supplier holds before integration. Observations stay unauthenticated/ineligible; production history, native Windows, P1 and product qualification remain open |
 
 **6 November S2.1 amendment:** the engine now depends on `time-domain` alongside
 `ntp-wire`, Tokio and `getrandom`. Its explicit experimental model preserves
@@ -1672,6 +1672,31 @@ Preflight artifact authentication under the declared section 19.5 profile, prote
 
 Group Policy can overwrite ordinary W32Time configuration. Detect managed policy and avoid repeatedly fighting it. If W32Time or another detected controller becomes active, cancel transient work safely, stop new actuation and display an ownership conflict. A private mutex coordinates this product's instances; it cannot prohibit other administrators or VM host integration from changing the clock. [S26]
 
+#### Product coordination and crash recovery
+
+Freeze that coordination primitive's representation, namespace, creator, actual
+owner/DACL, requested rights, native owner, lifetime and recovery owner before
+implementation. Distinguish new creation, trusted existing open, wrong-type
+collision, access denial and abandoned ownership. A name or acquired handle is
+not clock authority. Rejecting a foreign object preserves integrity but does not
+alone prevent precreation denial of service; qualify reservation resistance or
+record that availability limit. Never recover by relaxing rights or starting an
+unprotected second controller.
+
+Always reconcile the protected journal, consumed correction allowance, generation
+and current controller before effects. `WAIT_ABANDONED` indicates potentially
+inconsistent state, not clean recovery. Last-handle destruction can instead leave
+a fresh object with no abandonment indication; the same reconciliation is still
+required. For a Win32 mutex, acquisition/release belong to the owning native
+thread and acquisition is recursive. An async task or actor label supplies
+neither native-thread ownership nor serialization between tasks on that thread.
+Freeze both contracts without selecting a new thread or topology.
+
+"Private mutex" does not select `CreatePrivateNamespace`; namespace scope and
+object security remain separate. Use the [reviewed API distinctions and paired
+cases](plans/windows11-integration-follow-up.md#additional-service-practices--7-november-2026)
+under W11-W05 with the broker/lifecycle/mandatory-state owners, CHECK-1/5/12/13/15/27.
+
 ### 11.2 Upgrade, rollback and uninstall
 
 The [management exception](#421-service-management-admission-and-administrative-recovery)
@@ -2146,6 +2171,25 @@ or UI-owned recovery authority is introduced.
 
 No external config `include`, environment-variable expansion, command substitution, arbitrary executable hooks or dynamically loaded plugins are needed. Import/export, if added, uses the same bounded schema and authority path; importing a file does not grant its author administrator rights.
 
+For services, record deployment process arguments, transient SCM per-start
+arguments and protected durable machine policy as separate inputs. Establish the
+selected wrapper's actual callback bounds/encoding and distinguish native
+metadata from product options. Give extra per-start options an explicit
+unsupported/ignored, rejected or bounded admitted disposition; never silently
+merge them into an effect-capable console parser. Neither argument channel may
+replace protected role, policy, endpoint, state-root, maintenance or clock-owner
+authority. Ordinary recovery cannot depend on a vanished prior start option.
+
+Inventory actual service/dependency environment and profile inputs affecting
+those authorities, trust/provider configuration or diagnostics. Admit or disable
+authority-relevant overrides explicitly; lookup failure cannot silently redirect
+into foreign/user-writable storage. Qualify the real account before login and
+across missing/inaccessible/redirected paths. An OS temporary-path string proves
+neither private storage nor object identity; retain SEC-A02's live spill and
+creation-time-rights checks. Do not erase the environment indiscriminately,
+assume services never have profiles or infer ordinary caller control of SCM's
+environment. [Source and owner map](plans/windows11-integration-follow-up.md#additional-service-practices--7-november-2026).
+
 ### 12.3 Logging and support
 
 This is the canonical shared diagnostics contract, approved for planning on 29 October 2026. It specifies future behavior; no logger, service control or application Cargo workspace is implemented by this document. Keep implementation in the existing component plan, with `tracing` as the candidate facade and a qualified minimal subscriber/sink composition from section 18.6. [S74]
@@ -2217,6 +2261,17 @@ already collected. Qualify only named artifact paths with synthetic secrets and
 permitted useful diagnostic context, without changing global dump policy. The
 [collector-specific findings](plans/windows11-integration-follow-up.md#4-diagnostics-replacement-and-protected-storage)
 refine CHECK-17 and the existing storage privacy boundary.
+
+For unattended services, the per-role startup record also names the effective
+process/thread error policy, establishment owner and activation phase. Selected
+critical OS failure paths must make bounded progress without awaiting a dialog.
+Keep critical-error handling, WER invocation, WER UI, submission/queue policy and
+collector privacy distinct. Preserve useful approved diagnostics and
+administrator policy; no-UI implies neither no dump nor no upload. Account for
+inheritance, runtime and dependencies before adding setters, avoid competing
+process-wide changes, and qualify GUI/helper behavior separately. See the
+[service-source refinement](plans/windows11-integration-follow-up.md#additional-service-practices--7-november-2026);
+W11-W05 and W11-W08/ST-W07 retain the existing CHECK-17/21/27 cases.
 
 When WPR/WPA or another ETW trace supports a timing/lifecycle claim, retain
 monotonic correlation and session loss counts; an absent event in an incomplete
@@ -2843,6 +2898,15 @@ Qualification places harmless canary DLLs in controlled user-writable candidate 
 
 ### 15.3 Integration with Windows security and management
 
+For service and diagnostic metadata, apply the [canonical field contract](plans/windows-package-metadata.md#12-service-and-diagnostics-metadata-refinement--7-november-2026)
+and existing W11-W05/W11-W08/W11-W10 owners. Stable service/provider identity,
+localized display/purpose text, configured behavior and runtime observations are
+different facts. Inspect actual installed SCM resource resolution and event
+publisher/message rendering across legitimate servicing. Catalogue membership
+grants no configuration authority, account, privilege, channel or counter feature;
+generated strings and observed metadata authenticate neither executable nor caller.
+
+
 Windows integration means using the host's identities, protection and management facilities correctly. The `windows` bindings expose these facilities; they do not enforce a correct policy automatically. Keep the following ownership contract with the complete installer and narrow platform adapters. [S71, S89–S91]
 
 | Facility | Product owner and intended behavior | Required evidence / limitation |
@@ -2974,6 +3038,10 @@ one denied child launch cannot establish this composition. [S101]
 If later evidence selects persistent per-image settings, qualify no-login boot, restart and package update/repair/removal, collisions with administrator/enterprise policy, and ownership-preserving restoration. Such settings identify an image by name/path rather than product version; requalify changed binaries and MSIX versioned package paths. No machine-wide reset, administrator-policy overwrite or manual user setup step is introduced here. [S102]
 
 #### Startup and failure contract
+
+Include §12.3's effective noninteractive error-policy record in this startup
+ownership and activation order. It is distinct from exploit-mitigation bits;
+query/setter source alone does not establish unattended progress or crash privacy.
 
 The executable's trusted startup path selects its role profile; untrusted arguments, UI requests or writable configuration cannot replace it with a weaker profile. The platform adapter must:
 

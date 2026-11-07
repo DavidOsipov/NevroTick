@@ -9,6 +9,11 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+For the single editable product metadata source and build-time pipeline, start
+with [metadata/](../metadata/README.md). Its [five-stage contract](plans/windows-package-metadata.md#13-metadata-pipeline-implementation--7-november-2026)
+keeps generated source separate from actual component, native and release evidence.
+
+
 Agents start with [AGENTS.md](../AGENTS.md), choose the existing task and relevant
 rows below, then load the matching [repository skills](../.agents/skills/README.md).
 Use the [testing contract](../.agents/skills/testing/CONTRACT.md) to select evidence.
@@ -25,6 +30,7 @@ to own requirements, and task records own executed evidence.
 | --- | --- |
 | What code exists now, and which results apply to it? | [Current implementation summary](windows-time-architecture.md#1-current-state-capsule), backed by the workspace manifests, lockfile, source and linked candidate-specific task evidence. Dated baseline and review records below remain historical. |
 | How is service management limited to NevroTick while preserving administrative recovery? | [Canonical route/admission policy](windows-time-architecture.md#421-service-management-admission-and-administrative-recovery), [Microsoft source review and hardening map](plans/windows11-integration.md#service-management-hardening--7-november-2026) and [W11-W05 assignment](../tasks/windows11-integration.md#w11-w05-observe-effective-scm-maintenance-and-process-policy). Separate SCM principal rights, protected application admission and current effect guards; MSIX peer/provisioning/recovery behavior remains unqualified. |
+| How should agents create, manage, harden, log and optimize Windows services? | [implement-windows-service](../.agents/skills/implementation/implement-windows-service/SKILL.md) routes the maintained SCM/native guide, canonical service/diagnostic/resource contracts and W11-W05/W11-W08/W11-W10. The [7 November source refinement](plans/windows11-integration-follow-up.md#additional-service-practices--7-november-2026) adds argument-channel separation, effective unattended errors, mutex crash/thread semantics and conditional environment/startup cases. Source preparation supplies no native permission or service/package pass. |
 | What should a development agent do next, and which skills must it read and use? | [Development execution plan](plans/development-plan.md), especially its phase skill map, acceptance gates and next executable task. |
 | Which task owns each phase, integrated slice and deferred continuation? | [Task index](../tasks/README.md) maps existing implementation and evidence records; the [grouped deferred backlog](../tasks/development-backlog.md) supplies uncovered phase parents and activation criteria. The development plan still controls order and acceptance; task presence proves no readiness or completion. |
 | What must formal proofs actually establish, and what is still unproved? | [OD-10 §14.2](nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026) and the [product-guarantee debt](../tasks/development-backlog.md#product-guarantees-still-open) define scope, missing composition and completion; the [agent workflow](../.agents/skills/testing/references/formal-verification.md) prevents helper/tooling counts from replacing useful guarantees. All formal execution remains post-V1 under §14.1. |
@@ -44,7 +50,7 @@ to own requirements, and task records own executed evidence.
 | Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
 | Is SOCKS5 part of first Windows delivery? | No. [OD-11](nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral) and [SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition) defer proxy support beyond P0–P7. Direct interface/family and successful-path reuse stay in current work. The [limited future profile](windows-time-architecture.md#limited-socks5-profile--deferred) uses loopback/no-auth/local-DNS; the [existing engine task](../tasks/engine-transport-pilot.md#socks5-feasibility-and-deferral--5-november-2026) owns implementation/check preparation. |
 | How is the selected complete MSIX hardened and prepared for a Store attempt with services? | [MSIX/Store plan](plans/windows-msix-store.md), [amended OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership), [architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate), [signing guide §6.1](windows-time-signing-guide.md#61-store-msix-trust-and-publication-boundaries) and [current W11-W10 task](../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026): explicit content integrity, sealed executable paths, Store-compatible CIG, per-role protections, supported service provisioning and recovery. Local mechanics, owner submission and final Store-delivered qualification are separate stages; no working package or Store acceptance is claimed. |
-| How do we maintain extensive, correct Windows product/package metadata for either MSIX or a later MSI route? | [Windows metadata contract](plans/windows-package-metadata.md): per-binary VERSIONINFO, MSIX identity/resources, MSI product/ARP/summary fields, Store listings, shared value sources and independent readback through verified windows-rs APIs. Use [maintain-windows-metadata](../.agents/skills/implementation/maintain-windows-metadata/SKILL.md) for harvesting, field authority, TOML/JSON storage, generation and artifact comparison. OD-05 §7.6 records the owner objective; W11-W10/P6 retain implementation and artifact qualification. |
+| How do we maintain extensive, correct Windows product/package metadata for either MSIX or a later MSI route? | [Windows metadata contract](plans/windows-package-metadata.md): per-binary VERSIONINFO, MSIX identity/resources, MSI product/ARP/summary fields, Store listings, shared value sources and independent readback through verified windows-rs APIs. Its [service/diagnostics refinement](plans/windows-package-metadata.md#12-service-and-diagnostics-metadata-refinement--7-november-2026) owns applicability of the single [bounded field catalogue](supporting-reviews/windows-service-metadata-catalogue.md). Use [maintain-windows-metadata](../.agents/skills/implementation/maintain-windows-metadata/SKILL.md) for harvesting, field authority, TOML/JSON storage, generation and artifact comparison. OD-05 §7.6 records the owner objective; W11-W10/P6 retain implementation and artifact qualification. |
 | Which stable releases are supported, and how are unsafe releases or compromised publication authority handled? | [Release policy](release-policy.md): current no-stable status, proposed first-stable support/backport baseline, exact candidate promotion, Store containment, compatible corrective releases and incident recovery. [Existing W11 task §4.21](../tasks/windows11-integration.md#421-release-operations-integration--4-november-2026) owns documentation evidence and remaining decisions/rehearsals; no support commitment or native/account pass follows from the document. |
 | Can a Store release carry independently checkable evidence of its source and build? | [Enhanced build provenance](plans/release-provenance.md) records the possible attestation, reproducible-build and delivered-payload chain and its limits. [OD-05 §7.5](nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026) makes this additional assurance optional, with no new release blocker; existing artifact custody, SBOM/licence, integrity and installed-product checks remain required. |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
@@ -100,13 +106,47 @@ reconciliation. [S2.1's controlled measurement source checkpoint](../tasks/engin
 now passes focused host tests, public-contract probes, dependency checks and
 Windows cross-builds on its recorded source. The subsequent
 [three-owner measurement qualification](../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026)
-passed host tests, coverage and complete mutation gates on its recorded candidate.
-Those receipts do not qualify later source or graphs; the
-[refreshed graph's numerical critical-owner gates](../tasks/s0.1-source-readiness.md#refreshed-graph-and-current-evidence)
-remain pending. Continue the existing observation-to-Core admission contract in
-[development §7's current order](plans/development-plan.md#7-next-executable-task-for-a-development-agent),
-reconciling that gate before the reference/anchoring bridge. Native, production-scale/
-uncertainty and estimator qualification remain open.
+completed host tests, coverage and mutation gates on its recorded source.
+The later [two-owner rational-seconds/measurement checkpoint](../tasks/s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners)
+completed on 7 November:240/243 and352/355 covered lines, with103 and99 generated
+variants respectively. Five converter and three measurement misses have exact
+independently reviewed equivalence dispositions, no kill credit and no unresolved
+survivor; both adjusted viable scores are70/70. Engine-v1 remains incomplete
+because its manifest minimum changed during execution; the valid engine-v2
+receipt follows restoration of1.99.1. These results retain their exact Linux
+conversion/measurement scope. The [common-run reference bridge's final record](../tasks/engine-transport-pilot.md#common-run-reference-bridge--final-qualification-and-next-action)
+now closes its bounded GNU-hosted exit on the recorded `46513296...` snapshot:
+134 ordinary/135 optimized tests,64 doctests and both library/relative per-file
+coverage/mutation gates. Two exact library equivalences receive no kill credit;
+no unresolved survivor or timeout remains. Reuse across the latest pull follows
+review of unchanged compiled inputs, locked features, vendor and tools; it is no
+new whole-candidate execution pass. Fresh two-package Windows-target compiler/
+Clippy checks supply no native Windows evidence. The pure
+[N1b conditioned-window child](../tasks/engine-transport-pilot.md#n1b-final-qualification--two-selected-core-owners)
+now completes its selected two-owner Linux exit: ordinary/optimized/doctest,
+two-target, validation, coverage and reviewed mutation gates. Its record retains
+the interrupted ten-worker run, eight-worker fallback, exact manual equivalents
+and post-run adjudication. The
+[N2a final two-owner exit](../tasks/engine-transport-pilot.md#n2a-final-qualification--two-selected-core-owners)
+now completes its pure Linux scope on385-input `2fc732f1...`:396 ordinary/396
+optimized tests,88 doctests, both executable-line gates and304 accounted variants
+(181 behavioral caught,121 compiler/lint-unviable, two reviewed equivalents).
+Raw native2/0, scoped reuse of six producer controls and both regression kills
+remain explicit. The
+[N3a final qualification](../tasks/engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners)
+completes its two-owner controlled Linux scope on407-input `e71aab7...`:91 Engine
+tests,91 optimized tests,42 doctests, external contracts and both line gates.
+The357 accounted variants comprise214 fresh library outcomes and143 explicitly
+reused receiver outcomes, with four reviewed equivalents, no unresolved survivor
+or timeout and no equivalent kill credit. Independent cause/function review
+retains the earlier failed attempts and scoped validator controls. The next
+[receiving-contract card](../tasks/engine-transport-pilot.md#conditional-next-product-contract-after-n2s-finite-exit)
+must settle its four ownership/transaction choices and actual suppliers before
+Rust integration or an Engine-to-Core edge.
+Production history insertion remains open.
+The existing history receiver remains fixture-only;
+physical/date/source/policy admission, NTS, native Windows and full P1/product
+acceptance remain open.
 Runtime validation, independent behavioral tests, coverage/mutation, security,
 native/package and release gates remain; all existing execution holds remain.
 

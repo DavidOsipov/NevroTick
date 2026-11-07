@@ -59,6 +59,26 @@ mod combination;
 /// Checked source-quality window derivation and aligned variance divisors.
 mod window_variance;
 
+/// Exact row association and once-rounded, conditioned numerical preparation.
+mod conditioned_window;
+
+/// Borrowed conditioned suffixes with enclosed affine fitting and unit-safe lifting.
+mod conditioned_fit;
+
+pub use conditioned_fit::{
+    ConditionedFit, ConditionedFitError, ConditionedFitIssue, ConditionedFitOperation,
+    ConditionedFitStage, ConditionedNormalizedEstimate, ConditionedPhaseSeconds,
+    ConditionedRateRatio, ConditionedSuffix, ConditionedSuffixOutcome,
+    ConditionedWeightedSecondsSquared, InsufficientConditionedSuffix, fit_conditioned_suffix,
+    prepare_conditioned_suffix,
+};
+
+pub use conditioned_window::{
+    ConditionedBatchOutcome, ConditionedCoordinate, ConditionedWindowError,
+    DeclaredObservationContext, ExactObservationRow, InsufficientConditionedBatch,
+    PreparedConditionedBatch, PreparedConditionedPoint, prepare_conditioned_batch,
+};
+
 pub use window_variance::{WindowVarianceDivisors, WindowVarianceError, WindowVarianceStage};
 
 pub use combination::{

@@ -1,5 +1,36 @@
 # time-core source and contract provenance
 
+## N2a conditioned fitting authoring — 7 November 2026
+
+The independently reviewed N2a contract in
+`tasks/engine-transport-pilot.md#n2a-concrete-contract--conditioned-suffix-and-enclosed-affine-fit`
+admits a bounded translation into `src/conditioned_fit.rs`, with new original
+finite/subnormal interval primitives in `src/conditioned_fit/arithmetic.rs`.
+The selected Chrony 4.9 revision remains
+`8df4f1263e206585e6c4e61352d042c2dd12916a`. A fresh immutable GitHub read of
+`regress.c` retained19004 bytes with SHA256
+`bcd30c41f1a5c6c528adf199b6ef5215f62cc4c9078a82152a86ea90e46453f7`.
+Selected references are `RGR_WeightedRegression`69–93 (inverse-divisor affine
+coefficients and weighted SSE) and `RGR_FindBestRegression`252–269 (coefficient
+context). Preserve the Richard P. Curnow1997–2003 and Miroslav Lichvar2011,
+2016–2017 notices and exact GPL-2.0-only grant reproduced below in the derivative
+fit owner. This is source-derived work, not a clean-room implementation.
+
+Deliberate deviations are a suffix borrowing the actual immutable N1 chart and
+associated divisors, full finite/subnormal arithmetic, one saved reciprocal per
+row, centred response, five geometry-first ordered passes, exact-original-rational
+enclosures and checked power-of-two lifting. The exact newest phase anchor stays
+separate from the correction. The independent fixtures use exact rational facts;
+upstream agreement supplies only supplemental evidence. No variance divided by
+degrees of freedom, confidence/skew, runs, adaptive history, production source
+authority, clock effect or native caller is adopted. The old fixture fitter and
+its qualifications retain their historical scope.
+
+The additive Chrony ledger was recorded before source translation. This is
+authoring admission only: compiler, behavior, contract, coverage and mutation
+results must be recorded against the final integrated candidate in the existing
+task. Formal execution remains post-V1; no dependency or engine graph edge changes.
+
 This crate is GPL-2.0-only source-derived work, adapted on 30 October 2026.
 It supplies checked synthetic point/batch admission, response-independent
 geometry, exact-constant handling and an ordered inverse-divisor coefficient

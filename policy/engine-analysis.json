@@ -4,7 +4,8 @@
   "critical_files": [
     "crates/nevrotick-engine/src/lib.rs",
     "crates/nevrotick-engine/src/bin/nevrotick-observe.rs",
-    "crates/nevrotick-engine/src/measurement.rs"
+    "crates/nevrotick-engine/src/measurement.rs",
+    "crates/nevrotick-engine/src/relative.rs"
   ],
   "coverage_minimum_line_percent": 90,
   "mutation_minimum_viable_killed_percent": 95,
@@ -25,100 +26,100 @@
   "tool_admission_profile": "full",
   "mutation_equivalences": [
     {
-      "id": "ENGINE-COHERENCE-LOWER-EQUALITY",
-      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
-      "source_sha256": "85089611c6e2316beeb37f4b060ebec88b1db8686974a81a39c690dbae4fd648",
+      "id": "ENGINE-COMMIT-DURATION-FALLBACK-SUB",
+      "candidate_sha256": "23667e60971adc5d3bc1da4e4dfdcba58d8fc4cb6f400ad103ad192979b36f5d",
+      "source_sha256": "6f3c6eb2f491de7f27a89f8fba84556e818874a9c875643b08081206f5dd4d46",
       "mutant": {
-        "name": "crates/nevrotick-engine/src/measurement.rs:557:29: replace < with <= in coherence_residual",
+        "name": "crates/nevrotick-engine/src/lib.rs:1335:23: replace += with -= in commit_reply",
         "package": "nevrotick-engine",
-        "file": "crates/nevrotick-engine/src/measurement.rs",
+        "file": "crates/nevrotick-engine/src/lib.rs",
         "function": {
-          "function_name": "coherence_residual",
-          "return_type": "-> Result<u64, MeasurementRefusal>",
+          "function_name": "commit_reply",
+          "return_type": "",
           "span": {
             "start": {
-              "line": 524,
+              "line": 1315,
               "column": 1
             },
             "end": {
-              "line": 569,
+              "line": 1364,
               "column": 2
             }
           }
         },
         "span": {
           "start": {
-            "line": 557,
-            "column": 29
+            "line": 1335,
+            "column": 23
           },
           "end": {
-            "line": 557,
-            "column": 30
+            "line": 1335,
+            "column": 25
           }
         },
-        "replacement": "<=",
+        "replacement": "-=",
         "genre": "BinaryOperator"
       },
-      "requirement": "CHECK-25; S2.1 conditional mapping residual and failure semantics",
-      "rationale": "After helper-local bracket admission, changing only the equality branch computes checked zero instead of literal zero with identical errors and effects. Retain native survivors and raw denominators; no kill credit.",
+      "requirement": "CHECK-6/25/27; full-domain experimental reply publication",
+      "rationale": "After the helper-local total-order guard, checked subtraction returns Some for every valid pinned-host Instant pair; the two exact fallback-only counter changes have identical state, panic, allocation and lifecycle behavior. Retain raw misses without kill credit.",
       "proof": {
         "path": "tasks/engine-analysis-equivalences.md",
-        "sha256": "1a05909233dbaed1c0e65237cb87ad78a8d6298ce63f406c00940ec82ac3f14b",
-        "section": "ENGINE-COHERENCE-LOWER-EQUALITY",
-        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
+        "sha256": "38794dd1935847b9b18069bcbee6d5f6a215f626b967a293cc3260128f0e5ad5",
+        "section": "ENGINE-COMMIT-DURATION-FALLBACK-SUB",
+        "reviewer": "rational_equivalence_review; relative_registration_review independent source/custody check",
         "verdict": "independently-justified-equivalent"
       }
     },
     {
-      "id": "ENGINE-COHERENCE-UPPER-EQUALITY",
-      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
-      "source_sha256": "85089611c6e2316beeb37f4b060ebec88b1db8686974a81a39c690dbae4fd648",
+      "id": "ENGINE-COMMIT-DURATION-FALLBACK-MUL",
+      "candidate_sha256": "23667e60971adc5d3bc1da4e4dfdcba58d8fc4cb6f400ad103ad192979b36f5d",
+      "source_sha256": "6f3c6eb2f491de7f27a89f8fba84556e818874a9c875643b08081206f5dd4d46",
       "mutant": {
-        "name": "crates/nevrotick-engine/src/measurement.rs:561:26: replace > with >= in coherence_residual",
+        "name": "crates/nevrotick-engine/src/lib.rs:1335:23: replace += with *= in commit_reply",
         "package": "nevrotick-engine",
-        "file": "crates/nevrotick-engine/src/measurement.rs",
+        "file": "crates/nevrotick-engine/src/lib.rs",
         "function": {
-          "function_name": "coherence_residual",
-          "return_type": "-> Result<u64, MeasurementRefusal>",
+          "function_name": "commit_reply",
+          "return_type": "",
           "span": {
             "start": {
-              "line": 524,
+              "line": 1315,
               "column": 1
             },
             "end": {
-              "line": 569,
+              "line": 1364,
               "column": 2
             }
           }
         },
         "span": {
           "start": {
-            "line": 561,
-            "column": 26
+            "line": 1335,
+            "column": 23
           },
           "end": {
-            "line": 561,
-            "column": 27
+            "line": 1335,
+            "column": 25
           }
         },
-        "replacement": ">=",
+        "replacement": "*=",
         "genre": "BinaryOperator"
       },
-      "requirement": "CHECK-25; S2.1 conditional mapping residual and failure semantics",
-      "rationale": "After helper-local bracket admission, changing only the equality branch computes checked zero instead of literal zero with identical errors and effects. Retain native survivors and raw denominators; no kill credit.",
+      "requirement": "CHECK-6/25/27; full-domain experimental reply publication",
+      "rationale": "After the helper-local total-order guard, checked subtraction returns Some for every valid pinned-host Instant pair; the two exact fallback-only counter changes have identical state, panic, allocation and lifecycle behavior. Retain raw misses without kill credit.",
       "proof": {
         "path": "tasks/engine-analysis-equivalences.md",
-        "sha256": "1a05909233dbaed1c0e65237cb87ad78a8d6298ce63f406c00940ec82ac3f14b",
-        "section": "ENGINE-COHERENCE-UPPER-EQUALITY",
-        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
+        "sha256": "38794dd1935847b9b18069bcbee6d5f6a215f626b967a293cc3260128f0e5ad5",
+        "section": "ENGINE-COMMIT-DURATION-FALLBACK-MUL",
+        "reviewer": "rational_equivalence_review; relative_registration_review independent source/custody check",
         "verdict": "independently-justified-equivalent"
       }
     }
   ],
   "mutation_inventories": {
     "library": {
-      "count": 203,
-      "sha256": "23a714cb332d32b4aba0ff9fa257d5574d5a98d29a20c469a04f59db8068e4b5"
+      "count": 211,
+      "sha256": "851f9af30f666a917a81aa49c155760f06a326265c922cb31eff71c9d62a05d1"
     },
     "cli": {
       "count": 42,
@@ -127,31 +128,37 @@
     "measurement": {
       "count": 99,
       "sha256": "dfa103fba24077de193f4792760021dd07bfe5e061cd88992ea3d3b636b95bf9"
+    },
+    "relative": {
+      "count": 58,
+      "sha256": "cd32131c7856b73f3f2ea2c7ed7118c098e28ecf457e00c6f591fa6d2e8c5251"
     }
   },
-  "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
+  "candidate_sha256": "23667e60971adc5d3bc1da4e4dfdcba58d8fc4cb6f400ad103ad192979b36f5d",
   "inputs_sha256": {
-    "Cargo.toml": "20c65bf6e7d90e1de3fd5b89ae9d851718997e0efb77b5382c89c4eb92f247c0",
-    "Cargo.lock": "56833523c30ef64a3300fcc905d99039470fa1b88fc22ce295ada364bfd8a286",
-    "crates/nevrotick-engine/Cargo.toml": "07a8af6be34ba3115ca79d871a43bb3859c9303204e58d2c18b1620a371a8683",
-    "crates/nevrotick-engine/src/lib.rs": "f28b546f3a6017ca82e33d1979a5da96de8d9b9ad3f2cdb2e971bc5f5e2ad3f5",
+    "Cargo.toml": "e200e5e14ffd56653a707939f5a5543c9ac52514693fcf345a71253e1f94f763",
+    "Cargo.lock": "9f31370aaf3649527926acf48a927ce2b627d8de633d8f7a50b467cf2f07c24e",
+    "crates/nevrotick-engine/Cargo.toml": "a0b65ce3d53d4c37348ddc5546a2b8d9f5f266cbf2cd342d29990efa3adfe725",
+    "crates/nevrotick-engine/src/lib.rs": "6f3c6eb2f491de7f27a89f8fba84556e818874a9c875643b08081206f5dd4d46",
     "crates/nevrotick-engine/src/bin/nevrotick-observe.rs": "4e64e8912a8a50261b33e9753818c30cf247ee3bee99ba254cda446b2b22cd3d",
     "crates/nevrotick-engine/src/measurement.rs": "85089611c6e2316beeb37f4b060ebec88b1db8686974a81a39c690dbae4fd648",
+    "crates/nevrotick-engine/src/relative.rs": "5db7b4c2fb36004dd03be8f5065ab3daf8ae3b8dc6a1d2e09335abccd9a58c2c",
     "crates/nevrotick-engine/tests/runtime_boundary.rs": "dfa75af253a0d86ea584eea31ec1e262865abe0f91f273d9b8ee8aee56b440b6",
     "crates/nevrotick-engine/tests/prepare_release.rs": "f089024cd0bea7c84bbba360c55cf78683978983966267573c1ae6b9f198991d",
     "crates/nevrotick-engine/tests/prepare_entered.rs": "84a38779f863697a58f36e7ebf8d4acf80d0bab653fe2ae0ac488fa2ece96666",
     "crates/nevrotick-engine/tests/execute_entered.rs": "a8fea0f70cf2bc147900e2e639a3252c0c7dea0b9a10f2d3f25794273f9ba97a",
-    "crates/nevrotick-engine/tests/private/processing_guards.rs": "1808cbc2f67edf61c940653588aabc23ce7b07c3ae22adb19fe6c62e332cda9e",
+    "crates/nevrotick-engine/tests/private/processing_guards.rs": "9609eca6f87493c027490c23d4e64c9c05adb907324df69d73f28583c6e917ca",
     "crates/nevrotick-engine/tests/private/argument_guards.rs": "604bf76c7dfc7712f1823ee4d17f04adc46b5ff34ef4258b8aef9878502c71ca",
-    "crates/nevrotick-engine/tests/private/measurement.rs": "d994da65ce59a5651c6edcdad5906fa1b0f5bb3e128ae788182b783a58123315",
-    "scripts/portable-analysis.py": "36b1affc8fc8c384564ce147f156becf3b871ab40ab536069e778c0e1ab66b3d",
+    "crates/nevrotick-engine/tests/private/measurement.rs": "6180a73e74b1ab940ef426b881c9346de1f616ee1ee9c0d003cae0467fbebd9b",
+    "crates/nevrotick-engine/tests/private/relative.rs": "f10132c44efb361a200c421a9e226db712353aa0ab9ef4c529e3e883aa6133e5",
+    "scripts/portable-analysis.py": "d4693f94f665fffd62a9afd526921a134443f97aa9b835665cfa20fcfafff3b8",
     "scripts/analysis-runtime.py": "0de6d23b2e52fea78ee81f038d216c962ef87511df53443984bb6e6aacb79dc9",
     "scripts/check-analysis.py": "debe3b31cb93bd8b1b588e777a8c138a9dd6fbadc9152e253f320e1f73cb77e8",
     "scripts/prepare-product.py": "1003f48480c5bc397e395fccd06cd290b093ffc1487efa27a434cf864bed81fd",
     "policy/analysis-tools.json": "4da7796c6dd41a1a09dea9a7b1670480106fe1d1f260150385d78c8faa474234",
-    "policy/verification-manifest.toml": "7e32195abff10f6f895612f5d652f397bfb2b784e731455e22d3129b93c5cdab"
+    "policy/verification-manifest.toml": "40a4631e15f1f54b25c9925826aca4077f47cc87ce6c3bfb5d0b4934070a3ee4"
   },
-  "scope": "Three engine critical owners on the current374-input candidate, including checked once-rounded exact nominal seconds adapters. Six build jobs and ten mutation workers retain all90%/95% gates and512-variant bounds. Fresh descriptor enumeration and terminal coverage/mutation are required; no prior score is transferred. Only the two exact independently revalidated wall-delta equality variants may be excluded after their native outcomes, without kill credit; bracket-order equality variants have no exemption. The inert168-input external-contract role remains historical. No native Windows, physical accuracy, source eligibility, formal-proof or release qualification follows.",
+  "scope": "Four registered engine owners on the 376-input common-run reference/anchoring candidate. Library and relative are selected for new per-file coverage/mutation; CLI and measurement listings establish no new scores. Full tool admission, six build jobs, ten one-inner-job mutation workers, 512 variants and unchanged90%/95% gates remain. Only the exact source/descriptor-pinned helper-local checked-duration fallback pair may be excluded after actual native miss matching, with no kill credit. Historical measurement equivalences and inert168-input constructor role retain their prior scopes. No native Windows, source eligibility, clock authority, formal-proof or release qualification follows.",
   "external_contracts": {
     "schema_version": 1,
     "admission_status": "admitted-engine-external-contracts-only",

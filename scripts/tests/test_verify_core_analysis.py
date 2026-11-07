@@ -7095,14 +7095,14 @@ class CoreDocumentReaderTests(HistoricalS14cTestCase):
 
     def test_explicit_stable_profile_cannot_enter_metadata_union(self):
         for lane in ('cohort-union',):
-            args = SimpleNamespace(lane=lane, tool_admission_profile='stable-core')
+            args = SimpleNamespace(lane=lane, subject='all', tool_admission_profile='stable-core')
             with patch.object(MODULE, 'execute_inventory') as inventory, \
                  patch.object(MODULE, 'execute_cohort_union') as union, \
                  self.assertRaisesRegex(MODULE.Incomplete, 'requires the exact inventory card'):
                 MODULE.execute(args, {})
             inventory.assert_not_called(); union.assert_not_called()
         with patch.object(MODULE, 'execute_cohort_union') as union:
-            args = SimpleNamespace(lane='cohort-union', tool_admission_profile='full')
+            args = SimpleNamespace(lane='cohort-union', subject='all', tool_admission_profile='full')
             MODULE.execute(args, {})
             union.assert_called_once_with(args, {})
 
@@ -9354,6 +9354,26 @@ class AchievedPhaseIntegrationTests(HistoricalS14cTestCase):
                     self.assertFalse('core_invocations' in report, 'Unfunded phase observation was recorded.')
 
 
+@contextlib.contextmanager
+def historical_settled_source_observations():
+    """Supply inert historical hash observations, never admit current Rust bytes.
+
+    Only this nonexistent fixture namespace substitutes the hashing port. The
+    real source checker, all frozen pins and every other path keep their original
+    behavior. No local receipt, Git revision or historical source cache is read.
+    """
+    root = Path('/synthetic-settled-rate-source-observations')
+    observations = {root / name: digest
+                    for name, digest in MODULE.SETTLED_RATE_LIVE_SOURCE_SHA256.items()}
+    actual_sha256 = MODULE.PRODUCT.sha256
+
+    def observed_sha256(path):
+        return observations[path] if path in observations else actual_sha256(path)
+
+    with patch.object(MODULE.PRODUCT, 'sha256', side_effect=observed_sha256):
+        yield root
+
+
 class HistoricalFixtureIsolationTests(unittest.TestCase):
     """Historical source arithmetic must restore the current admission state."""
 
@@ -9364,6 +9384,15 @@ class HistoricalFixtureIsolationTests(unittest.TestCase):
     def snapshot(self):
         return {name: MODULE.COMMON.canonical_sha256(getattr(MODULE, name))
                 for name in HistoricalS14cTestCase.ALLOWANCE_MAP_NAMES}
+
+    def assert_current_sources_remain_held(self):
+        """N1/N2 additions cannot inherit settled-rate source qualification."""
+        reason = r'^Settled-rate live chart, receiver or unchanged adapter source differs\.$'
+        with self.assertRaisesRegex(MODULE.Incomplete, reason):
+            MODULE.admit_settled_rate_sources(ROOT)
+        if set(MODULE.MUTATION_INVENTORIES) == set(MODULE.SETTLED_RATE_SUBJECTS):
+            with self.assertRaisesRegex(MODULE.Incomplete, reason):
+                MODULE.read_policy(ROOT, 'contracts')
 
     def test_current_allowances_survive_a_healthy_historical_case(self):
         before = self.snapshot()
@@ -9378,9 +9407,9 @@ class HistoricalFixtureIsolationTests(unittest.TestCase):
         self.assertEqual(MODULE.FIXED['schema_version'], 26)
         self.assertEqual(MODULE.SOURCE_FILE_COUNT, 158)
         self.assertEqual(len(MODULE.cohort_budget_vectors(require_limits=False)[0]), 2820)
-        MODULE.admit_settled_rate_sources(ROOT)
-        if set(MODULE.MUTATION_INVENTORIES) == set(MODULE.SETTLED_RATE_SUBJECTS):
-            self.assertEqual(MODULE.read_policy(ROOT, 'contracts')['schema_version'], 26)
+        with historical_settled_source_observations() as root:
+            MODULE.admit_settled_rate_sources(root)
+        self.assert_current_sources_remain_held()
 
     def test_current_allowances_survive_historical_exception_cleanup(self):
         before = self.snapshot()
@@ -9393,23 +9422,31 @@ class HistoricalFixtureIsolationTests(unittest.TestCase):
         self.assertIn('intentional inert historical failure', result.errors[0][1])
         self.assertEqual(self.snapshot(), before)
         self.assertEqual(MODULE.FIXED['schema_version'], 26)
-        if set(MODULE.MUTATION_INVENTORIES) == set(MODULE.SETTLED_RATE_SUBJECTS):
-            self.assertEqual(MODULE.read_policy(ROOT, 'contracts')['schema_version'], 26)
+        with historical_settled_source_observations() as root:
+            MODULE.admit_settled_rate_sources(root)
+        self.assert_current_sources_remain_held()
 
     def test_current_historical_current_projection_preserves_original_sources(self):
-        before_policy = MODULE.read_policy(ROOT, 'contracts')
+        """Historical fixture projection leaves the held current tree unchanged."""
         before_bytes = (ROOT / MODULE.POLICY).read_bytes()
+        before_policy = json.loads(before_bytes)
         before_product = MODULE.PRODUCT.admit_product(ROOT)[1]
+        self.assert_current_sources_remain_held()
+        with historical_settled_source_observations() as root:
+            before_sources = MODULE.admit_settled_rate_sources(root)
         result = CoreAnalysisTests(
             'test_historical_fixture_survives_successor_template_between_healthy_templates'
         ).run(unittest.TestResult())
-        after_policy = MODULE.read_policy(ROOT, 'contracts')
+        after_policy = json.loads((ROOT / MODULE.POLICY).read_bytes())
         self.assertEqual((before_policy['schema_version'], after_policy['schema_version']), (26, 26))
         self.assertEqual(before_policy, after_policy)
         self.assertEqual((ROOT / MODULE.POLICY).read_bytes(), before_bytes)
         self.assertEqual(MODULE.PRODUCT.admit_product(ROOT)[1], before_product)
+        with historical_settled_source_observations() as root:
+            self.assertEqual(MODULE.admit_settled_rate_sources(root), before_sources)
+        self.assert_current_sources_remain_held()
         self.assertTrue(result.wasSuccessful(),
-                        'Historical projection failed between two admitted current reads: ' + str(result.errors))
+                        'Historical projection changed held current state: ' + str(result.errors))
 
 
 class SettledRateIntegrationTests(unittest.TestCase):
@@ -9524,13 +9561,20 @@ class SettledRateIntegrationTests(unittest.TestCase):
                     MODULE.record_counts({}, 'bad-precharge', value)
 
     def test_current_source_admission_checks_each_live_union_member(self):
-        MODULE.admit_settled_rate_sources(MODULE.ROOT)
-        for name in MODULE.SETTLED_RATE_LIVE_SOURCE_SHA256:
-            original = MODULE.PRODUCT.sha256
-            def changed(path, target=name):
-                return '0' * 64 if path == MODULE.ROOT / target else original(path)
-            with self.subTest(name=name), patch.object(MODULE.PRODUCT, 'sha256', side_effect=changed), self.assertRaises(MODULE.Incomplete):
-                MODULE.admit_settled_rate_sources(MODULE.ROOT)
+        """Historical pins accept inert observations and reject every changed member."""
+        with historical_settled_source_observations() as root:
+            MODULE.admit_settled_rate_sources(root)
+            for name in MODULE.SETTLED_RATE_LIVE_SOURCE_SHA256:
+                original = MODULE.PRODUCT.sha256
+                def changed(path, target=name):
+                    return '0' * 64 if path == root / target else original(path)
+                with self.subTest(name=name), patch.object(MODULE.PRODUCT, 'sha256', side_effect=changed), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_settled_rate_sources(root)
+
+    def test_current_core_additions_cannot_enter_historical_settled_rate_admission(self):
+        with self.assertRaisesRegex(MODULE.Incomplete,
+                r'^Settled-rate live chart, receiver or unchanged adapter source differs\.$'):
+            MODULE.admit_settled_rate_sources(ROOT)
 
     def test_literal_docs_and_source_upper_do_not_claim_observed_operations(self):
         output = ''.join('test ' + name + ' ... ok\n' for name in MODULE.RATE_DELIVERY.CURRENT_ORDINARY_TESTS)

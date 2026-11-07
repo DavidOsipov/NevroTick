@@ -872,22 +872,22 @@ def rational_seconds_test_execution(text, *, doctests):
 def rational_seconds_baseline(work):
     """Read the actual owned tool baseline, without crediting listing or setup."""
     directory = work / "mutation" / RATIONAL_SECONDS_SUBJECT / "mutants.out"
-    outcomes = rational_seconds_document(directory / "outcomes.json", maximum=64 * 1024 * 1024)
+    outcomes = COMMON.read_analysis_json(directory / "outcomes.json", maximum=64 * 1024 * 1024)
     if type(outcomes) is not dict or type(outcomes.get("outcomes")) is not list:
         raise Incomplete("Rational-seconds baseline outcomes have an invalid shape.")
     rows = [row for row in outcomes["outcomes"]
             if type(row) is dict and row.get("scenario") == "Baseline"]
     if len(rows) != 1 or rows[0].get("summary") != "Success":
         raise Incomplete("Rational-seconds mutation needs exactly one successful native baseline.")
-    relative = Path(rows[0].get("log_path", ""))
+    relative = COMMON.analysis_output_path(rows[0].get("log_path", ""))
     if relative.is_absolute() or not relative.parts or ".." in relative.parts:
         raise Incomplete("Rational-seconds baseline log escapes owned output.")
     path = directory / relative
-    if path != path.resolve(strict=True):
+    if path.is_symlink():
         raise Incomplete("Rational-seconds baseline log cannot use links.")
-    raw = ANALYSIS.read_once(path, maximum=16 * 1024 * 1024)
+    raw = COMMON.read_analysis_bytes(path, maximum=16 * 1024 * 1024)
     return {**rational_seconds_test_execution(raw.decode("utf-8"), doctests=True),
-            "log_sha256": PRODUCT.sha256(path)}
+            "log_sha256": hashlib.sha256(raw).hexdigest()}
 
 
 def enumerate_rational_seconds(session, policy, report):
@@ -952,7 +952,7 @@ def execute_rational_seconds(args, report):
                        "--", "--test-threads=1"]
             raw = session.run("coverage", command, policy["coverage_wall_seconds"])
             report["coverage_execution"] = rational_seconds_test_execution(raw, doctests=False)
-            coverage = json.loads((session.work / "coverage.json").read_text())
+            coverage = COMMON.read_analysis_json(session.work / "coverage.json")
             report["coverage"] = {RATIONAL_SECONDS_SUBJECT: COMMON.coverage_counts(
                 RATIONAL_SECONDS_SCOPE, coverage, "/work/source/" + RATIONAL_SECONDS_FILE)}
         if args.lane in {"mutation", "all"}:

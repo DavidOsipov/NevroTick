@@ -173,3 +173,146 @@ to continue.
 OD-10's post-V1 formal deferral and all existing Windows/fuzz/storage/UI/package
 holds remain. This audit grants no production sample eligibility, clock authority,
 Windows enforcement, complete security certification or release approval.
+
+
+## Local text-inventory and analyzer-output repairs — 7 November 2026
+
+David supplied two additional tooling findings and authorized continuing the
+issue-repair workflow. The quoted `/workspace` handoff at line981 is not present
+in this checkout: its tracked predecessor has175 lines. Its quoted four-open count is
+not adopted as a current local status. This checkpoint independently checks the
+two named paths. The preceding AccessKit source repair and BH-TOOL-01 have their
+own current records; native qualification and the other existing holds remain.
+No new CodeQL scan, Rust/analyzer campaign, formal or Windows execution occurred.
+
+Owners: GUI localization/source inventory under OD-15 and the source-preparation
+subset of CHECK-22/25; verification admission and independent evidence under
+CHECK-24/25. Pinned Linux/WSL Python3.12 is the required environment. Independent
+expectations are rejection of missing/unowned live text and controlled incomplete
+reporting for invalid/linked/over-budget output, with hashes of the same admitted
+bytes. CHECK-20/26 source/graph obligations and every native/product gate remain.
+
+**Slint inventory — confirmed and repaired.** `_nodes` only examined200 characters
+before an opening brace. Longer whitespace made a live native control typeless,
+losing its text-binding custody. An actual full509-ID source snapshot first
+passed healthy; three injected, long-spaced Text variants (missing/unowned/literal
+text) also passed incorrectly, producing the intended RED. The retained83-test
+run has25 failed subcases, not25 separate product defects. The repair scans the
+immediate header tokens backwards under existing source/node/depth/edge limits,
+retains named-instance identity and shares that header with literal-false parsing.
+It does not rescan the whole preceding source or become a general Slint compiler.
+
+All85 focused text-coverage tests pass, covering long spaces/comments/newlines,
+named gaps around `:=`, inheritance/instances, exact literal-false versus dynamic
+conditions, long type tokens and inert comments/strings. Source bookends match.
+The real `check-ui-text.py --root` entry also passes509 active/509 used IDs,
+zero errors, with unchanged semantic fingerprint
+`34c97f8a74a9559ae998f55389bedd9f92bb3f878e72df84d090372053a69e80`.
+This is source-inventory evidence, not independent translation approval, rendering
+or native accessibility qualification. Parser SHA256:
+`7e08b0c7f9b881b5e72198a9e4e89562b9d463227d78f944d960fd528f4e48b8`.
+
+**Analyzer outputs — confirmed and repaired.** The real shared analysis-lane
+entry accepted linked coverage/outcomes reports after sandbox execution. The
+original124-test RED retained exactly two intended linked-file failures and a
+healthy coverage/mutation neighbor; no resource-exhaustion experiment ran.
+Generated-file reads now traverse directories through no-follow descriptors,
+accept only one owned regular inode, bound bytes before reading and recheck
+file/directory attachment and metadata. JSON is strict UTF-8, duplicate/nonfinite
+rejecting and bounded before decoding:64MiB JSON,16MiB logs, depth64 and4million
+structural markers. These are admission ceilings, not measured host RSS/time
+limits. Paths are capped at4096 UTF-8 bytes/64 components, with raw strings bounded
+before Path construction/opening. Healthy coverage above1MiB remains accepted;
+inspected retained coverage reaches4.44MiB, so a1MiB blanket limit was rejected.
+
+The shared lane, dedicated rational/window coverage, Core per-outcome/accounting
+and engine/domain/window baseline paths all use this boundary. All three Core
+log-hash branches and dedicated baseline hashes derive from the same retained
+bytes, without a second path read. Coverage/mutation thresholds, native exits,
+required test/doctest counts, descriptors/equivalences and operation reservations
+remain enforced. Policy/inventory decoders and deferred formal readers were not
+changed. Shared helper SHA256:
+`d4693f94f665fffd62a9afd526921a134443f97aa9b835665cfa20fcfafff3b8`.
+
+The final shared suite passes136 tests. A further causal path-budget RED and its
+correction are retained. Controller RED showed a healthy baseline alongside the
+unwanted second hash read; repaired engine controls pass52 tests including that
+case, dedicated baseline controls pass2, and focused Core output/accounting
+controls pass4. The first controller integration exposed a missing hashlib import
+and remains failed; the import was corrected and the affected cases rerun.
+Together with the Slint suite, the final selected sets contain279 distinct passing
+Python tests; filtered repetitions receive no additional count. Strict workspace
+policy and changed-line whitespace checks pass. Four genuine retained coverage/
+outcome reports also pass the new reader; this is compatibility replay, not new
+Rust execution or a fresh mutation/coverage score.
+
+**Limits and retained failures.** The broad19-test rational/window suites are not
+green: historical374/370-input admissions reject the current377-input tree before
+many cases reach their targets. One newly changed rational object-error wording
+expectation was separately corrected to the same specific semantic rejection and
+rechecked in the passing dedicated tests. All other initial binding failures stay
+recorded; no historical recipe or score was rewritten. An overbroad Core suite
+was interrupted as incomplete using exact argv/cwd/stdout/PID-start ownership;
+the four changed-consumer controls then ran to completion. Independent reviewer
+`tooling_findings_review` (initial `fork_turns="none"`) inspected source, causal
+logs and final routing, finding no remaining material defect in this bounded
+repair. The reviewer ran no jobs and its agreement adds no executions.
+
+Evidence root:
+`/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/bughunt-text-and-reports-v1/`.
+It retains all RED/GREEN/partial logs, process-interruption custody, actual CLI
+result and report replay. `policy-binding.json` binds current377-input candidate
+`23667e60971adc5d3bc1da4e4dfdcba58d8fc4cb6f400ad103ad192979b36f5d`;
+older native receipts retain their original helpers/candidates. Existing staged
+work remains separate. No staging, commit or push was performed by this work.
+Resume the ordinary product queue; no Windows, fuzz, storage, UI, package or
+post-V1 formal disposition is lifted.
+
+Final guard refinement removes generated-path `resolve()` calls before bounded
+admission; leaf no-follow checks retain explicit errors and the shared reader
+enforces every ancestor. Policy/receipt readers keep their original behavior.
+The fresh final baseline controls pass4 cases and final Core controls pass all
+four in separate owned processes; the engine suite again passes52. The actual
+resolve/hash spies execute their originals if reached, so they are not substitute
+oracles. `closeout.json` is the final identity/result record; the earlier
+`final-source.json` predates this last guard refinement. Its source values remain
+preserved as an intermediate snapshot. The tracked predecessor's175 lines were
+verified with Git; the initial custody note's166-line estimate was inaccurate.
+
+The continuation rechecked both repaired production helper hashes against these
+retained identities and reran the focused suites with the pinned Python3.12:
+all85 text-inventory and136 shared-analysis tests pass (221 distinct tests).
+This is a fresh Python regression check, with no resource-exhaustion experiment,
+Rust/analyzer campaign or Windows execution. No staging, commit or push follows.
+
+Two further read-only reviews confirmed the current parser/helper hashes above
+and found no remaining bypass in these selected paths. The hostile Slint cases
+call the real `checker.check` consumer used by the CLI; the retained public CLI
+execution is its healthy control. Shared reader/test bytes still match the repair
+receipt. Later Core/Engine additions have separate candidates: the old controller
+results do not qualify those complete current scripts. After the N3 role update,
+all65 selected Engine/series admission controls pass in
+`dependency-refresh-20261106-v1/n3-series-python-controls-v2.log`. This adds current
+Python admission evidence, with no new native, resource-exhaustion or whole-product
+claim. The quoted remote four-open count remains unreconciled locally.
+
+## Retired local extraction data — 7 November 2026
+
+Under David's unused-evidence cleanup instruction, the obsolete
+`codeql-work/databases/product-bd1f7c4-serial/db-rust` extraction relations were
+removed. The surrounding metadata and existing `src.zip`, diagnostics, logs,
+source receipt and all query results remain. This historical directory is no
+longer a queryable database without rebuilding; the cloud rebuild direction
+above remains current. The source receipt binds343 committed files to
+`bd1f7c4a44e4a8dcf31fa6ca650b3a0cea1dd83e` and retains SHA256
+`d30a884b739a9a6d829f0b4814119cc2dfc22334322b349dd5107161141149a6`.
+
+Fresh MCP metadata lists only the separate October29 `/work/database` fixture;
+it, installed tools and running services were preserved. No matching readable
+process argv/cwd/fd/map or explicit mount used the retired product directory;
+three inaccessible process scopes remain a limitation of that sampled check.
+All410 protected files and the Git index were unchanged across deletion. Actual net recovery
+is574398464 bytes; available5628305408 bytes was observed after deletion, before
+later build work. No new archive, compression, unregister or process stop occurred.
+Receipt `dependency-refresh-20261106-v1/codeql-derived-index-cleanup-v1.json`
+SHA256: `273510a445b4f87cdf9ea3e19a46dc48032bb45bc0ceed678896e0745e1d435d`.

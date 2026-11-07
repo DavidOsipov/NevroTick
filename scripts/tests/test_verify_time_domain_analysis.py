@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import re
 import shutil
 import tempfile
 import tomllib
@@ -21,6 +22,54 @@ PURE_REGISTRY_NAMES = frozenset({
     "proc-macro2", "quote", "rustversion", "ryu", "smallvec",
     "static_assertions", "syn", "unicode-ident",
 })
+
+
+def policy_fixture(test):
+    """Build inert unit metadata without renewing the held production fuzz grant.
+
+    Only the checked-in policy shape and standalone lock are reused. The other
+    hash-bound inputs are explicit inert fixtures: these tests exercise policy
+    admission/dispatch, never compiler, package, solver or fuzz execution.
+    """
+    temporary = tempfile.TemporaryDirectory(prefix="domain-analysis-policy-")
+    test.addCleanup(temporary.cleanup)
+    root = Path(temporary.name)
+    policy = json.loads((ROOT / MODULE.POLICY).read_text())
+    policy["mutation_equivalences"] = []
+    selected = policy["coverage_guided_fuzzing"]
+    for name in selected["inputs_sha256"]:
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = ((ROOT / name).read_bytes() if name == selected["lockfile"] else
+                ("inert domain policy unit input: " + name + "\n").encode())
+        path.write_bytes(data)
+        selected["inputs_sha256"][name] = hashlib.sha256(data).hexdigest()
+    manifest = root / "policy/verification-manifest.toml"
+    manifest.write_text(
+        "critical_files = " + json.dumps(list(MODULE.SUBJECTS.values())) + "\n"
+        '[[security_modules]]\npackage = "time-domain"\nfiles = ' +
+        json.dumps(list(MODULE.SUBJECTS.values())) + "\n")
+    (root / MODULE.POLICY).write_text(json.dumps(policy))
+    test.assertEqual(MODULE.read_policy(root), policy)
+    return root, policy
+
+
+def canonical_lock_package(packages, package):
+    """Compare actual package identities/edges, independent of Cargo label syntax."""
+    edges = []
+    for dependency in package.get("dependencies", []):
+        match = re.fullmatch(r"([^\s()]+)(?: ([^\s()]+))?(?: \(([^()]+)\))?", dependency)
+        if match is None:
+            raise AssertionError("Malformed dependency identity in the lock fixture")
+        name, version, source = match.groups()
+        matches = [item for item in packages if item["name"] == name
+                   and (version is None or item["version"] == version)
+                   and (source is None or item.get("source") == source)]
+        if len(matches) != 1:
+            raise AssertionError("Dependency identity is missing or ambiguous")
+        selected = matches[0]
+        edges.append(tuple(selected.get(key) for key in ("name", "version", "source", "checksum")))
+    return {key: value for key, value in package.items() if key != "dependencies"}, sorted(edges)
 
 
 class DomainRegistryIdentityTests(unittest.TestCase):
@@ -98,6 +147,20 @@ class DomainRegistryIdentityTests(unittest.TestCase):
         self.assertIn('unchanged_note="syn 2.0.119"', block)
         self.assertEqual(tomllib.loads(block)["package"][0], after)
         self.assertEqual(projected["syn"][0]["dependencies"], ["proc-macro2"])
+
+    def test_lock_identity_comparison_preserves_edges_across_cargo_spellings(self):
+        packages = tomllib.loads(self.product())["package"]
+        selected = next(item for item in packages if item["name"] == "garde_derive")
+        canonical = canonical_lock_package(packages, selected)
+        self.assertEqual(canonical[1], [("syn", "2.0.119", MODULE.REGISTRY,
+                                        hashlib.sha256(b"syn@2.0.119").hexdigest())])
+        standalone = [item for item in packages if (item["name"], item["version"]) != ("syn", "3.0.9")]
+        bare = {**selected, "dependencies": ["syn"]}
+        self.assertEqual(canonical_lock_package(standalone, bare), canonical)
+        self.assertNotEqual(canonical_lock_package(packages, {**selected, "dependencies": ["syn 3.0.9"]}), canonical)
+        for dependencies in (["syn"], ["syn 2.0.120"], ["syn 2.0.119 (git+https://unreviewed.invalid)"]):
+            with self.subTest(dependencies=dependencies), self.assertRaises(AssertionError):
+                canonical_lock_package(packages, {**selected, "dependencies": dependencies})
 
     def test_projection_preserves_the_existing_full_fuzz_lock_bytes(self):
         expected = (ROOT / "policy/time-domain-fuzz.lock").read_text()
@@ -389,11 +452,14 @@ class DomainAnalysisTests(unittest.TestCase):
         registry = [item for item in lock if "source" in item]
         self.assertEqual(len(registry), 23)
         self.assertEqual({item["name"] for item in lock if "source" not in item}, {"time-domain", "time-domain-fuzz"})
-        product = {item["name"]: item for item in tomllib.loads((ROOT / "Cargo.lock").read_text())["package"]}
+        product = tomllib.loads((ROOT / "Cargo.lock").read_text())["package"]
         old = {item["name"]: item for item in json.loads((ROOT / "policy/ntp-wire-analysis.json").read_text())["coverage_guided_fuzzing"]["locked_registry_packages"]}
         for item in registry:
             if item["name"] in PURE_REGISTRY_NAMES:
-                self.assertEqual(item, product[item["name"]])
+                matches = [entry for entry in product
+                           if all(entry.get(key) == item.get(key) for key in ("name", "version", "source"))]
+                self.assertEqual(len(matches), 1, "The actual pure dependency must have one exact identity")
+                self.assertEqual(canonical_lock_package(lock, item), canonical_lock_package(product, matches[0]))
             if item["name"] in old:
                 self.assertEqual({key: item[key] for key in ("name", "version", "source", "checksum")},
                                  {key: old[item["name"]][key] for key in ("name", "version", "source", "checksum")})
@@ -426,33 +492,37 @@ class DomainAnalysisTests(unittest.TestCase):
             self.assertEqual(cases[name]["code"], "E0308")
 
     def test_policy_rejects_lowered_threshold_missing_owner_and_changed_source(self):
-        healthy = MODULE.read_policy(ROOT)
+        root, healthy = policy_fixture(self)
         self.assertEqual(len(healthy["critical_files"]), 9)
         # This minimal graph/threshold fixture has no product checkout. Exact E
         # source/candidate/proof admission is tested separately on real owners.
         fixture_policy = json.loads(json.dumps(healthy))
         fixture_policy["mutation_equivalences"] = []
-        with tempfile.TemporaryDirectory() as temp:
-            root = Path(temp)
-            inputs = [MODULE.POLICY, "policy/verification-manifest.toml",
-                      *healthy["coverage_guided_fuzzing"]["inputs_sha256"]]
-            for name in inputs:
-                target = root / name; target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(ROOT / name, target)
-            (root / MODULE.POLICY).write_text(json.dumps(fixture_policy))
-            self.assertEqual(MODULE.read_policy(root)["coverage_minimum_line_percent"], 90)
-            policy = root / MODULE.POLICY
-            bad = json.loads(policy.read_text()); bad["coverage_minimum_line_percent"] = 89
-            policy.write_text(json.dumps(bad))
-            with self.assertRaises(MODULE.Incomplete): MODULE.read_policy(root)
-            policy.write_text(json.dumps(fixture_policy))
-            inventory = root / "policy/verification-manifest.toml"
-            original = inventory.read_text()
-            inventory.write_text(original.replace('"crates/time-domain/src/era.rs"', '"crates/time-domain/src/missing.rs"'))
-            with self.assertRaises(MODULE.Incomplete): MODULE.read_policy(root)
-            inventory.write_text(original)
-            source = root / "policy/time-domain-fuzz-target.rs"; source.write_text(source.read_text() + "\n// changed\n")
-            with self.assertRaises(MODULE.Incomplete): MODULE.read_policy(root)
+        (root / MODULE.POLICY).write_text(json.dumps(fixture_policy))
+        self.assertEqual(MODULE.read_policy(root)["coverage_minimum_line_percent"], 90)
+        policy = root / MODULE.POLICY
+        bad = json.loads(policy.read_text()); bad["coverage_minimum_line_percent"] = 89
+        policy.write_text(json.dumps(bad))
+        with self.assertRaisesRegex(MODULE.Incomplete, "scope, threshold or budget"): MODULE.read_policy(root)
+        policy.write_text(json.dumps(fixture_policy))
+        inventory = root / "policy/verification-manifest.toml"
+        original = inventory.read_text()
+        inventory.write_text(original.replace('"crates/time-domain/src/era.rs"', '"crates/time-domain/src/missing.rs"'))
+        with self.assertRaisesRegex(MODULE.Incomplete, "numeric owner"): MODULE.read_policy(root)
+        inventory.write_text(original)
+        source = root / "policy/time-domain-fuzz-target.rs"; source.write_text(source.read_text() + "\n// changed\n")
+        with self.assertRaisesRegex(MODULE.Incomplete, "Fuzz source"): MODULE.read_policy(root)
+
+    def test_actual_current_fuzz_bindings_still_fail_closed(self):
+        """Unit fixture rebinding grants no admission to the changed real checkout."""
+        policy = json.loads((ROOT / MODULE.POLICY).read_text())
+        mismatched = [name for name, expected in policy["coverage_guided_fuzzing"]["inputs_sha256"].items()
+                      if hashlib.sha256((ROOT / name).read_bytes()).hexdigest() != expected]
+        if mismatched:
+            with self.assertRaisesRegex(MODULE.Incomplete, "Fuzz source, literal graph, selected grants or manifest changed"):
+                MODULE.read_policy(ROOT)
+        else:
+            self.assertEqual(MODULE.read_policy(ROOT), policy)
 
     def test_exact_equivalence_admission_is_unavoidable_in_domain_policy(self):
         with patch.object(MODULE.COMMON, "admit_mutation_equivalences",
@@ -486,15 +556,7 @@ class DomainLeapAnalysisTests(unittest.TestCase):
     }
 
     def policy_fixture(self):
-        temporary=tempfile.TemporaryDirectory(prefix="leap-analysis-policy-")
-        self.addCleanup(temporary.cleanup)
-        root=Path(temporary.name)
-        policy=MODULE.read_policy(ROOT)
-        for name in (MODULE.POLICY,"policy/verification-manifest.toml",
-                     *policy["coverage_guided_fuzzing"]["inputs_sha256"]):
-            target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
-            shutil.copyfile(ROOT/name,target)
-        return root,policy
+        return policy_fixture(self)
 
     def test_nine_exact_executable_owners_each_require_nonempty_coverage(self):
         self.assertEqual(MODULE.SCOPE.select("all"),self.EXPECTED)
@@ -600,7 +662,7 @@ class DomainLeapAnalysisTests(unittest.TestCase):
         self.assertEqual(MODULE.read_policy(root),healthy)
 
     def test_exact_error_literal_reaches_only_bundled_subject_command(self):
-        policy=MODULE.read_policy(ROOT)
+        _,policy=self.policy_fixture()
         for name,filename in self.EXPECTED.items():
             expected=["--error",self.BUNDLED_ERROR] if name=="leap_bundled" else []
             with self.subTest(owner=name):
@@ -611,16 +673,16 @@ class DomainLeapAnalysisTests(unittest.TestCase):
                 MODULE.SCOPE,"crates/time-domain/src/leap/generated.rs",policy)
 
     def test_new_context_cannot_claim_all_or_fuzz_or_fallback_full_tools(self):
-        policy=MODULE.read_policy(ROOT)
+        root,policy=self.policy_fixture()
         for lane in ("all","fuzz"):
             args=SimpleNamespace(lane=lane,subject="all",tool_admission_profile="stable-core")
-            with self.subTest(lane=lane),patch.object(MODULE.COMMON,"Session") as session:
-                with self.assertRaises(MODULE.Incomplete):
+            with self.subTest(lane=lane),patch.object(MODULE,"ROOT",root),patch.object(MODULE.COMMON,"Session") as session:
+                with self.assertRaisesRegex(MODULE.Incomplete,"exact nine-owner"):
                     MODULE.execute(args,{})
                 session.assert_not_called()
         args=SimpleNamespace(lane="contracts",subject="all",tool_admission_profile="full")
-        with patch.object(MODULE.COMMON,"Session") as session:
-            with self.assertRaises(MODULE.Incomplete):
+        with patch.object(MODULE,"ROOT",root),patch.object(MODULE.COMMON,"Session") as session:
+            with self.assertRaisesRegex(MODULE.Incomplete,"profile differs from the current policy"):
                 MODULE.execute(args,{})
             session.assert_not_called()
         for lane in ("contracts","coverage","mutation"):
@@ -629,13 +691,15 @@ class DomainLeapAnalysisTests(unittest.TestCase):
                 MODULE.SCOPE,policy),"stable-core")
 
     def test_selected_lane_reports_leap_unfuzzed_and_preserves_finish(self):
+        root,_=self.policy_fixture()
         args=SimpleNamespace(lane="coverage",subject="leap_validation",
                              tool_admission_profile="stable-core")
         with tempfile.TemporaryDirectory() as temporary:
             session=SimpleNamespace(work=Path(temporary),tools=Path(temporary)/"tools",
                                     run=lambda *args,**kwargs:None,finish=unittest.mock.Mock())
             report={}
-            with patch.object(MODULE.COMMON,"Session",return_value=session), \
+            with patch.object(MODULE,"ROOT",root), \
+                 patch.object(MODULE.COMMON,"Session",return_value=session), \
                  patch.object(MODULE.COMMON,"run_analysis_lanes") as run, \
                  patch.object(MODULE,"fuzz",side_effect=AssertionError("unselected fuzz")):
                 MODULE.execute(args,report)
@@ -645,7 +709,8 @@ class DomainLeapAnalysisTests(unittest.TestCase):
             self.assertEqual(run.call_args.args[-1],"coverage")
             session.finish.assert_called_once()
             session.finish.reset_mock()
-            with patch.object(MODULE.COMMON,"Session",return_value=session), \
+            with patch.object(MODULE,"ROOT",root), \
+                 patch.object(MODULE.COMMON,"Session",return_value=session), \
                  patch.object(MODULE.COMMON,"run_analysis_lanes",
                               side_effect=MODULE.Incomplete("independent lane failure")):
                 with self.assertRaisesRegex(MODULE.Incomplete,"independent lane failure"):

@@ -14,19 +14,26 @@ all existing Windows/fuzz/storage/UI holds remain in force. Current product work
 follows [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
 
 
-**Current product action, 6 November 2026:** after the [selected pure-leap
-checkpoint](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026),
-development §7 selects this task's [observation-to-Core admission contract](#next-source-checkpoint-observation-to-core-admission).
-The [first source checkpoint](#first-controlled-measurement-source-checkpoint--6-november-2026)
-now implements lossless staged evidence, the explicit experimental model,
-checked mapping/era/arithmetic and bounded diagnostic projection. The subsequent
-[three-owner qualification](#three-owner-measurement-qualification--6-november-2026)
-passed on its recorded host candidate, without qualifying later source or graphs.
-The [refreshed numerical critical-owner gates](s0.1-source-readiness.md#refreshed-graph-and-current-evidence)
-remain pending. Continue the
-[observation-to-Core contract](#next-source-checkpoint-observation-to-core-admission)
-in [development §7's current order](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent),
-reconciling those gates before the reference/anchoring bridge and retaining
+**Bug-handoff disposition, 7 November 2026:** bounded vendor admission, AccessKit
+range ordering, Slint text discovery and analyzer-output admission repairs are
+recorded in the [existing cloud handoff](codeql-cloud-handoff.md). BH-NATIVE-01's
+tray cleanup source repair retains its missing GUI/native evidence. H-ET1 remains
+the scheduling question recorded below, without a demonstrated contract defect.
+These gaps lift no hold. N1b's correction review closed N1-R1 and its
+[selected two-owner qualification](#n1b-final-qualification--two-selected-core-owners)
+is complete. The next bounded action is the N2 fit/suffix contract below.
+No commit/stage/push or Windows execution follows.
+
+**Current planned product action, 7 November 2026:** after the scoped leap, measurement
+and [two-owner numerical exits](s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners),
+development §7 selects this task's implemented
+[common-run reference/anchoring bridge](#next-bounded-bridge-common-run-reference-and-exact-anchoring--6-november-2026).
+Its [final selected-owner exit](#common-run-reference-bridge--final-qualification-and-next-action)
+passes134 ordinary,135 optimized and64 doctests across domain/engine, with
+96.201%/98.3516% library/relative coverage and complete viable mutation accounting.
+The task retains exact executed candidates, failed attempts and reviewed evidence
+reuse after the pull. Continue the existing
+[N2 contract entry](#n2-entry--conditioned-affine-fitting-and-suffix-contract), retaining
 `authentication=none eligible=0`. This is no estimator admission or clock effect.
 W11-W01 remains partially prepared; uncertainty, production scheduling and native
 qualification remain later scopes. Older proof-first wording below is historical
@@ -93,14 +100,18 @@ broker, UI and helper gain no runtime dependency. UI-M0 remains unchanged.
 
 ## Dependency gate before compilation
 
-**Current gate, reconciled 6 November 2026:** use the
+**Current gate, reconciled 7 November 2026:** use the
 [owner-requested dependency refresh](s0.1-source-readiness.md#refreshed-graph-and-current-evidence),
 the current manifest/lockfile and exact schema-3 policy. The admitted graph now
 uses `tokio-macros 2.7.2` with its engine-scoped Syn 3 host closure; Garde retains
 Syn 2. Both target and per-package rows record that separation without a global
 duplicate-version relaxation. The current engine also depends on `time-domain`
 and Garde, alongside Tokio, `getrandom` and `ntp-wire`. Retain the refresh's exact
-ordinary/cross evidence and pending numerical qualification.
+ordinary/cross evidence and the completed
+[two-owner numerical checkpoint](s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners).
+The later [reference bridge](#bridge-source-activation--7-november-2026) retains
+its own candidate and remaining changed-owner qualification; neither result is
+full engine, Windows or production-acquisition qualification.
 
 **Historical initial-engine gate:** the proposal and sixteen-package/2.7.1
 directions below record the earlier candidate. They do not override the current
@@ -3516,3 +3527,2671 @@ production `ValidatedSample`, authenticated eligibility, selection vote or clock
 authority. After this bridge, continue the existing production normalization,
 conditioning and checked-receiver chain with its original source/provenance
 requirements and holds; do not call this bridge full S2.1, P1 or product completion.
+
+**Commit-order refinement from current source review.** While touching the final
+commit owner for run-context identity, explicitly reject
+`processing < candidate.read.mono_after` before retaining the checked-duration
+fallback. Increment rejection once and preserve the pending slot and its prior
+history, matching the existing equal/predecessor regression. The current helper
+relies solely on `checked_duration_since`; selected Rust1.99.1 Windows source
+returns `Some(0)` when a negative interval is within the QPC epsilon. Its `Ord`
+comparison still orders those instants. Therefore a one-nanosecond predecessor
+can pass the duration check where the QPC epsilon is at least one nanosecond,
+contradicting the helper's rejection contract. The existing test
+`commit_processing_accepts_equal_read_and_rejects_its_predecessor` already supplies
+that predecessor and the legal equality neighbor. Preserve it and explicitly
+check their ordering; a later successor must retain a positive age.
+
+Independent reviewer `rational_equivalence_review` confirmed the actual helper,
+fresh-caller chain, test and pinned Windows standard-library implementation.
+This is a source-established conditional counterexample, not an observed Windows
+failure: the old Linux implementation rejects through `None`, so a Linux pass
+must not be relabelled a Windows RED or native repair qualification. Actual
+Windows execution stays held; carry the case to the existing native owner.
+This amendment changes no current numeric campaign input or quality threshold.
+
+### Bridge source activation — 7 November 2026
+
+The [two selected numeric owners](s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners)
+now pass their exact `cb2925bb...` Linux gates, including completed independent
+raw-log/custody reviews. This clears only this card's dependent source hold.
+Use the existing REQ-8/BND-1/CHECK-6/7/8/11/14/25/27 contracts, finite execution
+budget and all other holds. The compiler baseline remains1.99.1; no staging,
+commit or push is authorized by this activation.
+
+Root owns the real transport producer in `src/lib.rs`, its run-context plumbing,
+actual UDP/commit controls and integration. One worker owns the pure new
+`src/relative.rs`; an independent writer owns its private tests and numeric
+fixtures in the existing measurement-test module. No graph/dependency or CLI
+schema changes are selected. New sources follow the engine's GPL-2.0-only grant.
+
+The additive public API is `TransportFacts::relative_to(&anchor)` returning a
+borrowed `ExperimentalRelativeMeasurement`, with fixed typed
+`RelativeMeasurementRefusal` errors. It retains both original facts, exact
+`ExperimentalReferenceNs` values (whole plus half nanosecond), and the two
+`RoundedRationalSeconds` differences. Getter names state their units; differences
+are self minus anchor. The private context field is
+`Arc<RunClockContext { origin: Instant }>` and is separate from request identity.
+No public constructor mints a run context or relative view. Reference scalars
+have no default, unchecked conversion or context-free equality/order contract.
+
+New numeric helpers have explicit full raw scalar domains. A shared mandatory
+Garde rule checks the midpoint's raw endpoint/order/half-bit and exact doubled
+sum relation before publishing the private reference type; checked operations
+and the actual shared rational constructor own transformations and floating
+postconditions. Retain independently checked exact midpoint facts rather than
+using production division as the oracle. Successful conversion allocates no
+heap and reads no clock; rejected validation may create one bounded temporary
+report. The run allocates at most one small context retaining no socket/runtime.
+
+These are coupled Rust-only additions: no old persisted or independently
+versioned reader consumes them, so no data migration is needed. Existing facts,
+refusals, ages and the twenty-field diagnostic output retain their meaning.
+Source writing may proceed now; qualification and production history admission
+are separate exits. The next stage includes ordinary feature-omission RED/GREEN,
+the reviewed Windows-order source repair with its native evidence limit, actual
+two-peer/cross-run/direct-owner controls and the eventual changed-owner gates.
+
+### Bridge integration checkpoint — 7 November 2026
+
+Root restored the owner-requested correct declared baseline, `rust-version =
+"1.99.1"`, matching the pinned compiler and admitted dependency metadata. The
+external build-policy commit `5ef9853` was preserved and its complete current
+Cargo flag vector admitted; `relative-bridge-workspace-policy-v1.json` passes.
+Earlier numerical receipts retain their original source/configuration identities.
+
+The current bridge source map has376 inputs, SHA256
+`28e589a139ab8c976d1080328039988532f2be1f68a95d8c1dcea30b296dfb5e`.
+Root owns `lib.rs`, actual public-execution and final-commit controls. The pure
+module writer and separate numerical-test writer completed their owned paths;
+two bounded source reviews inspected exact arithmetic and the real integration
+chain. These workers inherited context; their source agreement is not additional
+execution or statistical independence. Source review found no concrete defect.
+Literal fixture/dyadic expectations were independently recalculated, including
+six checked nominal recipes and16 roundoff facts. The existing numerical-child
+receipts remain prerequisites, rather than transferred bridge scores.
+
+Public execution now retains one actual `execute` origin in a private context
+shared by both requests. Staging and final commit preserve/check this context
+separately from request identity, endpoints and original profile. The direct
+owner test substitutes each of those five fields independently, including a
+separate context allocation with the same numeric origin, then restores the
+healthy commit and checks duplicate-completion preservation. Actual two-peer UDP
+controls call `execute`, join both bounded peer threads, compare original wall
+nanoseconds/literal peer timestamps and independent u128 midpoint sums, and
+challenge reversed/self differences, cross-run admission, original row/anchor
+refusals and their error causes, row-first precedence and unchanged ages. Raw
+full-range numeric fixtures are labelled separately from genuine captures.
+The existing processing-boundary control now includes -1/0/+1ns and explicit
+predecessor ordering. Windows epsilon repair remains source-only evidence.
+
+Evidence is under
+`/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/`:
+
+- `relative-bridge-format-v1` stopped before formatting because the recipe
+  omitted the portable admission's required nextest argument. Versions2/3
+  completed the isolated pinned formatter; no application pass is attributed
+  to the first admission failure.
+- `relative-bridge-feature-red-v1` compiled the new tests and stopped at five
+  redundant type qualifiers under the existing deny lint. This is not the
+  intended RED. Root removed those qualifiers without changing expectations.
+- `relative-bridge-feature-red-v2` preserves a separate full snapshot differing
+  only in the mandatory midpoint Garde call, wrapped in `if false`. The unchanged
+  test first accepts `[10,11,10,1]`, then actually fails its required malformed
+  publication/`OutputInvariant` assertion: one failed test, native101, no compiler
+  or infrastructure failure. Full source/vendor/tool/driver bookends match.
+  This supplies a generation-gap control, with no generated-mutant credit.
+- `relative_bridge_ordinary.py` reuses the existing admitted ordinary recipe,
+  adds30 required test names and11 bridge legal/privacy/lifetime doctests, and
+  rejects empty/wrong/compile-failed RED selections. `relative-bridge-ordinary-v1`
+  is now running the coherent healthy cohort; no GREEN is claimed yet.
+
+Budget: one of two allowed causal repairs consumed by the redundant test paths;
+the intended omission RED is complete. The first ordinary cohort is in progress.
+Root retains sole Cargo ownership (six inner build jobs); eventual changed-owner
+coverage/mutation remains required and unexecuted. The new source is GPL-2.0-only,
+adds no dependency/runtime or twenty-field CLI change, and admits no history,
+source eligibility, authentication or clock operation. Post-V1 proof debt is
+routed into existing FP-D01; no formal execution starts. No native Windows job,
+fuzz/storage experiment, staging, commit or push occurred.
+
+**Finite continuation after actual preflight failures.** Ordinary versions1/2
+both stopped at formatting, with true custody bookends and no application
+compiler/Clippy/test/doc/release stage. Version2 was an avoidable duplicate dispatch
+before the local edit succeeded. Preserve and charge both attempts. Root applied
+exactly the requested two tuple compactions; the prior lint correction required
+this formatting follow-up. Current376-input map is
+`8e604439ec33e3829e2e7b8359e6acb3cbdf803481f412f129fe6c44eda7708c`.
+`relative-bridge-format-only-reuse-v1.json` compares the exact changed test file
+with the RED snapshot: only whitespace and optional final tuple commas differ.
+The exercised midpoint source/test, fault, healthy neighbor and graph are
+unchanged, so REDv2 retains its causal scope, without becoming a current GREEN.
+
+Reviewer `rational_candidate_review` checked all four receipts, source deltas
+and unchanged RED inputs read-only. The revised finite budget is one next healthy
+ordinary cohort (`relative-bridge-ordinary-v3`) and at most one causal
+compiler/Clippy repair/retry on an observed failure. Then run one existing
+changed-owner enumeration/coverage/mutation campaign for each of `lib.rs` and
+`relative.rs`, serially, under the unchanged90%/95%, no-unresolved-survivor,
+512-variant, six-build-job/ten-outer-one-inner-worker and time limits. Further
+failure requires another bounded causal reconciliation; no automatic rerun or
+new framework follows. No extra RED is needed unless a semantic/source/graph or
+context change invalidates its actual observation. Current four-owner
+registration controls pass49 Python tests; policy admission binds21 exact
+protected inputs, with fresh mutation inventories still pending. The prior
+measurement/CLI/converter campaigns are not repeated or given a new score.
+
+Ordinaryv3 passed formatting and the actual two-package compiler check, then
+stopped at two Clippy findings. Root used the single allowed causal repair:
+Garde's required borrowed unit context receives the same narrow, reasoned
+`#[expect(clippy::trivially_copy_pass_by_ref)]` used by existing custom rules;
+the fixture server explicitly consumes/drops its owned socket before healthy
+return. No validation or type privacy was relaxed. The midpoint rule/publisher
+bodies and independent RED test are unchanged; the added lint expectation and
+unrelated fixture socket-drop statement do not invalidate the historical RED's
+behavioral observation. The new376-input map is
+`91d73d824a87d8e052e0239642d77159e8c77292229417696c36f061c8d47387`.
+`relative-bridge-ordinary-v4` is the one permitted healthy retry. No further
+ordinary retry is authorized by this card without actual causal reconciliation.
+
+### Bridge ordinary GREEN and remote reconciliation — 7 November 2026
+
+`relative-bridge-ordinary-v4/verification.json` passes the complete coherent
+Linux ordinary cohort on the exact376-input `91d73d82...` map: isolated boundary,
+format, compiler, all-target Clippy,133 ordinary tests,134 optimized tests,
+64 doctests, rustdoc and CLI build/export. Counts combine domain/engine owners;
+the engine contributes67 ordinary tests and33 owned doctests, including the
+11 new relative legal/privacy/lifetime examples. All30 driver-required named
+cases executed; none failed or were ignored. Full product/vendor/tool/helper/
+driver bookends match. The exported development CLI SHA256 is
+`691b96e6bb22f5843fe9bcd965c514e14f7e85aa7cc9e408d7b83837b1a49265`.
+This is ordinary host evidence, not critical-file, native or release completion.
+
+After David requested the remote update, root fetched and fast-forwarded main
+from `5ef9853` to `b4f78a5864d0e994b577a5494233220c45319ec4`. Three overlapping
+local task/plan files merged cleanly against their old base; every other dirty
+and untracked file remained byte-identical, and the index stayed unstaged.
+`remote-main-reconcile-20261107-v1/reconcile.json` retains the original plain
+snapshots/patch, exact incoming tree, three merge results and custody checks.
+The remote changes documentation only; all376 ordinary product hashes and21
+engine protected inputs remain identical. Thus no unchanged ordinary campaign
+is repeated. The current §7 task stays this bridge, then production normalization/
+conditioning/receiver work. Imported AC-21/22 preserve the direct-path versus
+later SOCKS split under existing P7 owners; this bridge activates neither those
+integrations nor any Windows/fuzz/storage/formal work.
+
+Four-owner registration/admission was also reviewed read-only against the actual
+source: unique manifest ownership, exact protected inputs, all67 ordinary/33 doc
+records, deliberate omission controls and unchanged historical168-input contract
+role. It found no concrete registration defect; active equivalences are empty
+and mutation admission correctly remains closed until exact inventories are
+bound. This is source/control evidence, not another product campaign.
+
+Finished ordinary/RED build targets were deleted after live-reference and receipt
+checks, preserving source snapshots, native logs, all receipts and the exported
+CLI. No compression or shared tool/vendor/database deletion occurred.
+`relative-bridge-enumeration-v1` now lists all four exact engine inventories;
+listing supplies no coverage, mutation score or qualification credit. The
+subsequent existing `library` and `relative` gates remain the only selected
+changed-owner campaigns; earlier measurement/CLI/converter receipts retain their
+historical scopes. No staging, commit or push was performed.
+
+**Inventory-to-requirement review before gate freeze.** Enumeration completed
+without qualification credit: library211 (`851f9af3...`), CLI42 (`91da3640...`),
+measurement99 (`dfa103fb...`), relative58 (`cd32131c...`),410 total. Root reviewed
+the library's generated families and20 final-commit descriptors; the reviewer
+independently canonicalized all58 relative descriptors across22 families. The
+four production owner files remain byte-identical to that listing. Complete
+bindings are retained, but only library/relative are selected for new scores.
+
+The review found two concrete test gaps before expensive gates: no fixed
+Display/Debug assertions, and no legal capture exactly at the actual origin.
+Root added one small diagnostic test (all eight refusal strings and original/
+absent causes), two redacted Debug assertions on the actual public view/reference,
+and an at-origin zero midpoint control in the existing Instant test. No
+production algorithm, graph, public API or denominator changed. Formatting
+completed before the new freeze. No native mutant classification is inferred:
+the listed formatting mutations may instead be unviable under deny-warnings.
+
+The additional diagnostic name is mandatory in controller/driver admission; its
+coherently recounted omission first failed the Python control, then all49
+controller tests passed. Baseline is now68 ordinary plus33 doctests (101), and
+the ordinary driver requires31 names. Its earlier exact `a0c26821...` bytes are
+retained as `relative_bridge_ordinary_v1.py`, reconstructed by removing the single
+new required-name line and verified against the completed receipt's hash.
+
+This bounded pre-gate reconciliation authorizes one updated healthy ordinary
+cohort (`relative-bridge-ordinary-v5`) on376-input map
+`484784f792cce9d4ee58b7ba78dc7eb712ab728e3b013b3cb41a0b3e979f5019`,
+then the originally selected211/58 per-file gates. No automatic retry follows a
+failure. The omission RED still refers to its exact historical source: its
+exercised test/publisher and runtime semantics are unchanged; no new RED,
+generated kill or equivalence credit is claimed. Prior ordinary GREEN remains
+scoped to its prior candidate. Pending lifetime/privacy/Garde-generated and
+straight-line origin/constructor guarantees are covered by the named real
+consumer, raw-admission, omission and doctest alternatives, outside generated
+mutation numerators. Windows/native, formal, fuzz/storage and commit holds remain.
+
+**Updated ordinary exit.** `relative-bridge-ordinary-v5/verification.json` passes
+on the final `484784f7...` map: boundary, format, compiler, Clippy,134 ordinary,
+135 optimized and64 doctests, rustdoc and exported CLI. All31 required named
+cases and11 relative docs executed with no failures/ignored cases. The engine's
+selected baseline is68 ordinary plus33 docs. Full source/vendor/tool/helper/
+driver bookends match. The CLI remains byte-identical (`691b96e6...`) to v4;
+this does not extend its behavioral or release qualification. The library's
+existing `--lane all --subject library` coverage→mutation gate is now running,
+with the relative-owner gate next. Complete inventories are pinned; no current
+per-file score, equivalence or survivor disposition is claimed yet.
+
+### Library failure triage and bounded worker repair — 7 November 2026
+
+The first library gate remains **incomplete**. Coverage passes861/895 lines
+(96.201%); the actual211-variant mutation campaign is92 caught,114 unviable,
+two missed and three timed out, native exit3. Retain raw outcomes
+`b85ba86ab45e947c51cd508409c514770a6b832ef0ac5a178e2ec2d498c47597`
+and terminal receipt
+`2be4368a1b950814ab85a70363e72a4465f39cc9d4fcb3bb429ecc6ddd728c19`.
+No timeout, successful compilation or earlier assertion failure is counted as a
+completed mutation kill or gate pass.
+
+Independent raw-log review found each timed-out mutant compiled successfully,
+recorded five to seven failed lifecycle assertions, then stopped in the new
+synchronous public-execution fixture until the60-second native test deadline.
+The three faults invert `LiveSlot::finish` or remove terminal visibility. Source
+tracing explains the hang: `done()` stays false and the already-ready deadline
+cannot retire the faulted slots. No resource/task/socket/disk/permission failure
+marker was found. This is fault-exposed test-harness nontermination; healthy
+product execution passed. The original behavioral test body remains unchanged.
+
+The fixture now runs that same exact named test in one owned child. The parent
+bounds observation to five seconds and reap observation to500ms, caps both
+file-backed captures, rejects zero/wrong test selection, and kills/reaps its
+actual child before removing only its two fixed files and empty directory.
+Closed capture names and transcript bounds are checked at their consumers.
+Child success rows remain private, so baseline stays68 ordinary/33 docs.
+The cleared environment forwards only a closed worker flag and, when present,
+the exact namespace-owned LLVM profile path with `%p` uniqueness; coverage
+profiles stay outside capture cleanup. Native kill/reap failure remains a test
+failure with outer PID-namespace custody, rather than a successful cleanup claim.
+No detached thread, extra dependency, product-runtime change or broader timeout
+allowance was added.
+
+Both actual missed variants change only the unreachable checked-duration fallback
+counter. The [full-domain manual review](engine-analysis-equivalences.md#engine-commit-duration-fallback-sub)
+covers every valid pinned-host `Instant`/helper state and all counter, panic,
+allocation and lifecycle effects after the helper-local order guard. Their exact
+full native descriptor digests and library source hash are now pinned by the
+closed E-pair admission rule. Reachable counter1331, different source/spans,
+partial/duplicate/mixed IDs and altered native metadata are rejected. Existing
+measurement cohorts retain their old meanings. No E receives kill credit;
+Windows support is source evidence only and formal work stays deferred.
+
+Actual-product admission exposed one further metadata error: cargo-mutants
+represents implicit-unit functions with `return_type=""`. The shared ordinary
+mutation consumer incorrectly required a nonempty string. The retained focused
+RED rejects that real native shape; the small repair still requires a present
+bounded string, a nonempty function name, exact fields/spans and all source/
+review/native matching. None/bool/list/missing/overlong metadata remains rejected.
+All51 engine and122 shared Python controls pass. Independent source review checked
+the full descriptors, source/guard pins, manual argument and unchanged gates.
+These are ordinary mutation-accounting controls, not formal-verifier work.
+
+**Finite continuation:** run one five-case focused cohort from
+`relative_supervision_controls.py`: healthy, the three exact retained timeout
+faults and a zero-selection fault. Require actual one-test native0 or the intended
+bounded one-test native101, successful cleanup and unchanged custody; outer
+runner timeout, compiler/infrastructure failure or empty outer selection remains
+incomplete. Replay controls receive no generated-mutant credit. Then run one
+updated ordinary cohort and one retained211/58 library/relative gate each, serially,
+with the existing full admission, six compile jobs, ten outer/one inner workers,
+512-task/variant bounds and90%/95%/no-unresolved-survivor requirements. Reconfirm
+inventories against the final candidate; further failures require fresh bounded
+causal reconciliation, with no automatic retry. Formatting and21 protected-input
+bindings were frozen on376-input map
+`fdfb619ab1f1555185ce837a8006434a8da9cb66d44a5bd86d0a11f42b6139ef`.
+
+Another actor staged existing work during this continuation. Root saved plain
+index-entry/staged/unstaged custody under `external-staging-custody-20261107-v1`,
+preserved that staging and made no stage/commit/push action. David's no-commit
+instruction remains in force. Current qualification targets the actual working
+files, including the later unstaged repairs; it does not qualify the older index.
+
+**Focused-control cache failure and single corrected batch.** Version1's healthy
+public fixture passed, but its first fault replay unexpectedly returned native0.
+The fault's distinct source bytes were verified; the build log shows Cargo
+reused the healthy binary (`Finished` in0.14s, no compilation). All snapshots had
+been copied before the first build and were aliased at the same `/work/fixture`
+path with one shared target. Their earlier mtimes did not invalidate Cargo's
+fingerprint. The strict expected-native101 check rejected this result, so the
+batch stays incomplete; the remaining three cases did not execute. No fault
+passed incorrectly and no generated kill was credited.
+
+Retain the exact v1 driver (`b30cbb81...`) as
+`relative_supervision_controls_v1.py`, its snapshots/logs/receipt and true
+bookends. One corrected five-case batch, `relative-supervision-controls-v2`, is
+now authorized after this causal reconciliation. Each invocation has a fresh
+case-owned Cargo target/home/work directory; only read-only admitted tools/vendor
+bytes are shared. All five frozen source maps, expected native results, bounded
+child/capture cleanup,30-second per-command ceiling, one-GiB stop reserve and
+zero within-batch retries remain. This also supplies a negative control against
+silently treating a cached healthy binary as executed mutant evidence. The
+working source candidate `fdfb619a...` is unchanged by this recipe repair.
+
+**Worker controls GREEN.** `relative-supervision-controls-v2` passes all five
+fresh-target cases, with unchanged source/vendor/tool/helper/driver/snapshot
+bookends: healthy native0; the three retained lifecycle faults each native101
+with the actual child-deadline refusal and successful kill/reap; zero-selection
+native101 after a real child zero-test result. The five case wall times were
+7.86,11.79,12.18,11.80 and7.99 seconds including compilation. No outer timeout,
+compiler/infrastructure or cleanup failure occurred. These controls receive no
+generated-mutant credit. Finished build directories were deleted after custody
+checks; all five source maps/snapshots and native outputs remain.
+
+Independent supervisor review confirmed the unchanged3,171-byte behavioral body,
+closed names/bounded parser, exact profile forwarding and no detached supervision
+threads. Two comments were narrowed after this execution: success observes child
+exit, while persistent native failure retains outer PID-namespace custody;
+500ms bounds each reap observation, not the combined worst-case cleanup. Up to
+three stop attempts can occur through finish/cleanup/Drop. Only those documentation
+bytes changed; the executed control mechanisms and behavioral body are unchanged.
+The newly rebound376-input map is
+`46513296a558485a86222fccfdcfa93ff34231c094f8ff0305e638431dcdd4c5`.
+The one planned updated ordinary cohort is `relative-bridge-ordinary-v6`, followed
+by the still-required library-v2 and relative-v1 gates. No mutation pass is claimed.
+
+**Final ordinary exit after worker repair.** Ordinaryv6 passes all nine stages
+on `46513296...`:134 ordinary,135 optimized and64 doctests, all31 required names,
+compiler/Clippy/rustdoc and CLI export, with complete unchanged bookends. The
+already-authorized library-v2 gate is now running on this exact working candidate,
+with both exact fallback E entries active and no broader exception. The relative
+58-variant gate follows it. Ordinaryv6's finished target was removed after
+live-reference and receipt checks; fresh capacity exceeded four GiB before the
+new campaign. All source, logs, receipts and exported CLI remain. No staged bytes
+were changed by root; no commit or push occurred.
+
+## Common-run reference bridge — final qualification and next action
+
+**Selected bounded exit complete, 7 November 2026.** The engine now retains one
+actual run origin, separate request identities and exact whole/half-nanosecond
+references, and exposes a checked borrowed self-minus-anchor phase/reference
+view. Both selected production files meet the existing Linux gates on376-input
+candidate `46513296a558485a86222fccfdcfa93ff34231c094f8ff0305e638431dcdd4c5`.
+This completes this experimental bridge, not full S2.1, P1 or product acceptance.
+
+| Actual selected owner | Native line coverage | Complete generated mutation outcome | Viable score |
+| --- | --- | --- | --- |
+| `crates/nevrotick-engine/src/lib.rs` | 861/895 =96.201% | 211:95 caught,114 compiler/lint-unviable, two raw misses with exact E dispositions, zero timeouts/unresolved survivors | raw95/97; adjusted95/95; no E kill credit |
+| `crates/nevrotick-engine/src/relative.rs` | 179/182 =98.3516% | 58:36 caught,22 compiler/lint-unviable, zero misses/timeouts/exclusions | 36/36 |
+
+Receipts and raw artifacts are retained under
+`/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/`:
+
+- `relative-bridge-library-gates-v2/verification.json`, SHA256
+  `bfb9f2afd307e439b8b08174a00eed5ea254f411847bc369675abcabd598e467`;
+  native outcomes `7fb42d8cc000ad13e97856292bc508262471726f40d922d22933e5ed95a932f2`.
+- `relative-bridge-relative-gates-v1/verification.json`, SHA256
+  `bf0190beccb6b97b3285b8589cc226d8fa9d367b5de450a1b1f3811487b7e60e`;
+  native outcomes `21da6f4a1c8acf27faf9f43f1516a07102e87c622b8defb58f73ac11f3c22a45`.
+- `relative-bridge-ordinary-v6/verification.json`:134 ordinary,135 optimized,
+  64 doctests across domain/engine, compiler, Clippy, format, rustdoc and CLI
+  export. The engine's analysis baseline independently contains101 actual records:
+  68 ordinary plus33 owned doctests, including the11 new relative privacy/lifetime
+  examples. The CLI remains `691b96e6...`; no diagnostic-schema change occurred.
+- `relative-supervision-controls-v2/verification.json`: one healthy and four
+  bounded intended-failure cases, successful kill/reap, no outer timeout or
+  cleanup failure, complete custody and no generated-mutant credit.
+
+Independent raw accounting inspected every211/58 descriptor/outcome and native
+log. All114/22 unviable cases have actual compiler or deny-lint diagnostics,
+not observed infrastructure, OOM, ENOSPC, signal or compiler-crash causes. Every
+caught case builds successfully then fails real nonempty tests at native101;
+relative failures include both literal assertions and meaningful typed refusals.
+The three former library timeouts now finish as bounded failed tests through
+owned-child supervision. Peer `WouldBlock` in six other caught library cases is
+a bounded consequence of deliberately suppressed sends/retirement, rather than
+evidence of spawn/resource exhaustion. Both exact fallback E cases remain raw
+misses; their source, complete descriptors, full-domain manual rationale and
+review bytes are pinned. No machine-checked theorem or Windows execution is
+claimed. Baselines, complete native counts, frozen inputs, sealed tool copies and
+full before/after admission match. Named controls cover ungenerated constructors,
+Garde expansion/deleted validation, actual origin flow, endpoint/request/context
+substitution and external privacy/lifetime boundaries outside mutation numerators.
+
+The v1 library campaign remains incomplete (92K/114U/2M/3T). All earlier admission,
+compiler, formatting and cache failures retain their exact outcomes and candidates.
+No current source is credited with a historical green by replacing those receipts.
+
+### Latest remote integration and evidence reuse
+
+At David's latest request, root fetched and fast-forwarded main to
+`ef3c0ab6c810228d55c0df58a90d6952e71cc3a3`. Six overlapping documentation files
+were reconciled in two layers: first existing staged deltas onto the new remote,
+then later unstaged repairs onto that staged result. Two conflicting status
+paragraphs retained newer executed evidence and its scoped limits. Every other
+local staged blob/mode and dirty working byte remained preserved; no unstaged
+repair was promoted through `git add`. Plain recovery snapshots and the staged/
+working merge ledger are in `remote-main-reconcile-20261107-v2/reconcile.json`.
+No new commit or push was created, and the no-commit-until-return instruction holds.
+
+The pull changes seven whole-product inputs, so its376-input map is
+`8af6c75327c497ba727c1cb1bc146afdf69538a570c3d51bdfa75ce689e56931`,
+not the executed GNU map above. Exact comparison and independent rehashing show
+all59 selected engine/domain/wire inputs, root manifests/lock/config/toolchain/
+lints,27,114 vendor files and13 ordinary executables unchanged. The deltas are
+UI description/docs, their corresponding manifest/canonical admission pins and
+unused CycloneDX scope wording; dependency/features/license records and validator
+logic are unchanged. `engine-evidence-reuse.json` records reviewed **scoped reuse**,
+not new whole-candidate scores or UI qualification. Updated implementation/QA
+skills preserve graph admission, selected MSIX delivery and existing holds.
+
+Fresh post-pull checks pass51 engine,122 shared and28 dependency-policy Python
+controls (201 total), plus workspace policy. The new
+`relative-bridge-windows-typechecks-v1/verification.json` passes compiler/Clippy
+for `time-domain` and `nevrotick-engine` plus their dependencies, on the pulled
+`8af6c753...` snapshot with full unchanged bookends. It is GNU-hosted
+`x86_64-pc-windows-msvc` all-target checking only: no linking, Windows executable,
+PowerShell, native API, runtime protection, package or release qualification.
+
+One subsequent manifest annotation replaced stale pending-status prose with
+routing to this task's candidate-specific evidence. Its registrations, thresholds
+and every compiled input are unchanged. Current admission is rebound to
+`cb3dc291ba69fdde2d43ee5f4663b939709fa1ca4afcd166ecb6f8137d46ca18`;
+the reuse ledger records this purpose-only delta separately. Executed receipts
+retain their465/8af identities. No duplicate Rust campaign is justified by these
+nonbehavioral changes. All other source, control-policy and native-evidence
+prerequisites remain in force.
+
+### Next existing source checkpoint — pure normalization/conditioning contract
+
+Continue the [existing observation-to-Core admission card](#next-source-checkpoint-observation-to-core-admission)
+under REQ-8/BND-1 and CHECK-6/7/8/11/14/25/27. Engine and S1.2 jointly freeze one
+pure normalization/conditioning batch contract before state/history wiring.
+This is the next ready design action; its dependent implementation stays held
+until the input domain, arithmetic errors, failure results and checked receiver
+are settled and independently reviewed. No additional upstream survey is needed.
+
+Current inspected receivers are still `FixtureHistory::try_append` through
+`prepare_fixture_input`, `FitPoint::new`, `FitInput::new` and sufficient statistics.
+Their whole-nanosecond reference, bare Q33 phase and divisor interval[1/16,16]
+cannot represent this bridge's corrected phase/half-reference data and uncapped
+`WindowVarianceDivisors`. No production `ValidatedSample`/normalizer/receiver exists,
+and the engine still has no `time-core` dependency. Do not relabel these fixture
+APIs, cap/drop divisors or scaffold an unqualified append merely to connect names.
+
+Freeze exact same-source/context tuples, half-tick ordering/duplicate behavior,
+anchor-before-conversion, retained conversion/error bounds, checked time/phase
+conditioning, one frozen whole-window divisor vector for every suffix fit,
+0/1/2-row insufficient results and atomic no-partial publication. Preserve valid
+subnormal, unsupported-range and overflow neighbors explicitly. Independent
+numeric facts already recorded in the parent card include phases(-1,0,3)ms at
+times(-2,-1,0)s with divisors(1,1,4): intercept19/9ms, slope5/3ms/s and SSE4/9ms²;
+common divisor scaling preserves coefficients and scales weighted SSE inversely.
+These are expected mathematical facts, not new executed kernel acceptance.
+
+The pilot supplies one observation per peer: cross-peer relative views establish
+no same-source history, fit, freshness, authentication, agreement, eligible sample
+or clock authority. Genuine logical source/configuration/association/clock/mapping
+owners, date/scale/calendar provenance, physical capture/frequency/asymmetry
+bounds, current quantum/prior interval and production policy limits retain their
+existing prerequisites. Missing evidence must not become zero skew, unit weight,
+a default quality claim or source credit. Formal work stays post-V1; Windows,
+fuzz, optional-storage and UI holds remain. Continue product work within these
+owners; this source readiness record lifts no unrelated hold.
+
+### Pure conditioned-window contract — N1 source preparation
+
+**Revision N1b, 7 November 2026; independently reviewed for source implementation.** Engine and S1.2
+jointly own this finite numerical-preparation child under REQ-8/BND-1 and
+CHECK-6/7/8/11/14/25/27. Production admission/history stays open. N1 adds no
+engine-to-Core Cargo edge, live source, fit, statistics, expiry policy or state
+transition. No formal or Windows execution is part of this child.
+
+**Direct design.** Add one pure Core entry point, provisionally
+`prepare_conditioned_batch`, and a private prepared result. Keep `FixtureObservation`,
+`FitPoint`, `FitInput` and fixture history unchanged. They lose corrected phase/
+half ticks and reject subnormal weights. Common divisor scaling cannot fit a
+ratio above256 into[1/16,16]. Reuse the already adopted `time-domain` rational
+converter and `WindowVarianceDivisors`; add no dependency or arbitrary weight cap.
+
+**Declared input and association.** A private, fallibly constructed numeric row
+retains an explicitly asserted source/configuration/association/clock/mapping
+context, nonzero asserted observation key, exact reference `(whole_ns:u64,half:bool)`,
+corrected phase `A:i128` over `D=8_589_934_592_000_000_000` seconds, and positive
+finite peer-distance seconds. Reject `(u64::MAX,true)`, impossible for the
+selected u64-nanosecond capture chart. Admit the full i128 numeric phase domain
+without claiming all values came from the engine. Mandatory applicable Garde
+rules and shared typed-error predicates own construction; every primitive or
+already checked field needs an explicit invariant owner, not optional validation.
+These are declared associations, not physical, authenticated or current authority.
+
+The preparation call accepts one expected declared context, an immutable original
+row slice and raw current precision seconds. Its result borrows that original
+slice and preserves index association; it accepts no separate divisor vector.
+A later engine owner must retain actual completion identity/acquisition metadata
+alongside these rows and recheck current context. This numeric operation neither
+reconstructs nor renews acquisition age. Numeric keys cannot prevent a producer
+from relabelling a completion; that genuine replay/publication owner is outside N1.
+
+**Admission/failure order.** Bound count to0..64 before reading rows; admit
+positive finite current precision, including positive subnormals; compare every
+row context with the expected context; reject duplicate keys in original order;
+then reject the first non-increasing exact reference. Order uses the full65-bit
+half-tick `h=2*whole_ns+u128::from(half)`, not floating or floored nanoseconds.
+Next derive whole-window divisors, then convert coordinates in original order,
+condition and check transformed outputs. Row construction has its own earlier
+field errors; the batch never accepts an unchecked raw row. Errors contain only
+bounded count/index and fixed stage/cause, with nested typed causes. Never print
+raw timestamps/distances or Garde reports.
+
+**One population and insufficient counts.** Copy original-order distances into
+fixed scratch and invoke existing whole-window derivation exactly once with the
+explicit current precision. Copy its complete checked divisors into privately
+associated bounded storage, unchanged and in original order; avoid a
+self-referential owner borrowing its own scratch. Retain precision, distance bits
+and pre-prune population association. A later checked suffix view slices that
+same vector, never rederives medians or accepts another equal-length evaluation.
+Runs-only rows stay outside this population. No cap, replacement or row dropping.
+
+Counts0/1/2 return a distinct admitted insufficient result retaining original
+rows, context/count and exact newest reference/phase anchors when present. Empty
+input has no anchor/vector or derivation; explicit precision is still admitted.
+One/two rows pass all applicable membership/order/quality checks and retain the
+derived vector, but perform no coordinate conversion or geometry. A real quality
+arithmetic failure stays an error, never insufficient success. Insufficient
+variants expose no fit-ready batch, coefficient or readiness flag.
+
+**Exact subtraction and conditioning for3..64 rows.** Anchor reference and phase
+at the newest row. Form exact signed `x_i=(h_i-h_newest)/2_000_000_000` seconds
+and `y_i=(A_i-A_newest)/D` seconds before floating conversion. Use sign plus
+unsigned `abs_diff` so the difference of i128 extrema fits u128. Convert each
+difference once with `RoundedRationalSeconds`, retaining its exact tuple and
+arithmetic-only bound. Do not convert absolute phases then subtract, discard half
+ticks or project through integer nanoseconds/bare Q33.
+
+Choose `e_t` as the smallest integer with exact oldest-reference span<=`2^e_t`
+seconds; choose `e_p` from the largest exact absolute anchored phase similarly.
+All-zero phase uses `e_p=0`. Compare integer ratios with powers of two, not
+floating logarithms. Three strictly increasing half-tick rows imply at least1ns
+span, giving `e_t in[-29,35]`; `e_p in[-62,66]` covers the full raw phase domain.
+Compute a nonzero ratio's ceiling exponent without an overflowing shifted
+denominator: for numerator m>=denominator d, use
+`floor_log2(m/d)+(m%d!=0 || m/d is not a power of two)`; for0<m<d, use
+`-floor_log2(d/m)`. All divisions here are exact integer quotient/remainder.
+Never rely on `checked_shl` to detect discarded high bits. Separately multiply
+each once-rounded x/y and its bound by
+exact binary powers `2^-e_t`/`2^-e_p`. Coordinates and nonzero bounds remain
+normal in this domain, making this scaling exact; reject any contradiction.
+Retain exponents, exact anchors/differences, unscaled rounded values and scaled
+bounds. Prepared z/v are finite in[-1,0]/[-1,1]; newest coordinates are positive
+zero. In addition to exact order, enforce strictly increasing rounded z. If
+distinct exact references alias, return whole-window `RoundedReferenceCollision`;
+never merge/drop rows, change reference or widen tolerance. Half-tick references
+`(0,1,2^64)` provide a concrete exact-order/rounded-collision case.
+
+**Checked receiver and publication.** Only complete preparation can construct
+`PreparedConditionedBatch`, after all rows, one weight vector, anchors,
+conversions, scales and mandatory transformed-output rules pass. Private fields,
+immutable bounded point/original-row getters
+must prevent `Default`, unchecked `From`, deserialization, mutation or independent
+context relabelling. Index getters return `None` for every index at or above the
+retained count, including `usize::MAX`, without effects or panic. Original rows
+remain borrowed unchanged. Public suffix construction/views and their specific
+tests are deferred entirely to N2; N1 exposes no suffix API or new conditioning
+of a subset. This is the new numeric input owner, not a fixture `FitInput`.
+N1 does not execute or qualify its future fitting consumer. Work/storage are
+bounded by64 rows and fixed scratch, with no successful heap allocation, I/O,
+ambient reads, logging or caller-state mutation. Rejection may allocate bounded
+temporary Garde reports; it preserves input bits and returns no partial payload.
+
+**Separate N2 fit prerequisite.** Before fitting, freeze and qualify the new
+primitive/reduction/geometry/statistics domain, operation order and independently
+justified accuracy/error criteria. Finite divisors>=1 have legal positive
+subnormal reciprocals; fixture scalar rejection cannot categorically reject those
+raw weights. A checked unsupported product, nonzero-to-zero underflow, overflow
+or unresolved geometry may refuse the whole fit, with no fallback or fake zero
+slope. Preserve exact phase anchor: mathematical normalized outputs `(a',b',S')`
+map to anchored phase `A_newest/D+2^e_p*a'`, rate `2^(e_p-e_t)*b'` and weighted
+SSE `2^(2*e_p)*S'`. Actual reconstruction needs its own checked rounding/range/error
+contract. Finite normalized outputs/input-conversion bounds prove no final fit
+accuracy or physical capture/path uncertainty. N2 remains held, not silently
+implemented through old fixture primitives.
+
+**Acceptance and finite exit.** Observe actual original rows, exact anchors and
+differences, exponent choices, scaled values/bounds and unchanged divisors.
+Challenge0/1/2/3/64/65 counts; invalid precision and positive-subnormal neighbors;
+context/key/order bypasses and adjacent half ticks; rounded collision; full phase
+extrema; zero/constant phases; uncapped divisors/subnormal-reciprocal vectors;
+late failure with unchanged input bits. External legal and compile-fail controls
+challenge construction, mutation, defaults/conversions, association escape
+and borrowed row mutation. Include deleted-validator failures and legal neighbors.
+Require ordinary/optimized tests, doctests, compiler/Clippy/rustdoc, two-target
+checks and existing90% executable-line/95% per-file viable-mutation gates for
+each new critical owner. Format before freezing; root alone owns graph/runner
+registration and Cargo execution. Historical fixture passes grant no N1 credit.
+
+Prospective independent example: x`=(-2,-1,0)s`, y`=(-1,0,3)ms`, distances
+`(1,1,1.5)s`, precision`0.25s` derive divisors`(1,1,4)`.
+`e_t=1,e_p=-7` yields normalized y`=(-64/125,-48/125,0)` and mathematical
+line/SSE`=(-128/1125,32/75,1024/140625)`. Reverse units give intercept`19/9000s`,
+rate`1/600`, SSE`1/2250000s²`. Ordinary exact `Fraction` recalculation confirms
+these facts and exponent endpoints; it executes no Rust preparation or fit.
+Fit expectations belong to N2, not N1 mutation/coverage credit.
+
+N1's exit is a qualified pure prepared window and associated insufficient results.
+It leaves N2, genuine provenance/physical/date/scale evidence, history/expiry,
+current publication, actual integration and native/fuzz/storage/UI holds open.
+No upstream survey, larger runner project, physical default or proof job is part
+of this child.
+
+**N1b implementation boundary.** The public checked numeric row is
+`ExactObservationRow`, its five nonzero declared context labels are owned by
+`DeclaredObservationContext`, and `prepare_conditioned_batch` returns a closed
+prepared/insufficient outcome with private payload fields. Labels/observation
+keys assert numerical associations only. Ready points retain a borrow of their
+actual original row, exact once-rounded reference/phase deltas, normalized
+values/error bounds and the unchanged corresponding divisor. The batch retains
+the exact newest row and both scale exponents; insufficient results retain their
+appropriate original-row/weight metadata and no normalized points. No external
+point constructor or independently attachable weight vector is exposed.
+
+The implementation owner is the new `crates/time-core/src/conditioned_window.rs`
+module, with existing-library exports and a dedicated external test. Reuse the
+existing positive-finite rule for distance/precision; a narrow `pub(crate)`
+visibility change in `window_variance.rs` is permitted for that purpose and
+requires its source owner to enter this checkpoint's qualification. No manifest,
+lock, feature, graph or engine dependency change is needed. New source retains
+GPL-2.0-only. Existing fixture kernels and history transitions are unchanged.
+
+Numerical acceptance is specified before candidate results: exact tuples and
+scale exponents match integer/rational facts; binary64 values match an independent
+nearest/ties-even oracle; each retained error encloses the exact rational error.
+Scaling by the stated powers of two is bit-exact within the normal envelope,
+including canonical positive zero, and contributes no additional rounding error.
+No fitted tolerance or physical-accuracy claim substitutes for those checks.
+N2 owns fit arithmetic, reconstruction and suffix-view semantics.
+
+#### N1 independent plan review — historical correction request
+
+Reviewer `conditioning_contract_requirements` completed the concrete draft review
+read-only. Its initial assignment used `fork_turns="none"`; later requests supplied
+requirements and the concrete draft, without the root conversation. Inspected
+task SHA256 was `905359380c81f6c7aa92ec99fa4d9c309700efdd875d4ece06680adc375b5ec1`
+and S1.2 routing SHA256 was
+`c236d641127470163832989734acb422279ab2efd8d11c7062a149af358f135e`.
+The reviewer inspected canonical numerical requirements and the actual engine,
+rational, Core regression/normalization/history/runs/window-variance sources.
+No tests, compiler, native or formal jobs ran. Its comprehension paragraphs are
+retained verbatim:
+
+> N1 would prepare one immutable, conditioned numerical window from declared same-source rows. It retains exact newest anchors, half-tick time and corrected-phase differences, once-rounded conversions and bounds, power-of-two scales, and one associated whole-window divisor vector. Counts below three return distinct insufficient results. Fitting, statistical interpretation, history mutation and production admission remain separate held work.
+>
+> The actual engine bridge already preserves corrected phase ratios and exact half-nanosecond references within a shared experimental run. Core’s existing normalization/history APIs remain fixture-specific: whole-nanosecond timestamps, bounded bare Q33 phases and capped divisors. `WindowVarianceDivisors` supports uncapped finite divisors, while the rational converter retains exact signed-magnitude tuples and once-rounded values with arithmetic bounds. Neither numerical owner establishes physical accuracy, genuine source provenance or freshness.
+
+**Verdict: revise; N1-R1 remains open.** N1 promises checked suffix views and
+tests without defining valid indexes, short-suffix behavior, reused anchors/scales
+or failure results. Smallest correction is to defer the suffix API/tests to held
+N2 and keep immutable bounded N1 getters, or specify those contracts completely.
+The reviewer found no numerical contradiction in the stated exponent/scaling or
+worked example. At that checkpoint no correction-verification round occurred; the owner redirected
+work to the bug handoff first. Do not treat this draft as implementation-ready.
+
+### Bug-hunt scheduling assessment — H-ET1
+
+The supplied handoff's scheduling mechanism is source-established, but no current
+contract defect or source repair is demonstrated. Independent read-only reviewer
+`relative_registration_review` traced live `next_wake`, current task/architecture
+requirements and pinned Tokio source. The function remains byte-identical to the
+remote baseline, SHA256
+`a85fe5f6bd95b390aa5b42123b75ecb15eb89d014e0cea22b05451a911e2e9f4`;
+library source remains `6f3c6eb2f491de7f27a89f8fba84556e818874a9c875643b08081206f5dd4d46`.
+Biased receives can delay an unsent writable peer, but each association consumes
+at most64 datagrams and control/deadline branches precede I/O with fresh guards.
+The pilot promises bounded work/lifetime, not a maximum receive count before
+another peer's first send. §17.1 native-job capacity fairness supplies no such
+UDP per-wake guarantee. Existing63/64 tests cover an already completed neighbor,
+not unsent-peer fairness. No runtime reproduction or scheduling edit occurred.
+
+If stronger send fairness is selected, the existing S2.1 owner can specify one
+bounded real-socket cohort: genuinely unsent/writable B beside pending A with64
+queued invalid datagrams, no-burst and swapped-peer/order controls, generous
+deadline, owned process supervision and actual wake/send-order observations.
+Measured delay alone would not violate a guarantee absent from the contract.
+This remains a design/qualification question, not a fixed bug or indefinite
+starvation claim, and introduces no new native experiment or product policy.
+
+### N1b correction review and source implementation — 7 November 2026
+
+Fresh independent reviewer `n1b_plan_review`, initially dispatched with
+`fork_turns="none"`, read the corrected task, applicable architecture/requirements,
+engine producer, rational converter, Core normalization/history/regression and
+window-variance sources. Its two comprehension paragraphs are retained verbatim:
+
+> N1b prepares one immutable numerical window from checked rows with declared shared context. It preserves exact newest anchors, half-tick references, corrected-phase differences, once-rounded values and bounds, power-of-two scales, and one frozen whole-window divisor vector. Counts below three retain admitted metadata without producing normalized points. Fitting, suffix views, history mutation and production admission remain deferred.
+>
+> The existing engine preserves exact corrected phase and half-nanosecond references within an actual experimental run. Core’s current fixture normalization/history instead use whole nanoseconds, narrow Q33 phases and capped divisors. The shared rational converter and uncapped window-divisor owner support the proposed numerical preparation, while establishing neither physical accuracy nor genuine source provenance.
+
+**READY for N1b source implementation only; N1-R1 closed.** Public suffix
+construction/views and their tests are explicitly deferred to N2. N1 immutable
+getters define out-of-range results. The reviewer found no additional material
+finding in count/error precedence, full signed-domain differences, exact exponent
+selection/scaling, row/divisor association, private mandatory validation or
+failure-atomic bounded publication. Inspected task SHA256 was
+`1280b316c8a25bc1b2afe370dbd00ec52bfec65038f2835d746e43e3f8b4e702`
+at HEAD `c8df999abb2309d11cd4484159671a7110c21fa4`; this was source review,
+with no compiler, test, numerical/model, native or formal jobs and no edits.
+
+Implementation and independent test authors now own disjoint new module/private
+test and external-test files. The coordinator owns library exports, the shared
+positive-finite predicate visibility, configured verification registration and
+all Cargo execution. Applicable IDs remain REQ-8/BND-1 and
+CHECK-6/7/8/11/14/25/27. Exact integer/rational expectations and independent
+nearest/ties-even binary64 literals precede candidate execution; the required
+environment is admitted Linux Rust 1.99.1 plus Windows-target compiler checks.
+Native Windows, fit/history integration and product admission remain open.
+Qualification is pending; plan readiness supplies no execution result.
+
+### N1b implementation and ordinary checks — 7 November 2026
+
+The pure Core implementation now exists in
+`crates/time-core/src/conditioned_window.rs`, with checked rows/context,
+once-rounded exact differences, checked binary scaling, borrowed original-row
+association and distinct insufficient results. Core exports the closed API;
+`window_variance.rs` changes only its shared positive-finite predicate to
+`pub(crate)`. No manifest, lockfile, feature, engine dependency or existing
+fixture kernel/history change was made. Construction and transformed-output
+guards invoke mandatory Garde validation. The actual scale-admission helper also
+serves its invalid-output controls; testing a separate validator would not prove
+the production dispatch. Fixed-storage/no-success-allocation reasoning remains
+source evidence, without an executed allocation observer.
+
+Implementation and independent literal-oracle authors owned disjoint files.
+The external author froze30 ordinary Python exact-rational/binary-search IEEE
+fixture families before observing candidate results:29 successful preparation
+families and a separately refused collision. They challenge full `i128` phase
+differences, half ticks, tie parities, exact versus rounded exponent boundaries,
+unchanged divisors, count/membership/quality precedence, early/late collisions and
+original row identity. Ten private tests and19 source-owned doctests supplement
+the11 external tests. Oracle generator/facts are retained under the existing
+dependency-refresh evidence root's `n1-oracles-v1`; these are ordinary numerical
+expectations, not formal verification or fitted-result qualification.
+
+Fresh source reviewer `n1_independent_oracles` found no material product-source
+issue, while explicitly not independently reviewing its own tests. Its final
+bounded causal-delta review binds module SHA256
+`77f53d02b7d4b321faea02dbddc94eb15ce0d4121bf1e43f51960cd80246cbb2`.
+It verified the private scalar-copy/lifetime/lint changes and unchanged validation
+extraction preserve arithmetic, public API, refusal order and authority limits.
+The review ran no Rust jobs. Separate fresh reviewer `n1_runner_independent`
+found no material blocker in the additive two-owner runner, bounded nofollow
+report reads, exact native inventories or per-owner coverage/mutation accounting;
+its reviewed tooling snapshot precedes final name/policy binding.
+
+**Executed ordinary candidate:**380 product inputs,
+`05adb45b7b33288cef71629686a4559d594a9f357862ffa4d647e7e18a6cb65e`,
+HEAD `c8df999abb2309d11cd4484159671a7110c21fa4` plus retained dirty content.
+`n1-ordinary-v4/verification.json` under
+`/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1`
+has SHA256 `ad4bfeda11a310463f28cd61ad8ecdde1b85d25482c60dafc3813baef35b44f0`.
+All ten lanes pass: namespace boundary control, formatting, compiler, Clippy,
+361 ordinary tests,61 doctests,361 optimized tests, rustdoc and Windows-target
+compiler/Clippy. Source/helper/vendor/tool/recipe bookends are unchanged. All
+361 telemetry-split ordinary records and61 doctest records reconcile through
+the existing strict shared parser. This is GNU-hosted execution and Windows-target
+checking only, with no Windows linking, native execution or product admission.
+
+Earlier attempts remain retained: v1 passed compilation but failed seven Clippy
+checks; v2 reached the remaining external-test index-loop lint; v3 stopped at the
+four-GiB disk preflight before admission/execution. Narrow causal repairs preserve
+all numeric expectations. Closed compiler targets were deleted after process/
+ownership checks; source snapshots and receipts remain. No compression, staging,
+commit or push was performed by the coordinator.
+
+The new runner's13 Python controls pass on both recorded attempts, with strict
+workspace policy and whitespace checks passing. The separate
+`policy/conditioned-window-analysis.json` now freezes the380-input candidate,
+422 actual baseline identities and166 actual coverage identities, including
+all21 new N1 ordinary/private cases,34 window-variance controls and reviewed
+legal/privacy doctest groups. Complete discovery lists210 N1 and60 window-
+variance variants within the existing512 cap; all descriptors are bound and no
+equivalence or historical score is inherited. Enumeration is not qualification.
+
+**Remaining checkpoint:** complete and reconcile actual validation-omission,
+coverage and mutation gates on this candidate, retaining any miss, timeout or
+infrastructure failure. N1 is not yet finally qualified. N2 fitting/suffix views,
+genuine source/date/clock provenance, physical uncertainty, current history
+publication and production integration remain open. Windows, fuzz, storage and
+UI holds and the post-V1 formal deferral remain unchanged. Post-V1 proof debt
+retains the complete product guarantee: exact original-row association,
+full-domain differences, once-rounded values/bounds and lossless dyadic
+conditioning through the actual checked constructor/preparation chain. A helper
+or tool control cannot close that parent guarantee; no formal work is resumed.
+
+#### N1b validation and coverage correction — 7 November 2026
+
+The six actual validation-dispatch controls completed with unchanged
+source/vendor/tool bookends: each row, count, precision, membership, scale and
+point guard has one healthy native exit0 and one intended assertion failure at
+native101 after omitting only its validation dispatch. No generated-mutation
+credit is assigned. Receipt `n1-validation-controls-v1/verification.json` SHA256
+is `4e0a5528aae010679945c23b873e85787bcdc4bf6b40da6ff04b54c85401cee1`.
+Its driver uses the existing configured analysis custodian and six separately
+sealed fault inputs; no user-owned source was mutated for these controls.
+
+The first all-lane attempt passed its422-test baseline and166-test coverage
+execution, but correctly failed the90% gate: N1 covered496/576 lines
+(86.111%); the donor covered110/112 (98.214%). No mutation campaign ran.
+The raw coverage report and failed receipt remain in `n1-coverage-mutation-v1`.
+Independent inventory review also found that the two constructors have no
+generated descriptors: context mismatch/equality tests alone did not challenge
+a consistent five-label field swap, and key snapshots did not assert exact key
+retention. These are evidence gaps, without an observed product defect.
+
+Two focused external cases now assert five distinct literal labels and key97
+through actual constructors/getters/prepared/insufficient results, and useful
+bounded redacted diagnostics with exact typed causes from a real quality
+rejection. Synthetic conversion-error cases claim diagnostic projection only.
+The independent reviewer verified both copy-contract gaps are closed in source
+and the diagnostic tests are discriminating. The29 successful numerical fixtures
+are byte-identical; the critical modules are unchanged. There are now13 external
+and10 private N1 tests, plus the same19 owned doctests.
+
+Corrected ordinary v5 passes compiler/Clippy/format/rustdoc,363 ordinary and363
+optimized tests,61 doctests and both Windows-target checks with unchanged
+bookends, on380-input candidate
+`7a7d1b7bc692ba2a5f07b3d8ad795d28d97c9cb0f5f1255d9077ff0bb0457274`.
+`n1-policy-binding-v2.json` records its424 baseline and168 coverage identities,
+unchanged owner hashes and the complete210/60 descriptor bindings. It also
+records scoped reuse of the six original validation controls: every selected
+test-function body, actual source guard and compiler/vendor/runtime remains
+unchanged; only two additive external tests/helpers/imports changed. Their
+original execution candidate remains explicit; no fresh omission execution is
+claimed. All13 Python runner controls and strict workspace/whitespace checks pass.
+
+Current all-lane v2 passes coverage on the corrected candidate: N1 is556/576
+(96.528%), donor110/112 (98.214%). Complete mutation execution and final receipt
+reconciliation are underway; N1 final qualification remains pending.
+
+#### N1 mutation disk interruption and eight-worker fallback — 7 November 2026
+
+The ten-worker v2 campaign exceeded the practical disk allowance: available
+space fell to roughly246MB and then95MB while its full Core worker targets were
+being allocated. This exposed an inadequate two-GiB generic preflight for this
+specific workload, not a mathematical defect. The coordinator stopped only the
+owned37-process tree after checking exact launcher argv/cwd, PID start identities
+and ancestry. The pause exceeded the90-second build allowance; continuing it
+could contaminate timeout evidence. All36 owned children were therefore
+terminated, with the controller resumed solely to complete custody checks.
+Native campaign exit is-15, final source/vendor/tool admission is unchanged,
+and this interrupted mutation attempt receives **no score**. Actual pre-pause
+coverage remains separately retained; no mutation percentage is inferred from
+partial outcomes. `disk-pause.json` and `disk-cancellation.json` retain ownership,
+timing and signal records beside the raw v2 receipt.
+
+After terminal confirmation, only disposable compiler/temp copies were deleted:
+about3.60GB of worker scratch and0.45GB of coverage targets. Healthy source,
+complete enumerated differences, partial outcomes/logs, raw coverage and recipes
+remain. Two obsolete metadata-only Cargo registries and completed ordinary
+targets were also removed; both qualified vendor trees remain. No compression,
+shared service/IDE/MCP termination, Windows execution or staging followed.
+
+Following the owner's authorized10→8→6 fallback, this N1 role now freezes eight
+outer mutation workers and a five-GiB free-space admission floor before Session
+creation. Six ordinary build jobs, one inner mutation job,512-process limit,
+270 complete descriptors,90%/95% per-owner gates and time limits are unchanged.
+Historical roles retain their original policies. Fourteen Python controls pass,
+including exact-floor acceptance and one-byte-below rejection before any Session.
+The first added positive fixture omitted its synthetic candidate hash; its
+KeyError is retained in controls v4, corrected in v5 without product changes.
+
+Independent causal review found no material issue in the fallback or coverage
+reuse. `n1-policy-binding-v3.json` proves the complete380-input Rust/product map
+is unchanged and strictly reconciles the retained556/576 and110/112 coverage
+data; only mutation-recipe helpers and policy fields changed. It claims no new
+native coverage execution. The fresh `n1-mutation-eight-v1` mutation-only lane
+must complete both native baselines, re-enumerate and match both full descriptor
+bindings, and reconcile all outcomes before final qualification. Current partial
+progress remains unscored. The five-GiB floor is an admission safeguard, not a
+hard filesystem quota or a whole-product resource qualification.
+
+### N1b final qualification — two selected Core owners
+
+**Qualified within the declared pure Linux scope, 7 November 2026.** Candidate
+380/`7a7d1b7bc692ba2a5f07b3d8ad795d28d97c9cb0f5f1255d9077ff0bb0457274`
+retains the exact module/graph/tool identities above. Final strict reconciliation
+is `n1-final-qualification-v1.json`, SHA256
+`0c05d50028aa82645e5f7d76989f495c6e7f06f677e06cdad4d84c21b22405a7`.
+It binds current policy SHA256
+`d10854b663e10c0631e3b0891a97dc4def7f2a00acaadd067a7037fdd23b66c5`
+and [five exact manual dispositions](conditioned-window-analysis-equivalences.md),
+note SHA256 `7357a807148e8584a9a76a7da930e6e34984fab6031fe7eb63f4c69101144327`.
+
+| Selected owner | Executable lines | Complete mutation outcomes | Raw viable score | Reviewed adjusted score |
+| --- | --- | --- | --- | --- |
+| `conditioned_window.rs` | 556/576,96.528% | 210:103 caught,103 compiler/lint-unviable,4 missed,0 timeouts | 103/107,96.262% | 103/103,100%; four exact equivalents |
+| `window_variance.rs` | 110/112,98.214% | 60:34 caught,25 compiler/lint-unviable,1 missed,0 timeouts | 34/35,97.143% | 34/34,100%; one exact equivalent |
+
+All270 descriptors and outcomes reconcile; no survivor remains unresolved.
+Equivalent misses receive no kill credit. Each native eight-worker baseline
+executes all424 expected identities (363 ordinary and61 doctests). Ordinary v5
+also passes363 optimized tests, formatting, compiler/Clippy/rustdoc and both
+Windows-target checks. Six actual validation-dispatch omissions and their healthy
+controls retain their precise historical identity and verified scoped reuse.
+Fourteen current Python runner controls and strict workspace/whitespace checks
+pass. No allocator observer, native Windows or whole-manifest result is claimed.
+
+The raw eight-worker receipt remains `incomplete`, native2/2, with all five misses
+visible. Only `scope` and `mutation_equivalences` metadata changed afterward;
+configured policy admission, exact mutation accounting, bounded baseline reader
+and coverage reader independently reproduce the final result. This is reviewed
+post-run gate adjudication, not a new native campaign or a relabelled raw exit.
+Tool/vendor/source bytes were re-admitted. Earlier lint/preflight/coverage
+failures and the ten-worker resource cancellation remain retained.
+
+Fresh independent final reviewer `n1_final_receipt_review` recomputed all380
+current product hashes and the configured gates, checked complete211/61 outcome
+rows including baselines, and read every raw mutant log. All137 caught rows
+contain actual behavioral test failures; all128 unviable rows contain compiler
+diagnostics; each of the five missed rows executes424 expected identities. It
+found no disk/spawn/OOM/timeout failure misclassified as a kill, no missing row
+or scope overclaim, and verified all six control-body reuse hashes. Its verdict
+is qualified within this selected N1b scope. It ran no compiler/native jobs and
+did not duplicate the coordinator's full payload rehash.
+
+N1's finite exit is complete. N2, genuine provenance/physical uncertainty,
+production history/current publication, full P1 and native/security/package/
+release acceptance remain open. Formal work remains post-V1; no execution hold
+or owner decision was lifted. Staging is preserved; no commit or push occurred.
+
+### N2 entry — conditioned affine fitting and suffix contract
+
+**Next executable action: settle the concrete contract before implementation.**
+The existing engine/S1.2 numerical owner retains REQ-8/BND-1 and applicable
+CHECK-6/7/8/11/14/25/27. The producer is the actual immutable N1
+`PreparedConditionedBatch`; N2 must borrow its original rows, anchors, scales and
+whole-window divisors. Independently attachable weights/labels and old fixture
+contracts cannot substitute for that chain. This entry card supplies requirements,
+not an implementation-ready numerical recipe or a fresh phase qualification.
+
+Resolve the following in this existing task before dependent Rust changes:
+
+- Define a checked contiguous suffix, its valid index range, out-of-range errors
+  and0/1/2-row insufficient results. Retain the full original population's scales,
+  newest anchors and unchanged per-row divisors; no reweighting, reanchoring,
+  silent dropping or separately constructible point/weight pairing.
+- Specify the exact mathematical fit target and deterministic binary64 operation
+  order. Legal uncapped divisors and positive subnormal reciprocals remain legal
+  inputs; actual underflow, overflow or unresolved geometry needs typed refusal,
+  without adopting the older fixture kernel's categorical restrictions.
+- State producer-enforced output/error guarantees, including N1 input-conversion
+  bounds and new reciprocal/fit/reconstruction roundoff. Distinguish finite
+  computed coefficients from a justified error enclosure and physical uncertainty.
+  Keep the exact newest phase anchor separate from local fitted differences;
+  absolute binary64 conversion must not erase small fitted corrections.
+- Bind normalized intercept/rate/SSE and any checked lifting to the actual N1
+  chart. Preserve failure atomicity, borrowed association, bounded work/storage,
+  mandatory applicable Garde validation, safe diagnostics and checked output
+  construction. No history mutation, genuine-source assertion or clock effect.
+- Freeze independent rational/dyadic and adjacent-boundary expectations before
+  candidate results, including the retained three-point/nonunit-divisor example,
+  constant phases, maximum population, tiny legal weights, unresolved geometry
+  and short suffixes. Require the same ordinary, contract, optimized, two-target,
+  90% executable-line and95% per-file viable-mutation gates at the finite exit.
+
+The next card must name the actual helpers/reused algorithms, rounding/range/error
+envelope, private result/API ownership, test oracles and finite exit, then obtain
+independent plan review before dependent source changes. This card selects no
+engine Cargo edge, larger runner project, physical default or proof campaign;
+the existing ordinary product plan and execution holds remain in force.
+
+### N2a concrete contract — conditioned suffix and enclosed affine fit
+
+**Independently reviewed READY, 7 November 2026; source and ordinary checks complete,
+final qualification pending.** This
+expands the existing N2 entry rather than creating another workstream. Predecessor
+is qualified N1b380/`7a7d1b7bc692ba2a5f07b3d8ad795d28d97c9cb0f5f1255d9077ff0bb0457274`;
+HEAD remains `c8df999abb2309d11cd4484159671a7110c21fa4` with preserved dirty/staged
+work. Owner: existing engine/S1.2 numerical Core, REQ-8/BND-1 and
+CHECK-6/7/8/11/14/25/27. No engine graph edge, new dependency, production history,
+native Windows, clock effect or formal execution is selected.
+
+**Actual producer and API ownership.** A new `prepare_conditioned_suffix` function
+accepts `&'batch PreparedConditionedBatch<'rows>` and raw `start:usize`.
+`start>parent.sample_count()`, including `usize::MAX`, returns a typed range error
+before subtraction/access. Otherwise `[start,n)` is the complete selected suffix.
+Counts0/1/2 return `ConditionedSuffixOutcome::Insufficient` containing an opaque
+`InsufficientConditionedSuffix`; counts3..64 return `Ready(ConditionedSuffix)`.
+Both retain the actual parent borrow, original start/count and access to its
+unchanged full-population metadata, even for an empty suffix. They accept no raw
+point, weight, frame, anchor or scale arguments. N1's separate insufficient batch
+has no normalized points and is not an input to this API.
+
+Local point/row getters first check `index<suffix_count`, then checked original-
+index addition and the actual parent's getter. Out-of-range indices return `None`
+without panic/effect. A ready suffix borrows the parent, whose immutable original
+rows remain borrowed separately. `fit_conditioned_suffix(&'fit ConditionedSuffix)`
+returns a private `ConditionedFit` borrowing that exact ready suffix. Its producer
+publishes normalized and lifted estimates together only after every stage passes.
+It exposes no unchecked constructor, `Default`, deserialization, mutable access,
+independent certificate attachment or legacy fixture conversion. The public
+read-only scalar wrappers distinguish normalized estimates, phase-correction
+seconds, frequency ratio and weighted seconds-squared. Each exposes computed
+point, lower/upper enclosure and absolute arithmetic-error bound, with private
+construction. Fit fields identify normalized intercept/rate/weighted SSE and
+their separately lifted counterparts; debug/errors redact numeric payloads.
+
+**Exact mathematical target.** Let h be the exact half-nanosecond reference, A the
+full corrected-phase numerator, D=`8589934592000000000`, and retain the parent's
+newest row n and exact exponents `e_t/e_p`. For every selected original row:
+
+```text
+z* = ((h_i-h_n)/2000000000) * 2^(-e_t)
+v* = ((A_i-A_n)/D) * 2^(-e_p)
+r* = 1/q_i
+```
+
+Here q denotes its retained binary64 divisor exactly, not an ideal upstream
+quality formula. The target `(a*,b*)` minimizes `sum(r*(v*-a*-b*z*)^2)`;
+`S*` is that exact optimal weighted SSE. Exact references are strictly ordered
+and weights strictly positive, so a ready suffix has a unique exact line. An
+unresolved result is a numerical/enclosure refusal, not proof of exact singularity.
+All suffixes use the full parent's existing newest anchors, scales, precision and
+unchanged q bits; no median/quality rederivation, common weight scaling, coordinate
+rescaling/reanchoring or row dropping occurs in N2a.
+
+**Point domain and deterministic recipe.** Binary64 round-to-nearest/ties-even
+with gradual underflow, separate operations and chronological left reductions
+is the numerical execution contract. Each primitive admits finite operands and
+finite results, including signed subnormals. Division requires a positive stored
+denominator. Nonfinite values and multiplication/division of nonzero stored
+operands/numerator rounded to zero are typed failures at their actual stage/index.
+Addition/subtraction cancellation to zero is legal. Numerical zeros are
+canonicalized to positive zero; no nonzero result is clamped. A zero computed
+coefficient/SSE does not imply exact-source zero. No FMA/reassociation or fallback
+constant/previous result is used. Geometry precedes response arithmetic:
+
+```text
+pass 1: compute w_i=RN(1/q_i) once into associated fixed scratch;
+        W=RN(W+w_i), Z=RN(Z+RN(w_i*z_i)); mu_z=RN(Z/W)
+pass 2: dz=RN(z_i-mu_z), wd=RN(w_i*dz), G=RN(G+RN(wd*dz))
+        require point G>0 and the completed exact-target interval G.lower>0
+pass 3: V=RN(V+RN(w_i*v_i)); mu_v=RN(V/W)
+pass 4: dz=RN(z_i-mu_z), dv=RN(v_i-mu_v), wd=RN(w_i*dz)
+        C=RN(C+RN(wd*dv))
+        b=RN(C/G); a=RN(mu_v-RN(b*mu_z))
+pass 5: t=RN(v_i-a); p=RN(b*z_i); residual=RN(t-p)
+        S=RN(S+RN(RN(w_i*residual)*residual))
+```
+
+All reductions start at positive zero. The same saved reciprocal is used by
+every pass. Geometry refusal occurs before response products. There is no
+special constant shortcut: exact constant-phase deltas are zero and pass through
+the same admitted geometry and exact-zero identities. The implementation is
+five bounded O(n) passes over at most64 points with fixed reciprocal/enclosure
+scratch; no recursion, pair table or successful heap allocation. Rejected Garde
+reports remain bounded temporary allocations, not logged/returned.
+
+**Enclosure owner and accuracy contract.** New private finite closed intervals
+own this domain. Existing fixture `arithmetic`, point constructors and chart
+companions reject subnormal points or impose unrelated caps/spans/spread; their
+unchanged implementations are not N2's numeric owner. Seed each exact coordinate
+from the actual N1 point and conversion bound: zero bound gives the exact
+singleton; otherwise outwardly evaluate `[z-e_z,z+e_z]` and `[v-e_v,v+e_v]`.
+Reciprocal intervals enclose exact `1/q`, including positive subnormal results.
+
+Endpoint Add/Subtract/Multiply/positive-Divide evaluates the binary64 primitive,
+then moves downward/upward with `next_down`/`next_up`. Preserve only explicit
+exact identities: adding zero, subtracting equal finite operands or zero,
+negating a finite operand, multiplying by zero or one, zero numerator and
+division by one/equal positive operands. Normalize zero representation only.
+Enclosure underflow widens outward; it is not point underflow and must not use a
+`MIN_POSITIVE` normal floor. Reject nonfinite/exhausted finite endpoints. Generic
+interval multiplication/division uses all four endpoint combinations; division
+requires a strictly positive denominator lower endpoint. A dedicated square has
+lower zero when its input straddles zero, otherwise the outward minimum endpoint
+square, and the outward maximum endpoint square as upper bound. Mathematical
+nonnegative ranges may strengthen enclosure bounds; no computed point is clamped.
+
+Evaluate the exact-real centred equations through this interval owner: sums of
+R, R*Z and R*V; positive-margin division for the two means; G=sum(R*square(Z-mu_z)),
+C=sum((R*(Z-mu_z))*(V-mu_v)); B=C/G; A=mu_v-B*mu_z; and
+S=sum(R*square(V-(A+B*Z))). This interval chain includes N1 conversion, exact
+reciprocal, reduction, coefficient and residual/SSE uncertainty. It follows the
+same staged geometry-first ownership; intervals are not computed from a claimed
+zero-error rounded fit afterward. Unavailable positive G margin returns
+`UnresolvedGeometry`; the fixture `1/256` cutoff is not imported.
+
+For each published scalar take the hull of the exact-target interval and actual
+computed point. Outwardly bound the maximum distance from that point to either
+endpoint. The result guarantees exact-target containment, point containment and
+`abs(point-exact_target)<=absolute_error`, including cancellation/underflow in
+bound calculations. Nonfinite/error-range exhaustion refuses the whole fit.
+This is a certified arithmetic enclosure, not a universal relative-accuracy
+threshold or physical/statistical uncertainty. Width remains explicit for later
+admission; no product accuracy budget is invented. An exact-source SSE is
+nonnegative and at most the suffix count, but a rounded computed SSE is not
+silently clamped to that exact-target bound.
+
+**Checked lifting and exact phase anchor.** Keep the actual newest row's A/D
+anchor exact and borrowed. Never form an absolute binary64 phase. Lift targets
+as relative phase correction `2^e_p*a*`, frequency ratio `2^(e_p-e_t)*b*` and
+weighted seconds-squared `2^(2*e_p)*S*`. The exact power factors use checked
+binary exponent encoding with exponent ranges[-62,66],[-97,95],[-124,132]
+respectively. Checked point multiplication and outward interval multiplication
+produce fresh hull/error fields, including lifting roundoff/range failures.
+The phase result means exact anchor plus enclosed correction. A late lifting or
+validation failure returns no partial normalized/lifted object.
+
+**Enforcement and errors.** Newly admitted suffix indices, raw scalar/interval
+representations and final normalized/lifted outputs have shared predicates and
+mandatory applicable Garde validation in their sole private producers. Checked
+N1 data is reused immutably; a skipped field must name that actual owner. The
+producer algorithm owns the mathematical interval relationship; Garde checks
+representation and cannot certify arbitrary caller-claimed error. All internal
+input/output/error/lifetime invariants name their mandatory owner. Use bounded
+original index/count, stage, operation and typed cause, with no raw rows, labels,
+coefficients, distances, anchors or validator reports in diagnostics. Rejection
+preserves every input bit. No ambient read, I/O, logging, history transition,
+sample/tracking authority or clock effect occurs.
+
+**Source and provenance boundary.** Proposed owners are
+`crates/time-core/src/conditioned_fit.rs` for suffix/fit/output staging and
+`crates/time-core/src/conditioned_fit/arithmetic.rs` for the new interval/point
+domain, plus external and private tests. Reuse N1 getters unchanged; its stale
+single-line “no suffix/fit” documentation may be corrected without changing its
+numeric implementation. Library exports, critical-owner registration and an
+additive selected analysis role are coordinator-owned. No Cargo graph change.
+
+The pinned Chrony4.9 `regress.c` was re-fetched through GitHub's immutable file
+API at `8df4f1263e206585e6c4e61352d042c2dd12916a`; its19004 bytes match
+`bcd30c41f1a5c6c528adf199b6ef5215f62cc4c9078a82152a86ea90e46453f7`.
+Selected references are `RGR_WeightedRegression`69–93 and the coefficient body
+of `RGR_FindBestRegression`252–269. Retain Richard P. Curnow1997–2003 and
+Miroslav Lichvar2011,2016–2017 notices and GPL-2.0-only terms. Before translation,
+add the N2 adaptation and deviations to the existing Chrony ledger and
+`crates/time-core/PROVENANCE.md`. Deliberate changes are the actual N1 borrowed
+chart, full-range/subnormal domain, saved reciprocals, centred response, separate
+geometry/response stages, enclosed arithmetic and checked lifting. Residual
+degrees-of-freedom variance, confidence, skew, runs/adaptive history and native
+callers remain later work. Upstream agreement is supplemental, never the oracle.
+
+**Frozen independent facts and finite exit.** Ordinary Python-only design controls
+at `dependency-refresh-20261106-v1/n2-design-v1/fraction-controls.json` and the
+independently authored13 exact fixtures/seven integer-RNE controls under
+`n2-oracles-v1` predate N2 implementation. Their exact original-rational target
+checks use returned float bits as rationals; no fitted tolerance is permitted.
+The required set includes the retained nonunit three-point example, suffix
+reweighting discriminator, all-large-q zero/nonzero-SSE suffixes,64 rows, half
+ticks, large absolute anchors with small corrections, exact constants, zero
+covariance and genuine primitive underflow neighbours. In particular rounded
+v=(-1,-1/2,0) with original phases(-D,-D/2+1,0) has computed a/SSE0 but exact
+a=1/(3D), b=1 and SSE=2/(3D²); its enclosures must retain those nonzero facts.
+Freeze recipe-specific rounded admission/geometry neighbours before observing
+candidate results. Challenge actual suffix/fit/interval/lifting consumers,
+mandatory-validator omissions, private construction/mutation/association and
+borrowed lifetimes with valid neighbouring controls.
+
+Implement only after fresh independent plan review. Format the complete slice
+before expensive candidate freeze. Coordinator alone runs admitted Linux Rust
+and Windows-target compiler lanes; ordinary/optimized/doctest/contracts and
+90% executable-line/95% per-critical-file viable-mutation gates remain. Use the
+existing recipes/custodian, six ordinary jobs and eight outer/one inner mutation
+workers, complete inventories and512-task profile. Preflight actual disk/work
+footprint and reserve before campaigns; retain the measured N1 disk lesson and
+five-GiB minimum, clean only owned closed targets, and use the authorized lower
+worker fallback if needed. Missing/failed gates remain incomplete. Stop at a
+qualified pure suffix/fit/lift result; no larger tooling expansion, production
+insertion, native execution, formal job or release claim follows.
+
+#### N2a independent review and translation admission
+
+Fresh reviewer `n2a_plan_review`, initially dispatched with `fork_turns="none"`,
+reviewed the actual task SHA256
+`7bf6e5dc3beac9194947a8413d9366aaa9fc72b1a015ed9a9a4ae77fec0cd2b5`
+and the unchanged N1 numerical owners. This task identity is separate from the
+380-input predecessor product map `7a7d1b7bc692ba2a5f07b3d8ad795d28d97c9cb0f5f1255d9077ff0bb0457274`.
+The completed read-only review found no material gap and returned READY; it ran
+no compiler, test, native or formal jobs. Its comprehension record is retained
+verbatim:
+
+> N2a adds a checked contiguous suffix borrowed from the actual N1 batch, then fits and encloses an affine line using that unchanged chart, original row associations and divisors. Five prescribed binary64 passes produce point estimates; an independent interval chain encloses the exact original-rational fit. Normalized and lifted results publish together, retaining the exact newest phase anchor separately.
+>
+> The current source contains N1’s immutable prepared batch, exact row references, conversion bounds, power-of-two scales and associated divisors. N2 suffixes, arithmetic, fitting and lifting are planned source. Existing fixture kernels have incompatible numerical restrictions. Production history, acquisition authority, statistical uncertainty, NTS, native qualification and clock effects remain separate work.
+
+The coordinator admits the bounded translation after recording its selected
+source/notices/deviations in the existing Chrony ledger and crate provenance.
+Arithmetic and fit authors own separate new source/private-test files; an
+independent author owns external exact-fact tests. The coordinator alone owns
+exports, registrations, qualification and integration. This authoring admission
+is neither behavioral GREEN nor a qualification pass. Freeze remaining rounded
+recipe controls before observing candidate results; preserve all execution holds
+and the owner's commit hold.
+
+The independent recipe model then corrected one proposed design control before
+observing N2 candidate results. For the seven-row all-large suffix with
+`L=RN(1e154)` and `q=RN(L*L)`, the exact rational fit remains correct, but the
+literal rounded recipe's middle centred coordinate is nonzero: its tiny weighted
+product rounds to zero at original row5 and must return geometry point-underflow.
+The earlier suggestion that this particular fixture would be numerically ready
+was incorrect. Keep its exact mathematical facts and refusal control; use the
+separately frozen maximum-reachable N1 divisor (`0x1.ffffffffffffep1023`, exact
+dyadic rounded reciprocal `2^-1024`) for healthy all-large-weight zero/nonzero-SSE
+controls. This changes no fit operation or underflow policy. The exact-fit domain
+and this recipe's admitted numerical subset remain distinct. The same independent
+model froze the three small-scatter neighbors in `n2-oracles-v1/recipe_controls.*`:
+original-row4 point-underflow, unresolved interval geometry, then healthy geometry.
+
+#### N2a source and ordinary checks — 7 November 2026
+
+The integrated pure Core source implements the actual-parent suffix borrow,
+five prescribed point passes, separate original-rational interval chain and
+atomic normalized/physical outputs. Its exact anchor remains separate. New
+external tests contain 14 independently authored cases with 60 frozen scalar facts;
+17 private cases challenge producers and arithmetic. The code-owned analysis
+inventory additionally freezes 27 N2 legal/privacy/lifetime/unit doctests. No
+Cargo graph, engine integration, history insertion or native effect is added.
+
+Ordinary candidate: 385 inputs,
+`0a6f101e9d019ec209ec4d3940cc48abf0a242b66c50ce99591b1e91b84bb06c`.
+Receipt: `dependency-refresh-20261106-v1/n2-ordinary-v2/verification.json`, SHA256
+`6283fa64725c2670a1e6f58d6cbb5b88b939298287ab2bb28c93521f872946db`.
+It records 394 ordinary, 394 optimized and 88 doctests passing, plus formatting,
+compiler/Clippy/rustdoc and Windows-target compiler/Clippy. All source, helper,
+recipe, tool and vendor bookends match. Target checks compile only; they supply
+no native Windows execution. The later analysis-role refactor changes protected
+Python helper identity, with 20 focused N1/N2 controls passing; the 385 product
+inputs and Rust behavior remain unchanged. No new whole-candidate execution is
+claimed merely by rebinding analysis metadata.
+
+Retained failed development attempts remain explicit: format-v1 refused copyback
+because the coordinator’s N1 documentation edit had extra indentation; verified formatter output
+was subsequently copied back within the authorized seven-file scope, changing
+only that N1 documentation line. Compiler-v1 rejected an unused private getter;
+compiler-v2 compiled but Clippy rejected three production style/API issues and
+seven private-test expressions; compiler-v3 stopped on the merged-arm formatting.
+Ordinary-v1 then caught eight external pointer-assertion style cases. Repairs use
+the actual getters, equivalent identity patterns, a copied private raw candidate,
+private lifetime elision and explicit test pointers/assertions. No arithmetic
+recipe, expected numeric fact, tolerance, warning policy or gate was weakened.
+All failed attempts, source snapshots and logs remain retained.
+
+Fresh source reviewers `n2_arithmetic_independent` and `n2_fit_independent` began
+with `fork_turns="none"`, inspected their separate owners, then reconciled final
+source and actual receipt hashes. The fit reviewer found the three reversed N1
+constructor calls; they were corrected before compilation. No open semantic
+defect emerged within the reviewed scope. Arithmetic's independent exact-Fraction/
+nextafter model checked 9247 accepted endpoint, 6820 interval, 1369 square and 2400
+hull/error cases, with 2757 conservative range refusals tracked separately. Fit's
+seven independent exact-rational full/suffix cases also confirm all three lifts
+and the hidden-curvature facts. These are bounded source/model checks, not Rust
+executions or formal proofs; reviewer agreement adds no native tests. The final
+read-only reconciliations confirm the formatter/lint repairs preserve semantics.
+
+The source-only N1 change replaces its stale “no suffix/fit” sentence, retaining
+the same line count and numerical implementation. Historical N1 bindings/scores
+remain intact. A separate N2 role/policy selects exactly its two new owners,
+152 actual coverage identities and 482 package baseline identities, with no
+inherited scores, equivalences or mutation descriptors. Coverage, complete
+mutation enumeration/review/campaign, actual mandatory-validation omission
+controls and final independent qualification remain required. Stop at that finite
+pure suffix/fit/lift exit; production history and the ordinary product queue follow
+their existing owners. All Windows, fuzz, storage, UI and post-V1 formal holds,
+and the owner's commit hold, remain. No staging, commit or push occurred.
+
+Before these jobs, four closed leap-contract compiled caches (116 `.rmeta`,
+`.rlib` and `.so` files) were deleted after ownership/process checks, recovering
+155385856 bytes. All associated receipts, source and raw outcomes were preserved;
+49 unreadable process scopes were recorded. The cleanup receipt is
+`dependency-refresh-20261106-v1/n2-compiled-cache-cleanup.json`; the index SHA256
+remains `260295de47c6214534b58de8b07a248b730582a54760405f429f510d44a26d82`.
+
+#### N2a coverage, inventory and next controls
+
+Fresh full-profile coverage on the unchanged 385-input numerical candidate
+passes all 152 selected ordinary tests. Fit covers 527/551 executable lines
+(95.6443%); arithmetic covers 252/254 (99.2126%). This is line coverage, with no
+branch-coverage claim. Receipt `n2-coverage-v1/verification.json` SHA256:
+`a2d03cbd98845aad242dcf8552e864e296092c0248de6f1eb22f28854da5957c`.
+Its admitted policy SHA256 was
+`4fa4c4bb5f345cd035e70c2661b3b5f8be739f4ed4b1419e059fa8a03d6b05bd`.
+
+Complete listing on that same source enumerates 143 fit and 161 arithmetic
+variants, 304 total within the 512 campaign cap. Receipt
+`n2-enumeration-v1/verification.json` SHA256:
+`18d4f1277e4a26059b5f83e6c355417e7f6fbac7b0d0b4b3f08c306e738a4b75`.
+Descriptor hashes are respectively
+`310178d68d2ed4f545be205505f475f9c7cc25a700494c4634f40951fca630fa`
+and `89a69204c8943a5fb9bb2769fe290af1d0ec396ecf22cc9bb88a1225cdc78a69`.
+The read-only fit reviewer independently reconciled all 396 combined receipt/
+snapshot input bindings, 29 policy pins, actual test identities, all raw/listed
+descriptors, source spans and original diff hunks. Both maps are now frozen in
+N2's policy. Only its previously empty inventory field changed; the native
+coverage/listing receipts retain their original policy identity. No score,
+equivalence or new native pass follows from this metadata binding.
+
+**Next finite action:** execute the five actual mandatory-validator omission
+controls (point, interval and final scalar publishers; suffix range; lift power)
+with healthy and restored controls, then complete the two-owner mutation campaign
+and reconcile all raw outcomes before final independent qualification. The
+generator omits `Interval::new` and `ScalarEnclosure::new`: explicitly retain the
+interval validation control and add a causal hull/error construction control for
+the latter. Generated Garde enforcement is also outside ordinary mutation
+generation. These controls supplement rather than inflate generated kills.
+Use the existing custodian and frozen test selections, six ordinary jobs, eight
+outer/one inner mutation workers and current resource limits. Recheck disk before
+execution; do not start below the five-GiB admission floor. Mutation and these
+validation/generation-gap controls have not yet run; N2 is not finally qualified.
+
+Closed-target cleanup preserved all receipts, raw reports, complete primary
+source snapshots and seven unique formatter outputs. It removed five Cargo
+target trees, an empty listing target and two disposable sealed-tool copies
+(907808768 bytes), plus 378 byte-identical redundant formatter copies
+(15757312 bytes). Original qualified tools/vendors remain. The receipts are
+`n2-closed-target-cleanup.json` and `n2-redundant-format-cleanup.json` under the
+same evidence root. The final observation had 5379686400 bytes available, barely
+above the floor; it is an observation, not admission of a later campaign.
+
+#### N2a producer controls and mutation continuation
+
+Six isolated producer controls now pass on the unchanged 385-input numerical
+candidate. Five independently remove one actual Garde invocation; the sixth
+changes only the upper-hull operation in `ScalarEnclosure::new`. Each faulty
+fixture passes strict Clippy and an unaffected positive neighbor, then reaches
+its named assertion failure. Healthy and byte-restored fixtures each pass the
+selected test. The 30 commands comprise six Clippy checks, 18 passing single-test
+executions and six intended native101 assertion failures. Manual controls receive
+zero generated-mutation credit. Source, copied inputs, recipes, tools and vendor
+bookends match.
+
+Receipt `n2-producer-controls-v2/verification.json` SHA256:
+`228e2874da4c9ae5292c0f473b5e1d741dfbb02c6e18f8feadcebe6b5d82be9f`.
+The independent reviewer reconciled every fault's single expression change,
+395 unchanged other inputs, all 396 restored inputs, raw test identities/exits,
+and all 13 physical executable paths/sizes/hashes before target cleanup. The
+point fault publishes `Ok(NaN)`; the hull fault publishes a valid-looking zero
+enclosure whose upper bits 0 fail the independently required minsubnormal bits 1.
+The suffix control demonstrates loss of `SuffixRange` classification; checked
+subtraction still refuses the invalid request. It does not demonstrate invalid
+suffix acceptance. The other controls challenge interval/scalar publication and
+out-of-range lift-power admission through their actual producers.
+
+The initial `n2-producer-controls-v1` remains incomplete with zero control credit.
+All copied sources were created before healthy compilation and shared a target;
+the faulty point test reused the healthy executable and incorrectly passed,
+despite Clippy inspecting the altered source. Its original receipt SHA256 is
+`3d55de8469d8f75c906a7578a18b66ec2287c60e615f236583d8586ef4463a8c`.
+The source predates the reused binary; Cargo's retained fingerprint records
+mtime-based dependency information. V2 uses an explicit fresh target for each
+immutable healthy/fault/restored fixture and bounded executable observations.
+That change reaches the intended assertion while healthy/restored controls pass.
+`n2-control-cache-failure-v1.json` retains the old source/binary identities and
+timing evidence. This is a repaired harness problem, not a product defect.
+The reusable harness reference now requires this artifact isolation; the
+65-skill metadata/link/inventory check passes. No product lint or gate changed.
+
+`n2-function-generation-map-v2.json`, SHA256
+`5e2cfe235cebf0ddb118165d3bc97918d4f2260acc9e80dd3ee257f468df3b09`,
+maps all 103 authored functions, 304 generated identifiers and five Garde-derived
+owners to their detecting evidence. The two absent constructor functions and
+generated validation have the six controls above. A descriptor does not prove
+all inner behavior: 61 fit and 21 arithmetic functions have only whole-body
+return replacements. The map preserves independent ordinary/doctest evidence,
+original enumeration/current-policy distinction and pending viable-mutation
+accounting. No coverage or manual result is substituted for generated kills.
+
+The full two-owner campaign started in `n2-mutation-v1` after a fresh disk
+preflight, using eight workers, one inner job and the unchanged 512-task profile.
+All 304 descriptors and both full baseline identities remain required. Partial
+survivors are observations for later causal review, with no provisional score
+or automatic equivalence. Do not edit source/tests while the campaign is live.
+N2's final qualification remains open until complete native outcomes, survivor/
+timeout/unviable classifications and independent reconciliation are settled.
+
+Resource preparation deleted only verified duplicate installed-tool copies in
+96 owned passed campaign directories, recovering 865026048 bytes; original
+installed tools, raw reports and source were preserved. After independent binary
+reconciliation, closed v1/v2 compiled control targets were deleted, recovering
+1074008064 bytes while retaining all 10296 input files. The cleanup receipts are
+`n2-old-passed-tool-copy-cleanup.json` and `n2-producer-target-cleanup.json`.
+The mutation-start observation had 5754912768 bytes available; its actual fresh
+preflight, not this historical observation, governs admission. Index custody is
+unchanged. Windows, fuzz, storage, UI and post-V1 formal holds and the owner's
+commit hold remain.
+
+#### Conditional next product contract after N2's finite exit
+
+**Post-N3a activation — 7 November 2026:** after N3a's complete current-candidate
+exit and independent reconciliation, the next ready action is source-contract
+review in this existing observation-to-Core card. Rust integration and an
+engine-to-Core Cargo edge remain held until that contract and its actual
+suppliers are settled; this is not a new numerical-helper or tooling milestone.
+
+The actual same-source producer is
+`execute_series(PreparedSeries, &ControlSchedule) -> Result<SeriesReport, PilotError>`.
+Retain `SeriesReport::attempts()`, each `SeriesAttempt::index()` and
+`report()`/`not_started_cause()`, actual terminal facts, original age and
+request/common-run ownership. The older two-peer CLI remains separate.
+Numerical refusal never restores a consumed request. Equal endpoints or declared
+numeric context labels establish no matching owner or production eligibility.
+
+| Supplier | Disposition before receiving implementation |
+| --- | --- |
+| Same-source terminal completion, actual captures and request/run association | Available within N3a's qualified controlled Linux scope; preserve actual ownership. |
+| Exact midpoint/phase, once-rounded conversion, N1 conditioning and N2 fit | Existing scoped mechanisms are available; their actual receiving adapter is not implemented. |
+| Logical-source/configuration/association/clock/mapping generations and final current authority | Production suppliers held. `DeclaredObservationContext::new` accepts five nonzero declarations; it cannot create those facts. |
+| Date/era, claim-day LI and whole-exchange scale/calendar/mapping evidence | Production admission held; neither host time, LI=0 nor an experimental declaration supplies it. |
+| Justified peer distance, current precision, capture/quantum/frequency assumptions and limits | Existing quality/statistical suppliers held; no unit distance, zero skew or quality default is selected. |
+| Private completion-to-row association | Held: name the private adapter/entry capability consuming or authenticating the actual report/attempt and binding row keys. Public Core rows and five nonzero labels are copyable declarations; keeping a report alive is insufficient. |
+| Per-report versus accumulated history and reference chart | Held: each `execute_series` creates a fresh actual run context/origin. Settle same-run collection, cross-report mapping and0→1→2→3 admission separately from fit publication. |
+| Capacity/eviction and canonical parent population | Held: choose the atomic outcome when accepted incoming rows exceed64; derive N1 divisors over that chosen complete parent and inherit them unchanged in suffixes. |
+| Final serialized publication authority | Held: name the current receiver revision/context/quality/age guard covering staged rows and the history snapshot, with no await or check-to-commit gap. |
+
+Independent source review confirms the operation-local borrowed fit approach,
+but the four transaction choices above remain unresolved. This is ready contract
+work, not an implementation activation. Even empty N1 input requires positive
+finite current precision; absence supplies no default.
+
+Freeze actual monotonic-origin/source/configuration/association/clock/mapping
+ownership, consume-once correlated completion, exact half-nanosecond midpoint,
+phase numerator/8589934592000000000, signed corrected RTT and separate acquisition
+age/deadline. Name suppliers for date/era, LI/whole-exchange scale/calendar
+compatibility, capture/mapping error, historical/current quantum, prior frequency
+interval and policy limits. Unavailable inputs remain unavailable rather than
+zero skew, unit weight or a quality/eligibility claim. Apply the existing quality
+calculation and publication guard; preserve `authentication=none eligible=0`.
+
+Once actual suppliers are admitted, the private receiving owner stages bounded
+immutable `ExactObservationRow` values through `ExactObservationRow::new`,
+preserving each actual completion association. The existing N1 cap is64 rows,
+not a newly selected history/eviction policy. Call
+`prepare_conditioned_batch(context, &rows, current_precision_seconds)`, derive
+divisors once over the fitted population and exclude auxiliary runs-only rows.
+`prepare_conditioned_suffix(&batch, start)` retains that actual parent chart,
+anchors and divisor bits; `fit_conditioned_suffix(&suffix)` evaluates that suffix.
+Keep the original report alive throughout. Settle
+numerical-refusal/eviction semantics and preserve prior state, generations and
+honest age on rejection. Do not search smaller subsets merely to get a pass.
+`ConditionedFit` borrows suffix → batch → rows: storing it next to its own row
+array would be self-referential. The working choice for independent review is
+one operation-local borrowed evaluation, finishing same-fit diagnostics and
+checking current publication authority before one complete commit. Any owned
+report projection must retain private association to its original producer;
+copied public scalars and matching labels cannot establish it. Preserve explicit
+`ConditionedBatchOutcome::Insufficient`/`ConditionedSuffixOutcome::Insufficient`
+for0/1/2 rows without a fit. Distinguish collection acceptance from fit publication:
+settle whether admitted history is retained on fit refusal and how0→1→2→3 rows
+accumulate, while a missing fit supplies no new published fit. Missing suppliers,
+duplicate/stale context and arithmetic rejection preserve the prior transaction;
+no partial append/eviction or renewed age can manufacture success. Freeze those
+choices before implementing their transition table.
+
+Independent exit: one reviewed real producer → checked rows → N1 → N2 → receiving
+state contract with actual enforcement/held suppliers named. Retain the midpoint
+oscillator expectation (-1/1024 versus receipt-labelled -5/6144), half ticks,
+0/1/2 insufficiency, unchanged peer divisors under changed root claims, atomic
+duplicate/stale/arithmetic rejection, full-capacity row retention and original
+age. N2 SSE and arithmetic enclosures establish no statistical confidence,
+readiness or physical uncertainty. Existing residual/skew/runs/readiness owners
+and native/NTS holds remain. Freeze and independently review this producer-to-
+publication contract before activating its separate Rust implementation. This
+source-contract preparation completes no production receiver or P1 exit and
+lifts no formal, Windows, fuzz, storage or UI hold.
+
+#### N2a complete first campaign and strengthened candidate
+
+The complete first campaign is retained as incomplete, despite raw percentages
+above 95%. Fit: 143 generated, 83 caught, 57 compile/lint-unviable, three survivors;
+arithmetic: 161 generated, 96 caught, 64 unviable, one survivor. Both baselines execute
+482 actual tests. There are no timeouts. The four raw survivors have separate
+dispositions; neither passing percentages nor proposed tests close them.
+
+Two are genuine contract-test gaps. Changing `original_index`'s `<` to `<=`
+admits a one-past local index into its actual diagnostic-context constructor,
+even though downstream public getters mask it. Changing interval subtraction's
+zero-singleton `&&` to `||` loses valid endpoints for `[0,1]-[1,1]` and
+`[-1,0]-[1,1]`. One appended private regression per owner now checks those whole
+helper domains, actual consumers and healthy neighbors. Existing private-file
+bytes are preserved as prefixes. The healthy production code was already
+correct; no production arithmetic, constructor or guard was repaired.
+
+The two error-closure survivors have independently accepted whole-admitted-domain
+arguments in [the N2 disposition note](conditioned-fit-analysis-equivalences.md).
+The actual private N1 parent guarantees 3..64 rows, and the exact mandatory Garde
+predicate fails only for `start > count`. Changing the comparison to `>=` inside
+that error closure cannot affect equality, whose validation succeeds; deleting
+`!` in the later branch cannot affect a branch shielded by `start > count`.
+These are source-bound equivalents, with no generated kill credit or formal
+claim. Neither genuine gap is classified as equivalent. Broader construction or
+changed validation invalidates the arguments.
+
+Current strengthened product: 385 inputs,
+`2fc732f1c1a6872b2458236a9e49867cf360f67886ecee17cf99481a647c278c`.
+Ordinary receipt `n2-ordinary-v4/verification.json` SHA256:
+`609de691bba37c1a8de828e20c2940d570117c556dbed1d62b488947456930f0`.
+It passes 396 ordinary/396 optimized tests, 88 doctests, compiler/Clippy/format/
+rustdoc and both Windows-target checks with unchanged bookends. The preceding
+v3's native 396-test and doctest commands exited successfully, but its observer
+rejected interleaved expected compiler diagnostics under `--nocapture`; that
+failed receipt remains preserved. V4 captures/serializes doctest output and
+handles the parser's actual exception class. Its strict named-record parser is
+unchanged; no ambiguous output or compile error is accepted as a pass. Earlier
+intended negative diagnostics retain their unchanged public-source scope.
+
+Fresh `n2-coverage-v2` executes 154 selected tests, retaining 527/551 fit and 252/254
+arithmetic executable lines covered. Its receipt SHA256 is
+`9a8894189cb852ddeb2d1b32f9d0046340d4f14f262f9d8b371b62c56a593ef1`.
+The code-owned minimum is 33 new controls; current baseline inventory is 484.
+`n2-policy-binding-v2.json` binds the current product, source/helper bytes,
+unchanged 304 descriptors and exactly the two reviewed equivalents. Policy SHA256
+is `0f952e88cb0cb6ac3eb033e71329f7c3875e309bb80358881579386a9a6b8fa2`.
+The ordinary receipt's earlier helper snapshot and later data-only minimum
+update remain distinct; no historical generated score is transferred.
+
+The fresh complete campaign is `n2-mutation-v2`, with current 484-test baselines,
+eight workers/one inner job and the same finite budgets. Both genuine gap
+mutants must now fail; raw equivalents and native exits remain visible. Final
+qualification awaits its complete outcomes and independent reconciliation.
+Do not edit source, tests, analysis code, policy or proof note while it is live.
+
+Before that campaign, only three terminal ordinary/coverage target caches were
+deleted after custody/open-process checks, recovering 1106329600 bytes. Sources,
+raw reports and receipts were rehashed unchanged; the start observation had
+5604294656 bytes available. See `n2-strengthened-target-cleanup.json`. This does
+not authorize a later run without its own preflight or change any execution hold.
+
+### N2a final qualification — two selected Core owners
+
+**Qualified within the selected pure Linux numerical scope, 7 November 2026.**
+The strengthened 385-input product remains
+`2fc732f1c1a6872b2458236a9e49867cf360f67886ecee17cf99481a647c278c`.
+The complete second campaign is terminal; this final record supersedes the live
+status in the preceding addendum. Both critical production files are unchanged:
+`conditioned_fit.rs` SHA256 `dd82bc4a3aaf1c11d23fa45a25e9b35da595b3edb9d6209fd4ef2604a5784de8`
+and `conditioned_fit/arithmetic.rs` SHA256
+`c55d6e4080a7bab100f77991ef3ebff212e556b3fc35b2b37f9bc83413af5e0e`.
+REQ-8/BND-1 and CHECK-6/7/8/11/14/25/27 retain their bounded N2 meanings.
+
+All evidence below is under
+`/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/`.
+The coordinator join is `n2-final-qualification-v1.json`, SHA256
+`d5e5c2bd1c7221512aa9af41a987c3d0a444c9c4a541d043f190ea666915943a`.
+It rechecks all397 current source/helper inputs, the product385 map and policy
+`0f952e88cb0cb6ac3eb033e71329f7c3875e309bb80358881579386a9a6b8fa2`.
+
+| Selected owner | Executable lines | Generated | Behavioral caught | Compiler/lint unviable | Raw survivors / reviewed equivalents | Raw viable score |
+| --- | --- | --- | --- | --- | --- | --- |
+| Fit | 527/551 (95.6443%) | 143 | 84 | 57 | 2/2 | 84/86 (97.6744%) |
+| Arithmetic | 252/254 (99.2126%) | 161 | 97 | 64 | 0/0 | 97/97 (100%) |
+
+Both adjusted scores are100%, without unresolved survivor or timeout. The fit
+tool's native exit2 and arithmetic exit0 remain recorded; there is no claim that
+all304 variants were killed or that both native campaigns exited zero. The two
+source-bound human equivalents receive no kill credit. Each new regression
+caused its exact former survivor to fail a named behavioral assertion after a
+successful build. Both actual baselines contain484 identities:396 ordinary tests
+and88 doctests. Fresh coverage executes154 selected tests. Branch metrics are
+empty, so no branch-coverage qualification follows.
+
+The ordinary v4 and coverage v2 receipts above remain unchanged. Final mutation
+receipt `n2-mutation-v2/verification.json` SHA256:
+`299f0f9279eb5bc725830be94402061f782e21544ab57be0e0b636ec668c7986`.
+Independent audit `n2-mutation-v2-native-audit-final.json` SHA256:
+`c77efd054b427a616cde8f4395bc3133cb457ce1ba1297062dd53f7401bdd2ca`
+reconciles every304 raw log/descriptor, both exact baselines and all397 copied
+and current inputs. Compiler/lint failures are not counted as behavioral kills.
+`n2-function-generation-map-v3.json` SHA256
+`5465e3e3ca180c9c393ad271a54771133b4b6ba9603db213d485e0ab11a78cf3`
+maps all103 authored functions and the five macro-generated validation owners to
+the actual generated faults and independent alternative controls.
+
+The six isolated producer controls retain their actual older `0a6f101e...`
+execution. Scoped reuse, not fresh fault execution on `2fc732f1...`, is supported
+by `n2-producer-control-reuse-v1.json` SHA256
+`793dbf889b169116de67c76f4a553a3130a9b73fdcf55393169294e02f2119b8`:
+only two product inputs changed, by EOF private-test appends; the required-name
+list and policy/equivalence metadata changed separately. Production, prior
+control bodies, execution functions, graph, runtime, recipes and relevant tools
+remain unchanged. These six controls add zero generated mutation kills.
+
+`n2-allocation-source-review-v1.json` SHA256
+`0598064d6b815e8f0ea18556da2b03545cd29c97140bf106be75add4fd8c9e8c`
+traces the five fixed-field validators through pinned Garde/derive0.23.0:
+successful validation builds no report/path allocation; rejection can allocate
+one bounded temporary report/path/message, dropped during typed error conversion.
+Scratch is one inline64-entry array, five bounded passes and fixed endpoint
+combinations. This is source reasoning, not measured heap/stack/RSS, leak or
+native performance evidence. No Windows, clock, file or network effect is added.
+
+Final reviewer `n2_final_qualification` independently inspected the raw evidence
+and accepted this selected scope. It inherited parent context; no fresh-context
+or statistical-independence claim follows. Its completed report is
+`n2-final-independent-review-v1.json`, SHA256
+`5d6a4ecf504ef99b4be45abf2149d401e0216ebcb3077759d0b194584c9cd579`.
+The join retains the failed shared-target control attempt, incomplete first
+mutation campaign, ordinary observer retry and exact closed-cache cleanup.
+Historical ledger/provenance entries retain their earlier authoring scope;
+this task owns the final qualification. No extra execution is inferred from
+reviewer agreement or a report join.
+
+This closes N2's finite exit, not physical uncertainty, statistical confidence,
+same-source acquisition/history insertion, source eligibility, NTS, native
+Windows, P1, package or release qualification. No engine-to-Core dependency was
+added. Formal work remains post-V1, every existing execution hold remains, and
+the user's no-commit instruction remains in force. Continue the N3a contract
+below before dependent acquisition/receiver implementation.
+
+### N3a finite same-source acquisition and completion receiver contract
+
+**Independently reviewed READY for finite source implementation, 7 November
+2026.** This is the first admitted acquisition/receiver child after N2, within
+the existing observation-to-Core chain. Production sample/history admission and
+all native execution holds remain separate.
+Owner: engine/protocol/QA, with S1.2 retaining later numerical/history admission.
+Requirements: REQ-8/BND-1 and CHECK-6/7/8/11/14/25/27. Environment: admitted Linux,
+controlled loopback UDP only; no Windows, formal, public network or clock effects.
+
+**Observable source exit.** One engine-owned series makes exactly three planned
+sequential attempts to one explicitly configured loopback endpoint and moves
+each terminal completion once into bounded private receiving state. Three is a
+fixed attempt count, not a target of three successful measurements or permission
+to retry failed requests. The report distinguishes completed transport facts,
+nominal measurement refusal/unavailability and attempts not started because of
+terminal control/deadline/setup failure. Statistical admission is explicitly
+unavailable and admitted/eligible sample count remains zero.
+
+**Actual owners and API.** Add a small `series` owner in `nevrotick-engine`, with
+minimal `lib.rs` orchestration/reuse changes and focused private/public tests.
+Reuse actual `LiveSlot`, staging/commit/retirement, `measurement.rs` and
+`relative.rs`; add no Cargo dependency, generic runtime framework or N1/N2 input
+adapter. Keep the existing two-distinct-peer API and its one-query contract.
+The additive checked surface is `SeriesConfig::new(peer, request_timeout,
+series_timeout)`, optional already-checked experimental profile attachment,
+`prepare_series(&SeriesConfig)` and consuming
+`execute_series(PreparedSeries, &ControlSchedule)`. Config/prepared/report fields
+remain private, without raw/default/deserialization/mutation bypasses. A sole
+fallible constructor invokes adopted Garde rules for new raw configuration and
+token candidates. Source/exchange identity is created by actual preparation and
+execution, never accepted as matching caller labels.
+
+**Preparation and bounds.** Accept the existing loopback/nonzero-port/address
+scope rules. Both durations are positive, at most the existing laboratory
+`MAX_TIMEOUT` (30s), and request timeout cannot exceed series timeout. Preparation
+reads one24-byte entropy buffer for three distinct nonzero eight-byte tokens,
+rejecting zero/duplicate tokens without entropy retry or send. It creates no
+socket queue. Execution uses one private current-thread runtime and at most one
+active socket/request, one49-byte receive buffer and three owned terminal records.
+Bind/register a fresh request socket sequentially; record setup failure as a
+terminal series cause rather than silently replacing/retrying it. All remaining
+planned attempts then remain explicitly not started. Each request allows at most
+the existing64 readiness-driven send attempts and64 selected native datagrams,
+with one confirmed query send and no retransmission. Whole-series limits are
+192 such send attempts,192 selected datagrams and three confirmed sends.
+
+**Time and identity.** Capture one actual `Instant` origin before runtime/native
+setup. Total deadline is checked `origin + series_timeout`; each actual request
+has checked `min(request_start + request_timeout, total_deadline)`. Later setup,
+waiting or reevaluation never resets the total deadline. Each request has a fresh
+actual request/socket owner, its prepared unique correlation token and the same
+immutable configured-source/series context. Reports retain that shared context
+and the actual `TransportFacts`, without native handles. New series have distinct
+contexts even at the same address. Do not rearm a `Done` slot or call the old
+two-peer `execute` repeatedly and relabel its distinct origins as one series.
+This limited source/configuration identity establishes neither authenticated
+server identity nor independent votes, production clock/mapping generations or
+calibrated UTC accuracy. Existing aggregate control epoch remains laboratory
+control, not a substitute for those unavailable production suppliers.
+
+**State and completion.** The exclusive owner checks latest stop/invalidation,
+deadline and request state before send, after selected I/O, and again immediately
+before reply commit. Completion transfer is a private move from the actual
+terminal request into the matching series/request position, checked against
+actual owner identity and current control epoch. Duplicate/cross-series/stale
+transfer cannot overwrite prior records or revive a request. Correlated
+ordinary-header completion consumes its request even when nominal measurement
+is refused. Preserve that irreversible retirement independently of downstream
+numerical acceptance: rejection preserves earlier observation/history payloads
+but never restores `Pending`. Malformed or wrong-origin datagrams consume the
+bounded receive budget and may precede a valid neighboring reply; they do not
+become completed measurements. Stop, invalidation or total deadline retires the
+active request and marks later attempts not started, without extra sends.
+
+**Historical meaning and cleanup.** Preserve real capture brackets, acquisition
+and processing times, endpoints, raw signed RTT, corrected rational phase and
+the exact half-nanosecond midpoint representation. Retain original acquisition
+age; comparing views or choosing another anchor never makes an old result fresh.
+Keep original date/model declarations and typed measurement refusal. No raw
+clock reading, LI=0, host date or consistency tolerance supplies true-date/scale,
+calendar, capture/mapping bound, quantum, prior frequency interval, quality
+distance or unit weight. Those suppliers, NTS, statistical uncertainty/expiry/
+readiness and production history remain held. Do not construct N1 rows or a
+production `ValidatedSample`. Numerical report ownership remains the later
+private transaction problem identified above, not copied N2 scalar certificates.
+Retire/drop the current socket before preparing the next; reap any owned stop/
+invalidation timers and drop the runtime before return, preserving cleanup errors
+alongside a primary failure. Rust drop/host completion is not native Windows
+handle/AFD release qualification.
+
+**Independent acceptance and finite execution.** Through the real loopback entry,
+observe three requests to the same destination, pairwise distinct actual exchange
+identities/tokens, one common-origin reconstruction and no fourth send. Challenge
+an old reply replayed at the next socket, malformed-then-valid neighboring replies,
+nominal refusal consuming exactly once, cross-series/duplicate private completion
+transfer, control/deadline between staging and commit, partial series failures,
+receive/send caps, retained earlier records and honest age. Retain independent
+half-tick and midpoint oscillator facts (-1/1024 versus receipt-labelled -5/6144)
+where actual captures support them; exact scalar fixtures supplement rather than
+replace actual producer observations. Add legal-use and external compile-fail
+construction/mutation/consumption checks. Run focused development controls first,
+then existing configured ordinary/two-target checks with six build jobs. Register
+new critical owners and required test identities before freezing qualification;
+reuse current admitted analysis budgets and per-file90% line/95% viable-mutation
+gates, full inventories and alternative controls for ungenerated behavior. No
+solver, new runner framework, broad source survey or optional tool work is needed.
+The exit qualifies this controlled acquisition/receiver slice only; full Core
+composition, native/NTS/service/clock/package/release gates and all holds remain.
+
+#### N3a independent plan review and execution handoff
+
+Fresh reviewer `n3a_fresh_plan_review` received no parent conversation
+(`fork_turns=none`) and read the actual task, current engine/control/arithmetic
+sources and applicable canonical contracts. It completed its bounded read-only
+review of task SHA256
+`1187fb448834bf9c2cb611ff77795573c2eda0bf27382e2f3e127ad29e7be8be`;
+verdict **READY**, no material finding. Initial adoption added only the readiness
+label and this review record. The later API spelling refinement is recorded below. Report:
+`n3a-independent-plan-review-v1.json`, SHA256
+`8b74732006398e06c2c6ff89064bbba563eba61c21892c860cb8d7038c8135cd`,
+under the same external evidence root as N2. Its attributed comprehension:
+
+> N3a adds three sequential attempts to one controlled loopback endpoint, each
+> with a fresh socket/token and one shared series origin. A private receiver
+> retains terminal results once, including refusals and partial failures; sample
+> eligibility remains zero.
+
+> The existing engine queries two distinct peers once each. It already supplies
+> irreversible request retirement, actual identities, guarded reply commit,
+> exact nominal arithmetic and common-origin relative views. It has no
+> production statistical receiver or `time-core` dependency.
+
+Implementation must preserve earlier records through later setup or cleanup
+failure; the existing two-slot report and `finish_run` cannot directly express
+that contract. Use an owned partial-series result with separately retained
+primary/cleanup causes, rather than propagating an error that drops earlier
+observations. Review supplies no execution or production qualification.
+Proceed with the additive engine source and independent receiving/lifecycle
+controls under the existing six-job configured workflow. No commit or push.
+
+The first compiler/lint checkpoint refined the new API to borrow immutable
+checked `ControlSchedule`; only `PreparedSeries` transfers ownership. This
+follows the actual strict needless-pass-by-value diagnostic without adding
+`Copy`, cloning or a lint exception. Existing two-peer `execute` is unchanged.
+This API spelling refinement changes no accepted input, timing/control rule,
+report ownership or effect. Source/docs/public consumers move together.
+
+N2 closeout checks also pass strict workspace-policy adoption,65-skill pack,
+whitespace and all11 introduced navigation/equivalence links. Strict receipt:
+`n2-final-workspace-v1.json`. These are documentation/tooling checks, not extra
+Rust, native or product qualification. The index remains
+`260295de47c6214534b58de8b07a248b730582a54760405f429f510d44a26d82`.
+
+### N3a source and ordinary checkpoint — 7 November 2026
+
+The additive engine series owner and receiving state are implemented under the
+reviewed contract. `series.rs` owns three sequential fresh request lifetimes,
+one actual origin, private consume-once completion transfer, explicit unavailable
+statistical admission and retained partial results/primary/cleanup causes.
+The two-peer pilot remains separate. New raw configuration/token constructors
+invoke Garde, and the shared terminal-report consumer checks its0..2 index domain.
+The actual post-staging publisher rechecks current control/deadline before commit;
+later control preserves an already committed historical completion.
+
+Current compiled product:388 inputs,
+`9a3596ded9a4a5e14ec3f6876f6097926570e84c072767e552cfcaaf91877d3d`.
+Within the external evidence root already named above,
+`n3-series-ordinary-v2/verification.json` SHA256 is
+`b2eb90d2c21301e667f4e9fe26b2af8912213dc099e14f3a411a6c0d386668b6`.
+All388 copied/current product inputs,13 selected tools, recipes and the existing
+vendor inventory `f7e128d5...` have unchanged bookends. This new snapshot does not
+relabel the preceding N2 execution; those receipts retain their exact earlier
+source and pure numerical scope.
+
+| Source owner | SHA256 |
+| --- | --- |
+| `crates/nevrotick-engine/src/lib.rs` | `10e047bf2953becf82b9b6ce714dfcaf06a292f98084702c762eefc757423821` |
+| `crates/nevrotick-engine/src/series.rs` | `5b80047dce06148da0d317420d7333f0123aa945b8f2d5559071eb4fc9aeb995` |
+| `crates/nevrotick-engine/tests/private/series.rs` | `3e62c8a60e896d14b5f4e796196b56a021dfbe85bb413d944b9174a214434b18` |
+| `crates/nevrotick-engine/tests/series.rs` | `22864988b9b30868b480e680db6374beb5b6ce40faeaf9fc02d65215f36cec9a` |
+
+Actual Engine-only results:83 ordinary tests,83 optimized tests and42 doctests.
+Both ordinary cohorts include all eight new private and seven public controls.
+The nine new doctests include seven compile-fail cases, one executed inert
+constructor example and one `no_run` entrypoint compiler example; the latter
+does not execute a network body. Format, compiler, strict Clippy and rustdoc pass.
+Windows-target compiler/Clippy checks pass without linking or Windows execution.
+These counts do not include a new standalone time-domain test run.
+
+Real owned IPv4 and IPv6 loopback peers observe the three planned requests,
+distinct tokens/request identities, common-origin midpoint/half-bit and exact
+nominal phase/signed RTT reconstruction. Other actual UDP cases challenge malformed
+and old-token replies before valid neighbors, unavailable measurement still
+consuming its request, middle timeout followed by the final attempt, stop,
+invalidation and total deadline retaining earlier facts. The peer remains alive
+until application return to observe no fourth query; fixture work is bounded and
+joined. Historical local endpoints can be rebound after return. This establishes
+those reached host observations, not complete native Windows/AFD resource release.
+Private cases additionally stage genuine replies, change control/expiry, then
+call the actual production publisher with a healthy neighboring commit. They do
+not perform the claimed retirement themselves. Deterministic half-tick/oscillator
+facts retain their existing scalar controls; host timing does not force a chosen
+half-bit or oscillator trace.
+
+The bounded source reviewer found no material defect after inspecting the actual
+producer/receiver and publication seam. Its initial source hashes precede admitted
+formatting and the recorded lint corrections; current execution binds the table
+above. Source review supplies no extra execution. Whole-series `end` describes
+the owner's checkpoint outcome; a later deadline observation leaves already
+transferred per-request facts unchanged.
+
+Earlier attempts remain incomplete: compiler-v1 stopped on a replay-fixture
+`Option<[u8]>` inference error; an explicit `[u8;48]` annotation fixed that single
+cause. Compiler-v2 passed typechecking and stopped on seven source/private lint
+diagnostics. Ordinary-v1 then passed typechecking and stopped on four fixture
+lint diagnostics. These were not behavioral REDs. The final corrections preserve
+the oracles, borrow immutable schedule/fixture inputs, use fixed array chunks and
+retain only the two narrowly justified Garde borrowed-context lint expectations.
+Three admitted format receipts retain their before/after source bindings.
+
+Before expensive analysis, the authorized closed-cache cleanup removed four
+terminal N3 Cargo targets, three proven redundant formatter copies and34 exact
+disposable tool copies from closed earlier campaigns. Actual net recovery was
+1142218752 bytes;3148 source/raw/installed-tool files and the index stayed
+unchanged. Receipt `n3-closed-cache-cleanup-v1.json` SHA256:
+`ac3d3ebd3a3d25851a4ac2f53abeb0d1a07ffa7a5918c11166206c27ee4c9060`.
+The resulting5693202432 available bytes are an observation, not later admission.
+No compression, source/vendor/raw receipt/installed-tool deletion or process stop
+occurred. Rebuildable target binaries are no longer retained.
+
+**Next:** finish and independently check the separate library/series analysis
+profile, explicit external-consumer diagnostics, coverage, full descriptor
+enumeration, validator-omission controls and complete per-file mutation gates.
+Existing engine policies and numerical receipts remain historical; transfer no
+scores, descriptors or equivalents. N3a has an ordinary source checkpoint, not
+its final qualification. Production history, physical/date/scale/quality
+suppliers, NTS, native Windows, full P1 and release remain open. Every execution
+hold, post-V1 formal deferral and no-commit instruction remains in force.
+
+#### N3a qualification preparation and finite gap closure
+
+The separate `--profile series` path is implemented in the existing engine
+verifier, with its own two-owner policy and frozen83 ordinary/42 doctest/125
+baseline identities. Legacy policy/defaults remain unchanged. Thirteen new
+Python controls pass. The52 existing controls also pass after two current-source
+census assertions were routed to the current scope and the historical fallback
+test stopped relabelling old exclusions onto a changed library. The old exact
+source/native-descriptor check remains enforced; no historical exclusion was
+adopted into N3. These65 checks are Python admission/observer controls.
+
+The first N3 external-consumer lane passes all14 probes: one inert legal runtime
+control and13 intended compiler rejections for construction, mutation, defaults
+and consumed-plan bypasses. It performs no preparation/network body. Receipt
+`n3-series-contracts-v1/verification.json` SHA256:
+`37a3c67fe793fe23d4085cf69c7868fb1009450bf98006ce828a0b720b102723`.
+The first complete listing, `n3-series-enumerate-v1/verification.json`, SHA256
+`923441915016c5a8498e75186d0a319e5d3d2c4f63bde92f901cda01536a1e2c`,
+contains354 actual variants: library214 and series140. Both retain the ordinary
+`9a3596de...` snapshot and successful source/tool bookends. No mutation campaign,
+score or semantic disposition follows from enumeration. New policy inventories
+and equivalents remain empty; mutation stays closed pending reviewed bindings.
+
+Independent function review inventories128 authored functions (84 library/44
+series),30 guard groups, two Garde validation owners and other generated scope.
+Its provisional `n3-function-generation-map-v1.json`, SHA256
+`592dcdb9e85159ac0ed8d78dcac4ff95df7a81171ff2872a26262fd122da0fb1`,
+identifies missing direct evidence for fixed redaction, the new driver's work
+caps/selected-read accounting and partial setup/entropy failures. Coverage,
+descriptors and explicit omission alternatives still need reconciliation.
+
+Close these related gaps in one bounded source/test revision before the final
+candidate freeze and full mutation. Add direct redaction and budget/accounting
+controls, preserving valid neighbors and distinguishing modeled prior counters
+from newly observed native work. Where needed, two narrow private operation
+seams may inject entropy acquisition and request setup failure into the actual
+production path, using the unchanged OS backends in normal execution. They add
+no public callback, generic executor, provider choice, dependency or runtime.
+Injected errors establish propagation/retention, not actual OS failure or Windows
+provider qualification. Preserve an actual first completion through later setup
+failure and prevent additional sends. No other implementation or helper expansion
+is selected by this revision.
+
+The initial ordinary/contract/listing receipts remain exact historical evidence
+for `9a3596de...`. A changed source/test candidate needs refreshed ordinary
+identities, role pins, applicable contracts, coverage and complete descriptors
+before its mutation campaign. Final N3 qualification remains pending. Existing
+Windows/fuzz/storage/UI holds and post-V1 formal deferral remain unchanged.
+
+#### N3a revised ordinary checkpoint and analysis freeze
+
+The bounded gap revision passes the refreshed Engine-only ordinary workflow:
+89 tests/89 optimized tests and42 doctests. Its14 private controls include six
+new redaction, read/send-budget, selected-read accounting, entropy/entered-runtime
+and partial setup/registration cases; all seven public IPv4/IPv6 UDP controls
+remain. Modeled prior counters are distinct from the observed new native I/O.
+Injected failures demonstrate propagation and retained state, not OS/provider
+fault qualification. Independent source review found no material issue in the
+two private operation seams or the retained production backends/public API.
+
+Receipt `n3-series-ordinary-v3/verification.json` SHA256:
+`5537141cd7a88a08867c0944450d1421fcac45bb2f925b99c1fd160c42c6ee76`.
+Current compiled product:388 inputs,
+`5cc85952bffb47333fcfda3cfd89a64b061ed20f12b2b42eb1283b00b9e6244e`.
+The library remains `10e047bf...`; series source is
+`bcbd2fec35a0e498e7ef05e9470d188f8a1ef225b5d32c1bd2ae26843c7bd515`,
+private controls `88a47039c2cb1ddcce35fa5436d8622d465bd7beb5362f3b333940fe952c502a`,
+and public controls remain `22864988...`. Source/tool/vendor/recipe bookends,
+format/compiler/strict Clippy/rustdoc and Windows-target compiler/Clippy pass.
+There is no Windows linking/execution or standalone new time-domain test claim.
+
+Refresh only the separate series role's full89/42 inventories,21 new required
+names, changed doctest line identities and131-test baseline, current candidate
+and protected hashes before analysis. Legacy defaults/policies stay historical.
+Repeat applicable external contracts, complete listing and coverage on the new
+snapshot. The original354 descriptors are not silently adopted for changed
+series source. Two actual validator-omission controls use the established
+isolated-target/native-parser recipe; a source review caught and corrected an
+argv-factory shadowing bug before execution. No control result is yet claimed.
+
+Closed earlier-contract and ordinary-v3 targets, recorded redundant contract
+libraries and formatter copies were deleted after preservation/use checks,
+recovering802381824 bytes. All1966 protected files and the index remained
+unchanged; source/consumer snippets and raw receipts remain. Cleanup receipt
+`n3-qualification-target-cleanup-v1.json` SHA256:
+`3a0dbfe93cadda00ecd76f13baeae31a40756da5472d96b05b6d494509baa4dd`.
+Available5560377344 bytes was observed after cleanup; later jobs need fresh
+admission. No compression or process/service change occurred.
+
+The revised source has no coverage/mutation qualification yet. Finish these
+finite gates before dependent history/admission work; every hold and no-commit
+instruction remains in force.
+
+#### N3a current coverage, contracts and admitted mutation campaign
+
+The unchanged388-input `5cc85952...` compiled product now passes both selected
+Linux executable-line gates: library869/898 (96.7706%) and series538/583
+(92.2813%). Coverage executes all89 expected tests; branch metrics are empty,
+so this supplies no branch or Windows qualification. Receipt
+`n3-series-coverage-v1/verification.json` SHA256:
+`e9d0279f21725ed5b4d368393964e229f7bf1e8e6eb345bcde3f2d76e8ee13d5`.
+
+Fresh external contracts on this same compiled product pass14 probes: one legal
+inert constructor executable and13 code/span-matched compiler rejections.
+Preparation/execution signatures are checked without invoking entropy, runtime or
+network bodies. Receipt `n3-series-contracts-v2/verification.json` SHA256:
+`48a3441225bd890f701d12825e7b2627a4b4d07826b08dd2e3abf09f1a7f15f1`.
+The older contract receipt keeps its earlier source identity.
+
+Both actual Garde-dispatch omission controls pass their intended recipe: ten
+commands comprise two strict Clippy checks, six healthy/neighbor/restored native
+passes and two named assertion failures with native101. All other395 bound
+inputs remain unchanged in each fault variant and all396 restore byte-exactly.
+Five physical binaries/eight native observations were independently audited
+before deleting their closed targets. Receipt
+`n3-series-producer-controls-v1/verification.json` SHA256:
+`0b492b4a7ee5a21798d780824e31097021114074aecbb95e476934b80f0259ac`;
+independent review `n3-series-producer-controls-review-v1.json` SHA256:
+`dbddb3961c73e36839182a4724163eea502a478442f9f80f43a2b5a9cc9181d0`.
+These are two exact validation-dispatch controls with zero generated kill credit.
+
+Complete current enumeration lists356 descriptors: library214, inventory SHA256
+`b11ba4426343ee85bc7fd2db73f65bcd5d9f948d261c2fe0c5e5bfcf0e10375b`;
+series142, `48542e520cc69fe2357d20d1d3e8b421e1cb08b8615af9e42746debf94d01db6`.
+Receipt `n3-series-enumerate-v2/verification.json` SHA256:
+`69587fde48e56808f922e42e615146bfd9af7d0fbe2ba84a77b1785c1b87680f`.
+The finite source/function reconciliation maps130 authored functions, four
+zero-generated constructors and86 replacement-only functions to actual
+descriptors and independent alternatives. Its current pre-campaign verdict finds
+no material source/alternative-control blocker; outcomes and scores remain open.
+Map `n3-function-generation-map-v2.json` SHA256:
+`4f42baa80813862a98d4a388a3e03841db22f43fabf15bcf4347091a04c4e3f6`.
+
+Only the new series role adopts those exact two inventories, with no equivalent
+exclusions. Its policy SHA256 is
+`fd45261899caac4cef5d2514865c2a76c9e1e1b8ec8ffc455ecf11c6d63ef6ca`.
+After enumeration, the empty-inventory regression fixture was made explicitly
+held so it continues challenging refusal after adoption. That test and its policy
+pin are the only two changed inputs in the396-input enumeration map; all388
+compiled inputs, listing implementation, tools and recipes remain unchanged.
+The original listing receipt is preserved. Current Engine/series Python controls
+pass65 distinct tests (`n3-series-python-controls-v2.log`); the13 new-role controls
+also pass after inventory adoption (`n3-series-python-controls-v5.log`), without
+additional unique-test credit. Intermediate inspection/preparation failures
+performed no native jobs or product edits.
+
+Root started the full two-owner campaign in `n3-series-mutation-v1` with eight
+outer workers, one inner build job,512-process and512-variant caps, unchanged
+per-file95% gate and declared time bounds. Its result is pending; enumeration,
+coverage and passing mechanisms do not supply a mutation score. Independently
+reconcile actual131-identity baselines, every raw outcome and any survivor or
+timeout before final N3 qualification or dependent history work.
+
+Closed caches were deleted after custody/process checks: reviewed control targets
+and coverage build libraries (`n3-control-target-cleanup-v1.json`) recovered
+840318976 bytes; six duplicate installed-tool copies
+(`n3-duplicate-tools-cleanup-v1.json`) recovered47738880 bytes. The completed
+contract-v2 target, recorded duplicate libraries and nine historical tool copies
+(`n3-contract-v2-target-cleanup-v1.json`, SHA256
+`00069eca5b78450d5a6f513ab387c0376a30d42a9de6ddf909fdadda5aec2b72`)
+recovered302923776 bytes. Available5435633664 bytes was observed before campaign
+launch. Source, snippets, legal executable, raw receipts, coverage profiles and
+installed tools/vendor remain; inaccessible process scopes stay disclosed in
+each receipt. No compression, service/process stop, staging or commit occurred.
+All Windows/fuzz/storage/UI and post-V1 formal dispositions remain unchanged.
+
+##### First mutation run — incomplete
+
+The first complete library run terminates with214 variants:96 caught,113
+compiler/lint-unviable, two native misses and three test-phase timeouts.
+The actual baseline contains all131 identities (89 ordinary/42 doctests).
+Native library exit3 makes the configured wrapper fail closed before the series
+campaign; no142-variant result or adjusted score is claimed. Source/tool
+bookends remain unchanged. Terminal receipt
+`n3-series-mutation-v1/verification.json` SHA256:
+`9ae512fe9e1ce17dd8e40af0ac3d5082d72c702e74278bc04da5f9b48c1c1201`.
+
+Independent raw-log triage locates all three stalls in the library-unit
+`series::tests::setup_and_registration_failures_preserve_actual_prior_completion`:
+the test awaits its joined application/peer inside `runtime.block_on` without an
+independent application watchdog. The actual faults remove/invert Done-state
+observation in `LiveSlot::finish`/`terminal`. Each build succeeds in4.10–4.70s;
+the test phase times out at60.01–60.05s. The expired timer can remain ready while
+the changed application loop makes no terminal progress. This supports a
+mutation-induced stall and missing harness containment, not a healthy-product
+failure or measured CPU-contention claim. Earlier assertion failures in those
+logs do not turn timeout outcomes into caught variants.
+
+The two misses are the actual current `commit_reply` fallback `+=` replacements
+at1344:23 (`-=` and `*=`). Fresh source review of this helper's own predecessor
+guard and the pinned Linux `Instant` subtraction supports equivalence over the
+full safely typed helper domain. They remain native misses with zero kill credit;
+strict source/descriptor/candidate/artifact adoption and final outcome review are
+separate from that source conclusion. No machine proof or Windows equivalence is
+claimed.
+
+The next bounded repair changes test containment only: own an independent child
+completion deadline and actual kill/reap, preserve the complete actual assertions
+and healthy UDP observations, and reject zero/wrong child selection. First verify
+the three exact fault controls and their healthy neighbor with physical native
+executables; then rerun the complete admitted campaign. Production terminal
+semantics, coverage/mutation thresholds and every execution hold stay unchanged.
+
+##### Bounded test containment — current source checkpoint
+
+The test-only repair adds `tests/private/series_process.rs` to the existing Engine
+crate and wraps three private driver tests and seven public UDP tests. Each owns
+one exact-name child, verifies one selected test and body-entry handshake, bounds
+captured output to16KiB and confirms exit/reap before a semantic noncompletion
+assertion. The five-second wall budget is sampled by the parent; completed exit
+wins over a delayed monitor, and this is no measurement that every child finished
+within five seconds. All cleanup attempts share one500ms reap budget. Actual
+unknown native/fixture errors remain incomplete and retain bounded cause files;
+named `FAILED/101` alone is no semantic assertion. Independent static facts or
+checked test/product panic locations distinguish actual behavioral failures.
+The no-extra-datagram observer separately propagates unknown native errors.
+
+That compiled product checkpoint has389 inputs, SHA256
+`3752ebbe700aa12c6fb1b00fe0053fec50bb6d5944b4d34ca56e32bb200c9911`.
+Both critical product source files remain `10e047bf...`/`bcbd2fec...`; production
+code, Cargo dependencies and terminal semantics were not changed by this repair.
+Ordinary receipt `n3-series-ordinary-v6/verification.json` SHA256
+`343a4691a34d91fa2dc3e7fd234930d1183580df654e35fc5d8b94f675d1b0a4`
+passes89 ordinary/89 optimized tests and42 doctests, format/compiler/strict Clippy,
+rustdoc and Windows-target compiler/Clippy with unchanged bookends. There is no
+Windows linking/execution. Intermediate ordinary-v4 remains its own passing
+candidate; v5 stops at Clippy on new test documentation and an explicit `panic!`.
+The errors were corrected with accurate contracts and a runtime assertion that
+still propagates unknown native observation errors; no warning was suppressed.
+
+The separately admitted series role now uses389-source data and the same complete
+89/42/131 test identities. Its actual caught-log reader uses bounded no-follow
+admission, hashes those same bytes and rejects `N3_HARNESS_INCOMPLETE` before a
+marked fixture failure can qualify as caught. All69 current Engine/series Python
+admission controls pass (`n3-series-python-controls-v6.log`); the subsequent
+data-only rebind passes actual source/protected-input admission. Two current
+source/descriptor-bound fallback equivalents are opt-in under the independently
+reviewed Linux argument, with no kill credit or current mutation score.
+Policy SHA256: `7d4fa63f28b98389d6b613c1b8e93bee5452da94499643e3a83f1e8a881fe88f`.
+
+The two earlier Garde-dispatch controls retain their5cc-source scope. Their
+critical producer source and actual test body remain byte-identical; the current
+healthy body SHA256 is
+`7b2e0d0e456882d769d890d71e54964576d7d2396229de67f38455dbfce11348`.
+The new ordinary run executes that body. This supports explicit mechanism-scope
+reuse, not relabelling the old396-input receipt as the new398-input experiment.
+Earlier external contracts likewise retain their exact compiled library/API
+scope; fresh instrumentation and complete mutation remain required here.
+
+The first timeout-control run completes the exact `finish-inverted` case before
+an extra Clippy check rejects the intentionally constant-`None` variant for unused
+`self`. That static rejection is not behavioral RED. Its whole receipt remains
+incomplete (`n3-series-timeout-controls-v1/verification.json`, SHA256
+`7d6caee9b2b5208667a507e75c8dc8a5e6a283b2dd1e44daa76eb84f45639ffd`).
+Only the complete five-command slice is reused after current398-input/recipe
+checks and physical review of all four native observations/three binaries:
+`n3-series-timeout-first-case-review-v1.json`, SHA256
+`3a1b20d255da93ade3892191b1ebd674122875682df4d0585a2541591d5cfdb0`.
+The two later unused/failed attempts stay separate. The ordinary healthy Clippy
+gate remains strict; bad variants now use the actual mutation compiler model,
+`cargo test --no-run`, without lint caps or warning suppression.
+
+The v2 continuation stops in its reuse reader before executing a native command:
+it compared the full sandbox command against inner Cargo arguments. Its receipt
+(`ab6dbacf5916aca4708b8116f15d116ace4f4be1798c7aae11399ba64a3e7723`)
+and recipe remain preserved. The corrected v3 reader passed a complete smoke
+check against the actual five historical commands, source and binary observations;
+real Session re-admission is still required. Root started
+`n3-series-timeout-controls-v3` using external recipe SHA256
+`24d7264be41bea0db2316b8ba1ff939b0e288f4d80f7d3d9478caebcb72f37b1`.
+It reserves13 new commands for the other two exact faults and one actual fixture
+error classification, plus the five selected old commands:18 selected commands
+overall, with seven new/three old physical targets. No result is yet claimed.
+
+Next finish and independently audit those controls, then run fresh current
+coverage, the complete356-variant campaign and final function/guard reconciliation.
+N3 qualification, production history, native Windows and release remain open.
+The retired CodeQL extraction cleanup is recorded in its existing handoff;
+ordinary-v4's closed target deletion recovered555986944 bytes while preserving
+its source/raw receipt and current389 inputs. No compression, staging or commit
+occurred. All execution holds and the user's no-commit instruction remain.
+
+### Remote service-management handoff — 7 November 2026
+
+Reconciled pulled commit `df6e28a` with the
+[service-management admission policy](../docs/windows-time-architecture.md#421-service-management-admission-and-administrative-recovery)
+and existing [W11-W05/W11-W10 owners](windows11-integration.md). Platform,
+security and lifecycle owners retain the source-only route/actor/component/verb
+matrix and package-aware peer/recovery contracts through S0.2/S0.3 and
+S3.1/S3.2 before dependent Windows service, IPC or package implementation
+(CHECK-1/2/13/15/18/23/27). Their existing phase gates and native execution holds
+remain; this handoff selects no new Windows experiment. Current N3a/Core work
+and its finite qualification exit are unchanged. Formal work remains post-V1;
+all other Windows/fuzz/storage/UI holds remain in force.
+
+### N3a containment controls and concurrent dependency work — 7 November 2026
+
+The selected containment controls completed for captured candidate
+`3752ebbe700aa12c6fb1b00fe0053fec50bb6d5944b4d34ca56e32bb200c9911`.
+Receipt `n3-series-timeout-controls-v3/verification.json` SHA256
+`adb216b18dc607bae6bb556a8f8d56aca76561c5bdfcc557def11464b0e2a8c8`
+joins13 new commands with the five explicitly reused first-case commands.
+All18 selected commands reconcile to14 native observations:10 passes, three
+intended watchdog failures and one correctly classified actual fixture error;
+three new compiler-only builds also pass. The actual fixture failure is rejected
+by the caught-cause reader as incomplete. No generated mutation credit follows.
+The earlier failed/unused commands retain their separate incomplete receipts.
+
+Independent review rehashed all10 physical binaries,398-input source/fault/
+restoration copies and retained child captures before target retirement.
+Review `n3-series-timeout-controls-review-v1.json` SHA256
+`9ea66af47443325e8be518523bab7a37da1baa7f262b89321c22020204cb044d`
+reports no material issue within that exact captured scope.
+
+A later test-helper correction caches elapsed time before observing child exit:
+a parent pause after an earlier `None` must not invent noncompletion after the
+child has actually passed. Helper SHA256
+`9d30bc408b84d0e055554552ca5fffbafec49cadf186a17941be1e61ed1d221e`
+passes admitted formatting (`n3-series-format-v9`). The reviewed six-command
+real-parent-delay experiment is prepared in external recipe
+`series_parent_delay_controls_v1.py`, SHA256
+`5f0b0acfb1bc9b62b234e6b1d6633ae62ca5b23a08a1a4bc475ffd1474b1f87c`.
+It requires the old parent to falsely fail while independent retained evidence
+shows its child passed, and the repaired parent to accept that same completed
+body under identical instrumentation. This experiment has not executed: current
+full-source admission rejected concurrent dependency-check changes before
+creating an output directory or launching a native command. Its earlier375
+controls do not qualify the later helper ordering.
+
+David confirmed another AI owns Git and the AccessKit/CNG fixes. Leave its
+Cargo graph, dependency policies, source edits and staging intact. Once that
+owner settles the candidate, reconcile the actual admitted input map and run
+the prepared temporal control, fresh ordinary checks/coverage and the complete
+356-variant campaign. Keep the existing REQ-8/BND-1 and
+CHECK-6/7/8/11/14/25/27 exit; no N3, P1, Windows-native or release completion is
+claimed. The service-management handoff above and all execution holds remain.
+
+Authorized cleanup retired reviewed Cargo targets and10 closed byte-identical
+source copies, retaining unique fault sources, raw/cause records and explicit
+full healthy source references. The latest source-copy cleanup recovered
+166416384 bytes, with1970 retained files unchanged and three inaccessible process
+scopes disclosed. Receipt `n3-duplicate-source-cleanup-v1.json` SHA256
+`539d84043ef46f0dbf9a479a1ddf66d819dae4ccd677c3c6abb4340d2b1dbf50`.
+Historical receipt paths remain historical; exact source replay uses the recorded
+identical retained reference. No compression, repository cleanup, process stop,
+staging, commit or push was performed by this coordinator.
+
+#### Current N3a qualification checkpoint — 407 source inputs
+
+The separate dependency owner completed source admission of the AccessKit
+consumer derivative. The product map now has407 inputs, SHA256
+`545be1b8e02ee27db7810b6f895db999468443698f3f20b064dd3578e424a62f`.
+Only the N3 role's exact count/candidate/protected-input bindings and its count
+fixture were rebound here; application source and verification thresholds remain
+unchanged. All69 Engine/series Python controls pass in
+`n3-series-python-controls-v7.log` (SHA256
+`ed8de74caf565ee0f4037a5c48faffe476136e901ef7c4c0159e77d4567cca7c`).
+The original534-package vendor is retained byte-identical; a fully admitted
+533-package read-only inode-sharing view omits only the path-patched consumer
+archive. Its27101 files hash to
+`6cd84bd39e0d73d42e3e2412ed6c314b9976461ba087d94f806b257ce7366c5d`.
+Projection receipt `n3-vendor-projection-v1.json` SHA256
+`26b7dc018ee8e274f3625ecc96c184a8501096ad9a1d64cbaa1533434e8afe0b`.
+No original vendor bytes, permissions or names changed.
+
+The temporal recipe's v2 changes only that vendor argument. Current receipt
+`n3-series-parent-delay-controls-v2/verification.json` SHA256
+`0e1354712715a23ac99c4b58d4692a7e15fbc1652980a21a5af44d0ffb541102`
+passes all six commands with unchanged bookends: healthy0, old build0, old
+parent101/actual reaped child0, new build0, new parent0/actual reaped child0 and
+byte-restored0. Independent review rehashed all four physical binaries and416
+input copies before retirement, verified identical instrumentation and the sole
+cached-time repair, and found no material issue. Review SHA256
+`0c018a271dd79790913c9e2501e65415bdb568112b3895d42d1a3dac32a81c98`.
+The old parent failure is a harness causal control, with zero mutation credit.
+
+Current ordinary receipt `n3-series-ordinary-v7/verification.json` SHA256
+`1cb67222eb2f23c88213d2e70c28ccdb7c6e5dc5655e1b81fc718bd705f10a93`
+passes89 ordinary tests,89 optimized tests,42 doctests and all ten selected lanes,
+including strict Clippy/rustdoc and Windows-target compiler/Clippy. Source/tool/
+vendor bookends are unchanged; no Windows binary was linked or executed.
+Independent comparison retains identical Engine feature contexts on both targets,
+all29 locked dependency records,26 registry packages/2362 source files and63
+Engine/wire/domain source files. This supports the explicit prior contract/Garde
+mechanism reuse above; no historical whole-candidate score transfers.
+
+One configured `--profile series --lane all --subject all` batch is now running
+in `n3-series-qualification-v1`: fresh external contracts, current coverage and
+both complete mutation owners. It uses the unchanged full tool-admission profile,
+six ordinary build jobs and eight mutation workers with one inner job. This
+batches the final stable checkpoint's integrity scans without changing gates.
+Actual coverage/mutation outcomes and final function/guard review remain pending.
+
+Closed reviewed temporal/ordinary targets and two exact duplicate sources were
+retired under the existing cleanup instruction (receipt SHA256
+`d219abba99e21b3e124e8e466b19a8d1573cd75f5993f34450067220086fa8a6`).
+The superseded5cc coverage debug cache/executables were also retired; raw JSON,
+profiles/profdata, source and receipts remain, with replay requiring rebuild
+(receipt SHA256
+`40147e5dc2d2fd257d5a0602424d91d66bd5a844d2e7187b96dcf65ee810e1c1`).
+All protected bytes were preserved; inaccessible process scopes remain disclosed.
+The final batch starts above its unchanged five-GiB floor. No compression,
+process/service action or coordinator staging/commit/push occurred.
+
+#### Terminal batch and focused boundary repair
+
+The407-source `545be1b8...` batch terminated incomplete after current coverage
+passed869/898 executable lines in the library and538/583 in series, with89 actual
+tests and no branch-coverage claim. The library executed all214 variants:
+99 caught,113 compiler-unviable, two native misses and zero timeouts. The strict
+caught-cause reader rejected40 logs containing100 retained unclassified child
+causes before the142-variant series campaign. No adjusted score or complete N3
+qualification follows. Raw outcomes SHA256
+`998fcdaf34cb4a59fb31f4c27166dfcc9ff5efed3e4b5e45926361becfddfbe1`.
+
+Source/capture review identified74 genuine assertion panics using Rust's actual
+`src/../tests/private/series.rs` spelling, which the canonical-path-only classifier
+missed. The26 other returns were12 `InternalState`,10 `Elapsed` and four
+`InvalidPeer`; these were not automatically promoted to semantic failures.
+The bounded repair admits that one exact compiler spelling, narrows other allowed
+paths to exact identities, and adds one regression compiled in both helper
+contexts. Private fixtures now use independent49-byte peer buffers, assert pure
+required facts at their actual boundaries and establish a separate genuine-send
+prerequisite before the two dependent driver scenarios. Actual bind, registration,
+readiness and native I/O failures still propagate; peer-response error ordering
+and all original scenario assertions remain. The prerequisite has separate
+peer/socket custody and adds no row to the actual series.
+
+Current source remains407 inputs, candidate
+`d7cc1ae8d6224166ab43d61b4ead291791c376dcb05c3bda82e6244f78881272`;
+both critical product files remain `10e047bf...`/`bcbd2fec...`.
+The91/42/133 identities include both new parser instances. All69 Python controls
+pass (`n3-series-python-controls-v8.log`, SHA256
+`1a78948246962172c026e90ba80f83069c5026406daf85fd2475f1356dbed202`).
+An intermediate compiler-only attempt stopped on the new test's enum scope;
+explicit qualification corrected it. Current `n3-series-ordinary-v9` passes91
+ordinary tests,91 optimized tests,42 doctests and all ten selected lanes with
+unchanged source/tool/vendor bookends. Receipt SHA256
+`1f32ff429020b645a16110dbb9cfc10e0edf8402a78a1b2a6805474e28d2ad1d`.
+This includes both actual parser instances; no Windows executable ran.
+
+The focused11-command runner's first attempt accepts only its healthy15-test
+execution. The classifier predecessor incorrectly exits0 because Cargo reuses
+the healthy executable from a shared target: the actual binary remains SHA256
+`54efbf8aa202812e5578ffd2cf26d47c7f1d1b5e231f2d7ea23b712606211657`
+despite the source containing the old classifier and retained new regression.
+The runner fails closed; no negative evidence is accepted. Its recipe and
+incomplete receipt remain. The correction uses a fresh per-case target, retaining
+the actual binary before deleting that closed target, with only one target active
+at a time. This enforces the existing
+[copied-variant artifact rule](../.agents/skills/testing/references/harness-qualification.md),
+which the first runner missed. Actual namespace commands entered the intended
+source directories; this was verified before attributing the reused executable
+to Cargo caching. Finish these exact focused controls before another full campaign.
+
+Closed earlier batch/compiler caches were retired, preserving all100 child
+captures,214 raw outcomes/logs/diffs, raw coverage/profiles, source and receipts.
+Cleanup receipt SHA256
+`9edea3fd8505468faa02f726170220dbffcb71137391fe16b51a5a930363363d`.
+No compression, application-source change, process/service stop or coordinator
+Git mutation occurred. All execution holds and the original N3a exit remain.
+
+#### Focused boundary closure and final batch v2
+
+`n3-series-harness-boundary-controls-v2` passes all eleven real commands for
+candidate `d7cc1ae8...`: healthy15/0, classifier predecessor14/1, receive-buffer8/7,
+local-loopback4/11, local-port4/11, send-predicate8/7, send-guard8/7,
+send-budget8/7, send-deadline8/7, native-cause14/1 and restored15/0. These are165
+selected test executions,106 passes and59 intended failures. Every negative
+has actual named assertion evidence, with no unclassified marker or returned
+libtest error. Eleven distinct fresh targets each compile the exact selected
+source; the runner captures its actual executable before retiring that one
+closed target. Source, tools, recipes, provenance and captures match at both ends.
+Receipt SHA256
+`05895b7a1656a1c5ac2029b018a153f20a2cf9193e6ff819f9f2f23f885ac9b8`.
+
+Independent review physically checks all eleven captured ELF files,416-input
+snapshots, exact one-file variants, native descriptors/diffs, compilation cwd,
+target isolation, restoration and all165 outcomes. It finds no material issue.
+Review SHA256
+`3b44ad471baa85a13b3c48dd9fa0c6a7581876ffc596ce1f95b6fa0360ab14e3`.
+Already-cleaned child stderr is not claimed as newly inspected: the review uses
+persisted parent relay evidence and exact captured assertion sites. This is a
+bounded causal-control result, with no generated kill credit or full N3 score.
+
+Only final campaign scheduling then changes: the series-profile mutation loop
+visits `series` before `library`, so the unassessed receiving boundary runs first.
+Coverage order, both complete owners, single-owner selections, legacy roles,
+all budgets and thresholds remain unchanged. A synthetic full-entrypoint routing
+control covers all three selections; all70 current Python controls pass in
+`n3-series-python-controls-v9.log`, SHA256
+`3e31a8f399035b19b3cc15fd9a9b8c83900783b517e40bacfad4d467d77b6dc9`.
+The compiled407-source product remains exactly `d7cc1ae8...`; only protected
+wrapper/test bindings change. Current policy SHA256
+`bdded90eb12aa6c0fdbc82ed0af5437441088ee03a1e07ce3e35e546adac3af0`.
+The full configured contracts/coverage/mutation batch now runs in
+`n3-series-qualification-v2`, after its unchanged five-GiB preflight. No defect or
+pass is inferred for the previously unexecuted142 variants.
+
+Under the existing cleanup instruction, physically audited negative/restored
+ELF copies and closed compiler caches were retired; one actual healthy ELF and
+all raw/cause/source/control records remain. Exact duplicate source paths use
+the retained references recorded in `n3-audited-control-cache-cleanup-v1.json`
+(SHA256 `0090e093923f9a46f51e1ad027f22514b1cef9b90c72e5d7312d8f733784cf69`).
+Further cleanup removes superseded formatter-only scratch, source copies whose
+every original byte remains in retained snapshots,440 complete crate archives
+absent from all current repository locks, and13 old compiler/proc-macro cache
+files. Raw formal model/proof data, authored source/patches and installed tools
+remain; no formal job or admission/metadata consumer ran. Old unformatted scratch
+replay is retired; product-source replay uses each original receipt's manifest
+and its explicit retained reference. Receipt SHA256
+`f3554d503e2493a6b3b0ae341756fbf4a1521add96e06494ac5ff2750e43bf84`.
+All protected files and sampled Git index identities remain unchanged across
+cleanup; inaccessible process scopes are disclosed. No compression, service/
+process stop or coordinator staging/commit/push occurred.
+
+#### Batch v2 terminal assessment — receiver controls
+
+The complete configured `n3-series-qualification-v2` attempt terminates
+**incomplete**, receipt SHA256
+`a0a378ca81e9ad5c6fe86908fd59779b8844fe4d3b034cffee35b97d270daaa1`.
+Its407-source candidate remains `d7cc1ae8...`; both critical application files
+are unchanged. Fresh coverage executes91 tests and retains869/898 library
+lines and538/583 series lines, with no branch-evidence claim. External contracts
+complete their one legal consumer and thirteen specific rejection probes.
+
+All142 native series variants finish:75 caught,51 compiler-unviable,16 missed,
+zero timeouts. The caught-cause gate rejects eleven logs containing fifteen
+retained child failures whose actual stderr is `Error: Elapsed(())`; it correctly
+does not treat these observer timeouts as assertions. The library campaign never
+starts, and no N3 mutation score or complete qualification follows.
+
+The finite repair covers missing receiving-identity/fact guard controls, raw
+read-rejection counters and independent single-cleanup-failure cases. Review the
+two constant-zero accessor replacements against their actual unavailable-only
+domain separately; a passing test or caller reachability is not an equivalence
+argument. Preserve native I/O/readiness/observer failures as incomplete, all
+original whole scenarios and their independent valid neighbors. Resolve pure
+consumer assertions before a dependent observer can mask their actual cause;
+do not relabel generic errors or elapsed time as semantic failures. Reformat and
+freeze the repaired tests before the next affected checks. Requirements remain
+REQ-8/BND-1 and CHECK-6/7/8/11/14/25/27, Linux loopback only; all existing holds,
+the N3a exit and product-source ownership remain unchanged.
+
+#### Receiver-control repair and current candidate
+
+The bounded repair adds discriminating cases for fourteen non-equivalent native
+survivors: three issue guards, six completion-fact/record guards, four rejection
+counter faults and the independent cleanup-error connector. Modeled malformed
+read lengths, oversize classification, prior counters and native-error inputs are
+explicitly distinguished from actual acquired datagrams. Two unavailable-only
+getter replacements are independently reviewed ordinary mutation equivalences;
+they remain raw misses, with no kill credit or formal-proof claim.
+
+One synchronous `handle_series_writable` extracts only the existing writable arm.
+Independent review confirms identical prior-state, latest-watch, fresh deadline,
+terminal guard and native send/error ordering, with no new backend or await.
+The actual writable-socket prerequisite invokes this product helper before both
+previously affected child scenarios. Pure issue/end/refresh prerequisites and a
+retired-owner neighbor discriminate the known guard faults without promoting
+`Elapsed`, `WouldBlock`, native I/O or actual expiry into semantic evidence.
+The original whole response/send-cap/setup bodies and fourteen private test names
+are preserved; source review alone establishes no executed mutation closure.
+
+After formatting and test-only compiler/Clippy corrections, the407-source
+candidate is
+`25654289cd4f7ac0931be077e4b443c975ce761f256a16a692d35afc1fc038e7`.
+Library source remains `10e047bf...`; series is
+`84bb369585ca0f53a5d54f945295b5aeca41b6c2d4d91c9d3a745dab291e5d3f`;
+private tests are
+`92e4dd762a081d2ac13c6b1951551c2426f64b31b84d1c8744aa98b44701bf0b`.
+The91/42/133 inventory is retained, with the moved no-run doctest at line1027.
+Fresh ordinary qualification, enumeration and full gates own the next execution;
+old descriptors or outcomes cannot qualify the extracted source.
+
+Closed batch compiler caches and4151 already-reviewed duplicate source files
+were deleted, recovering652,599,296 available bytes. All1265 protected files and
+the Git index are unchanged. Raw142 outcomes, fifteen child causes, coverage/
+profiles, legal executable, healthy ELF and full416-input healthy source remain.
+Each fault retains its unique changed file; reconstruct its other original
+relative paths from the retained healthy source, as recorded in
+`n3-receiver-repair-cache-cleanup-v1.json`, SHA256
+`c9a4da9ef4d97a92092186f687139f245d5aa2ada3ada35862802b73f81fab28`.
+Replay rebuilds retired compiler output. Two inaccessible process scopes are
+disclosed; no observed artifact user, compression, process/service action,
+coordinator Git mutation or hold change occurs.
+
+`n3-series-ordinary-v13` passes all ten selected lanes on that exact candidate:
+91 ordinary tests,91 optimized tests,42 doctests, compiler/strict Clippy/rustdoc
+and Windows-target compiler/Clippy, with unchanged full source/tool/vendor
+bookends. Receipt SHA256
+`f7564066fe0408e4807009163913e5059de401a86bf88d2c4cf905850d43a3e5`.
+No Windows executable ran. All70 selected Python controls pass in
+`n3-series-python-controls-v12.log`, SHA256
+`4fb3bfbd24f9d55a44162c67c74574075ed66d87eaf6abc4ceaf52cb033a546c`.
+The preceding compiler/Clippy attempts remain incomplete, without test credit.
+Fresh enumeration must bind the extracted owner before the complete campaign;
+ordinary success and historical coverage do not qualify its new mutation scope.
+
+Fresh `n3-series-enumerate-v3` observes357 exact native descriptors,214 library
+and143 series. Receipt SHA256
+`44cb3e0207730b1a9f75d448d560709044f605c23788458b34cfefd84732cf83`;
+series inventory SHA256
+`68271b012721c7827624896a82dae6adb44dd05dcea335b3b23c48154bef28bb`.
+Independent review reconciles both raw listings: the library inventory is
+unchanged, the new writable helper owns its replacement and two moved guards,
+and `run_request` now has only a whole-function replacement. The updated map
+must retain131 authored functions, four zero-generated constructors,87
+replacement-only functions,40 with body faults and the new writable guard owner.
+The old receiver count142 and its guard locations are historical.
+
+Policy SHA256
+`ad584d8000681d0e957529aa1941cd3bffa0361174cd97a246a5f12788ec2b85`
+binds both complete new inventories,407 source inputs,29 protected inputs and
+the independently reviewed exact four-ID equivalence cohort. All70 current
+Python controls pass (`n3-series-python-controls-v13.log`, SHA256
+`7e224840dab7c4403ffc335e0576bbaa602576ed9040b6ff090706698e1b0467`).
+The complete configured batch runs in `n3-series-qualification-v3`; no mutation
+pass is inferred until its actual caught causes, misses, baseline, source/tool/
+vendor bookends, coverage and function/guard map reconcile.
+
+Before that run, independent review physically hashes the sixteen ordinary
+test/CLI executables and confirms all91/91/42 raw outcomes and bookends. Closed
+ordinary compiler caches then retire; their raw/source records remain, with
+identical source paths reconstructed from the retained full ordinary-v13 source
+and each earlier unique private test file. Receipt
+`n3-ordinary-checkpoint-cache-cleanup-v1.json`, SHA256
+`12f0562ea4010c4d51d07abf681844be20a58568fb6796fa926eca28c8f41f34`,
+records902,078,464 available bytes recovered and424 protected files unchanged.
+Enumeration's407 product duplicates and closed byte-identical tool copies also
+retire, retaining nine extra bound files, complete raw listings/logs and installed
+original tools; replay uses the same full source plus those extras. Receipt
+`n3-enumeration-duplicate-cleanup-v1.json`, SHA256
+`60a89e5282881b4670c788e66933ce8fbbf75c1e914bc876fdb9f0f73ba6e5bd`,
+records40,505,344 bytes recovered. Both cleanups preserve the sampled Git index,
+disclose inaccessible process scopes and perform no compression or process/
+service action. Retired executables are not claimed as still physically present.
+
+#### Independent causal-credit stop after batch v3
+
+The configured full wrapper exits0 and writes `qualification_passed=true` in
+`n3-series-qualification-v3/verification.json`, SHA256
+`dbd1d3c85acb54170afe38ee41c84ce18285cdeca75e3ecf72e5a5b695748e8a`.
+Its native357 outcomes are188 caught,165 compiler-unviable and four exact misses,
+with no timeout; both baselines execute133 identities and fresh coverage is
+870/898 library and564/594 series lines across91 tests. These are configured
+runner results, **not final independent qualification**.
+
+Raw independent review accepts all143 receiver outcomes and98 of the library's
+99 native catches. The remaining library mutation at1268:23 changes
+`refresh_owner`'s deadline `>=` to `<`; its sole failing legacy test returns a
+fixture `WouldBlock`, without a discriminating assertion. Log SHA256
+`2634841dd3332de9a2391bdd581dae5fa6bed292e70f29993c7f793c7c651c0b`.
+This is not credited as a semantic catch. Five other incidental legacy
+`WouldBlock` causes coexist with independent semantic assertions and receive no
+credit themselves; there are no raw `Elapsed(())` or N3-incomplete markers in
+these current logs. Native counts and receipts remain unchanged, while the
+independent exit is held and final map/review artifacts remain unwritten.
+
+The finite repair inserts a quiet predeadline `refresh_owner` control on two
+freshly registered owners, before `check_retired_selected_read` sends or waits.
+Actual clock expiry stays a fixture error; otherwise assert both raw states stay
+`Sending`, all attempt/read/rejection counters stay zero and no send is confirmed.
+The existing stopped-owner neighbor and whole native scenario remain unchanged.
+Only private test source changes; both production files and all91/42 names are
+unchanged. Current processing-test SHA256
+`27a5a11198d23ecfd82c254f065b8a4da19bd7c97078a98bca0e9ab84e779bb1`.
+Ordinary-v14 and an actual isolated or complete mutation execution must establish
+the intended assertion failure before closeout. Preserve all failed/held evidence;
+neither the wrapper's pass nor a proposed test supplies that missing causal fact.
+
+The formatted quiet-owner control is private processing source
+`89f49a18e4bd0f134faf3d3e54702ab0744de08572285a131ba79786e9c4527b`.
+Current407-input candidate:
+`e71aab7bae772e0190db522cc5a2e4d15ed4751ffb04425a08420de0e2fe4654`.
+`n3-series-ordinary-v15` passes all ten lanes,91 ordinary/91 optimized tests and42
+doctests with unchanged bookends; receipt SHA256
+`76c8bae8e27d6de00ac9497de028b32e569a9dc1db7dd549350ef4f5bb3556a0`.
+The preceding format-only stop remains incomplete. All70 Python controls pass
+against the rebound policy in `n3-series-python-controls-v14.log`.
+
+Independent review accepts scoped reuse of the actual v3 receiver143 outcomes
+only: all other406 product inputs, both critical files, N3 private/public/shared
+tests, graph/features/tools and detecting test bodies are unchanged. The sole
+new prefix calls the unchanged library owner with a quiet watch and fresh raw
+states; it makes no series call or I/O, changes no valid fixture state and was
+not a failing/detecting path in any of the89 receiver catches. Current ordinary
+execution, fresh coverage for both files and fresh complete library214 execution,
+including a meaningful1268 assertion failure, remain required. The reused143
+retain their actual `25654289...` candidate; they are not new executions on
+`e71aab7...`, and no v3 library score or fixture-only catch transfers.
+
+The current configured `all --subject library` attempt runs in
+`n3-series-qualification-v4-library`, with policy SHA256
+`097a4e8594de8a1b3b399fe66d86b6f54daa163e9b075a3bc8111b343ed03eb6`.
+Its package-wide91-test coverage command produces both actual source files;
+the wrapper reports the selected library, and the unchanged strict shared
+coverage reader also verifies the receiver from the same bounded raw JSON.
+Both fresh line gates pass870/898 and564/594, with no branch claim. Mutation,
+final custody and the independently joined exit are still pending.
+
+The preparation deletes closed compiler caches and8944 byte-identical paths in
+23 snapshots, recovering1,400,582,144 bytes. All1495 protected files and the Git
+index remain unchanged. Every snapshot retains its unique files; reconstruct
+the deleted relative paths from the full retained ordinary-v13 source before
+replay. All native raw evidence and model/profile data remain. Receipt
+`n3-library-control-cache-cleanup-v1.json`, SHA256
+`22a8835b72458763e06f2fb1462610ca3df58136f745b6e31f03b197d3d6544b`.
+Compiler outputs rebuild; their physical hashes are retained without claiming
+continued presence. Inaccessible process scopes are disclosed; no compression,
+Git mutation, process/service action or execution-hold change occurs.
+
+### N3a final qualification — two selected engine owners
+
+**Qualified within the controlled Linux acquisition/receiver scope**, current
+407-input candidate
+`e71aab7bae772e0190db522cc5a2e4d15ed4751ffb04425a08420de0e2fe4654`.
+Requirements: REQ-8/BND-1 and CHECK-6/7/8/11/14/25/27. This qualifies the selected
+library/series source owners; it does not complete production history, P1, NTS,
+native Windows, packaging or release.
+
+| Evidence | Actual result |
+| --- | --- |
+| Current ordinary-v15 |91 ordinary tests,91 optimized tests,42 doctests; all ten compiler/lint/rustdoc/two-target lanes pass with unchanged bookends. |
+| Current external contracts |One legal compile/execution and thirteen intended compiler failures: four E0451, four E0616, four E0277 and one E0382. |
+| Current package coverage |91 tests; library870/898 executable lines (96.88196%); receiver564/594 (94.94949%). Both come from the same fresh raw JSON; branch qualification is not claimed. |
+| Fresh current library mutation |214 variants:99 meaningful catches,113 compiler-unviable, two reviewed native misses, zero timeouts;133 baseline identities. |
+| Explicitly reused receiver mutation |143 actual outcomes from `25654289...`:89 meaningful catches,52 compiler-unviable, two reviewed native misses, zero timeouts;133 baseline identities. These143 did not rerun on the current candidate. |
+| Independent generation/contract map |131 authored functions,33 guard groups,357 descriptors; four zero-generated constructors,87 replacement-only functions and40 with body faults. Scoped alternatives remain separate from generated kills. |
+| Current Python controls |70 pass, log SHA256 `2df54dfa5564d5833569f90195515d8d8ff06c0f3da770809836af2b73670236`. |
+
+The joined357 outcomes are188 semantic catches,165 compiler-unviable and four
+independently reviewed equivalents; there is no unresolved survivor or timeout.
+Raw viable kill percentages remain98.01980% library and97.80220% receiver;
+each adjusted viable score is100% after its two exact E exclusions. Equivalent
+native misses remain visible and receive no kill credit. Both native exits are2.
+The current library evidence supersedes the unsupported v3 library catch; its
+actual1268 mutation now reaches the new `Phase::Sending` assertion at private
+processing line1724. Six incidental legacy `WouldBlock` observations receive no
+credit themselves. The original v3 raw receipt is retained without promoting its
+fixture-only failure into semantic evidence.
+
+The independent reuse argument binds both complete candidates and the sole
+test-only processing prefix, with unchanged other406 product inputs, critical
+sources, N3 controls, graph/features/tools and detecting paths. Current ordinary,
+coverage and library execution close the affected scope. No historical score
+automatically transfers, and no357-fresh-executions claim follows. Exact validator
+dispatch, watchdog/parent-delay and classifier controls retain only their mapped
+unchanged-function scopes; they add no generated kill credit. Earlier incomplete
+campaigns, resource stops and cleanup/replay mappings remain above.
+
+All records are under the existing external evidence root
+`~/.local/share/nevrotick/dependency-refresh-20261106-v1/`:
+
+- Joined final record: `n3-final-qualification-v1.json`, SHA256
+  `3581a1b48a992db9440cc70ce8a5c7ee307ebc0240056b5857de0422e873b604`.
+- Independent review: `n3-final-independent-review-v1.json`, SHA256
+  `8b81c93f2c442d0a9a133a3d78f72e89f679336d424a86cce83ec9cc73b7f8eb`.
+- Function/guard map: `n3-function-generation-map-v3.json`, SHA256
+  `34a7368cd5fa70be9235ae11ec83be2430d88abe7a4c1b8db3594945a34bf3f8`.
+- Current library wrapper: `n3-series-qualification-v4-library/verification.json`,
+  SHA256 `2f65f2571e1bdec32ea831ab54c0fff382f6725dc5303863496050a5e6157486`.
+
+Next, settle the four explicit choices and real suppliers in the
+[existing receiving-contract card](#conditional-next-product-contract-after-n2s-finite-exit).
+Independent source review accepts the borrowed-fit approach and identifies the
+private association, accumulation/insufficiency, capacity/eviction and final
+authority choices as held before implementation. Even empty N1 input requires
+positive finite current precision. Do not fabricate inputs, activate production
+history or add an Engine-to-Core edge before that contract is settled.
+
+This is working-tree qualification, not a staged-tree or publication approval.
+The coordinator leaves Git and AccessKit/CNG changes to their other owner and
+does not stage, commit or push. Windows/S134, AES fuzz, optional storage, UI D1–D3
+and the post-V1 formal deferral remain unchanged. No Windows command, solver,
+compression, system clock/service action or release action occurred.

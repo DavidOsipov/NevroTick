@@ -440,6 +440,14 @@ Inspected: `AUDIT.md`, `AGENTS.md`, documentation guide, repository independent-
 
 **Smallest correction/check:** before pilot execution, bind the actual SQLite build/VFS and temporary-file placement to an observer that includes transient peak allocation, failed cleanup and migration copies. State whether the ceiling covers all such output. Before native use, verify actual creation-time rights under the final service identity, including another service sharing its account. Do not infer those rights from a PRAGMA or from the synthetic pilot. **Owner:** storage/QA, then platform security; DATA-20/23, OPEN-ST-01, CHECK-15/17/21. No new encryption decision is required to close this prerequisite.
 
+**7 November source enrichment:** use the [service ambient-path findings](../docs/plans/windows11-integration-follow-up.md#ambient-paths-and-conditional-startup-cycles)
+to record actual environment/profile and dependency temp-path inputs under the
+selected account before login. Pair admitted forced spill with missing,
+inaccessible, overridden or redirected locations. `GetTempPath2W` verifies neither
+existence/access nor symlink safety; no silent user-writable fallback, account
+expansion or mandatory temp API follows. Keep real live-file custody, peak
+accounting, failed cleanup and current pilot/native holds with this same owner.
+
 ### SEC-A03 — The decoded-batch limit needs a separate decoder-workspace rule
 
 **Classification/severity:** prerequisite for a later compressed lane, not the first Q0/Q-J pilot; Medium. **Confidence:** high for streaming Zstd's distinction; the selected API/build is still unknown.

@@ -177,3 +177,540 @@ credit or historical-score transfer. Fresh complete descriptor, source,
 candidate, review-hash and native-outcome admission remains required before
 the current campaign's gate can pass. No Cargo, formal or Windows job was run
 for this revalidation.
+
+## Refreshed graph revalidation — 6 November 2026
+
+Reviewer `/root/rational_equivalence_review` independently revalidated only
+`ENGINE-COHERENCE-LOWER-EQUALITY` and `ENGINE-COHERENCE-UPPER-EQUALITY` on the
+refreshed 374-input product map
+`cb2925bb1288a0d844ec7ce702ffa88a0155be4530dd851dda7e06d20fad25f3`.
+Current files match the retained dependency-qualification map. Measurement
+source remains
+`85089611c6e2316beeb37f4b060ebec88b1db8686974a81a39c690dbae4fd648`;
+the complete 1,618-byte coherence contract/body remains
+`9032c1fe2ef9540906a015c3f7115f2addcd54f2f6b02250fb12c1e032e38865`.
+This continues the named independent review rather than relabelling it as a new
+fresh-context review.
+
+The graph/Rustup refresh changes neither the helper, its raw
+`SoftwareClock`/`ConvertedWall` domain nor the selected Rust 1.99.1 duration and
+checked-integer operations. Tokio's updated macro/Syn edge does not execute
+inside this pure helper. Reversed bracket, unavailable duration, narrowing and
+wall-subtraction failures remain identical before the comparisons. On success,
+ordered endpoints establish nonnegative `lower<=upper`, including Windows'
+small-negative interval clamp to zero. At lower equality the changed branch
+computes exact checked `lower-lower` rather than zero; at upper equality it
+computes exact checked `upper-upper` rather than zero after the identical first
+branch. All other results, errors and absence of allocation/I/O/state/lifecycle
+effects agree. Zero-width brackets remain legal: their separate `>` to `>=`
+guard variants are still non-equivalent.
+
+The retained `rational-seconds-engine-enumeration-v2` contains 99 measurement
+descriptors. Canonical complete descriptors excluding native `diff` are
+`0b710d00684a4a9fe260c6c5d35063e5996a9359e39380fc72decdaa6b7d3a3a`
+for557:29 (`<` to `<=`) and
+`364f2471bb106936bdb7f5568530c76e127946296dfcf141121dfcb3a8d15970`
+for561:26 (`>` to `>=`). The coordinator must match fresh descriptors and
+current source/candidate/review hashes and actual native outcomes before
+adopting either E entry. Retained enumeration is not current execution. These
+arguments supply no kill credit, historical-score transfer or retroactive pass
+for an incomplete campaign. No Cargo, native Windows, formal or solver job ran
+for this revalidation; ordinary per-file qualification remains the next exit.
+
+## ENGINE-NOMINAL-ZERO-SIGN
+
+Independent reviewer `/root/rational_equivalence_review` inspected the new
+native survivor over `nominal_seconds`' complete raw `i128` numerator and `u64`
+denominator domain, including zero denominator, zero numerator and `i128::MIN`.
+Verdict: **independently justified equivalent**, conditional on final candidate
+and configured descriptor/source/review/outcome admission. The measurement source
+is `85089611c6e2316beeb37f4b060ebec88b1db8686974a81a39c690dbae4fd648`;
+the actual shared constructor source is
+`2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438`.
+No caller restriction to today's nominal capture envelope is assumed.
+
+Exact native descriptor: package `nevrotick-engine`, file
+`crates/nevrotick-engine/src/measurement.rs`, genre `BinaryOperator`. Its exact name is
+`crates/nevrotick-engine/src/measurement.rs:754:29: replace < with <= in nominal_seconds`;
+replacement `<=`, operator span754:29–754:30. Function `nominal_seconds` has
+return type `-> Result<RoundedRationalSeconds, MeasurementRefusal>` and
+documentation-inclusive span741:1–762:2. The canonical complete descriptor
+SHA256, excluding native `diff`, is
+`21c6b249ac1075b0320ff846a839c688b9693e73ffbf3f886ef5ed6be14822d9`.
+It matches both the actual `engine-measurement-coverage-mutation-v1` outcome and
+the retained `rational-seconds-engine-enumeration-v2` descriptor exactly.
+
+For every nonzero numerator, `<0` and `<=0` choose the same sign. Both variants
+then execute the same nonzero-denominator check, `unsigned_abs`, shared
+constructor and fixed-error mapping with identical arguments. This includes
+`i128::MIN`, whose unsigned magnitude is `2^127`; no overflowing signed `abs`
+is introduced. Thus all returned exact tuples, floating bits/bounds, validation
+and checked-operation failures, allocations and other effects agree.
+
+For numerator zero and denominator zero, the sign branches differ, but the same
+`NonZeroU64::new(0)` refuses before either constructor call. Both return the same
+fixed `MeasurementRefusal::Arithmetic`. The closed Copy sign enum has no Drop,
+allocation, I/O or state effect, so this different temporary sign is unobservable.
+
+For numerator zero and any positive `u64` denominator, both have magnitude zero
+and the same checked denominator. Original chooses Positive and mutant chooses
+Negative. The actual `RoundedRationalSeconds::new` immediately replaces either
+requested sign with Positive when magnitude is zero, **before** calling
+`round_magnitude` or `publish`. Both therefore execute the same exact-zero
+conversion and the same validation/publication path with identical inputs:
+retained Positive sign, numerator zero, original denominator, positive-zero
+seconds and positive-zero arithmetic bound. No validation report or allocation
+path differs. The original requested sign is neither retained nor formatted.
+There is no ambient read, callback, partial output or owner-state effect.
+
+This is materially different from the historical unguarded publication OR/XOR
+case at432:59: that mutation changed the bits presented to Garde and its report
+allocation path for raw negative zero. That historical case remains **not E**.
+Here canonicalization precedes every downstream mathematical/validation use of
+the only differing temporary value. Any movement/removal of that canonicalization,
+change to the sign type/effects, wrapper validation order or constructor/consumer
+behavior requires renewed review of this argument.
+
+The native v1 campaign's raw result remains99 variants:70 caught,26 unviable,
+3 missed and0 timed out. Its raw `outcomes.json` SHA256 is
+`94cb742c5cda5e53414bd95457786b04910fc3e88c802e7871ef80ea8a675f0f`;
+this variant's raw diff SHA256 is
+`cde36d47728a94c35f2d9691961f1c2c01c447fcd0367bd6df0a433d28e3728d`
+and raw log SHA256 is
+`107e03888c5202303670c911dba6b243ce57dd5e6a62b14c888ad0e243886b46`.
+The wrapper receipt originally bound product map
+`cb2925bb1288a0d844ec7ce702ffa88a0155be4530dd851dda7e06d20fad25f3`
+and remains **incomplete** after bound-input drift. Final complete-candidate
+identity awaits the coordinator's MSRV reconciliation; this source-bound
+equivalence does not admit the drifting tree or supply a current gate pass.
+Retain the missed outcome and show any later E adjustment separately, with no
+kill credit. This review ran no Cargo, Windows, solver or formal job and changed
+no source, controller, policy or execution hold.
+
+## Commit-age fallback review — 7 November 2026
+
+Independent reviewer `/root/rational_equivalence_review` reviewed the two
+`commit_reply` counter-update survivors below under the existing ordinary
+CHECK-7/8/11/14/25 ownership, timing and mutation contracts. Verdict:
+**independently justified equivalent for the pinned Linux host configuration**,
+subject to exact configured source/descriptor/review/outcome admission. This is
+a source argument, not an executed formal proof or a killed-mutant result.
+The three historical measurement E cases above retain their separate scopes.
+
+The retained `relative-bridge-library-gates-v1/verification.json` binds the
+376-input product candidate
+`484784f792cce9d4ee58b7ba78dc7eb712ab728e3b013b3cb41a0b3e979f5019`.
+Re-admitting its frozen `work/source` reproduces that exact product digest;
+the report's larger 384-entry `source_sha256` also includes eight execution
+helpers and is not the product-only map. Current and frozen
+`crates/nevrotick-engine/src/lib.rs` both have SHA256
+`6f3c6eb2f491de7f27a89f8fba84556e818874a9c875643b08081206f5dd4d46`.
+The 2,066-byte adjacent contract and complete `commit_reply` body, from
+`/// Commit checked packet facts` up to the next helper's documentation, hash to
+`307ec2ede4f337700543029ce2664e57f5958338286f1130a8b1d1c600653290`.
+Any later test/helper change has a new candidate that the coordinator must bind;
+this review does not manufacture that identity or transfer a campaign pass.
+
+### Full helper boundary, counterexample search and effects
+
+The argument applies to every valid `LiveSlot`/immutable `StagedReply` state and
+every representable valid `Instant` pair admitted at this helper, independently
+of the present `process_reply` caller. No deadline, capture chronology or
+caller-provided nonnegative-age precondition is assumed. Invalid Rust values,
+data races and corrupted private standard-library representations are outside
+the safe typed domain.
+
+First, any different request/run identity, peer, local endpoint or profile, or
+any Sending/Done phase, returns identically before either age check. For a
+matching Pending state, the helper itself compares the immutable copied
+`processing` value with `candidate.read.mono_after`. Every strictly smaller
+value takes the unchanged earlier rejection update and return. This includes
+a one-nanosecond predecessor and a physical clock anomaly whose stored value
+actually moves backward. Both originals and mutants have the same earlier
+counter effects, including any counter-bound failure in an outlying raw state;
+neither proposed mutation changes that earlier update.
+
+The unchanged explicit order guard is at 1330:5–1333:6; the checked-duration
+`None` fallback is at 1334:5–1337:7, with its only changed operation at 1335.
+Only stored pairs with `processing >= read.mono_after` reach the checked
+subtraction. In the selected Rust 1.99.1 Linux implementation:
+
+1. Public `Instant` and its Unix `Instant`/`Timespec` representations derive
+   total `Ord` from the same stored seconds/nanoseconds used for subtraction.
+2. Public `checked_duration_since` calls Unix `checked_sub_instant`, which
+   returns `self.t.sub_timespec(&other.t).ok()`.
+3. For `self >= other`, `sub_timespec` returns `Ok(Duration)` directly.
+   Its full signed-seconds difference fits `u64`, including
+   `i64::MAX - i64::MIN = u64::MAX`. If nanoseconds require a borrow, ordering
+   establishes strictly greater seconds, so decrementing the later seconds
+   cannot underflow and the result still fits. Normalized nanoseconds stay
+   below one billion. Equal endpoints give `Some(Duration::ZERO)`.
+
+Thus the `None` branch containing the two changed counter operations has no
+execution in this complete valid host domain. Endpoint equality, adjacent
+nanoseconds on either side, borrowing across a seconds boundary, negative
+representable seconds and both signed-seconds extremes do not supply a
+counterexample. These cases were challenged by source arithmetic; this review
+did not execute new Rust cases or claim that all internal extrema are
+constructible through today's public producer.
+
+Consequently every executed instruction path, return, rejection counter,
+`last_rejection`, send/read history, terminal transition and result is the same.
+For accepted control/header paths the computed age is identical; the same
+measurement update, `Box` allocation, `Arc` reference-count changes and retained
+socket/run/request ownership occur. Borrowing, panic/allocation-failure paths,
+drops and eventual resource cleanup are unchanged. In the unreachable branch,
+decrement could otherwise underflow and multiply-by-one would otherwise omit
+an increment: those operations are not arithmetic identities for this counter,
+and their equivalence relies on the helper-local guard and pinned subtraction
+implementation, not on bounded receive counts or missing assertions.
+
+The public standard-library warning about monotonicity does not overturn this
+argument: logical capture chronology can disagree with stored numeric order,
+but the helper checks stored numeric order before subtracting those same
+immutable values. There is no new OS clock read in Linux's subtraction.
+Source/guard reordering, different `Instant` semantics, mutable operands or a
+new path into the fallback requires renewed review. Retain the defensive
+fallback and the explicit predecessor guard; neither is removed by this review.
+
+### Pinned primary source and platform limit
+
+Primary source was read from the actually selected
+`/home/david_osipov/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/`:
+
+| Source | Relevant lines | SHA256 |
+| --- | --- | --- |
+| `std/src/time.rs` | 153–156, 340–342 | `dbf93afc64e22548a08fbcfa68290a63b657933eb006ee6670270f6eddc0f9c3` |
+| `std/src/sys/time/unix.rs` | 49–52, 77–79 | `2250ca181d117737d32734c50156a7a9e74852251a17bf70b2a002b8d6fbac43` |
+| `std/src/sys/pal/unix/time.rs` | 27–31, 112–145 | `6e1caa7b5e1c9a26b0b8cd02d8fd67c0fc57e4de11c89877d01c2b69eb32031a` |
+| `std/src/sys/time/windows.rs` | 13–18, 49–58 | `3e344b796c406f5446dc0d31bb7737302723f21b4c606ed2b30794731e9b53de` |
+| `core/src/time.rs` | 79–85, 726–741 | `12efe985ec205c32a8813a64c889464f5d7692d3a5fe97ab3e12088d9964b526` |
+
+The pinned Windows source also derives order from its stored `Duration` and,
+for an ordered pair, takes `Duration::checked_sub`, which succeeds. Its
+small-negative epsilon clamp explains why the explicit predecessor guard is
+necessary; the helper rejects those pairs before the clamp. This is supporting
+Windows **source evidence only**. The actual reviewed mutant executions and
+E accounting are scoped to `x86_64-unknown-linux-gnu`; no native Windows
+qualification, clock accuracy, lifetime campaign or execution-hold release is
+claimed.
+
+## ENGINE-COMMIT-DURATION-FALLBACK-SUB
+
+Exact native name:
+`crates/nevrotick-engine/src/lib.rs:1335:23: replace += with -= in commit_reply`.
+Package `nevrotick-engine`, file `crates/nevrotick-engine/src/lib.rs`, genre
+`BinaryOperator`, replacement `-=`, operator span1335:23–1335:25. Function
+`commit_reply` has native `return_type` `""` (implicit unit) and
+documentation-inclusive span1315:1–1364:2. The complete typed descriptor,
+excluding rendered `diff`, hashes to
+`7367d98456163b7ac5194b8423d289121a3b30bc1e60910bc67f0f3dfb294c39`.
+It matches the actual v1 listing and `MissedMutant` outcome exactly.
+
+The full helper argument above applies: the changed `slot.rejected -= 1`
+exists only in the unreachable checked-duration `None` branch. No execution
+reaches its potentially different counter result or underflow behavior.
+Actual Build and Test phases both report `Success`; the raw log ends
+`*** result: Success` and contains 101 passing tests across 68 ordinary records
+and 33 doctests, zero failed/ignored records and zero observed resource-error
+markers. Raw diff SHA256 is
+`788558275d28d7cd5192d70ab9df35d514638f8733bf2bc5dbd2385afb60ce80`;
+raw log SHA256 is
+`dfe9276d20199e875861d4250dc13c390d13b6205a901bccdd89d8c0019989e9`.
+These observations establish the actual survivor and healthy execution, not
+the equivalence argument by themselves.
+
+## ENGINE-COMMIT-DURATION-FALLBACK-MUL
+
+Exact native name:
+`crates/nevrotick-engine/src/lib.rs:1335:23: replace += with *= in commit_reply`.
+All descriptor fields and spans are the same as the preceding case except
+name and replacement `*=`. The complete typed descriptor, excluding rendered
+`diff`, hashes to
+`640fe4b14f5d217b3662ca08f74bcfee0ad41eff9d9a613434fee7e0f15178d0`.
+It matches the actual v1 listing and `MissedMutant` outcome exactly.
+
+The full helper argument above applies: the changed `slot.rejected *= 1`
+exists only in the unreachable checked-duration `None` branch. Multiplication
+by one is not the original increment; absence of any execution of this branch
+is the reason their helper behavior agrees. Actual Build and Test phases both
+report `Success`; the raw log ends `*** result: Success` and contains 101
+passing tests across 68 ordinary records and 33 doctests, zero failed/ignored
+records and zero observed resource-error markers. Raw diff SHA256 is
+`d0e9117c3c6a09ce8515693dfcc051f27aaa8074b4925342cb9a11835ba0c887`;
+raw log SHA256 is
+`7a1d6210e3eaf59a744ffdcdcae7758ae33c2d50f450989d5373b545a9c0fd5a`.
+
+### Retained outcomes and adoption boundary
+
+Both raw logs/diffs remain under
+`~/.local/share/nevrotick/dependency-refresh-20261106-v1/relative-bridge-library-gates-v1/work/mutation/library/mutants.out/`.
+The exact raw `outcomes.json` SHA256 is
+`b85ba86ab45e947c51cd508409c514770a6b832ef0ac5a178e2ec2d498c47597`;
+the wrapper `verification.json` SHA256 is
+`2be4368a1b950814ab85a70363e72a4465f39cc9d4fcb3bb429ecc6ddd728c19`.
+The unmodified baseline also completed 101 passing tests without failed/ignored
+records; its raw log SHA256 is
+`80eaf7c9da03391912cd2786f752db0210e7571f7d52a040d9f4472764ad9a18`.
+The two mutant logs and baseline were independently checked for disk-full,
+spawn/execution/permission, allocation-failure, panic, FAILED and TIMEOUT
+markers; all selected marker counts were zero. This bounded scan does not
+characterize the campaign's separate timeout causes.
+
+The v1 raw campaign remains 211 variants: 92 caught, 114 unviable, 2 missed and
+3 timed out. Its mutation command exited 3 with no runner-level `failure`,
+and the wrapper remains **incomplete**, `qualification_passed=false`.
+Keep that raw outcome unchanged. Neither E receives kill credit; the three
+timeouts remain unresolved by this review. Fresh final candidate/source/review
+bindings, exact descriptor matching, separately displayed E adjustment and
+the remaining ordinary gate results are still required. No product, policy or
+controller was changed for this review. No Cargo, native, solver or formal job
+was run; post-V1 formal deferral and all other execution holds remain in force.
+
+## N3 current series fallback pair — 7 November 2026
+
+This is a new source-bound review for the explicit `series` profile, not an
+inheritance of either historical engine E cohort above. Independent reviewer
+`n2_arithmetic_independent`, with a separate challenge by `series_role_review`,
+reconciled the actual current descriptors and the installed primary sources.
+The source-only verdict is **independently justified equivalent for the pinned
+Linux host configuration**, over the full valid helper domain below. No formal
+compiler/solver job, Windows execution or new mutant execution was performed by
+this review. The coordinator separately observed the terminal native outcomes.
+
+The reviewed 388-input product candidate is
+`5cc85952bffb47333fcfda3cfd89a64b061ed20f12b2b42eb1283b00b9e6244e`.
+Current and frozen enumeration `crates/nevrotick-engine/src/lib.rs` have SHA256
+`10e047bf2953becf82b9b6ce714dfcaf06a292f98084702c762eefc757423821`.
+Its complete adjacent contract and `commit_reply` body, lines1324–1373 inclusive,
+are 2,066 bytes with SHA256
+`307ec2ede4f337700543029ce2664e57f5958338286f1130a8b1d1c600653290`.
+The current series owner is
+`bcbd2fec35a0e498e7ef05e9470d188f8a1ef225b5d32c1bd2ae26843c7bd515`.
+Changes to other test inputs require a newly bound complete candidate and actual
+outcomes; these recorded identities are not a future-candidate admission.
+
+The actual `n3-series-enumerate-v2/verification.json` SHA256 is
+`69587fde48e56808f922e42e615146bfd9af7d0fbe2ba84a77b1785c1b87680f`.
+Its 214-descriptor library inventory has canonical SHA256
+`b11ba4426343ee85bc7fd2db73f65bcd5d9f948d261c2fe0c5e5bfcf0e10375b`;
+the exact captured native library listing bytes hash to
+`908b7655df2f2d8f1c4ce3bbbc24ed8404860267af3d84a376e3a827f4b65f59`.
+Enumeration selected package `nevrotick-engine`, the library file, default
+features and the pinned Linux host toolchain. It establishes no execution score.
+
+### Complete helper domain and effects
+
+The argument covers every valid `LiveSlot` state, immutable `StagedReply` and
+representable valid `Instant` pair admitted by this helper. It does not narrow
+the helper to today's `process_reply` or `publish_series_reply` callers, assume
+clock monotonicity, impose capture/bracket chronology, require a successful
+measurement, or rely on a bounded normal rejection count. Invalid Rust values,
+data races and corrupted private standard-library representations are excluded
+by the safe typed domain, not by an invented caller precondition.
+
+Mismatched request/run identities, endpoints or profile, and any non-Pending
+phase, return unchanged before either time check. For a matching Pending state,
+the helper-local raw predecessor guard at1339–1341 rejects every stored
+`processing < candidate.read.mono_after` pair using the unchanged increment.
+This includes a one-nanosecond predecessor and stored observations of a clock
+anomaly. Arbitrary private `u16` counter values do not refute equivalence:
+overflow/panic/wrapping behavior at this earlier increment is unchanged.
+
+The remaining inputs satisfy `processing >= candidate.read.mono_after` for the
+same immutable operands passed to `checked_duration_since`. Public `Instant`,
+Unix `Instant` and `Timespec` compare the same stored seconds/nanoseconds used
+by subtraction. Unix `checked_sub_instant` calls `sub_timespec(...).ok()`.
+Its ordered branch always returns `Ok(Duration)`: the full nonnegative `i64`
+seconds difference fits `u64`, including `i64::MAX - i64::MIN = u64::MAX`.
+When nanoseconds require a borrow, strict seconds ordering makes subtracting
+one safe; resulting nanoseconds remain below one billion. `Duration::new`
+therefore needs no normalization or overflowing seconds addition. Equality
+gives `Some(Duration::ZERO)`. Signed-second extrema, negative seconds, adjacent
+nanoseconds and second-boundary borrowing supply no counterexample.
+
+There is no intervening await, operand mutation or additional OS clock read in
+this comparison/subtraction chain. Thus the `None` fallback containing line1344
+has no execution in this entire valid pinned-host domain. Subtraction by one
+and multiplication by one are not equivalent to incrementing a counter on a
+reachable branch; the unchanged local guard and actual subtraction semantics
+are essential. No missing assertion or ordinary test pass establishes this
+conclusion on its own.
+
+All reachable returns, counters, retained rejection causes, send/read history,
+terminal transitions and measurement age are identical. The same accepted
+control/header paths perform the same `Box` allocation and `Arc` operations;
+allocation failure, panic, borrowing, drops, socket/run/request custody and
+eventual cleanup are unchanged. Source/guard reordering, mutable operands, a
+new path into the fallback or different standard-library/target semantics
+requires renewed review. Retain both defensive checks in product source.
+
+### Current pinned primary sources
+
+Primary files were reread from
+`/home/david_osipov/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/`.
+The installation manifest identifies Rust/std/rust-src as
+`1.99.1 (58cf8f9c3 2026-10-13)`; its SHA256 is
+`48419307eb32e389a25ac360b6bccd4d196f3c4f35ce9d67a223319eff017c6c`.
+The enumeration receipt selects this toolchain root and records unchanged
+before/after full tool admission. This is a source/provenance argument, not a
+machine-checked proof of compiler or installed binary correctness.
+
+| Primary source | Relevant lines | SHA256 |
+| --- | --- | --- |
+| `std/src/time.rs` |153–156,340–342| `dbf93afc64e22548a08fbcfa68290a63b657933eb006ee6670270f6eddc0f9c3` |
+| `std/src/sys/time/mod.rs` |20–29| `449afdd86955252a302d889032a6cb2cbb04dd786f8cb81d9a9059ad933e7e4c` |
+| `std/src/sys/time/unix.rs` |49–52,77–79| `2250ca181d117737d32734c50156a7a9e74852251a17bf70b2a002b8d6fbac43` |
+| `std/src/sys/pal/unix/time.rs` |27–31,112–145| `6e1caa7b5e1c9a26b0b8cd02d8fd67c0fc57e4de11c89877d01c2b69eb32031a` |
+| `core/src/time.rs` |79–85,194–205| `12efe985ec205c32a8813a64c889464f5d7692d3a5fe97ab3e12088d9964b526` |
+| `core/src/num/niche_types.rs` |57–78,96–98| `1a74080c73dd7687b08e667d5611d4068a1b7556311f0b58e44edadb17d0a160` |
+
+## ENGINE-SERIES-COMMIT-DURATION-FALLBACK-SUB
+
+Exact native name:
+`crates/nevrotick-engine/src/lib.rs:1344:23: replace += with -= in commit_reply`.
+Package `nevrotick-engine`, file `crates/nevrotick-engine/src/lib.rs`, genre
+`BinaryOperator`, replacement `-=`, operator span1344:23–1344:25. The function
+has implicit-unit native `return_type` `""` and span1324:1–1373:2. Its complete
+typed descriptor, excluding rendered `diff`, has canonical SHA256
+`fb8ea69cd621b8843440c420b136eac359ec2409e0436f291f13cc0c5742377d`.
+The current full-domain argument above applies only to this exact fallback
+replacement. The actual terminal native outcome is `MissedMutant`, with both
+Build and Test phases `Success`. Its diff SHA256 is
+`5eed1f4d86a1fa2bb690eb67eb15bf5803928a4f61cefa77e2e7dee85378d745`;
+log SHA256 is
+`fdec6f408a4ddc86f259efa7079b1368486daf5ed6960b960ae71f3d00f4a6f0`.
+
+## ENGINE-SERIES-COMMIT-DURATION-FALLBACK-MUL
+
+Exact native name:
+`crates/nevrotick-engine/src/lib.rs:1344:23: replace += with *= in commit_reply`.
+All typed descriptor fields and spans match the preceding current case except
+name and replacement `*=`. Its complete typed descriptor canonical SHA256 is
+`a2d94adbb592864a95c4e6e1bd7a999afbab8fd089b1fdc05a33ea471408ffac`.
+The current full-domain argument above applies only to this exact fallback
+replacement. The actual terminal native outcome is `MissedMutant`, with both
+Build and Test phases `Success`. Its diff SHA256 is
+`a7251da8475618b40d764c95fd23a0ec52e5730205b9a30f515337196f2383cf`;
+log SHA256 is
+`bdfc6a1e51de1b7a4ca2258493a5d809c11c906c02064d199d530ed956344673`.
+
+### N3 raw outcomes and strict opt-in boundary
+
+Current raw artifacts remain beneath
+`~/.local/share/nevrotick/dependency-refresh-20261106-v1/n3-series-mutation-v1/work/mutation/library/mutants.out/`.
+The exact `outcomes.json` SHA256 is
+`0ca157d75a4d05e762fae493e97df121f63184d93f55cc7f8e46156aba5a1fc1`;
+wrapper `verification.json` SHA256 is
+`9ae512fe9e1ce17dd8e40af0ac3d5082d72c702e74278bc04da5f9b48c1c1201`.
+Both exact missed descriptors match the current enumeration. Each selected
+mutant log and the successful baseline contains 131 unique passing identities
+(89 ordinary and42 doctests), matching successful summary counts with no
+failed, ignored, measured or filtered credit, and ends `*** result: Success`.
+The baseline log SHA256 is
+`bca976d4c02975260f37c8028bd05e74e77549589e50307873b852f8fc2aa741`.
+This bounded reconciliation covers these two mutants and baseline, not a full
+audit of the other native logs or the causes of their timeouts.
+
+The unchanged raw campaign is214 variants:96 caught,113 unviable,2 missed and
+3 timed out. Native exit is3, the wrapper is incomplete and no score is
+qualified. Neither E is a kill. These two reviews do not resolve or exclude any
+timeout, compiler rejection, foreign mutant or historical descriptor.
+
+Only the explicit new `series` profile may opt into this complete two-ID cohort;
+empty E remains allowed. Its separate validator pins the exact current library
+source and complete native descriptor hashes, with these exact maintained
+review sections. Unchanged shared admission must additionally match the actual
+current product candidate, source/proof bytes, complete enumeration and native
+`MissedMutant` outcomes. Raw and adjusted accounting stay separate; native
+errors, timeouts, surviving non-E mutants and the90%/95% gates remain enforced.
+Final test-candidate rebinding and fresh actual campaign reconciliation remain
+coordinator work. The historical engine validator, E IDs and scopes are not
+broadened. No product/P1, native Windows, formal or release claim follows.
+
+## Unavailable-admission accessor pair — 7 November 2026
+
+This ordinary mutation-equivalence review covers two actual native misses from
+`n3-series-qualification-v2`, candidate
+`d7cc1ae8d6224166ab43d61b4ead291791c376dcb05c3bda82e6244f78881272`.
+The142-variant outcomes SHA256 is
+`792fae02f4e7476eeaf6eda63ac7c647206f9f92a54c61edbb588a6002bb4319`.
+Both exact variants build and pass their native tests; neither log contains an
+incomplete marker. The whole batch remains incomplete for other missing controls
+and unclassified observer failures. These two equivalences supply no kill credit.
+
+The reviewed series source SHA256 is
+`bcbd2fec35a0e498e7ef05e9470d188f8a1ef225b5d32c1bd2ae26843c7bd515`.
+Independent reviewer `temporal_control_review` challenged the complete local
+domain, construction paths and possible effects. `StatisticalAdmission` has only
+`Unavailable`. The private `SeriesReport::admission` field is initialized to that
+variant by its sole constructor, `SeriesReceiver::finish`; there is no decoding
+path or mutation API. More strongly, the exhaustive getter match yields zero for
+every valid value of the field, regardless of other report fields. The enum is
+not `Copy`, but matching its field without a binding moves nothing; it has no
+destructor. Neither getter allocates, performs I/O, mutates state, checks a clock,
+fails or changes ownership. Returning literal zero therefore preserves every
+admitted result, error/effect and lifecycle behavior, not merely today's callers.
+Nonzero returns are non-equivalent and must remain discriminated by tests.
+
+This is source reasoning for ordinary mutation accounting, with no formal tool,
+solver or product-proof claim. Reconcile exact accessor bodies, enum, visibility,
+constructors and complete candidate before admission on a later source. A new
+admission variant, changed semantics or additional construction/mutation path
+invalidates this review; a future nonzero sample count cannot inherit it.
+
+## ENGINE-SERIES-UNAVAILABLE-ADMITTED-ZERO
+
+The actual descriptor replaces
+`SeriesReport::admitted_sample_count -> usize` with `0` at
+`crates/nevrotick-engine/src/series.rs:464:9`, function span461:5–467:6,
+replacement span464:9–466:10. Canonical descriptor SHA256:
+`7da9d471e1fa869efa3b8ee17021b7a8c669c48e1c90a2b6c56db19acbe35545`.
+The complete adjacent contract and getter, lines461–467 inclusive, hash to
+`085a65547db12fec4d598648abda798f77c93df8fcedccfe06331223d1c3db65`.
+Its full-domain argument is the unavailable-only construction and effect argument
+above. Preserve the raw native `MissedMutant`; reviewed E is not a kill.
+
+## ENGINE-SERIES-UNAVAILABLE-ELIGIBLE-ZERO
+
+The actual descriptor replaces
+`SeriesReport::eligible_sample_count -> usize` with `0` at
+`crates/nevrotick-engine/src/series.rs:471:9`, function span468:5–474:6,
+replacement span471:9–473:10. Canonical descriptor SHA256:
+`a321a5a66afa4e62d840f1f040c6acbca0d152d84e89996a67c6ccf422e40861`.
+The complete adjacent contract and getter, lines468–474 inclusive, hash to
+`221ff1f7ed59ffa644153cd8ef614cbdc1a6c9478aabd8004d3e6033234dc66f`.
+The same unavailable-only argument covers this independently declared getter.
+Preserve the raw native `MissedMutant`; reviewed E is not a kill. Current opt-in
+admission must pin both exact accessor IDs plus the exact library fallback pair,
+their individual source/descriptor/review identities and the complete candidate.
+Empty E remains permitted; partial/foreign cohorts, unclassified failures,
+timeouts and unresolved survivors remain rejected by the existing gates.
+
+### Writable-owner extraction reconciliation
+
+After test-only compiler/Clippy corrections, the next407-input candidate is
+`25654289cd4f7ac0931be077e4b443c975ce761f256a16a692d35afc1fc038e7`.
+Series source is now
+`84bb369585ca0f53a5d54f945295b5aeca41b6c2d4d91c9d3a745dab291e5d3f`.
+Its sole application change extracts the writable-event arm into one synchronous
+owner; independent source review confirms identical guard/watch/deadline/send
+ordering. Both unavailable-accessor bodies, exact descriptors, unavailable-only
+enum, private construction and effect argument above remain unchanged. The
+library source and complete commit-duration helper also remain byte-identical.
+This permits rebinding the four source arguments to that candidate; fresh
+enumeration and actual native misses are still mandatory before any E accounting.
+No historical outcome or product proof transfers to the new candidate.
+
+### Quiet-owner test-only reconciliation
+
+The later407-input candidate is
+`e71aab7bae772e0190db522cc5a2e4d15ed4751ffb04425a08420de0e2fe4654`.
+Only the private legacy processing test gains a quiet predeadline owner control;
+both critical production files, all four exact descriptors, constructors and
+complete source arguments above remain byte-identical. Current ordinary tests,
+both coverage owners and fresh library214 execution remain required. The143
+series outcomes retain their actual `25654289...` candidate and original proof
+bytes; only an explicit independent unaffected-state argument may join them to
+the current candidate. This note creates no fresh series execution or kill credit
+and does not accept the prior fixture-only library catch.

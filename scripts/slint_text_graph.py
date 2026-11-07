@@ -55,41 +55,56 @@ def _expression_end(clean,start):
     return at
 
 
-def _literal_false(clean,opening):
-    """Recognize only if false (with grouping), immediately before an instance.
+def _space_before(clean,at):
+    while at and clean[at-1].isspace():at-=1
+    return at
 
-    Walk fixed tokens backwards under the existing source byte bound, so long
-    whitespace/comments cannot hide the condition beyond the type-name lookback.
-    No operators, properties or general condition values are evaluated.
+
+def _name_before(clean,at):
+    """Read one complete identifier token, never a suffix of a longer name."""
+    end=at
+    while at and(clean[at-1].isalnum()or clean[at-1]in '_-'):at-=1
+    return at,clean[at:end]
+
+
+def _instance_header(clean,opening):
+    """Read the type, optional identifier and preceding position of an instance.
+
+    Each opening brace consumes only its immediately preceding whitespace/name
+    tokens. Comments/strings are already masked; no fixed lookback or repeated
+    whole-prefix regex can hide a long but source-budgeted header.
     """
-    def space(at):
-        while at and clean[at-1].isspace():at-=1
-        return at
+    at,typ=_name_before(clean,_space_before(clean,opening))
+    if re.fullmatch(r'[A-Z][A-Za-z0-9_]*',typ)is None:return None,None,None
+    at=_space_before(clean,at);identifier=None
+    if at and clean[at-1]=='=':
+        if at<2 or clean[at-2:at]!=':=':raise ValueError('unsupported Slint instance header')
+        at,identifier=_name_before(clean,_space_before(clean,at-2))
+        if re.fullmatch(r'[a-z][a-z0-9-]*',identifier)is None:raise ValueError('unsupported Slint instance identifier')
+        at=_space_before(clean,at)
+    return typ,identifier,at
+
+
+def _literal_false(clean,at):
+    """Recognize only grouped if false immediately before the parsed instance.
+
+    Header custody comes from _instance_header; no operators, properties or
+    general condition values are evaluated. All scans follow disjoint local
+    tokens under the existing source byte and node/depth bounds.
+    """
     def word(at,value):
         start=at-len(value)
         if start<0 or clean[start:at]!=value:return None
         if start and(clean[start-1].isalnum()or clean[start-1]in '_-'):return None
-        return space(start)
-    at=space(opening);end=at
-    while at and(clean[at-1].isascii()and(clean[at-1].isalnum()or clean[at-1]=='_')):at-=1
-    if re.fullmatch(r'[A-Z][A-Za-z0-9_]*',clean[at:end])is None:return None
-    at=space(at)
-    # A named instance's := is separate from the conditional colon.
-    if at and clean[at-1]=='=':
-        at=space(at-1)
-        if not at or clean[at-1]!=':':return None
-        at=space(at-1);end=at
-        while at and(clean[at-1].isascii()and(clean[at-1].isalnum()or clean[at-1]=='-')):at-=1
-        if re.fullmatch(r'[a-z][a-z0-9-]*',clean[at:end])is None:return None
-        at=space(at)
+        return _space_before(clean,start)
     if not at or clean[at-1]!=':':return None
-    at=space(at-1);groups=0
-    while at and clean[at-1]==')':groups+=1;at=space(at-1)
+    at=_space_before(clean,at-1);groups=0
+    while at and clean[at-1]==')':groups+=1;at=_space_before(clean,at-1)
     at=word(at,'false')
     if at is None:return None
     for _ in range(groups):
         if not at or clean[at-1]!='(':return None
-        at=space(at-1)
+        at=_space_before(clean,at-1)
     return word(at,'if')
 
 
@@ -107,12 +122,9 @@ def _nodes(clean,components):
                 components[name]=base
                 typ=name;component=name;identifier=None
             else:
-                prefix=max(0,at-200)
-                found=re.search(r'(?:\b([a-z][a-z0-9-]*)\s*:=\s*)?\b([A-Z][A-Za-z0-9_]*)\s*$',clean[prefix:at])
-                typ=found[2] if found else None
-                identifier=found[1] if found else None
+                typ,identifier,before=_instance_header(clean,at)
                 component=inherited
-                literal_false=_literal_false(clean,at)
+                literal_false=_literal_false(clean,before)if typ is not None else None
             nodes.append({'start':at,'end':None,'parent':parent,'type':typ,'component':component,'identifier':identifier,
                           'dead':literal_false is not None or(parent is not None and nodes[parent]['dead']),
                           'dead_start':literal_false,

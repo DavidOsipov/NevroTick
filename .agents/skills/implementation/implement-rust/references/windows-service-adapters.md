@@ -5,6 +5,10 @@ stop/restart implementation/review. First read [canonical architecture](../../..
 sections 4, 9–11, 17.1, 18.6, CHECK-27 and S0.2–S0.3. Procedure adopts no dependency
 or production limits.
 
+The dedicated [Windows service skill](../../implement-windows-service/SKILL.md)
+selects creation, management, hardening, diagnostics and optimization work. This
+reference remains the detailed SCM/native procedure; load only its relevant parts.
+
 Source/design preparation does not establish a service/package candidate. Source
 review may identify API fit/blockers; Windows runtime needs actual evidence. Do not create runtime
 projects, install tools, register services or change clocks merely for checklist
@@ -79,7 +83,84 @@ Before execution, define transitions, per-state accepted-control masks, service
 exit codes, monotonic startup/stop deadlines and escalation owner. Mark undecided
 budgets incomplete; library sample timeouts are no production defaults.
 
+### Separate startup inputs and reachable waits
+
+Record deployment process arguments, SCM per-start arguments and protected
+durable policy separately under architecture §12.2. Inspect the selected
+wrapper/FFI's actual callback bounds, encoding and service-name metadata; never
+index an assumed nonempty vector. Extra options need an explicit unsupported/
+ignored, rejected or bounded admitted grammar. Do not forward the callback vector
+to a console/debug parser or let either channel override protected role, endpoint,
+state root, maintenance inhibition or clock ownership. Pair an installed ordinary
+start with conflicting/excessive/malformed options and a later ordinary recovery
+without transient parameters. Preserve legitimate administrative start/recovery.
+
+Inventory actual environment/profile/dependency inputs influencing configuration,
+trust, storage or diagnostics, including missing/redirected path outcomes under
+the real account before login. An OS temp-path result verifies no existence,
+access, symlink safety or private live-spill custody. Reuse
+[SEC-A02](../../../../../tasks/server-catalogue-and-statistics.md#sec-a02--file-backed-temporaries-need-concrete-location-and-peak-accounting-coverage),
+not a new storage policy; do not assume profiles are absent, erase all environment
+variables or change to SYSTEM for convenience. Identify an actual writable input
+before asserting attacker control.
+
+For reached policy locks, installer/SCM/native-provider or dependency waits,
+inspect the complete wait graph and challenge reachable cycles beside a healthy
+ordering. Preserve finite progress/failure and actual cancellation custody. The
+[pinned Tailscale policy-lock example](../../../../../docs/plans/windows11-integration-follow-up.md#additional-service-practices--7-november-2026)
+does not establish the same MSIX cycle here or justify reporting Running before
+availability. A genuinely available read-only Blocked control plane still grants
+no clock effect while required policy is unknown.
+
+### Establish effective unattended error behavior
+
+Record each role's effective process/thread error policy, establishment owner and
+phase in the existing startup manifest. Account for inherited, runtime and
+dependency behavior before adding setters. Keep critical-error dialog handling,
+WER invocation, WER UI, queue/upload choices and collector privacy distinct.
+The `SetErrorMode` page describes `SEM_NOGPFAULTERRORBOX` as suppressing WER
+invocation; do not use it merely as a no-UI switch. The thread API page uses
+different dialog wording; qualify the selected API rather than extending one
+page's semantics to every process/thread path.
+Do not disable approved reporting by default or copy unexplained numeric flags.
+Use [reviewed SDK/API distinctions](../../../../../docs/plans/windows11-integration-follow-up.md#additional-service-practices--7-november-2026).
+
+Avoid competing process-wide setters. Thread-local modes can suit a scoped native
+operation, but need actual OS-thread coverage and restoration; an async future
+may migrate and hidden native workers may use another mode. Qualify service
+profiles separately from UI/helper or a shared installer host. Pair ordinary
+startup/useful diagnostics with a selected critical-error fault during startup,
+work and stop: no modal wait, truthful failure, bounded cleanup and useful safe
+output. Query/setter success alone proves no such behavior. W11-W08/ST-W07 retain
+WER/LocalDumps/debugger synthetic-secret and retention cases; no UI is neither no
+dump nor no upload, and no global administrator policy change is authorized.
+
+Keep event provider/channel resources with the selected package/lifecycle owner;
+runtime logging does not gain installation privilege. If a classic Event Log
+adapter is selected, [RegisterEventSourceW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-registereventsourcew)
+can succeed for an unregistered source by falling back to Application without
+useful message descriptions. That return value is not provider installation or
+delivered-event qualification. Inspect real channel/provider identity, event
+rendering and unavailable/full-sink behavior under the selected API; the classic
+fallback is not a modern manifest-provider contract or a selected sink.
+
 ## Freeze service configuration and recovery behavior
+
+For descriptive/resource work, use [maintain-windows-metadata](../../maintain-windows-metadata/SKILL.md)
+and the [canonical service field contract](../../../../../docs/plans/windows-package-metadata.md#12-service-and-diagnostics-metadata-refinement--7-november-2026).
+Keep stable technical service name, localized display name, purpose description,
+next-run configuration and current status distinct. SCM indirect MUI references
+and package `ms-resource:` references need separate stored/resolved observations.
+Description null means unchanged; empty deletes. Read configuration/status with
+the appropriate query rights; a metadata request grants no configuration rights.
+The package Service schemas lack direct display/description attributes while
+the conversion report exposes those values: qualify the actual selected pipeline
+and installed update/rollback resource resolution before claiming propagation.
+The detailed catalogue is an applicability inventory, not a request to configure
+all fields. When no required-privilege list is configured SCM uses token defaults;
+omitting an update preserves the existing list. Existing W11-W05/W11-W10 owners
+retain privilege/provisioning authority and actual native qualification.
+
 
 The elevated installer/helper owns service registration/configuration and bounded
 maintenance under architecture section 11. Runtime lifecycle owners report status
@@ -219,6 +300,26 @@ allowed effect → denied neighboring effect → native evidence**. Include obje
 owner, DACL/inheritance, service/restricted/logon SIDs, handle lifetime and any
 impersonation state. Distinguish access requested, access granted and a successful
 effect; source constants or a copied SDDL string prove none of them.
+
+For the existing product coordination primitive, apply
+[architecture §11.1](../../../../../docs/windows-time-architecture.md#product-coordination-and-crash-recovery).
+Freeze representation, namespace, creator, owner/DACL, minimum actual API rights,
+native owner and recovery/lifetime. `CreateMutexW` opens an existing mutex with
+`MUTEX_ALL_ACCESS`, ignoring the proposed new descriptor/initial ownership;
+inspect an appropriate rights-selecting API rather than widening ACLs to fit it.
+`Global\` supplies scope, not security; it does not by itself require the
+privilege documented for global file-mapping/symbolic-link creation. A private
+namespace is unselected and boundary matching alone would not secure it.
+
+Pair trusted first/opened ownership with foreign precreation, wrong-type
+collision, access denial and intended cross-session sharing. Refusal cannot by
+itself prove reservation availability. Exercise abandoned ownership while a
+legitimate handle keeps the object alive, and separately a crash that destroys
+the last handle before recreation. Both paths must reconcile journal, generation,
+consumed allowance and current controller before effects. Preserve owning-thread
+release, recursive acquisition accounting and separate logical-task serialization;
+test cross-thread release/reentry through the selected safe adapter contract.
+Never treat a successful wait as clock authorization or a budget refund.
 
 Apply [management admission and administrative recovery](../../../../../docs/windows-time-architecture.md#421-service-management-admission-and-administrative-recovery):
 Record normal route, required installed component and deliberate elevated

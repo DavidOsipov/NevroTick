@@ -6,6 +6,7 @@ import copy
 import importlib.util
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import tempfile
@@ -53,6 +54,267 @@ def complete_report(value):
     value.update(caught=summaries.count("CaughtMutant"), missed=summaries.count("MissedMutant"),
                  timeout=summaries.count("Timeout"), unviable=summaries.count("Unviable"), success=0)
     return value
+
+
+class AnalyzerOutputTests(unittest.TestCase):
+    """Reach actual lane consumers with literal healthy analyzer-shaped output."""
+
+    def run_fixture(self, lane, change=lambda _path, _kind: None, *, report=None):
+        """Fake only the custodian; execute actual report and denominator checks."""
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            work = base / "work"; work.mkdir()
+            subjects = {"era": dict(FILES)["era"]}
+            mutant = {"file": subjects["era"], "name": "one", "package": "time-domain"}
+            calls = []
+            report = {} if report is None else report
+
+            def run(label, _command, _timeout, **_options):
+                calls.append(label)
+                if label == "coverage":
+                    path = work / "coverage.json"
+                    path.write_text(json.dumps({"data": [{"files": [{
+                        "filename": "/work/source/" + subjects["era"],
+                        "summary": {"lines": {"count": 10, "covered": 9}}}]}]}))
+                    change(path, "coverage")
+                    return "test result: ok. 3 passed; 0 failed; 0 ignored;"
+                if label == "mutation-enumeration:era":
+                    return json.dumps([mutant])
+                self.assertEqual(label, "mutation-campaign:era")
+                directory = work / "mutation/era/mutants.out"
+                (directory / "log").mkdir(parents=True)
+                log = directory / "log/baseline.log"
+                log.write_text("test result: ok. 3 passed; 0 failed; 0 ignored;")
+                change(log, "baseline")
+                path = directory / "outcomes.json"
+                path.write_text(json.dumps(complete_report({
+                    "cargo_mutants_version": "27.1.0", "total_mutants": 1,
+                    "outcomes": [{"scenario": "Baseline", "summary": "Success", "log_path": "log/baseline.log"},
+                                 {"scenario": {"Mutant": mutant}, "summary": "CaughtMutant"}]})))
+                change(path, "outcomes")
+                return {"exit_code": 0, "failure": None, "output": "complete"}
+
+            MODULE.run_analysis_lanes(SCOPE, subjects,
+                {"coverage_wall_seconds": 300, "mutation_wall_seconds": 1200,
+                 "maximum_mutants": 512, "mutation_jobs": 2},
+                work, base / "tools", run, report, lane)
+            return report, calls
+
+    def test_healthy_actual_lanes_keep_independent_counts(self):
+        coverage, calls = self.run_fixture("coverage")
+        self.assertEqual(calls, ["coverage"])
+        self.assertEqual(coverage["coverage"]["era"]["line_percent"], 90)
+        self.assertEqual(coverage["coverage"]["era"]["tests_executed"], 3)
+        mutation, calls = self.run_fixture("mutation")
+        self.assertEqual(calls, ["mutation-enumeration:era", "mutation-campaign:era"])
+        self.assertEqual(mutation["mutation"]["era"]["viable"], 1)
+        self.assertEqual(mutation["mutation"]["era"]["baseline_tests_executed"], 3)
+        self.assertTrue(mutation["mutation"]["era"]["gate_passed"])
+
+    def test_actual_lanes_reject_linked_json_outputs(self):
+        for kind, lane in (("coverage", "coverage"), ("outcomes", "mutation"), ("baseline", "mutation")):
+            def link(path, selected):
+                if selected == kind:
+                    target = path.with_name("retained-" + path.name)
+                    path.rename(target)
+                    path.symlink_to(target)
+            with self.subTest(kind=kind), self.assertRaises(MODULE.Incomplete):
+                self.run_fixture(lane, link)
+
+    def test_actual_lanes_reject_linked_parent_directories(self):
+        for kind, lane in (("coverage", "coverage"), ("outcomes", "mutation"), ("baseline", "mutation")):
+            def link(path, selected):
+                if selected == kind:
+                    parent = path.parent
+                    target = parent.with_name(parent.name + "-retained")
+                    parent.rename(target)
+                    parent.symlink_to(target, target_is_directory=True)
+            with self.subTest(kind=kind), self.assertRaises(MODULE.Incomplete):
+                self.run_fixture(lane, link)
+
+    def test_actual_lanes_reject_special_and_oversized_outputs_without_reading(self):
+        for kind, lane in (("coverage", "coverage"), ("outcomes", "mutation"), ("baseline", "mutation")):
+            for defect in ("fifo", "directory", "oversize", "hardlink"):
+                def change(path, selected):
+                    if selected != kind:
+                        return
+                    if defect == "oversize":
+                        bound = (MODULE.ANALYSIS_LOG_MAX_BYTES if kind == "baseline"
+                                 else MODULE.ANALYSIS_JSON_MAX_BYTES)
+                        with path.open("ab") as stream:
+                            stream.truncate(bound + 1)  # Sparse: no large payload allocation/write.
+                    elif defect == "hardlink":
+                        os.link(path, path.with_name("second-link"))
+                    else:
+                        path.unlink()
+                        if defect == "fifo":
+                            os.mkfifo(path)
+                        else:
+                            path.mkdir()
+                with self.subTest(kind=kind, defect=defect), self.assertRaises(MODULE.Incomplete):
+                    self.run_fixture(lane, change)
+
+    def test_actual_json_consumers_reject_malformed_bounded_payloads(self):
+        invalid = {
+            "duplicate": '{"data":[],"data":[]}',
+            "escaped-duplicate": '{"data":[],"d\\u0061ta":[]}',
+            "nonfinite": '{"unused":NaN}',
+            "infinity": '{"unused":Infinity}',
+            "float-overflow": '{"unused":1e999}',
+            "overlong-number": '{"unused":' + "1" * 129 + '}',
+            "depth": '{"unused":' + "[" * 64 + "0" + "]" * 64 + '}',
+            "utf8": b'{"unused":"\xff"}',
+            "trailing": '{} {}',
+            "truncated": '{"data":',
+            "root-array": '[]',
+        }
+        for kind, lane in (("coverage", "coverage"), ("outcomes", "mutation")):
+            for defect, raw in invalid.items():
+                def change(path, selected):
+                    if selected == kind:
+                        path.write_bytes(raw if isinstance(raw, bytes) else raw.encode())
+                report = {}
+                with self.subTest(kind=kind, defect=defect), self.assertRaises(MODULE.Incomplete):
+                    self.run_fixture(lane, change, report=report)
+                self.assertNotIn("era", report.get(lane, {}))
+
+    def test_healthy_coverage_larger_than_one_mib_retains_actual_counts(self):
+        """Retained LLVM reports exceed 4 MiB; a 1 MiB replacement cap is invalid."""
+        def pad(path, kind):
+            if kind == "coverage":
+                raw = path.read_bytes()
+                path.write_bytes(b" " * (1024 * 1024 + 1) + raw)
+        report, _calls = self.run_fixture("coverage", pad)
+        self.assertEqual(report["coverage"]["era"]["line_percent"], 90)
+        self.assertEqual(report["coverage"]["era"]["tests_executed"], 3)
+
+    def test_bounded_read_rejects_growth_and_leaf_or_parent_replacement(self):
+        for defect in ("growth-within-bound", "growth-past-bound", "leaf", "parent"):
+            with self.subTest(defect=defect), tempfile.TemporaryDirectory() as temporary:
+                base = Path(temporary); parent = base / "output"; parent.mkdir()
+                path = parent / "report"; path.write_bytes(b"healthy")
+                actual_read, requests = os.read, []
+
+                def raced_read(descriptor, requested):
+                    requests.append(requested)
+                    if len(requests) == 1:
+                        if defect.startswith("growth"):
+                            with path.open("ab") as stream:
+                                stream.write(b"more" if defect == "growth-within-bound" else b"x" * 64)
+                        elif defect == "leaf":
+                            path.rename(parent / "detached")
+                            path.write_bytes(b"healthy")
+                        else:
+                            parent.rename(base / "detached")
+                            parent.mkdir()
+                            path.write_bytes(b"healthy")
+                    return actual_read(descriptor, requested)
+
+                with patch.object(MODULE.os, "read", side_effect=raced_read):
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.read_analysis_bytes(path, maximum=16)
+                self.assertTrue(requests)
+                self.assertTrue(all(0 < request <= 17 for request in requests))
+
+    def test_bounded_reader_rejects_special_files_before_read_and_wrong_owner(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            fifo = parent / "fifo"; os.mkfifo(fifo)
+            for path in (fifo, parent, parent / "missing"):
+                with self.subTest(path=path.name), patch.object(MODULE.os, "read") as read:
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.read_analysis_bytes(path, maximum=16)
+                    read.assert_not_called()
+            path = parent / "owned"; path.write_bytes(b"valid")
+            with patch.object(MODULE.os, "geteuid", return_value=os.geteuid() + 1):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.read_analysis_bytes(path, maximum=16)
+            path.write_bytes(b"x" * 17)
+            with patch.object(MODULE.os, "read") as read:
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.read_analysis_bytes(path, maximum=16)
+                read.assert_not_called()
+            for bound in (True, 0, -1, MODULE.ANALYSIS_JSON_MAX_BYTES + 1):
+                with self.subTest(bound=bound), self.assertRaises(MODULE.Incomplete):
+                    MODULE.read_analysis_bytes(path, maximum=bound)
+
+    def test_path_limits_and_invalid_encoding_reject_before_any_open(self):
+        cases = (
+            Path("/" + "x" * 4096),
+            Path("/" + "é" * 2048),
+            Path("/" + "/".join(["x"] * 65)),
+            Path("/invalid-\ud800"),
+        )
+        for index, path in enumerate(cases):
+            with self.subTest(case=index), patch.object(MODULE.os, "open", side_effect=OSError("unexpected open")) as opened:
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.read_analysis_bytes(path, maximum=16)
+                opened.assert_not_called()
+
+    def test_exact_path_limits_keep_healthy_read_and_one_below_never_opens(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "healthy-é"; path.write_bytes(b"healthy")
+            limits = {"ANALYSIS_PATH_MAX_BYTES": len(str(path).encode("utf-8")),
+                      "ANALYSIS_PATH_MAX_COMPONENTS": len(path.parts) - 1}
+            with patch.multiple(MODULE, **limits):
+                self.assertEqual(MODULE.read_analysis_bytes(path, maximum=16), b"healthy")
+            for selected in limits:
+                tighter = {**limits, selected: limits[selected] - 1}
+                with self.subTest(limit=selected), patch.multiple(MODULE, **tighter):
+                    with patch.object(MODULE.os, "open", side_effect=OSError("unexpected open")) as opened:
+                        with self.assertRaises(MODULE.Incomplete):
+                            MODULE.read_analysis_bytes(path, maximum=16)
+                        opened.assert_not_called()
+
+    def test_raw_path_bounds_precede_path_construction_and_file_open(self):
+        for raw in ("x" * 4097, "x/" * 2049, "é" * 2049, "invalid-\ud800"):
+            with self.subTest(raw_length=len(raw)), patch.object(MODULE, "Path") as constructor:
+                with patch.object(MODULE.os, "open", side_effect=OSError("unexpected open")) as opened:
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.analysis_output_path(raw)
+                    constructor.assert_not_called()
+                    opened.assert_not_called()
+        self.assertEqual(MODULE.analysis_output_path("x" * 4096), Path("x" * 4096))
+        self.assertEqual(MODULE.analysis_output_path("é" * 2048), Path("é" * 2048))
+        self.assertEqual(MODULE.analysis_output_path("/".join(["x"] * 64)), Path(*["x"] * 64))
+        for raw in ("/".join(["x"] * 65), None, False, []):
+            with self.subTest(kind=type(raw).__name__), self.assertRaises(MODULE.Incomplete):
+                MODULE.analysis_output_path(raw)
+
+    def test_json_work_and_depth_are_bounded_before_decode(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "report.json"
+            for raw, limits in (
+                    ('{"many":[0,0,0]}', {"ANALYSIS_JSON_MAX_MARKERS": 5}),
+                    ('{"deep":[[0]]}', {"ANALYSIS_JSON_MAX_DEPTH": 2})):
+                path.write_text(raw)
+                with patch.multiple(MODULE, **limits), patch.object(MODULE.json, "loads") as decode:
+                    with self.assertRaisesRegex(MODULE.Incomplete, "structural work or depth"):
+                        MODULE.read_analysis_json(path)
+                    decode.assert_not_called()
+            path.write_text('{"literal":"[{},:\\"\\\\]", "number":1.25, "count":12}')
+            self.assertEqual(MODULE.read_analysis_json(path),
+                             {"literal": '[{},:"\\]', "number": 1.25, "count": 12})
+
+    def test_baseline_invalid_utf8_and_empty_relative_path_remain_incomplete(self):
+        def invalid_utf8(path, kind):
+            if kind == "baseline":
+                path.write_bytes(b"\xff")
+        with self.assertRaises(MODULE.Incomplete):
+            self.run_fixture("mutation", invalid_utf8)
+
+        def empty_log(path, kind):
+            if kind == "outcomes":
+                path.write_text(path.read_text().replace('"log/baseline.log"', '""'))
+        with self.assertRaises(MODULE.Incomplete):
+            self.run_fixture("mutation", empty_log)
+
+    def test_actual_baseline_rejects_oversized_raw_path_before_splitting(self):
+        def oversized_log(path, kind):
+            if kind == "outcomes":
+                path.write_text(path.read_text().replace('"log/baseline.log"', json.dumps("x/" * 2049)))
+        with self.assertRaisesRegex(MODULE.Incomplete, "path exceeds"):
+            self.run_fixture("mutation", oversized_log)
 
 
 class EvidenceTests(unittest.TestCase):
@@ -1863,7 +2125,8 @@ class EvidenceTests(unittest.TestCase):
             policy = {"mutation_equivalences": [entry], "maximum_mutants": 512}
             with patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)):
                 self.assertEqual(MODULE.admit_mutation_equivalences(root, SCOPE, policy), [entry])
-                for change in ("source", "candidate", "proof", "section", "review", "file", "identity", "duplicate", "unknown"):
+                for change in ("source", "candidate", "proof", "section", "review", "file", "identity", "duplicate", "unknown",
+                               "function_empty", "return_none", "return_bool", "return_list", "return_missing", "return_overlong"):
                     bad = json.loads(json.dumps(policy)); case = bad["mutation_equivalences"][0]
                     if change == "source": case["source_sha256"] = "f" * 64
                     if change == "candidate": case["candidate_sha256"] = "f" * 64
@@ -1874,6 +2137,12 @@ class EvidenceTests(unittest.TestCase):
                     if change == "identity": case["mutant"].pop("span")
                     if change == "duplicate": bad["mutation_equivalences"].append(dict(case))
                     if change == "unknown": case["skip_function"] = "resolve"
+                    if change == "function_empty": case["mutant"]["function"]["function_name"] = ""
+                    if change == "return_none": case["mutant"]["function"]["return_type"] = None
+                    if change == "return_bool": case["mutant"]["function"]["return_type"] = False
+                    if change == "return_list": case["mutant"]["function"]["return_type"] = []
+                    if change == "return_missing": case["mutant"]["function"].pop("return_type")
+                    if change == "return_overlong": case["mutant"]["function"]["return_type"] = "x" * 4097
                     with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
                         MODULE.admit_mutation_equivalences(root, SCOPE, bad)
                 source.write_text("changed numerical owner\n")

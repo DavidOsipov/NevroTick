@@ -482,6 +482,11 @@ read-only; they did not independently execute product tests or CodeQL.
 
 ### Confirmed inherited range-state deadlock
 
+**7 November supersession:** this section records the earlier alias-only repair.
+Its retained left-then-right contract for distinct owners is superseded by the
+[distinct-range repair](#distinct-range-lock-order-repair--7-november-2026)
+below. Historical tests and candidate identities retain their original scope.
+
 In the retained `accesskit_windows` source, `Compare` could take two read guards
 for the same state when both interfaces identify one range. `CompareEndpoints`
 explicitly recognized that identity and still acquired the same lock twice. A
@@ -676,3 +681,192 @@ This assessment ran no Cargo, native Windows, UIA, solver or product disclosure
 test. Reassess after relevant control, toolkit, consumer, profile or secret-flow
 changes; the current absence of a password producer is not a general dependency
 security certification.
+
+
+## BH-NATIVE-01 popup cleanup repair — 7 November 2026
+
+David authorized analysis/repair of the supplied logic-bug handoff. Independent
+source review confirmed the conditional failure-accounting path: `DestroyMenu`
+returning zero became a drained ordinary failure, allowing later cleanup to be
+acknowledged without that negative result. No actual leaked handle or native
+failure was reproduced.
+
+The actual destruction result now enters the private sticky bridge cleanup
+acknowledgement before transient notification. Failed destruction returns the
+existing cleanup error; a later successful call cannot clear uncertainty. The
+popup entry rejects before another allocation. Existing worker completion,
+`try_finish`, `cleanup_confirmed` and Slint `poll_stop` all retain that failure.
+Ordinary creation/build/foreground errors remain distinct when destruction
+succeeds. No destructive retry, new unsafe block or FFI argument change was added.
+Two authored portable tests cover failure/drain/restoration/later-success and a
+successful neighboring destruction. They have not executed.
+
+Independent reviewer `bugfix_independent_review`, created with `fork_turns="none"`,
+completed source review through the actual popup/worker/host stop chain and found
+no material repair defect. A subsequent formatter-only signature change leaves
+its behavioral conclusions unchanged. Current source hashes:
+
+- `src/native_tray.rs`: `0ffc9a81df1f418400cead00448b94d517c0992b34e1e388c38e917fc42a8ea2`.
+- `src/native_tray/windows.rs`: `14cd1bc3b46c4e7596a29b8344a4ddb7e38c13aef80f0db102a35ea837d8bbca`.
+
+Evidence is retained under
+`/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/`.
+`bughunt-native-source-controls-v1.log` passes14 Python source-custody controls,
+not Rust/native behavior. `bughunt-format-v1` retains its formatting-only failure;
+`bughunt-format-v2/verification.json` passes admitted boundary controls and full
+workspace formatting on377-input `44509d32073d69ea61a30ae4da9c0e838c8c02aa9102d8d90f4ec84d468ce482`,
+with unchanged source/tool/vendor bookends. No compiler/test pass follows from
+formatting. The working tree and existing staging remain separate; nothing was
+staged, committed or pushed by these repairs.
+
+**Still unqualified:** GUI compiler/Clippy/portable Rust tests lack the admitted
+host SDK here: read-only preflight found no Fontconfig/Freetype pkg-config entries
+or development headers; the retained private Debian13 SDK is not qualified for
+this Ubuntu host. No direct-Cargo or altered-SDK fallback ran. Native Windows
+execution remains held. When admitted, exercise the real popup-to-worker-to-host
+stop chain with controlled failed destruction, healthy wake/subsequent cleanup,
+blocked further popup allocation and failed final cleanup acknowledgement, plus
+a successful-destruction neighbor. Observe actual USER resources separately.
+This source repair lifts no UI/native/package/Windows hold.
+
+
+## Distinct-range lock-order repair — 7 November 2026
+
+David supplied the remaining-source audit on historical5ef9853 and requested
+continuing the bug-fix workflow. Its private `/tmp` artifacts are absent here;
+those reported experiments were not treated as current execution. A fresh
+read-only reviewer and a separate repair owner inspected the actual unchanged
+4427ab42... helper, active `Compare`/mutation paths, cloned same-context ranges,
+pinned std futex backend and generated COM agility. Opposite comparisons could
+retain different first read guards while queued writers exclude their second
+reads. Context tree read guards do not supply serialization. This is distinct
+from the earlier same-lock alias repair; no Windows hang was reproduced.
+
+The helper now detects aliases first and uses one guard. Distinct live owners
+are acquired by increasing address, with both guards retained through the single
+comparison and values restored to original left/right callback order. Addresses
+supply only a temporary lock order, never COM/persistent identity. Acquisition
+failure skips comparison and releases earlier guards; callback unwind releases
+both. Caller casts, same-context/endpoint checks, poison policy, dependency graph,
+features, versions, licences and Windows-only role remain unchanged. No unsafe
+code, cloning or snapshot replacement was introduced.
+
+**Actual RED/GREEN:** the isolated Linux fixture uses the exact std-only helper
+source, the re-admitted shipping1.99.1 compiler and existing verifier sandbox,
+cleared environment, read-only inputs, bounded output/processes and60-second
+outer command limits. RED retained the actual original production prefix and
+added the independent tests: compilation succeeded, seven tests executed, five
+passed and exactly the two new acquisition-order assertions failed at native101.
+The raw wrapper retained `incomplete` because nocapture panic diagnostics broke
+its row parser. Separate `red-v1-reviewed.json` adjudicates the complete raw
+records without replacing that receipt or rerunning the tests. An independent
+reviewer checked those exact failures and accepted behavioral RED. Assertions
+following the first queued-writer failure were not executed in RED.
+
+After repair, green-v3 passes all seven ordinary and seven optimized tests,
+workspace-equivalent Rust/Clippy deny rules, formatting and both Windows-target
+compiler/Clippy metadata checks with the full configured flag vector. No linking
+or Windows execution occurred. Cases cover both operand orientations, physical
+acquisition-rank poison, first/second acquisition failure, simultaneous real
+protection, alias queued-writer behavior and callback unwind. The forced opposing
+writer probes deliberately refuse their second nonblocking acquisitions and
+verify common first-owner selection; they do not demonstrate successful blocking
+COM comparisons under actual native contention. The healthy noncontended helper
+controls preserve callback values/order. Source/tool/driver bookends are unchanged.
+Green-v1 retains a formatter failure; green-v2 retains seven ordinary passes and
+test-only Clippy failures, subsequently repaired with fallible setup and two
+reasoned, narrowly scoped intentional-panic expectations. No failed attempt was
+relabelled as a pass.
+
+Evidence root:
+`/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/bughunt-distinct-range-v1/`.
+Final helper SHA256 is
+`cb6bb3924d2e6bd99edf7269b2ab6ec59ac42bed9313579f1ba6108b5497b473`;
+patch-notice SHA256 is
+`907b63541dd48cb12b14e8c66d0780176c174e25d25fe230e093a5c629f03b7e`.
+Fresh-context reviewer `accesskit_pair_independent` independently reviewed the
+contracts, RED records and final repair/test changes; it ran no jobs or edits
+and found no additional actionable defect. Actual native scheduling, compatibility,
+full-GUI coverage/mutation, resources and teardown remain open CHECK-22/27 work.
+The full Slint build remains subject to its SDK/native holds; this std-only
+control establishes no full GUI, package or release qualification.
+
+**Source admission integrated:** only the helper and patch notice changed within
+the27-file local derivative. Original archive/revision/source-map/grant fields,
+modified-file allowlist, registry identities, lock/manifests and selected
+features/roles remain unchanged. The derivative map and code-owned policy pin
+were rebound; canonical dependency-policy digest is
+`cbce0fe93225659982120df573e98a1276155f2a9f5c11af7c02a8e45885cdb5`.
+`source-adoption.json` retains the exact delta and377-input current map
+`f6764d23bc6169c6d9d18be6ce4f83de3e4326342efa987294b7d98f9593cfdb`.
+Python controls pass14 AccessKit-patch,28 Slint-profile,120 verifier and51 engine
+consumer cases. Prior numeric/native receipts keep their executed candidates;
+rebinding supplies no new Rust coverage/mutation score. No commit/push or native,
+formal, fuzz, storage or runtime-policy waiver follows. Resume the existing
+product queue and its pending N1 contract review after this bounded repair.
+
+
+**Concurrent guidance integration:** HEAD advanced externally fromef3c0ab to
+c8df999, changing six testing-skill guidance files. The coordinator read the
+applicable testing-contract/index delta; meaningful-repair RED/GREEN and existing
+qualification boundaries remain compatible with this work. All377 tested/adopted
+product input hashes remain identical. The index was also updated externally;
+its new staged state was preserved, not rolled back. This agent issued no stage,
+commit or push. `closeout.json` records both HEAD/index identities and scoped reuse:
+after helper execution only the unused Slint canonical-policy pin changed among
+its Python helper inputs; the actual Rust helper/config/compiler/tool bytes stay
+unchanged. Current source admission and consumer controls are separate fresh
+checks. These are bounded source/host results, not a new full-product score.
+
+
+## Text-inventory checker repair — 7 November 2026
+
+The [current tooling follow-up](codeql-cloud-handoff.md#local-text-inventory-and-analyzer-output-repairs--7-november-2026)
+records the long-spacing live-control omission, actual full509-ID RED/GREEN,
+85 passing text-inventory tests and the real509/509 CLI result. Header parsing
+now retains named/live control custody under existing source work limits. Source
+checking grants no translated-consent approval, rendered/native/accessibility
+pass or new UI scope. The current helper/candidate and retained failures are in
+that same record; no additional implementation plan or execution waiver follows.
+
+## AccessKit inclusive word-endpoint repair — 7 November 2026
+
+Accepted the fourth remaining-code review's navigation finding after reproducing
+it against the actual `accesskit_consumer` 0.38.0 public API. A valid 256-character
+run admits its inclusive endpoint, but `backward_to_word_start` narrowed that
+`usize` position to `u8`. The multiword endpoint returned 0 instead of 254.
+This is a text-navigation correctness defect under CHECK-22, not demonstrated
+memory corruption or a privilege crossing.
+
+The [local consumer derivative](../third-party/accesskit_consumer/NEVROTICK-PATCH.md)
+widens the word-start keys before binary search. Root Cargo patch routing and the
+lockfile select that derivative. Exact-start previous-word semantics, ordinary
+cross-run fallback and input limits remain. Original archive members, immutable
+revision/checksum, original manifest and MIT/Apache notices are retained; the
+eight new original Rust regression cases carry their separate GPL-3.0-only grant.
+
+Evidence: `/tmp/nevrotick-review-fixes-20261107-z36bdzau/`. The initial fixture
+compile error, E0716, is retained as setup failure, not behavioral RED. The corrected
+REDv2 fixture compiled, then failed four intended assertions while four neighboring
+controls passed. Unchanged test bytes pass after the causal search repair among
+all 213 library tests in both ordinary and optimized Linux builds on Rust 1.99.1.
+Doctests selected zero tests and supply no additional coverage. Cases include
+endpoint 256/neighbor 255, exact word starts, document start, a single word,
+word offset 255, UTF-16 surrogate pairs and a second run's actual origin.
+The configured namespace boundary control passed; source/vendor mounts stayed
+read-only, dependency archives matched their locked checksums, and no host
+network, Windows UIA/COM/Narrator or Slint layout execution occurred.
+
+The [dependency admission follow-up](s0.1-source-readiness.md#accesskit-consumer-local-source-admission--7-november-2026)
+records the three-patch graph. Vendored packages are excluded from workspace-member
+test selection: before changing/removing this consumer patch, run its named tests
+in a separately admitted pure host scope with explicit consumer package selection,
+ordinary and optimized builds. The existing full GUI command matrix is unchanged;
+this repair adds no portable-row admission shortcut or zero-doctest waiver.
+Native caller behavior remains with the existing admitted Windows/accessibility
+owner. Historical GUI receipts do not qualify the modified combined candidate.
+
+Independent fresh-context review, `review_two_dependency_repairs`, accepted the
+scoped correction without finding an introduced defect:
+
+> Independent read-only review found no introduced defect in the consumer correction. The non-narrowing search preserves previous-word semantics at exact starts and the existing cross-run fallback. Eight valid public-API cases retain independent literal expectations, including endpoint 256, neighboring positions, offset 255 and UTF-16 surrogate pairs. Raw REDv2 evidence records four behavioral failures with four healthy controls; unchanged regression bytes pass in the ordinary and optimized 213-test GREEN snapshots. Final source hashes match those snapshots; these results qualify portable consumer behavior only.

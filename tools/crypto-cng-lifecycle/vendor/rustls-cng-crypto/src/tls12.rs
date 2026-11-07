@@ -103,7 +103,7 @@ pub static TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384: SupportedCipherSuite =
         },
         kx: KeyExchangeAlgorithm::ECDHE,
         sign: ECDSA_SCHEMES,
-        aead_alg: &aead::AES_128_GCM,
+        aead_alg: &aead::AES_256_GCM,
         prf_provider: &Prf(SHA384),
     });
 
@@ -334,3 +334,6 @@ impl MessageDecrypter for ChaCha20Poly1305Crypter {
         Ok(msg.into_plain_message())
     }
 }
+
+#[cfg(test)]
+mod tests;

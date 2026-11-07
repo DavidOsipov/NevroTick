@@ -11,6 +11,27 @@ For field inventory, provenance, source storage and generation/readback details,
 use [maintain-windows-metadata](../../implementation/maintain-windows-metadata/SKILL.md).
 Keep this workflow as the final artifact/native qualification owner; authored
 records and metadata parsing alone do not prove a complete or trusted package.
+For service and diagnostic metadata, apply [the current field/readback contract](../../../../docs/plans/windows-package-metadata.md#12-service-and-diagnostics-metadata-refinement--7-november-2026).
+Compare expected per-role fields with final embedded resources, installed SCM
+stored/resolved labels and actual publisher/event rendering under admitted locales.
+Preserve query failure, missing, empty, unresolved, mismatch and not-run outcomes;
+challenge missing/replaced resources beside a healthy installed candidate. A
+catalogue count, signature description or self-reported version/hash proves no
+installed identity, signer trust or package completeness.
+
+Apply [the adopted delivery controls](../../../../docs/plans/windows-package-metadata.md#135-adopted-metadata-delivery-controls--7-november-2026)
+at MD-P4–MD-P5: derive required component/field/locale/resource bindings from the
+admitted record, then read actual emitted bytes independently. Challenge
+equal-count wrong ownership and mutually consistent declarations that disagree
+with the artifact. Verify consumed-input warm-build invalidation and actual
+selected compiler/SDK/target/profile identity through the existing build owner.
+Inspect the exact approved final payload for internal authoring/private-value
+leakage; a public source allowlist cannot qualify a later whole-directory copy.
+The source delivery report's `public_artifacts` describes exposure, not the
+approved shipping inventory; generated Rust/RC source remains a build input.
+Retain one frozen metadata generation and separate compiled, packaged, signed,
+submitted, Store-delivered and installed observations. Source-only delivery
+results leave these real consumer/native gates open.
 
 Identify frozen source/configuration/toolchain/dependency/feature inputs, actual final binary/package hashes. Inspect emitted PE/runtime protections, architecture, versions, manifests/resources, DLL loading dependencies, expected component/service inventory.
 

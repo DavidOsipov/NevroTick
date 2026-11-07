@@ -17,6 +17,87 @@ def fixture():
 
 
 class Coverage(unittest.TestCase):
+    def test_full_product_long_spaced_live_text_keeps_its_text_obligations(self):
+        root=Path(__file__).resolve().parents[2]
+        folder=root/'crates/nevrotick-ui/src/localization'
+        documents=[checker.protected_json.read(checker.read_regular(folder/name,checker.MAX_FILE_BYTES))
+                   for name in ['contract-source.json','text-contract-v1-baseline.json','runtime-text-sinks.json']]
+        contract,baseline,manifest=documents;files=checker.snapshot(root)
+        healthy=checker.check(contract,files,baseline,manifest['runtime_sinks'])
+        self.assertTrue(healthy['ok'],healthy['errors'])
+        self.assertEqual((healthy['active_ids'],healthy['used_ids']),(509,509))
+        path='crates/nevrotick-ui/ui/app.slint'
+        for body,kind in [('', 'missing-required-ui-binding'),
+                          ('text: root.spacing-unowned;', 'unowned-required-ui-source'),
+                          ('text: "Unowned spaced live text";', 'unowned-ui-literal')]:
+            with self.subTest(body=body):
+                changed=dict(files)
+                changed[path]=files[path].replace('inherits Window {','inherits Window { Text'+' '*501+'{ '+body+' }',1)
+                report=checker.check(contract,changed,baseline,manifest['runtime_sinks'])
+                self.assertEqual((report['active_ids'],report['used_ids']),(509,509))
+                self.assertFalse(report['ok'])
+                self.assertTrue(any(error['kind']==kind for error in report['errors']),report['errors'])
+
+    def test_named_instance_header_gaps_keep_lexical_identifier_custody(self):
+        for gap in [' '*199,' '*200,' '*501,'\n\t\r\n'*100,'/* '+'spacing '*70+'*/']:
+            for left,middle,right in [(gap,' ',' '),(' ',gap,' '),(' ',' ',gap)]:
+                with self.subTest(gap=repr(gap[:15]),position=(len(left),len(middle),len(right))):
+                    contract,files=fixture();path=next(iter(files))
+                    files[path]='''component Carrier inherits Rectangle { in property<string> caption; }
+                        export component AppWindow inherits Window {
+                            source'''+left+':='+middle+'Carrier'+right+'''{ caption: FixtureCopy.heading; }
+                            Text { text: source.caption; }
+                        }'''
+                    result=checker.check(contract,files)
+                    self.assertTrue(result['ok'],result['errors'])
+
+    def test_spaced_inherited_native_instances_require_current_owned_text(self):
+        for gap in [' '*199,' '*200,' '*501,'\n'*250,'/* '+'blank '*80+'*/']:
+            with self.subTest(gap=repr(gap[:15])):
+                contract,files=fixture();path=next(iter(files))
+                declaration='component Label inherits Text {} '
+                healthy=declaration+files[path][:-1]+' Label'+gap+'{ text: FixtureCopy.heading; } }'
+                files[path]=healthy
+                self.assertTrue(checker.check(contract,files)['ok'])
+                files[path]=healthy.replace('Label'+gap+'{ text: FixtureCopy.heading; }','Label'+gap+'{}')
+                self.assertTrue(any(error['kind']=='missing-required-ui-binding'for error in checker.check(contract,files)['errors']))
+                files[path]=healthy.replace('Label'+gap+'{ text: FixtureCopy.heading; }','Label'+gap+'{ text: "Unowned inherited label"; }')
+                self.assertTrue(any(error['kind']=='unowned-ui-literal'for error in checker.check(contract,files)['errors']))
+
+    def test_spaced_literal_false_instances_remain_dead_and_neighbors_remain_live(self):
+        for header in ['Text'+' '*501,'hidden'+' '*501+':= Text ',
+                       'hidden := '+'/* '+'gap '*100+'*/ Text ',
+                       'hidden := Text'+'\n'*250]:
+            with self.subTest(header=header[:20]):
+                contract,files=fixture();path=next(iter(files))
+                healthy=files[path][:-1]+' if ((false)): '+header+'{ text: "Dead text"; } }'
+                files[path]=healthy
+                self.assertTrue(checker.check(contract,files)['ok'])
+                for condition in ['true','root.show','false || root.show']:
+                    files[path]=healthy.replace('((false))',condition)
+                    self.assertTrue(any(error['kind']=='unowned-ui-literal'for error in checker.check(contract,files)['errors']))
+
+    def test_long_comments_and_strings_do_not_create_live_instances(self):
+        contract,files=fixture();path=next(iter(files))
+        files[path]=files[path].replace('inherits Window {','inherits Window { property<string> inert: "Text'+' '*501+'{ text: unowned; }"; /* Button'+' '*501+'{} */',1)
+        self.assertTrue(checker.check(contract,files)['ok'])
+
+    def test_long_custom_type_names_keep_their_complete_native_ancestry(self):
+        contract,files=fixture();path=next(iter(files));name='Label'+'x'*501
+        healthy='component '+name+' inherits Text {} '+files[path][:-1]+name+' { text: FixtureCopy.heading; } }'
+        files[path]=healthy
+        self.assertTrue(checker.check(contract,files)['ok'])
+        files[path]=healthy.replace(name+' { text: FixtureCopy.heading; }',name+' {}')
+        self.assertTrue(any(error['kind']=='missing-required-ui-binding'for error in checker.check(contract,files)['errors']))
+
+    def test_unsupported_named_headers_fail_closed_instead_of_losing_identity(self):
+        for header in ['Bad := Text','bad_name := Text','bad : = Text','bad = Text']:
+            with self.subTest(header=header):
+                contract,files=fixture();path=next(iter(files))
+                files[path]=files[path][:-1]+header+' '*501+'{ text: FixtureCopy.heading; } }'
+                with self.assertRaisesRegex(ValueError,'unsupported Slint instance (header|identifier)'):
+                    checker.check(contract,files)
+
     def test_literal_false_native_control_cannot_consume_the_only_id(self):
         for control in ['Text','Button']:
             with self.subTest(control=control):

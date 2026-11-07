@@ -22,10 +22,10 @@
   "maximum_mutants": 512,
   "maximum_listed_per_file": 4096,
   "maximum_listed_total": 8192,
-  "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
+  "candidate_sha256": "cb2925bb1288a0d844ec7ce702ffa88a0155be4530dd851dda7e06d20fad25f3",
   "inputs_sha256": {
-    "Cargo.toml": "20c65bf6e7d90e1de3fd5b89ae9d851718997e0efb77b5382c89c4eb92f247c0",
-    "Cargo.lock": "56833523c30ef64a3300fcc905d99039470fa1b88fc22ce295ada364bfd8a286",
+    "Cargo.toml": "e200e5e14ffd56653a707939f5a5543c9ac52514693fcf345a71253e1f94f763",
+    "Cargo.lock": "9f31370aaf3649527926acf48a927ce2b627d8de633d8f7a50b467cf2f07c24e",
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
     "crates/time-domain/src/lib.rs": "d1314aa80fc705d410e747de555d79d0a8a63d16b2ff5877e1012ce60ef039ab",
     "crates/time-domain/src/rational_seconds.rs": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
@@ -52,7 +52,7 @@
   "mutation_equivalences": [
     {
       "id": "RATIONAL-NORMALIZED-LOWER-RANGE",
-      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
+      "candidate_sha256": "cb2925bb1288a0d844ec7ce702ffa88a0155be4530dd851dda7e06d20fad25f3",
       "source_sha256": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
       "mutant": {
         "file": "crates/time-domain/src/rational_seconds.rs",
@@ -89,15 +89,15 @@
       "rationale": "Whole raw N/D domain produces a quotient at least 2^52; widening the lower guard to zero changes no result or effect.",
       "proof": {
         "path": "tasks/rational-seconds-analysis-equivalences.md",
-        "sha256": "d35ed705ebdceb811c939f42fbbd82b766f424888d98d54678e98a8478fc4c96",
+        "sha256": "a65b45688d9ede2afcfee3c3a658fdded49fcdcce8c2e77f2750abf4cc01ef5b",
         "section": "RATIONAL-NORMALIZED-LOWER-RANGE",
-        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
+        "reviewer": "rational_equivalence_review; coordinator current-graph reconciliation",
         "verdict": "independently-justified-equivalent"
       }
     },
     {
       "id": "RATIONAL-NORMALIZED-GUARD-FIRST",
-      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
+      "candidate_sha256": "cb2925bb1288a0d844ec7ce702ffa88a0155be4530dd851dda7e06d20fad25f3",
       "source_sha256": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
       "mutant": {
         "file": "crates/time-domain/src/rational_seconds.rs",
@@ -134,15 +134,15 @@
       "rationale": "Whole raw typed normalization domain makes all three total pure guard predicates false; changed short-circuit changes no effect.",
       "proof": {
         "path": "tasks/rational-seconds-analysis-equivalences.md",
-        "sha256": "d35ed705ebdceb811c939f42fbbd82b766f424888d98d54678e98a8478fc4c96",
+        "sha256": "a65b45688d9ede2afcfee3c3a658fdded49fcdcce8c2e77f2750abf4cc01ef5b",
         "section": "RATIONAL-NORMALIZED-GUARD-FIRST",
-        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
+        "reviewer": "rational_equivalence_review; coordinator current-graph reconciliation",
         "verdict": "independently-justified-equivalent"
       }
     },
     {
       "id": "RATIONAL-NORMALIZED-GUARD-SECOND",
-      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
+      "candidate_sha256": "cb2925bb1288a0d844ec7ce702ffa88a0155be4530dd851dda7e06d20fad25f3",
       "source_sha256": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
       "mutant": {
         "file": "crates/time-domain/src/rational_seconds.rs",
@@ -179,15 +179,15 @@
       "rationale": "Whole raw typed normalization domain makes every guard predicate false; all earlier errors and later results agree.",
       "proof": {
         "path": "tasks/rational-seconds-analysis-equivalences.md",
-        "sha256": "d35ed705ebdceb811c939f42fbbd82b766f424888d98d54678e98a8478fc4c96",
+        "sha256": "a65b45688d9ede2afcfee3c3a658fdded49fcdcce8c2e77f2750abf4cc01ef5b",
         "section": "RATIONAL-NORMALIZED-GUARD-SECOND",
-        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
+        "reviewer": "rational_equivalence_review; coordinator current-graph reconciliation",
         "verdict": "independently-justified-equivalent"
       }
     },
     {
       "id": "RATIONAL-SIGNIFICAND-DISJOINT-BITS",
-      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
+      "candidate_sha256": "cb2925bb1288a0d844ec7ce702ffa88a0155be4530dd851dda7e06d20fad25f3",
       "source_sha256": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
       "mutant": {
         "file": "crates/time-domain/src/rational_seconds.rs",
@@ -224,15 +224,15 @@
       "rationale": "Enforced normalization/carry yields fraction below 2^52; the exponent-only binary power has no overlapping fraction bits.",
       "proof": {
         "path": "tasks/rational-seconds-analysis-equivalences.md",
-        "sha256": "d35ed705ebdceb811c939f42fbbd82b766f424888d98d54678e98a8478fc4c96",
+        "sha256": "a65b45688d9ede2afcfee3c3a658fdded49fcdcce8c2e77f2750abf4cc01ef5b",
         "section": "RATIONAL-SIGNIFICAND-DISJOINT-BITS",
-        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
+        "reviewer": "rational_equivalence_review; coordinator current-graph reconciliation",
         "verdict": "independently-justified-equivalent"
       }
     },
     {
       "id": "RATIONAL-PUBLICATION-DISJOINT-SIGN",
-      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
+      "candidate_sha256": "cb2925bb1288a0d844ec7ce702ffa88a0155be4530dd851dda7e06d20fad25f3",
       "source_sha256": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
       "mutant": {
         "file": "crates/time-domain/src/rational_seconds.rs",
@@ -269,9 +269,9 @@
       "rationale": "Actual early raw sign-bit rejection precedes both expressions; remaining seconds word and closed-enum sign bit are disjoint, preserving validation allocations and all errors/effects.",
       "proof": {
         "path": "tasks/rational-seconds-analysis-equivalences.md",
-        "sha256": "d35ed705ebdceb811c939f42fbbd82b766f424888d98d54678e98a8478fc4c96",
+        "sha256": "a65b45688d9ede2afcfee3c3a658fdded49fcdcce8c2e77f2750abf4cc01ef5b",
         "section": "RATIONAL-PUBLICATION-DISJOINT-SIGN",
-        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
+        "reviewer": "rational_equivalence_review; coordinator current-graph reconciliation",
         "verdict": "independently-justified-equivalent"
       }
     }

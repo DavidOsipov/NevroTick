@@ -5,12 +5,16 @@ status = "six-member-scope-recorded-qualification-candidate-specific"
 security_module_minimum_executable_line_percent = 90
 critical_file_minimum_mutation_percent = 95
 security_modules = [
+    { name = "conditioned-affine-fit", package = "time-core", files = ["crates/time-core/src/conditioned_fit.rs", "crates/time-core/src/conditioned_fit/arithmetic.rs"], scope = "borrowed actual-N1 chart suffixes, original-divisor geometry-first affine fitting, exact-original-rational enclosures and atomic unit-safe lifting; implementation and candidate-specific qualification pending in tasks/engine-transport-pilot.md; no history insertion, physical uncertainty, source authority, native or clock effects" },
+    { name = "exact-conditioned-window", package = "time-core", files = ["crates/time-core/src/conditioned_window.rs"], scope = "checked immutable declared-context rows, exact half-tick/phase anchoring, once-rounded ratios and bounds, exact dyadic conditioning and unchanged original-row window divisors; N1b qualified within its retained two-owner Linux candidate in tasks/engine-transport-pilot.md; current N2 fitting has separate unfinished qualification; no genuine provenance, physical accuracy, production admission, history or clock authority" },
     { name = "exact-rational-seconds", package = "time-domain", files = ["crates/time-domain/src/rational_seconds.rs"], scope = "pure signed-u128/nonzero-u64 exact seconds ratio retained with one nearest-ties-even binary64 conversion and arithmetic rounding bound; current development/coverage/mutation qualification pending under tasks/s1.2-regression-readiness.md; no physical accuracy, sample eligibility, conditioned fit or clock authority" },
     { name = "fixture-reference-input-readiness", package = "time-core", files = ["crates/time-core/src/reference_input.rs"], scope = "exact-instance fixture chart admission and borrowed reference-input lifetime; monotone feedback invalidation with unknown dominance and modeled achieved-phase receiving; candidate-specific evidence in tasks/s1.3-source-selection-readiness.md; no installed mapping, native acknowledgement or clock authority" },
     { name = "fixture-settled-active-time-rate-delivery", package = "time-core", files = ["crates/time-core/src/reference_input/rate_delivery.rs"], scope = "checked independent active/monotonic spans, local non-replay settlement cursor and consume-before-arithmetic delivery of stored applied rate into a counterfactual complete-domain chart; portable authoring passed, selected current contract/coverage/mutation and validation-mechanism qualification pending; no native job completion, broker journal, physical ramp or clock authority" },
     { name = "engine-loopback-runtime-owner", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/lib.rs"], scope = "bounded two-peer loopback transport experiment; entropy/socket/runtime lifetime and current-generation admission; final contract, coverage, mutation, resource and native Windows qualification pending; no eligible sample, authentication or clock authority" },
     { name = "engine-observe-cli-admission", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/bin/nevrotick-observe.rs"], scope = "explicit loopback peer/timeout admission and bounded unauthenticated ineligible transport diagnostics; final contract, coverage, mutation and native Windows qualification pending; no production defaults or protected effects" },
     { name = "engine-experimental-measurement", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/measurement.rs"], scope = "conditional nominal software-clock conversion, explicit date/era scope and checked phase/raw-RTT arithmetic; declared model and observed consistency remain distinct; current contract, coverage and mutation qualification pending; no qualified UTC/wire accuracy, estimator eligibility, authentication or clock authority" },
+    { name = "engine-experimental-relative-measurement", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/relative.rs"], scope = "borrowed same-run terminal observations, actual shared-origin identity, checked exact half-nanosecond midpoint and self-minus-anchor phase/reference conversion; candidate-specific evidence belongs to the existing engine task; no production history, physical accuracy, current freshness, authentication or clock authority" },
+    { name = "engine-same-source-series-receiver", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/series.rs"], scope = "N3a fixed three-attempt sequential controlled-loopback acquisition, actual shared origin and unique request ownership, consume-once terminal delivery and retained partial results; implementation and candidate-specific contract, coverage, mutation and lifecycle checks pending in tasks/engine-transport-pilot.md; no production sample/history admission, physical quality, authentication, Windows or clock authority" },
     { name = "preview-admission", package = "nevrotick-ui", files = ["crates/nevrotick-ui/src/model.rs"], scope = "local prototype fields only; no production authority" },
     { name = "ntp-fixed-header", package = "ntp-wire", files = ["crates/ntp-wire/src/header.rs"], scope = "inert fixed binary header only; no exchange, authentication, time or clock authority" },
     { name = "ntp-outer-framing", package = "ntp-wire", files = ["crates/ntp-wire/src/datagram.rs"], scope = "bounded complete no-legacy-MAC outer framing only; no exchange, authentication, era or sample admission" },
@@ -55,12 +59,17 @@ security_modules = [
     { name = "fixture-chart-combination-shared-lifecycle", package = "time-core", files = ["crates/time-core/src/combination/lifecycle/chart.rs"], scope = "actual chart decision/batch lifetime, original-versus-target context separation, complete receiving before shared filtering and one validated staged-state commit; S158 portable authoring passed, dependent qualification pending; no installed generation, production eligibility or clock authority" },
 ]
 critical_files = [
+    "crates/time-core/src/conditioned_fit.rs",
+    "crates/time-core/src/conditioned_fit/arithmetic.rs",
+    "crates/time-core/src/conditioned_window.rs",
     "crates/time-domain/src/rational_seconds.rs",
     "crates/time-core/src/reference_input.rs",
     "crates/time-core/src/reference_input/rate_delivery.rs",
     "crates/nevrotick-engine/src/lib.rs",
     "crates/nevrotick-engine/src/bin/nevrotick-observe.rs",
     "crates/nevrotick-engine/src/measurement.rs",
+    "crates/nevrotick-engine/src/relative.rs",
+    "crates/nevrotick-engine/src/series.rs",
     "crates/nevrotick-ui/src/model.rs",
     "crates/nevrotick-ui/src/native.rs",
     "crates/nevrotick-ui/src/native/controls.rs",

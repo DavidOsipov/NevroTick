@@ -7,6 +7,7 @@ and native outcome accounting. No acquisition, new graph or profile exception.
 from __future__ import annotations
 
 import argparse
+import hashlib
 from collections import Counter
 import importlib.util
 import json
@@ -33,6 +34,7 @@ SUBJECTS = {
     "library": "crates/nevrotick-engine/src/lib.rs",
     "cli": "crates/nevrotick-engine/src/bin/nevrotick-observe.rs",
     "measurement": "crates/nevrotick-engine/src/measurement.rs",
+    "relative": "crates/nevrotick-engine/src/relative.rs",
 }
 SCOPE = COMMON.Scope("nevrotick-engine", tuple(SUBJECTS.items()), POLICY)
 CONTRACT_SCOPE = COMMON.Scope(
@@ -54,6 +56,7 @@ BOUND_INPUTS = (
     "crates/nevrotick-engine/tests/private/processing_guards.rs",
     "crates/nevrotick-engine/tests/private/argument_guards.rs",
     "crates/nevrotick-engine/tests/private/measurement.rs",
+    "crates/nevrotick-engine/tests/private/relative.rs",
     "scripts/portable-analysis.py", "scripts/analysis-runtime.py", "scripts/check-analysis.py",
     "scripts/prepare-product.py", "policy/analysis-tools.json", "policy/verification-manifest.toml",
 )
@@ -78,6 +81,7 @@ REQUIRED_TESTS = frozenset({
     "processing_guard_tests::complete_header_survives_actual_staging_and_terminal_projection",
     "processing_guard_tests::real_udp_measurement_matches_independent_captured_coordinates",
     "processing_guard_tests::measurement_refusal_consumes_the_correlated_request_once",
+    "processing_guard_tests::public_execute_relative_view_retains_actual_common_run_and_refusals",
     "measurement::tests::exact_dyadic_results_ignore_the_wire_token",
     "measurement::tests::peer_shift_changes_sign_without_changing_rtt",
     "measurement::tests::negative_raw_rtt_and_half_q32_phase_are_preserved",
@@ -104,6 +108,18 @@ REQUIRED_TESTS = frozenset({
     "measurement::tests::nominal_arithmetic_retains_full_coordinate_domain_without_i64_projection",
     "measurement::tests::nominal_seconds_preserve_corrected_capture_units_and_signed_rtt",
     "measurement::tests::nominal_seconds_checks_scale_and_retains_the_signed_integer_endpoint",
+    "measurement::tests::relative_phase_direction_preserves_checked_nominal_ticks",
+    "measurement::tests::relative_phase_anchoring_precedes_large_absolute_rounding",
+    "measurement::tests::relative_phase_difference_exceeds_i128_without_losing_sign",
+    "relative::tests::midpoint_bounds_preserve_half_nanoseconds_and_integer_endpoints",
+    "relative::tests::midpoint_publication_enforces_raw_association_and_garde_rule",
+    "relative::tests::duration_nanoseconds_admits_full_u64_and_rejects_next_tick",
+    "relative::tests::reference_instants_check_order_before_duration_conversion",
+    "relative::tests::relative_reference_differences_keep_direction_and_half_ticks",
+    "relative::tests::relative_phase_raw_i128_endpoints_keep_u128_magnitude",
+    "relative::tests::shared_origin_distinguishes_equal_values_from_run_identity",
+    "relative::tests::relative_seconds_scale_requires_nonzero_with_healthy_neighbors",
+    "relative::tests::relative_diagnostics_preserve_fixed_text_and_original_causes",
     "prepare_outside_runtime_owns_and_releases_standard_sockets",
     "prepare_rejects_entered_runtime_before_native_startup",
     "execute_rejects_entered_runtime_without_nested_runtime_creation",
@@ -124,6 +140,86 @@ FIXED_POLICY = {
     "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
     "mutation_jobs": 10, "mutation_process_limit": 512, "mutation_message_format": "json",
     "tool_admission_profile": "full", "mutation_equivalences": [],
+}
+
+# N3a has an explicit role. Legacy constants, admission and fixtures retain their
+# historical scope; selecting this role never imports their scores or inventory.
+SERIES_POLICY = "policy/series-analysis.json"
+SERIES_TESTS = "scripts/tests/test_series_analysis.py"
+SERIES_SUBJECTS = {
+    "library": "crates/nevrotick-engine/src/lib.rs",
+    "series": "crates/nevrotick-engine/src/series.rs",
+}
+SERIES_SCOPE = COMMON.Scope("nevrotick-engine", tuple(SERIES_SUBJECTS.items()), SERIES_POLICY)
+SERIES_BOUND_INPUTS = tuple(dict.fromkeys((
+    *BOUND_INPUTS, WRAPPER, SERIES_TESTS, "rust-toolchain.toml", ".cargo/config.toml",
+    ".cargo/mutants.toml", "crates/nevrotick-engine/src/series.rs",
+    "crates/nevrotick-engine/tests/private/series.rs", "crates/nevrotick-engine/tests/series.rs",
+)))
+SERIES_REQUIRED_TESTS = frozenset({
+    "series::tests::series_process::semantic_evidence_accepts_only_exact_named_admitted_sites",
+    "series_process::semantic_evidence_accepts_only_exact_named_admitted_sites",
+    "series::tests::all_series_debug_outputs_are_exact_fixed_redactions",
+    "series::tests::entropy_failure_and_entered_runtime_precede_all_acquisition_work",
+    "series::tests::selected_native_datagram_after_retirement_is_charged_without_publication",
+    "series::tests::setup_and_registration_failures_preserve_actual_prior_completion",
+    "series::tests::single_slot_driver_enforces_receive_cap_with_valid_boundary_neighbor",
+    "series::tests::single_slot_driver_enforces_send_cap_with_valid_boundary_neighbor",
+    "series::tests::actual_publication_rechecks_control_and_deadline_after_staging",
+    "series::tests::deadlines_and_controls_do_not_reset_the_series_origin",
+    "series::tests::genuine_terminal_report_admits_only_the_three_position_domain",
+    "series::tests::partial_report_preserves_primary_and_both_cleanup_causes",
+    "series::tests::post_commit_control_preserves_header_and_measurement_refusal",
+    "series::tests::raw_config_and_tokens_have_mandatory_bounded_admission",
+    "series::tests::receiver_rejects_duplicate_foreign_and_reused_identity_atomically",
+    "series::tests::transfer_control_and_irreversible_retirement_are_distinct",
+    "invalidation_preserves_first_completion_and_marks_third_not_started",
+    "ipv6_real_requests_retain_distinct_identity_and_one_exact_origin",
+    "middle_request_timeout_preserves_earlier_facts_and_starts_final_attempt",
+    "stop_preserves_first_completion_and_marks_third_not_started",
+    "three_real_requests_retain_distinct_identity_and_one_exact_origin",
+    "total_deadline_preserves_first_completion_and_prevents_third_send",
+    "unavailable_measurements_still_consume_once_after_rejected_neighbors",
+})
+SERIES_N3_DOCTESTS = {
+    "crates/nevrotick-engine/src/series.rs - series::PreparedSeries (line 209) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/series.rs - series::PreparedSeries (line 216) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/series.rs - series::SeriesAttempt (line 331) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 81) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 87) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 91) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/series.rs - series::SeriesReport (line 395) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/series.rs - series::SeriesConfig::new (line 111)": "legal_execution",
+    "crates/nevrotick-engine/src/series.rs - series::execute_series (line 1027) - compile": "legal_no_run",
+}
+SERIES_INVENTORY_DIGESTS = {
+    "ordinary": "6d197d0b3e02abb8a852754bf28d69642ca4182fc25a15e8d4a733c8b05c4622",
+    "doctests": "8f9b7f8aa85dead52856c3fc24957062b23ff2523142ee562d3ce81bb003415e",
+    "baseline": "69649c70594d720d1f46db6e64e1b095510e8f753e173abcdeee7252a7cce6e0",
+}
+SERIES_EQUIVALENCE_SOURCE = "10e047bf2953becf82b9b6ce714dfcaf06a292f98084702c762eefc757423821"
+SERIES_ZERO_ADMISSION_SOURCE = "84bb369585ca0f53a5d54f945295b5aeca41b6c2d4d91c9d3a745dab291e5d3f"
+SERIES_EQUIVALENCE_DESCRIPTORS = {
+    "ENGINE-SERIES-COMMIT-DURATION-FALLBACK-SUB":
+        "fb8ea69cd621b8843440c420b136eac359ec2409e0436f291f13cc0c5742377d",
+    "ENGINE-SERIES-COMMIT-DURATION-FALLBACK-MUL":
+        "a2d94adbb592864a95c4e6e1bd7a999afbab8fd089b1fdc05a33ea471408ffac",
+    "ENGINE-SERIES-UNAVAILABLE-ADMITTED-ZERO":
+        "7da9d471e1fa869efa3b8ee17021b7a8c669c48e1c90a2b6c56db19acbe35545",
+    "ENGINE-SERIES-UNAVAILABLE-ELIGIBLE-ZERO":
+        "a321a5a66afa4e62d840f1f040c6acbca0d152d84e89996a67c6ccf422e40861",
+}
+SERIES_FIXED_POLICY = {
+    "schema_version": 1, "admission_status": "admitted-n3a-series-source",
+    "package": "nevrotick-engine", "source_file_count": 407,
+    "critical_files": list(SERIES_SUBJECTS.values()),
+    "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+    "maximum_mutants": 512, "maximum_listed_per_file": 512, "maximum_listed_total": 512,
+    "coverage_wall_seconds": 300, "enumeration_wall_seconds": 240, "contracts_wall_seconds": 300,
+    "mutation_wall_seconds": 1200, "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+    "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
+    "mutation_jobs": 8, "mutation_process_limit": 512, "mutation_message_format": "json",
+    "minimum_free_bytes": 5 * 1024**3, "tool_admission_profile": "full",
 }
 
 
@@ -163,7 +259,7 @@ def inventory_bindings(policy: dict, *, required: bool = False) -> dict:
     if not bindings and not required:
         return {}
     if set(bindings) != set(SUBJECTS):
-        raise Incomplete("Campaign requires reviewed nonempty inventories for all three engine files.")
+        raise Incomplete("Campaign requires reviewed nonempty inventories for all four engine files.")
     for binding in bindings.values():
         if (not isinstance(binding, dict) or set(binding) != {"count", "sha256"}
                 or type(binding["count"]) is not int or not 0 < binding["count"] <= policy["maximum_mutants"]
@@ -174,31 +270,51 @@ def inventory_bindings(policy: dict, *, required: bool = False) -> dict:
 
 
 def validate_equivalence_scope(entries: object) -> None:
-    """Permit no E or only both reviewed coherence-equality cases, without skips.
+    """Admit the historical measurement cohort or the exact host fallback pair.
 
     Shared admission still binds each complete descriptor, candidate, source and
     independent-review artifact. This scope check supplies no semantic verdict.
     """
-    replacements = {"ENGINE-COHERENCE-LOWER-EQUALITY": "<=",
-                    "ENGINE-COHERENCE-UPPER-EQUALITY": ">="}
+    owners = {
+        "ENGINE-COHERENCE-LOWER-EQUALITY": ("measurement", "coherence_residual", "<=", None),
+        "ENGINE-COHERENCE-UPPER-EQUALITY": ("measurement", "coherence_residual", ">=", None),
+        "ENGINE-NOMINAL-ZERO-SIGN": ("measurement", "nominal_seconds", "<=", None),
+        "ENGINE-COMMIT-DURATION-FALLBACK-SUB": (
+            "library", "commit_reply", "-=",
+            "7367d98456163b7ac5194b8423d289121a3b30bc1e60910bc67f0f3dfb294c39"),
+        "ENGINE-COMMIT-DURATION-FALLBACK-MUL": (
+            "library", "commit_reply", "*=",
+            "640fe4b14f5d217b3662ca08f74bcfee0ad41eff9d9a613434fee7e0f15178d0"),
+    }
     if type(entries) is not list:
         raise Incomplete("Engine equivalences require an exact list.")
     if not entries:
         return
-    if (len(entries) != 2 or any(type(entry) is not dict for entry in entries)
-            or any(type(entry.get("id")) is not str for entry in entries)
-            or {entry.get("id") for entry in entries} != set(replacements)):
-        raise Incomplete("Engine equivalences require both exact reviewed coherence equality IDs.")
+    if (any(type(entry) is not dict for entry in entries)
+            or any(type(entry.get("id")) is not str for entry in entries)):
+        raise Incomplete("Engine equivalences require exact reviewed IDs.")
+    identifiers = {entry["id"] for entry in entries}
+    coherence = {"ENGINE-COHERENCE-LOWER-EQUALITY", "ENGINE-COHERENCE-UPPER-EQUALITY"}
+    fallback = {"ENGINE-COMMIT-DURATION-FALLBACK-SUB", "ENGINE-COMMIT-DURATION-FALLBACK-MUL"}
+    if len(entries) != len(identifiers) or identifiers not in (
+            coherence, coherence | {"ENGINE-NOMINAL-ZERO-SIGN"}, fallback):
+        raise Incomplete("Engine equivalences require a complete reviewed measurement cohort or exact fallback pair.")
     for entry in entries:
         mutant, proof = entry.get("mutant"), entry.get("proof")
+        subject, function, replacement, descriptor_digest = owners[entry["id"]]
         if (type(mutant) is not dict or type(mutant.get("function")) is not dict
-                or mutant.get("file") != SUBJECTS["measurement"]
-                or mutant["function"].get("function_name") != "coherence_residual"
+                or mutant.get("file") != SUBJECTS[subject]
+                or mutant["function"].get("function_name") != function
                 or mutant.get("genre") != "BinaryOperator"
-                or mutant.get("replacement") != replacements[entry["id"]]
+                or mutant.get("replacement") != replacement
                 or type(proof) is not dict
                 or proof.get("path") != "tasks/engine-analysis-equivalences.md"):
-            raise Incomplete("Engine equivalence leaves its exact coherence owner or review artifact.")
+            raise Incomplete("Engine equivalence leaves its exact function/operator owner or review artifact.")
+        if descriptor_digest is not None and (
+                COMMON.canonical_sha256(mutant) != descriptor_digest
+                or entry.get("source_sha256") !=
+                "6f3c6eb2f491de7f27a89f8fba84556e818874a9c875643b08081206f5dd4d46"):
+            raise Incomplete("Engine fallback equivalence requires its exact source and native descriptor.")
 
 
 def read_policy(root: Path) -> dict:
@@ -358,7 +474,7 @@ def copy_contract_dependencies(session, artifact: str) -> Path:
     return destination
 
 
-def contracts(session, policy: dict, report: dict) -> None:
+def contracts(session, policy: dict, report: dict, *, examples=None, effect_scope=None) -> None:
     """Compile intended external causes and execute only checked constructors."""
     deadline = time.monotonic() + policy["contracts_wall_seconds"]
     output = session.run(
@@ -371,7 +487,7 @@ def contracts(session, policy: dict, report: dict) -> None:
     consumers = session.work / "contract-inputs"
     consumers.mkdir(mode=0o700)
     (session.work / "contracts").mkdir(mode=0o700)
-    examples = contract_examples()
+    examples = contract_examples() if examples is None else examples
     for name, specimen in examples.items():
         (consumers / (name + ".rs")).write_text(specimen["source"])
     session.protect(consumers)
@@ -393,7 +509,8 @@ def contracts(session, policy: dict, report: dict) -> None:
         "immutable_dependencies_sha256": PRODUCT.inventory(dependencies),
         "required_diagnostics": {name: {key: specimen[key] for key in ("code", "tokens", "line")}
                                  for name, specimen in examples.items() if specimen["code"]},
-        "effect_scope": "Config/ControlSchedule construction only; no runtime, socket or execute calls",
+        "effect_scope": ("Config/ControlSchedule construction only; no runtime, socket or execute calls"
+                         if effect_scope is None else effect_scope),
     }
 
 
@@ -488,10 +605,11 @@ def validate_test_execution(text: str, *, doctests: bool) -> dict:
     docs = [name for name in records if re.fullmatch(
         r"[^\r\n]+\.rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile fail)?", name)]
     doc_pattern = re.compile(
-        r"(?:[^\r\n]+/)?crates/nevrotick-engine/src/(lib|measurement)\.rs - "
+        r"(?:[^\r\n]+/)?crates/nevrotick-engine/src/(lib|measurement|relative)\.rs - "
         r"(Config::new|ControlSchedule::new|measurement::ExperimentalProfile|"
         r"measurement::ExperimentalMeasurement|measurement::NominalPhaseNs|"
-        r"measurement::NominalRoundTripNs) \(line [1-9][0-9]*\)( - compile fail)?")
+        r"measurement::NominalRoundTripNs|relative::ExperimentalReferenceNs|"
+        r"relative::ExperimentalRelativeMeasurement) \(line [1-9][0-9]*\)( - compile fail)?")
     signatures = Counter((match[1], match[2], bool(match[3]))
                          for name in docs if (match := doc_pattern.fullmatch(name)) is not None)
     expected = Counter({("lib", "Config::new", False): 1,
@@ -503,7 +621,11 @@ def validate_test_execution(text: str, *, doctests: bool) -> dict:
                         ("measurement", "measurement::NominalPhaseNs", False): 1,
                         ("measurement", "measurement::NominalPhaseNs", True): 4,
                         ("measurement", "measurement::NominalRoundTripNs", False): 1,
-                        ("measurement", "measurement::NominalRoundTripNs", True): 4})
+                        ("measurement", "measurement::NominalRoundTripNs", True): 4,
+                        ("relative", "relative::ExperimentalReferenceNs", False): 1,
+                        ("relative", "relative::ExperimentalReferenceNs", True): 4,
+                        ("relative", "relative::ExperimentalRelativeMeasurement", False): 1,
+                        ("relative", "relative::ExperimentalRelativeMeasurement", True): 5})
     if doctests and (signatures != expected or len(docs) != sum(expected.values())):
         raise Incomplete("Engine mutation baseline omits its actual construction/privacy doctests.")
     if not doctests and docs:
@@ -514,23 +636,357 @@ def validate_test_execution(text: str, *, doctests: bool) -> dict:
 def validate_baseline(work: Path, subject: str) -> dict:
     """Inspect the tool's actual source-bound baseline before accepting any score."""
     directory = work / "mutation" / subject / "mutants.out"
-    outcomes = read_json(directory / "outcomes.json", maximum=64 * 1024 * 1024)
+    outcomes = COMMON.read_analysis_json(directory / "outcomes.json", maximum=64 * 1024 * 1024)
     baseline = [item for item in outcomes.get("outcomes", [])
                 if isinstance(item, dict) and item.get("scenario") == "Baseline"]
     if len(baseline) != 1 or baseline[0].get("summary") != "Success":
         raise Incomplete("Engine mutation requires exactly one successful actual baseline.")
-    relative = Path(baseline[0].get("log_path", ""))
+    relative = COMMON.analysis_output_path(baseline[0].get("log_path", ""))
     if relative.is_absolute() or not relative.parts or ".." in relative.parts:
         raise Incomplete("Engine baseline log escapes its owned output.")
     path = directory / relative
-    if path != path.resolve(strict=True):
+    if path.is_symlink():
         raise Incomplete("Engine baseline log cannot use a linked path.")
-    data = COMMON.ANALYSIS.read_once(path, maximum=16 * 1024 * 1024)
-    return {**validate_test_execution(data.decode("utf-8"), doctests=True), "log_sha256": PRODUCT.sha256(path)}
+    data = COMMON.read_analysis_bytes(path, maximum=16 * 1024 * 1024)
+    return {**validate_test_execution(data.decode("utf-8"), doctests=True), "log_sha256": hashlib.sha256(data).hexdigest()}
+
+
+def series_inventory_bindings(policy: dict, *, required: bool = False) -> dict:
+    """Keep discovery separate from exact, complete two-owner campaign admission."""
+    bindings = policy.get("mutation_inventories")
+    if type(bindings) is not dict:
+        raise Incomplete("Series mutation inventory bindings must be an object.")
+    if not bindings and not required:
+        return {}
+    if set(bindings) != set(SERIES_SUBJECTS):
+        raise Incomplete("Series mutation needs reviewed nonempty inventories for both owners.")
+    for binding in bindings.values():
+        if (type(binding) is not dict or set(binding) != {"count", "sha256"}
+                or type(binding["count"]) is not int or not 0 < binding["count"] <= 512
+                or type(binding["sha256"]) is not str
+                or re.fullmatch(r"[a-f0-9]{64}", binding["sha256"]) is None):
+            raise Incomplete("Series mutation requires exact positive inventory counts and hashes.")
+    return bindings
+
+
+def series_test_inventory(policy: dict) -> tuple[list[str], list[str]]:
+    """Admit all current package identities, not only a minimum N3 name subset."""
+    inventory = policy.get("test_inventory")
+    if (type(inventory) is not dict
+            or set(inventory) != {"ordinary", "doctests", "baseline_count", "sha256", "n3_doctests"}
+            or type(inventory["baseline_count"]) is not int or inventory["baseline_count"] != 133
+            or inventory["sha256"] != SERIES_INVENTORY_DIGESTS
+            or inventory["n3_doctests"] != SERIES_N3_DOCTESTS):
+        raise Incomplete("Series test inventory or legal/compile-only contract identities changed.")
+    ordinary, docs = inventory["ordinary"], inventory["doctests"]
+    for names, count, kind in ((ordinary, 91, "ordinary"), (docs, 42, "doctests")):
+        if (type(names) is not list or len(names) != count
+                or any(type(name) is not str or not name or len(name) > 1024 for name in names)
+                or len(set(names)) != count or names != sorted(names)
+                or COMMON.canonical_sha256(names) != SERIES_INVENTORY_DIGESTS[kind]):
+            raise Incomplete("Series requires its complete unique frozen package test identities.")
+    if (set(ordinary) != REQUIRED_TESTS | SERIES_REQUIRED_TESTS
+            or not set(SERIES_N3_DOCTESTS) <= set(docs)
+            or COMMON.canonical_sha256(sorted(ordinary + docs)) != SERIES_INVENTORY_DIGESTS["baseline"]):
+        raise Incomplete("Series package inventory omits an existing or new actual control.")
+    return ordinary, docs
+
+
+def validate_series_equivalence_scope(entries: object) -> None:
+    """Allow no E or the exact reviewed fallback and unavailable-admission pairs.
+
+    This does not inherit the historical engine cohort. Shared admission still
+    checks actual candidate/source/proof bytes and complete native missed faults;
+    its timeout, native-exit and score gates remain unchanged.
+    """
+    if type(entries) is not list:
+        raise Incomplete("Series equivalences require an exact list.")
+    if not entries:
+        return
+    required = {"id", "candidate_sha256", "source_sha256", "mutant", "requirement", "rationale", "proof"}
+    if (len(entries) != 4 or any(type(entry) is not dict or set(entry) != required for entry in entries)
+            or any(type(entry["id"]) is not str for entry in entries)
+            or {entry["id"] for entry in entries} != set(SERIES_EQUIVALENCE_DESCRIPTORS)):
+        raise Incomplete("Series equivalences require the complete exact current four-ID N3 cohort.")
+    for entry in entries:
+        mutant, proof = entry["mutant"], entry["proof"]
+        expected_source = (SERIES_ZERO_ADMISSION_SOURCE
+                           if entry["id"].startswith("ENGINE-SERIES-UNAVAILABLE-")
+                           else SERIES_EQUIVALENCE_SOURCE)
+        if (entry["source_sha256"] != expected_source
+                or type(mutant) is not dict
+                or COMMON.canonical_sha256(mutant) != SERIES_EQUIVALENCE_DESCRIPTORS[entry["id"]]
+                or type(entry["candidate_sha256"]) is not str
+                or re.fullmatch(r"[a-f0-9]{64}", entry["candidate_sha256"]) is None
+                or type(proof) is not dict
+                or set(proof) != {"path", "sha256", "section", "reviewer", "verdict"}
+                or proof["path"] != "tasks/engine-analysis-equivalences.md"
+                or proof["section"] != entry["id"]
+                or proof["verdict"] != "independently-justified-equivalent"
+                or type(proof["sha256"]) is not str
+                or re.fullmatch(r"[a-f0-9]{64}", proof["sha256"]) is None
+                or type(proof["reviewer"]) is not str or not 0 < len(proof["reviewer"].strip()) <= 128
+                or any(type(entry[key]) is not str or not 0 < len(entry[key].strip()) <= maximum
+                       for key, maximum in (("requirement", 256), ("rationale", 4096)))):
+            raise Incomplete("Series equivalence leaves its exact current source, native descriptor or review identity.")
+
+
+def validate_series_policy(policy: dict) -> dict:
+    """Admit only the explicit N3 role and its finite, unchanged gate settings."""
+    extras = {"candidate_sha256", "inputs_sha256", "mutation_inventories", "mutation_equivalences", "scope", "test_inventory"}
+    if (type(policy) is not dict or set(policy) != set(SERIES_FIXED_POLICY) | extras
+            or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                   for key, value in SERIES_FIXED_POLICY.items())
+            or type(policy.get("scope")) is not str or not 0 < len(policy["scope"]) <= 2048
+            or type(policy.get("candidate_sha256")) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", policy["candidate_sha256"]) is None):
+        raise Incomplete("Unreviewed series scope, thresholds, budgets or full tool profile.")
+    pins = policy["inputs_sha256"]
+    if (type(pins) is not dict or set(pins) != set(SERIES_BOUND_INPUTS)
+            or any(type(h) is not str or re.fullmatch(r"[a-f0-9]{64}", h) is None for h in pins.values())):
+        raise Incomplete("Series protected input bindings are incomplete or malformed.")
+    series_test_inventory(policy)
+    series_inventory_bindings(policy)
+    validate_series_equivalence_scope(policy["mutation_equivalences"])
+    if any(entry["candidate_sha256"] != policy["candidate_sha256"] for entry in policy["mutation_equivalences"]):
+        raise Incomplete("Series equivalence candidate differs from its complete policy candidate.")
+    return policy
+
+
+def read_series_policy(root: Path) -> dict:
+    """Bind the new role to actual product, helpers and existing manifest owners."""
+    policy = validate_series_policy(read_json(root / SERIES_POLICY))
+    _, identity = PRODUCT.admit_product(root)
+    if (len(identity) != policy["source_file_count"]
+            or COMMON.canonical_sha256(identity) != policy["candidate_sha256"]):
+        raise Incomplete("Series policy differs from the complete current product candidate.")
+    if any(PRODUCT.sha256(root / name) != digest for name, digest in policy["inputs_sha256"].items()):
+        raise Incomplete("Series protected source, test or helper bytes changed.")
+    manifest = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
+    for filename in SERIES_SUBJECTS.values():
+        if (manifest.get("critical_files", []).count(filename) != 1
+                or sum(module.get("package") == SERIES_SCOPE.package and filename in module.get("files", [])
+                       for module in manifest.get("security_modules", [])) != 1):
+            raise Incomplete("Each series owner needs one existing critical/security registration.")
+    COMMON.admit_mutation_equivalences(root, SERIES_SCOPE, policy)
+    return policy
+
+
+def validate_series_test_execution(text: str, policy: dict, *, doctests: bool) -> dict:
+    """Reconcile exact unique native records and complete zero-failure summaries."""
+    ordinary, docs = series_test_inventory(policy)
+    if type(text) is not str:
+        raise Incomplete("Series execution output must be captured text.")
+    records = []
+    for line in text.splitlines():
+        if line.startswith("test ") and not line.startswith("test result:"):
+            match = re.fullmatch(r"test ([^\r\n]+?) \.\.\. ok", line)
+            if match is None:
+                raise Incomplete("Series native record lacks its exact successful completion.")
+            records.append(match[1])
+        elif line in {"ok", "FAILED", "ignored"}:
+            raise Incomplete("Series native completion lacks its test identity.")
+    summaries = [line for line in text.splitlines() if line.startswith("test result:")]
+    counts = [re.fullmatch(
+        r"test result: ok\. (\d+) passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;.*", line)
+        for line in summaries]
+    expected = sorted(ordinary + docs) if doctests else ordinary
+    if (not records or not summaries or any(row is None for row in counts)
+            or len(records) != len(set(records)) or sorted(records) != expected
+            or sum(int(row[1]) for row in counts if row is not None) != len(records)):
+        raise Incomplete("Series execution lacks its complete actual package inventory or summaries.")
+    return {"tests_executed": len(records), "ordinary_tests": len(ordinary),
+            "doctests": len(docs) if doctests else 0,
+            "test_names": records, "inventory_sha256": COMMON.canonical_sha256(sorted(records)),
+            "required_n3": sorted(SERIES_REQUIRED_TESTS),
+            "n3_doctests": SERIES_N3_DOCTESTS if doctests else {},
+            "no_run_meaning": "execute_series no_run is compiler evidence; its network body is not executed"}
+
+
+def validate_series_caught_causes(directory: Path, outcomes: dict) -> dict:
+    """Refuse marked N3 harness failures before they can qualify as caught faults.
+
+    Use bounded admitted bytes for every selected native log. This checks the
+    explicit containment failure marker; independent semantic review of actual
+    caught outcomes remains required and no score is calculated here.
+    """
+    rows = outcomes.get("outcomes")
+    if (type(rows) is not list or len(rows) > 513
+            or any(type(row) is not dict for row in rows)):
+        raise Incomplete("Series caught-cause records are malformed or exceed their bounded inventory.")
+    checked = {}
+    for row in rows:
+        if row.get("summary") != "CaughtMutant":
+            continue
+        scenario = row.get("scenario")
+        mutant = scenario.get("Mutant") if type(scenario) is dict else None
+        name = mutant.get("name") if type(mutant) is dict else None
+        if type(name) is not str or not 0 < len(name) <= 4096 or name in checked:
+            raise Incomplete("Series caught-cause identity is missing or duplicated.")
+        relative = COMMON.analysis_output_path(row.get("log_path", ""))
+        if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+            raise Incomplete("Series caught-cause log escapes its owned output.")
+        data = COMMON.read_analysis_bytes(directory / relative, maximum=16 * 1024 * 1024)
+        if b"N3_HARNESS_INCOMPLETE" in data.splitlines():
+            raise Incomplete("Series caught fault contains an unclassified harness failure.")
+        checked[name] = hashlib.sha256(data).hexdigest()
+    return {"checked_caught_logs": checked, "marked_harness_failures": 0,
+            "independent_semantic_review_required": True}
+
+
+def validate_series_baseline(work: Path, subject: str, policy: dict) -> dict:
+    """Read one bounded actual baseline and hash exactly the parsed log bytes."""
+    if subject not in SERIES_SUBJECTS:
+        raise Incomplete("Series baseline needs one exact critical owner.")
+    directory = work / "mutation" / subject / "mutants.out"
+    outcomes = COMMON.read_analysis_json(directory / "outcomes.json", maximum=64 * 1024 * 1024)
+    rows = [x for x in outcomes.get("outcomes", []) if type(x) is dict and x.get("scenario") == "Baseline"]
+    if len(rows) != 1 or rows[0].get("summary") != "Success":
+        raise Incomplete("Series mutation requires exactly one successful actual baseline.")
+    relative = COMMON.analysis_output_path(rows[0].get("log_path", ""))
+    if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+        raise Incomplete("Series baseline log escapes its owned output.")
+    data = COMMON.read_analysis_bytes(directory / relative, maximum=16 * 1024 * 1024)
+    return {**validate_series_test_execution(data.decode("utf-8"), policy, doctests=True),
+            "log_sha256": hashlib.sha256(data).hexdigest(),
+            "caught_cause_admission": validate_series_caught_causes(directory, outcomes)}
+
+
+def series_contract_examples() -> dict:
+    """Use the existing external-consumer harness for exact N3 causes on line four.
+
+    The legal body exercises inert constructor neighbors and type-checks function
+    pointers only. Neither preparation entropy nor execute_series is invoked.
+    Negative helper bodies are compiler-only, including the double-consumption case.
+    """
+    setup = ("let peer = SocketAddr::from(([127, 0, 0, 1], 41001)); "
+             "let request = Duration::from_millis(100); let total = Duration::from_secs(1); "
+             "let config = SeriesConfig::new(peer, request, total)?; let _ = &config;")
+    marker = "legal-series-contracts:checked-only-no-preparation-or-network"
+    legal = ("assert!(SeriesConfig::new(peer, request, total).is_ok()); "
+             "assert!(SeriesConfig::new(peer, Duration::ZERO, total).is_err()); "
+             "assert!(SeriesConfig::new(peer, total, request).is_err()); "
+             "assert!(SeriesConfig::new(SocketAddr::from(([127,0,0,1],0)), request, total).is_err()); "
+             "let _: fn(&SeriesConfig) -> Result<(PreparedSeries, ControlHandle), PilotError> = prepare_series; "
+             "let _: fn(PreparedSeries, &ControlSchedule) -> Result<SeriesReport, PilotError> = execute_series; "
+             'println!("' + marker + '");')
+    examples = {
+        "series_legal": {"statement": legal, "code": None, "tokens": [], "success_marker": marker},
+        "series_config_construction": {
+            "statement": "fn bypass(base: SeriesConfig) { let _ = SeriesConfig { request_timeout: Duration::ZERO, ..base }; }",
+            "code": "E0451", "tokens": ["request_timeout", "private"]},
+        "series_prepared_construction": {
+            "statement": "fn bypass(base: PreparedSeries, peer: SocketAddr) { let _ = PreparedSeries { peer, ..base }; }",
+            "code": "E0451", "tokens": ["peer", "private"]},
+        "series_attempt_construction": {
+            "statement": "fn bypass(base: SeriesAttempt) { let _ = SeriesAttempt { index: 0, ..base }; }",
+            "code": "E0451", "tokens": ["index", "private"]},
+        "series_report_construction": {
+            "statement": "fn bypass(base: SeriesReport) { let _ = SeriesReport { primary_failure: None, ..base }; }",
+            "code": "E0451", "tokens": ["primary_failure", "private"]},
+        "series_config_mutation": {
+            "statement": "let mut value = config; value.series_timeout = Duration::ZERO; let _ = &value;",
+            "code": "E0616", "tokens": ["series_timeout", "private"]},
+        "series_prepared_mutation": {
+            "statement": "fn mutate(mut value: PreparedSeries) { value.series_timeout = Duration::ZERO; let _ = &value; }",
+            "code": "E0616", "tokens": ["series_timeout", "private"]},
+        "series_attempt_mutation": {
+            "statement": "fn mutate(mut value: SeriesAttempt) { value.index = 0; let _ = &value; }",
+            "code": "E0616", "tokens": ["index", "private"]},
+        "series_report_mutation": {
+            "statement": "fn mutate(mut value: SeriesReport) { value.primary_failure = None; let _ = &value; }",
+            "code": "E0616", "tokens": ["primary_failure", "private"]},
+        "series_prepared_consumed": {
+            "statement": "fn reuse(plan: PreparedSeries, first: &ControlSchedule, second: &ControlSchedule) { let _ = execute_series(plan, first); let _ = execute_series(plan, second); }",
+            "code": "E0382", "tokens": ["plan", "moved"]},
+    }
+    for kind, typename in (("config", "SeriesConfig"), ("prepared", "PreparedSeries"),
+                           ("attempt", "SeriesAttempt"), ("report", "SeriesReport")):
+        examples["series_" + kind + "_default"] = {
+            "statement": f"let _: {typename} = Default::default();",
+            "code": "E0277", "tokens": [typename, "Default"]}
+    for specimen in examples.values():
+        specimen["source"] = "\n".join([
+            "use nevrotick_engine::*; use std::{net::SocketAddr, time::Duration};",
+            "fn main() -> Result<(), PilotError> {", setup, specimen.pop("statement"), "Ok(())", "}"]) + "\n"
+        specimen["line"] = 4
+    return examples
+
+
+def execute_series_profile(args, report: dict) -> None:
+    """Run only the separately admitted N3 coverage/listing/mutation role."""
+    if args.lane not in {"contracts", "enumerate", "coverage", "mutation", "all"}:
+        raise Incomplete("Unknown series analysis lane.")
+    policy = read_series_policy(ROOT)
+    subjects = SERIES_SCOPE.select(args.subject)
+    if args.lane in {"mutation", "all"}:
+        bindings = series_inventory_bindings(policy, required=True)
+        if sum(bindings[name]["count"] for name in subjects) > policy["maximum_mutants"]:
+            raise Incomplete("Complete selected series mutation inventory exceeds 512 variants.")
+    if shutil.disk_usage(args.output_dir.parent).free < policy["minimum_free_bytes"]:
+        raise Incomplete("Series analysis requires five GiB of available preflight space.")
+    session_args = argparse.Namespace(**vars(args))
+    if args.lane == "enumerate":
+        session_args.lane = "mutation"  # Tool custody only; no campaign is launched.
+    report.update(subjects=subjects, candidate_sha256=policy["candidate_sha256"],
+                  qualification_passed=False, profile="series",
+                  scope="Bounded host N3 series " + args.lane,
+                  generation_gap_controls="Separate function/macro inventory and direct controls required; no score inferred.")
+    session = COMMON.Session(ROOT, session_args, report, SERIES_SCOPE, policy,
+                             (WRAPPER, SERIES_TESTS, *SERIES_BOUND_INPUTS))
+
+    def run(label, command, timeout, **options):
+        result = session.run(label, command, timeout, **options)
+        if label == "coverage":
+            report["coverage_execution"] = validate_series_test_execution(result, policy, doctests=False)
+        elif label.startswith("mutation-campaign:"):
+            subject = label.removeprefix("mutation-campaign:")
+            report.setdefault("baseline_execution", {})[subject] = validate_series_baseline(session.work, subject, policy)
+        return result
+
+    try:
+        if COMMON.canonical_sha256(session.product_identity) != policy["candidate_sha256"]:
+            raise Incomplete("Captured series Session differs from the admitted product.")
+        if any(PRODUCT.sha256(session.source / name) != digest
+               for name, digest in policy["inputs_sha256"].items()):
+            raise Incomplete("Captured series protected input bytes changed.")
+        if COMMON.canonical_sha256(read_json(session.source / SERIES_POLICY)) != COMMON.canonical_sha256(policy):
+            raise Incomplete("Captured series policy differs from admitted policy.")
+        if args.lane in {"contracts", "all"}:
+            contracts(session, policy, report, examples=series_contract_examples(),
+                      effect_scope="SeriesConfig constructors execute; preparation/execute signatures and negative consumption are compile-only. No entropy, runtime, socket or network body.")
+        if args.lane == "enumerate":
+            listing = COMMON.enumerate_mutation_inventories(
+                SERIES_SCOPE, subjects, policy, session.tools, run, report,
+                deadline=time.monotonic() + policy["enumeration_wall_seconds"],
+                maximum_per_file=policy["maximum_listed_per_file"], maximum_total=policy["maximum_listed_total"])
+            report.update(listed_inventories=listing.inventories,
+                          listed_inventory_bindings=listed_summary(listing.inventories),
+                          listed_total=listing.total, campaign_cap_exceeded=listing.campaign_budget_exceeded,
+                          campaign_admission=False)
+        elif args.lane != "contracts":
+            for lane in (("coverage", "mutation") if args.lane == "all" else (args.lane,)):
+                # Expose receiving-boundary failures before repeating the library.
+                selected = ({name: subjects[name] for name in ("series", "library") if name in subjects}
+                            if lane == "mutation" else subjects)
+                COMMON.run_analysis_lanes(SERIES_SCOPE, selected, policy, session.work,
+                                          session.tools, run, report, lane)
+    finally:
+        session.finish()
+    if args.lane in {"contracts", "all"}:
+        report["contracts_qualification_passed"] = True
+    if args.lane not in {"enumerate", "contracts"}:
+        report["qualification_passed"] = True
 
 
 def execute(args, report: dict) -> None:
     """Execute only the fixed selected lane, with full shared custody bookends."""
+    profile = getattr(args, "profile", "legacy")
+    if profile not in {"legacy", "series"}:
+        raise Incomplete("Unknown engine analysis profile.")
+    if profile == "series":
+        execute_series_profile(args, report)
+        return
     if args.lane == "contracts":
         execute_contracts(args, report)
         return
@@ -583,12 +1039,17 @@ def execute(args, report: dict) -> None:
 def main(argv=None) -> int:
     """Keep listing completion distinct from selected host coverage/mutation gates."""
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--profile", choices=("legacy", "series"), default="legacy")
     parser.add_argument("--lane", choices=("contracts", "enumerate", "coverage", "mutation", "all"), required=True)
-    parser.add_argument("--subject", choices=(*SUBJECTS, "all"), default="all")
+    parser.add_argument("--subject", choices=(*SUBJECTS, "series", "all"), default="all")
     parser.add_argument("--tool-admission-profile", choices=("full", "stable-core"), default="full")
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
+    if args.profile == "legacy" and args.subject == "series":
+        parser.error("--subject series requires --profile series")
+    if args.profile == "series" and args.subject not in {*SERIES_SUBJECTS, "all"}:
+        parser.error("--profile series selects only library, series or all")
     report = {"status": "incomplete", "scope": "Bounded host engine " + args.lane,
               "selected_lane": args.lane, "qualification_passed": False,
               "native_windows_qualification": "not performed"}

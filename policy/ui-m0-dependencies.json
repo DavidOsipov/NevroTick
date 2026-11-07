@@ -1,9 +1,9 @@
 {
   "schema_version": 3,
-  "scope": "Merged Slint 1.18.1 fixture GUI and controlled-loopback experimental engine measurement cohort; Windows Winit/software/accessibility and Linux public custom-platform tests. Exact local spin_on and Windows AccessKit source derivatives remain separately pinned. Adds only the main engine normal local time-domain dependency; all 534 registry identities, primary grants, archive-file exceptions and non-engine scopes retain their reviewed boundaries. No production sample eligibility, clock authority, Windows/native execution or distribution clearance is established by this policy. Existing pinned Garde0.23.0 derive/defaults-off is now also a direct engine validation edge; registry packages, features, patches and grants remain fixed. Execution qualification is separate. Owner-requested 6 November refresh changes seven transitive patch releases; engine Tokio macros now use the separately reviewed Syn3 host closure while Garde retains Syn2. Existing feature/backend, grant, patch and native holds remain.",
-  "lockfile_sha256": "9f31370aaf3649527926acf48a927ce2b627d8de633d8f7a50b467cf2f07c24e",
+  "scope": "Merged Slint 1.18.1 fixture GUI and controlled-loopback experimental engine measurement cohort; Windows Winit/software/accessibility and Linux public custom-platform tests. Exact local spin_on, accesskit_windows and accesskit_consumer source derivatives remain separately pinned. Adds only the main engine normal local time-domain dependency; all other registry identities, primary grants, archive-file exceptions and non-engine scopes retain their reviewed boundaries. No production sample eligibility, clock authority, Windows/native execution or distribution clearance is established by this policy. Existing pinned Garde0.23.0 derive/defaults-off is now also a direct engine validation edge; registry packages, features, patches and grants remain fixed. Execution qualification is separate. Owner-requested 6 November refresh changes seven transitive patch releases; engine Tokio macros now use the separately reviewed Syn3 host closure while Garde retains Syn2. Existing feature/backend, grant, patch and native holds remain. The local consumer substitution retains its upstream MIT/Apache grants and adds original GPL3 regression tests; no feature or target-role expansion follows.",
+  "lockfile_sha256": "6f4e6575d8fec495cd56a2f994fa7a6a297915dda68f7fca089bfe1dc69f8085",
   "manifests_sha256": {
-    "Cargo.toml": "e200e5e14ffd56653a707939f5a5543c9ac52514693fcf345a71253e1f94f763",
+    "Cargo.toml": "cc12e8ed99fb2d2655e0955f021690894b3b814f1b3d8d968625e02bc39dbf2f",
     "crates/nevrotick-ui/Cargo.toml": "3548bb4a5793a54c2da94e71aa95eb4336849702b93a455f70262a4bde2819b2",
     "crates/ntp-wire/Cargo.toml": "dc75f8a638a956217d3ecfa666a840b2ecef99c0a06dac7443ab5cf775032579",
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
@@ -26,18 +26,6 @@
       "proc_macro": false,
       "links": null,
       "upstream_revision": "a55d3e1a18bb9ef0e4bccc9083fb13c3e0ad8969"
-    },
-    {
-      "name": "accesskit_consumer",
-      "version": "0.38.0",
-      "checksum": "5d10a236f96f87d70732e44520046785431ef01d5bcd6b041317bfadd2f88245",
-      "license": "MIT OR Apache-2.0",
-      "files_sha256": "fc9e9ee737b62b4b529977e0dc67e6991e9791995d2659bfb31b36282ea7e784",
-      "selected_license": "MIT",
-      "build_script": false,
-      "proc_macro": false,
-      "links": null,
-      "upstream_revision": "c88605b96d04431f9c3c792464a0f2f253480e94"
     },
     {
       "name": "accesskit_winit",
@@ -5337,15 +5325,35 @@
       "upstream_checksum": "106c2b961215864d1c2e703ee63269c25c4e80a577ffb2c1017b9c17dcdf83a1",
       "upstream_files_sha256": "7b5aa35d98dbf1c4ba0d311f591de9486000b84f97190462de4266542d0306e7",
       "upstream_revision": "c88605b96d04431f9c3c792464a0f2f253480e94",
-      "files_sha256": "168f9f27b274058470317611baddba2f189b7c114684da6f6d88ea8a25b78853",
+      "files_sha256": "5388add5429dbb66ed8b0135afa77f9660a187f260991eb2a48836e17b36dd1b",
       "modified_files_sha256": {
         "Cargo.toml": "c33a928d1ab0f806fdbaff7ffac0d4b9e45043c7e059d5e87a4c5eff16e51190",
-        "NEVROTICK-PATCH.md": "2fd2dc9da02ccdfd80d03fe24be9f869a5fb44519a8c3c7571750952e3c1fa8d",
+        "NEVROTICK-PATCH.md": "907b63541dd48cb12b14e8c66d0780176c174e25d25fe230e093a5c629f03b7e",
         "src/lib.rs": "3cbee1ab1c8a9f6dc855c83823b30adf50cf2044fa24fef210a7b9b5ed2e3c87",
         "src/node.rs": "ad44d29cc02633cab2b74f5de98ef87f71ebc09b8fe3c9c7558e90f8ba7798a6",
-        "src/range_state.rs": "4427ab42304e84aa2e428d194f84f1d65183b28ac39404c7160ed63248d93ab1",
+        "src/range_state.rs": "cb6bb3924d2e6bd99edf7269b2ab6ec59ac42bed9313579f1ba6108b5497b473",
         "src/text.rs": "1ec6e0bee083e51d882fd661d81a36379b8034ee1f649a44826e0ddda16fbf53",
         "src/value_input.rs": "9bc22d48469a09eb482750ef8a1693adf32cbd752a5d9b90e08e6327ed73ada9"
+      }
+    },
+    {
+      "name": "accesskit_consumer",
+      "version": "0.38.0",
+      "path": "third-party/accesskit_consumer",
+      "license": "(MIT OR Apache-2.0) AND GPL-3.0-only",
+      "selected_license": "MIT AND GPL-3.0-only",
+      "build_script": false,
+      "proc_macro": false,
+      "links": null,
+      "upstream_checksum": "5d10a236f96f87d70732e44520046785431ef01d5bcd6b041317bfadd2f88245",
+      "upstream_files_sha256": "fc9e9ee737b62b4b529977e0dc67e6991e9791995d2659bfb31b36282ea7e784",
+      "upstream_revision": "c88605b96d04431f9c3c792464a0f2f253480e94",
+      "files_sha256": "18c7c77dd20fbe2bb0b989b77fba6b17d8da1bb606b262aa1ca16a2d1b6ef3b2",
+      "modified_files_sha256": {
+        "Cargo.toml": "4b6bec8f0be554ffc859b58584a5a51d328ec0ebede23493ea8f7ac849c91318",
+        "NEVROTICK-PATCH.md": "d4db49719ccbc18e5b949327e2938d1e4be1bebe04fbe5d731a4a6f25c03738a",
+        "src/text.rs": "d29dcdce24acb01a131e11ebb00776e057be707d263a5944b5e078180b5c9632",
+        "src/text/nevrotick_word_navigation_tests.rs": "f129d32aa09a901d6ba9c79af3b8959a941ffe86c01e3b84b8a5ef72d6d8c664"
       }
     }
   ],
