@@ -17,15 +17,16 @@ provisioning admission and native Windows lifecycle evidence remain open.
 and the engine's
 [receiving transaction reconciliation](engine-transport-pilot.md#receiving-transaction-reconciliation--7-november-2026).
 Its four identity/accumulation/capacity/commit choices are settled. Q1's conditional
-quality calculation's [frozen integrated checkpoint](engine-transport-pilot.md#q1-verification-readiness-and-frozen-integrated-candidate)
-passes111 ordinary/111 optimized tests,50 doctests and all ten selected lanes
-on416-input `8c05b4ee...`. The new negative-server limit control passed healthy
-and detected an isolated absolute-value omission; it earns no generated mutation
-kill. The role binds161 baseline names,20 Q1 cases and the reviewed167-variant
-inventory;68 Python controls pass. The frozen final contracts/coverage/mutation
-session has started under the unchanged five-GiB floor; its final outcome,
-mutation score and full Q1 exit remain pending. Earlier v6 contracts and366/382
-coverage retain their historical scope. Windows-target compiler checks
+quality calculation's [final qualification](engine-transport-pilot.md#q1-final-qualification--conditional-source-quality)
+passes its current 421-input Linux scope: exact-source reuse of 113 ordinary/
+113 optimized tests and 50 doctests, fresh contracts, 366/382 executable-line
+coverage and all 167 mutations. There are 132 caught, 34 compiler-unviable and
+one reviewed equivalent, with no timeout or unresolved survivor; exclusions
+receive no kill credit. All 94 Python controls and final custody pass. The old
+incomplete campaign and ungenerated-control scopes remain retained. Next freeze
+the [persistent acquisition-session contract](engine-transport-pilot.md#next-receiving-prerequisite--persistent-acquisition-session-contract)
+before implementing its shared-chart, preparation and retirement lifetime.
+Windows-target compiler checks
 establish no native Windows or service qualification.
 It uses actual completed `TransportFacts` and explicit checked assumptions;
 production suppliers, history integration and

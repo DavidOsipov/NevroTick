@@ -2655,7 +2655,11 @@ API adoption or full W11-W01 completion is claimed.
 Continue that bounded source contract when the owner reaches S2.1/P2, using this
 card and W11-W01's existing cases rather than repeating a general API survey.
 [Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-keeps S1.1c's rounding/era proof continuation first. The selected Linux Core
+selects the ordinary observation-to-Core chain: finish Q1's conditional-quality
+qualification, then prepare the actual capability/capture/mapping suppliers in
+the existing receiving card. Under OD-10 §14.1, all formal work remains deferred
+until after the first released V1; it is not a prerequisite for this source
+contract. The selected Linux Core
 checkpoint, leap implementation/proof scope, complete MSIX, optional enhanced
 release provenance, S134/native and fuzz restrictions, storage pause and UI-M0
 D1–D3 deferrals retain their recorded status. This preparation lifts no hold and

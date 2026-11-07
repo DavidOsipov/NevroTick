@@ -151,13 +151,15 @@ or timeout and no equivalent kill credit. Independent cause/function review
 retains the earlier failed attempts and scoped validator controls. The next
 [receiving transaction reconciliation](../tasks/engine-transport-pilot.md#receiving-transaction-reconciliation--7-november-2026)
 settles its four ownership/transaction choices. Q1's producer-bound conditional
-quality calculation's [frozen integrated checkpoint](../tasks/engine-transport-pilot.md#q1-verification-readiness-and-frozen-integrated-candidate)
-passes111 ordinary/111 optimized tests,50 doctests and all ten selected lanes
-on416-input `8c05b4ee...`. Its role binds161 baseline names,20 Q1 cases and the
-reviewed167-variant inventory;68 Python controls pass. The frozen final
-contracts/coverage/mutation session has started under the unchanged five-GiB
-floor; its final outcome, mutation score and full Q1 exit remain pending.
-Earlier v6 contracts and366/382 coverage retain their recorded historical scope.
+quality [final qualification](../tasks/engine-transport-pilot.md#q1-final-qualification--conditional-source-quality)
+passes its selected Linux gates on the 421-input `e8f6ead3...` candidate:
+113 ordinary/113 optimized tests and 50 doctests through exact-source reuse;
+fresh contracts, 366/382 executable-line coverage and 167 mutations. Counts are
+132 caught, 34 compiler-unviable and one reviewed equivalent, without timeout or
+unresolved survivor; exclusions receive no kill credit. All 94 Python controls
+and final custody pass. The earlier incomplete Q1 campaign remains retained.
+Next freeze the [persistent acquisition-session contract](../tasks/engine-transport-pilot.md#next-receiving-prerequisite--persistent-acquisition-session-contract),
+including actual shared-chart lifetime, one active plan/acquisition and retirement.
 Actual production
 suppliers remain required before
 history integration or an Engine-to-Core edge; Windows-target compiler checks

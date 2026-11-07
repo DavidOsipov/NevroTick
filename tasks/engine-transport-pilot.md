@@ -5439,6 +5439,151 @@ protected-helper change was the ledger's documentation update; its policy was
 rebound and current main Q1 admission passed without altering the executing
 frozen snapshot.
 
+##### Q1 strengthened qualification continuation — 8 November 2026
+
+The old `q1-quality-qualification-v1` process is terminal, not running. Its
+receipt SHA256 is
+`6eb9ed7bcd335fe850219465b611bd28b21a1858fa8c582e1b2161aaa7215a93`:
+the combined gate is **incomplete**, because a caught variant lacked the required
+source-bound assertion. Raw outcomes completed all 167 variants: 131 caught,
+34 compiler-unviable, two missed and zero timeouts. These raw counts establish
+no accepted mutation score. The original coverage and constructor results retain
+their exact historical input maps.
+
+Current private tests already assert success at the inclusive threshold neighbors
+instead of returning an unclassified product error, and check an advertised limit
+of 8.0 so the surviving getter replacement with 1.0 is distinguishable. The
+other survivor changes `interval_seconds`' zero sign selection. Independent
+whole-domain source review found it equivalent because the converter canonicalizes
+either requested sign to positive before processing a zero magnitude; retain
+this argument separately from actual execution and grant no kill credit.
+
+Current inspection found that all 421 compiled inputs, including the strengthened
+Q1 tests, already match `series-final-checkpoint-20261108-v1/green-ordinary-v3`.
+Its receipt SHA256
+`887732785dca641646e1c72adf1dcaf6af9054cd3566b33487d9e4ee1fee58b3`
+records 113 ordinary/113 optimized tests, 50 doctests and all ten selected lanes.
+Its executed helper set excludes the Q1 analysis-role wrapper, so the role-only
+repair does not invalidate this ordinary source evidence. An admitted formatting
+check also passed without changing source. Reuse this exact candidate rather
+than repeating the Rust ordinary campaign. The next finite checkpoint is to
+finish strict Q1 failed-test evidence admission, bind the actual identities and
+reviewed exclusion, then execute the existing combined contract/coverage/mutation
+lane. Q1 production arithmetic remains unchanged.
+REQ-8/BND-1 and CHECK-6/7/8/11/14/25/27 retain their conditional-quality scope:
+no production assumptions, history insertion, Core edge, service, native Windows
+or formal work is enabled. Final adjudication must preserve the earlier failed
+receipt and distinguish the getter's genuine test gap from the zero-sign
+equivalent and ungenerated controls.
+
+Owned terminal compiler targets from the old Q1 and final series campaigns were
+retired after process/custody checks. All 157 raw/merged coverage profiles, raw
+logs/outcomes/diffs, receipts and source remain. The measured recovery was
+802,193,408 bytes; main Git custody was unchanged. The small retirement record is
+`series-final-checkpoint-20261108-v1/terminal-target-cleanup-v5.json`. No
+compression or shared tool-cache deletion occurred; recheck the unchanged
+five-GiB campaign floor before execution.
+
+##### Q1 final qualification — conditional source quality
+
+**Qualified within the selected Linux scope, 8 November 2026.** The combined
+process exited 0 and was reaped. Its receipt is
+`q1-quality-final-20261108-v1/qualification-v1/verification.json` under the
+external NevroTick evidence store, SHA256
+`6ff25e852776c527786160e47d7d94d7f8a9b1745f728e76b352a31532e2e4de`.
+The compiled candidate is the 421-input
+`e8f6ead34f41429033a8d6c0ebd823bc693dae8caa645d53a8eafedf20e8727d`.
+All 432 execution inputs and full source/helper/vendor/tool custody passed;
+current main compiled/protected bytes match the frozen verification copy.
+
+The exact Green3 ordinary receipt above is reused: all 421 compiled inputs and
+12 actually executed helpers match, retaining 113 ordinary/113 optimized tests,
+50 doctests and both Windows-target compiler checks. This is source-bound reuse,
+not another ordinary execution. Fresh contracts ran one legal external consumer,
+11 intended privacy/type/lifetime rejections, one healthy validation companion
+and three actual constructor-validation omission controls. Fresh coverage ran
+113 tests and covered 366/382 executable lines (95.8115%); branch count is zero,
+so no branch-coverage claim follows.
+
+All 167 freshly enumerated mutations completed: 132 behavioral catches,
+34 compiler-unviable variants and one exact reviewed zero-sign equivalent miss,
+with no timeout or unresolved survivor. Raw 132/133 (99.2481%) and adjusted
+132/132 remain distinct; the exclusion receives no kill credit. Native
+`cargo-mutants` exit 2 is retained. Its actual baseline contains all 163 unique
+identities (113 ordinary plus 50 doctests). Raw outcomes SHA256:
+`e43f657d9211bdf18f4b2b258860a702060969bb56907e789977a73f85f88ff3`.
+
+The Q1 reader repair first reproduced ten malformed-log admissions, then rejected
+eleven incomplete/duplicate/inconsistent/aborted neighbors while preserving
+complete valid blocks and the existing source-bound primary/closed-secondary
+rules. All 94 Python controls passed in main and the frozen copy. Frozen results
+were observed in the actual tool transcript: 73 tests in 5.563 seconds and 21 in
+1.102 seconds, both exit 0; no separate shell log was retained. Replaying old
+native logs against their original semantic map accepted 128 primary cases and
+rejected exactly the three previously missing primaries. The old incomplete
+receipt remains unchanged.
+
+Independent final review reconciled all descriptors/diffs, all 34 unviable
+compiler diagnostics and all 132 caught logs, including 383 mapped primary
+causes. The getter replacement with 1.0 now fails the distinct 8.0 assertion;
+the three inclusive-boundary replacements now fail their intended success
+assertions. Separate review confirmed exact ordinary/baseline identities, raw
+LLVM coverage and source/protected-input custody. Reviews add no executions.
+The three zero-generated constructors, absolute-value omission and final
+validation alternatives retain their separate source/control scopes and no
+invented generated kill credit.
+
+This closes Q1's conditional nominal-quality calculation only. Actual physical
+assumptions, current authority, date/scale, mapping/calibration and current
+precision remain required before production admission/history. No Core edge,
+eligible sample, native Windows, NTS, P1, package or release pass follows. Continue
+the source-contract prerequisite below; all unrelated holds and OD-10 remain.
+
+After both audits completed, only owned terminal compiler/dependency and formatter
+work caches were deleted. Another 632,393,728 bytes were recovered; all 79 current
+coverage profiles, raw exports/logs/outcomes/diffs, source probes and receipts
+remain. `q1-quality-final-20261108-v1/terminal-target-cleanup-v1.json` records the
+exact paths and unchanged main Git/432 execution-input custody. Alongside the
+earlier 802,193,408-byte pass, this recovered 1,434,587,136 bytes without compression.
+
+##### Next receiving prerequisite — persistent acquisition-session contract
+
+The post-Q1 source review found no ready production receiving/history adapter:
+actual authority, date/scale, clock/mapping, calibrated quality and current
+precision suppliers are still absent. The four settled transaction choices above
+remain selected. Do not repeat them or introduce another fresh per-execution
+identity: existing run/request ownership already supplies that guarantee.
+
+The next useful source-contract child is a persistent engine-owned acquisition
+session. Its observable difference must be that two separately requested series
+from the same still-current session retain one genuine chart established before
+either acquisition, while retaining distinct run/request identities and original
+ages. Equal endpoints or caller-supplied numeric labels cannot join sessions.
+This is only the existing controlled transport scope; caller-created
+`SeriesConfig` is not an administrator-approved `LogicalSource`.
+
+Before implementation, freeze and independently review the reusable entrypoint
+and ownership lifetime in this card: creation from actual checked configuration,
+at most one prepared plan or active acquisition per session with no internal
+queue, consume-once execution,
+prepared-plan abandonment, terminal retirement and configuration/association
+replacement. Preserve exactly three planned attempts and the existing per-call
+deadlines, budgets and cleanup. Keep acquisition control handles scoped to their
+original plan; an old handle cannot control a successor. Retain no report
+collection inside the session, and do not weaken `relative_to`'s different-run
+refusal merely because reports share session provenance.
+
+Independent expected observations are a genuine shared pre-acquisition chart
+across two real series, distinct execution/request identities, foreign-session
+and substituted-plan refusal before acquisition, duplicate-consumption refusal,
+retirement with a valid fresh-session neighbor, and unchanged historical facts
+after late invalidation. Clock-continuity/mapping/date/calibration and production
+admission remain explicitly unavailable. Engine/domain/QA owns this source card;
+W11-W01 owns the separate capture/mapping contract. No Core dependency, history
+insertion, eligible sample, native execution or formal work follows from this
+proposal. Source implementation stays held until this finite API/lifecycle
+contract is settled; Q1's qualification remains the immediate executable task.
+
 #### N2a complete first campaign and strengthened candidate
 
 The complete first campaign is retained as incomplete, despite raw percentages

@@ -812,3 +812,120 @@ existing accounting gate and receives no kill credit. This source-only review
 does not predict any native result or mutation score. The selected continuation
 executes affected `series` mutation only; it supplies no current library mutation
 result or pass. Coverage and all other qualification obligations remain separate.
+
+## ENGINE-QUALITY-INTERVAL-ZERO-SIGN — 8 November 2026
+
+This Q1-specific source adjudication is separate from every N3 exclusion above.
+Independent reviewer `/root/series_checkpoint_design_review` inspected the actual
+native descriptor/diff, the complete helper domain, its current callers and the
+rational-result constructor/publication/getter chain. The review performed no
+build, mutation execution or formal compiler/solver work and supplies no kill
+credit. It does not close Q1's incomplete campaign or admit an analysis policy.
+
+### Exact source and historical native observation
+
+The descriptor is
+`crates/nevrotick-engine/src/quality.rs:524:29: replace < with <= in interval_seconds`.
+Its package is `nevrotick-engine`, file
+`crates/nevrotick-engine/src/quality.rs`, genre `BinaryOperator`, replacement
+`<=`, and operator span 524:29–524:30. Function `interval_seconds` has native
+return type `-> Result<RoundedRationalSeconds, QualityRefusal>` and
+documentation-inclusive span 514:1–531:2. Its complete typed descriptor,
+excluding only rendered `diff`, has canonical SHA256
+`ab870f10eb8cde026ababd980eb91338a2026e753395d4cd178bd50b8b6393ec`.
+Both the actual 167-entry Q1 enumeration and historical native outcome contain
+this exact descriptor. The replacement changes only the sign chosen for a zero
+signed numerator; it does not change the denominator check or magnitude.
+
+| Current source owner | SHA256 |
+| --- | --- |
+| Complete `crates/nevrotick-engine/src/quality.rs` | `f3abb4b00c769b3a4fb655cb923df7626c4209cb792594a55f065449051e2135` |
+| Helper definition, lines 517–531 without its terminal newline | `13743a3e5f2145727748b0e79cb531aee3befd1963d90be164f3a1aa211b4183` |
+| Complete descriptor function span, lines 514–531 including documentation and newlines | `82352ecaaf7a8d2f1a08c94ce1acd0513e9aad683c58e24f91b1fcf7ea499445` |
+| Complete `crates/time-domain/src/rational_seconds.rs` | `2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438` |
+| `RoundedRationalSeconds::new`, lines 492–504 including newlines | `0f709d6501f7697c5e31aeee3350add36b0b6c7cf5a62fce15a20a31983341e5` |
+
+These two complete production-source hashes match the current checkout and
+the historical Q1 frozen source. The current 421-input product identity is
+`e8f6ead34f41429033a8d6c0ebd823bc693dae8caa645d53a8eafedf20e8727d`;
+this source review supplies no Q1 qualification for that candidate.
+Historical native evidence remains under
+`~/.local/share/nevrotick/dependency-refresh-20261106-v1/q1-quality-qualification-v1/work/mutation/quality/mutants.out/`.
+This exact variant is `MissedMutant`, with Build and Test both `Success`.
+Its raw diff SHA256 is
+`30543ec1f8b2b782512731bd6148deb4be7e9fe8a80d97eac1a6030443584745`;
+its raw log SHA256 is
+`0114833b926b3f2e6790760e6e9cebb9d836d279798d74769812b965a1901ee0`.
+The campaign belongs to the 416-input candidate
+`8c05b4eedd9c3f231e4d809d9cc3ef028a8a9d1d21672ed6ebf045a525a96c29`.
+Its terminal wrapper receipt is **incomplete**, SHA256
+`6eb9ed7bcd335fe850219465b611bd28b21a1858fa8c582e1b2161aaa7215a93`:
+the caught-cause gate refused missing selected Q1 assertion evidence. Neither
+this source argument nor a successful survivor log turns that receipt into a
+qualified campaign. Changed current tests and the larger integrated candidate
+must retain their separate admission/execution identities.
+
+### Complete typed domain, counterexamples and effects
+
+The helper's own boundary admits every `i128` numerator, every `u64`
+denominator and every valid `QualityInterval` variant. No assumption that a
+denominator is already positive, a numerator is nonzero, or values came from
+today's `exact_intervals` caller narrows this argument. The following cases
+cover the complete domain:
+
+1. If the denominator is zero, both versions return the same
+   `QualityRefusal::ExactArithmetic(interval)` at `NonZeroU64::new` before
+   evaluating the mutated comparison. This includes zero and both signed
+   numerator extrema.
+2. For a positive denominator and a nonzero numerator, `<0` and `<=0` select
+   the same sign. Both pass the same `numerator.unsigned_abs()` and denominator
+   to the same constructor. This includes `i128::MIN`, whose unsigned magnitude
+   is 2^127 without signed negation/overflow, and `i128::MAX`, whose magnitude
+   is 2^127−1. Every later success or failure path therefore agrees.
+3. For a positive denominator and numerator zero, the original requests
+   `RationalSign::Positive` and the mutant requests `Negative`, both with
+   magnitude 0. `RoundedRationalSeconds::new` immediately replaces either sign
+   with `Positive` when magnitude is zero, **before** `round_magnitude`, shared
+   output validation or `publish`. The zero rounding branch supplies positive
+   floating zero, zero error bound, exponent 0 and exact=true. Publication then
+   receives identical inputs and checks the same canonical-zero association.
+   Both results retain sign `Positive`, magnitude 0, the original positive
+   denominator, `seconds().to_bits()==0` and
+   `absolute_roundoff_seconds().to_bits()==0`.
+
+The discriminating boundary is numerator 0. Adjacent −1/+1, both signed extrema,
+and denominators 0/1/`u64::MAX` do not provide a counterexample for the reasons
+above. This is an argument over the exact typed operations, not an inference
+from absence of a failing test or from real-number algebra applied to floating
+arithmetic. The existing raw-helper test includes zero and both extrema; it
+does not itself establish equivalence or a new execution result.
+
+`exact_intervals` derives local/server/raw-RTT tuples from the same borrowed
+successful `TransportFacts` measurement and calls this helper three times.
+`compute_quality`, `evaluate_conditional_quality` and the three public interval
+getters consume/retain the same canonical results. They cannot observe the
+discarded requested zero sign. All five rational-result fields, typed refusals,
+representation bounds, original facts/assumption association and acquisition
+age therefore remain unchanged. This conclusion also covers direct helper
+calls outside those current producers.
+
+The changed comparison and sign enum have no callbacks, allocation, I/O, time
+read or mutation effects. After zero canonicalization, both executions invoke
+the identical conversion/validation/publication path with identical inputs;
+any allocation or failure behavior belongs to that unchanged path. No new
+allocation, cleanup, ownership, rounding or physical-uncertainty claim is made.
+The advertised-distance getter replacement with 1.0 is a different, non-equivalent
+survivor and is not covered by this exclusion.
+
+### Invalidation and admission boundary
+
+Changed helper inputs/body, denominator/refusal precedence, sign or magnitude
+representation, constructor zero canonicalization/order, rational conversion,
+publication, getters or observable effects require renewed review. In
+particular, validating/publishing the requested sign before zero
+canonicalization, retaining negative zero, or exposing the discarded sign would
+invalidate this argument. Bind the exact source/converter/descriptor and the
+whole selected candidate before any Q1 policy admission; do not import an N3
+cohort or a historical score. An admitted E remains an exclusion, never a kill,
+and current qualification must preserve the actual native outcome and complete
+caught-cause/function/guard evidence under the existing 90%/95% gates.

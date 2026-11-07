@@ -1090,19 +1090,27 @@ with no unresolved survivor or timeout. Equivalents receive no kill credit.
 Independent review closes the former fixture-only deadline catch through an
 actual predeadline assertion; all prior failures and scoped control reuse remain.
 
-**Next executable product task:** complete Q1's critical-file qualification in the existing
-[receiving transaction reconciliation](../../tasks/engine-transport-pilot.md#receiving-transaction-reconciliation--7-november-2026).
-Its strengthened frozen integrated checkpoint passes111 ordinary/111 optimized
-tests,50 doctests and all ten selected host/Windows-target compiler lanes
-on416-input `8c05b4ee...`; this supplies no native Windows or service pass.
-The additive source-specific role passes68 Python controls and binds actual v7
-evidence and the complete reviewed167-descriptor inventory. A new negative-server
-processing magnitude neighbor test also catches an isolated `.abs()` omission;
-that ungenerated control receives no mutation kill credit. The final combined
-contracts/coverage/mutation run is executing after the unchanged five-GiB
-preflight. Reconcile its actual complete results, viable denominator and separate
-function/guard alternatives before claiming the Q1 exit. The 90% line and95%
-per-file mutation gates and all existing protections remain.
+**Completed Q1 — 8 November 2026:** the
+[conditional-quality final exit](../../tasks/engine-transport-pilot.md#q1-final-qualification--conditional-source-quality)
+qualifies its current 421-input Linux scope. Exact source-bound ordinary reuse
+retains 113 ordinary/113 optimized tests and 50 doctests. Fresh contracts and
+366/382 executable-line coverage pass. All 167 fresh mutations reconcile as
+132 caught, 34 compiler-unviable and one reviewed equivalent, with no timeout or
+unresolved survivor. Raw native exit 2 and the earlier incomplete campaign remain
+visible; exclusions receive no kill credit. All 94 Python controls pass, and
+final source/helper/vendor/tool custody is unchanged. This is conditional nominal
+quality, not production calibration, admission, native Windows or a service pass.
+
+**Next executable product task:** freeze and independently review the persistent
+acquisition-session API/lifecycle contract in the existing
+[receiving prerequisite](../../tasks/engine-transport-pilot.md#next-receiving-prerequisite--persistent-acquisition-session-contract).
+Establish a genuine chart before multiple explicitly requested series while
+retaining distinct run/request identities, existing per-call budgets and at most
+one prepared plan or active acquisition. Settle abandonment, retirement and
+configuration/association replacement before implementation. Another fresh ID
+per execution would duplicate existing ownership and cannot close this gap.
+Actual production suppliers and the Core/history edge remain held. The 90% line,
+95% per-file mutation and all other existing protections remain.
 The earlier412-input103-test checkpoint retains only its historical scope.
 Three completed source reviews settle private pre-acquisition chart/completion
 association, per-completion accumulation with explicit0/1/2 insufficiency,

@@ -66,7 +66,7 @@
       "rationale": "The helper-local predecessor guard and exact pinned Linux Instant subtraction make only the1350 fallback unreachable throughout the complete valid helper domain. The reachable1346 increment is unchanged. Preserve all reachable effects and raw native outcomes; no caller chronology assumption, new library execution or kill credit.",
       "proof": {
         "path": "tasks/engine-analysis-equivalences.md",
-        "sha256": "d16a4a70294e084858db049c0d14208afe80a25bfd7e0dd6d46cf73c83f7d6c3",
+        "sha256": "78f8b4e5a66889238344ed9424a4dded86d68e38b9075321d59d5a0c6276a241",
         "section": "ENGINE-SERIES-COMMIT-DURATION-FALLBACK-SUB",
         "reviewer": "series_checkpoint_design_review; current full-domain source challenge",
         "verdict": "independently-justified-equivalent"
@@ -111,7 +111,7 @@
       "rationale": "The helper-local predecessor guard and exact pinned Linux Instant subtraction make only the1350 fallback unreachable throughout the complete valid helper domain. The reachable1346 increment is unchanged. Preserve all reachable effects and raw native outcomes; no caller chronology assumption, new library execution or kill credit.",
       "proof": {
         "path": "tasks/engine-analysis-equivalences.md",
-        "sha256": "d16a4a70294e084858db049c0d14208afe80a25bfd7e0dd6d46cf73c83f7d6c3",
+        "sha256": "78f8b4e5a66889238344ed9424a4dded86d68e38b9075321d59d5a0c6276a241",
         "section": "ENGINE-SERIES-COMMIT-DURATION-FALLBACK-MUL",
         "reviewer": "series_checkpoint_design_review; current full-domain source challenge",
         "verdict": "independently-justified-equivalent"
@@ -156,7 +156,7 @@
       "rationale": "The complete private admission enum has only Unavailable; every valid report getter returns0 regardless of other fields, with no effects, failure or ownership difference. Exact current source-only review supplies no native outcome or kill credit; new variants or construction/getter changes invalidate.",
       "proof": {
         "path": "tasks/engine-analysis-equivalences.md",
-        "sha256": "d16a4a70294e084858db049c0d14208afe80a25bfd7e0dd6d46cf73c83f7d6c3",
+        "sha256": "78f8b4e5a66889238344ed9424a4dded86d68e38b9075321d59d5a0c6276a241",
         "section": "ENGINE-SERIES-UNAVAILABLE-ADMITTED-ZERO",
         "reviewer": "series_checkpoint_tests; current enum/constructor/getter source review",
         "verdict": "independently-justified-equivalent"
@@ -201,7 +201,7 @@
       "rationale": "The complete private admission enum has only Unavailable; every valid report getter returns0 regardless of other fields, with no effects, failure or ownership difference. Exact current source-only review supplies no native outcome or kill credit; new variants or construction/getter changes invalidate.",
       "proof": {
         "path": "tasks/engine-analysis-equivalences.md",
-        "sha256": "d16a4a70294e084858db049c0d14208afe80a25bfd7e0dd6d46cf73c83f7d6c3",
+        "sha256": "78f8b4e5a66889238344ed9424a4dded86d68e38b9075321d59d5a0c6276a241",
         "section": "ENGINE-SERIES-UNAVAILABLE-ELIGIBLE-ZERO",
         "reviewer": "series_checkpoint_tests; current enum/constructor/getter source review",
         "verdict": "independently-justified-equivalent"
@@ -231,7 +231,7 @@
     "scripts/prepare-product.py": "1003f48480c5bc397e395fccd06cd290b093ffc1487efa27a434cf864bed81fd",
     "policy/analysis-tools.json": "4da7796c6dd41a1a09dea9a7b1670480106fe1d1f260150385d78c8faa474234",
     "policy/verification-manifest.toml": "8842b3fe384fae437ab26085bf18800d3891040f8e7cd4dbc312415f6da0244c",
-    "scripts/verify-engine-analysis.py": "08fdd7e7d9a0ca9f087ccf1c43c05e35afec9b10cefc74e0603c5b757797e08b",
+    "scripts/verify-engine-analysis.py": "d72a808f55b72b5f2a13148a22f0f43368398d9e5e242e214370f4d28e833ccd",
     "scripts/tests/test_series_analysis.py": "dc9f3d95ddbcdc7faa35502dcfdb6b90d4e88ccfb29a120cf4b4c17f1b8f447c",
     "rust-toolchain.toml": "2b58ea5089dfdfacf78ae2a5f52dfce89a583339ccc2c7cc0b40e96230dc9ccc",
     ".cargo/config.toml": "ae88d5eebb6e1da17cb2f3f292ac1e7b29d3fbe2ccbb41516414582d9afcfd52",
@@ -240,7 +240,7 @@
     "crates/nevrotick-engine/tests/private/series.rs": "c51e54f6e59feddd952c13a79bc8c24db2830520bdc7a07ba882cc4dea6744a9",
     "crates/nevrotick-engine/tests/series.rs": "931f34750ee74df81599ce5e34cacecf92a126d5966db779a2cc396eb28f9099",
     "crates/nevrotick-engine/tests/private/series_process.rs": "c73ea1b550f7126f2a74327bdfc70345a550a7ffe95e056d553fa882ffe6d376",
-    "scripts/tests/test_verify_engine_analysis.py": "1a3a1e55760a2acc8e79a4f05d30bdf18c9fe6af60f06866ae0d25c224d202a3"
+    "scripts/tests/test_verify_engine_analysis.py": "822d9fbfaee63eafbc9c1d0110ca7861fa88deb365f90652259578e411d3f8b6"
   },
   "mutation_inventories": {
     "library": {

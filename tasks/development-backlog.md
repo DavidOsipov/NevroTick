@@ -88,15 +88,17 @@ settles private pre-acquisition chart/completion binding, per-completion collect
 and fit insufficiency, atomic oldest-only fitted-row replacement and final
 serialized authority. Q1's producer-bound conditional quality calculation is the
 selected dependency, with mandatory explicit checked assumptions and no
-production-calibration claim. Its [frozen416-input checkpoint](engine-transport-pilot.md#q1-verification-readiness-and-frozen-integrated-candidate)
-`8c05b4ee...` passes111 ordinary/111 optimized tests,50 doctests and all ten selected
-lanes. The strengthened negative-server control passed healthy and detected an
-isolated absolute-value omission without generated mutation credit. The role
-binds161 baseline names,20 Q1 cases and the reviewed167-variant inventory;68 Python
-controls pass. The frozen final contracts/coverage/mutation session has started
-under the unchanged five-GiB floor; its final outcome, mutation score and full Q1
-exit remain pending. Earlier v6 contracts and366/382 coverage, and the
-412-input103-test checkpoint, retain their recorded historical scopes.
+production-calibration claim. Its [final 421-input checkpoint](engine-transport-pilot.md#q1-final-qualification--conditional-source-quality)
+`e8f6ead3...` passes the selected Linux gates: exact-source ordinary reuse of
+113 ordinary/113 optimized tests and 50 doctests, fresh external/validation
+contracts, 366/382 executable-line coverage and 167 mutations. There are 132
+caught, 34 compiler-unviable and one reviewed equivalent, without timeout or
+unresolved survivor; exclusions receive no kill credit. All 94 Python controls
+and final custody pass. The old incomplete campaign and separately executed
+absolute-value/constructor controls retain their actual scope. Next freeze the
+[persistent acquisition-session contract](engine-transport-pilot.md#next-receiving-prerequisite--persistent-acquisition-session-contract)
+for genuine shared-chart lifetime, one prepared plan or active acquisition,
+abandonment and retirement before source implementation.
 Windows-target compiler
 checks establish no native Windows or service qualification. Actual
 generation/date/scale/quality suppliers and Engine-to-Core/history

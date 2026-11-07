@@ -236,18 +236,22 @@ QUALITY_BOUND_INPUTS = tuple(dict.fromkeys((
     "crates/nevrotick-engine/src/quality/tests.rs", "crates/nevrotick-engine/tests/quality.rs",
     "crates/nevrotick-engine/PROVENANCE.md", "crates/nevrotick-engine/COPYING",
     "tasks/s0.1-chrony-ledger.json",
+    "crates/time-domain/src/rational_seconds.rs", "tasks/engine-analysis-equivalences.md",
 )))
-QUALITY_CANDIDATE = "8c05b4eedd9c3f231e4d809d9cc3ef028a8a9d1d21672ed6ebf045a525a96c29"
+QUALITY_CANDIDATE = "e8f6ead34f41429033a8d6c0ebd823bc693dae8caa645d53a8eafedf20e8727d"
 QUALITY_SOURCE_PINS = {
     "crates/nevrotick-engine/src/quality.rs": "f3abb4b00c769b3a4fb655cb923df7626c4209cb792594a55f065449051e2135",
-    "crates/nevrotick-engine/src/quality/tests.rs": "7716653c1607c5f2552ea11e0a95b73a8423aa12a05ebac93aad4b282ea19da5",
+    "crates/nevrotick-engine/src/quality/tests.rs": "d2053446b6deca39df565e67249ca53c6a0c7aead04bb9096ddf84b3d989fcb0",
     "crates/nevrotick-engine/tests/quality.rs": "83a50ff2b783fde80431f5a46eae632a2fd6e774ffc4fec756317221daee9343",
+    "crates/time-domain/src/rational_seconds.rs": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
 }
 QUALITY_INVENTORY_DIGESTS = {
-    "ordinary": "a4334cb64efd67d27173699d934ee3750c9aab0e3714e8075a9412fb3db06f5c",
-    "doctests": "20f3ff09ec18c5edaf90acecbf2e918124ea03386699f27aa6cb1e3ddd6577c4",
-    "baseline": "2dd44a4b578ac0345ed6b24bf74ca95ab23795ab9de333e598b2b08e9a05eb6d",
+    "ordinary": "c21b82fd32cea0a3a3eefddc8f84d3b43e8591d03e2286d3445f4d334a7ae3c3",
+    "doctests": "5eaf6bcb3df3807ecf447ef66d256abb85511048fbd3939da951c21df379e48a",
+    "baseline": "b4a41aeb46444047904e96043d94e390ab8e34bf7c01a829f1adf55869267ca4",
 }
+QUALITY_ZERO_EQUIVALENCE_ID = "ENGINE-QUALITY-INTERVAL-ZERO-SIGN"
+QUALITY_ZERO_EQUIVALENCE_DESCRIPTOR = "ab870f10eb8cde026ababd980eb91338a2026e753395d4cd178bd50b8b6393ec"
 QUALITY_REQUIRED_TESTS = frozenset({
     "quality::tests::computed_policy_boundaries_preserve_strict_and_inclusive_comparisons",
     "quality::tests::declared_getters_and_constructor_precedence_preserve_original_bits",
@@ -283,11 +287,11 @@ QUALITY_DOCTESTS = {
 QUALITY_FIXED_POLICY = {
     **SERIES_FIXED_POLICY,
     "admission_status": "admitted-q1-conditional-quality-source",
-    "source_file_count": 416, "critical_files": list(QUALITY_SUBJECTS.values()),
+    "source_file_count": 421, "critical_files": list(QUALITY_SUBJECTS.values()),
 }
 QUALITY_EVIDENCE_ROOT = Path.home() / ".local/share/nevrotick/dependency-refresh-20261106-v1"
-QUALITY_ORDINARY_RECEIPT = QUALITY_EVIDENCE_ROOT / "q1-quality-ordinary-v7/verification.json"
-QUALITY_ORDINARY_SHA256 = "d60e763c073f28277793a9e4b71cd53b505ff408bf06a7e10426be482055505c"
+QUALITY_ORDINARY_RECEIPT = Path.home() / ".local/share/nevrotick/series-final-checkpoint-20261108-v1/green-ordinary-v3/verification.json"
+QUALITY_ORDINARY_SHA256 = "887732785dca641646e1c72adf1dcaf6af9054cd3566b33487d9e4ee1fee58b3"
 QUALITY_ORDINARY_RECIPES = {
     "quality_ordinary_v2.py": "717cc1902e7c01194967309375d8a1660910276ba4045e7efbe81fe9af743a1b",
     "quality_ordinary_v1.py": "bb903f4bd09b6e59ccc956f4de582eb9b421fa9d49ba926920318fefdda0fc08",
@@ -1251,33 +1255,63 @@ def quality_test_inventory(policy: dict) -> tuple[list[str], list[str]]:
     inventory = policy.get("test_inventory")
     if (type(inventory) is not dict
             or set(inventory) != {"ordinary", "doctests", "baseline_count", "sha256", "q1_doctests"}
-            or type(inventory["baseline_count"]) is not int or inventory["baseline_count"] != 161
+            or type(inventory["baseline_count"]) is not int or inventory["baseline_count"] != 163
             or inventory["sha256"] != QUALITY_INVENTORY_DIGESTS
             or inventory["q1_doctests"] != QUALITY_DOCTESTS):
         raise Incomplete("Quality test inventory or actual legal/negative contract identities changed.")
     ordinary, docs = inventory["ordinary"], inventory["doctests"]
-    for names, count, kind in ((ordinary, 111, "ordinary"), (docs, 50, "doctests")):
+    for names, count, kind in ((ordinary, 113, "ordinary"), (docs, 50, "doctests")):
         if (type(names) is not list or len(names) != count
                 or any(type(name) is not str or not name or len(name) > 1024 for name in names)
                 or len(set(names)) != count or names != sorted(names)
                 or COMMON.canonical_sha256(names) != QUALITY_INVENTORY_DIGESTS[kind]):
             raise Incomplete("Quality needs its exact complete unique native test identities.")
-    if (set(ordinary) != REQUIRED_TESTS | SERIES_REQUIRED_TESTS | QUALITY_REQUIRED_TESTS
+    if (set(ordinary) != REQUIRED_TESTS | SERIES_REQUIRED_TESTS | SERIES_CHECKPOINT_REQUIRED_TESTS | QUALITY_REQUIRED_TESTS
             or not set(QUALITY_DOCTESTS) <= set(docs)
             or COMMON.canonical_sha256(sorted(ordinary + docs)) != QUALITY_INVENTORY_DIGESTS["baseline"]):
         raise Incomplete("Quality inventory omits a selected or existing actual control.")
     return ordinary, docs
 
 
+def validate_quality_equivalence_scope(entries: object) -> None:
+    """Permit only no E or the reviewed exact zero-sign fault; never an N3 cohort.
+
+    Converter/source custody and actual native MissedMutant adjudication remain
+    mandatory in the policy reader and shared analysis path. No kill is inferred.
+    """
+    if type(entries) is not list:
+        raise Incomplete("Quality equivalences require an exact list.")
+    if not entries:
+        return
+    required = {"id", "candidate_sha256", "source_sha256", "mutant", "requirement", "rationale", "proof"}
+    if len(entries) != 1 or type(entries[0]) is not dict or set(entries[0]) != required:
+        raise Incomplete("Quality permits only its exact single reviewed zero-sign equivalence.")
+    entry = entries[0]
+    proof, mutant = entry["proof"], entry["mutant"]
+    if (entry["id"] != QUALITY_ZERO_EQUIVALENCE_ID
+            or entry["source_sha256"] != QUALITY_SOURCE_PINS[QUALITY_SUBJECTS["quality"]]
+            or type(mutant) is not dict or COMMON.canonical_sha256(mutant) != QUALITY_ZERO_EQUIVALENCE_DESCRIPTOR
+            or type(entry["candidate_sha256"]) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", entry["candidate_sha256"]) is None
+            or type(proof) is not dict or set(proof) != {"path", "sha256", "section", "reviewer", "verdict"}
+            or proof["path"] != "tasks/engine-analysis-equivalences.md"
+            or proof["section"] != QUALITY_ZERO_EQUIVALENCE_ID
+            or proof["verdict"] != "independently-justified-equivalent"
+            or type(proof["sha256"]) is not str or re.fullmatch(r"[a-f0-9]{64}", proof["sha256"]) is None
+            or type(proof["reviewer"]) is not str or not 0 < len(proof["reviewer"].strip()) <= 128
+            or any(type(entry[key]) is not str or not 0 < len(entry[key].strip()) <= maximum
+                   for key, maximum in (("requirement", 256), ("rationale", 4096)))):
+        raise Incomplete("Quality equivalence leaves its exact source, descriptor or reviewed dossier identity.")
+
+
 def validate_quality_policy(policy: dict) -> dict:
-    """Admit the separately frozen Q1 role without inherited exclusions or scores."""
+    """Admit current Q1 with no inherited scores and only its exact reviewed E."""
     extras = {"candidate_sha256", "inputs_sha256", "mutation_inventories",
               "mutation_equivalences", "scope", "test_inventory", "ordinary_evidence"}
     if (type(policy) is not dict or set(policy) != set(QUALITY_FIXED_POLICY) | extras
             or any(type(policy.get(key)) is not type(value) or policy[key] != value
                    for key, value in QUALITY_FIXED_POLICY.items())
             or policy.get("candidate_sha256") != QUALITY_CANDIDATE
-            or policy.get("mutation_equivalences") != []
             or type(policy.get("scope")) is not str or not 0 < len(policy["scope"]) <= 2048):
         raise Incomplete("Unreviewed quality source, scope, threshold, budget or exclusion.")
     pins = policy["inputs_sha256"]
@@ -1291,6 +1325,9 @@ def validate_quality_policy(policy: dict) -> dict:
         raise Incomplete("Quality ordinary receipt or immutable recipe binding changed.")
     quality_test_inventory(policy)
     quality_inventory_bindings(policy)
+    validate_quality_equivalence_scope(policy["mutation_equivalences"])
+    if any(entry["candidate_sha256"] != policy["candidate_sha256"] for entry in policy["mutation_equivalences"]):
+        raise Incomplete("Quality equivalence differs from its complete policy candidate.")
     return policy
 
 
@@ -1342,6 +1379,7 @@ def read_quality_policy(root: Path) -> dict:
                    for module in manifest.get("security_modules", [])) != 1):
         raise Incomplete("Quality needs exactly one current critical/security owner registration.")
     admit_quality_ordinary(policy)
+    COMMON.admit_mutation_equivalences(root, QUALITY_SCOPE, policy)
     return policy
 
 
@@ -1524,11 +1562,49 @@ def validate_quality_caught_causes(directory: Path, outcomes: dict, semantic_sit
         if ("N3_HARNESS_INCOMPLETE" in text or "Q1_HARNESS_INCOMPLETE" in text
                 or re.search(r"error\[E\d+\]|could not compile|process didn't exit successfully.*rustc|"
                              r"timed out|no space left|cannot allocate memory|out of memory|"
-                             r"failed to spawn|resource temporarily unavailable", text, re.IGNORECASE)):
+                             r"failed to spawn|resource temporarily unavailable|signal:\s*\d|"
+                             r"SIG(?:KILL|ABRT|SEGV|BUS|ILL)|process aborted|fatal runtime error", text, re.IGNORECASE)):
             raise Incomplete("Quality caught fault contains compiler or unclassified harness failure.")
         causes, secondary = [], []
         sections = set()
         failed_sections = list(re.finditer(r"^---- ([^\r\n]+) stdout ----\n(.*?)(?=^---- |^failures:|\Z)", text, re.MULTILINE | re.DOTALL))
+        blocks = list(re.finditer(
+            r"^running (\d{1,6}) tests?\n(.*?)^test result: (ok|FAILED)\. "
+            r"(\d{1,6}) passed; (\d{1,6}) failed; (\d{1,6}) ignored; "
+            r"(\d{1,6}) measured; (\d{1,6}) filtered out;[^\r\n]*$", text,
+            re.MULTILINE | re.DOTALL))
+        records = re.findall(r"(?m)^test ([^\r\n]+?) \.\.\. (ok|FAILED|ignored)$", text)
+        failed_names = [test for test, status in records if status == "FAILED"]
+        if (not blocks or len(re.findall(r"(?m)^running ", text)) != len(blocks)
+                or len(re.findall(r"(?m)^test result:", text)) != len(blocks)
+                or len(failed_names) != len(set(failed_names))
+                or sorted(match[1] for match in failed_sections) != sorted(failed_names)
+                or any(sum(block.start() <= match.start() < block.end() for block in blocks) != 1
+                       for match in failed_sections)):
+            raise Incomplete("Quality caught fault lacks complete unique native failure records.")
+        recorded = 0
+        for block in blocks:
+            running, body, status, passed, failed, ignored, measured, filtered = block.groups()
+            counts = tuple(map(int, (running, passed, failed, ignored, measured, filtered)))
+            block_records = re.findall(r"(?m)^test ([^\r\n]+?) \.\.\. (ok|FAILED|ignored)$", body)
+            block_failed = [test for test, result in block_records if result == "FAILED"]
+            block_sections = re.findall(r"(?m)^---- ([^\r\n]+) stdout ----$", body)
+            listed = body.rsplit("\nfailures:\n", 1)
+            listing = listed[-1].strip("\n").splitlines()
+            if (status != ("FAILED" if counts[2] else "ok") or any(counts[3:])
+                    or counts[0] != counts[1] + counts[2] or len(block_records) != counts[0]
+                    or len({test for test, _ in block_records}) != len(block_records)
+                    or sum(result == "ok" for _, result in block_records) != counts[1]
+                    or len(block_failed) != counts[2] or sorted(block_sections) != sorted(block_failed)
+                    or re.search(r"(?m)^running ", body)
+                    or (counts[2] and (len(listed) != 2
+                        or any(not line.startswith("    ") or not line[4:] for line in listing)
+                        or sorted(line[4:] for line in listing) != sorted(block_failed)))
+                    or (not counts[2] and len(listed) != 1)):
+                raise Incomplete("Quality caught fault has inconsistent completed libtest records.")
+            recorded += len(block_records)
+        if recorded != len(records):
+            raise Incomplete("Quality caught fault has test records outside completed native blocks.")
         if (text.count("panicked at ") != sum(match[2].count("panicked at ") for match in failed_sections)
                 or len(re.findall(r"(?m)^Error: ", text)) != sum(len(re.findall(r"(?m)^Error: ", match[2])) for match in failed_sections)):
             raise Incomplete("Quality caught fault has an error or panic outside a named failed-test section.")

@@ -1254,17 +1254,17 @@ class EngineExternalContractTests(unittest.TestCase):
 class QualityAnalysisTests(unittest.TestCase):
     """Q1 registration controls use synthetic native logs; no analyzer is invoked."""
 
-    def test_series_checkpoint_rebind_preserves_frozen_quality_admission(self):
-        """New N3 identities cannot rewrite Q1's historical roster or helper set."""
+    def test_current_roles_keep_distinct_source_scopes_and_bound_input_sets(self):
+        """Current package identities do not merge the two qualification owners."""
         policy = self.policy()
         MODULE.validate_quality_policy(policy)
         ordinary, docs = MODULE.quality_test_inventory(policy)
-        self.assertEqual((len(ordinary), len(docs)), (111, 50))
+        self.assertEqual((len(ordinary), len(docs)), (113, 50))
         self.assertEqual(len(MODULE.SERIES_REQUIRED_TESTS), 23)
-        self.assertTrue(MODULE.SERIES_CHECKPOINT_REQUIRED_TESTS.isdisjoint(ordinary))
+        self.assertTrue(MODULE.SERIES_CHECKPOINT_REQUIRED_TESTS <= set(ordinary))
         self.assertNotIn(MODULE.SERIES_PROCESS_SOURCE, MODULE.QUALITY_BOUND_INPUTS)
         self.assertIn(MODULE.SERIES_PROCESS_SOURCE, MODULE.SERIES_CURRENT_BOUND_INPUTS)
-        self.assertEqual(MODULE.QUALITY_FIXED_POLICY["source_file_count"], 416)
+        self.assertEqual(MODULE.QUALITY_FIXED_POLICY["source_file_count"], 421)
 
     def policy(self):
         return copy.deepcopy(json.loads((ROOT / MODULE.QUALITY_POLICY).read_text()))
@@ -1310,12 +1310,24 @@ class QualityAnalysisTests(unittest.TestCase):
         """Use exactly the admitted receipt copy, never mutable checkout line literals."""
         return MODULE.quality_semantic_assertion_sites(MODULE.QUALITY_ORDINARY_RECEIPT.parent/"source",self.policy())
 
+    @staticmethod
+    def failed_execution(failures):
+        """Literal completed libtest failure records; no product execution claimed."""
+        noun = "test" if len(failures) == 1 else "tests"
+        return (f"running {len(failures)} {noun}\n"
+                + "".join(f"test {test} ... FAILED\n" for test, _ in failures)
+                + "\nfailures:\n\n"
+                + "".join(f"---- {test} stdout ----\n{body}\n\n" for test, body in failures)
+                + "failures:\n\n" + "".join(f"    {test}\n" for test, _ in failures)
+                + f"\ntest result: FAILED. 0 passed; {len(failures)} failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s\n")
+
     def caught_fixture(self, directory):
         test = "quality::tests::dyadic_calculation_borrows_original_facts_and_assumptions"
         site=next(site for site in self.semantic_sites()["tests"][test] if site["owner"]=="exact")
-        text = (f"---- {test} stdout ----\nthread '{test}' panicked at "
+        body = (f"thread '{test}' panicked at "
                 f"{site['source']}:{site['line']}:{site['column']}:\n"
-                f"{site['marker']}\n  left: 17\n right: 19\n\nfailures:\n")
+                f"{site['marker']}\n  left: 17\n right: 19")
+        text = self.failed_execution([(test, body)])
         (directory / "caught.log").write_text(text)
         row = {"scenario": {"Mutant": self.descriptor()}, "summary": "CaughtMutant",
                "phase_results": self.phases("CaughtMutant"), "log_path": "caught.log"}
@@ -1333,11 +1345,12 @@ class QualityAnalysisTests(unittest.TestCase):
             "mutation_jobs":8, "jobs":6, "test_threads":1, "minimum_free_bytes":5*1024**3,
             "tool_admission_profile":"full"}.items():
             self.assertEqual(policy[key], value)
-        self.assertEqual(policy["mutation_equivalences"], [])
+        self.assertEqual([entry["id"] for entry in policy["mutation_equivalences"]],
+                         ["ENGINE-QUALITY-INTERVAL-ZERO-SIGN"])
         self.assertEqual(policy["mutation_inventories"], {"quality":{"count":167,
             "sha256":"52851ec7a7408ed86034de072648f0e3071e3f4b314142f9ee529fb9b90971f5"}})
-        self.assertEqual(policy["source_file_count"],416)
-        self.assertEqual(policy["test_inventory"]["baseline_count"],161)
+        self.assertEqual(policy["source_file_count"],421)
+        self.assertEqual(policy["test_inventory"]["baseline_count"],163)
         self.assertEqual(len([name for name in MODULE.QUALITY_REQUIRED_TESTS if name.startswith("quality::tests::")]),17)
         self.assertEqual(len(MODULE.QUALITY_REQUIRED_TESTS),20)
         self.assertEqual(len(policy["ordinary_evidence"]["recipes_sha256"]),6)
@@ -1365,6 +1378,103 @@ class QualityAnalysisTests(unittest.TestCase):
             policy = self.policy(); change(policy)
             with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_quality_policy(policy)
+
+    @staticmethod
+    def zero_sign_entry():
+        """Independent literal reviewed fault; this fixture supplies no native outcome."""
+        identifier = "ENGINE-QUALITY-INTERVAL-ZERO-SIGN"
+        return {
+            "id": identifier,
+            "candidate_sha256": "e8f6ead34f41429033a8d6c0ebd823bc693dae8caa645d53a8eafedf20e8727d",
+            "source_sha256": "f3abb4b00c769b3a4fb655cb923df7626c4209cb792594a55f065449051e2135",
+            "mutant": {
+                "file": "crates/nevrotick-engine/src/quality.rs", "package": "nevrotick-engine",
+                "name": "crates/nevrotick-engine/src/quality.rs:524:29: replace < with <= in interval_seconds",
+                "function": {"function_name": "interval_seconds",
+                    "return_type": "-> Result<RoundedRationalSeconds, QualityRefusal>",
+                    "span": {"start": {"line": 514, "column": 1}, "end": {"line": 531, "column": 2}}},
+                "span": {"start": {"line": 524, "column": 29}, "end": {"line": 524, "column": 30}},
+                "replacement": "<=", "genre": "BinaryOperator"},
+            "requirement": "REQ-8/BND-1; CHECK-25/27; canonical rational zero",
+            "rationale": "Exact reviewed full typed-domain constructor canonicalization; synthetic admission control only.",
+            "proof": {"path": "tasks/engine-analysis-equivalences.md",
+                "sha256": hashlib.sha256((ROOT / "tasks/engine-analysis-equivalences.md").read_bytes()).hexdigest(),
+                "section": identifier, "reviewer": "independent zero-sign source review; observer fixture",
+                "verdict": "independently-justified-equivalent"}}
+
+    def test_quality_equivalence_opt_in_is_only_the_exact_zero_sign_fault(self):
+        entry = self.zero_sign_entry()
+        self.assertEqual(independent_digest(entry["mutant"]),
+                         "ab870f10eb8cde026ababd980eb91338a2026e753395d4cd178bd50b8b6393ec")
+        MODULE.validate_quality_equivalence_scope([])
+        MODULE.validate_quality_equivalence_scope([entry])
+        for change in ("list", "duplicate", "foreign", "source", "line", "span", "replacement",
+                       "function", "return_type", "genre", "package", "file", "proof_path", "proof_section",
+                       "proof_hash", "verdict", "reviewer", "candidate", "rationale", "extra"):
+            bad = copy.deepcopy(entry)
+            if change == "list": bad = None
+            elif change == "foreign": bad["id"] = "ENGINE-SERIES-UNAVAILABLE-ADMITTED-ZERO"
+            elif change == "source": bad["source_sha256"] = "a" * 64
+            elif change == "line": bad["mutant"]["span"]["start"]["line"] = 525
+            elif change == "span": bad["mutant"]["function"]["span"]["end"]["line"] = 532
+            elif change == "replacement": bad["mutant"]["replacement"] = ">="
+            elif change == "function": bad["mutant"]["function"]["function_name"] = "exact_intervals"
+            elif change == "return_type": bad["mutant"]["function"]["return_type"] = "-> f64"
+            elif change == "genre": bad["mutant"]["genre"] = "FnValue"
+            elif change == "package": bad["mutant"]["package"] = "time-domain"
+            elif change == "file": bad["mutant"]["file"] = "crates/time-domain/src/rational_seconds.rs"
+            elif change == "proof_path": bad["proof"]["path"] = "tasks/foreign.md"
+            elif change == "proof_section": bad["proof"]["section"] = "ENGINE-NOMINAL-ZERO-SIGN"
+            elif change == "proof_hash": bad["proof"]["sha256"] = "bad"
+            elif change == "verdict": bad["proof"]["verdict"] = "unreviewed"
+            elif change == "reviewer": bad["proof"]["reviewer"] = " "
+            elif change == "candidate": bad["candidate_sha256"] = False
+            elif change == "rationale": bad["rationale"] = " "
+            elif change == "extra": bad["unknown"] = True
+            cohort = None if change == "list" else [bad, copy.deepcopy(bad)] if change == "duplicate" else [bad]
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_quality_equivalence_scope(cohort)
+        policy = self.policy(); policy["mutation_equivalences"] = []
+        MODULE.validate_quality_policy(policy)
+        policy["mutation_equivalences"] = [entry]
+        MODULE.validate_quality_policy(policy)
+        policy["mutation_equivalences"][0]["candidate_sha256"] = "a" * 64
+        with self.assertRaisesRegex(MODULE.Incomplete, "complete policy candidate"):
+            MODULE.validate_quality_policy(policy)
+
+    def test_quality_converter_and_dossier_are_explicit_protected_inputs(self):
+        converter, dossier = "crates/time-domain/src/rational_seconds.rs", "tasks/engine-analysis-equivalences.md"
+        policy = self.policy()
+        self.assertIn(converter, MODULE.QUALITY_BOUND_INPUTS)
+        self.assertIn(dossier, MODULE.QUALITY_BOUND_INPUTS)
+        self.assertEqual(policy["inputs_sha256"][converter],
+                         "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438")
+        self.assertEqual(policy["inputs_sha256"][dossier], policy["mutation_equivalences"][0]["proof"]["sha256"])
+        policy["inputs_sha256"][converter] = "a" * 64
+        with self.assertRaisesRegex(MODULE.Incomplete, "bindings are invalid"):
+            MODULE.validate_quality_policy(policy)
+
+    def test_quality_equivalent_native_miss_is_excluded_without_kill_credit(self):
+        entry = self.zero_sign_entry(); equivalent = entry["mutant"]
+        caught = self.descriptor("quality synthetic caught companion")
+        expected = {row["name"]: row for row in (caught, equivalent)}
+        report = {"cargo_mutants_version": "27.1.0", "total_mutants": 2,
+            "caught": 1, "missed": 1, "unviable": 0, "timeout": 0, "success": 0,
+            "outcomes": [{"scenario": "Baseline", "summary": "Success", "phase_results": self.phases("Success")},
+                {"scenario": {"Mutant": caught}, "summary": "CaughtMutant", "phase_results": self.phases("CaughtMutant")},
+                {"scenario": {"Mutant": equivalent}, "summary": "MissedMutant", "phase_results": self.phases("MissedMutant")}]}
+        def observe(data, native=2):
+            return MODULE.COMMON.mutation_counts(MODULE.QUALITY_SCOPE, data, expected,
+                "crates/nevrotick-engine/src/quality.rs", native_exit_code=native,
+                equivalences=[entry], defer_gate=True)
+        result = observe(report)
+        self.assertEqual((result["killed"], result["survived"], result["excluded"],
+                          result["raw_denominator"], result["adjusted_denominator"]), (1, 1, 1, 2, 1))
+        with self.assertRaisesRegex(MODULE.Incomplete, "native exit"): observe(report, native=0)
+        bad = copy.deepcopy(report); bad["outcomes"][-1].update(summary="CaughtMutant", phase_results=self.phases("CaughtMutant"))
+        bad.update(caught=2, missed=0)
+        with self.assertRaisesRegex(MODULE.Incomplete, "not an actual missed mutant"):
+            observe(bad, native=0)
 
     def test_quality_ordinary_evidence_rejects_changed_actual_receipt_and_recipe_bytes(self):
         policy = self.policy()
@@ -1481,6 +1591,41 @@ class QualityAnalysisTests(unittest.TestCase):
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.validate_quality_caught_causes(directory, bad, self.semantic_sites())
 
+    def test_quality_caught_causes_require_complete_native_failure_records(self):
+        mapping = self.semantic_sites()
+        test = "quality::tests::dyadic_calculation_borrows_original_facts_and_assumptions"
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            healthy, outcomes = self.caught_fixture(directory)
+            prior = ("running 1 test\ntest fixture::healthy ... ok\n"
+                     "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n")
+            for complete in (healthy, prior + healthy):
+                (directory / "caught.log").write_text(complete)
+                result = MODULE.validate_quality_caught_causes(directory, outcomes, mapping)
+                self.assertEqual(len(next(iter(result["checked_caught_logs"].values()))["causes"]), 1)
+            section = healthy[healthy.index("---- "):healthy.rindex("\nfailures:\n")]
+            foreign = healthy.replace("running 1 test\n", "running 2 tests\n").replace(
+                f"test {test} ... FAILED\n", f"test {test} ... FAILED\ntest fixture::peer ... FAILED\n"
+            ).replace("0 passed; 1 failed", "0 passed; 2 failed").replace(
+                "\n\ntest result:", "\n    fixture::peer\n\ntest result:")
+            bad = {
+                "section only": section,
+                "truncated after assertion": healthy[:healthy.rindex("\nfailures:\n")],
+                "truncated before summary": healthy[:healthy.rindex("test result:")],
+                "signal": healthy + "error: process did not exit successfully (signal: 9, SIGKILL: kill)\n",
+                "abort": healthy + "fatal runtime error: thread stack overflow, aborting\n",
+                "duplicate failed row": healthy + f"test {test} ... FAILED\n",
+                "duplicate truncated run": healthy + f"running 1 test\ntest {test} ... FAILED\n",
+                "truncated later passing block": healthy + "running 1 test\ntest fixture::healthy ... ok\n",
+                "inconsistent summary": healthy.replace("0 passed; 1 failed", "1 passed; 1 failed"),
+                "wrong running count": healthy.replace("running 1 test\n", "running 2 tests\n"),
+                "foreign failed row without section": foreign,
+            }
+            for label, text in bad.items():
+                (directory / "caught.log").write_text(text)
+                with self.subTest(label=label), self.assertRaises(MODULE.Incomplete):
+                    MODULE.validate_quality_caught_causes(directory, outcomes, mapping)
+
     def test_quality_semantic_sites_are_bound_to_source_and_reachable_helpers(self):
         mapping=self.semantic_sites()
         test="quality::tests::dyadic_calculation_borrows_original_facts_and_assumptions"
@@ -1528,9 +1673,10 @@ class QualityAnalysisTests(unittest.TestCase):
         secondary="quality::tests::precision_clamps_have_exact_boundary_and_neighbor_values"
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);healthy,outcomes=self.caught_fixture(directory)
-            prefix=healthy.removesuffix("failures:\n")
+            primary="quality::tests::dyadic_calculation_borrows_original_facts_and_assumptions"
+            body=healthy.split(f"---- {primary} stdout ----\n",1)[1].rsplit("\nfailures:\n",1)[0].rstrip("\n")
             def mixed(error):
-                return prefix+f"---- {secondary} stdout ----\n{error}\n\nfailures:\n"
+                return self.failed_execution([(primary,body),(secondary,error)])
             for error in ["Error: InvalidAssumption(HistoricalQuantum)","Error: NonFinite(FrequencyWidth)"]:
                 (directory/"caught.log").write_text(mixed(error))
                 result=MODULE.validate_quality_caught_causes(directory,outcomes,mapping)
@@ -1543,7 +1689,8 @@ class QualityAnalysisTests(unittest.TestCase):
                 (directory/"caught.log").write_text(mixed(error))
                 with self.subTest(error=error), self.assertRaises(MODULE.Incomplete):
                     MODULE.validate_quality_caught_causes(directory,outcomes,mapping)
-            (directory/"caught.log").write_text(f"---- {secondary} stdout ----\nError: InvalidAssumption(HistoricalQuantum)\n\nfailures:\n")
+            (directory/"caught.log").write_text(self.failed_execution([
+                (secondary,"Error: InvalidAssumption(HistoricalQuantum)")]))
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_quality_caught_causes(directory,outcomes,mapping)
 
@@ -1553,7 +1700,7 @@ class QualityAnalysisTests(unittest.TestCase):
         site=next(site for site in mapping["tests"][test] if site["owner"]=="check_near")
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);_,outcomes=self.caught_fixture(directory)
-            healthy=f"---- {test} stdout ----\n{site['marker']}\n\nfailures:\n"
+            healthy=self.failed_execution([(test,site["marker"])])
             (directory/"caught.log").write_text(healthy)
             result=MODULE.validate_quality_caught_causes(directory,outcomes,mapping)
             cause=next(iter(result["checked_caught_logs"].values()))["causes"][0]

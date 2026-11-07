@@ -1309,7 +1309,7 @@ scoped producer-control reuse and raw native2/0. Its historical candidate bindin
 remain exact; a role, ordinary pass or enumeration alone supplies no full
 numerical, production, native or release qualification.
 
-The qualified [N3a series checkpoint](tasks/engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners)
+The historical qualified [N3a series checkpoint](tasks/engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners)
 uses `verify-engine-analysis.py --profile series --subject all`, with the separate
 [series policy](policy/series-analysis.json). It selects exactly the library and
 series owners, freezes91 ordinary/42 doctest/133 baseline identities and23 N3
@@ -1326,6 +1326,26 @@ declared host evidence. The final selected Linux exit joins fresh library214
 with143 explicitly reviewed unchanged-series outcomes; it does not claim357
 fresh executions. Production history, NTS, Windows and release qualification
 remain separate gates.
+
+The current [series-summary repair](tasks/engine-transport-pilot.md#final-series-summary-checkpoint-repair--8-november-2026)
+uses that series profile with 113 ordinary/50 doctest/163 baseline identities and
+two additional deterministic final-checkpoint controls. Its fresh mutation scope
+is the series file only; it claims no new library mutation result. Current
+metadata rebinding preserves the original frozen execution receipts.
+
+Q1 conditional quality uses the same [engine verifier](scripts/verify-engine-analysis.py)
+with `--profile quality --subject quality --lane all`, an explicit admitted
+`--vendor-dir`, `--tool-admission-profile full` and a fresh external `--output-dir`.
+The [quality policy](policy/quality-analysis.json) selects only `quality.rs`,
+binds the current ordinary receipt and complete 163-identity baseline, and allows
+only the exact independently reviewed zero-sign exclusion. Its caught-cause
+reader requires complete consistent libtest blocks and rejects native aborts.
+The five-GiB preflight, finite budgets, six build jobs, eight outer/one inner
+mutation jobs and 90%/95% per-file gates remain. The
+[Q1 final record](tasks/engine-transport-pilot.md#q1-final-qualification--conditional-source-quality)
+owns actual contracts, coverage, all 167 fresh outcomes and unchanged custody;
+neither conditional assumptions nor this role supplies production calibration,
+history admission, a Core dependency or native Windows qualification.
 
 The pure fixture core uses [verify-core-analysis.py](scripts/verify-core-analysis.py)
 and [time-core-analysis.json](policy/time-core-analysis.json). Its recorded

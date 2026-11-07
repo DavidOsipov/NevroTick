@@ -2,7 +2,7 @@
   "schema_version": 1,
   "admission_status": "admitted-q1-conditional-quality-source",
   "package": "nevrotick-engine",
-  "source_file_count": 416,
+  "source_file_count": 421,
   "critical_files": [
     "crates/nevrotick-engine/src/quality.rs"
   ],
@@ -25,7 +25,7 @@
   "mutation_message_format": "json",
   "minimum_free_bytes": 5368709120,
   "tool_admission_profile": "full",
-  "candidate_sha256": "8c05b4eedd9c3f231e4d809d9cc3ef028a8a9d1d21672ed6ebf045a525a96c29",
+  "candidate_sha256": "e8f6ead34f41429033a8d6c0ebd823bc693dae8caa645d53a8eafedf20e8727d",
   "inputs_sha256": {
     "Cargo.toml": "ed63de18dbcaa3dcb8dc0ac3142bb4c868373a6d21171e6181b3f5d754b5d84e",
     "Cargo.lock": "fa9103e455e401c39f349c04b10a2d7058408d25210763321f56b7dad9c1afba",
@@ -42,27 +42,29 @@
     "crates/nevrotick-engine/tests/private/argument_guards.rs": "604bf76c7dfc7712f1823ee4d17f04adc46b5ff34ef4258b8aef9878502c71ca",
     "crates/nevrotick-engine/tests/private/measurement.rs": "6180a73e74b1ab940ef426b881c9346de1f616ee1ee9c0d003cae0467fbebd9b",
     "crates/nevrotick-engine/tests/private/relative.rs": "f10132c44efb361a200c421a9e226db712353aa0ab9ef4c529e3e883aa6133e5",
-    "scripts/portable-analysis.py": "c72ef68451a899cf6f43303b29ae8be877264d9ede196a1d2010187dc79714dc",
+    "scripts/portable-analysis.py": "ee99bb49b77156a640ea53a6ede258d8f522b7ba0f8a962f480f277e148380ef",
     "scripts/analysis-runtime.py": "0de6d23b2e52fea78ee81f038d216c962ef87511df53443984bb6e6aacb79dc9",
     "scripts/check-analysis.py": "debe3b31cb93bd8b1b588e777a8c138a9dd6fbadc9152e253f320e1f73cb77e8",
     "scripts/prepare-product.py": "1003f48480c5bc397e395fccd06cd290b093ffc1487efa27a434cf864bed81fd",
     "policy/analysis-tools.json": "4da7796c6dd41a1a09dea9a7b1670480106fe1d1f260150385d78c8faa474234",
-    "policy/verification-manifest.toml": "44e1d95e2c690fd9a280e2acdbabaa8a6f7ab1b7ec6180e6f85ba6279789b0ec",
-    "scripts/verify-engine-analysis.py": "08bc0fd964758dd095401d3b790bbc0062f72c8c9bbe9b1ab84a1de323a5080d",
-    "scripts/tests/test_series_analysis.py": "6c1bb6958c23a6220825e17c358bfb1ede717fbbb10b2941891aa4e55c80afcd",
+    "policy/verification-manifest.toml": "8842b3fe384fae437ab26085bf18800d3891040f8e7cd4dbc312415f6da0244c",
+    "scripts/verify-engine-analysis.py": "d72a808f55b72b5f2a13148a22f0f43368398d9e5e242e214370f4d28e833ccd",
+    "scripts/tests/test_series_analysis.py": "dc9f3d95ddbcdc7faa35502dcfdb6b90d4e88ccfb29a120cf4b4c17f1b8f447c",
     "rust-toolchain.toml": "2b58ea5089dfdfacf78ae2a5f52dfce89a583339ccc2c7cc0b40e96230dc9ccc",
     ".cargo/config.toml": "ae88d5eebb6e1da17cb2f3f292ac1e7b29d3fbe2ccbb41516414582d9afcfd52",
     ".cargo/mutants.toml": "af0e3b1d7774464fb6d3b8566b61472a853ce2e6b0ba26a1c4fbe82f676b5f5b",
-    "crates/nevrotick-engine/src/series.rs": "84bb369585ca0f53a5d54f945295b5aeca41b6c2d4d91c9d3a745dab291e5d3f",
-    "crates/nevrotick-engine/tests/private/series.rs": "92e4dd762a081d2ac13c6b1951551c2426f64b31b84d1c8744aa98b44701bf0b",
+    "crates/nevrotick-engine/src/series.rs": "174ab3b4538356c5134cb850baac19640baf27c1e14ad3c12f953948549a43f7",
+    "crates/nevrotick-engine/tests/private/series.rs": "c51e54f6e59feddd952c13a79bc8c24db2830520bdc7a07ba882cc4dea6744a9",
     "crates/nevrotick-engine/tests/series.rs": "931f34750ee74df81599ce5e34cacecf92a126d5966db779a2cc396eb28f9099",
-    "scripts/tests/test_verify_engine_analysis.py": "ff7d3a4f7290244c492704cfb2cb0a59ee9f701c2964d30899402bd7cf330237",
+    "scripts/tests/test_verify_engine_analysis.py": "822d9fbfaee63eafbc9c1d0110ca7861fa88deb365f90652259578e411d3f8b6",
     "crates/nevrotick-engine/src/quality.rs": "f3abb4b00c769b3a4fb655cb923df7626c4209cb792594a55f065449051e2135",
-    "crates/nevrotick-engine/src/quality/tests.rs": "7716653c1607c5f2552ea11e0a95b73a8423aa12a05ebac93aad4b282ea19da5",
+    "crates/nevrotick-engine/src/quality/tests.rs": "d2053446b6deca39df565e67249ca53c6a0c7aead04bb9096ddf84b3d989fcb0",
     "crates/nevrotick-engine/tests/quality.rs": "83a50ff2b783fde80431f5a46eae632a2fd6e774ffc4fec756317221daee9343",
     "crates/nevrotick-engine/PROVENANCE.md": "fc853d335869a188a6023255f33ba8736459927533d8da3c5d009ec012e3aa29",
     "crates/nevrotick-engine/COPYING": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
-    "tasks/s0.1-chrony-ledger.json": "33192a1be949b502a4eba8f9fe4757da2f319cbe7c63df369a30d23afb804ed3"
+    "tasks/s0.1-chrony-ledger.json": "33192a1be949b502a4eba8f9fe4757da2f319cbe7c63df369a30d23afb804ed3",
+    "crates/time-domain/src/rational_seconds.rs": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
+    "tasks/engine-analysis-equivalences.md": "78f8b4e5a66889238344ed9424a4dded86d68e38b9075321d59d5a0c6276a241"
   },
   "mutation_inventories": {
     "quality": {
@@ -70,8 +72,54 @@
       "sha256": "52851ec7a7408ed86034de072648f0e3071e3f4b314142f9ee529fb9b90971f5"
     }
   },
-  "mutation_equivalences": [],
-  "scope": "Q1 conditional nominal source quality only; one critical quality.rs owner, actual borrowed TransportFacts and explicit checked assumptions. Exact416-input candidate and actual ordinary-v7 receipt bind111 ordinary/111 optimized/50 doctest executions,17 private and3 external Q1 cases,161 baseline identities. The reviewed complete167-descriptor inventory is bound to unchanged production source f3abb4b0; the custodian must re-enumerate and verify every descriptor before mutation. No equivalence, inherited score or passed combined gate is claimed. Full custody, five-GiB preflight and all90% line/95% per-file viable mutation/resource gates remain. Production calibration/admission, history, native Windows, P1 and release remain outside this qualification.",
+  "mutation_equivalences": [
+    {
+      "id": "ENGINE-QUALITY-INTERVAL-ZERO-SIGN",
+      "candidate_sha256": "e8f6ead34f41429033a8d6c0ebd823bc693dae8caa645d53a8eafedf20e8727d",
+      "source_sha256": "f3abb4b00c769b3a4fb655cb923df7626c4209cb792594a55f065449051e2135",
+      "mutant": {
+        "name": "crates/nevrotick-engine/src/quality.rs:524:29: replace < with <= in interval_seconds",
+        "package": "nevrotick-engine",
+        "file": "crates/nevrotick-engine/src/quality.rs",
+        "function": {
+          "function_name": "interval_seconds",
+          "return_type": "-> Result<RoundedRationalSeconds, QualityRefusal>",
+          "span": {
+            "start": {
+              "line": 514,
+              "column": 1
+            },
+            "end": {
+              "line": 531,
+              "column": 2
+            }
+          }
+        },
+        "span": {
+          "start": {
+            "line": 524,
+            "column": 29
+          },
+          "end": {
+            "line": 524,
+            "column": 30
+          }
+        },
+        "replacement": "<=",
+        "genre": "BinaryOperator"
+      },
+      "requirement": "REQ-8/BND-1; CHECK-6/7/8/11/14/25/27; Q1 canonical exact-interval zero sign",
+      "rationale": "Only numerator 0 changes the requested sign. Denominator 0 refusal precedes the comparison; every nonzero numerator selects the same sign. The pinned rational constructor canonicalizes zero sign before rounding/validation/publication, preserving all tuple fields, errors and effects over the full typed helper domain. An exact native miss is required; no kill or historical score credit.",
+      "proof": {
+        "path": "tasks/engine-analysis-equivalences.md",
+        "sha256": "78f8b4e5a66889238344ed9424a4dded86d68e38b9075321d59d5a0c6276a241",
+        "section": "ENGINE-QUALITY-INTERVAL-ZERO-SIGN",
+        "reviewer": "series_checkpoint_design_review; independent whole-typed-domain source review",
+        "verdict": "independently-justified-equivalent"
+      }
+    }
+  ],
+  "scope": "Current Q1 conditional quality using the original borrowed TransportFacts and declared assumptions on the Green3 candidate with 421 inputs: 113 ordinary tests, 50 doctests, 163 baseline identities, 20 Q1 controls and existing N3 checkpoint tests. Current private tests add primary acceptance assertions and a distinct advertised-limit getter control. Retain the actual 167-descriptor source-bound inventory pending fresh re-enumeration. Only the exact reviewed interval zero-sign E may be excluded after an actual native miss; quality source, rational converter and dossier are pinned. No kill or historical score credit. Full source/helper/vendor/tool custody, 90% line and 95% viable-mutation gates and finite bounds remain unchanged. No Core edge, production activation, physical calibration, native Windows, formal or release claim.",
   "test_inventory": {
     "ordinary": [
       "absent_measurement_refuses_quality_with_actual_valid_neighbor",
@@ -167,8 +215,10 @@
       "relative::tests::shared_origin_distinguishes_equal_values_from_run_identity",
       "series::tests::actual_publication_rechecks_control_and_deadline_after_staging",
       "series::tests::all_series_debug_outputs_are_exact_fixed_redactions",
+      "series::tests::current_checkpoint_observes_new_controls_before_expired_deadline",
       "series::tests::deadlines_and_controls_do_not_reset_the_series_origin",
       "series::tests::entropy_failure_and_entered_runtime_precede_all_acquisition_work",
+      "series::tests::final_checkpoint_reads_current_control_without_rewriting_three_completions",
       "series::tests::genuine_terminal_report_admits_only_the_three_position_domain",
       "series::tests::partial_report_preserves_primary_and_both_cleanup_causes",
       "series::tests::post_commit_control_preserves_header_and_measurement_refusal",
@@ -230,19 +280,19 @@
       "crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 204) - compile fail",
       "crates/nevrotick-engine/src/series.rs - series::PreparedSeries (line 209) - compile fail",
       "crates/nevrotick-engine/src/series.rs - series::PreparedSeries (line 216) - compile fail",
-      "crates/nevrotick-engine/src/series.rs - series::SeriesAttempt (line 331) - compile fail",
+      "crates/nevrotick-engine/src/series.rs - series::SeriesAttempt (line 336) - compile fail",
       "crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 81) - compile fail",
       "crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 87) - compile fail",
       "crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 91) - compile fail",
       "crates/nevrotick-engine/src/series.rs - series::SeriesConfig::new (line 111)",
-      "crates/nevrotick-engine/src/series.rs - series::SeriesReport (line 395) - compile fail",
-      "crates/nevrotick-engine/src/series.rs - series::execute_series (line 1027) - compile"
+      "crates/nevrotick-engine/src/series.rs - series::SeriesReport (line 400) - compile fail",
+      "crates/nevrotick-engine/src/series.rs - series::execute_series (line 1071) - compile"
     ],
-    "baseline_count": 161,
+    "baseline_count": 163,
     "sha256": {
-      "ordinary": "a4334cb64efd67d27173699d934ee3750c9aab0e3714e8075a9412fb3db06f5c",
-      "doctests": "20f3ff09ec18c5edaf90acecbf2e918124ea03386699f27aa6cb1e3ddd6577c4",
-      "baseline": "2dd44a4b578ac0345ed6b24bf74ca95ab23795ab9de333e598b2b08e9a05eb6d"
+      "ordinary": "c21b82fd32cea0a3a3eefddc8f84d3b43e8591d03e2286d3445f4d334a7ae3c3",
+      "doctests": "5eaf6bcb3df3807ecf447ef66d256abb85511048fbd3939da951c21df379e48a",
+      "baseline": "b4a41aeb46444047904e96043d94e390ab8e34bf7c01a829f1adf55869267ca4"
     },
     "q1_doctests": {
       "crates/nevrotick-engine/src/quality.rs - quality::DeclaredQualityAssumptions (line 389)": "legal_execution",
@@ -256,8 +306,8 @@
     }
   },
   "ordinary_evidence": {
-    "receipt": "/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/q1-quality-ordinary-v7/verification.json",
-    "sha256": "d60e763c073f28277793a9e4b71cd53b505ff408bf06a7e10426be482055505c",
+    "receipt": "/home/david_osipov/.local/share/nevrotick/series-final-checkpoint-20261108-v1/green-ordinary-v3/verification.json",
+    "sha256": "887732785dca641646e1c72adf1dcaf6af9054cd3566b33487d9e4ee1fee58b3",
     "recipes_sha256": {
       "quality_ordinary_v2.py": "717cc1902e7c01194967309375d8a1660910276ba4045e7efbe81fe9af743a1b",
       "quality_ordinary_v1.py": "bb903f4bd09b6e59ccc956f4de582eb9b421fa9d49ba926920318fefdda0fc08",
