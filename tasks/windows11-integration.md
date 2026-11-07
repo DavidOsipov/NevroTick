@@ -3507,24 +3507,26 @@ effects remain with their existing owners. No service was installed or started.
 
 ### 4.34 Active two-service completion goal — 7 November 2026
 
-The explicit owner goal now covers both own-process services and their complete
-contract/test integration, not only §4.33's portable source child. The goal is
-active; §4.33 supplies predecessor evidence, not a parent completion claim.
+The original owner goal covers both own-process services and their complete
+contract/test integration, not only §4.33's portable source child. This is the
+historical goal setup; the current source handoff and next action are in
+[§4.35.8](#4358-service-source-handoff-and-integration-prerequisites--8-november-2026).
+§4.33 supplies predecessor evidence, not a parent completion claim.
 Use this existing W11-W05/S0.2/S3.1 chain with W11-W08/W11-W10 and their canonical
 security/lifecycle owners. Keep the separate engine/Core work and existing
 Windows/fuzz/storage/formal dispositions intact.
 
 | Obligation / owner | Current disposition and next action | Required observable exit |
 | --- | --- | --- |
-| Portable lifecycle and actual-completion custody; platform/CHECK-27 | Source and 12 ordinary public tests exist; independent gap review and source-bound coverage/mutation preparation are active. | Explicit contracts, direct/bypass/healthy/fault/boundary/concurrency cases, >=90% executable lines for service.rs and >=95% viable mutation score with complete inventory/omitted behavior reconciliation; integrated source and custody unchanged. |
-| Process entry, dispatcher, ServiceMain, bounded callback notification and checked status mapping; platform/CHECK-27 | Next source adapter slice after the lifecycle checkpoint and exact binding/wrapper admission. Do not silently adopt a wrapper or add console service fallback. | Prompt dispatcher connection; registration and status failures remain failures; one transition owner; no FFI unwind, dangling context, false Running/Stopped or use after terminal status. Host injection, Windows compilation/link and actual SCM observations remain separate exits. |
+| Portable lifecycle, SCM, privilege validation and actual-completion custody; platform/CHECK-1/27 | Implemented; retained ordinary/release platform cohort is 39 tests plus eight doctests. Current integrated per-file coverage/mutation remains open; see §4.35.8. | Explicit contracts, direct/bypass/healthy/fault/boundary/concurrency cases, >=90% executable lines per security file and >=95% viable mutation per critical file with complete inventory/omitted behavior reconciliation; integrated source and custody unchanged. |
+| Process entry, dispatcher, ServiceMain, bounded callback notification and checked status mapping; platform/CHECK-27 | Two fixed-role laboratory hosts and native adapter source exist; retained ordinary/release fixture cohort is 37 tests. Product adoption, current Windows linking and actual SCM evidence remain open. | Prompt dispatcher connection; registration and status failures remain failures; one transition owner; no FFI unwind, dangling context, false Running/Stopped or use after terminal status. Host injection, Windows compilation/link and actual SCM observations remain separate exits. |
 | Service identity, required privileges, creation-time object security, process/token isolation, unattended-error and mitigation profiles; platform/security/CHECK-1/15/16 | Supported complete-MSIX provisioning/account mapping is unresolved; ordinary installed service work and native probes remain held. | Effective engine token lacks clock/debug/impersonation rights; broker narrow allowed controls succeed, injection/network/foreign-owner paths fail beside valid neighbors; actual configured/effective phases and profiles observed. Use existing decision procedure for material topology/security choice. |
 | Protected management, arguments, maintenance inhibition and service-specific diagnostics; IPC/security/W11-W05/W11-W08 | Contracts apply before dependent adapters; actual IPC and diagnostic owners remain separate incomplete work. | Process/SCM/durable arguments cannot substitute identity, roots, endpoints or clock authority; unauthorized/stale/direct-handler bypasses have no protected effects, benign Interrogate/unsupported control handling, bounded redacted required-event failures and safe cleanup. |
-| Startup/shutdown/restart, broker journal/recovery and worker cancellation; lifecycle/CHECK-12/13/23/27 | Portable counters do not supply actual service/native completion or durable broker recovery. | Real-operation custody and fixed limits survive timeout; actual jobs/callbacks drain before terminal acknowledgement, finite per-role restart and maintenance behavior, no renewed correction budget, successor authority reconciliation and independent crash recovery. |
-| Two executable compositions and integrated/package qualification; W11-W10/P3/P6 | No service binaries or final package exist; cannot claim complete services. | Separate own-process engine/broker closures without privilege/runtime leakage, full handler/IPC integration with simulated clock before P4, complete selected MSIX provisioning/update/removal recovery and actual native evidence on the adopted Windows matrix. |
+| Startup/shutdown/restart and worker cancellation; lifecycle/CHECK-27 | Laboratory capture/control-loop custody exists. Product workers, native completion/recovery and per-role restart/maintenance behavior remain open. Clock journal/recovery algorithms retain their existing external owner. | Actual jobs/callbacks retain fixed budgets and drain before terminal acknowledgement; finite per-role restart and maintenance behavior, diagnosed failures and valid neighboring recovery. Service lifetime cannot renew external clock authority. |
+| Two executable compositions and source adoption; W11-W05/P3, with W11-W10 provisioning dependency | Two laboratory executable compositions exist; no current Windows artifact or final product-service integration pass. Full package delivery remains with W11-W10/P6. | Separate own-process engine/broker composition without privilege/runtime leakage; qualified handler/worker integration with simulated effects. Intended accounts/pre-start provisioning and native evidence gate installed hosting; package delivery is a separate exit. |
 | Final independent acceptance; coordinator/security/QA | Entire parent remains incomplete. | Requirement-by-requirement audit of actual delivered/built/native behavior and persisted outcomes, full applicable security/resource/package gates, no missing required evidence; portable or aggregate green cannot substitute. |
 
-Current bounded campaign: one service.rs owner, one writer for source, one for
+Original bounded campaign plan: one service.rs owner, one writer for source, one for
 public tests, one coordinator for tooling/output. Inspect cheap tool/resource
 readiness first. Planned initial ceilings are six ordinary build jobs, four
 mutation workers with one build/test slot per worker, <=512 generated variants,
@@ -4281,9 +4283,10 @@ failed, ignored or filtered cases and complete custody. Their records are
 `recovered-platform-full-v1.json` and `recovered-fixture-full-v1.json`.
 Formatting, documentation markup and the stable checked-chunk iteration idiom
 were subsequently repaired through actual fmt/Clippy feedback without changing
-the exact count/length admission guard. Final-source static/documentation and
-optimized checks are in progress; per-file metrics and native/package obligations
-remain pending.
+the exact count/length admission guard. The later
+[§4.35.7 checkpoint](#4357-run-deadline-representability-repair-and-metric-scope)
+records completed final-source static/documentation and optimized checks;
+per-file metrics and native/package obligations remain pending.
 
 #### 4.35.7 Run-deadline representability repair and metric scope
 
@@ -4330,14 +4333,78 @@ with debug assertions disabled, not `verify-release`.
 Actual per-file measurements, Windows artifact and native/package qualification
 remain open. Windows/native, fuzz, storage and formal holds remain.
 
-The next metric checkpoint now binds the current 421 portable product inputs at
+The 7 November metric checkpoint bound the then-current 421 portable product inputs at
 `ff8148597f0950d46e50b7986a5b318f8ea5fb61dc2e10c507242e9697a65346`,
 the exact protected helper inputs, 39 actually executed ordinary/release names
-and eight executed doctests. Current `read_policy(..., campaign=False)` passed;
+and eight executed doctests. At that checkpoint, `read_policy(..., campaign=False)` passed;
 `portable-binding-v1.json` retains the full map and source-checkpoint lineage.
 Descriptor inventories remain empty: this admits enumeration/coverage, not a
 mutation campaign or a metric pass. New primary records stay under the main
 repository's `artifacts/windows-services/recovery-20261107-v1/`.
+
+#### 4.35.8 Service source handoff and integration prerequisites — 8 November 2026
+
+**Disposition:** implemented source foundation; ready for bounded source
+integration preparation. Qualified production-service adoption and installed/native
+integration remain incomplete. W11-W05/platform/security owns the S3.1 service
+child; W11-W08 owns reached diagnostic behavior and W11-W10 owns the necessary
+account/provisioning interface. Keep this task as the single execution/evidence
+chain. NTP/NTS algorithms, clock discipline/journal algorithms and full MSIX/Store
+delivery belong to their existing workstreams, not this service child.
+
+**Available implementation:** commit `89f035e2233e6d86d6d29319b0c4b29e0f667fe7`
+contains the portable `windows-platform` lifecycle, SCM projection and private
+checked privilege snapshots, plus two standalone fixed-role laboratory hosts.
+Their actual source connects executable entry → dispatcher → ServiceMain → handler
+registration → serialized startup/token observation → checked status/Stop owner.
+The hosts still execute an inert control loop with laboratory deadlines; neither
+is a production engine or broker service. Reuse one hosting owner and its checked
+types/custody rather than introducing another wrapper or parallel implementation.
+
+**Evidence reviewed:** local `source-checkpoint-v2.json` under
+`artifacts/windows-services/recovery-20261107-v1/` retains the 441-input candidate
+`2f492f0e...`; all 13 referenced receipt hashes still match. Recorded normal and
+release cohorts passed 39 platform and 37 fixture tests, with eight platform
+doctests, formatting, GNU/Windows-target Clippy and strict fixture rustdoc.
+At handoff entry, all 23 service/fixture input bytes matched that checkpoint;
+this documentation edit subsequently updates the fixture README only within that
+set. Service Rust, manifests, lockfiles and the qualification recipe are unchanged.
+Three concurrent engine-series source changes also mean the whole 441-input
+freeze and portable 421-input `ff814859...` binding no longer describe the complete
+current checkout.
+Retain these scoped results; refresh the relevant candidate before dependent jobs.
+No new Cargo, analyzer or Windows execution was performed for this documentation
+handoff. The raw records are local retained evidence, not committed artifacts.
+
+| Next stage / owner | Entry and next action | Independent observable exit / current limit |
+| --- | --- | --- |
+| Source integration preparation — W11-W05/platform/security | Available now: map existing role-specific hosts and portable APIs to one S3.1 adapter/worker startup/status/stop child. Freeze inputs, readiness meaning, failure results, actual-completion custody, cancellation and cleanup before implementation. | A reviewed producer/worker/status/stop ownership map and finite direct-call, healthy, denied, boundary and fault controls; no new account, production deadline, runtime or effect authority inferred from the lab. |
+| Qualified source adoption — platform/QA | Refresh ordinary candidate/bindings; finish current >=90% per-security-file coverage and >=95% per-critical-file mutation with complete reviewed inventories, guard/derive alternatives and applicable host/native-source scopes. Complete current Windows cross-link and independent image readback. | Candidate-bound source/contract/metric and static artifact evidence. Current mutation inventories are empty; no fresh metric pass or current Windows link/PE pass exists. The latest SDK readiness attempt is incomplete after index drift. |
+| Product service composition — platform with engine/broker/IPC/diagnostic owners | Consume qualified adapters and explicit worker/handler contracts; final SCM identities, intended tokens/SIDs, privilege allowlists, creation-time object protection and supported pre-start provisioning must be resolved before ordinary installed hosting. | Truthful availability, enforced startup admission, bounded diagnosed stop/restart and management isolation. Current engine observation checks only its three forbidden privileges; broker observation is descriptive, not its full allowlist. Typed errors are not a complete diagnostic sink. |
+| Native service qualification — W11-W05/security/QA | Existing Windows hold must be lifted separately; use admitted disposable fixtures and intended roles on the adopted two-family matrix. | Actual SCM callbacks/status failures, effective token/object isolation, native completion, resource retention and failure/recovery behavior satisfy CHECK-1/27 and reached CHECK-17/21 beside valid controls. Host injections and compiler checks do not close this stage. |
+
+**Next service action:** execute the source integration preparation row in this
+existing S3.1 chain, then close its source-adoption prerequisites before claiming
+product integration readiness. The current Core/engine queue is unchanged.
+This handoff lifts no Windows/native, fuzz or optional-storage hold and starts no
+formal work before V1. Full P3, package delivery and release remain separate exits.
+
+**Independent documentation review:** `docs_handoff_review`, fresh context
+(`fork_turns: none`), completed a read-only review of the nine-file documentation
+delta against `89f035e`, before this review receipt. It inspected the manifests,
+hosting source, canonical account/IPC/lifetime contracts and retained checkpoint;
+no required review input was missing. Verdict: **ready for source integration
+preparation**, with no material documentation findings. This is no new source,
+metric or native qualification. The reviewer's comprehension was:
+
+> The proposed handoff makes the existing service foundation discoverable and directs S3.1 to reuse it. It permits bounded source integration preparation while retaining separate gates for qualified source adoption, installed product hosting and native Windows qualification. NTP/NTS algorithms, clock discipline and complete Store delivery remain with their existing owners.
+
+> The current system has seven product-workspace members, including portable `windows-platform`, plus two standalone inert laboratory SCM hosts. Their dispatcher, ServiceMain, callback, status and self-token adapter source exists. Historical ordinary/static checks do not establish final identities, provisioning, effective isolation, production worker integration or native behavior.
+
+Documentation checks passed: all 18 added local links/anchors across the nine
+Markdown files resolve; `check_skills.py` passes all 66 skills; scoped
+`git diff --check` reports no whitespace errors. No application tests were rerun
+for this documentation-only change.
 
 <a id="433-winget-distribution-before-v1--7-november-2026"></a>
 

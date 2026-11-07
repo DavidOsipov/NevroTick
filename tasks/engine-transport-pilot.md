@@ -6620,3 +6620,129 @@ existing requirements. This enhancement is not a pre-V1 prerequisite and does no
 defer those correctness duties or release current execution holds. Do not restart
 the prototype or silently advance to KHR-0 while MT-C01 is blocked/incomplete.
 
+### Final series-summary checkpoint repair — 8 November 2026
+
+David requested removing the reporting ambiguity in `run_series` after analysis
+of `89f035e`. This bounded N3 continuation belongs to the existing state,
+publication and lifecycle contracts under CHECK-15/23/25/26; it changes no
+production admission, native Windows permission, source identity or clock effect.
+The unrelated `scripts/cross-link-service-fixture.py` edit remains outside scope.
+
+Selected contract: historical completion transfer uses the request's actual
+terminal snapshot. After transfer, the owner samples current control and time
+under one short watch read guard and selects the summary before releasing that
+guard. Stop precedes invalidation, which precedes the original total deadline.
+When all three positions have transferred, an active checkpoint selects
+`Completed`. Control updates serialized after this checkpoint do not revise the
+selected summary or historical records. Cleanup failures remain separately
+observable and may promote the result to `Failure`.
+
+Plan and detecting checks:
+
+1. Add a private current-summary helper and notification-only Before/After
+   checkpoints around actual post-transfer classification. Production passes an
+   empty observer; callbacks run outside the watch guard and cannot supply the
+   classification or a completion. Preserve the old post-transfer decision long
+   enough to obtain a behavioral RED with the new deterministic test.
+2. Use actual three-request `run_series` fixtures and bounded external control
+   acknowledgements: stop/invalidation before the final checkpoint select
+   `Stopped`/`Stale`; either after it preserves `Completed`. Check all three
+   retained reports and original facts/age, exactly three queries and no fourth.
+   Add reached-deadline controls for current stop/invalidation precedence without
+   timing sleeps; retain existing between-commit-and-transfer coverage.
+3. Wire the fresh post-transfer helper, establish GREEN, then format and freeze
+   the final candidate. Run configured ordinary compiler/Clippy/tests/docs and
+   Windows-target checks, plus affected critical-file qualification. Historical
+   N3 receipts retain their exact source and do not qualify this changed owner.
+4. Independently review the final implementation and source-bound observations;
+   record actual results, any incomplete gates and the next action here.
+
+The plan review and lifecycle-test design completed read-only in fresh contexts.
+No native Windows, service, formal solver or public-network execution is selected.
+
+Behavioral RED completed on the deliberately stale post-transfer path. Format,
+compiler and Clippy passed; 92 library tests passed and the new full-driver case
+failed after all retained-fact and fixture checks, with the exact cause
+`N3_SEMANTIC_EVIDENCE independent fact: final series summary ignored its serialized current control`.
+Native exit 101 and unchanged source/helper/vendor/tool/recipe bookends are retained
+in `series-final-checkpoint-20261108-v1/red-ordinary-v1/verification.json` under
+the external NevroTick evidence store (SHA256
+`f6ed81c5c52676f675783eae6b657c108f26400ba63756bb53801556b18fd2ea`).
+This RED reaches Before-stop only; its early failure does not establish that the
+remaining Before/After controls ran. The current-control/past-deadline helper
+case passed. The repair now selects the post-transfer decision through
+`current_series_end`, retains `terminal_control` only for historical transfer,
+and documents the summary and cleanup cutoffs in the public `SeriesEnd` contract.
+GREEN and critical-file qualification were still pending at that checkpoint.
+
+The repaired driver passed all four before/after stop/invalidation cases and
+ordinary host/optimized/doc/cross-target checks. Independent review confirmed the
+read-guard, historical transfer and callback ordering; a documentation correction
+then clarified that `SeriesEnd` also covers termination before any transfer.
+
+Before the mutation campaign, fixture review identified concrete fault classes
+that could return early or reject independently valid setup. The fixture now
+retains partial query observations only when the application has returned, and
+asserts known-valid product admissions before fallible unwrapping. Native I/O,
+channel, worker and other fixture failures remain raw. A deliberately inverted
+epoch comparison compiled and passed Clippy, then both selected checkpoint tests
+failed for intended product assertions with native exit 101 and no
+`N3_HARNESS_INCOMPLETE`. This establishes fixture sensitivity, not a mutation kill.
+The focused receipt SHA256 is
+`5854ba2f49a342be4da8c8e7dcd465fb625153822c389129b68ec84b579ef436`.
+
+Final ordinary-v3 passed all ten lanes on the 421-input candidate
+`e8f6ead34f41429033a8d6c0ebd823bc693dae8caa645d53a8eafedf20e8727d`:
+113 ordinary tests, 113 optimized tests and 50 doctests; source/helper/vendor/tool/
+recipe bookends are unchanged. Receipt SHA256:
+`887732785dca641646e1c72adf1dcaf6af9054cd3566b33487d9e4ee1fee58b3`.
+The current series-only role binds its actual 163 baseline identities and all new
+checkpoint cases. Ninety Python controls passed in both main and the frozen
+copy. The new cause map admits only complete source-bound assertions/facts;
+truncated, duplicate, aborted or mixed harness evidence rejects. Historical Q1
+and legacy fixture policies retain their distinct scope. Fresh enumeration then
+started with no inherited inventory or equivalence; affected source coverage,
+mutation and final adjudication were still open. The unchanged library is listed to
+reconcile descriptor identities only; no new library mutation result is claimed.
+
+**Final exit — qualified within the bounded Linux series scope.** The final
+combined contracts/coverage/mutation process exited 0 and was reaped. Receipt
+`qualification-v1/verification.json` SHA256:
+`daad7d045d010afcbe0157f53f8d81d47de3db80f6ae83a4f17f686645d56ac2`.
+The exact 421-input candidate remains `e8f6ead3...`; full source/helper/vendor/tool
+custody passed. One legal external consumer compiled and executed, and all 13
+privacy/type/consumption/default bypasses failed for their intended diagnostics.
+Current coverage is 589/618 executable lines (95.3074%), with all 113 ordinary cases
+executed. The actual mutation baseline contains 113 ordinary plus 50 doctest
+identities. All 145 listed series variants reconcile as 89 caught, 54
+compiler-unviable and two reviewed equivalent misses, with zero timeouts or
+unresolved survivors. Raw 89/91 (97.8022%) and adjusted 89/89 remain distinct;
+exclusions receive no kill credit. Raw mutation exit 2 is retained.
+
+The final source/evidence reviewer reconciled every complete descriptor and raw
+diff, every unviable diagnostic and all 89 caught causes. Thirty-eight logs carry
+complete source-bound new-checkpoint causes. Four older direct-`Result` catches
+were separately checked as causal legal-boundary/required-cleanup assertions.
+A separate raw-evidence reviewer verified ordinary/optimized/doc identities,
+both LLVM exports and all 421 product/31 protected-input identities across the
+execution copies. Neither review adds executions. Both found no concrete
+evidence defect in their assigned scopes.
+
+Generation reconciliation records 27 descriptors for the changed owner/helper
+paths: current-summary helper 2, driver 1, owned wrapper 1 and receiver 23. Helper
+and driver replacements that fail compilation receive no behavioral credit.
+Fresh time acquisition, read-guard lifetime, original-snapshot transfer and
+callback ordering lack operation-level generated faults; the reviewed source,
+actual Before/After controls and retained between-commit-and-transfer case are
+their separate alternatives. No ungenerated behavior was added to kills or
+exclusions. The final fixture/code passed 90 Python controls and unchanged main
+admission; main compiled inputs match the qualified copy.
+
+The requested ambiguity is resolved: a delivered control serialized before the
+final guarded control/time checkpoint participates in the summary; a control
+serialized afterward does not revise it. All historical completions retain their
+original snapshot and age. Cleanup failures retain their independent effect.
+This establishes no fresh library mutation score, production sample admission,
+native Windows/AFD cleanup, service, package, P1 or release qualification. Resume
+the existing product queue; all unrelated holds and OD-10 deferral remain.
+

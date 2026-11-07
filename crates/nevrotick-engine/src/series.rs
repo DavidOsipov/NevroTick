@@ -301,12 +301,17 @@ pub enum SeriesNotStartedCause {
     PrimaryFailure,
 }
 
-/// Whole-series owner decision at its final checkpoint, distinct from request facts.
-/// A later control/deadline observation never rewrites a retained terminal record.
+/// Whole-series result, distinct from retained historical request facts.
+///
+/// Post-transfer control/time decisions are sampled under a short watch read
+/// guard. Updates serialized after the final checkpoint do not revise its selected
+/// summary or retained terminal records. Primary and cleanup failures remain
+/// independently reportable and may select `Failure`.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SeriesEnd {
-    /// All three positions transferred and the final owner checkpoint completed.
-    /// Individual transport results may still be timeouts, controls or refusals.
+    /// All three positions transferred; the final checkpoint observed active
+    /// control before the original total deadline. Transport results remain
+    /// independent and may include timeouts or numerical refusals.
     Completed,
     /// The owner observed stop, retiring unfinished work and suppressing later sends.
     Stopped,
@@ -589,13 +594,13 @@ impl SeriesReceiver {
         Ok(())
     }
 
-    /// Move one actual completion after the same exclusive control checkpoint.
+    /// Move one actual completion using its original terminal control checkpoint.
     /// # Errors
     /// Reject duplicate/foreign/stale transfers without overwriting any position.
     fn receive(&mut self, completion: Completion, state: Control) -> Result<(), PilotError> {
         let expected = self.issued.as_ref().ok_or(PilotError::InternalState)?;
         let status = completion.report.status();
-        let current = if state.stop {
+        let checkpoint_matches = if state.stop {
             status == Status::Stopped
         } else if state.epoch != 0 {
             status == Status::Stale
@@ -610,7 +615,7 @@ impl SeriesReceiver {
                 && facts.profile == completion.owner.profile
         });
         if !expected.same_request(&completion.owner)
-            || !current
+            || !checkpoint_matches
             || !facts_match
             || completion.report.slot != completion.owner.index
             || completion.report.local != completion.owner.local
@@ -681,6 +686,30 @@ fn series_end(state: Control, now: Instant, deadline: Instant) -> Option<SeriesE
     } else {
         None
     }
+}
+
+/// Sample current controls and time at one serialized summary checkpoint.
+///
+/// The short read guard prevents control publication during time sampling and
+/// pure classification. Release it before any callback, effect or await. A
+/// control update serialized afterward cannot revise the selected summary.
+fn current_series_end(
+    control: &mut watch::Receiver<Control>,
+    deadline: Instant,
+) -> Option<SeriesEnd> {
+    let state = control.borrow_and_update();
+    let end = series_end(*state, Instant::now(), deadline);
+    drop(state);
+    end
+}
+
+/// Private notification boundaries around a post-transfer summary decision.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum SeriesCheckpointPhase {
+    /// Historical transfer is complete; the summary has not sampled controls.
+    Before,
+    /// The summary is selected and its read guard has been released.
+    After,
 }
 
 /// Check request deadline arithmetic without resetting the original total bound.
@@ -854,8 +883,8 @@ fn handle_series_writable(
 /// Drive one one-way request and retain the last exclusive transfer checkpoint.
 ///
 /// Return immediately on terminal commit, without refreshing that snapshot:
-/// control published afterward cannot erase historical completion. The next
-/// planned request separately checks the then-current watch state before setup.
+/// control published afterward cannot erase historical completion. The series
+/// owner separately resamples controls for its summary and before later setup.
 async fn run_request(
     mut slot: LiveSlot,
     control: &mut watch::Receiver<Control>,
@@ -915,22 +944,25 @@ fn setup_request(setup: RequestSetup) -> Result<LiveSlot, PilotError> {
 }
 
 /// Execute exactly three planned sequential requests, preserving every prior record.
-/// Only the private bind/registration operation is injectable for causal failure
-/// controls; the public path always passes the unchanged actual setup backend.
-async fn run_series<F>(
+/// Private setup and checkpoint notifications support bounded causal controls.
+/// Notifications cannot select a summary or fabricate a transferred completion;
+/// the public path uses the actual setup backend and an empty observer.
+async fn run_series<F, O>(
     mut prepared: PreparedSeries,
     mut receiver: SeriesReceiver,
     deadline: Instant,
     setup: &mut F,
+    observe_checkpoint: &mut O,
 ) -> SeriesReport
 where
     F: FnMut(RequestSetup) -> Result<LiveSlot, PilotError>,
+    O: FnMut(u8, SeriesCheckpointPhase),
 {
     let Ok(limits) = FrameLimits::new(PACKET_BYTES, 0) else {
         return receiver.finish(SeriesEnd::Failure, Some(PilotError::WireSetup));
     };
     for (index, packet) in prepared.packets.into_iter().enumerate() {
-        if let Some(end) = series_end(latest(&mut prepared.control), Instant::now(), deadline) {
+        if let Some(end) = current_series_end(&mut prepared.control, deadline) {
             return receiver.finish(end, None);
         }
         let request_end = match request_deadline(Instant::now(), prepared.request_timeout, deadline)
@@ -953,16 +985,20 @@ where
         if let Err(error) = receiver.issue(RequestOwner::from_slot(position, &slot)) {
             return receiver.finish(SeriesEnd::Failure, Some(error));
         }
-        let (slot, state) = run_request(slot, &mut prepared.control, request_end, limits).await;
+        let (slot, terminal_control) =
+            run_request(slot, &mut prepared.control, request_end, limits).await;
         let owner = RequestOwner::from_slot(position, &slot);
         let report = match slot.into_report(position) {
             Ok(value) => value,
             Err(error) => return receiver.finish(SeriesEnd::Failure, Some(error)),
         };
-        if let Err(error) = receiver.receive(Completion { owner, report }, state) {
+        if let Err(error) = receiver.receive(Completion { owner, report }, terminal_control) {
             return receiver.finish(SeriesEnd::Failure, Some(error));
         }
-        if let Some(end) = series_end(state, Instant::now(), deadline) {
+        observe_checkpoint(position, SeriesCheckpointPhase::Before);
+        let end = current_series_end(&mut prepared.control, deadline);
+        observe_checkpoint(position, SeriesCheckpointPhase::After);
+        if let Some(end) = end {
             return receiver.finish(end, None);
         }
     }
@@ -1000,7 +1036,15 @@ async fn run_series_owned(
     match invalidate_job {
         Ok(job) => {
             let mut setup = setup_request;
-            let report = run_series(prepared, receiver, deadline, &mut setup).await;
+            let mut observe_checkpoint = |_, _| {};
+            let report = run_series(
+                prepared,
+                receiver,
+                deadline,
+                &mut setup,
+                &mut observe_checkpoint,
+            )
+            .await;
             let stop = finish_timer(stop_job).await;
             let invalidate = finish_timer(job).await;
             reconcile_cleanup(report, stop, invalidate)

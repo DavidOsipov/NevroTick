@@ -261,6 +261,13 @@ controller, clock authority or P1.
 peers, a private current-thread runtime and the unauthenticated, ineligible
 `nevrotick-observe` CLI. Its host experiment does not qualify production
 acquisition, native Windows teardown, NTS, services or clock effects.
+[windows-platform](crates/windows-platform/Cargo.toml) owns portable service
+lifecycle/SCM/privilege contracts. Two fixed-role inert
+[laboratory hosts](tools/windows-service-fixture/README.md) supply native SCM
+adapter source outside the product workspace. For their next integration child,
+reuse the [W11-W05/S3.1 handoff](tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026);
+source availability and retained host checks do not establish qualified product
+hosting, final identities/provisioning or native Windows evidence.
 Other proposed components remain architecture plans until their source exists.
 Inspect current manifests/source before choosing commands;
 never scaffold product crates merely to pass documentation/tool checks.

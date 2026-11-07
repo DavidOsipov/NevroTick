@@ -225,7 +225,9 @@ def run(args):
         record["target_cpu"] = "x86-64-v3"
         paths = [str(linker), "-flavor", "link", *("/libpath:" + str(path) for path in library_roots)]
         wrapper = work / "linker"
-        wrapper.write_text("#!/usr/bin/python3\nimport os,sys\nos.execv(" + repr(paths[0]) + ", " + repr(paths) + " + sys.argv[1:])\n")
+        wrapper.write_text("#!/usr/bin/python3 -I\nimport json,os,sys\nargv=" + repr(paths)
+                           + " + sys.argv[1:]\nwith open('/work/linker-calls.jsonl','a',encoding='utf-8') as stream:\n"
+                           + " stream.write(json.dumps(argv)+'\\n')\nos.execv(argv[0],argv)\n")
         wrapper.chmod(0o500)
         wrapper_sha = C.PRODUCT.sha256(wrapper)
         record["linker_prefix_argv"] = paths
@@ -274,7 +276,7 @@ def run(args):
             results = [execute([str(linker), "-flavor", "link", "--version"]), execute([str(inspector), "--version"])]
             succeeded = all(result["exit_code"] == 0 for result in results)
         else:
-            command = [str(stable / "bin/cargo"), "--config", f'target.{TARGET}.linker="/work/linker"',
+            command = [str(stable / "bin/cargo"), "--verbose", "--verbose", "--config", f'target.{TARGET}.linker="/work/linker"',
                        "build", "--manifest-path", "/work/source/" + Q.MANIFEST, "--release", "--target", TARGET,
                        "--frozen", "--offline", "--jobs", "1", "--bin", BINS[0], "--bin", BINS[1],
                        "--message-format=json-render-diagnostics"]
@@ -293,19 +295,25 @@ def run(args):
                     Q.require(name in BINS and name not in emitted and item["target"]["kind"] == ["bin"]
                               and item["executable"] == expected and item["profile"]["opt_level"] == "3"
                               and item["profile"]["debug_assertions"] is False, "Unexpected actual Cargo executable.")
-                    pdb_names = {name + ".pdb", name.replace("-", "_") + ".pdb"}
-                    pdbs = [value for value in item["filenames"] if Path(value).name in pdb_names
-                            and str(Path(value).parent) == f"/work/target/{TARGET}/release"]
-                    Q.require(len(pdbs) == 1, "Actual Cargo message omits a unique matching PDB.")
-                    emitted[name] = (work / Path(expected).relative_to("/work"),
-                                     work / Path(pdbs[0]).relative_to("/work"))
+                    emitted[name] = work / Path(expected).relative_to("/work")
                 Q.require(set(emitted) == set(BINS), "Actual Cargo output omits a fixed composition.")
+                linker_log = C.read_analysis_text(work / "linker-calls.jsonl", maximum=1024 * 1024)
+                calls = [C.ANALYSIS.decode(line.encode("utf-8")) for line in linker_log.splitlines()]
+                Q.require(len(calls) == 2 and all(type(call) is list and call[:len(paths)] == paths
+                          and all(type(argument) is str for argument in call) for call in calls),
+                          "Actual linker call ledger differs from the two fixed link invocations.")
+                record["actual_linker_argv"] = calls
                 artifacts = Q.RECORDS / ("cross-" + args.label + "-artifacts")
                 artifacts.mkdir(mode=0o700)
                 record["artifacts"] = {}
-                for name, (image, pdb) in emitted.items():
-                    Q.require(pdb.is_file() and not pdb.is_symlink(), "Matching emitted PDB is missing.")
+                for name, image in emitted.items():
+                    pdb_names = {name + ".pdb", name.replace("-", "_") + ".pdb"}
+                    pdbs = [image.parent / value for value in pdb_names if (image.parent / value).is_file()]
+                    Q.require(len(pdbs) == 1 and not pdbs[0].is_symlink(), "Matching emitted PDB is missing or ambiguous.")
+                    pdb = pdbs[0]
                     readback = pe_readback(image)
+                    Q.require(readback["codeview_path"].replace("\\", "/").split("/")[-1] == pdb.name,
+                              "Selected PDB does not match the image's CodeView basename.")
                     observed = execute([str(inspector), "--file-headers", "--coff-load-config", "--coff-debug-directory",
                                         "--coff-imports", str(Path("/work") / image.relative_to(work))])
                     Q.require(observed["exit_code"] == 0, "Independent LLVM PE inspection failed.")

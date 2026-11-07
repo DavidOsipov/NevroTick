@@ -5,11 +5,13 @@ the [development plan](../docs/plans/development-plan.md). Architecture §21 own
 P0–P7 and stage meanings; the plan owns ordering/readiness; linked tasks own
 bounded work and candidate-specific evidence. This index does not certify exits.
 
-**Service source start — 7 November 2026:** the owner-requested
-[W11-W05 portable lifecycle checkpoint](windows11-integration.md#433-portable-service-lifecycle-source-start--7-november-2026)
-introduces shared logic for the engine and clock broker in `windows-platform`.
-Actual SCM adapters, service binaries, account/provisioning admission and native
-qualification remain open under the existing execution hold.
+**Service source handoff — 8 November 2026:** portable lifecycle/SCM/privilege
+owners and two fixed-role laboratory SCM host compositions are implemented.
+The existing
+[W11-W05/S3.1 handoff](windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026)
+owns their reuse, integration prerequisites and remaining qualification. Source
+integration preparation can proceed; qualified product adoption, final account/
+provisioning admission and native Windows lifecycle evidence remain open.
 
 **Current continuation:** use [plan §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
 and the engine's
@@ -94,7 +96,7 @@ retain their existing prerequisites and re-entry gates.
 | Phase / stages | Task and role owner | Readiness, prerequisites and observable exit |
 | --- | --- | --- |
 | P0 S0.1 | [Source readiness](s0.1-source-readiness.md), [protocol comparison](s0.1-protocol-comparison.md), [crypto feasibility](s0.1-crypto-feasibility.md); protocol/dependency/security | Existing bounded source/kernel/provider records. Exact graph/provenance and held native/provider choices remain separate; CHECK-20/26 and S0.1 exit remain scoped. |
-| P0 S0.2 | [Platform parent](development-backlog.md#p0-platform-and-policy); platform/security | Deferred service-token/lifecycle experiment; intended accounts, admitted adapter and disposable fixture precede actual allowed/denied CHECK-1/27 observations. |
+| P0 S0.2 | [W11-W05 source handoff](windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026), [platform parent](development-backlog.md#p0-platform-and-policy); platform/security | Portable owners and inert SCM host source exist with retained host/static checks. Final accounts, current qualification and an admitted disposable fixture still precede native allowed/denied CHECK-1/27 observations. |
 | P0 S0.3 | [Platform parent](development-backlog.md#p0-platform-and-policy); IPC/security | Deferred mutual-identity experiment after token/endpoint contracts; real permitted/denied status/protected calls and fake endpoints establish CHECK-2 subset. |
 | P0 S0.4 | [Platform parent](development-backlog.md#p0-platform-and-policy), [W11-W02](windows11-integration.md#w11-w02-reconcile-sleep-timers-and-clock-presentation); clock/platform | Deferred measured backend experiment; bounded owned guest/reference/recovery precede sign/rate/step/power/cancel CHECK-10/11/12 observations. |
 | P0 S0.5 | [Slint GUI continuation](s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui), [handoff](slint-gui-handoff.md); UI/accessibility + dependency/licence | OD-13 selects Slint. The v0.4 fixture GUI, original GUI GPL3 grant and branch portable/capture/source-control evidence are delivered; merged-candidate, backend/native, critical-text approval and hardening work remain open. Full CHECK-22 feasibility retains D1/D3 triggers; historical Win32/toolkit results do not transfer. |
@@ -107,7 +109,7 @@ retain their existing prerequisites and re-entry gates.
 | P1 S1.4 | [Core completion parent](development-backlog.md#p1-core-completion), [leap entry table](s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint); Core/domain | Abstract discipline/holdover parent remains deferred. The separate pure-leap owner has completed its recorded final host qualification; preserve current receipts and continue with the observation-to-Core contract under plan §7. Formal obligations are post-V1. Later protocol/native scopes remain open. |
 | P1 S1.5 | [Core completion / verifier maintenance](development-backlog.md#p1-core-completion); tooling/dependency/QA | Cross-cutting verification and eventual phase closure; existing actual gates remain mandatory. Deferred maintenance is not a new implementation prerequisite. |
 | P2 S2.1–S2.4 | [Acquisition parent](development-backlog.md#p2-acquisition), [observation-to-Core contract](engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission); engine/protocol/security | The common-run bridge, N1b and N2a have completed their selected host exits. N3a's finite same-source acquisition/consume-once receiver now passes its ordinary checkpoint; complete its separate contract/coverage/mutation and validator-mechanism gates. Production history remains unimplemented and existing history fixture-only. Full UDP/DNS → NTS → qualified reuse/recovery → adversarial closure retains its deferred parent gates. The [ordinary S2.2 card](engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026) prepares fresh KE/protected UDP/actual Core composition; graph/trust/contracts and implementation evidence remain open. Reuse existing owners without inheriting production qualification. |
-| P3 S3.1–S3.4 | [Service-boundary parent](development-backlog.md#p3-service-boundary); platform/IPC/security/Core | Deferred final services → authenticated handlers → mandatory state → simulated-backend integration. W11/ST-W assignments refine these owners; optional storage retains its separate pause. |
+| P3 S3.1–S3.4 | [Service-boundary parent](development-backlog.md#p3-service-boundary), [source handoff](windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026); platform/IPC/security/Core | S3.1 integration preparation reuses the implemented service foundation; product/native adoption remains gated. Authenticated handlers → mandatory state → simulated-backend integration retain their prerequisites. W11/ST-W assignments apply; optional storage retains its separate pause. |
 | P4 S4.1–S4.5 | [Clock parent](development-backlog.md#p4-clock-integration); clock/platform/security/QA | Deferred measured backend/accounting → finite policy → power generations → ownership/recovery → soak; relevant P0/P3 evidence and bounded native admission precede effects. |
 | P5 S5.1–S5.4 | [Production-UI parent](development-backlog.md#p5-production-ui); UI/accessibility/platform | Deferred Slint status → settings/helper → diagnostics/tray → accessibility/resources, consuming the admitted adapter and its exact feature graph. Restore D2 before live status/commands and D1/D3 at their preview/qualification triggers. |
 | P6 S6.1–S6.4 | [Existing Windows package owner](windows11-integration.md); W11-W10 with W11-W05/release/security | Selected complete hardened MSIX remains in this task: mitigations, lifecycle, one-product behavior, then submission/delivered provenance. CHECK-20/SBOM covers the full payload, including non-Cargo files; local and Store-delivered exits differ. |

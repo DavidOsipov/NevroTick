@@ -29,6 +29,7 @@ to own requirements, and task records own executed evidence.
 | Question | Source of truth |
 | --- | --- |
 | What code exists now, and which results apply to it? | [Current implementation summary](windows-time-architecture.md#1-current-state-capsule), backed by the workspace manifests, lockfile, source and linked candidate-specific task evidence. Dated baseline and review records below remain historical. |
+| Are the Windows services ready for integration? | [Current W11-W05/S3.1 handoff](../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026): portable lifecycle/SCM/privilege code and two laboratory SCM hosts are available for source integration preparation. Qualified product adoption, final identities/provisioning and native Windows validation remain open; the handoff names owners and observable exits. |
 | How is service management limited to NevroTick while preserving administrative recovery? | [Canonical route/admission policy](windows-time-architecture.md#421-service-management-admission-and-administrative-recovery), [Microsoft source review and hardening map](plans/windows11-integration.md#service-management-hardening--7-november-2026) and [W11-W05 assignment](../tasks/windows11-integration.md#w11-w05-observe-effective-scm-maintenance-and-process-policy). Separate SCM principal rights, protected application admission and current effect guards; MSIX peer/provisioning/recovery behavior remains unqualified. |
 | How should agents create, manage, harden, log and optimize Windows services? | [implement-windows-service](../.agents/skills/implementation/implement-windows-service/SKILL.md) routes the maintained SCM/native guide, canonical service/diagnostic/resource contracts and W11-W05/W11-W08/W11-W10. The [7 November source refinement](plans/windows11-integration-follow-up.md#additional-service-practices--7-november-2026) adds argument-channel separation, effective unattended errors, mutex crash/thread semantics and conditional environment/startup cases. Source preparation supplies no native permission or service/package pass. |
 | What should a development agent do next, and which skills must it read and use? | [Development execution plan](plans/development-plan.md), especially its phase skill map, acceptance gates and next executable task. |
@@ -74,10 +75,11 @@ experiments. UI-M0's M0 checks do not complete the AC/CHECK catalogs or P0/P5.
 Select only the criteria applicable to the authorized task and retain deferred
 requirements with their owners and restoration triggers.
 
-The owner-requested [7 November service source checkpoint](../tasks/windows11-integration.md#433-portable-service-lifecycle-source-start--7-november-2026)
-adds the shared portable lifecycle owner in `windows-platform` for the engine and
-clock broker. Checked host logic and cross-compilation remain distinct from the
-unimplemented SCM adapter, installed identities and native service qualification.
+The [8 November service handoff](../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026)
+records portable lifecycle/SCM/privilege owners and two laboratory executable
+compositions with native adapter source. Reuse them for integration preparation;
+qualified production adoption, installed identities and native Windows service
+qualification remain incomplete.
 
 The [UI-M0 task](../tasks/ui-m0.md#remaining-evidence-and-next-work) retains the
 Win32 prototype and its incomplete full native-memory instrumentation. The

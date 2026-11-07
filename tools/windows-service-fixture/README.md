@@ -25,8 +25,17 @@ startup/stop allowance 10,000 ms and maximum Running interval 60,000 ms. These a
 not product defaults or measured Windows latency guarantees. The Running deadline
 is anchored to the Ready observation, before control-loop work admission, and is
 never renewed. Pending/Running deadlines cannot interrupt an arbitrary native
-call. The only admitted work permit owns the genuine inert control loop; it
-completes before terminal reporting.
+call. One startup permit owns synchronous self-token observation through explicit
+cleanup attempts; unknown capture/cleanup refuses Ready in either role. The engine
+requires the three fixed forbidden privileges absent; broker observation remains
+descriptive. A later sequential permit owns the genuine inert control loop and
+completes before terminal reporting. These permits do not overlap or enlarge the
+one-slot capacity.
+
+The [8 November source handoff](../../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026)
+owns reuse for bounded S3.1 integration preparation. Current per-file qualification,
+product worker/composition adoption, supported identities/provisioning and native
+Windows evidence remain open; the fixture is not a completed production service.
 
 The source path is fixed executable → one dispatcher attempt → role-specific
 `ServiceMain` → fixed handler registration → private non-cloneable status token →
@@ -85,10 +94,11 @@ persistent state. It has no installer, shell command execution, wrapper, automat
 restart, elevation or additional runtime.
 
 The exact external Windows edge is existing `windows-sys` 0.61.2, defaults off,
-with `Win32_Foundation` and `Win32_System_Services` only. The other direct edge is
-the existing path-owned `windows-platform`. The new lock is seeded from the root
-lock before offline resolution to preserve admitted versions. Resolution/build
-need their separate source/graph review and coordinator go-ahead.
+with `Win32_Foundation`, `Win32_Security`, `Win32_System_Services` and
+`Win32_System_Threading`. The other direct edge is the existing path-owned
+`windows-platform`. The lock preserves admitted registry identities. The retained
+graph/ordinary-check receipts cover their frozen candidate; changed source or
+features require refreshed admission before dependent checks.
 
 Pinned Rust 1.99.1 source selects the futex parker on the standard Windows target.
 `Thread::unpark` uses its existing parker, a Release atomic swap and, when needed,

@@ -643,7 +643,13 @@ for unrelated research before ordinary full NTS acquisition.
 ## P3 service boundary
 
 **Owner:** platform/IPC/security, with Core and diagnostics owners.
-**Status:** deferred full-services parent; apply W11-W04/05/08 and relevant
+**Status:** source integration preparation available; full-services/native parent
+remains incomplete. Reuse the implemented portable owners and two laboratory SCM
+hosts through the existing
+[W11-W05/S3.1 handoff](windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026).
+Qualified source adoption still needs current per-file and artifact evidence;
+installed hosting also needs final identities/provisioning and native admission.
+Apply W11-W04/05/08 and relevant
 ST-W03–ST-W07 before dependent adapters. Optional-cache pause does not pause the
 separate mandatory policy/authority/floor state owner. **Exit:** [plan §6/P3](../docs/plans/development-plan.md#p3--windows-services-secure-ipc-and-protected-state).
 
@@ -653,7 +659,7 @@ deliberately elevated recovery must both work. Full services remain deferred.
 
 | Future card / role owner | Prerequisites and next bounded action | Independent observation required for exit |
 | --- | --- | --- |
-| S3.1 final services / platform/security | Relevant S0.2/S0.7 evidence, admitted narrow SCM adapter and native fixture; freeze one service's startup/status/stop child. | Intended service becomes actually ready; denied token actions and failed/delayed callbacks cannot report false readiness or escape shutdown ownership. CHECK-1/27, AC-01/13. |
+| S3.1 final services / platform/security | Reuse W11-W05's lifecycle/SCM/privilege and laboratory host source; freeze one adapter/worker startup/status/stop child with actual-completion contracts. Refresh candidate qualification before promotion; final accounts, relevant S0.2/S0.7 evidence and admitted fixture precede installed/native work. | Intended service becomes actually ready; denied token actions and failed/delayed callbacks cannot report false readiness or escape shutdown ownership. CHECK-1/27, AC-01/13. Source preparation alone does not close this exit. |
 | S3.2 authenticated handlers / IPC/security | S0.3 proof, final endpoints/tokens and strict framing/domain/current-authorization contracts; expand one permitted/denied method pair. | Valid current caller succeeds; malformed/oversized/stale/unauthorized/fake-endpoint/partial-I/O cases cause no protected effect; native buffers/permits survive actual completion. CHECK-2/3/25/27. |
 | S3.3 mandatory policy/state / platform/security | Frozen revisions/migration/durable-outcome and directory-authority contracts; select one atomic mandatory-state transition and recovery case. Adopted optional storage remains a separately gated child under its existing task. | Valid current policy commits; corrupt/old/unauthorized records, disk-full/interruption and path substitution preserve safe state and charged authority. Optional reset cannot erase mandatory state. CHECK-15/25/27, AC-07; relevant W11/ST-W refinements. |
 | S3.4 simulated integration/status / Core/platform/diagnostics | Actual secured services/handlers plus qualified pure proposals; integrate one journey against a simulated clock backend. | Valid proposal/status is coherent; stale generations, unavailable dependencies and malformed snapshots cannot claim Tracking, applied effects or success. Required redacted diagnostics remain bounded. CHECK-14/17/25/27, AC-05/16; actual clock effects stay P4. |

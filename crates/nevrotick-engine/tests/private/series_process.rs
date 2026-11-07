@@ -14,10 +14,11 @@ const CHILD_WALL: Duration = Duration::from_secs(5);
 const REAP_WALL: Duration = Duration::from_millis(500);
 const OUTPUT_LIMIT: u64 = 16_384;
 const COVERAGE_PROFILE: &str = "/work/target/llvm-cov-target/source-%p-%m.profraw";
-const CASES: [&str; 10] = [
+const CASES: [&str; 11] = [
     "series::tests::single_slot_driver_enforces_receive_cap_with_valid_boundary_neighbor",
     "series::tests::single_slot_driver_enforces_send_cap_with_valid_boundary_neighbor",
     "series::tests::setup_and_registration_failures_preserve_actual_prior_completion",
+    "series::tests::final_checkpoint_reads_current_control_without_rewriting_three_completions",
     "three_real_requests_retain_distinct_identity_and_one_exact_origin",
     "ipv6_real_requests_retain_distinct_identity_and_one_exact_origin",
     "unavailable_measurements_still_consume_once_after_rejected_neighbors",

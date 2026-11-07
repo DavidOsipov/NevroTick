@@ -640,6 +640,13 @@ Implement two own-process services using qualified narrow SCM adapters, then
 bounded versioned handlers, current authorization, protected persistence and
 coherent status. Start proposal integration with a simulated clock backend.
 
+The [8 November source handoff](../../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026)
+provides portable lifecycle/SCM/privilege code and two inert laboratory hosts for
+S3.1 integration preparation. Reuse this source; qualify its adoption and bind
+actual worker/handler lifetimes before claiming production service integration.
+Final identity/provisioning, native observations and the acceptance rows below
+remain required; the laboratory control loop supplies none of those exits.
+
 Apply [service management admission and administrative recovery](../windows-time-architecture.md#421-service-management-admission-and-administrative-recovery).
 Use existing S0.2/S0.3 and W11-W05/W11-W10. Qualify normal protected component
 admission separately from principal/verb authorization, SCM rights and deliberate
@@ -944,13 +951,33 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
-**Owner-requested service source start — 7 November 2026:** David requested
-reading the service contracts/skills and starting implementation. The bounded
-[W11-W05 lifecycle source checkpoint](../../tasks/windows11-integration.md#433-portable-service-lifecycle-source-start--7-november-2026)
-adds shared portable `windows-platform` logic for both own-process services.
-This parallel source preparation does not admit ordinary installed service work:
-MSIX provisioning/account isolation, native execution and the remaining S0.2/P3
-gates stay open. The existing Core/engine continuation below retains its scope.
+**Completed N3 summary repair — 8 November 2026:** the affected critical-file
+qualification is recorded in the existing
+[final checkpoint repair](../../tasks/engine-transport-pilot.md#final-series-summary-checkpoint-repair--8-november-2026)
+and the ordinary product queue below resumes. The code now separates
+historical completion transfer from a current, serialized control/time summary
+checkpoint. Deterministic external-control fixtures cover all four final-position
+Before/After stop/invalidation cases. Final ordinary evidence passes 113 ordinary/
+113 optimized tests, 50 doctests and both Windows-target compiler checks on its
+recorded 421-input candidate. Final contracts, 589/618 executable-line coverage
+and all 145 mutations pass the scoped gates: 89 caught, 54 unviable and two
+reviewed equivalent misses, with no timeout or unresolved survivor. Equivalents
+receive no kill credit; no fresh library mutation, native Windows, service,
+production admission or release pass follows.
+
+**Service source handoff — 8 November 2026:** shared `windows-platform`
+lifecycle, SCM projection and privilege validation, plus two fixed-role laboratory
+SCM hosts, are implemented. Reuse this foundation for bounded integration
+preparation under the existing
+[W11-W05/S3.1 handoff](../../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026);
+do not scaffold replacement services. Retained host/static checks cover the
+recorded source candidate, not completed production services. The next service
+child must freeze adapter/worker ownership and refresh the current candidate's
+ordinary, per-file coverage/mutation and Windows artifact evidence before qualified
+source adoption. Final accounts/provisioning and actual Windows lifecycle/security
+evidence still gate installed integration. This parallel source handoff does not
+change the Core/engine continuation below or lift any execution hold. NTP/NTS
+algorithms, clock discipline and complete package delivery retain their own owners.
 
 **Controlling owner amendment — 6 November 2026:**
 [OD-10 §14.1](../nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
@@ -2502,6 +2529,9 @@ Its verdict was **READY for documentary integration**, with no material mapping,
 ownership or acceptance finding. Its comprehension paragraphs were:
 
 > The change gives every canonical development stage a discoverable task owner while keeping the development plan in control of ordering and acceptance. Existing active and historical records remain in place; one grouped backlog supplies missing future parents. Those parents describe prerequisites and independently observable exits without presenting themselves as executable experiments or completed work.
+
+The following 4 November comprehension is historical: the workspace now has seven
+members and the service foundation described in [§7](#7-next-executable-task-for-a-development-agent).
 
 > The current workspace manifest contains six members. Its task records describe bounded protocol/numerical fixtures, a restricted native UI prototype and an unauthenticated loopback engine pilot. The selected settled-rate checkpoint passed its four-owner gates; earlier receipts retain their original candidates, and production acquisition, services, clock integration, complete packaging and release qualification remain open. UI-M0 deferrals and the separate Windows, fuzz and optional-storage holds remain applicable.
 

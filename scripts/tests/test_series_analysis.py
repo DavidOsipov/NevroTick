@@ -1,8 +1,7 @@
 """Independent N3 profile admission controls; no compiler/analyzer execution.
 
-Initial native identities are frozen from the admitted ordinary-v3 source-bound
-receipt; two instances of one new parser regression are declared from source
-and require fresh actual execution. Synthetic records exercise observer rejection only and claim no product
+Current native identities are copied from the actual final-checkpoint ordinary-v3
+receipt (88773278...), including Q1 and both checkpoint tests. Synthetic records exercise observer rejection only and claim no product
 execution. Historical engine fixtures are not changed or reused as an oracle.
 """
 from __future__ import annotations
@@ -24,9 +23,9 @@ SPEC = importlib.util.spec_from_file_location("series_analysis_test", ROOT / "sc
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
-ORDINARY_NAMES = ('argument_guard_tests::argument_text_preserves_exact_byte_boundaries_and_original_borrows', 'argument_guard_tests::argument_text_rejects_unix_nontext_in_both_roles', 'argument_guard_tests::decimal_profile_fields_preserve_raw_digit_boundaries', 'argument_guard_tests::pair_budget_admits_six_and_preserves_exhausted_failure', 'cli_worker_binary_preserves_literal_transport_contracts', 'cli_worker_binary_rejects_arguments_and_observes_sink_failures', 'execute_rejects_entered_runtime_without_nested_runtime_creation', 'invalidation_preserves_first_completion_and_marks_third_not_started', 'ipv6_real_requests_retain_distinct_identity_and_one_exact_origin', 'measurement::tests::absent_profile_is_a_distinct_transport_only_reason', 'measurement::tests::asymmetric_decimal_captures_keep_exact_signed_nominal_values', 'measurement::tests::coherence_helper_rejects_each_reversed_bracket', 'measurement::tests::decimal_remainders_change_the_exact_nominal_phase', 'measurement::tests::declared_coherence_limit_has_an_exact_healthy_neighbor', 'measurement::tests::era_zero_and_multiple_candidates_remain_distinct', 'measurement::tests::exact_dyadic_results_ignore_the_wire_token', 'measurement::tests::fractional_conversion_residuals_reconstruct_nominal_values', 'measurement::tests::fresh_owner_age_stamp_preserves_the_actual_arithmetic', 'measurement::tests::inert_header_does_not_bypass_the_time_reply_guard', 'measurement::tests::negative_raw_rtt_and_half_q32_phase_are_preserved', 'measurement::tests::nominal_arithmetic_rejects_each_remainder_boundary_without_partial_result', 'measurement::tests::nominal_arithmetic_retains_full_coordinate_domain_without_i64_projection', 'measurement::tests::nominal_result_garde_enforces_both_strict_numerator_bounds', 'measurement::tests::nominal_seconds_checks_scale_and_retains_the_signed_integer_endpoint', 'measurement::tests::nominal_seconds_preserve_corrected_capture_units_and_signed_rtt', 'measurement::tests::nonzero_capture_intervals_keep_inside_and_outside_neighbors', 'measurement::tests::out_of_scope_local_coordinate_is_not_rebased', 'measurement::tests::peer_shift_changes_sign_without_changing_rtt', 'measurement::tests::pre_unix_and_post_unix_100_ns_have_literal_residuals', 'measurement::tests::pre_unix_nominal_remainders_keep_epoch_and_sign_association', 'measurement::tests::profile_bounds_and_maximum_allowance_are_checked', 'measurement::tests::refusal_codes_and_display_remain_literal_and_redacted', 'measurement::tests::relative_phase_anchoring_precedes_large_absolute_rounding', 'measurement::tests::relative_phase_difference_exceeds_i128_without_losing_sign', 'measurement::tests::relative_phase_direction_preserves_checked_nominal_ticks', 'measurement::tests::reversed_brackets_and_processing_are_not_ages', 'measurement::tests::send_after_outside_scope_cannot_hide_between_valid_endpoints', 'measurement::tests::software_window_retains_each_local_and_peer_extremum', 'middle_request_timeout_preserves_earlier_facts_and_starts_final_attempt', 'prepare_outside_runtime_owns_and_releases_standard_sockets', 'prepare_rejects_entered_runtime_before_native_startup', 'processing_guard_tests::commit_processing_accepts_equal_read_and_rejects_its_predecessor', 'processing_guard_tests::complete_header_survives_actual_staging_and_terminal_projection', 'processing_guard_tests::completed_cleanup_results_preserve_primary_and_each_independent_error', 'processing_guard_tests::completed_send_results_preserve_rearm_causes_and_one_way_history', 'processing_guard_tests::configuration_enforces_endpoint_and_timeout_boundaries', 'processing_guard_tests::control_schedule_preserves_legal_zero_and_maximum_delays', 'processing_guard_tests::entropy_admission_checks_each_half_and_exact_request_bytes', 'processing_guard_tests::failure_summaries_preserve_fixed_redacted_cause_projections', 'processing_guard_tests::literal_header_rejections_preserve_the_actual_pending_neighbor', 'processing_guard_tests::local_endpoint_admission_requires_both_loopback_and_nonzero_port', 'processing_guard_tests::measurement_refusal_consumes_the_correlated_request_once', 'processing_guard_tests::owned_timers_deliver_immediate_actions_and_cancel_future_actions', 'processing_guard_tests::processing_uses_fresh_deadline_and_current_control', 'processing_guard_tests::public_execute_relative_view_retains_actual_common_run_and_refusals', 'processing_guard_tests::read_classification_keeps_platform_oversize_and_native_errors_distinct', 'processing_guard_tests::real_udp_measurement_matches_independent_captured_coordinates', 'processing_guard_tests::receive_cap_preserves_sixty_three_and_retires_sixty_four', 'processing_guard_tests::selected_read_accounting_survives_retirement_and_typed_oversize', 'processing_guard_tests::staged_reply_cannot_cross_socket_owner_or_commit_twice', 'processing_guard_tests::terminal_io_causes_and_send_history_remain_distinct', 'processing_guard_tests::watch_controls_latch_stop_and_reject_generation_wrap', 'relative::tests::duration_nanoseconds_admits_full_u64_and_rejects_next_tick', 'relative::tests::midpoint_bounds_preserve_half_nanoseconds_and_integer_endpoints', 'relative::tests::midpoint_publication_enforces_raw_association_and_garde_rule', 'relative::tests::reference_instants_check_order_before_duration_conversion', 'relative::tests::relative_diagnostics_preserve_fixed_text_and_original_causes', 'relative::tests::relative_phase_raw_i128_endpoints_keep_u128_magnitude', 'relative::tests::relative_reference_differences_keep_direction_and_half_ticks', 'relative::tests::relative_seconds_scale_requires_nonzero_with_healthy_neighbors', 'relative::tests::shared_origin_distinguishes_equal_values_from_run_identity', 'series::tests::actual_publication_rechecks_control_and_deadline_after_staging', 'series::tests::all_series_debug_outputs_are_exact_fixed_redactions', 'series::tests::deadlines_and_controls_do_not_reset_the_series_origin', 'series::tests::entropy_failure_and_entered_runtime_precede_all_acquisition_work', 'series::tests::genuine_terminal_report_admits_only_the_three_position_domain', 'series::tests::partial_report_preserves_primary_and_both_cleanup_causes', 'series::tests::post_commit_control_preserves_header_and_measurement_refusal', 'series::tests::raw_config_and_tokens_have_mandatory_bounded_admission', 'series::tests::receiver_rejects_duplicate_foreign_and_reused_identity_atomically', 'series::tests::selected_native_datagram_after_retirement_is_charged_without_publication', 'series::tests::series_process::semantic_evidence_accepts_only_exact_named_admitted_sites', 'series::tests::setup_and_registration_failures_preserve_actual_prior_completion', 'series::tests::single_slot_driver_enforces_receive_cap_with_valid_boundary_neighbor', 'series::tests::single_slot_driver_enforces_send_cap_with_valid_boundary_neighbor', 'series::tests::transfer_control_and_irreversible_retirement_are_distinct', 'series_process::semantic_evidence_accepts_only_exact_named_admitted_sites', 'stop_preserves_first_completion_and_marks_third_not_started', 'three_real_requests_retain_distinct_identity_and_one_exact_origin', 'total_deadline_preserves_first_completion_and_prevents_third_send', 'unavailable_measurements_still_consume_once_after_rejected_neighbors')
+ORDINARY_NAMES = ('absent_measurement_refuses_quality_with_actual_valid_neighbor', 'actual_quality_limits_refuse_without_rewriting_completion_or_age', 'actual_series_quality_retains_signed_intervals_source_and_original_age', 'argument_guard_tests::argument_text_preserves_exact_byte_boundaries_and_original_borrows', 'argument_guard_tests::argument_text_rejects_unix_nontext_in_both_roles', 'argument_guard_tests::decimal_profile_fields_preserve_raw_digit_boundaries', 'argument_guard_tests::pair_budget_admits_six_and_preserves_exhausted_failure', 'cli_worker_binary_preserves_literal_transport_contracts', 'cli_worker_binary_rejects_arguments_and_observes_sink_failures', 'execute_rejects_entered_runtime_without_nested_runtime_creation', 'invalidation_preserves_first_completion_and_marks_third_not_started', 'ipv6_real_requests_retain_distinct_identity_and_one_exact_origin', 'measurement::tests::absent_profile_is_a_distinct_transport_only_reason', 'measurement::tests::asymmetric_decimal_captures_keep_exact_signed_nominal_values', 'measurement::tests::coherence_helper_rejects_each_reversed_bracket', 'measurement::tests::decimal_remainders_change_the_exact_nominal_phase', 'measurement::tests::declared_coherence_limit_has_an_exact_healthy_neighbor', 'measurement::tests::era_zero_and_multiple_candidates_remain_distinct', 'measurement::tests::exact_dyadic_results_ignore_the_wire_token', 'measurement::tests::fractional_conversion_residuals_reconstruct_nominal_values', 'measurement::tests::fresh_owner_age_stamp_preserves_the_actual_arithmetic', 'measurement::tests::inert_header_does_not_bypass_the_time_reply_guard', 'measurement::tests::negative_raw_rtt_and_half_q32_phase_are_preserved', 'measurement::tests::nominal_arithmetic_rejects_each_remainder_boundary_without_partial_result', 'measurement::tests::nominal_arithmetic_retains_full_coordinate_domain_without_i64_projection', 'measurement::tests::nominal_result_garde_enforces_both_strict_numerator_bounds', 'measurement::tests::nominal_seconds_checks_scale_and_retains_the_signed_integer_endpoint', 'measurement::tests::nominal_seconds_preserve_corrected_capture_units_and_signed_rtt', 'measurement::tests::nonzero_capture_intervals_keep_inside_and_outside_neighbors', 'measurement::tests::out_of_scope_local_coordinate_is_not_rebased', 'measurement::tests::peer_shift_changes_sign_without_changing_rtt', 'measurement::tests::pre_unix_and_post_unix_100_ns_have_literal_residuals', 'measurement::tests::pre_unix_nominal_remainders_keep_epoch_and_sign_association', 'measurement::tests::profile_bounds_and_maximum_allowance_are_checked', 'measurement::tests::refusal_codes_and_display_remain_literal_and_redacted', 'measurement::tests::relative_phase_anchoring_precedes_large_absolute_rounding', 'measurement::tests::relative_phase_difference_exceeds_i128_without_losing_sign', 'measurement::tests::relative_phase_direction_preserves_checked_nominal_ticks', 'measurement::tests::reversed_brackets_and_processing_are_not_ages', 'measurement::tests::send_after_outside_scope_cannot_hide_between_valid_endpoints', 'measurement::tests::software_window_retains_each_local_and_peer_extremum', 'middle_request_timeout_preserves_earlier_facts_and_starts_final_attempt', 'prepare_outside_runtime_owns_and_releases_standard_sockets', 'prepare_rejects_entered_runtime_before_native_startup', 'processing_guard_tests::commit_processing_accepts_equal_read_and_rejects_its_predecessor', 'processing_guard_tests::complete_header_survives_actual_staging_and_terminal_projection', 'processing_guard_tests::completed_cleanup_results_preserve_primary_and_each_independent_error', 'processing_guard_tests::completed_send_results_preserve_rearm_causes_and_one_way_history', 'processing_guard_tests::configuration_enforces_endpoint_and_timeout_boundaries', 'processing_guard_tests::control_schedule_preserves_legal_zero_and_maximum_delays', 'processing_guard_tests::entropy_admission_checks_each_half_and_exact_request_bytes', 'processing_guard_tests::failure_summaries_preserve_fixed_redacted_cause_projections', 'processing_guard_tests::literal_header_rejections_preserve_the_actual_pending_neighbor', 'processing_guard_tests::local_endpoint_admission_requires_both_loopback_and_nonzero_port', 'processing_guard_tests::measurement_refusal_consumes_the_correlated_request_once', 'processing_guard_tests::owned_timers_deliver_immediate_actions_and_cancel_future_actions', 'processing_guard_tests::processing_uses_fresh_deadline_and_current_control', 'processing_guard_tests::public_execute_relative_view_retains_actual_common_run_and_refusals', 'processing_guard_tests::read_classification_keeps_platform_oversize_and_native_errors_distinct', 'processing_guard_tests::real_udp_measurement_matches_independent_captured_coordinates', 'processing_guard_tests::receive_cap_preserves_sixty_three_and_retires_sixty_four', 'processing_guard_tests::selected_read_accounting_survives_retirement_and_typed_oversize', 'processing_guard_tests::staged_reply_cannot_cross_socket_owner_or_commit_twice', 'processing_guard_tests::terminal_io_causes_and_send_history_remain_distinct', 'processing_guard_tests::watch_controls_latch_stop_and_reject_generation_wrap', 'quality::tests::computed_policy_boundaries_preserve_strict_and_inclusive_comparisons', 'quality::tests::declared_getters_and_constructor_precedence_preserve_original_bits', 'quality::tests::dyadic_calculation_borrows_original_facts_and_assumptions', 'quality::tests::evaluator_failure_precedence_preserves_original_observation', 'quality::tests::finite_input_overflow_is_refused_at_the_first_computed_stage', 'quality::tests::generated_garde_dispatch_covers_nested_and_computed_fields', 'quality::tests::gradual_underflow_does_not_claim_exact_zero_uncertainty', 'quality::tests::mandatory_assumption_admission_preserves_bits_and_rejects_invalid_fields', 'quality::tests::negative_local_wall_interval_grows_declared_frequency_dispersion', 'quality::tests::negative_server_interval_processing_limit_uses_absolute_magnitude', 'quality::tests::original_measurement_refusal_and_redacted_diagnostics_are_preserved', 'quality::tests::precision_clamps_have_exact_boundary_and_neighbor_values', 'quality::tests::raw_round_trip_is_converted_once_before_cancellation', 'quality::tests::raw_scalar_and_interval_helpers_preserve_full_admitted_domains', 'quality::tests::refusal_families_keep_bounded_diagnostics_and_typed_sources', 'quality::tests::signed_server_interval_and_unsigned_root_words_are_retained', 'quality::tests::zero_raw_rtt_uses_combined_precision_floor', 'relative::tests::duration_nanoseconds_admits_full_u64_and_rejects_next_tick', 'relative::tests::midpoint_bounds_preserve_half_nanoseconds_and_integer_endpoints', 'relative::tests::midpoint_publication_enforces_raw_association_and_garde_rule', 'relative::tests::reference_instants_check_order_before_duration_conversion', 'relative::tests::relative_diagnostics_preserve_fixed_text_and_original_causes', 'relative::tests::relative_phase_raw_i128_endpoints_keep_u128_magnitude', 'relative::tests::relative_reference_differences_keep_direction_and_half_ticks', 'relative::tests::relative_seconds_scale_requires_nonzero_with_healthy_neighbors', 'relative::tests::shared_origin_distinguishes_equal_values_from_run_identity', 'series::tests::actual_publication_rechecks_control_and_deadline_after_staging', 'series::tests::all_series_debug_outputs_are_exact_fixed_redactions', 'series::tests::current_checkpoint_observes_new_controls_before_expired_deadline', 'series::tests::deadlines_and_controls_do_not_reset_the_series_origin', 'series::tests::entropy_failure_and_entered_runtime_precede_all_acquisition_work', 'series::tests::final_checkpoint_reads_current_control_without_rewriting_three_completions', 'series::tests::genuine_terminal_report_admits_only_the_three_position_domain', 'series::tests::partial_report_preserves_primary_and_both_cleanup_causes', 'series::tests::post_commit_control_preserves_header_and_measurement_refusal', 'series::tests::raw_config_and_tokens_have_mandatory_bounded_admission', 'series::tests::receiver_rejects_duplicate_foreign_and_reused_identity_atomically', 'series::tests::selected_native_datagram_after_retirement_is_charged_without_publication', 'series::tests::series_process::semantic_evidence_accepts_only_exact_named_admitted_sites', 'series::tests::setup_and_registration_failures_preserve_actual_prior_completion', 'series::tests::single_slot_driver_enforces_receive_cap_with_valid_boundary_neighbor', 'series::tests::single_slot_driver_enforces_send_cap_with_valid_boundary_neighbor', 'series::tests::transfer_control_and_irreversible_retirement_are_distinct', 'series_process::semantic_evidence_accepts_only_exact_named_admitted_sites', 'stop_preserves_first_completion_and_marks_third_not_started', 'three_real_requests_retain_distinct_identity_and_one_exact_origin', 'total_deadline_preserves_first_completion_and_prevents_third_send', 'unavailable_measurements_still_consume_once_after_rejected_neighbors')
 
-DOCTEST_NAMES = ('crates/nevrotick-engine/src/lib.rs - Config::new (line 188)', 'crates/nevrotick-engine/src/lib.rs - ControlSchedule::new (line 1577)', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 216)', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 222) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 229) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 237) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 242) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 104) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 117) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 126) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 131) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 94)', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 610)', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 618) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 623) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 631) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 636) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 680)', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 688) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 693) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 701) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 706) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 101) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 106) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 111) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 116) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 92)', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 157)', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 169) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 185) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 192) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 197) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 204) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::PreparedSeries (line 209) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::PreparedSeries (line 216) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::SeriesAttempt (line 331) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 81) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 87) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 91) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::SeriesConfig::new (line 111)', 'crates/nevrotick-engine/src/series.rs - series::SeriesReport (line 395) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::execute_series (line 1027) - compile')
+DOCTEST_NAMES = ('crates/nevrotick-engine/src/lib.rs - Config::new (line 194)', 'crates/nevrotick-engine/src/lib.rs - ControlSchedule::new (line 1583)', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 216)', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 222) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 229) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 237) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 242) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 104) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 117) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 126) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 131) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 94)', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 610)', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 618) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 623) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 631) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 636) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 680)', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 688) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 693) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 701) - compile fail', 'crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 706) - compile fail', 'crates/nevrotick-engine/src/quality.rs - quality::ConditionalQuality (line 749) - compile fail', 'crates/nevrotick-engine/src/quality.rs - quality::ConditionalQuality (line 755) - compile fail', 'crates/nevrotick-engine/src/quality.rs - quality::ConditionalQuality (line 760) - compile fail', 'crates/nevrotick-engine/src/quality.rs - quality::DeclaredFrequencyInterval (line 255) - compile fail', 'crates/nevrotick-engine/src/quality.rs - quality::DeclaredQualityAssumptions (line 389)', 'crates/nevrotick-engine/src/quality.rs - quality::DeclaredQualityAssumptions (line 401) - compile fail', 'crates/nevrotick-engine/src/quality.rs - quality::DeclaredQualityAssumptions (line 405) - compile fail', 'crates/nevrotick-engine/src/quality.rs - quality::DeclaredQualityLimits (line 305) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 101) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 106) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 111) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 116) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 92)', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 157)', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 169) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 185) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 192) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 197) - compile fail', 'crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 204) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::PreparedSeries (line 209) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::PreparedSeries (line 216) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::SeriesAttempt (line 336) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 81) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 87) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 91) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::SeriesConfig::new (line 111)', 'crates/nevrotick-engine/src/series.rs - series::SeriesReport (line 400) - compile fail', 'crates/nevrotick-engine/src/series.rs - series::execute_series (line 1071) - compile')
 
 def digest(value):
     """Independent documented JSON digest, not the production helper."""
@@ -48,11 +47,13 @@ def literal_execution(names):
 
 class SeriesAnalysisControls(unittest.TestCase):
     def test_literal_inventory_and_legacy_defaults_remain_distinct(self):
-        self.assertEqual(len(ORDINARY_NAMES), 91)
-        self.assertEqual(len(DOCTEST_NAMES), 42)
+        self.assertEqual(len(ORDINARY_NAMES), 113)
+        self.assertEqual(len(DOCTEST_NAMES), 50)
         self.assertEqual(len(MODULE.REQUIRED_TESTS), 68)
         self.assertEqual(len(MODULE.SERIES_REQUIRED_TESTS), 23)
-        self.assertEqual(set(ORDINARY_NAMES), MODULE.REQUIRED_TESTS | MODULE.SERIES_REQUIRED_TESTS)
+        self.assertEqual(len(MODULE.SERIES_CHECKPOINT_REQUIRED_TESTS), 2)
+        self.assertEqual(set(ORDINARY_NAMES), MODULE.REQUIRED_TESTS | MODULE.SERIES_REQUIRED_TESTS
+                         | MODULE.SERIES_CHECKPOINT_REQUIRED_TESTS | MODULE.QUALITY_REQUIRED_TESTS)
         self.assertEqual(MODULE.FIXED_POLICY["mutation_jobs"], 10)
         self.assertNotIn("contracts_wall_seconds", MODULE.FIXED_POLICY)
         self.assertNotIn("mutation_equivalences", MODULE.SERIES_FIXED_POLICY)
@@ -60,18 +61,18 @@ class SeriesAnalysisControls(unittest.TestCase):
         self.assertEqual(MODULE.SERIES_SCOPE.select("all"), {
             "library": "crates/nevrotick-engine/src/lib.rs",
             "series": "crates/nevrotick-engine/src/series.rs"})
-        self.assertEqual(digest(list(ORDINARY_NAMES)), "6d197d0b3e02abb8a852754bf28d69642ca4182fc25a15e8d4a733c8b05c4622")
-        self.assertEqual(digest(list(DOCTEST_NAMES)), "8f9b7f8aa85dead52856c3fc24957062b23ff2523142ee562d3ce81bb003415e")
+        self.assertEqual(digest(list(ORDINARY_NAMES)), "c21b82fd32cea0a3a3eefddc8f84d3b43e8591d03e2286d3445f4d334a7ae3c3")
+        self.assertEqual(digest(list(DOCTEST_NAMES)), "5eaf6bcb3df3807ecf447ef66d256abb85511048fbd3939da951c21df379e48a")
 
     def test_exact_healthy_coverage_and_baseline_records(self):
         policy = policy_fixture()
         coverage = MODULE.validate_series_test_execution(literal_execution(ORDINARY_NAMES), policy, doctests=False)
         baseline = MODULE.validate_series_test_execution(literal_execution(ORDINARY_NAMES + DOCTEST_NAMES), policy, doctests=True)
-        self.assertEqual(coverage["tests_executed"], 91)
+        self.assertEqual(coverage["tests_executed"], 113)
         self.assertEqual(coverage["doctests"], 0)
-        self.assertEqual(baseline["tests_executed"], 133)
-        self.assertEqual(baseline["doctests"], 42)
-        self.assertEqual(baseline["inventory_sha256"], "69649c70594d720d1f46db6e64e1b095510e8f753e173abcdeee7252a7cce6e0")
+        self.assertEqual(baseline["tests_executed"], 163)
+        self.assertEqual(baseline["doctests"], 50)
+        self.assertEqual(baseline["inventory_sha256"], "b4a41aeb46444047904e96043d94e390ab8e34bf7c01a829f1adf55869267ca4")
         kinds = list(baseline["n3_doctests"].values())
         self.assertEqual(kinds.count("compile_fail"), 7)
         self.assertEqual(kinds.count("legal_execution"), 1)
@@ -89,11 +90,11 @@ class SeriesAnalysisControls(unittest.TestCase):
             MODULE.validate_series_test_execution(literal_execution(names), policy_fixture(), doctests=False)
 
     def test_each_n3_identity_and_no_run_identity_is_required(self):
-        for missing in MODULE.SERIES_REQUIRED_TESTS:
+        for missing in MODULE.SERIES_REQUIRED_TESTS | MODULE.SERIES_CHECKPOINT_REQUIRED_TESTS:
             with self.subTest(missing=missing), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_series_test_execution(literal_execution([n for n in ORDINARY_NAMES if n != missing]), policy_fixture(), doctests=False)
         for missing in ("crates/nevrotick-engine/src/series.rs - series::SeriesConfig::new (line 111)",
-                        "crates/nevrotick-engine/src/series.rs - series::execute_series (line 1027) - compile"):
+                        "crates/nevrotick-engine/src/series.rs - series::execute_series (line 1071) - compile"):
             with self.subTest(missing=missing), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_series_test_execution(literal_execution([n for n in ORDINARY_NAMES + DOCTEST_NAMES if n != missing]), policy_fixture(), doctests=True)
 
@@ -103,7 +104,7 @@ class SeriesAnalysisControls(unittest.TestCase):
                healthy.replace("0 ignored", "1 ignored"),
                healthy.replace("0 filtered out", "1 filtered out"),
                healthy.replace(" ... ok", " ... ignored", 1),
-               healthy.replace("91 passed", "92 passed"),
+               healthy.replace("113 passed", "114 passed"),
                healthy[:healthy.index("test result:")],
                healthy + "ok\n", literal_execution(())]
         for text in bad:
@@ -184,6 +185,9 @@ class SeriesAnalysisControls(unittest.TestCase):
     def test_mutation_order_preserves_selected_owners_and_coverage(self):
         """Synthetic routing only; no Cargo or product execution is represented."""
         policy = policy_fixture()
+        bindings = {
+            "library": {"count": 1, "sha256": "1" * 64},
+            "series": {"count": 1, "sha256": "2" * 64}}
         _, identity = MODULE.PRODUCT.admit_product(ROOT)
         observed, finished = [], []
         fake = SimpleNamespace(product_identity=identity, source=ROOT,
@@ -195,6 +199,7 @@ class SeriesAnalysisControls(unittest.TestCase):
             def capture(_scope, selected, _policy, _work, _tools, _run, _report, lane):
                 observed.append((subject, lane, list(selected)))
             with (patch.object(MODULE, "read_series_policy", return_value=policy),
+                  patch.object(MODULE, "series_inventory_bindings", return_value=bindings),
                   patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=5 * 1024**3 + 1)),
                   patch.object(MODULE.COMMON, "Session", return_value=fake),
                   patch.object(MODULE, "contracts") as contracts,
@@ -216,9 +221,10 @@ class SeriesAnalysisControls(unittest.TestCase):
             log = out / "log/baseline.log"; raw = literal_execution(ORDINARY_NAMES + DOCTEST_NAMES).encode(); log.write_bytes(raw)
             (out / "outcomes.json").write_text(json.dumps({"outcomes": [{"scenario": "Baseline", "summary": "Success", "log_path": "log/baseline.log"}]}))
             original = MODULE.COMMON.read_analysis_bytes
-            with patch.object(MODULE.COMMON, "read_analysis_bytes", wraps=original) as reads:
+            with (patch.object(MODULE.COMMON, "read_analysis_bytes", wraps=original) as reads,
+                  patch.object(MODULE, "series_checkpoint_assertion_sites", return_value={})):
                 observed = MODULE.validate_series_baseline(work, "series", policy_fixture())
-            self.assertEqual(observed["tests_executed"], 133)
+            self.assertEqual(observed["tests_executed"], 163)
             self.assertEqual(observed["log_sha256"], hashlib.sha256(raw).hexdigest())
             self.assertEqual(sum(call.args[0] == log for call in reads.call_args_list), 1)
             for relative in ["../escape.log", "/tmp/escape.log"]:
@@ -236,11 +242,13 @@ class SeriesAnalysisControls(unittest.TestCase):
             (out / "outcomes.json").write_text(json.dumps({"outcomes": rows}))
             healthy = b"named child reached its independent semantic assertion\n"
             log.write_bytes(healthy)
-            result = MODULE.validate_series_baseline(work, "series", policy_fixture())
+            with patch.object(MODULE, "series_checkpoint_assertion_sites", return_value={}):
+                result = MODULE.validate_series_baseline(work, "series", policy_fixture())
             self.assertEqual(result["caught_cause_admission"]["checked_caught_logs"],
                              {"selected-lab-fault": hashlib.sha256(healthy).hexdigest()})
             log.write_bytes(healthy + b"N3_HARNESS_INCOMPLETE\nfixture failure is not a behavioral kill\n")
-            with self.assertRaisesRegex(MODULE.Incomplete, "harness failure"):
+            with (patch.object(MODULE, "series_checkpoint_assertion_sites", return_value={}),
+                  self.assertRaisesRegex(MODULE.Incomplete, "harness failure")):
                 MODULE.validate_series_baseline(work, "series", policy_fixture())
             log.unlink(); log.symlink_to(out / "log/baseline.log")
             with self.assertRaises(MODULE.Incomplete):
@@ -249,17 +257,94 @@ class SeriesAnalysisControls(unittest.TestCase):
             with self.assertRaisesRegex(MODULE.Incomplete, "identity"):
                 MODULE.validate_series_caught_causes(out, {"outcomes": rows})
 
+    def test_checkpoint_map_binds_static_product_facts_and_direct_assertions(self):
+        mapping = MODULE.series_checkpoint_assertion_sites(ROOT, policy_fixture())
+        final = "series::tests::final_checkpoint_reads_current_control_without_rewriting_three_completions"
+        direct = "series::tests::current_checkpoint_observes_new_controls_before_expired_deadline"
+        self.assertEqual(set(mapping["tests"]), {final, direct})
+        facts = mapping["tests"][final]
+        self.assertTrue(all(site["kind"] == "static_checkpoint_fact" for site in facts))
+        self.assertIn("final series summary ignored its serialized current control", {site["marker"] for site in facts})
+        self.assertFalse(any("short native response" in site["marker"] or "acknowledged" in site["marker"] for site in facts))
+        self.assertTrue(all(site["kind"] == "panic_assertion" for site in mapping["tests"][direct]))
+        self.assertEqual(mapping["bridge"], {
+            "source": "crates/nevrotick-engine/tests/private/series_process.rs", "line": 429, "column": 9,
+            "marker": "N3 exact child semantic failure assertion"})
+        self.assertEqual(len(mapping["tests"][direct]), 4)
+        self.assertIn("fresh checkpoint control rejected its first generation change",
+                      {site["marker"] for site in mapping["tests"][direct]})
+        policy = policy_fixture(); policy["inputs_sha256"][MODULE.SERIES_PROCESS_SOURCE] = "a" * 64
+        with self.assertRaisesRegex(MODULE.Incomplete, "admitted bytes"):
+            MODULE.series_checkpoint_assertion_sites(ROOT, policy)
+
+    @staticmethod
+    def checkpoint_failure(test, site, *, fact=None):
+        """Synthetic failed-test section with literal source coordinates, no native claim."""
+        prefix = "" if fact is None else "N3_SEMANTIC_EVIDENCE independent fact: " + fact + "\n"
+        return ("running 1 test\ntest " + test + " ... FAILED\n\nfailures:\n\n---- " + test
+                + " stdout ----\n" + prefix + "thread '" + test
+                + "' (7) panicked at " + site["source"] + ":" + str(site["line"]) + ":"
+                + str(site["column"]) + ":\n" + site["marker"] + "\n\nfailures:\n\n    " + test
+                + "\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s\n")
+
+    def test_checkpoint_caught_requires_source_fact_bridge_or_direct_assertion(self):
+        mapping = MODULE.series_checkpoint_assertion_sites(ROOT, policy_fixture())
+        final = "series::tests::final_checkpoint_reads_current_control_without_rewriting_three_completions"
+        direct = "series::tests::current_checkpoint_observes_new_controls_before_expired_deadline"
+        fact = "final series summary ignored its serialized current control"
+        healthy = self.checkpoint_failure(final, mapping["bridge"], fact=fact)
+        causes = MODULE.series_checkpoint_caught_causes(healthy, mapping)
+        self.assertEqual(len(causes), 1)
+        self.assertEqual((causes[0]["owner"], causes[0]["line"]), ("final_checkpoint_case", 1981))
+        for site in mapping["tests"][direct]:
+            self.assertEqual(len(MODULE.series_checkpoint_caught_causes(self.checkpoint_failure(direct, site), mapping)), 1)
+        for bad in [healthy.replace(fact, "checkpoint worker panicked"),
+                    healthy.replace("N3_SEMANTIC_EVIDENCE independent fact: " + fact + "\n", ""),
+                    healthy.replace(":429:9:", ":423:9:"),
+                    healthy.replace("N3 exact child semantic failure assertion", "N3 series owner noncompletion assertion"),
+                    healthy.replace("' (7) panicked", "-foreign' (7) panicked"),
+                    healthy.replace("series_process.rs:429", "foreign.rs:429"),
+                    healthy[:healthy.rindex("\n\nfailures:")],
+                    healthy[:healthy.rindex("test result:")],
+                    healthy.replace("0 passed; 1 failed", "1 passed; 1 failed"),
+                    healthy.replace("running 1 test", "running 2 tests"),
+                    healthy + "test " + final + " ... FAILED\n",
+                    healthy + "running 1 test\ntest " + final + " ... FAILED\n",
+                    healthy + "error: test failed; process did not exit successfully (signal: 9, SIGKILL: kill)\n",
+                    healthy.replace("\n\nfailures:", "\nError: Elapsed(())\n\nfailures:"),
+                    healthy.replace("\n\nfailures:", '\nError: Custom { kind: Other, error: "checkpoint worker panicked" }\n\nfailures:')]:
+            with self.subTest(log=bad), self.assertRaises(MODULE.Incomplete):
+                MODULE.series_checkpoint_caught_causes(bad, mapping)
+        with self.assertRaises(MODULE.Incomplete): MODULE.series_checkpoint_caught_causes(healthy, None)
+        with self.assertRaisesRegex(MODULE.Incomplete, "complete semantic section"):
+            MODULE.series_checkpoint_caught_causes("test " + final + " ... FAILED\n", mapping)
+
+    def test_checkpoint_harness_failure_refuses_even_beside_a_genuine_primary(self):
+        mapping = MODULE.series_checkpoint_assertion_sites(ROOT, policy_fixture())
+        direct = "series::tests::current_checkpoint_observes_new_controls_before_expired_deadline"
+        text = self.checkpoint_failure(direct, mapping["tests"][direct][-1])
+        with tempfile.TemporaryDirectory() as td:
+            directory = Path(td); log = directory / "mixed.log"
+            rows = [{"scenario": {"Mutant": {"name": "synthetic-early-stop"}},
+                     "summary": "CaughtMutant", "log_path": "mixed.log"}]
+            log.write_text(text)
+            result = MODULE.validate_series_caught_causes(directory, {"outcomes": rows}, mapping)
+            self.assertEqual(len(result["checkpoint_semantic_causes"]["synthetic-early-stop"]), 1)
+            log.write_text(text + "N3_HARNESS_INCOMPLETE\nError: Elapsed(())\n")
+            with self.assertRaisesRegex(MODULE.Incomplete, "harness failure"):
+                MODULE.validate_series_caught_causes(directory, {"outcomes": rows}, mapping)
+
     def test_source_candidate_and_manifest_owners_are_actual_boundaries(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td); policy = policy_fixture()
             policy["mutation_equivalences"] = []
-            for name in MODULE.SERIES_BOUND_INPUTS:
+            for name in MODULE.SERIES_CURRENT_BOUND_INPUTS:
                 path = root / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_text("fixture:" + name + "\n")
             manifest = root / "policy/verification-manifest.toml"
             manifest.write_text('critical_files = ["crates/nevrotick-engine/src/lib.rs", "crates/nevrotick-engine/src/series.rs"]\n[[security_modules]]\npackage = "nevrotick-engine"\nfiles = ["crates/nevrotick-engine/src/lib.rs", "crates/nevrotick-engine/src/series.rs"]\n')
-            identity = {"fixture-" + str(i): "1" * 64 for i in range(407)}
+            identity = {"fixture-" + str(i): "1" * 64 for i in range(421)}
             policy["candidate_sha256"] = digest(identity)
-            policy["inputs_sha256"] = {n: hashlib.sha256((root / n).read_bytes()).hexdigest() for n in MODULE.SERIES_BOUND_INPUTS}
+            policy["inputs_sha256"] = {n: hashlib.sha256((root / n).read_bytes()).hexdigest() for n in MODULE.SERIES_CURRENT_BOUND_INPUTS}
             target = root / MODULE.SERIES_POLICY; target.write_text(json.dumps(policy))
             with patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)):
                 self.assertEqual(MODULE.read_series_policy(root), policy)
@@ -285,15 +370,15 @@ class SeriesAnalysisControls(unittest.TestCase):
             identifier = "ENGINE-SERIES-COMMIT-DURATION-FALLBACK-" + suffix
             entries.append({
                 "id": identifier, "candidate_sha256": candidate,
-                "source_sha256": "10e047bf2953becf82b9b6ce714dfcaf06a292f98084702c762eefc757423821",
+                "source_sha256": "f14ab14174eab86abdd14b8b70a567e88deeda4062520ed13323e7c4a8d11622",
                 "mutant": {
-                    "name": f"{filename}:1344:23: replace += with {replacement} in commit_reply",
+                    "name": f"{filename}:1350:23: replace += with {replacement} in commit_reply",
                     "package": "nevrotick-engine", "file": filename,
                     "function": {"function_name": "commit_reply", "return_type": "",
-                                 "span": {"start": {"line": 1324, "column": 1},
-                                          "end": {"line": 1373, "column": 2}}},
-                    "span": {"start": {"line": 1344, "column": 23},
-                             "end": {"line": 1344, "column": 25}},
+                                 "span": {"start": {"line": 1330, "column": 1},
+                                          "end": {"line": 1379, "column": 2}}},
+                    "span": {"start": {"line": 1350, "column": 23},
+                             "end": {"line": 1350, "column": 25}},
                     "replacement": replacement, "genre": "BinaryOperator"},
                 "requirement": "CHECK-6/7/8/11/14/25/27",
                 "rationale": "Admission control for an exact independently reviewed source/descriptor pair; no synthetic execution credit.",
@@ -302,12 +387,12 @@ class SeriesAnalysisControls(unittest.TestCase):
                           "verdict": "independently-justified-equivalent"}})
         filename = "crates/nevrotick-engine/src/series.rs"
         for suffix, function, line, start, end in (
-                ("ADMITTED", "admitted_sample_count", 464, 461, 467),
-                ("ELIGIBLE", "eligible_sample_count", 471, 468, 474)):
+                ("ADMITTED", "admitted_sample_count", 469, 466, 472),
+                ("ELIGIBLE", "eligible_sample_count", 476, 473, 479)):
             identifier = "ENGINE-SERIES-UNAVAILABLE-" + suffix + "-ZERO"
             entries.append({
                 "id": identifier, "candidate_sha256": candidate,
-                "source_sha256": "84bb369585ca0f53a5d54f945295b5aeca41b6c2d4d91c9d3a745dab291e5d3f",
+                "source_sha256": "174ab3b4538356c5134cb850baac19640baf27c1e14ad3c12f953948549a43f7",
                 "mutant": {
                     "name": f"{filename}:{line}:9: replace SeriesReport::{function} -> usize with 0",
                     "package": "nevrotick-engine", "file": filename,
@@ -332,10 +417,10 @@ class SeriesAnalysisControls(unittest.TestCase):
         MODULE.validate_series_equivalence_scope([])
         MODULE.validate_series_equivalence_scope(entries)
         self.assertEqual([digest(entry["mutant"]) for entry in entries], [
-            "fb8ea69cd621b8843440c420b136eac359ec2409e0436f291f13cc0c5742377d",
-            "a2d94adbb592864a95c4e6e1bd7a999afbab8fd089b1fdc05a33ea471408ffac",
-            "7da9d471e1fa869efa3b8ee17021b7a8c669c48e1c90a2b6c56db19acbe35545",
-            "a321a5a66afa4e62d840f1f040c6acbca0d152d84e89996a67c6ccf422e40861"])
+            "2ab92195ec79b1c71bae647479ea1f5a82b5e6e0a0bfde2cbc3da0bd9067af1d",
+            "5d7961f5476b58579bee819ba1a895a6da90fc0cfa4a10ddcb389bf82ce982f9",
+            "f4b3fae4f21b063861301bae063b9115737894d7916b6583f896cf63ca5ec531",
+            "cc59ea98db653c91db4af372b1f9a3db26c081098e00eb62588d1fb33f097298"])
         for owner in ("library", "series"):
             with self.subTest(partial=owner), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_series_equivalence_scope(self.current_fallback_entries(owner=owner))
@@ -394,13 +479,17 @@ class SeriesAnalysisControls(unittest.TestCase):
             root = Path(td)
             _, current = MODULE.PRODUCT.admit_product(ROOT)
             proof_name = "tasks/engine-analysis-equivalences.md"
-            for name in sorted(set(current) | set(MODULE.SERIES_BOUND_INPUTS) | {MODULE.SERIES_POLICY, proof_name}):
+            for name in sorted(set(current) | set(MODULE.SERIES_CURRENT_BOUND_INPUTS) | {MODULE.SERIES_POLICY, proof_name}):
                 target = root / name; target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(ROOT / name, target)
             _, identity = MODULE.PRODUCT.admit_product(root)
             entries = self.current_fallback_entries(digest(identity))
             policy = policy_fixture(); policy["candidate_sha256"] = digest(identity)
             policy["mutation_equivalences"] = entries
+            # Independent literal records must match the current copied source;
+            # this custody fixture supplies no mutant execution or kill credit.
+            for entry in entries:
+                self.assertEqual(entry["source_sha256"], hashlib.sha256((root / entry["mutant"]["file"]).read_bytes()).hexdigest())
             MODULE.validate_series_equivalence_scope(entries)
             self.assertEqual(MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SERIES_SCOPE, policy), entries)
             bad = copy.deepcopy(policy); bad["mutation_equivalences"][0]["candidate_sha256"] = "a" * 64

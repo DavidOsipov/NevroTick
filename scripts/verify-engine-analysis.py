@@ -156,6 +156,10 @@ SERIES_BOUND_INPUTS = tuple(dict.fromkeys((
     ".cargo/mutants.toml", "crates/nevrotick-engine/src/series.rs",
     "crates/nevrotick-engine/tests/private/series.rs", "crates/nevrotick-engine/tests/series.rs",
 )))
+# The frozen Q1 role below retains SERIES_BOUND_INPUTS. Only the current N3
+# continuation adds the child bridge used by its new semantic-cause admission.
+SERIES_PROCESS_SOURCE = "crates/nevrotick-engine/tests/private/series_process.rs"
+SERIES_CURRENT_BOUND_INPUTS = (*SERIES_BOUND_INPUTS, SERIES_PROCESS_SOURCE, TESTS)
 SERIES_REQUIRED_TESTS = frozenset({
     "series::tests::series_process::semantic_evidence_accepts_only_exact_named_admitted_sites",
     "series_process::semantic_evidence_accepts_only_exact_named_admitted_sites",
@@ -181,37 +185,37 @@ SERIES_REQUIRED_TESTS = frozenset({
     "total_deadline_preserves_first_completion_and_prevents_third_send",
     "unavailable_measurements_still_consume_once_after_rejected_neighbors",
 })
+SERIES_CHECKPOINT_REQUIRED_TESTS = frozenset({
+    "series::tests::current_checkpoint_observes_new_controls_before_expired_deadline",
+    "series::tests::final_checkpoint_reads_current_control_without_rewriting_three_completions",
+})
 SERIES_N3_DOCTESTS = {
     "crates/nevrotick-engine/src/series.rs - series::PreparedSeries (line 209) - compile fail": "compile_fail",
     "crates/nevrotick-engine/src/series.rs - series::PreparedSeries (line 216) - compile fail": "compile_fail",
-    "crates/nevrotick-engine/src/series.rs - series::SeriesAttempt (line 331) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/series.rs - series::SeriesAttempt (line 336) - compile fail": "compile_fail",
     "crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 81) - compile fail": "compile_fail",
     "crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 87) - compile fail": "compile_fail",
     "crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 91) - compile fail": "compile_fail",
-    "crates/nevrotick-engine/src/series.rs - series::SeriesReport (line 395) - compile fail": "compile_fail",
     "crates/nevrotick-engine/src/series.rs - series::SeriesConfig::new (line 111)": "legal_execution",
-    "crates/nevrotick-engine/src/series.rs - series::execute_series (line 1027) - compile": "legal_no_run",
+    "crates/nevrotick-engine/src/series.rs - series::SeriesReport (line 400) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/series.rs - series::execute_series (line 1071) - compile": "legal_no_run"
 }
 SERIES_INVENTORY_DIGESTS = {
-    "ordinary": "6d197d0b3e02abb8a852754bf28d69642ca4182fc25a15e8d4a733c8b05c4622",
-    "doctests": "8f9b7f8aa85dead52856c3fc24957062b23ff2523142ee562d3ce81bb003415e",
-    "baseline": "69649c70594d720d1f46db6e64e1b095510e8f753e173abcdeee7252a7cce6e0",
+    "ordinary": "c21b82fd32cea0a3a3eefddc8f84d3b43e8591d03e2286d3445f4d334a7ae3c3",
+    "doctests": "5eaf6bcb3df3807ecf447ef66d256abb85511048fbd3939da951c21df379e48a",
+    "baseline": "b4a41aeb46444047904e96043d94e390ab8e34bf7c01a829f1adf55869267ca4"
 }
-SERIES_EQUIVALENCE_SOURCE = "10e047bf2953becf82b9b6ce714dfcaf06a292f98084702c762eefc757423821"
-SERIES_ZERO_ADMISSION_SOURCE = "84bb369585ca0f53a5d54f945295b5aeca41b6c2d4d91c9d3a745dab291e5d3f"
+SERIES_EQUIVALENCE_SOURCE = "f14ab14174eab86abdd14b8b70a567e88deeda4062520ed13323e7c4a8d11622"
+SERIES_ZERO_ADMISSION_SOURCE = "174ab3b4538356c5134cb850baac19640baf27c1e14ad3c12f953948549a43f7"
 SERIES_EQUIVALENCE_DESCRIPTORS = {
-    "ENGINE-SERIES-COMMIT-DURATION-FALLBACK-SUB":
-        "fb8ea69cd621b8843440c420b136eac359ec2409e0436f291f13cc0c5742377d",
-    "ENGINE-SERIES-COMMIT-DURATION-FALLBACK-MUL":
-        "a2d94adbb592864a95c4e6e1bd7a999afbab8fd089b1fdc05a33ea471408ffac",
-    "ENGINE-SERIES-UNAVAILABLE-ADMITTED-ZERO":
-        "7da9d471e1fa869efa3b8ee17021b7a8c669c48e1c90a2b6c56db19acbe35545",
-    "ENGINE-SERIES-UNAVAILABLE-ELIGIBLE-ZERO":
-        "a321a5a66afa4e62d840f1f040c6acbca0d152d84e89996a67c6ccf422e40861",
+    "ENGINE-SERIES-COMMIT-DURATION-FALLBACK-SUB": "2ab92195ec79b1c71bae647479ea1f5a82b5e6e0a0bfde2cbc3da0bd9067af1d",
+    "ENGINE-SERIES-COMMIT-DURATION-FALLBACK-MUL": "5d7961f5476b58579bee819ba1a895a6da90fc0cfa4a10ddcb389bf82ce982f9",
+    "ENGINE-SERIES-UNAVAILABLE-ADMITTED-ZERO": "f4b3fae4f21b063861301bae063b9115737894d7916b6583f896cf63ca5ec531",
+    "ENGINE-SERIES-UNAVAILABLE-ELIGIBLE-ZERO": "cc59ea98db653c91db4af372b1f9a3db26c081098e00eb62588d1fb33f097298"
 }
 SERIES_FIXED_POLICY = {
     "schema_version": 1, "admission_status": "admitted-n3a-series-source",
-    "package": "nevrotick-engine", "source_file_count": 407,
+    "package": "nevrotick-engine", "source_file_count": 421,
     "critical_files": list(SERIES_SUBJECTS.values()),
     "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
     "maximum_mutants": 512, "maximum_listed_per_file": 512, "maximum_listed_total": 512,
@@ -747,18 +751,18 @@ def series_test_inventory(policy: dict) -> tuple[list[str], list[str]]:
     inventory = policy.get("test_inventory")
     if (type(inventory) is not dict
             or set(inventory) != {"ordinary", "doctests", "baseline_count", "sha256", "n3_doctests"}
-            or type(inventory["baseline_count"]) is not int or inventory["baseline_count"] != 133
+            or type(inventory["baseline_count"]) is not int or inventory["baseline_count"] != 163
             or inventory["sha256"] != SERIES_INVENTORY_DIGESTS
             or inventory["n3_doctests"] != SERIES_N3_DOCTESTS):
         raise Incomplete("Series test inventory or legal/compile-only contract identities changed.")
     ordinary, docs = inventory["ordinary"], inventory["doctests"]
-    for names, count, kind in ((ordinary, 91, "ordinary"), (docs, 42, "doctests")):
+    for names, count, kind in ((ordinary, 113, "ordinary"), (docs, 50, "doctests")):
         if (type(names) is not list or len(names) != count
                 or any(type(name) is not str or not name or len(name) > 1024 for name in names)
                 or len(set(names)) != count or names != sorted(names)
                 or COMMON.canonical_sha256(names) != SERIES_INVENTORY_DIGESTS[kind]):
             raise Incomplete("Series requires its complete unique frozen package test identities.")
-    if (set(ordinary) != REQUIRED_TESTS | SERIES_REQUIRED_TESTS
+    if (set(ordinary) != REQUIRED_TESTS | SERIES_REQUIRED_TESTS | SERIES_CHECKPOINT_REQUIRED_TESTS | QUALITY_REQUIRED_TESTS
             or not set(SERIES_N3_DOCTESTS) <= set(docs)
             or COMMON.canonical_sha256(sorted(ordinary + docs)) != SERIES_INVENTORY_DIGESTS["baseline"]):
         raise Incomplete("Series package inventory omits an existing or new actual control.")
@@ -815,7 +819,7 @@ def validate_series_policy(policy: dict) -> dict:
             or re.fullmatch(r"[a-f0-9]{64}", policy["candidate_sha256"]) is None):
         raise Incomplete("Unreviewed series scope, thresholds, budgets or full tool profile.")
     pins = policy["inputs_sha256"]
-    if (type(pins) is not dict or set(pins) != set(SERIES_BOUND_INPUTS)
+    if (type(pins) is not dict or set(pins) != set(SERIES_CURRENT_BOUND_INPUTS)
             or any(type(h) is not str or re.fullmatch(r"[a-f0-9]{64}", h) is None for h in pins.values())):
         raise Incomplete("Series protected input bindings are incomplete or malformed.")
     series_test_inventory(policy)
@@ -871,23 +875,190 @@ def validate_series_test_execution(text: str, policy: dict, *, doctests: bool) -
     return {"tests_executed": len(records), "ordinary_tests": len(ordinary),
             "doctests": len(docs) if doctests else 0,
             "test_names": records, "inventory_sha256": COMMON.canonical_sha256(sorted(records)),
-            "required_n3": sorted(SERIES_REQUIRED_TESTS),
+            "required_n3": sorted(SERIES_REQUIRED_TESTS | SERIES_CHECKPOINT_REQUIRED_TESTS),
             "n3_doctests": SERIES_N3_DOCTESTS if doctests else {},
             "no_run_meaning": "execute_series no_run is compiler evidence; its network body is not executed"}
 
 
-def validate_series_caught_causes(directory: Path, outcomes: dict) -> dict:
+def series_checkpoint_assertion_sites(source_root: Path, policy: dict) -> dict:
+    """Bind the two new controls and closed semantic helpers to admitted bytes.
+
+    Peer/channel/worker errors are not sites. The child bridge relays one fixed
+    independent fact; its parent assertion alone supplies no semantic credit.
+    """
+    filename = "crates/nevrotick-engine/tests/private/series.rs"
+    sources = {}
+    for name in (filename, SERIES_PROCESS_SOURCE):
+        data = COMMON.read_analysis_bytes(source_root / name, maximum=512 * 1024)
+        if hashlib.sha256(data).hexdigest() != policy["inputs_sha256"].get(name):
+            raise Incomplete("Series checkpoint semantic source differs from admitted bytes.")
+        sources[name] = data.decode("utf-8")
+    source = sources[filename]
+    masked, functions = quality_rust_functions(source)
+    allowed_helpers = {"final_checkpoint_case", "check_checkpoint_facts", "serve_checkpoint", "checkpoint_queries"}
+    result = {"candidate_sha256": policy["candidate_sha256"],
+              "source_sha256": {name: policy["inputs_sha256"][name] for name in sources}, "tests": {}}
+    for test in sorted(SERIES_CHECKPOINT_REQUIRED_TESTS):
+        pending, visited, sites = [test.removeprefix("series::tests::")], set(), []
+        while pending:
+            owner = pending.pop()
+            if owner in visited:
+                continue
+            if owner not in functions:
+                raise Incomplete("Series checkpoint test/helper has no admitted function body.")
+            visited.add(owner)
+            start, end = functions[owner]["start"], functions[owner]["end"]
+            code = masked[start:end]
+            pending.extend(helper for helper in sorted(allowed_helpers)
+                           if re.search(r"\b" + helper + r"\s*\(", code))
+            for match in re.finditer(r"\b(assert|assert_eq|assert_ne)!\s*\(", code):
+                offset = start + match.start()
+                marker = {"assert": "assertion failed:", "assert_eq": "assertion `left == right` failed",
+                          "assert_ne": "assertion `left != right` failed"}[match[1]]
+                opening = start + match.end() - 1
+                depth, close = 1, opening + 1
+                while close < end and depth:
+                    depth += (masked[close] == "(") - (masked[close] == ")")
+                    close += 1
+                strings = re.findall(r'"((?:\\.|[^"\\])*)"', source[opening:close])
+                if depth or (strings and (match[1] != "assert" or len(strings) != 1
+                                          or "\\" in strings[0] or "{" in strings[0])):
+                    raise Incomplete("Series checkpoint assertion has an unreviewed message shape.")
+                if strings:
+                    marker = strings[0]
+                sites.append({"source": filename, "line": source.count("\n", 0, offset) + 1,
+                              "column": offset - source.rfind("\n", 0, offset), "owner": owner,
+                              "kind": "panic_assertion", "marker": marker})
+            for match in re.finditer(r"\bcheckpoint_fact\s*\(", code):
+                offset, opening = start + match.start(), start + match.end() - 1
+                depth, close = 1, opening + 1
+                while close < end and depth:
+                    depth += (masked[close] == "(") - (masked[close] == ")")
+                    close += 1
+                strings = re.findall(r'"((?:\\.|[^"\\])*)"', source[opening:close])
+                if depth or len(strings) != 1 or "\\" in strings[0]:
+                    raise Incomplete("Series checkpoint fact lacks one exact static source marker.")
+                sites.append({"source": filename, "line": source.count("\n", 0, offset) + 1,
+                              "column": offset - source.rfind("\n", 0, offset), "owner": owner,
+                              "kind": "static_checkpoint_fact", "marker": strings[0]})
+        if not sites:
+            raise Incomplete("Series checkpoint control has no admitted semantic assertion.")
+        result["tests"][test] = sorted(sites, key=lambda row: (row["line"], row["column"]))
+    process = sources[SERIES_PROCESS_SOURCE]
+    bridge = list(re.finditer(r'assert!\(\s*completion == Completion::Passed,\s*"N3 exact child semantic failure assertion"', process))
+    if len(bridge) != 1:
+        raise Incomplete("Series checkpoint child bridge assertion changed.")
+    offset = bridge[0].start()
+    result["bridge"] = {"source": SERIES_PROCESS_SOURCE, "line": process.count("\n", 0, offset) + 1,
+                        "column": offset - process.rfind("\n", 0, offset),
+                        "marker": "N3 exact child semantic failure assertion"}
+    return result
+
+
+def series_checkpoint_caught_causes(text: str, semantic_sites: dict | None) -> list[dict]:
+    """Require every failed checkpoint control to have its own mapped cause.
+
+    A genuine assertion elsewhere cannot hide a checkpoint fixture timeout.
+    The legacy non-checkpoint semantic review remains independently required.
+    """
+    if re.search(r"signal:\s*\d|SIG(?:KILL|ABRT|SEGV|BUS|ILL)|process aborted|fatal runtime error", text):
+        raise Incomplete("Series checkpoint log contains an aborted native test process.")
+    blocks = list(re.finditer(
+        r"^running (\d{1,6}) tests?\n(.*?)^test result: (ok|FAILED)\. "
+        r"(\d{1,6}) passed; (\d{1,6}) failed; (\d{1,6}) ignored; "
+        r"(\d{1,6}) measured; (\d{1,6}) filtered out;[^\r\n]*$", text,
+        re.MULTILINE | re.DOTALL))
+    sections = re.finditer(r"^---- ([^\r\n]+) stdout ----\n(.*?)(?=^---- |^failures:|\Z)", text,
+                           re.MULTILINE | re.DOTALL)
+    causes, seen = [], set()
+    for section in sections:
+        test, body = section.groups()
+        if test not in SERIES_CHECKPOINT_REQUIRED_TESTS:
+            continue
+        if (test in seen or type(semantic_sites) is not dict
+                or set(semantic_sites.get("tests", {})) != set(SERIES_CHECKPOINT_REQUIRED_TESTS)):
+            raise Incomplete("Series checkpoint cause needs its complete source-bound site map.")
+        seen.add(test)
+        containing = [block for block in blocks if block.start() <= section.start() < block.end()]
+        if len(containing) != 1:
+            raise Incomplete("Series checkpoint failure lacks a completed native test block.")
+        block = containing[0]
+        running, block_body, status, passed, failed, ignored, measured, filtered = block.groups()
+        counts = tuple(map(int, (running, passed, failed, ignored, measured, filtered)))
+        records = re.findall(r"(?m)^test ([^\r\n]+?) \.\.\. (ok|FAILED|ignored)$", block_body)
+        failed_names = [name for name, result in records if result == "FAILED"]
+        listed = block_body.rsplit("\nfailures:\n", 1)
+        listing = listed[-1].strip("\n").splitlines()
+        section_names = re.findall(r"(?m)^---- ([^\r\n]+) stdout ----$", block_body)
+        if (status != "FAILED" or not counts[2] or any(counts[3:])
+                or counts[0] != counts[1] + counts[2] or len(records) != counts[0]
+                or len({name for name, _ in records}) != len(records)
+                or sum(result == "ok" for _, result in records) != counts[1]
+                or len(failed_names) != counts[2] or test not in failed_names
+                or len(listed) != 2 or any(not line.startswith("    ") or not line[4:] for line in listing)
+                or sorted(line[4:] for line in listing) != sorted(failed_names)
+                or sorted(section_names) != sorted(failed_names)
+                or re.search(r"(?m)^running \d+ tests?", block_body)):
+            raise Incomplete("Series checkpoint failure lacks consistent completed libtest records.")
+        if re.search(r"(?m)^Error: ", body):
+            raise Incomplete("Series checkpoint failure contains a fixture, channel, worker or I/O error.")
+        admitted = semantic_sites["tests"][test]
+        fact_prefix = "N3_SEMANTIC_EVIDENCE independent fact: "
+        facts = [line.removeprefix(fact_prefix) for line in body.splitlines() if line.startswith(fact_prefix)]
+        if body.count("N3_SEMANTIC_EVIDENCE") != len(facts) or len(facts) > 1:
+            raise Incomplete("Series checkpoint child lacks one exact static semantic fact.")
+        fact_sites = [site for fact in facts for site in admitted
+                      if site["kind"] == "static_checkpoint_fact" and site["marker"] == fact]
+        if len(fact_sites) != len(facts):
+            raise Incomplete("Series checkpoint child fact is outside its admitted source owner.")
+        locations = list(re.finditer(r"(?m)^thread '([^'\r\n]+)'(?: \(\d+\))? panicked at "
+                                    r"(?:/work/source/)?([^\r\n]+):(\d+):(\d+):\n([^\r\n]+)", body))
+        if not locations or body.count("panicked at ") != len(locations):
+            raise Incomplete("Series checkpoint failure lacks an exact semantic assertion location.")
+        section_causes, bridges = [], 0
+        for location in locations:
+            thread, source, line, column, message = location.groups()
+            source = {"crates/nevrotick-engine/src/../tests/private/series.rs":
+                          "crates/nevrotick-engine/tests/private/series.rs",
+                      "crates/nevrotick-engine/src/../tests/private/series_process.rs":
+                          SERIES_PROCESS_SOURCE}.get(source, source)
+            coordinates = source, int(line), int(column)
+            bridge = semantic_sites["bridge"]
+            if (thread == test and coordinates == (bridge["source"], bridge["line"], bridge["column"])
+                    and message == bridge["marker"] and len(fact_sites) == 1):
+                bridges += 1
+                continue
+            sites = [site for site in admitted if site["kind"] == "panic_assertion"
+                     and coordinates == (site["source"], site["line"], site["column"])
+                     and message.startswith(site["marker"])]
+            if thread != test or len(sites) != 1:
+                raise Incomplete("Series checkpoint panic is not its named source-owned semantic assertion.")
+            section_causes.append({"test": test, **sites[0]})
+        if facts and bridges != 1:
+            raise Incomplete("Series checkpoint static fact lacks its exact completed child bridge.")
+        section_causes.extend({"test": test, **site} for site in fact_sites)
+        if not section_causes:
+            raise Incomplete("Series checkpoint failure has no admitted semantic cause.")
+        causes.extend(section_causes)
+    named_failures = [name for name in re.findall(r"(?m)^test ([^\r\n]+?) \.\.\. FAILED$", text)
+                      if name in SERIES_CHECKPOINT_REQUIRED_TESTS]
+    if len(named_failures) != len(set(named_failures)) or set(named_failures) != seen:
+        raise Incomplete("Series named checkpoint failure lacks its complete semantic section.")
+    return causes
+
+
+def validate_series_caught_causes(directory: Path, outcomes: dict, semantic_sites: dict | None = None) -> dict:
     """Refuse marked N3 harness failures before they can qualify as caught faults.
 
     Use bounded admitted bytes for every selected native log. This checks the
-    explicit containment failure marker; independent semantic review of actual
-    caught outcomes remains required and no score is calculated here.
+    explicit containment failure marker and the new checkpoint source-owned
+    assertions; independent review of other causes remains required.
     """
     rows = outcomes.get("outcomes")
     if (type(rows) is not list or len(rows) > 513
             or any(type(row) is not dict for row in rows)):
         raise Incomplete("Series caught-cause records are malformed or exceed their bounded inventory.")
-    checked = {}
+    checked, checkpoint_causes = {}, {}
     for row in rows:
         if row.get("summary") != "CaughtMutant":
             continue
@@ -902,8 +1073,12 @@ def validate_series_caught_causes(directory: Path, outcomes: dict) -> dict:
         data = COMMON.read_analysis_bytes(directory / relative, maximum=16 * 1024 * 1024)
         if b"N3_HARNESS_INCOMPLETE" in data.splitlines():
             raise Incomplete("Series caught fault contains an unclassified harness failure.")
+        causes = series_checkpoint_caught_causes(data.decode("utf-8"), semantic_sites)
+        if causes:
+            checkpoint_causes[name] = causes
         checked[name] = hashlib.sha256(data).hexdigest()
     return {"checked_caught_logs": checked, "marked_harness_failures": 0,
+            "checkpoint_semantic_causes": checkpoint_causes,
             "independent_semantic_review_required": True}
 
 
@@ -922,7 +1097,8 @@ def validate_series_baseline(work: Path, subject: str, policy: dict) -> dict:
     data = COMMON.read_analysis_bytes(directory / relative, maximum=16 * 1024 * 1024)
     return {**validate_series_test_execution(data.decode("utf-8"), policy, doctests=True),
             "log_sha256": hashlib.sha256(data).hexdigest(),
-            "caught_cause_admission": validate_series_caught_causes(directory, outcomes)}
+            "caught_cause_admission": validate_series_caught_causes(directory, outcomes,
+                series_checkpoint_assertion_sites(work / "source", policy))}
 
 
 def series_contract_examples() -> dict:
@@ -1006,7 +1182,7 @@ def execute_series_profile(args, report: dict) -> None:
                   scope="Bounded host N3 series " + args.lane,
                   generation_gap_controls="Separate function/macro inventory and direct controls required; no score inferred.")
     session = COMMON.Session(ROOT, session_args, report, SERIES_SCOPE, policy,
-                             (WRAPPER, SERIES_TESTS, *SERIES_BOUND_INPUTS))
+                             (WRAPPER, SERIES_TESTS, *SERIES_CURRENT_BOUND_INPUTS))
 
     def run(label, command, timeout, **options):
         result = session.run(label, command, timeout, **options)
@@ -1200,8 +1376,8 @@ def validate_quality_test_execution(text: str, policy: dict, *, doctests: bool) 
 def quality_rust_functions(source: str) -> tuple[str, dict[str, dict]]:
     """Extract bounded top-level test/helper bodies, masking comments and strings.
 
-    This intentionally handles the admitted Q1 test syntax only. A changed shape,
-    duplicate function or unmatched delimiter remains an admission failure.
+    This intentionally handles the admitted Q1 and selected N3 checkpoint test
+    syntax only. Changed shapes, duplicates or unmatched delimiters fail admission.
     """
     masked = re.sub(r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"',
                     lambda match: re.sub(r"[^\n]", " ", match[0]), source, flags=re.DOTALL)

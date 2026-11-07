@@ -1553,8 +1553,15 @@ async fn setup_failure_case(
             setup_request(request)
         }
     };
+    let mut observe_checkpoint = |_, _| {};
     let (report, response) = tokio::join!(
-        run_series(prepared, receiver, deadline, &mut setup),
+        run_series(
+            prepared,
+            receiver,
+            deadline,
+            &mut setup,
+            &mut observe_checkpoint
+        ),
         reply_once(&remote)
     );
     response?;
@@ -1604,6 +1611,462 @@ async fn setup_failure_case(
     }
     assert_no_extra_query(&remote)?;
     drop(handle);
+    Ok(())
+}
+
+/// Bound native fixture operations and the external checkpoint handshake.
+const CHECKPOINT_WAIT: Duration = Duration::from_secs(2);
+
+/// External control requests have no access to the series receiver or its records.
+#[derive(Clone, Copy)]
+enum CheckpointAction {
+    /// Latch a stop through the actual public control handle.
+    Stop,
+    /// Advance the aggregate generation through the actual public control handle.
+    Invalidate,
+}
+
+/// One genuinely observed query; opaque nonce bytes have no debug formatter.
+struct CheckpointQuery {
+    /// Independently observed correlation token from the actual query.
+    nonce: [u8; 8],
+    /// Actual client endpoint reported by the independently owned peer socket.
+    client: SocketAddr,
+}
+
+/// Bounded observations returned only after the peer/control worker is joined.
+struct CheckpointObservations {
+    /// Actual independently owned destination configured for this finite series.
+    endpoint: SocketAddr,
+    /// At most three actual transmitted queries, in their observed order.
+    queries: Vec<CheckpointQuery>,
+    /// Actual hook time, absent when the application returns before that boundary.
+    boundary: Option<Instant>,
+}
+
+/// Finite callback state; it can notify but cannot select or mutate a summary.
+struct CheckpointHook {
+    /// Exactly one final-request boundary selected by the independent case.
+    phase: SeriesCheckpointPhase,
+    /// Bounded one-shot delivery to the independently running control worker.
+    entered: std::sync::mpsc::SyncSender<Instant>,
+    /// Bounded acknowledgement after the actual public control call has returned.
+    acknowledged: std::sync::mpsc::Receiver<()>,
+    /// Original callback observation, retained without refreshing acquired facts.
+    boundary: Option<Instant>,
+    /// Handshake errors remain fixture failures rather than product conclusions.
+    failure: Option<std::io::Error>,
+}
+
+impl CheckpointHook {
+    /// Notify exactly the selected final boundary, then await bounded publication.
+    /// Preserve errors for propagation after application return and worker join.
+    fn observe(&mut self, index: u8, phase: SeriesCheckpointPhase) {
+        if index != 2 || phase != self.phase {
+            return;
+        }
+        if self.boundary.is_some() {
+            self.failure = Some(std::io::Error::other(
+                "duplicate final checkpoint notification",
+            ));
+            return;
+        }
+        let now = Instant::now();
+        self.boundary = Some(now);
+        self.failure = self.entered.send(now).map_err(std::io::Error::other).err();
+        if self.failure.is_none() {
+            self.failure = self
+                .acknowledged
+                .recv_timeout(CHECKPOINT_WAIT)
+                .map_err(std::io::Error::other)
+                .err();
+        }
+    }
+}
+
+/// Record a bounded independent semantic failure without exposing packet contents.
+/// # Errors
+/// Return the fixed fact when its independently expected condition fails.
+fn checkpoint_fact(condition: bool, fact: &'static str) -> std::io::Result<()> {
+    if condition {
+        Ok(())
+    } else {
+        series_process::semantic_check_failed(fact);
+        Err(std::io::Error::other(fact))
+    }
+}
+
+/// Reply to at most three actual requests with independently fixed peer facts.
+/// Retain an observed partial trace only after confirmed application return.
+/// # Errors
+/// Preserve native errors and reject changed length, nonce, mode or endpoint facts.
+fn checkpoint_queries(
+    peer: &crate::StdSocket,
+    returned: &std::sync::mpsc::Receiver<()>,
+) -> std::io::Result<Vec<CheckpointQuery>> {
+    let mut queries: Vec<CheckpointQuery> = Vec::with_capacity(3);
+    for index in 0..3 {
+        let mut packet = [0; 49];
+        let (length, client) = match peer.recv_from(&mut packet) {
+            Ok(query) => query,
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+                ) && returned.try_recv().is_ok() =>
+            {
+                return Ok(queries);
+            }
+            Err(error) => return Err(error),
+        };
+        checkpoint_fact(length == 48, "checkpoint peer observed a non-header query")?;
+        checkpoint_fact(
+            packet[0] == 0x23 && packet[1..40].iter().all(|byte| *byte == 0),
+            "checkpoint peer observed an undeclared query payload",
+        )?;
+        checkpoint_fact(
+            client.ip().is_loopback() && client.port() != 0,
+            "checkpoint query lost its real loopback endpoint",
+        )?;
+        let mut nonce = [0; 8];
+        nonce.copy_from_slice(&packet[40..48]);
+        checkpoint_fact(
+            nonce.iter().any(|byte| *byte != 0) && queries.iter().all(|prior| prior.nonce != nonce),
+            "checkpoint query reused or omitted its actual nonce",
+        )?;
+        let index_bits = u64::try_from(index).map_err(std::io::Error::other)?;
+        let second = 4_000_000_000 + index_bits;
+        let mut reply = [0; 48];
+        reply[0] = 0x24;
+        reply[1] = 2;
+        reply[24..32].copy_from_slice(&nonce);
+        reply[32..40].copy_from_slice(&((second << 32) | 0x4000_0000).to_be_bytes());
+        reply[40..48].copy_from_slice(&((second << 32) | 0x6000_0000).to_be_bytes());
+        if peer.send_to(&reply, client)? != 48 {
+            return Err(std::io::Error::other(
+                "checkpoint peer produced a short native response",
+            ));
+        }
+        queries.push(CheckpointQuery { nonce, client });
+    }
+    Ok(queries)
+}
+
+/// Own all native replies, external publication and post-return send observation.
+/// # Errors
+/// Preserve bounded native/channel/control failures; reject an actual fourth query.
+fn serve_checkpoint(
+    peer: &crate::StdSocket,
+    control: &ControlHandle,
+    action: CheckpointAction,
+    entered: &std::sync::mpsc::Receiver<Instant>,
+    acknowledged: &std::sync::mpsc::SyncSender<()>,
+    returned: &std::sync::mpsc::Receiver<()>,
+) -> std::io::Result<CheckpointObservations> {
+    let endpoint = peer.local_addr()?;
+    let queries = checkpoint_queries(peer, returned)?;
+    if queries.len() != 3 {
+        return Ok(CheckpointObservations {
+            endpoint,
+            queries,
+            boundary: None,
+        });
+    }
+    let boundary = entered
+        .recv_timeout(CHECKPOINT_WAIT)
+        .map_err(std::io::Error::other)?;
+    match action {
+        CheckpointAction::Stop => control.stop(),
+        CheckpointAction::Invalidate => {
+            let invalidation = control.invalidate();
+            checkpoint_fact(
+                invalidation.is_ok(),
+                "first external checkpoint invalidation was refused",
+            )?;
+            invalidation.map_err(std::io::Error::other)?;
+        }
+    }
+    acknowledged.send(()).map_err(std::io::Error::other)?;
+    returned
+        .recv_timeout(CHECKPOINT_WAIT)
+        .map_err(std::io::Error::other)?;
+    peer.set_read_timeout(Some(Duration::from_millis(100)))?;
+    let mut extra = [0; 49];
+    match peer.recv_from(&mut extra) {
+        Err(error)
+            if matches!(
+                error.kind(),
+                std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+            ) => {}
+        Err(error) => return Err(error),
+        Ok(_) => checkpoint_fact(false, "final checkpoint allowed a fourth native query")?,
+    }
+    Ok(CheckpointObservations {
+        endpoint,
+        queries,
+        boundary: Some(boundary),
+    })
+}
+
+/// Check original acquired facts against the peer and the later checkpoint event.
+/// # Errors
+/// Reject missing facts, changed peer bits/endpoints/context, or refreshed age.
+fn check_checkpoint_facts(
+    report: &SeriesReport,
+    observed: &CheckpointObservations,
+) -> Result<(), Box<dyn Error>> {
+    let boundary = observed
+        .boundary
+        .ok_or_else(|| std::io::Error::other("missing acknowledged checkpoint boundary"))?;
+    for (index, (attempt, query)) in report.attempts().iter().zip(&observed.queries).enumerate() {
+        checkpoint_fact(
+            attempt.report().is_some() && attempt.not_started_cause().is_none(),
+            "final control erased a completed request position",
+        )?;
+        let record = attempt.report().ok_or(PilotError::InternalState)?;
+        checkpoint_fact(
+            usize::from(attempt.index()) == index
+                && usize::from(record.slot()) == index
+                && record.status() == Status::Header
+                && record.sent()
+                && record.received() == 1
+                && record.rejected() == 0
+                && record.last_rejection().is_none()
+                && record.local_endpoint() == query.client,
+            "final control rewrote genuine transport completion facts",
+        )?;
+        checkpoint_fact(
+            record.facts().is_some(),
+            "final control erased acquired header facts",
+        )?;
+        let facts = record.facts().ok_or(PilotError::InternalState)?;
+        let second = 4_000_000_000 + u64::try_from(index)?;
+        checkpoint_fact(
+            facts.peer_receive_bits() == ((second << 32) | 0x4000_0000)
+                && facts.peer_transmit_bits() == ((second << 32) | 0x6000_0000)
+                && facts.header().origin_timestamp().bits().to_be_bytes() == query.nonce
+                && facts.peer_endpoint() == observed.endpoint
+                && report.peer_endpoint() == observed.endpoint
+                && facts.local_endpoint() == query.client
+                && Arc::ptr_eq(&facts.run_context, &report.context),
+            "checkpoint changed literal peer facts or historical ownership",
+        )?;
+        checkpoint_fact(
+            facts.send_before().monotonic() >= report.origin() && facts.processing() <= boundary,
+            "checkpoint refreshed or replaced an original acquisition capture",
+        )?;
+        let measurement = facts.measurement();
+        checkpoint_fact(
+            measurement.is_ok(),
+            "valid checkpoint declaration lost its expected measurement",
+        )?;
+        let age = measurement?.acquisition_age();
+        let relative = facts.relative_to(facts);
+        checkpoint_fact(
+            relative.is_ok(),
+            "same acquired checkpoint facts lost their valid relative view",
+        )?;
+        let relative = relative?;
+        let row_measurement = relative.row().measurement();
+        checkpoint_fact(
+            row_measurement.is_ok(),
+            "valid checkpoint relative row lost its expected measurement",
+        )?;
+        checkpoint_fact(
+            age == facts
+                .processing()
+                .duration_since(facts.read_return().monotonic_after())
+                && row_measurement?.acquisition_age() == age,
+            "checkpoint refreshed an original acquisition age",
+        )?;
+        for earlier in &report.attempts()[..index] {
+            let earlier = earlier.report().ok_or(PilotError::InternalState)?;
+            checkpoint_fact(
+                !facts.same_exchange(earlier.facts().ok_or(PilotError::InternalState)?),
+                "checkpoint merged two actual request identities",
+            )?;
+        }
+    }
+    Ok(())
+}
+
+/// Execute the actual series with a synchronized external final control request.
+/// # Errors
+/// Preserve real preparation/runtime/peer/handshake failures after joining the worker.
+fn final_checkpoint_case(
+    phase: SeriesCheckpointPhase,
+    action: CheckpointAction,
+    expected: SeriesEnd,
+) -> Result<(), Box<dyn Error>> {
+    let peer = crate::StdSocket::bind(SocketAddr::from((Ipv4Addr::LOCALHOST, 0)))?;
+    peer.set_read_timeout(Some(CHECKPOINT_WAIT))?;
+    peer.set_write_timeout(Some(CHECKPOINT_WAIT))?;
+    let profile = ExperimentalProfile::new(3_000_000_000, 4_500_000_000, 30_000_000_000);
+    checkpoint_fact(
+        profile.is_ok(),
+        "independently valid checkpoint declaration was refused",
+    )?;
+    let config = SeriesConfig::new(peer.local_addr()?, Duration::from_secs(1), CHECKPOINT_WAIT);
+    checkpoint_fact(
+        config.is_ok(),
+        "independently valid checkpoint loopback plan was refused",
+    )?;
+    let config = config?.with_experimental_profile(profile?);
+    let preparation = prepare_series_with_entropy(&config, |entropy| {
+        *entropy = [
+            1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
+        ];
+        Ok(())
+    });
+    checkpoint_fact(
+        preparation.is_ok(),
+        "independently valid distinct checkpoint tokens were refused",
+    )?;
+    let (prepared, control) = preparation?;
+    let shared = context();
+    let deadline = shared
+        .origin
+        .checked_add(CHECKPOINT_WAIT)
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let receiver = SeriesReceiver::new(shared, prepared.peer, prepared.profile);
+    let runtime = runtime()?;
+    let (entered, entering) = std::sync::mpsc::sync_channel(1);
+    let (acknowledge, acknowledged) = std::sync::mpsc::sync_channel(1);
+    let (returned, returning) = std::sync::mpsc::sync_channel(1);
+    let (report, observed) = std::thread::scope(|scope| {
+        let worker = scope.spawn(move || {
+            serve_checkpoint(&peer, &control, action, &entering, &acknowledge, &returning)
+        });
+        let mut checkpoint = CheckpointHook {
+            phase,
+            entered,
+            acknowledged,
+            boundary: None,
+            failure: None,
+        };
+        let mut hook = |index, selected| checkpoint.observe(index, selected);
+        let mut setup = setup_request;
+        let report = runtime.block_on(run_series(
+            prepared, receiver, deadline, &mut setup, &mut hook,
+        ));
+        let notification = returned.send(());
+        let worker = worker
+            .join()
+            .map_err(|_| std::io::Error::other("checkpoint worker panicked"))?;
+        let observed = worker?;
+        notification.map_err(std::io::Error::other)?;
+        checkpoint_fact(
+            observed.queries.len() == 3,
+            "series returned before three planned native queries",
+        )?;
+        if let Some(error) = checkpoint.failure {
+            return Err(error);
+        }
+        if checkpoint.boundary.is_none() || checkpoint.boundary != observed.boundary {
+            return Err(std::io::Error::other(
+                "selected final checkpoint was not acknowledged",
+            ));
+        }
+        Ok::<_, std::io::Error>((report, observed))
+    })?;
+    checkpoint_fact(
+        report.primary_failure().is_none()
+            && report.stop_cleanup_failure().is_none()
+            && report.invalidate_cleanup_failure().is_none()
+            && report.admitted_sample_count() == 0
+            && report.eligible_sample_count() == 0,
+        "checkpoint control created failure, cleanup or sample authority",
+    )?;
+    check_checkpoint_facts(&report, &observed)?;
+    checkpoint_fact(
+        report.end() == expected,
+        "final series summary ignored its serialized current control",
+    )?;
+    Ok(())
+}
+
+/// Controls before the final summary retire authority without erasing three replies.
+/// Controls serialized afterward cannot revise the already selected summary.
+/// # Errors
+/// Preserve bounded native/fixture failures and independently observed violations.
+#[test]
+fn final_checkpoint_reads_current_control_without_rewriting_three_completions()
+-> Result<(), Box<dyn Error>> {
+    if series_process::parent_or_child(
+        "series::tests::final_checkpoint_reads_current_control_without_rewriting_three_completions",
+    )? {
+        return Ok(());
+    }
+    for (phase, action, expected) in [
+        (
+            SeriesCheckpointPhase::Before,
+            CheckpointAction::Stop,
+            SeriesEnd::Stopped,
+        ),
+        (
+            SeriesCheckpointPhase::Before,
+            CheckpointAction::Invalidate,
+            SeriesEnd::Stale,
+        ),
+        (
+            SeriesCheckpointPhase::After,
+            CheckpointAction::Stop,
+            SeriesEnd::Completed,
+        ),
+        (
+            SeriesCheckpointPhase::After,
+            CheckpointAction::Invalidate,
+            SeriesEnd::Completed,
+        ),
+    ] {
+        final_checkpoint_case(phase, action, expected)?;
+    }
+    Ok(())
+}
+
+/// The actual serialized helper freshly observes controls before an expired bound.
+/// # Errors
+/// Preserve checked invalidation or future-deadline construction failure.
+/// # Panics
+/// Require expired-deadline priority and a live quiet neighboring checkpoint.
+#[test]
+fn current_checkpoint_observes_new_controls_before_expired_deadline() -> Result<(), PilotError> {
+    for (invalidate, stop, expected) in [
+        (false, false, SeriesEnd::SeriesDeadline),
+        (true, false, SeriesEnd::Stale),
+        (true, true, SeriesEnd::Stopped),
+    ] {
+        let quiet = Control {
+            stop: false,
+            epoch: 0,
+        };
+        let (sender, mut receiver) = watch::channel(quiet);
+        let control = ControlHandle { sender };
+        let prior = latest(&mut receiver);
+        assert!(!prior.stop && prior.epoch == 0);
+        let deadline = Instant::now();
+        if invalidate {
+            let invalidation = control.invalidate();
+            assert!(
+                invalidation.is_ok(),
+                "fresh checkpoint control rejected its first generation change"
+            );
+            invalidation?;
+        }
+        if stop {
+            control.stop();
+        }
+        assert_eq!(current_series_end(&mut receiver, deadline), Some(expected));
+    }
+    let (sender, mut receiver) = watch::channel(Control {
+        stop: false,
+        epoch: 0,
+    });
+    let deadline = Instant::now()
+        .checked_add(CHECKPOINT_WAIT)
+        .ok_or(PilotError::DeadlineOverflow)?;
+    assert_eq!(current_series_end(&mut receiver, deadline), None);
+    drop(sender);
     Ok(())
 }
 

@@ -714,3 +714,101 @@ series outcomes retain their actual `25654289...` candidate and original proof
 bytes; only an explicit independent unaffected-state argument may join them to
 the current candidate. This note creates no fresh series execution or kill credit
 and does not accept the prior fixture-only library catch.
+
+## Current N3 final-summary source re-admission — 8 November 2026
+
+This dated addendum supplies current source review for the same four N3 IDs;
+all earlier candidates, native outcomes and source arguments above retain their
+historical scopes. It admits no historical outcome as a fresh execution and
+supplies no kill or score. This is ordinary mutation accounting, with no formal
+compiler/solver, Windows-native or library mutation execution by these reviewers.
+
+The current421-input product candidate is
+`e8f6ead34f41429033a8d6c0ebd823bc693dae8caa645d53a8eafedf20e8727d`.
+Its final ordinary receipt is
+`~/.local/share/nevrotick/series-final-checkpoint-20261108-v1/green-ordinary-v3/verification.json`,
+SHA256 `887732785dca641646e1c72adf1dcaf6af9054cd3566b33487d9e4ee1fee58b3`:
+113 ordinary,113 optimized and50 doctests, with unchanged source/helper/recipe/
+vendor/tool bookends. Those passes do not establish equivalence themselves.
+
+The actual current enumeration is
+`~/.local/share/nevrotick/series-final-checkpoint-20261108-v1/enumerate-v1/verification.json`,
+SHA256 `a819df52c17245b7f9597c705e7865f6f0bd032bd1316fa3ecdbcbe1914eabc8`.
+It contains214 library descriptors, canonical inventory SHA256
+`0f1ca0520c68e80b752245af0271bea934f14db9bffd4159a171bf8c09dabc21`,
+and145 series descriptors, canonical inventory SHA256
+`e5cf359d7cb73c0298e9f007c6e2a6b2921674bebdfc2ced18fdadf1485e6b4c`.
+All359 are actual native listings, below the unchanged512 cap. The complete typed
+descriptor identities below exclude only the optional rendered `diff`.
+
+### Current fallback domain and exact two operators
+
+Independent reviewer `/root/series_checkpoint_design_review` checked the current
+library source, actual native descriptors and pinned standard-library sources.
+The library file SHA256 is
+`f14ab14174eab86abdd14b8b70a567e88deeda4062520ed13323e7c4a8d11622`.
+`commit_reply` has native function span1330:1–1379:2 including its adjacent
+contract; those complete lines hash to
+`307ec2ede4f337700543029ce2664e57f5958338286f1130a8b1d1c600653290`.
+Its function definition, lines1333–1379 without the terminal newline, has SHA256
+`39b380c49078491dbb2fb8337b6c10474733cf831be02ebd1c5b12269333bc04`
+and is unchanged from the `89f035e` helper. Q1 exports changed whole-file bytes
+and moved descriptor coordinates; they did not establish new library execution.
+The six primary-source hashes in the earlier pinned-source table were checked
+and remain identical for the admitted Linux Rust1.99.1 configuration.
+
+The full valid helper-domain argument remains necessary: mismatched identities,
+endpoints, profile or phase return before the time checks. The local guard rejects
+every `processing < candidate.read.mono_after` using the unchanged, reachable
+increment at1346. For the remaining immutable operands, the pinned Linux
+comparison and subtraction return `Some(Duration)`, including equal instants,
+signed-second extrema and nanosecond borrowing. No caller chronology or normal
+counter-range assumption is added. The fallback at1350 is therefore unreachable
+over the complete valid helper domain. These two operators do not target the
+reachable1346 increment.
+
+| Existing N3 ID | Actual current operator/name | Complete descriptor SHA256 |
+| --- | --- | --- |
+| `ENGINE-SERIES-COMMIT-DURATION-FALLBACK-SUB` | `crates/nevrotick-engine/src/lib.rs:1350:23: replace += with -= in commit_reply` | `2ab92195ec79b1c71bae647479ea1f5a82b5e6e0a0bfde2cbc3da0bd9067af1d` |
+| `ENGINE-SERIES-COMMIT-DURATION-FALLBACK-MUL` | `crates/nevrotick-engine/src/lib.rs:1350:23: replace += with *= in commit_reply` | `5d7961f5476b58579bee819ba1a895a6da90fc0cfa4a10ddcb389bf82ce982f9` |
+
+Both are `BinaryOperator` descriptors with operator span1350:23–1350:25,
+function `commit_reply`, implicit-unit return type and the function span above.
+Every reachable return, counter, retained cause, history, terminal/measurement
+result, allocation, error/panic, borrow/drop and resource custody remains
+unchanged. Changed guards, helper operands/body, platform, toolchain or
+standard-library semantics invalidate this source re-admission.
+
+### Current unavailable-only getter domain
+
+Independent reviewer `/root/series_checkpoint_tests` checked the current series
+source, all report constructors/cleanup/execution paths and the actual145-entry
+native map. Series source SHA256 is
+`174ab3b4538356c5134cb850baac19640baf27c1e14ad3c12f953948549a43f7`.
+`StatisticalAdmission` still has the sole `Unavailable` variant. The private
+field remains unavailable through every construction and lifecycle path; more
+strongly, the exhaustive getters return zero for every valid report regardless
+of its other fields. Literal zero changes no effect, failure or ownership.
+Neither changed final-summary timing nor a returned control result supplies
+sample admission. Nonzero replacements remain non-equivalent.
+
+| Existing N3 ID | Actual current replacement | Function span | Replacement span | Complete descriptor SHA256 |
+| --- | --- | --- | --- | --- |
+| `ENGINE-SERIES-UNAVAILABLE-ADMITTED-ZERO` | `crates/nevrotick-engine/src/series.rs:469:9: replace SeriesReport::admitted_sample_count -> usize with 0` |466:5–472:6|469:9–471:10| `f4b3fae4f21b063861301bae063b9115737894d7916b6583f896cf63ca5ec531` |
+| `ENGINE-SERIES-UNAVAILABLE-ELIGIBLE-ZERO` | `crates/nevrotick-engine/src/series.rs:476:9: replace SeriesReport::eligible_sample_count -> usize with 0` |473:5–479:6|476:9–478:10| `cc59ea98db653c91db4af372b1f9a3db26c081098e00eb62588d1fb33f097298` |
+
+Both have package `nevrotick-engine`, genre `FnValue`, return type `-> usize`
+and replacement `0`. A new enum variant, constructor/mutation path or changed
+getter/domain/effects requires renewed review and source/descriptor binding.
+
+### Current admission and execution limit
+
+The series profile retains strict empty-or-complete-four opt-in. Each current
+entry binds this whole candidate, its exact whole-file source, the complete
+actual descriptor and the updated dossier bytes. No partial cohort, historical
+descriptor, reachable increment, timeout or unclassified failure is accepted.
+An E exclusion still requires the exact actual native `MissedMutant` under the
+existing accounting gate and receives no kill credit. This source-only review
+does not predict any native result or mutation score. The selected continuation
+executes affected `series` mutation only; it supplies no current library mutation
+result or pass. Coverage and all other qualification obligations remain separate.

@@ -1073,22 +1073,31 @@ scope; a compiler accepting an option establishes no performance benefit.
 ## Starting implementation
 
 The shared [service lifecycle owner](crates/windows-platform/src/service.rs)
-has its source/test/evidence chain in [W11-W05](tasks/windows11-integration.md#434-active-two-service-completion-goal--7-november-2026).
-Use the fixed [service analysis policy](policy/service-analysis.json) and runner
-for its selected per-file gates:
+has its source/test/evidence chain in the
+[W11-W05/S3.1 handoff](tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026).
+For its selected per-file gates, use the fixed
+[service analysis policy](policy/service-analysis.json) through the main-repository
+record-retention frontend, after current source/test/helper binding admission:
 
 ```sh
-python3 -B scripts/verify-service-analysis.py --lane enumerate --output-dir /tmp/new-service-enumeration
-python3 -B scripts/verify-service-analysis.py --lane coverage --output-dir /tmp/new-service-coverage
-python3 -B scripts/verify-service-analysis.py --lane mutation --output-dir /tmp/new-service-mutation
+python3 -B scripts/run-service-analysis.py --lane enumerate --label new-service-enumeration --vendor-dir /absolute/admitted-vendor
+python3 -B scripts/run-service-analysis.py --lane coverage --label new-service-coverage --vendor-dir /absolute/admitted-vendor
+python3 -B scripts/run-service-analysis.py --lane mutation --label new-service-mutation --vendor-dir /absolute/admitted-vendor
 ```
 
-Each output must be new, private and outside the checkout. Actual ordinary tests
-and doctests, the complete product identity and protected helper bytes must be
-bound first; changed source requires fresh ordinary evidence and a reviewed
-rebind. Enumeration lists the fixed `service.rs` and `scm.rs` owners. Review both
-complete descriptor inventories and function/guard/macro generation gaps, then
-bind their exact counts/hashes before mutation. The stable-only service role
+Each label must be fresh. Primary raw logs/reports, profiles and coverage binaries
+are retained under `artifacts/windows-services/recovery-20261107-v1/`; preserve
+them during cleanup. Derived execution copies/caches remain in the persistent
+external service cache under the existing producer isolation rules. Author source
+and unfinished work in the main repository, never solely in temporary storage.
+Actual ordinary tests and doctests, complete product identity and protected helper
+bytes must be bound first; changed inputs require fresh evidence and a reviewed
+rebind. The 7 November binding is historical, not admission for a changed checkout.
+Schema 5 enumerates `service.rs`, `scm.rs` and `privilege_observation.rs`. Review all
+three complete descriptor inventories and function/guard/macro generation gaps,
+then bind exact counts/hashes before mutation; empty inventories admit no campaign.
+The frontend's control tests establish no executed product metric gate.
+The stable-only service role
 retains full admitted stable-tool/vendor/source custody, 90% executable lines,
 95% per-file viable mutation and finite six-build/four-mutation-worker limits.
 The current parallel profile permits 512 tasks with worker-owned targets and

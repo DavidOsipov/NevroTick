@@ -108,14 +108,19 @@ qualify the combined integration candidate.
 | [ntp-exchange](../crates/ntp-exchange/Cargo.toml) | Single-slot unauthenticated fixture association and deterministic scenarios | [Association](../tasks/s1.1-exchange-association.md) and [harness](../tasks/s1.1-deterministic-harness.md) tasks; no production acquisition |
 | [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness, modeled correction accounting and pure conditioned-window/affine fitting | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md) retain fixture evidence. [Settled-rate](../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners), [N1b](../tasks/engine-transport-pilot.md#n1b-final-qualification--two-selected-core-owners) and [N2a](../tasks/engine-transport-pilot.md#n2a-final-qualification--two-selected-core-owners) complete their exact selected Linux scopes; full P1 and production history remain open |
 | [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback observer and additive three-attempt same-source series with consume-once private receiver; conditional software-clock measurements, exact nominal values and common-origin relative views; `nevrotick-observe` remains the two-peer CLI | Recorded [measurement](../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026), [exact-nominal](../tasks/engine-transport-pilot.md#exact-nominal-terminal-qualification--6-november-2026), [rational-seconds](../tasks/s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners) and [common-run bridge](../tasks/engine-transport-pilot.md#common-run-reference-bridge--final-qualification-and-next-action) receipts retain their exact scopes. [N3a final qualification](../tasks/engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners) completes its selected Linux scope on407-input `e71aab7...`:91 ordinary/91 optimized tests,42 doctests, external contracts, both line gates and357 accounted variants (214 fresh library plus143 explicitly reused receiver outcomes; four reviewed equivalents, no unresolved survivor or timeout). The existing receiving-contract card retains its four transaction choices and supplier holds before integration. Observations stay unauthenticated/ineligible; production history, native Windows, P1 and product qualification remain open |
+| [windows-platform](../crates/windows-platform/Cargo.toml) | Portable lifecycle/status, SCM projection and checked privilege snapshots, with explicit completion custody | [W11-W05/S3.1 handoff](../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026); consumed by standalone laboratory hosts, with product adoption and native qualification open |
 
-**7 November service source amendment:** [windows-platform](../crates/windows-platform/Cargo.toml)
-adds the portable lifecycle/status owner for the separate engine and broker roles.
-Its [W11-W05 source checkpoint](../tasks/windows11-integration.md#433-portable-service-lifecycle-source-start--7-november-2026)
-records fixed pending deadlines, checked acknowledgements, terminal failure and
-actual-completion custody logic. It is not linked into a service executable and
-contains no native calls. SCM adapter, provisioning, identities and native service
-qualification remain open; no networking, GUI or runtime is added to this owner.
+**8 November service source handoff:** [windows-platform](../crates/windows-platform/Cargo.toml)
+owns portable lifecycle/status, SCM projection and checked privilege snapshots for
+the separate engine and broker roles. The standalone
+[laboratory hosts](../tools/windows-service-fixture/README.md) consume it through
+real Windows dispatcher, ServiceMain, callback, status and self-token adapter
+source; the portable crate itself contains no native calls. The
+[W11-W05/S3.1 handoff](../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026)
+records implemented source and retained host/static checks, with source integration
+preparation available. These are inert laboratory compositions, not production
+services. Product worker/composition adoption, current per-file qualification,
+final identities/provisioning and native service evidence remain open.
 
 **6 November S2.1 amendment:** the engine now depends on `time-domain` alongside
 `ntp-wire`, Tokio and `getrandom`. Its explicit experimental model preserves

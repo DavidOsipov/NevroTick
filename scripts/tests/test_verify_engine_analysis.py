@@ -1254,6 +1254,18 @@ class EngineExternalContractTests(unittest.TestCase):
 class QualityAnalysisTests(unittest.TestCase):
     """Q1 registration controls use synthetic native logs; no analyzer is invoked."""
 
+    def test_series_checkpoint_rebind_preserves_frozen_quality_admission(self):
+        """New N3 identities cannot rewrite Q1's historical roster or helper set."""
+        policy = self.policy()
+        MODULE.validate_quality_policy(policy)
+        ordinary, docs = MODULE.quality_test_inventory(policy)
+        self.assertEqual((len(ordinary), len(docs)), (111, 50))
+        self.assertEqual(len(MODULE.SERIES_REQUIRED_TESTS), 23)
+        self.assertTrue(MODULE.SERIES_CHECKPOINT_REQUIRED_TESTS.isdisjoint(ordinary))
+        self.assertNotIn(MODULE.SERIES_PROCESS_SOURCE, MODULE.QUALITY_BOUND_INPUTS)
+        self.assertIn(MODULE.SERIES_PROCESS_SOURCE, MODULE.SERIES_CURRENT_BOUND_INPUTS)
+        self.assertEqual(MODULE.QUALITY_FIXED_POLICY["source_file_count"], 416)
+
     def policy(self):
         return copy.deepcopy(json.loads((ROOT / MODULE.QUALITY_POLICY).read_text()))
 
