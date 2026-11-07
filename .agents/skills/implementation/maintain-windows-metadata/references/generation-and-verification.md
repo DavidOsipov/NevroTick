@@ -123,6 +123,23 @@ wrong-value, wrong-owner, duplicate and unclaimed-content refusals. These reader
 understand only the generated JSON/XML/CSV/Rust/RC subset; widening them is not a
 substitute for compilation or an independent native resource reader.
 
+Interpret XML from its actual byte representation and admitted encoding
+declaration; decoding first can conceal an incompatible charset. Keep a direct
+observer refusal and a real-CLI faulty-producer control beside the healthy
+independent byte reader. Turn known resource/field boundaries and critical
+delivery bindings into permanent independent cases, rather than relying only on
+reflexive report counts or one combined literal sentinel.
+
+For source-tool lifecycle changes, apply [the phase-specific outcome contract](../../../../../docs/plans/windows-package-metadata.md#136-source-tool-finalization-and-failure-outcomes--7-november-2026).
+Recheck source/code identities and the held candidate's pathname binding before
+success. Assert refusal and preservation of foreign state for a rebound path;
+asserting that a test hook ran is not a substitute for the operation's result.
+Pair precommit flush/rename failures with cleanup checks. After successful rename,
+a failed final flush reports `PublicationUncertainError` / CLI exit `3` and the
+redacted `publication-uncertain` JSON outcome; preserve the published tree.
+Read-only `check` reconciles visible content, never the missing durability
+acknowledgement. Retrying `generate` must still refuse an existing destination.
+
 When adding an executed pipeline module, update `CODE_FILES`, the independently
 specified receipt expectations and isolated copied-tool fixtures together.
 Retain healthy generation before the stale-code rejection; an omitted import is

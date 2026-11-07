@@ -183,6 +183,11 @@ contacts just because a tool returned them.
 Recompute derived outputs when their inputs change. Declare change detection
 for every consumed file/environment input; compare frozen hashes before and
 after collection/generation. Use deterministic ordering and an explicit encoding.
+Keep unpublished-staging failure separate from publication followed by a missing
+flush acknowledgement. The source tool's `publication-uncertain` result preserves
+the committed tree; record it and reconcile visible bytes before deciding the
+next action. Neither successful readback nor a repeated generation refusal proves
+the missing durability acknowledgement. Follow [the existing phase contract](../../../../../docs/plans/windows-package-metadata.md#136-source-tool-finalization-and-failure-outcomes--7-november-2026).
 Keep the collection timestamp in the observation, separate from a stable release
 date or `SOURCE_DATE_EPOCH`; do not inject the current wall-clock time into every
 EXE. The latter timestamp helps deterministic tooling but does not prove a

@@ -777,6 +777,60 @@ environments execute these exits. This amendment adds no prerequisite to the
 current Core/N3 queue, no stronger public attestation requirement, no package
 route change and no exception to Windows, fuzz, storage, UI or formal-work holds.
 
+### 13.6 Source-tool finalization and failure outcomes — 7 November 2026
+
+David authorized closing the source-pipeline audit findings within the existing
+MD-P1–MD-P3 owner. This is portable metadata-tool work, not an expansion into
+the held compiled/native/package stages or another product plan.
+
+Admission must enforce the selected ASCII email grammar, including local-part
+dot placement, without rewriting accepted values or claiming mailbox ownership.
+Retain permanent just-below/exact/just-above cases for reached decoded resource
+limits and Store/service/resource-reference rules, with valid neighboring inputs.
+The XML observer must interpret the actual bytes and their declared encoding;
+decoding to Unicode first must not conceal an incompatible declaration. Preserve
+the declared generated subset, literal text, rejection of extra content and
+independent critical component/field/representation expectations.
+
+During generation, recheck consumed source and generator identities before
+publication. During read-only `check`, recheck those identities and the binding
+between the selected output pathname and the held candidate directory before
+success. Retain bounded no-follow reads and caller-owned isolation. These checks
+detect the tested in-flight changes; they neither contain arbitrary same-user
+code execution nor promise that a pathname cannot change after return.
+
+Distinguish publication phases instead of equating every error with no effect:
+
+| Phase/outcome | Required behavior |
+| --- | --- |
+| Admission or precommit write/flush/rename failure | Refuse success, remove only owned unpublished staging, preserve any existing candidate and foreign state. Retain independent healthy controls. |
+| Acknowledged publication | Write/flush files and their containing directories, flush the complete staging directory, rename the new tree and obtain the final parent-directory flush acknowledgement. Report only host-filesystem acknowledgement, not hardware or crash-durability proof. |
+| Rename succeeded, final flush acknowledgement failed | Preserve the committed complete tree and raise `PublicationUncertainError`, a `MetadataError` subtype. The CLI returns exit `3` with the bounded JSON outcome below, distinct from ordinary rejection exit `1`. Never delete, overwrite or automatically retry the committed tree. |
+
+```json
+{"schema_version":1,"status":"publication-uncertain","durability":"unconfirmed","action":"check-existing-output-before-retry"}
+```
+
+After an uncertain result, `check` may reconcile the visible bytes against the
+frozen source; it cannot retroactively establish the missing flush acknowledgement.
+Repeated `generate` still refuses an existing destination. Keep invalid source,
+unsafe output, precommit failure, uncertain publication and successful readback
+distinct in logs and task evidence, without exposing raw values or private paths.
+
+Acceptance retains the prior audit counterexamples: an isolated omission of the
+final generator-identity comparison must be caught through actual publication
+behavior; a rebound-parent control must require refusal as well as unchanged
+foreign bytes. Add byte/declaration XML faults, invalid email neighbors, decoded
+and field-limit boundaries, independently specified delivery bindings, bounded
+literal/field-interaction properties and pre/postcommit failure cases. Preserve
+the first RED and a useful healthy control; faults that only break an observation
+hook or fail an import do not establish semantic test sensitivity.
+
+The coordinator records the integrated candidate, actual test and selected
+fault-sensitivity outcomes in the existing W11-W10 task. A bounded seeded trial
+is not a per-file mutation score or a full release coverage result. MD-P4–MD-P5,
+the current Core queue, required v3/hardening policy and all execution holds remain.
+
 ## Primary sources
 
 Microsoft Learn schemas and Windows Installer references were retrieved using

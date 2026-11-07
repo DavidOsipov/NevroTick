@@ -9,6 +9,7 @@ import shutil
 import sys
 import unittest
 from unittest import mock
+import xml.etree.ElementTree as ET
 
 from test_pipeline import REPOSITORY, LITERAL_SENTINEL, SourceFixture, json_data
 
@@ -31,6 +32,24 @@ class ProducerDeliveryCliTests(SourceFixture):
         self.assertEqual(text.count(old), 1)
         producer.write_text(text.replace(old, '("PUBLISHER", model.product.name)'))
         invalid = self.base / "invalid"
+        self.require_rejection(self.cli("generate", output=invalid))
+        self.assertFalse(invalid.exists())
+
+    def test_xml_encoding_defect_is_refused_before_publication(self) -> None:
+        self.copy_pipeline()
+        self.require_success(self.cli("generate", output=self.output))
+        # The independent consumer receives bytes, including their declaration.
+        healthy = (self.output / "authoring/display.xml").read_bytes()
+        self.assertEqual(ET.fromstring(healthy).tag,
+                         "{urn:nevrotick:metadata:authoring:1}metadata")
+        producer = self.root / "metadata/pipeline/generate.py"
+        text = producer.read_text()
+        old = 'return ET.tostring(root, encoding="utf-8", xml_declaration=True) + b"\\n"'
+        self.assertEqual(text.count(old), 1)
+        changed = ('return (ET.tostring(root, encoding="utf-8", xml_declaration=True) '
+                   '+ b"\\n").replace(b"encoding=\'utf-8\'", b"encoding=\'utf-16\'", 1)')
+        producer.write_text(text.replace(old, changed))
+        invalid = self.base / "invalid-xml"
         self.require_rejection(self.cli("generate", output=invalid))
         self.assertFalse(invalid.exists())
 
@@ -102,6 +121,50 @@ class DeliveryObservationTests(SourceFixture):
         self.assertTrue(any(row["component"] == "ui" and row["artifact"] == "rc/ui.rc"
                             for row in report["obligations"]))
         self.assertTrue(all("value" not in row for row in report["obligations"]))
+
+    def test_critical_report_bindings_have_independent_meaning(self) -> None:
+        report = json.loads(self.outputs["field-coverage.json"])["delivery"]
+        bindings = {
+            (row["source"], row["component"], row["artifact"],
+             row["locator"], row["representation"])
+            for row in report["obligations"]
+        }
+        # Literal requirements for the current fixture/observer roles, rather
+        # than values or expectations returned by delivery_contract().
+        required = {
+            ("product.publisher", "product", "metadata.json", "/product/publisher", "identity"),
+            ("product.publisher", "ui", "rc/ui.rc", "CompanyName", "identity"),
+            ("product.name", "observe", "rc/observe.rc", "ProductName", "identity"),
+            ("platform.target", "product", "rust/product.rs", "TARGET", "identity"),
+            ("platform.cpu_floor", "product", "metadata.json", "/cpu_floor", "identity"),
+            ("component.ui.license", "ui", "rust/ui.rs", "LICENSE", "identity"),
+            ("component.observe.license", "observe", "rust/observe.rs", "LICENSE", "identity"),
+            ("component.ui.file_version", "ui", "rc/ui.rc", "FILEVERSION", "identity"),
+            ("component.observe.version", "observe", "rc/observe.rc", "FileVersion", "identity"),
+            ("component.ui.binary_name", "ui", "rust/ui.rs", "ORIGINAL_FILENAME",
+             "append-.exe-if-absent"),
+            ("component.ui.binary_name", "ui", "rc/ui.rc", "OriginalFilename",
+             "append-.exe-if-absent"),
+            ("component.ui.display_name", "ui", "authoring/display.xml",
+             "/metadata/components/ui/name", "identity"),
+            ("component.broker.scm.name", "broker", "authoring/service-inputs.json",
+             "/services/broker/technical_name", "resolved-value-or-null"),
+        }
+        self.assertLessEqual(required, bindings)
+        self.assertEqual(len(bindings), len(report["obligations"]))
+        self.assertEqual(set(report["public_artifacts"]), {
+            "metadata.json", "rust/product.rs", "rust/ui.rs", "rust/observe.rs",
+            "rc/ui.rc", "rc/observe.rc",
+        })
+        self.assertEqual(set(report["internal_only_artifacts"]), {
+            "field-register.json", "field-coverage.json", "authoring/display.xml",
+            "authoring/msix-inputs.json", "authoring/service-inputs.json",
+            "authoring/event-inputs.json", "authoring/store.csv", "authoring/project-inputs.json",
+        })
+        self.assertFalse(any(row["artifact"].startswith(("rust/engine", "rc/engine",
+                                                       "rust/broker", "rc/broker",
+                                                       "rust/helper", "rc/helper"))
+                             for row in report["obligations"]))
 
     def test_agreeing_projections_cannot_replace_source_truth(self) -> None:
         outputs = self.json_change("metadata.json", lambda data: data["product"].__setitem__("publisher", "Wrong"))
@@ -176,6 +239,43 @@ class DeliveryObservationTests(SourceFixture):
                 self.assertNotEqual(changed, original)
                 outputs = self.outputs.copy(); outputs["authoring/display.xml"] = changed
                 self.reject(outputs)
+
+    def test_xml_encoding_declaration_matches_the_actual_byte_contract(self) -> None:
+        name = "authoring/display.xml"
+        original = self.outputs[name]
+        self.assertEqual(ET.fromstring(original).tag,
+                         "{urn:nevrotick:metadata:authoring:1}metadata")
+        for encoding in (b"utf-16", b"iso-8859-1", b"unknown-private-charset"):
+            with self.subTest(encoding=encoding):
+                changed = original.replace(b"encoding='utf-8'",
+                                           b"encoding='" + encoding + b"'", 1)
+                self.assertNotEqual(changed, original)
+                self.reject({**self.outputs, name: changed})
+
+    def test_xml_generated_utf8_declaration_neighbors_remain_readable(self) -> None:
+        name = "authoring/display.xml"
+        original = self.outputs[name]
+        for changed in (
+            original.replace(b"encoding='utf-8'", b"encoding='UTF-8'", 1),
+            original.replace(b"version='1.0' encoding='utf-8'",
+                             b'version="1.0" encoding="UTF-8"', 1),
+            original.replace(b"?>\n", b"?>\r\n", 1),
+        ):
+            with self.subTest(prefix=changed[:80]):
+                self.assertNotEqual(changed, original)
+                self.assertEqual(ET.fromstring(changed).tag,
+                                 "{urn:nevrotick:metadata:authoring:1}metadata")
+                self.delivery.verify_delivery(self.model, {**self.outputs, name: changed})
+
+    def test_xml_requires_the_declared_generated_utf8_source_form(self) -> None:
+        name = "authoring/display.xml"
+        original = self.outputs[name]
+        for changed in (b"\xef\xbb\xbf" + original, original.split(b"\n", 1)[1],
+                        original.replace(b"version='1.0'", b"version='1.1'", 1),
+                        original.replace(b"<product>", b"<product>\xff", 1)):
+            with self.subTest(prefix=changed[:80]):
+                self.assertNotEqual(changed, original)
+                self.reject({**self.outputs, name: changed})
 
     def test_csv_duplicate_field_or_same_count_wrong_identity_is_refused(self) -> None:
         for replacement in (b'"product.name"', b'"wrong.name"'):

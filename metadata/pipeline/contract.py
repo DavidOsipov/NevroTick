@@ -24,7 +24,7 @@ from .text_policy import TextPolicyError, require_text, validate_source
 MAX_FILE_BYTES = 256 * 1024
 MAX_INPUT_BYTES = 1024 * 1024
 MAX_DEPTH = 16
-MAX_NODES = 8192  # Closed 716-field register plus bounded authoring headroom.
+MAX_NODES = 8192  # Complete declared field register plus bounded authoring headroom.
 MAX_STRING = 16384  # A Store description may contain 10,000 characters.
 TARGET = "x86_64-pc-windows-msvc"
 CPU_FLOOR = "x86-64-v3"
@@ -464,7 +464,21 @@ def _validate_field_value(value: str, key: str, value_type: str) -> None:
         if re.fullmatch(r"(?:[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}|\{[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}\})", value) is None:
             raise MetadataError("field: invalid GUID")
     elif value_type == "email":
-        if re.fullmatch(r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,63}", value) is None or len(value) > 254:
+        # The admitted ASCII dot-atom/DNS subset is narrower than every RFC
+        # mailbox form. Preserve its spelling; syntax proves no deliverability
+        # or ownership. Dot atoms need nonempty parts, SMTP local-parts fit 64
+        # octets, and every DNS host label fits 63 octets.
+        # RFC 5322 §3.2.3, RFC 5321 §4.5.3.1.1, RFC 1035 §2.3.4.
+        parts = value.split("@")
+        if len(parts) != 2 or len(value) > 254:
+            raise MetadataError("field: invalid public email syntax")
+        local, domain = parts
+        atom = r"[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+"
+        labels = domain.split(".")
+        if (len(local) > 64 or re.fullmatch(atom + r"(?:\." + atom + r")*", local) is None
+                or len(labels) < 2 or re.fullmatch(r"[A-Za-z]{2,63}", labels[-1]) is None
+                or any(re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?", label)
+                       is None for label in labels)):
             raise MetadataError("field: invalid public email syntax")
     elif value_type == "isni":
         if re.fullmatch(r"[0-9]{4} [0-9]{4} [0-9]{4} [0-9]{3}[0-9X]", value) is None:

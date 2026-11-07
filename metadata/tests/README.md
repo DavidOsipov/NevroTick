@@ -23,6 +23,8 @@ The independent expected facts are fixed before inspecting generated output:
 | Missing, changed or unexpected output | `check` rejects without changing any output bytes | Silent correction or ignored extra file |
 | Source-delivery obligation | Independently decoded component/field/artifact value and multiplicity match the admitted record | Consistently wrong generator output, wrong owner with the same count, duplicate binding or unexpected public field passes |
 | Invalid input, unsafe source or unsafe output | Bounded rejection, no raw rejected value or foreign file leak, prior output remains intact | Partial generation or source mutation |
+| Generator or output identity changes during the operation | Refuse the stale result and preserve foreign state; healthy frozen operation still succeeds | Success justified only by an initial snapshot or a test callback being reached |
+| Failure before versus after rename | Precommit failure removes owned staging; postcommit flush uncertainty preserves the complete published tree and reports a distinct nonzero outcome | Deleting a committed candidate, blind retry or treating visible-byte readback as durability acknowledgement |
 
 Observer controls deliberately perturb a promised value, omit one required file,
 and add one unexpected file. A real CLI healthy case remains separate. JSON,
@@ -30,10 +32,16 @@ XML and CSV observations use independent standard-library parsers. The Rust/RC
 checks inspect the generated source literals; they establish source projection
 facts and do not claim resource compilation or native readback.
 
-The versioned `field-coverage.json` delivery result describes reached source
+The versioned `field-coverage.json` delivery contract describes required source
 bindings, separately from the complete field-disposition register. Semantic
 observers do not call production encoders to derive their interpretation. The
 exact-byte check remains necessary for stale/corrupt candidate custody.
+Permanent boundary cases cover reached decoded and field-specific limits.
+Independent literal/interaction tables and critical delivery bindings complement
+the named producer faults. Seeded guard controls must fail through a meaningful
+operation/result assertion; a broken import or unreached observation hook is not
+a semantic kill. Use [the finalization contract](../../docs/plans/windows-package-metadata.md#136-source-tool-finalization-and-failure-outcomes--7-november-2026)
+for source identity and publication-outcome expectations.
 Actual Cargo/resource warm-build invalidation, independent linked-resource
 readback and final-package privacy tests belong to the existing MD-P4–MD-P5
 integration owners; these source tests do not execute or qualify those gates.

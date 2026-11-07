@@ -665,6 +665,56 @@ remain distinct from actual delivery and native qualification.
 | Pending real consumer, MD-P4 build/component owner | Wire the frozen generation into actual resource consumers; independently read linked resources. Run cold → consumed-input change → warm → clean control, check rerun rules and actual selected compiler/SDK/target/profile identity. Preserve intentional per-component/version/licence differences. |
 | Pending dependent package/native work, MD-P4–MD-P5 W11-W05/W11-W08/W11-W10 | Check namespace references/collisions when real identities exist; exact package/export allowlists exclude internal authoring and private values. Retain accidental-copy/private-sentinel controls, actual signed/submitted/Store/installed identities and independent resource readback. Existing prerequisites and execution holds remain. |
 
+**Source-tool finalization, 7 November 2026:** David authorized closing the
+subsequent audit's admission/observer defects and regression gaps under
+[metadata §13.6](../docs/plans/windows-package-metadata.md#136-source-tool-finalization-and-failure-outcomes--7-november-2026).
+The current portable checkpoint includes strict email and byte/encoding XML
+admission, decoded/Store/service/resource-reference boundaries, independent
+delivery bindings and literal properties, in-flight source/code/path identity,
+and precommit versus publication-uncertain recovery. Preserve the audit's useful
+healthy controls and require the formerly surviving identity-comparison fault
+to fail through actual publication behavior. The historical adoption receipt
+below does not establish completion of these later checks.
+
+**Finalization receipt, 7 November 2026:** the dirty working-tree source candidate
+at `df6e28a4641f2f046373a9c5640aa60736716a22` passed **227 tests in 95.385 seconds,
+with no failures, errors or skips**, using Python 3.12.3 on Linux/WSL. This adds
+44 permanent cases: 21 admission-boundary, 12 lifecycle, six bounded property
+methods and five additional delivery checks. Independent expected bindings,
+33 joint single-line values, six multiline product values and real-CLI examples
+retain accepted neighboring behavior and per-role licence/privacy distinctions.
+
+The XML reader now checks the actual UTF-8 byte/declaration form. Email syntax,
+decoded/field limits and in-flight source/code/output identity have permanent
+controls. Ordered file/containing-directory/staging flushes precede rename;
+failed final parent flush preserves the committed tree and returns the distinct
+typed/API and redacted CLI exit-3 outcome. Readback confirms visible contents,
+not the lost durability acknowledgement. Release-mode source validation still
+refuses the unfinished release candidate.
+
+Four named isolated guard variants now fail through meaningful operation/result
+assertions: final generation-code comparison, final check-code comparison,
+parent-path refusal and replaced-check-root binding. The comparison controls
+retain their observation call, so failures do not merely indicate a missing
+test hook. This closes the audit's formerly surviving guard counterexample;
+the bounded experiment establishes no general mutation percentage.
+
+Two independent reviews accepted the source implementation, test oracles and
+instructions. Ten independent API/CLI healthy/fault controls passed, including
+postcommit uncertainty and preserved bytes. The coordinator also validated,
+generated and checked the actual source and independently read the 15-file tree:
+14 payload contracts, 160 selected source bindings and eight code-module hashes.
+The 731 field dispositions and 261 unresolved values retain their prior scope;
+the authored product record was not changed. First RED and corrected fixture
+attempts remain in the evidence alongside final GREEN results.
+
+Exact source/test/input identities, raw logs and output hashes are retained under
+`/tmp/nevrotick-metadata-finalization-20261107-ln3poplx/`; the independent behavior
+controls are under `/tmp/nevrotick-metadata-independent-20261107-o4wfvxgx/`.
+No Cargo/resource compilation, native Windows, service/clock, package, signing,
+Store, fuzz or formal operation occurred. Existing MD-P4–MD-P5 consumers,
+native/package owners and all execution holds remain.
+
 **Adoption source receipt, 7 November 2026:** the dirty working-tree candidate
 at `df6e28a4641f2f046373a9c5640aa60736716a22` passed the configured metadata suite:
 **183 tests, 59.779 seconds, no failures, errors or skips**, on Linux/WSL with

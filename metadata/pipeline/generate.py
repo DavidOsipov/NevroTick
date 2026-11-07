@@ -59,6 +59,18 @@ PUBLIC_STRINGS = (
 )
 
 
+class PublicationUncertainError(MetadataError):
+    """Rename completed, but the final containing-directory flush was not acknowledged.
+
+    The committed tree is retained. This is neither a precommit failure nor
+    permission to overwrite/retry; a read-only check can reconcile visible bytes
+    but cannot retroactively confirm the failed durability acknowledgement.
+    """
+
+    def __init__(self) -> None:
+        super().__init__("metadata-publication-durability-unconfirmed")
+
+
 def _field_value(model: Metadata, key: str) -> str:
     """Return only a populated/derived value; unresolved empty text stays absent."""
     for field in model.fields:
@@ -416,7 +428,11 @@ def _directory_identity(descriptor: int) -> tuple[int, int]:
 
 
 def _parent_unchanged(path: Path, descriptor: int) -> None:
-    """Reject renamed/replaced ancestors before publishing a path-facing result."""
+    """Bind a held directory to its current path before a path-facing result.
+
+    The caller's owned isolation remains necessary after this observation; this
+    check cannot prevent a competing same-identity mutation after it returns.
+    """
     current = _open_directory(path)
     try:
         if _directory_identity(current) != _directory_identity(descriptor):
@@ -473,6 +489,9 @@ def _write_payload(staging: int, relative: str, data: bytes) -> None:
             os.fsync(destination)
         finally:
             os.close(destination)
+        # File flushes alone do not acknowledge the entries in reached child
+        # directories. Flush this held container before its parent is published.
+        os.fsync(directory)
     finally:
         os.close(directory)
 
@@ -495,7 +514,9 @@ def generate(root: Path, output: Path, source: Path | None = None, *,
     The parent must be owned and unwritable by other users. Protecting it from a
     malicious process with the same identity requires the build sandbox. Rename
     publication is atomic within that owned-parent prerequisite; no updater or
-    overwrite operation is supplied here.
+    overwrite operation is supplied here. Precommit failures release staging;
+    a failed final parent flush after rename raises PublicationUncertainError
+    and preserves the committed complete tree for explicit reconciliation.
     """
     model = load_metadata(root, source, stage=stage)
     outputs = _expected(model)
@@ -529,7 +550,10 @@ def generate(root: Path, output: Path, source: Path | None = None, *,
         os.fsync(staging)
         os.rename(temporary, output.name, src_dir_fd=parent, dst_dir_fd=parent)
         temporary = None
-        os.fsync(parent)
+        try:
+            os.fsync(parent)
+        except OSError as error:
+            raise PublicationUncertainError() from error
         return {"status": "generated-" + stage, "file_count": len(outputs),
                 "pending_count": len(model.pending), **field_counts(model)}
     finally:
@@ -544,7 +568,11 @@ def generate(root: Path, output: Path, source: Path | None = None, *,
 
 def check(root: Path, output: Path, source: Path | None = None, *,
           stage: str = "source") -> dict[str, object]:
-    """Compare every actual file against fresh expectations without writing output."""
+    """Read a path-bound frozen candidate and recheck source/code/root identity.
+
+    This is observational: it neither repairs bytes nor establishes durability,
+    native interpretation or stability after the caller releases its isolation.
+    """
     model = load_metadata(root, source, stage=stage)
     expected = _expected(model)
     output = _outside_source(root, output)
@@ -588,12 +616,16 @@ def check(root: Path, output: Path, source: Path | None = None, *,
                     observed_outputs[relative] = data
 
     try:
+        _parent_unchanged(output, root_fd)
         visit(root_fd)
         if seen != set(expected):
             raise MetadataError("missing-output-file")
         verify_delivery(model, observed_outputs)
         if load_metadata(root, source, stage=stage) != model:
             raise MetadataError("source-changed-during-check")
+        if _code_identity() != json.loads(expected["receipt.json"])["tools"]:
+            raise MetadataError("generator-changed-during-check")
+        _parent_unchanged(output, root_fd)
         return {"status": "checked-" + stage, "file_count": len(seen),
                 "pending_count": len(model.pending), **field_counts(model)}
     finally:

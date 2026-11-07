@@ -1046,14 +1046,15 @@ class ModelBoundaryTests(SourceFixture):
         with mock.patch.object(self.generator, "_open_directory", side_effect=swap_after_admission), mock.patch.object(
             self.generator, "_code_identity", side_effect=observe_before_cleanup
         ):
-            try:
+            with self.assertRaises((self.contract.MetadataError, OSError)):
                 self.generator.generate(self.root, parent / "generated")
-            except (self.contract.MetadataError, OSError):
-                pass
         self.assertTrue(swapped, "The actual parent-admission seam must be exercised")
         self.assertTrue(during_generation, "Observe foreign state before cleanup can mask writes")
         self.assertEqual(during_generation, [before])
         self.assertEqual(snapshot(foreign), before)
+        self.assertFalse((moved / "generated").exists(), "A rebound parent must not publish under its moved identity")
+        self.assertFalse((foreign / "generated").exists())
+        self.assertEqual(list(moved.glob(".nevrotick-metadata-*")), [])
 
     def test_source_file_changed_during_read_is_rejected(self) -> None:
         original_read = self.contract.os.read

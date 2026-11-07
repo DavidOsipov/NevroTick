@@ -13,7 +13,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).absolute().parents[2]))
 
 from metadata.pipeline.contract import MetadataError, load_metadata  # noqa: E402
-from metadata.pipeline.generate import check, field_counts, generate  # noqa: E402
+from metadata.pipeline.generate import PublicationUncertainError, check, field_counts, generate  # noqa: E402
 
 
 def main(arguments: list[str] | None = None) -> int:
@@ -36,6 +36,14 @@ def main(arguments: list[str] | None = None) -> int:
             report = generate(args.root, args.output, args.source, stage=args.stage)
         else:
             report = check(args.root, args.output, args.source, stage=args.stage)
+    except PublicationUncertainError:
+        # A complete rename is already visible. Report the distinct outcome
+        # without deleting it, exposing raw errors or automatically retrying.
+        print(json.dumps({"schema_version": 1, "status": "publication-uncertain",
+                          "durability": "unconfirmed",
+                          "action": "check-existing-output-before-retry"},
+                         sort_keys=True, allow_nan=False))
+        return 3
     except (MetadataError, OSError, UnicodeError, RecursionError, ValueError):
         # Raw rejected values, source paths and platform errors may be private.
         # Detailed valid pending owners are part of metadata.json, not stderr.

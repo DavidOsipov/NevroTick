@@ -365,12 +365,20 @@ def _rc(raw: bytes) -> dict[str, object]:
 
 
 def _xml(raw: bytes) -> dict[str, object]:
-    """Interpret the fixed authoring tree, rejecting DTD/entities and extra nodes."""
-    text = raw.decode("utf-8")
-    body = text[text.find("?>") + 2:] if text.startswith("<?xml ") else text
-    if any(token in body for token in ("<!DOCTYPE", "<!ENTITY", "<!--", "<?")):
+    """Read the declared UTF-8 byte form, rejecting unclaimed XML constructs."""
+    # This reader owns the generated XML 1.0/UTF-8 subset. Decoding to a str
+    # before parsing would make ElementTree ignore a conflicting declaration.
+    declaration, newline, body = raw.partition(b"\n")
+    if (not newline or re.fullmatch(
+            rb"<\?xml version=(['\"])1[.]0\1 encoding=(['\"])(?:utf-8|UTF-8)\2\?>",
+            declaration.rstrip(b"\r")) is None):
+        raise MetadataError("delivery-xml-encoding-declaration")
+    # Enforce strict UTF-8 without replacing malformed bytes.
+    raw.decode("utf-8")
+    if any(token in body for token in (b"<!DOCTYPE", b"<!ENTITY", b"<!--", b"<?")):
         raise MetadataError("delivery-xml-declaration")
-    root = ET.fromstring(text)
+    # The parser must still see the bytes and their encoding declaration.
+    root = ET.fromstring(raw)
     namespace = "{" + _NAMESPACE + "}"
     if root.tag != namespace + "metadata" or set(root.attrib) != {"schema-version", "stage"}:
         raise MetadataError("delivery-xml-root")

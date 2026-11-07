@@ -821,6 +821,12 @@ the exact allowed payload and private-authoring exclusions, namespace references
 and final signed/Store/installed observations. The existing W11-W10 receipt owns
 actual execution; none of these planned exits is a native pass or a new Core task.
 
+The [source-tool finalization contract](windows-package-metadata.md#136-source-tool-finalization-and-failure-outcomes--7-november-2026)
+closes the audited admission/observer and regression gaps at the same portable
+checkpoint. W11-W10 records its integrated results and publication-uncertain
+recovery; this continuation does not move the ordinary Core queue or close
+MD-P4–MD-P5 by source-tool evidence.
+
 The [7 November service/diagnostic metadata refinement](windows-package-metadata.md#12-service-and-diagnostics-metadata-refinement--7-november-2026)
 adds bounded field dispositions, actual SCM/MUI propagation and servicing,
 conditional signature/native-manifest descriptions, and installed event-resource

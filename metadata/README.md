@@ -66,6 +66,15 @@ imports, output names, templates, executable commands or network access.
 Successful commands print a bounded JSON result. Rejections return nonzero and
 omit raw values/private paths; inspect the reviewed pending entries or a valid
 generated descriptor for owner actions.
+If rename succeeded but the final parent-directory flush failed, the CLI instead
+returns exit `3` with `status: "publication-uncertain"` and
+`durability: "unconfirmed"`. Preserve that candidate and inspect it with read-only
+`check` before deciding a next action; do not retry generation into the existing
+directory or remove it as failed staging. A passing `check` confirms visible
+contents, not the missing flush acknowledgement. Direct API callers receive
+`PublicationUncertainError`, a `MetadataError` subtype. Ordinary rejection remains
+exit `1`; command-argument errors retain their separate parser outcome.
+
 The result includes `field_count` and `unresolved_field_count`; the latter counts
 pending fields and derived observations with no value yet. It is not a count of
 release blockers. The detailed coverage report separates these two kinds.
