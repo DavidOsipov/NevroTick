@@ -5,6 +5,73 @@ conditional reference, not whole file. Repository architecture outranks external
 examples. Documentation adaptation performed no Cargo graph, Rust build, parser
 experiment or Windows UI execution.
 
+## Modern Rust release review — 9 November 2026
+
+The [modern stable Rust reference](implement-rust/references/modern-rust.md)
+supports `implement-rust` with version-specific choices and caveats. It was
+checked against NevroTick `61fd244a6bbd12cee887e6974da1b730a5aa1561`, whose
+toolchain/MSRV already selected 1.99.1, edition 2024 and resolver 3. This update
+changes instructions, not the toolchain, product source, dependency graph,
+runtime topology, CPU floor or qualification status. Review/use evidence belongs
+in the [existing skill-quality record](../../plans/2026-10-30-skill-quality.md#modern-rust-reference-review--9-november-2026).
+
+The requested interval is **2024-11-09 through 2026-11-09**, inclusive. Checked
+the [official release index](https://blog.rust-lang.org/releases/), each announcement
+below and the corresponding language, compiler/platform, library/const API,
+Cargo, rustdoc and compatibility sections present in the
+[complete release notes](https://doc.rust-lang.org/releases.html), also available
+in the [1.99.1 source snapshot](https://github.com/rust-lang/rust/blob/1.99.1/RELEASES.md).
+The index ends at **1.99.1 (2026-10-15)**: **17 feature releases and 9 patches**
+fall in the interval. Rust 1.82 (2024-10-17) is outside it; previously stable
+prerequisites are not counted as new features. Do not infer future releases from
+a schedule or treat beta/nightly material as a stable contract.
+
+The table records the disposition of every release, with representative changes
+that explain that disposition. The linked release/API inventories retain the full
+upstream lists; this is not a copied changelog. Unrelated target support,
+diagnostic/rustdoc presentation and minor convenience APIs do not each require a
+normative instruction. **Prefer** means use for a matching touched contract;
+**conditional** needs a concrete path and existing approval/evidence; neither
+orders a mechanical code rewrite.
+
+| Release / official source | Date | Guidance disposition |
+| --- | --- | --- |
+| [1.83.0](https://blog.rust-lang.org/2024/11/28/Rust-1.83.0/) | 2024-11-28 | Conditional const construction, `BufRead`/collection/`ControlFlow` conveniences; preserve explicit OS-error classification and artifact-path inspection. |
+| [1.84.0](https://blog.rust-lang.org/2025/01/09/Rust-1.84.0/) | 2025-01-09 | Prefer strict-provenance tools inside necessary adapters and exact integer square root where applicable. Cargo MSRV-aware resolution reinforces existing resolver policy; IP address classification is not reachability. |
+| [1.84.1](https://blog.rust-lang.org/2025/01/30/Rust-1.84.1/) | 2025-01-30 | Patch review: compiler/incremental/diagnostic/build corrections; no distinct coding pattern needed. |
+| [1.85.0](https://blog.rust-lang.org/2025/02/20/Rust-1.85.0/) | 2025-02-20 | Document current 2024 safety/drop/capture semantics and async closures. Midpoint is conditional on rounding; `Waker::noop` cannot establish executor progress. |
+| [1.85.1](https://blog.rust-lang.org/2025/03/18/Rust-1.85.1/) | 2025-03-18 | Patch review includes merged doctests and Windows rename regressions; already subsumed by the selected pin. |
+| [1.86.0](https://blog.rust-lang.org/2025/04/03/Rust-1.86.0/) | 2025-04-03 | Prefer safe disjoint mutable access. Upcasting, adjacent floats, target-feature functions and `OnceLock::wait` are conditional on existing ownership/numerical/CPU/blocking contracts. |
+| [1.87.0](https://blog.rust-lang.org/2025/05/15/Rust-1.87.0/) | 2025-05-15 | Document precise trait captures, signed midpoint and bit reinterpretation limits; conditional cursor/extraction helpers and pipes. Preserve explicit native links and CPU-feature eligibility for safer intrinsics. |
+| [1.88.0](https://blog.rust-lang.org/2025/06/26/Rust-1.88.0/) | 2025-06-26 | Prefer checked array chunking and readable 2024 let chains. Conditional cfg/cache conveniences; `select_unpredictable` is no constant-time guarantee. No ordinary need for naked assembly. |
+| [1.89.0](https://blog.rust-lang.org/2025/08/07/Rust-1.89.0/) | 2025-08-07 | Conditional const inference, lifetime syntax, `Result::flatten` and file locks; heed raw-pointer diagnostics and cross-target doctest execution. AVX-512 support changes no v3 minimum. |
+| [1.90.0](https://blog.rust-lang.org/2025/09/18/Rust-1.90.0/) | 2025-09-18 | Prefer checked signed subtraction when its range matches. Linux linker defaults and multi-package publishing do not change Windows linking or publication authority. |
+| [1.91.0](https://blog.rust-lang.org/2025/10/30/Rust-1.91.0/) | 2025-10-30 | Prefer checked signed differences; distinguish panic-on-overflow `strict_*`. Conditional duration/collection helpers and intermediate build directories. ARM64 tier changes do not expand the supported target. |
+| [1.91.1](https://blog.rust-lang.org/2025/11/10/Rust-1.91.1/) | 2025-11-10 | Patch review: illumos locking and WASM linking; no Windows coding rule to add. |
+| [1.92.0](https://blog.rust-lang.org/2025/12/11/Rust-1.92.0/) | 2025-12-11 | Preserve stronger never-type diagnostics. Conditional lock downgrade; zeroed allocation and raw union borrows retain initialization/aliasing obligations. |
+| [1.93.0](https://blog.rust-lang.org/2026/01/22/Rust-1.93.0/) | 2026-01-22 | Prefer safe exact-size array views; bound `Duration::from_nanos_u128`. Raw-parts/`MaybeUninit` facilities grant no unsafe permission. Stable jump-table control is already configured. |
+| [1.93.1](https://blog.rust-lang.org/2026/02/12/Rust-1.93.1/) | 2026-02-12 | Patch review: compiler/rustfmt crashes, Clippy false positives and WASI descriptors; no new product requirement. |
+| [1.94.0](https://blog.rust-lang.org/2026/03/05/Rust-1.94.0/) | 2026-03-05 | Prefer fixed-size windows where useful; conditional lazy/iterator helpers. Review Cargo includes/TOML parser compatibility, closure captures and Windows time bounds when affected. |
+| [1.94.1](https://blog.rust-lang.org/2026/03/26/Rust-1.94.1/) | 2026-03-26 | Patch review includes removal of incompatible Windows `OpenOptionsExt` additions and Cargo archive-security fixes; check exact patch versions. |
+| [1.95.0](https://blog.rust-lang.org/2026/04/16/Rust-1.95.0/) | 2026-04-16 | Prefer useful `cfg_select!`, match guards and strict 0/1 conversion. Atomic updates need repeatable closures. Conditional insertion/range/layout/hint facilities; no custom target replacement. |
+| [1.96.0](https://blog.rust-lang.org/2026/05/28/Rust-1.96.0/) | 2026-05-28 | Conditional diagnostic assertions and explicit new range types. Preserve pointer validity/trait contracts; Cargo security fixes and platform changes add no execution permission. |
+| [1.96.1](https://blog.rust-lang.org/2026/06/30/Rust-1.96.1/) | 2026-06-30 | Patch review: MIR miscompilation, Cargo retries/timeouts and bundled libssh2 security fixes. |
+| [1.97.0](https://blog.rust-lang.org/2026/07/09/Rust-1.97.0/) | 2026-07-09 | Conditional bit helpers, Cargo warning/lockfile-path controls; review v0 demangling, pin coercion, enum-layout assumptions and Windows socket errors when affected. |
+| [1.97.1](https://blog.rust-lang.org/2026/07/16/Rust-1.97.1/) | 2026-07-16 | Patch review: LLVM miscompilation fix; compiler version is part of evidence identity. |
+| [1.98.0](https://blog.rust-lang.org/2026/08/20/Rust-1.98.0/) | 2026-08-20 | Conditional integer buffers, UTF-16 decoders, bool-to-Result and subrange helpers. Reject relaxed algebraic floats for current timing/security contracts; review Windows TLS destruction and ownership compatibility. |
+| [1.98.1](https://blog.rust-lang.org/2026/09/03/Rust-1.98.1/) | 2026-09-03 | Patch review: trait-object vtable miscompilation correction; no evidence NevroTick exercised the defect. |
+| [1.99.0](https://blog.rust-lang.org/2026/10/01/Rust-1.99.0/) | 2026-10-01 | Document inherited default-feature override, raw-borrow diagnostics, tagged-union evaluation and ownership-transfer cautions. Defer unneeded variadics/layout machinery; preserve strict decoding and CI/artifact identity. |
+| [1.99.1](https://blog.rust-lang.org/2026/10/15/Rust-1.99.1/) | 2026-10-15 | Current pin already includes x86-64 FFI `bool` codegen correction, `wcslen` fallback and macOS linker repair. No upgrade or affected-product claim. |
+
+Exact method contracts are linked beside the reusable guidance. Three source
+qualifications matter: the detailed 1.98 notes/rustdoc include `bool::ok_or*`
+although the announcement's API list omits them; Cargo's 1.99 notes and current
+dependency reference supersede the older Edition Guide's inherited-defaults
+rejection; `set_var`'s official safety contract explicitly permits Windows
+multithreaded calls despite its edition-2024 unsafe signature. Research is original
+instructional synthesis; no upstream code, skill, dependency or licence grant was
+imported. Existing adapted-skill notices and upstream inventories remain intact.
+
 ## Windows service workflow — 7 November 2026
 
 The same-day metadata handoff extends [maintain-windows-metadata](maintain-windows-metadata/SKILL.md)

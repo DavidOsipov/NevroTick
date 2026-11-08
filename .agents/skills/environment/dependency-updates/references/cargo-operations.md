@@ -47,9 +47,35 @@ explicitly. Published-base audits do not attest to changed local path dependenci
 Features are additive/unified under applicable resolver rules. Direct
 `default-features = false` cannot prove no other enabling path. Inspect actual
 features, source, checksum, patches, build.rs, proc macros and native libraries.
-Deliberately select future virtual workspace resolver: Rust 2024 implies resolver 3
-for packages, but virtual workspaces still need explicit workspace setting.
+Preserve and verify the actual virtual workspace's explicit resolver setting:
+Rust 2024 implies resolver 3 for packages, but a virtual workspace does not infer
+it from a package edition. The reviewed NevroTick workspace already selects 3;
+MSRV-aware resolution still does not prove compilation with the selected compiler.
 Choose edition/MSRV only under authorized workspace decision, never incidentally.
+
+### Version-specific Cargo choices
+
+With **Cargo 1.99 and edition 2024 or later**, a member can override an inherited
+dependency's `default-features`, including disabling defaults enabled by the
+workspace declaration. Earlier 2024-edition Cargo rejected that conflicting
+`false`; older editions ignore it with a warning. Use this only for an intended
+graph change and inspect all enabling paths: feature unification still applies.
+See [inherited dependencies](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#inheriting-a-dependency-from-a-workspace),
+[feature unification](https://doc.rust-lang.org/cargo/reference/features.html#feature-unification)
+and the [1.99 release notes](https://doc.rust-lang.org/releases.html#version-1990-2026-10-01).
+Reconcile versioned notes with rolling docs; an older Edition Guide description
+of the 1.85–1.98 rejection is not the 1.99 rule.
+
+Treat newer build conveniences as conditional: Cargo cache cleanup (1.88) does
+not run under `--offline`/`--frozen`; `build.build-dir` (1.91) changes intermediate
+artifact location; config includes/TOML 1.1 (1.94) require review of every included
+input and repository parser; `build.warnings` and `resolver.lockfile-path` (1.97)
+do not replace lint/linker policy or authorize an untracked lockfile. Keep source,
+config, lockfile and outputs bound to the existing execution lane. See the
+[release survey](../../../implementation/SOURCES.md#modern-rust-release-review--9-november-2026)
+and [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html).
+Do not change global cache/configuration, publish packages or adopt a new graph
+merely because a stable Cargo version supports it.
 
 ## Qualify the final graph
 

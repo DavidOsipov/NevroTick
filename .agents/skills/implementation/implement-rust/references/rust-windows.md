@@ -3,6 +3,10 @@
 Read canonical architecture sections 9–11, 17.1 and 18.1 before boundary changes.
 Choices implement those responsibilities, not replacement service design.
 
+For newer pointer/provenance, initialization, atomic or blocking-library APIs,
+use [modern stable Rust](modern-rust.md). Preserve this reference's ownership and
+completion contracts when substituting a newer mechanism.
+
 For SCM dispatch, status/control callbacks, account qualification or native-worker
 stop/restart, read [Windows service adapters](windows-service-adapters.md).
 Load its bounded S0.2/CHECK-27 procedure only for those boundaries.

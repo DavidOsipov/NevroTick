@@ -5,6 +5,10 @@ MSRV, concurrency limits or required assets. Pinned PdfCraft Rust port's evidenc
 distinctions appear in [SOURCES](../../SOURCES.md): reference material, not NevroTick
 implementation.
 
+For version-specific language/library choices and compiler compatibility, consult
+[modern stable Rust](modern-rust.md). Read patch as well as feature release notes;
+new availability does not change the admitted target, graph or evidence lane.
+
 Before Cargo checks/compilation, inspect relevant local/build/proc-macro code and
 command expansion. `--locked` prevents resolution changes but may fetch;
 `--offline` restricts Cargo retrieval, not arbitrary build-script I/O. Neither is

@@ -1,6 +1,6 @@
 ---
 name: "implement-rust"
-description: "Implement, refactor or review NevroTick Rust logic, ownership, typed errors, safe diagnostics, recovery, state, concurrency and Windows adapter boundaries."
+description: "Implement, refactor or review NevroTick Rust logic, stable API choices, ownership, typed errors, safe diagnostics, recovery, state, concurrency and Windows adapter boundaries."
 ---
 
 # Implement Rust
@@ -9,6 +9,15 @@ Start with repository instructions/current architectural owner. Preserve request
 implementation/review/planning scope, dirty work and resolved decisions. Ordinary
 code edits must not create Cargo workspaces, dependencies or service architecture
 as side effects.
+
+Before choosing language/library features, inspect the actual toolchain, member
+MSRV/edition, target and admitted feature graph. For newer syntax, standard-library
+replacements, pointer APIs or compiler compatibility, read
+[modern stable Rust](references/modern-rust.md). Prefer safe APIs that simplify the
+touched contract; preserve explicit rejection, rounding, guard lifetimes and
+resource limits. Stable availability is not a reason for mechanical rewrites,
+new unsafe code, a dependency/toolchain change or a claimed performance gain.
+Keep the detailed release survey in the linked source register, not every task.
 
 Read the shared [implementation contract](../CONTRACT.md). For every changed
 function/module, identify preconditions, postconditions, failure and effect/state

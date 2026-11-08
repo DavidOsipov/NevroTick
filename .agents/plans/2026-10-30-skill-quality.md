@@ -548,3 +548,112 @@ amended four files to a new manifest/diff identity; Git publication supplies the
 durable commit identity. The final check also compares the actual paragraph and
 its quotation with the judge's supplied narrow wording. No unexecuted repository,
 behavioral, product or Windows check is converted into a pass by either verdict.
+
+## Modern Rust reference review — 9 November 2026
+
+### Request, scope and acceptance
+
+David requested locating the Rust-writing skill, reviewing the last two years of
+Rust features for NevroTick usefulness, improving the skills/references where
+justified and committing the result to `main`. Starting candidate:
+`61fd244a6bbd12cee887e6974da1b730a5aa1561`; the isolated checkout was clean.
+The relevant entry point is `implementation/implement-rust`, with existing
+contract, numerical, Windows, execution, CPU and Cargo owners.
+
+Acceptance for this instruction-only task is: cover all stable releases in
+2024-11-09–2026-11-09 using official sources; distinguish suitable, conditional
+and inappropriate mechanisms against actual code/configuration; keep guidance
+discoverable without duplicating existing policy; verify the integrated skill
+pack and reviewed diff before the authorized main update. These are local task
+criteria, not additional application or release gates. The source register owns
+the 26-release inventory and the modern reference owns reusable decisions.
+
+The actual workspace already pins Rust/MSRV 1.99.1, edition 2024 and resolver 3.
+This task changes no Rust source, Cargo configuration, lockfile, target flags,
+runtime, dependency graph, native permission or formal-work deferral. No compiler
+upgrade is needed to use the documented stable facilities.
+
+### Research and project fit
+
+Two read-only researchers independently covered the earlier (1.83–1.88) and later
+(1.89–1.99.1) releases. A third reviewed the actual repository for fit and existing
+ownership. The coordinator inspected the source/configuration, official release
+index and relevant API/edition/Cargo contracts, and acquired the versioned
+upstream `1.99.1/RELEASES.md` (SHA-256
+`0311ba85c08f659f13bb22aff0dc3837c6c291008529ebd9e5efc9c75b5f321f`).
+This is evidence of the inspected text, not a signature or product qualification.
+
+The review found existing `as_chunks` use in NTS negotiation, privilege decoding
+and the transport series, provenance-aware native handle conversions, and
+`AtomicU32::try_update` in bounded service work admission. These are reasons to
+teach their contracts accurately, not evidence of missing implementations.
+Array windows are a conditional simplification for touched adjacent-sample code.
+The exact nearest-ties-even rounding owner prevents mechanical midpoint changes.
+
+The integrated guidance explicitly distinguishes slice errors from duplicate-key
+HashMap panics; exact-length views from complete semantic admission; checked from
+strict/panicking arithmetic; bit reinterpretation from range conversion; ordinary
+from relaxed algebraic floating-point semantics; edition-dependent guard lifetimes;
+retryable atomic closures from exactly-once effects; blocking std APIs from async
+completion; allocation provenance from native handle identity; and stable features
+from adopted dependencies/CPU/runtime policy.
+
+The Cargo reference replaces its obsolete future-workspace wording with the
+actual explicit resolver policy and explains the 1.99/2024 inherited-defaults
+change without claiming feature isolation. Main Rust, Windows and execution
+entry points link to one conditional modern reference. The implementation source
+register retains release coverage and source discrepancies. No new skill or
+imported-skill inventory change is necessary.
+
+### Verification and review
+
+Before editing and on the integrated candidate,
+`python3 -B .agents/skills/scripts/check_skills.py` passed for all 66 skills.
+The skill-creator `quick_validate.py` also accepted `implement-rust`. A separate
+standard-library-only structural check passed all **37 added local links/anchors**
+and exact release/date parity against the upstream snapshot (**26 entries**).
+Git whitespace checks passed; all seven changed files are Markdown, with no
+unstaged product/configuration changes. No checksum manifest exists at
+`docs/SHA256SUMS.txt`; unrelated design-bundle manifests are unaffected.
+
+The review candidate was frozen with diff SHA-256
+`3af087ccf666cf953d34dc6157c70244b50d7cd5bd40606f61c289a09047861a`.
+A separate reviewer verified its seven file hashes, source snapshot, exact
+release/date inventory, actual code fit and consequential official contracts.
+Its verdict was **READY after two narrow documentation corrections**: replace
+the obsolete `struct.AtomicU32` Rustdoc link with the stable alias and specialized
+method link, explicitly separating experimental generic `Atomic<T>`; describe
+`static_mut_refs` as deny-by-default rather than an unoverrideable prohibition.
+Both corrections were applied. No substantive API/policy correction or broader
+research pass was required. The reviewer saw a completed researcher's summary
+through agent-status output, disclosed that exposure and independently checked
+primary sources; this is not claimed as a blind review.
+
+A different fresh-context agent used the updated skill on eight bounded review
+proposals, with no desired answers or prior findings supplied. It loaded the
+entry point, modern reference and relevant existing owners, checked current
+source/configuration and primary docs, and produced these independently checked
+outcomes:
+
+| Proposal | Observed decision and discriminating evidence |
+| --- | --- |
+| Ignore arbitrary packet chunk remainder | Reject; 7/9-byte inputs distinguish malformed messages from valid 8/16-byte neighbors. Preserve the legitimate exact-length-invariant exception. |
+| Exact 8-byte array view plus existing domain construction | Accept; 7/9 bytes reject, 8 bytes decode with explicit big-endian meaning and still undergo domain admission. |
+| Network-derived `strict_sub` | Reject panic-based admission; distinguish underflow from representable zero/positive results and keep the actual signedness contract. |
+| Publish an event inside an atomic updater | Reject; closure success can precede a failed CAS, causing duplicate or uncommitted events. Publication after `Ok` still needs the existing transaction owner. |
+| `OnceLock::wait` on the current-thread engine | Reject blocking; distinguish already-ready access from delayed/failed initialization, responsiveness and actual native completion. |
+| Inherited defaults disabled in one member prove graph-wide absence | Accept the 1.99/2024 override syntax, reject the isolation claim; distinguish unified from separate build contexts and feature activation from retained binary bytes. |
+| One integer-to-bool conversion for wire and Win32 | Accept exact 0/1 wire admission; reject it for a documented nonzero-success result, where 2 is a useful contrasting case. |
+| Signed midpoint replaces ties-even | Reject; (1, 2) and (-1, -2) expose the rounding difference, while (2, 3) and (2, 4) are passing neighbors. |
+
+This single review exercise demonstrates correct use for the supplied cases. It
+is not an old/new comparison, measured improvement, unseen generalization result
+or executed application test. No files or configuration were changed by that
+agent. The two subsequent documentation corrections do not alter those case
+decisions; the final structural checks cover their resulting bytes.
+
+Product Cargo, native Windows, formal and performance runs are outside this
+Markdown-only change's evidence. Existing product gates and execution holds
+remain with their owners. Final commit identity supplies the durable candidate;
+the frozen review hash above identifies the earlier pre-correction/pre-receipt
+bytes, not the final commit.
