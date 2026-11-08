@@ -2497,6 +2497,73 @@ consumer, Windows, provider or release qualification. The final receipt receives
 a whitespace/link-scope check before publication; its addition does not extend
 the reviewers' inspected candidate.
 
+#### Interim self-signed MSI clarification — 8 November 2026
+
+**Owner correction and basis:** after `e9539c0b20b2e2d79a913420e932259fa8e4f14b`,
+David reported no personal publicly trusted code-signing certificate and accepted
+SignPath Foundation if eligible or an own generated certificate for an interim
+MSI. [OD-05 §7.8](../docs/nevrotick-owner-decisions.md#78-signpath-and-interim-self-signed-msi--8-november-2026)
+records the current decision; [signing guide §7.1](../docs/windows-time-signing-guide.md#71-interim-self-signed-msi-profile)
+owns its evidence. This qualifies the earlier signing-capability requirement by
+declared profile; it does not undo full-file coverage or revive unsigned/OpenPGP
+substitution. Earlier review quotations/receipts describe their original candidates.
+
+This permitted interim profile is not confined to laboratory builds, but its
+availability does not select MSI instead of the current complete Store MSIX.
+No public publisher-trust result or installation compatibility is established.
+Use the same W11-W10/S6.4/R-06 card and existing checks:
+
+| Existing owner / checks | Required continuation |
+| --- | --- |
+| Release/security; CHECK-18/26 | Bind the permitted MSI profile, full supported signature inventory and independently approved signing key to protected release authority. Qualify key custody/rotation/compromise handling, expected-key identity and tamper/removed/wrong-key controls in the declared verifier context; preserve approved upstream signatures and final-byte/padding checks. |
+| Windows/package QA; CHECK-18/23 | Retain the unchanged clean-target untrusted-chain result separately from controlled signature verification. Qualify actual installation, warnings/refusal, runtime and maintenance on each claimed policy configuration without customer certificate import or protection changes. A blocked configuration is not a supported pass. |
+| Existing helper/loader/lifecycle owners; CHECK-16/18/23, CHECK-27 when reached | Resolve each existing public-trust assumption for the profile without unconditional verifier success or weaker required CIG/loader admission. Qualify later migration to the admitted public signer and reject silent downgrade. Store MSI/EXE and direct-MSIX trust constraints remain separate. |
+
+**Disposition:** absence of a publicly trusted certificate alone is accepted for
+this named interim MSI profile. Missing/invalid required signatures or another
+required-control incompatibility remains blocking for the affected configuration.
+The code-signing provider's acceptance, MSI delivery selection and exact release
+approval remain distinct. No certificate/key was generated, exported or installed,
+and no signing, provider submission, workflow, native run or release was performed.
+Current execution holds and optional-provenance scope remain unchanged.
+
+**Next action:** populate the existing signer-capability card with the declared
+profile and expected key/verifier/trust observations when the MSI alternative is
+assigned; continue current Store-MSIX/Core preparation independently. Documentation
+validation is recorded below after review, without a signing/native pass.
+
+**Documentation review and validation — interim MSI clarification**
+
+The frozen ten-file candidate uses base
+`e9539c0b20b2e2d79a913420e932259fa8e4f14b`, manifest SHA-256
+`3039bb099185adfcc56336e180f6abd01abbcc1f1ee95b63cd5edce0e18b722d`
+and diff SHA-256
+`c0ecbb9155d07d5a5d97fb328ad78b3d7ee02ade8da8057df4da0dd3e1d9a68c`.
+These identities precede this factual receipt.
+
+`padding_primary_sources` completed the scoped owner/signing-guide technical
+review, matched both document identities and reported no technical findings.
+`signing_coverage_judge` inspected the actual ten-file diff and relevant contracts,
+matched the diff at start/end, and returned **READY for documentary integration**
+with no blocking findings. Both were separate read-only reviewers with earlier
+context, not fresh-context reviews. Failed fresh launches from the earlier
+candidate supply no coverage for this clarification. No reviewer edited files
+or executed repository code, Windows tools, signing or account actions.
+
+The judge's comprehension is preserved verbatim:
+
+> The candidate records David’s clarification as an accepted interim MSI signing option: an owner-controlled generated certificate may sign the installer and required owned payloads while publicly trusted signing is unavailable. This permission is expressly broader than laboratory use. It preserves the requirement to sign every supported shipped artifact, keeps approved upstream signatures, and separates verification against the approved project key from public Windows publisher trust.
+
+> The project still prepares one complete Store-first MSIX; this clarification does not select MSI delivery or authorize signing or publication. If MSI is selected later, W11-W10/S6.4 and R-06 must qualify the declared self-signed profile, retain clean-machine trust failures accurately, resolve actual helper/loader dependencies and verify installation and maintenance on each claimed configuration. Lack of a public CA certificate alone no longer blocks that named profile, while missing signatures and incompatibility with another required control remain unresolved work.
+
+Coordinator static checks passed all **20** added/changed local link/anchor pairs,
+unchanged frontmatter for both modified skills and diff whitespace checks. No
+root documentation checksum bundle exists. The full skill checker remains
+**not run** because the `security-audit` skill's required OS namespace isolation
+was unavailable; no repository execution bypass was used. The final receipt
+receives a scope/whitespace check before publication. Documentation readiness
+establishes no signing key, working MSI profile or native/release qualification.
+
 ### 4.23 Optional build-provenance research — 4 November 2026
 
 David requested research on evidence connecting a Store release to his repository,

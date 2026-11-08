@@ -107,7 +107,12 @@ attempt with services. Its 8 November §7.7 requires signatures on the package
 and every supported shipped file, including nonbinary files; use architecture
 §19.7 and signing guide §4.1. Foundation display and David's release authority
 remain; MSI delivery needs a later decision. The unsigned-MSI/OpenPGP exception
-is superseded. Missing signing capability blocks release, not source preparation.
+is superseded. Missing signing capability under the declared profile blocks release, not source preparation.
+The later §7.8 accepts interim self-signed MSI if MSI delivery is selected:
+all-file signatures remain mandatory, but lack of a public CA certificate alone
+does not block that profile. Follow signing guide §7.1; record approved-key
+integrity, clean-machine chain distrust and actual runtime/channel results
+separately. No customer certificate import, protection bypass or fake trust pass.
 
 Windows exploit-protection work: read [architecture section 15.4](docs/windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission)
 and [hardening section 6.4](docs/windows-time-development-hardening.md#64-per-process-mitigation-qualification).

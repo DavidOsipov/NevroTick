@@ -26,6 +26,14 @@ candidate for required inner signatures even on MSIX. This policy
 selects no TUF protocol, custom updater, remote kill switch, secondary installer
 or new privileged recovery service.
 
+The later [OD-05 §7.8 clarification](nevrotick-owner-decisions.md#78-signpath-and-interim-self-signed-msi--8-november-2026)
+permits interim self-signed MSI if that delivery route is selected. Apply
+[signing guide §7.1](windows-time-signing-guide.md#71-interim-self-signed-msi-profile):
+all required signatures remain, public CA trust is explicitly absent, and actual
+channel/installed-code/native qualification remains open. The absence of a
+public certificate alone does not block this declared profile. This permission
+does not authorize publication, customer certificate import or a protection bypass.
+
 The [existing Windows task](../tasks/windows11-integration.md) owns execution
 records under W11-W10, with W11-W05 and the existing release, security, storage
 and clock owners. A document review does not close OPEN-3/11/12/14, supply a
@@ -162,6 +170,11 @@ Bind approval to an auditable candidate evidence record containing:
   individual/package results and post-Store preservation. Reconcile every shipped
   supported signable file, including nonbinary formats; retain exact bytes and
   unresolved capability/coverage blockers. No catalog-only or OpenPGP exception.
+- For an admitted interim self-signed MSI, name the profile, independently
+  approved key, controlled verification trust, unchanged-target public-chain
+  failure and actual policy/installation outcomes. Keep that accepted trust
+  limitation visible in release status and later signer-migration records;
+  it is not a public publisher-trust pass or a claim that users verify the key.
 - Audience, visibility, flight/rollout state, observation/stop criteria, recovery
   target, approval owner/date and subsequent publication/availability observations.
 

@@ -3921,9 +3921,11 @@ CHECK-18 records package/catalog and individual-signature evidence separately.
 Preserve legitimate upstream signatures and all security/licence/lifecycle gates.
 Signing-provider treatment of Chrony derivation, proprietary brand assets and the
 first release remains unresolved; do not infer rejection or change the brand
-licence. Missing supported production signing capability is open work and blocks
-release, not independent source/design work. R-06 owns the remaining concrete
-signer/format/custody questions.
+licence. Missing signing capability required by the declared profile blocks its
+release, not independent source/design work. The later OD-05 §7.8 accepts interim
+self-signed MSI; lack of a public CA certificate alone does not block that named
+profile. R-06 owns its approved-key, public-trust and installed-code questions
+under [signing guide §7.1](windows-time-signing-guide.md#71-interim-self-signed-msi-profile).
 
 Sign and verify required inner artifacts before assembling and signing enclosing
 containers; qualify actual Store processing and repeat delivered-artifact checks.
@@ -4015,9 +4017,22 @@ sign containers inside-out, then reconcile the actual delivered package and
 individual signatures. Keep stage-specific full-file hashes/lengths and protected
 approval through final use. Store transformation must preserve the required
 inner signatures or the release remains blocked pending resolution/owner choice;
-it cannot be passed using catalog-only trust. Missing production signing
-capability is likewise open work, not N/A. The unsigned-MSI/OpenPGP exception is
+it cannot be passed using catalog-only trust. Missing signing capability required
+by the declared profile is likewise open work, not N/A. The unsigned-MSI/OpenPGP exception is
 superseded; ordinary users do not supply manual detached verification.
+
+**Later owner qualification, 8 November:** [OD-05 §7.8](nevrotick-owner-decisions.md#78-signpath-and-interim-self-signed-msi--8-november-2026)
+permits interim self-signed MSI, including required owned payloads, if MSI
+delivery is later selected. This preserves individual-signature coverage while
+explicitly accepting absent public CA trust for that profile. Verify against the
+independently approved key in the declared controlled verifier context; retain
+clean-machine untrusted-chain results and actual policy/runtime outcomes
+separately. A lab trust substitution is not public publisher qualification.
+No blanket trust-error suppression, customer trust-store installation or weakened
+helper/CIG/loader admission follows. Existing signed-helper assumptions must be
+resolved for the profile before claiming compatibility; Store MSI/EXE and MSIX
+trust requirements remain unchanged. [Signing guide §7.1](windows-time-signing-guide.md#71-interim-self-signed-msi-profile)
+owns the precise evidence and later public-signer transition.
 
 Signature presence does not establish automatic checking on every launch/load
 or safe behavior. Preserve PackageIntegrity, required process/loader controls,
@@ -4260,7 +4275,7 @@ Every check below is **planned / not executed**. Owners are future engineering r
 | CHECK-15 | Corrupt/old/incompatible state, reparse/hardlink/path swap, disk-full and interrupted replacement | Protected files cannot redirect privileged writes; invalid critical policy does not become permissive | P3/P4, platform/security |
 | CHECK-16 | Inspect build/PE/runtime evidence against section 15.4's role manifest; test activation/startup failure, actual SCM child-policy enforcement, DLL canaries, import/load paths and valid dependencies | Required protection enforced before normal protected work; valid workflows and applicable UI accessibility remain functional; failure preserves ownership-aware recovery | P0/P6/P7, security/build |
 | CHECK-17 | Secret-bearing paths/exports; required-event filtering; diagnostic-session expiry; sink failure/flooding | Allowlisted useful output at every enabled level; authorized finite collection; non-suppressible required routing; bounded aggregate storage/loss and safe cleanup. See section 12.3 and hardening section 9.8 | P2/P3/P5, security |
-| CHECK-18 | Verify the signed package and complete per-file signature inventory under section 19.7/signing guide §4.1, expected identities, submitted/delivered lineage and post-Store inner-signature preservation; challenge missing/removed/wrong-signer signatures and omitted nested content. Apply section 19.6/guide §5.2 for embedded PE padding, complete-byte custody and consumer trust; qualify installed-code/helper trust, lifecycle and policy restrictions | Invalid candidate rejected; fully covered valid candidate succeeds without developer roots or disabled protections. Package/catalog trust cannot substitute for required individual signatures. No authority inherited by unauthenticated application content; neither Store recognition nor detached OpenPGP supplies missing product authorization, native trust or runtime evidence | P6/P7, release |
+| CHECK-18 | Verify the signed package and complete per-file signature inventory under section 19.7/signing guide §4.1, expected identities, submitted/delivered lineage and post-Store inner-signature preservation; challenge missing/removed/wrong-signer signatures and omitted nested content. Apply section 19.6/guide §5.2 for padding/custody and guide §7.1 only for the accepted interim self-signed MSI profile; qualify actual installed-code/helper trust and policy behavior | Invalid signatures/key identities are rejected; supported valid behavior succeeds without customer trust-store changes or disabled protections. Interim self-signed MSI records controlled approved-key verification and clean-machine public-trust failure separately, never as publicly trusted `Valid`. Package/catalog trust cannot replace required individual signatures or supply missing component/effect authority | P6/P7, release |
 | CHECK-19 | CI valid/invalid lint/SAST/source-origin controls, test-discovery and exit propagation | Relevant bad input fails actual gate; valid code passes; no zero-test success | P1/P7, tooling |
 | CHECK-20 | Complete dependency/feature/license/source and build-provenance inventory | Compatible selected grants, pinned origins, no hidden native/build dependencies or signing exposure | P0/P1/P7, release/license |
 | CHECK-21 | One-hour baseline and 72-hour reconnect/fault soak on named hardware | CPU/memory/wakeups/size/handles meet declared budgets; no teardown-masked leaks | P4/P5/P7, performance |
@@ -4419,7 +4434,7 @@ Exit requires CHECK-14/17/21/22 on actual Windows. Manual Narrator/keyboard evid
 
 S6.1 finalizes per-binary mitigations and DLL load policy for the selected complete MSIX. S6.2 qualifies its provisioning, lifecycle and fault recovery. S6.3 verifies one-product behavior, unelevated launch, old in-memory component rejection, repair/Reset/downgrade policy and removal of every component before or without UI launch. S6.4 prepares the Store submission candidate and capability justification, then records actual Store decisions/signing, delivered package verification, SBOM and release provenance. Candidate preparation does not require prior certification; public release still requires the actual approved and qualified artifact. No MSI prerequisite or UI-only package is delivered.
 
-Exit requires CHECK-13/16/18/20/23/26 for the declared Store MSIX profile, with applicable authority, dependency and recovery checks. Store rejection or concrete technical infeasibility returns delivery choice to David; a later MSI or a different provider is not an automatic exit. Missing required production signatures blocks release. Do not declare a laboratory certificate, local schema pass or OpenPGP signature equivalent to delivered-artifact trust and native qualification.
+Exit requires CHECK-13/16/18/20/23/26 for the declared Store MSIX profile, with applicable authority, dependency and recovery checks. Store rejection or concrete technical infeasibility returns delivery choice to David; MSI is not an automatic exit. Missing required signatures under the declared profile blocks release; the accepted interim self-signed MSI profile does not require public CA trust but still needs its explicit guide §7.1 evidence. No lab certificate, local schema pass or OpenPGP signature establishes public publisher trust or native qualification.
 
 Prepare and rehearse the [release operations](release-policy.md#9-qualification-matrix-and-remaining-decisions)
 under those same owners: approved support/transition record, usable account and

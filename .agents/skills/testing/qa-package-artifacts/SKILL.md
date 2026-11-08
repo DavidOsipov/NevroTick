@@ -44,8 +44,17 @@ Preserve approved upstream signatures; do not replace them just to obtain a pass
 Challenge missing/removed/invalid or wrong-signer signatures, omitted nested PE
 and changed signed scripts beside the fully covered healthy inventory. Reconcile
 required inner signatures again on the actual Store-delivered package. Missing
-signing capability is open work/release blocked, not N/A; signature presence
+signing capability under the declared profile is open work/release blocked, not N/A; signature presence
 alone proves no runtime enforcement. Reuse existing CHECK-18/23/26 and receipt.
+
+Apply [the interim self-signed MSI procedure](../../../../docs/windows-time-signing-guide.md#71-interim-self-signed-msi-profile)
+only under its declared owner-approved profile. Verify expected-key integrity in
+the recorded controlled context, then retain the unchanged clean-machine chain
+distrust and actual policy/installation outcome. Do not call that public trust,
+equate every self-signed artifact with a lab-only fixture or reject the profile
+solely for lacking a public CA certificate. Wrong-key, invalid/removed signatures
+and other required-control failures remain blockers; no blanket ignore of tool
+errors or customer certificate import follows.
 
 Apply [PE-padding and final-byte qualification](../../../../docs/windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes)
 at the existing admitted artifact stage. Record embedded versus catalog/package

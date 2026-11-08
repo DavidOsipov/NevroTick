@@ -25,6 +25,12 @@ account, access-removal, renewal or recovery rehearsal.
 Sections 5.1–5.2 also refine cross-route qualification where applicable: keep
 embedded PE, package/catalog and exact final-artifact evidence separate.
 
+**Later 8 November clarification:** [OD-05 §7.8](nevrotick-owner-decisions.md#78-signpath-and-interim-self-signed-msi--8-november-2026)
+accepts an interim self-signed MSI profile while David has no personal publicly
+trusted code-signing certificate. [Section 7.1](#71-interim-self-signed-msi-profile)
+distinguishes approved-key integrity from public publisher trust. This is an
+available signing profile, not a switch from the selected Store MSIX direction.
+
 **OPEN-11** remains open for actual selected-route acceptance and qualification. This guide does not claim that an account, certificate, signing integration, submitted package or release gate has been completed.
 
 ## 2. What “getting the certificate” means here
@@ -171,8 +177,10 @@ Source files, discarded build intermediates/static libraries and deliberately
 damaged laboratory fixtures are not shipped artifacts merely because they exist
 in the repository. Separately admitted OS/runtime dependencies keep their own
 trust and inventory owner; this rule does not instruct agents to modify OS files.
-If the actual format is signable but the production key/service is unavailable,
-record **open signing work / release blocked**, not unsupported or N/A.
+If the actual format is signable but signing capability for the declared profile
+is unavailable, record **open signing work / release blocked**, not unsupported
+or N/A. The owner-approved interim self-signed MSI profile in section 7.1 is a
+signing capability; absence of a public CA certificate alone does not block it.
 
 **Signature identity and custody.** For each inventory entry record path and
 container/stream location, actual format, ownership/provenance, required signing
@@ -183,6 +191,13 @@ package evidence; distinguish observed pass/fail, unknown/offline, not run and
 reasoned non-applicability. A generic `Valid` result, signer display name or
 Microsoft/Store signer class alone does not identify an approved component.
 Certificate renewal must remain possible under the admitted identity policy.
+
+Name the actual trust profile as well as the signing format. For interim
+self-signed MSI, record approved-key signature verification separately from
+**public trust: not established / untrusted chain** on an unchanged clean system.
+A positive result in a deliberately configured verification VM is not a default
+consumer-Windows trust pass. Section 7.1 defines this narrow owner exception;
+it does not relax the selected Store route's trust or mitigation requirements.
 
 Preserve valid approved upstream signatures. They can satisfy the component's
 individual-signature obligation; do not reattribute the component to NevroTick.
@@ -235,7 +250,7 @@ as a substitute for these controls. [S19, S20, S22, S31]
 
 ## 5. Authenticode verification before publishing
 
-Apply the per-file Authenticode checks to required supported artifacts on every route. The MSI command applies only if MSI is selected; section 6.1 supplies the separate Store package/catalog checks. Unsupported commands do not waive required signatures: choose the admitted format verifier and retain distinct results.
+Apply the per-file Authenticode checks to required supported artifacts on every route. The MSI command applies only if MSI is selected; section 6.1 supplies the separate Store package/catalog checks. Unsupported commands do not waive required signatures: choose the admitted format verifier and retain distinct results. For section 7.1's accepted interim self-signed MSI, use its separately labelled verification environment and clean-machine trust observation; the recipe below is not permission to suppress an untrusted-chain error or claim public trust.
 
 Use the admitted Windows SDK's SignTool on the actual returned files. Example commands below are **verification recipes, not executed results**; substitute the real file names and run from a trusted tool environment.
 
@@ -247,7 +262,7 @@ signtool verify /pa /all /v /tw .\release\Product.ClockBroker.exe
 if ($LASTEXITCODE -ne 0) { throw "Broker signature verification failed or warned" }
 ```
 
-Repeat the payload check for every file required by the signed inventory. `/pa` selects Authenticode verification policy, `/all` verifies all signatures present and `/tw` warns about a missing timestamp. Treat warnings as a release failure requiring investigation. Verifying the MSI does **not** recursively prove every embedded executable's signature. [S7]
+Repeat the payload check for every file required by the signed inventory. `/pa` selects Authenticode verification policy, `/all` verifies all signatures present and `/tw` warns about a missing timestamp. For the publicly trusted profile, failures/warnings block acceptance. For the interim self-signed profile, section 7.1 records expected clean-machine chain distrust separately; unexpected failures and missing/invalid signatures still block it. Verifying the MSI does **not** recursively prove every embedded executable's signature. [S7]
 
 The release checker must also enforce our intended identity and package manifest: a successful generic trust check alone can accept a valid signature from an unintended publisher. The accepted Foundation publisher display is not sufficient NevroTick project identity: qualify rejection of an unrelated, legitimately Foundation-signed artifact alongside acceptance of the approved NevroTick artifact. Bind admission to the approved project/artifact lineage and protected manifest, not display text or editable version resources alone. Design publisher/certificate renewal handling explicitly rather than permanently pinning a single leaf certificate without a rotation plan. [S2]
 
@@ -394,7 +409,8 @@ global Wintrust policy. W11-W10/S6.4 owns the
 | **Microsoft Store with MSI/EXE** | Possible listing/distribution route for an already signed complete installer | The developer must supply trusted signatures; it does not provide free signing for an unsigned MSI |
 | **Azure Artifact Signing Public Trust** | Paid hosted-signing alternative when the applicant is eligible | Not a free OSS entitlement; identity/geography restrictions apply |
 | **Commercial public code-signing provider** | Possible later owner-selected alternative if cost, identity verification and provider policies are acceptable | Obtain current eligibility and price directly; no free availability or automatic fallback assumed |
-| **Self-signed laboratory certificate** | Controlled installer/privilege/lifecycle experiments | Not public publisher trust and not a production distribution solution |
+| **Owner-controlled interim self-signed certificate** | Explicitly accepted interim MSI release profile in section 7.1 | No public CA/Windows publisher trust or warning-free installation promise; channel, installed-code and native compatibility still need qualification |
+| **Separate self-signed laboratory certificate** | Controlled installer/privilege/lifecycle experiments | Lab trust substitutions qualify only the recorded experiment, not normal consumer trust or the interim release profile's key custody |
 
 Microsoft's Store MSI/EXE rules require the installer and included PE files to be signed with certificates chaining to an accepted authority; Store MSIX signing is a different path. A provider's willingness to sign an MSI containing an unsigned upstream DLL would not itself satisfy that Store requirement. [S8]
 
@@ -529,14 +545,96 @@ independently rejected on the device. [Section 7](release-policy.md#7-compromise
 preserves that residual and the distinct MSA/Entra/application recovery routes.
 
 <a id="7-development-and-the-accepted-initial-openpgp-release-profile"></a>
+<a id="7-development-signing-and-the-superseded-openpgp-profile"></a>
 
-## 7. Development signing and the superseded OpenPGP profile
+## 7. Development signing, interim MSI and historical profiles
 
-**Historical profile, superseded on 8 November 2026:** this section preserves the earlier MSI decision and the limits attached to it, with its former anchor retained for existing links. It no longer authorizes unsigned installers/payloads or an OpenPGP-only release, even if free signing is unavailable. Current production work follows section 4.1 and OD-05 §7.7. The laboratory boundaries below remain applicable; the former release-profile instructions are retained only as history.
+The later 8 November [OD-05 §7.8 clarification](nevrotick-owner-decisions.md#78-signpath-and-interim-self-signed-msi--8-november-2026)
+accepts the interim self-signed MSI option in §7.1. This preserves actual native
+signatures under section 4.1; it does not restore the historical unsigned-MSI/
+OpenPGP permission retained in §7.2. Earlier anchors remain for existing links.
 
 The architecture described an isolated, test-signed S0.6 MSI to qualify installation, privilege separation and removal behavior. Any later authorized laboratory package experiment must retain the current Windows execution stop until its owner-controlled gate is released. Trust a test certificate only inside the disposable laboratory VM; record the substituted trust store and certificate in the evidence. Restore or destroy the VM afterward.
 
 That experiment does not satisfy the public publisher-trust portion of CHECK-18 or CHECK-23. Ordinary users must not be instructed to install our development root certificate. Do not disable Windows signature, reputation or application-control protections to make a public package install.
+
+### 7.1 Interim self-signed MSI profile
+
+**Scope:** David accepts signing an interim MSI and its required owned payloads
+with an owner-controlled generated certificate while public-trust signing is
+unavailable. This is not limited to a lab build and does not require buying a
+certificate. It is an available profile for a later selected complete MSI,
+subject to its actual qualification and exact-candidate approval; Store MSIX
+remains selected. No key generation, signing or publication has occurred here.
+
+The useful guarantee is signature correctness against an **independently
+approved project key**, within the format's authenticated coverage. Record the
+approved public certificate/key identity through protected release authority;
+reading a certificate from the artifact being checked cannot authenticate its
+owner. An attacker can supply a different self-signed key. Signature removal
+does not universally prevent MSI/PE execution, and PE padding/full-byte custody
+still follows section 5.2. [S22, S32]
+
+Keep the three evidence layers explicit:
+
+| Observation | Required result and limit |
+| --- | --- |
+| Release QA in an isolated verifier context with the approved certificate explicitly trusted | Expected-key signature/format checks succeed; changed covered content, removed signatures and a different key, including the same subject/display name, fail the actual release gate. Independently bind expected key and final hashes to the approved candidate. Record the trust substitution; this is not public Windows trust. |
+| Untouched clean target, without installing that certificate | Record the actual untrusted-chain/publisher result and effective policy. Expected chain distrust is permitted only by this named interim profile; retain the failure/status, never relabel it `Valid` or ignore all nonzero verifier returns. No public-trust CHECK-18 pass is claimed. |
+| Actual delivery/install/startup/helper/loading/update/repair/removal | Qualify every claimed configuration with protections active. Record warnings and policy refusals honestly; a blocked configuration is not a supported installation. Other required security/lifecycle behavior must still work beside adversarial controls. |
+
+Windows Installer's ability to install a direct MSI depends on applicable policy;
+there is no universal MSI requirement that every signature chain to a public CA.
+Microsoft's current SmartScreen guidance gives self-signed certificates the same
+initial-warning behavior as unsigned files. Smart App Control does not treat
+self-signed certificates as trusted-provider certificates; its separate reputation
+assessment prevents concluding that every self-signed file is always blocked.
+Do not advertise improved default Windows trust from signature presence. [S32]
+
+The accepted lower publisher-trust level is explicit; ordinary consumers gain
+no independent automatic proof that this self-signed key belongs to NevroTick
+merely by downloading the MSI. Publish truthful release-channel/profile status.
+Do not add customer root/Trusted People/Trusted Publishers installation, ask
+users to disable protection, or require manual detached verification. The
+controlled verifier's certificate trust belongs only in its disposable lab.
+
+For any existing helper, maintenance or loader path that relies on a publicly
+trusted signer, R-06/W11-W10 must resolve that exact admission dependency before
+claiming the interim profile works. Keep CIG/DLL protections and current authority
+requirements; do not replace `WinVerifyTrust` failure with unconditional acceptance
+or introduce a custom runtime verifier as a side effect. Missing public trust is
+not by itself a blocker for this approved profile; a demonstrated incompatibility
+with another required control remains a concrete blocker for that configuration.
+
+Maintain separate signing authority from ordinary lab keys: document protected
+private-key custody, authorized use, backup, expiry, rotation and compromise
+response. Expose no private key/PFX or password in the repository, package or logs.
+Use the same metadata-first, inner-before-outer, strong-digest/timestamp and final
+inventory controls as section 4.1, preserving approved upstream signatures.
+A trusted timestamp does not make a self-signed issuer publicly trusted. Recheck
+the actual timestamp/verification behavior rather than claiming CA revocation
+service for an unissued self-signed certificate. [S7, S16]
+
+**Channel boundaries:** this option does not satisfy the Store MSI/EXE requirement
+for trusted-CA signatures on the installer and all PE files. Direct MSIX delivery
+requires device trust and is not made equivalent to direct MSI by this permission.
+Do not transfer those Store rules into an invented blanket WinGet-MSI prohibition;
+the [existing WinGet plan](plans/winget-distribution.md) owns actual channel and
+manifest validation. No alternative delivery channel is selected here. [S8, S33]
+
+If SignPath accepts the project, qualify its exact allowed artifact graph and
+Foundation publisher identity. Transition from the interim key to the approved
+public-trust signer with deliberate issuer-policy updates, new final-byte records
+and upgrade/repair/rollback checks. The old interim profile must not become a
+silent downgrade after the stronger profile is adopted. Provider eligibility and
+the owner's release decision remain separate; self-signing grants no exemption
+from Foundation restrictions. [S1, S2]
+
+### 7.2 Historical unsigned-MSI and OpenPGP permission
+
+**Superseded on 8 November 2026:** the quoted former profile below is not an
+admissible current release route. Section 7.1 permits actual embedded/native
+self-signatures, not unsigned installers supplemented only by detached signatures.
 
 > **Retained 29 October OD-05 policy:** if the owner returns to MSI and no usable free Authenticode route is available initially, David permits an MSI without project Authenticode signatures, accompanied by OpenPGP signatures. This earlier removal of a blanket Authenticode blocker does not override the 3 November MSIX selection, approve a paid service or authorize an automatic release. The package remains one complete product, and David approves the exact candidate.
 >
@@ -576,12 +674,21 @@ That experiment does not satisfy the public publisher-trust portion of CHECK-18 
 | Complete MSIX lifecycle on supported Windows, including reset/removal and W32Time restoration | Package/Windows verifier | Native execution remains held; final Store-artifact evidence required before broad release |
 | Exact-candidate visibility and broad release after post-Store qualification | David Osipov | Owner decision retained; no publication by this work |
 | Per-format native signing capability and SignPath eligibility if pursued | Maintainer / provider / verifier | Required inner-file capability also applies to MSIX; missing capability blocks release, not independent source preparation. MSI delivery remains conditional; the OpenPGP-only exception is superseded |
+| Interim self-signed MSI, if MSI delivery is later selected | Owner / release / Windows verifier | OD-05 §7.8 accepts the profile; section 7.1 requires approved-key coverage, truthful public-trust failure, actual channel/installed-code qualification and later signer migration. No key or signed artifact is established |
 | Stable-support and transition commitment | David Osipov / release owner | [Release-policy §2](release-policy.md#2-support-status-and-proposed-baseline) is proposed; no stable series, support lifetime, backport schedule or response deadline approved |
 | Renewal, revocation, access removal and recovery | Release/security owner | [Operational procedures are written](release-policy.md#7-compromised-publisher-repository-or-build-authority); actual private inventory and applicable renewal/access/recovery rehearsals remain pending and required before public release |
 
 **OPEN-11 tracks acceptance and qualification of the selected Store MSIX route and its required per-file signatures.** MSI delivery remains a later owner choice, with no unsigned/OpenPGP-only exception. Preparation does not wait for speculative Store preapproval. Initial controlled submission does not claim completed post-Store checks. Broad release requires actual delivered-artifact coverage, installed-file trust, protection and lifecycle evidence, with David's exact-candidate decision. A provider account, a screenshot of a certificate or this guide alone is insufficient.
 
 ## 9. Sources and related documents
+
+Primary sources checked for the later 8 November self-signed MSI clarification:
+
+- **S32:** [SmartScreen reputation](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation), [Smart App Control signing](https://learn.microsoft.com/en-us/windows/apps/develop/smart-app-control/code-signing-for-smart-app-control), [SAC overview](https://learn.microsoft.com/en-us/windows/apps/develop/smart-app-control/overview) and [Windows Installer/software restriction policy](https://learn.microsoft.com/en-us/windows/win32/msi/windows-installer-and-software-restriction-policy). These distinguish warnings, trusted-certificate admission, reputation and policy-dependent installation; they do not establish a universal self-signed-MSI ban or successful NevroTick installation.
+- **S33:** [MSIX certificate creation/trust](https://learn.microsoft.com/en-us/windows/msix/package/create-certificate-package-signing) and [App Installer trusted-certificate requirement](https://learn.microsoft.com/en-us/windows/msix/app-installer/troubleshoot-appinstaller-issues#trusted-certificates). This MSIX trust requirement is not a generic MSI rule. S8 states the separate Store MSI/EXE CA-chain requirement.
+
+David's explicit instruction authorizes the interim profile; these sources
+establish its trust limits. No source research is a signing or native pass.
 
 Primary sources checked for the 8 November all-signable shipping requirement:
 

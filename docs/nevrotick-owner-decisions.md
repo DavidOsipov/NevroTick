@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.21<br>
+**Document:** NV-DEC-001, revision 1.22<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
@@ -18,6 +18,11 @@ requires signatures on the installer/package and every shipped file with a
 supported format-appropriate signing mechanism, including nonbinary files.
 This supersedes the unsigned-MSI/OpenPGP permission and catalog-only exemptions
 for individually signable payloads; implementation and qualification remain open.
+
+**Later 8 November signing-resource clarification:** [OD-05 §7.8](#78-signpath-and-interim-self-signed-msi--8-november-2026)
+permits an interim self-signed MSI profile while David lacks a personal publicly
+trusted code-signing certificate. All-file signing remains required; public
+Windows trust and signature correctness are separate results.
 
 **4 November release-operations addition:** section 7.4 records authorized
 research/documentation and a proposed support baseline, not a new accepted
@@ -278,8 +283,9 @@ Windows execution stop, separate fuzz no-retry hold, storage pause and UI-M0
 deferrals remain. This amendment authorizes source/design preparation; it claims
 no working MSIX, native mitigation enforcement, signing or Store acceptance.
 
-Under §7.7, missing required production signing capability blocks the affected
-release, not source/design preparation. No delivery decision authorizes automatic
+Under §7.7, missing signing capability required by the declared profile blocks the
+affected release, not source/design preparation; §7.8 permits interim self-signed
+MSI without public CA trust. No delivery decision authorizes automatic
 publication, removes unrelated gates, approves a paid certificate or turns absent
 evidence into a pass. SignPath's acceptance remains external. [S12]
 
@@ -421,7 +427,7 @@ it is not a statement that the current repository already produces signed files.
 - Store package/catalog trust and individual signatures require separate
   evidence. Qualify the actual delivered artifact and preservation of required
   inner signatures after Store processing. Missing signatures, unsupported
-  production signing capability or incompatible transformation block release
+  signing capability required by the declared profile or incompatible transformation block release
   pending resolution; there is no catalog-only exemption for signable files.
 - The former unsigned-MSI plus OpenPGP release permission in §§7.1–7.3 is
   superseded. Ordinary users must not perform detached-signature verification as
@@ -440,6 +446,44 @@ The Store-first direction, Foundation publisher-display acceptance, David's
 human signing/release authority, Core priority and existing execution holds
 remain. This records no provider selection, paid certificate, account action,
 production signing, Store submission or completed native result.
+
+### 7.8 SignPath and interim self-signed MSI — 8 November 2026
+
+**Direct owner clarification:** David reports that he currently has no personal
+publicly trusted code-signing certificate. For MSI, the available approaches he
+intends to use are SignPath Foundation, subject to acceptance, or his own generated
+certificate; he prefers a self-signed artifact to an unsigned one. Record this as
+an accepted interim signing option, not proof of an existing key or provider access.
+
+For a later selected MSI release, an owner-controlled self-signed certificate
+may sign the complete installer and the required owned payloads. This permission
+is not confined to laboratory builds. Lack of a publicly trusted certificate
+alone does not block that explicitly declared interim profile. It does not waive
+§7.7's full supported signature coverage, approved upstream signatures, protected
+release approval or the other applicable product/channel gates.
+
+Self-signed Authenticode supplies checkable integrity and signer continuity only
+relative to an independently approved key. It supplies no public CA validation
+of David's identity, automatic Windows publisher trust or promise of warning-free
+installation. Keep signature/key verification, the expected untrusted-chain
+result on an unchanged clean machine and actual installation/runtime behavior
+separate. Do not turn an arbitrary trust failure into a successful verification.
+Use [signing guide §7.1](windows-time-signing-guide.md#71-interim-self-signed-msi-profile)
+for the bounded evidence and transition procedure.
+
+SignPath remains the intended public-trust option if the provider admits this
+project and artifact graph; its Foundation certificate identifies the Foundation,
+not a newly acquired personal certificate. Preserve its provenance and upstream
+restrictions. The self-signed option does not satisfy Store MSI/EXE CA-chain
+requirements or automatically provide trusted sideloaded MSIX/CIG admission.
+It permits no customer certificate-store installation, disabled OS protection,
+manual detached-verification requirement or unconditional helper/loader acceptance.
+
+Complete Store MSIX remains the selected delivery direction; this clarification
+does not itself switch to MSI or authorize a release. David retains exact-candidate
+approval. No paid certificate, provider application, key generation/export,
+signing operation, upload or native execution is performed or authorized by this
+documentation update. W11-W10/S6.4 and R-06 retain the concrete qualification work.
 
 ## 8. OD-06 — future research and decision queue
 

@@ -306,6 +306,15 @@ matter for inner files on MSIX as well as a later selected MSI. Missing producti
 capability blocks release, not independent source preparation. **David Osipov**
 approves releases; research supplies no submission/signing/publication authority.
 
+The later [OD-05 §7.8](nevrotick-owner-decisions.md#78-signpath-and-interim-self-signed-msi--8-november-2026)
+accepts interim self-signed MSI if MSI delivery is selected. Use
+[signing guide §7.1](windows-time-signing-guide.md#71-interim-self-signed-msi-profile)
+to resolve approved-key custody, controlled-verifier versus clean-machine trust,
+the existing helper/loader admission dependencies and later signer migration.
+Missing public CA trust alone is accepted for this named profile; missing
+required signatures, invalid identity or another required-control incompatibility
+is not waived. No consumer certificate import or new custom verifier is adopted.
+
 ### Research questions
 
 1. How do the provider's current terms treat a Rust port of Chrony, third-party/native payloads, the first-release condition and proprietary NevroTick brand assets? The current [SignPath conditions](https://signpath.org/terms.html) are labelled Draft. Give supported interpretations and questions for later authorized clarification; do not assert approval or rejection or change the artwork licence.

@@ -13,9 +13,18 @@ Read [the security contract](../CONTRACT.md), architecture sections 11, 15, 18�
 
 Use [MSIX plan §3](../../../../docs/plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper) for explicit package integrity, immutable code, exact Store-compatible CIG and per-role mitigations. Follow [§7's stages](../../../../docs/plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners): source/design preparation → locally built/test-signed mechanics when prerequisites permit → David's Store trial → actual delivered-byte qualification before broad release. Do not require prior Store approval or a Store signature to prepare the first submission. Local trust substitutions prove no Store signer-category admission; keep those final-artifact cases unexecuted until that artifact exists. Current Core priority, Windows execution stop, separate fuzz hold and storage pause remain.
 
-Apply [architecture §19.7](../../../../docs/windows-time-architecture.md#197-signatures-for-the-complete-shipped-inventory) and [signing guide §4.1](../../../../docs/windows-time-signing-guide.md#41-required-signatures-for-the-shipped-inventory): the package and every supported signable shipped file need verified signatures, including nonbinary formats. Preserve approved upstream signatures, finish metadata first and sign/verify inside-out; independently reconcile actual delivered bytes and required inner-signature preservation. Missing production signing capability blocks release, not source preparation. SignPath can be a candidate for inner files on MSIX; it is not selected. MSI delivery needs a later owner decision, and the unsigned-MSI/OpenPGP exception is superseded. Preserve native lifecycle/security evidence and David's exact-candidate authority.
+Apply [architecture §19.7](../../../../docs/windows-time-architecture.md#197-signatures-for-the-complete-shipped-inventory) and [signing guide §4.1](../../../../docs/windows-time-signing-guide.md#41-required-signatures-for-the-shipped-inventory): the package and every supported signable shipped file need verified signatures, including nonbinary formats. Preserve approved upstream signatures, finish metadata first and sign/verify inside-out; independently reconcile actual delivered bytes and required inner-signature preservation. Missing signing capability under the declared admitted profile blocks release, not source preparation. SignPath can be a candidate for inner files on MSIX; it is not selected. MSI delivery needs a later owner decision, and the unsigned-MSI/OpenPGP exception is superseded. Preserve native lifecycle/security evidence and David's exact-candidate authority.
 
 For build policy read proposed [development-hardening guide](../../../../docs/windows-time-development-hardening.md); for provider onboarding, signing scope/order and publisher verification read [signing guide](../../../../docs/windows-time-signing-guide.md). Research/proposed steps prove no adopted enforcement, provider approval, production signing or clean-machine verification. Submission, signing and publication retain task authorization/protected approval owner.
+
+For the later owner-approved interim self-signed MSI option, use
+[signing guide §7.1](../../../../docs/windows-time-signing-guide.md#71-interim-self-signed-msi-profile).
+Signing capability is profile-specific: a public CA certificate is not required
+for that named profile. All-file coverage remains; preserve approved-key checks,
+clean-machine chain distrust and actual helper/loader/channel results separately.
+Do not report public trust, suppress trust errors broadly, install customer roots
+or weaken required mitigations. This is neither lab-only permission nor an
+automatic change from Store MSIX to MSI.
 
 For artifact admission, extraction or consumption, apply
 [the canonical content-trust rule](../../../../docs/windows-time-architecture.md#196-authenticated-artifact-content-and-consumer-trust)
