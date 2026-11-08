@@ -771,6 +771,27 @@ under the existing evidence root above. Other agents' staged and working-tree
 changes are preserved. This stop supplies no MD-P4–MD-P5, native, formal or
 release pass and lifts no execution hold.
 
+**Hosted checkpoint reconciliation, 8 November 2026:** signed coordinator
+checkpoint `e76863fc2b5acc393d317fd93857213f410fe609` retains its selected
+Core/engine/wire Linux results, but has no whole-product hosted pass.
+[Repository security run 42474671456](https://github.com/DavidOsipov/NevroTick/actions/runs/42474671456)
+passed its secret scan and failed metadata admission: the 244-test corpus reached
+the two seven-quote preflight subtests above. Both source and regression-test Git
+blobs are unchanged from parent `1237c072573be36805efe8569ff4e5a652886bce`.
+This is the existing stopped metadata defect, not a new result or a reason to
+weaken the guard. Its repair and full qualification remain paused under the
+owner's resource-stop instruction; this reconciliation restarts neither.
+[Portable run 42474671434](https://github.com/DavidOsipov/NevroTick/actions/runs/42474671434)
+stopped before compilation on two stale six-member fixture expectations after
+`windows-platform` became the seventh member. A separate source-only follow-up
+pins all seven member identities and nine ordered tree scopes per target,
+preserving the AccessKit exclusion and admission controls; 168 focused Python
+checks pass. It does not alter dependencies, compiler policy or metadata code.
+The initial main push reported a required-check bypass; later source fixes must
+pass the actual required checks before promotion. The cloud child below may
+prepare its bounded contract from the published coordinator baseline, while
+reporting its own unavailable/failed checks and preserving all current holds.
+
 **Adoption source receipt, 7 November 2026:** the dirty working-tree candidate
 at `df6e28a4641f2f046373a9c5640aa60736716a22` passed the configured metadata suite:
 **183 tests, 59.779 seconds, no failures, errors or skips**, on Linux/WSL with

@@ -19,6 +19,7 @@ HOST, WINDOWS = BASE.HOST, BASE.WINDOWS
 AK = "accesskit_windows@0.34.0"
 AK_PATH = "third-party/accesskit_windows"
 AK_LICENSE = "MIT AND BSD-3-Clause AND GPL-3.0-only"
+EXPECTED_MEMBERS = ("nevrotick-ui", "ntp-wire", "time-domain", "ntp-exchange", "time-core", "nevrotick-engine", "windows-platform")
 
 
 def accesskit_record():
@@ -156,14 +157,20 @@ class AccessKitPathPatchControls(unittest.TestCase):
         self.assertIsNone(package["source"])
         self.assertEqual(package["manifest_path"], "/work/fixture/third-party/accesskit_windows/Cargo.toml")
         self.assertEqual(package["license"], AK_LICENSE)
-        self.assertEqual(len(projected["workspace_members"]), 6)
+        self.assertEqual(projected["workspace_members"], [
+            "path+file:///work/fixture/crates/" + name + "#0.0.0" for name in EXPECTED_MEMBERS
+        ])
 
     def test_commands_are_identical_to_spin_only_and_do_not_compile_accesskit_on_linux(self):
+        targets = {"portable": (HOST,), "windows": (WINDOWS,), "dependencies": (HOST, WINDOWS)}
         for lane in ("portable", "windows", "dependencies"):
             single = VERIFY.commands(lane, schema_version=3, patched_packages=("spin_on",))
             double = VERIFY.commands(lane, schema_version=3, patched_packages=("spin_on", "accesskit_windows"))
             self.assertEqual(single, double)
-            self.assertEqual(sum(label.startswith("dependency-tree-") for label, _ in double), 16 if lane == "dependencies" else 8)
+            self.assertEqual([label for label, _ in double if label.startswith("dependency-tree-")], [
+                "dependency-tree-" + (scope + "-" if scope else "") + target
+                for target in targets[lane] for scope in ("", *EXPECTED_MEMBERS, "spin_on")
+            ])
             self.assertFalse(any("accesskit_windows" in label or AK_PATH in " ".join(command) for label, command in double))
 
     def test_test_accounting_does_not_create_accesskit_package_evidence(self):
