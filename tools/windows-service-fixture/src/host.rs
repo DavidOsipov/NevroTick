@@ -35,6 +35,7 @@ use windows_platform::{
 
 use crate::{
     FixtureError, LabRole, NativeError, TokenObservationFailure,
+    diagnostics::{Diagnostics, Event, FailureCode, MemorySink, Sinks},
     error::{ServiceFailure, WorkerError},
 };
 
@@ -390,6 +391,10 @@ pub(super) struct ServiceInvocation<R: StatusReporter<Error = NativeError>, P: W
     terminal_failure: Option<LifecycleError<NativeError>>,
     /// Final result is extracted at most once; absence never becomes later Clean.
     result_taken: bool,
+    /// Invocation-owned finite output, with no effect on lifecycle decisions.
+    diagnostics: Diagnostics,
+    /// First emission of each existing primary/completion/Stop/terminal fact.
+    diagnosed_failures: [bool; 4],
     /// A wake is bound to this OS thread; the generic owner must not migrate.
     thread_bound: PhantomData<Rc<()>>,
 }
@@ -400,6 +405,42 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
         self.admission_closed = true;
         if self.failure.is_none() {
             self.failure = Some(error);
+        }
+        self.publish_failures();
+    }
+
+    /// Project each retained failure slot once; never format or consume its cause.
+    /// Loss remains in the finite output owner and never becomes a service error.
+    fn publish_failures(&mut self) {
+        if !self.diagnosed_failures[0]
+            && let Some(error) = &self.failure
+        {
+            self.diagnosed_failures[0] = true;
+            self.diagnostics
+                .emit(Event::PrimaryFailure(FailureCode::from_fixture(error)));
+        }
+        if !self.diagnosed_failures[1]
+            && let Some(error) = self.completion_failure
+        {
+            self.diagnosed_failures[1] = true;
+            self.diagnostics
+                .emit(Event::CompletionFailure(FailureCode::from_worker(error)));
+        }
+        if !self.diagnosed_failures[2]
+            && let Some(error) = &self.stop_failure
+        {
+            self.diagnosed_failures[2] = true;
+            self.diagnostics
+                .emit(Event::StopReportFailure(FailureCode::from_lifecycle(error)));
+        }
+        if !self.diagnosed_failures[3]
+            && let Some(error) = &self.terminal_failure
+        {
+            self.diagnosed_failures[3] = true;
+            self.diagnostics
+                .emit(Event::TerminalReportFailure(FailureCode::from_lifecycle(
+                    error,
+                )));
         }
     }
 
@@ -486,6 +527,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
                     Ok(()) => {
                         self.run_deadline = Some(deadline);
                         self.phase = WorkerPhase::Running;
+                        self.diagnostics.emit(Event::RunningAcknowledged);
                     }
                     Err(error) => self.fail(FixtureError::Lifecycle(error)),
                 }
@@ -564,7 +606,9 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
     /// Fence first, attempt `StopPending` once, then request bounded cancellation.
     fn begin_stop(&mut self, clock: &mut impl Clock) {
         self.admission_closed = true;
+        self.diagnostics.emit(Event::AdmissionClosed);
         let now = self.observed.cleanup_observation(clock, &mut self.failure);
+        self.publish_failures();
         if self.owner.state() == Some(ServiceState::StartPending) {
             self.check_pending(now);
         }
@@ -579,6 +623,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
                 self.stop_failure = Some(error);
             }
         }
+        self.publish_failures();
         self.phase = WorkerPhase::Stopping;
         if self.custody != WorkerCustody::Dormant {
             self.custody = WorkerCustody::Cancelling;
@@ -613,10 +658,12 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
                             self.completion_failure = Some(error);
                         }
                     }
+                    self.publish_failures();
                 }
             }
         }
         let now = self.observed.cleanup_observation(clock, &mut self.failure);
+        self.publish_failures();
         if self.owner.state() == Some(ServiceState::StopPending) {
             self.check_pending(now);
         }
@@ -632,7 +679,9 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker> ServiceInvocation<R, P> 
                 self.terminal_failure = Some(error);
             }
         }
+        self.publish_failures();
         self.phase = WorkerPhase::Finished;
+        self.diagnostics.emit(Event::Finished);
     }
 
     /// Take one finite, nonblocking step while retaining every original owner.
@@ -767,6 +816,35 @@ pub(super) fn start_invocation<A: StatusFactory, C: Clock, P: Worker>(
     notification: &StopNotification,
     worker: P,
 ) -> Result<ServiceInvocation<A::Reporter, P>, FixtureError> {
+    start_invocation_with_diagnostics(
+        role,
+        argc,
+        factory,
+        token_observer,
+        clock,
+        notification,
+        (worker, Sinks::new(MemorySink::new(true), None)),
+    )
+}
+
+/// Bind concrete finite sinks at the actual invocation composition boundary.
+/// The worker is dormant under the same contract as `start_invocation`; sinks
+/// contain no callbacks, paths or control authority. Role binds here, so a supplied
+/// output composition cannot label the invocation as a different service role.
+///
+/// # Errors
+/// Preserve pre-invocation registration/budget failure; that reporting remains
+/// outside this portable invocation-owned diagnostic seam.
+pub(super) fn start_invocation_with_diagnostics<A: StatusFactory, C: Clock, P: Worker>(
+    role: LabRole,
+    argc: u32,
+    factory: &mut A,
+    token_observer: &mut impl TokenObserver,
+    clock: &mut C,
+    notification: &StopNotification,
+    composition: (P, Sinks),
+) -> Result<ServiceInvocation<A::Reporter, P>, FixtureError> {
+    let (worker, sinks) = composition;
     let reporter = factory.register(role).map_err(FixtureError::Native)?;
     let budget =
         PendingBudget::new(LAB_WAIT_HINT_MS, LAB_PENDING_MS).map_err(FixtureError::Budget)?;
@@ -808,7 +886,7 @@ pub(super) fn start_invocation<A: StatusFactory, C: Clock, P: Worker>(
         }
     }
     let admission_closed = failure.is_some() || notification.stop_requested();
-    Ok(ServiceInvocation {
+    let mut invocation = ServiceInvocation {
         owner,
         worker,
         permit: None,
@@ -825,8 +903,13 @@ pub(super) fn start_invocation<A: StatusFactory, C: Clock, P: Worker>(
         stop_failure: None,
         terminal_failure: None,
         result_taken: false,
+        diagnostics: Diagnostics::new(role, sinks),
+        diagnosed_failures: [false; 4],
         thread_bound: PhantomData,
-    })
+    };
+    invocation.diagnostics.emit(Event::StartObserved);
+    invocation.publish_failures();
+    Ok(invocation)
 }
 
 /// Drive the same actual invocation for both inert native executable compositions.

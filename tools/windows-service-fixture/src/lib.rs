@@ -8,6 +8,9 @@
 //! product service, authenticated time, provisioning or clock authority exists.
 #![deny(unsafe_code)]
 
+#[cfg(any(windows, test))]
+#[forbid(unsafe_code)]
+mod diagnostics;
 mod error;
 #[cfg(any(windows, test))]
 #[forbid(unsafe_code)]

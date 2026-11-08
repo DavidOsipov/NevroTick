@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure only the changed portable fixture host/error owners (GPL-2.0-only).
+"""Measure the portable fixture host/error/diagnostics owners (GPL-2.0-only).
 
 The fixture runner owns tool admission and isolated execution. This module reuses
 only existing pure metric parsers and evidence export; it changes no shared gate.
@@ -42,7 +42,7 @@ C = Q.C
 E = load("fixture_metric_export", Q.ROOT / "scripts/run-service-analysis.py")
 Incomplete = C.Incomplete
 PACKAGE = "nevrotick-windows-service-fixture"
-SUBJECTS = {"host": "src/host.rs", "error": "src/error.rs"}
+SUBJECTS = {"host": "src/host.rs", "error": "src/error.rs", "diagnostics": "src/diagnostics.rs"}
 SCOPE = C.Scope(PACKAGE, tuple(SUBJECTS.items()), "fixture-local")
 COVERAGE_SCOPE = C.Scope(PACKAGE, tuple((k, Q.TOOL + "/" + v) for k, v in SUBJECTS.items()), "fixture-local")
 LIMITS = {"coverage_wall_seconds": 300, "enumeration_wall_seconds": 120,
@@ -152,7 +152,7 @@ def inventory_listing(text, subject):
 def inventory_summary(inventories):
     """Hash all native descriptor members except the optional rendered diff."""
     require(type(inventories) is dict and set(inventories) == set(SUBJECTS),
-            "Both complete fixture inventories are required.")
+            "All complete fixture owner inventories are required.")
     C.combined_mutant_count(inventories, LIMITS["maximum_mutants"])
     return {name: {"count": len(rows), "sha256": C.canonical_sha256({
                 key: {field: value for field, value in row.items() if field != "diff"}
@@ -177,7 +177,7 @@ remaining gaps remain qualification gaps even when the numeric score passes.
                     and type(row["count"]) is int and type(row["sha256"]) is str
                     for row in review["inventories"].values()), "Review inventory counters must be exact integers.")
     require(type(reconciled) is dict and set(reconciled) == set(SUBJECTS),
-            "Source reconciliation must cover both owners.")
+            "Source reconciliation must cover every fixture owner.")
     for item in reconciled.values():
         require(type(item) is dict and set(item) == {"functions_and_guards", "derives_and_macros",
                     "unsafe_and_cfg_omissions", "independent_tests", "remaining_gaps"}
@@ -303,7 +303,8 @@ def selected_span(value):
     """Recognize only source/test paths in this standalone fixture namespace."""
     if type(value) is not str or ".." in PurePosixPath(value).parts:
         return False
-    files = ("src/host.rs", "src/error.rs", "src/host_tests.rs", "src/error_tests.rs", "tests/entrypoints.rs")
+    files = ("src/host.rs", "src/error.rs", "src/diagnostics.rs", "src/host_tests.rs",
+             "src/error_tests.rs", "src/diagnostics_tests.rs", "tests/entrypoints.rs")
     return value in files or any(value == prefix + filename for filename in files
                for prefix in ("/work/source/" + Q.TOOL + "/", Q.TOOL + "/"))
 
@@ -516,7 +517,7 @@ class Session:
 
 
 def enumerate_owners(session):
-    """Enumerate both owners completely under one finite wall-clock allowance."""
+    """Enumerate all admitted owners under one finite wall-clock allowance."""
     deadline, inventories = time.monotonic() + LIMITS["enumeration_wall_seconds"], {}
     for subject in SUBJECTS:
         seconds = C.remaining_timeout(deadline, LIMITS["enumeration_wall_seconds"])
@@ -621,7 +622,7 @@ def run(args):
         fcntl.flock(writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
         output.mkdir(mode=0o700)
         evidence.mkdir(mode=0o700)
-        record = {"schema_version": 1, "scope": "portable fixture host/error only", "lane": args.lane,
+        record = {"schema_version": 1, "scope": "portable fixture host/error/diagnostics only", "lane": args.lane,
                   "status": "incomplete", "started_unix": time.time(), "commands": [], "limits": LIMITS,
                   "work": str(output / "work"), "subjects": SUBJECTS, "metrics_passed": False,
                   "qualification_passed": False, "bookends_passed": False, "index_bytes_unchanged": False,

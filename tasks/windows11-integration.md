@@ -5257,6 +5257,240 @@ with an explicit old-head lease. No account signing key, global signing setting,
 hook or shared branch history is changed. The external publication receipt
 records the final server-signed hash, signature verification and remote readback.
 
+#### 4.35.10 W11-W05/W11-W08 portable service diagnostics child — 8 November 2026
+
+**Owner and baseline.** This child continues the actual S3.1 invocation from
+§4.35.9 in `/workspace/NevroTick-diagnostics`, branch
+`service/portable-diagnostics`, baseline
+`c4f434c5cbbe5702e5c126a869c46be0bb132ef4`. Core/engine algorithms, shared
+manifests/locks, policies and schemas remain coordinator-owned. The ordinary
+Core queue in development-plan §7 is unchanged. All native/Windows, fuzz,
+storage and UI holds and post-V1 formal deferral remain in force.
+
+**Bounded contract proposed for independent freeze review.** Reuse the original
+`ServiceInvocation` decision owner and its earliest failure and three secondary
+failure slots. A fixture-private portable diagnostics module owns a closed v1
+event/field projection, bounded sink admission and loss accounting. It adds no
+dependency, logger framework, file writer, native event provider, diagnostic
+control endpoint, verbosity authorization or new failure chain.
+
+The composition uses two separate finite in-memory sinks, each at most sixteen
+fixed-size encoded records. Required lifecycle/failure attempts are independent
+of the optional sink, including INFO events with optional output off. Enqueue
+executes bounded ordinary memory operations: no callbacks, locks, I/O, retries,
+flush wait or recursively logged failures. Full/unavailable sinks preserve their
+first accepted records and count loss with saturating arithmetic. A sequence
+cannot wrap or reuse an earlier identity. It orders only this invocation;
+cross-process/restart identity, UTC truth and durable delivery remain unqualified.
+Only role, event/version, honest severity, fixed failure category and local
+sequence are admitted; no arbitrary string, error formatting/source chain,
+packet, path, identity, key, cookie or approval token reaches a sink.
+
+Events distinguish invocation start, acknowledged Running, closed admission,
+retained primary/secondary failures and finished owner custody. Finished is not
+an independent success acknowledgement and cannot occur while actual completion
+remains pending. Repeated polls and repeated result reads must not duplicate an
+event. Logging results do not feed readiness, admission, permit completion,
+cleanup, terminal status or the retained original result.
+
+**Acceptance and planned evidence.** CHECK-17: inspect actual admitted encoded
+outputs for useful fixed fields and recognizable synthetic-secret exclusion,
+including required INFO with optional output off and healthy/full/unavailable
+sinks. CHECK-27/14: compare actual owner/status/worker traces and original failure
+with each sink condition through pending readiness, Stop, cancellation, timeout
+and late failed completion; no completion output or work-charge release before
+acknowledgement. CHECK-21: finite records/memory/loss and no sink waiting; no
+native performance claim. CHECK-26: unchanged dependency/features plus GNU and
+Windows-target graph/lint lanes. Require the existing ordinary/optimized,
+format/Clippy/rustdoc/doc checks, at least 90% executable-line coverage and 95%
+mutation per affected critical file with complete generation reconciliation and
+independently reviewed equivalences receiving zero kill credit.
+
+The root agent owns `host.rs`, `lib.rs`, the new diagnostics module/unit tests
+and this task. Separate workers own `host_tests.rs` and the fixture-local metrics
+extension and its controls. Independent contract, integrated-source/privacy and metric
+reviews are required before qualification closeout. No shared schema/policy
+change is requested by this slice; any newly necessary shared change returns to
+its coordinator before dependent work.
+
+**Contract freeze review.** Independent read-only `diagnostics_contract_review`
+accepted the contract before implementation. Explicit conditions retained:
+stable wire mapping rather than Rust enum layout, useful lifecycle categories,
+Finished distinct from successful Stopped, required INFO independent of optional
+output, once-only failure projection, saturated loss and no source-chain
+formatting. This is an eight-event fixture contract. Native/provider and
+pre-invocation reporting, production metadata, runtime health consumption,
+draining/flush and debug-session authorization remain separate gaps.
+
+**Baseline execution.** Existing candidate
+`7eb81c688ad538b2744253bf686657dda93e15e315d87d989064ddc1e43a515f`
+(454 inputs) passed the fresh four-command GNU/Windows graph check and all
+70 Rust tests (69 library + one entrypoint integration; none failed, ignored or
+filtered). Records: `diagnostics-baseline-graph-v1.json` and
+`diagnostics-baseline-test-v1.json` under this worktree's existing
+`artifacts/windows-services/recovery-20261107-v1/` chain. Initial readiness
+preflights executed no compiler command: the new worktree needed the existing
+artifact directory, then the explicit installed vendor path instead of a missing
+historical `ui-m0.json` pointer. Both prerequisites were supplied without changing
+the runner. The successful graph/test receipts use the explicit vendor path.
+
+**Causal output control.** `diag-red-test-v3.json` retained an intentionally
+missing sink-byte copy on candidate
+`f86e77d7e94c5defff57ef11e180feb4ec7f686ae4d6b20cde83f042d6f78961`. It executed all
+82 library tests: 72 passed and ten output assertions failed, native exit 101,
+with healthy source/tool/vendor/config/index bookends. Five failures were the
+new actual-owner output/privacy/routing cases; five were portable output cases.
+Restoring the single record assignment repairs that deliberate fault. This is
+test sensitivity evidence, not a discovered pre-existing product vulnerability.
+Earlier `diag-red-test-v1.json` refused a stale graph before compilation;
+`diag-red-test-v2.json` retained two empty-array type-inference compiler errors.
+The errors were corrected with an explicitly typed empty slice. Neither attempt
+is behavioral RED. `diag-clippy-v1.json` separately retained three documentation/
+empty-assertion lint findings; no lint or policy was suppressed.
+
+**Integrated source checkpoint.** Independent `portable_runner_review` found no
+source/privacy/custody blocker after the sink copy was restored. It required
+direct default-composition and immediate startup-refusal output observations;
+the added test now captures the actual default constructor's required bytes,
+optional Off, first failure, fence and charge before any poll, for both roles
+and healthy/argument-refusal/initial-status-failure cases.
+
+`diag-test-v2.json` then retained 81 passing and two failing library tests.
+Both failures were incorrect new charge expectations: revision 2 item 2 above
+already requires physically acknowledged preparation to complete its permit,
+and refused Running admits no running permit. Independent review confirmed
+zero charge with unresolved cleanup/result in those two cases; pending
+initialization expiry retains one charge. Corrected only those expectations,
+adding cancellation-once and unavailable-result assertions. Production code and
+the exact-output expectations did not change.
+
+The frozen 456-input candidate is
+`5fc4d5e36db86801abb0691ef3a95f69a8ea598aaefc51268a64026a2c14493c`.
+Fresh graph (`diag-graph-v3`, four commands), GNU Clippy (`diag-clippy-v3`),
+ordinary tests (`diag-test-v3`), format (`diag-fmt-v1`), optimized tests
+(`diag-optimized-v1`), Windows-target Clippy (`diag-windows-clippy-v1`) and
+private rustdoc (`diag-rustdoc-v1`) all passed with exact-source/tool/vendor/
+configuration/index bookends. Ordinary and optimized each execute **84 Rust
+tests: 83 library plus one entrypoint integration**, none failed, ignored or
+filtered. `diag-doc-v1` ran the configured doctest lane with zero examples;
+that supplies no behavioral-test credit. The 20 fixture metric and five
+qualification Python controls also pass; they are separate from the Rust count.
+
+| Frozen changed Rust input | SHA256 |
+| --- | --- |
+| `src/diagnostics.rs` | `326c39efd8da786441bdeda446815f06507e80ff16fe279addf156f61ff5e78e` |
+| `src/diagnostics_tests.rs` | `e93b4f0dc0c67bc892a3161a3b2fc05e1f0d08a3ca4af3c8341d08ce69dec2ab` |
+| `src/host.rs` | `3ff3b32d717448e78994a76047be57c0567af7561e2d1936530626f6bb1fbb96` |
+| `src/host_tests.rs` | `873ad622beaac756ca9e7b215d676a4702c83bc281aeb225807fd11de5608a3e` |
+| `src/lib.rs` | `599151e85cd7dd94ac9a3150364adc60a56a17d7b573f3c33d591ed6018e38f4` |
+
+All five paths are relative to `tools/windows-service-fixture/`. The final
+metric helper hashes are `906e52fe012f4b972c80fb9210ee51549de16aef7b50adc248217f4faac33237`
+(`metrics.py`) and `952fe4802c6a57b42d0ca3d827f1d28a421270f62744caf952537db51ad26894`
+(`test_metrics.py`). Shared manifests, locks, policy, schemas, platform and
+Core/engine source remain unchanged from the agreed baseline.
+
+**Coverage and complete inventory checkpoint.** `diag-coverage-v2.json` passes
+all three separate executable-line gates on the frozen candidate: host
+**507/538 (94.23791821561338%)**, error **127/127 (100%)**, diagnostics
+**119/119 (100%)**. LLVM reports zero branch entries; this establishes no branch
+coverage result. Its instrumented run retains the same 84 Rust test identities.
+`diag-enumerate-v1.json` retains the complete nonempty inventories: host **85**,
+error **40**, diagnostics **16**, total **141**, for independent function/guard,
+derive/macro and cfg/unsafe omission reconciliation before mutation. Both lanes
+preserve full custody and export their raw evidence. `diag-coverage-v1.json`
+refused relative receipt paths before any command; the corrected invocation uses
+canonical absolute receipt paths, without changing the source or runner.
+
+The eight ordinary lane elapsed times were 15.99 s graph, 19.10 s GNU Clippy,
+20.55 s tests, 14.26 s format, 57.34 s optimized, 21.26 s Windows-target Clippy,
+18.41 s doctest and 18.76 s private rustdoc. The ordinary test body took 0.07 s;
+retained lane time also includes exact acquisition/admission, sealed-copy work,
+compilation where needed and custody bookends. No limit, pin, isolation or gate
+was weakened to improve these timings.
+
+**Final bounded source exit.** `diag-mutation-v1.json` passes all three per-file
+gates on the exact 456-input candidate above. The 110.37 s campaign retained all
+141 generated outcomes, all three 84-test baselines, each actual native command
+exit, strict selected semantic-assertion/compiler cause attribution, full
+source/tool/vendor/configuration/index bookends and complete raw export.
+
+| Critical owner | Generated | Behavioral caught | Compiler/lint-unviable (zero credit) | Raw missed | Timeouts | Adjusted score |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| host | 85 | 48 | 36 | 1 exact reviewed equivalent | 0 | 48/48 = 100% |
+| error | 40 | 16 | 24 | 0 | 0 | 16/16 = 100% |
+| diagnostics | 16 | 3 | 13 | 0 | 0 | 3/3 = 100% |
+
+Total: **67 behavioral catches, 73 unviable and one exact equivalent**, zero
+unresolved survivors or timeouts. Host raw 48/49 is 97.95918367346938%; its native
+exit 2 remains recorded for the actual raw survivor. Error and diagnostics native
+exits are 0. The sole equivalent receives zero kill credit: current
+`InertWorker::poll_prepare` at line 112, exact descriptor canonical SHA256
+`c6d0657ebd35ce904a84c92a35f1e93573ab0de48da0ca7235f3198816a07da9`,
+returns the identical `Ready(Ok(()))` through pinned Rust's `Poll::from` for the
+full helper domain. Historical descriptors are not substituted for the current
+one. `diag-equivalence-review-v1.json` binds the current source, candidate and all
+three inventories and reconciles the unchanged method with S31-EQ-POLL-FROM.
+
+`diag-inventory-review-v1.json` independently reconciles all production bodies,
+guards, derives/macros and cfg/unsafe omissions against the complete inventories.
+Diagnostics has only **three viable generated mutations**, not sixteen
+behavioral kills. Its constructor, individual mapping/literal, encoding-order
+and arithmetic generation omissions rely on the named independent exact-output,
+privacy and boundary controls, not invented generated kills. All generated
+descriptors have now been exercised. Windows-only source/native omissions retain
+their native evidence gaps.
+
+Independent `fixture_metrics_review` recomputed all 141 outcomes and assertion/
+compiler causes from the archived logs, verified every current input and all
+three complete inventories/baselines, and checked 773 noncompiler archive-file
+hashes. It accepted the bounded metric/source exit with no blocker and the
+low-viable diagnostics limitation above. Earlier independent source review
+accepted field privacy, bounded sinks, original error/custody preservation and
+the default/startup controls; the later oracle correction was independently
+confirmed against revision 2 without changing production code.
+
+The immutable proof used by this campaign is retained at
+`diag-mutation-v1-evidence/raw/work/equivalence-proofs/tasks/windows11-integration.md`,
+SHA256 `71caaf461aead45506ad8490a8975b2b17d5784cbce16d112a1f05beb11df8ac`.
+That identifies the retained pre-closeout snapshot, **not this subsequently
+updated task file**. Its raw review receipts and export remain in this worktree's
+existing `artifacts/windows-services/recovery-20261107-v1/` chain.
+
+**Goal disposition: complete within the frozen portable child.** The actual
+service invocation now emits finite typed outputs at its decision owner, reuses
+its original primary/secondary failure facts, attempts required INFO with optional
+output off and preserves service readiness, admission, charged work, cleanup and
+the original result under healthy/full/unavailable sink conditions. Actual
+outputs exclude the exercised synthetic worker secrets and retained native
+payloads while preserving useful event/cause categories. No shared manifest,
+lock, dependency, policy or schema changed. At this qualification checkpoint,
+work remained isolated on `service/portable-diagnostics`; no commit, push or
+external publication had yet occurred.
+
+**Owner-authorized local-main integration — 8 November 2026.** David subsequently
+requested committing this child into `main`. The intended commit contains only
+this task and the seven fixture implementation/test/metric paths above. Remote
+main still matches the agreed `c4f434c` baseline. Preserve the two existing dirty
+CodeQL/Slint handoff files in the primary worktree, verify the complete staged
+tree and unchanged qualified inputs, run its Python/secret controls, then commit
+and fast-forward local main. No remote push is part of this instruction. This
+integration changes no source qualification or native/product hold.
+
+**Native/product boundary and next owners.** Portable queue admission is a sink attempt, not
+Windows Event Log delivery, installer/provider/channel resources, access,
+retention, WER/dump privacy or a support export. Those W11-W08/ST-W07 and package
+owners remain open. This child does not qualify production workers, service
+accounts/provisioning, installed lifecycle, final mitigations, MSIX or release.
+W11-W08 and the diagnostic/platform/package coordinator next own production
+instance/time-quality/generation/correlation metadata and its shared schema,
+runtime health consumers, finite drain/flush, actual event-channel resources/
+permissions/retention and authorized diagnostic sessions. ST-W07 retains named
+dump/export secret cases. W11-W05 retains real worker/provisioning and native
+SCM/completion/recovery. Adopt those integrations only at their admitted phase;
+the metric receipt deliberately retains `qualification_passed=false` for the
+unqualified whole product. This completed source child lifts no execution hold.
+
 ### 4.36 WinGet distribution before V1 — 7 November 2026
 
 **Status:** researched/planned, not implemented or natively qualified.

@@ -559,6 +559,96 @@ fn registration_failure_retains_the_original_cause_without_any_status() {
     );
 }
 
+/// The native-shaped default composition emits constructor facts before any poll
+/// can repeat them. Healthy startup is a neighboring control for each refusal.
+///
+/// # Errors
+/// Propagate actual owner construction errors before comparing bounded snapshots.
+/// # Panics
+/// Fails if default routing is disconnected or constructor failures are deferred.
+#[test]
+fn diagnostics_default_entry_emits_startup_facts_before_first_poll() -> Result<(), Box<dyn Error>> {
+    use super::{InertWorker, InvocationPoll, start_invocation};
+
+    let report_error = NativeError::new(NativeOperation::Status, 7472);
+    for (role, role_code) in [(LabRole::Engine, 1), (LabRole::ClockBroker, 2)] {
+        for (argc, start_failure) in [(1, None), (2, None), (1, Some(report_error))] {
+            let observation = Rc::new(RefCell::new(Observations {
+                status_failures: start_failure.map_or_else(Vec::new, |error| vec![(1, error)]),
+                ..Observations::default()
+            }));
+            let notification = StopNotification::new();
+            let mut factory = Factory {
+                observations: Rc::clone(&observation),
+                failure: None,
+            };
+            let mut clock = ScriptedClock {
+                observations: vec![Instant::now(); 16],
+                reads: 0,
+            };
+            let mut invocation = start_invocation(
+                role,
+                argc,
+                &mut factory,
+                &mut HealthyTokenObserver,
+                &mut clock,
+                &notification,
+                InertWorker::new(),
+            )?;
+            let expected_result = if argc == 2 {
+                Err(FixtureError::UnsupportedArguments)
+            } else if let Some(error) = start_failure {
+                Err(FixtureError::Lifecycle(
+                    windows_platform::service::LifecycleError::Report(error),
+                ))
+            } else {
+                Ok(())
+            };
+            // Snapshot immediately, before Stop/poll can republish a missing fact.
+            let initial_records = invocation.diagnostics.required().records().to_vec();
+            let optional_was_off = invocation.diagnostics.optional().is_none();
+            let initial_failure_matched = invocation.failure() == expected_result.as_ref().err();
+            let initial_work = invocation.outstanding_work();
+            let initial_admission_closed = invocation.admission_closed();
+            let _control = notification.handle_control(1);
+            let mut finished = false;
+            for _ in 0..8 {
+                if invocation.poll(&mut clock, &notification) == InvocationPoll::Finished {
+                    finished = true;
+                    break;
+                }
+            }
+            let result = invocation.take_result();
+            assert!(finished);
+            assert_eq!(result, Some(expected_result));
+            assert!(initial_failure_matched);
+            assert_eq!(initial_work, 0);
+            assert_eq!(
+                initial_admission_closed,
+                argc == 2 || start_failure.is_some()
+            );
+            assert!(optional_was_off);
+            let mut expected_records = vec![[1, role_code, 1, 1, 0, 1, 0, 0, 0]];
+            if argc == 2 || start_failure.is_some() {
+                expected_records.push([
+                    1,
+                    role_code,
+                    4,
+                    2,
+                    if argc == 2 { 4 } else { 10 },
+                    2,
+                    0,
+                    0,
+                    0,
+                ]);
+            }
+            assert_eq!(initial_records, expected_records);
+            assert_eq!(invocation.outstanding_work(), 0);
+        }
+    }
+    Ok(())
+}
+
 /// Excessive SCM arguments fail through registered status without becoming policy.
 ///
 /// # Panics
@@ -2259,11 +2349,13 @@ mod worker_tests {
 
     use super::super::{
         Clock, InvocationPoll, ServiceInvocation, StatusFactory, TokenObserver, Worker, WorkerWake,
-        start_invocation,
+        start_invocation_with_diagnostics,
     };
     use crate::{
         FixtureError, LabRole, NativeError, NativeOperation, TokenCleanupOutcome,
-        TokenObservationCause, TokenObservationFailure, error::WorkerError,
+        TokenObservationCause, TokenObservationFailure,
+        diagnostics::{MemorySink, Sinks},
+        error::WorkerError,
     };
 
     /// Test construction errors remain distinct from assertions about host behavior.
@@ -2512,6 +2604,8 @@ mod worker_tests {
         preparation_effect: Option<PreparationEffect>,
         /// Wake captured from the actual host, without an independently made token.
         wake: Option<WorkerWake>,
+        /// Synthetic private worker input, never an admitted diagnostic field.
+        private_context: Vec<u8>,
     }
 
     impl Default for Script {
@@ -2524,6 +2618,7 @@ mod worker_tests {
                 completion: Poll::Pending,
                 preparation_effect: None,
                 wake: None,
+                private_context: Vec::new(),
             }
         }
     }
@@ -2661,6 +2756,14 @@ mod worker_tests {
         /// # Errors
         /// Propagate checked construction of the independently selected token fixture.
         fn start(settings: Settings) -> TestResult<Self> {
+            Self::start_with_sinks(settings, Sinks::new(MemorySink::new(true), None))
+        }
+
+        /// Pass finite diagnostic sinks to the same actual startup and decision owner.
+        ///
+        /// # Errors
+        /// Propagate checked construction of the independently selected token fixture.
+        fn start_with_sinks(settings: Settings, sinks: Sinks) -> TestResult<Self> {
             let trace = Rc::new(RefCell::new(Trace {
                 report_failures: settings.report_failures,
                 ..Trace::default()
@@ -2691,14 +2794,14 @@ mod worker_tests {
                 notification: Rc::clone(&notification),
                 time,
             };
-            let (invocation, start_failure) = match start_invocation(
+            let (invocation, start_failure) = match start_invocation_with_diagnostics(
                 settings.role,
                 settings.argc,
                 &mut factory,
                 &mut observer,
                 &mut clock,
                 &notification,
-                worker,
+                (worker, sinks),
             ) {
                 Ok(invocation) => (Some(invocation), None),
                 Err(error) => (None, Some(error)),
@@ -2859,6 +2962,446 @@ mod worker_tests {
                 std::mem::forget(invocation);
             }
         }
+    }
+
+    /// Independent finite destination conditions, without a callback into the owner.
+    #[derive(Clone, Copy)]
+    enum DiagnosticSinkCondition {
+        /// Every bounded record fits and is accepted.
+        Healthy,
+        /// All sixteen slots were already occupied before owner construction.
+        Full,
+        /// The selected output destination refuses every admission attempt.
+        Unavailable,
+    }
+
+    /// Construct a finite sink condition before the real service startup runs.
+    fn diagnostic_sink(condition: DiagnosticSinkCondition) -> MemorySink {
+        match condition {
+            DiagnosticSinkCondition::Healthy => MemorySink::new(true),
+            DiagnosticSinkCondition::Full => MemorySink::full(),
+            DiagnosticSinkCondition::Unavailable => MemorySink::new(false),
+        }
+    }
+
+    /// Compare the actual accepted bytes and independent loss facts at a sink.
+    ///
+    /// # Errors
+    /// Reject an expected record count outside the fixed counter representation.
+    /// # Panics
+    /// Fails if accepted records, retained first records or loss counts differ.
+    fn assert_diagnostic_sink(
+        sink: &MemorySink,
+        condition: DiagnosticSinkCondition,
+        expected: &[[u8; 9]],
+    ) -> TestResult {
+        let attempted = u32::try_from(expected.len())?;
+        match condition {
+            DiagnosticSinkCondition::Healthy => {
+                assert_eq!(sink.records(), expected);
+                assert_eq!(sink.loss(), (0, 0));
+            }
+            DiagnosticSinkCondition::Full => {
+                assert_eq!(sink.records(), &[[0; 9]; 16]);
+                assert_eq!(sink.loss(), (attempted, 0));
+            }
+            DiagnosticSinkCondition::Unavailable => {
+                let empty: &[[u8; 9]] = &[];
+                assert_eq!(sink.records(), empty);
+                assert_eq!(sink.loss(), (0, attempted));
+            }
+        }
+        Ok(())
+    }
+
+    /// Actual required INFO output follows acknowledged facts, independently of
+    /// optional output. Repeated Pending/Finished observations emit no duplicates.
+    ///
+    /// # Errors
+    /// Propagate checked fixture construction or access to an absent actual owner.
+    /// # Panics
+    /// Fails if queued output manufactures readiness/completion or loses a transition.
+    #[test]
+    fn diagnostics_required_info_tracks_actual_readiness_and_completion() -> TestResult {
+        for (role, role_code) in [(LabRole::Engine, 1), (LabRole::ClockBroker, 2)] {
+            let mut rig = Rig::start_with_sinks(
+                Settings {
+                    role,
+                    ..Settings::default()
+                },
+                Sinks::new(MemorySink::new(true), None),
+            )?;
+            let started = [[1, role_code, 1, 1, 0, 1, 0, 0, 0]];
+            assert_eq!(rig.owner()?.diagnostics.required().records(), &started);
+            assert!(rig.owner()?.diagnostics.optional().is_none());
+            for _ in 0..8 {
+                assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+                assert_eq!(rig.owner()?.outstanding_work(), 1);
+                assert_eq!(rig.owner()?.state(), Some(ServiceState::StartPending));
+                assert!(rig.take_result().is_none());
+            }
+            assert_eq!(rig.owner()?.diagnostics.required().records(), &started);
+            assert_eq!(rig.count(&Event::Activate), 0);
+            rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+            let _observation = rig.poll()?;
+            assert_eq!(rig.owner()?.state(), Some(ServiceState::Running));
+            assert_eq!(
+                rig.owner()?.diagnostics.required().records(),
+                &[
+                    [1, role_code, 1, 1, 0, 1, 0, 0, 0],
+                    [1, role_code, 2, 1, 0, 2, 0, 0, 0],
+                ]
+            );
+            let _control = rig.notification.handle_control(1);
+            for _ in 0..8 {
+                assert!(matches!(rig.poll()?, InvocationPoll::Pending(_)));
+                assert!(rig.owner()?.admission_closed());
+                assert_eq!(rig.owner()?.outstanding_work(), 1);
+                assert!(rig.take_result().is_none());
+            }
+            assert_eq!(rig.count(&Event::Cancel), 1);
+            assert_eq!(
+                rig.owner()?.diagnostics.required().records(),
+                &[
+                    [1, role_code, 1, 1, 0, 1, 0, 0, 0],
+                    [1, role_code, 2, 1, 0, 2, 0, 0, 0],
+                    [1, role_code, 3, 1, 0, 3, 0, 0, 0],
+                ]
+            );
+            assert_eq!(rig.settle(Ok(())), Some(Ok(())));
+            for _ in 0..8 {
+                assert_eq!(rig.poll()?, InvocationPoll::Finished);
+                assert!(rig.take_result().is_none());
+            }
+            assert_eq!(rig.owner()?.outstanding_work(), 0);
+            assert_eq!(
+                rig.owner()?.diagnostics.required().records(),
+                &[
+                    [1, role_code, 1, 1, 0, 1, 0, 0, 0],
+                    [1, role_code, 2, 1, 0, 2, 0, 0, 0],
+                    [1, role_code, 3, 1, 0, 3, 0, 0, 0],
+                    [1, role_code, 8, 1, 0, 4, 0, 0, 0],
+                ]
+            );
+            assert_eq!(rig.owner()?.diagnostics.required().loss(), (0, 0));
+        }
+        Ok(())
+    }
+
+    /// Saturation and unavailable outputs cannot change actual owner outcomes or
+    /// discard first/secondary failure facts. Optional failures cannot consume
+    /// required capacity; repeated overdue polls cannot multiply diagnostics.
+    ///
+    /// # Errors
+    /// Propagate checked fixtures or absence of required retained failure facts.
+    /// # Panics
+    /// Fails if any sink condition changes lifecycle, custody, original failure or output.
+    #[test]
+    fn diagnostics_sink_faults_preserve_primary_cleanup_and_actual_completion() -> TestResult {
+        use DiagnosticSinkCondition::{Full, Healthy, Unavailable};
+
+        let stop_error = NativeError::new(NativeOperation::Status, 7443);
+        let terminal_error = NativeError::new(NativeOperation::Status, 7441);
+        let expected = [
+            [1, 1, 1, 1, 0, 1, 0, 0, 0],
+            [1, 1, 4, 2, 20, 2, 0, 0, 0],
+            [1, 1, 3, 1, 0, 3, 0, 0, 0],
+            [1, 1, 6, 2, 10, 4, 0, 0, 0],
+            [1, 1, 5, 2, 23, 5, 0, 0, 0],
+            [1, 1, 7, 2, 10, 6, 0, 0, 0],
+            [1, 1, 8, 1, 0, 7, 0, 0, 0],
+        ];
+        let mut outcomes = Vec::new();
+        for required in [Healthy, Full, Unavailable] {
+            for optional in [None, Some(Healthy), Some(Full), Some(Unavailable)] {
+                let mut rig = Rig::start_with_sinks(
+                    Settings {
+                        report_failures: vec![(3, stop_error), (1, terminal_error)],
+                        ..Settings::default()
+                    },
+                    Sinks::new(diagnostic_sink(required), optional.map(diagnostic_sink)),
+                )?;
+                rig.script.borrow_mut().preparation = Poll::Ready(Err(WorkerError::Preparation));
+                let _observation = rig.poll()?;
+                assert_eq!(
+                    rig.failure(),
+                    Some(&FixtureError::Worker(WorkerError::Preparation))
+                );
+                assert!(rig.owner()?.admission_closed());
+                assert_eq!(rig.owner()?.outstanding_work(), 1);
+                assert_eq!(rig.count(&Event::Cancel), 1);
+                assert_eq!(rig.count(&Event::Activate), 0);
+                assert!(rig.take_result().is_none());
+                rig.advance(Duration::from_secs(10))?;
+                let statuses_before_completion = rig.statuses();
+                for _ in 0..8 {
+                    assert_eq!(rig.poll()?, InvocationPoll::Overdue);
+                    assert_eq!(rig.owner()?.outstanding_work(), 1);
+                    assert!(rig.take_result().is_none());
+                }
+                assert_eq!(rig.statuses(), statuses_before_completion);
+                assert!(!rig.statuses().iter().any(|raw| raw[1] == 1));
+                assert_diagnostic_sink(
+                    rig.owner()?.diagnostics.required(),
+                    required,
+                    &expected[..4],
+                )?;
+                let result = rig.settle(Err(WorkerError::Cleanup));
+                let Some(Err(FixtureError::Cleanup(facts))) = &result else {
+                    return Err("diagnostic sink fault changed the bounded failure result".into());
+                };
+                assert_eq!(
+                    facts.primary(),
+                    &FixtureError::Worker(WorkerError::Preparation)
+                );
+                assert_eq!(facts.completion(), Some(WorkerError::Cleanup));
+                assert_eq!(
+                    facts.stop_report(),
+                    Some(&LifecycleError::Report(stop_error))
+                );
+                assert_eq!(
+                    facts.terminal_report(),
+                    Some(&LifecycleError::Report(terminal_error))
+                );
+                assert_eq!(rig.owner()?.outstanding_work(), 0);
+                for _ in 0..8 {
+                    assert_eq!(rig.poll()?, InvocationPoll::Finished);
+                    assert!(rig.take_result().is_none());
+                }
+                assert_diagnostic_sink(rig.owner()?.diagnostics.required(), required, &expected)?;
+                match (optional, rig.owner()?.diagnostics.optional()) {
+                    (None, None) => {}
+                    (Some(condition), Some(sink)) => {
+                        assert_diagnostic_sink(sink, condition, &expected)?;
+                    }
+                    _ => return Err("the optional diagnostic route changed presence".into()),
+                }
+                outcomes.push((rig.events(), rig.statuses(), result));
+            }
+        }
+        for neighboring in outcomes.windows(2) {
+            let [first, next] = neighboring else {
+                return Err("two-outcome comparison did not contain two outcomes".into());
+            };
+            assert_eq!(first, next);
+        }
+        Ok(())
+    }
+
+    /// A failed status report is not an acknowledged Running event. Deadline
+    /// failure remains separately useful and neither case implies completed work.
+    ///
+    /// # Errors
+    /// Propagate checked fixtures or absence of required actual owner observations.
+    /// # Panics
+    /// Fails if reporting or deadline failure is mislabeled or manufactures readiness.
+    #[test]
+    fn diagnostics_distinguish_failed_running_acknowledgement_from_deadline() -> TestResult {
+        let report_error = NativeError::new(NativeOperation::Status, 7414);
+        for deadline in [false, true] {
+            let mut rig = Rig::start_with_sinks(
+                Settings {
+                    report_failures: if deadline {
+                        Vec::new()
+                    } else {
+                        vec![(4, report_error)]
+                    },
+                    ..Settings::default()
+                },
+                Sinks::new(MemorySink::new(true), Some(MemorySink::new(true))),
+            )?;
+            if deadline {
+                let _observation = rig.poll()?;
+                rig.advance(Duration::from_secs(10))?;
+            } else {
+                rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+            }
+            let _observation = rig.poll()?;
+            let cause_code = if deadline { 11 } else { 10 };
+            let expected = [
+                [1, 1, 1, 1, 0, 1, 0, 0, 0],
+                [1, 1, 4, 2, cause_code, 2, 0, 0, 0],
+                [1, 1, 3, 1, 0, 3, 0, 0, 0],
+            ];
+            assert_eq!(rig.owner()?.diagnostics.required().records(), &expected);
+            // Pending initialization retains its charge. Ready acknowledged real
+            // initialization completion; refused Running admits no running charge.
+            assert_eq!(rig.owner()?.outstanding_work(), u32::from(deadline));
+            assert_eq!(rig.count(&Event::Activate), 0);
+            assert_eq!(rig.count(&Event::Cancel), 1);
+            assert!(rig.take_result().is_none());
+            assert_eq!(
+                rig.failure(),
+                Some(&FixtureError::Lifecycle(if deadline {
+                    LifecycleError::DeadlineElapsed
+                } else {
+                    LifecycleError::Report(report_error)
+                }))
+            );
+            assert!(matches!(rig.settle(Ok(())), Some(Err(_))));
+            assert_eq!(rig.owner()?.outstanding_work(), 0);
+            let mut completed = expected.to_vec();
+            completed.push([1, 1, 8, 1, 0, 4, 0, 0, 0]);
+            assert_eq!(rig.owner()?.diagnostics.required().records(), completed);
+            let optional = rig
+                .owner()?
+                .diagnostics
+                .optional()
+                .ok_or("healthy optional sink disappeared")?;
+            assert_eq!(optional.records(), completed);
+        }
+        Ok(())
+    }
+
+    /// Recognizable private values stay in the actual worker input on both the
+    /// success and rejection paths. Inspect both real output byte streams and
+    /// retain useful permitted event/failure context beside secret exclusion.
+    ///
+    /// # Errors
+    /// Propagate checked fixtures or absence of an expected optional destination.
+    /// # Panics
+    /// Fails if private worker inputs enter admitted records or useful output disappears.
+    #[test]
+    fn diagnostics_actual_success_and_failure_outputs_exclude_worker_secrets() -> TestResult {
+        let secrets: [&[u8]; 4] = [
+            b"SYNTHETIC_NTS_COOKIE_8e3d57a1",
+            b"SYNTHETIC_TLS_KEY_d2099c52",
+            b"SYNTHETIC_APPROVAL_TOKEN_09ac1f3b",
+            b"C:\\private-user\\SYNTHETIC_PATH_448c",
+        ];
+        let private_input = secrets.concat();
+        for failed in [false, true] {
+            let mut rig = Rig::start_with_sinks(
+                Settings::default(),
+                Sinks::new(MemorySink::new(true), Some(MemorySink::new(true))),
+            )?;
+            {
+                let mut script = rig.script.borrow_mut();
+                script.private_context.clone_from(&private_input);
+                script.preparation = if failed {
+                    Poll::Ready(Err(WorkerError::Preparation))
+                } else {
+                    Poll::Ready(Ok(()))
+                };
+            }
+            let _observation = rig.poll()?;
+            assert_eq!(rig.script.borrow().private_context, private_input);
+            let result = rig.settle(Ok(()));
+            assert_eq!(
+                result,
+                Some(if failed {
+                    Err(FixtureError::Worker(WorkerError::Preparation))
+                } else {
+                    Ok(())
+                })
+            );
+            let expected = if failed {
+                [
+                    [1, 1, 1, 1, 0, 1, 0, 0, 0],
+                    [1, 1, 4, 2, 20, 2, 0, 0, 0],
+                    [1, 1, 3, 1, 0, 3, 0, 0, 0],
+                    [1, 1, 8, 1, 0, 4, 0, 0, 0],
+                ]
+            } else {
+                [
+                    [1, 1, 1, 1, 0, 1, 0, 0, 0],
+                    [1, 1, 2, 1, 0, 2, 0, 0, 0],
+                    [1, 1, 3, 1, 0, 3, 0, 0, 0],
+                    [1, 1, 8, 1, 0, 4, 0, 0, 0],
+                ]
+            };
+            let optional = rig
+                .owner()?
+                .diagnostics
+                .optional()
+                .ok_or("healthy optional sink disappeared")?;
+            for sink in [rig.owner()?.diagnostics.required(), optional] {
+                assert_eq!(sink.records(), &expected);
+                let emitted = sink.records().iter().flatten().copied().collect::<Vec<_>>();
+                for secret in secrets {
+                    assert!(!emitted.windows(secret.len()).any(|bytes| bytes == secret));
+                }
+                assert_eq!(sink.loss(), (0, 0));
+            }
+        }
+        Ok(())
+    }
+
+    /// Native numeric failure payloads remain available in original primary and
+    /// secondary facts, while only reviewed cause categories reach both sinks.
+    ///
+    /// # Errors
+    /// Propagate fixture construction or absence of the expected bounded failure.
+    /// # Panics
+    /// Fails if native payloads escape, useful categories vanish or original facts change.
+    #[test]
+    fn diagnostics_native_primary_and_secondary_payloads_remain_unformatted() -> TestResult {
+        let native_secrets = [*b"KEY!", *b"TOKN", *b"PATH"];
+        let running_error = NativeError::new(
+            NativeOperation::Status,
+            u32::from_le_bytes(native_secrets[0]),
+        );
+        let stop_error = NativeError::new(
+            NativeOperation::Status,
+            u32::from_le_bytes(native_secrets[1]),
+        );
+        let terminal_error = NativeError::new(
+            NativeOperation::Status,
+            u32::from_le_bytes(native_secrets[2]),
+        );
+        let mut rig = Rig::start_with_sinks(
+            Settings {
+                report_failures: vec![(4, running_error), (3, stop_error), (1, terminal_error)],
+                ..Settings::default()
+            },
+            Sinks::new(MemorySink::new(true), Some(MemorySink::new(true))),
+        )?;
+        rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+        let _observation = rig.poll()?;
+        assert_eq!(rig.count(&Event::Activate), 0);
+        assert_eq!(rig.owner()?.outstanding_work(), 0);
+        assert_eq!(rig.count(&Event::Cancel), 1);
+        assert!(rig.take_result().is_none());
+        let result = rig.settle(Err(WorkerError::Cleanup));
+        let Some(Err(FixtureError::Cleanup(facts))) = &result else {
+            return Err("native diagnostic projection changed the original failure".into());
+        };
+        assert_eq!(
+            facts.primary(),
+            &FixtureError::Lifecycle(LifecycleError::Report(running_error))
+        );
+        assert_eq!(facts.completion(), Some(WorkerError::Cleanup));
+        assert_eq!(
+            facts.stop_report(),
+            Some(&LifecycleError::Report(stop_error))
+        );
+        assert_eq!(
+            facts.terminal_report(),
+            Some(&LifecycleError::Report(terminal_error))
+        );
+        let expected = [
+            [1, 1, 1, 1, 0, 1, 0, 0, 0],
+            [1, 1, 4, 2, 10, 2, 0, 0, 0],
+            [1, 1, 3, 1, 0, 3, 0, 0, 0],
+            [1, 1, 6, 2, 10, 4, 0, 0, 0],
+            [1, 1, 5, 2, 23, 5, 0, 0, 0],
+            [1, 1, 7, 2, 10, 6, 0, 0, 0],
+            [1, 1, 8, 1, 0, 7, 0, 0, 0],
+        ];
+        let optional = rig
+            .owner()?
+            .diagnostics
+            .optional()
+            .ok_or("healthy optional sink disappeared")?;
+        for sink in [rig.owner()?.diagnostics.required(), optional] {
+            assert_eq!(sink.records(), &expected);
+            let emitted = sink.records().iter().flatten().copied().collect::<Vec<_>>();
+            for secret in native_secrets {
+                assert!(!emitted.windows(secret.len()).any(|bytes| bytes == secret));
+            }
+            assert_eq!(sink.loss(), (0, 0));
+        }
+        Ok(())
     }
 
     /// Actual time observations can publish Stop before readiness, activation or

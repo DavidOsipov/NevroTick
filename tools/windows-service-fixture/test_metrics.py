@@ -25,9 +25,10 @@ def descriptor(filename="src/host.rs", *, name="host guard"):
 
 
 def inventories():
-    """Keep the two source subjects explicit in every fixture."""
+    """Keep all three source subjects explicit in every fixture."""
     return {"host": {"host guard": descriptor()},
-            "error": {"error source": descriptor("src/error.rs", name="error source")}}
+            "error": {"error source": descriptor("src/error.rs", name="error source")},
+            "diagnostics": {"diagnostics output": descriptor("src/diagnostics.rs", name="diagnostics output")}}
 
 
 def execution(names=("healthy_owner", "failed_cleanup")):
@@ -68,7 +69,7 @@ def review_fixture():
                       "independent_tests": ["healthy_owner", "failed_cleanup"], "remaining_gaps": []}
     return {"schema_version": 1, "candidate_sha256": "a" * 64,
             "inventories": M.inventory_summary(inventories()), "reviewer": "independent-fixture-review",
-            "reconciliation": {"host": copy.deepcopy(reconciliation), "error": copy.deepcopy(reconciliation)}}
+            "reconciliation": {name: copy.deepcopy(reconciliation) for name in ("host", "error", "diagnostics")}}
 
 
 def equivalence_fixture(root):
@@ -96,6 +97,24 @@ def equivalence_fixture(root):
 class FixtureMetricControls(unittest.TestCase):
     """Challenge false passes without installing or invoking any analysis tool."""
 
+    def test_diagnostics_is_an_exact_required_metric_owner_with_bounded_attribution(self):
+        """The new output boundary has its own gate and only its actual source/tests qualify."""
+        self.assertEqual(M.SUBJECTS, {"host": "src/host.rs", "error": "src/error.rs",
+                                     "diagnostics": "src/diagnostics.rs"})
+        item = descriptor("src/diagnostics.rs", name="diagnostics output guard")
+        self.assertEqual(M.inventory_listing(json.dumps([item]), "diagnostics"), {item["name"]: item})
+        admitted = {"extensions": {"cargo-mutants": Path("/selected/cargo-mutants")}}
+        command = M.mutation_base_command(admitted, "diagnostics")
+        self.assertEqual(command[command.index("--file") + 1], "src/diagnostics.rs")
+        self.assertIn("--cap-lints", command)
+        self.assertEqual(command[command.index("--cap-lints") + 1], "false")
+        for filename in ("src/diagnostics.rs", "src/diagnostics_tests.rs"):
+            for prefix in ("", "tools/windows-service-fixture/", "/work/source/tools/windows-service-fixture/"):
+                self.assertTrue(M.selected_span(prefix + filename))
+        for filename in ("../src/diagnostics.rs", "src/diagnostics.rs/foreign", "src/diagnostics_extra.rs",
+                         "/foreign/src/diagnostics.rs", "src/../src/diagnostics_tests.rs"):
+            self.assertFalse(M.selected_span(filename))
+
     def test_received_record_is_parsed_from_one_strict_owned_snapshot(self):
         self.assertEqual(M.decode_record(b'{"status":"passed","count":1}'), {"status": "passed", "count": 1})
         for data in (b'{"count":1,"count":2}', b'{"value":NaN}', b'{"value":1e999}',
@@ -110,11 +129,14 @@ class FixtureMetricControls(unittest.TestCase):
              "summary": {"lines": {"count": 100, "covered": 90}}},
             {"filename": "/work/source/tools/windows-service-fixture/src/error.rs",
              "summary": {"lines": {"count": 10, "covered": 10}}},
+            {"filename": "/work/source/tools/windows-service-fixture/src/diagnostics.rs",
+             "summary": {"lines": {"count": 100, "covered": 95}}},
             {"filename": "/work/source/unrelated.rs", "summary": {"lines": {"count": 1000, "covered": 0}}}]}]}
         before = copy.deepcopy(report)
         result = M.metric_coverage(report)
         self.assertEqual(result["host"]["line_percent"], 90)
         self.assertEqual(result["error"]["line_percent"], 100)
+        self.assertEqual(result["diagnostics"]["line_percent"], 95)
         self.assertEqual(report, before)
         for change in ("missing", "empty", "low", "duplicate", "foreign"):
             broken = copy.deepcopy(report)
@@ -131,6 +153,72 @@ class FixtureMetricControls(unittest.TestCase):
                 files[0]["filename"] = "/work/source/foreign/src/host.rs"
             with self.subTest(change=change), self.assertRaises(M.Incomplete):
                 M.metric_coverage(broken)
+
+    def test_diagnostics_cannot_borrow_coverage_or_inventory_from_other_owners(self):
+        """A green host/error pair cannot hide a missing or weak diagnostics owner."""
+        report = {"data": [{"files": [
+            {"filename": "/work/source/tools/windows-service-fixture/src/host.rs",
+             "summary": {"lines": {"count": 100, "covered": 100}}},
+            {"filename": "/work/source/tools/windows-service-fixture/src/error.rs",
+             "summary": {"lines": {"count": 100, "covered": 100}}},
+            {"filename": "/work/source/tools/windows-service-fixture/src/diagnostics.rs",
+             "summary": {"lines": {"count": 100, "covered": 90}}}]}]}
+        self.assertEqual(M.metric_coverage(report)["diagnostics"]["line_percent"], 90)
+        for change in ("low", "missing", "duplicate", "foreign"):
+            bad = copy.deepcopy(report)
+            files = bad["data"][0]["files"]
+            if change == "low":
+                files[2]["summary"]["lines"]["covered"] = 89
+            elif change == "missing":
+                del files[2]
+            elif change == "duplicate":
+                files.append(copy.deepcopy(files[2]))
+            else:
+                files[2]["filename"] = "/foreign/src/diagnostics.rs"
+            with self.subTest(change=change), self.assertRaises(M.Incomplete):
+                M.metric_coverage(bad)
+        rows = inventories()
+        del rows["diagnostics"]
+        with self.assertRaises(M.Incomplete):
+            M.inventory_summary(rows)
+        review = review_fixture()
+        del review["reconciliation"]["diagnostics"]
+        with self.assertRaises(M.Incomplete):
+            M.receive_review(review, "a" * 64, M.inventory_summary(inventories()))
+
+    def test_diagnostics_actual_assertion_and_compiler_sources_keep_distinct_credit(self):
+        """Only selected diagnostics assertions can kill; compiler faults remain zero credit."""
+        item = descriptor("src/diagnostics.rs", name="diagnostics output")
+        expected = {item["name"]: item}
+        text = ("test bounded_output ... FAILED\n\n---- bounded_output stdout ----\n"
+                "thread 'bounded_output' panicked at src/diagnostics_tests.rs:120:5:\n"
+                "assertion `left == right` failed\n  left: 1\n right: 2\n\nfailures:\n")
+        diagnostic = {"reason": "compiler-message", "target": {"name": "nevrotick_windows_service_fixture"},
+                      "message": {"level": "error", "message": "mismatched types",
+                                  "spans": [{"is_primary": True, "file_name": "src/diagnostics.rs"}]}}
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            for summary in ("CaughtMutant", "Unviable"):
+                report = outcomes(summary)
+                report["outcomes"][1]["scenario"]["Mutant"] = item
+                (directory / "mutant.log").write_text(text if summary == "CaughtMutant" else json.dumps(diagnostic) + "\n")
+                causes = M.mutation_causes(directory, report, ["bounded_output"])
+                if summary == "CaughtMutant":
+                    self.assertEqual(causes[item["name"]]["kind"], "behavioral-assertion")
+                    self.assertEqual(causes[item["name"]]["causes"][0]["source"], "src/diagnostics_tests.rs")
+                    result = M.C.mutation_counts(M.SCOPE, report, expected, "src/diagnostics.rs", defer_gate=True)
+                    self.assertEqual((result["killed"], result["unviable"]), (1, 0))
+                else:
+                    self.assertEqual(causes[item["name"]]["kind"], "compiler-unviable")
+                    self.assertEqual(causes[item["name"]]["kill_credit"], 0)
+                    with self.assertRaisesRegex(M.Incomplete, "no viable denominator"):
+                        M.C.mutation_counts(M.SCOPE, report, expected, "src/diagnostics.rs", defer_gate=True)
+            report = outcomes("MissedMutant")
+            report["outcomes"][1]["scenario"]["Mutant"] = item
+            result = M.C.mutation_counts(M.SCOPE, report, expected, "src/diagnostics.rs",
+                                         native_exit_code=2, defer_gate=True)
+            self.assertFalse(result["gate_passed"])
+            self.assertEqual(result["unresolved_survivors"], ["diagnostics output"])
 
     def test_native_test_names_counts_and_failures_cannot_be_substituted(self):
         self.assertEqual(M.executed_tests(execution()), ["failed_cleanup", "healthy_owner"])
