@@ -250,6 +250,13 @@ def _preflight(raw: bytes, field: str) -> str:
                 escaped = True
             elif text.startswith(quote, index):
                 index += len(quote) - 1
+                if len(quote) == 3:
+                    # A multiline closing run may include one or two literal
+                    # quotes; consume them without opening another string.
+                    for _ in range(2):
+                        if not text.startswith(quote[0], index + 1):
+                            break
+                        index += 1
                 quote = ""
         elif character == "#":
             comment = True

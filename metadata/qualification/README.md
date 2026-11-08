@@ -1,8 +1,15 @@
 # Portable metadata qualification
 
-The current run is stopped and incomplete. Read the
-[restart checkpoint](CHECKPOINT.md) before launching another campaign; it records
-a known parser-budget regression and preserved partial mutation evidence.
+The full campaign remains incomplete. On 8 November the owner reopened the
+bounded parser-budget repair and its affected checks; the seven-quote regression
+and all 247 current metadata tests now pass. Fresh strict typing, causal controls
+and subprocess-aware coverage also pass; every declared security module meets
+its 90% line gate. This is not full mutation qualification. Read the [current amendment and historical restart checkpoint](CHECKPOINT.md)
+and [W11-W10 task](../../tasks/windows11-integration.md#w11-w10-re-enter-conditional-mechanisms-only-for-a-concrete-need)
+before another campaign. The old `/tmp` evidence directory is now absent;
+its recorded partial outcomes are historical and cannot be re-admitted without
+the original artifacts. The current repair has fresh evidence in the task's
+existing coordinator chain.
 
 This directory qualifies the Python source pipeline at MD-P1–MD-P3. The
 [existing metadata plan](../../docs/plans/windows-package-metadata.md#13-metadata-pipeline-implementation--7-november-2026)

@@ -1,5 +1,34 @@
 # Qualification restart checkpoint — 7 November 2026
 
+## Current owner amendment — 8 November 2026
+
+David explicitly requested fixing the seven-quote metadata defect. The finite
+repair is now implemented: the lexical scanner consumes at most two additional
+matching quote characters after a multiline closing triple, preserving parser
+syntax ownership and all budgets. The original regression remains unchanged;
+all 247 current unit tests pass, with separate healthy/hostile lexical-depth,
+quoted-bracket, escape and invalid-syntax controls. Strict typing and four
+compile-valid causal fault controls pass. Fresh coverage completes all 247 tests,
+observes all 283 CLI children, excludes 14 altered source-file observations and
+passes every declared 90% security-module line gate. The repaired contract is
+580/636 lines (91.195%), with 307/360 branches reported separately. The first
+600-second attempt remains incomplete; the unchanged-source retry completed in
+670.237 seconds under its finite 1,800-second bound. Exact results and final
+publication are recorded in the
+[existing W11-W10 task](../../tasks/windows11-integration.md#w11-w10-re-enter-conditional-mechanisms-only-for-a-concrete-need).
+
+The historical evidence directory named below is absent as of 8 November.
+Its raw typing, coverage, 641 closed mutation outcomes and interrupted jobs
+cannot be freshly admitted, reused as current outcomes or resumed from the
+missing checkpoint. Fresh repair records use the existing coordinator chain's
+`phase-plan-20261108-v1/metadata-preflight-repair-v1` directory. Full per-file
+95% mutation qualification remains open; bounded causal controls add no score.
+The owner reopened this repair and its affected verification, not an automatic
+rerun of the entire historical 8,890-variant campaign. All native/package,
+formal, fuzz, storage and UI holds remain.
+
+## Historical snapshot — 7 November 2026
+
 **Status: stopped for resource pressure; full qualification is incomplete.**
 David asked to stop when PC resources were constrained and to resume only when
 he starts the work again. At the checkpoint the WSL filesystem was 96% full
@@ -23,7 +52,7 @@ The original checkout baseline was `e5d9a0112e198ab41a50ee0b0057e06eab68ab84`;
 HEAD alone does not identify the modified candidate. Use the source/test/input
 hashes in `source-freeze-corpus-v4.json` and the later stopped-file records.
 
-## Completed evidence
+## Historical completed evidence
 
 - Strict mypy checking passed all eight production modules and a legal consumer;
   five intended negative controls discriminated. Tool custody and configuration
@@ -50,7 +79,7 @@ hashes in `source-freeze-corpus-v4.json` and the later stopped-file records.
 - Later tests caught exact surviving CLI, quote-scanner and read-budget faults.
   Their supplemental results do not replace the raw full-campaign outcomes.
 
-## Required next work
+## Historical required next work
 
 1. **Fix the demonstrated healthy-source defect first.**
    `test_preflight_contracts.PreflightContractTests.test_seventeenth_container_after_single_literal_quote_is_refused_before_parser`

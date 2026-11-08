@@ -792,6 +792,79 @@ pass the actual required checks before promotion. The cloud child below may
 prepare its bounded contract from the published coordinator baseline, while
 reporting its own unavailable/failed checks and preserving all current holds.
 
+**Owner-directed preflight repair, 8 November 2026 — source repair complete:** David
+explicitly requested fixing the metadata defect after the published fixture
+correction. This reopens the finite source repair and its affected verification
+under MD-P1–MD-P3/W11-W10, CHECK-18/20/23/26/27. The original resource stop and
+unfinished 8,890-variant campaign remain historical; this instruction does not
+relabel their outcomes or automatically resume that full campaign. The prior
+`/tmp/nevrotick-metadata-qualification-20261107-zu2t_iqg/` evidence directory is
+now absent, so its raw tool, coverage and mutation receipts cannot be freshly
+admitted or counted as retained current evidence. Preserve the written history;
+recreate current admission rather than fabricating the missing records.
+
+The receiving guarantee is unchanged: valid multiline basic/literal strings may
+contain one or two delimiter quotes, but a following seventeenth lexical
+container must be refused before `tomllib.loads`. Fifteen/sixteen lexical
+containers and genuine quoted bracket payloads remain valid neighbors; the
+later decoded-depth rule stays separate. Source owner: metadata contract;
+implementation and semantic review are separate agents, with coordinator-owned
+integrated verification on Linux/CPython 3.12. Keep the original seven-quote
+regression unchanged. Freeze the repaired source, run strict ordinary/CLI and
+available admitted static/coverage checks, then reconcile bounded distinguishing
+faults and remaining per-file mutation debt. A bug-fix GREEN or hosted gate pass
+will not establish full MD-P1–MD-P3, native/package or release qualification.
+Fresh evidence uses the existing coordinator evidence chain under
+`phase-plan-20261108-v1/metadata-preflight-repair-v1`; all unrelated execution
+holds and post-V1 formal deferral remain.
+
+The repaired contract source SHA256 is
+`de6b4df99bc70e2c992c639adda8170f69074a9a4047980139aa529cebf0dc21`.
+Only its multiline closing-state advance changes; APIs, error families and
+resource ceilings remain. The exact closing-triple plus at-most-two-quote rule
+matches [TOML 1.0](https://toml.io/en/v1.0.0#string) and the
+[pinned CPython 3.12.3 parser](https://github.com/python/cpython/blob/v3.12.3/Lib/tomllib/_parser.py).
+
+Fresh verification passes 247 ordinary tests, all eight preflight methods,
+strict typing of eight modules plus one legal/five negative consumers, and four
+compile-valid causal faults with healthy/restored eight-test controls. The
+original five preflight methods remain byte-identical. Actual source CLI
+validate/generate/check reconciles all 15 artifacts; release mode still refuses
+unfinished data. The complete configured portable admission/accounting/source
+cohort now passes 362 Python tests plus the UI-text checker. Its inherited
+prepare-product fixture omission is corrected by two setup lines only: all 26
+original test bodies/assertions remain unchanged, and real admission rules,
+policies and dependencies are untouched.
+
+The current full coverage run passes all 247 tests, observes all 283 launched
+CLI subprocesses with none missing, and excludes 14 altered source-file identity
+observations before healthy readback. Nonexecuting package markers retain zero
+denominators. Branches are separate evidence:
+
+| Module | Covered/executable lines | Covered/total branches |
+| --- | ---: | ---: |
+| `__main__.py` | 43/46 | 10/10 |
+| `contract.py` | 580/636 | 307/360 |
+| `delivery.py` | 275/296 | 153/172 |
+| `fields.py` | 17/18 | 1/2 |
+| `generate.py` | 357/376 | 119/136 |
+| `text_policy.py` | 39/39 | 20/20 |
+
+Every declared security module exceeds 90% executable lines. `coverage-v2/coverage-result.json`
+has SHA256 `dd6d336d6442472abb6b876a7924581bc852b0deb5bdcbf0d1615419eb3c8efa`;
+`typing-v1/result.json`, `verification.json`, `actual-cli-v1.json`,
+`fault-controls-v1/verification.json` and `portable-control-cohort-v1.json`
+retain the exact sources, tools, commands and outcomes. The first collector
+attempt stopped at its 600.216-second wall bound and remains incomplete; the
+unchanged-source retry passed in 670.237 seconds under a 1,800-second bound.
+Independent semantic and source/documentation reviews found no blocker.
+
+This fixes the demonstrated pre-parser defect. Four manually selected faults
+supply no whole-file mutation denominator or 95% pass; full current critical-file
+mutation qualification remains open. The absent historical 8,890-variant
+artifacts are not re-admitted or counted. No native/package/release or full
+metadata qualification follows, and all unrelated holds remain.
+
 **Adoption source receipt, 7 November 2026:** the dirty working-tree candidate
 at `df6e28a4641f2f046373a9c5640aa60736716a22` passed the configured metadata suite:
 **183 tests, 59.779 seconds, no failures, errors or skips**, on Linux/WSL with

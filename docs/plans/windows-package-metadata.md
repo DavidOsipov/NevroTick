@@ -888,6 +888,22 @@ remain incomplete. Qualification-helper controls must reject missing scope,
 weakened thresholds, wrong identities and absent subprocess observations.
 Retain the existing MD-P4–MD-P5 owners, current Core queue and all execution holds.
 
+**8 November bounded repair amendment:** the owner reopened the seven-quote
+preflight defect after its unchanged regression blocked hosted security checks.
+The source repair preserves the 16-container lexical budget and TOML syntax
+ownership; the 247-test corpus, strict typing and four causal fault controls
+pass. Fresh coverage also passes all five 90% security-module line gates with
+all 247 tests and 283 CLI subprocesses observed; the repaired contract is 580/636
+lines, with branch evidence separate. The timed-out initial collector attempt
+remains incomplete. Exact source-bound results/publication and remaining full
+mutation qualification are reconciled in
+[W11-W10](../../tasks/windows11-integration.md#w11-w10-re-enter-conditional-mechanisms-only-for-a-concrete-need)
+and the [checkpoint amendment](../../metadata/qualification/CHECKPOINT.md).
+The old `/tmp` raw evidence is absent; written historical metrics cannot replace
+its missing artifacts. The finite repair does not restart the whole historical
+8,890-variant campaign or weaken the existing 90%/95% requirements. It grants no
+native, package or release pass.
+
 ## Primary sources
 
 Microsoft Learn schemas and Windows Installer references were retrieved using

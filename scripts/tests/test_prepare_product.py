@@ -314,6 +314,8 @@ class CompletePolicyAcquisitionControls(unittest.TestCase):
         self.vendor = self.directory / "vendor"
         self.policy = json.loads((ROOT / "scripts/tests/fixtures/ui-m0-schema2.json").read_text())
         self.assertEqual(self.policy["schema_version"], 2)
+        # Inert shape pin for the adopted seventh member, not workspace admission.
+        self.policy["manifests_sha256"]["crates/windows-platform/Cargo.toml"] = "c" * 64
         self.responses = {}
         self.sources = {}
         for package in self.policy["packages"] + self.policy["metadata_only_packages"]:

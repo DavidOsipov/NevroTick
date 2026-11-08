@@ -77,6 +77,70 @@ class PreflightContractTests(unittest.TestCase):
     def test_seventeenth_container_after_single_literal_quote_is_refused_before_parser(self) -> None:
         self.require_depth_refusal_before_parser((('"""', '"'), ("'''", "'")))
 
+    def test_multiline_leading_and_trailing_quotes_preserve_depth_neighbors(self) -> None:
+        for quote in ('"""', "'''"):
+            for leading in range(3):
+                for trailing in range(3):
+                    literal = quote[0] * leading + "[" * 20 + "]" * 20 + "#.{" + quote[0] * trailing
+                    prefix = f"a={quote}{literal}{quote}\n"
+                    for depth in (15, 16, 17):
+                        text = prefix + "b=" + "[" * depth + "0" + "]" * depth + "\n"
+                        nested: object = 0
+                        for _ in range(depth):
+                            nested = [nested]
+                        expected = {"a": literal, "b": nested}
+                        with self.subTest(quote=quote, leading=leading, trailing=trailing, depth=depth):
+                            self.assertEqual(tomllib.loads(text), expected)
+                            if depth == 17:
+                                with mock.patch.object(self.contract.tomllib, "loads", side_effect=AssertionError("parser reached before lexical admission")) as parser:
+                                    with self.assertRaisesRegex(self.contract.MetadataError, "lexical nesting budget"):
+                                        self.contract._decode(text.encode(), "owned-preflight")
+                                    parser.assert_not_called()
+                            else:
+                                self.assertEqual(self.contract._preflight(text.encode(), "owned-preflight"), text)
+                                if depth == 15:
+                                    self.assertEqual(self.contract._decode(text.encode(), "owned-preflight"), expected)
+                                else:
+                                    # Sixteen lexical containers are allowed; the
+                                    # scalar is at decoded depth seventeen.
+                                    with mock.patch.object(self.contract.tomllib, "loads", wraps=tomllib.loads) as parser:
+                                        with self.assertRaisesRegex(self.contract.MetadataError, "decoded structure budget"):
+                                            self.contract._decode(text.encode(), "owned-preflight")
+                                        parser.assert_called_once_with(text)
+
+    def test_multiline_basic_escapes_preserve_comments_and_dotted_key_budget(self) -> None:
+        for trailing in range(3):
+            body = r'\"' + "[" * 20 + r'\\' + '"' * trailing
+            literal = '"' + "[" * 20 + "\\" + '"' * trailing
+            prefix = 'a="""' + body + '"""\n# ' + '[' * 20 + '.' * 20 + '"' * 9 + "\n"
+            for depth in (15, 16, 17):
+                text = prefix + "k." * (depth - 1) + "leaf=0\n"
+                expected: dict[str, object] = {"leaf": 0}
+                for _ in range(depth - 1):
+                    expected = {"k": expected}
+                with self.subTest(trailing=trailing, dotted_depth=depth):
+                    self.assertEqual(tomllib.loads(text), {"a": literal, **expected})
+                    if depth == 17:
+                        with mock.patch.object(self.contract.tomllib, "loads", side_effect=AssertionError("parser reached before dotted-key admission")) as parser:
+                            with self.assertRaisesRegex(self.contract.MetadataError, "dotted-key depth budget"):
+                                self.contract._decode(text.encode(), "owned-preflight")
+                            parser.assert_not_called()
+                    else:
+                        self.assertEqual(self.contract._decode(text.encode(), "owned-preflight"), {"a": literal, **expected})
+
+    def test_overlong_multiline_quote_runs_remain_syntax_errors(self) -> None:
+        for character in ('"', "'"):
+            for count in (9, 10):
+                text = "a=" + character * count + "\nb=0\n"
+                with self.subTest(character=character, count=count):
+                    with self.assertRaises(tomllib.TOMLDecodeError):
+                        tomllib.loads(text)
+                    self.assertEqual(self.contract._preflight(text.encode(), "owned-preflight"), text)
+                    with mock.patch.object(self.contract.tomllib, "loads", wraps=tomllib.loads) as parser:
+                        with self.assertRaisesRegex(self.contract.MetadataError, "malformed TOML"):
+                            self.contract._decode(text.encode(), "owned-preflight")
+                        parser.assert_called_once_with(text)
+
 
 if __name__ == "__main__":
     unittest.main()
