@@ -1399,8 +1399,31 @@ Four exact reviewed equivalent misses earn no kill credit. The ten-worker
 campaign's private mutation profile changes only debug information to zero;
 optimization, debug assertions, overflow checks, lint rules and shipping profiles
 remain unchanged. Original attempts and external-refresh ENOMEM remain retained.
-Next prepare the remaining frequency-prior/holdover contract under development
-§7; neither complete controller nor native qualification follows.
+The [frequency-prior four-owner exit](tasks/s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners)
+now passes its selected GNU fixture gates on 436-input `3c8ae8f1...`: 509 ordinary/
+509 optimized tests, 98 doctests and 260 coverage tests. All four line gates and
+699 generated variants reconcile: 424 caught, 271 compiler-unviable, four exact
+reviewed equivalent misses, no timeout or unresolved survivor. Equivalents earn
+no kills. External 2+18 and validation alternatives retain explicit source-scoped
+joins. The final read-only union pins corrected envelope-reader code separately
+from frozen native inputs; its original failed invocation remains incomplete.
+The task owns exact results, generation limits and publication metadata joins.
+Neither a complete controller nor Windows/native/product qualification follows.
+
+Its additive `verify-core-analysis.py --subject frequency_prior` role uses
+`policy/frequency-prior-analysis.json` and `--tool-admission-profile stable-core`.
+The separate `baseline`, `enumerate`, `contracts`, `coverage` and `mutation`
+lanes retain current source/helper/tool/vendor custody. Pending policy bindings
+start no session. Enumeration lists all four owners without qualification credit;
+mutation requires all four reviewed inventories before any selected campaign.
+Use `--cohort-id frequency_state`, `frequency_numeric`, `phase_plan` or
+`rate_delivery` for a complete owner, then `--lane cohort-union` with all four
+`--cohort-receipt` paths. Each campaign retains the 512-variant cap and the final
+join rechecks raw outcomes and full baseline identities; no favorable partial
+cohort replaces the union. Per-file 90% coverage/95% mutation, ten outer/one inner
+mutation workers and the five-GiB floor remain. External contracts select two
+legal consumers and eighteen intended compiler refusals, including the unchanged
+finite-phase set. These configured entry points supply no unexecuted pass.
 
 The pure fixture core uses [verify-core-analysis.py](scripts/verify-core-analysis.py)
 and [time-core-analysis.json](policy/time-core-analysis.json). Its recorded

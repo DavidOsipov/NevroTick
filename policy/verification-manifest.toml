@@ -5,6 +5,7 @@ status = "seven-member-scope-recorded-qualification-candidate-specific"
 security_module_minimum_executable_line_percent = 90
 critical_file_minimum_mutation_percent = 95
 security_modules = [
+    { name = "fixture-frequency-prior", package = "time-core", files = ["crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs", "crates/time-core/src/regression/chart/roundoff/frequency_prior.rs"], scope = "genuine same-owner frequency assimilation, explicit fixture monotonic association, complete prior/anchor/statistics custody, conditional prediction and numerical enclosures; source authoring/qualification pending in existing S1.3 task; no physical UTC/root uncertainty, applied baseline acknowledgement, service readiness, native or clock authority" },
     { name = "fixture-finite-phase-plan", package = "time-core", files = ["crates/time-core/src/reference_input/rate_delivery/phase_plan.rs", "crates/time-core/src/regression/chart/roundoff/phase_plan.rs"], scope = "exclusive fixture producer lease, finite baseline-relative phase obligation, matching modeled terminal custody and carried numerical debt/proposal enclosures; current candidate qualification pending in tasks/s1.3-source-selection-readiness.md; no physical oscillator estimate, source eligibility, broker durability, native or clock authority" },
     { name = "persistent-acquisition-session", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/session.rs"], scope = "bounded checked-configuration session ownership, pre-acquisition chart provenance, exclusive prepared/executing lifetime, terminal retirement, report-owned exact reference view and rejection-only within-series observed-coherence veto; qualification belongs to tasks/engine-transport-pilot.md; no administrator-approved source, clock/mapping/date/calibration authority, history insertion or native completion qualification" },
     { name = "service-privilege-observation", package = "windows-platform", files = ["crates/windows-platform/src/privilege_observation.rs"], scope = "bounded inert privilege-capture decoding and engine forbidden-privilege absence predicate; current recovery source and qualification pending in tasks/windows11-integration.md; no native token provenance, lasting authority, full process isolation, broker allowlist or installed-service admission" },
@@ -66,6 +67,8 @@ security_modules = [
     { name = "fixture-chart-combination-shared-lifecycle", package = "time-core", files = ["crates/time-core/src/combination/lifecycle/chart.rs"], scope = "actual chart decision/batch lifetime, original-versus-target context separation, complete receiving before shared filtering and one validated staged-state commit; S158 portable authoring passed, dependent qualification pending; no installed generation, production eligibility or clock authority" },
 ]
 critical_files = [
+    "crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs",
+    "crates/time-core/src/regression/chart/roundoff/frequency_prior.rs",
     "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs",
     "crates/time-core/src/regression/chart/roundoff/phase_plan.rs",
     "crates/windows-platform/src/privilege_observation.rs",

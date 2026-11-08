@@ -76,10 +76,13 @@ use super::{
 mod roundoff;
 
 pub use roundoff::{
-    FixturePhaseNumericError, FixturePhaseNumericField, FixturePhaseNumericIssue,
-    FixturePhaseNumericStep,
+    FixtureFrequencyNumericError, FixtureFrequencyNumericField, FixtureFrequencyNumericIssue,
+    FixtureFrequencyNumericStep, FixturePhaseNumericError, FixturePhaseNumericField,
+    FixturePhaseNumericIssue, FixturePhaseNumericStep,
 };
-pub(crate) use roundoff::{PhaseDebt, PhaseRates};
+pub(crate) use roundoff::{
+    FrequencyAnchor, FrequencyPrediction, FrequencyPrior, PhaseDebt, PhaseRates,
+};
 
 /// Inclusive integer magnitude that has an exact binary64 representation.
 const MAX_EXACT_NANOSECONDS: u64 = 1_u64 << 53;

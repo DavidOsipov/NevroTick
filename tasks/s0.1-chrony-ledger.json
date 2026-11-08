@@ -303,6 +303,25 @@
   ],
   "local_adaptations": [
     {
+      "task": "S1.4 conditional frequency prior and holdover",
+      "status": "reviewed Revision2 contract; coupled source authoring in progress; no current implementation qualification",
+      "destination": "crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs and crates/time-core/src/regression/chart/roundoff/frequency_prior.rs with existing owning phase/rate hooks",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "task_record": "tasks/s1.3-source-selection-readiness.md#s14-frequency-prior-and-conditional-holdover-contract",
+      "selected_source_files": ["reference.c"],
+      "selected_symbols_or_context": "get_clock_estimates840-873; actual REF_SetReference caller930-986; conditional growth730-755; immutable reference.c SHA256e9a9cb678413366c51d42e5e3dd13f8a4104a3006a538987f66bc3a2a4da803f",
+      "historical_source_review_preserved": true,
+      "license": "GPL-2.0-only",
+      "copying_sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
+      "evidence_directory": "/home/david_osipov/.local/share/nevrotick/phase-plan-20261108-v1",
+      "deliberate_deviations": [
+        "Retained same-chart positive-behind monotonic-rate mean replaces the expected-zero residual assumption; no proposal is treated as applied and active baseline remains separate.",
+        "Normalized separately rounded gain and nonnegative skew mixture carry inherited arithmetic enclosures; both-zero weights explicitly refuse rather than copying NaN/clamp behavior.",
+        "Original fit SDs, conditional skew and deterministic errors stay distinct; added bounded-age growth is not total UTC/root uncertainty.",
+        "Genuine exclusive-owner intake, explicit clock association, actual known-total anchor rebase, monotone quality guards and take-once custody select no native mapping, shipping default, new source authority or pre-V1 formal execution."
+      ]
+    },
+    {
       "task": "S1.4 finite phase-plan lifecycle",
       "status": "selected two-owner Linux fixture qualification complete through source-specific join: ordinary 455/455/92, coverage and per-file mutation pass; external 1+7 consumers reused on unchanged non-test API; full controller/native/product gates remain open",
       "destination": "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs",

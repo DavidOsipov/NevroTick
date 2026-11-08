@@ -1,5 +1,39 @@
 # time-core source and contract provenance
 
+## S1.4 conditional frequency-prior adaptation — 8 November 2026
+
+The reviewed Revision 2 contract in
+`tasks/s1.3-source-selection-readiness.md#s14-frequency-prior-and-conditional-holdover-contract`
+selects a coupled child of the existing exclusive reference/phase owner.
+The source basis is Chrony 4.9, revision
+`8df4f1263e206585e6c4e61352d042c2dd12916a`, `reference.c`:
+`get_clock_estimates`840–873, its real `REF_SetReference` caller930–986,
+and conditional dispersion growth around730–755. The retained complete file is
+38,331 bytes with SHA256
+`e9a9cb678413366c51d42e5e3dd13f8a4104a3006a538987f66bc3a2a4da803f`.
+Its original Richard P. Curnow1997–2003, Miroslav Lichvar2009–2018/2020/2022
+and Andy Fiddaman2024 notices and GPL-2.0-only grant/disclaimer accompany the
+adapted numerical source. David Osipov owns the AI-assisted Rust modification.
+
+The fixture keeps a same-chart mean instead of assuming the prior proposed
+frequency was applied. Both means use positive-behind displacement per
+monotonic second; the effective baseline remains a separate active-awake rate.
+Normalized weights and the nonnegative algebraic skew mixture avoid unnecessary
+absolute-skew/mean squaring. Both-zero weights refuse explicitly; no upstream
+NaN/clamp behavior or new default is adopted. Statistical rate/phase SDs remain
+original fit diagnostics, distinct from the conditional model and its separate
+arithmetic enclosures. Added prediction growth is not a total UTC/root bound.
+
+Actual source receipts, original observation age, explicit clock association,
+known-total-effect anchor rebasing and sole continuation custody remain at the
+coupled lifecycle owner. The current additive zero-rate chart effect is not
+Chrony's multiplicative cooked/raw ppm conversion. No native oscillator mapping,
+persistent rate acknowledgement, shipping limit, physical calibration or
+service Tracking/Holdover authority follows. Source authoring and its exact
+ordinary/contract/coverage/mutation qualification are separate stages; historical
+finite-plan scores do not transfer to changed or new source. Formal work remains
+post-V1 and all other execution holds remain.
+
 ## S1.4 finite phase-plan adaptation — 8 November 2026
 
 The accepted contract in

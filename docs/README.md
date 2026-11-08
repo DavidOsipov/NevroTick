@@ -188,11 +188,14 @@ This closes only the inert S2.2 child. The subsequent
 qualifies its bounded Linux fixture scope: 455 ordinary/455 optimized tests,
 92 doctests, scoped external contracts and both per-file coverage/mutation gates.
 All 376 variants reconcile; four exact reviewed equivalents receive no kill
-credit. The next executable Core work is the remaining S1.4 frequency-prior
-update/aging/holdover contract preparation under
-[development §7](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
-The exact controller law remains unaccepted; full S1.4, P1 and engine integration
-remain open. The actual
+credit. The [frequency-prior four-owner exit](../tasks/s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners)
+now passes 509 ordinary/509 optimized tests, 98 doctests, scoped contracts and
+all four line/mutation gates. Its 699 variants comprise 424 caught, 271 unviable
+and four reviewed equivalent misses without kill credit; the task separates
+frozen native inputs from corrected read-only union verification. Continue the
+reviewed [S2.2 association/request preparation](../tasks/engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request)
+under development §7. Full S1.4/P1, production controller policy and engine
+integration remain open. The actual
 capture/mapping supplier contract is settled as source
 preparation under
 [W11-W01 §4.26](../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026),

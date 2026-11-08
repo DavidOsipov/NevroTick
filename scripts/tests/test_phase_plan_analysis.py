@@ -222,6 +222,16 @@ class PhasePlanAnalysisTests(unittest.TestCase):
                 MODULE.validate_phase_plan_equivalence_scope(approved, parent)
 
     def test_equivalence_keeps_actual_common_source_candidate_and_proof_admission(self):
+        # The generic custody boundary receives honestly rebound current bytes.
+        # This is not adoption of these historical faults for the current role.
+        _, current_identity = MODULE.PRODUCT.admit_product(ROOT)
+        current_entries = [profile_equivalence(), *numeric_equivalences()]
+        for entry in current_entries:
+            entry["candidate_sha256"] = MODULE.COMMON.canonical_sha256(current_identity)
+            entry["source_sha256"] = MODULE.PRODUCT.sha256(ROOT / entry["mutant"]["file"])
+            entry["proof"]["sha256"] = MODULE.PRODUCT.sha256(ROOT / entry["proof"]["path"])
+        self.assertEqual(MODULE.COMMON.admit_mutation_equivalences(
+            ROOT, MODULE.PHASE_PLAN_SCOPE, {"mutation_equivalences": current_entries}), current_entries)
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             proof = "tasks/phase-plan-analysis-equivalences.md"
@@ -244,18 +254,32 @@ class PhasePlanAnalysisTests(unittest.TestCase):
             entries = [profile_equivalence(), *numeric_equivalences()]
             for entry in entries:
                 entry["candidate_sha256"] = policy["candidate_sha256"]
+            historical_entries = copy.deepcopy(entries)
+            for entry in entries:
+                entry["source_sha256"] = identity[entry["mutant"]["file"]]
+                entry["proof"]["sha256"] = hashlib.sha256(original[proof]).hexdigest()
             policy["mutation_equivalences"] = entries
             target = root / MODULE.PHASE_PLAN_POLICY
             with patch.object(MODULE, "PHASE_PLAN_BOUND_INPUTS", bound), \
-                 patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)), \
-                 patch.object(MODULE.COMMON, "admit_mutation_equivalences",
-                              wraps=MODULE.COMMON.admit_mutation_equivalences) as admit:
+                 patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)):
+                historical = {**policy, "mutation_equivalences": historical_entries}
+                target.write_text(json.dumps(historical))
+                with self.assertRaisesRegex(MODULE.Incomplete, "source or complete candidate"):
+                    MODULE.read_phase_plan_policy(root)
+                # Even honest rebinding passes only generic custody, not the
+                # unchanged historical descriptor/source/proof whitelist.
                 target.write_text(json.dumps(policy))
-                self.assertEqual(MODULE.read_phase_plan_policy(root), policy)
-                admit.assert_called_once()
+                with self.assertRaisesRegex(MODULE.Incomplete, "exact reviewed descriptor/source/proof"):
+                    MODULE.read_phase_plan_policy(root)
                 for fault in ("source_pin", "candidate", "actual_source", "actual_proof", "proof_heading", "proof_cap",
                               "actual_parent"):
                     altered = copy.deepcopy(policy)
+                    if fault == "actual_parent":
+                        # Historical metadata-only healthy neighbor, not admission
+                        # of the currently changed parent implementation.
+                        historical_parent = {parent: "c8a05da2b622468426063a3addb17e2c27d8ba9856efee9c53ff7f6d7201166f"}
+                        self.assertIsNone(MODULE.validate_phase_plan_equivalence_scope(
+                            historical_entries, historical_parent))
                     if fault == "source_pin":
                         altered["mutation_equivalences"][0]["source_sha256"] = "b" * 64
                     elif fault == "candidate":
@@ -269,11 +293,16 @@ class PhasePlanAnalysisTests(unittest.TestCase):
                             data = original[name] + b" " * 65536
                         (root / name).write_bytes(data)
                         altered["inputs_sha256"][name] = hashlib.sha256(data).hexdigest()
-                        if name == proof:
-                            altered["mutation_equivalences"][0]["proof"]["sha256"] = hashlib.sha256(data).hexdigest()
+                        if fault in {"proof_heading", "proof_cap"}:
+                            for entry in altered["mutation_equivalences"]:
+                                entry["proof"]["sha256"] = hashlib.sha256(data).hexdigest()
                     target.write_text(json.dumps(altered))
                     with self.subTest(fault=fault), self.assertRaises(MODULE.Incomplete):
-                        MODULE.read_phase_plan_policy(root)
+                        if fault == "actual_parent":
+                            MODULE.validate_phase_plan_equivalence_scope(
+                                historical_entries, altered["inputs_sha256"])
+                        else:
+                            MODULE.COMMON.admit_mutation_equivalences(root, MODULE.PHASE_PLAN_SCOPE, altered)
                     for name, data in original.items():
                         (root / name).write_bytes(data)
 

@@ -4670,7 +4670,7 @@ def cargo_phase_segments(outcome, output):
             for index, (phase, header) in enumerate(zip(phases, headers, strict=True))}
 
 
-def cargo_json_records(output, *, test_phase=False):
+def cargo_json_records(output, *, test_phase=False, private_target=False):
     """Remove only complete known Cargo JSON records; retain other bytes verbatim.
 
     Test callers may retain complete captured principal assertion blocks and
@@ -4680,6 +4680,8 @@ def cargo_json_records(output, *, test_phase=False):
     """
     if type(test_phase) is not bool:
         raise Incomplete('Cargo JSON Test-context mode must be Boolean.')
+    if type(private_target) is not bool:
+        raise Incomplete('Cargo JSON private-target mode must be Boolean.')
     def unique_pairs(pairs):
         result = {}
         for key, value in pairs:
@@ -4885,9 +4887,11 @@ def cargo_json_records(output, *, test_phase=False):
                                   for value in pair) for pair in env)):
                 raise Incomplete('Cargo build-script environment is malformed or exceeds its bounds.')
             out_dir = item['out_dir']
+            target_prefix = (r'/work/target' if private_target else
+                             r'/work/tmp/cargo-mutants-source-[A-Za-z0-9]{6}\.tmp/target')
             if (not isinstance(out_dir, str) or len(out_dir.encode('utf-8')) > 4096
                     or not re.fullmatch(
-                        r'/work/tmp/cargo-mutants-source-[A-Za-z0-9]{6}\.tmp/target/debug/build/'
+                        target_prefix + r'/debug/build/'
                         + re.escape(packages[package]) + r'-[a-f0-9]{16}/out', out_dir)):
                 raise Incomplete('Cargo build-script output directory is outside the observed layout.')
         elif (not isinstance(item['package_id'], str) or not isinstance(item['manifest_path'], str)
@@ -8164,6 +8168,109 @@ PHASE_PLAN_REQUIRED_DOCTESTS = (
 PHASE_PLAN_CONTRACT_MARKER = "legal-phase-plan-contract\n"
 
 
+# New conditional frequency child: no predecessor metrics or equivalences.
+FREQUENCY_PRIOR_SUBJECT = "frequency_prior"
+FREQUENCY_PRIOR_POLICY = "policy/frequency-prior-analysis.json"
+FREQUENCY_PRIOR_SUBJECTS = {
+    "frequency_state": "crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs",
+    "frequency_numeric": "crates/time-core/src/regression/chart/roundoff/frequency_prior.rs",
+    "phase_plan": PHASE_PLAN_FILE,
+    "rate_delivery": "crates/time-core/src/reference_input/rate_delivery.rs",
+}
+FREQUENCY_PRIOR_SCOPE = COMMON.Scope("time-core", tuple(FREQUENCY_PRIOR_SUBJECTS.items()), FREQUENCY_PRIOR_POLICY)
+FREQUENCY_PRIOR_FIXED = {
+    **PHASE_PLAN_FIXED, "critical_files": list(FREQUENCY_PRIOR_SUBJECTS.values()),
+    "tool_admission_profile": "stable-core", "maximum_listed_total": 2048,
+    "general_jobs": 12,
+    "external_consumer_limits": {"legal_executions": 2, "negative_compilations": 18},
+}
+FREQUENCY_PRIOR_BOUND_INPUTS = tuple(dict.fromkeys((
+    *PHASE_PLAN_BOUND_INPUTS, *FREQUENCY_PRIOR_SUBJECTS.values(),
+    "crates/time-core/tests/frequency_prior.rs", "crates/time-core/tests/private/frequency_prior_numeric.rs",
+    "crates/time-core/tests/private/frequency_prior_state.rs",
+    "crates/time-core/tests/rate_delivery.rs", "crates/time-core/PROVENANCE.md",
+    "scripts/core-frequency-contracts.py", "scripts/tests/test_core_frequency_contracts.py",
+    "scripts/tests/test_frequency_prior_analysis.py",
+    "tasks/phase-plan-analysis-equivalences.md",
+)))
+FREQUENCY_PRIOR_REQUIRED_TESTS = PHASE_PLAN_REQUIRED_TESTS | frozenset({
+    'actual_intake_replay_and_monotonic_prediction_preserve_original_evidence',
+    'admitted_failures_and_exhaustion_cannot_be_retried',
+    'age_equality_replay_and_fresh_recovery_use_actual_observation_age',
+    'association_constructor_refusal_preserves_cursor_for_a_valid_neighbor',
+    'clock_context_and_each_time_order_guard_preserve_the_model',
+    'conflict_then_generation_or_stop_blocks_models_without_erasing_history',
+    'current_owner_and_chart_relationships_are_required_before_consumption',
+    'cursor_carries_identity_and_nonoverlap_across_replacement_owners',
+    'dyadic_delivery_and_cancellation_use_active_time_only',
+    'exhausted_no_effect_cursor_still_allows_only_readonly_model_projection',
+    'expiry_masked_by_pending_operation_stays_expired_after_historical_known',
+    'finite_only_constructor_stays_disabled_without_projection_time_effects',
+    'foreign_real_producer_round_and_equal_chart_do_not_replace_owned_model',
+    'frequency_diagnostics_and_declared_limits_keep_bounded_private_readouts',
+    'fresh_context_transfer_retains_history_until_actual_new_observation',
+    'fresh_singleton_updates_the_whole_record_and_real_growth_interval',
+    'gain_one_uses_the_genuine_current_rate_without_changing_active_baseline',
+    'gain_zero_success_and_both_zero_refusal_have_distinct_whole_records',
+    'genuine_numeric_growth_loss_recovers_only_from_new_ready_evidence',
+    'growth_upper_cap_expiry_keeps_the_previous_model_historical',
+    'independent_phase_and_frequency_commits_preserve_their_actual_records',
+    'no_effect_then_unknown_preserve_history_but_have_distinct_cursor_results',
+    'noeffect_and_unknown_have_distinct_terminal_behavior',
+    'outward_growth_cap_equality_and_adjacent_caps_use_the_real_receiver',
+    'pending_highwater_allows_late_known_total_anchor_rebase_once',
+    'reference_input::rate_delivery::phase_plan::tests::construction_error_projection_preserves_frequency_causes_without_owner_state',
+    'regression::chart::roundoff::frequency_prior::tests::actual_total_anchor_rebase_preserves_both_error_channels',
+    'regression::chart::roundoff::frequency_prior::tests::actual_updated_model_growth_includes_disagreement',
+    'regression::chart::roundoff::frequency_prior::tests::closed_interval_sign_and_endpoint_neighbors',
+    'regression::chart::roundoff::frequency_prior::tests::diagnostics_redact_numeric_state_and_preserve_error_source',
+    'regression::chart::roundoff::frequency_prior::tests::equal_skew_fusion_matches_dyadic_and_integer_square_truth',
+    'regression::chart::roundoff::frequency_prior::tests::finite_overflow_and_duration_limits_preserve_prior_and_anchor',
+    'regression::chart::roundoff::frequency_prior::tests::inherited_mean_and_skew_errors_survive_successive_updates',
+    'regression::chart::roundoff::frequency_prior::tests::initialization_preserves_fresh_error_and_correlated_zero',
+    'regression::chart::roundoff::frequency_prior::tests::large_and_tiny_equal_skews_use_normalized_weights',
+    'regression::chart::roundoff::frequency_prior::tests::noninteger_elapsed_and_inherited_projection_errors_are_enclosed',
+    'regression::chart::roundoff::frequency_prior::tests::nonzero_prior_translation_and_sign_are_preserved',
+    'regression::chart::roundoff::frequency_prior::tests::raw_inputs_have_typed_rejections_and_healthy_neighbors',
+    'regression::chart::roundoff::frequency_prior::tests::singular_weight_enclosure_retains_the_old_model',
+    'regression::chart::roundoff::frequency_prior::tests::transformed_outputs_delegate_complete_field_rules',
+    'regression::chart::roundoff::frequency_prior::tests::weaker_fit_keeps_zero_innovation_and_expected_skew',
+    'regression::chart::roundoff::frequency_prior::tests::zero_pair_refuses_but_single_zero_cases_are_supported',
+    'settled_translation_preserves_genuine_retained_histories_and_credit',
+    'span_and_rate_admission_preserve_valid_neighbors',
+    'constructor_coordinate_refusals_keep_cursor_and_exact_cause',
+    'foreign_target_cursor_refusals_keep_frequency_cause_and_retry',
+    'reference_input::rate_delivery::frequency_prior::tests::basis_matches_requires_each_checked_geometry_component',
+    'reference_input::rate_delivery::frequency_prior::tests::checked_domain_boundaries_and_query_refusal_order_are_exact',
+    'reference_input::rate_delivery::frequency_prior::tests::checked_relationship_rejects_each_supplied_source_coordinate',
+    'reference_input::rate_delivery::frequency_prior::tests::disabled_latches_are_noops_and_enabled_empty_state_retains_no_model',
+    'reference_input::rate_delivery::frequency_prior::tests::first_hard_retirement_survives_later_reasons_and_pending_queries',
+    'reference_input::rate_delivery::frequency_prior::tests::rebase_checks_each_descriptor_relationship_and_preserves_whole_history',
+    'reference_input::rate_delivery::frequency_prior::tests::rebase_missing_or_failed_descriptors_preserve_the_complete_record',
+    'reference_input::rate_delivery::frequency_prior::tests::rebase_projected_epoch_support_has_both_inclusive_neighbors',
+    'reference_input::rate_delivery::frequency_prior::tests::unknown_component_latch_preserves_genuine_history_and_block_precedence',
+    'reference_input::rate_delivery::phase_plan::tests::actual_unknown_reception_latches_frequency_before_private_projection',
+    'regression::chart::roundoff::frequency_prior::tests::absolute_value_preserves_dominant_cross_zero_magnitude',
+    'regression::chart::roundoff::frequency_prior::tests::around_intervals_enclose_independent_dyadic_endpoints',
+    'regression::chart::roundoff::frequency_prior::tests::gain_interval_zero_support_preserves_singular_and_exact_cases',
+    'regression::chart::roundoff::frequency_prior::tests::multiplication_preserves_exact_zero_endpoints',
+    'regression::chart::roundoff::frequency_prior::tests::whole_zero_products_keep_canonical_bits_and_nonzero_neighbors',
+})
+FREQUENCY_PRIOR_REQUIRED_DOCTESTS = (
+    *PHASE_PLAN_REQUIRED_DOCTESTS,
+    (PHASE_PLAN_FILE, "reference_input::rate_delivery::phase_plan::FixturePhasePlanOwner<'producer,'chart>::project_model", True, 2),
+    (FREQUENCY_PRIOR_SUBJECTS["frequency_state"], "reference_input::rate_delivery::frequency_prior::FixtureFrequencyProfile", False, 1),
+    (FREQUENCY_PRIOR_SUBJECTS["frequency_state"], "reference_input::rate_delivery::frequency_prior::FixtureFrequencyProfile", True, 1),
+    (FREQUENCY_PRIOR_SUBJECTS["frequency_state"], "reference_input::rate_delivery::frequency_prior::FixtureFrequencyHistory", False, 1),
+    (FREQUENCY_PRIOR_SUBJECTS["frequency_state"], "reference_input::rate_delivery::frequency_prior::FixtureFrequencyHistory", True, 1),
+    (FREQUENCY_PRIOR_SUBJECTS["rate_delivery"], "reference_input::rate_delivery::FixtureRateSpan", True, 2),
+    (FREQUENCY_PRIOR_SUBJECTS["rate_delivery"], "reference_input::rate_delivery::FixtureSettledRateInterval", True, 1),
+    (FREQUENCY_PRIOR_SUBJECTS["rate_delivery"], "reference_input::rate_delivery::FixtureRateSettlementCursor", True, 1),
+    (FREQUENCY_PRIOR_SUBJECTS["rate_delivery"], "reference_input::rate_delivery::FixtureRateSettlementCompletion", True, 1),
+    (FREQUENCY_PRIOR_SUBJECTS["rate_delivery"], "reference_input::rate_delivery::FixtureReferenceInputState<'_>::receive_rate_settlement", True, 1),
+)
+
+
 class ConditionedAnalysisRole(NamedTuple):
     """Code-owned selection data; policy cannot choose owners or execution targets."""
 
@@ -8210,6 +8317,8 @@ def _phase_plan_role() -> ConditionedAnalysisRole:
 
 def _conditioned_inventory_bindings(policy, role, *, required=False):
     """Admit no review yet or both exact nonempty inventories within one cap."""
+    if role.selector == FREQUENCY_PRIOR_SUBJECT:
+        return frequency_inventory_bindings(policy, required=required)
     bindings = policy.get("mutation_inventories")
     if type(bindings) is not dict:
         raise Incomplete(f"{role.label} inventory bindings must be an object.")
@@ -8300,6 +8409,9 @@ def _conditioned_test_execution(text, policy, role, *, doctests):
     if type(doctests) is not bool:
         raise Incomplete(f"{role.label} doctest selection must be Boolean.")
     inventories = _conditioned_test_inventories(policy, role)
+    if (role.selector == FREQUENCY_PRIOR_SUBJECT
+            and re.search(r"(?m)^(?:thread .+ panicked at|Error:|error(?:\[|:)|fatal runtime error)", text)):
+        raise Incomplete("Frequency-prior successful execution contains a panic or compiler/harness error.")
     records = successful_test_records(text, label=role.label)
     normalized = [name.removeprefix("/work/source/") for name in records]
     lane = "baseline" if doctests else "coverage"
@@ -8355,7 +8467,8 @@ def configure_phase_plan_mutation(session, policy, report, role):
     copy. No source manifest, Rust flags, assertions, overflow or other profile
     setting changes. The Session seals the replacement for every later command.
     """
-    if (role.selector != PHASE_PLAN_SUBJECT or role.scope != PHASE_PLAN_SCOPE
+    if (not ((role.selector == PHASE_PLAN_SUBJECT and role.scope == PHASE_PLAN_SCOPE)
+                 or (role.selector == FREQUENCY_PRIOR_SUBJECT and role.scope == FREQUENCY_PRIOR_SCOPE))
             or type(policy.get("mutation_debug_info")) is not int
             or policy["mutation_debug_info"] != 0):
         raise Incomplete("Only phase-plan mutation admits integer-zero debug information.")
@@ -8723,7 +8836,15 @@ fn main() {}
 
 def phase_plan_contracts(session, policy, report):
     """Compile fixed consumers with existing custody and strict causal diagnostics."""
-    examples = phase_plan_contract_examples()
+    return _external_contract_registry(session, policy, report, phase_plan_contract_examples(),
+        {"phase_plan_legal": PHASE_PLAN_CONTRACT_MARKER},
+        "Constructor assertions executed; the legal two-retirement borrow journey is compiled only. Actual modeled trajectories belong to the package tests.")
+
+
+def _external_contract_registry(session, policy, report, examples, markers, legal_scope):
+    """Reuse the existing single-build, sealed-consumer causal execution boundary."""
+    if set(markers) != {name for name, row in examples.items() if row["code"] is None}:
+        raise Incomplete("External contract markers differ from the exact legal registry.")
     limits = policy["external_consumer_limits"]
     if ({"legal_executions": sum(row["code"] is None for row in examples.values()),
          "negative_compilations": sum(row["code"] is not None for row in examples.values())} != limits):
@@ -8745,7 +8866,7 @@ def phase_plan_contracts(session, policy, report):
     evidence = {"legal_executions": 0, "negative_compilations": 0, "specimens": {},
         "libraries_sha256": {name: PRODUCT.sha256(dependencies / name)
                              for name in ("libtime_core.rlib", "libtime_domain.rlib")},
-        "legal_execution_scope": "Constructor assertions executed; the legal two-retirement borrow journey is compiled only. Actual modeled trajectories belong to the package tests."}
+        "legal_execution_scope": legal_scope}
     report["external_contracts"] = evidence
     for name, specimen in examples.items():
         source_path = "/work/contract-inputs/" + name + ".rs"
@@ -8766,7 +8887,7 @@ def phase_plan_contracts(session, policy, report):
         digest = PRODUCT.sha256(binary)
         actual = session.run("external-legal-execution", ["/work/contracts/" + name],
             COMMON.remaining_timeout(deadline, 30), sealed=[consumers, dependencies, binary])
-        if actual != PHASE_PLAN_CONTRACT_MARKER or PRODUCT.sha256(binary) != digest:
+        if actual != markers[name] or PRODUCT.sha256(binary) != digest:
             raise Incomplete("Phase-plan legal execution lacks its exact marker or unchanged binary.")
         evidence["specimens"][name].update(binary_sha256=digest, stdout=actual)
         evidence["legal_executions"] += 1
@@ -8807,8 +8928,870 @@ def main_phase_plan(args):
 
 
 
+def _frequency_prior_role():
+    """Reuse the current conditioned executor contract with this exact four-owner selection."""
+    return ConditionedAnalysisRole(FREQUENCY_PRIOR_SUBJECT, "Frequency-prior", FREQUENCY_PRIOR_SCOPE,
+        FREQUENCY_PRIOR_FIXED, FREQUENCY_PRIOR_BOUND_INPUTS, FREQUENCY_PRIOR_REQUIRED_TESTS,
+        FREQUENCY_PRIOR_REQUIRED_DOCTESTS, ("frequency_prior", "phase_plan", "rate_delivery"))
+
+
+def frequency_inventory_bindings(policy, *, required=False):
+    """Admit none before discovery or the complete four-owner union, never a partial map."""
+    rows = policy.get("mutation_inventories")
+    if type(rows) is not dict or (not rows and required):
+        raise Incomplete("Frequency-prior mutation requires all four reviewed inventories.")
+    if not rows:
+        return rows
+    if set(rows) != set(FREQUENCY_PRIOR_SUBJECTS):
+        raise Incomplete("Frequency-prior inventory map omits or adds an owner.")
+    for row in rows.values():
+        if (type(row) is not dict or set(row) != {"count", "sha256"}
+                or type(row["count"]) is not int or not 0 < row["count"] <= 512
+                or type(row["sha256"]) is not str or re.fullmatch(r"[0-9a-f]{64}", row["sha256"]) is None):
+            raise Incomplete("Frequency-prior inventories need bounded counts and exact hashes.")
+    if sum(row["count"] for row in rows.values()) > 2048:
+        raise Incomplete("Frequency-prior complete listing exceeds 2048 variants.")
+    return rows
+
+
+def read_frequency_prior_policy(root):
+    """Require fresh actual source/helper/test pins; pending placeholders start no session."""
+    policy = _read_conditioned_policy(root, _frequency_prior_role())
+    if not COMMON.frequency_prior_equivalences_valid(policy) or COMMON.RUNTIME.MAX_JOBS != 12:
+        raise Incomplete("Frequency-prior requires its four current reviewed equivalences and unchanged job budget.")
+    COMMON.require_frequency_prior_role(FREQUENCY_PRIOR_SCOPE, policy)
+    return policy
+
+
+def frequency_selected_owners(policy, cohort_id):
+    """Select a whole code-owned owner or an at-most-512 complete union, never file slices."""
+    rows = frequency_inventory_bindings(policy, required=True)
+    if cohort_id is None:
+        if sum(row["count"] for row in rows.values()) > 512:
+            raise Incomplete("Frequency-prior union exceeds 512; select one complete named owner cohort.")
+        return dict(FREQUENCY_PRIOR_SUBJECTS)
+    if type(cohort_id) is not str or cohort_id not in FREQUENCY_PRIOR_SUBJECTS:
+        raise Incomplete("Frequency-prior cohort must name one of its four fixed owners.")
+    return {cohort_id: FREQUENCY_PRIOR_SUBJECTS[cohort_id]}
+
+
+def _frequency_captured(session, policy, role):
+    """Recheck the captured complete product, policy and every current protected input."""
+    if (len(session.product_identity) != policy["source_file_count"]
+            or COMMON.canonical_sha256(session.product_identity) != policy["candidate_sha256"]
+            or inventory_document(session.source / role.scope.policy) != policy
+            or any(PRODUCT.sha256(session.source / name) != policy["inputs_sha256"][name]
+                   for name in role.bound_inputs)):
+        raise Incomplete("Captured frequency-prior source/policy/helper identity differs.")
+
+
+def _frequency_contracts(session, policy, report):
+    """Load the new protected helper only inside its admitted role, preserving old closures."""
+    helper = COMMON.load_module("core_frequency_contracts", session.source / "scripts/core-frequency-contracts.py")
+    helper.contracts(session, policy, report, _external_contract_registry, phase_plan_contract_examples)
+
+
+def execute_frequency_prior(args, report):
+    """Reuse Session, exact roster readers, complete listing and normal per-file gates."""
+    role = _frequency_prior_role()
+    if (args.subject != FREQUENCY_PRIOR_SUBJECT or args.tool_admission_profile != "stable-core"
+            or args.lane not in {"baseline", "enumerate", "coverage", "contracts", "mutation", "all", "cohort-union"}
+            or getattr(args, "inventory_admission", None) or getattr(args, "cohort_plan", None)):
+        raise Incomplete("Frequency-prior requires its exact stable-only four-owner role.")
+    policy = read_frequency_prior_policy(ROOT)
+    if args.lane == "cohort-union":
+        return frequency_cohort_union(args, report, policy, role)
+    if getattr(args, "cohort_receipt", None) or (args.cohort_id is not None and args.lane not in {"mutation", "all"}):
+        raise Incomplete("Frequency-prior cohort flags are allowed only for their named mutation/union lane.")
+    selected = frequency_selected_owners(policy, args.cohort_id) if args.lane in {"mutation", "all"} else role.scope.select("all")
+    if args.lane in {"mutation", "all"}:
+        COMMON._require_private_output(ROOT, args.output_dir)
+        if shutil.disk_usage(args.output_dir.parent).free < policy["mutation_minimum_free_bytes"]:
+            raise Incomplete("Frequency-prior ten-worker mutation requires five GiB free.")
+    session_args = argparse.Namespace(**vars(args))
+    if args.lane in {"baseline", "enumerate"}:
+        session_args.lane = "contracts" if args.lane == "baseline" else "mutation"
+    report.update(subjects=dict(selected), complete_subjects=role.scope.select("all"),
+        candidate_sha256=policy["candidate_sha256"], qualification_passed=False,
+        full_role_qualification=False, historical_family_bindings_reused=False,
+        cohort_id=args.cohort_id, all_reviewed_inventory_bindings=policy["mutation_inventories"])
+    session = COMMON.Session(ROOT, session_args, report, role.scope, policy, role.bound_inputs)
+    try:
+        _frequency_captured(session, policy, role)
+        if args.lane == "enumerate":
+            _enumerate_conditioned(session, policy, report, role)
+            report["native_test_invocations"] = 0
+        if args.lane in {"baseline", "all"}:
+            raw = session.run("baseline", ["cargo", "test", "--package", "time-core", "--frozen",
+                "--jobs", "6", "--", "--test-threads=1"], policy["baseline_wall_seconds"])
+            report["baseline_execution"] = _conditioned_test_execution(raw, policy, role, doctests=True)
+        if args.lane in {"coverage", "all"}:
+            command = [str(session.tools / "cargo-llvm-cov"), "llvm-cov", "--package", "time-core",
+                "--frozen", "--jobs", "6", "--lib", *(arg for target in role.coverage_tests for arg in ("--test", target)),
+                "--json", "--output-path", "/work/coverage.json", "--failure-mode", "any",
+                "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/", "--", "--test-threads=1"]
+            raw = session.run("coverage", command, policy["coverage_wall_seconds"])
+            report["coverage_execution"] = _conditioned_test_execution(raw, policy, role, doctests=False)
+            coverage = COMMON.read_analysis_json(session.work / "coverage.json")
+            report["coverage"] = {name: COMMON.coverage_counts(role.scope, coverage, "/work/source/" + path)
+                                  for name, path in role.scope.select("all").items()}
+        if args.lane == "contracts":
+            _frequency_contracts(session, policy, report)
+        if args.lane in {"mutation", "all"}:
+            configure_phase_plan_mutation(session, policy, report, role)
+            report["mutation_debug_configuration"]["scope"] = "Private frequency-prior mutation enumeration/build/tests only; other profile settings unchanged."
+            def run(label, command, timeout, **options):
+                value = session.run(label, command, timeout, **options)
+                if label.startswith("mutation-campaign:"):
+                    name = label.removeprefix("mutation-campaign:")
+                    report.setdefault("baseline_executions", {})[name] = _conditioned_baseline(session.work, policy, name, role)
+                return value
+            COMMON.run_analysis_lanes(role.scope, selected, policy, session.work, session.tools, run, report, "mutation")
+            report["frequency_artifacts"] = {}
+            for owner, filename in selected.items():
+                items, _ = COMMON.parse_mutation_listing(report["mutation_enumeration"][owner]["raw_output"], expected_jobs=10)
+                inventory = COMMON.mutation_inventory(role.scope, items, 512, filename)
+                report["frequency_artifacts"][owner] = frequency_artifact_manifest(
+                    session.work, report, policy, owner, inventory, session.identity,
+                    session.dependency_policy, session.vendor_identity)
+    finally:
+        session.finish()
+    report["selected_lane_passed"] = True
+    if args.lane in {"mutation", "all"}:
+        report["cohort_complete"] = True
+        report["mutation_union_passed"] = set(selected) == set(FREQUENCY_PRIOR_SUBJECTS)
+        report["qualification_passed"] = report["mutation_union_passed"]
+
+
+def _frequency_source_name(value, identity):
+    """Normalize only a current captured Core Rust source, without host-path resolution."""
+    if type(value) is not str or len(value) > 4096:
+        raise Incomplete("Frequency compiler/assertion source is malformed.")
+    value = re.sub(r"^/work/tmp/cargo-mutants-source-[A-Za-z0-9]{6}[.]tmp/", "", value)
+    value = value.removeprefix("/work/source/")
+    if not value.startswith("crates/time-core/"):
+        raise Incomplete("Frequency cause is outside its owned package.")
+    parts = ["crates", "time-core"]
+    for part in value.split("/")[2:]:
+        if part == "..":
+            if len(parts) <= 2:
+                raise Incomplete("Frequency cause escapes its owned package.")
+            parts.pop()
+        elif re.fullmatch(r"[A-Za-z0-9_.-]+", part):
+            parts.append(part)
+        else:
+            raise Incomplete("Frequency cause source path is unsupported.")
+    name = "/".join(parts)
+    if name not in identity or not name.endswith(".rs"):
+        raise Incomplete("Frequency cause has no captured current Rust source.")
+    return name
+
+
+def _frequency_assertion(source_root, identity, filename, line, column, message):
+    """Require an exact real test assertion or its same-file tracked success guard."""
+    name = _frequency_source_name(filename, identity)
+    if not name.startswith("crates/time-core/tests/"):
+        raise Incomplete("A product panic is not frequency semantic test evidence.")
+    data = COMMON.read_analysis_bytes(source_root / name, maximum=512 * 1024)
+    if hashlib.sha256(data).hexdigest() != identity[name]:
+        raise Incomplete("Frequency assertion source bytes changed.")
+    source = data.decode("utf-8")
+    lines = source.splitlines(keepends=True)
+    if not 1 <= line <= len(lines) or not 1 <= column <= len(lines[line - 1]):
+        raise Incomplete("Frequency assertion location is outside captured source.")
+    offset = sum(map(len, lines[:line - 1])) + column - 1
+    # Mask comments, ordinary/raw strings and character literals, retaining offsets.
+    masked = re.sub(r'r(?P<q>#{0,16})".*?"(?P=q)|//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])\'',
+        lambda found: re.sub(r"[^\n]", " ", found[0]), source, flags=re.DOTALL)
+    token = re.match(r"(assert_eq!|assert_ne!|assert!|product_ok)\s*\(", masked[offset:])
+    if token is None:
+        raise Incomplete("Frequency panic is not at an actual source-owned assertion token.")
+    kind = token[1]
+    if kind == "product_ok":
+        helper = re.findall(r"#\[track_caller\]\s*fn product_ok[^\n]*", source)
+        witness = re.search(r'assert!\s*\(\s*(?:value|result)[.]is_ok\(\)\s*,\s*"([^"\\]*)"', source)
+        if len(helper) != 1 or witness is None:
+            raise Incomplete("Frequency tracked guard lacks its unique fixed success assertion.")
+        prefix = witness[1].split("{", 1)[0]
+        if len(prefix) < 8 or not message.startswith(prefix):
+            raise Incomplete("Frequency tracked guard panic has a foreign message.")
+    elif kind in {"assert_eq!", "assert_ne!"}:
+        expected = "assertion `left == right` failed" if kind == "assert_eq!" else "assertion `left != right` failed"
+        if not message.startswith(expected):
+            raise Incomplete("Frequency assertion has the wrong actual diagnostic family.")
+    else:
+        opening = offset + token.end() - 1
+        depth, comma, end = 0, None, opening + 1
+        while end < len(masked):
+            char = masked[end]
+            if char == ")" and depth == 0:
+                break
+            if char in "([{": depth += 1
+            elif char in ")]}": depth -= 1
+            elif char == "," and depth == 0 and comma is None: comma = end
+            end += 1
+        condition = masked[opening + 1:comma if comma is not None else end].strip()
+        if condition == "false" or end == len(masked):
+            raise Incomplete("Frequency fallback or unfinished assertion earns no credit.")
+        if comma is None:
+            if not message.startswith("assertion failed:"):
+                raise Incomplete("Frequency assertion has a foreign panic message.")
+        else:
+            literal = re.match(r'\s*"([^"\\]*)"', source[comma + 1:end])
+            prefix = literal[1].split("{", 1)[0] if literal else ""
+            if len(prefix) < 8 or not message.startswith(prefix):
+                raise Incomplete("Frequency custom assertion has no source-bound fixed message.")
+    return {"source": name, "line": line, "column": column, "kind": kind,
+            "source_sha256": identity[name]}
+
+
+def _frequency_residual_failure(text):
+    """Reject residual failures after removing only an independently owned cause."""
+    return bool(re.search(INFRASTRUCTURE_FAILURE, text)
+                or re.search(r"(?m)^[ \t]*(?:Error:|error(?:\[[A-Za-z0-9_]+\])?:|[A-Z0-9_]*HARNESS_)", text))
+
+
+def _frequency_failed_target(cause, source_root, identity):
+    """Derive Cargo's failed target from its already source-owned assertion."""
+    source = cause["source"]
+    target = re.fullmatch(r"crates/time-core/tests/([A-Za-z_][A-Za-z0-9_]*)[.]rs", source)
+    if target:
+        return "--test " + target[1]
+    if source.startswith("crates/time-core/tests/private/") and "::" in cause["test"]:
+        for name in identity:
+            if not name.startswith("crates/time-core/src/") or not name.endswith(".rs"): continue
+            data = COMMON.read_analysis_bytes(source_root / name, maximum=512 * 1024)
+            if hashlib.sha256(data).hexdigest() != identity[name]:
+                raise Incomplete("Frequency private-test module source changed.")
+            for path in re.findall(r'#\[path\s*=\s*"([^"\r\n]+)"\]\s*mod\s+[A-Za-z_][A-Za-z0-9_]*\s*;', data.decode("utf-8")):
+                if _frequency_source_name(str(Path(name).parent / path), identity) == source:
+                    return "--lib"
+    raise Incomplete("Frequency assertion has no owned Cargo test target.")
+
+
+def _frequency_caught_text(text, source_root, identity, policy):
+    """Require complete failed names and one owned assertion panic per failed section."""
+    finals = list(re.finditer(r"(?m)^failures:\r?\n(?:\r?\n)?((?:    [A-Za-z_][A-Za-z0-9_:]*\r?\n)+)"
+        r"\r?\ntest result: FAILED[.] (\d+) passed; (\d+) failed; 0 ignored; 0 measured; 0 filtered out;[^\r\n]*", text))
+    failed = []
+    for final in finals:
+        names = [line.strip() for line in final[1].splitlines()]
+        if len(names) != int(final[3]) or not names:
+            raise Incomplete("Frequency caught summary and failed names disagree.")
+        failed.extend(names)
+    ordinary = {name for name in policy["test_inventories"]["baseline"] if " (line " not in name}
+    headers = list(re.finditer(r"(?m)^---- ([A-Za-z_][A-Za-z0-9_:]*) stdout ----\r?\n", text))
+    records = re.findall(r"(?m)^test ([A-Za-z_][A-Za-z0-9_:]*) \.\.\. FAILED\r?$", text)
+    if (not finals or len(set(failed)) != len(failed) or not set(failed) <= ordinary
+            or sorted(records) != sorted(failed) or sorted(h[1] for h in headers) != sorted(failed)):
+        raise Incomplete("Frequency caught output lacks complete owned failed-test blocks.")
+    spans = []; causes = []
+    panic = r"(?m)^thread '([^'\r\n]+)'(?: \(\d+\))? panicked at ([^\r\n]+):(\d+):(\d+):\r?\n([^\r\n]+)"
+    for index, header in enumerate(headers):
+        following = [f.start() for f in finals if f.start() >= header.end()]
+        if index + 1 < len(headers): following.append(headers[index + 1].start())
+        if not following:
+            raise Incomplete("Frequency failed section is unterminated.")
+        end = min(following); body = text[header.end():end]
+        locations = list(re.finditer(panic, body))
+        if len(locations) != 1 or body.count("panicked at ") != 1:
+            raise Incomplete("Frequency failed section has extra or malformed panics.")
+        location = locations[0]
+        if location[1] != header[1] or re.search(r"(?m)^Error:", body):
+            raise Incomplete("Frequency failure is an unowned thread or opaque Error-only result.")
+        causes.append({"test": header[1], **_frequency_assertion(source_root, identity,
+            location[2], int(location[3]), int(location[4]), location[5])})
+        if _frequency_residual_failure(body[:location.start()] + body[location.end():]):
+            raise Incomplete("Frequency failed section contains a mixed infrastructure/compiler failure.")
+        spans.append((header.start(), end))
+    outside = text
+    for start, end in reversed(spans): outside = outside[:start] + outside[end:]
+    targets = {_frequency_failed_target(cause, source_root, identity) for cause in causes}
+    footer = r"(?m)^error: test failed, to rerun pass `-p time-core (--lib|--test [A-Za-z_][A-Za-z0-9_]*)`\r?$"
+    footers = list(re.finditer(footer, outside))
+    original_footers = list(re.finditer(footer, text))
+    if (len(targets) != 1 or len(footers) != 1 or footers[0][1] not in targets
+            or len(original_footers) != 1 or original_footers[0].start() < finals[-1].end()):
+        raise Incomplete("Frequency Cargo test-failed footer differs from its owned failed target.")
+    outside = outside[:footers[0].start()] + outside[footers[0].end():]
+    if _frequency_residual_failure(outside):
+        raise Incomplete("Frequency caught output contains an outside panic/error.")
+    return outside, causes
+
+
+def _frequency_null_let_chain(message, mutant, mutant_diff, source_root, identity, target):
+    """Bind four exact cases; current state changes only its private test suffix."""
+    sources = {
+        "crates/time-core/src/reference_input/rate_delivery.rs": "5a6ed0953bf6e0be88338c52251ed594fcbaaf5cca530e1f541236eb3f8e042d",
+        "crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs": "a0a6af42cba3f012545d05ad5949f8934c28bd4bd65e503f695cc7fdf150c23a",
+    }
+    filename = mutant.get("file") if type(mutant) is dict else None
+    if filename not in sources:
+        return False
+    source_sha = sources[filename]
+    reviewed = {
+        602: ("1da25cb416e19236586a5c55b0193b3387abd5b83d6d83bba784dbed2c12779a",
+              "0f2849df1d7ad6e4bfec917615afab2801d136b42caf4c0dfb69e4f29fa8596c",
+              "c9790db06dd14bd2409e339ae202bae11e51f38506437e7f987a74ac072f3381"),
+        607: ("cbc4c28727bafe833e2bb94f30d4a5194972248109a7d1d61d1501daa1bf15c7",
+              "2ad958303cc0b51f07caa692a7bccc80c9f1937cbfd7c947457c7747bccbbdb3",
+              "bd80e359086a537ae652178540578f146caf255d0cfaa7acd8018e33b1973837"),
+        743: ("739c84e9c3f210c9c78ff9c909008878c6b5993b59151086c6655425cf4fad4d",
+              "efc129fc2666132bcd2a9e8a3027d24a20982bfa95c4c7a4a156621809550fd2",
+              "92eb3ad3f67bfb40754f78780cba36576e4162473502a71a6060450b7c440cb9"),
+        811: ("6bd1273186c15a107768e3c9b4ffdf1a537dfbdc3b5b39c6aea2a8315bc47ab9",
+              "3d8cfd71ad2bffba7c378f6963e32d3b1dd496f0371b8f4599ed47ea9176c0d0",
+              "6faae4ce7b6695e9d32a35323caca83d278747932be5680cf08f12b14a3ff7a5"),
+    }
+    primary = [span for span in message["spans"] if span.get("is_primary") is True]
+    if (message.get("code") is not None
+            or message["message"] != "`||` operators are not supported in let chain conditions"
+            or type(mutant) is not dict or type(mutant_diff) is not str
+            or identity.get(filename) != source_sha or len(primary) != 1
+            or target["kind"] != ["lib"] or target["test"] is not True):
+        return False
+    span = primary[0]; line = span.get("line_start")
+    if type(line) is not int or line not in reviewed:
+        return False
+    descriptor_sha, diff_sha, changed_sha = reviewed[line]
+    if (COMMON.canonical_sha256(mutant) != descriptor_sha
+            or hashlib.sha256(mutant_diff.encode()).hexdigest() != diff_sha):
+        return False
+    data = COMMON.read_analysis_bytes(source_root / filename, maximum=512 * 1024)
+    if hashlib.sha256(data).hexdigest() != source_sha:
+        return False
+    lines = data.decode("utf-8").splitlines(keepends=True)
+    expected = {
+        602: "        && interval.span.active.0 < last\n",
+        607: "        && interval.span.effective.0 < last\n",
+        743: "            && let Err(reason) = self.consume(round)\n",
+        811: "            && let Err(error) = predict(&model, profile, chart, now)\n",
+    }[line]
+    if lines[line - 1] != expected:
+        return False
+    lines[line - 1] = expected.replace("&&", "|| /* ~ changed by cargo-mutants ~ */", 1)
+    changed = "".join(lines).encode()
+    column = 13 if line in (743, 811) else 9
+    byte_start = len("".join(lines[:line - 1]).encode()) + column - 1
+    return (hashlib.sha256(changed).hexdigest() == changed_sha
+            and span.get("file_name") == filename and span.get("line_end") == line
+            and span.get("column_start") == column and span.get("column_end") == column + 2
+            and span.get("byte_start") == byte_start and span.get("byte_end") == byte_start + 2
+            and span.get("text") == [{"highlight_start": column, "highlight_end": column + 2,
+                                      "text": lines[line - 1].rstrip("\n")}])
+
+
+def _frequency_mutation_source(source_root, identity, mutant, diff):
+    """Apply one reviewed native file diff, requiring every old byte and hunk count."""
+    if mutant is None and diff is None:
+        return None
+    if (type(mutant) is not dict or set(mutant) != {"name", "package", "file", "function", "span", "replacement", "genre"}
+            or mutant.get("package") != "time-core" or type(diff) is not str
+            or len(diff.encode()) > 2 * 1024 * 1024):
+        raise Incomplete("Frequency diagnostic mutation context is incomplete or unbounded.")
+    filename = _frequency_source_name(mutant.get("file"), identity)
+    if filename not in FREQUENCY_PRIOR_SUBJECTS.values():
+        raise Incomplete("Frequency diagnostic diff is outside its four owned files.")
+    data = COMMON.read_analysis_bytes(source_root / filename, maximum=512 * 1024)
+    if hashlib.sha256(data).hexdigest() != identity[filename]:
+        raise Incomplete("Frequency diagnostic diff preimage changed.")
+    original = data.decode("utf-8").splitlines(keepends=True)
+    span = mutant.get("span")
+    if (type(span) is not dict or set(span) != {"start", "end"}
+            or any(type(point) is not dict or set(point) != {"line", "column"}
+                   or any(type(value) is not int or value < 1 for value in point.values())
+                   for point in span.values())):
+        raise Incomplete("Frequency diagnostic descriptor span is malformed.")
+    first, last = span["start"], span["end"]
+    if (not 1 <= first["line"] <= last["line"] <= len(original)
+            or first["column"] > len(original[first["line"] - 1].rstrip("\r\n")) + 1
+            or last["column"] > len(original[last["line"] - 1].rstrip("\r\n")) + 1
+            or (first["line"] == last["line"] and first["column"] > last["column"])):
+        raise Incomplete("Frequency diagnostic descriptor span escapes its preimage.")
+    parts = diff.splitlines(keepends=True)
+    prefix = f"{filename}:{mutant['span']['start']['line']}:{mutant['span']['start']['column']}: "
+    if (type(mutant.get("name")) is not str or not mutant["name"].startswith(prefix)
+            or len(parts) < 4 or parts[:2] != ["--- " + filename + "\n", "+++ " + mutant["name"][len(prefix):] + "\n"]):
+        raise Incomplete("Frequency diagnostic diff has foreign file/descriptor headers.")
+    output = []; cursor = 0; index = 2; hunks = 0; changes = 0
+    while index < len(parts):
+        match = re.fullmatch(r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@\n", parts[index])
+        if match is None or hunks >= 256:
+            raise Incomplete("Frequency diagnostic diff hunk header is malformed.")
+        old_count, new_count = int(match[2] or "1"), int(match[4] or "1")
+        old_start = int(match[1]) - (1 if old_count else 0)
+        new_start = int(match[3]) - (1 if new_count else 0)
+        if not cursor <= old_start <= len(original) or old_start + old_count > len(original):
+            raise Incomplete("Frequency diagnostic diff hunks overlap or escape source.")
+        output.extend(original[cursor:old_start])
+        if new_start != len(output):
+            raise Incomplete("Frequency diagnostic diff new coordinates disagree.")
+        old_used = new_used = 0; index += 1
+        while index < len(parts) and not parts[index].startswith("@@ "):
+            part = parts[index]; index += 1
+            if not part or part[0] not in " +-" or not part.endswith("\n"):
+                raise Incomplete("Frequency diagnostic diff contains an unsupported file/line marker.")
+            if part[0] in " -":
+                if old_used >= old_count or part[1:] != original[old_start + old_used]:
+                    raise Incomplete("Frequency diagnostic diff context/preimage differs.")
+                old_used += 1
+            if part[0] in " +":
+                output.append(part[1:]); new_used += 1
+            if part[0] in "+-": changes += 1
+            if old_used > old_count or new_used > new_count:
+                raise Incomplete("Frequency diagnostic diff exceeds its hunk counts.")
+        if (old_used, new_used) != (old_count, new_count):
+            raise Incomplete("Frequency diagnostic diff hunk is incomplete.")
+        cursor = old_start + old_count; hunks += 1
+    output.extend(original[cursor:])
+    changed = "".join(output).encode()
+    if not hunks or not changes or changed == data or len(changed) > 2 * 1024 * 1024:
+        raise Incomplete("Frequency diagnostic diff has no bounded actual mutation.")
+    return filename, changed
+
+
+def _frequency_owned_span(span, filename, data, pristine_sha):
+    """Bind complete rustc coordinates/highlight text to the compiled source view."""
+    lines = data.decode("utf-8").splitlines(keepends=True)
+    start, end = span.get("line_start"), span.get("line_end")
+    column, last = span.get("column_start"), span.get("column_end")
+    if (any(type(value) is not int for value in (start, end, column, last))
+            or not 1 <= start <= end <= len(lines)):
+        raise Incomplete("Frequency compiler span lines are outside compiled source.")
+    contents = [line.removesuffix("\n").removesuffix("\r") for line in lines]
+    if (not 1 <= column <= len(contents[start - 1]) + 1
+            or not 1 <= last <= len(contents[end - 1]) + 1
+            or (start == end and last < column)):
+        raise Incomplete("Frequency compiler span columns are outside compiled source.")
+    byte_start = len("".join(lines[:start - 1]).encode()) + len(contents[start - 1][:column - 1].encode())
+    byte_end = len("".join(lines[:end - 1]).encode()) + len(contents[end - 1][:last - 1].encode())
+    text = [{"text": contents[line - 1], "highlight_start": column if line == start else 1,
+             "highlight_end": last if line == end else len(contents[line - 1]) + 1}
+            for line in range(start, end + 1)]
+    if (type(span.get("byte_start")) is not int or type(span.get("byte_end")) is not int
+            or span["byte_start"] != byte_start or span["byte_end"] != byte_end or span.get("text") != text):
+        raise Incomplete("Frequency compiler span bytes/text differ from compiled source.")
+    return {"source": filename, "line": start, "column": column, "source_sha256": pristine_sha,
+            "diagnostic_source_sha256": hashlib.sha256(data).hexdigest()}
+
+
+def _frequency_const_trait_companion(records, record, mutant, diff, compiled, identity):
+    """Bind four exact catalog payloads to balanced owned const-trait triplets.
+
+    All four formats have predecessor native evidence. The current state
+    source changes only its private test suffix; fresh outcomes remain required.
+    """
+    base = "crates/time-core/src/reference_input/rate_delivery"
+    reviewed = {
+        "bd96f1630c2456f8e3772aeef1762864b72b069b952977eaaa1c576cccb5da5d": (
+            base + ".rs", "5a6ed0953bf6e0be88338c52251ed594fcbaaf5cca530e1f541236eb3f8e042d",
+            "723d4ffee269e48a8707d559098cffb94f64b43492b29f1a65188b47f39cbc54",
+            "8d8bbc09d0612b20712bda840de6dc0d4f0b4a09608624a519b6e047c9cc20a1", 458, 14, 17985),
+        "b4a8e086768d821986b49d35a8e83abb608622a07135c546f3ff8c78f3ffc4cc": (
+            base + "/frequency_prior.rs", "a0a6af42cba3f012545d05ad5949f8934c28bd4bd65e503f695cc7fdf150c23a",
+            "acd2dccf2275dab8bd86450d96783c9d815ccec8d95ddf4b7cb074da4c2a5519",
+            "669650ef337acf934c5ca71bc4ce069be7535d6a32df30a5e2c4922aec542daa", 474, 9, 18716),
+        "4cf549f72bd867c230bb7cda531a88ee11599ff6cda1317de59e141148b94942": (
+            base + "/phase_plan.rs", "a9770f085170b8c9ae52a5957761f99173ee3ff02294df56cb1e8e0c8b888b48",
+            "239121f694f3d071cf24f691f7cec824fea365013edaa1c0629af5a1c86ef775",
+            "c1bf2936a5841f59736a1977f747a73e1dad3defcdb664002d02322ecf1d1695", 417, 9, 16956),
+        "2ddfa326dd703b5748dc0a4faa2a7703813bf170a1296bd443c0523fc2d4d6ad": (
+            base + "/phase_plan.rs", "a9770f085170b8c9ae52a5957761f99173ee3ff02294df56cb1e8e0c8b888b48",
+            "97e70b1874a3f24367d91df0294225729b0e8513e6f4d23873b56ebd96427a93",
+            "2255974b6312cd40c668f3fd2f71f1c8a27645bd87fd8226ee3f6475d29f6ae5", 495, 9, 19714),
+    }
+    binding = reviewed.get(COMMON.canonical_sha256(mutant)) if type(mutant) is dict else None
+    if binding is None:
+        return False
+    filename, pristine_sha, diff_sha, changed_sha, line, column, offset = binding
+    if (compiled is None or compiled[0] != filename or type(diff) is not str
+            or identity.get(filename) != pristine_sha
+            or hashlib.sha256(diff.encode()).hexdigest() != diff_sha
+            or hashlib.sha256(compiled[1]).hexdigest() != changed_sha
+            or record["target"]["kind"] != ["lib"] or record["target"]["test"] is not True
+            or record["message"]["code"] is not None
+            or record["message"]["message"] != "`TryInto` is not yet stable as a const trait"):
+        return False
+    expected = {
+        None: ("`TryInto` is not yet stable as a const trait", column, column + 12, offset, offset + 12),
+        "E0658": ("cannot call conditionally-const method `<u64 as TryInto<NonZero<u64>>>::try_into` in constant functions", column + 2, column + 12, offset + 2, offset + 12),
+        "E0015": ("cannot call non-const method `Result::<NonZero<u64>, TryFromIntError>::unwrap` in constant functions", column + 13, column + 21, offset + 13, offset + 21),
+    }
+    counts = {code: 0 for code in expected}
+    for candidate in records:
+        if (candidate["reason"] != "compiler-message" or candidate["package_id"] != record["package_id"]
+                or candidate["manifest_path"] != record["manifest_path"] or candidate["target"] != record["target"]):
+            continue
+        message = candidate["message"]; raw_code = message.get("code")
+        code = raw_code.get("code") if type(raw_code) is dict else None
+        if message["level"] != "error" or code not in expected or message["message"] != expected[code][0]:
+            continue
+        if code is None and raw_code is not None:
+            return False
+        primary = [span for span in message["spans"] if type(span) is dict and span.get("is_primary") is True]
+        if len(primary) != 1:
+            return False
+        span = primary[0]
+        if (span.get("file_name") != filename or span.get("line_start") != line or span.get("line_end") != line
+                or tuple(span.get(key) for key in ("column_start", "column_end", "byte_start", "byte_end")) != expected[code][1:]):
+            return False
+        _frequency_owned_span(span, filename, compiled[1], identity[filename])
+        counts[code] += 1
+    return 1 <= counts[None] <= 2 and len(set(counts.values())) == 1
+
+
+def _frequency_compiler_errors(records, source_root, identity, *, mutant=None, mutant_diff=None):
+    """Accept coded owned errors or exact observed source-bound syntax companions."""
+    compiled = _frequency_mutation_source(source_root, identity, mutant, mutant_diff)
+    causes = []; workspace = None
+    for record in records:
+        if record["reason"] != "compiler-message": continue
+        message = record["message"]
+        pending = [(message, 0)]; inspected = 0
+        while pending:
+            item, depth = pending.pop(); inspected += 1
+            if (depth > 16 or inspected > 256 or type(item) is not dict
+                    or type(item.get("message")) is not str or type(item.get("children")) is not list
+                    or re.search(INFRASTRUCTURE_FAILURE, item["message"])
+                    or (depth and item.get("level") == "error")):
+                raise Incomplete("Frequency compiler diagnostic contains infrastructure/nested failure.")
+            pending.extend((child, depth + 1) for child in item["children"])
+        if message["level"] != "error": continue
+        code = message.get("code")
+        if code is None:
+            if (re.fullmatch(r"aborting due to [1-9][0-9]* previous errors?(?:; [1-9][0-9]* warnings? emitted)?", message["message"])
+                    and not message["spans"] and causes): continue
+        elif (type(code) is not dict or set(code) != {"code", "explanation"}
+                or type(code.get("code")) is not str
+                or not (re.fullmatch(r"E[0-9]{4}", code["code"]) or code["code"] in {
+                    "unused_variables", "unused_imports", "unused_mut", "dead_code", "unreachable_code",
+                    "unreachable_patterns", "unused_comparisons", "arithmetic_overflow"})):
+            raise Incomplete("Frequency compiler error code is unadmitted.")
+        package = re.fullmatch(r"path\+file://(/work/tmp/cargo-mutants-source-[A-Za-z0-9]{6}[.]tmp)/crates/time-core#0[.]0[.]0", record["package_id"])
+        if package is None or (workspace is not None and workspace != package[1]):
+            raise Incomplete("Frequency compiler error belongs to an unowned package.")
+        workspace = package[1]; target = record["target"]
+        name = _frequency_source_name(target["src_path"], identity)
+        if (record["manifest_path"] != workspace + "/crates/time-core/Cargo.toml"
+                or target["edition"] != "2024" or target["kind"] not in (["lib"], ["test"])
+                or type(target.get("test")) is not bool
+                or (target["kind"] == ["lib"] and (name != "crates/time-core/src/lib.rs" or target["name"] != "time_core"))
+                or (target["kind"] == ["test"] and (not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", target["name"])
+                    or name != "crates/time-core/tests/" + target["name"] + ".rs"))):
+            raise Incomplete("Frequency compiler error target is outside the actual package.")
+        if any(type(span) is not dict for span in message["spans"]):
+            raise Incomplete("Frequency compiler span schema is malformed.")
+        primary = [span for span in message["spans"] if span.get("is_primary") is True]
+        if not primary: raise Incomplete("Frequency compiler error lacks a primary owned span.")
+        locations = []
+        for span in primary:
+            filename = _frequency_source_name(span.get("file_name"), identity)
+            data = COMMON.read_analysis_bytes(source_root / filename, maximum=512 * 1024)
+            if hashlib.sha256(data).hexdigest() != identity[filename]:
+                raise Incomplete("Frequency compiler span pristine source changed.")
+            if compiled is not None and compiled[0] == filename:
+                data = compiled[1]
+            locations.append(_frequency_owned_span(span, filename, data, identity[filename]))
+        if code is None and not (_frequency_null_let_chain(
+                message, mutant, mutant_diff, source_root, identity, target)
+                or _frequency_const_trait_companion(records, record, mutant, mutant_diff, compiled, identity)):
+            raise Incomplete("Frequency compiler error has no admitted source-bound cause.")
+        targets = (["lib", *(["lib test"] if target["test"] else [])] if target["kind"] == ["lib"]
+                   else ['test "' + target["name"] + '"'])
+        causes.append({"code": code["code"] if code else None, "primary": locations, "cargo_targets": targets})
+    return causes
+
+
+def _frequency_log_cause(outcome, text, source_root, identity, policy, *, mutant_diff=None):
+    """Reuse phase/JSON primitives without historical counters or span exceptions."""
+    phases = cargo_phase_segments(outcome, text); causes = []
+    for phase, segment in phases.items():
+        if phase == "Test" and outcome["summary"] == "CaughtMutant":
+            segment, causes = _frequency_caught_text(segment, source_root, identity, policy)
+        records, raw = cargo_json_records(segment)
+        finished = [row for row in records if row["reason"] == "build-finished"]
+        expected = outcome["summary"] != "Unviable"
+        if len(finished) != 1 or finished[0]["success"] is not expected or records[-1] is not finished[0]:
+            raise Incomplete("Frequency Cargo phase lacks its exact final build-finished record.")
+        scenario = outcome.get("scenario")
+        mutant = scenario.get("Mutant") if type(scenario) is dict and not expected else None
+        errors = _frequency_compiler_errors(records, source_root, identity,
+            mutant=mutant, mutant_diff=mutant_diff if not expected else None)
+        if not expected and errors:
+            allowed = {target for error in errors for target in error["cargo_targets"]}
+            footer = (r"(?m)^error: could not compile `time-core` \((lib(?: test)?|test \"[A-Za-z_][A-Za-z0-9_]*\")\) "
+                      r"due to [1-9][0-9]* previous errors?(?:; [1-9][0-9]* warnings? emitted)?\r?$")
+            targets = re.findall(footer, raw)
+            if len(targets) != len(set(targets)) or not set(targets) <= allowed:
+                raise Incomplete("Frequency Cargo compiler footer has a duplicate or unowned target.")
+            raw = re.sub(footer, "", raw)
+        if _frequency_residual_failure(raw):
+            raise Incomplete("Frequency raw phase contains an infrastructure or harness failure.")
+        if outcome["summary"] == "Unviable":
+            if not errors: raise Incomplete("Frequency unviable outcome has no owned compiler cause.")
+            causes = errors
+        elif errors:
+            raise Incomplete("Frequency caught/successful outcome contains compiler errors.")
+    if outcome["summary"] in {"Success", "MissedMutant"}:
+        _conditioned_test_execution(text, policy, _frequency_prior_role(), doctests=True)
+    return causes
+
+
+def _frequency_config(work, report, dependency_policy, vendor_identity=None):
+    """Bind retained exact debug-zero config and the unchanged admitted vendor bytes."""
+    config = report.get("mutation_debug_configuration")
+    if type(config) is not dict:
+        raise Incomplete("Frequency leaf lacks its retained debug-only Cargo configuration.")
+    before, after = config.get("before_text"), config.get("after_text")
+    if (type(before) is not str or type(after) is not str or len(before) > 4096 or len(after) > 4096
+            or hashlib.sha256(before.encode()).hexdigest() != config.get("before_sha256")
+            or hashlib.sha256(after.encode()).hexdigest() != config.get("after_sha256")):
+        raise Incomplete("Frequency configuration text/hash is malformed.")
+    parsed = tomllib.loads(before)
+    try: directory = parsed["source"]["reviewed"]["directory"]
+    except (KeyError, TypeError) as error: raise Incomplete("Frequency vendor configuration is malformed.") from error
+    if type(directory) is not str:
+        raise Incomplete("Frequency vendor path is malformed.")
+    vendor = Path(directory)
+    if not vendor.is_absolute() or str(vendor.resolve(strict=True)) != directory:
+        raise Incomplete("Frequency retained vendor path is not canonical.")
+    if (parsed != {"source": {"crates-io": {"replace-with": "reviewed"}, "reviewed": {"directory": directory}}}
+            or after != before + "\n[profile.dev]\ndebug = 0\n[profile.test]\ndebug = 0\n"
+            or config.get("profile_settings") != {"dev": {"debug": 0}, "test": {"debug": 0}}
+            or config.get("other_profile_settings_changed") is not False):
+        raise Incomplete("Frequency config changes more than the reviewed debug-only profile.")
+    actual = COMMON.read_analysis_bytes(work / "cargo-home/config.toml", maximum=4096)
+    if actual != after.encode(): raise Incomplete("Frequency retained Cargo config differs from the sealed config.")
+    admitted = PRODUCT.admit_vendor(vendor, dependency_policy) if vendor_identity is None else vendor_identity
+    return {"path": "cargo-home/config.toml", "bytes": len(actual), "sha256": hashlib.sha256(actual).hexdigest(),
+            "vendor": directory, "vendor_inventory_sha256": COMMON.canonical_sha256(admitted)}
+
+
+def frequency_artifact_manifest(work, report, policy, owner, inventory, identity,
+                                dependency_policy, vendor_identity=None):
+    """Rebuild the closed actual outcome/log/diff/config manifest with causal observations."""
+    source = work / "source"
+    if not COMMON.frequency_prior_equivalences_valid(policy):
+        raise Incomplete("Frequency raw artifacts have an unreviewed equivalence scope.")
+    equivalents = {entry["mutant"]["name"]: entry["mutant"] for entry in policy["mutation_equivalences"]}
+    if PRODUCT.inventory(source) != identity:
+        raise Incomplete("Frequency retained source inventory changed or gained inputs.")
+    config = _frequency_config(work, report, dependency_policy, vendor_identity)
+    prefix = Path("mutation") / owner / "mutants.out"
+    files = {config["path"]: {"bytes": config["bytes"], "sha256": config["sha256"]}}
+    def read(relative, maximum):
+        data = COMMON.read_analysis_bytes(work / relative, maximum=maximum)
+        name = relative.as_posix()
+        if name in files: raise Incomplete("Frequency raw artifact path is duplicated.")
+        files[name] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+        return data
+    raw = read(prefix / "outcomes.json", 64 * 1024 * 1024)
+    outcomes = COMMON.ANALYSIS.decode(raw.decode("utf-8"))
+    if type(outcomes.get("end_time")) is not str or not outcomes["end_time"]:
+        raise Incomplete("Frequency raw native outcomes are not terminal.")
+    rows = outcomes.get("outcomes")
+    if type(rows) is not list or len(rows) != len(inventory) + 1:
+        raise Incomplete("Frequency raw outcome artifact set is incomplete.")
+    observed = set(); causes = {}; baseline = 0
+    for row in rows:
+        scenario = row.get("scenario")
+        mutant = scenario.get("Mutant") if type(scenario) is dict else None
+        if scenario == "Baseline":
+            baseline += 1; identifier = "Baseline"
+            if row.get("summary") != "Success" or row.get("diff_path") is not None:
+                raise Incomplete("Frequency baseline artifact is not the exact healthy absence of a diff.")
+        else:
+            if (type(mutant) is not dict or mutant.get("name") not in inventory
+                    or (row.get("summary") not in {"CaughtMutant", "Unviable"}
+                        and not (row.get("summary") == "MissedMutant" and mutant == equivalents.get(mutant.get("name"))))):
+                raise Incomplete("Frequency raw mutant artifact has a foreign/unresolved descriptor.")
+            identifier = mutant["name"]
+            frozen = {key: value for key, value in inventory[identifier].items() if key != "diff"}
+            if identifier in observed or mutant != frozen:
+                raise Incomplete("Frequency raw mutant descriptor is repeated or changed.")
+            observed.add(identifier)
+            diff = COMMON.analysis_output_path(row.get("diff_path"))
+            if diff.is_absolute() or len(diff.parts) != 2 or diff.parts[0] != "diff" or diff.suffix != ".diff":
+                raise Incomplete("Frequency raw diff escapes its owned artifact directory.")
+            data = read(prefix / diff, 2 * 1024 * 1024)
+            if type(inventory[identifier].get("diff")) is not str or data != inventory[identifier]["diff"].encode():
+                raise Incomplete("Frequency raw diff differs from the reviewed actual listing payload.")
+        log = COMMON.analysis_output_path(row.get("log_path"))
+        if log.is_absolute() or len(log.parts) != 2 or log.parts[0] != "log" or log.suffix != ".log":
+            raise Incomplete("Frequency raw log escapes its owned artifact directory.")
+        data = read(prefix / log, 16 * 1024 * 1024)
+        causes[identifier] = {"summary": row.get("summary"), "descriptor_sha256":
+            COMMON.canonical_sha256(mutant) if mutant else None,
+            "causes": _frequency_log_cause(row, data.decode("utf-8"), source, identity, policy,
+                mutant_diff=inventory[identifier]["diff"] if mutant else None)}
+    if baseline != 1 or observed != set(inventory):
+        raise Incomplete("Frequency raw artifact union omits a baseline or mutant.")
+    for kind in ("log", "diff"):
+        expected = {Path(name).name for name in files if Path(name).parent == prefix / kind}
+        actual = set()
+        for child in (work / prefix / kind).iterdir():
+            if len(actual) >= len(rows) or child.name not in expected:
+                raise Incomplete("Frequency raw log/diff directory has an unlisted artifact.")
+            actual.add(child.name)
+        if actual != expected:
+            raise Incomplete("Frequency raw log/diff directory is incomplete.")
+    return {"owner": owner, "files": files, "configuration": config, "causal_observations": causes,
+            "inventory_sha256": COMMON.canonical_sha256(inventory), "source_identity_sha256": COMMON.canonical_sha256(identity)}
+
+
+def frequency_cohort_receipt_owner(receipt, policy, identity, admitted):
+    """Admit source/tool-bound terminal metadata; raw leaf evidence remains mandatory."""
+    if (type(receipt) is not dict or type(receipt.get("analysis_admission")) is not dict
+            or type(receipt.get("analysis_admission_after")) is not dict):
+        raise Incomplete("Frequency-prior union metadata is malformed.")
+    owner = receipt.get("cohort_id")
+    if (receipt.get("status") != "passed" or receipt.get("selected_lane") != "mutation"
+            or receipt.get("cohort_complete") is not True or type(owner) is not str
+            or owner not in FREQUENCY_PRIOR_SUBJECTS
+            or receipt.get("subjects") != {owner: FREQUENCY_PRIOR_SUBJECTS[owner]}
+            or receipt.get("complete_subjects") != FREQUENCY_PRIOR_SUBJECTS
+            or receipt.get("candidate_sha256") != policy["candidate_sha256"]
+            or receipt.get("source_sha256") != identity or receipt.get("tool_admission_profile") != "stable-core"
+            or receipt.get("all_reviewed_inventory_bindings") != policy["mutation_inventories"]
+            or receipt.get("analysis_policy_sha256") != admitted["policy_sha256"]
+            or receipt.get("analysis_admission", {}).get("profile") != "stable-core"
+            or receipt.get("analysis_admission_after", {}).get("profile") != "stable-core"
+            or receipt.get("analysis_admission_after", {}).get("unchanged") is not True
+            or receipt.get("analysis_admission", {}).get("inventories") != admitted["inventories"]
+            or receipt.get("analysis_admission_after", {}).get("inventories") != admitted["inventories"]):
+        raise Incomplete("Frequency-prior union has foreign/stale/incomplete owner custody.")
+    return owner
+
+
+def frequency_campaign_result(work, receipt, campaign, owner, role, policy, admitted,
+                              dependency_policy):
+    """Re-admit both recorded argv layers without executing or creating replay inputs.
+
+    Session validates the inner mutation command before execution, but its saved
+    runtime result contains the complete sandbox argv. Reconstruct that envelope
+    from independently admitted inputs rather than accepting an arbitrary prefix
+    or trusting the saved command's paths, environment or resource options.
+    """
+    runtime = COMMON.RUNTIME
+    for path in (work, work / "source", work / "home", work / "tmp",
+                 work / "cargo-home", work / "target"):
+        runtime._directory(path, "Retained frequency work")
+    readonly = admitted["readonly_roots"]
+    if receipt.get("analysis_admission", {}).get("readonly_roots") != [str(path) for path in readonly]:
+        raise Incomplete("Frequency campaign readonly roots differ from independent admission.")
+    configuration = _frequency_config(work, receipt, dependency_policy)
+    vendor, tools, stable = Path(configuration["vendor"]), work.parent / "tools", admitted["stable"]
+    inner = [str(tools / "cargo-mutants"), "mutants", "--package", role.scope.package,
+             "--file", FREQUENCY_PRIOR_SUBJECTS[owner], "--test-workspace", "false",
+             "--cap-lints", "false", "--jobs", "10", "--jobserver", "true",
+             "--jobserver-tasks", "10", "--cargo-arg=--message-format=json",
+             "--baseline", "run", "--build-timeout", "90", "--timeout", "60",
+             "--output", "/work/mutation/" + owner]
+    result = COMMON.mutation_campaign_result(role.scope, tools, owner, inner, campaign,
+        expected_jobs=10, expected_message_format="json", policy=policy)
+    expected = runtime.sandbox_command(ROOT, work, inner,
+        readonly=[*readonly, vendor, tools], sealed=[work / "source", work / "cargo-home/config.toml"],
+        path_dirs=[stable / "bin", tools], cwd=work / "source",
+        environment={"RUSTC": str(stable / "bin/rustc"), "RUSTDOC": str(stable / "bin/rustdoc"),
+                     "RUST_TEST_THREADS": "1"},
+        mode="ordinary", cpu_seconds=600, address_space_bytes=8 * 1024 ** 3,
+        build_jobs=1, cargo_target_mode="worker", process_limit=512, descriptor_limit=256)
+    if campaign.get("command") != expected:
+        raise Incomplete("Frequency campaign sandbox command differs from its exact admitted envelope.")
+    return result
+
+
+def frequency_cohort_union(args, report, policy, role):
+    """Join exactly four complete actual owner receipts through unchanged raw leaf validators."""
+    frequency_inventory_bindings(policy, required=True)
+    equivalences = COMMON.admit_mutation_equivalences(ROOT, role.scope, policy)
+    paths = getattr(args, "cohort_receipt", [])
+    if args.cohort_id is not None or len(paths) != 4 or any(not path.is_absolute() for path in paths):
+        raise Incomplete("Frequency-prior union requires four distinct complete named-owner receipts.")
+    # The custodian sees the original spelling before resolve can hide a link.
+    documents = [COMMON.read_analysis_json(path) for path in paths]
+    canonical = [path.resolve(strict=True) for path in paths]
+    if len(set(canonical)) != 4:
+        raise Incomplete("Frequency-prior union duplicates an owned receipt path.")
+    dependency_policy, product = PRODUCT.admit_product(ROOT)
+    identity = dict(product)
+    identity.update({name: PRODUCT.sha256(ROOT / name) for name in (role.scope.policy, *role.bound_inputs)})
+    admitted = COMMON.ANALYSIS.admit(ROOT, profile="stable-core")
+    reviewed = {}; leaves = {}
+    for path, receipt in zip(canonical, documents, strict=True):
+        owner = frequency_cohort_receipt_owner(receipt, policy, identity, admitted)
+        if owner in leaves:
+            raise Incomplete("Frequency-prior union duplicates an owner.")
+        work = path.resolve().parent / "work"
+        if receipt.get("owned_output") != str(path.resolve().parent) or receipt.get("work") != str(work):
+            raise Incomplete("Frequency-prior receipt escapes its owned artifacts.")
+        COMMON.require_unchanged(work / "source", identity)
+        tool = path.resolve().parent / "tools/cargo-mutants"
+        if (receipt.get("tools_sha256") != {"cargo-mutants": PRODUCT.sha256(tool)}
+                or PRODUCT.sha256(tool) != PRODUCT.sha256(COMMON.tool_path(ROOT, "cargo-mutants"))):
+            raise Incomplete("Frequency-prior union tool bytes differ.")
+        raw = receipt.get("mutation_enumeration", {}).get(owner, {}).get("raw_output")
+        items, _ = COMMON.parse_mutation_listing(raw, expected_jobs=10)
+        inventory = COMMON.mutation_inventory(role.scope, items, 512, FREQUENCY_PRIOR_SUBJECTS[owner])
+        reviewed.update(COMMON.admit_reviewed_mutation_inventories(role.scope, policy, {owner: inventory}))
+        campaigns = [row for row in receipt.get("lanes", []) if row.get("lane") == "mutation-campaign:" + owner]
+        if len(campaigns) != 1:
+            raise Incomplete("Frequency-prior union lacks one actual complete campaign phase.")
+        campaign = campaigns[0]
+        frequency_campaign_result(work, receipt, campaign, owner, role, policy, admitted, dependency_policy)
+        outcomes = COMMON.read_analysis_json(work / "mutation" / owner / "mutants.out/outcomes.json")
+        result = COMMON.mutation_counts(role.scope, outcomes, inventory, FREQUENCY_PRIOR_SUBJECTS[owner],
+            native_exit_code=campaign["exit_code"], equivalences=[entry for entry in equivalences
+                if entry["mutant"]["file"] == FREQUENCY_PRIOR_SUBJECTS[owner]])
+        if result != {key: value for key, value in receipt.get("mutation", {}).get(owner, {}).items()
+                      if key != "baseline_tests_executed"}:
+            raise Incomplete("Frequency-prior union raw per-file accounting changed.")
+        baseline = _conditioned_baseline(work, policy, owner, role)
+        if baseline != receipt.get("baseline_executions", {}).get(owner):
+            raise Incomplete("Frequency-prior union full baseline identities changed.")
+        artifacts = frequency_artifact_manifest(work, receipt, policy, owner, inventory, identity, dependency_policy)
+        if receipt.get("frequency_artifacts") != {owner: artifacts}:
+            raise Incomplete("Frequency-prior retained raw artifacts/configuration/causes changed.")
+        leaves[owner] = {"receipt": str(path.resolve()), "sha256": PRODUCT.sha256(path),
+            "raw_artifact_manifest_sha256": COMMON.canonical_sha256(artifacts),
+            "outcomes_sha256": PRODUCT.sha256(work / "mutation" / owner / "mutants.out/outcomes.json"),
+            "mutation": result, "baseline": baseline}
+    if set(leaves) != set(FREQUENCY_PRIOR_SUBJECTS) or reviewed != policy["mutation_inventories"]:
+        raise Incomplete("Frequency-prior union is incomplete.")
+    COMMON._require_private_output(ROOT, args.output_dir)
+    args.output_dir.mkdir(mode=0o700)
+    report.update(owned_output=str(args.output_dir), subjects=FREQUENCY_PRIOR_SUBJECTS,
+        candidate_sha256=policy["candidate_sha256"], source_sha256=identity,
+        mutation_cohort_union=leaves, qualification_passed=True, mutation_union_passed=True,
+        full_role_qualification=False, scope="Complete four-owner mutation union only; coverage/contracts/native Windows remain separate.")
+
+
+def main_frequency_prior(args):
+    """Keep scoped lane/cohort success distinct from complete role or product qualification."""
+    report = {"status": "incomplete", "selected_lane": args.lane,
+        "scope": "Conditional frequency four-owner " + args.lane,
+        "qualification_passed": False, "native_qualification": "not performed"}
+    if args.cohort_id is not None:
+        report["scope"] += " cohort " + args.cohort_id + " (one complete owner; full union pending)"
+    try:
+        if args.lane != "cohort-union" and args.vendor_dir is None:
+            args.vendor_dir = Path(json.loads(PRODUCT.POINTER.read_text())["vendor_dir"])
+        execute_frequency_prior(args, report)
+        report["status"] = "enumerated" if args.lane == "enumerate" else "passed"
+    except REPORT_FAILURES as error:
+        report.update(status="incomplete", qualification_passed=False, selected_lane_passed=False, error=str(error))
+    if report.get("owned_output") == str(args.output_dir):
+        (args.output_dir / "verification.json").write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
+    print(report["status"].upper() + ": " + report["scope"], flush=True)
+    if report.get("error"):
+        print(report["error"], file=sys.stderr)
+    return 0 if report["status"] in {"passed", "enumerated"} else 1
+
+
 def execute(args, report):
     """Run only selected current-admitted rows; preserve partial raw observations."""
+    if args.subject == FREQUENCY_PRIOR_SUBJECT:
+        return execute_frequency_prior(args, report)
     if args.subject == WINDOW_VARIANCE_SUBJECT:
         return execute_window_variance(args, report)
     if args.subject == CONDITIONED_WINDOW_SUBJECT:
@@ -8951,7 +9934,7 @@ def main(argv=None):
     """Fresh owned outputs, fixed scopes and nonzero incomplete status only."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lane", choices=("inventory", "contracts", "baseline", "coverage", "mutation", "cohort-union", "enumerate", "all"), default="coverage")
-    parser.add_argument("--subject", choices=(*SUBJECTS, WINDOW_VARIANCE_SUBJECT, CONDITIONED_WINDOW_SUBJECT, CONDITIONED_FIT_SUBJECT, PHASE_PLAN_SUBJECT, "all"), default="all")
+    parser.add_argument("--subject", choices=(*SUBJECTS, WINDOW_VARIANCE_SUBJECT, CONDITIONED_WINDOW_SUBJECT, CONDITIONED_FIT_SUBJECT, PHASE_PLAN_SUBJECT, FREQUENCY_PRIOR_SUBJECT, "all"), default="all")
     parser.add_argument("--inventory-admission", type=Path)
     parser.add_argument('--cohort-plan', type=Path)
     parser.add_argument('--cohort-id')
@@ -8960,6 +9943,8 @@ def main(argv=None):
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--tool-admission-profile", choices=COMMON.ANALYSIS.ADMISSION_PROFILES, default="full")
     args = parser.parse_args(argv)
+    if args.subject == FREQUENCY_PRIOR_SUBJECT:
+        return main_frequency_prior(args)
     if args.subject == WINDOW_VARIANCE_SUBJECT:
         return main_window_variance(args)
     if args.subject == CONDITIONED_WINDOW_SUBJECT:

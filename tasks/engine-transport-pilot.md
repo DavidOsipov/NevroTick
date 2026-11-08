@@ -2836,6 +2836,90 @@ The exact remaining law needs independent review before coding. The completed
 finite mechanism and another inert helper do not clear S2.2's provider/trust/
 runtime and association gates.
 
+### Next source contract: one NTS association and one outstanding request
+
+**9 November 2026 — independent review READY; preparation only.**
+The selected frequency-prior GNU exit is complete; continue ordered steps 1/3/4
+here. This review admits no dependent implementation or authenticated exchange. REQ-8/BND-2, CHECK-6/8/9/17/21/
+25/26/27 and AC-04 govern this child; CHECK-7 remains with the later numerical
+bridge. No implementation, authenticated exchange or checkpoint pass is claimed.
+
+The engine owns one current association and at most one outstanding request;
+reservation, encoding, invoked send and pending reply occupy that same slot.
+The wire owner supplies layout only. State labels below are proposed lifecycle
+outcomes; the explicitly existing APIs retain their narrower current guarantees.
+
+| Freeze item / enforcing owner | Required input and receiving boundary |
+| --- | --- |
+| Complete association / engine | Step 3's actual validated KE job, offer, negotiation, both exporter keys, selected AEAD, admitted endpoint, trust basis and lifetimes publish together after current-revision checks. Failure preserves only an independently valid old association. No public constructor from caller-asserted labels. |
+| Existing inert KE / wire | `encode_nts_ke_ntpv4_request`, `NtsKeAccumulator::finish` and `negotiate_nts_ke_ntpv4` supply syntax/negotiation; `cookies()`, `exporter_context()`, `server_hint()` and `port_hint()` supply their documented views. They establish no TLS connection, exporter secret or endpoint authority. |
+| Cookie reservation / engine | Move one exact opaque cookie out of issuable inventory into the exclusive request; another reservation must fail Busy before entropy/encoding. Preserve bytes, issuance age and association identity. Empty KE cookies remain structurally accepted; current formatter representability is a separate request refusal, without padding or rewriting a cookie. |
+| UID/AEAD production / engine+crypto | The actual admitted entropy owner issues fresh word-aligned UID bytes containing at least 32 CSPRNG octets. The admitted negotiated AEAD supplies truthful nonce/ciphertext/NMAX lengths, authenticates the exact AAD and encrypts admitted plaintext. Neither raw bytes nor `NtsRequestShape::new` prove those facts. |
+| Existing formatter / wire | `prepare_nts_client_request` owns the destination borrow; `PreparedNtsRequest::associated_data` borrows its exact prefix; consuming `finish` yields `NtsClientRequest::packet_bytes`. Preserve its stage-atomic failures. Completion grants no association/current-send authority. |
+| Request identity / engine | Retain association incarnation, local request identity, exact UID, real T1 separately, actual socket/remote endpoint, configuration/path/trust/clock revisions and monotonic origin. Equal counters, packet bytes or timestamps cannot substitute for owner provenance. |
+| Bytes/work / engine+wire | Before allocation/issuance freeze explicit finite cookie count/bytes, UID length, packet/plaintext/nonce/ciphertext sizes, copies/scratch and pending native-work budget. Checked sums include available+reserved cookies, UID copies, keys and buffers; aliases are not counted twice. Existing `FrameLimits` bounds only its one packet (48–4096 bytes, ≤64 fields), not aggregate secret memory. |
+| Currentness/deadlines / engine+adapter | Freeze stage and total deadlines on trusted monotonic readings and their origin. Recheck association validity, all affected revisions, destination and complete protected encoding immediately before actual send invocation, serialized with cutover. After any await revalidate before new effects/publication. A submitted operation can no longer be assumed unsent. |
+
+Missing real producers remain explicit: verified ordinary KE/exporter, qualified
+UID/AEAD output, current association publication, admitted socket/send completion
+and authenticated response admission. `AcquisitionSession::prepare` and its
+`PreparedAcquisition`/report path remain the existing unauthenticated experiment;
+they cannot supply these facts or bypass the held Engine-to-Core edge.
+
+| Actual transition / sole owner | Allowed state/effect and failure custody |
+| --- | --- |
+| No usable association → reservation attempted | Refuse boundedly before packet/send effects; enter existing bounded acquisition/recovery, never ordinary plain fallback. |
+| Available → Reserved | Admit current complete association, budgets and one cookie/UID reservation atomically. Second issue is Busy; failed admission publishes no request and advances no send/completion facts. |
+| Reserved → Encoded | Borrow only this reservation's bytes into the formatter and AEAD. Any layout/encryption/finalization refusal publishes no sendable capability; preserve formatter stage bytes and return an explicit not-sent outcome to the same owner. Drop is not cookie reissuance. |
+| Encoded → NoSend | Only evidence that the selected adapter was never invoked, or its separately qualified definite-no-send result, establishes this outcome. Retire this request/UID; record cookie disposition without automatically returning it to issuable inventory. No retry/reuse permission follows. |
+| Encoded → SendInvoked | Run the final effect guard before native submission. Retain socket, packet, cookie/UID and permit through the real operation. Cancellation after submission removes publication eligibility; it proves no native completion or absence of emission. |
+| SendInvoked → local completion | Exact full local datagram-send completion records local submission, not peer delivery/authentication. Only a still-current, non-retired request may enter Pending with its original deadline. A late full send for a cancelled/invalidated request updates its receipt and custody only; publication retirement is sticky. |
+| SendInvoked → Ambiguous | Short/indeterminate/error/cancelled outcomes lacking a qualified no-send guarantee retire publication eligibility and record unknown emission. Do not reissue its cookie/UID or repeat the request implicitly. Resource capacity follows actual completion, even after caller cancellation. |
+| Pending → completed / timeout / invalidated | Only step 5's complete current authenticated receiver may atomically publish permitted cookies/evidence and consume completion once. Timeout, cancellation, generation/path/trust invalidation retire separately. Rejected malformed/unauthenticated traffic leaves a healthy pending request usable. |
+| Any live slot → request-retired | This request cannot publish a late packet or revive its UID. No new issue while its native custody remains unresolved; bound cleanup and surface an unavailable owner when it cannot finish. A replacement owner cannot reset that job. Request retirement alone does not assert that the association remains valid or becomes invalid. |
+| Request-retired → terminal reconciliation | Record the actual terminal send fact, including late known full submission, without restoring this request's publication eligibility. Release capacity only after real completion/cleanup. A separately current usable association and another issuable cookie may then support a fresh request/UID; an invalidated association still requires its own recovery/replacement. |
+
+The cookie ledger distinguishes reserved, known locally submitted, proven not
+sent and emission-unknown facts. None authorizes reuse. Any allowed return or
+reuse, including after proven no-send, still needs its pending privacy-policy
+disposition; this draft selects neither automatic burning nor return-to-pool.
+[RFC 8915 §5.7](https://www.rfc-editor.org/rfc/rfc8915.html#section-5.7)
+permits reuse subject to the application/user's resilience/privacy preference;
+this local hold is not an RFC mandatory-burn rule. Preserve that section's
+outstanding-UID/S2C verification and successful-new-KE replacement boundary in
+the dependent receiver/association work.
+Zero replacement cookies are a separate pending acceptance/completion/retry
+decision in NV-DEC-001 before the dependent receiver path. Keep initial KE cookie
+cardinality, wire representability and replacement-cookie policy separate.
+
+| Independent paired trajectory / future receiving boundary | Required observation |
+| --- | --- |
+| One valid reservation versus concurrent second issue | One cookie/UID bound to one request; Busy has no entropy/send/cookie effect. After an authorized terminal disposition, a new request using another issuable cookie has a fresh UID. |
+| Literal layout versus capacity/shape refusal | Inert fixture UID32/Cookie12, zero placeholders and shape0/0/0 gives packet128/AAD100; budget127 refuses unchanged. This is a framing oracle only, never selected-AEAD acceptance. Retain the formatter's complete byte vectors and abandonment negatives. |
+| Pre-invocation cancellation versus delayed native completion | First produces NoSend; second keeps its permit until actual completion and cannot send/reissue through a replacement. A late full submission becomes a known receipt but never revives this request's publication eligibility. Observer records outcomes without performing the transition. |
+| Exact full send versus short/ambiguous result | Only full local completion of a non-retired current request reaches Pending; neither result grants time/cookie publication or peer-delivery truth. Pair current send with a policy/path/trust cutover between encoding and invocation: no new stale send. |
+| Malformed/wrong UID/tag beside valid pending response | Bad traffic changes no cookie/time/completion; the valid current response completes once. Duplicate/late reply and processing at the deadline publish nothing; `send ≤ arrival ≤ processing_now < deadline` is checked at final publication. |
+| Valid candidate versus export/endpoint/generation failure | Publish the complete candidate once; fail without partial key/cookie/endpoint state and preserve only a separately valid old association. Diagnostics contain bounded stages/reasons, never raw UID/cookie/key/packet/native text. |
+
+Review private construction/field mutation, producer substitution, double issue,
+borrow escape, drop and terminal replay at the actual owner; no fake authenticated
+producer or valid-looking raw model can supply a healthy control. Freeze the
+selected adapter's complete/short/error/no-send guarantees before implementing
+those branches. Native observations require their separate execution admission.
+
+**Source-contract review:** READY for bounded preparation; implementation remains gated.
+The freeze table, outcome/ownership boundaries and paired oracles identify the
+remaining dependencies here. Exact TLS/provider/AEAD graph, ordinary trust profile,
+execution arrangement, finite values, privacy reuse and zero-cookie dispositions
+still gate dependent implementation; W11-W01 owns actual mapping suppliers.
+Before selecting the Windows verifier, apply [R-05](../docs/nevrotick-research-handoff.md#7-r-05--windows-trust-with-a-wrong-system-date)
+and the existing crypto trust/native-work card: identify delegated retrieval,
+actual wrapper controls and actual-completion custody. The imported research
+adds no native pass or Core prerequisite.
+This prepares no new framework, dependency, default, retry policy or source vote.
+Current Core qualification, MD-P1–MD-P3/service ownership, native/fuzz/storage/UI
+holds and OD-10's post-V1 formal deferral remain unchanged.
+
 ### Observable exit and Windows boundary
 
 Extend the existing bounded `nevrotick-observe` projection with actual KE/

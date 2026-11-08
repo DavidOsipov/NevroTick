@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Private expiry-invariant observations after genuine modeled `NoEffect` reception.
+//! Private fixture expiry, Unknown reception and construction-error checks.
 //!
-//! Actual checked histories, producer emissions and owning lifecycle operations
-//! precede the private observation. Clocks are explicit fixture assertions; no
-//! native completion, physical clock or fabricated owner/debt is supplied.
+//! Expiry and Unknown cases use actual checked histories, producer emissions and
+//! owning lifecycle operations before observing private state. The construction
+//! error case tests a pure conversion law without constructing an owner or event.
+//! Clocks remain fixture assertions; no native completion or physical clock is
+//! supplied.
 
 use std::{error::Error, fmt, io, num::NonZeroU64};
 
@@ -329,5 +331,214 @@ fn no_effect_latches_each_deadline_before_later_issue_can_mask_it() -> TestResul
     ] {
         no_effect_case(active, monotonic, clock)?;
     }
+    Ok(())
+}
+
+/// Projection of valid construction causes preserves their typed frequency family.
+///
+/// This calls a pure private classifier directly. It fabricates no owner, event
+/// or constructor result and claims no public constructor reaches this arm.
+/// # Panics
+/// Reject cause erasure in the bounded projection or its nonfrequency neighbor.
+#[test]
+fn construction_error_projection_preserves_frequency_causes_without_owner_state() {
+    for source in [
+        crate::FixtureFrequencyError::ClockContextMismatch,
+        crate::FixtureFrequencyError::ClockAssociationMismatch,
+        crate::FixtureFrequencyError::CursorUnavailable,
+        crate::FixtureFrequencyError::ValidationInvariant,
+    ] {
+        let original = FixturePhaseError::Frequency { source };
+        let restored = super::ConstructionFailure::from_error(&original).into_error();
+        assert_eq!(restored, original);
+    }
+    let neighbor = FixturePhaseError::ClockContextMismatch;
+    assert_eq!(
+        super::ConstructionFailure::from_error(&neighbor).into_error(),
+        neighbor
+    );
+}
+
+/// Enable the existing genuine fixture without attaching a model or source credit.
+/// # Errors
+/// Preserve checked fixture labels, profiles, cursor and constructor refusals.
+/// # Panics
+/// Reject refusal of these explicit supported scalar and association inputs.
+fn frequency_owner_for_unknown<'producer, 'chart>(
+    state: &'producer mut FixtureCombinationState,
+    chart: &'chart FixtureAffineChart,
+    initial: FixturePhaseNow,
+) -> TestResult<FixturePhasePlanOwner<'producer, 'chart>> {
+    let frequency = product_ok(crate::FixtureFrequencyProfile::new(
+        1.0,
+        0.0,
+        1.0,
+        MonotonicNs::new(32 * SECOND).duration_since(MonotonicNs::new(0))?,
+    ))?;
+    product_ok(FixturePhasePlanOwner::new_with_frequency(
+        state,
+        chart,
+        FixtureRateSettlementCursor::new(chart, clocks()?, label(1)?),
+        initial,
+        profile()?,
+        product_ok(FixturePhaseBaseline::new(1.0 / 1024.0))?,
+        frequency,
+        crate::FixtureFrequencyClockAssociation::new(
+            label(17)?,
+            label(23)?,
+            label(101)?,
+            label(107)?,
+        ),
+    ))
+}
+
+/// Compare every exposed historical field without granting current model quality.
+/// # Panics
+/// Reject changed statistics, numerical bounds, identity, chart support or ages.
+fn assert_unknown_frequency_history(
+    actual: &crate::FixtureFrequencyHistory,
+    original: &crate::FixtureFrequencyHistory,
+) {
+    assert_eq!(
+        [
+            actual.mean_seconds_per_second().to_bits(),
+            actual.mean_roundoff_seconds_per_second().to_bits(),
+            actual.skew_seconds_per_second().to_bits(),
+            actual.skew_roundoff_seconds_per_second().to_bits(),
+            actual.residual_seconds_per_second().to_bits(),
+            actual.residual_roundoff_seconds_per_second().to_bits(),
+            actual.anchor_phase_seconds().to_bits(),
+            actual.anchor_roundoff_seconds().to_bits(),
+            actual.phase_standard_deviation_seconds().to_bits(),
+            actual
+                .rate_standard_deviation_seconds_per_second()
+                .to_bits(),
+        ],
+        [
+            original.mean_seconds_per_second().to_bits(),
+            original.mean_roundoff_seconds_per_second().to_bits(),
+            original.skew_seconds_per_second().to_bits(),
+            original.skew_roundoff_seconds_per_second().to_bits(),
+            original.residual_seconds_per_second().to_bits(),
+            original.residual_roundoff_seconds_per_second().to_bits(),
+            original.anchor_phase_seconds().to_bits(),
+            original.anchor_roundoff_seconds().to_bits(),
+            original.phase_standard_deviation_seconds().to_bits(),
+            original
+                .rate_standard_deviation_seconds_per_second()
+                .to_bits(),
+        ]
+    );
+    assert_eq!(actual.emitted_round(), original.emitted_round());
+    assert_eq!(actual.source_context(), original.source_context());
+    assert_eq!(actual.frames(), original.frames());
+    assert_eq!(actual.reference_frames(), original.reference_frames());
+    let domain = actual.domain();
+    let original_domain = original.domain();
+    assert_eq!(
+        [domain.start(), domain.common_reference(), domain.end()],
+        [
+            original_domain.start(),
+            original_domain.common_reference(),
+            original_domain.end(),
+        ]
+    );
+    assert_eq!(
+        [
+            actual.anchor_observed_at(),
+            actual.latest_observed_at(),
+            actual.fit_reference(),
+            actual.projected_at(),
+        ],
+        [
+            original.anchor_observed_at(),
+            original.latest_observed_at(),
+            original.fit_reference(),
+            original.projected_at(),
+        ]
+    );
+}
+
+/// Actual parent Unknown reception must latch the retained frequency component.
+///
+/// The final component query is a private state observation. The public blocked
+/// owner still has no projection or recovery path, and this grants neither one.
+/// # Errors
+/// Preserve genuine fixture setup and actual constructor/intake/issue failures.
+/// # Panics
+/// Reject a lost Unknown latch, invented history or reusable terminal custody.
+#[test]
+fn actual_unknown_reception_latches_frequency_before_private_projection() -> TestResult {
+    let chart = chart()?;
+    let mut fixture = producer(&chart)?;
+    let context = clocks()?;
+    let initial =
+        FixturePhaseNow::new(context, ActiveAwakeNs::new(0), MonotonicNs::new(4 * SECOND));
+    let batch = product_ok(FixtureChartBatch::new(
+        &chart,
+        MonotonicNs::new(4 * SECOND),
+        &fixture.entries,
+    ))?;
+    let mut owner = frequency_owner_for_unknown(&mut fixture.state, &chart, initial)?;
+    let admitted = product_ok(owner.receive_reference(&batch, &fixture.strata, initial))?;
+    assert!(matches!(
+        admitted,
+        FixturePhaseReferenceAdmission::Accepted { emitted_round }
+            if emitted_round == label(1)?
+    ));
+    assert!(matches!(
+        owner.frequency_admission(),
+        crate::FixtureFrequencyAdmission::Accepted { emitted_round }
+            if emitted_round == label(1)?
+    ));
+    let healthy = product_ok(owner.project_model(initial))?;
+    assert_eq!(healthy.nominal_phase_seconds(), 1.0 / 32.0);
+    assert_eq!(healthy.evidence_age().nanoseconds(), 2 * SECOND);
+    let original = *healthy.history();
+    {
+        let proposal = product_ok(owner.issue(initial, FixturePhaseResidualPermission::Deny))?;
+        assert_eq!(proposal.ordinal(), label(1)?);
+    }
+    let result = owner.settle(
+        FixtureRateSettlement::Unknown {
+            context,
+            ordinal: label(1)?,
+        },
+        None,
+        initial,
+    );
+    assert!(matches!(&result, FixturePhaseSettlement::Unknown(_)));
+    let FixturePhaseSettlement::Unknown(mut blocked) = result else {
+        return Err(io::Error::other("missing actual Unknown parent result").into());
+    };
+    assert_eq!(
+        blocked.cursor().status(),
+        FixtureRateCursorStatus::Unresolved
+    );
+    assert_eq!(blocked.cursor().next_ordinal(), None);
+    assert_eq!(blocked.cursor().last_active_end(), None);
+    assert_eq!(blocked.cursor().last_monotonic_end(), None);
+    // Same chart/time was healthy before the real terminal call. Only the
+    // component's Unknown latch should prevent this private query afterward.
+    let projected =
+        blocked
+            .continuation
+            .frequency
+            .project(&chart, context, initial.monotonic(), false);
+    assert!(matches!(
+        projected,
+        Err(crate::FixtureFrequencyError::Unknown)
+    ));
+    let retained = blocked.frequency_history();
+    assert!(retained.is_some());
+    let Some(retained) = retained else {
+        return Err(io::Error::other("actual Unknown lost its historical model").into());
+    };
+    assert_unknown_frequency_history(&retained, &original);
+    assert_eq!(
+        blocked.cursor().status(),
+        FixtureRateCursorStatus::Unresolved
+    );
+    assert_eq!(blocked.cursor().next_ordinal(), None);
     Ok(())
 }

@@ -115,3 +115,136 @@ Its reviewer parsed each actual miss log and the native baseline: all contain
 of the original misses, not kill credit, a formal proof or transfer of the
 incomplete campaign's status. The policy pins every complete descriptor and
 current product; no other numerical mutation is admitted by these arguments.
+
+## FREQUENCY-PROFILE-NORMAL-POSITIVE
+
+**Current-source review, 8 November 2026:** `/root/series_checkpoint_design_review`,
+`/root/series_checkpoint_verification` and `/root`. Requirements remain
+REQ-8/10/11/14/15 and the pure CHECK-7/8/10/14/25 scope in the
+[frequency-prior task](s1.3-source-selection-readiness.md#frequency-diagnosticprovenance-qualification-checkpoint--8-november-2026).
+This is an ordinary source-equivalence argument, not a formal-verifier result.
+
+The current 436-input product candidate is
+`3c8ae8f191cba09742259957d491bb362f8301a39c7506c1a029e02be4ae7e90`.
+Exact current source is
+`crates/time-core/src/reference_input/rate_delivery/phase_plan.rs`, SHA256
+`a9770f085170b8c9ae52a5957761f99173ee3ff02294df56cb1e8e0c8b888b48`.
+Only the line178, column42 replacement of `>` with `>=` in `profile_valid`
+is admitted. Its normalized complete seven-field descriptor SHA256 is
+`87ebc63219626344ce56ac51b015c23fb2d7e2cf8ae69695757b6ce33ba11d04`;
+the rendered diff SHA256 is
+`dfeaa49099fa3e0942a626a76fb9dfef5b83940f0ff3eb25644576c9e8a6da49`.
+
+The current predicate retains `v.is_normal() && *v > 0.0` for each of its three
+caps. Both zeros, every subnormal, infinities and all NaN encodings fail
+`is_normal()` and short-circuit before either comparison. Every other binary64
+value is a finite nonzero normal: positive values satisfy both comparisons and
+negative values satisfy neither. Thus the replacement preserves the Boolean for
+the entire raw `f64` domain, including invalid/private inputs. The unchanged
+horizon predicates, iteration order and short-circuit behavior preserve the
+complete predicate result.
+
+Both mandatory Garde admission and the constructor's repeated explicit check
+consume that same result. Their returned values, rejection reports, allocation
+paths, state and effects remain identical. The enabled frequency constructor
+adds a caller without changing this predicate or the argument. This is a fresh
+review against the current source, expanded callers and actual 295-descriptor
+phase inventory; the historical176:42 source binding is not inherited.
+
+For this phase owner, the policy may name only this exact case. All 295 variants
+must still
+execute. An exclusion requires the actual matching `MissedMutant` result with
+successful build and tests; a caught, unviable, timed-out, absent or changed case
+cannot receive this exclusion. A matching result remains a raw miss and receives
+no behavioral kill credit. No current miss or completed campaign is asserted by
+this source preparation. The three older numerical equivalences above are
+outside the current four-owner inventory and supply no exclusions for it.
+
+## FREQUENCY-GROWTH-NORMAL-POSITIVE
+
+**Current-source review, 8 November 2026:** `/root/inert_nts_formatter_plan_review`,
+`/root/series_checkpoint_verification` and `/root`. The requirements and current
+436-input candidate above apply. This is an ordinary source argument, not a
+formal-verifier result or a mutation kill.
+
+Exact source `crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs`,
+SHA256 `a0a6af42cba3f012545d05ad5949f8934c28bd4bd65e503f695cc7fdf150c23a`.
+The original 42,083-byte production prefix remains unchanged; only the private
+test-module declaration follows it. Exact variant: line180, column19, `>` to
+`>=` in `profile_valid`. Complete normalized descriptor SHA256:
+`b5a0a6e706ec4a2cbe7f87283276804d97af40ccc03e1b1c1f8b4dbb1fe95355`.
+Rendered diff SHA256:
+`8252d2903b1bef3a9f56801a7b871da96aef90721a6adca8187e90657915eae0`.
+
+The unchanged immediately preceding `growth.is_normal()` excludes both zeros,
+all subnormals, infinities and every NaN encoding. Reached positive normals
+satisfy both comparisons; reached negative normals satisfy neither. Earlier
+skew/clock-error predicates and subsequent age predicates retain their original
+order and short-circuit behavior. This covers the entire raw profile tuple,
+including invalid values, rather than assuming a previously admitted profile.
+Both mandatory Garde and the repeated explicit predicate receive the same
+Boolean, preserving returned parameters, rejection/allocation paths and effects.
+The unmodified original-source variant actually survived the earlier state
+campaign; that incomplete result supplies no current-source passing score.
+
+## FREQUENCY-ANCHOR-BOUND-ABS-SIGN
+
+**Current-source review, 8 November 2026:** `/root/inert_nts_formatter_plan_review`,
+`/root/series_checkpoint_verification` and `/root`. The same requirements,
+candidate and score restrictions apply.
+
+Exact numerical source
+`crates/time-core/src/regression/chart/roundoff/frequency_prior.rs`, SHA256
+`c29c5461fc90820de0aef29503174a64b70dc18aca131b8592b247e123ad247b`.
+Exact variant: line625, column64, delete unary `-` in `FrequencyAnchor::rebase`.
+Normalized descriptor SHA256:
+`22517d32dfe7600ed511c0e3e94937445c1c7079b9cbc6bc277e494927283f1c`.
+Rendered diff SHA256:
+`3acdd5b45d9fc361e6e7249efbdff3aeb98f2db2376c9de38e34bb9d7ca598fb`.
+The required parent is `crates/time-core/src/regression/chart/roundoff.rs`, SHA256
+`4bea2d3fbd596ec5c28b7febd56d21efe42b19c7de2fdbd84f804d5451ff476f`.
+Its pin is mandatory; the older phase proof's parent hash cannot be inherited.
+
+Only the right operand of `coefficient_addition_error` changes. The separately
+rounded point subtraction, raw effect admission and zero-effect branch do not.
+The parent's first use of this operand is `right.abs()`, and no operation observes
+its sign beforehand. For every finite admitted effect, including both signed
+zeros and extreme magnitudes, `abs(-effect.phase)` and `abs(effect.phase)` have
+identical bits. All subsequent bound operands, operation order, overflow/refusal
+causes, output admission, anchor bits and caller-owned effects are identical.
+Invalid raw effects fail through the unchanged earlier admission path. This
+covers the complete method domain and its errors, not only current examples.
+
+## FREQUENCY-INTERVAL-WHOLE-ZERO-PRODUCT
+
+**Current-source review, 8 November 2026:** `/root/series_checkpoint_design_review`,
+`/root/series_checkpoint_verification` and `/root`. The same requirements,
+candidate and score restrictions apply.
+
+Exact numerical source SHA256 is the one above. Exact variant: line1196,
+column27, outer `||` to `&&` in `Interval::multiply`.
+Normalized descriptor SHA256:
+`31b9588c3950a1a8c2069d4bc14ebf95ed991885d9ffaf8b2bf9658716181872`.
+Rendered diff SHA256:
+`b7fae67cb70757cc5896a3737def9bf39cd9071334535bfb5d95c9781cba7199`.
+
+The admitted helper domain contains finite ordered closed intervals, including
+signed-zero endpoints and bound-only subnormals. Partition it into three cases.
+With both whole intervals zero, both versions return the same canonical `ZERO`.
+With neither whole interval zero, both execute the identical original loop.
+With exactly one whole interval zero, only the mutated version enters the loop;
+each of its four endpoint pairs has a zero operand. The unchanged inner `||`
+therefore selects the literal positive-zero pair every time, bypassing products
+and outward rounding. Starting from finite extrema, min/max reduction yields
+the same canonical positive-zero endpoints as `ZERO`. No error, allocation,
+counter, source state or other effect differs. The additional four iterations
+remain within the existing maximum-four-pair fixed-work contract; exact timing
+equality is neither required nor claimed. The distinct inner-operator variant is
+not equivalent and has its own zero-endpoint regression control.
+
+These three cases and the current phase-normality case are the entire permitted
+current set. Every exact variant still executes and must actually finish as
+`MissedMutant` with its complete passing current roster before exclusion. Caught,
+unviable, absent, changed or timed-out variants cannot receive this treatment.
+All exclusions remain raw misses and receive zero kill credit. The earlier
+incomplete campaigns and completed proofs retain only their original scopes.

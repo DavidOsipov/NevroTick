@@ -14,13 +14,14 @@ integration preparation can proceed; qualified product adoption, final account/
 provisioning admission and native Windows lifecycle evidence remain open.
 
 **Current continuation:** [plan §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-returns to remaining S1.4 frequency-prior update/aging/holdover contract preparation
-after the [finite phase-plan two-owner exit](s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners).
-Its selected Linux fixture scope passes 455 ordinary/455 optimized tests,
-92 doctests, scoped external contracts and both per-file coverage/mutation gates;
-all 376 variants reconcile with four exact equivalents receiving no kill credit.
-The exact remaining controller law needs independent review before coding;
-full S1.4/P1 and S2.2 provider/trust/runtime integration remain open.
+routes the reviewed [S2.2 association/request preparation](engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request)
+after the [frequency-prior four-owner exit](s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners).
+The latter passes its selected GNU scope: 509 ordinary/509 optimized tests,
+98 doctests, scoped contract/mechanism joins and all four line/mutation gates.
+Its 699 variants are 424 caught, 271 compiler-unviable and four reviewed
+non-killed equivalents, without timeout or unresolved survivor. The corrected
+union reader and frozen native inputs remain separately identified. Full
+S1.4/P1, production policy and S2.2 provider/trust/runtime integration remain open.
 The engine's [receiving transaction reconciliation](engine-transport-pilot.md#receiving-transaction-reconciliation--7-november-2026)
 retains its settled identity/accumulation/capacity/commit choices. Q1's conditional
 quality calculation's [final qualification](engine-transport-pilot.md#q1-final-qualification--conditional-source-quality)
@@ -50,8 +51,8 @@ are 185 caught, 113 compiler-unviable and five equivalent misses, with zero
 timeout or unresolved survivor; six focused controls add no denominator or
 compiler/harness kill credit. Current execution follows
 [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent):
-prepare the remaining frequency-prior/holdover contract after the qualified
-finite phase-plan child. The inert S2.2
+continue reviewed association/request preparation after the qualified
+conditional frequency-prior child. The inert S2.2
 formatter child now passes 119 ordinary/119 optimized tests, 86 doctests,
 external-consumer contracts and all three affected line/mutation gates. Its
 108 generated variants are 79 caught and 29 compiler-unviable, with no survivor,
@@ -140,7 +141,7 @@ retain their existing prerequisites and re-entry gates.
 | P1 S1.1c–e | [Time domain](s1.1-time-domain.md), [exchange](s1.1-exchange-association.md), [deterministic harness](s1.1-deterministic-harness.md); domain/protocol/QA | Existing checked numerical and fixture-association children. [RequestTiming proof](s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026) passed five full-domain/defect/restored jobs and158 selected Python checks, with34 inputs/nine executed Python sources bound. Constructor arithmetic only; lifecycle/native/P1 gates remain open. |
 | P1 S1.2 | [Regression/history](s1.2-regression-readiness.md); numerical Core | Existing task; retain selected-owner receipts, remaining scope and independent trajectory/critical-file gates. |
 | P1 S1.3 | [Selection/principal/combination](s1.3-source-selection-readiness.md); numerical Core | [Actual source-counter invariant](s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026) passed five full raw2^80/three-defect/restored jobs,145 properties and291 Python checks;32 inputs/nine executed Python sources bound. Earlier ordinal/append-depth/rational evidence remains preserved. [Complete constructor source preparation](s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026) now has six genuine Garde-backed Cargo projects,14 authenticated vendor packages,51 source checks and independent review; zero compiler/proof commands, execution unready. Source-specific admission/target/allocator/drop/unwinding/constructor proof, transactional lifecycle, prefix/depth/topology/whole-selection, held fraction models/bridge/import/addition, Garde admission, `EndpointParts`, complete enclosure and Core/P1 remain open. All holds and the full P0–P7 objective remain. |
-| P1 S1.4 | [Core completion parent](development-backlog.md#p1-core-completion), [leap entry table](s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint); Core/domain | Abstract discipline/holdover parent remains deferred. The separate pure-leap owner has completed its recorded final host qualification; preserve current receipts and continue with the observation-to-Core contract under plan §7. Formal obligations are post-V1. Later protocol/native scopes remain open. |
+| P1 S1.4 | [Core completion parent](development-backlog.md#p1-core-completion), [leap entry table](s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint); Core/domain | The complete abstract discipline/holdover parent remains open; its finite-plan and conditional-frequency children have selected GNU exits. The separate pure-leap owner has completed its recorded final host qualification; preserve current receipts and continue with the observation-to-Core contract under plan §7. Formal obligations are post-V1. Later protocol/native scopes remain open. |
 | P1 S1.5 | [Core completion / verifier maintenance](development-backlog.md#p1-core-completion); tooling/dependency/QA | Cross-cutting verification and eventual phase closure; existing actual gates remain mandatory. Deferred maintenance is not a new implementation prerequisite. |
 | P2 S2.1–S2.4 | [Acquisition parent](development-backlog.md#p2-acquisition), [observation-to-Core contract](engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission); engine/protocol/security | The common-run bridge, N1b and N2a have completed their selected host exits. N3a's finite same-source acquisition/consume-once receiver now passes its ordinary checkpoint; complete its separate contract/coverage/mutation and validator-mechanism gates. Production history remains unimplemented and existing history fixture-only. Full UDP/DNS → NTS → qualified reuse/recovery → adversarial closure retains its deferred parent gates. The [ordinary S2.2 card](engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026) prepares fresh KE/protected UDP/actual Core composition; graph/trust/contracts and implementation evidence remain open. Reuse existing owners without inheriting production qualification. |
 | P3 S3.1–S3.4 | [Service-boundary parent](development-backlog.md#p3-service-boundary), [source handoff](windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026); platform/IPC/security/Core | S3.1 integration preparation reuses the implemented service foundation; product/native adoption remains gated. Authenticated handlers → mandatory state → simulated-backend integration retain their prerequisites. W11/ST-W assignments apply; optional storage retains its separate pause. |

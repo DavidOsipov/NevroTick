@@ -39,9 +39,11 @@ use garde::Validate;
 use time_domain::{ActiveAwakeDurationNs, ActiveAwakeNs, MonotonicDurationNs, MonotonicNs};
 
 use super::{
-    FixtureRateClock, FixtureRateClockContext, FixtureRateCursorStatus, FixtureRateDeliveryError,
+    FixtureFrequencyAdmission, FixtureFrequencyClockAssociation, FixtureFrequencyError,
+    FixtureFrequencyHistory, FixtureFrequencyProfile, FixtureFrequencyProjection, FixtureRateClock,
+    FixtureRateClockContext, FixtureRateCursorStatus, FixtureRateDeliveryError,
     FixtureRateSettlement, FixtureRateSettlementCursor, FixtureRateSettlementKind,
-    FixtureReferenceInputState,
+    FixtureReferenceInputState, frequency_prior::FrequencyState,
 };
 use crate::{
     FixtureAffineChart, FixtureChartBatch, FixtureChartCombinationError, FixtureChartError,
@@ -244,6 +246,11 @@ pub enum FixturePhaseRetirementReason {
 /// Bounded lifecycle refusal, retaining typed causes rather than inputs.
 #[derive(PartialEq)]
 pub enum FixturePhaseError {
+    /// The enabled model rejected its explicit clock/profile association.
+    Frequency {
+        /// Bounded conditional-model cause with no raw labels or input values.
+        source: FixtureFrequencyError,
+    },
     /// An explicit horizon or numerical cap is unsupported.
     InvalidProfile,
     /// Mandatory validation disagreed with its shared typed rule.
@@ -326,6 +333,7 @@ impl fmt::Debug for FixturePhaseError {
 impl fmt::Display for FixturePhaseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
+            Self::Frequency { .. } => "fixture phase: frequency association rejected",
             Self::InvalidProfile => "fixture phase: invalid profile",
             Self::ValidationInvariant => "fixture phase: validation invariant",
             Self::ClockContextMismatch => "fixture phase: clock context mismatch",
@@ -358,6 +366,7 @@ impl fmt::Display for FixturePhaseError {
 impl std::error::Error for FixturePhaseError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
+            Self::Frequency { source } => Some(source),
             Self::Chart { source } => Some(source),
             Self::Reference { source } => Some(source),
             Self::Delivery { source } => Some(source),
@@ -562,6 +571,14 @@ pub struct FixturePhaseConstructionRejected {
 /// Construction-only refusal codes keep the cursor-returning error bounded.
 /// No branch owns producer state, charts, reference payloads or validation reports.
 enum ConstructionFailure {
+    /// Enabled model construction rejected the actual monotonic clock assertion.
+    FrequencyClock,
+    /// Enabled model construction rejected the original source/chart assertion.
+    FrequencyAssociation,
+    /// Enabled model construction rejected the actual cursor status/mapping.
+    FrequencyCursor,
+    /// Enabled model construction disagreed with its mandatory invariant rule.
+    FrequencyInvariant,
     /// Supplied clock association differs from the actual cursor context.
     ClockContext,
     /// Active time precedes the cursor's last known active endpoint.
@@ -581,10 +598,23 @@ enum ConstructionFailure {
 }
 
 impl ConstructionFailure {
+    /// Keep only the four actual enabled-construction causes beside the cursor.
+    /// Numerical and quality errors cannot arise before any model exists; an
+    /// unexpected such result is a construction invariant disagreement.
+    fn from_frequency_error(error: FixtureFrequencyError) -> Self {
+        match error {
+            FixtureFrequencyError::ClockContextMismatch => Self::FrequencyClock,
+            FixtureFrequencyError::ClockAssociationMismatch => Self::FrequencyAssociation,
+            FixtureFrequencyError::CursorUnavailable => Self::FrequencyCursor,
+            _ => Self::FrequencyInvariant,
+        }
+    }
+
     /// Project a construction-time refusal into its bounded stored family.
     /// The borrowed cause is neither mutated nor retained.
     fn from_error(error: &FixturePhaseError) -> Self {
         match error {
+            FixturePhaseError::Frequency { source } => Self::from_frequency_error(*source),
             FixturePhaseError::ClockContextMismatch => Self::ClockContext,
             FixturePhaseError::TimeRegression {
                 clock: FixtureRateClock::ActiveAwake,
@@ -603,6 +633,18 @@ impl ConstructionFailure {
     /// This changes no cursor, producer, clock reading or useful-plan state.
     fn into_error(self) -> FixturePhaseError {
         match self {
+            Self::FrequencyClock => FixturePhaseError::Frequency {
+                source: FixtureFrequencyError::ClockContextMismatch,
+            },
+            Self::FrequencyAssociation => FixturePhaseError::Frequency {
+                source: FixtureFrequencyError::ClockAssociationMismatch,
+            },
+            Self::FrequencyCursor => FixturePhaseError::Frequency {
+                source: FixtureFrequencyError::CursorUnavailable,
+            },
+            Self::FrequencyInvariant => FixturePhaseError::Frequency {
+                source: FixtureFrequencyError::ValidationInvariant,
+            },
             Self::ClockContext => FixturePhaseError::ClockContextMismatch,
             Self::ActiveOrder => FixturePhaseError::TimeRegression {
                 clock: FixtureRateClock::ActiveAwake,
@@ -678,6 +720,8 @@ impl std::error::Error for FixturePhaseConstructionRejected {
 /// }
 /// ```
 pub struct FixturePhasePlanOwner<'producer, 'chart> {
+    /// Same-owner optional feature mode; enabled assimilation cannot be bypassed.
+    frequency: FrequencyState,
     /// Exclusive actual producer lease preventing concurrent emission-credit changes.
     producer: &'producer mut FixtureCombinationState,
     /// Local readiness bound to the exact currently borrowed mathematical chart.
@@ -848,6 +892,7 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
             });
         }
         Ok(Self {
+            frequency: FrequencyState::disabled(),
             producer,
             readiness: FixtureReferenceInputState::new(chart),
             cursor,
@@ -860,6 +905,104 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
             historical_debt: None,
             issued: None,
         })
+    }
+
+    /// Construct the same exclusive owner with compulsory frequency assimilation.
+    ///
+    /// The explicit immutable association is a fixture assertion, not a native
+    /// clock mapping. Both constructor paths retain the same cursor/producer
+    /// custody. There is no later public enable or raw model setter.
+    /// # Errors
+    /// Preserve the supplied cursor on association or existing phase admission
+    /// failure; no producer advancement or model observation occurs.
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Both independent profiles and the explicit clock association are mandatory inputs; no ambient/default policy is selected."
+    )]
+    pub fn new_with_frequency(
+        producer: &'producer mut FixtureCombinationState,
+        chart: &'chart FixtureAffineChart,
+        cursor: FixtureRateSettlementCursor,
+        now: FixturePhaseNow,
+        profile: FixturePhaseProfile,
+        baseline: FixturePhaseBaseline,
+        frequency_profile: FixtureFrequencyProfile,
+        association: FixtureFrequencyClockAssociation,
+    ) -> Result<Self, FixturePhaseConstructionRejected> {
+        let frequency =
+            match FrequencyState::enabled(frequency_profile, association, chart, &cursor) {
+                Ok(frequency) => frequency,
+                Err(source) => {
+                    return Err(FixturePhaseConstructionRejected {
+                        cursor,
+                        error: ConstructionFailure::from_frequency_error(source),
+                    });
+                }
+            };
+        let mut owner = Self::new(producer, chart, cursor, now, profile, baseline)?;
+        owner.frequency = frequency;
+        Ok(owner)
+    }
+
+    /// Last actual source-admission outcome, separate from finite phase admission.
+    #[must_use]
+    pub fn frequency_admission(&self) -> FixtureFrequencyAdmission {
+        self.frequency.admission()
+    }
+
+    /// Copy historical diagnostics without claiming current model availability.
+    #[must_use]
+    pub fn frequency_history(&self) -> Option<FixtureFrequencyHistory> {
+        self.frequency.history()
+    }
+
+    /// Project the conditional model on the explicitly associated monotonic axis.
+    ///
+    /// Enabled valid current readings commit before later quality/pending/model
+    /// rejection, so an earlier query cannot revive quality. This creates no
+    /// fresh source, phase obligation, baseline acknowledgement or clock effect.
+    /// # Errors
+    /// Disabled/context/order failures change no state. Later refusals retain
+    /// the valid time high-water and all issued-operation/history custody.
+    ///
+    /// Prediction is not a fresh-reference admission path:
+    /// ```compile_fail,E0308
+    /// use time_core::{FixtureFrequencyProjection, FixturePhaseNow,
+    ///     FixturePhasePlanOwner, FixturePrincipalStratum};
+    /// fn substitute(owner: &mut FixturePhasePlanOwner<'_, '_>,
+    ///     prediction: FixtureFrequencyProjection, strata: &[FixturePrincipalStratum],
+    ///     now: FixturePhaseNow) {
+    ///     let _result = owner.receive_reference(&prediction, strata, now);
+    /// }
+    /// ```
+    /// Nor can callers bypass genuine intake with a scalar learning method:
+    /// ```compile_fail,E0599
+    /// use time_core::FixturePhasePlanOwner;
+    /// fn bypass(owner: &mut FixturePhasePlanOwner<'_, '_>) {
+    ///     owner.learn(0.0, 0.0);
+    /// }
+    /// ```
+    pub fn project_model(
+        &mut self,
+        now: FixturePhaseNow,
+    ) -> Result<FixtureFrequencyProjection, FixtureFrequencyError> {
+        if !self.frequency.is_enabled() {
+            return Err(FixtureFrequencyError::Disabled);
+        }
+        check_now(self.last_now, &self.cursor, now).map_err(|error| match error {
+            FixturePhaseError::ClockContextMismatch => FixtureFrequencyError::ClockContextMismatch,
+            FixturePhaseError::TimeRegression { clock } => {
+                FixtureFrequencyError::TimeRegression { clock }
+            }
+            _ => FixtureFrequencyError::ValidationInvariant,
+        })?;
+        self.last_now = now;
+        self.frequency.project(
+            self.readiness.chart,
+            self.cursor.context,
+            now.monotonic,
+            self.issued.is_some(),
+        )
     }
 
     /// Borrow the actual chart with its existing lifetime for genuine new batches.
@@ -924,6 +1067,7 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
 
     /// Retire proposal authority monotonically while retaining a late receiver.
     pub fn retire(&mut self, reason: FixturePhaseRetirementReason) {
+        self.frequency.retire(reason);
         if self.authority.is_none() {
             self.authority = Some(reason);
         }
@@ -972,6 +1116,7 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
             let token = match self.readiness.admit_reference_input(&outcome) {
                 Ok(token) => token,
                 Err(source) => {
+                    self.frequency.no_ready(round);
                     return Ok(FixturePhaseReferenceAdmission::AdmittedNoPlan {
                         emitted_round: round,
                         reason: FixturePhaseError::Reference { source },
@@ -979,6 +1124,12 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
                 }
             };
             let estimate = token.combined();
+            self.frequency.assimilate(
+                estimate,
+                token.emitted_round(),
+                self.cursor.context,
+                now.monotonic,
+            );
             FixturePhaseProvenance {
                 phase: estimate.phase_seconds(),
                 error: estimate.phase_mean_roundoff_seconds(),
@@ -1090,6 +1241,10 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
 
 /// One consuming terminal path; only outer rejection returns an unchanged owner.
 #[must_use]
+#[expect(
+    clippy::large_enum_variant,
+    reason = "The bounded inline result retains exclusive late-result custody and immutable model history without introducing a success-path heap allocation; the largest variant is constant-size, not input-sized."
+)]
 pub enum FixturePhaseSettlement<'producer, 'chart> {
     /// The event was not admitted and ownership is returned intact.
     OuterRejected {
@@ -1114,6 +1269,8 @@ impl fmt::Debug for FixturePhaseSettlement<'_, '_> {
 
 /// Owned transfer custody without any predecessor-chart borrow or useful proposal.
 struct Continuation<'producer> {
+    /// The same model/profile/clock association moves through the sole custody slot.
+    frequency: FrequencyState,
     /// Exclusively leased producer transferred once, never cloned or reconstructed.
     producer: &'producer mut FixtureCombinationState,
     /// Actual advanced cursor retaining consumption and historical endpoint marks.
@@ -1146,6 +1303,8 @@ struct Continuation<'producer> {
 /// ```
 #[must_use]
 pub struct FixturePhaseRetirement<'producer> {
+    /// Historical model diagnostics survive consumption of the continuation slot.
+    frequency_history: Option<FixtureFrequencyHistory>,
     /// Sole producer-and-cursor transfer slot; taking either path empties it.
     continuation: Option<Continuation<'producer>>,
     /// Original typed known terminal event, retained independently of arithmetic.
@@ -1182,6 +1341,11 @@ pub struct FixturePhaseBlocked<'producer> {
 }
 
 impl FixturePhaseBlocked<'_> {
+    /// Copy historical diagnostics; Unknown grants no useful model projection.
+    #[must_use]
+    pub fn frequency_history(&self) -> Option<FixtureFrequencyHistory> {
+        self.continuation.frequency.history()
+    }
     /// Borrow the actually consumed unresolved cursor without a reset path.
     #[must_use]
     pub const fn cursor(&self) -> &FixtureRateSettlementCursor {
@@ -1351,6 +1515,7 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
     /// The prior readiness borrow and issued view do not escape this transfer.
     fn into_continuation(self) -> Continuation<'producer> {
         Continuation {
+            frequency: self.frequency,
             producer: self.producer,
             cursor: self.cursor,
             profile: self.profile,
@@ -1410,6 +1575,7 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
                 FixturePhaseSettlement::ProvenNoEffect(self)
             }
             FixtureRateSettlementKind::Unknown => {
+                self.frequency.unknown();
                 let provenance = self.provenance;
                 let historical_debt = self.historical_debt;
                 FixturePhaseSettlement::Unknown(FixturePhaseBlocked {
@@ -1420,6 +1586,8 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
                 })
             }
             FixtureRateSettlementKind::Completed | FixtureRateSettlementKind::Cancelled => {
+                self.frequency
+                    .rebase(predecessor, completion.effect(), completion.replacement());
                 let debt = settled_debt(self.obligation, event, self.baseline, observed_baseline);
                 let refusal = continuation_refusal(
                     self.profile,
@@ -1439,7 +1607,9 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
                 if let Ok(value) = &debt {
                     self.historical_debt = Some(*value);
                 }
+                let frequency_history = self.frequency.history();
                 FixturePhaseSettlement::Known(FixturePhaseRetirement {
+                    frequency_history,
                     continuation: Some(self.into_continuation()),
                     event,
                     replacement,
@@ -1454,6 +1624,12 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
 }
 
 impl<'producer> FixturePhaseRetirement<'producer> {
+    /// Copy the historical rebase result without supplying a usable projection.
+    /// The snapshot survives a successful take-once transfer.
+    #[must_use]
+    pub const fn frequency_history(&self) -> Option<FixtureFrequencyHistory> {
+        self.frequency_history
+    }
     /// Borrow the actual replacement or preserve its original composition error.
     /// # Errors
     /// Return the original post-consumption chart failure.
@@ -1580,6 +1756,7 @@ impl<'producer> FixturePhaseRetirement<'producer> {
             .take()
             .ok_or(FixturePhaseError::TransferConsumed)?;
         Ok(FixturePhasePlanOwner {
+            frequency: value.frequency,
             producer: value.producer,
             readiness: FixtureReferenceInputState::new(chart),
             cursor: value.cursor,

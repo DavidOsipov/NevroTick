@@ -10,6 +10,14 @@
 /// Owning finite phase obligations layered on the existing terminal receiver.
 mod phase_plan;
 
+/// Conditional frequency learning belongs to the same exclusive phase owner.
+mod frequency_prior;
+
+pub use frequency_prior::{
+    FixtureFrequencyAdmission, FixtureFrequencyClockAssociation, FixtureFrequencyError,
+    FixtureFrequencyHistory, FixtureFrequencyProfile, FixtureFrequencyProjection,
+};
+
 pub use phase_plan::{
     FixturePhaseBaseline, FixturePhaseBlocked, FixturePhaseConstructionRejected, FixturePhaseError,
     FixturePhaseNow, FixturePhasePlanOwner, FixturePhaseProfile, FixturePhaseProposal,
@@ -502,9 +510,23 @@ pub struct FixtureRateSettlementCompletion {
     kind: FixtureRateSettlementKind,
     /// None is only known no-effect/unknown absence; Err retains its exact cause.
     replacement: Result<Option<FixtureAffineChart>, FixtureChartError>,
+    /// Actual checked total-delivery effect, retained separately from composition.
+    /// Only the owning phase/model receiver can use this descriptor to rebase.
+    effect: Result<Option<FixtureAffineChart>, FixtureChartError>,
 }
 
 impl FixtureRateSettlementCompletion {
+    /// Borrow the actual admitted effect without recomputing rate/time arithmetic.
+    /// # Errors
+    /// Retain the original effect-construction failure after cursor consumption.
+    const fn effect(&self) -> Result<Option<&FixtureAffineChart>, FixtureChartError> {
+        match &self.effect {
+            Ok(Some(chart)) => Ok(Some(chart)),
+            Ok(None) => Ok(None),
+            Err(error) => Err(*error),
+        }
+    }
+
     /// Copy the admitted kind without inferring numerical or native success.
     #[must_use]
     pub const fn kind(&self) -> FixtureRateSettlementKind {
@@ -693,14 +715,16 @@ impl FixtureReferenceInputState<'_> {
             admitted
         };
         cursor.progress = admitted.next;
-        let (kind, replacement) = match admitted.event {
-            FixtureRateSettlement::ProvenNoEffect { .. } => {
-                (FixtureRateSettlementKind::ProvenNoEffect, Ok(None))
-            }
+        let (kind, replacement, effect) = match admitted.event {
+            FixtureRateSettlement::ProvenNoEffect { .. } => (
+                FixtureRateSettlementKind::ProvenNoEffect,
+                Ok(None),
+                Ok(None),
+            ),
             FixtureRateSettlement::Unknown { .. } => {
                 cursor.progress = CursorProgress::Unresolved;
                 self.receive_feedback(FixtureCorrectionFeedback::Unknown);
-                (FixtureRateSettlementKind::Unknown, Ok(None))
+                (FixtureRateSettlementKind::Unknown, Ok(None), Ok(None))
             }
             FixtureRateSettlement::Completed(interval)
             | FixtureRateSettlement::Cancelled(interval) => {
@@ -709,22 +733,29 @@ impl FixtureReferenceInputState<'_> {
                 cursor.target_frame = interval.frames.target_frame();
                 cursor.target_generation = interval.frames.target_generation();
                 self.receive_feedback(FixtureCorrectionFeedback::CoordinateChanged);
-                let replacement = FixtureAffineChart::settled_rate_effect(
+                let effect = FixtureAffineChart::settled_rate_effect(
                     interval.frames,
                     interval.domain,
                     interval.rate,
                     interval.span.active_elapsed,
-                )
-                .and_then(|effect| predecessor.compose(&effect))
-                .map(Some);
+                );
+                let replacement = effect
+                    .as_ref()
+                    .map_err(|error| *error)
+                    .and_then(|effect| predecessor.compose(effect))
+                    .map(Some);
                 let kind = if matches!(admitted.event, FixtureRateSettlement::Completed(_)) {
                     FixtureRateSettlementKind::Completed
                 } else {
                     FixtureRateSettlementKind::Cancelled
                 };
-                (kind, replacement)
+                (kind, replacement, effect.map(Some))
             }
         };
-        Ok(FixtureRateSettlementCompletion { kind, replacement })
+        Ok(FixtureRateSettlementCompletion {
+            kind,
+            replacement,
+            effect,
+        })
     }
 }

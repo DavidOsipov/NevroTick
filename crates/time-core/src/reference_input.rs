@@ -16,6 +16,8 @@
 mod rate_delivery;
 
 pub use rate_delivery::{
+    FixtureFrequencyAdmission, FixtureFrequencyClockAssociation, FixtureFrequencyError,
+    FixtureFrequencyHistory, FixtureFrequencyProfile, FixtureFrequencyProjection,
     FixturePhaseBaseline, FixturePhaseBlocked, FixturePhaseConstructionRejected, FixturePhaseError,
     FixturePhaseNow, FixturePhasePlanOwner, FixturePhaseProfile, FixturePhaseProposal,
     FixturePhaseProvenance, FixturePhaseReferenceAdmission, FixturePhaseResidualPermission,

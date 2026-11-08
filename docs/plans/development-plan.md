@@ -1,8 +1,8 @@
 # NevroTick development and acceptance plan
 
-**Created:** 29 October 2026; **documentation reconciliation:** 8 November 2026
+**Created:** 29 October 2026; **documentation reconciliation:** 9 November 2026
 
-**Status:** P0–P7 remain open. The finite phase-plan child, bounded session/coherence and inert NTS formatter have completed their recorded Linux scopes. Next implement the independently reviewed S1.4 fixture frequency-prior/conditional-holdover contract; production/native adoption remains open. Production suppliers and Slint integration/native/backend/text approval remain open.
+**Status:** P0–P7 remain open. The conditional frequency-prior child has completed its selected four-owner GNU fixture exit, alongside the earlier finite plan, session/coherence and inert formatter. Full S1.4/P1, production/native adoption, suppliers and Slint integration/backend/text approval remain open. Section 7 routes the next bounded source preparation.
 
 **Original planning baseline:** `f7ba1e7724a41cc846b1df6b9ddb20f095988b7a`
 
@@ -40,9 +40,11 @@ records what remains and how each guarantee closes. Completed helpers and green
 tooling do not complete their parent algorithm; this amendment schedules no
 pre-V1 formal work and changes no current product acceptance gate.
 
-**Immediate priority:** implement the reviewed S1.4 fixture frequency-prior, aging and conditional-holdover child under section 7, preserving the qualified finite-plan child. Ordinary NTS retains its priority and graph/trust/runtime gates. W11-W01 owns actual capture/mapping suppliers; production admission and history integration remain open. The separate W11-W05 cloud child uses the published coordinator baseline.
+**Immediate priority:** continue the reviewed S2.2 association/cookie/request source preparation after the [frequency-prior exit](../../tasks/s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners). Its finite budgets, actual providers/producers, graph, ordinary trust, runtime and pending privacy decisions gate implementation. W11-W01 owns actual capture/mapping suppliers; production admission and history integration remain open. Parallel metadata MD-P1–MD-P3 and service work retain their owners. All execution holds and post-V1 formal deferral remain.
 
-**Current Core checkpoint:** the [finite phase-plan two-owner exit](../../tasks/s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners) passes its selected Linux fixture gates with 455 ordinary/455 optimized tests, 92 doctests, scoped external contracts and complete per-file coverage/mutation reconciliation. Full S1.4/P1 remains open. Earlier [modeled settled active-time delivery](../../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners) completed its selected four-owner Linux fixture qualification on the sealed 158-input V8 product: portable, contracts, coverage, four mutation cohorts and exact union passed. Its task retains exact bindings, original failures and evidence limits. The [pure-leap final qualification](../../tasks/s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026) and [three-owner controlled-measurement qualification](../../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026) complete their recorded bounded scopes; section 7 now routes the reviewed frequency-prior/conditional-holdover implementation after the finite-plan child's scoped exit; production observation-to-Core admission remains open. Do not repeat completed finite contract or qualification stages or infer production date policy. The preceding [S1.4c modeled achieved-phase checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14c-final-qualification--one-selected-owner) retains its completed selected Linux-fixture gates on the sealed 156-input preimage. The [S1.4b composition checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14b-final-qualification--three-selected-owners) retains its completed selected Linux-fixture gates on the preceding 156-input candidate. The [S1.4a reference-input checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14a-final-qualification--one-selected-owner) retains its completed 154-input scope. The [S158 nine-owner checkpoint](../../tasks/s1.3-source-selection-readiness.md#s158-final-qualification--nine-selected-owners), [S157](../../tasks/s1.3-source-selection-readiness.md#s157-selected-three-owner-linux-fixture-checkpoint--complete), [S155](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete) and [S156](../../tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete) retain their earlier exact candidates and completed scopes; full S1.4/P1 remains open. [Section 7](#7-next-executable-task-for-a-development-agent) owns current routing; linked tasks retain historical candidates and detailed results.
+**Current Core checkpoint:** the [frequency-prior four-owner exit](../../tasks/s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners) passes 509 ordinary/509 optimized tests, 98 doctests, scoped external/mechanism joins, all four line gates and the complete 699-variant union. Counts are 424 caught, 271 compiler-unviable and four reviewed equivalent misses; no timeout or unresolved survivor remains, and equivalents earn no kills. The task retains exact execution/reader identities, original failures and later metadata joins. This is a conditional GNU fixture exit; full S1.4/P1 and production/native qualification remain open.
+
+**Earlier selected Core checkpoints:** the [finite phase-plan two-owner exit](../../tasks/s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners) passes its selected Linux fixture gates with 455 ordinary/455 optimized tests, 92 doctests, scoped external contracts and complete per-file coverage/mutation reconciliation. Full S1.4/P1 remains open. Earlier [modeled settled active-time delivery](../../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners) completed its selected four-owner Linux fixture qualification on the sealed 158-input V8 product: portable, contracts, coverage, four mutation cohorts and exact union passed. Its task retains exact bindings, original failures and evidence limits. The [pure-leap final qualification](../../tasks/s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026) and [three-owner controlled-measurement qualification](../../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026) complete their recorded bounded scopes; section 7 now routes reviewed S2.2 source preparation after the conditional frequency-prior exit; production observation-to-Core admission remains open. Do not repeat completed finite contract or qualification stages or infer production date policy. The preceding [S1.4c modeled achieved-phase checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14c-final-qualification--one-selected-owner) retains its completed selected Linux-fixture gates on the sealed 156-input preimage. The [S1.4b composition checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14b-final-qualification--three-selected-owners) retains its completed selected Linux-fixture gates on the preceding 156-input candidate. The [S1.4a reference-input checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14a-final-qualification--one-selected-owner) retains its completed 154-input scope. The [S158 nine-owner checkpoint](../../tasks/s1.3-source-selection-readiness.md#s158-final-qualification--nine-selected-owners), [S157](../../tasks/s1.3-source-selection-readiness.md#s157-selected-three-owner-linux-fixture-checkpoint--complete), [S155](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete) and [S156](../../tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete) retain their earlier exact candidates and completed scopes; full S1.4/P1 remains open. [Section 7](#7-next-executable-task-for-a-development-agent) owns current routing; linked tasks retain historical candidates and detailed results.
 
 The [engine controlled-measurement checkpoint](../../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026)
 records bounded, unauthenticated experimental acquisition and controlled host
@@ -1183,23 +1185,47 @@ receive no kill credit; external 1+7 consumers use the documented unchanged-API
 source join. Original incomplete attempts remain retained. This completes the
 finite mechanism, not oscillator learning, holdover or P1.
 
-**Current executable product task:** implement the reviewed S1.4 abstract
-reference-control frequency-prior and conditional-holdover child. Start with
-canonical §7.2.1/§9 and the
-[existing Revision 2 contract](../../tasks/s1.3-source-selection-readiness.md#s14-frequency-prior-and-conditional-holdover-contract):
-genuine combined frequency and its distinct uncertainty, retained prior and aging,
-actual new-observation credit, generations and acknowledged correction feedback.
-Keep numerical roundoff separate from physical/statistical assumptions and keep
-monotonic and active-time domains explicit. Independent ownership, numerical-law
-and oracle reviews of Revision 2 are READY for fixture authoring; implementation
-and its qualification remain unexecuted. Author the coupled intake/state/
-projection/known-anchor-rebase slice and literal healthy/hostile cases together;
-do not substitute detached numerical helpers for the consumer guarantee.
+**Completed bounded Core child:** the
+[frequency-prior four-owner exit](../../tasks/s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners)
+qualifies the accepted Revision 2 coupled fixture on 436-input `3c8ae8f1...`:
+509 ordinary/509 optimized tests, 98 doctests, scoped 2+18 external contracts,
+validation alternatives, 260 coverage identities and four complete mutation
+cohorts. All 699 variants reconcile as 424 caught, 271 compiler-unviable and four
+reviewed raw equivalent misses. Each per-file gate passes; no unresolved survivor
+or timeout remains. A corrected read-only union separately pins its reader and
+frozen native inputs; prior incomplete receipts remain unchanged. This closes
+neither physical confidence, production admission nor S1.4/P1.
+
+**Current executable product task:** continue the independently reviewed
+[S2.2 one-association/request preparation](../../tasks/engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request)
+in its existing ordered handoff. Settle actual producers and finite limits,
+then independently freeze the admitted implementation slice. Cookie reuse and
+zero-replacement-cookie decisions remain held for their dependent paths; provider,
+graph, ordinary trust and runtime gates remain. Do not repeat completed Core
+contract or qualification stages. The five-GiB full-row/mutation floor and all
+isolation and metric requirements remain unchanged.
 The finite child selects no shipping clock limits
 or defaults. Ordinary NTS retains its priority, while S2.2's provider/graph/trust/
 runtime and cookie-use/association gates remain open. The parallel W11-W05/S3.1
-cloud source child starts from the published baseline under its existing task;
-it owns no Core/engine algorithm, shared manifest/lockfile or qualification policy.
+cloud source child arrived as `c4f434c` under its existing task. Its imported source
+is disjoint from the checked Core inputs. The final private cloud raw evidence
+bundle remains unavailable locally and through PR16/Actions artifacts; obtain and
+independently review it before adopting reported final service metrics. Its
+native/product gaps and all execution holds remain. It owns no Core/engine
+algorithm, shared manifest/lockfile or coordinator qualification policy.
+
+The parallel portable service-diagnostics source arrived in `f9cc578`; its eight
+service fixture/task paths leave the checked Core product inputs unchanged.
+Source integration alone adopts no unreviewed service metrics or native pass.
+David has now assigned the cloud agent completion of MD-P1–MD-P3 under W11-W10:
+start from the repaired metadata source and existing qualification checkpoint,
+freeze/re-admit its tools and complete inventory with **four workers**, preserve
+all thresholds/isolation, and exercise/read back validate → generate → check.
+It owns metadata qualification and demonstrated metadata repairs separately
+from Core, and must deliver a portable raw-evidence bundle for independent
+review. The coordinator retains shared manifest, lockfile, policy and schema
+custody. This assignment supplies no new Core prerequisite or native/package
+qualification and lifts no execution hold.
 
 The earlier412-input103-test checkpoint retains only its historical scope.
 Three completed source reviews settle private pre-acquisition chart/completion
@@ -1246,8 +1272,8 @@ unit/property/boundary tests, 90% security-primitive coverage, 95% per-critical-
 mutation, source/graph/security/native/package/release gates remain required.
 Existing Windows/S134, separate AES fuzz, optional-storage and UI-M0 D1–D3 holds
 remain unchanged. OD-05's complete hardened MSIX and David's release authority
-remain unchanged. The finite phase-plan child is scoped complete; next freeze the remaining
-frequency-prior/holdover contract above. Full S1.4/P1 remains open. Formal
+remain unchanged. The finite phase-plan and conditional frequency-prior children have selected
+GNU exits; continue the reviewed S2.2 source preparation above. Full S1.4/P1 remains open. Formal
 obligations remain post-V1.
 
 ### Retained proof history — superseded scheduling
@@ -1525,7 +1551,7 @@ and [W11 §4.30](../../tasks/windows11-integration.md#430-ordinary-s22-windows-q
 route later fresh-KE/protected-UDP/Core integration. Exact graph/trust admission,
 finite contracts, the local zero-cookie decision and actual implementation/
 qualification remain open. The inert formatter child has its scoped exit;
-section 7 now routes the reviewed S1.4 frequency-prior/conditional-holdover fixture implementation. Continue to
+section 7 now routes reviewed S2.2 association/request preparation after the selected frequency-prior exit. Continue to
 use these same owners for later dependent integration. This routing lifts no
 provider/trust, native, fuzz, storage or UI hold and resumes no formal work.
 

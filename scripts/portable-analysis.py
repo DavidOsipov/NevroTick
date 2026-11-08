@@ -96,6 +96,13 @@ SERVICE_SCM_SUBJECTS = (*SERVICE_LIFECYCLE_SUBJECTS, ("scm", "crates/windows-pla
 SERVICE_PRIVILEGE_SUBJECTS = (*SERVICE_SCM_SUBJECTS,
                             ("privilege", "crates/windows-platform/src/privilege_observation.rs"))
 
+FREQUENCY_PRIOR_SUBJECTS = (
+    ("frequency_state", "crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs"),
+    ("frequency_numeric", "crates/time-core/src/regression/chart/roundoff/frequency_prior.rs"),
+    ("phase_plan", "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs"),
+    ("rate_delivery", "crates/time-core/src/reference_input/rate_delivery.rs"),
+)
+
 def load_module(name: str, path: Path):
     """Load reviewed repository tooling without running its CLI entry point."""
     specification = importlib.util.spec_from_file_location(name, path)
@@ -1335,6 +1342,105 @@ def require_engine_contract_role(scope: Scope, policy: dict) -> None:
         raise Incomplete("Engine external contracts require their exact inert library-only role.")
 
 
+def frequency_prior_equivalences_valid(policy):
+    """Admit only unique subsets of four current full-domain source reviews."""
+    entries = policy.get("mutation_equivalences")
+    if type(entries) is not list or len(entries) > 4:
+        return False
+    if not entries:
+        return True
+    fields = {"id", "candidate_sha256", "source_sha256", "mutant", "requirement", "rationale", "proof"}
+    candidate = "3c8ae8f191cba09742259957d491bb362f8301a39c7506c1a029e02be4ae7e90"
+    path = "tasks/phase-plan-analysis-equivalences.md"
+    reviewed = {
+        "FREQUENCY-PROFILE-NORMAL-POSITIVE": (
+            "a9770f085170b8c9ae52a5957761f99173ee3ff02294df56cb1e8e0c8b888b48",
+            "87ebc63219626344ce56ac51b015c23fb2d7e2cf8ae69695757b6ce33ba11d04",
+            "Normality excludes both signed zeros, subnormals, infinities and every NaN before the comparison; "
+            "positive and negative normal binary64 values give identical >0 and >=0 results. Earlier guards, "
+            "short-circuit order, validation, errors and effects are unchanged. This current-source argument "
+            "grants zero kills; the exact mutant must still be an actual MissedMutant."),
+        "FREQUENCY-GROWTH-NORMAL-POSITIVE": (
+            "a0a6af42cba3f012545d05ad5949f8934c28bd4bd65e503f695cc7fdf150c23a",
+            "b5a0a6e706ec4a2cbe7f87283276804d97af40ccc03e1b1c1f8b4dbb1fe95355",
+            "Normality rejects both signed zeros, subnormals, infinities and every NaN before the growth comparison; "
+            "positive and negative normal binary64 values give identical >0 and >=0 results. All other profile "
+            "fields, short-circuit order, validation, errors and effects are unchanged. This current-source argument "
+            "grants zero kills; the exact mutant must still be an actual MissedMutant."),
+        "FREQUENCY-ANCHOR-BOUND-ABS-SIGN": (
+            "c29c5461fc90820de0aef29503174a64b70dc18aca131b8592b247e123ad247b",
+            "22517d32dfe7600ed511c0e3e94937445c1c7079b9cbc6bc277e494927283f1c",
+            "Only the coefficient-bound argument changes sign; the phase subtraction and earlier admissions are "
+            "unchanged. The pinned parent coefficient_addition_error applies abs to that operand before every "
+            "bound operation, yielding identical operands, error order, output fields and effects for every "
+            "admitted anchor and raw effect. Signed-zero and all failure paths are unchanged. This current-source "
+            "argument grants zero kills; the exact mutant must still be an actual MissedMutant."),
+        "FREQUENCY-INTERVAL-WHOLE-ZERO-PRODUCT": (
+            "c29c5461fc90820de0aef29503174a64b70dc18aca131b8592b247e123ad247b",
+            "31b9588c3950a1a8c2069d4bc14ebf95ed991885d9ffaf8b2bf9658716181872",
+            "If exactly one finite ordered interval is whole zero, the unchanged inner endpoint OR shortcut "
+            "returns literal positive zero for all four pairs; reduction therefore returns the same canonical ZERO. "
+            "With both or neither whole zero, the paths are identical. Outputs, refusals and effects agree over the "
+            "full admitted interval domain; maximum work remains four pairs, without a timing-equality claim. "
+            "This current-source argument grants zero kills; the exact mutant must still be an actual MissedMutant."),
+    }
+    seen = set()
+    for entry in entries:
+        if type(entry) is not dict or set(entry) != fields:
+            return False
+        identifier = entry.get("id")
+        if type(identifier) is not str or identifier not in reviewed or identifier in seen:
+            return False
+        source, descriptor, rationale = reviewed[identifier]
+        if (entry.get("candidate_sha256") != candidate or policy.get("candidate_sha256") != candidate
+                or entry.get("source_sha256") != source or type(entry.get("mutant")) is not dict
+                or canonical_sha256(entry["mutant"]) != descriptor
+                or entry.get("requirement") != "REQ-8/10/11/14/15; CHECK-7/8/10/11/14/25; AC-19"
+                or entry.get("rationale") != rationale):
+            return False
+        proof = entry.get("proof")
+        if not (type(proof) is dict and set(proof) == {"path", "sha256", "section", "reviewer", "verdict"}
+                and proof.get("path") == path and proof.get("section") == identifier
+                and proof.get("reviewer") == "/root; /root/series_checkpoint_design_review; /root/series_checkpoint_verification"
+                and proof.get("verdict") == "independently-justified-equivalent"
+                and type(proof.get("sha256")) is str and re.fullmatch(r"[a-f0-9]{64}", proof["sha256"]) is not None
+                and type(policy.get("inputs_sha256")) is dict and policy["inputs_sha256"].get(path) == proof["sha256"]):
+            return False
+        if (identifier == "FREQUENCY-ANCHOR-BOUND-ABS-SIGN"
+                and policy["inputs_sha256"].get("crates/time-core/src/regression/chart/roundoff.rs")
+                    != "4bea2d3fbd596ec5c28b7febd56d21efe42b19c7de2fdbd84f804d5451ff476f"):
+            return False
+        seen.add(identifier)
+    return True
+
+
+def require_frequency_prior_role(scope, policy):
+    """Admit only the four-owner stable-only child, never a historical role alias."""
+    facts = {
+        "schema_version": 1, "package": "time-core",
+        "critical_files": list(dict(FREQUENCY_PRIOR_SUBJECTS).values()),
+        "tool_admission_profile": "stable-core", "coverage_minimum_line_percent": 90,
+        "mutation_minimum_viable_killed_percent": 95, "baseline_wall_seconds": 300,
+        "coverage_wall_seconds": 300, "enumeration_wall_seconds": 240,
+        "mutation_wall_seconds": 1200, "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+        "jobs": 6, "test_threads": 1, "coverage_test_threads": 1, "mutation_jobs": 10,
+        "mutation_process_limit": 512, "mutation_message_format": "json",
+        "mutation_minimum_free_bytes": 5 * 1024 ** 3, "maximum_mutants": 512,
+        "maximum_listed_per_file": 512, "maximum_listed_total": 2048,
+        "mutation_debug_info": 0, "contracts_wall_seconds": 300, "general_jobs": 12,
+        "external_consumer_limits": {"legal_executions": 2, "negative_compilations": 18},
+    }
+    extra = {"source_file_count", "candidate_sha256", "inputs_sha256", "mutation_inventories",
+             "mutation_equivalences", "test_inventories", "scope"}
+    if (type(scope) is not Scope or scope.package != "time-core"
+            or scope.policy != "policy/frequency-prior-analysis.json"
+            or scope.subjects != FREQUENCY_PRIOR_SUBJECTS or type(policy) is not dict
+            or set(policy) != set(facts) | extra
+            or any(type(policy.get(k)) is not type(v) or policy[k] != v for k, v in facts.items())
+            or not frequency_prior_equivalences_valid(policy)):
+        raise Incomplete("Frequency-prior requires its exact four-owner stable role and unchanged gates.")
+
+
 def admission_profile(args, scope, policy):
     """Require an exact stable role before narrowing analysis-tool custody."""
     profile = getattr(args, "tool_admission_profile", "full")
@@ -1342,6 +1448,12 @@ def admission_profile(args, scope, policy):
         raise Incomplete("Unknown analysis admission profile.")
     if policy.get("tool_admission_profile", "full") != profile:
         raise Incomplete("Analysis admission profile differs from the current policy.")
+    if (scope.policy == "policy/frequency-prior-analysis.json"
+            or scope.subjects == FREQUENCY_PRIOR_SUBJECTS):
+        require_frequency_prior_role(scope, policy)
+        if profile != "stable-core" or args.lane not in {"contracts", "coverage", "mutation", "all"}:
+            raise Incomplete("Frequency-prior admits only its stable compiler/coverage/mutation lanes.")
+        return profile
     if (scope.package == "windows-platform" or scope.policy == "policy/service-analysis.json"
             or scope.subjects in (SERVICE_LIFECYCLE_SUBJECTS, SERVICE_SCM_SUBJECTS, SERVICE_PRIVILEGE_SUBJECTS)
             or policy.get("package") == "windows-platform"):
