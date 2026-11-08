@@ -17,6 +17,17 @@ literal sinks and critical wording approval have different enforcing owners.
 No signature, code review or parser pass alone establishes safe truthful content.
 Admitted immutable domain values remain reusable under unchanged invariants/context.
 
+For signed executable/package admission and consumption, apply
+[architecture section 19.6](../../../docs/windows-time-architecture.md#196-authenticated-artifact-content-and-consumer-trust).
+Identify authenticated coverage, intended component/release identity and actual
+signature source before accepting application content or authorizing an effect.
+Unauthenticated certificate content or a payload outside the mechanism's covered
+content gains no authority from its carrier's valid signature. Preserve the
+verified object's identity and protection through use;
+use [the existing artifact procedure](../../../docs/windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes)
+for applicable padding and full-file checks. Keep signature metadata inspection
+inert and safe parsing/current effect authorization independent of provenance.
+
 Preserve relevant raw representation and bound bytes/work before strict inert decoding; require shared garde/domain validation inside private fallible construction, then current trusted-owner authorization/state/budget guards at the sink, serialized effect and actual acknowledgement. Follow [contract enforcement](../implementation/implement-rust-contracts/references/contract-enforcement.md); NTP/NTS retains bounded protocol-specific parsers. Rust type safety/Serde admission prove no endpoint identity, freshness, source independence, UTC truth, clock ownership or permission. Unknown/corrupt mandatory policy fails closed; optional invalid drift priors may follow explicit reacquisition. Never lower authentication/source counts to hide outages.
 
 Challenge actual entry points independently of UI restrictions: malformed and valid-shaped unauthorized/stale inputs, plus repeated individually valid requests that exceed aggregate budgets. Verify bounded redacted errors, cleanup, preserved prior valid state and absence of forbidden effects alongside accepted neighbors. Apply these rules to implemented surfaces without expanding UI-M0 or reviving its deferred work.

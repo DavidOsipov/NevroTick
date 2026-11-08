@@ -843,6 +843,16 @@ and independent readers in the existing register; source catalogue coverage does
 not complete a generator, installed resource or release gate. This adds no new
 provider, account, privilege, counter set, packaging route or Core prerequisite.
 
+Apply [architecture section 19.6](../windows-time-architecture.md#196-authenticated-artifact-content-and-consumer-trust)
+and the [W11-W10/S6.4 content-trust assignment](../../tasks/windows11-integration.md#pe-content-trust-refinement--8-november-2026)
+before affected artifact consumers and release acceptance. Preserve actual
+signature coverage/source, applicable padding controls, approved complete-byte
+custody and independent consumer no-effect evidence. The
+[signing guide](../windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes)
+owns the procedure; catalog-only Store payloads do not acquire a new embedded-
+signature requirement. These are planned CHECK-18/23/26 refinements, with CHECK-25
+for reached consumers and CHECK-27 for native verifier work; current holds remain.
+
 Deliver the owner-selected complete hardened MSIX containing UI, engine, broker,
 helper and all required payloads. Follow the [MSIX plan](windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners)
 and amended OD-05: source/design preparation needs no Store preapproval; local

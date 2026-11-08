@@ -266,13 +266,31 @@ failures do not masquerade as evidence for the changed condition.
 | Otherwise valid PE with nonzero data after PKCS#7 inside `WIN_CERTIFICATE` | Strict embedded verification rejects the padding case; an unrelated broken chain or malformed signed content is insufficient evidence |
 | Changed final bytes against the previously approved full-file hash | Custody/admission comparison rejects the mismatch even if a generic signature check still reports valid |
 | Catalog-preferred verification of a PE that also has an embedded signature | Identify the selected signature source; that result cannot be recorded as an embedded-padding pass |
+| Harmless application-data marker in an unauthenticated region supplied to an existing consumer | A valid carrier-signature result cannot make the marker select a trusted command, destination, configuration or executable payload; observe the real admission boundary with inert effect sinks beside an admitted healthy input |
+| Substituted extracted component or otherwise permitted downstream input | Its own component/release authentication and exact-byte custody reject substitution before protected use; the carrier's valid signature cannot supply missing authority |
 
 Generate product metadata before signing. Do not personalize signed files by
 placing configuration, download URLs, commands or purportedly trusted metadata
-in unauthenticated certificate padding. Any separately distributed configuration
-keeps its own admitted authentication contract. The strict lab setting is not
-evidence about provider hosts or customer systems, and this qualification does
-not authorize an installer to change customers' global Wintrust policy.
+in unauthenticated certificate padding. Apply the producer **and consumer** rule
+in [architecture section 19.6](windows-time-architecture.md#196-authenticated-artifact-content-and-consumer-trust):
+excluded application data, unvalidated attributes and additional signature
+material gain no application authority from a valid containing PE. Any separately
+admitted configuration or payload keeps its own authentication/admission contract;
+preserve the verified object through actual use. Legitimate signature/chain/
+timestamp inspection remains with the admitted verifier, not a blanket ban on
+additional signatures or attributes. [S22, S25]
+
+The consumer cases apply when such a consumer exists in the admitted scope;
+record its real source-to-effect path or justified non-applicability. Use harmless
+markers and inert effect sinks, not malware or execution of the altered PE.
+Consumer evidence is separate from native signature-verifier evidence. Do not
+create a downloader, custom verifier or redundant runtime file scanner for this
+test; the current complete-package/no-runtime-downloaded-code contract remains.
+
+The strict lab setting is not evidence about provider hosts or customer systems,
+and this qualification does not authorize an installer to change customers'
+global Wintrust policy. W11-W10/S6.4 owns the
+[current assignment and outstanding results](../tasks/windows11-integration.md#pe-content-trust-refinement--8-november-2026).
 
 ## 6. What the other routes do and do not solve
 

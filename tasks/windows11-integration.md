@@ -2370,6 +2370,48 @@ profiles add no prerequisite. OPEN-11 and CHECK-18/23/24 own this operational ex
 P7's whole-product reconciliation is the separate
 [final qualification parent](development-backlog.md#p7-final-qualification).
 
+#### PE content trust refinement — 8 November 2026
+
+**Scope and status:** the review of `981b01d186091ef5285128ccc9316d8e7e3e03e8`
+found concrete padding guidance in the signing guide/package QA but incomplete
+architecture and execution routing. This amendment specializes existing
+W11-W10/S6.4 and applicable consumer owners; it creates no second package task.
+Source/documentation integration is prepared. Behavioral, strict-verifier and
+final-artifact qualification of this refinement remain **not run** under the
+current prerequisites and native holds; no product code is changed here.
+
+Apply [architecture section 19.6](../docs/windows-time-architecture.md#196-authenticated-artifact-content-and-consumer-trust)
+and [signing guide section 5.2](../docs/windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes)
+before dependent consumer integration and the S6.4 release checkpoint.
+
+| Existing owner / checkpoint | Required continuation and observable exit |
+| --- | --- |
+| Reached metadata/helper/loader/maintenance consumer owner; CHECK-18/25 | Trace artifact bytes through parsing/admission to a command, destination, configuration or load decision. Excluded certificate content supplies no application authority; harmless hostile markers have no protected effect while admitted input works. Preserve actual verified-object identity through use; record a source-based applicability decision where no such consumer exists. |
+| Applicable embedded PE; release/security verifier, CHECK-18 | Where the admitted profile requires embedded PE verification, freeze actual Windows/tool/architecture, signature source, trust action/flags, effective padding policy and restart evidence. Healthy embedded-signed PE succeeds; the otherwise-valid nonzero-padding case fails for that condition. A catalog result or unrelated chain failure cannot qualify this row. |
+| W11-W10/S6.4 with independent QA; CHECK-18/23/26 | Bind full-file SHA-256 and lengths to the protected approved stage record. Reject substituted final bytes or components; reconcile local, signed, submitted, Store-delivered and installed identities at their actual stages. Provider documentation alone supplies no candidate-bound verification result. |
+
+The existing candidate receipt must retain each applicable input/source identity,
+expected and observed result, healthy control, signature mechanism and reasoned
+non-applicability or not-run outcome. Keep embedded PE, package/catalog,
+consumer-effect and project/release authority observations separate. Native-work
+lifetime/retrieval limits remain CHECK-27 when reached; no unrelated campaign is
+added. These observations join existing S6.4/P7 evidence before broad release.
+
+**Next action:** at the next affected source integration, identify actual
+consumers and their enforcement owners in this task. At the admitted artifact
+checkpoint, qualify the existing guide's finite controls against the exact
+candidate. Keep complete MSIX/Store selected, catalog-only applicability explicit,
+all native holds, and David's submission/publication authority. No new downloader,
+updater, custom PE parser, customer-registry change or production signing is
+authorized by this documentation amendment.
+
+**Documentation validation:** three read-only technical/routing reviews approved
+the integration; the final diff whitespace check and 25 added local links/anchors
+passed, and all three changed skill frontmatters remain unchanged. The full
+skill-pack checker remains **not run** because the execution sandbox's required
+namespace isolation was unavailable in this session. Scoped static checks supply
+no skill-script, consumer, Windows or release qualification result.
+
 ### 4.23 Optional build-provenance research — 4 November 2026
 
 David requested research on evidence connecting a Store release to his repository,

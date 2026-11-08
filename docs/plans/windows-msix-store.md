@@ -110,6 +110,15 @@ than automatically requiring all MSI-specific embedded-signature assumptions.
 Neither a missing embedded signature nor a successful generic trust call alone
 settles that profile.
 
+Apply [architecture section 19.6](../windows-time-architecture.md#196-authenticated-artifact-content-and-consumer-trust)
+to the contents actually consumed by helpers, loaders and metadata readers.
+Package/catalog and embedded PE verification have different coverage; an
+embedded-padding result requires its own applicable
+[signing-guide check](../windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes).
+No valid carrier signature authorizes excluded application data or a substituted
+component. Reuse approved complete-byte custody at each actual delivery stage;
+this adds no separate signature requirement to catalog-only payloads.
+
 **Project inference:** the intended helper must belong to the approved installed
 NevroTick package/release and permitted operation. An unrelated legitimately
 Store-signed executable remains unauthorized, just as an unrelated
@@ -343,6 +352,7 @@ fixture, after the current execution stop is lifted.
 | Compromised network engine | Cannot set time, impersonate the broker, write broker memory, duplicate protected tokens, change SCM/ACLs or replace mandatory state; legitimate bounded engine-to-broker IPC still works. | CHECK-1/2/15/16 |
 | Unsupported/failed mitigation, early loaded incompatible module | Affected role cannot expose sensitive operations under an undeclared weaker profile; supported protected startup and bounded recovery remain available. | CHECK-16/23/27 |
 | Signed but malformed/stale IPC, data or update state | Strict bounded admission, current identity/generation and effect authority reject the request; valid neighboring input succeeds. Code signing does not validate data or authorize clock correction. | CHECK-2/3/12/13/15 |
+| Unauthenticated certificate content, changed final bytes or a substituted extracted component | Apply architecture section 19.6 and signing guide section 5.2: no inherited application authority, actual signature-source identification, applicable embedded-padding rejection and approved complete-byte custody; admitted healthy content remains usable. Catalog success alone is not a padding result. | CHECK-18/23/26; CHECK-25 for reached consumers |
 | Forced update, crash, Reset or last-user removal | No stale successor overwrite, erased sole journal/recovery path or orphaned W32Time takeover; ordinary maintenance restores the correct owner/state. | CHECK-5/12/13/23/27 |
 
 CIG reduces an image-loading attack surface; ACG/CFG/CET and privilege boundaries

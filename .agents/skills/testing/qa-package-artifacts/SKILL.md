@@ -44,6 +44,15 @@ Bind full-file hashes and lengths to the protected approved release record and
 retain stage-specific custody. This does not require new embedded signatures on
 catalog-only Store payloads or lift current native execution holds.
 
+Trace any reached artifact-data consumer through
+[the canonical content-trust rule](../../../../docs/windows-time-architecture.md#196-authenticated-artifact-content-and-consumer-trust)
+and [security-boundary QA](../qa-security-boundaries/SKILL.md). Use harmless markers
+and inert effect sinks at the real admission boundary to challenge inherited
+trust in excluded content or substituted components; admitted healthy input
+must still work. Keep these consumer observations separate from signature
+verification, and record source-based non-applicability where no such consumer
+exists. Do not create a downloader or custom verifier merely to exercise a case.
+
 The selected target is one complete hardened MSIX with UI/engine/broker/administration helper for David's Store trial, under [architecture §19.4](../../../../docs/windows-time-architecture.md#194-future-complete-msix-gate) and [OD-05](../../../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership). Compare actual payloads/installed results; source selection proves no package or qualified implementation. Check package/catalog and project-specific identity, tamper controls, clean-machine operation, one product lifecycle and source/SBOM/provenance obligations. Use [MSIX plan §3](../../../../docs/plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper) for integrity, immutable code and the actual per-role DLL/mitigation profile.
 
 Follow [the existing stages in §7](../../../../docs/plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners). First identify and inspect the complete local candidate; test-signed Windows mechanics run only when prerequisites and execution holds permit. Record which catalog/CIG/activation cases need genuine Store bytes. David then tries the prepared submission with services; prior Store approval or signing is not a prerequisite for its preparation. After Store processing, independently inspect the actual delivered package and rerun affected trust, load, runtime and servicing cases before broad release. Keep local, submitted and Store-delivered hashes distinct. Certification and local schema success are not application passes. Current Core priority, Windows stop, separate fuzz hold and storage pause remain.

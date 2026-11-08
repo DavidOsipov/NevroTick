@@ -2634,6 +2634,10 @@ disposition beside the valid current-owner completing control.
 
 **Control and failure:** Pinned source/features/lockfile/toolchain/SDK; review procedural macros/build scripts/native code and licenses; bounded isolated untrusted builds without signing secrets; protected release branch and workflow; separate exact-artifact approval; verify the declared release profile's expected signer, artifact/payload inventory and hashes; SBOM/provenance and reproducible unsigned output where achievable. Signing provider eligibility and policy remain external facts to verify.
 
+Apply [section 19.6](#196-authenticated-artifact-content-and-consumer-trust)
+to post-signing substitution and partial signature coverage: a valid carrier
+signature alone cannot authorize excluded application data or a downstream payload.
+
 **Residual and owner:** Compromised authorized maintainers, signing provider or toolchain remain meaningful risks. Release/security owner defines recovery and rotation. **Verification:** CHECK-18/19/20/24, P0/P6/P7: wrong-source/wrong-publisher/tampered artifacts and untrusted workflow attempts fail; approved reproducible candidate signs/installs normally.
 
 #### THR-16 — Lifecycle interruption leaves no valid time owner
@@ -2691,6 +2695,11 @@ no product recovery result.
 **Path:** Untrusted maintenance request, package/activation identity, command-line value, executable path, journal or rollback field → elevated lifecycle action → arbitrary process, service, registry or filesystem effect. The retained MSI route additionally exposes public properties, transforms and custom-action data.
 
 **Control and failure:** Product-owned identifiers and installation roots, strict allowlisted properties and bounded action-specific data; reject unsupported transforms/configuration paths for privileged behavior; no shell interpreter or arbitrary helper path; protected helper with identity/integrity established from the verified package under section 19.5; scoped rollback record validated as strictly as forward execution. Validate in the privileged effect owner, not only in an unelevated UI sequence. Repair/uninstall reauthorize and validate rather than trusting historical input. Avoid advertised/per-user entrypoints that unexpectedly trigger privileged repair.
+
+The [artifact consumer contract](#196-authenticated-artifact-content-and-consumer-trust)
+also applies before helper/maintenance code turns file content into an action.
+Unauthenticated certificate content supplies no command, destination or payload
+authority merely because its containing executable passes a signature check.
 
 **Residual and owner:** An authorized administrator can intentionally install arbitrary trusted/untrusted software; that is outside this boundary. The product must not turn a standard user's maintenance request into unintended elevated effects. Installer/security owner owns the lifecycle-action design. **Verification:** CHECK-13/15/18/23, P6: standard-user repair/maintenance requests, malformed operation/rollback data, wrong package identity, path replacement and normal complete install/repair/remove; forbidden external files/services/processes remain untouched.
 
@@ -3929,6 +3938,46 @@ has been established. Retain [THR-15](#thr-15--build-or-signing-pipeline-publish
 and OPEN-11's explicit risk/evidence decision instead of treating signer-category
 admission or a release-status table as that mechanism.
 
+### 19.6 Authenticated artifact content and consumer trust
+
+**Refinement, 8 November 2026:** this specializes sections 6.1 and 19.1 under
+THR-15/20 and existing CHECK-18/23/26. A verifier result establishes only the
+content and identity covered by its admitted signature mechanism. Keep that
+result separate from approved project/release identity, complete final-file
+custody, safe data admission and current authority for an effect.
+
+Never use unauthenticated certificate padding, unvalidated signature attributes
+or additional signature material as an authority for application commands,
+download destinations, executable payloads or trusted release configuration.
+This applies to producers and consumers, including metadata readers, helpers,
+service activation and maintenance. Keep inspection inert; legitimate
+certificate, chain and timestamp processing remains with the admitted verifier.
+Do not implement a custom PE/signature parser for this control or reject every
+additional signature/attribute merely because some such content can be
+unauthenticated.
+
+Every admitted package member or extracted component needs its expected
+component/release identity and applicable content authentication, through the
+qualified package/catalog mechanism or its other admitted profile. Preserve the
+verified object's identity and protection through actual consumption/loading;
+replacing it invalidates admission. A downloader's signature alone does not
+authenticate its later download. The current complete-package contract permits
+no hidden or runtime-downloaded native code and adopts no new downloader or updater.
+
+Apply [signing guide section 5.2](windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes)
+for complete-file SHA-256/length bound to protected approved records, stage
+transitions, actual verifier policy and applicable embedded-padding controls.
+Catalog/package evidence cannot qualify an embedded-padding check; this does
+not require embedded signatures on catalog-only Store payloads. Safe parsing and
+effect authorization remain mandatory even for authenticated content.
+
+W11-W10/S6.4 and the existing consumer/security owners retain the
+[qualification assignment](../tasks/windows11-integration.md#pe-content-trust-refinement--8-november-2026).
+CHECK-18 owns signature coverage/custody; CHECK-23/26 retain package/inventory
+evidence, CHECK-25 applies to reached data consumers, and CHECK-27 applies to
+reached native verification work. Documentation closes no implementation or
+native gate and lifts no execution hold.
+
 ---
 
 ## 20. Verification strategy and acceptance checks
@@ -4158,7 +4207,7 @@ Every check below is **planned / not executed**. Owners are future engineering r
 | CHECK-15 | Corrupt/old/incompatible state, reparse/hardlink/path swap, disk-full and interrupted replacement | Protected files cannot redirect privileged writes; invalid critical policy does not become permissive | P3/P4, platform/security |
 | CHECK-16 | Inspect build/PE/runtime evidence against section 15.4's role manifest; test activation/startup failure, actual SCM child-policy enforcement, DLL canaries, import/load paths and valid dependencies | Required protection enforced before normal protected work; valid workflows and applicable UI accessibility remain functional; failure preserves ownership-aware recovery | P0/P6/P7, security/build |
 | CHECK-17 | Secret-bearing paths/exports; required-event filtering; diagnostic-session expiry; sink failure/flooding | Allowlisted useful output at every enabled level; authorized finite collection; non-suppressible required routing; bounded aggregate storage/loss and safe cleanup. See section 12.3 and hardening section 9.8 | P2/P3/P5, security |
-| CHECK-18 | Verify the selected Store MSIX package/catalog identity, approved release, submitted/delivered artifact lineage, tamper/wrong-package controls and protected installed-code/helper trust; clean-machine lifecycle and policy restrictions. Retained MSI profiles keep their separate evidence if later selected | Invalid candidate rejected; valid supported candidate succeeds without developer roots or disabled protections. Store signature recognition is not project authorization or certification of runtime behavior; no OpenPGP/Authenticode equivalence | P6/P7, release |
+| CHECK-18 | Verify the selected Store MSIX package/catalog identity, approved release, submitted/delivered artifact lineage, tamper/wrong-package controls and protected installed-code/helper trust; apply section 19.6 and signing guide section 5.2 for actual signature source, applicable embedded-padding rejection and approved complete-byte custody; clean-machine lifecycle and policy restrictions. Retained MSI profiles keep their separate evidence if later selected | Invalid candidate rejected; valid supported candidate succeeds without developer roots or disabled protections. No authority inherited by unauthenticated application content. Store signature recognition is not project authorization or certification of runtime behavior; no OpenPGP/Authenticode equivalence | P6/P7, release |
 | CHECK-19 | CI valid/invalid lint/SAST/source-origin controls, test-discovery and exit propagation | Relevant bad input fails actual gate; valid code passes; no zero-test success | P1/P7, tooling |
 | CHECK-20 | Complete dependency/feature/license/source and build-provenance inventory | Compatible selected grants, pinned origins, no hidden native/build dependencies or signing exposure | P0/P1/P7, release/license |
 | CHECK-21 | One-hour baseline and 72-hour reconnect/fault soak on named hardware | CPU/memory/wakeups/size/handles meet declared budgets; no teardown-masked leaks | P4/P5/P7, performance |

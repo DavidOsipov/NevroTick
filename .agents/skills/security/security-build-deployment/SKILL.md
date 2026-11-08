@@ -17,6 +17,15 @@ Retain the earlier MSI/SignPath/OpenPGP profiles as conditional fallback/referen
 
 For build policy read proposed [development-hardening guide](../../../../docs/windows-time-development-hardening.md); for provider onboarding, signing scope/order and publisher verification read [signing guide](../../../../docs/windows-time-signing-guide.md). Research/proposed steps prove no adopted enforcement, provider approval, production signing or clean-machine verification. Submission, signing and publication retain task authorization/protected approval owner.
 
+For artifact admission, extraction or consumption, apply
+[the canonical content-trust rule](../../../../docs/windows-time-architecture.md#196-authenticated-artifact-content-and-consumer-trust)
+and [signing guide section 5.2](../../../../docs/windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes)
+directly, independently of provider choice. Trace excluded application data and
+substituted components to actual command/destination/load sinks. Record the
+applicable signature source, strict-policy result, approved full-file custody and
+harmless consumer controls in existing W11-W10/S6.4 evidence; no valid carrier
+signature alone supplies authority for unauthenticated content or a later payload.
+
 For profile, CPU, LTO or PGO changes, read the
 [Windows build guidance](../../implementation/optimize-rust-performance/references/measurement.md#build-optimization-and-windows-x64).
 Preserve the admitted CPU floor, arithmetic/fault policy, symbols and complete

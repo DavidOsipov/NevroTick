@@ -148,6 +148,12 @@ Bind approval to an auditable candidate evidence record containing:
   and resource evidence separately from fixture availability and suitability.
 - Supported component/schema/generation transitions from §6, actual lifecycle
   results, wrong-clock/offline verifier cases and remaining blockers.
+- [Artifact content-trust evidence](windows-time-architecture.md#196-authenticated-artifact-content-and-consumer-trust):
+  actual signature source/profile, approved complete-file SHA-256/lengths,
+  applicable strict-padding and consumer controls, with observed, not-run and
+  reasoned non-applicable outcomes kept distinct. Use the
+  [existing verification procedure](windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes)
+  and W11-W10/S6.4 receipt; a catalog result cannot supply embedded-padding evidence.
 - Audience, visibility, flight/rollout state, observation/stop criteria, recovery
   target, approval owner/date and subsequent publication/availability observations.
 
