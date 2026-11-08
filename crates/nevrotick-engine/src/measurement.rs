@@ -535,7 +535,8 @@ fn coherence_residual(
     base_wall: ConvertedWall,
     later_wall: ConvertedWall,
 ) -> Result<u64, MeasurementRefusal> {
-    if base.mono > base.mono_after || later.mono > later.mono_after {
+    if base.mono > base.mono_after || later.mono > later.mono_after || later.mono < base.mono_after
+    {
         return Err(MeasurementRefusal::CaptureOrder);
     }
     let lower = signed_nanoseconds(
@@ -566,6 +567,50 @@ fn coherence_residual(
         0
     };
     u64::try_from(gap).map_err(|_| MeasurementRefusal::Arithmetic)
+}
+
+/// Derive the largest fixed-baseline residual across one original bounded series.
+///
+/// Every raw three-position input is checked; each present position retains its
+/// original send-before/send-after/read-return triplet. Missing positions invent
+/// no capture. Validate all own brackets and retained sequence edges explicitly
+/// before any conversion, so platform subtraction tolerance cannot hide order.
+/// Then convert and compare at most nine captures in original order against the
+/// first present capture, without sorting, rolling or resetting that baseline.
+/// Return `None` only for no captures, otherwise the fully checked maximum gap.
+///
+/// The caller owns actual report association and any later profile comparison.
+/// This helper reads no clock, changes no state and adopts no date/header/profile
+/// rules. It cannot establish continuity or a finite physical-error bound.
+/// Success allocates nothing; rejected wall admission may allocate the existing
+/// bounded validation report. No partial result escapes a later checked failure.
+/// # Errors
+/// Reject any capture order first, then the first original-order checked wall,
+/// interval or residual conversion failure, preserving the fixed refusal.
+pub(super) fn series_coherence_residuals(
+    captures: &[Option<[SoftwareClock; 3]>; 3],
+) -> Result<Option<u64>, MeasurementRefusal> {
+    let mut previous_after: Option<Instant> = None;
+    for capture in captures.iter().flatten().flatten() {
+        if capture.mono > capture.mono_after
+            || previous_after.is_some_and(|previous| previous > capture.mono)
+        {
+            return Err(MeasurementRefusal::CaptureOrder);
+        }
+        previous_after = Some(capture.mono_after);
+    }
+
+    let mut baseline: Option<(SoftwareClock, ConvertedWall)> = None;
+    let mut maximum = 0;
+    for &capture in captures.iter().flatten().flatten() {
+        let wall = convert_wall(capture.utc)?;
+        if let Some((first, first_wall)) = baseline {
+            maximum = maximum.max(coherence_residual(first, capture, first_wall, wall)?);
+        } else {
+            baseline = Some((capture, wall));
+        }
+    }
+    Ok(baseline.map(|_| maximum))
 }
 
 /// Check every nominal local point against the supplied independent date scope.

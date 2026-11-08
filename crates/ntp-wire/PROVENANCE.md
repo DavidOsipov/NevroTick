@@ -134,3 +134,19 @@ complete endpoint parser, absolute-DNS handling and current destination policy.
 This pure result qualifies no provider, algorithm implementation, TLS identity or
 closure, exporter keys, endpoint permission, cookie lifecycle, usable association
 or atomic publication. The later effect owner must establish those guarantees.
+
+## Inert NTS client request formatting
+
+`src/nts_request.rs` is original safe Rust implementing the byte-layout facts in
+[RFC 8915 sections 5.3–5.7](https://www.rfc-editor.org/rfc/rfc8915.html#section-5.3)
+and the existing no-legacy-MAC framing limits from
+[RFC 7822 section 3](https://www.rfc-editor.org/rfc/rfc7822.html#section-3),
+reviewed 8 November 2026. No RFC code component or upstream implementation is
+copied, and no dependency is added. Existing Chrony notices remain unchanged.
+
+The exact-copy writer's supported UID/cookie shapes are local structural limits,
+not narrower NTS-KE cookie admission. Its explicit nonce allowance and opaque
+ciphertext declaration carry no algorithm, entropy, key, cookie-lifecycle,
+authentication, association or send authority. The existing engine task owns
+current implementation and qualification evidence; this provenance note supplies
+no execution result.

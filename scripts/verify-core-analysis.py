@@ -8047,6 +8047,123 @@ CONDITIONED_FIT_REQUIRED_DOCTESTS = (
 )
 
 
+# This additive child imports machinery, never predecessor bindings or scores.
+PHASE_PLAN_SUBJECT = "phase_plan"
+PHASE_PLAN_POLICY = "policy/phase-plan-analysis.json"
+PHASE_PLAN_FILE = "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs"
+PHASE_PLAN_SUBJECTS = {
+    PHASE_PLAN_SUBJECT: PHASE_PLAN_FILE,
+    "phase_plan_numeric": "crates/time-core/src/regression/chart/roundoff/phase_plan.rs",
+}
+PHASE_PLAN_SCOPE = COMMON.Scope(
+    "time-core", tuple(PHASE_PLAN_SUBJECTS.items()), PHASE_PLAN_POLICY)
+# Actual repository loader closure: module-top Core imports, portable admission,
+# check-analysis -> runtime/controls, and verify -> strict/environment/Slint.
+# These execute while loading/admitting this role even when their old campaigns
+# are not selected. Product Rust pins alone do not own these helper identities.
+PHASE_PLAN_HELPER_INPUTS = (
+    "scripts/verify-core-analysis.py", "scripts/portable-analysis.py",
+    "scripts/verify-time-domain-analysis.py",
+    "scripts/core-selection-accounting.py", "scripts/core-selection-contracts.py",
+    "scripts/core-projection-accounting.py", "scripts/core-analysis-cohorts.py",
+    "scripts/core-enclosure-accounting.py", "scripts/core-projected-batch-accounting.py",
+    "scripts/core-combination-accounting.py", "scripts/core-adaptive-accounting.py",
+    "scripts/core-adaptive-contracts.py", "scripts/core-chart-accounting.py",
+    "scripts/core-chart-contracts.py", "scripts/core-chart-combination-accounting.py",
+    "scripts/core-chart-combination-contracts.py", "scripts/core-rate-delivery-accounting.py",
+    "scripts/check-analysis.py", "scripts/analysis-runtime.py", "scripts/analysis-controls.py",
+    "scripts/verify.py", "scripts/prepare-product.py", "scripts/check-environment.py",
+    "scripts/check-strict.py", "scripts/slint_dependency_profile.py", "scripts/slint_linux_sdk.py",
+)
+PHASE_PLAN_BOUND_INPUTS = (
+    "Cargo.toml", "Cargo.lock", "crates/time-core/Cargo.toml", "crates/time-domain/Cargo.toml",
+    "crates/time-core/src/lib.rs", "crates/time-core/src/reference_input.rs",
+    "crates/time-core/src/reference_input/rate_delivery.rs", "crates/time-core/src/regression.rs",
+    "crates/time-core/src/regression/chart.rs", "crates/time-core/src/regression/chart/roundoff.rs",
+    *PHASE_PLAN_SUBJECTS.values(), "crates/time-core/tests/phase_plan.rs",
+    "crates/time-core/tests/private/phase_plan_numeric.rs",
+    "crates/time-core/tests/private/phase_plan_lifecycle.rs", "crates/time-domain/src/clock.rs",
+    *PHASE_PLAN_HELPER_INPUTS, "scripts/tests/test_phase_plan_analysis.py",
+    "policy/analysis-tools.json", "policy/verification-manifest.toml",
+    "tasks/s1.3-source-selection-readiness.md", "tasks/s0.1-chrony-ledger.json",
+)
+PHASE_PLAN_FIXED = {
+    **CONDITIONED_WINDOW_FIXED,
+    "critical_files": list(PHASE_PLAN_SUBJECTS.values()),
+    "mutation_jobs": 10,
+    "mutation_debug_info": 0,
+    "contracts_wall_seconds": 300,
+    "external_consumer_limits": {"legal_executions": 1, "negative_compilations": 7},
+}
+PHASE_PLAN_REQUIRED_TESTS = frozenset({
+    "genuine_literal_sources_emit_once_and_repeated_evaluation_is_not_ready",
+    "successive_two_second_retirements_carry_debt_error_and_original_deadlines",
+    "quantized_actual_rate_has_the_literal_residual_and_division_bound",
+    "negative_transient_with_positive_aggregate_is_a_healthy_continuation",
+    "no_effect_clears_only_the_operation_and_duplicate_terminal_is_outer_rejected",
+    "foreign_context_and_wrong_ordinal_leave_a_matching_terminal_usable",
+    "current_unknown_is_a_blocked_historical_owner_not_zero_delivery",
+    "retained_remap_is_not_ready_but_fresh_observations_replace_the_obligation",
+    "exact_expiry_then_clock_rewind_cannot_restore_residual_permission",
+    "stop_conflict_and_generation_retirement_preserve_late_known_settlement",
+    "admitted_conversion_failure_retains_event_cursor_and_original_provenance",
+    "active_delivery_is_independent_of_monotonic_elapsed_and_utc_mapping",
+    "rejected_permission_keeps_clock_highwaters_but_not_an_issued_operation",
+    "missing_or_changed_effective_baseline_retains_known_history_without_debt",
+    "delivery_retirements_preserve_debt_and_actual_transient_need_not_equal_request",
+    "zero_nominal_debt_keeps_its_bound_and_the_original_signed_zero_baseline",
+    "foreign_chart_and_outstanding_reference_reject_before_producer_advance",
+    "rejected_construction_returns_the_cursor_and_leaves_the_producer_unadvanced",
+    "admitted_no_plan_retains_credit_until_genuinely_new_eligible_rows_arrive",
+    "ordinal_exhaustion_has_a_useful_last_neighbor_and_no_reset_path",
+    "raw_profile_and_baseline_refusals_keep_supported_boundary_neighbors",
+    "lifecycle_error_families_keep_bounded_redacted_diagnostics_and_typed_causes",
+    "settled_cursor_constructor_refusals_preserve_custody_and_first_reference_credit",
+    "constructor_deadline_overflow_has_independent_exact_clock_neighbors",
+    "terminal_cursor_construction_cannot_restore_unknown_or_exhausted_authority",
+    "issue_deadlines_and_no_effect_permission_preserve_original_operation_budget",
+    "aggregate_cap_refusal_has_an_exact_cap_neighbor_without_hidden_issuance",
+    "reference_input::rate_delivery::phase_plan::tests::no_effect_latches_each_deadline_before_later_issue_can_mask_it",
+    "independent_target_tag_mismatches_preserve_cursor_and_source_credit",
+    "genuine_phase_envelope_has_adjacent_declared_cap_neighbors",
+    "actual_rate_cap_and_zero_transient_keep_both_debt_signs",
+    "negative_debt_direction_and_zero_residual_have_typed_neighbors",
+    "zero_phase_baseline_only_issuance_accepts_both_actual_rate_signs",
+    "postsettlement_phase_cap_distinguishes_equal_and_rounded_excess",
+    "late_known_delivery_reports_each_expiry_before_transfer",
+    "fresh_transfer_baseline_cap_has_signed_adjacent_neighbors",
+    "terminal_current_clocks_contain_delayed_known_delivery_independently",
+    "regression::chart::roundoff::phase_plan::tests::successive_baseline_relative_dyadic_deliveries",
+    "regression::chart::roundoff::phase_plan::tests::prior_error_survives_successive_settlement_and_division",
+    "regression::chart::roundoff::phase_plan::tests::quantized_actual_rate_has_independent_non_dyadic_quotient",
+    "regression::chart::roundoff::phase_plan::tests::noninteger_remaining_seconds_keep_independent_point_and_error",
+    "regression::chart::roundoff::phase_plan::tests::negative_transient_can_have_positive_aggregate",
+    "regression::chart::roundoff::phase_plan::tests::completion_and_overshoot_preserve_actual_debt",
+    "regression::chart::roundoff::phase_plan::tests::zero_and_ambiguous_sign_preserve_baseline_bits",
+    "regression::chart::roundoff::phase_plan::tests::explicit_caps_clamp_transient_then_check_aggregate",
+    "regression::chart::roundoff::phase_plan::tests::debt_constructor_rejects_all_unsupported_scalar_classes",
+    "regression::chart::roundoff::phase_plan::tests::zero_and_integer_duration_boundaries_are_explicit",
+    "regression::chart::roundoff::phase_plan::tests::transformed_unsupported_results_are_rejected_atomically",
+    "regression::chart::roundoff::phase_plan::tests::numeric_error_families_redact_and_delegate_typed_sources",
+    "regression::chart::roundoff::phase_plan::tests::checked_debt_and_rates_debug_are_opaque_over_distinct_values",
+    "regression::chart::roundoff::phase_plan::tests::transformed_scalar_faults_fail_raw_and_checked_rate_admission",
+    "regression::chart::roundoff::phase_plan::tests::transformed_branch_faults_fail_raw_and_checked_rate_admission",
+    "regression::chart::roundoff::phase_plan::tests::settlement_raw_rules_reject_before_zero_duration_shortcuts",
+    "regression::chart::roundoff::phase_plan::tests::zero_delivery_and_bound_exhaustion_preserve_prior_debt",
+    "regression::chart::roundoff::phase_plan::tests::noninteger_horizon_error_includes_denominator_conversion",
+    "regression::chart::roundoff::phase_plan::tests::settlement_rounding_order_preserves_noninteger_duration",
+    "regression::chart::roundoff::phase_plan::tests::proposal_input_rules_preserve_caps_and_baseline_boundaries",
+    "regression::chart::roundoff::phase_plan::tests::proposal_error_encloses_inherited_debt_interval",
+    "regression::chart::roundoff::phase_plan::tests::delivery_error_preserves_zero_factor_identity",
+})
+PHASE_PLAN_REQUIRED_DOCTESTS = (
+    (PHASE_PLAN_FILE, "reference_input::rate_delivery::phase_plan::FixturePhaseBaseline", False, 1),
+    (PHASE_PLAN_FILE, "reference_input::rate_delivery::phase_plan::FixturePhasePlanOwner", True, 2),
+    (PHASE_PLAN_FILE, "reference_input::rate_delivery::phase_plan::FixturePhaseRetirement", True, 1),
+)
+PHASE_PLAN_CONTRACT_MARKER = "legal-phase-plan-contract\n"
+
+
 class ConditionedAnalysisRole(NamedTuple):
     """Code-owned selection data; policy cannot choose owners or execution targets."""
 
@@ -8081,6 +8198,14 @@ def _conditioned_fit_role() -> ConditionedAnalysisRole:
         CONDITIONED_FIT_FIXED, CONDITIONED_FIT_BOUND_INPUTS,
         CONDITIONED_FIT_REQUIRED_TESTS, CONDITIONED_FIT_REQUIRED_DOCTESTS,
         ("conditioned_fit",))
+
+
+def _phase_plan_role() -> ConditionedAnalysisRole:
+    """Select only the finite lifecycle/numerical owners and their own controls."""
+    return ConditionedAnalysisRole(
+        PHASE_PLAN_SUBJECT, "Phase-plan", PHASE_PLAN_SCOPE, PHASE_PLAN_FIXED,
+        PHASE_PLAN_BOUND_INPUTS, PHASE_PLAN_REQUIRED_TESTS, PHASE_PLAN_REQUIRED_DOCTESTS,
+        ("phase_plan",))
 
 
 def _conditioned_inventory_bindings(policy, role, *, required=False):
@@ -8223,6 +8348,38 @@ def _enumerate_conditioned(session, policy, report, role):
                   campaign_admission=False, qualification_passed=False)
 
 
+def configure_phase_plan_mutation(session, policy, report, role):
+    """Seal this role's debug-info-only mutation profile after earlier lanes.
+
+    Require the original sealed vendor-only config before changing its private
+    copy. No source manifest, Rust flags, assertions, overflow or other profile
+    setting changes. The Session seals the replacement for every later command.
+    """
+    if (role.selector != PHASE_PLAN_SUBJECT or role.scope != PHASE_PLAN_SCOPE
+            or type(policy.get("mutation_debug_info")) is not int
+            or policy["mutation_debug_info"] != 0):
+        raise Incomplete("Only phase-plan mutation admits integer-zero debug information.")
+    before = COMMON.read_analysis_text(session.config, maximum=4096)
+    before_sha256 = hashlib.sha256(before.encode()).hexdigest()
+    expected = {"source": {"crates-io": {"replace-with": "reviewed"},
+                           "reviewed": {"directory": str(session.vendor)}}}
+    if before_sha256 != session.config_sha256 or tomllib.loads(before) != expected:
+        raise Incomplete("Phase-plan mutation requires its unchanged sealed vendor-only Cargo config.")
+    after = before + "\n[profile.dev]\ndebug = 0\n[profile.test]\ndebug = 0\n"
+    after_sha256 = hashlib.sha256(after.encode()).hexdigest()
+    session.configure(after)
+    if (COMMON.read_analysis_text(session.config, maximum=4096) != after
+            or session.config_sha256 != after_sha256):
+        raise Incomplete("Phase-plan mutation debug-only Cargo config was not sealed exactly.")
+    report["mutation_debug_configuration"] = {
+        "before_text": before, "before_sha256": before_sha256,
+        "after_text": after, "after_sha256": after_sha256,
+        "profile_settings": {"dev": {"debug": 0}, "test": {"debug": 0}},
+        "other_profile_settings_changed": False,
+        "scope": "Private phase-plan mutation enumeration/build/tests only; earlier baseline, coverage, ordinary, contracts and shipping profiles unchanged.",
+    }
+
+
 def _execute_conditioned(args, report, role, *, read_policy):
     """Run this two-owner child through unchanged shared custody and gate machinery."""
     if (args.subject != role.selector
@@ -8236,7 +8393,8 @@ def _execute_conditioned(args, report, role, *, read_policy):
         _conditioned_inventory_bindings(policy, role, required=True)
         COMMON._require_private_output(ROOT, args.output_dir)
         if shutil.disk_usage(args.output_dir.parent).free < policy["mutation_minimum_free_bytes"]:
-            raise Incomplete(f"{role.label} eight-worker mutation requires at least five GiB free before admission.")
+            workers = "ten" if role.selector == PHASE_PLAN_SUBJECT else "eight"
+            raise Incomplete(f"{role.label} {workers}-worker mutation requires at least five GiB free before admission.")
     session_args = argparse.Namespace(**vars(args))
     if args.lane in {"enumerate", "baseline"}:
         session_args.lane = "mutation" if args.lane == "enumerate" else "contracts"
@@ -8270,6 +8428,8 @@ def _execute_conditioned(args, report, role, *, read_policy):
                 role.scope, coverage, "/work/source/" + filename)
                 for name, filename in role.scope.select("all").items()}
         if args.lane in {"mutation", "all"}:
+            if role.selector == PHASE_PLAN_SUBJECT:
+                configure_phase_plan_mutation(session, policy, report, role)
             def run(label, command, timeout, **options):
                 raw = session.run(label, command, timeout, **options)
                 if label.startswith("mutation-campaign:"):
@@ -8362,6 +8522,290 @@ def main_conditioned_fit(args):
     return _main_conditioned(args, _conditioned_fit_role(), execute_role=execute_conditioned_fit)
 
 
+def validate_phase_plan_equivalence_scope(entries, inputs_sha256):
+    """Allow only unique subsets of the four exact reviewed source equivalences.
+
+    COMMON still admits actual candidate/source/proof custody and later requires
+    each exact fault to be an actual miss. This closed scope grants no kill.
+    Its prevalidated input map also binds the sign-insensitive parent helper.
+    """
+    reviewed = {
+        "PHASE-PROFILE-NORMAL-POSITIVE": (
+            "7a332363cc72c569a0a99fa5adbba4b5695bbb1367ea60d08449ed122d5bee13",
+            "131b5b15383236d6dcc596b9750cd491c2ea4933decf5a4f2db38b4c819b5f9e"),
+        "PHASE-NUMERIC-ADDITION-ABS-SIGN": (
+            "2d2e5ecf16c6aed1131f63420bae97f7037074b4511f2f9744be9fcdc31cddc9",
+            "0e3501f19639eca712ca0a6bbe423178d91415996edc3963b7f7f0bcadbb9a3a"),
+        "PHASE-NUMERIC-POSITIVE-CLAMP-EQUALITY": (
+            "2d2e5ecf16c6aed1131f63420bae97f7037074b4511f2f9744be9fcdc31cddc9",
+            "157595293ff60b8a3a3c036a78382a8b4a2102405edadcb6f4eccb36161aa229"),
+        "PHASE-NUMERIC-NEGATIVE-CLAMP-EQUALITY": (
+            "2d2e5ecf16c6aed1131f63420bae97f7037074b4511f2f9744be9fcdc31cddc9",
+            "e74479b761cec558fdce8ce470058f36d48ad71afa8ba27d75d1fca6f3a10d1f"),
+    }
+    if type(entries) is not list or len(entries) > len(reviewed):
+        raise Incomplete("Phase-plan equivalences require a unique subset of its four reviewed faults.")
+    required = {"id", "candidate_sha256", "source_sha256", "mutant", "requirement", "rationale", "proof"}
+    seen = set()
+    for entry in entries:
+        if type(entry) is not dict or set(entry) != required:
+            raise Incomplete("Phase-plan equivalence has missing or unknown fields.")
+        identifier, proof = entry["id"], entry["proof"]
+        if type(identifier) is not str or identifier not in reviewed or identifier in seen:
+            raise Incomplete("Phase-plan equivalence identity is unreviewed or duplicated.")
+        source, descriptor = reviewed[identifier]
+        if (entry["source_sha256"] != source or type(entry["mutant"]) is not dict
+                or COMMON.canonical_sha256(entry["mutant"]) != descriptor
+                or type(proof) is not dict
+                or proof.get("path") != "tasks/phase-plan-analysis-equivalences.md"
+                or proof.get("sha256") != "a73747280f00ec21fe896d3e38d0fd1826f8d49fd93683ef01f7829d2eddb227"
+                or proof.get("section") != identifier):
+            raise Incomplete("Phase-plan equivalence differs from its exact reviewed descriptor/source/proof.")
+        seen.add(identifier)
+    if ("PHASE-NUMERIC-ADDITION-ABS-SIGN" in seen
+            and (type(inputs_sha256) is not dict
+                 or inputs_sha256.get("crates/time-core/src/regression/chart/roundoff.rs")
+                 != "c8a05da2b622468426063a3addb17e2c27d8ba9856efee9c53ff7f6d7201166f")):
+        raise Incomplete("Phase-plan addition equivalence requires its exact sign-insensitive parent helper.")
+
+
+def read_phase_plan_policy(root):
+    """Require fresh complete bindings and only exact observed source equivalences."""
+    policy = _read_conditioned_policy(root, _phase_plan_role())
+    validate_phase_plan_equivalence_scope(policy["mutation_equivalences"], policy["inputs_sha256"])
+    return policy
+
+
+def phase_plan_contract_examples():
+    """Fixed real public consumers; policy cannot supply source or diagnostic truth.
+
+    Constructor assertions execute in the legal binary. The legal two-retirement
+    journey is compiled only; actual modeled journeys belong to package tests.
+    Every negative has a compiling typed neighbor in that same legal consumer.
+    """
+    legal = '''use time_core::{FixtureAffineChart, FixtureCombinationState, FixturePhaseBaseline,
+    FixturePhaseError, FixturePhaseNow, FixturePhasePlanOwner, FixturePhaseProfile,
+    FixturePhaseResidualPermission, FixturePhaseSettlement, FixtureRateSettlement,
+    FixtureRateSettlementCursor};
+use time_domain::{ActiveAwakeNs, MonotonicNs};
+fn lease<'producer, 'chart>(producer: &'producer mut FixtureCombinationState,
+    chart: &'chart FixtureAffineChart, cursor: FixtureRateSettlementCursor,
+    now: FixturePhaseNow, profile: FixturePhaseProfile, baseline: FixturePhaseBaseline)
+    -> Result<FixturePhasePlanOwner<'producer, 'chart>, Box<dyn std::error::Error>> {
+    let owner = FixturePhasePlanOwner::new(producer, chart, cursor, now, profile, baseline)?;
+    std::hint::black_box(owner.cursor());
+    Ok(owner)
+}
+fn journey(mut owner: FixturePhasePlanOwner<'_, '_>, first: FixtureRateSettlement,
+    second: FixtureRateSettlement, baseline: FixturePhaseBaseline, now: FixturePhaseNow)
+    -> Result<(), FixturePhaseError> {
+    {
+        let proposal = owner.issue(now, FixturePhaseResidualPermission::Allow)?;
+        std::hint::black_box(proposal.ordinal());
+    }
+    let mut first_retirement = match owner.settle(first, Some(baseline), now) {
+        FixturePhaseSettlement::Known(value) => value,
+        _ => return Ok(()),
+    };
+    let mut next = first_retirement.resume(now, FixturePhaseResidualPermission::Allow)?;
+    {
+        let proposal = next.issue(now, FixturePhaseResidualPermission::Allow)?;
+        std::hint::black_box(proposal.ordinal());
+    }
+    let mut second_retirement = match next.settle(second, Some(baseline), now) {
+        FixturePhaseSettlement::Known(value) => value,
+        _ => return Ok(()),
+    };
+    let final_owner = second_retirement.resume_fresh(now, baseline)?;
+    std::hint::black_box(final_owner.cursor());
+    Ok(())
+}
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let baseline = FixturePhaseBaseline::new(-0.0)?;
+    assert_eq!(baseline.rate().to_bits(), (-0.0_f64).to_bits());
+    assert!(FixturePhaseBaseline::new(f64::NAN).is_err());
+    assert_eq!(FixturePhaseBaseline::new(1.0 / 1024.0)?.rate(), 1.0 / 1024.0);
+    let active = ActiveAwakeNs::new(8_000_000_000).duration_since(ActiveAwakeNs::new(0))?;
+    let monotonic = MonotonicNs::new(16_000_000_000).duration_since(MonotonicNs::new(0))?;
+    let _profile = FixturePhaseProfile::new(active, monotonic, 1.0 / 16.0, 1.0 / 128.0, 1.0 / 64.0)?;
+    assert!(FixturePhaseProfile::new(active, monotonic, 0.0, 1.0 / 128.0, 1.0 / 64.0).is_err());
+    println!("legal-phase-plan-contract");
+    Ok(())
+}
+'''
+    cases = {"phase_plan_legal": {"source": legal, "code": None}}
+
+    def negative(name, source, code, rejected_line, tokens, neighbor):
+        """Bind one fixed primary line and field/borrow meaning, never rendering."""
+        if source.splitlines().count(rejected_line) != 1:
+            raise Incomplete("Phase-plan negative has no unique fixed receiving line.")
+        cases[name] = {
+            "source": source, "code": code, "line": source.splitlines().index(rejected_line) + 1,
+            "tokens": tokens, "external_legal_neighbor": {
+                "file": "crates/time-core/tests/phase_plan.rs", "test": neighbor},
+        }
+
+    negative("phase_plan_producer_lease", '''use time_core::{FixtureAffineChart, FixtureCombinationState, FixturePhaseBaseline,
+    FixturePhaseNow, FixturePhasePlanOwner, FixturePhaseProfile, FixtureRateSettlementCursor};
+fn overlap(producer: &mut FixtureCombinationState, chart: &FixtureAffineChart,
+    cursor: FixtureRateSettlementCursor, now: FixturePhaseNow,
+    profile: FixturePhaseProfile, baseline: FixturePhaseBaseline)
+    -> Result<(), Box<dyn std::error::Error>> {
+    let owner = FixturePhasePlanOwner::new(producer, chart, cursor, now, profile, baseline)?;
+    std::hint::black_box(producer.emitted_rounds());
+    std::hint::black_box(owner);
+    Ok(())
+}
+fn main() {}
+''', "E0502", "    std::hint::black_box(producer.emitted_rounds());", ["producer", "immutable"],
+        "successive_two_second_retirements_carry_debt_error_and_original_deadlines")
+    negative("phase_plan_live_proposal", '''use time_core::{FixturePhaseBaseline, FixturePhaseError, FixturePhaseNow,
+    FixturePhasePlanOwner, FixturePhaseResidualPermission, FixtureRateSettlement};
+fn stale_view(mut owner: FixturePhasePlanOwner<'_, '_>, event: FixtureRateSettlement,
+    baseline: FixturePhaseBaseline, now: FixturePhaseNow) -> Result<(), FixturePhaseError> {
+    let proposal = owner.issue(now, FixturePhaseResidualPermission::Allow)?;
+    let settled = owner.settle(event, Some(baseline), now);
+    std::hint::black_box(proposal.ordinal());
+    std::hint::black_box(settled);
+    Ok(())
+}
+fn main() {}
+''', "E0505", "    let settled = owner.settle(event, Some(baseline), now);", ["owner", "borrow"],
+        "no_effect_clears_only_the_operation_and_duplicate_terminal_is_outer_rejected")
+    negative("phase_plan_double_transfer", '''use time_core::{FixturePhaseBaseline, FixturePhaseError, FixturePhaseNow,
+    FixturePhaseResidualPermission, FixturePhaseRetirement};
+fn concurrent(retired: &mut FixturePhaseRetirement<'_>, now: FixturePhaseNow,
+    baseline: FixturePhaseBaseline) -> Result<(), FixturePhaseError> {
+    let first = retired.resume(now, FixturePhaseResidualPermission::Allow)?;
+    let second = retired.resume_fresh(now, baseline)?;
+    std::hint::black_box((first, second));
+    Ok(())
+}
+fn main() {}
+''', "E0499", "    let second = retired.resume_fresh(now, baseline)?;", ["retired", "mutable"],
+        "successive_two_second_retirements_carry_debt_error_and_original_deadlines")
+    negative("phase_plan_retirement_escape", '''use time_core::{
+    FixturePhaseError, FixturePhaseNow, FixturePhasePlanOwner,
+    FixturePhaseResidualPermission, FixturePhaseRetirement,
+};
+fn escape<'producer>(
+    mut retired: FixturePhaseRetirement<'producer>,
+    now: FixturePhaseNow,
+) -> Result<FixturePhasePlanOwner<'producer, 'producer>, FixturePhaseError> {
+    retired.resume(now, FixturePhaseResidualPermission::Allow)
+}
+fn main() {}
+''', "E0515", "    retired.resume(now, FixturePhaseResidualPermission::Allow)",
+        ["retired", "owned by the current function"],
+        "successive_two_second_retirements_carry_debt_error_and_original_deadlines")
+    negative("phase_plan_baseline_literal", '''use time_core::FixturePhaseBaseline;
+fn main() {
+    let _ = FixturePhaseBaseline { rate: 0.0 };
+}
+''', "E0451", "    let _ = FixturePhaseBaseline { rate: 0.0 };", ["rate", "private"],
+        "raw_profile_and_baseline_refusals_keep_supported_boundary_neighbors")
+    negative("phase_plan_profile_mutation", '''use time_core::FixturePhaseProfile;
+fn mutate(profile: &mut FixturePhaseProfile) {
+    profile.phase_cap = 0.0;
+}
+fn main() {}
+''', "E0616", "    profile.phase_cap = 0.0;", ["phase_cap", "private"],
+        "raw_profile_and_baseline_refusals_keep_supported_boundary_neighbors")
+    negative("phase_plan_cursor_retarget", '''use time_core::{FixturePhasePlanOwner, FixtureRateSettlementCursor};
+fn retarget(owner: &mut FixturePhasePlanOwner<'_, '_>, cursor: FixtureRateSettlementCursor) {
+    owner.cursor = cursor;
+}
+fn main() {}
+''', "E0616", "    owner.cursor = cursor;", ["cursor", "private"],
+        "foreign_context_and_wrong_ordinal_leave_a_matching_terminal_usable")
+    return cases
+
+
+def phase_plan_contracts(session, policy, report):
+    """Compile fixed consumers with existing custody and strict causal diagnostics."""
+    examples = phase_plan_contract_examples()
+    limits = policy["external_consumer_limits"]
+    if ({"legal_executions": sum(row["code"] is None for row in examples.values()),
+         "negative_compilations": sum(row["code"] is not None for row in examples.values())} != limits):
+        raise Incomplete("Phase-plan contract registry differs from its closed consumer limits.")
+    deadline = time.monotonic() + policy["contracts_wall_seconds"]
+    output = session.run("contract-library", [str(session.stable / "bin/cargo"), "build",
+        "--package", "time-core", "--frozen", "--jobs", str(policy["jobs"]), "--lib",
+        "--message-format=json"], COMMON.remaining_timeout(deadline, 120))
+    artifact = COMMON.library_artifact(output, "time-core", "/work/source/crates/time-core/Cargo.toml")
+    domain_artifact = COMMON.library_artifact(output, "time-domain", "/work/source/crates/time-domain/Cargo.toml")
+    dependencies = copy_contract_dependencies(session, artifact, domain_artifact)
+    consumers = session.work / "contract-inputs"
+    consumers.mkdir(mode=0o700)
+    binaries = session.work / "contracts"
+    binaries.mkdir(mode=0o700)
+    for name, specimen in examples.items():
+        (consumers / (name + ".rs")).write_text(specimen["source"])
+    session.protect(consumers)
+    evidence = {"legal_executions": 0, "negative_compilations": 0, "specimens": {},
+        "libraries_sha256": {name: PRODUCT.sha256(dependencies / name)
+                             for name in ("libtime_core.rlib", "libtime_domain.rlib")},
+        "legal_execution_scope": "Constructor assertions executed; the legal two-retirement borrow journey is compiled only. Actual modeled trajectories belong to the package tests."}
+    report["external_contracts"] = evidence
+    for name, specimen in examples.items():
+        source_path = "/work/contract-inputs/" + name + ".rs"
+        evidence["specimens"][name] = {
+            "source_sha256": PRODUCT.sha256(consumers / (name + ".rs")),
+            **{key: value for key, value in specimen.items() if key != "source"}}
+        command = [str(session.stable / "bin/rustc"), "--edition", "2024", "--crate-name", name,
+            "--error-format=json", source_path,
+            "--extern", "time_core=/work/contract-deps/libtime_core.rlib",
+            "--extern", "time_domain=/work/contract-deps/libtime_domain.rlib",
+            "-L", "dependency=/work/contract-deps", "--out-dir", "/work/contracts"]
+        session.run("external-consumer-" + name, command, COMMON.remaining_timeout(deadline, 60),
+                    sealed=[consumers, dependencies], specimen=specimen if specimen["code"] else None)
+        if specimen["code"] is not None:
+            evidence["negative_compilations"] += 1
+            continue
+        binary = binaries / name
+        digest = PRODUCT.sha256(binary)
+        actual = session.run("external-legal-execution", ["/work/contracts/" + name],
+            COMMON.remaining_timeout(deadline, 30), sealed=[consumers, dependencies, binary])
+        if actual != PHASE_PLAN_CONTRACT_MARKER or PRODUCT.sha256(binary) != digest:
+            raise Incomplete("Phase-plan legal execution lacks its exact marker or unchanged binary.")
+        evidence["specimens"][name].update(binary_sha256=digest, stdout=actual)
+        evidence["legal_executions"] += 1
+    if {key: evidence[key] for key in limits} != limits:
+        raise Incomplete("Phase-plan actual consumer completion is incomplete.")
+
+
+def execute_phase_plan(args, report):
+    """Keep this child's analysis and external-contract lanes separately explicit."""
+    if args.lane != "contracts":
+        report["qualification_scope"] = "Selected baseline/coverage/mutation lanes only; external contracts require their separate contracts receipt."
+        return _execute_conditioned(args, report, _phase_plan_role(), read_policy=read_phase_plan_policy)
+    if (args.subject != PHASE_PLAN_SUBJECT or args.tool_admission_profile != "full"
+            or any(getattr(args, name, None) for name in
+                   ("inventory_admission", "cohort_plan", "cohort_id", "cohort_receipt"))):
+        raise Incomplete("Phase-plan contracts require their exact full-profile role.")
+    role = _phase_plan_role()
+    policy = read_phase_plan_policy(ROOT)
+    report.update(subjects=role.scope.select("all"), candidate_sha256=policy["candidate_sha256"],
+                  qualification_passed=False, historical_family_bindings_reused=False)
+    session = COMMON.Session(ROOT, args, report, role.scope, policy, role.bound_inputs)
+    try:
+        if (len(session.product_identity) != policy["source_file_count"]
+                or COMMON.canonical_sha256(session.product_identity) != policy["candidate_sha256"]
+                or inventory_document(session.source / role.scope.policy) != policy
+                or any(PRODUCT.sha256(session.source / name) != policy["inputs_sha256"][name]
+                       for name in role.bound_inputs)):
+            raise Incomplete("Captured phase-plan contract candidate/policy/protected inputs differ.")
+        phase_plan_contracts(session, policy, report)
+    finally:
+        session.finish()
+    report["qualification_passed"] = True
+
+
+def main_phase_plan(args):
+    """Report only the exact new child; incomplete bindings authorize no job."""
+    return _main_conditioned(args, _phase_plan_role(), execute_role=execute_phase_plan)
+
+
 
 def execute(args, report):
     """Run only selected current-admitted rows; preserve partial raw observations."""
@@ -8371,6 +8815,8 @@ def execute(args, report):
         return execute_conditioned_window(args, report)
     if args.subject == CONDITIONED_FIT_SUBJECT:
         return execute_conditioned_fit(args, report)
+    if args.subject == PHASE_PLAN_SUBJECT:
+        return execute_phase_plan(args, report)
     if args.lane not in {'inventory', 'contracts', 'coverage', 'mutation', 'cohort-union'}:
         raise Incomplete('Unsupported checkpoint lane; optional fuzz/all execution is not admitted.')
     requested_profile = getattr(args, "tool_admission_profile", "full")
@@ -8505,7 +8951,7 @@ def main(argv=None):
     """Fresh owned outputs, fixed scopes and nonzero incomplete status only."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lane", choices=("inventory", "contracts", "baseline", "coverage", "mutation", "cohort-union", "enumerate", "all"), default="coverage")
-    parser.add_argument("--subject", choices=(*SUBJECTS, WINDOW_VARIANCE_SUBJECT, CONDITIONED_WINDOW_SUBJECT, CONDITIONED_FIT_SUBJECT, "all"), default="all")
+    parser.add_argument("--subject", choices=(*SUBJECTS, WINDOW_VARIANCE_SUBJECT, CONDITIONED_WINDOW_SUBJECT, CONDITIONED_FIT_SUBJECT, PHASE_PLAN_SUBJECT, "all"), default="all")
     parser.add_argument("--inventory-admission", type=Path)
     parser.add_argument('--cohort-plan', type=Path)
     parser.add_argument('--cohort-id')
@@ -8520,6 +8966,8 @@ def main(argv=None):
         return main_conditioned_window(args)
     if args.subject == CONDITIONED_FIT_SUBJECT:
         return main_conditioned_fit(args)
+    if args.subject == PHASE_PLAN_SUBJECT:
+        return main_phase_plan(args)
     if args.lane == "baseline":
         parser.error("--lane baseline belongs only to --subject conditioned_window/conditioned_fit")
     if args.lane in {"enumerate", "all"}:

@@ -10,6 +10,16 @@ use std::{
     net::{Ipv4Addr, Ipv6Addr, SocketAddrV6},
 };
 
+/// Assert an independently valid pure product result without formatting its cause.
+/// # Errors
+/// Keep the original typed result for the existing propagation path.
+/// # Panics
+/// Reject an unexpected refusal using only the code-owned static fact.
+fn product_ok<T, E>(result: Result<T, E>, fact: &'static str) -> Result<T, E> {
+    assert!(result.is_ok(), "{fact}");
+    result
+}
+
 /// Explicit laboratory endpoint; fixture sockets never send to it in these tests.
 fn peer() -> SocketAddr {
     SocketAddr::from((Ipv4Addr::LOCALHOST, 41001))
@@ -360,6 +370,209 @@ fn actual_publication_rechecks_control_and_deadline_after_staging() -> Result<()
     Ok(())
 }
 
+/// Original process hook, shared only with this bounded scope's delegating hook.
+type CounterPanicHook = Box<dyn Fn(&std::panic::PanicHookInfo<'_>) + Send + Sync + 'static>;
+
+/// Suppress only this singleton test thread during the two synchronous catches.
+/// Normal restoration returns the exact original hook before fallible cleanup.
+/// An escaping fixture unwind only disables suppression and remains uncredited.
+struct CounterPanicScope {
+    /// Exact original hook; no caller can retain another reference to this wrapper.
+    previous: Option<Arc<CounterPanicHook>>,
+    /// Disable suppression even when hook APIs cannot run during fixture unwind.
+    active: Arc<std::sync::atomic::AtomicBool>,
+}
+
+impl CounterPanicScope {
+    /// Install after all native/fallible setup; delegate every other thread.
+    /// # Errors
+    /// Refuse hook installation during an already active fixture unwind.
+    fn new() -> std::io::Result<Self> {
+        if std::thread::panicking() {
+            return Err(std::io::Error::other("counter fixture already unwinding"));
+        }
+        let previous = Arc::new(std::panic::take_hook());
+        let delegated = Arc::clone(&previous);
+        let active = Arc::new(std::sync::atomic::AtomicBool::new(true));
+        let enabled = Arc::clone(&active);
+        let controlled = std::thread::current().id();
+        std::panic::set_hook(Box::new(move |info| {
+            if std::thread::current().id() != controlled
+                || !enabled.load(std::sync::atomic::Ordering::SeqCst)
+            {
+                delegated(info);
+            }
+        }));
+        Ok(Self {
+            previous: Some(previous),
+            active,
+        })
+    }
+
+    /// Restore the exact prior hook on every qualifying nonpanicking path.
+    /// Return false for unexpected fixture unwind or an escaped hook reference;
+    /// delegation remains enabled, and neither case supplies semantic credit.
+    fn restore(&mut self) -> bool {
+        self.active
+            .store(false, std::sync::atomic::Ordering::SeqCst);
+        if std::thread::panicking() {
+            return false;
+        }
+        let Some(previous) = self.previous.take() else {
+            return true;
+        };
+        drop(std::panic::take_hook());
+        match Arc::try_unwrap(previous) {
+            Ok(original) => {
+                std::panic::set_hook(original);
+                true
+            }
+            Err(original) => {
+                std::panic::set_hook(Box::new(move |info| original(info)));
+                false
+            }
+        }
+    }
+}
+
+impl Drop for CounterPanicScope {
+    /// Never call hook mutation APIs from an escaping fixture unwind.
+    fn drop(&mut self) {
+        let _restored = self.restore();
+    }
+}
+
+/// Observe actual local socket/runtime/watch disposal before any panic witness.
+/// Rebinding proves only these completed local fixture owners released their ports.
+/// # Errors
+/// Preserve hook, native rebinding and incomplete runtime/watch cleanup as raw errors.
+fn counter_fixture_cleanup(
+    locals: [SocketAddr; 2],
+    watch_released: bool,
+    hook_restored: bool,
+) -> std::io::Result<()> {
+    let first = crate::StdSocket::bind(locals[0])?;
+    let second = crate::StdSocket::bind(locals[1])?;
+    drop((first, second));
+    if !watch_released || !hook_restored || tokio::runtime::Handle::try_current().is_ok() {
+        return Err(std::io::Error::other(
+            "counter fixture hook, watch or runtime cleanup incomplete",
+        ));
+    }
+    Ok(())
+}
+
+/// Exercise two synchronous counters after genuine setup, without reusing an unwind.
+/// The retired read is modeled input, not an observed native event or report.
+/// # Errors
+/// Preserve native setup, exact child selection and actual cleanup failures as raw.
+/// # Panics
+/// Reject a caught counter panic only after cleanup, then require exact healthy effects.
+#[test]
+fn synchronous_counter_boundaries_do_not_panic_and_preserve_exact_effects()
+-> Result<(), Box<dyn Error>> {
+    if series_process::parent_or_child(
+        "series::tests::synchronous_counter_boundaries_do_not_panic_and_preserve_exact_effects",
+    )? {
+        return Ok(());
+    }
+    let runtime = runtime()?;
+    let (mut publication_slot, staged, deadline) = runtime.block_on(staged_native_reply())?;
+    publication_slot.finish(TerminalOutcome::Stopped);
+    let entered = runtime.enter();
+    let mut read_slot = terminal_slot(context())?;
+    let locals = [publication_slot.local, read_slot.local];
+    let (publication_sender, mut publication_control) = watch::channel(Control {
+        stop: true,
+        epoch: 0,
+    });
+    let state = Control {
+        stop: true,
+        epoch: 7,
+    };
+    let (read_sender, mut read_control) = watch::channel(state);
+    let selected = SeriesRead {
+        result: NativeReadOutcome::Datagram {
+            length: PACKET_BYTES,
+            source: peer(),
+        },
+        read: SoftwareClock::capture(),
+    };
+    let buffer = [0; RECEIVE_BYTES];
+    let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
+    let mut hook = CounterPanicScope::new()?;
+    let publication = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        publish_series_reply(
+            &mut publication_slot,
+            &mut publication_control,
+            Ok(staged),
+            deadline,
+        )
+    }));
+    let reading = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        handle_series_read(
+            &mut read_slot,
+            &mut read_control,
+            selected,
+            &buffer,
+            limits,
+            deadline,
+            state,
+        )
+    }));
+    let hook_restored = hook.restore();
+    drop(hook);
+    let did_not_panic = publication.is_ok() && reading.is_ok();
+    // Inspect only a successful call's owner; discard an unwound owner unchanged.
+    let publication_effects = publication.as_ref().is_ok_and(|observed| {
+        observed.stop
+            && observed.epoch == 0
+            && publication_slot.received == 0
+            && publication_slot.rejected == 1
+            && publication_slot.last_rejection.is_none()
+            && publication_slot.terminal().map(TerminalOutcome::status) == Some(Status::Stopped)
+            && publication_slot
+                .terminal()
+                .and_then(TerminalOutcome::facts)
+                .is_none()
+    });
+    let read_effects = reading.as_ref().is_ok_and(|observed| {
+        observed.stop
+            && observed.epoch == 7
+            && read_slot.received == 1
+            && read_slot.rejected == 1
+            && read_slot.last_rejection.is_none()
+            && read_slot.terminal().map(TerminalOutcome::status) == Some(Status::Timeout)
+            && read_slot
+                .terminal()
+                .and_then(TerminalOutcome::facts)
+                .is_none()
+    });
+    drop((publication, publication_slot, publication_control));
+    drop((reading, read_slot, read_control));
+    let watch_released = [
+        publication_sender.receiver_count(),
+        read_sender.receiver_count(),
+    ] == [0, 0];
+    drop((publication_sender, read_sender));
+    drop(entered);
+    drop(runtime);
+    counter_fixture_cleanup(locals, watch_released, hook_restored)?;
+    assert!(
+        did_not_panic,
+        "synchronous series counter operations must not panic"
+    );
+    assert!(
+        publication_effects,
+        "retired publication changed its exact counter effects"
+    );
+    assert!(
+        read_effects,
+        "modeled retired read changed its exact counter effects"
+    );
+    Ok(())
+}
+
 /// Actual mandatory config/token constructors reject bypasses and accept neighbors.
 /// # Errors
 /// Preserve an unexpected rejection of independent valid laboratory facts.
@@ -390,7 +603,10 @@ fn raw_config_and_tokens_have_mandatory_bounded_admission() -> Result<(), PilotE
             Err(PilotError::InvalidTimeout)
         ));
     }
-    let plan = SeriesConfig::new(peer(), MAX_TIMEOUT, MAX_TIMEOUT)?;
+    let plan = product_ok(
+        SeriesConfig::new(peer(), MAX_TIMEOUT, MAX_TIMEOUT),
+        "valid bounded series configuration was refused",
+    )?;
     assert_eq!(plan.peer, peer());
     assert_eq!(plan.request_timeout, MAX_TIMEOUT);
     assert_eq!(plan.series_timeout, MAX_TIMEOUT);
@@ -412,7 +628,10 @@ fn raw_config_and_tokens_have_mandatory_bounded_admission() -> Result<(), PilotE
     bytes[..8].fill(1);
     bytes[8..16].fill(2);
     bytes[16..].fill(3);
-    let packets = series_packets(&bytes)?;
+    let packets = product_ok(
+        series_packets(&bytes),
+        "valid distinct series tokens were refused",
+    )?;
     for (index, packet) in packets.iter().enumerate() {
         assert!(packet[0] == 0x23, "fixed request header changed");
         assert!(packet[1..40] == [0; 39], "fixed request prefix changed");
@@ -496,7 +715,10 @@ fn issue_boundary_neighbors(
     ));
     assert_eq!(receiver.next, 0);
     assert!(receiver.issued.is_none());
-    receiver.issue(copy_owner(&first.owner))?;
+    product_ok(
+        receiver.issue(copy_owner(&first.owner)),
+        "valid original series owner issue was refused",
+    )?;
     let outstanding = completion(0, Arc::clone(&first.owner.context))?;
     assert!(matches!(
         receiver.issue(copy_owner(&outstanding.owner)),
@@ -528,12 +750,15 @@ fn receiver_rejects_duplicate_foreign_and_reused_identity_atomically() -> Result
     let replay = duplicate_timeout(&first);
     let mut reused_owner = copy_owner(&first.owner);
     issue_boundary_neighbors(&mut receiver, &first)?;
-    receiver.receive(
-        first,
-        Control {
-            stop: false,
-            epoch: 0,
-        },
+    product_ok(
+        receiver.receive(
+            first,
+            Control {
+                stop: false,
+                epoch: 0,
+            },
+        ),
+        "valid original series completion was refused",
     )?;
     assert!(matches!(
         receiver.receive(
@@ -557,7 +782,10 @@ fn receiver_rejects_duplicate_foreign_and_reused_identity_atomically() -> Result
         Err(PilotError::InternalState)
     ));
     let second = completion(1, Arc::clone(&shared))?;
-    receiver.issue(copy_owner(&second.owner))?;
+    product_ok(
+        receiver.issue(copy_owner(&second.owner)),
+        "valid original series owner issue was refused",
+    )?;
     let mut substituted = duplicate_timeout(&second);
     substituted.owner.identity = Arc::new(());
     assert!(matches!(
@@ -572,12 +800,15 @@ fn receiver_rejects_duplicate_foreign_and_reused_identity_atomically() -> Result
     ));
     assert_eq!(receiver.next, 1);
     assert!(receiver.issued.is_some());
-    receiver.receive(
-        second,
-        Control {
-            stop: false,
-            epoch: 0,
-        },
+    product_ok(
+        receiver.receive(
+            second,
+            Control {
+                stop: false,
+                epoch: 0,
+            },
+        ),
+        "valid original series completion was refused",
     )?;
     let report = receiver.finish(SeriesEnd::Failure, Some(PilotError::WireSetup));
     assert_eq!(
@@ -738,7 +969,10 @@ fn transfer_control_and_irreversible_retirement_are_distinct() -> Result<(), Box
     let shared = context();
     let mut receiver = SeriesReceiver::new(Arc::clone(&shared), peer(), None);
     let first = completion(0, Arc::clone(&shared))?;
-    receiver.issue(copy_owner(&first.owner))?;
+    product_ok(
+        receiver.issue(copy_owner(&first.owner)),
+        "valid original series owner issue was refused",
+    )?;
     for state in [
         Control {
             stop: true,
@@ -755,12 +989,15 @@ fn transfer_control_and_irreversible_retirement_are_distinct() -> Result<(), Box
         ));
         assert_eq!(receiver.next, 0);
     }
-    receiver.receive(
-        first,
-        Control {
-            stop: false,
-            epoch: 0,
-        },
+    product_ok(
+        receiver.receive(
+            first,
+            Control {
+                stop: false,
+                epoch: 0,
+            },
+        ),
+        "valid original series completion was refused",
     )?;
     let mut retired = terminal_slot(Arc::clone(&shared))?;
     let now = Instant::now();
@@ -869,7 +1106,10 @@ fn post_commit_control_preserves_header_and_measurement_refusal() -> Result<(), 
     let observed = publish_series_reply(&mut slot, &mut control, Ok(staged), deadline);
     assert!(slot.done());
     let mut receiver = SeriesReceiver::new(shared, destination, None);
-    receiver.issue(RequestOwner::from_slot(0, &slot))?;
+    product_ok(
+        receiver.issue(RequestOwner::from_slot(0, &slot)),
+        "valid original series owner issue was refused",
+    )?;
     let owner = RequestOwner::from_slot(0, &slot);
     let completed = Completion {
         owner,
@@ -878,7 +1118,10 @@ fn post_commit_control_preserves_header_and_measurement_refusal() -> Result<(), 
     receive_boundary_neighbors(&mut receiver, &completed, observed)?;
     handle.stop();
     // No new observation belongs between terminal commit and its private transfer.
-    receiver.receive(completed, observed)?;
+    product_ok(
+        receiver.receive(completed, observed),
+        "valid original series completion was refused",
+    )?;
     let current = latest(&mut control);
     let now = Instant::now();
     assert_eq!(series_end(current, now, now), Some(SeriesEnd::Stopped));
@@ -917,14 +1160,20 @@ fn deadlines_and_controls_do_not_reset_the_series_origin() -> Result<(), PilotEr
         .checked_add(Duration::from_secs(2))
         .ok_or(PilotError::DeadlineOverflow)?;
     assert_eq!(
-        request_deadline(origin, Duration::from_secs(1), total)?,
+        product_ok(
+            request_deadline(origin, Duration::from_secs(1), total),
+            "valid bounded request deadline was refused"
+        )?,
         origin + Duration::from_secs(1)
     );
     assert_eq!(
-        request_deadline(
-            origin + Duration::from_secs(1),
-            Duration::from_secs(2),
-            total
+        product_ok(
+            request_deadline(
+                origin + Duration::from_secs(1),
+                Duration::from_secs(2),
+                total
+            ),
+            "valid bounded request deadline was refused"
         )?,
         total
     );
@@ -987,13 +1236,19 @@ fn cleanup_boundary_neighbors() -> Result<(), Box<dyn Error>> {
         let shared = context();
         let mut receiver = SeriesReceiver::new(Arc::clone(&shared), peer(), None);
         let first = completion(0, shared)?;
-        receiver.issue(copy_owner(&first.owner))?;
-        receiver.receive(
-            first,
-            Control {
-                stop: false,
-                epoch: 0,
-            },
+        product_ok(
+            receiver.issue(copy_owner(&first.owner)),
+            "valid original series owner issue was refused",
+        )?;
+        product_ok(
+            receiver.receive(
+                first,
+                Control {
+                    stop: false,
+                    epoch: 0,
+                },
+            ),
+            "valid original series completion was refused",
         )?;
         let partial = receiver.finish(SeriesEnd::Stopped, None);
         let report = reconcile_cleanup(
@@ -1054,13 +1309,19 @@ fn partial_report_preserves_primary_and_both_cleanup_causes() -> Result<(), Box<
     let shared = context();
     let mut receiver = SeriesReceiver::new(Arc::clone(&shared), peer(), None);
     let first = completion(0, shared)?;
-    receiver.issue(copy_owner(&first.owner))?;
-    receiver.receive(
-        first,
-        Control {
-            stop: false,
-            epoch: 0,
-        },
+    product_ok(
+        receiver.issue(copy_owner(&first.owner)),
+        "valid original series owner issue was refused",
+    )?;
+    product_ok(
+        receiver.receive(
+            first,
+            Control {
+                stop: false,
+                epoch: 0,
+            },
+        ),
+        "valid original series completion was refused",
     )?;
     let partial = receiver.finish(SeriesEnd::Failure, Some(PilotError::WireSetup));
     let report = reconcile_cleanup(
@@ -1069,6 +1330,9 @@ fn partial_report_preserves_primary_and_both_cleanup_causes() -> Result<(), Box<
         Err(PilotError::GenerationExhausted),
     );
     assert_eq!(report.end(), SeriesEnd::Failure);
+    assert!(report.primary_failure().is_some());
+    assert!(report.stop_cleanup_failure().is_some());
+    assert!(report.invalidate_cleanup_failure().is_some());
     assert_eq!(
         report
             .primary_failure()
@@ -1099,6 +1363,7 @@ fn partial_report_preserves_primary_and_both_cleanup_causes() -> Result<(), Box<
     }
     let invalid = SeriesReceiver::new(context(), peer(), None).finish(SeriesEnd::Completed, None);
     assert_eq!(invalid.end(), SeriesEnd::Failure);
+    assert!(invalid.primary_failure().is_some());
     assert_eq!(
         invalid
             .primary_failure()
@@ -1109,6 +1374,7 @@ fn partial_report_preserves_primary_and_both_cleanup_causes() -> Result<(), Box<
     let healthy = reconcile_cleanup(invalid, Ok(()), Ok(()));
     assert!(healthy.stop_cleanup_failure().is_none());
     assert!(healthy.invalidate_cleanup_failure().is_none());
+    assert!(healthy.primary_failure().is_some());
     assert_eq!(
         healthy
             .primary_failure()
@@ -1140,13 +1406,19 @@ fn assert_fixed_redaction(actual: &str, expected: &str) {
 fn all_series_debug_outputs_are_exact_fixed_redactions() -> Result<(), Box<dyn Error>> {
     let runtime = runtime()?;
     let (mut slot, staged, deadline) = runtime.block_on(staged_native_reply())?;
-    let config = SeriesConfig::new(slot.peer, Duration::from_secs(1), Duration::from_secs(2))?;
-    let (prepared, handle) = prepare_series_with_entropy(&config, |entropy| {
-        for (position, token) in entropy.as_chunks_mut::<8>().0.iter_mut().enumerate() {
-            *token = [u8::try_from(position + 1).map_err(|_| PilotError::InternalState)?; 8];
-        }
-        Ok(())
-    })?;
+    let config = product_ok(
+        SeriesConfig::new(slot.peer, Duration::from_secs(1), Duration::from_secs(2)),
+        "valid bounded series configuration was refused",
+    )?;
+    let (prepared, handle) = product_ok(
+        prepare_series_with_entropy(&config, |entropy| {
+            for (position, token) in entropy.as_chunks_mut::<8>().0.iter_mut().enumerate() {
+                *token = [u8::try_from(position + 1).map_err(|_| PilotError::InternalState)?; 8];
+            }
+            Ok(())
+        }),
+        "known valid distinct debug preparation tokens were refused",
+    )?;
     assert_fixed_redaction(&format!("{config:?}"), "SeriesConfig { .. }");
     assert_fixed_redaction(&format!("{prepared:?}"), "PreparedSeries { .. }");
     let mut receiver = SeriesReceiver::new(Arc::clone(&slot.run_context), slot.peer, None);
@@ -1155,14 +1427,20 @@ fn all_series_debug_outputs_are_exact_fixed_redactions() -> Result<(), Box<dyn E
         epoch: 0,
     });
     let checkpoint = publish_series_reply(&mut slot, &mut control, Ok(staged), deadline);
-    receiver.issue(RequestOwner::from_slot(0, &slot))?;
+    product_ok(
+        receiver.issue(RequestOwner::from_slot(0, &slot)),
+        "valid original series owner issue was refused",
+    )?;
     let owner = RequestOwner::from_slot(0, &slot);
-    receiver.receive(
-        Completion {
-            owner,
-            report: slot.into_report(0)?,
-        },
-        checkpoint,
+    product_ok(
+        receiver.receive(
+            Completion {
+                owner,
+                report: slot.into_report(0)?,
+            },
+            checkpoint,
+        ),
+        "valid original series completion was refused",
     )?;
     let report = receiver.finish(SeriesEnd::Stopped, None);
     assert_fixed_redaction(
@@ -1481,10 +1759,13 @@ fn entropy_failure_and_entered_runtime_precede_all_acquisition_work() -> Result<
 {
     let remote = crate::StdSocket::bind(SocketAddr::from((Ipv4Addr::LOCALHOST, 0)))?;
     remote.set_nonblocking(true)?;
-    let config = SeriesConfig::new(
-        remote.local_addr()?,
-        Duration::from_millis(100),
-        Duration::from_secs(1),
+    let config = product_ok(
+        SeriesConfig::new(
+            remote.local_addr()?,
+            Duration::from_millis(100),
+            Duration::from_secs(1),
+        ),
+        "valid bounded series configuration was refused",
     )?;
     let calls = std::cell::Cell::new(0);
     let failed = prepare_series_with_entropy(&config, |entropy| {
@@ -1494,12 +1775,15 @@ fn entropy_failure_and_entered_runtime_precede_all_acquisition_work() -> Result<
     });
     assert!(matches!(failed, Err(PilotError::Entropy)));
     assert_eq!(calls.get(), 1);
-    let (prepared, handle) = prepare_series_with_entropy(&config, |entropy| {
-        *entropy = [
-            1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
-        ];
-        Ok(())
-    })?;
+    let (prepared, handle) = product_ok(
+        prepare_series_with_entropy(&config, |entropy| {
+            *entropy = [
+                1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
+            ];
+            Ok(())
+        }),
+        "known valid distinct entropy control tokens were refused",
+    )?;
     let runtime = runtime()?;
     let entered = runtime.enter();
     calls.set(0);
@@ -1696,6 +1980,95 @@ fn checkpoint_fact(condition: bool, fact: &'static str) -> std::io::Result<()> {
     }
 }
 
+/// Only closed pure product refusals can explain a known admitted checkpoint plan.
+/// Native-bearing, task, entropy and opaque/unknown summaries remain uncredited.
+fn checkpoint_has_uncredited_failure(cause: FailureSummary) -> bool {
+    cause.native_cause().is_some()
+        || !matches!(
+            cause.code(),
+            "invalid_peer"
+                | "duplicate_peer"
+                | "invalid_timeout"
+                | "zero_random_token"
+                | "duplicate_random_token"
+                | "duplicate_local_address"
+                | "deadline_overflow"
+                | "generation_exhausted"
+                | "internal_state"
+                | "wire_setup"
+                | "entered_runtime"
+        )
+}
+
+/// Expose real driver/native context before any semantic completion assertion.
+/// # Errors
+/// Keep native/unknown primary, cleanup and slot I/O failures raw and uncredited.
+fn checkpoint_native_context(report: &SeriesReport) -> std::io::Result<()> {
+    let uncredited = [
+        report.primary_failure(),
+        report.stop_cleanup_failure(),
+        report.invalidate_cleanup_failure(),
+    ]
+    .into_iter()
+    .flatten()
+    .any(checkpoint_has_uncredited_failure);
+    let slot_io = report.attempts().iter().any(|attempt| {
+        attempt
+            .report()
+            .is_some_and(|record| record.status() == Status::Io || record.io_cause().is_some())
+    });
+    if uncredited || slot_io {
+        return Err(std::io::Error::other(
+            "checkpoint driver retained native or unclassified failure context",
+        ));
+    }
+    Ok(())
+}
+
+/// Pure typed-error controls distinguish product refusals from native context.
+/// No report, socket, operation or contradictory-clock observation is fabricated.
+/// # Panics
+/// Keep admitted-input product faults visible and all native/unknown causes uncredited.
+#[test]
+fn checkpoint_failure_taxonomy_keeps_native_context_uncredited() {
+    for error in [
+        PilotError::InvalidPeer,
+        PilotError::DuplicatePeer,
+        PilotError::InvalidTimeout,
+        PilotError::ZeroToken,
+        PilotError::DuplicateToken,
+        PilotError::DuplicateLocalAddress,
+        PilotError::DeadlineOverflow,
+        PilotError::GenerationExhausted,
+        PilotError::InternalState,
+        PilotError::WireSetup,
+        PilotError::EnteredRuntime,
+    ] {
+        assert!(!checkpoint_has_uncredited_failure(FailureSummary::capture(
+            error
+        )));
+    }
+    let native = IoCause::capture(&std::io::Error::from(std::io::ErrorKind::ConnectionReset));
+    for error in [
+        PilotError::Bind(native),
+        PilotError::Nonblocking(native),
+        PilotError::LocalAddress(native),
+        PilotError::Registration(native),
+        PilotError::RuntimeBuild(native),
+        PilotError::Entropy,
+        PilotError::ControlTask,
+        PilotError::ControlCleanup {
+            primary: Some(FailureSummary::capture(PilotError::InternalState)),
+            stop: None,
+            invalidate: None,
+        },
+    ] {
+        assert!(checkpoint_has_uncredited_failure(FailureSummary::capture(
+            error
+        )));
+    }
+}
+
 /// Reply to at most three actual requests with independently fixed peer facts.
 /// Retain an observed partial trace only after confirmed application return.
 /// # Errors
@@ -1808,6 +2181,135 @@ fn serve_checkpoint(
     })
 }
 
+/// Convert a fixture wall read using only its literal epoch offset.
+/// # Errors
+/// Keep unsupported host dates and unrepresentable coordinates as raw fixture errors.
+fn checkpoint_wall_nanoseconds(value: std::time::SystemTime) -> Result<i128, Box<dyn Error>> {
+    let unix = i128::try_from(value.duration_since(std::time::UNIX_EPOCH)?.as_nanos())?;
+    unix.checked_add(2_208_988_800_000_000_000).ok_or_else(|| {
+        std::io::Error::other("checkpoint fixture wall coordinate unavailable").into()
+    })
+}
+
+/// Admit original local captures before expecting conditional measurement success.
+/// The literal date window and allowance belong to this fixture, not product getters.
+/// # Errors
+/// Preserve inadmissible actual chronology, date or model observations without credit.
+fn checkpoint_capture_prerequisites(
+    captures: &[SoftwareClock; 3],
+    processing: Instant,
+) -> Result<(), Box<dyn Error>> {
+    if processing < captures[2].mono_after {
+        return Err(std::io::Error::other("checkpoint fixture processing precedes capture").into());
+    }
+    let baseline = captures[0];
+    let baseline_wall = checkpoint_wall_nanoseconds(baseline.utc)?;
+    let mut previous_after = None;
+    for (index, capture) in captures.iter().enumerate() {
+        if capture.mono > capture.mono_after
+            || previous_after.is_some_and(|previous| previous > capture.mono)
+        {
+            return Err(
+                std::io::Error::other("checkpoint fixture capture order unavailable").into(),
+            );
+        }
+        previous_after = Some(capture.mono_after);
+        let wall = checkpoint_wall_nanoseconds(capture.utc)?;
+        if !(3_000_000_000_000_000_000..=4_500_000_000_999_999_999).contains(&wall) {
+            return Err(
+                std::io::Error::other("checkpoint fixture date outside declaration").into(),
+            );
+        }
+        if index == 0 {
+            continue;
+        }
+        let lower = i128::try_from(
+            capture
+                .mono
+                .checked_duration_since(baseline.mono_after)
+                .ok_or_else(|| std::io::Error::other("checkpoint fixture lower bound unavailable"))?
+                .as_nanos(),
+        )?;
+        let upper = i128::try_from(
+            capture
+                .mono_after
+                .checked_duration_since(baseline.mono)
+                .ok_or_else(|| std::io::Error::other("checkpoint fixture upper bound unavailable"))?
+                .as_nanos(),
+        )?;
+        let delta = wall
+            .checked_sub(baseline_wall)
+            .ok_or_else(|| std::io::Error::other("checkpoint fixture wall progress unavailable"))?;
+        let gap = if delta < lower {
+            lower.checked_sub(delta)
+        } else if delta > upper {
+            delta.checked_sub(upper)
+        } else {
+            Some(0)
+        }
+        .ok_or_else(|| std::io::Error::other("checkpoint fixture progress gap unavailable"))?;
+        if gap > 30_000_000_000 {
+            return Err(
+                std::io::Error::other("checkpoint fixture exceeded declared allowance").into(),
+            );
+        }
+    }
+    Ok(())
+}
+
+/// Check only the fixture prerequisite with synthetic clocks, never a report.
+/// # Errors
+/// Preserve unavailable synthetic clock coordinates as raw setup errors.
+/// # Panics
+/// Require inclusive allowance admission and neighboring step/order/date refusals.
+#[test]
+fn checkpoint_capture_prerequisites_keep_boundary_and_invalid_observations_distinct()
+-> Result<(), Box<dyn Error>> {
+    let origin = Instant::now();
+    let wall = std::time::UNIX_EPOCH
+        .checked_add(Duration::from_mins(13_183_520))
+        .ok_or_else(|| std::io::Error::other("synthetic checkpoint date unavailable"))?;
+    let capture = |before, after, wall_ns| -> Result<SoftwareClock, Box<dyn Error>> {
+        Ok(SoftwareClock {
+            mono: origin
+                .checked_add(Duration::from_nanos(before))
+                .ok_or_else(|| std::io::Error::other("synthetic checkpoint start unavailable"))?,
+            mono_after: origin
+                .checked_add(Duration::from_nanos(after))
+                .ok_or_else(|| std::io::Error::other("synthetic checkpoint end unavailable"))?,
+            utc: wall
+                .checked_add(Duration::from_nanos(wall_ns))
+                .ok_or_else(|| std::io::Error::other("synthetic checkpoint wall unavailable"))?,
+        })
+    };
+    // A 100 ns grid retains distinct wall neighbors on Windows `SystemTime` too.
+    let processing = origin
+        .checked_add(Duration::from_nanos(600))
+        .ok_or_else(|| std::io::Error::other("synthetic checkpoint processing unavailable"))?;
+    let admitted = [
+        capture(0, 100, 0)?,
+        capture(200, 300, 200)?,
+        capture(400, 500, 30_000_000_500)?,
+    ];
+    assert!(checkpoint_capture_prerequisites(&admitted, processing).is_ok());
+    let mut stepped = admitted;
+    stepped[2] = capture(400, 500, 30_000_000_600)?;
+    assert!(checkpoint_capture_prerequisites(&stepped, processing).is_err());
+    let mut reversed = admitted;
+    reversed[2] = capture(400, 300, 400)?;
+    assert!(checkpoint_capture_prerequisites(&reversed, processing).is_err());
+    let mut overlapping = admitted;
+    overlapping[1] = capture(0, 300, 200)?;
+    assert!(checkpoint_capture_prerequisites(&overlapping, processing).is_err());
+    assert!(checkpoint_capture_prerequisites(&admitted, origin).is_err());
+    let mut outside = admitted;
+    outside[0].utc = wall
+        .checked_sub(Duration::from_nanos(100))
+        .ok_or_else(|| std::io::Error::other("synthetic checkpoint lower date unavailable"))?;
+    assert!(checkpoint_capture_prerequisites(&outside, processing).is_err());
+    Ok(())
+}
+
 /// Check original acquired facts against the peer and the later checkpoint event.
 /// # Errors
 /// Reject missing facts, changed peer bits/endpoints/context, or refreshed age.
@@ -1854,6 +2356,11 @@ fn check_checkpoint_facts(
         checkpoint_fact(
             facts.send_before().monotonic() >= report.origin() && facts.processing() <= boundary,
             "checkpoint refreshed or replaced an original acquisition capture",
+        )?;
+        // These immutable originals also supply the later self-relative measurement.
+        checkpoint_capture_prerequisites(
+            &[facts.send_before, facts.send_after, facts.read_return],
+            facts.processing,
         )?;
         let measurement = facts.measurement();
         checkpoint_fact(
@@ -1953,15 +2460,22 @@ fn final_checkpoint_case(
         let worker = worker
             .join()
             .map_err(|_| std::io::Error::other("checkpoint worker panicked"))?;
+        checkpoint_native_context(&report)?;
         let observed = worker?;
         notification.map_err(std::io::Error::other)?;
+        if let Some(error) = checkpoint.failure {
+            return Err(error);
+        }
+        checkpoint_fact(
+            report.primary_failure().is_none()
+                && report.stop_cleanup_failure().is_none()
+                && report.invalidate_cleanup_failure().is_none(),
+            "admitted checkpoint plan returned a product failure",
+        )?;
         checkpoint_fact(
             observed.queries.len() == 3,
             "series returned before three planned native queries",
         )?;
-        if let Some(error) = checkpoint.failure {
-            return Err(error);
-        }
         if checkpoint.boundary.is_none() || checkpoint.boundary != observed.boundary {
             return Err(std::io::Error::other(
                 "selected final checkpoint was not acknowledged",
@@ -2095,11 +2609,6 @@ fn setup_and_registration_failures_preserve_actual_prior_completion() -> Result<
             Duration::from_secs(1),
             Duration::from_secs(2),
         );
-        if config.is_err() {
-            series_process::semantic_check_failed(
-                "independently valid series configuration was refused",
-            );
-        }
         assert!(
             config.is_ok(),
             "independently valid series configuration was refused"

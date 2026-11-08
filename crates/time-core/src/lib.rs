@@ -154,9 +154,18 @@ pub use selection::{
 mod reference_input;
 
 pub use reference_input::{
-    FixtureAchievedPhaseCompletion, FixtureCorrectionFeedback, FixtureRateClock,
+    FixtureAchievedPhaseCompletion, FixtureCorrectionFeedback, FixturePhaseBaseline,
+    FixturePhaseBlocked, FixturePhaseConstructionRejected, FixturePhaseError, FixturePhaseNow,
+    FixturePhasePlanOwner, FixturePhaseProfile, FixturePhaseProposal, FixturePhaseProvenance,
+    FixturePhaseReferenceAdmission, FixturePhaseResidualPermission, FixturePhaseRetirement,
+    FixturePhaseRetirementReason, FixturePhaseSettlement, FixtureRateClock,
     FixtureRateClockContext, FixtureRateCursorStatus, FixtureRateDeliveryError,
     FixtureRateSettlement, FixtureRateSettlementCompletion, FixtureRateSettlementCursor,
     FixtureRateSettlementKind, FixtureRateSpan, FixtureReferenceInput, FixtureReferenceInputError,
     FixtureReferenceInputState, FixtureReferenceReadiness, FixtureSettledRateInterval,
+};
+
+pub use regression::{
+    FixturePhaseNumericError, FixturePhaseNumericField, FixturePhaseNumericIssue,
+    FixturePhaseNumericStep,
 };

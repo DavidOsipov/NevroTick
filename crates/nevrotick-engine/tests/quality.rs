@@ -15,8 +15,8 @@ use std::time::{Duration, SystemTime};
 use nevrotick_engine::{
     ConditionalQuality, ControlSchedule, DeclaredFrequencyInterval, DeclaredQualityAssumptions,
     DeclaredQualityLimits, ExperimentalProfile, MeasurementRefusal, QualityRefusal, SeriesConfig,
-    SeriesEnd, SeriesReport, SlotReport, Status, TransportFacts, evaluate_conditional_quality,
-    execute_series, prepare_series,
+    SeriesEnd, SeriesReport, SlotReport, SoftwareClock, Status, TransportFacts,
+    evaluate_conditional_quality, execute_series, prepare_series,
 };
 use time_domain::{RationalSign, RoundedRationalSeconds};
 
@@ -36,6 +36,92 @@ const NOMINAL_DENOMINATOR: u64 = 4_294_967_296_000_000_000;
 const RECEIVE_FRACTION: u64 = 0x4000_0000;
 /// Literal peer transmit fraction, three eighths second.
 const TRANSMIT_FRACTION: u64 = 0x6000_0000;
+
+/// Check actual fixture captures independently; failures are raw setup/model errors.
+/// No product measurement, coherence calculation or profile getter supplies this oracle.
+/// # Errors
+/// Reject inadmissible observed chronology, date or declared wall-progress gaps.
+fn fixture_capture_model(captures: &[SoftwareClock], require_dates: bool) -> Check<()> {
+    let Some(baseline) = captures.first() else {
+        return Err(io::Error::other("actual fixture retained no capture baseline").into());
+    };
+    let baseline_wall = ntp_nanoseconds(baseline.utc())?;
+    let mut previous_after = None;
+    for (index, capture) in captures.iter().enumerate() {
+        let before = capture.monotonic();
+        let after = capture.monotonic_after();
+        if before > after || previous_after.is_some_and(|previous| previous > before) {
+            return Err(
+                io::Error::other("actual fixture capture chronology is inadmissible").into(),
+            );
+        }
+        previous_after = Some(after);
+        let wall = ntp_nanoseconds(capture.utc())?;
+        if require_dates && !(3_000_000_000_000_000_000..=4_500_000_000_999_999_999).contains(&wall)
+        {
+            return Err(
+                io::Error::other("actual fixture wall date is outside its declaration").into(),
+            );
+        }
+        if index == 0 {
+            continue;
+        }
+        let lower = i128::try_from(
+            before
+                .checked_duration_since(baseline.monotonic_after())
+                .ok_or_else(|| io::Error::other("actual fixture lower interval is unavailable"))?
+                .as_nanos(),
+        )?;
+        let upper = i128::try_from(
+            after
+                .checked_duration_since(baseline.monotonic())
+                .ok_or_else(|| io::Error::other("actual fixture upper interval is unavailable"))?
+                .as_nanos(),
+        )?;
+        let delta = wall
+            .checked_sub(baseline_wall)
+            .ok_or_else(|| io::Error::other("actual fixture wall interval is unrepresentable"))?;
+        let gap = if delta < lower {
+            lower.checked_sub(delta)
+        } else if delta > upper {
+            delta.checked_sub(upper)
+        } else {
+            Some(0)
+        }
+        .ok_or_else(|| io::Error::other("actual fixture model gap is unrepresentable"))?;
+        if gap > 30_000_000_000 {
+            return Err(io::Error::other(
+                "actual fixture exceeded its declared wall-progress allowance",
+            )
+            .into());
+        }
+    }
+    Ok(())
+}
+
+/// Establish the fixture's actual local model before an expected product success.
+/// Dates and tolerance are the fixed declarations used by this fixture's builder.
+/// # Errors
+/// Preserve actual capture/date/model prerequisites as raw fixture failures.
+fn fixture_measurement_prerequisites(facts: &TransportFacts, require_dates: bool) -> Check<()> {
+    let captures = [facts.send_before(), facts.send_after(), facts.read_return()];
+    if facts.processing() < captures[2].monotonic_after() {
+        return Err(
+            io::Error::other("actual fixture processing precedes receive completion").into(),
+        );
+    }
+    fixture_capture_model(&captures, require_dates)
+}
+
+/// Assert a reviewed pure product success without formatting its error payload.
+/// # Errors
+/// Preserve the original typed result for the existing propagation path.
+/// # Panics
+/// Reject only the independently known-valid product result named by the static fact.
+fn product_ok<T, E>(result: Result<T, E>, fact: &'static str) -> Result<T, E> {
+    assert!(result.is_ok(), "{fact}");
+    result
+}
 
 /// Record a bounded semantic failure without exposing captured packets or tokens.
 /// # Errors
@@ -130,16 +216,18 @@ fn run_series(with_profile: bool) -> Check<(SeriesReport, PeerObservations)> {
     let peer = UdpSocket::bind("127.0.0.1:0")?;
     peer.set_read_timeout(Some(PEER_WAIT))?;
     peer.set_write_timeout(Some(PEER_WAIT))?;
-    let config = SeriesConfig::new(
-        peer.local_addr()?,
-        Duration::from_secs(1),
-        Duration::from_secs(3),
+    let config = product_ok(
+        SeriesConfig::new(
+            peer.local_addr()?,
+            Duration::from_secs(1),
+            Duration::from_secs(3),
+        ),
+        "known valid quality series configuration was refused",
     )?;
     let config = if with_profile {
-        config.with_experimental_profile(ExperimentalProfile::new(
-            3_000_000_000,
-            4_500_000_000,
-            30_000_000_000,
+        config.with_experimental_profile(product_ok(
+            ExperimentalProfile::new(3_000_000_000, 4_500_000_000, 30_000_000_000),
+            "known valid quality series profile was refused",
         )?)
     } else {
         config
@@ -165,6 +253,17 @@ fn run_series(with_profile: bool) -> Check<(SeriesReport, PeerObservations)> {
 /// # Errors
 /// Reject missing/failed attempts, changed endpoints, admission or cleanup failures.
 fn check_report(report: &SeriesReport, observed: &PeerObservations) -> Check<()> {
+    if report.primary_failure().is_some()
+        || report.stop_cleanup_failure().is_some()
+        || report.invalidate_cleanup_failure().is_some()
+        || report.attempts().iter().any(|attempt| {
+            attempt
+                .report()
+                .is_some_and(|record| record.status() == Status::Io || record.io_cause().is_some())
+        })
+    {
+        return Err(io::Error::other("quality fixture retained a driver or cleanup cause").into());
+    }
     check(
         report.end() == SeriesEnd::Completed,
         "quality series was incomplete",
@@ -207,20 +306,36 @@ fn check_report(report: &SeriesReport, observed: &PeerObservations) -> Check<()>
 /// # Errors
 /// Reject a missing planned position or absent terminal completion.
 fn slot(report: &SeriesReport, index: usize) -> Check<&SlotReport> {
-    report
+    let record = report
         .attempts()
         .get(index)
-        .and_then(|attempt| attempt.report())
-        .ok_or_else(|| io::Error::other("missing quality terminal report").into())
+        .and_then(|attempt| attempt.report());
+    check(record.is_some(), "quality terminal report was lost")?;
+    record.ok_or_else(|| io::Error::other("missing checked quality terminal report").into())
 }
 
 /// Borrow only the original actual completion's privately produced facts.
 /// # Errors
-/// Reject a terminal report without retained ordinary-header observations.
+/// Reject absent observations or changed fixed ordinary peer facts.
 fn facts(report: &SeriesReport, index: usize) -> Check<&TransportFacts> {
-    slot(report, index)?
-        .facts()
-        .ok_or_else(|| io::Error::other("missing quality transport facts").into())
+    let facts = slot(report, index)?.facts();
+    check(facts.is_some(), "quality transport facts were lost")?;
+    let facts = facts.ok_or_else(|| io::Error::other("missing checked quality transport facts"))?;
+    let header = facts.header();
+    let receive = u64::from(header.receive_timestamp().seconds());
+    let transmit = u64::from(header.transmit_timestamp().seconds());
+    check(
+        header.version() == 4
+            && header.mode() == 4
+            && header.leap_indicator() == 0
+            && header.stratum() == 2
+            && header.receive_timestamp().bits() != 0
+            && header.transmit_timestamp().bits() != 0
+            && (3_000_000_000..=4_500_000_000).contains(&receive)
+            && (3_000_000_000..=4_500_000_000).contains(&transmit),
+        "quality retained header changed fixed ordinary peer facts",
+    )?;
+    Ok(facts)
 }
 
 /// Construct explicit dyadic assumptions with no implicit physical interpretation.
@@ -337,7 +452,13 @@ fn check_quality(
     check_ratio(result.server_interval(), peer_ticks, 4_294_967_296)?;
     check_ratio(result.raw_round_trip(), raw_numerator, NOMINAL_DENOMINATOR)?;
     check(
-        fact.measurement()?.nominal_round_trip().numerator() == raw_numerator,
+        product_ok(
+            fact.measurement(),
+            "known successful actual quality measurement was lost",
+        )?
+        .nominal_round_trip()
+        .numerator()
+            == raw_numerator,
         "original nominal RTT did not reconstruct from actual wall captures",
     )?;
     let local_seconds = seconds_from_nanoseconds(local_ns)?;
@@ -368,7 +489,12 @@ fn check_quality(
         .checked_duration_since(fact.read_return().monotonic_after())
         .ok_or_else(|| io::Error::other("quality capture age order changed"))?;
     check(
-        result.original_facts().measurement()?.acquisition_age() == original_age,
+        product_ok(
+            result.original_facts().measurement(),
+            "known successful retained actual quality measurement was lost",
+        )?
+        .acquisition_age()
+            == original_age,
         "conditional quality refreshed original acquisition age",
     )?;
     Ok(())
@@ -386,7 +512,11 @@ fn actual_series_quality_retains_signed_intervals_source_and_original_age() -> C
         let record = slot(&report, index)?;
         let before = diagnostic(record)?;
         let fact = facts(&report, index)?;
-        let result = evaluate_conditional_quality(fact, &declared)?;
+        fixture_measurement_prerequisites(fact, true)?;
+        let result = product_ok(
+            evaluate_conditional_quality(fact, &declared),
+            "known valid actual conditional quality evaluation was refused",
+        )?;
         check_quality(&result, fact, &declared)?;
         for other_index in 0..3 {
             check(
@@ -430,7 +560,11 @@ fn absent_measurement_refuses_quality_with_actual_valid_neighbor() -> Check<()> 
     let (neighbor, observed) = run_series(true)?;
     check_report(&neighbor, &observed)?;
     let fact = facts(&neighbor, 0)?;
-    let result = evaluate_conditional_quality(fact, &declared)?;
+    fixture_measurement_prerequisites(fact, true)?;
+    let result = product_ok(
+        evaluate_conditional_quality(fact, &declared),
+        "known valid actual conditional quality evaluation was refused",
+    )?;
     check_quality(&result, fact, &declared)
 }
 
@@ -444,6 +578,7 @@ fn actual_quality_limits_refuse_without_rewriting_completion_or_age() -> Check<(
     let record = slot(&report, 0)?;
     let before = diagnostic(record)?;
     let fact = facts(&report, 0)?;
+    fixture_measurement_prerequisites(fact, true)?;
     let root_equal = assumptions(16_384.5, 128.0, 1.0 / 4.0)?;
     check(
         matches!(
@@ -469,7 +604,10 @@ fn actual_quality_limits_refuse_without_rewriting_completion_or_age() -> Check<(
         "literal peer processing interval bypassed its quality limit",
     )?;
     let processing_equal = assumptions(32_768.0, 128.0, 1.0 / 8.0)?;
-    let accepted = evaluate_conditional_quality(fact, &processing_equal)?;
+    let accepted = product_ok(
+        evaluate_conditional_quality(fact, &processing_equal),
+        "known valid actual conditional quality evaluation was refused",
+    )?;
     check_quality(&accepted, fact, &processing_equal)?;
     check(
         before == diagnostic(record)?,

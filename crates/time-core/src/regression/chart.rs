@@ -75,6 +75,12 @@ use super::{
 /// Sole numerical owner of separately evaluated values and outward error bounds.
 mod roundoff;
 
+pub use roundoff::{
+    FixturePhaseNumericError, FixturePhaseNumericField, FixturePhaseNumericIssue,
+    FixturePhaseNumericStep,
+};
+pub(crate) use roundoff::{PhaseDebt, PhaseRates};
+
 /// Inclusive integer magnitude that has an exact binary64 representation.
 const MAX_EXACT_NANOSECONDS: u64 = 1_u64 << 53;
 

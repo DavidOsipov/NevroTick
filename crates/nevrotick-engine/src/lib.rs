@@ -15,6 +15,7 @@ mod measurement;
 mod quality;
 mod relative;
 mod series;
+mod session;
 
 pub use measurement::{
     ExperimentalMeasurement, ExperimentalProfile, MeasurementRefusal, NominalPhaseNs,
@@ -31,6 +32,10 @@ pub use relative::{
 pub use series::{
     PreparedSeries, SeriesAttempt, SeriesConfig, SeriesEnd, SeriesNotStartedCause, SeriesReport,
     execute_series, prepare_series,
+};
+pub use session::{
+    AcquisitionError, AcquisitionReference, AcquisitionReferenceRefusal, AcquisitionReport,
+    AcquisitionSession, CoherenceUnavailable, PreparedAcquisition, SeriesCoherence,
 };
 
 use ntp_wire::{FrameLimits, RawHeader, frame_no_legacy_mac_datagram};

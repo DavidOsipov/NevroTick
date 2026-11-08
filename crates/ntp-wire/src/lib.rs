@@ -1,10 +1,12 @@
-//! Pure bounded NTP wire decoding and inert NTS-KE request/record processing.
+//! Pure bounded NTP wire decoding and inert NTS-KE/NTS request processing.
 //!
 //! S1.1a handles exactly one 48-byte fixed header. Its immutable outputs retain
 //! every raw field without admitting a time sample, peer, profile, authentication
 //! state or calendar era. S1.1b adds explicit no-legacy-MAC outer framing and
 //! immutable opaque extension views. Exchange, NTS semantics, authentication and
 //! sample admission remain separately bounded owners.
+//! The two-stage NTS client formatter exposes immutable AAD before accepting
+//! separately supplied nonce/ciphertext bytes; serialization confers no trust.
 //!
 //! The library has no heap, I/O, ambient clock or unsafe code. Incremental framing
 //! retains bounded state only within its caller-storage borrow. Exporter contexts
@@ -19,6 +21,7 @@ mod nts_ke;
 mod nts_negotiation;
 mod nts_packet;
 mod nts_plaintext;
+mod nts_request;
 
 pub use datagram::{
     ExtensionFields, FrameError, FrameLimits, RawDatagram, RawExtension,
@@ -42,4 +45,9 @@ pub use nts_packet::{NtsAuthenticatorError, NtsAuthenticatorParts, read_nts_auth
 pub use nts_plaintext::{
     NtsPlaintextError, NtsPlaintextFields, NtsPlaintextLimits, RawNtsPlaintext,
     RawNtsPlaintextField, frame_nts_plaintext,
+};
+
+pub use nts_request::{
+    NtsClientRequest, NtsRequestEncodeError, NtsRequestShape, PreparedNtsRequest,
+    prepare_nts_client_request,
 };

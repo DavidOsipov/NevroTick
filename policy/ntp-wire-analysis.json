@@ -406,7 +406,8 @@
     "crates/ntp-wire/src/nts_ke.rs",
     "crates/ntp-wire/src/nts_negotiation.rs",
     "crates/ntp-wire/src/nts_packet.rs",
-    "crates/ntp-wire/src/nts_plaintext.rs"
+    "crates/ntp-wire/src/nts_plaintext.rs",
+    "crates/ntp-wire/src/nts_request.rs"
   ],
   "mutation_jobs": 10,
   "mutation_process_limit": 512

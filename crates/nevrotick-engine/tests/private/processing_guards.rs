@@ -9,6 +9,16 @@ use std::io::Read;
 use std::path::PathBuf;
 use std::process::{Child, Command, ExitStatus, Stdio};
 
+/// Require a reviewed known-valid pure product result without exposing its error.
+/// # Errors
+/// Return the original typed result after the independent success witness.
+/// # Panics
+/// Reject an unexpected refusal of the caller's independently valid product input.
+fn product_ok<T, E>(result: Result<T, E>, fact: &'static str) -> Result<T, E> {
+    assert!(result.is_ok(), "{fact}");
+    result
+}
+
 /// Maximum fixture I/O wait; unrelated to the processing deadline under test.
 const IO_LIMIT: Duration = Duration::from_secs(2);
 
@@ -2012,7 +2022,10 @@ fn check_independent_staged_context_guards(
     let original_peer = candidate.peer;
     let original_local = candidate.local;
     let original_profile = candidate.profile;
-    let alternate_profile = Some(ExperimentalProfile::new(0, 0, 0)?);
+    let alternate_profile = Some(product_ok(
+        ExperimentalProfile::new(0, 0, 0),
+        "known-valid experimental profile was refused",
+    )?);
     let accounting = (
         slot.sent,
         slot.received,
@@ -2379,10 +2392,12 @@ impl RelativeExecuteChild {
     /// Successful inner libtest rows stay private to avoid double-counting tests.
     /// # Errors
     /// Reject nonzero/zero/wrong selection, timeout, capture or cleanup failure.
+    /// # Panics
+    /// Relay one source-owned assertion only after native exit and successful cleanup.
     fn finish(mut self) -> Result<(), Box<dyn Error>> {
         let observed = self.wait();
         let stopped = self.stop();
-        let result: Result<(), Box<dyn Error>> = (|| {
+        let result: Result<Option<String>, Box<dyn Error>> = (|| {
             if let Err(cleanup) = stopped {
                 return Err(format!(
                     "relative worker observation {observed:?}; kill/reap failed: {cleanup}"
@@ -2398,9 +2413,18 @@ impl RelativeExecuteChild {
         })();
         let cleanup = self.cleanup();
         match (result, cleanup) {
-            (Ok(()), Ok(())) => Ok(()),
+            (Ok(evidence), Ok(())) => {
+                if let Some(evidence) = &evidence {
+                    eprintln!("N3_SEMANTIC_EVIDENCE {evidence}");
+                }
+                assert!(
+                    evidence.is_none(),
+                    "N3 exact child semantic failure assertion"
+                );
+                Ok(())
+            }
             (Err(error), Ok(())) => Err(error),
-            (Ok(()), Err(error)) => Err(error.into()),
+            (Ok(_), Err(error)) => Err(error.into()),
             (Err(primary), Err(cleanup)) => {
                 Err(format!("{primary}; relative worker cleanup also failed: {cleanup}").into())
             }
@@ -2427,7 +2451,7 @@ fn require_relative_execute_success(
     status: ExitStatus,
     stdout: &str,
     stderr: &str,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<Option<String>, Box<dyn Error>> {
     if u64::try_from(stdout.len())? > RELATIVE_OUTPUT_LIMIT
         || u64::try_from(stderr.len())? > RELATIVE_OUTPUT_LIMIT
     {
@@ -2449,7 +2473,52 @@ fn require_relative_execute_success(
         && summary.starts_with("test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; ")
         && summary.contains(" filtered out; finished in ")
     {
-        return Ok(());
+        return Ok(None);
+    }
+    // A failed native child is a semantic witness only after its entire exact
+    // libtest outcome completed. Unknown errors and additional panics stay raw.
+    if let [test, summary] = tests.as_slice()
+        && status.code() == Some(101)
+        && selected_once
+        && *test == format!("test {RELATIVE_EXECUTE_TEST} ... FAILED")
+        && summary.starts_with("test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; ")
+        && summary.contains(" filtered out; finished in ")
+        && stdout
+            .lines()
+            .filter(|line| line.starts_with("    "))
+            .eq([format!("    {RELATIVE_EXECUTE_TEST}")])
+        && !stdout.lines().chain(stderr.lines()).any(|line| {
+            line.starts_with("Error: ")
+                || line.contains("HARNESS_INCOMPLETE")
+                || line.contains("fatal runtime error")
+        })
+    {
+        let panics: Vec<_> = stderr
+            .lines()
+            .filter(|line| line.contains(" panicked at "))
+            .collect();
+        if let [panic] = panics.as_slice()
+            && panic.starts_with(&format!("thread '{RELATIVE_EXECUTE_TEST}'"))
+            && let Some((_, location)) = panic.split_once(" panicked at ")
+        {
+            let mut parts = location.trim_end_matches(':').rsplitn(3, ':');
+            let column = parts.next().and_then(|value| value.parse::<u32>().ok());
+            let row = parts.next().and_then(|value| value.parse::<u32>().ok());
+            let source = parts.next();
+            if let (Some(column), Some(row), Some(source)) = (column, row, source)
+                && row > 0
+                && column > 0
+                && matches!(
+                    source,
+                    "crates/nevrotick-engine/tests/private/processing_guards.rs"
+                        | "crates/nevrotick-engine/src/../tests/private/processing_guards.rs"
+                )
+            {
+                return Ok(Some(format!(
+                    "test assertion/panic at crates/nevrotick-engine/tests/private/processing_guards.rs:{row}:{column}"
+                )));
+            }
+        }
     }
     Err(format!(
         "relative execute worker did not pass exactly one named test ({status}); stdout={stdout:?}; stderr={stderr:?}"
@@ -2595,6 +2664,7 @@ fn check_relative_refusals(
     let available = other.slots()[1]
         .facts()
         .ok_or_else(|| io::Error::other("available anchor absent"))?;
+    check_observed_measurement(available)?;
     assert!(matches!(
         row.relative_to(available),
         Err(RelativeMeasurementRefusal::DifferentRun)
@@ -2634,7 +2704,11 @@ fn check_relative_refusals(
         );
     }
     assert_eq!(
-        available.measurement()?.acquisition_age(),
+        product_ok(
+            available.measurement(),
+            "known-valid retained measurement was refused"
+        )?
+        .acquisition_age(),
         available
             .processing
             .checked_duration_since(available.read_return.mono_after)
@@ -2652,6 +2726,10 @@ fn check_relative_refusals(
 /// Fail on context/request conflation, wrong units/direction, renewed ages,
 /// changed original facts, cross-run acceptance or lost measurement refusals.
 #[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "Keep the original live pair, both exact deltas and unchanged ages in one consumer control"
+)]
 fn public_execute_relative_view_retains_actual_common_run_and_refusals()
 -> Result<(), Box<dyn Error>> {
     match std::env::var_os(RELATIVE_EXECUTE_WORKER) {
@@ -2659,7 +2737,10 @@ fn public_execute_relative_view_retains_actual_common_run_and_refusals()
         Some(value) if value == "1" => (),
         Some(_) => return Err(io::Error::other("invalid relative execute worker flag").into()),
     }
-    let profile = ExperimentalProfile::new(2_272_060_800, 6_311_433_599, 30_000_000_000)?;
+    let profile = product_ok(
+        ExperimentalProfile::new(2_272_060_800, 6_311_433_599, 30_000_000_000),
+        "known-valid experimental profile was refused",
+    )?;
     let report = execute_relative_fixture([Some(profile); 2])?;
     let row = report.slots()[0]
         .facts()
@@ -2674,10 +2755,21 @@ fn public_execute_relative_view_retains_actual_common_run_and_refusals()
     assert_ne!(row.local_endpoint(), anchor.local_endpoint());
     assert!(Arc::ptr_eq(&row.run_context, &anchor.run_context));
     let ages = [
-        row.measurement()?.acquisition_age(),
-        anchor.measurement()?.acquisition_age(),
+        product_ok(
+            row.measurement(),
+            "known-valid retained measurement was refused",
+        )?
+        .acquisition_age(),
+        product_ok(
+            anchor.measurement(),
+            "known-valid retained measurement was refused",
+        )?
+        .acquisition_age(),
     ];
-    let view = row.relative_to(anchor)?;
+    let view = product_ok(
+        row.relative_to(anchor),
+        "same-run successful measurements lost their relative view",
+    )?;
     assert_eq!(
         format!("{view:?}"),
         "ExperimentalRelativeMeasurement { .. }"
@@ -2710,7 +2802,10 @@ fn public_execute_relative_view_retains_actual_common_run_and_refusals()
         nominal(anchor)?,
         8_589_934_592_000_000_000,
     );
-    let reversed = anchor.relative_to(row)?;
+    let reversed = product_ok(
+        anchor.relative_to(row),
+        "same-run successful measurements lost their relative view",
+    )?;
     assert_observed_difference(
         reversed.phase_delta_seconds(),
         nominal(anchor)?,
@@ -2723,7 +2818,10 @@ fn public_execute_relative_view_retains_actual_common_run_and_refusals()
         i128::try_from(row_ticks)?,
         2_000_000_000,
     );
-    let self_view = row.relative_to(row)?;
+    let self_view = product_ok(
+        row.relative_to(row),
+        "same-run successful measurements lost their relative view",
+    )?;
     for zero in [
         self_view.phase_delta_seconds(),
         self_view.reference_delta_seconds(),
@@ -2735,8 +2833,16 @@ fn public_execute_relative_view_retains_actual_common_run_and_refusals()
     }
     assert_eq!(
         [
-            row.measurement()?.acquisition_age(),
-            anchor.measurement()?.acquisition_age()
+            product_ok(
+                row.measurement(),
+                "known-valid retained measurement was refused"
+            )?
+            .acquisition_age(),
+            product_ok(
+                anchor.measurement(),
+                "known-valid retained measurement was refused"
+            )?
+            .acquisition_age()
         ],
         ages
     );
@@ -2873,6 +2979,142 @@ fn observed_capture_gap(facts: &TransportFacts) -> Result<u64, Box<dyn Error>> {
     Ok(u64::try_from(gap)?)
 }
 
+/// Admit actual local captures under this fixture's independently fixed declaration.
+/// No product profile, measurement or coherence result supplies this prerequisite.
+/// # Errors
+/// Keep unsupported chronology, date, representation or observed model gaps raw.
+fn observed_measurement_prerequisites(
+    captures: &[SoftwareClock; 3],
+    processing: Instant,
+) -> Result<(), Box<dyn Error>> {
+    if processing < captures[2].mono_after {
+        return Err(io::Error::other("observed fixture processing precedes capture").into());
+    }
+    let baseline = captures[0];
+    let baseline_wall = observed_wall_coordinates(baseline.utc)?.2;
+    let mut previous_after = None;
+    for (index, capture) in captures.iter().enumerate() {
+        if capture.mono > capture.mono_after
+            || previous_after.is_some_and(|previous| previous > capture.mono)
+        {
+            return Err(io::Error::other("observed fixture capture order unavailable").into());
+        }
+        previous_after = Some(capture.mono_after);
+        let wall = observed_wall_coordinates(capture.utc)?.2;
+        if !(2_272_060_800_000_000_000..=6_311_433_599_999_999_999).contains(&wall) {
+            return Err(io::Error::other("observed fixture date outside declaration").into());
+        }
+        if index == 0 {
+            continue;
+        }
+        let lower = i128::try_from(
+            capture
+                .mono
+                .checked_duration_since(baseline.mono_after)
+                .ok_or_else(|| io::Error::other("observed fixture lower bound unavailable"))?
+                .as_nanos(),
+        )?;
+        let upper = i128::try_from(
+            capture
+                .mono_after
+                .checked_duration_since(baseline.mono)
+                .ok_or_else(|| io::Error::other("observed fixture upper bound unavailable"))?
+                .as_nanos(),
+        )?;
+        let delta = wall
+            .checked_sub(baseline_wall)
+            .ok_or_else(|| io::Error::other("observed fixture wall progress unavailable"))?;
+        let gap = if delta < lower {
+            lower.checked_sub(delta)
+        } else if delta > upper {
+            delta.checked_sub(upper)
+        } else {
+            Some(0)
+        }
+        .ok_or_else(|| io::Error::other("observed fixture progress gap unavailable"))?;
+        if gap > 30_000_000_000 {
+            return Err(io::Error::other("observed fixture exceeded declared allowance").into());
+        }
+    }
+    Ok(())
+}
+
+/// Check only this raw fixture oracle with synthetic captures, never facts/reports.
+/// # Errors
+/// Preserve unavailable synthetic coordinates as raw fixture setup errors.
+/// # Panics
+/// Require representable date/model endpoints and neighboring chronology/model refusals.
+#[test]
+fn observed_measurement_prerequisites_keep_broad_date_and_model_boundaries()
+-> Result<(), Box<dyn Error>> {
+    let origin = Instant::now();
+    let capture = |before, after, utc| -> Result<SoftwareClock, Box<dyn Error>> {
+        Ok(SoftwareClock {
+            mono: origin
+                .checked_add(Duration::from_nanos(before))
+                .ok_or_else(|| io::Error::other("synthetic observed start unavailable"))?,
+            mono_after: origin
+                .checked_add(Duration::from_nanos(after))
+                .ok_or_else(|| io::Error::other("synthetic observed end unavailable"))?,
+            utc,
+        })
+    };
+    // A 100 ns grid retains distinct wall neighbors on Windows `SystemTime` too.
+    let processing = origin
+        .checked_add(Duration::from_nanos(600))
+        .ok_or_else(|| io::Error::other("synthetic observed processing unavailable"))?;
+    let lower = std::time::UNIX_EPOCH
+        .checked_add(Duration::from_hours(17_520))
+        .ok_or_else(|| io::Error::other("synthetic observed lower date unavailable"))?;
+    let upper = std::time::UNIX_EPOCH
+        .checked_add(Duration::new(4_102_444_799, 999_999_900))
+        .ok_or_else(|| io::Error::other("synthetic observed upper date unavailable"))?;
+    for utc in [lower, upper] {
+        let admitted = [
+            capture(0, 100, utc)?,
+            capture(200, 300, utc)?,
+            capture(400, 500, utc)?,
+        ];
+        assert!(observed_measurement_prerequisites(&admitted, processing).is_ok());
+    }
+    for (wall_ns, accepted) in [(30_000_000_500, true), (30_000_000_600, false)] {
+        let last_wall = lower
+            .checked_add(Duration::from_nanos(wall_ns))
+            .ok_or_else(|| io::Error::other("synthetic observed wall step unavailable"))?;
+        let captures = [
+            capture(0, 100, lower)?,
+            capture(200, 300, lower)?,
+            capture(400, 500, last_wall)?,
+        ];
+        assert_eq!(
+            observed_measurement_prerequisites(&captures, processing).is_ok(),
+            accepted
+        );
+    }
+    let admitted = [
+        capture(0, 100, lower)?,
+        capture(200, 300, lower)?,
+        capture(400, 500, lower)?,
+    ];
+    let mut reversed = admitted;
+    reversed[2] = capture(400, 300, lower)?;
+    assert!(observed_measurement_prerequisites(&reversed, processing).is_err());
+    let mut overlapping = admitted;
+    overlapping[1] = capture(0, 300, lower)?;
+    assert!(observed_measurement_prerequisites(&overlapping, processing).is_err());
+    assert!(observed_measurement_prerequisites(&admitted, origin).is_err());
+    for utc in [
+        lower.checked_sub(Duration::from_nanos(100)),
+        upper.checked_add(Duration::from_nanos(100)),
+    ] {
+        let mut outside = admitted;
+        outside[0].utc =
+            utc.ok_or_else(|| io::Error::other("synthetic observed outside date unavailable"))?;
+        assert!(observed_measurement_prerequisites(&outside, processing).is_err());
+    }
+    Ok(())
+}
+
 /// Reconstruct a successful actual-UDP result without production conversion/math.
 /// The literal peer readings are NTP second 4,000,000,000 plus 1/16 and 1/8 s.
 ///
@@ -2882,7 +3124,29 @@ fn observed_capture_gap(facts: &TransportFacts) -> Result<u64, Box<dyn Error>> {
 /// # Panics
 /// Fail on wrong units/sign, substituted token, dropped remainder, age or residual.
 fn check_observed_measurement(facts: &TransportFacts) -> Result<(), Box<dyn Error>> {
-    let measurement = facts.measurement()?;
+    assert!(
+        facts.header.version() == 4
+            && facts.header.mode() == 4
+            && facts.header.leap_indicator() == 0
+            && facts.header.stratum() == 1
+            && facts.header.receive_timestamp().bits() == 0xee6b_2800_1000_0000
+            && facts.header.transmit_timestamp().bits() == 0xee6b_2800_2000_0000
+            && facts.peer_receive_bits == 0xee6b_2800_1000_0000
+            && facts.peer_transmit_bits == 0xee6b_2800_2000_0000
+            && facts.peer.ip().is_loopback()
+            && facts.peer.port() != 0
+            && facts.local.ip().is_loopback()
+            && facts.local.port() != 0,
+        "observed measurement changed fixed ordinary peer facts"
+    );
+    observed_measurement_prerequisites(
+        &[facts.send_before, facts.send_after, facts.read_return],
+        facts.processing,
+    )?;
+    let measurement = product_ok(
+        facts.measurement(),
+        "known-valid retained measurement was refused",
+    )?;
     let (t1, r1, source_ns1) = observed_wall_coordinates(facts.send_before.utc)?;
     let (t4, r4, source_ns4) = observed_wall_coordinates(facts.read_return.utc)?;
     let t2 = 17_179_869_184_268_435_456_i128;
@@ -3213,10 +3477,9 @@ fn real_udp_measurement_matches_independent_captured_coordinates() -> Result<(),
         let [first, second] = prepared;
         let mut slot = live_slot(first)?;
         drop(second);
-        slot.profile = Some(ExperimentalProfile::new(
-            2_272_060_800,
-            6_311_433_599,
-            30_000_000_000,
+        slot.profile = Some(product_ok(
+            ExperimentalProfile::new(2_272_060_800, 6_311_433_599, 30_000_000_000),
+            "known-valid experimental profile was refused",
         )?);
         let [peer, unused] = peers;
         drop(unused);
@@ -3298,10 +3561,9 @@ fn measurement_refusal_consumes_the_correlated_request_once() -> Result<(), Box<
             original.measurement(),
             Err(MeasurementRefusal::Unavailable)
         ));
-        slot.profile = Some(ExperimentalProfile::new(
-            2_272_060_800,
-            6_311_433_599,
-            30_000_000_000,
+        slot.profile = Some(product_ok(
+            ExperimentalProfile::new(2_272_060_800, 6_311_433_599, 30_000_000_000),
+            "known-valid experimental profile was refused",
         )?);
         let late = response(&slot, &peer, &query, 1, false).await?;
         assert!(matches!(

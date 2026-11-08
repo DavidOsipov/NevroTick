@@ -13,19 +13,52 @@ owns their reuse, integration prerequisites and remaining qualification. Source
 integration preparation can proceed; qualified product adoption, final account/
 provisioning admission and native Windows lifecycle evidence remain open.
 
-**Current continuation:** use [plan §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-and the engine's
-[receiving transaction reconciliation](engine-transport-pilot.md#receiving-transaction-reconciliation--7-november-2026).
-Its four identity/accumulation/capacity/commit choices are settled. Q1's conditional
+**Current continuation:** [plan §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+returns to remaining S1.4 frequency-prior update/aging/holdover contract preparation
+after the [finite phase-plan two-owner exit](s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners).
+Its selected Linux fixture scope passes 455 ordinary/455 optimized tests,
+92 doctests, scoped external contracts and both per-file coverage/mutation gates;
+all 376 variants reconcile with four exact equivalents receiving no kill credit.
+The exact remaining controller law needs independent review before coding;
+full S1.4/P1 and S2.2 provider/trust/runtime integration remain open.
+The engine's [receiving transaction reconciliation](engine-transport-pilot.md#receiving-transaction-reconciliation--7-november-2026)
+retains its settled identity/accumulation/capacity/commit choices. Q1's conditional
 quality calculation's [final qualification](engine-transport-pilot.md#q1-final-qualification--conditional-source-quality)
 passes its current 421-input Linux scope: exact-source reuse of 113 ordinary/
 113 optimized tests and 50 doctests, fresh contracts, 366/382 executable-line
 coverage and all 167 mutations. There are 132 caught, 34 compiler-unviable and
 one reviewed equivalent, with no timeout or unresolved survivor; exclusions
 receive no kill credit. All 94 Python controls and final custody pass. The old
-incomplete campaign and ungenerated-control scopes remain retained. Next freeze
-the [persistent acquisition-session contract](engine-transport-pilot.md#next-receiving-prerequisite--persistent-acquisition-session-contract)
-before implementing its shared-chart, preparation and retirement lifetime.
+incomplete campaign and ungenerated-control scopes remain retained. The
+[persistent session owner](engine-transport-pilot.md#persistent-session-final-qualification--8-november-2026)
+now passes its 424-input controlled Linux scope: 127 ordinary/127 optimized
+tests, 59 doctests, external contracts, 123/123 executable lines and all 23
+mutations (nine behavioral catches, fourteen compiler-unviable, no survivor/
+timeout/exclusion). Unviables earn no kill credit; all 108 Python controls and
+custody pass. The reviewed
+[report-owned session-reference view](engine-transport-pilot.md#report-owned-session-reference--finite-api-contract-8-november-2026)
+now has [final bounded Linux qualification](engine-transport-pilot.md#report-owned-reference-final-qualification--8-november-2026)
+on 424-input `e931838b...`: 129 ordinary/129 optimized tests, 63 doctests, twenty
+intended negative contracts, 186/186 executable lines and 34 mutations (ten
+behavioral catches, twenty-four compiler-unviable, no survivor/timeout/exclusion).
+Unviables earn no kill credit; all 108 Python controls and custody pass. Three
+missing factory observations/generation limits remain explicit. The subsequent
+[session/coherence final join](engine-transport-pilot.md#within-series-coherence--final-joined-qualification)
+passes its three-owner Linux scope with 143 ordinary/143 optimized tests,
+64 doctests and every per-file coverage/mutation gate. Its 303 unique variants
+are 185 caught, 113 compiler-unviable and five equivalent misses, with zero
+timeout or unresolved survivor; six focused controls add no denominator or
+compiler/harness kill credit. Current execution follows
+[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent):
+prepare the remaining frequency-prior/holdover contract after the qualified
+finite phase-plan child. The inert S2.2
+formatter child now passes 119 ordinary/119 optimized tests, 86 doctests,
+external-consumer contracts and all three affected line/mutation gates. Its
+108 generated variants are 79 caught and 29 compiler-unviable, with no survivor,
+timeout or exclusion; no complete S2.2 or native qualification follows.
+The source-only actual capture/mapping contract is settled under
+[W11-W01 §4.26](windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026);
+production/native implementation still requires its actual suppliers/admission.
 Windows-target compiler checks
 establish no native Windows or service qualification.
 It uses actual completed `TransportFacts` and explicit checked assumptions;

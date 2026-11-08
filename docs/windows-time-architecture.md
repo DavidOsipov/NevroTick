@@ -93,7 +93,7 @@ Quick navigation: [architecture](#3-component-architecture-and-authority), [NTS 
 **Implementation summary; historical main baseline, 5 November 2026:** the
 initial capsule was reconciled against
 [main at `5e98c79`](https://github.com/DavidOsipov/NevroTick/commit/5e98c79901c90de77db6c6047cb483ec10b8cbd5).
-The maintained table includes later 6–7 November engine and GUI source amendments;
+The maintained table includes later 6–8 November engine, service and GUI source amendments;
 that old pin does not identify their candidates. The [workspace manifest](../Cargo.toml),
 [lockfile](../Cargo.lock) and current source contain seven members. Source presence
 and task qualification are separate: linked tasks retain exact candidates,
@@ -103,12 +103,35 @@ qualify the combined integration candidate.
 | Component | Present implementation | Evidence owner and boundary |
 | --- | --- | --- |
 | [nevrotick-ui](../crates/nevrotick-ui/Cargo.toml) | Checked fixture model, Slint v0.4 views and narrow Windows adapters; old Win32 adapter retained as unexported historical source | [Current GUI handoff](../tasks/slint-gui-handoff.md), [S0.5](../tasks/s0.5-ui-comparison.md) and [original UI-M0](../tasks/ui-m0.md); no engine/Core integration, with D1–D3 still deferred |
-| [ntp-wire](../crates/ntp-wire/Cargo.toml) | Bounded NTP decoding/framing, inert NTS-KE processing and NTS envelope/plaintext readers | [Header](../tasks/s1.1-header.md), [framing](../tasks/s1.1-framing.md) and [protocol](../tasks/s0.1-protocol-comparison.md) tasks; no TLS/AEAD, authenticated acquisition or sample authority |
+| [ntp-wire](../crates/ntp-wire/Cargo.toml) | Bounded NTP decoding/framing, inert NTS-KE processing, NTS envelope/plaintext readers and a checked two-stage client request formatter | [Header](../tasks/s1.1-header.md), [framing](../tasks/s1.1-framing.md) and [protocol](../tasks/s0.1-protocol-comparison.md) tasks; the [formatter exit](../tasks/engine-transport-pilot.md#inert-request-formatter-final-qualification--8-november-2026) qualifies its three changed Linux owners. No TLS/AEAD, authenticated acquisition or sample authority |
 | [time-domain](../crates/time-domain/Cargo.toml) | Checked timestamps, eras, exchange arithmetic, rounding, distinct clock domains and pure leap knowledge/interpretation | [S1.1c](../tasks/s1.1-time-domain.md) and [S1.4](../tasks/s1.4-leap-policy.md); scoped arithmetic/knowledge evidence establishes no production eligibility or clock effects |
 | [ntp-exchange](../crates/ntp-exchange/Cargo.toml) | Single-slot unauthenticated fixture association and deterministic scenarios | [Association](../tasks/s1.1-exchange-association.md) and [harness](../tasks/s1.1-deterministic-harness.md) tasks; no production acquisition |
 | [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness, modeled correction accounting and pure conditioned-window/affine fitting | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md) retain fixture evidence. [Settled-rate](../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners), [N1b](../tasks/engine-transport-pilot.md#n1b-final-qualification--two-selected-core-owners) and [N2a](../tasks/engine-transport-pilot.md#n2a-final-qualification--two-selected-core-owners) complete their exact selected Linux scopes; full P1 and production history remain open |
 | [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback observer and additive three-attempt same-source series with consume-once private receiver; conditional software-clock measurements, exact nominal values and common-origin relative views; `nevrotick-observe` remains the two-peer CLI | Recorded [measurement](../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026), [exact-nominal](../tasks/engine-transport-pilot.md#exact-nominal-terminal-qualification--6-november-2026), [rational-seconds](../tasks/s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners) and [common-run bridge](../tasks/engine-transport-pilot.md#common-run-reference-bridge--final-qualification-and-next-action) receipts retain their exact scopes. [N3a final qualification](../tasks/engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners) completes its selected Linux scope on407-input `e71aab7...`:91 ordinary/91 optimized tests,42 doctests, external contracts, both line gates and357 accounted variants (214 fresh library plus143 explicitly reused receiver outcomes; four reviewed equivalents, no unresolved survivor or timeout). The existing receiving-contract card retains its four transaction choices and supplier holds before integration. Observations stay unauthenticated/ineligible; production history, native Windows, P1 and product qualification remain open |
 | [windows-platform](../crates/windows-platform/Cargo.toml) | Portable lifecycle/status, SCM projection and checked privilege snapshots, with explicit completion custody | [W11-W05/S3.1 handoff](../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026); consumed by standalone laboratory hosts, with product adoption and native qualification open |
+
+**8 November engine continuation:** the
+[series-summary checkpoint repair](../tasks/engine-transport-pilot.md#final-series-summary-checkpoint-repair--8-november-2026)
+serializes current control/time classification after historical completion
+transfer; later controls cannot revise that selected summary. The engine also
+owns a persistent pre-acquisition session chart, exclusive prepared/executing
+lifetime and a report-owned exact reference view over original successful
+measurements. Its [reference-view qualification](../tasks/engine-transport-pilot.md#report-owned-reference-final-qualification--8-november-2026)
+records the bounded 424-input `e931838b...` Linux scope and explicit remaining
+factory/generation observations. Historical reports preserve original identities
+and ages; neither chart identity nor software brackets attest mapping continuity,
+finite physical error or current authority. Actual capture/mapping suppliers
+remain source-contract work under
+[W11-W01 §4.26](../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026).
+The later [session/coherence final join](../tasks/engine-transport-pilot.md#within-series-coherence--final-joined-qualification)
+qualifies its three selected Linux source owners, including retirement on a
+within-series contradiction under the original declared allowance. Compatibility
+creates no mapping guarantee. Its separately completed runs, five exact
+equivalences, source/cause controls and outstanding factory observations retain
+their recorded scopes. The next independent protocol child is complete inert
+NTS request formatting under the existing S2.2 task; no crypto provider, runtime
+or production receiver is adopted by that routing.
+Production history/Core integration, native Windows and P1 remain open.
 
 **8 November service source handoff:** [windows-platform](../crates/windows-platform/Cargo.toml)
 owns portable lifecycle/status, SCM projection and checked privilege snapshots for

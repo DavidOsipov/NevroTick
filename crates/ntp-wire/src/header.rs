@@ -60,6 +60,12 @@ pub struct RawHeader {
 }
 
 impl RawHeader {
+    /// Borrow the exact admitted fixed-width bytes for inert serialization.
+    /// No mode, version, timestamp or authentication semantics are added.
+    pub(crate) const fn wire_bytes(&self) -> &[u8; FIXED_HEADER_LEN] {
+        &self.bytes
+    }
+
     /// Return the two raw leap-indicator bits without synchronized-state admission.
     #[must_use]
     pub const fn leap_indicator(&self) -> u8 {

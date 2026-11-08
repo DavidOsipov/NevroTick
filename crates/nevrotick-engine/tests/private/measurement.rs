@@ -16,7 +16,18 @@ use super::{
     ExperimentalProfile, MAX_DECLARED_RESIDUAL_NS, MeasurementRefusal, NANOS_PER_SECOND,
     NOMINAL_NUMERATOR_LIMIT, NTP_UNIX_OFFSET_SECONDS, NominalResultCandidate, Q32_SCALE,
     SoftwareClock, coherence_residual, convert_wall, measure, nominal_arithmetic, require_in_scope,
+    series_coherence_residuals,
 };
+
+/// Assert an independently valid pure product result without formatting its cause.
+/// # Errors
+/// Keep the original typed result for the existing propagation path.
+/// # Panics
+/// Reject an unexpected refusal using only the code-owned static fact.
+fn product_ok<T, E>(result: Result<T, E>, fact: &'static str) -> Result<T, E> {
+    assert!(result.is_ok(), "{fact}");
+    result
+}
 
 /// Nonzero NTP-era-zero base, independent of the host's current UTC reading.
 const BASE: u64 = 4_000_000_000;
@@ -107,7 +118,10 @@ fn refusal_codes_and_display_remain_literal_and_redacted() {
 #[test]
 fn software_window_retains_each_local_and_peer_extremum() -> Result<(), MeasurementRefusal> {
     let start = Instant::now();
-    let profile = Some(ExperimentalProfile::new(BASE, BASE + 5, 30_000_000_000)?);
+    let profile = Some(product_ok(
+        ExperimentalProfile::new(BASE, BASE + 5, 30_000_000_000),
+        "valid experimental profile was refused",
+    )?);
     // Columns are T1, send-after, T2, T3, T4, in whole seconds above BASE.
     // Each column supplies the unique zero and unique four in one row.
     for [t1, after, t2, t3, t4] in [
@@ -120,13 +134,16 @@ fn software_window_retains_each_local_and_peer_extremum() -> Result<(), Measurem
         let before = capture(start, 0, BASE + t1, 0)?;
         let after = capture(start, 1_000_000_000, BASE + after, 0)?;
         let read = capture(start, 2_000_000_000, BASE + t4, 0)?;
-        let result = measure(
-            profile,
-            before,
-            after,
-            read,
-            read.mono_after,
-            header(BASE_BITS + (t2 << 32), BASE_BITS + (t3 << 32), 1)?,
+        let result = product_ok(
+            measure(
+                profile,
+                before,
+                after,
+                read,
+                read.mono_after,
+                header(BASE_BITS + (t2 << 32), BASE_BITS + (t3 << 32), 1)?,
+            ),
+            "valid synthetic measurement was refused",
         )?;
         assert_eq!(
             result.software_window().earliest().ticks(),
@@ -158,22 +175,31 @@ fn exact_dyadic_results_ignore_the_wire_token() -> Result<(), MeasurementRefusal
     let processing = start
         .checked_add(Duration::from_millis(100))
         .ok_or(MeasurementRefusal::Arithmetic)?;
-    let profile = Some(ExperimentalProfile::new(BASE, BASE + 1, 0)?);
-    let first = measure(
-        profile,
-        before,
-        after,
-        read,
-        processing,
-        header(BASE_BITS + (7 << 25), BASE_BITS + (8 << 25), 1)?,
+    let profile = Some(product_ok(
+        ExperimentalProfile::new(BASE, BASE + 1, 0),
+        "valid experimental profile was refused",
+    )?);
+    let first = product_ok(
+        measure(
+            profile,
+            before,
+            after,
+            read,
+            processing,
+            header(BASE_BITS + (7 << 25), BASE_BITS + (8 << 25), 1)?,
+        ),
+        "valid synthetic measurement was refused",
     )?;
-    let second = measure(
-        profile,
-        before,
-        after,
-        read,
-        processing,
-        header(BASE_BITS + (7 << 25), BASE_BITS + (8 << 25), u64::MAX)?,
+    let second = product_ok(
+        measure(
+            profile,
+            before,
+            after,
+            read,
+            processing,
+            header(BASE_BITS + (7 << 25), BASE_BITS + (8 << 25), u64::MAX)?,
+        ),
+        "valid synthetic measurement was refused",
     )?;
     assert_eq!(first, second);
     assert_eq!(first.arithmetic().offset().numerator(), 134_217_728);
@@ -198,13 +224,19 @@ fn peer_shift_changes_sign_without_changing_rtt() -> Result<(), MeasurementRefus
     let before = capture(start, 0, BASE, 0)?;
     let after = capture(start, 0, BASE, 0)?;
     let read = capture(start, 85_937_500, BASE, 85_937_500)?;
-    let result = measure(
-        Some(ExperimentalProfile::new(BASE, BASE + 1, 0)?),
-        before,
-        after,
-        read,
-        read.mono_after,
-        header(BASE_BITS + (3 << 25), BASE_BITS + (4 << 25), 7)?,
+    let result = product_ok(
+        measure(
+            Some(product_ok(
+                ExperimentalProfile::new(BASE, BASE + 1, 0),
+                "valid experimental profile was refused",
+            )?),
+            before,
+            after,
+            read,
+            read.mono_after,
+            header(BASE_BITS + (3 << 25), BASE_BITS + (4 << 25), 7)?,
+        ),
+        "valid synthetic measurement was refused",
     )?;
     assert_eq!(result.arithmetic().offset().numerator(), -134_217_728);
     assert_eq!(result.arithmetic().round_trip().numerator(), 335_544_320);
@@ -224,23 +256,32 @@ fn negative_raw_rtt_and_half_q32_phase_are_preserved() -> Result<(), Measurement
     let start = Instant::now();
     let before = capture(start, 0, BASE, 0)?;
     let read = capture(start, 7_812_500, BASE, 7_812_500)?;
-    let profile = Some(ExperimentalProfile::new(BASE, BASE + 1, 0)?);
-    let negative = measure(
-        profile,
-        before,
-        before,
-        read,
-        read.mono_after,
-        header(BASE_BITS + (7 << 25), BASE_BITS + (9 << 25), 8)?,
+    let profile = Some(product_ok(
+        ExperimentalProfile::new(BASE, BASE + 1, 0),
+        "valid experimental profile was refused",
+    )?);
+    let negative = product_ok(
+        measure(
+            profile,
+            before,
+            before,
+            read,
+            read.mono_after,
+            header(BASE_BITS + (7 << 25), BASE_BITS + (9 << 25), 8)?,
+        ),
+        "valid synthetic measurement was refused",
     )?;
     assert_eq!(negative.arithmetic().round_trip().numerator(), -33_554_432);
-    let half = measure(
-        profile,
-        before,
-        before,
-        before,
-        before.mono_after,
-        header(BASE_BITS, BASE_BITS + 1, 8)?,
+    let half = product_ok(
+        measure(
+            profile,
+            before,
+            before,
+            before,
+            before.mono_after,
+            header(BASE_BITS, BASE_BITS + 1, 8)?,
+        ),
+        "valid synthetic measurement was refused",
     )?;
     assert_eq!(half.arithmetic().offset().numerator(), 1);
     assert_eq!(half.arithmetic().round_trip().numerator(), -1);
@@ -259,15 +300,21 @@ fn negative_raw_rtt_and_half_q32_phase_are_preserved() -> Result<(), Measurement
 #[test]
 fn decimal_remainders_change_the_exact_nominal_phase() -> Result<(), MeasurementRefusal> {
     let start = Instant::now();
-    let profile = Some(ExperimentalProfile::new(BASE, BASE + 1, 0)?);
+    let profile = Some(product_ok(
+        ExperimentalProfile::new(BASE, BASE + 1, 0),
+        "valid experimental profile was refused",
+    )?);
     let whole = capture(start, 0, BASE, 0)?;
-    let healthy = measure(
-        profile,
-        whole,
-        whole,
-        whole,
-        start,
-        header(BASE_BITS, BASE_BITS, 1)?,
+    let healthy = product_ok(
+        measure(
+            profile,
+            whole,
+            whole,
+            whole,
+            start,
+            header(BASE_BITS, BASE_BITS, 1)?,
+        ),
+        "valid synthetic measurement was refused",
     )?;
     assert_eq!(healthy.nominal_phase().numerator(), 0);
     assert_eq!(healthy.nominal_round_trip().numerator(), 0);
@@ -275,13 +322,16 @@ fn decimal_remainders_change_the_exact_nominal_phase() -> Result<(), Measurement
     assert_eq!(healthy.nominal_round_trip().denominator(), 4_294_967_296);
 
     let fractional = capture(start, 0, BASE, 100)?;
-    let result = measure(
-        profile,
-        fractional,
-        fractional,
-        fractional,
-        start,
-        header(BASE_BITS + 429, BASE_BITS + 429, 2)?,
+    let result = product_ok(
+        measure(
+            profile,
+            fractional,
+            fractional,
+            fractional,
+            start,
+            header(BASE_BITS + 429, BASE_BITS + 429, 2)?,
+        ),
+        "valid synthetic measurement was refused",
     )?;
     assert_eq!(result.arithmetic().offset().numerator(), 0);
     assert_eq!(result.local_fractional_remainders(), [496_729_600; 2]);
@@ -309,7 +359,10 @@ fn decimal_remainders_change_the_exact_nominal_phase() -> Result<(), Measurement
 fn asymmetric_decimal_captures_keep_exact_signed_nominal_values() -> Result<(), MeasurementRefusal>
 {
     let start = Instant::now();
-    let profile = Some(ExperimentalProfile::new(BASE, BASE + 1, 200)?);
+    let profile = Some(product_ok(
+        ExperimentalProfile::new(BASE, BASE + 1, 200),
+        "valid experimental profile was refused",
+    )?);
     // T1/T4 are integer nanoseconds above BASE; T2/T3 are exact Q32 fractions.
     // Expected values were independently reduced from those original units.
     for (t1_ns, t4_ns, t2_fraction, t3_fraction, phase, round_trip) in [
@@ -321,13 +374,16 @@ fn asymmetric_decimal_captures_keep_exact_signed_nominal_values() -> Result<(), 
     ] {
         let before = capture(start, 0, BASE, t1_ns)?;
         let read = capture(start, 0, BASE, t4_ns)?;
-        let result = measure(
-            profile,
-            before,
-            before,
-            read,
-            start,
-            header(BASE_BITS + t2_fraction, BASE_BITS + t3_fraction, 3)?,
+        let result = product_ok(
+            measure(
+                profile,
+                before,
+                before,
+                read,
+                start,
+                header(BASE_BITS + t2_fraction, BASE_BITS + t3_fraction, 3)?,
+            ),
+            "valid synthetic measurement was refused",
         )?;
         assert_eq!(result.nominal_phase().numerator(), phase);
         assert_eq!(result.nominal_phase().denominator(), 8_589_934_592);
@@ -349,7 +405,10 @@ fn asymmetric_decimal_captures_keep_exact_signed_nominal_values() -> Result<(), 
 fn pre_unix_nominal_remainders_keep_epoch_and_sign_association() -> Result<(), MeasurementRefusal> {
     let start = Instant::now();
     let epoch_bits = 2_208_988_800_u64 << 32;
-    let profile = Some(ExperimentalProfile::new(2_208_988_799, 2_208_988_801, 0)?);
+    let profile = Some(product_ok(
+        ExperimentalProfile::new(2_208_988_799, 2_208_988_801, 0),
+        "valid experimental profile was refused",
+    )?);
     for (seconds, nanos, peer_bits, remainder, phase) in [
         (
             2_208_988_799,
@@ -367,13 +426,16 @@ fn pre_unix_nominal_remainders_keep_epoch_and_sign_association() -> Result<(), M
         ),
     ] {
         let clock = capture(start, 0, seconds, nanos)?;
-        let result = measure(
-            profile,
-            clock,
-            clock,
-            clock,
-            start,
-            header(peer_bits, peer_bits, 4)?,
+        let result = product_ok(
+            measure(
+                profile,
+                clock,
+                clock,
+                clock,
+                start,
+                header(peer_bits, peer_bits, 4)?,
+            ),
+            "valid synthetic measurement was refused",
         )?;
         assert_eq!(result.arithmetic().offset().numerator(), 0);
         assert_eq!(result.local_fractional_remainders(), [remainder; 2]);
@@ -405,7 +467,10 @@ fn nominal_arithmetic_rejects_each_remainder_boundary_without_partial_result()
         ([999_999_999, 0], -999_999_999, -999_999_999),
         ([0, 999_999_999], -999_999_999, 999_999_999),
     ] {
-        let (actual_phase, actual_round_trip) = nominal_arithmetic(arithmetic, remainders)?;
+        let (actual_phase, actual_round_trip) = product_ok(
+            nominal_arithmetic(arithmetic, remainders),
+            "valid nominal arithmetic was refused",
+        )?;
         assert_eq!(actual_phase.numerator(), phase);
         assert_eq!(actual_phase.denominator(), 8_589_934_592);
         assert_eq!(actual_round_trip.numerator(), round_trip);
@@ -422,7 +487,15 @@ fn nominal_arithmetic_rejects_each_remainder_boundary_without_partial_result()
             Err(MeasurementRefusal::Arithmetic)
         );
     }
-    assert_eq!(nominal_arithmetic(arithmetic, [0, 0])?.0.numerator(), 0);
+    assert_eq!(
+        product_ok(
+            nominal_arithmetic(arithmetic, [0, 0]),
+            "valid nominal arithmetic was refused"
+        )?
+        .0
+        .numerator(),
+        0
+    );
     Ok(())
 }
 
@@ -508,7 +581,10 @@ fn nominal_arithmetic_retains_full_coordinate_domain_without_i64_projection()
         let [t1, t2, t3, t4] = coordinates;
         let arithmetic =
             exchange_arithmetic(t1, t2, t3, t4).map_err(|_| MeasurementRefusal::Arithmetic)?;
-        let (actual_phase, actual_round_trip) = nominal_arithmetic(arithmetic, remainders)?;
+        let (actual_phase, actual_round_trip) = product_ok(
+            nominal_arithmetic(arithmetic, remainders),
+            "valid nominal arithmetic was refused",
+        )?;
         assert_eq!(actual_phase.numerator(), phase);
         assert_eq!(actual_phase.denominator(), 8_589_934_592);
         assert_eq!(actual_round_trip.numerator(), round_trip);
@@ -531,13 +607,19 @@ fn fractional_conversion_residuals_reconstruct_nominal_values() -> Result<(), Me
     let start = Instant::now();
     let before = capture(start, 0, BASE, 100)?;
     let read = capture(start, 100, BASE, 200)?;
-    let result = measure(
-        Some(ExperimentalProfile::new(BASE, BASE, 0)?),
-        before,
-        before,
-        read,
-        read.mono_after,
-        header(BASE_BITS, BASE_BITS, 9)?,
+    let result = product_ok(
+        measure(
+            Some(product_ok(
+                ExperimentalProfile::new(BASE, BASE, 0),
+                "valid experimental profile was refused",
+            )?),
+            before,
+            before,
+            read,
+            read.mono_after,
+            header(BASE_BITS, BASE_BITS, 9)?,
+        ),
+        "valid synthetic measurement was refused",
     )?;
     let [r1, r4] = result.local_fractional_remainders();
     assert_eq!([r1, r4], [496_729_600, 993_459_200]);
@@ -573,8 +655,14 @@ fn pre_unix_and_post_unix_100_ns_have_literal_residuals() -> Result<(), Measurem
     let after = UNIX_EPOCH
         .checked_add(Duration::from_nanos(100))
         .ok_or(MeasurementRefusal::Arithmetic)?;
-    let old = convert_wall(before)?;
-    let new = convert_wall(after)?;
+    let old = product_ok(
+        convert_wall(before),
+        "valid synthetic wall conversion was refused",
+    )?;
+    let new = product_ok(
+        convert_wall(after),
+        "valid synthetic wall conversion was refused",
+    )?;
     let epoch_ticks = NTP_UNIX_OFFSET_SECONDS * Q32_SCALE;
     assert_eq!(old.coordinate.ticks(), epoch_ticks - 430);
     assert_eq!(old.remainder, 503_270_400);
@@ -623,19 +711,28 @@ fn declared_coherence_limit_has_an_exact_healthy_neighbor() -> Result<(), Measur
     let before = capture(start, 0, BASE, 0)?;
     let read = capture(start, 10_000_000, BASE, 20_000_000)?;
     let raw = header(BASE_BITS, BASE_BITS, 2)?;
-    let accepted = measure(
-        Some(ExperimentalProfile::new(BASE, BASE, 10_000_000)?),
-        before,
-        before,
-        read,
-        read.mono_after,
-        raw,
+    let accepted = product_ok(
+        measure(
+            Some(product_ok(
+                ExperimentalProfile::new(BASE, BASE, 10_000_000),
+                "valid experimental profile was refused",
+            )?),
+            before,
+            before,
+            read,
+            read.mono_after,
+            raw,
+        ),
+        "valid synthetic measurement was refused",
     )?;
     assert_eq!(accepted.observed_residual_ns(), 10_000_000);
     assert_eq!(accepted.declared_limit_ns(), 10_000_000);
     assert_eq!(
         measure(
-            Some(ExperimentalProfile::new(BASE, BASE, 9_999_999)?),
+            Some(product_ok(
+                ExperimentalProfile::new(BASE, BASE, 9_999_999),
+                "valid experimental profile was refused"
+            )?),
             before,
             before,
             read,
@@ -668,15 +765,27 @@ fn nonzero_capture_intervals_keep_inside_and_outside_neighbors() -> Result<(), M
         .checked_add(Duration::from_nanos(3_600))
         .ok_or(MeasurementRefusal::Arithmetic)?;
     let raw = header(BASE_BITS, BASE_BITS, 11)?;
-    let strict = Some(ExperimentalProfile::new(BASE, BASE, 0)?);
-    let just_below = Some(ExperimentalProfile::new(BASE, BASE, 99)?);
-    let neighbor = Some(ExperimentalProfile::new(BASE, BASE, 100)?);
+    let strict = Some(product_ok(
+        ExperimentalProfile::new(BASE, BASE, 0),
+        "valid experimental profile was refused",
+    )?);
+    let just_below = Some(product_ok(
+        ExperimentalProfile::new(BASE, BASE, 99),
+        "valid experimental profile was refused",
+    )?);
+    let neighbor = Some(product_ok(
+        ExperimentalProfile::new(BASE, BASE, 100),
+        "valid experimental profile was refused",
+    )?);
     for wall_delta in [600, 1_200, 1_600] {
         let mut after = capture(start, 2_000, BASE, wall_delta)?;
         after.mono_after = start
             .checked_add(Duration::from_nanos(2_600))
             .ok_or(MeasurementRefusal::Arithmetic)?;
-        let accepted = measure(strict, before, after, read, read.mono_after, raw)?;
+        let accepted = product_ok(
+            measure(strict, before, after, read, read.mono_after, raw),
+            "valid synthetic measurement was refused",
+        )?;
         assert_eq!(accepted.observed_residual_ns(), 0);
     }
     for wall_delta in [500, 1_700] {
@@ -692,7 +801,10 @@ fn nonzero_capture_intervals_keep_inside_and_outside_neighbors() -> Result<(), M
             measure(just_below, before, after, read, read.mono_after, raw),
             Err(MeasurementRefusal::MappingDiscontinuity)
         );
-        let accepted = measure(neighbor, before, after, read, read.mono_after, raw)?;
+        let accepted = product_ok(
+            measure(neighbor, before, after, read, read.mono_after, raw),
+            "valid synthetic measurement was refused",
+        )?;
         assert_eq!(accepted.observed_residual_ns(), 100);
         assert_eq!(accepted.declared_limit_ns(), 100);
     }
@@ -713,10 +825,19 @@ fn coherence_helper_rejects_each_reversed_bracket() -> Result<(), MeasurementRef
     let start = Instant::now();
     let before = capture(start, 0, BASE, 0)?;
     let later = capture(start, 2_000, BASE, 2_000)?;
-    let before_wall = convert_wall(before.utc)?;
-    let later_wall = convert_wall(later.utc)?;
+    let before_wall = product_ok(
+        convert_wall(before.utc),
+        "valid synthetic wall conversion was refused",
+    )?;
+    let later_wall = product_ok(
+        convert_wall(later.utc),
+        "valid synthetic wall conversion was refused",
+    )?;
     assert_eq!(
-        coherence_residual(before, later, before_wall, later_wall)?,
+        product_ok(
+            coherence_residual(before, later, before_wall, later_wall),
+            "valid synthetic coherence residual was refused"
+        )?,
         0
     );
 
@@ -732,7 +853,10 @@ fn coherence_helper_rejects_each_reversed_bracket() -> Result<(), MeasurementRef
         "coherence helper admitted a reversed bracket"
     );
     assert_eq!(
-        coherence_residual(before, later, before_wall, later_wall)?,
+        product_ok(
+            coherence_residual(before, later, before_wall, later_wall),
+            "valid synthetic coherence residual was refused"
+        )?,
         0
     );
     Ok(())
@@ -751,7 +875,10 @@ fn reversed_brackets_and_processing_are_not_ages() -> Result<(), MeasurementRefu
     let start = Instant::now();
     let first = capture(start, 0, BASE, 0)?;
     let later = capture(start, 100, BASE, 100)?;
-    let profile = Some(ExperimentalProfile::new(BASE, BASE, 0)?);
+    let profile = Some(product_ok(
+        ExperimentalProfile::new(BASE, BASE, 0),
+        "valid experimental profile was refused",
+    )?);
     let raw = header(BASE_BITS, BASE_BITS, 3)?;
     assert_eq!(
         measure(profile, first, later, first, later.mono_after, raw),
@@ -776,7 +903,11 @@ fn reversed_brackets_and_processing_are_not_ages() -> Result<(), MeasurementRefu
 /// or any coordinate's one-tick outside neighbor yields the wrong refusal.
 #[test]
 fn out_of_scope_local_coordinate_is_not_rebased() -> Result<(), MeasurementRefusal> {
-    let dates = ExperimentalProfile::new(BASE, BASE, 0)?.dates();
+    let dates = product_ok(
+        ExperimentalProfile::new(BASE, BASE, 0),
+        "valid experimental profile was refused",
+    )?
+    .dates();
     let outside_ticks = [
         dates
             .earliest()
@@ -809,7 +940,10 @@ fn out_of_scope_local_coordinate_is_not_rebased() -> Result<(), MeasurementRefus
     let clock = capture(start, 0, BASE - 1, 0)?;
     assert_eq!(
         measure(
-            Some(ExperimentalProfile::new(BASE, BASE, 0)?),
+            Some(product_ok(
+                ExperimentalProfile::new(BASE, BASE, 0),
+                "valid experimental profile was refused"
+            )?),
             clock,
             clock,
             clock,
@@ -837,7 +971,10 @@ fn send_after_outside_scope_cannot_hide_between_valid_endpoints() -> Result<(), 
     let read = capture(start, 200, BASE, 200)?;
     assert_eq!(
         measure(
-            Some(ExperimentalProfile::new(BASE, BASE, 3_000_000_000)?),
+            Some(product_ok(
+                ExperimentalProfile::new(BASE, BASE, 3_000_000_000),
+                "valid experimental profile was refused"
+            )?),
             before,
             after,
             read,
@@ -864,7 +1001,10 @@ fn era_zero_and_multiple_candidates_remain_distinct() -> Result<(), MeasurementR
     let clock = capture(start, 0, BASE, 0)?;
     assert_eq!(
         measure(
-            Some(ExperimentalProfile::new(BASE, BASE, 0)?),
+            Some(product_ok(
+                ExperimentalProfile::new(BASE, BASE, 0),
+                "valid experimental profile was refused"
+            )?),
             clock,
             clock,
             clock,
@@ -875,7 +1015,10 @@ fn era_zero_and_multiple_candidates_remain_distinct() -> Result<(), MeasurementR
     );
     assert_eq!(
         measure(
-            Some(ExperimentalProfile::new(0, 1_u64 << 32, 0)?),
+            Some(product_ok(
+                ExperimentalProfile::new(0, 1_u64 << 32, 0),
+                "valid experimental profile was refused"
+            )?),
             clock,
             clock,
             clock,
@@ -899,7 +1042,10 @@ fn era_zero_and_multiple_candidates_remain_distinct() -> Result<(), MeasurementR
 fn inert_header_does_not_bypass_the_time_reply_guard() -> Result<(), MeasurementRefusal> {
     let start = Instant::now();
     let clock = capture(start, 0, BASE, 0)?;
-    let profile = Some(ExperimentalProfile::new(BASE, BASE, 0)?);
+    let profile = Some(product_ok(
+        ExperimentalProfile::new(BASE, BASE, 0),
+        "valid experimental profile was refused",
+    )?);
     for (flags, stratum, receive, transmit) in [
         (0x24, 0, BASE_BITS, BASE_BITS),
         (0x24, 16, BASE_BITS, BASE_BITS),
@@ -945,7 +1091,10 @@ fn inert_header_does_not_bypass_the_time_reply_guard() -> Result<(), Measurement
 /// excessive-allowance neighbor is admitted.
 #[test]
 fn profile_bounds_and_maximum_allowance_are_checked() -> Result<(), MeasurementRefusal> {
-    let profile = ExperimentalProfile::new(BASE, BASE, MAX_DECLARED_RESIDUAL_NS)?;
+    let profile = product_ok(
+        ExperimentalProfile::new(BASE, BASE, MAX_DECLARED_RESIDUAL_NS),
+        "valid experimental profile was refused",
+    )?;
     assert_eq!(profile.earliest_ntp_seconds(), BASE);
     assert_eq!(profile.latest_ntp_seconds(), BASE);
     assert_eq!(profile.maximum_residual_ns(), MAX_DECLARED_RESIDUAL_NS);
@@ -982,13 +1131,19 @@ fn profile_bounds_and_maximum_allowance_are_checked() -> Result<(), MeasurementR
 fn fresh_owner_age_stamp_preserves_the_actual_arithmetic() -> Result<(), MeasurementRefusal> {
     let start = Instant::now();
     let clock = capture(start, 0, BASE, 100)?;
-    let staged = measure(
-        Some(ExperimentalProfile::new(BASE, BASE, 0)?),
-        clock,
-        clock,
-        clock,
-        start,
-        header(BASE_BITS + 429, BASE_BITS + 429, 1)?,
+    let staged = product_ok(
+        measure(
+            Some(product_ok(
+                ExperimentalProfile::new(BASE, BASE, 0),
+                "valid experimental profile was refused",
+            )?),
+            clock,
+            clock,
+            clock,
+            start,
+            header(BASE_BITS + 429, BASE_BITS + 429, 1)?,
+        ),
+        "valid synthetic measurement was refused",
     )?;
     let committed = staged.with_acquisition_age(Duration::from_micros(25));
     assert_eq!(committed.acquisition_age(), Duration::from_micros(25));
@@ -1018,17 +1173,26 @@ fn fresh_owner_age_stamp_preserves_the_actual_arithmetic() -> Result<(), Measure
 fn nominal_seconds_preserve_corrected_capture_units_and_signed_rtt()
 -> Result<(), MeasurementRefusal> {
     let start = Instant::now();
-    let profile = Some(ExperimentalProfile::new(BASE, BASE + 1, 200)?);
+    let profile = Some(product_ok(
+        ExperimentalProfile::new(BASE, BASE + 1, 200),
+        "valid experimental profile was refused",
+    )?);
     let same = capture(start, 0, BASE, 100)?;
-    let measured = measure(
-        profile,
-        same,
-        same,
-        same,
-        start,
-        header(BASE_BITS + 429, BASE_BITS + 429, 6)?,
+    let measured = product_ok(
+        measure(
+            profile,
+            same,
+            same,
+            same,
+            start,
+            header(BASE_BITS + 429, BASE_BITS + 429, 6)?,
+        ),
+        "valid synthetic measurement was refused",
     )?;
-    let phase = measured.nominal_phase().seconds()?;
+    let phase = product_ok(
+        measured.nominal_phase().seconds(),
+        "valid retained nominal seconds projection was refused",
+    )?;
     assert_eq!(phase.sign(), RationalSign::Negative);
     assert_eq!(phase.numerator_magnitude(), 993_459_200);
     assert_eq!(phase.denominator().get(), 8_589_934_592_000_000_000);
@@ -1037,7 +1201,10 @@ fn nominal_seconds_preserve_corrected_capture_units_and_signed_rtt()
         phase.absolute_roundoff_seconds().to_bits(),
         0x3a80_0000_0000_0000
     );
-    let zero = measured.nominal_round_trip().seconds()?;
+    let zero = product_ok(
+        measured.nominal_round_trip().seconds(),
+        "valid retained nominal seconds projection was refused",
+    )?;
     assert_eq!(zero.sign(), RationalSign::Positive);
     assert_eq!(zero.numerator_magnitude(), 0);
     assert_eq!(zero.denominator().get(), 4_294_967_296_000_000_000);
@@ -1050,15 +1217,21 @@ fn nominal_seconds_preserve_corrected_capture_units_and_signed_rtt()
     ] {
         let send = capture(start, 0, BASE, send_ns)?;
         let receive = capture(start, 0, BASE, receive_ns)?;
-        let observation = measure(
-            profile,
-            send,
-            send,
-            receive,
-            start,
-            header(BASE_BITS + 429, BASE_BITS + 429, 7)?,
+        let observation = product_ok(
+            measure(
+                profile,
+                send,
+                send,
+                receive,
+                start,
+                header(BASE_BITS + 429, BASE_BITS + 429, 7)?,
+            ),
+            "valid synthetic measurement was refused",
         )?;
-        let round_trip = observation.nominal_round_trip().seconds()?;
+        let round_trip = product_ok(
+            observation.nominal_round_trip().seconds(),
+            "valid retained nominal seconds projection was refused",
+        )?;
         assert_eq!(round_trip.sign(), sign);
         assert_eq!(round_trip.numerator_magnitude(), 429_496_729_600);
         assert_eq!(round_trip.denominator().get(), 4_294_967_296_000_000_000);
@@ -1085,7 +1258,10 @@ fn nominal_seconds_checks_scale_and_retains_the_signed_integer_endpoint()
         super::nominal_seconds(1, 0),
         Err(MeasurementRefusal::Arithmetic)
     ));
-    let endpoint = super::nominal_seconds(i128::MIN, 1)?;
+    let endpoint = product_ok(
+        super::nominal_seconds(i128::MIN, 1),
+        "valid nominal seconds projection was refused",
+    )?;
     assert_eq!(endpoint.sign(), RationalSign::Negative);
     assert_eq!(endpoint.numerator_magnitude(), 1_u128 << 127);
     assert_eq!(endpoint.seconds().to_bits(), 0xc7e0_0000_0000_0000);
@@ -1191,8 +1367,11 @@ fn nominal_relative_fixture(
         t4.map_err(|_| RelativeMeasurementRefusal::Arithmetic)?,
     )
     .map_err(|_| RelativeMeasurementRefusal::Arithmetic)?;
-    let (phase, round_trip) = nominal_arithmetic(arithmetic, fixture.remainders)
-        .map_err(|_| RelativeMeasurementRefusal::Arithmetic)?;
+    let (phase, round_trip) = product_ok(
+        nominal_arithmetic(arithmetic, fixture.remainders),
+        "valid nominal relative fixture was refused",
+    )
+    .map_err(|_| RelativeMeasurementRefusal::Arithmetic)?;
     assert_eq!(phase.numerator(), fixture.phase);
     assert_eq!(round_trip.numerator(), fixture.round_trip);
     Ok(phase)
@@ -1302,5 +1481,353 @@ fn relative_phase_difference_exceeds_i128_without_losing_sign()
             0x40a0_0000_0000_0000,
         );
     }
+    Ok(())
+}
+
+/// Nine fixed point brackets with independently equal wall/monotonic progress.
+/// No current wall reading, profile, header or physical-error claim is supplied.
+/// # Errors
+/// Preserve failure of checked fixture-clock construction on this platform.
+fn coherence_nine(start: Instant) -> Result<[[SoftwareClock; 3]; 3], MeasurementRefusal> {
+    let mut captures = [[capture(start, 0, BASE, 0)?; 3]; 3];
+    for (position, item) in (0_u64..9).zip(captures.iter_mut().flatten()) {
+        let nanoseconds = position
+            .checked_mul(100)
+            .ok_or(MeasurementRefusal::Arithmetic)?;
+        *item = capture(start, nanoseconds, BASE, nanoseconds)?;
+    }
+    Ok(captures)
+}
+
+/// Valid individual brackets may still cross at the helper's raw boundary.
+/// A one-nanosecond reversal is rejected before platform duration subtraction.
+/// # Errors
+/// Preserve checked fixture construction and valid neighboring residual failures.
+/// # Panics
+/// Require crossed rejection while touching equality and separation remain legal.
+#[test]
+fn coherence_helper_crossed_brackets_keep_touching_and_separated_neighbors()
+-> Result<(), MeasurementRefusal> {
+    let start = Instant::now();
+    let mut before = capture(start, 0, BASE, 0)?;
+    before.mono_after = start
+        .checked_add(Duration::from_nanos(100))
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    let before_wall = product_ok(
+        convert_wall(before.utc),
+        "valid synthetic wall conversion was refused",
+    )?;
+    for (nanoseconds, expected) in [
+        (99, Err(MeasurementRefusal::CaptureOrder)),
+        (100, Ok(0)),
+        (101, Ok(0)),
+    ] {
+        let later = capture(start, nanoseconds, BASE, 100)?;
+        assert_eq!(
+            coherence_residual(
+                before,
+                later,
+                before_wall,
+                product_ok(
+                    convert_wall(later.utc),
+                    "valid synthetic wall conversion was refused"
+                )?
+            ),
+            expected
+        );
+    }
+    Ok(())
+}
+
+/// Missing positions invent no captures; any present triplet supplies its baseline.
+/// # Errors
+/// Preserve actual checked fixture/conversion failures for valid input neighbors.
+/// # Panics
+/// Require `None` only for an empty input, and keep leading/interior/trailing holes.
+#[test]
+fn series_coherence_empty_single_and_holes_keep_original_positions()
+-> Result<(), MeasurementRefusal> {
+    let [first, middle, last] = coherence_nine(Instant::now())?;
+    assert_eq!(
+        product_ok(
+            series_coherence_residuals(&[None; 3]),
+            "valid retained capture residuals were refused"
+        )?,
+        None
+    );
+    for retained in [
+        [Some(first), None, None],
+        [None, Some(middle), None],
+        [None, None, Some(last)],
+        [Some(first), None, Some(last)],
+        [None, Some(middle), Some(last)],
+    ] {
+        assert_eq!(
+            product_ok(
+                series_coherence_residuals(&retained),
+                "valid retained capture residuals were refused"
+            )?,
+            Some(0)
+        );
+    }
+    Ok(())
+}
+
+/// Every one of nine original positions affects the result, including the last.
+/// One 1000 ns wall perturbation differs from the otherwise literal unit slope;
+/// when placed at the baseline it instead shifts all eight later differences.
+/// # Errors
+/// Preserve checked fixture construction and actual accepted-neighbor failures.
+/// # Panics
+/// Require the independently specified 1000 ns maximum for each selected position.
+#[test]
+fn series_coherence_all_nine_positions_influence_the_maximum() -> Result<(), MeasurementRefusal> {
+    let original = coherence_nine(Instant::now())?;
+    assert_eq!(
+        product_ok(
+            series_coherence_residuals(&original.map(Some)),
+            "valid retained capture residuals were refused"
+        )?,
+        Some(0)
+    );
+    for position in 0..9 {
+        let mut changed = original;
+        let selected = changed
+            .iter_mut()
+            .flatten()
+            .nth(position)
+            .ok_or(MeasurementRefusal::Arithmetic)?;
+        selected.utc = selected
+            .utc
+            .checked_add(Duration::from_nanos(1_000))
+            .ok_or(MeasurementRefusal::Arithmetic)?;
+        assert_eq!(
+            product_ok(
+                series_coherence_residuals(&changed.map(Some)),
+                "valid retained capture residuals were refused"
+            )?,
+            Some(1_000)
+        );
+    }
+    assert_eq!(
+        product_ok(
+            series_coherence_residuals(&original.map(Some)),
+            "valid retained capture residuals were refused"
+        )?,
+        Some(0)
+    );
+    Ok(())
+}
+
+/// The first retained capture stays fixed; per-triplet rebasing hides this ramp.
+/// Each triplet adds only 300 ns bias, while the last is 600 ns from the first.
+/// # Errors
+/// Preserve checked fixture construction and actual fixed-baseline failures.
+/// # Panics
+/// Require accumulated 600 ns rather than rolling 300 ns or per-triplet zero.
+#[test]
+fn series_coherence_fixed_first_baseline_detects_accumulated_drift()
+-> Result<(), MeasurementRefusal> {
+    let mut captures = coherence_nine(Instant::now())?;
+    for (position, triplet) in (0_u64..3).zip(&mut captures) {
+        let bias = position
+            .checked_mul(300)
+            .ok_or(MeasurementRefusal::Arithmetic)?;
+        for item in triplet {
+            item.utc = item
+                .utc
+                .checked_add(Duration::from_nanos(bias))
+                .ok_or(MeasurementRefusal::Arithmetic)?;
+        }
+    }
+    assert_eq!(
+        product_ok(
+            series_coherence_residuals(&captures.map(Some)),
+            "valid retained capture residuals were refused"
+        )?,
+        Some(600)
+    );
+    let [first, _, last] = captures;
+    assert_eq!(
+        product_ok(
+            series_coherence_residuals(&[Some(first), None, Some(last)]),
+            "valid retained capture residuals were refused"
+        )?,
+        Some(600)
+    );
+    Ok(())
+}
+
+/// Own brackets and all eight retained sequence edges are checked independently.
+/// Synthetic crossings are one nanosecond; they make no native clock claim.
+/// # Errors
+/// Preserve checked fixture-clock construction and healthy touching acceptance.
+/// # Panics
+/// Require every reversed/crossed case to reject, while equality remains legal.
+#[test]
+fn series_coherence_rejects_each_own_and_sequential_order_violation()
+-> Result<(), MeasurementRefusal> {
+    let original = coherence_nine(Instant::now())?;
+    for position in 0..9 {
+        let mut changed = original;
+        let selected = changed
+            .iter_mut()
+            .flatten()
+            .nth(position)
+            .ok_or(MeasurementRefusal::Arithmetic)?;
+        selected.mono_after = selected
+            .mono
+            .checked_sub(Duration::from_nanos(1))
+            .ok_or(MeasurementRefusal::Arithmetic)?;
+        assert_eq!(
+            series_coherence_residuals(&changed.map(Some)),
+            Err(MeasurementRefusal::CaptureOrder)
+        );
+    }
+    for (position, previous) in (1..9).zip(original.iter().flatten()) {
+        let mut changed = original;
+        let selected = changed
+            .iter_mut()
+            .flatten()
+            .nth(position)
+            .ok_or(MeasurementRefusal::Arithmetic)?;
+        selected.mono = previous
+            .mono_after
+            .checked_sub(Duration::from_nanos(1))
+            .ok_or(MeasurementRefusal::Arithmetic)?;
+        assert_eq!(
+            series_coherence_residuals(&changed.map(Some)),
+            Err(MeasurementRefusal::CaptureOrder)
+        );
+    }
+    let mut touching = original;
+    for item in touching.iter_mut().flatten().take(8) {
+        item.mono_after = item
+            .mono
+            .checked_add(Duration::from_nanos(100))
+            .ok_or(MeasurementRefusal::Arithmetic)?;
+    }
+    assert_eq!(
+        product_ok(
+            series_coherence_residuals(&touching.map(Some)),
+            "valid retained capture residuals were refused"
+        )?,
+        Some(0)
+    );
+    Ok(())
+}
+
+/// Validate the entire capture order before attempting any residual arithmetic.
+/// The early 30-billion-second wall jump exceeds u64 nanoseconds; a later raw
+/// reversed bracket must win before that independently known arithmetic refusal.
+/// # Errors
+/// Preserve checked fixture construction on the selected platform.
+/// # Panics
+/// Require complete ordering validation rather than per-point early conversion.
+#[test]
+fn series_coherence_full_order_validation_precedes_earlier_arithmetic()
+-> Result<(), MeasurementRefusal> {
+    let mut captures = coherence_nine(Instant::now())?;
+    let first = captures
+        .iter_mut()
+        .flatten()
+        .next()
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    first.utc = first
+        .utc
+        .checked_add(Duration::from_mins(500_000_000))
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    assert_eq!(
+        series_coherence_residuals(&captures.map(Some)),
+        Err(MeasurementRefusal::Arithmetic)
+    );
+    let last = captures
+        .iter_mut()
+        .flatten()
+        .next_back()
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    last.mono_after = last
+        .mono
+        .checked_sub(Duration::from_nanos(1))
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    assert_eq!(
+        series_coherence_residuals(&captures.map(Some)),
+        Err(MeasurementRefusal::CaptureOrder)
+    );
+    Ok(())
+}
+
+/// An early large residual is not a result while a later checked failure remains.
+/// # Errors
+/// Preserve checked fixture construction and the valid 1000 ns neighbor.
+/// # Panics
+/// Require the final arithmetic refusal even after an earlier measured gap.
+#[test]
+fn series_coherence_late_arithmetic_failure_wins_over_an_earlier_gap()
+-> Result<(), MeasurementRefusal> {
+    let mut captures = coherence_nine(Instant::now())?;
+    let early = captures
+        .iter_mut()
+        .flatten()
+        .nth(1)
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    early.utc = early
+        .utc
+        .checked_add(Duration::from_nanos(1_000))
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    assert_eq!(
+        product_ok(
+            series_coherence_residuals(&captures.map(Some)),
+            "valid retained capture residuals were refused"
+        )?,
+        Some(1_000)
+    );
+    let last = captures
+        .iter_mut()
+        .flatten()
+        .next_back()
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    last.utc = last
+        .utc
+        .checked_add(Duration::from_mins(500_000_000))
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    assert_eq!(
+        series_coherence_residuals(&captures.map(Some)),
+        Err(MeasurementRefusal::Arithmetic)
+    );
+    Ok(())
+}
+
+/// Residual admission retains the full u64 domain without a hidden profile cap.
+/// The supplied wall delta is `u64::MAX` plus 85 ns on the 100 ns Windows grid.
+/// Exact monotonic progress of 85 ns leaves `u64::MAX`; 84 ns leaves one too many.
+/// # Errors
+/// Preserve representable fixture construction and the exact maximum neighbor.
+/// # Panics
+/// Require full-width success and the one-nanosecond arithmetic rejection.
+#[test]
+fn series_coherence_full_u64_residual_keeps_its_next_rejection() -> Result<(), MeasurementRefusal> {
+    let start = Instant::now();
+    let before = capture(start, 0, BASE, 0)?;
+    let seconds = BASE
+        .checked_add(18_446_744_073)
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    let mut middle = capture(start, 85, seconds, 709_551_700)?;
+    let last = capture(start, 100, seconds, 709_551_700)?;
+    assert_eq!(
+        product_ok(
+            series_coherence_residuals(&[Some([before, middle, last]), None, None]),
+            "valid retained capture residuals were refused"
+        )?,
+        Some(u64::MAX)
+    );
+    middle.mono = start
+        .checked_add(Duration::from_nanos(84))
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    middle.mono_after = middle.mono;
+    assert_eq!(
+        series_coherence_residuals(&[Some([before, middle, last]), None, None]),
+        Err(MeasurementRefusal::Arithmetic)
+    );
     Ok(())
 }

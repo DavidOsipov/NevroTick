@@ -12,6 +12,15 @@
 
 use time_domain::{ActiveAwakeDurationNs, MonotonicNs};
 
+/// Baseline-relative finite phase debt and its separately bounded rate requests.
+mod phase_plan;
+
+pub use phase_plan::{
+    FixturePhaseNumericError, FixturePhaseNumericField, FixturePhaseNumericIssue,
+    FixturePhaseNumericStep,
+};
+pub(crate) use phase_plan::{PhaseDebt, PhaseRates};
+
 use super::super::normalization::integer_to_f64;
 use super::super::projection::FixtureAnchorProjection;
 use super::super::{ArithmeticStage, NormalizationComponent, arithmetic};

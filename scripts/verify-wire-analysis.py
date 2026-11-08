@@ -29,8 +29,10 @@ NTS_KE = "crates/ntp-wire/src/nts_ke.rs"
 NTS_NEGOTIATION = "crates/ntp-wire/src/nts_negotiation.rs"
 NTS_PACKET = "crates/ntp-wire/src/nts_packet.rs"
 NTS_PLAINTEXT = "crates/ntp-wire/src/nts_plaintext.rs"
+NTS_REQUEST = "crates/ntp-wire/src/nts_request.rs"
 SUBJECTS = {"header": HEADER, "datagram": DATAGRAM, "nts_ke": NTS_KE,
-            "nts_negotiation": NTS_NEGOTIATION, "nts_packet": NTS_PACKET, "nts_plaintext": NTS_PLAINTEXT}
+            "nts_negotiation": NTS_NEGOTIATION, "nts_packet": NTS_PACKET, "nts_plaintext": NTS_PLAINTEXT,
+            "nts_request": NTS_REQUEST}
 # The extended source-admitted target compares all six pure owners with
 # independent framing and request/response negotiation expectations.
 FUZZ_SUBJECTS = {"header": HEADER, "datagram": DATAGRAM, "nts_ke": NTS_KE,
@@ -56,6 +58,11 @@ RUNTIME, Incomplete = COMMON.RUNTIME, COMMON.Incomplete
 SCOPE = COMMON.Scope(PACKAGE, tuple(SUBJECTS.items()), POLICY)
 
 
+BOUND_INPUTS = (POLICY, "scripts/portable-analysis.py", "scripts/verify-wire-analysis.py",
+                "scripts/prepare-product.py", "scripts/analysis-runtime.py", "scripts/check-analysis.py",
+                "scripts/analysis-controls.py", "policy/analysis-tools.json", "policy/verification-manifest.toml")
+
+
 def read_policy(root: Path) -> dict:
     """Reject changed scope, thresholds or resource caps before running tools."""
     policy = json.loads((root / POLICY).read_text())
@@ -74,14 +81,14 @@ def read_policy(root: Path) -> dict:
     for filename in SUBJECTS.values():
         if manifest.get("critical_files", []).count(filename) != 1:
             raise Incomplete("A parser is absent or duplicated in the reviewed critical-file inventory.")
-        if not any(module.get("package") == PACKAGE and filename in module.get("files", [])
-                   for module in manifest.get("security_modules", [])):
-            raise Incomplete("A parser is absent from the security-module inventory.")
+        if sum(module.get("files", []).count(filename) for module in manifest.get("security_modules", [])
+               if module.get("package") == PACKAGE) != 1:
+            raise Incomplete("A wire owner is absent or duplicated in the security-module inventory.")
     return policy
 
 
 def select_subjects(subject: str) -> dict[str, str]:
-    """Return only the fixed reviewed file mapping; all includes all six owners."""
+    """Return only the fixed reviewed file mapping; all includes all seven owners."""
     if subject == "all":
         return dict(SUBJECTS)
     if subject not in SUBJECTS:
@@ -92,9 +99,9 @@ def select_subjects(subject: str) -> dict[str, str]:
 def admit_fuzz_subject(lane: str, subject: str) -> None:
     """Admit only fixed source-reviewed fuzz owners and known lane selections.
 
-    The extended target covers all six owners; subject selection narrows only
-    coverage/mutation, while contracts and fuzz retain their complete scope.
-    Actual fuzz execution still requires the extended target's exact source hash.
+    The admitted target covers six owners. The seventh formatter owner therefore
+    closes fuzz/all until separately reviewed target admission; contracts,
+    coverage and mutation remain selectable without extending fuzz authority.
     """
     if lane not in {"contracts", "coverage", "mutation", "fuzz", "all"} or subject not in {*SUBJECTS, "all"}:
         raise Incomplete("Unknown wire analysis lane or subject.")
@@ -169,7 +176,7 @@ def privacy_error(result: dict, expected: str) -> None:
 
 
 def contract_examples() -> dict[str, tuple[str, str | None]]:
-    """Keep independent legal, privacy and borrow specimens for all six wire owners."""
+    """Keep independent legal, privacy and borrow specimens for all seven wire owners."""
     setup = ('let Ok(limits) = ntp_wire::FrameLimits::new(76, 1) else { return; }; '
              'let mut input = vec![0u8; 76]; input[51] = 28; ')
     frame = ('let Ok(frame) = ntp_wire::frame_no_legacy_mac_datagram(&input, limits) '
@@ -229,6 +236,8 @@ def contract_examples() -> dict[str, tuple[str, str | None]]:
     examples.update(nts_exporter_contract_examples())
     examples.update(nts_packet_contract_examples())
     examples.update(nts_plaintext_contract_examples())
+    examples.update({name: (specimen["source"], specimen["code"])
+                     for name, specimen in nts_request_contract_specs().items()})
     # Direct rustc consumers get no rustdoc main wrapper. This is structural
     # preflight only; the actual compiler still owns syntax/type diagnostics.
     if any(re.search(r"\bfn\s+main\s*\(", text) is None for text, _ in examples.values()):
@@ -550,6 +559,80 @@ def nts_plaintext_contract_examples() -> dict[str, tuple[str, str | None]]:
             "frame_nts_plaintext(&bytes, NtsPlaintextLimits::new(4, 1).unwrap()).unwrap()\n}\nfn main() {}\n", "E0515"),
     }
 
+
+
+def nts_request_contract_specs() -> dict[str, dict]:
+    """Closed literal formatter consumer and source-bound external bypass causes."""
+    imports = ("use ntp_wire::{NtsRequestShape, PreparedNtsRequest, NtsClientRequest, "
+               "prepare_nts_client_request, decode_fixed_header, FrameLimits};\n")
+    def main(body: str) -> str:
+        return imports + "fn main() {\n" + body + "\n}\n"
+    setup = ("let mut header_bytes = [0u8; 48]; header_bytes[0] = 0x23;\n"
+             "let header = decode_fixed_header(&header_bytes).expect(\"fixed header\");\n"
+             "let uid = [0x11u8; 32]; let cookie = [0x22u8; 12];\n"
+             "let shape = NtsRequestShape::new(3, 5, 16).expect(\"declared shape\");\n"
+             "let limits = FrameLimits::new(148, 4).expect(\"literal limits\");\n"
+             "let mut output = [0xa5u8; 160];\n")
+    call = "prepare_nts_client_request(&header, &uid, &cookie, 1, shape, &mut output, limits).expect(\"valid request\")"
+    prepared = setup + "let plan = " + call + ";\n"
+    finish = ".finish(&[0xa1, 0xa2, 0xa3], &[0xc1, 0xc2, 0xc3, 0xc4, 0xc5]).expect(\"declared tail\")"
+    # Independent fixed wire bytes: 48-byte header, UID36, Cookie16,
+    # Placeholder16, Authenticator32. AAD ends at literal offset116.
+    literal = ([0x23] + [0] * 47 + [1, 4, 0, 36] + [0x11] * 32
+               + [2, 4, 0, 16] + [0x22] * 12 + [3, 4, 0, 16] + [0] * 12
+               + [4, 4, 0, 32, 0, 3, 0, 5, 0xa1, 0xa2, 0xa3, 0,
+                  0xc1, 0xc2, 0xc3, 0xc4, 0xc5] + [0] * 15)
+    assert len(literal) == 148
+    expected = ",".join(str(byte) for byte in literal)
+    legal = ("let expected: [u8; 148] = [" + expected + "];\n" + setup
+             + "let original = output.as_ptr();\n{\nlet plan = " + call + ";\n"
+             + "assert_eq!(plan.associated_data(), &expected[..116]);\n"
+             + "let packet = plan" + finish + ";\n"
+             + "assert_eq!(packet.packet_bytes(), &expected);\n"
+             + "assert_eq!(packet.packet_bytes().as_ptr(), original);\n}\n"
+             + "assert_eq!(&output[148..], &[0xa5; 12]);\n"
+             + 'println!("wire-nts-request:literal-prefix-finish");')
+    specs = {"nts_request_legal": {"source": main(legal), "code": None,
+                                     "success_marker": "wire-nts-request:literal-prefix-finish"}}
+    def add(name: str, before: str, statement: str, code: str, tokens: list[str]) -> None:
+        source = main(before + statement)
+        specs["nts_request_" + name] = {"source": source, "code": code,
+            "line": source.splitlines().index(statement) + 1, "tokens": tokens}
+    add("shape_construction", "", "let _ = NtsRequestShape { nonce_length: 0, ciphertext_length: 0, nonce_width: 0, authenticator_length: 0 };", "E0451", ["NtsRequestShape", "private"])
+    for field in ("nonce_length", "ciphertext_length", "nonce_width", "authenticator_length"):
+        add("shape_" + field + "_mutation", "", "fn change(mut shape: NtsRequestShape) { shape." + field + " = 0; }", "E0616", [field, "private"])
+    add("shape_default", "", "let _: NtsRequestShape = Default::default();", "E0277", ["NtsRequestShape", "Default"])
+    add("plan_construction", "", "fn forge(output: &mut [u8], shape: NtsRequestShape) { let _ = PreparedNtsRequest { packet: output, aad_length: 0, shape }; }", "E0451", ["PreparedNtsRequest", "private"])
+    for field, value, argument in (("packet", "replacement", "replacement: &'a mut [u8]"),
+                                   ("aad_length", "0", "_unused: ()"),
+                                   ("shape", "replacement", "replacement: NtsRequestShape")):
+        add("plan_" + field + "_mutation", "", "fn change<'a>(mut plan: PreparedNtsRequest<'a>, " + argument + ") { plan." + field + " = " + value + "; }", "E0616", [field, "private"])
+    add("plan_default", "", "let _: PreparedNtsRequest<'static> = Default::default();", "E0277", ["PreparedNtsRequest", "Default"])
+    add("plan_clone", "", "fn needs_clone<T: Clone>() {} needs_clone::<PreparedNtsRequest<'static>>();", "E0277", ["PreparedNtsRequest", "Clone"])
+    add("plan_debug", "", "fn needs_debug<T: core::fmt::Debug>() {} needs_debug::<PreparedNtsRequest<'static>>();", "E0277", ["PreparedNtsRequest", "Debug"])
+    add("packet_construction", "", "let _ = NtsClientRequest { packet: &[] };", "E0451", ["NtsClientRequest", "private"])
+    add("packet_mutation", "", "fn change<'a>(mut packet: NtsClientRequest<'a>, replacement: &'a [u8]) { packet.packet = replacement; }", "E0616", ["packet", "private"])
+    add("packet_default", "", "let _: NtsClientRequest<'static> = Default::default();", "E0277", ["NtsClientRequest", "Default"])
+    add("packet_debug", "", "fn needs_debug<T: core::fmt::Debug>() {} needs_debug::<NtsClientRequest<'static>>();", "E0277", ["NtsClientRequest", "Debug"])
+    add("aad_readonly", "", "fn change(plan: PreparedNtsRequest<'_>) { plan.associated_data()[0] = 1; }", "E0594", ["cannot assign", "reference"])
+    add("packet_readonly", "", "fn change(packet: NtsClientRequest<'_>) { packet.packet_bytes()[0] = 1; }", "E0594", ["cannot assign", "reference"])
+    add("prepared_output_borrow", prepared, "output[0] = 1; let _ = plan.associated_data(); core::hint::black_box(output[0]);", "E0506", ["output", "borrow"])
+    add("finished_output_borrow", prepared + "let packet = plan" + finish + ";\n", "output[0] = 1; let _ = packet.packet_bytes(); core::hint::black_box(output[0]);", "E0506", ["output", "borrow"])
+    add("aad_blocks_finish", "", "fn overlap(plan: PreparedNtsRequest<'_>) { let aad = plan.associated_data(); let _ = plan" + finish + "; let _ = aad.len(); }", "E0505", ["plan", "borrow"])
+    add("plan_consumed", "", "fn twice(plan: PreparedNtsRequest<'_>) { let _ = plan" + finish + "; let _ = plan" + finish + "; }", "E0382", ["plan", "moved"])
+    local_setup = setup.replace("\n", " ")
+    add("plan_escape", "", "fn escape() -> PreparedNtsRequest<'static> { " + local_setup + call + " }", "E0515", ["output"])
+    add("packet_escape", "", "fn escape() -> NtsClientRequest<'static> { " + local_setup + call + finish + " }", "E0515", ["output"])
+    add("aad_escape", "", "fn escape<'a>(plan: PreparedNtsRequest<'a>) -> &'a [u8] { plan.associated_data() }", "E0515", ["plan"])
+    return specs
+
+
+def request_privacy_error(result: dict, name: str, expected: str) -> None:
+    """Bind only a closed new formatter specimen to its exact JSON compiler cause."""
+    specimen = nts_request_contract_specs().get(name)
+    if specimen is None or specimen["code"] is None or specimen["code"] != expected:
+        raise Incomplete("Unknown or misbound NTS request compiler specimen.")
+    COMMON.compiler_cause(result, specimen, "/work/contract-inputs/" + name + ".rs")
 
 def fuzz_seeds() -> dict[str, bytes]:
     """Declare bounded literal word-framing neighbors independently of the parser."""
@@ -954,8 +1037,7 @@ def execute(args, report: dict) -> None:
     report["subjects"] = subjects
     dependency_policy, identity = PRODUCT.admit_product(ROOT)
     product_identity = dict(identity)
-    extra = (POLICY, "scripts/portable-analysis.py", "scripts/verify-wire-analysis.py", "scripts/prepare-product.py", "scripts/analysis-runtime.py",
-             "scripts/check-analysis.py", "policy/analysis-tools.json", "policy/verification-manifest.toml")
+    extra = BOUND_INPUTS
     extra += (policy["coverage_guided_fuzzing"]["target_source"],
               policy["coverage_guided_fuzzing"]["llvm_notice"])
     identity.update({name: PRODUCT.sha256(ROOT / name) for name in extra})
@@ -1053,7 +1135,11 @@ def execute(args, report: dict) -> None:
                 expected_jobs=COMMON.mutation_jobs(policy),
                 expected_message_format=COMMON.mutation_message_format(policy))
         if expected_error:
-            privacy_error(result, expected_error)
+            name = label.removeprefix("external-consumer-")
+            if name.startswith("nts_request_"):
+                request_privacy_error(result, name, expected_error)
+            else:
+                privacy_error(result, expected_error)
             return result["output"]
         if negative:
             if result["failure"] or result["exit_code"] == 0 or negative not in result["output"]:
@@ -1073,13 +1159,25 @@ def execute(args, report: dict) -> None:
         run("contract-library", [rustc, "--edition", "2024", "--crate-name", "ntp_wire",
                                   "--crate-type", "rlib", "/work/source/crates/ntp-wire/src/lib.rs",
                                   "--out-dir", "/work/contracts"], 120, sealed=[consumers])
+        executed_legal = {}
+        request_specs = nts_request_contract_specs()
         for name, (_, diagnostic) in examples.items():
             run("external-consumer-" + name,
                 [rustc, "--edition", "2024", "--crate-name", name,
                  "/work/contract-inputs/" + name + ".rs",
-                 "--extern", "ntp_wire=/work/contracts/libntp_wire.rlib", "--out-dir", "/work/contracts"],
+                 "--extern", "ntp_wire=/work/contracts/libntp_wire.rlib", "--out-dir", "/work/contracts",
+                 *(["--error-format=json"] if name in request_specs and diagnostic else [])],
                 120, sealed=[consumers],
                 expected_error=diagnostic)
+            if name == "nts_request_legal":
+                binary = work / "contracts" / name
+                before = PRODUCT.sha256(binary)
+                text = run("external-legal-execution-" + name, ["/work/contracts/" + name],
+                           30, sealed=[consumers, binary])
+                if (text.splitlines() != [request_specs[name]["success_marker"]]
+                        or PRODUCT.sha256(binary) != before):
+                    raise Incomplete("NTS request legal consumer did not preserve its literal execution/binary.")
+                executed_legal[name] = {"binary_sha256": before, "success_marker": text.strip()}
         report["contracts"] = {"legal_consumers_compiled": sum(diagnostic is None for _, diagnostic in examples.values()),
                                "privacy_bypasses_rejected": sum(
                                    diagnostic in {"E0451", "E0616"} for _, diagnostic in examples.values()),
@@ -1087,13 +1185,14 @@ def execute(args, report: dict) -> None:
                                "construction_or_mutation_bypasses_rejected": sum(
                                    diagnostic in {"E0451", "E0616"} for _, diagnostic in examples.values()),
                                "borrow_bypasses_rejected": sum(
-                                   diagnostic in {"E0502", "E0515", "E0506", "E0594", "E0597"} for _, diagnostic in examples.values()),
+                                   diagnostic in {"E0502", "E0505", "E0515", "E0506", "E0594", "E0597"} for _, diagnostic in examples.values()),
                                "consumed_owner_bypasses_rejected": sum(
                                    diagnostic == "E0382" for _, diagnostic in examples.values()),
                                "default_or_payload_debug_bypasses_rejected": sum(
                                    diagnostic == "E0277" for _, diagnostic in examples.values()),
                                "required_diagnostics": {name: diagnostic for name, (_, diagnostic) in examples.items()
                                                         if diagnostic is not None}}
+        report["contracts"]["legal_consumers_executed"] = executed_legal
         print("PASSED: ntp-wire external-consumer contracts", flush=True)
     COMMON.run_analysis_lanes(SCOPE, subjects, policy, work, tools, run, report, args.lane)
     if args.lane in {"fuzz", "all"}:
@@ -1243,7 +1342,7 @@ def main(argv=None) -> int:
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
-    report = {"status": "incomplete", "scope": "ntp-wire header/datagram/inert NTS packet/raw NTS-KE and pending NTPv4 negotiation contracts/coverage/mutation; fuzz compares all six pure owners without TLS, keys or endpoint authority",
+    report = {"status": "incomplete", "scope": "ntp-wire seven-owner contracts/coverage/mutation including inert two-stage client request formatting; fuzz/all fail closed until the separate six-owner fuzz admission is extended; no TLS, keys or endpoint authority",
               "native_qualification": "not performed"}
     try:
         if args.vendor_dir is None:

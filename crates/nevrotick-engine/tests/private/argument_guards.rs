@@ -3,6 +3,16 @@
 
 use super::*;
 
+/// Assert a reviewed pure product success without formatting its error payload.
+/// # Errors
+/// Preserve the original typed result for the existing propagation path.
+/// # Panics
+/// Reject only the independently known-valid product result named by the static fact.
+fn product_ok<T, E>(result: Result<T, E>, fact: &'static str) -> Result<T, E> {
+    assert!(result.is_ok(), "{fact}");
+    result
+}
+
 /// The owner admits exactly six pairs and preserves exhausted state on every failure.
 /// These calls exercise the resource contract independently of the option grammar.
 ///
@@ -87,7 +97,10 @@ fn decimal_profile_fields_preserve_raw_digit_boundaries() -> Result<(), CliError
             "{:0width$}:{:0width$}:{:0width$}",
             2_272_060_800_u64, 6_311_433_599_u64, 0_u64
         );
-        let profile = clock_profile(&text)?;
+        let profile = product_ok(
+            clock_profile(&text),
+            "known valid padded clock profile was refused",
+        )?;
         assert_eq!(profile.earliest_ntp_seconds(), 2_272_060_800);
         assert_eq!(profile.latest_ntp_seconds(), 6_311_433_599);
         assert_eq!(profile.maximum_residual_ns(), 0);

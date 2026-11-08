@@ -14,11 +14,12 @@ const CHILD_WALL: Duration = Duration::from_secs(5);
 const REAP_WALL: Duration = Duration::from_millis(500);
 const OUTPUT_LIMIT: u64 = 16_384;
 const COVERAGE_PROFILE: &str = "/work/target/llvm-cov-target/source-%p-%m.profraw";
-const CASES: [&str; 11] = [
+const CASES: [&str; 12] = [
     "series::tests::single_slot_driver_enforces_receive_cap_with_valid_boundary_neighbor",
     "series::tests::single_slot_driver_enforces_send_cap_with_valid_boundary_neighbor",
     "series::tests::setup_and_registration_failures_preserve_actual_prior_completion",
     "series::tests::final_checkpoint_reads_current_control_without_rewriting_three_completions",
+    "series::tests::synchronous_counter_boundaries_do_not_panic_and_preserve_exact_effects",
     "three_real_requests_retain_distinct_identity_and_one_exact_origin",
     "ipv6_real_requests_retain_distinct_identity_and_one_exact_origin",
     "unavailable_measurements_still_consume_once_after_rejected_neighbors",
@@ -451,18 +452,42 @@ fn semantic_evidence(stderr: &str, name: &str) -> Option<String> {
     if stderr.lines().any(|line| line == "N3_HARNESS_INCOMPLETE") {
         return None;
     }
+    let errors: Vec<_> = stderr
+        .lines()
+        .filter(|line| line.starts_with("Error: "))
+        .collect();
+    let panics = stderr.matches(" panicked at ").count();
+    if stderr
+        .lines()
+        .filter(|line| *line == SEMANTIC_FAILED)
+        .count()
+        > 1
+    {
+        return None;
+    }
     let mut lines = stderr.lines();
     while let Some(line) = lines.next() {
         if line == SEMANTIC_FAILED {
             let fact = lines.next()?.strip_prefix("N3_SEMANTIC_FACT ")?;
+            let expected_error = format!("Error: Custom {{ kind: Other, error: {fact:?} }}");
             if fact.len() <= 160
                 && fact.is_ascii()
                 && !fact.bytes().any(|byte| byte.is_ascii_control())
+                && stderr
+                    .lines()
+                    .filter(|line| line.starts_with("N3_SEMANTIC_FACT "))
+                    .count()
+                    == 1
+                && panics == 0
+                && errors.as_slice() == [expected_error.as_str()]
             {
                 return Some(format!("independent fact: {fact}"));
             }
             return None;
         }
+    }
+    if !errors.is_empty() || panics != 1 {
+        return None;
     }
     let named_thread = format!("thread '{name}'");
     for line in stderr
@@ -525,6 +550,14 @@ fn semantic_evidence_accepts_only_exact_named_admitted_sites() {
             Some("test assertion/panic at crates/nevrotick-engine/tests/private/series.rs:23:7")
         );
     }
+    let fact = "independent product condition changed";
+    let semantic = format!(
+        "{SEMANTIC_FAILED}\nN3_SEMANTIC_FACT {fact}\nError: Custom {{ kind: Other, error: {fact:?} }}\n"
+    );
+    assert_eq!(
+        semantic_evidence(&semantic, name).as_deref(),
+        Some("independent fact: independent product condition changed")
+    );
     for rejected in [
         panic_at("foreign::test", canonical),
         panic_at(
@@ -545,6 +578,15 @@ fn semantic_evidence_accepts_only_exact_named_admitted_sites() {
         String::from("test result: FAILED. 0 passed; 1 failed; exit code: 101\n"),
         format!("N3_HARNESS_INCOMPLETE\n{}", panic_at(name, canonical)),
         format!("N3_HARNESS_INCOMPLETE\n{}", panic_at(name, compiler_alias)),
+        format!("{}Error: Arithmetic\n", panic_at(name, canonical)),
+        format!(
+            "{}{}",
+            panic_at(name, canonical),
+            panic_at("foreign::worker", canonical)
+        ),
+        format!("{semantic}Error: Arithmetic\n"),
+        format!("{semantic}{}", panic_at(name, canonical)),
+        format!("{semantic}N3_SEMANTIC_FACT foreign fact\n"),
     ] {
         assert!(semantic_evidence(&rejected, name).is_none());
     }

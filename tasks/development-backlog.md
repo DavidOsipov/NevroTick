@@ -18,7 +18,7 @@ finite execution limits and cleanup before implementation. Record actual exit
 observations and gaps through the [testing contract](../.agents/skills/testing/CONTRACT.md).
 Do not pre-create one task file per stage or start a second plan.
 
-The current [Core continuation and holds](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+The current [product continuation and holds](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
 govern throughout: blocked S134 stager/artifact; general host Windows execution
 and host elevation/security/service/clock changes; separate AES fuzz no-retry
 hold; optional-storage experiment pause. [Owned-Sandbox permission](windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026)
@@ -95,16 +95,52 @@ contracts, 366/382 executable-line coverage and 167 mutations. There are 132
 caught, 34 compiler-unviable and one reviewed equivalent, without timeout or
 unresolved survivor; exclusions receive no kill credit. All 94 Python controls
 and final custody pass. The old incomplete campaign and separately executed
-absolute-value/constructor controls retain their actual scope. Next freeze the
-[persistent acquisition-session contract](engine-transport-pilot.md#next-receiving-prerequisite--persistent-acquisition-session-contract)
-for genuine shared-chart lifetime, one prepared plan or active acquisition,
-abandonment and retirement before source implementation.
+absolute-value/constructor controls retain their actual scope. The
+[persistent session owner](engine-transport-pilot.md#persistent-session-final-qualification--8-november-2026)
+now qualifies genuine shared-chart lifetime, exclusive preparation/execution,
+abandonment and retirement in its 424-input controlled Linux scope. Its final
+record retains 127 ordinary/127 optimized tests, 59 doctests, external contracts,
+123/123 executable lines and 23 mutations: nine behavioral catches, fourteen
+compiler-unviable, no survivor/timeout/exclusion and no unviable kill credit.
+All 108 Python controls and final custody pass. The reviewed
+[report-owned session-reference view](engine-transport-pilot.md#report-owned-session-reference--finite-api-contract-8-november-2026)
+now has [final bounded Linux qualification](engine-transport-pilot.md#report-owned-reference-final-qualification--8-november-2026)
+on 424-input `e931838b...`: 129 ordinary/129 optimized tests, 63 doctests, twenty
+intended negative contracts, 186/186 executable lines and 34 mutations (ten
+behavioral catches, twenty-four compiler-unviable, no survivor/timeout/exclusion).
+Unviables earn no kill credit; all 108 Python controls and custody pass. Three
+missing factory observations/generation limits remain in that record. The
+[session/coherence final join](engine-transport-pilot.md#within-series-coherence--final-joined-qualification)
+now qualifies the three selected Linux source owners on `6d4cc156...`, with
+303 actual unique variants, 185 caught, 113 compiler-unviable and five reviewed
+equivalents. All ordinary/contracts/per-file line and mutation gates pass;
+equivalents add no kills, and original failures/recovery scopes remain explicit.
+The [complete inert NTS request formatter](engine-transport-pilot.md#next-independent-source-child-complete-inert-nts-request-formatting)
+has passed its three-owner bounded Linux exit: 119 ordinary/119 optimized tests,
+86 doctests, external contracts and per-file line/mutation gates; 108 variants
+are 79 caught and 29 unviable, with no survivor/timeout/exclusion. It adopts no
+AEAD/trust/runtime, supplies no mapping authority and does not close complete
+S2.2. The subsequent
+[finite phase-plan child](s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners)
+now passes its selected two-owner Linux fixture gates: 455 ordinary/455 optimized
+tests, 92 doctests, scoped external contracts and per-file coverage/mutation.
+Its 376 variants include four exact reviewed equivalents with no kill credit.
+Next freeze the remaining S1.4 frequency-prior update/aging/holdover contract under
+[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+The exact law is not already accepted; this is contract preparation before
+controller coding, without inventing shipped correction limits.
+W11-W01's actual capture/mapping contract is settled as
+[source-only preparation](windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026).
+Actual issuer/validity/error/invalidation evidence remains required before
+production implementation and publication; another engine pairwise helper is not
+a receiving prerequisite because the Core owner already computes those differences.
 Windows-target compiler
 checks establish no native Windows or service qualification. Actual
 generation/date/scale/quality suppliers and Engine-to-Core/history
 implementation remain held; declared labels, retained lifetimes and empty input
-supply neither authority nor a precision default. Preserve all separate phase
-and execution holds.
+supply neither authority nor a precision default. Ordinary abstract
+discipline/holdover remains open in its P1 owner, without becoming a formatter
+dependency. Preserve all separate phase and execution holds.
 
 ### Product guarantees still open
 
@@ -602,7 +638,7 @@ Held patches and all execution holds remain in force.
 | S1.3 independent split proof / numerical Core; tooling/QA | **Qualified raw leaf only.** The [split terminal checkpoint](s1.3-source-selection-readiness.md#split-terminal-qualification--5-november-2026) completed all five expected job outcomes with the unchanged admitted Kani route. | Full raw significand/scale admission, exact decomposition, fraction canonicalization/invariants and error classification are proved, including three compiled semantic defects and restored healthy proof. This does not qualify the complete producer, addition or Core. |
 | S1.3 raw scaled-value representation proofs / numerical Core; tooling/QA | **Qualified exact raw leaves only.** The [representation terminal checkpoint](s1.3-source-selection-readiness.md#representation-terminal-qualification--6-november-2026) completed all ten expected outcomes: `signed_whole` covers every bool sign, u64 whole and arbitrary u64/u32 fraction field pair; `from_bits` covers every raw u64 bit pattern. | Exact signed magnitude/fraction independence, raw bit admission, sign/Q33 representation, invariant/error guarantees, each leaf's three semantic defects and restored health are qualified. This closes no Garde/caller admission, addition, `EndpointParts` construction, complete enclosure or Core/P1 acceptance. |
 | S1.3 full-domain fraction addition / numerical Core; tooling/QA | **Post-V1; query-split card terminal DEFER.** The [terminal assessment](s1.3-source-selection-readiness.md#fraction-query-split-terminal-assessment--6-november-2026) records the qualified thirteen-job prefix, job 14's zero-check universal timeout, unrun jobs 15–20 and passing final custody. Direct witnesses and restorations remain unqualified. After V1 only: source-only encoding/property diagnosis and bounded Verus/Kani bridge scout; `--no-cheating` rejects `external_body`/`assume_specification`. An exact bridge is required; no flag change, adoption, new run, automatic retry or budget extension follows. Prior trials and all holds retain their status. | Retain the existing full checked-pair carry/residual and required-success contract, unchanged actual-source full domain, all eleven mathematical assertions, all 23 witnesses, three semantic defects and both complete restored lanes. Earlier bounded results, partial regions, narrowed domains and assumed product theorems do not close addition or Core. |
-| S1.4 discipline/holdover / Core/domain | Applicable S1.3 selection/combination and current reference, achieved-effect and active-time delivered-rate contracts; finish the current child first, then freeze one abstract controller/holdover transition. | Independent trajectories give bounded step/slew/holdover proposals; stale generations, duplicate/unknown effects and unacknowledged requests cannot create delivered correction or fresh observations. CHECK-7/8/10/11/25, AC-19. Current S1.4a–c and rate-delivery receipts stay in S1.3. |
+| S1.4 discipline/holdover / Core/domain | **Finite child scoped complete; parent open:** the [two-owner finite phase-plan exit](s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners) passes selected Linux 455/455/92, scoped external-contract and per-file coverage/mutation gates. Next independently freeze the remaining frequency-prior update/aging/holdover contract under development §7; no exact controller law is yet accepted. Adaptive horizon, physical/statistical assumptions, production source admission, broker/native effects and complete S1.4 remain open. | Independent trajectories give bounded step/slew/holdover proposals; stale generations, duplicate/unknown effects and unacknowledged requests cannot create delivered correction or fresh observations. CHECK-7/8/10/11/25, AC-19. Current S1.4a–c and rate-delivery receipts stay in S1.3. |
 | S1.4 leap child / domain/Core/protocol | **Selected pure checkpoint complete:** [current qualification](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026) reconciles four new mutation cohorts, qualified portable/contracts/coverage reuse, its admission-code delta and current offline generator checks. Full acquisition, guard/reacquisition, integration/native scopes and post-V1 proofs remain open. | Pure history/coverage/rule cases and atomic replacement pass within the selected scope. Full silent-source acquisition and LP-C04 stay in protocol integration; native mapping stays S0.4/P4. Existing LP-C cases and CHECK-6/7/8/11/14/25/26 retain their owning slices. |
 | S1.5 verification closure / tooling/dependency/QA | Existing configured application gates and selected critical owners; maintain required checks now, close remaining phase scope at its actual checkpoint. Deferred QF-02 recipe maintenance stays acknowledged in the active Core task. | Healthy code/inputs pass and intended lint/SAST/discovery/admission faults fail actual gates; retained provenance, applicable per-file coverage/mutation and exact receipt scope support closure. CHECK-19/20/25/26. No new implementation prerequisite or duplicate campaign. |
 

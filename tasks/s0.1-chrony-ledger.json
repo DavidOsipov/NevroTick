@@ -11,6 +11,54 @@
   "notice_obligation": "Preserve each selected original copyright, GPL-2.0-only grant/disclaimer, modification provenance and corresponding-source/build obligations in any future translation. Context files are not automatically admitted imports.",
   "files": [
     {
+      "path": "reference.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/reference.c",
+      "sha256": "e9a9cb678413366c51d42e5e3dd13f8a4104a3006a538987f66bc3a2a4da803f",
+      "bytes": 38331,
+      "git_blob": "960e011c6f1629b06904af06be292ce0fba721f4",
+      "raw_evidence_path": "/home/david_osipov/.local/share/nevrotick/phase-plan-20261108-v1/upstream/chrony-4.9/reference.c",
+      "selected_symbols_or_context": "REF_SetReference: reference projection and separate frequency/offset submission; S1.4 finite-plan context",
+      "proposed_destination": "time-core/reference_input/rate_delivery/phase_plan; full oscillator law remains pending",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003",
+        "Copyright (C) Miroslav Lichvar  2009-2018, 2020, 2022",
+        "Copyright (C) Andy Fiddaman  2024"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "local.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/local.c",
+      "sha256": "af16a2e6f46716f5bd4e405bdeebaecacbf15ca62476e153323e3836e2c7d3ac",
+      "bytes": 23961,
+      "git_blob": "5e5e8a29bc08efc878ae84c473557b601c1c8bb8",
+      "raw_evidence_path": "/home/david_osipov/.local/share/nevrotick/phase-plan-20261108-v1/upstream/chrony-4.9/local.c",
+      "selected_symbols_or_context": "LCL_AccumulateFrequencyAndOffset: driver-returned frequency and dependent model notification; S1.4 context",
+      "proposed_destination": "time-core finite-plan accounting context; no Unix driver/API port",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003",
+        "Copyright (C) Miroslav Lichvar  2011, 2014-2015, 2025"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "sys_generic.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sys_generic.c",
+      "sha256": "1556c00f4b646634879d311ea406681f661dd67e03367d6a73ff116ff01e048f",
+      "bytes": 13787,
+      "git_blob": "95c9eede9699a58d6ed9368c2f803f90ac802a35",
+      "raw_evidence_path": "/home/david_osipov/.local/share/nevrotick/phase-plan-20261108-v1/upstream/chrony-4.9/sys_generic.c",
+      "selected_symbols_or_context": "update_slew: settle achieved transient before replacement, distinct base frequency and actual applied frequency",
+      "proposed_destination": "time-core/reference_input/rate_delivery/phase_plan; explicit additive active-time fixture units",
+      "copyright_notices": [
+        "Copyright (C) Miroslav Lichvar  2014-2015"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
       "path": "ntp.h",
       "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/ntp.h",
       "sha256": "8a398152373c84736d3d77394661996d5194dbfc1f79ec8859a6660b5b6762ae",
@@ -254,6 +302,24 @@
     }
   ],
   "local_adaptations": [
+    {
+      "task": "S1.4 finite phase-plan lifecycle",
+      "status": "selected two-owner Linux fixture qualification complete through source-specific join: ordinary 455/455/92, coverage and per-file mutation pass; external 1+7 consumers reused on unchanged non-test API; full controller/native/product gates remain open",
+      "destination": "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "task_record": "tasks/s1.3-source-selection-readiness.md#s14-finite-phase-plan-lifecycle-contract",
+      "selected_source_files": ["reference.c", "local.c", "sys_generic.c"],
+      "historical_source_review_preserved": true,
+      "license": "GPL-2.0-only",
+      "copying_sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
+      "evidence_directory": "/home/david_osipov/.local/share/nevrotick/phase-plan-20261108-v1",
+      "deliberate_deviations": [
+        "Positive-behind phase and common additive displacement-per-active-second rates replace opposite upstream step sign and cooked/raw frequency conversion.",
+        "Explicit checked finite fixture horizons/caps and separate monotonic expiry select no shipping constants or full adaptive controller law.",
+        "One leased actual producer and persistent local cursor carry remaining debt/error, retain committed known delivery and distinguish residual continuation from fresh emitted evidence.",
+        "No Unix APIs, native acknowledgement, physical mapping, broker durability, source eligibility or formal proof are adopted."
+      ]
+    },
     {
       "task": "S1.1d",
       "status": "pure association implemented; private-candidate verification in progress; shared build-policy integration pending",

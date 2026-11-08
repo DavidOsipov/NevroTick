@@ -929,3 +929,122 @@ whole selected candidate before any Q1 policy admission; do not import an N3
 cohort or a historical score. An admitted E remains an exclusion, never a kill,
 and current qualification must preserve the actual native outcome and complete
 caught-cause/function/guard evidence under the existing 90%/95% gates.
+
+
+## Current Session/coherence equivalences — 8 November 2026
+
+This addendum re-adjudicates five actual misses on the current compiled candidate
+`6d4cc1560b7974129d75462cdb7b46411f97784bf8442ac64b88896468a5acb4`.
+It does not inherit an earlier outcome or disposition. Source-level equivalence
+reasoning here is not a machine-checked product proof and discharges no OD-10
+post-V1 proof obligation. Each exclusion receives zero kill credit; retain raw
+counts, all descriptors, native exits and the original incomplete receipts.
+
+Current source bindings:
+
+- `crates/nevrotick-engine/src/series.rs`:
+  `3444eeb5e950c77ac738bbb268ef43e2dd68b6984adac1454e2d8754b174da7c`.
+- `crates/nevrotick-engine/src/measurement.rs`:
+  `0b97439bbb6b6e83db74b046a7140b0030e3c97b7aa69b67423f60c454889ff7`.
+- The shared constructor dependency, `crates/time-domain/src/rational_seconds.rs`:
+  `2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438`.
+
+The two Series misses are actual `MissedMutant` rows in v2 outcomes
+`d4a05096669ab5c5b1b7cd293ce84e94fa66d777919ba5824e15b2cd25d8b479`.
+The three Measurement misses are actual rows in outcomes
+`af7176966956174447b686862e370cbaefdb3906936e98fd58bd3ddaff77276d`.
+Each built and executed the complete 207-identity baseline successfully; no
+ignored, filtered, compiler-unviable, timed-out or ungenerated case is excluded.
+The legitimate doctest line shifts caused by replacing function bodies remain
+separately checked against each raw diff. Descriptor hashes below identify the
+complete native mutant object WITHOUT its separately retained rendered diff.
+
+Independent reviewers: `series_checkpoint_verification/enumerated_series_review`
+for both Series cases; `series_checkpoint_design_review` for Measurement;
+`series_checkpoint_verification` and the coordinator challenged all five against
+current declarations, constructors, raw outcomes and dependent source. This is
+an independently justified equivalence verdict only for the exact bindings.
+
+## ENGINE-SESSION-SERIES-UNAVAILABLE-ADMITTED-ZERO
+
+Actual descriptor: `series.rs:476:9`, replace
+`SeriesReport::admitted_sample_count -> usize` with `0`.
+Native descriptor SHA256:
+`8b3ff21dbdb4481bd500c4a6afc55933af64e5f954bc7e41824f453aef84e8af`.
+
+The full valid typed domain, not just a successful caller, has one possible
+admission state. `StatisticalAdmission` is private and has exactly `Unavailable`;
+`SeriesReport.admission` is private. The sole production report literal in
+`SeriesReceiver::finish` sets `Unavailable`. Cleanup changes end/failure fields,
+and the execution/session owners move or borrow that same report without
+mutating admission. There is no public construction, mutation, Default or From
+route for another state. The exhaustive borrowed const getter therefore returns
+`usize` zero for every valid report, regardless of all other fields or caller
+chronology. Literal zero has the same result, ownership, allocation, failure,
+panic and effect behavior. Adding an admission variant or changing the field,
+constructor, cleanup/session mutation or getter invalidates this argument.
+
+## ENGINE-SESSION-SERIES-UNAVAILABLE-ELIGIBLE-ZERO
+
+Actual descriptor: `series.rs:483:9`, replace
+`SeriesReport::eligible_sample_count -> usize` with `0`.
+Native descriptor SHA256:
+`1bb74259a1ad856d2c4d85150a1fb75787ec932cc116910bcf3bf1c8ce90f2ef`.
+
+The same complete private typed domain and sole report constructor established
+above apply. This separate exhaustive borrowed const getter also maps its sole
+`Unavailable` state to zero, without allocation, failure, panic or effects.
+Replacing it by zero changes neither any valid return nor state/ownership.
+The same enum, field, constructor, mutation and getter changes invalidate it.
+
+## ENGINE-SESSION-COHERENCE-LOWER-EQUALITY
+
+Actual descriptor: `measurement.rs:558:29`, replace `<` with `<=` in
+`coherence_residual`. Native descriptor SHA256:
+`bd833b6be02ec7ea0e551202bc0ba3982d6a587c5ae694d6d504030a95065e0d`.
+
+The helper itself checks both own brackets and their cross order before any
+subtraction. In every reached successful comparison path, its original raw
+monotonic endpoints satisfy base <= base_after <= later <= later_after. Exact
+checked duration/nanosecond conversions consequently give 0 <= lower <= upper.
+All order, checked-duration, duration-to-i128 and wall-difference errors occur
+before the changed comparison and are identical. The operators differ only when
+wall_delta == lower. The original lower branch is false; the upper branch is
+also false because lower <= upper, so the gap is literal zero. The replacement
+computes checked lower - wall_delta = 0; subtracting equal representable i128
+values cannot overflow. Both then perform the same successful conversion to
+u64 zero. No state, allocation, I/O, callback or error changes. Any relevant
+ordering, duration/conversion, subtraction or publication change invalidates it.
+
+## ENGINE-SESSION-COHERENCE-UPPER-EQUALITY
+
+Actual descriptor: `measurement.rs:562:26`, replace `>` with `>=` in
+`coherence_residual`. Native descriptor SHA256:
+`da36761fb7f15b660253819ecfd4d29a868bf422d9a54ce49f845331bcd33dcc`.
+
+The helper-enforced full-domain ordering and unchanged earlier errors above
+apply. The operators differ only when wall_delta == upper. The lower branch is
+false because lower <= upper. The original returns literal zero; the replacement
+computes checked wall_delta - upper = 0 and performs the same u64 conversion.
+The return, errors, allocation and effects are identical. The same guard,
+conversion, subtraction and publication changes invalidate this argument.
+
+## ENGINE-SESSION-NOMINAL-ZERO-SIGN
+
+Actual descriptor: `measurement.rs:799:29`, replace `<` with `<=` in
+`nominal_seconds`. Native descriptor SHA256:
+`85e4e17d40dbe6e7a5ed1e147a2caed88565d9e49f8255ce33249134ce321a3e`.
+
+Consider the complete raw i128 numerator by u64 denominator domain. Nonzero
+numerators choose the same sign in both versions, including i128::MIN, whose
+unsigned_abs is representable as 2^127. Only numerator zero changes the temporary
+Copy sign. Denominator zero returns the same Arithmetic refusal before calling
+the converter. Otherwise magnitude is zero and `RoundedRationalSeconds::new`
+canonicalizes its sign to Positive BEFORE calling the same round_magnitude and
+publication/validation paths. All resulting fields, including the stored sign,
+positive floating-zero bits, exact ratio and rounding bound, are identical.
+Errors, allocation and effects are unchanged; the temporary Copy sign has no
+Drop behavior and is neither logged nor exposed. This depends on the exact
+shared constructor above, not a wrapper assumption or floating equality of
++0.0 and -0.0. Changing canonicalization, call/publication order, conversion,
+validation, sign effects or this helper invalidates the argument.

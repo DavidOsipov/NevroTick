@@ -594,9 +594,9 @@ fn bounded_fields<'a>(
     )?;
     let mut values = BTreeMap::new();
     for token in line.split(' ') {
-        let (key, value) = token
-            .split_once('=')
-            .ok_or_else(|| io::Error::other("malformed CLI field"))?;
+        let parts = token.split_once('=');
+        check(parts.is_some(), "malformed CLI field")?;
+        let (key, value) = parts.ok_or_else(|| io::Error::other("malformed CLI field"))?;
         check(
             !key.is_empty() && !value.is_empty() && values.insert(key, value).is_none(),
             "empty/duplicate CLI field",
@@ -614,6 +614,7 @@ fn bounded_fields<'a>(
 /// # Errors
 /// Reject missing, signed, nondecimal, padded or overflowing values.
 fn integer(values: &BTreeMap<&str, &str>, key: &str) -> Check<u128> {
+    check(values.contains_key(key), "missing CLI integer")?;
     let raw = values
         .get(key)
         .ok_or_else(|| io::Error::other("missing CLI integer"))?;
@@ -623,7 +624,9 @@ fn integer(values: &BTreeMap<&str, &str>, key: &str) -> Check<u128> {
             && (*raw == "0" || !raw.starts_with('0')),
         "CLI integer is not canonical unsigned decimal",
     )?;
-    Ok(raw.parse()?)
+    let parsed = raw.parse();
+    check(parsed.is_ok(), "CLI integer exceeds unsigned range")?;
+    Ok(parsed?)
 }
 
 /// Read a canonical signed diagnostic integer without the product formatter/parser.
@@ -631,6 +634,7 @@ fn integer(values: &BTreeMap<&str, &str>, key: &str) -> Check<u128> {
 /// # Errors
 /// Reject missing, signed-plus, padded, negative-zero, nondecimal and overflowing values.
 fn signed_integer(values: &BTreeMap<&str, &str>, key: &str) -> Check<i128> {
+    check(values.contains_key(key), "missing CLI signed integer")?;
     let raw = values
         .get(key)
         .copied()
@@ -644,7 +648,9 @@ fn signed_integer(values: &BTreeMap<&str, &str>, key: &str) -> Check<i128> {
             && raw != "-0",
         "CLI integer is not canonical signed decimal",
     )?;
-    Ok(raw.parse()?)
+    let parsed = raw.parse();
+    check(parsed.is_ok(), "CLI integer exceeds signed range")?;
+    Ok(parsed?)
 }
 
 /// Exact public fields for the experimental nominal observation; no accuracy claim.
@@ -874,9 +880,9 @@ fn transcript(output: &CliOutput, case: CliCase, clients: [SocketAddr; 2]) -> Ch
     )?;
     check(output.stdout.is_ascii(), "CLI stdout is not actual ASCII")?;
     let text = std::str::from_utf8(&output.stdout)?;
-    let text = text
-        .strip_suffix('\n')
-        .ok_or_else(|| io::Error::other("unterminated CLI stream"))?;
+    let ended = text.strip_suffix('\n');
+    check(ended.is_some(), "unterminated CLI stream")?;
+    let text = ended.ok_or_else(|| io::Error::other("unterminated CLI stream"))?;
     let lines: Vec<_> = text.split('\n').collect();
     let measurements = case
         .statuses()
@@ -889,10 +895,12 @@ fn transcript(output: &CliOutput, case: CliCase, clients: [SocketAddr; 2]) -> Ch
     )?;
     for (slot, client) in clients.iter().enumerate() {
         let bound = fields(lines[slot], &["event", "slot", "local"])?;
+        let local = bound["local"].parse::<SocketAddr>();
+        check(local.is_ok(), "CLI bound endpoint is not a socket address")?;
         check(
             bound["event"] == "bound"
                 && integer(&bound, "slot")? == u128::try_from(slot)?
-                && bound["local"].parse::<SocketAddr>()? == *client,
+                && local? == *client,
             "bound record differs from physical request source",
         )?;
     }
@@ -971,13 +979,16 @@ fn transcript_controls(output: &CliOutput, clients: [SocketAddr; 2]) -> Check<()
 /// Require intended algebra/qualifier/residual rejection beside the actual healthy stream.
 fn measurement_transcript_controls(output: &CliOutput, clients: [SocketAddr; 2]) -> Check<()> {
     let healthy = std::str::from_utf8(&output.stdout)?;
-    let first = healthy
-        .lines()
-        .find(|line| {
-            line.split(' ').any(|token| token == "event=measurement")
-                && line.split(' ').any(|token| token == "slot=0")
-        })
-        .ok_or_else(|| io::Error::other("actual slot0 nominal measurement absent"))?;
+    let original = healthy.lines().find(|line| {
+        line.split(' ').any(|token| token == "event=measurement")
+            && line.split(' ').any(|token| token == "slot=0")
+    });
+    check(
+        original.is_some(),
+        "actual slot0 nominal measurement absent",
+    )?;
+    let first =
+        original.ok_or_else(|| io::Error::other("actual slot0 nominal measurement absent"))?;
     let values = bounded_fields(first, MEASUREMENT_FIELDS, 1024)?;
     let phase = signed_integer(&values, "phase_q33")?;
     let wrong_phase = phase
@@ -1035,9 +1046,13 @@ fn measurement_transcript_controls(output: &CliOutput, clients: [SocketAddr; 2])
 /// Reject missing completion records or a fault rejected for an unrelated reason.
 fn timeout_elapsed_controls(output: &CliOutput, clients: [SocketAddr; 2]) -> Check<()> {
     let healthy = std::str::from_utf8(&output.stdout)?;
-    let (prefix, _) = healthy
-        .rsplit_once("event=done elapsed_ns=")
-        .ok_or_else(|| io::Error::other("actual timeout completion record absent"))?;
+    let completion = healthy.rsplit_once("event=done elapsed_ns=");
+    check(
+        completion.is_some(),
+        "actual timeout completion record absent",
+    )?;
+    let (prefix, _) =
+        completion.ok_or_else(|| io::Error::other("actual timeout completion record absent"))?;
     for value in ["0", "1"] {
         let changed = CliOutput {
             status: output.status,
@@ -1105,9 +1120,7 @@ fn cli_case(ip: IpAddr, case: CliCase) -> Check<()> {
         first[40..48] != second[40..48],
         "actual association tokens collided",
     )?;
-    if let Err(error) = transcript(&output, case, clients) {
-        return Err(format!("{case:?}/{ip}: {error}; actual={output:?}").into());
-    }
+    transcript(&output, case, clients)?;
     if case == CliCase::Healthy {
         transcript_controls(&output, clients)?;
     }

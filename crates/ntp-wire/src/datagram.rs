@@ -91,6 +91,24 @@ impl FrameLimits {
             max_extension_fields,
         })
     }
+
+    /// Admit computed encoder dimensions through the existing explicit budgets.
+    /// This reads no bytes, changes no state and supplies no framing guarantee.
+    /// # Errors
+    /// Refuse a byte excess before a field-count excess, as in the reader.
+    pub(crate) fn check_message_budget(
+        self,
+        byte_count: usize,
+        field_count: usize,
+    ) -> Result<(), FrameError> {
+        if byte_count > self.max_datagram_bytes {
+            return Err(FrameError::ByteLimit);
+        }
+        if field_count > self.max_extension_fields {
+            return Err(FrameError::TooManyExtensions);
+        }
+        Ok(())
+    }
 }
 
 /// A completely framed immutable datagram; success conveys no protocol trust.

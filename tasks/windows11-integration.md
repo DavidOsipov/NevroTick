@@ -2613,6 +2613,39 @@ enhanced-provenance policy remain. No native recovery or release pass is claimed
 
 ### 4.26 S2.1 timestamp-provenance preparation — 5 November 2026
 
+**8 November receiving checkpoint:** the
+[report-owned session reference](engine-transport-pilot.md#report-owned-reference-final-qualification--8-november-2026)
+now has bounded Linux qualification on 424-input `e931838b...`. Genuine reports
+retain their private pre-acquisition chart and original successful measurement,
+with checked exact midpoint derivation and unchanged ages. This does not provide
+mapping continuity, calibrated finite errors or production admission; its three
+unobserved factory paths and generation limits remain recorded.
+
+**Finite source contract settled — 8 November:** acquisition/platform and the
+engine receiving owner now have the
+[producer/receiver contract](engine-transport-pilot.md#w11-w01-finite-capturemapping-supplier-contract--8-november-2026)
+and exact pinned Rust/Tokio/Mio plus Microsoft source trace. No affirmative
+mapping issuer is implemented. The contract requires real identity/evidence,
+finite validity/errors and current invalidation, or explicit unavailable outcomes;
+its accepted/stale/unavailable/late-completion controls preserve original captures
+and ages. The pilot chart/watch value is not that authority. Actual provider and
+native qualification remain open; no Windows probe is authorized.
+
+**Completed portable child — 8 November:** the
+[within-series observed-coherence veto](engine-transport-pilot.md#within-series-observed-coherence-veto--implementation-contract)
+has [final bounded Linux qualification](engine-transport-pilot.md#within-series-coherence--final-joined-qualification).
+It can reject contradictions among genuine retained
+captures under one bounded run's existing declaration and retire future use.
+Compatibility grants no mapping/physical-error guarantee. There is no cross-series
+wall baseline or new tolerance. The raw-order repair, source-linked surrogate,
+real fixtures and per-file gates retain their exact scopes; the surrogate is
+not native Windows evidence. The supplier source contract above is settled;
+actual provider/native implementation remains with acquisition/platform and
+its admission. The next executable routing follows
+[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent),
+which selects the independent inert NTS request formatter. All production
+supplier and execution holds remain.
+
 **6 November source continuation:** the [first controlled measurement checkpoint](engine-transport-pilot.md#first-controlled-measurement-source-checkpoint--6-november-2026)
 implements generic software wall-read brackets, complete header/identity/context
 retention and conditional nominal arithmetic. GNU tests and Windows cross-builds
@@ -2655,9 +2688,12 @@ API adoption or full W11-W01 completion is claimed.
 Continue that bounded source contract when the owner reaches S2.1/P2, using this
 card and W11-W01's existing cases rather than repeating a general API survey.
 [Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-selects the ordinary observation-to-Core chain: finish Q1's conditional-quality
-qualification, then prepare the actual capability/capture/mapping suppliers in
-the existing receiving card. Under OD-10 §14.1, all formal work remains deferred
+selects the ordinary observation-to-Core chain: Q1's conditional-quality,
+persistent session and report-owned reference checkpoints are qualified within
+their recorded Linux scopes. Now prepare the actual capability/capture/mapping
+suppliers in the existing receiving card. Core already computes exact
+self-minus-anchor phase/reference differences, so another engine pairwise API
+is not a prerequisite. Under OD-10 §14.1, all formal work remains deferred
 until after the first released V1; it is not a prerequisite for this source
 contract. The selected Linux Core
 checkpoint, leap implementation/proof scope, complete MSIX, optional enhanced
@@ -4411,6 +4447,74 @@ Markdown files resolve; `check_skills.py` passes all 66 skills; scoped
 for this documentation-only change.
 
 <a id="433-winget-distribution-before-v1--7-november-2026"></a>
+
+**Cloud source-integration handoff — 8 November 2026.** Start from the exact
+published baseline named in the coordinator's publication message. This is the
+bounded W11-W05/platform/security S3.1 adapter-to-worker lifecycle child, primarily
+CHECK-27 with reached CHECK-1/17/21/24/25/26 obligations. It prepares source
+integration; it establishes no product-service, installed or native readiness.
+Reuse `windows-platform` and the existing fixed-role service fixture, keeping one
+serialized lifecycle/status/Stop owner and separate engine/broker processes.
+
+**Writable scope:** `tools/windows-service-fixture/src/host.rs`, `host_tests.rs`,
+`error.rs` and `error_tests.rs`; `src/native.rs` only for necessary worker wiring
+through the existing adapter, preserving its callback, status-token and FFI
+custody. If the reviewed worker contract exposes a concrete lifecycle API gap,
+record that gap before changing only `crates/windows-platform/src/service.rs`
+and `crates/windows-platform/tests/service.rs`. Record the finite contract and
+results in this existing subsection. Core/engine algorithms, shared manifests,
+lockfiles, dependency/features, policies, verifier scripts and qualification
+bindings remain coordinator-owned. Do not add another dispatcher, runtime,
+supervisor, privileged command surface or service identity.
+
+Before implementation, name the real worker, its startup inputs, readiness
+producer/acknowledgement, actual-completion owner, Stop admission cutoff and
+failure cleanup. Running requires acknowledged worker readiness and successful SCM status
+publication. Stop accepted by the lifecycle owner closes new work admission;
+late results cannot reopen it. Cancellation, timeout and Drop alone prove no actual
+completion, release no job capacity and authorize no clean Stopped result.
+Retain first failure, separate cleanup failures and the existing explicit failed
+terminal outcome after reporting/deadline failure; never retry a terminal status
+context that may have been released.
+
+The current `ready()` rejects every outstanding work permit. Freeze whether
+startup work actually returns before active work admission, or whether a
+long-running worker started before Running needs a reviewed lifecycle API
+refinement. A readiness acknowledgement must never call `complete()` for a job
+that is still running. The laboratory host currently uses sequential completed
+token-capture and active control-loop permits. It supplies neither a production
+engine worker nor a broker worker; do not fabricate either or convert laboratory
+budgets into shipping defaults. An unavailable worker/provider remains an
+explicit source-integration limit.
+
+Use current `AGENTS.md`, `TOOLING.md`, the service/contract/security skills and
+configured verification entrypoints. First admit the cloud's exact pinned tools,
+vendor and source; local installation pointers, ignored historical receipts and
+MSVC SDK inventories may be absent. Recreate admitted prerequisites through the
+existing workflow or report the affected check unavailable, without ambient Cargo
+fallbacks, floating versions or weaker admission. Run fresh applicable
+platform/fixture graph, format, compiler/Clippy, ordinary/optimized tests,
+doctests and rustdoc lanes. Use deterministic worker barriers for healthy
+readiness, Stop before/during startup, status failure, repeated Stop, pending
+actual work, late completion and failed cleanup. Host injections establish their
+portable/source scope only.
+
+The coordinator owns current roster/source bindings, independent review,
+registration of changed hosting owners and their required >=90% executable-line
+coverage/>=95% viable mutation gates. The existing service analysis role covers
+only `service.rs`, `scm.rs` and `privilege_observation.rs`; its result cannot
+qualify changed fixture hosting code. Preserve complete inventories, generation
+gaps, original failures and actual raw results. Deliver the bounded reviewed
+source change and honest remaining gates; do not manufacture a whole-service
+qualification pass.
+
+Final identities/accounts/SIDs, full privilege admission, supported provisioning,
+actual SCM/effective-token/resource/recovery observations, broker clock ownership
+and complete MSIX/Store qualification remain with their existing owners. Retain
+the Windows/native execution hold, separate fuzz hold, optional-storage pause,
+UI holds and post-V1 formal deferral. This assignment authorizes no service
+registration/start, clock effect, signing, installation, package publication or
+external-agent contact.
 
 ### 4.36 WinGet distribution before V1 — 7 November 2026
 

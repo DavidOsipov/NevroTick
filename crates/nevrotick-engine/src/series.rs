@@ -140,6 +140,13 @@ impl SeriesConfig {
         self.profile = Some(profile);
         self
     }
+
+    /// Borrow-free copy of the original one-run declaration for its session owner.
+    /// This supplies no mapping authority or model spanning separate executions.
+    #[must_use]
+    pub(super) const fn experimental_profile(&self) -> Option<ExperimentalProfile> {
+        self.profile
+    }
 }
 
 impl fmt::Debug for SeriesConfig {

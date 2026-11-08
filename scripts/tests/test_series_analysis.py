@@ -46,6 +46,35 @@ def literal_execution(names):
 
 
 class SeriesAnalysisControls(unittest.TestCase):
+    def checkpoint_sources_fixture(self):
+        """Bind copied parser inputs locally without admitting a current product role."""
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        policy = copy.deepcopy(policy_fixture())
+        pins = {}
+        for name in ("crates/nevrotick-engine/tests/private/series.rs", MODULE.SERIES_PROCESS_SOURCE):
+            data = (ROOT / name).read_bytes()
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+            pins[name] = hashlib.sha256(data).hexdigest()
+            policy["inputs_sha256"][name] = pins[name]
+        policy["candidate_sha256"] = digest({"synthetic_checkpoint_sources": pins})
+        return root, policy
+
+    def historical_series_product(self):
+        """Use the exact retained N3/Q1 ordinary source, not a later dirty tree."""
+        data = MODULE.COMMON.read_analysis_bytes(MODULE.QUALITY_ORDINARY_RECEIPT, maximum=512 * 1024)
+        self.assertEqual(hashlib.sha256(data).hexdigest(), MODULE.QUALITY_ORDINARY_SHA256)
+        receipt = json.loads(data)
+        self.assertEqual(receipt["candidate_sha256"], policy_fixture()["candidate_sha256"])
+        # The native snapshot also retains the historical role's protected helpers.
+        source = MODULE.QUALITY_ORDINARY_RECEIPT.parent.parent / "qualification-v1/work/source"
+        identity = receipt["source_sha256"]
+        self.assertEqual({name: MODULE.PRODUCT.sha256(source / name) for name in identity}, identity)
+        return source, identity
+
     def test_literal_inventory_and_legacy_defaults_remain_distinct(self):
         self.assertEqual(len(ORDINARY_NAMES), 113)
         self.assertEqual(len(DOCTEST_NAMES), 50)
@@ -184,13 +213,13 @@ class SeriesAnalysisControls(unittest.TestCase):
 
     def test_mutation_order_preserves_selected_owners_and_coverage(self):
         """Synthetic routing only; no Cargo or product execution is represented."""
-        policy = policy_fixture()
         bindings = {
             "library": {"count": 1, "sha256": "1" * 64},
             "series": {"count": 1, "sha256": "2" * 64}}
-        _, identity = MODULE.PRODUCT.admit_product(ROOT)
+        historical, identity = self.historical_series_product()
+        policy = MODULE.read_json(historical / MODULE.SERIES_POLICY)
         observed, finished = [], []
-        fake = SimpleNamespace(product_identity=identity, source=ROOT,
+        fake = SimpleNamespace(product_identity=identity, source=historical,
                                work=Path("/unused/not-created"), tools={},
                                finish=lambda: finished.append(True))
         for subject in ("all", "library", "series"):
@@ -199,6 +228,7 @@ class SeriesAnalysisControls(unittest.TestCase):
             def capture(_scope, selected, _policy, _work, _tools, _run, _report, lane):
                 observed.append((subject, lane, list(selected)))
             with (patch.object(MODULE, "read_series_policy", return_value=policy),
+                  patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)),
                   patch.object(MODULE, "series_inventory_bindings", return_value=bindings),
                   patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=5 * 1024**3 + 1)),
                   patch.object(MODULE.COMMON, "Session", return_value=fake),
@@ -258,7 +288,8 @@ class SeriesAnalysisControls(unittest.TestCase):
                 MODULE.validate_series_caught_causes(out, {"outcomes": rows})
 
     def test_checkpoint_map_binds_static_product_facts_and_direct_assertions(self):
-        mapping = MODULE.series_checkpoint_assertion_sites(ROOT, policy_fixture())
+        root, policy = self.checkpoint_sources_fixture()
+        mapping = MODULE.series_checkpoint_assertion_sites(root, policy)
         final = "series::tests::final_checkpoint_reads_current_control_without_rewriting_three_completions"
         direct = "series::tests::current_checkpoint_observes_new_controls_before_expired_deadline"
         self.assertEqual(set(mapping["tests"]), {final, direct})
@@ -267,15 +298,25 @@ class SeriesAnalysisControls(unittest.TestCase):
         self.assertIn("final series summary ignored its serialized current control", {site["marker"] for site in facts})
         self.assertFalse(any("short native response" in site["marker"] or "acknowledged" in site["marker"] for site in facts))
         self.assertTrue(all(site["kind"] == "panic_assertion" for site in mapping["tests"][direct]))
+        process = (root / MODULE.SERIES_PROCESS_SOURCE).read_text()
+        offset = process.rfind("assert!(", 0, process.index('"N3 exact child semantic failure assertion"'))
+        self.assertGreaterEqual(offset, 0)
         self.assertEqual(mapping["bridge"], {
-            "source": "crates/nevrotick-engine/tests/private/series_process.rs", "line": 429, "column": 9,
+            "source": MODULE.SERIES_PROCESS_SOURCE,
+            "line": process.count("\n", 0, offset) + 1,
+            "column": offset - process.rfind("\n", 0, offset),
             "marker": "N3 exact child semantic failure assertion"})
         self.assertEqual(len(mapping["tests"][direct]), 4)
         self.assertIn("fresh checkpoint control rejected its first generation change",
                       {site["marker"] for site in mapping["tests"][direct]})
-        policy = policy_fixture(); policy["inputs_sha256"][MODULE.SERIES_PROCESS_SOURCE] = "a" * 64
+        wrong_pin = copy.deepcopy(policy)
+        wrong_pin["inputs_sha256"][MODULE.SERIES_PROCESS_SOURCE] = "a" * 64
         with self.assertRaisesRegex(MODULE.Incomplete, "admitted bytes"):
-            MODULE.series_checkpoint_assertion_sites(ROOT, policy)
+            MODULE.series_checkpoint_assertion_sites(root, wrong_pin)
+        changed = root / MODULE.SERIES_PROCESS_SOURCE
+        changed.write_bytes(changed.read_bytes() + b"\n// changed copied source\n")
+        with self.assertRaisesRegex(MODULE.Incomplete, "admitted bytes"):
+            MODULE.series_checkpoint_assertion_sites(root, policy)
 
     @staticmethod
     def checkpoint_failure(test, site, *, fact=None):
@@ -288,22 +329,29 @@ class SeriesAnalysisControls(unittest.TestCase):
                 + "\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s\n")
 
     def test_checkpoint_caught_requires_source_fact_bridge_or_direct_assertion(self):
-        mapping = MODULE.series_checkpoint_assertion_sites(ROOT, policy_fixture())
+        root, policy = self.checkpoint_sources_fixture()
+        mapping = MODULE.series_checkpoint_assertion_sites(root, policy)
         final = "series::tests::final_checkpoint_reads_current_control_without_rewriting_three_completions"
         direct = "series::tests::current_checkpoint_observes_new_controls_before_expired_deadline"
         fact = "final series summary ignored its serialized current control"
         healthy = self.checkpoint_failure(final, mapping["bridge"], fact=fact)
         causes = MODULE.series_checkpoint_caught_causes(healthy, mapping)
         self.assertEqual(len(causes), 1)
-        self.assertEqual((causes[0]["owner"], causes[0]["line"]), ("final_checkpoint_case", 1981))
+        source = (root / "crates/nevrotick-engine/tests/private/series.rs").read_text()
+        offset = source.rfind("checkpoint_fact(", 0, source.index('"' + fact + '"'))
+        self.assertGreaterEqual(offset, 0)
+        self.assertEqual((causes[0]["owner"], causes[0]["line"]),
+                         ("final_checkpoint_case", source.count("\n", 0, offset) + 1))
         for site in mapping["tests"][direct]:
             self.assertEqual(len(MODULE.series_checkpoint_caught_causes(self.checkpoint_failure(direct, site), mapping)), 1)
         for bad in [healthy.replace(fact, "checkpoint worker panicked"),
                     healthy.replace("N3_SEMANTIC_EVIDENCE independent fact: " + fact + "\n", ""),
-                    healthy.replace(":429:9:", ":423:9:"),
+                    healthy.replace(":" + str(mapping["bridge"]["line"]) + ":" + str(mapping["bridge"]["column"]) + ":",
+                                    ":" + str(mapping["bridge"]["line"] + 1) + ":" + str(mapping["bridge"]["column"]) + ":"),
                     healthy.replace("N3 exact child semantic failure assertion", "N3 series owner noncompletion assertion"),
                     healthy.replace("' (7) panicked", "-foreign' (7) panicked"),
-                    healthy.replace("series_process.rs:429", "foreign.rs:429"),
+                    healthy.replace("series_process.rs:" + str(mapping["bridge"]["line"]),
+                                    "foreign.rs:" + str(mapping["bridge"]["line"])),
                     healthy[:healthy.rindex("\n\nfailures:")],
                     healthy[:healthy.rindex("test result:")],
                     healthy.replace("0 passed; 1 failed", "1 passed; 1 failed"),
@@ -320,7 +368,8 @@ class SeriesAnalysisControls(unittest.TestCase):
             MODULE.series_checkpoint_caught_causes("test " + final + " ... FAILED\n", mapping)
 
     def test_checkpoint_harness_failure_refuses_even_beside_a_genuine_primary(self):
-        mapping = MODULE.series_checkpoint_assertion_sites(ROOT, policy_fixture())
+        root, policy = self.checkpoint_sources_fixture()
+        mapping = MODULE.series_checkpoint_assertion_sites(root, policy)
         direct = "series::tests::current_checkpoint_observes_new_controls_before_expired_deadline"
         text = self.checkpoint_failure(direct, mapping["tests"][direct][-1])
         with tempfile.TemporaryDirectory() as td:
@@ -477,11 +526,12 @@ class SeriesAnalysisControls(unittest.TestCase):
         """Copy actual admitted bytes; exercise custody without running a mutant."""
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            _, current = MODULE.PRODUCT.admit_product(ROOT)
+            historical, current = self.historical_series_product()
             proof_name = "tasks/engine-analysis-equivalences.md"
             for name in sorted(set(current) | set(MODULE.SERIES_CURRENT_BOUND_INPUTS) | {MODULE.SERIES_POLICY, proof_name}):
                 target = root / name; target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(ROOT / name, target)
+                source = historical if name in current else ROOT
+                shutil.copyfile(source / name, target)
             _, identity = MODULE.PRODUCT.admit_product(root)
             entries = self.current_fallback_entries(digest(identity))
             policy = policy_fixture(); policy["candidate_sha256"] = digest(identity)

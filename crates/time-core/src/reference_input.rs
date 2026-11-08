@@ -16,7 +16,11 @@
 mod rate_delivery;
 
 pub use rate_delivery::{
-    FixtureRateClock, FixtureRateClockContext, FixtureRateCursorStatus, FixtureRateDeliveryError,
+    FixturePhaseBaseline, FixturePhaseBlocked, FixturePhaseConstructionRejected, FixturePhaseError,
+    FixturePhaseNow, FixturePhasePlanOwner, FixturePhaseProfile, FixturePhaseProposal,
+    FixturePhaseProvenance, FixturePhaseReferenceAdmission, FixturePhaseResidualPermission,
+    FixturePhaseRetirement, FixturePhaseRetirementReason, FixturePhaseSettlement, FixtureRateClock,
+    FixtureRateClockContext, FixtureRateCursorStatus, FixtureRateDeliveryError,
     FixtureRateSettlement, FixtureRateSettlementCompletion, FixtureRateSettlementCursor,
     FixtureRateSettlementKind, FixtureRateSpan, FixtureSettledRateInterval,
 };

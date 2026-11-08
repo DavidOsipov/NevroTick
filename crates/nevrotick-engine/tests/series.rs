@@ -15,7 +15,7 @@ use std::time::{Duration, Instant, SystemTime};
 use nevrotick_engine::{
     ControlHandle, ControlSchedule, ExperimentalProfile, MeasurementRefusal, Rejection,
     RelativeMeasurementRefusal, SeriesConfig, SeriesEnd, SeriesNotStartedCause, SeriesReport,
-    SlotReport, Status, TransportFacts, execute_series, prepare_series,
+    SlotReport, SoftwareClock, Status, TransportFacts, execute_series, prepare_series,
 };
 use time_domain::{RationalSign, RoundedRationalSeconds};
 
@@ -32,6 +32,92 @@ const QUIET_WAIT: Duration = Duration::from_millis(100);
 const PEER_SECOND: u64 = 4_000_000_000;
 /// Exact Q32 scaling, independent of the production converters.
 const Q32: i128 = 4_294_967_296;
+
+/// Check actual fixture captures independently; failures are raw setup/model errors.
+/// No product measurement, coherence calculation or profile getter supplies this oracle.
+/// # Errors
+/// Reject inadmissible observed chronology, date or declared wall-progress gaps.
+fn fixture_capture_model(captures: &[SoftwareClock], require_dates: bool) -> Check<()> {
+    let Some(baseline) = captures.first() else {
+        return Err(io::Error::other("actual fixture retained no capture baseline").into());
+    };
+    let baseline_wall = ntp_nanoseconds(baseline.utc())?;
+    let mut previous_after = None;
+    for (index, capture) in captures.iter().enumerate() {
+        let before = capture.monotonic();
+        let after = capture.monotonic_after();
+        if before > after || previous_after.is_some_and(|previous| previous > before) {
+            return Err(
+                io::Error::other("actual fixture capture chronology is inadmissible").into(),
+            );
+        }
+        previous_after = Some(after);
+        let wall = ntp_nanoseconds(capture.utc())?;
+        if require_dates && !(3_000_000_000_000_000_000..=4_500_000_000_999_999_999).contains(&wall)
+        {
+            return Err(
+                io::Error::other("actual fixture wall date is outside its declaration").into(),
+            );
+        }
+        if index == 0 {
+            continue;
+        }
+        let lower = i128::try_from(
+            before
+                .checked_duration_since(baseline.monotonic_after())
+                .ok_or_else(|| io::Error::other("actual fixture lower interval is unavailable"))?
+                .as_nanos(),
+        )?;
+        let upper = i128::try_from(
+            after
+                .checked_duration_since(baseline.monotonic())
+                .ok_or_else(|| io::Error::other("actual fixture upper interval is unavailable"))?
+                .as_nanos(),
+        )?;
+        let delta = wall
+            .checked_sub(baseline_wall)
+            .ok_or_else(|| io::Error::other("actual fixture wall interval is unrepresentable"))?;
+        let gap = if delta < lower {
+            lower.checked_sub(delta)
+        } else if delta > upper {
+            delta.checked_sub(upper)
+        } else {
+            Some(0)
+        }
+        .ok_or_else(|| io::Error::other("actual fixture model gap is unrepresentable"))?;
+        if gap > 30_000_000_000 {
+            return Err(io::Error::other(
+                "actual fixture exceeded its declared wall-progress allowance",
+            )
+            .into());
+        }
+    }
+    Ok(())
+}
+
+/// Establish the fixture's actual local model before an expected product success.
+/// Dates and tolerance are the fixed declarations used by this fixture's builder.
+/// # Errors
+/// Preserve actual capture/date/model prerequisites as raw fixture failures.
+fn fixture_measurement_prerequisites(facts: &TransportFacts, require_dates: bool) -> Check<()> {
+    let captures = [facts.send_before(), facts.send_after(), facts.read_return()];
+    if facts.processing() < captures[2].monotonic_after() {
+        return Err(
+            io::Error::other("actual fixture processing precedes receive completion").into(),
+        );
+    }
+    fixture_capture_model(&captures, require_dates)
+}
+
+/// Assert an independently valid pure product result without formatting its cause.
+/// # Errors
+/// Keep the original typed result for the existing propagation path.
+/// # Panics
+/// Reject an unexpected refusal using only the code-owned static fact.
+fn product_ok<T, E>(result: Result<T, E>, fact: &'static str) -> Result<T, E> {
+    assert!(result.is_ok(), "{fact}");
+    result
+}
 
 /// Return a fixed failed fact without formatting request packets or tokens.
 ///
@@ -280,9 +366,9 @@ fn run_bound_case(
 /// # Errors
 /// Reject an unexpected unstarted position.
 fn slot(report: &SeriesReport, index: usize) -> Check<&SlotReport> {
-    report.attempts()[index]
-        .report()
-        .ok_or_else(|| io::Error::other("expected terminal series attempt").into())
+    let record = report.attempts()[index].report();
+    check(record.is_some(), "expected terminal series attempt")?;
+    record.ok_or_else(|| io::Error::other("expected terminal series attempt").into())
 }
 
 /// Require actual completed transport facts; numerical acceptance is separate.
@@ -290,9 +376,9 @@ fn slot(report: &SeriesReport, index: usize) -> Check<&SlotReport> {
 /// # Errors
 /// Reject an unexpected terminal record without correlated header facts.
 fn facts(report: &SeriesReport, index: usize) -> Check<&TransportFacts> {
-    slot(report, index)?
-        .facts()
-        .ok_or_else(|| io::Error::other("expected retained transport facts").into())
+    let retained = slot(report, index)?.facts();
+    check(retained.is_some(), "expected retained transport facts")?;
+    retained.ok_or_else(|| io::Error::other("expected retained transport facts").into())
 }
 
 /// Check report indexing, zero admission, cleanup and the actually observed sockets.
@@ -301,6 +387,20 @@ fn facts(report: &SeriesReport, index: usize) -> Check<&TransportFacts> {
 /// # Errors
 /// Preserve rebind/setup failure or a mismatched endpoint/terminal report contract.
 fn common_report_checks(report: &SeriesReport, observed: &PeerObservations) -> Check<()> {
+    if report.primary_failure().is_some()
+        || report.stop_cleanup_failure().is_some()
+        || report.invalidate_cleanup_failure().is_some()
+        || report.attempts().iter().any(|attempt| {
+            attempt
+                .report()
+                .is_some_and(|record| record.status() == Status::Io || record.io_cause().is_some())
+        })
+    {
+        return Err(io::Error::other(
+            "actual series fixture retained a driver or native I/O cause",
+        )
+        .into());
+    }
     check(
         report.peer_endpoint() == observed.endpoint,
         "series changed its peer",
@@ -398,13 +498,31 @@ fn check_exact_measurement(fact: &TransportFacts, index: u8) -> Check<i128> {
         fact.peer_transmit_bits() == transmit,
         "retained peer transmit bits changed",
     )?;
+    let header = fact.header();
+    let header_receive = u64::from(header.receive_timestamp().seconds());
+    let header_transmit = u64::from(header.transmit_timestamp().seconds());
+    check(
+        header.version() == 4
+            && header.mode() == 4
+            && header.leap_indicator() == 0
+            && header.stratum() == 2
+            && header.receive_timestamp().bits() != 0
+            && header.transmit_timestamp().bits() != 0
+            && (3_000_000_000..=4_500_000_000).contains(&header_receive)
+            && (3_000_000_000..=4_500_000_000).contains(&header_transmit),
+        "series retained header changed fixed ordinary peer facts",
+    )?;
+    fixture_measurement_prerequisites(fact, true)?;
     let first = ntp_nanoseconds(fact.send_before().utc())?;
     let fourth = ntp_nanoseconds(fact.read_return().utc())?;
     let phase =
         (i128::from(receive) + i128::from(transmit)) * 1_000_000_000 - (first + fourth) * Q32;
     let round_trip =
         (fourth - first) * Q32 - (i128::from(transmit) - i128::from(receive)) * 1_000_000_000;
-    let measurement = fact.measurement()?;
+    let measurement = product_ok(
+        fact.measurement(),
+        "valid original series measurement was refused",
+    )?;
     check(
         measurement.nominal_phase().numerator() == phase
             && measurement.nominal_phase().denominator() == 8_589_934_592,
@@ -498,7 +616,10 @@ fn healthy_report_checks(report: &SeriesReport, observed: &PeerObservations) -> 
                 row.same_exchange(anchor) == (index == anchor_index),
                 "distinct requests shared exchange identity",
             )?;
-            let view = row.relative_to(anchor)?;
+            let view = product_ok(
+                row.relative_to(anchor),
+                "valid same-run relative view was refused",
+            )?;
             let anchor_ticks = expected_reference(report.origin(), anchor)?;
             let row_reference = view.row_reference();
             let anchor_reference = view.anchor_reference();
@@ -664,10 +785,22 @@ fn middle_request_timeout_preserves_earlier_facts_and_starts_final_attempt() -> 
         first.processing() < last.send_before().monotonic(),
         "earlier acquisition was relabelled after a later timeout",
     )?;
-    let age = first.measurement()?.acquisition_age();
-    let view = first.relative_to(last)?;
+    let age = product_ok(
+        first.measurement(),
+        "valid retained series measurement was refused",
+    )?
+    .acquisition_age();
+    let view = product_ok(
+        first.relative_to(last),
+        "valid timeout-neighbor relative view was refused",
+    )?;
     check(
-        view.row().measurement()?.acquisition_age() == age,
+        product_ok(
+            view.row().measurement(),
+            "valid relative-row measurement was refused",
+        )?
+        .acquisition_age()
+            == age,
         "choosing a later anchor refreshed an old acquisition",
     )?;
     Ok(())

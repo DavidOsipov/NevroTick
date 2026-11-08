@@ -7,6 +7,16 @@
 //! native acknowledgement, durable settlement or clock authority. All storage
 //! and receiving work are constant. Histories and observation credit are untouched.
 
+/// Owning finite phase obligations layered on the existing terminal receiver.
+mod phase_plan;
+
+pub use phase_plan::{
+    FixturePhaseBaseline, FixturePhaseBlocked, FixturePhaseConstructionRejected, FixturePhaseError,
+    FixturePhaseNow, FixturePhasePlanOwner, FixturePhaseProfile, FixturePhaseProposal,
+    FixturePhaseProvenance, FixturePhaseReferenceAdmission, FixturePhaseResidualPermission,
+    FixturePhaseRetirement, FixturePhaseRetirementReason, FixturePhaseSettlement,
+};
+
 use std::{fmt, num::NonZeroU64};
 
 use garde::Validate;

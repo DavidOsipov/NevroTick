@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Exact anchoring within one actual experimental transport run.
+//! Exact same-origin midpoint arithmetic and anchoring within one transport run.
 //!
 //! The transport owner retains the real origin and distinct request identities.
 //! This module borrows terminal facts, checks their shared run and conditional
@@ -80,12 +80,12 @@ impl Error for RelativeMeasurementRefusal {
     }
 }
 
-/// Exact nominal midpoint in nanoseconds from its retained experimental run origin.
+/// Exact nominal midpoint in nanoseconds from its retained experimental chart origin.
 ///
 /// The value retains whole nanoseconds and, when its half bit is set, one further
 /// half nanosecond.
 /// Only the private checked midpoint owner constructs this representation. The
-/// containing relative view retains its actual capture and run association;
+/// containing relative or acquisition view retains its actual capture and chart association;
 /// this scalar alone supplies no context-free equality, ordering or provenance.
 ///
 /// A legal consumer can read both exact parts from a checked view:
@@ -427,15 +427,18 @@ fn duration_nanoseconds(duration: Duration) -> Result<u64, RelativeMeasurementRe
     u64::try_from(duration.as_nanos()).map_err(|_| RelativeMeasurementRefusal::ReferenceRange)
 }
 
-/// Place actual selected lower captures in their already matched run chart.
+/// Place actual selected lower captures in their already associated immutable chart.
 ///
+/// The calling owner establishes the actual run or session association; arbitrary
+/// matching labels or lifetimes cannot establish provenance. This helper checks
+/// chronology and exact representation only, never current authority.
 /// Every raw `Instant` triple is accepted for checking. Explicit ordering rejects
 /// pre-origin and reversed values before duration subtraction, including Windows'
 /// small-negative-to-zero interval tolerance. Both checked durations are narrowed
 /// before midpoint construction. No ambient clock is read and no age is renewed.
 /// # Errors
 /// Preserve before-origin, order, range, arithmetic or midpoint-admission refusal.
-fn reference_from_instants(
+pub(super) fn reference_from_instants(
     origin: Instant,
     send: Instant,
     read: Instant,

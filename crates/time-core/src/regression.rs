@@ -72,8 +72,11 @@ pub use chart::{
     FixtureAdaptiveChartView, FixtureAffineChart, FixtureChartBoundIssue,
     FixtureChartBoundOperation, FixtureChartDomain, FixtureChartError, FixtureChartField,
     FixtureChartFrames, FixtureChartIssue, FixtureChartOutcome, FixtureChartProjection,
-    FixtureChartStep, FixtureChartTracking,
+    FixtureChartStep, FixtureChartTracking, FixturePhaseNumericError, FixturePhaseNumericField,
+    FixturePhaseNumericIssue, FixturePhaseNumericStep,
 };
+
+pub(crate) use chart::{PhaseDebt, PhaseRates};
 
 pub use history::{FixtureHistory, FixtureHistoryReport, HistoryError};
 

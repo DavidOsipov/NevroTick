@@ -1,0 +1,582 @@
+{
+  "schema_version": 1,
+  "package": "nevrotick-engine",
+  "coverage_minimum_line_percent": 90,
+  "mutation_minimum_viable_killed_percent": 95,
+  "maximum_mutants": 512,
+  "maximum_listed_per_file": 512,
+  "maximum_listed_total": 512,
+  "coverage_wall_seconds": 300,
+  "enumeration_wall_seconds": 240,
+  "contracts_wall_seconds": 300,
+  "mutation_wall_seconds": 1200,
+  "mutation_build_seconds": 90,
+  "mutation_test_seconds": 60,
+  "jobs": 6,
+  "test_threads": 1,
+  "coverage_test_threads": 1,
+  "mutation_jobs": 8,
+  "mutation_process_limit": 512,
+  "mutation_message_format": "json",
+  "minimum_free_bytes": 5368709120,
+  "tool_admission_profile": "full",
+  "admission_status": "admitted-acquisition-session-source",
+  "critical_files": [
+    "crates/nevrotick-engine/src/session.rs",
+    "crates/nevrotick-engine/src/series.rs",
+    "crates/nevrotick-engine/src/measurement.rs"
+  ],
+  "mutation_equivalences": [
+    {
+      "id": "ENGINE-SESSION-SERIES-UNAVAILABLE-ADMITTED-ZERO",
+      "candidate_sha256": "6d4cc1560b7974129d75462cdb7b46411f97784bf8442ac64b88896468a5acb4",
+      "source_sha256": "3444eeb5e950c77ac738bbb268ef43e2dd68b6984adac1454e2d8754b174da7c",
+      "mutant": {
+        "name": "crates/nevrotick-engine/src/series.rs:476:9: replace SeriesReport::admitted_sample_count -> usize with 0",
+        "package": "nevrotick-engine",
+        "file": "crates/nevrotick-engine/src/series.rs",
+        "function": {
+          "function_name": "SeriesReport::admitted_sample_count",
+          "return_type": "-> usize",
+          "span": {
+            "start": {
+              "line": 473,
+              "column": 5
+            },
+            "end": {
+              "line": 479,
+              "column": 6
+            }
+          }
+        },
+        "span": {
+          "start": {
+            "line": 476,
+            "column": 9
+          },
+          "end": {
+            "line": 478,
+            "column": 10
+          }
+        },
+        "replacement": "0",
+        "genre": "FnValue"
+      },
+      "requirement": "CHECK-15/CHECK-23/CHECK-25/CHECK-26: exact source-bound mutation accounting and preserved bounded engine observation.",
+      "rationale": "The complete valid private admission domain has only Unavailable; the exhaustive borrowed getter and literal zero have identical returns and no effects. No kill credit.",
+      "proof": {
+        "path": "tasks/engine-analysis-equivalences.md",
+        "sha256": "45e00cca6753f1954c9c7dbc305cf263bbd36f388b498a1c7aa9ecfafa336434",
+        "section": "ENGINE-SESSION-SERIES-UNAVAILABLE-ADMITTED-ZERO",
+        "reviewer": "series_checkpoint_design_review; series_checkpoint_verification",
+        "verdict": "independently-justified-equivalent"
+      }
+    },
+    {
+      "id": "ENGINE-SESSION-SERIES-UNAVAILABLE-ELIGIBLE-ZERO",
+      "candidate_sha256": "6d4cc1560b7974129d75462cdb7b46411f97784bf8442ac64b88896468a5acb4",
+      "source_sha256": "3444eeb5e950c77ac738bbb268ef43e2dd68b6984adac1454e2d8754b174da7c",
+      "mutant": {
+        "name": "crates/nevrotick-engine/src/series.rs:483:9: replace SeriesReport::eligible_sample_count -> usize with 0",
+        "package": "nevrotick-engine",
+        "file": "crates/nevrotick-engine/src/series.rs",
+        "function": {
+          "function_name": "SeriesReport::eligible_sample_count",
+          "return_type": "-> usize",
+          "span": {
+            "start": {
+              "line": 480,
+              "column": 5
+            },
+            "end": {
+              "line": 486,
+              "column": 6
+            }
+          }
+        },
+        "span": {
+          "start": {
+            "line": 483,
+            "column": 9
+          },
+          "end": {
+            "line": 485,
+            "column": 10
+          }
+        },
+        "replacement": "0",
+        "genre": "FnValue"
+      },
+      "requirement": "CHECK-15/CHECK-23/CHECK-25/CHECK-26: exact source-bound mutation accounting and preserved bounded engine observation.",
+      "rationale": "The same sole Unavailable admission state makes this separate exhaustive borrowed getter zero for every valid report, with identical failure and effect behavior. No kill credit.",
+      "proof": {
+        "path": "tasks/engine-analysis-equivalences.md",
+        "sha256": "45e00cca6753f1954c9c7dbc305cf263bbd36f388b498a1c7aa9ecfafa336434",
+        "section": "ENGINE-SESSION-SERIES-UNAVAILABLE-ELIGIBLE-ZERO",
+        "reviewer": "series_checkpoint_design_review; series_checkpoint_verification",
+        "verdict": "independently-justified-equivalent"
+      }
+    },
+    {
+      "id": "ENGINE-SESSION-COHERENCE-LOWER-EQUALITY",
+      "candidate_sha256": "6d4cc1560b7974129d75462cdb7b46411f97784bf8442ac64b88896468a5acb4",
+      "source_sha256": "0b97439bbb6b6e83db74b046a7140b0030e3c97b7aa69b67423f60c454889ff7",
+      "mutant": {
+        "name": "crates/nevrotick-engine/src/measurement.rs:558:29: replace < with <= in coherence_residual",
+        "package": "nevrotick-engine",
+        "file": "crates/nevrotick-engine/src/measurement.rs",
+        "function": {
+          "function_name": "coherence_residual",
+          "return_type": "-> Result<u64, MeasurementRefusal>",
+          "span": {
+            "start": {
+              "line": 524,
+              "column": 1
+            },
+            "end": {
+              "line": 570,
+              "column": 2
+            }
+          }
+        },
+        "span": {
+          "start": {
+            "line": 558,
+            "column": 29
+          },
+          "end": {
+            "line": 558,
+            "column": 30
+          }
+        },
+        "replacement": "<=",
+        "genre": "BinaryOperator"
+      },
+      "requirement": "CHECK-15/CHECK-23/CHECK-25/CHECK-26: exact source-bound mutation accounting and preserved bounded engine observation.",
+      "rationale": "Only wall_delta == lower differs; checked capture ordering gives lower <= upper, and checked subtraction of equal values yields the same zero gap and u64 result. Earlier refusals are unchanged. No kill credit.",
+      "proof": {
+        "path": "tasks/engine-analysis-equivalences.md",
+        "sha256": "45e00cca6753f1954c9c7dbc305cf263bbd36f388b498a1c7aa9ecfafa336434",
+        "section": "ENGINE-SESSION-COHERENCE-LOWER-EQUALITY",
+        "reviewer": "series_checkpoint_design_review; series_checkpoint_verification",
+        "verdict": "independently-justified-equivalent"
+      }
+    },
+    {
+      "id": "ENGINE-SESSION-COHERENCE-UPPER-EQUALITY",
+      "candidate_sha256": "6d4cc1560b7974129d75462cdb7b46411f97784bf8442ac64b88896468a5acb4",
+      "source_sha256": "0b97439bbb6b6e83db74b046a7140b0030e3c97b7aa69b67423f60c454889ff7",
+      "mutant": {
+        "name": "crates/nevrotick-engine/src/measurement.rs:562:26: replace > with >= in coherence_residual",
+        "package": "nevrotick-engine",
+        "file": "crates/nevrotick-engine/src/measurement.rs",
+        "function": {
+          "function_name": "coherence_residual",
+          "return_type": "-> Result<u64, MeasurementRefusal>",
+          "span": {
+            "start": {
+              "line": 524,
+              "column": 1
+            },
+            "end": {
+              "line": 570,
+              "column": 2
+            }
+          }
+        },
+        "span": {
+          "start": {
+            "line": 562,
+            "column": 26
+          },
+          "end": {
+            "line": 562,
+            "column": 27
+          }
+        },
+        "replacement": ">=",
+        "genre": "BinaryOperator"
+      },
+      "requirement": "CHECK-15/CHECK-23/CHECK-25/CHECK-26: exact source-bound mutation accounting and preserved bounded engine observation.",
+      "rationale": "Only wall_delta == upper differs; checked capture ordering gives lower <= upper, and the replacement computes the same zero gap without overflow or changed effects. No kill credit.",
+      "proof": {
+        "path": "tasks/engine-analysis-equivalences.md",
+        "sha256": "45e00cca6753f1954c9c7dbc305cf263bbd36f388b498a1c7aa9ecfafa336434",
+        "section": "ENGINE-SESSION-COHERENCE-UPPER-EQUALITY",
+        "reviewer": "series_checkpoint_design_review; series_checkpoint_verification",
+        "verdict": "independently-justified-equivalent"
+      }
+    },
+    {
+      "id": "ENGINE-SESSION-NOMINAL-ZERO-SIGN",
+      "candidate_sha256": "6d4cc1560b7974129d75462cdb7b46411f97784bf8442ac64b88896468a5acb4",
+      "source_sha256": "0b97439bbb6b6e83db74b046a7140b0030e3c97b7aa69b67423f60c454889ff7",
+      "mutant": {
+        "name": "crates/nevrotick-engine/src/measurement.rs:799:29: replace < with <= in nominal_seconds",
+        "package": "nevrotick-engine",
+        "file": "crates/nevrotick-engine/src/measurement.rs",
+        "function": {
+          "function_name": "nominal_seconds",
+          "return_type": "-> Result<RoundedRationalSeconds, MeasurementRefusal>",
+          "span": {
+            "start": {
+              "line": 786,
+              "column": 1
+            },
+            "end": {
+              "line": 807,
+              "column": 2
+            }
+          }
+        },
+        "span": {
+          "start": {
+            "line": 799,
+            "column": 29
+          },
+          "end": {
+            "line": 799,
+            "column": 30
+          }
+        },
+        "replacement": "<=",
+        "genre": "BinaryOperator"
+      },
+      "requirement": "CHECK-15/CHECK-23/CHECK-25/CHECK-26: exact source-bound mutation accounting and preserved bounded engine observation.",
+      "rationale": "Only the zero numerator changes a temporary Copy sign. Zero denominator has the same refusal; otherwise the bound constructor canonicalizes zero to Positive before identical rounding and publication. No kill credit.",
+      "proof": {
+        "path": "tasks/engine-analysis-equivalences.md",
+        "sha256": "45e00cca6753f1954c9c7dbc305cf263bbd36f388b498a1c7aa9ecfafa336434",
+        "section": "ENGINE-SESSION-NOMINAL-ZERO-SIGN",
+        "reviewer": "series_checkpoint_design_review; series_checkpoint_verification",
+        "verdict": "independently-justified-equivalent"
+      }
+    }
+  ],
+  "candidate_sha256": "6d4cc1560b7974129d75462cdb7b46411f97784bf8442ac64b88896468a5acb4",
+  "source_file_count": 424,
+  "ordinary_evidence": {
+    "receipt": "/home/david_osipov/.local/share/nevrotick/acquisition-session-20261108-v1/coherence-ordinary-v10/verification.json",
+    "sha256": "fc6bf6fddef8cb47e168c62aa6a4f1a2e41853c8759c26c74e7536491629d0ec",
+    "status": "passed-session-all",
+    "recipes_sha256": {
+      "/home/david_osipov/.local/share/nevrotick/acquisition-session-20261108-v1/coherence_ordinary_v3.py": "7240b69ce85cc92e27eba2e26ecfa6b33323e0974a3a7e1904f2c205cd1e8c6b",
+      "/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/relative_bridge_ordinary.py": "937709d9bc11054253b2e0cd9ad05357792f81bcb6e1ff88f997ac8f2a8292a9",
+      "/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/conditioned_fit_ordinary_v2.py": "3062bb0bb1869161e273ad4e80b238a4d7ef94661a21ffa4127341832a9356d6",
+      "/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/series_ordinary_v1.py": "d3ab16cc3e08a03f950808cdaeb570dc86ba4aefec4a1c6bf9c0810631e64cc2",
+      "/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/series_ordinary_v3.py": "17574af8bb9e4b41b3f55337531a82e2c0a2a275741f255b3b3cea226002e568",
+      "/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/quality_ordinary_v1.py": "bb903f4bd09b6e59ccc956f4de582eb9b421fa9d49ba926920318fefdda0fc08",
+      "/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/quality_ordinary_v2.py": "717cc1902e7c01194967309375d8a1660910276ba4045e7efbe81fe9af743a1b",
+      "/home/david_osipov/.local/share/nevrotick/acquisition-session-20261108-v1/session_ordinary_v1.py": "3e666c8a81b422d4b8df3a42f387c5be6970de753d18f99838d3430aaa3b7052",
+      "/home/david_osipov/.local/share/nevrotick/acquisition-session-20261108-v1/coherence_ordinary_v1.py": "c18aeb7449021933a7b5170e75168710bd4714e55e9b6c71d5722154f27f1a7e",
+      "/home/david_osipov/.local/share/nevrotick/acquisition-session-20261108-v1/coherence_ordinary_v2.py": "90756105680c4dd0214449c4fdcd2547524f3c3dca57aabde80665cf29177ec5"
+    }
+  },
+  "test_inventory": {
+    "ordinary": [
+      "absent_measurement_refuses_quality_with_actual_valid_neighbor",
+      "actual_quality_limits_refuse_without_rewriting_completion_or_age",
+      "actual_series_quality_retains_signed_intervals_source_and_original_age",
+      "argument_guard_tests::argument_text_preserves_exact_byte_boundaries_and_original_borrows",
+      "argument_guard_tests::argument_text_rejects_unix_nontext_in_both_roles",
+      "argument_guard_tests::decimal_profile_fields_preserve_raw_digit_boundaries",
+      "argument_guard_tests::pair_budget_admits_six_and_preserves_exhausted_failure",
+      "clean_stop_and_real_deadline_each_allow_a_fresh_preparation",
+      "cli_worker_binary_preserves_literal_transport_contracts",
+      "cli_worker_binary_rejects_arguments_and_observes_sink_failures",
+      "execute_rejects_entered_runtime_without_nested_runtime_creation",
+      "invalidation_preserves_first_completion_and_marks_third_not_started",
+      "ipv6_real_requests_retain_distinct_identity_and_one_exact_origin",
+      "measurement::tests::absent_profile_is_a_distinct_transport_only_reason",
+      "measurement::tests::asymmetric_decimal_captures_keep_exact_signed_nominal_values",
+      "measurement::tests::coherence_helper_crossed_brackets_keep_touching_and_separated_neighbors",
+      "measurement::tests::coherence_helper_rejects_each_reversed_bracket",
+      "measurement::tests::decimal_remainders_change_the_exact_nominal_phase",
+      "measurement::tests::declared_coherence_limit_has_an_exact_healthy_neighbor",
+      "measurement::tests::era_zero_and_multiple_candidates_remain_distinct",
+      "measurement::tests::exact_dyadic_results_ignore_the_wire_token",
+      "measurement::tests::fractional_conversion_residuals_reconstruct_nominal_values",
+      "measurement::tests::fresh_owner_age_stamp_preserves_the_actual_arithmetic",
+      "measurement::tests::inert_header_does_not_bypass_the_time_reply_guard",
+      "measurement::tests::negative_raw_rtt_and_half_q32_phase_are_preserved",
+      "measurement::tests::nominal_arithmetic_rejects_each_remainder_boundary_without_partial_result",
+      "measurement::tests::nominal_arithmetic_retains_full_coordinate_domain_without_i64_projection",
+      "measurement::tests::nominal_result_garde_enforces_both_strict_numerator_bounds",
+      "measurement::tests::nominal_seconds_checks_scale_and_retains_the_signed_integer_endpoint",
+      "measurement::tests::nominal_seconds_preserve_corrected_capture_units_and_signed_rtt",
+      "measurement::tests::nonzero_capture_intervals_keep_inside_and_outside_neighbors",
+      "measurement::tests::out_of_scope_local_coordinate_is_not_rebased",
+      "measurement::tests::peer_shift_changes_sign_without_changing_rtt",
+      "measurement::tests::pre_unix_and_post_unix_100_ns_have_literal_residuals",
+      "measurement::tests::pre_unix_nominal_remainders_keep_epoch_and_sign_association",
+      "measurement::tests::profile_bounds_and_maximum_allowance_are_checked",
+      "measurement::tests::refusal_codes_and_display_remain_literal_and_redacted",
+      "measurement::tests::relative_phase_anchoring_precedes_large_absolute_rounding",
+      "measurement::tests::relative_phase_difference_exceeds_i128_without_losing_sign",
+      "measurement::tests::relative_phase_direction_preserves_checked_nominal_ticks",
+      "measurement::tests::reversed_brackets_and_processing_are_not_ages",
+      "measurement::tests::send_after_outside_scope_cannot_hide_between_valid_endpoints",
+      "measurement::tests::series_coherence_all_nine_positions_influence_the_maximum",
+      "measurement::tests::series_coherence_empty_single_and_holes_keep_original_positions",
+      "measurement::tests::series_coherence_fixed_first_baseline_detects_accumulated_drift",
+      "measurement::tests::series_coherence_full_order_validation_precedes_earlier_arithmetic",
+      "measurement::tests::series_coherence_full_u64_residual_keeps_its_next_rejection",
+      "measurement::tests::series_coherence_late_arithmetic_failure_wins_over_an_earlier_gap",
+      "measurement::tests::series_coherence_rejects_each_own_and_sequential_order_violation",
+      "measurement::tests::software_window_retains_each_local_and_peer_extremum",
+      "middle_request_timeout_preserves_earlier_facts_and_starts_final_attempt",
+      "prepare_outside_runtime_owns_and_releases_standard_sockets",
+      "prepare_rejects_entered_runtime_before_native_startup",
+      "processing_guard_tests::commit_processing_accepts_equal_read_and_rejects_its_predecessor",
+      "processing_guard_tests::complete_header_survives_actual_staging_and_terminal_projection",
+      "processing_guard_tests::completed_cleanup_results_preserve_primary_and_each_independent_error",
+      "processing_guard_tests::completed_send_results_preserve_rearm_causes_and_one_way_history",
+      "processing_guard_tests::configuration_enforces_endpoint_and_timeout_boundaries",
+      "processing_guard_tests::control_schedule_preserves_legal_zero_and_maximum_delays",
+      "processing_guard_tests::entropy_admission_checks_each_half_and_exact_request_bytes",
+      "processing_guard_tests::failure_summaries_preserve_fixed_redacted_cause_projections",
+      "processing_guard_tests::literal_header_rejections_preserve_the_actual_pending_neighbor",
+      "processing_guard_tests::local_endpoint_admission_requires_both_loopback_and_nonzero_port",
+      "processing_guard_tests::measurement_refusal_consumes_the_correlated_request_once",
+      "processing_guard_tests::observed_measurement_prerequisites_keep_broad_date_and_model_boundaries",
+      "processing_guard_tests::owned_timers_deliver_immediate_actions_and_cancel_future_actions",
+      "processing_guard_tests::processing_uses_fresh_deadline_and_current_control",
+      "processing_guard_tests::public_execute_relative_view_retains_actual_common_run_and_refusals",
+      "processing_guard_tests::read_classification_keeps_platform_oversize_and_native_errors_distinct",
+      "processing_guard_tests::real_udp_measurement_matches_independent_captured_coordinates",
+      "processing_guard_tests::receive_cap_preserves_sixty_three_and_retires_sixty_four",
+      "processing_guard_tests::selected_read_accounting_survives_retirement_and_typed_oversize",
+      "processing_guard_tests::staged_reply_cannot_cross_socket_owner_or_commit_twice",
+      "processing_guard_tests::terminal_io_causes_and_send_history_remain_distinct",
+      "processing_guard_tests::watch_controls_latch_stop_and_reject_generation_wrap",
+      "quality::tests::computed_policy_boundaries_preserve_strict_and_inclusive_comparisons",
+      "quality::tests::declared_getters_and_constructor_precedence_preserve_original_bits",
+      "quality::tests::dyadic_calculation_borrows_original_facts_and_assumptions",
+      "quality::tests::evaluator_failure_precedence_preserves_original_observation",
+      "quality::tests::finite_input_overflow_is_refused_at_the_first_computed_stage",
+      "quality::tests::generated_garde_dispatch_covers_nested_and_computed_fields",
+      "quality::tests::gradual_underflow_does_not_claim_exact_zero_uncertainty",
+      "quality::tests::mandatory_assumption_admission_preserves_bits_and_rejects_invalid_fields",
+      "quality::tests::negative_local_wall_interval_grows_declared_frequency_dispersion",
+      "quality::tests::negative_server_interval_processing_limit_uses_absolute_magnitude",
+      "quality::tests::original_measurement_refusal_and_redacted_diagnostics_are_preserved",
+      "quality::tests::precision_clamps_have_exact_boundary_and_neighbor_values",
+      "quality::tests::raw_round_trip_is_converted_once_before_cancellation",
+      "quality::tests::raw_scalar_and_interval_helpers_preserve_full_admitted_domains",
+      "quality::tests::refusal_families_keep_bounded_diagnostics_and_typed_sources",
+      "quality::tests::signed_server_interval_and_unsigned_root_words_are_retained",
+      "quality::tests::zero_raw_rtt_uses_combined_precision_floor",
+      "relative::tests::duration_nanoseconds_admits_full_u64_and_rejects_next_tick",
+      "relative::tests::midpoint_bounds_preserve_half_nanoseconds_and_integer_endpoints",
+      "relative::tests::midpoint_publication_enforces_raw_association_and_garde_rule",
+      "relative::tests::reference_instants_check_order_before_duration_conversion",
+      "relative::tests::relative_diagnostics_preserve_fixed_text_and_original_causes",
+      "relative::tests::relative_phase_raw_i128_endpoints_keep_u128_magnitude",
+      "relative::tests::relative_reference_differences_keep_direction_and_half_ticks",
+      "relative::tests::relative_seconds_scale_requires_nonzero_with_healthy_neighbors",
+      "relative::tests::shared_origin_distinguishes_equal_values_from_run_identity",
+      "series::tests::actual_publication_rechecks_control_and_deadline_after_staging",
+      "series::tests::all_series_debug_outputs_are_exact_fixed_redactions",
+      "series::tests::checkpoint_capture_prerequisites_keep_boundary_and_invalid_observations_distinct",
+      "series::tests::checkpoint_failure_taxonomy_keeps_native_context_uncredited",
+      "series::tests::current_checkpoint_observes_new_controls_before_expired_deadline",
+      "series::tests::deadlines_and_controls_do_not_reset_the_series_origin",
+      "series::tests::entropy_failure_and_entered_runtime_precede_all_acquisition_work",
+      "series::tests::final_checkpoint_reads_current_control_without_rewriting_three_completions",
+      "series::tests::genuine_terminal_report_admits_only_the_three_position_domain",
+      "series::tests::partial_report_preserves_primary_and_both_cleanup_causes",
+      "series::tests::post_commit_control_preserves_header_and_measurement_refusal",
+      "series::tests::raw_config_and_tokens_have_mandatory_bounded_admission",
+      "series::tests::receiver_rejects_duplicate_foreign_and_reused_identity_atomically",
+      "series::tests::selected_native_datagram_after_retirement_is_charged_without_publication",
+      "series::tests::series_process::semantic_evidence_accepts_only_exact_named_admitted_sites",
+      "series::tests::setup_and_registration_failures_preserve_actual_prior_completion",
+      "series::tests::single_slot_driver_enforces_receive_cap_with_valid_boundary_neighbor",
+      "series::tests::single_slot_driver_enforces_send_cap_with_valid_boundary_neighbor",
+      "series::tests::synchronous_counter_boundaries_do_not_panic_and_preserve_exact_effects",
+      "series::tests::transfer_control_and_irreversible_retirement_are_distinct",
+      "series_process::semantic_evidence_accepts_only_exact_named_admitted_sites",
+      "session::tests::completion_classification_covers_all_end_and_failure_combinations",
+      "session::tests::entered_runtime_refusals_preserve_prepare_rollback_and_retire_consumed_execution",
+      "session::tests::equal_origin_foreign_owners_produce_distinct_genuine_report_memberships",
+      "session::tests::forgotten_plan_keeps_busy_until_idempotent_terminal_retirement",
+      "session::tests::private_busy_and_retired_states_reject_before_driver_preparation",
+      "session::tests::private_drop_contradictions_retire_without_entering_execution",
+      "session::tests::private_plan_state_chart_and_missing_inner_contradictions_retire",
+      "session::tests::reference_refusal_diagnostics_and_exact_typed_sources_are_fixed",
+      "session::tests::series_coherence_debug_contains_only_fixed_scalar_causes",
+      "session::tests::session_debug_and_driver_error_sources_are_fixed_and_typed",
+      "session::tests::synthetic_capture_coherence_preserves_nonzero_limit_and_checked_failure_precedence",
+      "session::tests::synthetic_execution_unwind_retires_and_releases_prepared_resources",
+      "session::tests::synthetic_started_guard_drop_retires_without_reopening_capacity",
+      "session::tests::unused_plan_drop_releases_capacity_without_replacing_the_chart",
+      "session_reference_refusals_preserve_original_causes_and_checked_positions",
+      "stale_execution_retires_owner_without_refreshing_retained_facts",
+      "stop_preserves_first_completion_and_marks_third_not_started",
+      "three_real_requests_retain_distinct_identity_and_one_exact_origin",
+      "total_deadline_preserves_first_completion_and_prevents_third_send",
+      "two_requested_series_share_chart_keep_distinct_runs_and_old_handles_isolated",
+      "unavailable_measurements_still_consume_once_after_rejected_neighbors"
+    ],
+    "doctests": [
+      "crates/nevrotick-engine/src/lib.rs - Config::new (line 199)",
+      "crates/nevrotick-engine/src/lib.rs - ControlSchedule::new (line 1588)",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 216)",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 222) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 229) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 237) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 242) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 104) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 117) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 126) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 131) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 94)",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 655)",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 663) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 668) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 676) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 681) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 725)",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 733) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 738) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 746) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 751) - compile fail",
+      "crates/nevrotick-engine/src/quality.rs - quality::ConditionalQuality (line 749) - compile fail",
+      "crates/nevrotick-engine/src/quality.rs - quality::ConditionalQuality (line 755) - compile fail",
+      "crates/nevrotick-engine/src/quality.rs - quality::ConditionalQuality (line 760) - compile fail",
+      "crates/nevrotick-engine/src/quality.rs - quality::DeclaredFrequencyInterval (line 255) - compile fail",
+      "crates/nevrotick-engine/src/quality.rs - quality::DeclaredQualityAssumptions (line 389)",
+      "crates/nevrotick-engine/src/quality.rs - quality::DeclaredQualityAssumptions (line 401) - compile fail",
+      "crates/nevrotick-engine/src/quality.rs - quality::DeclaredQualityAssumptions (line 405) - compile fail",
+      "crates/nevrotick-engine/src/quality.rs - quality::DeclaredQualityLimits (line 305) - compile fail",
+      "crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 101) - compile fail",
+      "crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 106) - compile fail",
+      "crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 111) - compile fail",
+      "crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 116) - compile fail",
+      "crates/nevrotick-engine/src/relative.rs - relative::ExperimentalReferenceNs (line 92)",
+      "crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 157)",
+      "crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 169) - compile fail",
+      "crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 185) - compile fail",
+      "crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 192) - compile fail",
+      "crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 197) - compile fail",
+      "crates/nevrotick-engine/src/relative.rs - relative::ExperimentalRelativeMeasurement (line 204) - compile fail",
+      "crates/nevrotick-engine/src/series.rs - series::PreparedSeries (line 216) - compile fail",
+      "crates/nevrotick-engine/src/series.rs - series::PreparedSeries (line 223) - compile fail",
+      "crates/nevrotick-engine/src/series.rs - series::SeriesAttempt (line 343) - compile fail",
+      "crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 81) - compile fail",
+      "crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 87) - compile fail",
+      "crates/nevrotick-engine/src/series.rs - series::SeriesConfig (line 91) - compile fail",
+      "crates/nevrotick-engine/src/series.rs - series::SeriesConfig::new (line 111)",
+      "crates/nevrotick-engine/src/series.rs - series::SeriesReport (line 407) - compile fail",
+      "crates/nevrotick-engine/src/series.rs - series::execute_series (line 1078) - compile",
+      "crates/nevrotick-engine/src/session.rs - session::AcquisitionReference (line 600)",
+      "crates/nevrotick-engine/src/session.rs - session::AcquisitionReference (line 609) - compile fail",
+      "crates/nevrotick-engine/src/session.rs - session::AcquisitionReference (line 619) - compile fail",
+      "crates/nevrotick-engine/src/session.rs - session::AcquisitionReference (line 626) - compile fail",
+      "crates/nevrotick-engine/src/session.rs - session::AcquisitionReport (line 438) - compile fail",
+      "crates/nevrotick-engine/src/session.rs - session::AcquisitionReport (line 444) - compile fail",
+      "crates/nevrotick-engine/src/session.rs - session::AcquisitionReport::coherence (line 470) - compile fail",
+      "crates/nevrotick-engine/src/session.rs - session::AcquisitionSession (line 112) - compile fail",
+      "crates/nevrotick-engine/src/session.rs - session::AcquisitionSession (line 118) - compile fail",
+      "crates/nevrotick-engine/src/session.rs - session::AcquisitionSession (line 124) - compile fail",
+      "crates/nevrotick-engine/src/session.rs - session::AcquisitionSession (line 94)",
+      "crates/nevrotick-engine/src/session.rs - session::PreparedAcquisition (line 205) - compile fail",
+      "crates/nevrotick-engine/src/session.rs - session::PreparedAcquisition (line 213) - compile fail",
+      "crates/nevrotick-engine/src/session.rs - session::PreparedAcquisition (line 222) - compile fail"
+    ],
+    "sha256": {
+      "ordinary": "47f7924a9bd5c8eb79e33a207afb6cf8a7114bd1dd03a357eb69db555ce72120",
+      "doctests": "c0f44db972f2395731f503278e53cdd6bb5981beecb28efde85db11d2f9ef2ac",
+      "baseline": "eadd3c3ad17cf72670d8f3e084fd12860cfa685ba670a1e0793a23a4ddbcad73"
+    }
+  },
+  "inputs_sha256": {
+    "Cargo.toml": "ed63de18dbcaa3dcb8dc0ac3142bb4c868373a6d21171e6181b3f5d754b5d84e",
+    "Cargo.lock": "fa9103e455e401c39f349c04b10a2d7058408d25210763321f56b7dad9c1afba",
+    "crates/nevrotick-engine/Cargo.toml": "a0b65ce3d53d4c37348ddc5546a2b8d9f5f266cbf2cd342d29990efa3adfe725",
+    "crates/nevrotick-engine/src/lib.rs": "1c71ecae2e4499fd47e39fa128446d3d3348b73f70c9a7d9ab713feb02275bd0",
+    "crates/nevrotick-engine/src/bin/nevrotick-observe.rs": "4e64e8912a8a50261b33e9753818c30cf247ee3bee99ba254cda446b2b22cd3d",
+    "crates/nevrotick-engine/src/measurement.rs": "0b97439bbb6b6e83db74b046a7140b0030e3c97b7aa69b67423f60c454889ff7",
+    "crates/nevrotick-engine/src/relative.rs": "83bcebc5c1c433c0f3e59d7a942aae85c0aafd71f22634e019fbe28ccf8dafff",
+    "crates/nevrotick-engine/tests/runtime_boundary.rs": "98b315838a63d267863be97a9e297af1b0da67031b8237a78e1935ac5721ae9e",
+    "crates/nevrotick-engine/tests/prepare_release.rs": "f089024cd0bea7c84bbba360c55cf78683978983966267573c1ae6b9f198991d",
+    "crates/nevrotick-engine/tests/prepare_entered.rs": "84a38779f863697a58f36e7ebf8d4acf80d0bab653fe2ae0ac488fa2ece96666",
+    "crates/nevrotick-engine/tests/execute_entered.rs": "a8fea0f70cf2bc147900e2e639a3252c0c7dea0b9a10f2d3f25794273f9ba97a",
+    "crates/nevrotick-engine/tests/private/processing_guards.rs": "a3d6b01bfc048dc3ab4ecf79bbfeb9ad5ba28ff51c7eac9a143db4536a667877",
+    "crates/nevrotick-engine/tests/private/argument_guards.rs": "ef528d3eb92be421c70db7331381f7ab8b5985987292bd46a3bba243f812fff5",
+    "crates/nevrotick-engine/tests/private/measurement.rs": "92ff829d76f7642893bcc316bf15ef0b45a3b08f184c7d8a5345a4b8f2669b1b",
+    "crates/nevrotick-engine/tests/private/relative.rs": "f10132c44efb361a200c421a9e226db712353aa0ab9ef4c529e3e883aa6133e5",
+    "scripts/portable-analysis.py": "ee99bb49b77156a640ea53a6ede258d8f522b7ba0f8a962f480f277e148380ef",
+    "scripts/analysis-runtime.py": "0de6d23b2e52fea78ee81f038d216c962ef87511df53443984bb6e6aacb79dc9",
+    "scripts/check-analysis.py": "debe3b31cb93bd8b1b588e777a8c138a9dd6fbadc9152e253f320e1f73cb77e8",
+    "scripts/prepare-product.py": "1003f48480c5bc397e395fccd06cd290b093ffc1487efa27a434cf864bed81fd",
+    "policy/analysis-tools.json": "4da7796c6dd41a1a09dea9a7b1670480106fe1d1f260150385d78c8faa474234",
+    "policy/verification-manifest.toml": "3bd126b9102a19cf15821bbaa86b58e2af6c8b323b43e876f32b2162d91ba1b7",
+    "scripts/verify-engine-analysis.py": "518a4a24c10ced6249469987ace7800e935b2a81e68922a1d686ba08422a13ca",
+    "scripts/tests/test_session_analysis.py": "65a0131125fe0a508e66d9e466564374ff72752ea182c4e90763c7c55a090930",
+    "rust-toolchain.toml": "2b58ea5089dfdfacf78ae2a5f52dfce89a583339ccc2c7cc0b40e96230dc9ccc",
+    ".cargo/mutants.toml": "af0e3b1d7774464fb6d3b8566b61472a853ce2e6b0ba26a1c4fbe82f676b5f5b",
+    "scripts/analysis-controls.py": "f39eb0123e279331e38b48addc5bdc61d29dcbb3e26e8c18ec99512b0affe1a0",
+    "crates/nevrotick-engine/src/session.rs": "4c073e3a7e28efbfd69c9d33299ead853f3d4741ab4cc1e4ef4747220dec4961",
+    "crates/nevrotick-engine/src/series.rs": "3444eeb5e950c77ac738bbb268ef43e2dd68b6984adac1454e2d8754b174da7c",
+    "crates/nevrotick-engine/tests/private/session.rs": "45042036750aab75617204e1b8d5271526ab9e061e72047cc447a99701d8e3b9",
+    "crates/nevrotick-engine/tests/session.rs": "d6c8156568088d9584334f225cdbd22e01639c0f14c7364310fb2dfd74a57540",
+    "crates/nevrotick-engine/tests/private/series_process.rs": "0055f9042057a4edb64cfff5cc8d60c236dd59f83e9c89a31234d0ce1a8863d5",
+    "crates/nevrotick-engine/tests/private/series.rs": "f9a55dfaed62ea35f8c1ce3d05d974b994f3d51ca43fa304ee200cc9c6b5a3c8",
+    "crates/nevrotick-engine/tests/series.rs": "17e6b06854aa4891e69c55066ba6475e82974cda267ebb520020ec77ba73947d",
+    "crates/nevrotick-engine/src/quality/tests.rs": "4432851aecb9ab5be77ed599d2f20a0888a7ceb68b0055f66311a4b943938916",
+    "crates/nevrotick-engine/tests/quality.rs": "889b3f12d946030b555f8255b79657f20f1c4f8e5b3168d8a25bbaae4f89a567",
+    "policy/measurement-coherence-windows-control.rs": "89b86782c32c01453139906d1e5a27305032d0c04bca480eb1a9025657504584",
+    "tasks/engine-analysis-equivalences.md": "45e00cca6753f1954c9c7dbc305cf263bbd36f388b498a1c7aa9ecfafa336434"
+  },
+  "mutation_inventories": {
+    "session": {
+      "count": 43,
+      "sha256": "ac52818f4135691dcb87dd6a1837bc1a83a145dfa9beb691bfe3d33cb0705ce2"
+    },
+    "series": {
+      "count": 147,
+      "sha256": "bcab8db0d4de96bba3b37251b492e9bd1d4de3049aaab94a63640c358c299347"
+    },
+    "measurement": {
+      "count": 113,
+      "sha256": "6538fb0906b9ba177abf0e5b2e0733e3a8837b8e92dfb2e490c34f25a68fe3f8"
+    }
+  },
+  "mutation_witnesses": {
+    "maximum_cases": 6,
+    "case_wall_seconds": 120,
+    "total_wall_seconds": 360,
+    "jobs": 1,
+    "test_threads": 1,
+    "candidate_sha256": "6d4cc1560b7974129d75462cdb7b46411f97784bf8442ac64b88896468a5acb4",
+    "ordinary_receipt_sha256": "fc6bf6fddef8cb47e168c62aa6a4f1a2e41853c8759c26c74e7536491629d0ec",
+    "cases": {
+      "crates/nevrotick-engine/src/series.rs:171:25: replace == with != in token_issue": {
+        "descriptor_sha256": "057546eea791b5f3617793730eab05355a6d867621f1f864a60d6d5801966a16",
+        "test": "series::tests::raw_config_and_tokens_have_mandatory_bounded_admission"
+      },
+      "crates/nevrotick-engine/src/series.rs:171:51: replace == with != in token_issue": {
+        "descriptor_sha256": "88218aa722db50cb2cb49acf67c7f418161f438be0a91e6bd92dd59e7431c8b6",
+        "test": "series::tests::raw_config_and_tokens_have_mandatory_bounded_admission"
+      },
+      "crates/nevrotick-engine/src/series.rs:171:77: replace == with != in token_issue": {
+        "descriptor_sha256": "490d828a33a2e9be16c8bff75cb19fd802c3731c6cbc75bc85df6d783741e074",
+        "test": "series::tests::raw_config_and_tokens_have_mandatory_bounded_admission"
+      },
+      "crates/nevrotick-engine/src/series.rs:743:12: replace >= with < in refresh_slot": {
+        "descriptor_sha256": "c1d19da02aaf6b5616706445ade365a706739078249d8fea28501211b87a432b",
+        "test": "series::tests::actual_publication_rechecks_control_and_deadline_after_staging"
+      },
+      "crates/nevrotick-engine/src/series.rs:821:27: replace += with -= in publish_series_reply": {
+        "descriptor_sha256": "415b333e2c60d8faf007e76474451d5128c39007624c2defbfa41e38ac9befc8",
+        "test": "series::tests::synchronous_counter_boundaries_do_not_panic_and_preserve_exact_effects"
+      },
+      "crates/nevrotick-engine/src/series.rs:843:27: replace += with -= in handle_series_read": {
+        "descriptor_sha256": "f52338e9e5f8bdb1327d5515541705f58e2836d42aeddca6057178c939bf7966",
+        "test": "series::tests::synchronous_counter_boundaries_do_not_panic_and_preserve_exact_effects"
+      }
+    }
+  },
+  "scope": "Current fixed session/series/measurement host cohort bound to actual ordinary-v10: 424 product inputs, 143 ordinary and optimized tests, 64 doctests and 207 combined identities. The retained ordinary receipt binds 30 helpers, 26 observed repository imports and 10 recipe provenance entries; current Session closure binds 37 protected inputs. Keep 126 explicit semantic owners and no credit for the two raw fixture-oracle controls. Preserve all 303 complete source-identical reviewed descriptors and five exact reviewed observed equivalence exclusions with zero kill credit, with fresh campaign enumeration equality required. Six exact supplementary witnesses require complete main native phases, catalog/diff integrity and clean independently observed healthy/101 pairs; rejected main logs retain zero credit. A standalone preflight grants no full baseline or mutation score. Preserve per-file 90% coverage and 95% viable mutation, all custody and existing bounds. Retained incomplete execution receipts and later reader adjudication remain separate; this binding claims no fresh whole-303 execution pass; no Windows-native, production mapping or release qualification is claimed."
+}

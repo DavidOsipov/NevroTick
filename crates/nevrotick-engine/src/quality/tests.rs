@@ -23,6 +23,16 @@ const LOCAL_NS: u64 = 125_000_000;
 /// One sixteenth second in exact Q32 ticks.
 const SERVER_TICKS: i128 = 268_435_456;
 
+/// Assert a reviewed pure product success without formatting its error payload.
+/// # Errors
+/// Preserve the original typed result for the existing propagation path.
+/// # Panics
+/// Reject only the independently known-valid product result named by the static fact.
+fn product_ok<T, E>(result: Result<T, E>, fact: &'static str) -> Result<T, E> {
+    assert!(result.is_ok(), "{fact}");
+    result
+}
+
 /// Build original checked nominal facts on the common 100 ns wall-clock grid.
 ///
 /// The host supplies only a monotonic fixture anchor, never a date or accuracy
@@ -99,12 +109,14 @@ fn facts_with_wall(
     bytes[32..40].copy_from_slice(&receive_bits.to_be_bytes());
     bytes[40..48].copy_from_slice(&transmit_bits.to_be_bytes());
     let header = decode_fixed_header(&bytes).map_err(|_| "header fixture")?;
-    let profile = Some(ExperimentalProfile::new(
-        BASE - 1,
-        BASE + 20,
-        maximum_residual_ns,
+    let profile = Some(product_ok(
+        ExperimentalProfile::new(BASE - 1, BASE + 20, maximum_residual_ns),
+        "known valid quality fixture profile was refused",
     )?);
-    let measurement = measure(profile, before, before, read, processing, header)?;
+    let measurement = product_ok(
+        measure(profile, before, before, read, processing, header),
+        "known valid synthetic quality measurement was refused",
+    )?;
     let peer: SocketAddr = "127.0.0.1:8123".parse()?;
     let local: SocketAddr = "127.0.0.1:18123".parse()?;
     Ok(TransportFacts {
@@ -157,7 +169,10 @@ fn dyadic_calculation_borrows_original_facts_and_assumptions() -> Result<(), Box
     ] {
         let facts = facts(LOCAL_NS, remote, -10, [8192, 256])?;
         let declared = assumptions([1.0, 1.0, 1.0])?;
-        let result = evaluate_conditional_quality(&facts, &declared)?;
+        let result = product_ok(
+            evaluate_conditional_quality(&facts, &declared),
+            "known valid conditional quality evaluation was refused",
+        )?;
         assert!(ptr::eq(
             ptr::from_ref(result.original_facts()),
             ptr::from_ref(&facts)
@@ -215,7 +230,11 @@ fn dyadic_calculation_borrows_original_facts_and_assumptions() -> Result<(), Box
         exact(result.advertised_distance_seconds(), 17.0 / 256.0);
         exact(result.delay_minus_dispersion_seconds(), 29.0 / 512.0);
         assert_eq!(
-            result.original_facts().measurement()?.acquisition_age(),
+            product_ok(
+                result.original_facts().measurement(),
+                "known successful retained quality measurement was lost"
+            )?
+            .acquisition_age(),
             Duration::from_millis(7)
         );
         assert_eq!(format!("{result:?}"), "ConditionalQuality { .. }");
@@ -232,13 +251,19 @@ fn dyadic_calculation_borrows_original_facts_and_assumptions() -> Result<(), Box
 fn signed_server_interval_and_unsigned_root_words_are_retained() -> Result<(), Box<dyn Error>> {
     let negative = facts(LOCAL_NS, -SERVER_TICKS, -10, [0, 0])?;
     let declared = assumptions([1.0, 1.0, 1.0])?;
-    let result = evaluate_conditional_quality(&negative, &declared)?;
+    let result = product_ok(
+        evaluate_conditional_quality(&negative, &declared),
+        "known valid conditional quality evaluation was refused",
+    )?;
     exact(result.server_interval().seconds(), -1.0 / 16.0);
     exact(result.raw_round_trip().seconds(), 3.0 / 16.0);
     exact(result.peer_distance_seconds(), 51.0 / 512.0);
     let high = facts(LOCAL_NS, SERVER_TICKS, -10, [0x8000_0000, 0xffff_0000])?;
     let broad = assumptions([1_000_000.0; 3])?;
-    let high_result = evaluate_conditional_quality(&high, &broad)?;
+    let high_result = product_ok(
+        evaluate_conditional_quality(&high, &broad),
+        "known valid conditional quality evaluation was refused",
+    )?;
     exact(high_result.advertised_root_delay_seconds(), 32_768.0);
     exact(high_result.advertised_root_dispersion_seconds(), 65_535.0);
     exact(high_result.advertised_distance_seconds(), 81_919.0);
@@ -258,7 +283,11 @@ fn signed_server_interval_and_unsigned_root_words_are_retained() -> Result<(), B
 fn negative_server_interval_processing_limit_uses_absolute_magnitude() -> Result<(), Box<dyn Error>>
 {
     let facts = facts(LOCAL_NS, -SERVER_TICKS, -10, [0, 0])?;
-    let original_age = facts.measurement()?.acquisition_age();
+    let original_age = product_ok(
+        facts.measurement(),
+        "known successful quality fixture measurement was lost",
+    )?
+    .acquisition_age();
     let original_header = facts.header();
     let processing = 1.0_f64 / 16.0;
     let below = assumptions([1.0, 1.0, processing.next_down()])?;
@@ -266,7 +295,14 @@ fn negative_server_interval_processing_limit_uses_absolute_magnitude() -> Result
         evaluate_conditional_quality(&facts, &below),
         Err(QualityRefusal::ServerProcessing)
     ));
-    assert_eq!(facts.measurement()?.acquisition_age(), original_age);
+    assert_eq!(
+        product_ok(
+            facts.measurement(),
+            "known successful quality fixture measurement was lost"
+        )?
+        .acquisition_age(),
+        original_age
+    );
     for maximum in [processing, processing.next_up()] {
         let declared = assumptions([1.0, 1.0, maximum])?;
         let result = evaluate_conditional_quality(&facts, &declared);
@@ -281,7 +317,11 @@ fn negative_server_interval_processing_limit_uses_absolute_magnitude() -> Result
         ));
         assert_eq!(result.original_facts().header(), original_header);
         assert_eq!(
-            result.original_facts().measurement()?.acquisition_age(),
+            product_ok(
+                result.original_facts().measurement(),
+                "known successful retained quality measurement was lost"
+            )?
+            .acquisition_age(),
             original_age
         );
     }
@@ -305,21 +345,29 @@ fn negative_local_wall_interval_grows_declared_frequency_dispersion() -> Result<
         [0, 0],
     )?;
     let declared = assumptions([1.0, 1.0, 1.0])?;
-    let result = evaluate_conditional_quality(&facts, &declared)?;
+    let result = product_ok(
+        evaluate_conditional_quality(&facts, &declared),
+        "known valid conditional quality evaluation was refused",
+    )?;
     exact(result.local_interval().seconds(), -1.0 / 8.0);
     exact(result.raw_round_trip().seconds(), -3.0 / 16.0);
     exact(result.adjusted_delay_seconds(), 3.0 / 16.0);
     exact(result.peer_dispersion_seconds(), 3.0 / 512.0);
     exact(result.peer_distance_seconds(), 51.0 / 512.0);
     assert_eq!(
-        result
-            .original_facts()
-            .measurement()?
-            .observed_residual_ns(),
+        product_ok(
+            result.original_facts().measurement(),
+            "known successful retained quality measurement was lost",
+        )?
+        .observed_residual_ns(),
         250_000_000
     );
     assert_eq!(
-        result.original_facts().measurement()?.acquisition_age(),
+        product_ok(
+            result.original_facts().measurement(),
+            "known successful retained quality measurement was lost"
+        )?
+        .acquisition_age(),
         Duration::from_millis(7)
     );
     Ok(())
@@ -334,7 +382,10 @@ fn negative_local_wall_interval_grows_declared_frequency_dispersion() -> Result<
 fn zero_raw_rtt_uses_combined_precision_floor() -> Result<(), Box<dyn Error>> {
     let facts = facts(LOCAL_NS, 2 * SERVER_TICKS, -10, [0, 0])?;
     let declared = assumptions([1.0, 1.0, 1.0])?;
-    let result = evaluate_conditional_quality(&facts, &declared)?;
+    let result = product_ok(
+        evaluate_conditional_quality(&facts, &declared),
+        "known valid conditional quality evaluation was refused",
+    )?;
     assert_eq!(result.raw_round_trip().numerator_magnitude(), 0);
     exact(result.raw_round_trip().seconds(), 0.0);
     exact(result.combined_precision_seconds(), 1.0 / 512.0);
@@ -365,7 +416,11 @@ fn precision_clamps_have_exact_boundary_and_neighbor_values() -> Result<(), Box<
     ] {
         let facts = facts(LOCAL_NS, SERVER_TICKS, precision, [0, 0])?;
         exact(
-            evaluate_conditional_quality(&facts, &declared)?.peer_precision_seconds(),
+            product_ok(
+                evaluate_conditional_quality(&facts, &declared),
+                "known valid conditional quality evaluation was refused",
+            )?
+            .peer_precision_seconds(),
             expected,
         );
     }
@@ -390,7 +445,10 @@ fn computed_policy_boundaries_preserve_strict_and_inclusive_comparisons()
         ));
     }
     let declared = assumptions([advertised.next_up(), 1.0, 1.0])?;
-    let _accepted = evaluate_conditional_quality(&facts, &declared)?;
+    let _accepted = product_ok(
+        evaluate_conditional_quality(&facts, &declared),
+        "known valid conditional quality evaluation was refused",
+    )?;
     let adjusted = 29.0_f64 / 512.0;
     let below = assumptions([1.0, adjusted.next_down(), 1.0])?;
     assert!(matches!(
@@ -598,7 +656,10 @@ fn gradual_underflow_does_not_claim_exact_zero_uncertainty() -> Result<(), Box<d
             DeclaredFrequencyInterval::new(0.0, f64::from_bits(upper_bits))?,
             limits,
         )?;
-        let result = evaluate_conditional_quality(&facts, &declared)?;
+        let result = product_ok(
+            evaluate_conditional_quality(&facts, &declared),
+            "known valid conditional quality evaluation was refused",
+        )?;
         assert_eq!(result.frequency_half_width().to_bits(), expected_half_bits);
         assert_eq!(
             result
@@ -626,7 +687,10 @@ fn original_measurement_refusal_and_redacted_diagnostics_are_preserved()
 -> Result<(), Box<dyn Error>> {
     let mut facts = facts(LOCAL_NS, SERVER_TICKS, -10, [8192, 256])?;
     let declared = assumptions([1.0; 3])?;
-    let _healthy = evaluate_conditional_quality(&facts, &declared)?;
+    let _healthy = product_ok(
+        evaluate_conditional_quality(&facts, &declared),
+        "known valid conditional quality evaluation was refused",
+    )?;
     facts.measurement = Err(MeasurementRefusal::MappingDiscontinuity);
     let result = evaluate_conditional_quality(&facts, &declared);
     assert!(matches!(
@@ -671,7 +735,10 @@ fn original_measurement_refusal_and_redacted_diagnostics_are_preserved()
 fn raw_round_trip_is_converted_once_before_cancellation() -> Result<(), Box<dyn Error>> {
     let facts = facts(100_000_000, 429_496_730, -10, [0, 0])?;
     let declared = assumptions([1.0; 3])?;
-    let result = evaluate_conditional_quality(&facts, &declared)?;
+    let result = product_ok(
+        evaluate_conditional_quality(&facts, &declared),
+        "known valid conditional quality evaluation was refused",
+    )?;
     assert_eq!(result.raw_round_trip().sign(), RationalSign::Negative);
     assert_eq!(result.raw_round_trip().numerator_magnitude(), 400_000_000);
     assert_eq!(
@@ -762,7 +829,10 @@ fn generated_garde_dispatch_covers_nested_and_computed_fields() -> Result<(), Bo
     let mut bad_limits = declared;
     bad_limits.limits.delay = f64::NAN;
     assert!(bad_limits.validate().is_err());
-    let intervals = exact_intervals(&facts)?;
+    let intervals = product_ok(
+        exact_intervals(&facts),
+        "known valid quality interval extraction was refused",
+    )?;
     for (value, positive, nonnegative, signed) in [
         (1.0, true, true, true),
         (f64::from_bits(1), true, true, true),
@@ -774,7 +844,10 @@ fn generated_garde_dispatch_covers_nested_and_computed_fields() -> Result<(), Bo
         (f64::NEG_INFINITY, false, false, false),
     ] {
         for index in 0..13 {
-            let mut candidate = compute_quality(&facts, &declared, &intervals)?;
+            let mut candidate = product_ok(
+                compute_quality(&facts, &declared, &intervals),
+                "known valid quality computation was refused",
+            )?;
             assert!(candidate.validate().is_ok());
             let (field, expected) = match index {
                 0 => (&mut candidate.peer_precision, positive),
@@ -811,7 +884,11 @@ fn generated_garde_dispatch_covers_nested_and_computed_fields() -> Result<(), Bo
 #[test]
 fn evaluator_failure_precedence_preserves_original_observation() -> Result<(), Box<dyn Error>> {
     let facts = facts(LOCAL_NS, SERVER_TICKS, -10, [8192, 256])?;
-    let original_age = facts.measurement()?.acquisition_age();
+    let original_age = product_ok(
+        facts.measurement(),
+        "known successful quality fixture measurement was lost",
+    )?
+    .acquisition_age();
     let overflow = DeclaredQualityAssumptions::new(
         1.0 / 1024.0,
         0.0,
@@ -844,8 +921,18 @@ fn evaluator_failure_precedence_preserves_original_observation() -> Result<(), B
         );
     }
     let legal = assumptions([1.0; 3])?;
-    let _accepted = evaluate_conditional_quality(&facts, &legal)?;
-    assert_eq!(facts.measurement()?.acquisition_age(), original_age);
+    let _accepted = product_ok(
+        evaluate_conditional_quality(&facts, &legal),
+        "known valid conditional quality evaluation was refused",
+    )?;
+    assert_eq!(
+        product_ok(
+            facts.measurement(),
+            "known successful quality fixture measurement was lost"
+        )?
+        .acquisition_age(),
+        original_age
+    );
     let mut unavailable = facts;
     unavailable.profile = None;
     unavailable.measurement = measure(

@@ -2626,6 +2626,216 @@ Their contracts remain with those owners.
    and age; no fabricated zero, divisor `1.0`, first-sample readiness or
    fixture-derived production threshold.
 
+### Next independent source child: complete inert NTS request formatting
+
+After the current within-series coherence checkpoint, step 4 has an independent
+protocol-only child in the existing `ntp-wire` owner under REQ-8/BND-2 and the pure
+portions of CHECK-6/9/17/21/25/26. Prepare a complete two-stage request formatter;
+an AAD-prefix helper alone does not complete the parent protected-request writer.
+No new dependency, runtime, provider selection, clock mapping or source admission
+is needed for this inert source scope. Review this contract independently before
+authoring; retain the current qualification candidate until its exit.
+
+Use a checked private plan that owns the destination's mutable borrow. Preparation
+preflights the complete declared layout before writing its prefix, and exposes
+AAD only through an immutable borrow. Consuming finalization checks supplied
+nonce/ciphertext lengths before writing the tail and returns the complete
+immutable packet view. Every failure preserves that stage's input buffer; an
+abandoned plan publishes no completed request. Neither view grants authentication
+or association authority. Keep formatting errors and Debug output free of UID,
+cookie, nonce, ciphertext and packet payloads.
+
+The narrow layout is header, UID, one opaque Cookie, explicitly requested clear
+zero placeholders, then Authenticator. Admit an NTPv4 client-mode (mode 3) header
+inside the checked request plan: `RawHeader` alone supplies no such guarantee.
+Preserve exact UID/cookie bytes. This exact-copy layout requires a word-aligned
+UID body of at least 32 octets; refuse unsupported shapes rather than changing
+the UID. CSPRNG provenance remains the engine's obligation. Every placeholder
+body has exactly the opaque Cookie body's length and contains only zero octets;
+derive that length from the admitted Cookie instead of accepting an independent
+placeholder length. AAD ends
+before the Authenticator header. Check explicit nonce/ciphertext lengths and their
+word padding, plus trailing Additional Padding for the declared negotiated
+nonce allowance. That allowance's truthful algorithm binding remains with the
+admitted AEAD owner; supply no default. Placeholder count is bounded by the
+existing packet/field budgets, rather than promoting RFC guidance into a new
+protocol maximum. [RFC 8915 §§5.3–5.7](https://www.rfc-editor.org/rfc/rfc8915.html#section-5.3)
+
+Use existing `FrameLimits` (48–4096 bytes, at most 64 fields), checked length/count
+arithmetic and complete output-capacity admission. The current no-legacy-MAC
+reader requires non-final fields of at least 16 bytes and a final field of at
+least 28, all word-aligned. Thus this exact-copy writer supports aligned Cookie
+bodies of at least 12 bytes; return a typed unsupported-shape refusal otherwise.
+Do not pad/change opaque cookies or narrow existing KE parsing, which accepts
+empty opaque cookies. [RFC 7822 §3](https://www.rfc-editor.org/rfc/rfc7822.html#section-3)
+
+Observable exit: independently specified complete byte vectors and AAD boundaries;
+version/mode and aligned UID-length refusals with valid neighboring requests;
+zero/multiple placeholders whose bodies have the exact Cookie length and zero
+contents; padding, count, length and capacity neighbors; unchanged
+sentinel destinations on preparation/finalization refusal; and external borrow,
+privacy and consume-once controls. Separately compare valid output with existing
+framing/authenticator readers. Reader acceptance proves framing only. Actual AEAD,
+truthful shape binding, cookie reservation/reuse, send ownership, receiver
+authentication and association publication remain necessary to complete step 4
+and S2.2. The provider/graph/trust and complete-operation gates in architecture
+§18.7.1, all execution holds and OD-10's post-V1 deferral remain unchanged.
+
+Independent plan review completed on 8 November under REQ-8/CHECK-6/25. The three
+structural rules above close its requested revision: existing raw-header and
+envelope readers do not enforce request mode/version, exact-copy UID alignment
+or placeholder semantics for this writer. No provider/runtime/native prerequisite
+blocks this inert source child; implement it only after the current checkpoint.
+This review authored no packet formatter and establishes no implementation pass.
+
+#### Inert request formatter — source authoring, 8 November 2026
+
+The completed coherence join activates this protocol-only child. Source owner is
+`ntp-wire`; REQ-8/BND-2 and CHECK-6/9/17/21/25/26 retain the contract above. The
+selected API uses privately checked `NtsRequestShape`, an exclusive
+`PreparedNtsRequest` with an immutable AAD borrow, and consuming `finish` returning
+`NtsClientRequest`. Both stages preflight before their first write. The existing
+`FrameLimits` and raw header gain narrow crate-only projections/budget admission;
+no Cargo graph change is needed. RFC 8915 section 5.6 remains the independent
+source for nonce/ciphertext padding and the explicit negotiated nonce allowance.
+
+Independent test authoring owns literal complete-packet/AAD facts and boundary,
+failure-atomicity and storage-borrow controls. The coordinator owns production
+code; separate reviewers own contract review and the package-selected ordinary
+recipe using the configured sandbox APIs. Initial preparation deliberately
+rejects after dimension/capacity admission so a valid literal can establish
+behavioral RED before prefix-writing implementation. No completed formatter or
+qualification is claimed at this authoring checkpoint. Ordinary authoring checks
+retain their four-GiB recipe floor. The previous engine campaign's five-GiB guard
+does not govern this wire child: use the actual wire entrypoint's admission,
+unchanged resource limits and measured cache/headroom before its later analysis.
+Coverage/mutation remain pending their own current-candidate execution.
+
+**Source and ordinary exit:** the complete formatter is now implemented in
+`crates/ntp-wire/src/nts_request.rs`, with the private checked shape, exclusive
+prepared destination, immutable AAD and consuming finalization described above.
+An independent source review found no concrete layout, overflow, panic, privacy,
+borrow or failure-atomicity defect. Its requested discriminating small-nonce-
+allowance case and both-length-mismatch priority case were added without changing
+the fifteen test names or five literal arrays. Existing KE cookie admission and
+the Cargo graph are unchanged.
+
+The actual RED ran one existing-reader literal control successfully and the
+known-valid formatter case with native exit 101 at its independent exact-budget
+assertion. The original observer incorrectly treated Cargo's normal lowercase
+failure footer as a foreign `Error:`; its incomplete receipt remains unchanged.
+Read-only replay checks the retained source, raw results and seven rejecting
+observer controls, without claiming another native execution. An initial GREEN
+passed compilation but stopped on six test-only Clippy diagnostics before tests;
+those were corrected without lint waivers or changed semantic expectations.
+The known-valid RED assertion/inputs remain unchanged; later equivalent empty-
+slice assertion syntax means whole-test-body byte identity is not claimed.
+
+Final `green-v2/verification.json` under
+`/home/david_osipov/.local/share/nevrotick/nts-request-formatter-20261108-v1`
+has SHA256 `20c3102dea282f92c7943fd7a732f3d077d524b4ac62d80ac72d6f2dabbd974c`.
+Candidate `67c764a70e6df73679c2961d159ea4f2913b10243d3de2c500e91946e12abbe7`
+has a 426-input ordinary map including nine helper pins and five overlapping
+observed imports, rather than 435 or 440 unique inputs. All seven package-selected
+ordinary rows passed: format, compiler, Clippy, tests, doctests, optimized tests
+and rustdoc. Actual counts are 119 ordinary, the same 119 optimized, and 86
+doctests, with no failures, ignored or filtered cases. All fifteen formatter tests
+ran in both test profiles. Source/helper/vendor/tool bookends match current main;
+the process exited zero and was reaped. The explicit admitted vendor is
+`dependency-refresh-20261106-v1/series-accesskit-vendor-v1` (533 packages); the
+default pointer's extra unselected package was refused and its tree left intact.
+
+The analysis registration now includes the new file with header/datagram as the
+three changed critical owners. Its 301 Python controls passed (63 wire, 144 shared
+portable, 73 legacy engine, 21 legacy series). All 89 older contract specimens and
+the complete six-owner fuzz policy object remain unchanged. The wrapper adds one
+executed legal formatter specimen, 26 source-bound JSON compiler probes, and the
+previously missing `analysis-controls.py` loader pin. These are configured
+controls; their actual external Rust execution, fresh security-file coverage and
+per-file mutation qualification were the next exit at that checkpoint. Use explicit contracts,
+coverage and mutation lanes; fuzz/all fail closed for the seven-versus-six scope
+and the separate fuzz hold remains. No provider, AEAD, association, native Windows,
+formal, parent S2.2 or release qualification follows from the ordinary exit.
+
+#### Inert request formatter final qualification — 8 November 2026
+
+**Qualified within the bounded Linux pure three-owner child.** The data-only
+`final-qualification-join-v1.json` in the external formatter evidence directory
+above has SHA256
+`a8edf83c398e67fea9349a74e951d3542fdf53f0874f6a930e1cd493473b21b9`.
+It replays existing leaf validators with subprocess creation forbidden; it adds
+no native run. All 436 analysis source/helper/policy inputs match current main
+and their captured execution copies. Ordinary evidence retains its exact
+426-input map, including the overlapping helper/import pins described above.
+The final four-column qualification is:
+
+| Critical owner | Covered / executable lines | Generated variants | Actual caught / unviable |
+| --- | ---: | ---: | ---: |
+| `header.rs` | 104 / 104 | 39 | 32 / 7 |
+| `datagram.rs` | 89 / 89 | 38 | 24 / 14 |
+| `nts_request.rs` | 131 / 131 | 31 | 23 / 8 |
+
+Every file independently passes the 90% line and 95% viable-mutation gates;
+each viable score is 100%. The 108 unique generated variants reconcile as 79
+caught and 29 replacement-caused compile failures, with zero survivor, timeout
+or exclusion. Unviables receive no kill credit. These are three separate full
+campaigns, each retaining ten outer workers, one inner worker, 512 campaign tasks,
+the complete nonempty inventory cap of 512, enumeration-inclusive 1200-second
+wall budget and 90/60-second build/test bounds. No single combined 512/1200
+campaign or continuous execution is claimed. Each actual healthy baseline has
+the same 205 unique identities: 119 ordinary tests and 86 doctests.
+
+All generated descriptors, original preimages, raw diffs, phase results and
+failure causes were reconciled independently. Seventy catches are source-owned
+test assertions, three are typed refusals of independently valid pure inputs,
+and six are exact pure-parser/finalizer underflow or slice/copy panics under those
+valid inputs. No ambient/native setup, resource or cleanup failure earns credit.
+The join binds all 222 primary mutation log/diff/outcome artifacts. All native
+campaigns exited zero and their owners reaped them; no owned job remains live.
+
+The actual external-contract run compiled 116 specimens: eight legal consumers,
+82 legacy negative probes and 26 new source-bound JSON diagnostics. Only the new
+legal consumer executed, checking its independent 148-byte packet, AAD116 and
+untouched suffix12. A separate bounded external consumer observed byte/field
+budgets 127/2 → `ByteLimit`, 128/2 → `TooManyExtensions`, 127/3 → `ByteLimit`
+and healthy 128/3, with unchanged rejection buffers and exact AAD100/Auth28/suffix8.
+That manual control adds no Cargo test, generated mutant or kill. Its first
+literal-transcription compile failure remains incomplete; the one corrected
+control passed inside the original 300-second envelope. The unchanged runtime
+exposes driver-process custody but no individual child PID. Final source/library/
+binary/tool bookends and both driver reaps are retained.
+
+Assurance limits remain explicit. `NtsRequestShape::new` has no generated
+descriptor; header/datagram constructors and borrowed projections also have
+ungenerated behavior or compile-unviable replacements. No generator reason or
+whole-constructor mutation proof is invented. Existing independent shape/NMAX/
+u16 controls, complete 128/164-byte vectors, executed 148-byte vector, sentinels,
+abandonment/input-expiry cases, pointer checks, manual competing-budget control
+and 26 external diagnostics are their bounded alternatives. Endian/copy/fill/
+chunk/slice operations, early-write reordering, visibility/traits/borrows/drop and
+every checked-overflow failure branch are not claimed individually mutated.
+100% executable-line coverage supplies no branch or whole-domain proof. All
+eleven executed coverage ELFs, eleven raw profiles and one merged profile remain
+retained; the healthy instrumented run supplies no seeded detector claim.
+
+Original vendor admission, RED-observer, Clippy, compiler-warning fixture and
+manual-literal failures remain unchanged beside their corrected/replayed results.
+No Cargo graph, provider, AEAD/trust/runtime, actual cookie/send/association,
+production source, clock, native Windows, P1/P2 or release exit follows. Fuzz/all
+still refuse the seven-owner analysis versus six-owner fuzz scope, and all
+execution holds and OD-10's post-V1 formal deferral remain.
+
+**Current coordinator continuation:** the subsequent
+[finite phase-plan child](s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners)
+passes its selected two-owner Linux fixture qualification (455 ordinary/455
+optimized tests, 92 doctests, scoped external contracts and per-file coverage/
+mutation gates). Next freeze the remaining S1.4 frequency-prior update/aging/
+holdover contract under
+[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+The exact remaining law needs independent review before coding. The completed
+finite mechanism and another inert helper do not clear S2.2's provider/trust/
+runtime and association gates.
+
 ### Observable exit and Windows boundary
 
 Extend the existing bounded `nevrotick-observe` projection with actual KE/
@@ -5581,8 +5791,966 @@ after late invalidation. Clock-continuity/mapping/date/calibration and productio
 admission remain explicitly unavailable. Engine/domain/QA owns this source card;
 W11-W01 owns the separate capture/mapping contract. No Core dependency, history
 insertion, eligible sample, native execution or formal work follows from this
-proposal. Source implementation stays held until this finite API/lifecycle
-contract is settled; Q1's qualification remains the immediate executable task.
+proposal. Q1's final exit above closes that predecessor. The finite API/lifecycle
+contract below is the next source checkpoint; implementation follows its review.
+
+##### Persistent session API and lifecycle — 8 November 2026
+
+**Reviewed implementation contract; source authoring starts below.** Reuse the
+actual checked `SeriesConfig`, `prepare_series` and consuming `execute_series`.
+Create an opaque `AcquisitionSession` from an owned immutable configuration and
+an engine-created chart before any preparation. Add no dependency, runtime,
+mutex, queue, external retire channel or production authority. Existing one-shot
+APIs and `TransportFacts::relative_to` retain their contracts.
+
+Selected API shape:
+
+```text
+AcquisitionSession::new(SeriesConfig) -> AcquisitionSession
+AcquisitionSession::prepare(&mut self)
+    -> Result<(PreparedAcquisition<'_>, ControlHandle), AcquisitionError>
+PreparedAcquisition::execute(self, &ControlSchedule)
+    -> Result<AcquisitionReport, AcquisitionError>
+AcquisitionSession::retire(&mut self)
+AcquisitionReport::series(&self) -> &SeriesReport
+AcquisitionReport::chart_origin(&self) -> Instant
+AcquisitionReport::same_session(&self, &Self) -> bool
+```
+
+The prepared guard holds an exclusive mutable session borrow and the actual
+private prepared plan; execution retains that borrow through the existing
+driver's timer/runtime cleanup. Only that operation can construct a report
+wrapper, from its genuine returned series and the chart captured before its
+preparation. No public operation accepts a caller-paired report, facts/context
+tuple or chart. The immutable report retains metadata only; matching provenance
+is not current authority. The session retains no report collection. Private
+identity, checked configuration reuse and owning construction enforce these
+invariants; no new raw scalar admission or second validation rule is introduced.
+
+| State/action | Required result and effect |
+| --- | --- |
+| Idle, successful prepare | One Prepared guard; no socket/runtime; existing entropy/token admission is unchanged. |
+| Idle, failed prepare | Original typed driver refusal; remain Idle; no hidden retry. |
+| Prepared guard dropped unused | Drop the actual prepared resources before returning the session to Idle. |
+| Prepared guard deliberately forgotten | Remain Busy; another prepare refuses before entropy/native work. |
+| Execute consumes guard | Transition to Executing before invoking the driver; no second preparation or quiescent retirement is expressible while its exclusive borrow is held. |
+| Driver returns clean Completed, Stopped or SeriesDeadline | Return the original report with pre-acquisition chart metadata; return to Idle only after cleanup. |
+| Driver returns Stale/Failure or any primary/cleanup failure | Retain the original report and retire the session. |
+| Driver returns an outer error or encounters a structural contradiction | Retire the session; preserve the actual typed error; never reopen capacity as if execution completed normally. |
+| Unexpected unwind | Drop marks the session Retired and the original unwind propagates; add no production panic catcher or fabricated typed failure. |
+| Quiescent retire | Idempotently select terminal Retired, including a forgotten-plan Busy state; all later preparations refuse. |
+| Configuration/association replacement | Retire/drop the old quiescent owner and create a fresh session/chart; no in-place mutation or old-handle retargeting. |
+
+Retirement is explicitly quiescent. Active interruption uses the original plan's
+`ControlHandle`; the caller waits for actual execution/cleanup before retirement
+or replacement. A stop request is delivery, not completion. Normal report
+classification preserves the qualified historical-transfer/fresh-summary cutoff;
+no wrapper can erase a historical completion or renew its age. Unknown Windows
+native completion remains unqualified under the existing execution hold.
+
+Independent acceptance must cover two actual successful series sharing one
+pre-acquisition chart with distinct run/request identities; equal-endpoint
+foreign sessions; old-handle isolation; plan drop/forget; entered-runtime
+preparation/execution failures; explicit retirement and stale/failure retirement;
+private construction/substitution/mutation/duplicate-consumption and simultaneous
+prepare/retire bypasses through external compile-fail plus legal-use controls.
+Use bounded native loopback fixtures and direct private transition controls where
+an actual backend failure cannot be forced. Such synthetic transition controls
+must not be called observed native failures. Requirements remain REQ-8/BND-1 and
+CHECK-6/7/8/11/14/15/23/25/26/27 within this controlled Linux slice.
+
+Independent source/ownership review found this contract ready: the borrowed
+private plan and inline genuine-return wrapping preserve association without
+changing existing run identities. Terminal retirement after a forgotten plan
+cannot reopen capacity and no native work was started by preparation. The
+independent verification owner separately supplies direct/real-loopback and
+external bypass cases. These are source-plan reviews, not executed acceptance.
+
+Format before
+freezing; use the admitted ordinary recipe with actual new test discovery, then
+the affected 90% executable-line/95% per-critical-file mutation and external
+contract gates. Affected shared-owner evidence must be reconciled explicitly;
+prior scores do not transfer by filename. Formal work remains post-V1, and no
+Core/history edge, calibrated sample, service, native Windows or release pass is
+authorized by this source card.
+
+##### Persistent session authoring and ordinary checks — 8 November 2026
+
+Initial source authoring added `src/session.rs` with minimal engine module/re-exports,
+nine private lifecycle controls, three public real-acquisition controls, one
+executed-legal and eight negative doctest examples. Independent read-only source
+review found no concrete defect in its selected ownership/provenance scope.
+Removing only the two `lib.rs` additions exactly recovers its prior qualified
+bytes; transport, quality and relative-conversion bodies remain unchanged. The
+new critical/security manifest registration precedes the candidate freeze.
+
+The external `acquisition-session-20261108-v1/session_ordinary_v1.py` adapts the
+immutable Q1 ordinary recipe only for the new owner's test/doctest discovery and
+formatter copyback allowlist. It retains the sandbox, admitted vendor/toolchain,
+six build jobs, finite limits and recipe/source/helper bookends. Test discovery
+includes intervening lint attributes on the deliberate forget/unwind controls.
+No private toolchain or product implementation outside main was introduced.
+
+Strict workspace policy and admitted formatting passed. First ordinary attempt
+`ordinary-v1` passed format and compiler, then stopped at Clippy: six private-test
+semicolon/assertion-style diagnostics and one unnecessary owned peer-control
+argument in the public fixture. Native Clippy exit 101 is retained; no tests
+executed. Receipt SHA256:
+`2a375315b6eec6102e3a1e0ffa860b347d00db40be8e5c4a851ec4a53c95cc10`.
+Its 424-input candidate was `ebb64fff...` and all source/helper/vendor/tool/recipe
+bookends stayed unchanged. Repair follows existing lint conventions without
+changing expectations, lifecycle rules or compiler policy. Ordinary, external
+contracts, affected coverage/mutation and final qualification remain open.
+
+##### Persistent session final qualification — 8 November 2026
+
+**Qualified within the controlled Linux session-owner scope.** The final combined
+process exited 0 and was reaped. Receipt
+`acquisition-session-20261108-v1/qualification-v1/verification.json` SHA256:
+`e5cbb42dc58e6bd706323c0add2b53f5be4582683a6d9e862ac02a3fcdc7239c`.
+The 424-input compiled candidate is
+`257dac833fa5555dca998aa1c4f4ec718170bff1622d939411977f4bb68cd611`.
+All 432 execution inputs and source/helper/vendor/tool custody passed and match
+current main. The source remains in the main repository; copied trees are
+verification inputs only.
+
+Ordinary-v2 passed its earlier nine-private/three-public scope. Independent
+function/guard review then found three Drop branches were not discriminated:
+their tests first called `begin_execution`, which already retired the guard.
+The strengthened tests drop each contradiction directly, retain a healthy
+neighbor, check all four Display messages, and compare genuine reports from
+distinct owners whose private origins were set equal before preparation. That
+origin setup is a synthetic identity control, not an observed equal-clock event.
+No report factory or attachment helper was added. Production source is unchanged.
+
+Strengthened ordinary-v3 stopped before tests at one missing documentation
+backtick; its incomplete receipt is retained, SHA256
+`853218147e9247b148ac3ff2c0535b34b8c5d4a0d8b1daf744c00b956b7e9a44`.
+The comment-only correction produced ordinary-v4, SHA256
+`08c77ca96c97870c8700e119037a5ae9d9cfd091b3104a970ce3ef3688bcef21`:
+all ten lanes passed with 127 ordinary/127 optimized tests, 59 doctests,
+compiler/Clippy/rustdoc/format and both Windows-target compiler checks. All eleven
+private and three public session cases and nine session doctests executed.
+
+The new singleton session analysis role binds that actual receipt, 186 complete
+baseline identities, 29 protected inputs and the exact reviewed 23-descriptor
+inventory. All 108 Python controls pass (73 engine, 21 historical-series,
+14 session). Two legacy series tests had compared historical bindings against
+the newer graph; their fixtures now use retained product/source/policy bytes.
+This repairs synthetic routing/custody controls without weakening admission or
+claiming a new N3 execution. Product inputs are unchanged after ordinary-v4;
+the later analysis bindings and historical fixture repair are separately scoped.
+
+Fresh external contracts executed one legal consumer and rejected all eight
+construction/mutation/retarget/consume-once/overlap/retirement/lifetime bypasses
+with their intended diagnostics. Fresh coverage executed all 127 expected cases
+and recorded 123/123 executable lines (100%) for `session.rs`; branch count is
+zero. Raw LLVM export SHA256:
+`4432623494611bd3822b3c493531006ab8cbd8f25c52a4ffc881a1f22bd3192a`.
+
+All 23 freshly enumerated mutations completed: nine meaningful catches,
+fourteen compiler-unviable cases, zero survivors/timeouts/exclusions. Native
+mutation exit 0 and the nonempty 9/9 viable score are retained. Raw outcomes
+SHA256: `08584e358ba8087f810e5446c046ce0c49e4e0c51ec1c6de1ad34b2bfa20c6f3`.
+The baseline is exactly 127 ordinary plus 59 doctest identities. All nine catches
+compiled first and then failed actual assertions; no compiler or harness error
+earns kill credit. The intentional unwind panic is exact source-bound control
+evidence with zero credit; the separate retirement assertion detects the fault.
+
+Independent review reconciled every descriptor/diff, all 25 credited assertion
+sites and every unviable compiler cause. Five formatter replacements and two
+constant membership replacements fail unused-variable checks; six require
+unavailable Default implementations, and one trait-object replacement fails
+E0790. These are not behavioral kills. A separate reviewer reconciled actual
+ordinary/coverage/baseline identities and every execution/protected input.
+Neither review adds executions.
+
+Generation covers fifteen of sixteen production functions, but viable variants
+exercise five. The constructor has no generated descriptor; creation brackets,
+actual repeated series and private/external construction controls remain its
+alternatives. Individual preparation, missing-plan, Drop, label-selection,
+association, failure-projection and cleanup-order obligations retain the direct
+guards, five-label/eight-mask classifier, actual returned outcomes and source
+review above. Returned native primary/cleanup failures remain unobserved at the
+wrapper; synthetic classifier evidence is not native failure qualification.
+No ungenerated operation is added to kills or exclusions.
+
+The unused preparation copy was advanced through recorded deltas before any
+native campaign ran from it. It retains 1,330 captured files, including all
+required inputs; 557 duplicate non-input documentation files were retired after comparison
+with main. Unique ordinary snapshots/raw receipts remain. Compiler/formatter
+cache and duplicate formatter-input retirement records are kept under the same
+evidence root; duplicates are reconstructible from exact retained references.
+No compression or shared tool-store deletion occurred.
+
+After the final process and independent audits completed, terminal target/dependency
+caches were deleted under `terminal-target-cleanup-v3.json`. Raw coverage profiles
+and their instrumented objects were retained under
+`qualification-v1/retained-coverage/` before deletion; the exact names and hashes
+are in that retirement record. Raw LLVM export, mutation evidence, source and
+receipts remain. This pass recovered 362,303,488 available bytes; Git custody and
+all 432 qualified inputs remained unchanged. Available space was 5,211,746,304
+bytes afterward, below the five-GiB campaign admission floor: recheck resources
+before the next expensive campaign rather than lowering that floor.
+
+This closes the bounded persistent session mechanism, not production logical
+source/configuration authority, date/scale, clock/mapping continuity, calibrated
+quality/current precision, history/Core integration, native Windows, NTS, P1 or
+release qualification. Existing library/relative/quality mutation receipts retain
+their historical scopes; this is no fresh whole-engine score. Continue the
+reference-view contract below with all unrelated holds and OD-10 unchanged.
+
+##### Next receiving prerequisite — report-owned session reference
+
+The selected next child is a borrowed exact reference view created only by an
+`AcquisitionReport` method. Select an original attempt by checked position,
+obtain that report's own genuine terminal facts, and derive its midpoint against
+the private session chart. Accept no caller-supplied report/facts/origin/context
+tuple. Retain the original position and borrowed association alongside the
+checked `ExperimentalReferenceNs`; copied scalar parts establish no provenance.
+
+Require the original `facts.measurement()` to succeed before midpoint arithmetic,
+matching the existing relative-measurement constructor. Preserve its exact
+`MeasurementRefusal` on failure; an absent position or absent facts is a separate
+refusal. Success retains the original conditional `ExperimentalMeasurement` and
+its limitations. A transport-only midpoint does not satisfy this receiving view.
+Independent source review confirms that this resolves the finite choice within
+the selected receiver prerequisite, without changing production authority.
+
+The existing `relative::reference_from_instants` already checks before-origin,
+ordering, duration narrowing and Garde-backed midpoint publication. Reuse that
+owner through a narrow internal path rather than duplicate its arithmetic.
+Keep the selected exact formula and half-nanosecond bit, original measurement
+refusals, original ages and the current `relative_to`/DifferentRun rule. The view
+reads no ambient clock and grants no current authority or history insertion.
+
+Freeze and independently review its finite method/result/refusal contract before
+implementation. Its observable exit is reconstruction from actual captures in
+two separately requested series sharing one session chart, with distinct runs/
+requests and unchanged ages, plus absent-position/facts, construction/substitution
+bypasses and odd-half/full-u64 boundaries. Synthetic boundaries remain distinct
+from real captures. Engine/domain/QA and W11-W01 retain their existing owners;
+production suppliers, Core/history edge and native execution stay held.
+
+##### Report-owned session reference — finite API contract, 8 November 2026
+
+Independent source/ownership and test-design review settle the next source child
+under CHECK-1/3/7/10/12/15/27. The engine report owns association; the existing
+relative arithmetic owns checked midpoint publication. Required environment is
+the admitted Linux controlled-loopback fixture plus portable external consumer
+checks; Windows-target compilation remains distinct from native qualification.
+
+`AcquisitionReport::reference_at(position: u8)` returns a private immutable
+`AcquisitionReference<'_>` or `AcquisitionReferenceRefusal`, in this exact order:
+
+1. Checked original-position lookup; reject outside 0..3 as `AttemptPosition`.
+2. Obtain that original attempt's terminal report and facts; return
+   `FactsUnavailable` for unstarted or fact-free outcomes. Their original causes
+   remain available through the unmodified series report.
+3. Require those facts' original successful `ExperimentalMeasurement`; preserve
+   the exact `MeasurementRefusal` as `Measurement(reason)` before reference work.
+4. Call the existing checked reference owner with the report's private session
+   origin and its own lower send/read captures; preserve `Reference(reason)`.
+   The reachable nested reasons are before-origin, order, range, arithmetic and
+   output invariant; this path does not compare runs or recalculate measurements.
+
+Only that method constructs the view inline after all checks. Private fields
+retain the original report, attempt, facts, successful measurement and checked
+scalar. Immutable `report()`, `attempt()`, `facts()`, `measurement()` and
+`midpoint()` getters expose them without substitution or age renewal. Private
+construction establishes association; a common borrow lifetime alone does not.
+There is no raw factory, default, conversion, mutation or serialization path.
+Repeated derivation and retained reports after retirement remain legal historical
+operations. Existing report identity owns `same_session`; no second identity
+scheme or current-authority claim is introduced. Formatting is fixed/redacted;
+error causes retain only the existing bounded typed refusals.
+
+Reuse the arithmetic unchanged by a narrow `pub(super)` helper and chart-neutral
+documentation in `relative.rs`; keep `relative_to` and `DifferentRun` unchanged.
+Actual two-series checks independently reconstruct twice the midpoint as the
+`u128` endpoint sum, retain all original associations/ages, test the original
+measurement-refusal and absent-facts/position paths, and retain healthy neighbors.
+Existing direct relative controls cover odd halves, full-u64, chronology and
+mandatory output admission; synthetic boundaries remain separate from genuine
+capture provenance. External legal, construction/substitution and lifetime probes
+must reach their intended rules. Format before freezing, then complete affected
+ordinary, contract, coverage/mutation and independent final checks. Current free
+space is below the five-GiB analysis floor; no heavy campaign is running. Reclaim
+only attributable terminal duplicates or await more space; preserve the floor.
+
+Source and tests are now authored and independently source-reviewed. The factory,
+private view, ordered refusals and five immutable getters are in `session.rs`;
+the only other production changes are re-exports and the reference helper's
+internal visibility/documentation. Removing doc comments and reverting that one
+visibility change reproduces the prior relative executable text exactly, SHA256
+`2f86721b766d34148dd352b4a36147b711adfbab28be8c205f30e289cda0b08f`.
+Retained arithmetic mutation remains historical; the changed caller requires
+fresh qualification and existing relative regressions run again ordinarily.
+
+Twelve private and four public session cases are authored. The existing real UDP
+fixture checks all five original-object pointers/getters, an independent `u128`
+sum for twice the midpoint, exact age, repeated derivation and retention across
+issuer reuse/retirement/drop. Separate actual series target `Unavailable` and
+`DateScope` original measurement refusals; pre-stopped reports reject absent facts
+and out-of-domain positions. Private diagnostics preserve exact typed causes.
+Synthetic odd-half/full-u64/chronology controls remain in the existing relative
+tests. Genuine wrapper chronology/range failures and successful foreign views
+with equal origin values remain unobserved; no fabricated positive provenance
+or product test factory was added to cover them.
+
+The unchanged admitted session ordinary recipe completed `reference-format-v1`,
+receipt SHA256 `935ffdcf321d95166d60b055e273be7471fda11e953d7a122dc77e2958564ff6`.
+Boundary and formatter native exits are zero and custody is unchanged. The
+strict workspace-policy check also passed. The new ordinary-all run is
+`acquisition-session-20261108-v1/reference-ordinary-v1`; no current test,
+coverage/mutation or native Windows pass is claimed before its actual results.
+The previous session checkpoint remains exact historical evidence, not admission
+for this changed session source.
+
+Resource admission was restored by deleting exact duplicate non-owner source
+files from eight terminal ordinary snapshots, identical non-input documentation
+from two old context copies, six rebuildable terminal contract binaries and the
+completed formatter work cache. `reference-terminal-retirement-v1.json` records
+every reconstruction reference; both full native-source anchors, every engine
+Rust owner file, unique context, raw logs/receipts/profiles/coverage objects and
+mutation evidence remain. Available bytes increased by 265,170,944 to
+5,404,037,120; main Git custody was unchanged. No compression, hard-link
+deduplication, shared-store deletion or system change occurred.
+
+The first ordinary attempt stopped at one public-test `borrow_as_ptr` Clippy
+diagnostic before tests. Its receipt SHA256 is
+`2945e384f945320989b55aa0292a4f9bbbb9ccc0d145b7dcb9ac5a26cd260c2f`;
+candidate `e50286d6...` and bookends are retained. The compiler-recommended safe
+raw-address expression preserves the original pointer assertion without an allow.
+Ordinary-v2 passed format/compiler/Clippy and reached the actual new refusal test,
+which failed its original terminal-outcome assertion; receipt SHA256
+`c8c9bf630015d1c2c3d798f3fb63782acf2039669851fce254777ae1a857715a`,
+candidate `00a6ea72...`, unchanged bookends. The fixture wrongly expected a
+stratum-zero reply to carry ordinary facts and a `Protocol` measurement refusal.
+The established driver deliberately returns opaque `Control` without facts for
+that reply. This is a fixture expectation defect, not product RED or a new driver
+defect. The peer is restored to fixed ordinary stratum-two replies; a separately
+checked profile `[0,1]` seconds now targets `DateScope`. The actual healthy cases
+already require local coordinates in the disjoint `[3e9,4.5e9]` fixture window.
+No production source, counter contract or expected successful neighbor changed.
+Both incomplete runs and their raw diagnostics remain; only terminal compiler
+caches were retired. Fresh formatting/ordinary execution follows the repair.
+
+The repaired source completed `reference-format-v2` without further formatting
+changes, receipt SHA256
+`20773fab0dfb105a0e84f95dad0ef97c1ff952870c553ee6682236d68972bdf6`.
+Ordinary-v3 then exited 0 and was reaped: all ten configured lanes passed,
+including 129 ordinary tests, 129 optimized tests, 63 doctests, rustdoc and both
+Windows-target compiler checks. Receipt SHA256
+`67c9fb2d1b7968ec0f106f43886c5c9ca27b6163eae41c273dfc4acebb3adff7`,
+424-input candidate
+`e931838bcafa35bca1841d58949e47bb56d59f389bfed7904b898113bcdc4ab1`.
+All source/helper/vendor/tool/recipe bookends pass. Actual `Unavailable` and
+`DateScope` refusal cases now pass alongside the original healthy neighbors;
+all existing relative arithmetic controls ran in this fresh ordinary cohort.
+Current session source SHA256 is
+`e63d4d33497a4cb21b26645f1e8fc38eea1494aca574a55fd55cbe3a0cb9e25b`.
+
+The singleton session analysis role is being rebound to that actual receipt,
+192 baseline identities and all sixteen session cases. Its new external view
+construction/retarget/lifetime/default/conversion/internal-access guards require
+actual execution and intended diagnostics; source review is not a contract pass.
+No new midpoint arithmetic is introduced; the actual report→facts→measurement→
+reference composition remains part of the existing post-V1 product-proof debt.
+All formal execution stays deferred. Coverage, reviewed fresh mutation inventory
+and independent final qualification of this changed session owner remain open.
+
+Fresh enumeration exited 0 on that same compiled candidate. Receipt
+`reference-enumerate-v1/verification.json` SHA256
+`0b1baf9beb9020e0ac85e6adc370762b39953139daea59c7efd8b217859ea21e`
+records exactly 34 descriptors and unchanged custody; qualification is correctly
+false. Independent review matched every raw/structured descriptor, diff, removed
+context and source span before admission. The approved catalog SHA256 is
+`c0a094f3b45682b9ccb2b07cf03a3c0704547c928d0a268ed67ded362395573b`.
+All 108 Python controls pass; an independent evidence join matched the complete
+129/129/63 rosters, 424 product inputs, twelve ordinary helpers, seven recipes,
+29 protected bindings and all 432 enumeration inputs against main and the sealed
+reference-stage source. The older `checkout/` remains historical, unused here.
+
+Twenty-five of twenty-six production functions have descriptors; the original
+session constructor remains ungenerated. The eleven new variants include only
+whole-body/default/leaked-default replacements for the factory/getters and
+formatter/source bodies. There are no individual selector, association,
+refusal-order, cause-mapping or capture-selection variants. Actual original-object
+pointers, independent endpoint-sum arithmetic, original ages/causes, typed errors,
+boundary controls, external privacy/lifetime probes and source review remain
+their independent alternatives, not invented generated kills or exclusions.
+
+Before campaign execution, retain these explicit limits: there is no genuine
+factory-path observation returning `Reference(reason)`, no competing original
+measurement plus reference failure control, and no explicit new-view lookup on a
+started terminal outcome without facts. The tested typed error values establish
+diagnostics separately. Immutable actual charts/captures and direct checked
+helper/error-map composition supply source evidence, with existing raw relative
+boundary controls; they are not claimed as those missing end-to-end observations.
+Neither review found incorrect production code. These limits constrain the
+bounded source-owner claim and remain for future receiving/native qualification.
+
+The reviewed 34-entry catalog is now bound in the existing policy; its SHA256 is
+`068627a2c7134bd386ec444a86aa875d98ddb473c505ab83fbad29b84016bc26`.
+The prior policy is retained separately. No Rust, test, wrapper or ordinary input
+changed during binding. The next run combines actual external contract probes,
+coverage, complete baseline and all 34 mutations; compiler/harness failures earn
+no kill credit. No fresh outcome or coverage result is claimed by enumeration.
+
+##### Report-owned reference final qualification — 8 November 2026
+
+**Qualified within the bounded Linux source-owner scope and limits above.** The
+combined process exited 0 and was reaped. Receipt
+`acquisition-session-20261108-v1/reference-qualification-v1/verification.json`
+SHA256 `d96f4af3078429586ef376fa21bb6fc654048dca824f2666b424c2694554a4a9`.
+Compiled candidate `e931838b...` remains the exact 424-input ordinary-v3 candidate;
+all 432 campaign inputs match main and the sealed source. Full before/after
+source/helper/vendor/tool custody passes. Ordinary-v3's 129/129/63 results,
+all sixteen session cases and 108 Python controls retain their exact identities.
+
+One legal external binary compiled and executed checked session construction and
+retirement. Twenty negative programs failed with the required diagnostic code,
+semantic tokens and primary probe line, covering raw construction, all five view
+links, owner escape/drop, defaults/conversions and internal access. The legal
+view/getter function only typechecks; actual successful getters execute through
+the real public fixture. Private-module E0603 checks `relative`; the separate
+absent-root-export E0432 checks `reference_from_instants`. No rendered/source-text
+diagnostic bypass was introduced.
+
+Fresh coverage executed all 129 expected cases and recorded 186/186 executable
+session lines. Branch count is zero; no branch qualification is claimed. Raw
+LLVM export SHA256:
+`b771714f607caf796fdefb59caaa41b959773e054a184834e7d63366508eb319`.
+The actual mutation baseline is 192 distinct successes: 129 ordinary tests plus
+63 doctests, without failed, ignored or filtered rows. Baseline log SHA256:
+`88d72c5e6c02d527fc33af7fdb6c5950d287b0ba0b58935fa5eb0c1067c775bb`.
+
+All 34 current mutations completed: ten meaningful catches, twenty-four
+compiler-unviable cases, zero survivors, timeouts or exclusions. Native exit 0
+and the nonempty 10/10 viable score are retained. Raw outcomes SHA256:
+`00dccca26d9f4c48419e8c210e7dd8186dffc7c4704e47d6151fb7e48c154fd1`.
+Independent raw review matched every descriptor/diff and all 26 credited assertion
+sites. All ten catches built successfully before actual test exit 101. The
+intentional unwind at private line 357 receives zero credit; the independent
+retirement assertion at line 361 detects the changed Drop behavior.
+
+Eight formatter removals leave unused parameters, two constant membership
+replacements leave `other` unused, twelve replacements require unavailable
+Default implementations and two trait-object replacements produce E0790.
+These are compiler-unviable, never behavioral kills. No opaque/native/harness or
+resource failure supplies kill credit. A separate independent reviewer joined
+ordinary, external-contract, coverage, baseline and source/custody evidence.
+Neither review adds executions.
+
+The generator's 25/26 function coverage does not establish operation-level
+coverage for selector/association/refusal-order/cause-map/capture choices. The
+three missing factory observations recorded before execution remain open;
+line and mutation gates do not replace them. This supplies no fresh relative,
+quality, library or whole-engine mutation score. Historical relative arithmetic
+evidence is reused only through the exact executable-source projection and fresh
+ordinary execution of existing arithmetic/new-caller regressions above.
+
+Continue with W11-W01's actual capture/mapping supplier contract under
+[Windows task §4.26](windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026).
+Independent source tracing found no need for another engine pairwise API:
+`ExactObservationRow::new` accepts these exact original phase/reference parts and
+`conditioned_window::prepare_point` already derives widened exact differences
+before once-rounded conversion. The next finite source-only exit must identify
+the actual mapping/clock identity issuer, validity/error suppliers, invalidation
+and unavailable outcomes, with accepted/stale/late-completion controls.
+Increasing monotonic time and adjacent software reads are not mapping attestation.
+Administrator-approved source/date/scale/calibration/current-precision suppliers,
+production history/Core integration, native Windows, NTS, services, P1 and release
+qualification remain open. OD-10 and all unrelated execution holds remain.
+
+After both independent audits and outer completion, terminal compiler/dependency
+caches were deleted under `reference-target-retirement-v4.json`. Ninety raw
+profile/instrumented-object files were retained unchanged under
+`reference-qualification-v1/retained-coverage/`; raw LLVM, logs, outcomes/diffs,
+full source and receipts remain. This recovered 363,245,568 available bytes;
+all 432 qualified inputs and main Git custody remained unchanged. Available
+space afterward was 5,155,344,384 bytes, below the five-GiB analysis preflight:
+recheck resources before another heavy campaign and preserve that floor. No
+compression or shared-store deletion occurred.
+
+##### W11-W01 finite capture/mapping supplier contract — 8 November 2026
+
+The next source-contract checkpoint is settled under CHECK-6/7/8/9/10/11/15/21/
+25/27, with acquisition/platform and the existing receiving owner. This selects
+no new platform API, dependency, affirmative mapping provider or execution
+permission. Rust 1.99.1 commit `58cf8f9c35b355199727627d07ae34a4e2846d67` and
+the selected Tokio/Mio source were inspected locally and against pinned official
+upstream source; vendor files match checksums. The actual producer chain is:
+
+`Instant/SystemTime/Instant` wall-read brackets → successful synchronous send-call
+or selected receive-return capture → conditional measurement → serialized final
+control/deadline commit → immutable facts → consume-once transfer → driver cleanup
+→ session classification. The private run/session identities preserve historical
+association, not mapping authority. Tokio readiness ultimately invokes the
+synchronous Mio/std payload operations; this is not complete IOCP/AFD teardown
+qualification.
+
+| Claim | Actual supplier and source limit | Required receiving behavior |
+| --- | --- | --- |
+| Capture placement and association | Original software brackets, actual socket/request/endpoint/header association. Send success does not establish delivery; queued ingress can precede the receive call. | Retain exact original readings and placement category. No invented wire-error interval or renewed age. |
+| Clock representation | Pinned Windows std uses QPC/QPF for Instant and GetSystemTimePreciseAsFileTime for SystemTime. Numeric resolution is not physical precision or external UTC accuracy. | Preserve distinct domains and checked conversions; reject explicit order violations before Windows' small-negative subtraction tolerance can mask them. |
+| Clock/mapping identity, validity and finite errors | No current implemented issuer. Software consistency checks only challenge the explicit experimental declaration. | Production mapping remains unavailable until an actual owner supplies private identity/revision, scale, validity covering the whole exchange and justified error terms. Missing terms never become zero. |
+| Configuration/association/calendar/source context | Current owners must issue their own identities and revisions; the pilot watch epoch and caller labels are not those authorities. | Bind before acquisition; replacement invalidates old work despite equal endpoints or labels. Independently require date/scale/source and calibration suppliers. |
+| Clock/power change and invalidation | Actual broker acknowledgements and qualified platform events are future suppliers. HandlerEx time-change notification is retrospective, not an atomic mapping lease. | Withdraw issuance first, advance checked revision, and retire crossing/pending work. Unknown event coverage, unsupported backend and revision exhaustion remain unavailable. |
+| Final publication and late work | The actual receiving/native-operation owners, not ControlHandle delivery alone. | Recheck issuer/revision, full validity, current context, control, deadline and original age at one serialized admission commit. Late completion is charged once and retains native custody without publishing current admission; no await/callback/unlock splits guard and commit. |
+
+The source-contract acceptance matrix requires a genuine valid neighboring
+issuance, each absent supplier, stale/replaced identity, invalidation immediately
+before publication, late completion, revision exhaustion and retained facts/ages
+after retirement. Synthetic issuers/backend controls establish only their stated
+scope. No detached `MappingValid` model or positive capability is implemented
+merely to exercise that matrix. Actual provider/native implementation is held
+until its suppliers/admission exist; existing history/Core integration stays held.
+
+Primary source anchors: [pinned Rust Windows clocks](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/library/std/src/sys/time/windows.rs),
+[pinned Tokio UDP](https://github.com/tokio-rs/tokio/blob/b53b2001ed2ccfd9b87e32a0c6da1a1eebdc80b8/tokio/src/net/udp.rs),
+[pinned Mio UDP](https://github.com/tokio-rs/mio/blob/79d1417c94e3a45c8bdd796e5422e22e8c488086/src/net/udp.rs),
+[QPC semantics](https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps),
+[precise wall reads](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimepreciseasfiletime),
+[sendto](https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-sendto),
+[recvfrom](https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-recvfrom),
+[HandlerEx](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nc-winsvc-lphandler_function_ex).
+Microsoft Learn MCP search/fetch and GitHub MCP source retrieval are read-only
+source evidence; no Windows command, installation or native qualification ran.
+
+##### Within-series observed-coherence veto — implementation contract
+
+Independent ownership and test review select one useful portable child of that
+contract. `ExperimentalProfile` explicitly declares coherence over **one bounded
+run**. Assess all retained captures in one genuine returned `SeriesReport`; do
+not extend its allowance across separately requested series or retain a rolling
+wall baseline. No new physical threshold or owner policy decision is introduced.
+
+Add a privately derived report field and immutable `coherence()` getter using
+`SeriesCoherence::{ObservedCompatible, ObservedInconsistent, Unavailable(reason)}`
+and `CoherenceUnavailable::{NoProfile, NoFacts, Capture(MeasurementRefusal)}`.
+Only the real consuming driver-return path attaches this assessment. Reachable
+checked capture causes are `CaptureOrder` and `Arithmetic`; no raw payload or
+validation report escapes. Original series/end/failure fields, measurements,
+refusals, ages and historical `reference_at` behavior remain unchanged.
+
+Assessment order is fixed: no original profile yields NoProfile first; otherwise
+visit original attempts and each retained facts object's send-before/send-after/
+read-return triplet, skipping absent facts without inventing captures. At most
+nine captures exist. With none, return NoFacts. Keep the first retained send-before
+as fixed baseline. Check every bracket and the complete retained sequence before
+subtraction (`mono <= mono_after`, previous-after <= next-before), then complete
+all checked wall conversions and baseline residuals in original order. Any
+checked failure wins over an earlier threshold excess. Only after full success,
+maximum residual strictly greater than the existing declared limit is
+ObservedInconsistent; equality is ObservedCompatible. Compatibility establishes
+neither all-pairs agreement, missing-capture coverage, continuity nor finite
+physical error. Original measurement success is not required for assessment.
+
+After actual driver/cleanup return, inconsistency or checked-capture failure
+adds a terminal retirement veto. Compatible/NoProfile/NoFacts add no veto, but
+cannot override existing Stale/Failure/primary/cleanup retirement. No historical
+driver completion is relabelled or said to have been prevented. No clock read,
+capture queue, affirmative mapping capability or automatic retry is introduced.
+
+Controls: zero/one/three retained facts; holes and all nine captures; first-baseline
+drift ramp; exact-limit/just-over neighbors; own/crossed ordering, touching equality,
+conversion/arithmetic failure, and excess followed by later invalid input;
+assessment × existing completion causes; genuine healthy execution and DateScope
+refusal with compatible local captures; NoProfile/NoFacts precedence; metadata
+privacy and original-object/age preservation. Synthetic assessment/classifier
+controls remain distinct from actual contradictory-clock execution, which is
+unobserved without an admitted clock seam/experiment. Do not mutate the host clock.
+
+Before reuse, repair `coherence_residual`'s raw-helper cross-bracket guard. Current
+measure callers already perform explicit whole-exchange ordering, so this is a
+source-derived helper contract gap, not a demonstrated current product defect.
+Pinned Windows subtraction may otherwise hide a small negative lower interval.
+An isolated source-linked Windows-epsilon subtraction surrogate can provide
+behavioral RED/GREEN, labelled separately from native Windows execution. Preserve
+direct Linux controls and all existing raw math cases. Formal execution remains
+post-V1. Format before freezing, then complete affected ordinary/contracts and
+per-file 90%/95% qualification; source presence alone closes no gate.
+
+##### Within-series coherence — ordinary checkpoint
+
+The genuine session-return path now derives this bounded assessment and applies
+the retirement veto. The aggregate capture helpers borrow their immutable fixed
+arrays; chronology, checked conversion, fixed-baseline residual and inclusive
+threshold semantics are unchanged. Direct synthetic controls cover all nine
+positions, holes, accumulated drift, exact-limit/just-over neighbors and late
+checked failures. Actual public fixtures retain the original reports, captures,
+ages and reference refusals. Contradictory-clock execution remains unobserved.
+
+Before freezing, independent reviews corrected two evidence-classification gaps.
+The final-checkpoint fixture now exposes native/unknown primary, cleanup and slot
+I/O causes before semantic query-count/reply assertions. Closed product failures
+remain semantic only after joined worker/notification/hook errors are exposed;
+19 pure typed-error controls cover the classification. Public fixture prerequisites
+independently check actual chronology/date/model conditions before expecting
+measurement success. Fixed peer/header facts remain separate semantic assertions,
+so their corruption cannot be downgraded to a raw environment refusal. Original
+vectors and negative cases are retained. These are fixture repairs; they do not
+demonstrate an additional final-summary product defect.
+
+Final ordinary receipt `coherence-ordinary-v6/verification.json` under the existing
+external `acquisition-session-20261108-v1` evidence root has SHA256
+`20985dd383202d1036b91eef0e39f5f1d31bd7293f3126735e8d7b47663a1e4a`.
+Its 424-input candidate is
+`dce1f17f93ac9ee23b511962a21540b238e8bb515055a927870e363e3154ab6d`.
+All ten lanes exited zero: boundary/format/compiler/Clippy, 140 ordinary tests,
+140 optimized tests, 64 doctests, rustdoc and both Windows-target compiler/Clippy
+checks. Bookends passed and every product input still matches main. Windows
+checks supply neither linking nor native evidence.
+
+Earlier attempts remain explicit: v1 stopped at one compiler qualification lint;
+v2 stopped at its formatting consequence; v3/v4 stopped at the new cohort's
+Clippy diagnostics, before any Rust tests. V5 executed all 140 ordinary cases
+successfully, then the recipe's required-name observer rejected incorrectly
+spelled processing/argument module prefixes. The immutable original recipe and
+failed receipts remain. Recipe v2 corrects those two literal prefixes against
+actual native records, retains the complete selection and adds the original
+coherence recipe to both provenance bookends. Its SHA256 is
+`90756105680c4dd0214449c4fdcd2547524f3c3dca57aabde80665cf29177ec5`.
+
+The current three-owner analysis role preserves 90% executable lines and 95%
+viable mutation per file, complete package baselines, the existing finite budgets
+and the five-GiB preflight. Its source-linked Windows subtraction surrogate now
+accepts formatter whitespace while requiring exactly one unchanged guard token
+sequence; actual healthy/removed-guard execution is still pending. All 114 Python
+controls passed (20 current-role, 21 series and 73 legacy engine). Three historical
+source-parser unit consumers now use isolated, explicitly pinned test copies;
+production legacy policy bindings and admission remain historical and unchanged.
+Bind the actual new ordinary receipt, then enumerate/review all three inventories
+before contracts/coverage/mutation. No old score, inventory or equivalence closes
+these pending gates.
+
+Cleanup preserved the full current source, failure logs/receipts and unique
+engine preimages while deleting terminal build caches and exact duplicate
+snapshots with reconstruction paths. Ten superseded initial-session coverage
+executables were also retired; its raw LLVM exports, 80 raw/merged profiles,
+source and qualification evidence remain. Re-exporting that historical coverage
+from profiles now requires rebuilding its pinned instrumented source. The newer
+reference coverage objects remain. Small cleanup receipts are retained in the
+same evidence root; no compression or shared-store deletion occurred. Available
+space after this cleanup was 5,519,736,832 bytes; recheck before analysis.
+
+Complete enumeration then exited zero in `coherence-enumerate-v1`, receipt SHA256
+`78d2fd550bcb27595f8f1afca9ad280c88aa8fe6414f8ad6c2ec5bda3fb4c25d`:
+43 session, 147 series and 113 measurement descriptors. All 303 complete raw
+diffs were independently replayed against their captured preimages and exact
+advertised replacements. Normalized catalogue hashes are respectively
+`ac52818f4135691dcb87dd6a1837bc1a83a145dfa9beb691bfe3d33cb0705ce2`,
+`bcab8db0d4de96bba3b37251b492e9bd1d4de3049aaab94a63640c358c299347`
+and `6538fb0906b9ba177abf0e5b2e0733e3a8837b8e92dfb2e490c34f25a68fe3f8`.
+Generation reaches 28/29 session, 47/49 series and 35/36 measurement functions,
+plus four measurement module-constant faults. Constructors/generated validation,
+individual capture selection/attachment, operation-level checkpoint placement,
+and individual reference association/refusal-order substitutions retain their
+separate direct/private/public controls; no ungenerated fault receives credit.
+Actual inconsistent/checked-capture factory outcomes and final-third-transfer
+deadline expiry at the summary boundary remain unobserved.
+
+Pre-campaign review completed a finite audit of all ten actual-capture test
+sources. It found the same missing raw model prerequisite in the private final
+checkpoint and in two independently acquired processing-fixture report origins.
+Those paths now admit original chronology/date/model inputs before positive
+measurement/reference assertions. Fixed peer facts stay semantic. Two new pure
+fixture controls exercise date/order/model boundaries and earn no product kill
+credit. Windows source review also corrected sub-100-ns wall fixtures that could
+collapse on FILETIME conversion. The session threshold still tests exactly 10 ns
+versus 11 ns by changing the exact monotonic bracket while keeping wall readings
+on the 100-ns grid. The eight new measurement controls already used representable
+wall values; their full-width residual control retains `u64::MAX` versus its
+one-nanosecond rejection through monotonic arithmetic.
+
+**Historical ordinary candidate superseding v6:** `coherence-ordinary-v9` exited zero
+with all ten lanes, 142 ordinary/142 optimized tests and 64 doctests. Its 424-input
+candidate is
+`9453ba3ac6a8e091b4deb024cb2d8154aadd157c44965400fc60f0dfcf501f1a`;
+receipt SHA256 is
+`2a2ca3f214a9cc7ddcb8b9a941b3aa5d640f43d0c9ddf51cfd4c7082ff417550`.
+Bookends passed and all 424 inputs matched main at closeout. V7's proposed
+`Duration::from_days` stopped before tests because it is unstable in the pinned
+compiler. V8's minute equivalent compiled but failed the preferred-unit lint.
+The current exact hour equivalent uses the pinned library's stable constructor;
+neither policy nor feature gates were relaxed. Both original failures remain.
+
+All three production owners remain byte-identical to the reviewed 303-descriptor
+enumeration. Reuse that catalogue review only across this exact source/config/tool
+identity; the actual final campaign must re-enumerate the complete current
+catalogues and compare them before mutation. Rebind v9's full 206-test baseline
+and changed fixture/helper pins; inherit no old score or equivalence. Cleanup
+retired only terminal ordinary caches and exact duplicate non-owner snapshots,
+preserving the complete v9 source and unique engine preimages. Space afterward
+was 5,452,701,696 bytes; recheck the unchanged five-GiB floor before analysis.
+
+Subsequent admission review found that the v1/v2 ordinary recipes imported 18
+repository helpers without including their bytes in the helper custody map.
+The v6/v9 Rust outcomes above remain actual observations, but their incomplete
+helper custody does not establish a closed ordinary qualification.
+
+**Current closed ordinary checkpoint — v10:** the revised v3 recipe captures all
+26 observed repository imports and pins 30 helper/data inputs, with ten recipe
+provenance entries. Its missing-helper/changed-helper controls reject before any
+native command. `coherence-ordinary-v10` exited zero in all ten lanes: 143
+ordinary tests, 143 optimized tests and 64 doctests. The 424-product-input
+candidate is
+`6d4cc1560b7974129d75462cdb7b46411f97784bf8442ac64b88896468a5acb4`;
+receipt SHA256 is
+`fc6bf6fddef8cb47e168c62aa6a4f1a2e41853c8759c26c74e7536491629d0ec`.
+All product/helper bytes, 26 observed imports and recipe identities match the
+445-file captured source and current main checkout at closeout. The actual full
+baseline is 207 identities (143 ordinary plus 64 doctests). This is source-file
+custody under the admitted host/runtime assumptions, not atomic loaded-bytecode
+attestation.
+
+The first fresh three-owner campaign, `coherence-qualification-v1`, is retained
+as **incomplete**, with native exit 1 and receipt SHA256
+`3911f2d86b13ff8c959ac40a43d6565387567cb671d07cddfdba135794f1df35`.
+Its 21 intended negative consumer refusals and one executed legal consumer were
+observed. Coverage reached session 225/225, series 595/621 and measurement
+374/377 executable lines. Session mutation reported 14 caught/29 unviable;
+series reported 90 caught/55 unviable/two misses. The strict caught-cause reader
+rejected 14 series outcomes, and measurement mutation never ran. Those raw
+counts are not a passed mutation gate. The analysis loader also omitted its
+unconditional `analysis-controls.py` import from custody; current unchanged bytes
+cannot retrospectively supply missing bookends. The current loader now includes
+that helper in its 36-input map and has a regression control.
+
+Fixture repairs distinguish native setup/cleanup failures from independently
+known product assertions. The new synchronous counter-boundary fixture uses
+separate valid slot/control owners, catches only the two synchronous product
+calls, and completes fixture cleanup before reporting an intended assertion.
+V10 includes its healthy execution; no synthetic panic receives product credit.
+The complete 303-descriptor inventory and three production source identities
+remain unchanged. The reviewed six-case supplementary witness profile permits
+listed rejected causes only. The original failed logs retain zero credit, every
+descriptor remains in the denominator, and source-bound independent evidence is
+required for any additional kill. Independent review reproduced foreign
+panic/cause text bypassing witness eligibility. Global diagnostic containment and
+exact case-specific cause/marker checks now reject those cases; the full-suite
+parser remains unchanged. All 126 Python controls pass (32 session, 21 series,
+73 engine), with 36 protected inputs and 126 semantic owners bound to V10.
+
+The one bounded native preflight terminated and was reaped. Its adopted tool
+returned zero: one healthy selected test passed and the exact token-comparison
+fault failed with native test exit 101 at the intended source assertion. The
+wrapper nevertheless exited 1 because its filtered reader expected two doctest
+blocks that this Cargo invocation does not emit. Original receipt
+`coherence-witness-control-v1/verification.json` remains incomplete, SHA256
+`4fc668c352d28dbe2341ec99c7d2afc1db94b6af1c2eb73aea8e94f7d48f06b4`.
+
+The corrected witness reader first validates the full 207-name roster, then
+requires all nine ordinary target blocks for a healthy filtered run, or exactly
+the first failed block. It admits zero doctest blocks for this fixed filtered
+invocation; those 64 doctests were not executed here and receive no credit.
+Missing ordinary blocks, extra doctests and mixed/foreign groups reject. Only
+this reader's function AST changed; execution, argv construction, phase checks
+and the full-suite parser remain unchanged from the captured native run.
+
+Retained-raw adjudication passed under the reviewed reader, without another
+native job. Receipt `coherence-witness-control-v1-reader-replay.json` SHA256:
+`25586d032730998fadaee86c50bfded7d74badf12b26b0a4f8522ac92adce468`.
+Independent readback checked all 45 artifact bookends, the 434-file captured
+source/helper inventory and the only intended drift: reader, Python controls
+and their policy pins. Sixteen actual-log adversarial controls reject. The
+original wrapper exit 1 remains separate from native tool exit 0; the original
+receipt was not promoted. This establishes one terminal token-witness control,
+not a fresh full baseline, a mutation score or the complete campaign. The normal
+full-suite reader still rejects these filtered logs.
+
+Next action: admit a fresh `--profile session --subject all --lane all` campaign
+with the explicit vendor and a new external output. Require actual re-enumeration
+of all 303 descriptors, the full 207-test baseline and every per-file gate; reuse
+no old score. Exclusions remain empty. Source review prepared a conditional
+whole-domain argument for the two zero-count getters, whose private admission
+enum currently has only `Unavailable`; adopt no disposition until the fresh
+actual outcomes and exact descriptors have been reconciled.
+
+Current exit: closed ordinary GREEN; fresh affected three-owner
+contracts/coverage/mutation pending. Retire only terminal regeneratable caches
+while retaining the source, outcomes and raw coverage artifacts; recheck the
+unchanged five-GiB analysis preflight floor. The native, fuzz, storage, UI and
+post-V1 formal holds remain unchanged.
+This closes neither physical mapping assurance, authenticated acquisition, Core
+admission, P1/P2 nor release acceptance.
+
+**Fresh v2 terminal checkpoint — 8 November:** the coordinator admitted the
+unchanged candidate and ran `coherence-qualification-v2` with all three subjects,
+explicit vendor and full tool admission. Original unified-exec handle `50018`
+terminated and was reaped with exit 1. Receipt SHA256:
+`591ca1419bb7ec3a8ae8aa81d32ce4acf4d844e02140a01162ab7624c81ec07c`.
+The final custody/tool bookends and all 434 captured input bytes match. External
+contracts and all three executable-line gates completed. Session has 43 actual
+variants: 14 caught/29 compiler-unviable. Series has 147 actual variants:
+90 native caught/55 compiler-unviable/two misses; both baselines execute all 207
+identities. Independent review admits 84 series caught logs normally and five
+clean supplementary pairs, with each rejected main log retaining zero credit.
+No measurement mutation ran, and the sixth supplementary pair did not run.
+
+The stopping cause is a second observed diagnostic shape for the exact listed
+`handle_series_read` line-843 subtraction fault. Its two completed failure
+sections now contain the direct production underflow at `series.rs:843:13` and
+the source-bound NoPanic assertion/child bridge; there are no raw `Error` or
+`N3_HARNESS` markers. The frozen rule permits only this fault's earlier cleanup
+failure shape, so it rejects the different category. This is not a demonstrated
+healthy-product defect. Do not edit, promote or erase the failed receipt.
+
+**Finite recovery plan:** independent reviews accept a phase-scoped evidence
+join, not a new claim that `--subject all` passed. Keep the completed 190 native
+variants, five actual witness pairs, coverage and contracts under their original
+source/tool/helper identities. First run the already configured measurement-only
+`--profile session --subject measurement --lane all` entrypoint under unchanged
+helpers, requiring fresh 113 enumeration/outcomes and its full 207-test baseline.
+Then repair only line-843 eligibility and its controls: preserve the old exact
+cleanup shape, and additionally require the exact observed two-test/no-harness
+shape, locations/messages and completed child bridge. Other cases and global
+containment remain strict. No Rust or Cargo change is needed.
+
+Run only the missing exact line-843 healthy/101 pair through the existing sealed
+witness executor at case index 5. Preserve the original preflight driver and
+receipts; use a pinned, narrowly adapted external control recipe without a fake
+main row or a validator/session monkeypatch. Bound the new witness command to
+120 seconds and its separate admission/execution/closeout node to 300 seconds.
+Retain the original five witnesses' configured 360-second shared deadline.
+Their recorded tool intervals total 45.902 seconds, but outer startup/check
+durations were not retained; do not present that sum as total outer elapsed or
+claim the six separately executed commands shared one continuous deadline.
+The selected measurement node retains its configured finite limits. Record
+recovery nodes separately; claim no completion within the expired original
+continuous 1200-second deadline. This is a phase-scoped recovery, not another
+attempt at an unchanged whole-cohort command.
+
+Finally use existing read-only leaf validators to reconcile every retained/fresh
+descriptor, diff, baseline, phase and cause. Require identical compiled Rust,
+tools/configuration and unchanged native-execution AST across any reader-only
+drift. Record one data-only joined receipt naming the retained/fresh scopes and
+all bookends, while retaining v2's incomplete status and raw exits. Keep every
+raw variant, viable denominator and miss. A raw percentage above 95 is not enough:
+`COMMON.mutation_counts` also requires no unresolved survivors. Adopt only the
+five actually observed, independently reviewed source-equivalent cases through
+the existing exact source/candidate/descriptor/proof schema: two Series zero
+getters and Measurement's two equality-to-zero gaps and canonical-zero sign.
+Their current source-level arguments are appended in the existing
+[equivalence dossier](engine-analysis-equivalences.md#current-sessioncoherence-equivalences--8-november-2026),
+within the unchanged 64-KiB cap and with the historical prefix preserved. This
+is nonformal mutation accounting; OD-10 product-proof debt is unchanged.
+The active Session role must admit only no E or this complete exact five-entry
+cohort, with current proof custody; COMMON scoring is unchanged. The adjusted
+denominator excludes justified equivalents only, never adds kills, and retains
+the distinct raw 90/92 and 81/84 scores. No percentage alone, missing owner or
+synthetic/compiler/harness result can close a gate.
+
+**Measurement recovery node completed:** existing measurement-only command ran
+under unchanged helpers. Unified-exec `36144` terminated and was reaped with
+exit 1; receipt SHA256
+`35d3c4cbbafb1ba20e0eaf6c9d57c5ece18d9d7b5542fedf6e5f165e21847080`
+retains the unresolved-equivalence gate failure. All 113 variants actually ran:
+81 caught, 29 compiler-unviable, three misses and zero timeouts, with a fresh
+complete 207-test baseline and 374/377 covered lines. Independent review checked
+every descriptor/diff/phase/cause, each miss's complete successful test roster,
+and final 434-input/tool custody. Across the two immutable nodes this is 303
+unique variants, not 303 fresh executions in one process. The missing line-843
+pair, narrowly corrected reader, exact five-E admission and final joined
+read-only adjudication remain open; no combined qualification pass is claimed.
+
+##### Within-series coherence — final joined qualification
+
+**Qualified within the selected Linux host-fixture scope — 8 November 2026.**
+Compiled candidate
+`6d4cc1560b7974129d75462cdb7b46411f97784bf8442ac64b88896468a5acb4`
+retains all 424 product inputs. Final receipt
+`coherence-final-qualification-join-v1.json` under the external evidence root has
+SHA256 `13490672a75ea28ef52b32f480f341a80d37fb1e6be7c9041f3ff97184a5e9ff`.
+It joins separately completed native runs; it does not promote either original
+incomplete command or claim a fresh whole-303 command pass.
+
+Ordinary-v10 passes all ten configured lanes, including 143 ordinary tests,
+143 optimized tests and 64 doctests. Its 445-file captured source/helper union,
+30 helper pins, 26 observed imports and ten recipe identities remain intact.
+Current reader/proof admission has 37 protected inputs and a 435-file union;
+the earlier execution nodes retain their original 434-input helper custody.
+Only the reviewed admission/equivalence and exact line-843 diagnostic handling
+changed. Native execution, argv, phase checks, ordinary/full-test and strict
+caught-cause parsing ASTs, and COMMON scoring remain unchanged.
+
+| Owner | Executable lines | Actual variants | Caught | Compiler-unviable | Equivalent misses | Raw viable score | Adjusted score |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Session | 225/225 | 43 | 14 | 29 | 0 | 14/14 | 14/14 |
+| Series | 595/621 | 147 | 90 | 55 | 2 | 90/92 | 90/90 |
+| Measurement | 374/377 | 113 | 81 | 29 | 3 | 81/84 | 81/81 |
+
+All three normal configured 90% line/95% mutation gates pass with no unresolved
+survivor or timeout. The selected three main campaigns contain one execution of
+each of the 303 variants: 185 caught, 113 compiler-unviable and five actual misses. The five
+exact source-bound equivalence dispositions remove only those misses from the
+adjusted denominator, add no kills and discharge no formal-proof debt.
+Every main baseline executes all 207 identities. Twenty-one unique external
+bypasses fail for their intended source diagnostics; the legal consumer executes.
+The getter-only legal function remains typechecked rather than executed; actual
+getter behavior is covered by the real public fixtures.
+
+Source-cause reconciliation admits 179 caught cases normally and six through
+their separately executed healthy/101 pairs, with a disjoint union of 185 unique
+faults. Rejected main logs, compiler/harness failures, the deliberate unwind
+control and the Windows-source surrogate receive zero kill credit. Focused
+controls execute one selected ordinary test and zero doctests; their extra six
+mutant invocations are not added to the 303-variant denominator.
+
+The first line-843 driver launch stopped before Session creation: its pinned
+1,794,622-byte report exceeded the generic 512-KiB policy reader. Its failed
+driver and outer receipt remain unchanged. A narrowly adapted driver uses an
+explicit 2-MiB bound for that one report and bounded pre-admission diagnostics;
+the general reader limit is unchanged. The subsequent actual line-843 pair
+passed, and original handle `78011` was reaped with exit 0. Receipt SHA256:
+`7fbc106828988c8eb773a7e8c6ed00b5e8cf97f98c1834a06951c1b06efc796b`.
+The measured executor took 16.153 seconds, the admitted node 105.451 seconds,
+and the full outer process including startup, serialization and reaping took
+105.499 seconds. Its separate 120/300
+second acceptance bounds passed. No original continuous 360/1200-second
+whole-campaign claim is made for the joined recovery.
+
+Independent reviewers reconciled every descriptor/diff/phase, all caught causes
+and compiler refusals, each missed case's complete successful test roster, all
+six focused pairs and current input/tool/configuration custody. A second final
+review checked the joined receipt and its raw artifact hashes; coordinator
+readback reproduced all three normal COMMON gates with process creation
+forbidden. All 130 Python controls pass. Original failures and raw exits remain
+visible. Retired build/contract-dependency caches do not remain replay artifacts:
+new consumer compilation requires rebuilding the pinned source. Legal consumer
+binaries, source and raw diagnostics remain, as do each current coverage node's
+21 instrumented ELF paths, 80 raw profiles, one merged profile and 40 dependency
+provenance files.
+
+The exact generation gaps remain separate: constructor/macro validation and
+other ungenerated behavior receive only their named alternative checks, never
+invented kills. Genuine reference-factory error/competing-failure/no-facts
+observations, actual report-factory inconsistency/checked-capture outcomes and
+final-third-transfer deadline expiry remain unobserved. Branch evidence is zero.
+The source-linked Windows subtraction control is not native Windows evidence.
+Compatibility under a declared one-run allowance grants no mapping continuity,
+physical error, source authentication, production sample/Core/history authority,
+P1/P2 completion, service, package or release qualification. All unrelated holds
+and OD-10's post-V1 formal deferral remain.
+
+**Next executable product child:** implement and qualify the existing
+[complete inert NTS request formatter](#next-independent-source-child-complete-inert-nts-request-formatting)
+under S2.2 step 4. Independent source/plan and routing reviews found no mandatory
+ready Core prerequisite for this child; the header/UID/placeholder contract
+corrections are incorporated. It needs no provider, mapping issuer, runtime or
+Core dependency. Actual suppliers remain with W11-W01, and ordinary abstract
+discipline/holdover remains in its P1 parent. Complete the formatter's own
+contract/security/coverage/mutation evidence before claiming that child; AEAD,
+cookie/send/association ownership and the complete S2.2 exit remain later work.
+
+Closeout synchronized the development plan, documentation/task navigation,
+backlog, architecture state capsule, W11-W01 card and TOOLING with this scoped
+exit and next child. All 55 added local Markdown links and whitespace checks
+pass. Git HEAD and the index were preserved for the independent Git owner; no
+publishing or release result is implied. The formatter is planned and ready,
+not implemented by this qualification record.
 
 #### N2a complete first campaign and strengthened candidate
 
@@ -6890,4 +8058,45 @@ original snapshot and age. Cleanup failures retain their independent effect.
 This establishes no fresh library mutation score, production sample admission,
 native Windows/AFD cleanup, service, package, P1 or release qualification. Resume
 the existing product queue; all unrelated holds and OD-10 deferral remain.
+
+#### Current working-tree recheck — 8 November 2026
+
+On David's renewed request to remove the ambiguity, the coordinator rechecked
+the repair at HEAD `1237c072573be36805efe8569ff4e5a652886bce` with the existing
+dirty work preserved. The RED, ordinary-v3 and final qualification receipt hashes
+still match those recorded above. Current `series.rs` differs from the qualified
+copy only by the additive `SeriesConfig::experimental_profile` getter: removing
+that getter makes the files byte-identical. In particular, `series_end`,
+`current_series_end`, historical transfer, the actual driver and cleanup
+reconciliation are unchanged. The entire final-checkpoint fixture section is
+also byte-identical to the qualified source. The serialized contract above
+therefore remains the implemented resolution; no second finalization repair is
+needed.
+
+An independent read-only reviewer confirmed the matching watch write/read lock
+serialization, unchanged transfer/cleanup paths, and all four Before/After
+controls in the retained GREEN logs. The unchanged final-checkpoint fixture
+section has SHA256
+`01c1581c4e8faa8473ca5753c2167239b54199393ec2817fbf15c7638b7e41a4`.
+
+This recheck ran no new Rust campaign and does not requalify the wider dirty
+tree. The later session/coherence and verification-helper changes remain
+authored but unqualified; their current admission stays closed pending fresh
+ordinary evidence. A separate review identified a pre-existing fixture failure
+classification limitation: native setup or slot-I/O failure can reach a semantic
+checkpoint assertion before its native cause is exposed. No such outcome was
+observed in this recheck. The next affected harness checkpoint must classify
+those raw native causes before query-count or reply-field assertions; this is
+test assurance work, not a demonstrated finalization defect or a new mutation
+kill. Preserve the original qualification's exact candidate and reviewed causes.
+
+The byte-identical fixture comparison above predates the subsequent raw-cause
+classification repairs in the coherence checkpoint. Current ordinary-v10 now
+executes both final-checkpoint tests with those fixture repairs, including all
+four Before/After stop/invalidation cases. The product summary helper, driver,
+historical-transfer and cleanup logic remain unchanged from the scoped repair;
+the added profile getter is their only production-file difference. V10's fresh
+ordinary result is recorded in the coherence checkpoint above. The earlier
+whole-fixture hash and mutation score retain their historical scope and are not
+relabelled as qualification of the wider current candidate.
 

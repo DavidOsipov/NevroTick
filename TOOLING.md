@@ -1195,9 +1195,9 @@ results and unresolved observations belong in the task record.
 The pure wire owners' additional evidence uses
 [verify-wire-analysis.py](scripts/verify-wire-analysis.py) and
 [its scoped policy](policy/ntp-wire-analysis.json), after the ordinary graph and
-portable rows. Select `--lane contracts`, `coverage`, `mutation`, `fuzz` or `all`,
+portable rows. Select `--lane contracts`, `coverage` or `mutation`,
 and `--subject header`, `datagram`, `nts_ke`, `nts_negotiation`, `nts_packet`,
-`nts_plaintext` or `all` (default)
+`nts_plaintext`, `nts_request` or `all` (default)
 for coverage/mutation scope,
 with `--output-dir /new/private/Linux/output` and, when selecting another copy,
 `--vendor-dir /admitted/vendor`. The output path must be new. These are owned
@@ -1210,10 +1210,21 @@ from one actual package run. Mutation reconciles separate complete nonempty
 per-file enumerations and treats build failures as unviable; the selected campaign
 shares the fixed total mutant/time budgets. External consumer checks require a
 compiling legal caller and exact privacy/borrow error causes. Contracts cover all
-six registered owners; `--subject` does not narrow that lane. Candidate-specific
-results belong to the [protocol task](tasks/s0.1-protocol-comparison.md#inert-nts-plaintext-framing).
-The test-only fuzz target covers all six pure owners, including request-bound
-negotiation, outer authenticator framing and inner plaintext framing. Contracts and fuzz exercise their complete scope;
+seven registered owners; `--subject` does not narrow that lane. The formatter's
+new external consumer executes an independent complete byte literal; older legal
+specimens retain their compile-only scope. New negative probes require their exact
+source-bound JSON compiler cause. The loader also pins its actual
+`analysis-controls.py` import. Candidate-specific older results belong to the
+[protocol task](tasks/s0.1-protocol-comparison.md#inert-nts-plaintext-framing);
+the [inert formatter child](tasks/engine-transport-pilot.md#next-independent-source-child-complete-inert-nts-request-formatting)
+owns its current results and the changed header/datagram helpers' qualification.
+
+`--lane fuzz` and `--lane all` now fail closed for every subject: the separately
+admitted fuzz target covers the original six owners, without the new formatter.
+Adding the analysis subject supplies no fuzz admission or permission to lift the
+existing fuzz hold. Retain that target and all its hashes until its own authorized
+extension. Its six-owner scope includes request-bound
+negotiation, outer authenticator framing and inner plaintext framing. Contracts and the separate fuzz target exercise their complete declared scope;
 `--subject` narrows coverage/mutation only. An independently written byte-state
 model supplies request acceptance and fixed-offer response acceptance/projection
 expectations. Rejection classes/precedence and refusal contexts without algorithm
@@ -1346,6 +1357,50 @@ mutation jobs and 90%/95% per-file gates remain. The
 owns actual contracts, coverage, all 167 fresh outcomes and unchanged custody;
 neither conditional assumptions nor this role supplies production calibration,
 history admission, a Core dependency or native Windows qualification.
+
+The historical report-owned reference checkpoint used the session profile for
+`session.rs`, with 129 ordinary tests, 63 doctests and 34 variants. The role
+distinguishes the exact intentional unwind control from discriminating assertions;
+that control alone receives no kill credit. The 90%/95% gates and finite resource
+budgets remain. The
+[reference-view final record](tasks/engine-transport-pilot.md#report-owned-reference-final-qualification--8-november-2026)
+owns its twenty intended negative contracts, 186/186 executable-line coverage,
+ten behavioral catches, twenty-four compiler-unviable cases and unchanged custody.
+Its recorded factory/generation limits remain; the legal getter function only
+typechecks, while successful getters execute in the real public fixture.
+These are bounded Linux results; no new whole-engine score or native Windows
+qualification follows.
+
+The current [session/coherence checkpoint](tasks/engine-transport-pilot.md#within-series-coherence--final-joined-qualification)
+uses `verify-engine-analysis.py --profile session --subject all --lane all`, with
+full tool admission, the explicit admitted vendor and a fresh external output.
+The [session policy](policy/session-analysis.json) now selects `session.rs`,
+`series.rs` and `measurement.rs`, binds ordinary-v10's 143 ordinary/64 doctest
+identities and all 303 descriptors, and protects 37 helper/proof inputs. It admits
+only no exclusions or the complete exact five-case current equivalence cohort,
+with the existing source/candidate/descriptor/reviewed-proof guards. No common
+scoring rule or threshold changed. Six listed rejected Series cases can earn
+credit only through their independently clean focused controls; their original
+mixed logs remain uncredited. Full-suite admission still rejects filtered logs.
+
+The final qualification explicitly joins retained 190 main variants and a
+separately completed 113-variant measurement node, plus six focused pairs. The
+original incomplete commands and separate recovery budgets remain visible;
+there is no passing whole-303 command or original continuous-wall claim. Current
+source/native-execution identity and per-file gates were reconciled without
+inheriting historical scores. Any subsequent source/helper change needs its
+appropriate fresh admission or an explicit unaffected-state argument. The
+subsequent [S1.4 finite phase-plan two-owner exit](tasks/s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners)
+now passes its own Linux fixture gates: 455 ordinary/455 optimized tests,
+92 doctests, independently justified unchanged-API external 1+7 reuse, 199
+coverage cases and all 376 mutation variants. Lifecycle and numerical line
+coverage are 98.2538% and 94.5755%; each file passes its 95% viable-mutation gate.
+Four exact reviewed equivalent misses earn no kill credit. The ten-worker
+campaign's private mutation profile changes only debug information to zero;
+optimization, debug assertions, overflow checks, lint rules and shipping profiles
+remain unchanged. Original attempts and external-refresh ENOMEM remain retained.
+Next prepare the remaining frequency-prior/holdover contract under development
+§7; neither complete controller nor native qualification follows.
 
 The pure fixture core uses [verify-core-analysis.py](scripts/verify-core-analysis.py)
 and [time-core-analysis.json](policy/time-core-analysis.json). Its recorded

@@ -1,5 +1,46 @@
 # time-core source and contract provenance
 
+## S1.4 finite phase-plan adaptation — 8 November 2026
+
+The accepted contract in
+`tasks/s1.3-source-selection-readiness.md#s14-finite-phase-plan-lifecycle-contract`
+selects an owning, inert finite-plan mechanism beneath the existing reference and
+settled-rate owners. The accounting order is source-derived from Chrony 4.9,
+revision `8df4f1263e206585e6c4e61352d042c2dd12916a`: `REF_SetReference` in
+`reference.c`934–987, `LCL_AccumulateFrequencyAndOffset` in `local.c`732–764,
+and `update_slew` in `sys_generic.c`180–270. Known delivered transient correction
+is accounted before selecting its replacement; effective baseline and transient
+rates remain distinct. This is not a clean-room provenance claim.
+
+The existing additive ledger now retains the complete immutable source files,
+verified against their full Git blob identities before adaptation:
+
+| File | SHA-256 | Original copyright notices |
+| --- | --- | --- |
+| `reference.c` | `e9a9cb678413366c51d42e5e3dd13f8a4104a3006a538987f66bc3a2a4da803f` | Richard P. Curnow1997–2003; Miroslav Lichvar2009–2018,2020,2022; Andy Fiddaman2024 |
+| `local.c` | `af16a2e6f46716f5bd4e405bdeebaecacbf15ca62476e153323e3836e2c7d3ac` | Richard P. Curnow1997–2003; Miroslav Lichvar2011,2014–2015,2025 |
+| `sys_generic.c` | `1556c00f4b646634879d311ea406681f661dd67e03367d6a73ff116ff01e048f` | Miroslav Lichvar2014–2015 |
+
+Each file grants GPL-2.0-only. Its complete original notice/grant/disclaimer is
+retained in the raw source, and the adapted owner preserves the selected
+`sys_generic.c` notice. David Osipov owns the AI-assisted Rust adaptation. The
+original numerical bound implementation is kept under the existing chart
+roundoff owner; it is not an upstream numerical-accuracy or parity claim.
+
+Deliberate deviations are positive-behind phase, explicit common additive rates
+in displacement seconds per active-awake second, typed independent monotonic and
+active clocks, a caller-declared known effective baseline, explicit finite fixture
+horizon/caps, and carried binary64 debt with separate outward arithmetic bounds.
+The implementation does not copy Chrony's Unix calls, constants, opposite step
+sign, cooked/raw frequency denominator or seconds-squared correction parameter.
+Full oscillator learning, adaptive horizon policy, physical forecast/accuracy,
+native actuator mapping and durable broker authority remain parent obligations.
+No shipping correction defaults or new source eligibility follow.
+
+This is implementation/provenance preparation. Actual compiler, behavior,
+external-contract, coverage and mutation results belong to the existing S1.3
+task against their executed candidate. Formal work remains post-V1.
+
 ## N2a conditioned fitting authoring — 7 November 2026
 
 The independently reviewed N2a contract in
