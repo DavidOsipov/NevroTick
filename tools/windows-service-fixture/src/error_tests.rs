@@ -7,7 +7,7 @@ use std::{collections::BTreeSet, error::Error};
 
 use windows_platform::service::{BudgetError, LifecycleError, PendingBudget};
 
-use super::{FixtureError, NativeError, NativeOperation};
+use super::{FixtureError, NativeError, NativeOperation, ServiceFailure, WorkerError};
 
 /// Fixture-only category ceiling, separate from product logging/output policy.
 const MAX_CATEGORY_BYTES: usize = 64;
@@ -104,6 +104,16 @@ fn fixture_variant_categories_are_distinct_and_have_the_declared_source_presence
         ),
         (FixtureError::ServiceFailed, false),
         (FixtureError::OutcomeUnavailable, false),
+        (FixtureError::Worker(WorkerError::Preparation), true),
+        (
+            FixtureError::Cleanup(ServiceFailure::new(
+                FixtureError::Worker(WorkerError::Preparation),
+                Some(WorkerError::Cleanup),
+                None,
+                None,
+            )),
+            true,
+        ),
     ];
     let expected_classes = cases.len();
     let mut classes = BTreeSet::new();
@@ -112,6 +122,69 @@ fn fixture_variant_categories_are_distinct_and_have_the_declared_source_presence
         assert!(classes.insert(category(&error)));
     }
     assert_eq!(classes.len(), expected_classes);
+}
+
+/// Worker and bounded cleanup failures preserve typed causes without formatting
+/// numeric reporter codes or recursively joining their diagnostic messages.
+///
+/// # Errors
+/// Propagate missing or changed typed-source hops.
+///
+/// # Panics
+/// Fail if categories collapse, secondary slots disappear or the primary changes.
+#[test]
+fn worker_cleanup_facts_retain_the_primary_and_each_bounded_secondary() -> Result<(), Box<dyn Error>>
+{
+    let mut categories = BTreeSet::new();
+    for cause in [
+        WorkerError::Preparation,
+        WorkerError::Activation,
+        WorkerError::Running,
+        WorkerError::Cleanup,
+    ] {
+        assert!(categories.insert(category(&cause)));
+        let wrapped = FixtureError::Worker(cause);
+        assert_eq!(
+            wrapped
+                .source()
+                .and_then(|source| source.downcast_ref::<WorkerError>()),
+            Some(&cause),
+        );
+        category(&wrapped);
+    }
+    let first = NativeError::new(NativeOperation::Status, 717);
+    let stop = NativeError::new(NativeOperation::Status, 718);
+    let terminal = NativeError::new(NativeOperation::Status, 719);
+    let facts = ServiceFailure::new(
+        FixtureError::Lifecycle(LifecycleError::Report(first)),
+        Some(WorkerError::Cleanup),
+        Some(LifecycleError::Report(stop)),
+        Some(LifecycleError::Report(terminal)),
+    );
+    assert_eq!(
+        facts.primary(),
+        &FixtureError::Lifecycle(LifecycleError::Report(first)),
+    );
+    assert_eq!(facts.completion(), Some(WorkerError::Cleanup));
+    assert_eq!(facts.stop_report(), Some(&LifecycleError::Report(stop)));
+    assert_eq!(
+        facts.terminal_report(),
+        Some(&LifecycleError::Report(terminal)),
+    );
+    category(&facts);
+    let wrapped = FixtureError::Cleanup(facts);
+    category(&wrapped);
+    let source = wrapped.source().ok_or("bounded cleanup source missing")?;
+    let facts = source
+        .downcast_ref::<ServiceFailure>()
+        .ok_or("cleanup source changed")?;
+    assert_eq!(
+        source
+            .source()
+            .and_then(|cause| cause.downcast_ref::<FixtureError>()),
+        Some(facts.primary()),
+    );
+    Ok(())
 }
 
 /// An actual rejected budget retains its typed cause through the fixture layer.

@@ -4531,9 +4531,11 @@ handoff. The raw records are local retained evidence, not committed artifacts.
 | Product service composition — platform with engine/broker/IPC/diagnostic owners | Consume qualified adapters and explicit worker/handler contracts; final SCM identities, intended tokens/SIDs, privilege allowlists, creation-time object protection and supported pre-start provisioning must be resolved before ordinary installed hosting. | Truthful availability, enforced startup admission, bounded diagnosed stop/restart and management isolation. Current engine observation checks only its three forbidden privileges; broker observation is descriptive, not its full allowlist. Typed errors are not a complete diagnostic sink. |
 | Native service qualification — W11-W05/security/QA | Existing Windows hold must be lifted separately; use admitted disposable fixtures and intended roles on the adopted two-family matrix. | Actual SCM callbacks/status failures, effective token/object isolation, native completion, resource retention and failure/recovery behavior satisfy CHECK-1/27 and reached CHECK-17/21 beside valid controls. Host injections and compiler checks do not close this stage. |
 
-**Next service action:** execute the source integration preparation row in this
-existing S3.1 chain, then close its source-adoption prerequisites before claiming
-product integration readiness. The current Core/engine queue is unchanged.
+**Next service action:** the owner-assigned child in [§4.35.9](#4359-w11-w05s31-worker-lifecycle-child--8-november-2026)
+now records reviewed contract/source authoring and its blocked verification.
+Restore admitted tooling, qualify that candidate and close source-adoption
+prerequisites before claiming product integration readiness. The current
+Core/engine queue is unchanged.
 This handoff lifts no Windows/native, fuzz or optional-storage hold and starts no
 formal work before V1. Full P3, package delivery and release remain separate exits.
 
@@ -4623,6 +4625,637 @@ the Windows/native execution hold, separate fuzz hold, optional-storage pause,
 UI holds and post-V1 formal deferral. This assignment authorizes no service
 registration/start, clock effect, signing, installation, package publication or
 external-agent contact.
+
+#### 4.35.9 W11-W05/S3.1 worker lifecycle child — 8 November 2026
+
+**Active goal:** own the bounded adapter-to-worker startup/readiness/status/Stop
+child, reuse `windows-platform` and `windows-service-fixture`, implement its
+reviewed source slice, and record exact verification results and remaining gaps.
+Original source-authoring baseline was `origin/main`
+`1237c072573be36805efe8569ff4e5a652886bce`; branch
+`service/w11-w05-s3.1`, separate worktree `/workspace/NevroTick-service`.
+Existing uncommitted cloud audit handoffs remain in the main checkout, backed up
+under `/workspace/.nevrotick-cloud/service-lifecycle-pull-f6yd87pr`.
+
+**Scope and owners:** W11-W05/platform owns the existing private fixture host
+and worker seam; CHECK-27 is the lifecycle exit, with CHECK-1's existing startup
+privilege admission and reached CHECK-17/21 error/resource controls. The
+coordinator retains Core/engine algorithms, shared manifests/locks and all
+verification policies. No production worker, account, runtime, deadline, IPC,
+network/clock effect or installed-service authority is selected. Formal work
+remains post-V1; Windows/native, fuzz, storage and UI execution holds remain.
+
+**Frozen contract, revision 2 (independently accepted before implementation):**
+
+1. One invocation retains the existing `ServiceLifecycle`, reporter, worker and
+   sole outstanding permit. Host startup/token admission precedes worker
+   preparation. All worker phase methods, activation and cancellation return
+   promptly. Worker events are level-triggered: publish state before coalesced
+   owner wake, retain it until observed, and retain an unpark token across the
+   check-to-park race. Every wake rechecks Stop/time; waits use the remaining
+   fixed phase/run deadline, without a polling heartbeat or invented progress.
+   The existing SCM callback continues to publish only sticky Stop and wake the
+   owner. A real worker must supply this wake protocol before later adoption.
+2. Preparation returns Pending, Ready or a typed failure. Ready acknowledges
+   physically completed initialization and a prepared, dormant worker. Only this
+   acknowledgement completes the startup permit. The owner rechecks Stop/time
+   and calls `ready`; operational activation needs an acknowledged Running
+   report and a separately admitted running permit. Neither preparation nor
+   Running means trustworthy time or clock authority.
+3. The invocation permanently fences all its admission before any fallible time,
+   StopPending/report operation or worker cancellation. This private fence also
+   applies when `ServiceLifecycle::request_stop` refuses reversed/unrepresentable
+   time before changing its state. Worker failure and cancellation requests are
+   distinct from actual completion; a failed Running report never activates.
+4. Completion is an explicit Pending/Finished(Result) observation. Only Finished
+   acknowledges completed jobs and resolved cleanup custody (or an acknowledged
+   recovery handoff), and completes the
+   permit. A first worker/status/time failure remains the primary result;
+   subsequent worker cleanup and status failures remain bounded, inspectable
+   secondary facts: one completion outcome and one outcome for each permitted
+   StopPending/terminal report, without an accumulating error list. An unresolved
+   cleanup attempt stays Pending. Cleanup cannot replace the primary cause or
+   manufacture Clean.
+5. Deadline expiry and Drop release no charged work. An overdue invocation stays
+   retained with its original lifecycle/reporter/worker; finite step methods
+   return Pending/Overdue without consuming it. It emits no Stopped and admits
+   no replacement work. Dropping a borrowed poll/observation does not drop that
+   owner. The private host keeps the invocation through Finished and cannot
+   return ServiceMain on an overdue step. Whole-owner destruction while a worker
+   is unresolved must be prevented by the private ownership path or the inert
+   fixture's fatal custody guard; a leaked counter alone is insufficient.
+   Late completion can settle only this invocation, with a failed terminal
+   outcome. Polling/repeated Stop never renews deadlines or fabricates progress.
+   The source driver cannot force completion of a stalled native job; actual
+   native termination/recovery remains a held product integration prerequisite,
+   not an assertion made by this source child.
+
+Independent controls use the actual host/worker owner: healthy readiness/Stop;
+denied startup invokes no worker; pending/failed preparation never runs; Running
+report failure never activates; Stop/failure/exact deadline close admission;
+cancellation/timeout/drop cannot complete charged work; late completion cannot
+release successor work; cleanup/reporting faults preserve the first failure.
+Both roles retain existing laboratory identity, privilege checks and limits.
+
+Fresh-context read-only reviewer `service_contract_review` required revision 2's
+early fence, wake, retained-overdue custody, resolved-completion and bounded
+secondary-outcome clarifications. It then accepted revision 2 for bounded source
+implementation with no residual contract blocker. The fixture-only fatal custody
+guard must abort before unresolved worker/reporter field destruction; it selects
+no product fault policy. No source or native test is implied by that review.
+
+**Entry preflight:** configured `qualification.py ready` exited 1 before any
+Cargo/compiler/analyzer command: missing
+`/home/agent/.local/share/nevrotick/analysis-installation.json`. Receipt
+`artifacts/windows-services/recovery-20261107-v1/cloud-s31-ready-entry.json`,
+SHA256 `f2874bfdbdc4f1a90c08f0d9840b2b5586eb5a709d5c899ecc8a5799895b2250`.
+Current runner also requires the canonical private compiler and pinned stable
+inventory absent here. Existing cloud vendor contains one extra package versus
+the current 533-directory policy; it was preserved, not used as admitted input.
+Ordinary execution and current metrics remain incomplete. Restore/admit the
+configured installation and exact vendor without weakening policy; then create
+a fresh graph receipt. The coordinator must separately refresh the historical
+421-input metric binding and nonempty reviewed mutation inventories. The
+90% per-security-file line and 95% per-critical-file mutation gates are unchanged;
+platform metrics alone cannot qualify changed fixture host/worker source.
+
+**Source-authoring checkpoint (not qualified source adoption):** the existing
+native `run_service` now drives one persistent private `ServiceInvocation`.
+`WorkerCustody` distinguishes dormant, preparing, prepared, active, cancelling
+and actually finished work. Its worker starts dormant; phase methods cannot
+receive a lifecycle, reporter or permit. The original thread-bound owner alone
+releases a charge after Ready/Finished acknowledgement, reports status and
+extracts its result once. Whole-owner destruction while unresolved aborts only
+this inert fixture before its worker/reporter fields are destroyed. Overdue
+steps retain the original owner; notification-only retention after the shutdown
+deadline makes **no bounded native-stop guarantee**. No production worker or
+effect was connected.
+
+The independent test owner authored 18 worker controls through
+`start_invocation`/`poll`; the coordinator added an independently reviewed live
+Stop-deadline overflow case, for **19 worker controls**. These include both roles, denied startup, readiness and
+Running acknowledgement, Stop inside Running reporting, reversed/expired time,
+all worker failure phases, pending cancellation, independent phase deadlines,
+late completion and successor isolation, bounded failure facts, one-shot result,
+discarded observations, retained wake and healthy/fatal whole-owner Drop children.
+One new error-projection test checks typed causes and all secondary slots; the
+existing category test includes both new variants. Existing host tests retain
+their behavioral expectations, with two additional reversal boundaries and clock
+scripts adjusted from eight to ten healthy observations for preparation/health
+guards. First-status-failure testing now also observes both later report failures.
+**All these Rust tests are authored, uncompiled and unexecuted.** No behavioral
+RED/GREEN, formatter, compiler, Clippy, rustdoc, metric or Windows result is claimed.
+
+Fresh-context `service_source_review` inspected the source, all 19 worker-test
+oracles and teardown. Before final freeze, review corrected stale pending-time
+guards, one-shot result custody, the preceding-phase/stop-deadline distinction,
+private-item documentation and the wake control. Its final source-only verdict
+found no blocking lifecycle/language/harness issue and was ready for configured
+verification; this is not evidence that those commands pass. The wake control
+uses a fresh owner thread and explicit notification/publication handshake beside
+a bounded quiet neighbor; spurious wakes remain legal and it proves no scheduler
+or native latency guarantee. The final added overflow case retains a live
+preparation charge while shutdown deadline construction fails, beside a
+representable neighbor. It checks the original startup-expiry cause, independent
+Stop/terminal refusal facts and no false Stopped acknowledgement. Independent
+review accepted its oracle; the case remains unexecuted.
+
+Final read-only use of the existing qualification recipe's `source_identity` and
+`manifest_admission` passed: **443 source inputs**, including all **16 fixture
+inputs**, candidate SHA256
+`7bfcca4bf6956583c500d02e395ff5da9e7c5646c7b2ce2a0cda4ebf85baafd6`.
+This identifies bytes only; it is no tool/vendor/graph admission or executed test.
+`git diff --check` exited 0. All `crates/`, manifests/locks, `.cargo/`, policies,
+verification scripts and the Git index remain coordinator-owned and unchanged.
+
+| Final source input | SHA256 |
+| --- | --- |
+| `tools/windows-service-fixture/src/host.rs` | `e69b4d96d92170d8d037d61b8dba5a175acc6f393ff2d20c0be5c76cdc91a178` |
+| `tools/windows-service-fixture/src/worker.rs` | `2a2468721612a5a12263278b06ccdf0cfd0e84234de8567336146475efbac101` |
+| `tools/windows-service-fixture/src/worker_tests.rs` | `55c2b6e1d5ab1728be9fa8abaa9c903acc3f64bfd8c8a2cc4f8b31fa128ccb75` |
+| `tools/windows-service-fixture/src/host_tests.rs` | `3cb90733188e1d104d2710c6c13182ffd81d956b60443ef7ba522af3c4a1cc80` |
+| `tools/windows-service-fixture/src/error.rs` | `18b29f03f343edfcba22268eac2eaadc4ded468d72fc7076604f3c86f307826e` |
+| `tools/windows-service-fixture/src/error_tests.rs` | `0db5bc9afcdd399354349c7d6864f1c121bef010f3c5b38c98fac0afd9150305` |
+| `tools/windows-service-fixture/src/lib.rs` | `c13d107f0c302738f3daec760616dce840ce39704e66e752287aa40106c50ef7` |
+| `tools/windows-service-fixture/README.md` | `99ffb6a2add8ba1645ec0fc08b922e72124ce962089e7a0162ffd92be7cbbd0d` |
+
+**Tool installation continuation — 8 November 2026:** David explicitly requested
+installation of the missing tools. Pinned rustup 1.29.3 and Rust 1.99.1 are now
+installed at the canonical `/home/agent/.cargo` and `/home/agent/.rustup` paths,
+with the declared Clippy, rustfmt, rust-analyzer, rust-src, LLVM tools and Windows
+MSVC target components. All eight compiler executable digests match the existing
+policy. The configured `setup-unix.py` installer completed all five pinned tool
+installs and version smokes: nextest 0.9.150, cargo-deny 0.20.2, cargo-audit 0.22.2,
+cargo-mutants 27.1.0 and cargo-llvm-cov 0.9.1. All five installed binary digests
+also match policy. Shell PATH/profile files were not changed.
+
+The first nextest download timed out; that incomplete receipt is preserved.
+Already verified nextest/deny archives were reused. The other three direct
+GitHub downloads encountered 503s; public GitHub release-asset API downloads
+then matched the exact same pinned archive hashes. No floating version, package
+source, compiler flag or verification policy was substituted.
+
+External retained evidence is under
+`/workspace/.nevrotick-cloud/service-tools-install-20261108/`:
+
+| Record | Actual result / SHA256 |
+| --- | --- |
+| `installation-api.json` | Complete five-tool installation/version smoke; `a1ca83aac8b8636e9482c3b61bcd3530e9db4391f18aea04606e26535bd71343` |
+| `vendor-admission.json` | Official `verify.admit_vendor` passed all 533 packages / 27,101 files, no hardlinks; `86c2d6c113eeb808d7ea2f31193bf52de6eab7d46d80331352ec54848be69b65` |
+| `evidence/stable-complete-payload-inventory.json` | Fresh complete 3,924-entry local compiler inventory, **not policy-admitted**; `11c41bffe7f0b5c808e5ea61f7385c3d3fb79eff99185be41b1d8a9246329719` |
+| `host-helper-comparison.json` | Read-only required-helper path/hash inspection; `b2ab48895901a49c7c54dd94ce418756797ec3a7ccec0d8dfde06150eae70556` |
+
+The exact fresh vendor is at that directory's `vendor/`; inventory SHA256 is
+`6cd84bd39e0d73d42e3e2412ed6c314b9976461ba087d94f806b257ce7366c5d`.
+The previous CodeQL vendor and its extra obsolete package remain untouched.
+A private, owned mode-0600 installation pointer now exists at the required path;
+it explicitly describes stable-only local installation, not policy admission.
+Independent read-only `installed_tools_review` checked all five tool archives,
+versions and installed binaries, all eight compiler binary pins, every one of
+the 3,924 stable inventory entries, the complete fresh vendor and pointer custody.
+These checks passed. They establish installation integrity, not product execution.
+The service source candidate remains the same 443-input `7bfcca4b...` checkpoint.
+
+**New actual refusal after installation:** configured `qualification.py ready
+--label cloud-s31-ready-installed-v1 --vendor-dir <fresh vendor>` exited 1 with
+`Inventory SHA256 mismatch; refusing to parse substituted bytes.` Its retained
+record is `artifacts/windows-services/recovery-20261107-v1/cloud-s31-ready-installed-v1.json`,
+SHA256 `de15a6e370e7ce1e320a42502299726c683f11f3791aa513006eec9c33963114`;
+zero compiler/Cargo/analyzer commands ran. The original missing-pointer refusal
+remains historical evidence. This retry follows actual prerequisite changes.
+
+The remaining admission restriction cannot be repaired by installing Rust tools:
+the service consumer pins the old inventory's complete JSON hash
+`8b7bd1c19a976090ce4c8e8246a4ca1d7dfef26d76e04ae3bc9672101694190e`,
+including machine-specific absolute roots. It also demands exact Ubuntu helper
+payloads at fixed public paths. This Debian cloud's bwrap/prlimit/linker hashes
+differ, and the required GCC-13/Python-3.12 paths are absent. Normal Debian package
+installation cannot reproduce the original inventory/root binding or establish
+equivalence of those Ubuntu payloads. No old inventory, checker or pinned hash was
+overwritten to manufacture admission. The original verification policy stays
+unchanged, as required by the coordinator-owned scope.
+
+**Next action / remaining exits:** coordinator reviews an explicit cloud host
+admission profile, retaining the original Ubuntu profile and binding this complete
+installed compiler inventory, exact supported host helpers, read-only mounts and
+existing resource/custody controls. The installation and helper records above are
+concrete inputs to that review, not an automatic new trust root. Then run fresh
+`ready` and `graph` receipts through `qualification.py`, followed by affected
+fixture/platform ordinary and optimized tests, format, GNU/Windows Clippy and
+rustdoc/doctest lanes with that receipt. Coordinator-owned metric rebinding,
+complete inventories and fixture-specific measurement admission must retain
+90% executable lines per security file and 95% viable mutation per critical file,
+including generation/guard/derive reconciliation. Current policies/denominators
+were neither edited nor bypassed. Windows cross-link/independent PE readback,
+supported final accounts/provisioning, full per-role token/object/mitigation
+admission, actual worker wake/completion and bounded process escalation,
+diagnostic sinks, installed/native recovery and product composition remain with
+their existing owners and holds. No Core/engine, production service, native,
+package or release acceptance is closed by this checkpoint.
+
+**Owner-requested pull and goal renewal — 8 November 2026:** both main and the
+separate service worktree now fast-forward to published `origin/main`
+`e76863fc2b5acc393d317fd93857213f410fe609`. The local task merged without
+conflicts; all eight other service files and both main-checkout audit handoffs
+retain their pre-pull bytes. Backup:
+`/workspace/.nevrotick-cloud/service-goal-repull-p6k1vank/`.
+The new cloud handoff in §4.35.8 is adopted as the current scope; the updated
+development queue leaves this parallel child separate from the coordinator's
+Core frequency-prior/holdover work.
+
+The existing source preparation and contract revision 2 are preserved. Reconcile
+the pre-existing private `worker.rs`/`worker_tests.rs` and `lib.rs` wiring with
+the newly published bounded writable-file list before further implementation or
+adoption; preserving those files does not broaden the assignment. Tools and the
+exact vendor remain installed, while the cloud inventory/helper admission and
+metric bindings remain coordinator-owned. The new read-only source identity is
+**453 inputs**, SHA256
+`9c5e6bc239eee89f036e64bdd789275788795909729363985ef3b8dca03538ca`.
+The earlier 443-input source results and refusal receipts remain historical;
+they are not current admission or execution evidence. No new Rust/test/native
+execution occurred for this pull or goal message.
+
+**Renewed goal message:**
+
+Own and complete the admitted source work for the existing W11-W05/S3.1 service
+adapter-to-worker lifecycle child from baseline
+`e76863fc2b5acc393d317fd93857213f410fe609`, in the separate service worktree.
+Start with current `AGENTS.md`, `docs/README.md` and
+`tasks/windows11-integration.md` §4.35.8, then load the relevant repository service,
+Rust-contract, security and testing skills.
+
+Reuse `windows-platform`, `windows-service-fixture` and the existing task chain.
+Continue from the frozen, independently reviewed startup/readiness/status/Stop
+contract and preserved source checkpoint; independently review any necessary
+contract changes before implementing the admitted source slice. Cover worker
+failure, cancellation, actual-completion custody and cleanup while preserving
+the original failure and bounded secondary outcomes.
+
+Demonstrate that Running requires acknowledged worker readiness and successful
+SCM status publication, Stop closes new admission, and cancellation, timeout or
+Drop cannot fabricate completed work or release capacity prematurely. Preserve
+the current testing workflow, complete reviewed inventories, at least 90%
+executable-line coverage per security file and at least 95% mutation score per
+critical file.
+
+Keep Core/engine algorithms, shared manifests, lockfiles, dependencies/features,
+verification policies, scripts and qualification bindings coordinator-owned.
+Preserve all existing execution holds. Record exact source identities, actual
+commands/results, unavailable checks and remaining native/product gaps in the
+existing task chain; claim only the qualification stages actually demonstrated.
+
+**Scope-reconciled continuation checkpoint — 8 November 2026:** the separate
+worktree remains on agreed baseline `e76863fc2b5acc393d317fd93857213f410fe609`.
+The worker types now live directly in the existing `src/host.rs`; its 19 controls
+are a private nested module in the existing `src/host_tests.rs`. The earlier
+separate worker files were folded after exact backup at
+`/workspace/.nevrotick-cloud/service-scope-fold-su9avfc2/`. `src/lib.rs` and the
+fixture README were restored to their published baseline bytes. Only the four
+admitted host/error Rust files and this task differ from the baseline. No native
+FFI wiring, platform lifecycle API, dependency, manifest, lock, policy, verifier
+or qualification binding changed.
+
+Contract revision 2 is unchanged. Structural comparison against the backup
+passed: moved worker declarations differ only in the necessary standard-library
+qualification; the original host owner body and host tests remain intact; the
+19 new test bodies differ only in module/import paths and the single fatal-child
+selector. That selector is now
+`host::tests::worker_tests::unresolved_owner_drop_aborts_before_worker_or_reporter_destruction`.
+The worker module's prompt-call, retained Pending, publish-before-wake and
+failure-versus-completion obligations remain in the host documentation. Error
+payload types stay public through the public `FixtureError` variants and are
+imported internally from `crate::error`, without changing the library entry file.
+
+Fresh-context read-only `scope_fold_review` independently compared the actual
+backup/current source and found no blocking body, import, privacy, selector or
+documentation issue. It confirmed all 19 controls were preserved. This is source
+inspection, **not compiler, lint or behavioral execution**. `git diff --check`
+and the admitted-writable-path check both exited 0.
+
+The existing recipe's read-only `source_identity`/`manifest_admission` checks
+passed for **451 inputs**, including all **14 fixture inputs**, candidate SHA256
+`e92f619630de0f9d00f80ff5f8263d77acb8566a4cac8f111d89dfe8fc044e3b`.
+The earlier 443/453-input snapshots are historical and supply no current pass.
+
+| Current changed Rust input | SHA256 |
+| --- | --- |
+| `tools/windows-service-fixture/src/host.rs` | `6b3de31d12830940f78f0d42034f9d3112d3c800db4bb9a48f828dd2ff764c59` |
+| `tools/windows-service-fixture/src/host_tests.rs` | `4357bfe70b8213bbecaf398fd3e44805fe8297745d53ecceada3cb34b8d32aa2` |
+| `tools/windows-service-fixture/src/error.rs` | `18b29f03f343edfcba22268eac2eaadc4ded468d72fc7076604f3c86f307826e` |
+| `tools/windows-service-fixture/src/error_tests.rs` | `0db5bc9afcdd399354349c7d6864f1c121bef010f3c5b38c98fac0afd9150305` |
+
+**Goal disposition: blocked at coordinator-owned verification admission.**
+Read-only reconciliation confirms the installed inventory is still
+`11c41bffe7f0b5c808e5ea61f7385c3d3fb79eff99185be41b1d8a9246329719`,
+while policy still requires
+`8b7bd1c19a976090ce4c8e8246a4ca1d7dfef26d76e04ae3bc9672101694190e`.
+Neither that policy nor its admission/runtime checker changed between the actual
+installed-readiness refusal and `e76863f`. Its prerequisite failure is therefore
+unchanged; no identical blocked compiler campaign was resubmitted. The service
+metric policy still binds 421 historical inputs, has zero mutation inventories
+and registers only the three portable platform owners, not the changed host.
+No 90%/95% result, current graph/ordinary/optimized/format/Clippy/rustdoc pass or
+Running/Stop behavioral demonstration can be claimed.
+
+Next the coordinator admits the exact cloud tool/helper profile and registers
+the changed host/error owners with current source/test bindings, complete
+inventories and required measurement roles. Then run fresh ready/graph and the
+existing qualification lanes on this candidate, preserving every actual failure
+and raw result. Production workers/providers, final identities/provisioning,
+effective privileges/mitigations, actual SCM/resource/completion/recovery and
+bounded native escalation, broker clock ownership, full package and release
+qualification remain open. All Windows/native, fuzz, storage, UI and post-V1
+formal execution holds remain intact. The goal is not complete.
+
+**Owner portability/metric amendment — 8 November 2026:** David explicitly removed
+the machine-specific checksum requirement and directed mutation qualification at
+the code this child changes, while another AI continues Core/engine work. This
+supersedes the preceding admission/ownership blocker for this service lane.
+The service-local `qualification.py` now uses the existing public-host sandbox,
+observes current helper/compiler inventory identities instead of requiring an
+old machine's inventory JSON or Ubuntu helper digest, and retains upstream
+compiler/tool executable pins. Source/vendor/tool change detection, sealed
+read-only inputs, isolated namespaces, offline Cargo, finite process/wall/CPU/
+memory/file limits, immutable records and failed-run custody remain. Shared
+analysis policies/runners, Core/engine sources, manifests and lockfiles are not
+edited. No additional Ubuntu installation is required for these portable roles.
+
+The fixture-local metric lane selects exactly the changed production Rust owners
+`tools/windows-service-fixture/src/host.rs` and `src/error.rs`, with >=90%
+executable lines and >=95% viable mutation per file, complete reviewed descriptor
+inventories and explicit generation omissions. Unchanged platform owners retain
+their separate evidence; their score cannot substitute for this host's result.
+Python runner/parser controls qualify the tooling separately and grant no Rust
+metric or product pass.
+
+Initial new evidence: all 17 service-local Python controls passed. An actual
+isolated boundary control confirmed writable owned output, read-only source,
+hidden host home/credentials and host-loopback isolation; pinned rustc's version
+smoke passed in the same sandbox. Record
+`artifacts/windows-services/recovery-20261107-v1/owner-portable-runtime-v1.json`.
+Fresh configured `ready` passed one command and `graph` passed all four literal
+target/feature metadata observations, with tool/vendor/source bookends. Independent
+read-only `portable_runner_review` found no blocking admission, graph, namespace
+or resource-custody issue and independently passed the five admission controls.
+These are environment/graph results, not yet service behavior or metric evidence.
+
+**Portable execution and first metric attempt — 8 November 2026:** the owner
+amendment unblocked actual configured execution on Debian. The v3 source matrix
+passed fixture ordinary/optimized tests, GNU and Windows-target Clippy,
+formatting, rustdoc/doc, and unchanged platform ordinary/optimized/Clippy/doc
+lanes. Earlier `owner-portable-fixture-fmt-v1` and
+`owner-portable-fixture-clippy-v2` failures remain retained: exact rustfmt changes
+and a redundant outer module documentation attribute were repaired before those
+passes. A finite direct inert-worker control was then added; v4 graph,
+formatting, GNU/Windows Clippy and ordinary/optimized fixture lanes passed
+**58 tests** (57 library, one integration), with no ignored or filtered cases.
+
+`owner-fixture-coverage-v1.json` reports **435/470 host executable lines
+(92.55319148936171%)** and **127/127 error lines (100%)** on candidate
+`23d762fbaa9033f11164722b86a76e56a8fe99858ca30943b585e66a160252bb`.
+It is line evidence, not LLVM branch or native Windows evidence. Full enumeration
+and independent review preceded mutation: 72 host descriptors and 40 error
+descriptors, with authored-function, guard, derive/macro and cfg/native omissions
+recorded in `owner-fixture-inventory-review-v2.json`.
+
+The first mutation attempt, `owner-fixture-mutation-v1.json`, is **incomplete**.
+Host native exit 3 retained 72 actual variants: 32 reported caught, 30 compiler
+unviable, eight missed and two timed out; the error campaign was not reached.
+No final kill score is claimed. Some reported catches were bare process aborts
+or resource exhaustion and require meaningful behavioral attribution, not
+automatic credit. Raw listing, diffs, logs and all individual outcomes were
+exported in full. Genuine test gaps include preparation after startup expiry,
+preservation of an overdue deadline before later cleanup failure, a single
+secondary failure, helper deadline/clock domains and initial shutdown allowance.
+Earlier caller-only equivalence suggestions for the default Wait method and
+`begin_stop` were rejected after reviewing the helpers' own admitted domains.
+They remain non-equivalent until actually caught by discriminating controls.
+
+The fixture-local metric helper now supports exact independently reviewed
+equivalence records, retaining raw misses and zero kill credit, and records
+unbuffered selected-test assertion witnesses before any later custody abort.
+Abort/OOM/timeout alone remains no kill evidence. Its 17 Python controls and
+five portable admission controls pass, independently repeated by
+`fixture_metrics_review`. Ordinary Cargo/libtest and all shared gate policies
+remain unchanged. These Python results supply no service metric credit.
+
+Independent source review also identified a concrete Stop boundary defect:
+an already published Stop during a clock observation could be followed by
+Running acknowledgement, operational activation or health polling because only
+an earlier private flag was inspected. Deterministic real-owner RED controls
+are being added before the minimal fresh-Stop-guard repair. The final Stop read
+will be the continuation's admission point; a later racing callback is handled
+at the next boundary, without a claim of retroactive cancellation. This finding
+and the test changes invalidate v4 as the final qualification candidate; its
+earlier passes retain their exact source scope.
+
+##### S31-EQ-POLL-FROM
+
+**Exact reviewed equivalent, zero kill credit:** replacing
+`InertWorker::poll_prepare`'s `Poll::Ready(Ok(()))` with
+`Poll::from(Ok(()))` changes no output, error, effect or lifecycle obligation.
+The complete native descriptor remains in the generated and executed inventory;
+the first campaign actually reported it `MissedMutant`. Final scoring requires
+that same exact descriptor to remain a raw miss in the fresh campaign.
+
+Boundary/domain: the actual method accepts its mutable inert worker and retained
+wake. It reads neither argument and performs no mutation, notification, resource
+admission or cleanup; preparation readiness is distinct from finished work.
+The argument applies to every admitted worker state and wake, not only today's
+fixed driver or a narrower caller population. Counterexample search includes
+dormant, activated and cancelled worker states, wake-token presence, readiness
+and cleanup observations; neither expression branches on those facts.
+
+Pinned Rust 1.99.1's `core/src/task/poll.rs:219` implements `From<T> for Poll<T>`;
+its body at lines 228–230 is exactly `Poll::Ready(t)`. Here the inferred `T` is
+`Result<(), WorkerError>` and `t` is the identical `Ok(())`. Both expressions
+construct the same value, without fallible conversion, allocation or changed
+short-circuit effects. Pinned rust-src file SHA256:
+`dbaf9d13639e373517116869dbced2a438dc0cb297308b431da7484823294ee0`.
+Independent reviewer `service_generation_map` checked the installed source and
+matching rustc/rust-src 1.99.1 manifest before accepting this argument.
+
+The descriptor's canonical SHA256 (all native fields, excluding optional diff)
+is `8203999635e8ef330143fbb5bb779d936267bfe9714aa461ad052b2bdf52ede1`.
+The final exact review also binds the complete fixture candidate, native
+inventory, owner file and these task proof bytes. New source, contract,
+replacement, descriptor, compiler/standard-library behavior or configuration
+requires reconciliation; no function wildcard or inferred future exclusion is
+authorized. The actual raw survivor stays visible, contributes **zero kills**
+and is removed only from the adjusted viable denominator after exact admission.
+The separate Wait, pending-check and shutdown-helper survivors receive no such
+exclusion; concrete legal helper-boundary witnesses refuted those suggestions.
+
+##### Final bounded service-source exit — 8 November 2026
+
+**Result: PASS for this portable source child, not the parent S3.1/P3 or installed
+product service.** The installation/admission blocker is resolved by the owner
+amendment above. Final candidate:
+`7eb81c688ad538b2744253bf686657dda93e15e315d87d989064ddc1e43a515f`
+(454 admitted source/configuration/runner inputs), on baseline
+`e76863fc2b5acc393d317fd93857213f410fe609`, branch `service/w11-w05-s3.1`,
+separate worktree `/workspace/NevroTick-service`.
+
+Final production owner hashes:
+
+- `tools/windows-service-fixture/src/host.rs`:
+  `63e7ee47f7805e72cfc1cbc533721b79009b08352ab8f31a70e38a7f0c5a5468`.
+- `tools/windows-service-fixture/src/error.rs`:
+  `18b29f03f343edfcba22268eac2eaadc4ded468d72fc7076604f3c86f307826e`.
+- Final host tests:
+  `d60399e9ca925334caa43b3a07f1a9d4384e8eb5667d304df802946cc837b874`;
+  error tests:
+  `d3a533edb4856cdd77881161d78cce4f969659b7d7f8839244ec2967e122c2d8`.
+
+The actual owner retains its lifecycle, reporter, dormant worker, phase charge,
+trusted clock history and original failure through cancellation and real
+completion. Ready finishes initialization, acknowledged Running precedes a
+separate operational charge and activation, and Stop fences admission before
+fallible cleanup. Overdue/drop/cancellation release no unresolved work; only
+Ready/Finished worker acknowledgements settle their phase charge. The driver keeps
+the same overdue owner. Unresolved whole-owner destruction aborts this fixture
+before worker/reporter field destruction; this chooses no product recovery policy.
+One completion and two status secondary slots preserve later facts without
+replacing the earliest cause or constructing an unbounded error chain.
+
+The independent Stop finding has a complete RED→GREEN record.
+`owner-stop-clock-regression-red-v5.json` ran the unchanged implementation:
+66/69 library cases passed and exactly the readiness, activation and health
+clock-Stop cases failed their intended status/effect assertions, native exit 101,
+with healthy source/tool/vendor/index custody. The minimal repair adds a fresh
+Stop read at those three post-observation continuation guards. The final guard
+read is the admission point; later callbacks are observed at the next boundary.
+Initial preparation already had the correct guard. The same expectations pass
+on v6/v7; healthy no-Stop and pre-preparation Stop neighbors remain.
+
+All final records below are under
+`artifacts/windows-services/recovery-20261107-v1/`:
+
+| Check | Exact final evidence | Observed result |
+| --- | --- | --- |
+| Locked feature/target graph | `owner-portable-graph-v7.json` | Four exact GNU/Windows metadata/tree commands pass. |
+| Format / GNU Clippy / Windows-target Clippy | `owner-portable-fixture-fmt-v7.json`, `owner-portable-fixture-clippy-v7.json`, `owner-portable-windows-clippy-v7.json` | All pass; no lint capping or policy change. Windows is a cross-check, not native execution. |
+| Ordinary / optimized fixture | `owner-portable-fixture-test-v7.json`, `owner-portable-fixture-optimized-v7.json` | Each passes 69 library plus one integration test; zero failed/ignored/filtered. |
+| Executable-line coverage | `owner-fixture-coverage-v3.json` | Host **442/473 = 93.446088794926%**; error **127/127 = 100%**. Both exceed 90%; no LLVM branch coverage claim. |
+| Full reviewed mutation inventory | `owner-fixture-enumerate-v3.json`, `owner-fixture-inventory-review-v7.json` | All **75 host + 40 error descriptors**; function/guard, derive/macro and cfg/native generation omissions reconciled. |
+| Full mutation outcome/cause accounting | `owner-fixture-mutation-v4.json` | Both per-file gates pass, with healthy bookends and complete raw export. |
+
+Mutation accounting, without favorable aggregate substitution:
+
+- Host: 75 generated; **44 behavioral catches**, 30 compiler/lint-unviable and
+  one exact independently reviewed `Poll::from` raw survivor. Native exit **2**
+  is retained, not relabelled as zero. Raw viable score **44/45 =
+  97.77777777777777%**; adjusted score **44/44 = 100%** after the sole exact
+  equivalence. It receives **zero kill credit**.
+- Error: 40 generated; **16 behavioral catches**, 24 compiler/lint-unviable,
+  native exit **0**, viable score **16/16 = 100%**, no exclusion.
+- Total inventory is 115, comprising 60 meaningful catches, 54 unviable and one
+  equivalent miss. Both owners have **zero unresolved survivors and timeouts**.
+  Every baseline runs the same 70 actual named tests. Compiler failures, bare
+  aborts, OOM and timeouts receive no independent kill credit.
+
+The direct helper controls actually catch the previously missed Wait, pending
+expiry and reversed-shutdown guards. Other repaired test gaps check no further
+preparation after startup expiry, the deadline as primary before later failed
+completion, each single secondary fact and valid startup metadata. The three
+new Stop OR mutants are caught by independently specified forbidden
+Running/activation/health observations. A bounded healthy-driver child checks
+valid argc=1, exact statuses, one remaining wait, success and completion marker;
+its parent asserts exit code 0, preserving meaningful evidence even when a
+defective child later hits a fatal custody guard. Tests retain the existing
+Cargo/libtest workflow; finite scripts replace mutation-induced busy loops.
+
+Earlier failures remain immutable: mutation v1 timed out; v2 produced the full
+host 44/30/1/0 native outcomes but strict attribution rejected custom-message or
+Result-return failures without explicit assertion evidence. The expectations
+were made explicit, not weakened. Mutation v3 stopped after enumeration because
+the reviewer's descriptive string exceeded the existing 200-character schema
+bound; v7 review shortens only that identity text. No mutation ran in v3.
+Only v4 is the final complete mutation pass. Earlier format, Clippy, RED and
+incomplete metric records are preserved alongside the successful records.
+
+The source-unchanged v6 fixture rustdoc/doc and v3 platform regression/doc
+receipts retain their exact compiled scope: later changes affect only fixture
+test assertions, not those compiled inputs. They are not a fresh whole-product
+pass. The 17 metric and five portable-runner Python controls passed and were
+independently repeated; their files are unchanged in the final candidate.
+
+Independent `portable_runner_review` accepts the source repair, scope and final
+bounded exit. Independent `fixture_metrics_review` recomputed all 115 outcomes,
+70 baseline identities per owner, all failure-cause dictionaries and 249
+retained mutation/proof file hashes. `service_generation_map` independently
+reconciled the full inventory and the sole exact equivalence. Source, sealed
+copies, vendor, tools, configuration and index bookends pass; raw exports are
+complete. No source, artifact or index is staged, committed or pushed.
+
+The final campaign retained the complete task proof snapshot with SHA256
+`89bb275f4a04ef80d60bfb2440f652e56de3e783639bb579913f5b04e800febf`
+under its exported `work/equivalence-proofs/tasks/windows11-integration.md`.
+This closeout is appended after successful campaign bookends; it changes neither
+the admitted Rust candidate nor that preserved historical proof snapshot.
+
+**Scope and next owner:** the six tracked changes are this task, fixture-local
+`qualification.py` and the four admitted host/error Rust files; the three new
+files are fixture-local `metrics.py`, `test_metrics.py` and
+`test_qualification.py`. Core/engine algorithms, shared manifests, lockfiles,
+verification policies and shared runners remain untouched. Another AI's Core/
+engine work is independent of this child.
+
+The coordinator can review/adopt this tested source slice, then owns the next
+explicit production-worker/handler integration contract and admitted source
+composition. `InertWorker` and scripted controls are not production suppliers.
+Actual Windows SCM/callback/completion and native-job termination/recovery,
+accounts/provisioning/tokens/service SIDs/object rights, effective maximum
+compatible mitigations, current linked-image/PE and installed/package/Store/
+release evidence remain open under their existing owners. Native memory and
+resource diagnostics remain held; no Windows, fuzz, storage, UI or formal hold
+is lifted. Formal work remains post-V1. The metric record intentionally retains
+`qualification_passed=false` for those broader native/product obligations.
+
+##### Remote integration and commit preparation — 8 November 2026
+
+David subsequently authorized pulling remote changes, resolving conflicts and
+committing/pushing this service branch. It first fast-forwarded to remote main
+`c4e21fd29906c9b48fed4e22fdd2386af2ca52b3`. A final remote check observed
+`c4717471cbc87c53eea2e16b63ffa1e79028cb25`, which was also integrated before
+publication. Both pulls reapplied only the nine explicitly selected service/task
+paths from preserved private backups. Git merged the task histories automatically;
+there were no unresolved textual conflicts. The incoming metadata preflight
+repair, seven-member fixture corrections, published metadata CI record and
+coordinator's reviewed frequency-prior contract/policy update remain intact.
+The latter routes the other AI's next Core fixture work; this service child
+changes no Core/engine algorithm or shared policy. Main/UI worktrees and their
+existing changes were not altered.
+
+Neither the first eight nor the later four incoming paths intersects the
+service's 454 admitted inputs.
+Post-integration source inventory and standalone manifest/lock/feature admission
+match the final qualified candidate `7eb81c688ad538b2744253bf686657dda93e15e315d87d989064ddc1e43a515f`
+exactly. Coverage-v3, mutation-v4 and the service Rust checks therefore retain
+their exact source scope; the unrelated pull requires no repeat Rust campaign.
+Independent `portable_runner_review` confirms that impact/scope assessment and
+preservation of both evidence histories and all existing holds. The archived
+task proof remains its historical snapshot, not the current mutable task file.
+
+Commit preparation uses the complete materialized Git index, candidate-owned
+entrypoints, the affected incoming Python controls, fixture runner/parser
+controls and configured pinned Gitleaks controls/history/tree scanning. The
+private publish receipt retains the exact index tree, source identity, command
+results and commit/push outcome; only the nine service/task paths are staged.
+GitHub CLI's configured identity has confirmed repository push permission;
+publication uses that identity without changing global Git authentication.
+
+**Publication-rule correction:** GitHub accepted the first local commit
+`ffdbfed9be02c0f44a0c11634bf670b0b2e474da` but reported bypass of its verified
+signature requirement and its no-merge rule for inherited main merge
+`e0c8516db9d1b284eb410bc2c8bd548c103a35fb`. This event is retained; a later
+correction does not erase it. Shared main history is preserved. The correction
+uses GitHub's documented automatically signed `createCommitOnBranch` operation
+on a temporary branch from the same reviewed coordinator baseline, verifies the
+exact staged tree and signature, then replaces only this child's own new commit
+with an explicit old-head lease. No account signing key, global signing setting,
+hook or shared branch history is changed. The external publication receipt
+records the final server-signed hash, signature verification and remote readback.
 
 ### 4.36 WinGet distribution before V1 — 7 November 2026
 

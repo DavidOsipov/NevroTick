@@ -24,6 +24,7 @@ from pathlib import Path
 import re
 import resource
 import shutil
+import stat
 import subprocess
 import time
 import tomllib
@@ -82,6 +83,172 @@ def no_ambient_flags():
     require(not any(key in {"RUSTFLAGS", "CARGO_ENCODED_RUSTFLAGS", "RUSTDOCFLAGS", "CARGO_ENCODED_RUSTDOCFLAGS"}
                     or (key.startswith("CARGO_TARGET_") and key.endswith(("_RUSTFLAGS", "_RUSTDOCFLAGS")))
                     for key in os.environ), "Ambient compiler flag overrides are forbidden.")
+
+
+def compiler_snapshot(stable):
+    """Observe the complete current compiler, without an old machine's inventory pin."""
+    entries = {}
+    scopes = ("bin", "etc", "lib", "libexec", "share")
+
+    def visit(path):
+        """Record each real file or contained link; reject special and escaping entries."""
+        details = path.lstat()
+        relative = path.relative_to(stable).as_posix()
+        require(len(entries) < 100000, "Compiler inventory exceeds its finite entry bound.")
+        if stat.S_ISLNK(details.st_mode):
+            resolved = path.resolve(strict=True)
+            require(resolved.is_relative_to(stable)
+                    and any(resolved.is_relative_to(stable / scope) for scope in scopes),
+                    "Compiler symlink escapes selected payload scopes.")
+            entries[relative] = {"kind": "symlink", "target": os.readlink(path)}
+        elif stat.S_ISDIR(details.st_mode):
+            for child in sorted(path.iterdir()):
+                visit(child)
+        else:
+            require(stat.S_ISREG(details.st_mode), "Special compiler payload entry.")
+            entries[relative] = {"kind": "file", "bytes": details.st_size,
+                                 "sha256": C.PRODUCT.sha256(path)}
+
+    for scope in scopes:
+        require((stable / scope).is_dir(), "Incomplete installed compiler scope.")
+        visit(stable / scope)
+    return entries
+
+
+def host_helpers():
+    """Select usable public Debian/Ubuntu helpers; record current identity, not legacy pins."""
+    selected = {}
+    for name in ("bwrap", "prlimit", "cc", "ld", "python3"):
+        found = shutil.which(name, path="/usr/bin:/bin")
+        require(found is not None, "Required service host helper is missing: " + name)
+        path = Path(found)
+        resolved = path.resolve(strict=True)
+        require(resolved.is_file() and resolved.is_relative_to(Path("/usr"))
+                and os.access(resolved, os.X_OK), "Invalid public service helper: " + name)
+        selected[name] = {"path": str(path), "resolved": str(resolved),
+                          "sha256": C.PRODUCT.sha256(resolved)}
+    return selected
+
+
+def admit_service_tools():
+    """Admit pinned upstream tools and observe this host, per the owner's portability amendment."""
+    require(os.geteuid() != 0, "Service verification requires an ordinary user.")
+    policy = json.loads((ROOT / "policy/tool-manifest.json").read_text())
+    stable = Path.home() / (".rustup/toolchains/" + policy["rust"]["channel"]
+                           + "-" + policy["rust"]["host"])
+    require(stable.is_dir() and stable.resolve(strict=True) == stable,
+            "Installed compiler must have a canonical real directory.")
+    C.RUNTIME._narrow(stable)
+    pins = policy["rust"]["linux_binary_sha256"]
+    for name, digest in pins.items():
+        C.PRODUCT.ENV.require_admitted_binary(stable / "bin" / name, digest, name)
+    extensions = {}
+    for name in ("cargo-mutants", "cargo-llvm-cov"):
+        specification = next(item for item in policy["tools"] if item["name"] == name)
+        path = Path.home() / ".cargo/bin" / name
+        C.PRODUCT.ENV.require_admitted_binary(path, specification["binary_sha256"], name)
+        extensions[name] = path
+    snapshot = compiler_snapshot(stable)
+    return {"stable": stable, "readonly_roots": [stable], "extensions": extensions,
+            "helpers": host_helpers(), "snapshot": snapshot,
+            "inventories": [{"name": "current-service-compiler", "entries": len(snapshot),
+                             "sha256": canonical(snapshot)}],
+            "manifest_sha256": C.PRODUCT.sha256(ROOT / "policy/tool-manifest.json"),
+            "extension_sha256": {name: C.PRODUCT.sha256(path) for name, path in extensions.items()}}
+
+
+def tool_identity(admitted):
+    """Project the observed installation for exact same-candidate graph receipt checks."""
+    return {"stable": str(admitted["stable"]), "inventories": admitted["inventories"],
+            "helpers": admitted["helpers"], "manifest_sha256": admitted["manifest_sha256"],
+            "extensions": {name: {"path": str(path), "sha256": admitted["extension_sha256"][name]}
+                           for name, path in admitted["extensions"].items()},
+            "admission": "owner-approved current host; upstream tool pins retained"}
+
+
+def check_service_tools(admitted):
+    """Detect changed helper paths or selected executables around every actual command."""
+    require(host_helpers() == admitted["helpers"], "Service host helper changed during execution.")
+    require(C.PRODUCT.sha256(ROOT / "policy/tool-manifest.json") == admitted["manifest_sha256"],
+            "Upstream tool policy changed during execution.")
+    policy = json.loads((ROOT / "policy/tool-manifest.json").read_text())
+    for name, expected in policy["rust"]["linux_binary_sha256"].items():
+        require(C.PRODUCT.sha256(admitted["stable"] / "bin" / name) == expected,
+                "Compiler executable changed during execution.")
+    for name, path in admitted["extensions"].items():
+        require(C.PRODUCT.sha256(path) == admitted["extension_sha256"][name],
+                "Service analysis executable changed during execution.")
+
+
+def run_command(work, command, admitted, vendor, source, *, timeout=180,
+                cpu_seconds=None, mutation=False, cwd=None):
+    """Use the existing public-host sandbox with the service's unchanged resource custody."""
+    require(isinstance(command, list) and command
+            and all(isinstance(item, str) and item and "\0" not in item for item in command),
+            "Service execution requires a nonempty literal argv.")
+    require(type(mutation) is bool, "Mutation resource selection must be explicit.")
+    cpu_seconds = timeout if cpu_seconds is None else cpu_seconds
+    require(type(timeout) in (int, float) and 0 < timeout <= 3600,
+            "Invalid finite service wall allowance.")
+    require(type(cpu_seconds) is int and 0 < cpu_seconds <= 3600,
+            "Invalid finite service CPU allowance.")
+    C.RUNTIME._directory(work, "Service work")
+    C.RUNTIME._owned_work(work, ROOT)
+    C.RUNTIME._directory(source, "Service source")
+    C.RUNTIME._directory(vendor, "Service vendor")
+    require(source.is_relative_to(work), "Sealed service source is outside owned work.")
+    config = work / "cargo-home/config.toml"
+    C.RUNTIME._sealed_inputs(work, [source, config])
+    cwd = source if cwd is None else cwd
+    C.RUNTIME._directory(cwd, "Service command cwd")
+    require(cwd.is_relative_to(source), "Service command cwd escapes the sealed source.")
+    check_service_tools(admitted)
+    for name in ("home", "tmp", "cargo-home", "target"):
+        (work / name).mkdir(mode=0o700, exist_ok=True)
+    replacements = {str(admitted["stable"] / "bin" / name): "/toolchain/bin/" + name
+                    for name in ("cargo", "rustc", "rustdoc", "rustfmt", "cargo-fmt", "cargo-clippy")}
+    replacements.update({str(path): "/tools/" + name for name, path in admitted["extensions"].items()})
+    invocation = [replacements.get(item, item) for item in command]
+    base = C.PRODUCT.ENV.sandbox_command(admitted["stable"], work, invocation)
+    separator = base.index("--")
+    args = []
+    index = 0
+    while index < separator:
+        if base[index] == "--setenv":
+            index += 3
+        elif base[index] == "--chdir":
+            index += 2
+        else:
+            args.append(base[index])
+            index += 1
+    args[0] = admitted["helpers"]["bwrap"]["path"]
+    args.extend(["--ro-bind", str(source), "/work/source", "--ro-bind", str(vendor), "/vendor",
+                 "--ro-bind", str(config), "/work/cargo-home/config.toml", "--dir", "/tools"])
+    for name, path in admitted["extensions"].items():
+        args.extend(["--ro-bind", str(path), "/tools/" + name])
+    args.extend(["--chdir", str(Path("/work") / cwd.relative_to(work))])
+    environment = {"PATH": "/tools:/toolchain/bin:/usr/bin:/bin", "LANG": "C.UTF-8",
+                   "HOME": "/work/home", "TMPDIR": "/work/tmp", "TMP": "/work/tmp", "TEMP": "/work/tmp",
+                   "CARGO_HOME": "/work/cargo-home", "CARGO_NET_OFFLINE": "true", "CARGO_INCREMENTAL": "0",
+                   "CARGO_BUILD_JOBS": "1", "CARGO_TERM_COLOR": "never", "RUSTUP_AUTO_INSTALL": "0",
+                   "RUSTC": "/toolchain/bin/rustc", "RUSTDOC": "/toolchain/bin/rustdoc",
+                   "RUST_TEST_THREADS": "1"}
+    if not mutation:
+        environment["CARGO_TARGET_DIR"] = "/work/target"
+    else:
+        # Keep a semantic assertion visible if a later custody guard aborts the
+        # same libtest process. An abort alone still supplies no mutation credit.
+        environment["RUST_TEST_NOCAPTURE"] = "1"
+    for key, value in environment.items():
+        args.extend(["--setenv", key, value])
+    args.extend(["--", admitted["helpers"]["prlimit"]["path"], "--as=8589934592",
+                 "--cpu=" + str(cpu_seconds), "--nproc=" + ("512" if mutation else "128"),
+                 "--nofile=4096" if mutation else "--nofile=256", "--fsize=268435456", "--", *invocation])
+    result = C.PRODUCT.ENV.run(args, cwd=ROOT, timeout=timeout,
+                               environment={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
+                               stdin=subprocess.DEVNULL)
+    check_service_tools(admitted)
+    return {**result, "namespace_argv": invocation}
 
 
 def manifest_admission(policy):
@@ -342,15 +509,13 @@ def run(args):
         record["recipe_sha256"] = identity[SELF]
         record["index_before"] = index_identity()
         record["feature_delta"] = manifest_admission(policy)
-        admitted = C.ANALYSIS.admit(ROOT, profile="stable-core")
+        admitted = admit_service_tools()
         # Selection supplies no trust: the complete chosen directory must still
         # match every current reviewed package byte and checksum map below.
         vendor = (args.vendor_dir or Path(json.loads(C.PRODUCT.POINTER.read_text())["vendor_dir"])).resolve(strict=True)
         vendor_identity = C.PRODUCT.admit_vendor(vendor, policy)
         record["vendor"] = {"path": str(vendor), "inventory_sha256": canonical(vendor_identity), "files": len(vendor_identity)}
-        record["tools"] = {"stable": str(admitted["stable"]), "inventories": admitted["inventories"],
-                           "pointer": admitted["installation_pointer"],
-                           "pointer_sha256": admitted["installation_pointer_sha256"]}
+        record["tools"] = tool_identity(admitted)
         source = work / "source"
         source.mkdir(mode=0o700)
         for name in identity:
@@ -360,9 +525,9 @@ def run(args):
         require(C.PRODUCT.inventory(source) == identity, "Derived source copy is incomplete.")
         (work / "cargo-home").mkdir(mode=0o700)
         config = work / "cargo-home/config.toml"
-        config.write_text('[source.crates-io]\nreplace-with="reviewed"\n[source.reviewed]\ndirectory=' + json.dumps(str(vendor)) + '\n')
+        config.write_text('[source.crates-io]\nreplace-with="reviewed"\n[source.reviewed]\ndirectory="/vendor"\n')
         record["config_sha256"] = C.PRODUCT.sha256(config)
-        cargo = str(admitted["stable"] / "bin/cargo")
+        cargo = "/toolchain/bin/cargo"
         graph_binding = {key: record[key] for key in ("candidate_sha256", "recipe_sha256", "config_sha256", "feature_delta", "vendor", "tools")}
         if args.lane not in {"ready", "graph"}:
             require(args.graph_receipt is not None, "Compilation requires an explicit current graph receipt.")
@@ -383,10 +548,8 @@ def run(args):
             if graph_receipt:
                 require(C.PRODUCT.sha256(graph_receipt) == record["received_graph_sha256"], "Received graph record changed during the job.")
 
-        environment = {"RUSTC": str(admitted["stable"] / "bin/rustc"),
-                       "RUSTDOC": str(admitted["stable"] / "bin/rustdoc"), "RUST_TEST_THREADS": "1"}
         if args.lane == "ready":
-            commands = [[environment["RUSTC"], "--version", "--verbose"]]
+            commands = [["/toolchain/bin/rustc", "--version", "--verbose"]]
         elif args.lane == "graph":
             commands = graph_commands(cargo)
         else:
@@ -394,10 +557,8 @@ def run(args):
         for command in commands:
             check()
             require(shutil.disk_usage(ROOT).free >= DISK_FLOOR, "Less than 2GiB free before execution.")
-            result = C.RUNTIME.run(ROOT, work, command, timeout=SECONDS,
-                                   readonly=[*admitted["readonly_roots"], vendor], sealed=[source, config],
-                                   path_dirs=[admitted["stable"] / "bin"], environment=environment,
-                                   cwd=source, cpu_seconds=SECONDS, build_jobs=JOBS)
+            result = run_command(work, command, admitted, vendor, source,
+                                 timeout=SECONDS, cpu_seconds=SECONDS)
             record["commands"].append({"argv": command, **result})
             check()
             require(result.get("failure") is None and type(result.get("exit_code")) is int,
@@ -412,9 +573,8 @@ def run(args):
                                     for i, target in enumerate(TARGETS)]
         check()
         require(C.PRODUCT.admit_vendor(vendor, policy) == vendor_identity, "Vendor content changed during the job.")
-        after = C.ANALYSIS.admit(ROOT, profile="stable-core")
-        require(all(after[key] == admitted[key] for key in ("stable", "inventories", "readonly_roots",
-                    "installation_pointer", "installation_pointer_sha256", "policy_sha256")), "Tool payload changed during the job.")
+        after = admit_service_tools()
+        require(tool_identity(after) == tool_identity(admitted), "Tool payload changed during the job.")
         check()
         record["index_after"] = index_identity()
         record["index_bytes_unchanged"] = True
