@@ -110,6 +110,10 @@ pub enum FixtureError {
     ServiceFailed,
     /// Dispatcher returned before an actual owner-result receipt was available.
     OutcomeUnavailable,
+    /// A worker phase failed without acknowledging physical completion.
+    Worker(WorkerError),
+    /// The original cause accompanied by bounded independent cleanup/report facts.
+    Cleanup(ServiceFailure),
 }
 
 impl fmt::Display for FixtureError {
@@ -130,6 +134,8 @@ impl fmt::Display for FixtureError {
             Self::PrivilegeAdmission(_) => "laboratory engine privilege admission failed",
             Self::ServiceFailed => "laboratory service did not finish cleanly",
             Self::OutcomeUnavailable => "laboratory service outcome receipt is unavailable",
+            Self::Worker(_) => "laboratory service worker failed",
+            Self::Cleanup(_) => "laboratory service failed with cleanup facts",
         })
     }
 }
@@ -143,8 +149,107 @@ impl Error for FixtureError {
             Self::Native(error) => Some(error),
             Self::TokenObservation(error) => Some(error),
             Self::PrivilegeAdmission(error) => Some(error),
+            Self::Worker(error) => Some(error),
+            Self::Cleanup(error) => Some(error),
             _ => None,
         }
+    }
+}
+
+/// Fixed worker failure categories; these contain no arbitrary diagnostic text.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum WorkerError {
+    /// Initialization failed; actual completion is still separately observed.
+    Preparation,
+    /// Operational activation was refused after Running acknowledgement.
+    Activation,
+    /// Operational health failed while its original work remained charged.
+    Running,
+    /// Actual completion resolved custody with a failed cleanup outcome.
+    Cleanup,
+}
+
+impl fmt::Display for WorkerError {
+    /// Render a fixed bounded category, independent of worker state or input.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Preparation => "laboratory worker preparation failed",
+            Self::Activation => "laboratory worker activation failed",
+            Self::Running => "laboratory worker operation failed",
+            Self::Cleanup => "laboratory worker cleanup failed",
+        })
+    }
+}
+
+impl Error for WorkerError {}
+
+/// One original cause and at most one result from each permitted cleanup effect.
+/// Private construction prevents recursive accumulation of wrapped failures.
+#[derive(Debug, Eq, PartialEq)]
+pub struct ServiceFailure {
+    /// One boxed cause, allocated only when independent secondary facts exist.
+    primary: Box<FixtureError>,
+    /// The sole completed worker cleanup failure, if later than the primary cause.
+    completion: Option<WorkerError>,
+    /// The sole `StopPending` failure, if later than the primary cause.
+    stop_report: Option<LifecycleError<NativeError>>,
+    /// The sole terminal report failure, if later than the primary cause.
+    terminal_report: Option<LifecycleError<NativeError>>,
+}
+
+impl ServiceFailure {
+    /// Wrap exactly once at the finished invocation's result boundary.
+    #[cfg(any(windows, test))]
+    pub(crate) fn new(
+        primary: FixtureError,
+        completion: Option<WorkerError>,
+        stop_report: Option<LifecycleError<NativeError>>,
+        terminal_report: Option<LifecycleError<NativeError>>,
+    ) -> Self {
+        Self {
+            primary: Box::new(primary),
+            completion,
+            stop_report,
+            terminal_report,
+        }
+    }
+
+    /// Read the earliest cause without formatting its internal typed details.
+    #[must_use]
+    pub fn primary(&self) -> &FixtureError {
+        &self.primary
+    }
+
+    /// Read the sole later failed completion observation, if any.
+    #[must_use]
+    pub const fn completion(&self) -> Option<WorkerError> {
+        self.completion
+    }
+
+    /// Read the sole later failed `StopPending` operation, if any.
+    #[must_use]
+    pub const fn stop_report(&self) -> Option<&LifecycleError<NativeError>> {
+        self.stop_report.as_ref()
+    }
+
+    /// Read the sole later failed terminal operation, if any.
+    #[must_use]
+    pub const fn terminal_report(&self) -> Option<&LifecycleError<NativeError>> {
+        self.terminal_report.as_ref()
+    }
+}
+
+impl fmt::Display for ServiceFailure {
+    /// Project only a bounded category, leaving all causes explicitly inspectable.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("laboratory service retained cleanup failures")
+    }
+}
+
+impl Error for ServiceFailure {
+    /// Preserve the earliest typed failure; secondary facts have separate getters.
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(self.primary.as_ref())
     }
 }
 
