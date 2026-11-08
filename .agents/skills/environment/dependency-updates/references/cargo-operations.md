@@ -12,6 +12,12 @@ Separate acquisition covered by the task from frozen graph inspection. Missing
 cached sources or admitted metadata are preparation gaps, not permission for an
 analysis command to fetch implicitly.
 
+Before adding a newly proposed third-party dependency, match its canonical
+package name, registry where applicable, and source to the intended upstream's
+primary release material or reviewed source revision. Package existence or a
+pinned checksum does not establish that match; keep an unverified generated name
+as a research candidate.
+
 `cargo metadata --frozen --format-version 1` describes resolved packages/targets;
 retain needed fields only; print no credentials. `cargo tree --frozen -e features`
 exposes feature activation; inspect `cargo tree --frozen -d` for multiple versions

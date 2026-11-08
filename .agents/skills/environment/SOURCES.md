@@ -34,6 +34,17 @@ Adaptation added, upgraded, downloaded/built no dependencies. Prospective comman
 need selected-toolchain checks. Advisory freshness, license compatibility and
 Windows runtime remain real-graph admission/qualification tasks.
 
+### Package identity clarification — 8 November 2026
+
+The first-adoption name/origin check makes existing architecture sections 18.2
+and 18.5 explicit in Cargo discovery. It changes no dependency decision or
+execution permission.
+
+| Primary source inspected | Applied finding |
+| --- | --- |
+| [Cargo manifests and lockfiles](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) | Exact resolution preserves the selected dependency; intended-upstream identity remains a separate admission question. |
+| [Spracklen et al., package-hallucination research, v3](https://arxiv.org/abs/2406.10279v3) | Original Python/JavaScript research motivates checking generated package names against the intended upstream; it establishes no Rust or current-model prevalence. |
+
 ## Windows Sandbox management
 
 The original [manage-windows-sandbox](manage-windows-sandbox/SKILL.md) workflow was
