@@ -53,6 +53,12 @@ For the selected Store route, verify the exact installed package/publisher/relea
 
 MSI/SignPath/OpenPGP workflows are retained fallback/reference only if David revisits delivery after rejection or concrete technical evidence. They are not parallel deliverables or MSIX prerequisites. If later selected, Authenticode needs actual publisher/chain/timestamp evidence; OpenPGP needs the trusted full key fingerprint, exact final MSI signature, signed manifest and qualified installed-code trust. Absent Authenticode is not passed, and no profile waives native gates or David's release approval.
 
+For a conditional SignPath configuration review, use [artifact signing restrictions](../../implementation/maintain-windows-metadata/references/artifact-signing-restrictions.md).
+Reconcile the effective selectors, per-file expectations and signature operations
+with the approved payload; exercise its relevant mismatch cases before adoption.
+Provider acceptance leaves independent final-byte, project-identity and installed
+qualification with their existing owners.
+
 For update/repair/Reset/removal and fault/restoration claims use [Windows evidence](../references/windows-evidence.md). Test-signed experiments qualify only declared mechanics; they do not establish Store signer-category admission. Store processing/signing can change bytes; record reproducibility, submitted lineage and final authenticated identity separately.
 
 Reject mismatched/tampered artifacts beside legitimate neighboring package controls. TUF/custom-updater research remains unadopted. Report exact inspected outputs, stage-specific gaps and unavailable Windows/security-profile evidence; a Store refusal returns the delivery decision to David rather than silently selecting MSI.

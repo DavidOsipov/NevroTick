@@ -1,8 +1,9 @@
 # Primary sources
 
 Reviewed 5 November 2026 (UTC); service/artifact refinements checked 7 November
-2026. This is an original local workflow: no upstream
-implementation or third-party skill is vendored. Research used Microsoft Learn,
+2026; signing-configuration semantics checked 8 November 2026. This is an
+original local workflow: no upstream implementation or third-party skill is
+vendored. Research used Microsoft Learn,
 GitHub, Context7, Firecrawl developer search/page extraction and web search/open.
 Indexed snippets and generated extraction answers were discovery aids; current
 official contracts and pinned implementation resolve material claims. Tool
@@ -28,6 +29,7 @@ the project's command line or treat metadata collection as arbitrary-code-safe.
 | --- | --- |
 | [GetFileVersionInfoExW](https://learn.microsoft.com/windows/win32/api/winver/nf-winver-getfileversioninfoexw) | MUI involvement for localized and neutral modes, matching size-query flags, full paths and truncation |
 | [VERSIONINFO](https://learn.microsoft.com/windows/win32/menurc/versioninfo-resource) | Fixed numeric fields, string/resource structure; complete field mapping remains in the canonical plan |
+| [StringFileInfo](https://learn.microsoft.com/en-us/windows/win32/menurc/stringfileinfo-block) | OriginalFilename retains original naming; apply NevroTick's approved shipped-basename mapping |
 | [Resource files](https://learn.microsoft.com/windows/win32/menurc/about-resource-files), [.res linker inputs](https://learn.microsoft.com/cpp/build/reference/dot-res-files-as-linker-input?view=msvc-170) | RC script → resource compilation → link into the executable |
 | [CreatePackageReader](https://learn.microsoft.com/windows/win32/api/appxpackaging/nf-appxpackaging-iappxfactory-createpackagereader) | Read-only package reader validates structure/footprint; does not validate the digital signature |
 | [MakePri options](https://learn.microsoft.com/windows/uwp/app-resources/makepri-exe-command-options) | PRI dumps, detailed output and external schema for schema-free resource packs |
@@ -80,6 +82,26 @@ build SDK. Refresh complete schema imports, inherited groups and choice
 substitutions against the actually admitted toolchain; preview/internal fields
 and mere schema presence establish neither product applicability nor OS/Store
 support. No native checks were run for these source refinements.
+
+## Conditional signing-configuration sources
+
+Use [artifact signing restrictions](artifact-signing-restrictions.md) for the
+bounded application of these sources. The [signing guide](../../../../../docs/windows-time-signing-guide.md)
+already cites the SignPath reference as S5; this refinement supplies configuration
+semantics, not another metadata catalogue or a provider-selection decision.
+
+| Primary source | Refinement and limit |
+| --- | --- |
+| [SignPath reference](https://docs.signpath.io/artifact-configuration/reference) | Supported metadata restrictions, overrides and format-specific signature operations |
+| [SignPath syntax](https://docs.signpath.io/artifact-configuration/syntax) | Path matching, cardinality, parameter declarations and required values |
+| [SignPath examples](https://docs.signpath.io/artifact-configuration/examples) | Concrete restriction composition and nested-signing order; illustrative names/versions are not project defaults |
+| [Artifact configuration overview](https://docs.signpath.io/artifact-configuration/) | Generated configurations need review, particularly for third-party payloads |
+| [Microsoft package certificates](https://learn.microsoft.com/en-us/windows/msix/package/create-certificate-package-signing), [MSIX signing](https://learn.microsoft.com/en-us/windows/msix/package/sign-app-package-using-signtool) | Certificate/manifest publisher and block-map digest correspondence; use the admitted current SDK and existing Store qualification stages |
+| [MSIX persistent identity](https://learn.microsoft.com/en-us/windows/msix/package/persistent-identity) | A separately reviewed publisher-bridging migration, not authority to change the current package identity |
+
+These are dated documentation observations. Provider locale/version extraction,
+unmatched-content handling and actual selected-service behavior require the
+named controls before adoption; documentation inspection is not a signing run.
 
 ## Standards and local owners
 

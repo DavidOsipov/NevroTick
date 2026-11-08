@@ -32,6 +32,7 @@ separate; a manifest version range is not the complete product support policy.
 | Choose authorities, handle conflicts, model fields or store evidence | [Record and storage](references/record-and-storage.md) |
 | Change the portable pipeline or interpret its source-delivery report | [Implemented owners and report semantics](references/generation-and-verification.md#maintain-the-portable-pipeline), then the affected regression owner |
 | Generate resources/manifests, map versions/locales or verify outputs | [Generation and verification](references/generation-and-verification.md) |
+| Review signing-time metadata checks, file selectors or a conditional SignPath configuration | [Artifact signing restrictions](references/artifact-signing-restrictions.md); keep the selected delivery route and independent artifact QA |
 | Inventory SCM, artifact or diagnostic schema members | Relevant appendix of the [bounded field catalogue](../../../../docs/supporting-reviews/windows-service-metadata-catalogue.md), through the canonical plan; read only the affected surface |
 | Check an API claim, tool candidate or upstream revision | [Primary sources](references/sources.md) |
 | Begin a field register or observation contract | [TOML field example](assets/field-register.example.toml), [JSON observation example](assets/observation.example.json); both are illustrative, incomplete inputs |
@@ -107,6 +108,9 @@ not accepted source files or successful observation records.
    success and matching publisher strings do not prove signatures or trust.
    Check actual consumer invalidation, selected producer identity and final
    package/export exclusions at their existing MD-P4–MD-P5 gates.
+   For a signing-configuration review, check the selected files and effective
+   restrictions against independent release expectations; use the conditional
+   reference above without treating provider acceptance as complete readback.
 8. **Close the current scope honestly.** Report field coverage and missing
    required values by stage, changed sources/projections, exact checked inputs,
    observed differences, unexecuted checks and the next existing owner action.
