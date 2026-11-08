@@ -865,6 +865,20 @@ mutation qualification remains open. The absent historical 8,890-variant
 artifacts are not re-admitted or counted. No native/package/release or full
 metadata qualification follows, and all unrelated holds remain.
 
+**Published repair and hosted closeout, 8 November 2026:** signed commit
+`c4e21fd29906c9b48fed4e22fdd2386af2ca52b3` reached `origin/main`.
+[Portable product run 42478884094](https://github.com/DavidOsipov/NevroTick/actions/runs/42478884094)
+passed its actual isolated product step. The
+[repository security run 42478884249](https://github.com/DavidOsipov/NevroTick/actions/runs/42478884249)
+passed workflow policy, full-history/tree secret scanning and the security gate
+on attempt 2; the four prepared CodeQL jobs were explicitly skipped under the
+existing deferral. Attempt 1 passed the metadata suite but hit a scanner archive
+read timeout before scanning; one bounded failed-job rerun completed. The push
+reported bypass of pending required checks, retained in the publication receipt;
+later green checks do not erase that event. `hosted-closeout-v1.json` in the
+repair evidence directory records these exact handles. Full per-file mutation,
+native/package and release qualification remain open.
+
 **Adoption source receipt, 7 November 2026:** the dirty working-tree candidate
 at `df6e28a4641f2f046373a9c5640aa60736716a22` passed the configured metadata suite:
 **183 tests, 59.779 seconds, no failures, errors or skips**, on Linux/WSL with

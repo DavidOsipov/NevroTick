@@ -78,7 +78,7 @@
     "scripts/tests/test_phase_plan_analysis.py": "1599badcfca79b534103139dcee5d3337b9eaf511fae282bfb3882e6d430f2e8",
     "policy/analysis-tools.json": "4da7796c6dd41a1a09dea9a7b1670480106fe1d1f260150385d78c8faa474234",
     "policy/verification-manifest.toml": "f4d137b05955812271f5ab3dd62219c4606e20d663b0037cb2034a82838075e9",
-    "tasks/s1.3-source-selection-readiness.md": "f846b81483029bd433cb032e8b395a8194aa1e4cef46c28a65ac45b9887a6a05",
+    "tasks/s1.3-source-selection-readiness.md": "8e37a1d03881a691401247cc0f42f8ec325037b2c51c484e37a7046eadb32983",
     "tasks/s0.1-chrony-ledger.json": "5b83e835fe18bd9d453f79d39253b4a3edbac3fdcc644fdc62503c2b30d12501"
   },
   "test_inventories": {
