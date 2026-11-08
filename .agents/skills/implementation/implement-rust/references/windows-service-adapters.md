@@ -169,6 +169,15 @@ all fields. When no required-privilege list is configured SCM uses token default
 omitting an update preserves the existing list. Existing W11-W05/W11-W10 owners
 retain privilege/provisioning authority and actual native qualification.
 
+The runtime service values come from
+[architecture §4.1.1](../../../../../docs/windows-time-architecture.md#411-service-privilege-profiles).
+Emit explicit nonempty `MULTI_SZ` names from one reviewed role policy and keep
+configuration readback separate from full effective-token admission. An absent
+or empty list is not a NevroTick minimum-privilege profile. Required privileges
+filter at a fresh service start and do not grant missing account rights; retain
+own-process hosting and inspect actual activation on install/repair/update.
+Service SID/default-owner/object masks remain separate fields and checks.
+
 
 The elevated installer/helper owns service registration/configuration and bounded
 maintenance under architecture section 11. Runtime lifecycle owners report status
@@ -426,9 +435,18 @@ service SIDs and required-privilege allowlists. The retained MSI design uses a
 broker virtual account and LocalService engine; that account mapping and a
 two-LocalService alternative both need supported pre-start provisioning and native
 proof for MSIX. Do not invent a manifest account or assume the service may grant
-itself configuration rights. Verify
-the engine lacks the architecture's dangerous privileges, including *present but
-disabled* clock privilege. Unexpected rights are a failed configuration gate.
+itself configuration rights. Verify the complete present privilege set for each
+role against the [canonical profiles](../../../../../docs/windows-time-architecture.md#411-service-privilege-profiles),
+including disabled entries. Resolve allowed names to local LUIDs and retain
+unknown/extra entries or incomplete capture as failure, not filtered output.
+The current three-forbidden-privilege laboratory observer is only partial source;
+extend its existing capture/admission owners through
+[W11 §4.38](../../../../../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026).
+The broker's ordinary-work baseline keeps its clock privilege disabled;
+the guarded native effect owns checked enable/use/disable and failure custody.
+Client identification capture is a separate synchronous scope; do not apply
+the service's set to an allowed user/admin client's captured token.
+Unexpected rights are a failed configuration gate.
 Stop before a nominally denied raw write if token inspection already violates that
 absence; the test must not turn a known configuration failure into an unbounded effect.
 Do not silently broaden to LocalSystem; record a failed proof and evaluate only

@@ -395,7 +395,7 @@ The authority design requires separate own-process engine and broker services. T
 
 LocalService is not sufficient isolation by itself. Windows policy can grant it change-system-time privilege, and its ordinary token includes other powerful rights. SCM's required-privileges setting removes unneeded privileges at process startup; services sharing a process receive the union, which is another reason to avoid shared-process hosting. `SetSystemTime` can enable a present clock privilege, so merely leaving it disabled is not a defense. [S04, S05, S06, S07]
 
-The engine's effective token must lack `SeSystemtimePrivilege`, `SeDebugPrivilege`, `SeImpersonatePrivilege` and unnecessary process/token-management rights. The broker retains only `SeSystemtimePrivilege` and rights demonstrably needed for its implementation; `SeChangeNotifyPrivilege` is an OS-retained exception. Identity-level pipe authorization must be proven without retaining broad impersonation authority. Inspect actual tokens at startup and in qualification tests. Unexpected dangerous rights are a configuration error, not an informational warning.
+The engine's effective token must lack `SeSystemtimePrivilege`, `SeDebugPrivilege`, `SeImpersonatePrivilege` and unnecessary process/token-management rights. [Section 4.1.1](#411-service-privilege-profiles) fixes the complete privilege sets for both services; checking only those three forbidden engine privileges is insufficient for product admission. Identity-level pipe authorization must be proven without retaining broad impersonation authority. Inspect actual tokens at startup and in qualification tests. An unexpected privilege, including a disabled one, is a configuration error, not an informational warning.
 
 Track configured value, documented activation point, observed token/policy and
 pending restart/reboot separately. Required-privilege changes apply at the next
@@ -431,6 +431,107 @@ creation/replacement under the existing object matrix. The
 [pre-start provisioning refinement](plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
 retains the source basis and native proof obligations; it selects no account,
 topology, TokenOwner mechanism or new authentication protocol.
+
+#### 4.1.1 Service privilege profiles
+
+**Selected design, 9 November 2026, Asia/Tbilisi:** David requested explicit
+privilege choices for each service. These profiles refine the existing
+least-privilege boundary; they do not establish an installed token, settle the
+MSIX account/provisioning mapping or authorize Windows execution. W11-W05/S0.2
+and W11-W10 own implementation and qualification through
+[the privilege handoff](../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026).
+The [API/source rationale](plans/windows11-integration.md#service-privilege-source-review--9-november-2026)
+and [paired checks](windows-time-development-hardening.md#service-privilege-profile-qualification)
+retain the same CHECK owners.
+
+| Runtime role | Explicit SCM `RequiredPrivileges` names | Complete admitted primary-token privilege set |
+| --- | --- | --- |
+| `engine-service` | `SeChangeNotifyPrivilege` | Exactly that privilege. Clock, debug, impersonation and every other privilege must be absent, even if disabled. |
+| `clock-broker` | `SeChangeNotifyPrivilege`; `SeSystemtimePrivilege` | Exactly those two privileges. System-time privilege is disabled outside the bounded authorized clock-effect scope below. |
+
+These are privilege names, not service display names, configurable user input,
+account rights assignments or object access masks. The installer/provisioning
+record and runtime admission must consume the same reviewed role policy.
+Use an explicit, correctly terminated, nonempty `MULTI_SZ`. An absent, empty,
+malformed or extra-name list does not satisfy this NevroTick profile; do not
+infer that an empty Windows list guarantees a privilege-free token.
+Omitting a configuration update is not the same as setting this policy. [S06]
+
+SCM filters privileges at the next service start; it does not grant missing
+account rights or change an already running token. Services sharing a process
+receive the union of their requirements, so own-process hosting remains
+mandatory. SCM retains `SeChangeNotifyPrivilege` even when it is not requested;
+including it explicitly avoids an ambiguous empty engine list. Its traversal
+behavior does not grant arbitrary read/write access to the target object.
+Keep account-policy assignment, SCM configuration, activation, token observation
+and actual operation results distinct. [S06, S140]
+
+**No other runtime privilege is admitted.** This is a complete allowlist,
+not a blacklist of familiar dangerous privileges. In particular:
+
+| Privilege family | Disposition and reason |
+| --- | --- |
+| `SeImpersonatePrivilege`, `SeDelegateSessionUserImpersonatePrivilege`, `SeTcbPrivilege`, `SeCreateTokenPrivilege`, `SeAssignPrimaryTokenPrivilege` | Absent from both services. Selected IPC captures an identification token and never performs effects as the client; neither role creates arbitrary logon identities or launches work as another user. |
+| `SeDebugPrivilege`, `SeLoadDriverPrivilege` | Absent. Inspecting peers must use granted minimum object rights; neither service is a debugger or driver loader. |
+| `SeBackupPrivilege`, `SeRestorePrivilege`, `SeTakeOwnershipPrivilege`, `SeSecurityPrivilege`, `SeRelabelPrivilege` | Absent. Required files/keys/objects need correct supported provisioning, owners and ACLs. Runtime services do not repair arbitrary ownership, bypass storage permissions or provision SACLs. |
+| `SeIncreaseQuotaPrivilege`, `SeIncreaseWorkingSetPrivilege`, `SeLockMemoryPrivilege`, `SeIncreaseBasePriorityPrivilege`, `SeSystemProfilePrivilege`, `SeProfileSingleProcessPrivilege` | Absent. Resource tuning, process creation or diagnostic convenience does not justify expanding the runtime profile. Qualify required bounded memory/diagnostic operations under the selected token. |
+| `SeTimeZonePrivilege`, `SeShutdownPrivilege`, `SeRemoteShutdownPrivilege`, `SeCreateGlobalPrivilege` and every unlisted privilege | Absent. UTC clock control is the broker's one exceptional privilege; display conversion, shutdown notification and an object name alone grant no additional authority. |
+
+An API/provider that requires an additional privilege is a concrete compatibility
+finding. Resolve it through the existing operation owner or bring the supported
+design/security tradeoff to David; never silently widen the set, retain a more
+powerful duplicate token, switch to LocalSystem or retry under another identity.
+The normal-user UI and elevated lifecycle helper are different roles; do not
+apply these service-token sets to their user/installer tokens. Helper object
+rights and any necessary scoped privileges require their own actual operations;
+this selection grants them no new authority.
+
+**Complete runtime observation and admission.** Resolve the admitted privilege
+names to LUIDs on the observed Windows instance; do not hard-code portable LUID
+values. Enumerate the entire primary-token `TokenPrivileges` result and compare
+the present set, not merely the enabled entries or three known forbidden names.
+An extra/unknown LUID, missing required privilege, incomplete or failed capture
+blocks normal service work. Keep actual attribute bits and lookup/capture errors;
+an unrecognized entry cannot disappear from the observation.
+
+Verify the expected account, service/restricted SIDs, own-process instance,
+object security and effective thread context separately. Ordinary service work
+and clock effects must not run with an unexpected thread impersonation token.
+A captured client token in §5.4.2 is a separate authorization input; a legitimate
+user/admin client's token is not required to match a service's privilege set.
+Query-only startup observation must not silently repair/remove unexpected rights
+and then claim the initial token conformed. Privilege/SID changes and
+first-install/repair/update activation need the existing lifecycle evidence.
+
+**Clock privilege lifetime.** The broker's ordinary-work admission requires
+`SeSystemtimePrivilege` present but disabled. After current actor, generation,
+ownership and correction-budget guards pass, the single clock-effect owner uses
+a short synchronous enable/use/disable scope for the selected setter. No await,
+callback, client impersonation or unrelated work belongs in that scope; primary
+token adjustment affects the process, not only one Rust function or thread.
+Serialize every product path that can change this privilege or clock state.
+
+`SetSystemTime` enables a present system-time privilege internally and disables
+it before return; disabled privilege therefore does not protect the engine.
+`SetSystemTimeAdjustmentPrecise` requires the caller to enable it and disable
+it afterwards. Check `AdjustTokenPrivileges`' Boolean result **and**
+`GetLastError`, including `ERROR_NOT_ALL_ASSIGNED`, and verify the effective
+disabled state before ordinary work resumes. Do not use irreversible
+`SE_PRIVILEGE_REMOVED` for temporary scoping: authorized later cleanup/recovery
+still needs the same privilege. [S07, S137]
+
+If enablement fails, perform no clock effect. If a setter's outcome or the final
+disable/readback is uncertain, stop normal actuation, retain the actual outcome
+and custody, and use the existing bounded broker-fault/recovery owner in §10.4;
+do not claim successful restoration, reset the clock blindly or rely solely on a
+destructor. A live broker retains the ability to re-enable a present privilege;
+temporary disabling is not a security boundary against compromise of that broker.
+
+**Source/evidence limit.** The current portable observer and laboratory native
+adapter capture only the three named engine privilege facts; broker observation
+is descriptive. Their historical results do not implement or qualify this
+complete profile. Extend the existing observation/admission owners before product
+hosting; preserve existing Windows/fuzz/storage holds and post-V1 formal deferral.
 
 ### 4.2 Operation authorization
 
@@ -578,6 +679,18 @@ remote-client rejection must hold for every exposed pipe instance.
 Freeze the request-to-token binding procedure for the selected native byte/message mode, framing and security-context tracking before P3. `ImpersonateNamedPipeClient` applies to the calling thread and the last message read. Bound any initial read needed for identification; capture and bind identity before another read can replace the context attributed to that request. Fragmentation, read-ahead, pipelining and changing thread security contexts must not mix principals within an admitted request. Reject ambiguous/changing attribution and qualify the exact adapter behavior. [S106]
 
 Keep impersonation, token acquisition and reversion in one short synchronous thread-bound scope. Do not await, yield, dispatch application work, invoke callbacks or perform unrelated privileged I/O while impersonating. After successful reversion, dispatch only the explicit captured token/identity and immutable request context; the serialized effect owner still rechecks current rights, revisions and budgets. Unknown/anonymous identity or failed token acquisition rejects the request without substituting the broker's identity. Qualify identification-level token opening, including `OpenThreadToken`'s `OpenAsSelf` semantics, without adding broad impersonation privilege. [S106]
+
+The [service privilege profiles](#411-service-privilege-profiles) retain no
+`SeImpersonatePrivilege`. Every native client open/reconnect explicitly requests
+`SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION`; freeze context-tracking and
+effective-only choices separately in the selected adapter contract. Validate the
+captured impersonation-token type and `SecurityIdentification` level, rather
+than assuming absence of the privilege prevents every impersonation path.
+`OpenThreadToken` with `TOKEN_QUERY` and `OpenAsSelf=TRUE` still requires the
+appropriate object access; failure rejects without a broader-privilege fallback.
+Revert successfully before authorization/dispatch, and pass the captured handle
+explicitly to token checks. The client's token is evidence, not a context in
+which the service may perform a clock, file, registry or SCM effect. [S13, S106]
 
 Authorize against effective token semantics: enabled versus deny-only groups, restrictions, the required service identity and any operation-specific elevation requirement. Finding an Administrators SID in raw token groups is insufficient. Where a token-check helper permits an ambient/null-token fallback, pass the captured client token explicitly. These rules do not remove section 5.1's OS-account/group revocation limits. [S106]
 
@@ -4752,6 +4865,8 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 - **S138 - Recovery observations and conditional bounds, checked 5 November 2026.** Microsoft [precise setter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustmentprecise), [service status](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-setservicestatus), [failure actions](https://learn.microsoft.com/windows/win32/api/winsvc/ns-winsvc-service_failure_actionsw) and [queued restart behavior](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-changeserviceconfig2w); [NIST stability analysis](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication1065.pdf), [NIST tolerance intervals](https://www.itl.nist.gov/div898/handbook/prc/section2/prc264.htm) and [PNNL upper tolerance limits](https://vsp.pnnl.gov/help/vsample/Design_UTL_Non_Parametric.htm). API configuration, observed maxima and statistical population coverage do not establish an all-failures cleanup deadline. The residual calculation remains conditional on qualified rate, exposure and uncertainty assumptions.
 
 - **S139 - UI execution-level semantics, checked 6 November 2026.** Microsoft [/MANIFESTUAC](https://learn.microsoft.com/en-us/cpp/build/reference/manifestuac-embeds-uac-information-in-manifest?view=msvc-170) documents inherited `asInvoker` permissions and explicit elevated launch. Existing native/package qualification must establish the effective token and actual unelevated launch; manifest configuration alone does not supply that evidence.
+
+- **S140 - Exact service privilege/profile semantics, checked 9 November 2026.** Microsoft [privilege names and meanings](https://learn.microsoft.com/windows/win32/secauthz/privilege-constants), [complete token query](https://learn.microsoft.com/windows/win32/api/securitybaseapi/nf-securitybaseapi-gettokeninformation), [local privilege-name resolution](https://learn.microsoft.com/windows/win32/api/winbase/nf-winbase-lookupprivilegevaluew), [service required privileges](https://learn.microsoft.com/windows/win32/api/winsvc/ns-winsvc-service_required_privileges_infow) and [write-restricted service behavior](https://techcommunity.microsoft.com/blog/askperf/ws2008-windows-service-hardening/372702). Architecture §4.1.1 selects NevroTick's role policy; source/API documentation does not establish actual installed-token or provider compatibility.
 
 ## Appendix B. Worksheet attribution and use
 

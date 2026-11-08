@@ -18,6 +18,21 @@ Disposable clock/service/installer machine: capture owned baseline service/W32Ti
 
 Exercise real engine/broker/UI/helper tokens/allowed verbs (CHECK-1–3). Include standard user, filtered/elevated admin, delegated/revoked application grants, old sessions, remote clients, fake server. Disabled button/denied constructor is no endpoint authorization test. Inspect actual named-pipe ACL/server identity; attempt valid-shaped protected-effect requests.
 
+For the two runtime services, use
+[architecture §4.1.1](../../../../docs/windows-time-architecture.md#411-service-privilege-profiles)
+and [the profile matrix](../../../../docs/windows-time-development-hardening.md#service-privilege-profile-qualification).
+Capture the whole primary-token privilege set, attributes, local LUID/name
+mapping and process lifetime. Compare exact role policy: extra enabled/disabled,
+unknown entry, missing requirement and incomplete/failed observation deny normal
+work beside a useful intended-token control. Three forbidden names or enabled-only
+inspection do not prove a full allowlist. Distinguish configured names, service
+restart, actual SID/token state and object/owner rights. Inspect identity-only
+client capture and checked reversion separately; a client token is not a service
+profile. Broker enable/use/disable, `ERROR_NOT_ALL_ASSIGNED` and uncertain
+cleanup need their own paired controls under existing clock/recovery ownership.
+Use current held/admitted execution status; do not perform a clock denial probe
+on a token already observed to retain forbidden clock privilege.
+
 Observe the true Windows result: applied sign/rate/phase, quantization, privilege behavior and acknowledgement. Include cancellation before/during native work, native call failure, delayed completion, stale generations, lost acknowledgement and cumulative budgets. Verify no unwinding crosses FFI and no replacement permit is fabricated while cancelled work still owns one (CHECK-10/27).
 
 Exercise actual SCM start/stop pending/running status, failure/preshutdown controls, registration failure, restart, no-login startup. UI exit must not stop background service. Attribute handle/thread/resource counts to actual owner; unclear global counts insufficient.

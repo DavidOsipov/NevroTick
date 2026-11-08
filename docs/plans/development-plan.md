@@ -2014,6 +2014,15 @@ does not isolate every live secret or establish rollback-resistant storage.
 
 #### Imported hardening work queue
 
+**9 November service privileges:** consume
+[architecture §4.1.1](../windows-time-architecture.md#411-service-privilege-profiles)
+and [W11 §4.38](../../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026)
+before dependent S0.2/S0.3/P3/P4/P6 work. W11-W05 owns full per-role token
+observation/admission and scoped broker clock privilege; W11-W10 owns supported
+pre-start provisioning and servicing. The existing three-privilege laboratory
+observer supplies narrower evidence. Source preparation follows its current
+assignment, native work remains held, and §7's next executable task is unchanged.
+
 **8 November OS-integration research:** use the
 [bounded source/CVE handoff](../supporting-reviews/windows-os-integration-risk-research.md)
 and its [W11 §4.37 integration record](../../tasks/windows11-integration.md#437-os-integration-vulnerability-research--8-november-2026)
@@ -2148,6 +2157,16 @@ This review executed no product or native tests and establishes no implementatio
 default approval, residual-risk acceptance or release qualification.
 
 ### 8.5 Windows 11 integration research and qualification
+
+**Service privilege profiles, 9 November 2026:** the
+[canonical sets](../windows-time-architecture.md#411-service-privilege-profiles),
+[API rationale](windows11-integration.md#service-privilege-source-review--9-november-2026)
+and [implementation handoff](../../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026)
+replace open-ended runtime privilege selection with explicit role policy.
+Extend the existing observer/admission owners; preserve identification-only IPC,
+same-account object isolation and bounded clock privilege cleanup. Full installed
+token/provider/package compatibility remains unqualified under existing CHECK
+owners; no new service, helper authority, dependency or execution permission.
 
 **Service metadata, 7 November 2026:** the [canonical refinement](windows-package-metadata.md#12-service-and-diagnostics-metadata-refinement--7-november-2026)
 and its single conditional field catalogue enrich existing W11-W10/P6,

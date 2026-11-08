@@ -69,6 +69,17 @@ additional owner needed for the changed guarantee:
    actual installed resource resolution and servicing through the metadata owner;
    a source string, schema field or successful setter is not installed readback.
 
+   Use [architecture §4.1.1's exact service privilege profiles](../../../../docs/windows-time-architecture.md#411-service-privilege-profiles)
+   for both runtime services. Configuration needs explicit nonempty names;
+   admission needs full present-set observation, not only enabled privileges or
+   a familiar forbidden subset. Route the current laboratory observer's missing
+   full-profile behavior through
+   [W11 §4.38](../../../../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026).
+   Preserve startup activation and supported package provisioning; do not add
+   token/SCM rights or retain a powerful duplicate merely to make a wrapper,
+   child-launch, memory or diagnostic convenience succeed. UI/helper tokens
+   retain their distinct role/operation contracts.
+
 3. **Give transitions one owner.** Trace process entry → dispatcher → ServiceMain
    → callback notification → serialized lifecycle owner → checked status report,
    worker admission and cleanup. Connect promptly to SCM; keep slow initialization

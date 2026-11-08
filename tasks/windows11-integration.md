@@ -355,6 +355,14 @@ retrieval; DNS-C14/17 when the DNS service participates.
 
 ### W11-W05 Observe effective SCM, maintenance and process policy
 
+**Service privileges, 9 November 2026:** consume
+[architecture §4.1.1](../docs/windows-time-architecture.md#411-service-privilege-profiles)
+and [the bounded continuation in §4.38](#438-service-privilege-profile-handoff--9-november-2026)
+before dependent token/admission or package integration. Exact role sets are now
+selected; full-profile observation/enforcement, supported provisioning and native
+compatibility remain open. This refines the current service task, not §7's
+executable Core queue or the Windows/fuzz/storage/UI/post-V1-proof holds.
+
 **Service metadata refinement, 7 November 2026:** consume [metadata §12.2](../docs/plans/windows-package-metadata.md#122-scm-labels-localization-and-installed-propagation)
 with W11-W10 before dependent service authoring/provisioning. Source preparation
 is ready; native work remains held. Freeze stable technical identity separately
@@ -4722,7 +4730,7 @@ handoff. The raw records are local retained evidence, not committed artifacts.
 | --- | --- | --- |
 | Source integration preparation — W11-W05/platform/security | Available now: map existing role-specific hosts and portable APIs to one S3.1 adapter/worker startup/status/stop child. Freeze inputs, readiness meaning, failure results, actual-completion custody, cancellation and cleanup before implementation. | A reviewed producer/worker/status/stop ownership map and finite direct-call, healthy, denied, boundary and fault controls; no new account, production deadline, runtime or effect authority inferred from the lab. |
 | Qualified source adoption — platform/QA | Refresh ordinary candidate/bindings; finish current >=90% per-security-file coverage and >=95% per-critical-file mutation with complete reviewed inventories, guard/derive alternatives and applicable host/native-source scopes. Complete current Windows cross-link and independent image readback. | Candidate-bound source/contract/metric and static artifact evidence. Current mutation inventories are empty; no fresh metric pass or current Windows link/PE pass exists. The latest SDK readiness attempt is incomplete after index drift. |
-| Product service composition — platform with engine/broker/IPC/diagnostic owners | Consume qualified adapters and explicit worker/handler contracts; final SCM identities, intended tokens/SIDs, privilege allowlists, creation-time object protection and supported pre-start provisioning must be resolved before ordinary installed hosting. | Truthful availability, enforced startup admission, bounded diagnosed stop/restart and management isolation. Current engine observation checks only its three forbidden privileges; broker observation is descriptive, not its full allowlist. Typed errors are not a complete diagnostic sink. |
+| Product service composition — platform with engine/broker/IPC/diagnostic owners | Consume qualified adapters and explicit worker/handler contracts; final SCM identities, intended tokens/SIDs, enforcement of [the selected privilege profiles](../docs/windows-time-architecture.md#411-service-privilege-profiles), creation-time object protection and supported pre-start provisioning must be resolved before ordinary installed hosting. | Truthful availability, enforced startup admission, bounded diagnosed stop/restart and management isolation. Current engine observation checks only its three forbidden privileges; broker observation is descriptive, not its full allowlist. [§4.38](#438-service-privilege-profile-handoff--9-november-2026) owns the profile continuation. Typed errors are not a complete diagnostic sink. |
 | Native service qualification — W11-W05/security/QA | Existing Windows hold must be lifted separately; use admitted disposable fixtures and intended roles on the adopted two-family matrix. | Actual SCM callbacks/status failures, effective token/object isolation, native completion, resource retention and failure/recovery behavior satisfy CHECK-1/27 and reached CHECK-17/21 beside valid controls. Host injections and compiler checks do not close this stage. |
 
 **Next service action:** the owner-assigned child in [§4.35.9](#4359-w11-w05s31-worker-lifecycle-child--8-november-2026)
@@ -5878,3 +5886,122 @@ for these checks. The repository pack checker and its regression suite remain
 validation. `docs/SHA256SUMS.txt` is absent, so no bundle-manifest pass is claimed.
 The final receipt changes only this review/evidence record; the parent's final
 candidate check and publication identity remain separate from the reviewed hash.
+
+### 4.38 Service privilege profile handoff — 9 November 2026
+
+**Request, source and scope.** David asked to select the right privileges for
+each service and update documentation and relevant skills. Baseline:
+`13ce18d728e0ca552805c8160c2649b338d472f9`, initially clean. This is a
+documentation/skill change using Microsoft primary sources and bounded source
+inspection; it does not implement a runtime setter or lift native execution.
+Dates here use Asia/Tbilisi.
+
+**Decision owner:** [architecture §4.1.1](../docs/windows-time-architecture.md#411-service-privilege-profiles).
+The engine's exact set is `{SeChangeNotifyPrivilege}`; the broker's exact set is
+`{SeChangeNotifyPrivilege, SeSystemtimePrivilege}`. Both SCM records use explicit
+nonempty names. All other present privileges fail admission, even when disabled.
+The broker's clock privilege is disabled outside its guarded serialized effect.
+The [source rationale](../docs/plans/windows11-integration.md#service-privilege-source-review--9-november-2026)
+records API prerequisites and provider/process/memory compatibility limits;
+[hardening's profile matrix](../docs/windows-time-development-hardening.md#service-privilege-profile-qualification)
+owns the independent expected observations.
+
+**Threat and contract refinement.** A compromised network engine must not
+activate a retained clock/debug/impersonation or other unneeded privilege.
+A partial observer cannot prove the complete set. Configuration/readback cannot
+prove a changed running token, and a required-privilege list cannot grant an
+account missing clock rights. Peer identification is a bounded thread context,
+not permission for service effects under client authority. A broker's temporary
+clock-privilege disabling does not protect it from code already executing inside
+that privileged process. Preserve actual SID/owner/DACL/handle isolation,
+admitted application/actor/effect guards and current clock ownership.
+These refine existing BND-3/4/5 and CHECK-1/2/3/10/12/13/15/23/27; no new
+requirement/check identifier family or generic privilege framework is introduced.
+
+#### Current implementation boundary
+
+The parent and read-only researchers inspected
+`crates/windows-platform/src/privilege_observation.rs` and
+`tools/windows-service-fixture/src/native_token.rs`:
+
+- The native adapter queries tokens and structurally captures `TokenPrivileges`,
+  but resolves three fixed forbidden-engine LUIDs; the portable snapshot retains
+  those named facts.
+- `require_engine_absence` checks those three facts. Broker observation is
+  descriptive, not an exact broker allowlist or enabled-state admission.
+- The native self-observer's `OpenThreadToken(..., OpenAsSelf=TRUE)` detects an
+  unexpected ambient token; it is not an implementation of IPC client capture.
+- The bounded scan of these two components found no service-SID setter,
+  `ChangeServiceConfig2` provisioning or complete service/restricted-SID/default-
+  owner qualification. This is not a claim about every file in the repository.
+
+Retain the historical narrow source/host receipts at their recorded scope. The
+new policy does not retroactively make them complete product-token evidence.
+Reuse these existing observation/admission owners and their contracts; do not
+scaffold a second policy engine or expand the inert lab into production services.
+
+#### Ordered continuation in the existing workstream
+
+| Owner / stage | Concrete next work | Observable exit and current disposition |
+| --- | --- | --- |
+| Platform/security, W11-W05/S0.2 | Freeze the existing observer/consumer extension: complete bounded LUID/attribute capture, local allowed-name resolution, exact role comparison, explicit error states and expected non-impersonating service context. Keep configured policy and observation distinct. | Independent valid, extra-enabled, extra-disabled, unknown-LUID, missing-required and malformed/incomplete/failure controls through the real consumer. Source preparation follows the current assigned child; implementation/qualification is OPEN. |
+| IPC/platform, S0.3/P3 | Bind identification-only QoS on every open/reconnect to actual token type/level, request/read ownership, query-only capture and checked same-thread reversion. Authorize explicit captured identity after reversion, without adding `SeImpersonatePrivilege`. | Allowed real user/admin/engine paths work; anonymous, unexpected level, failed token open and ambiguous attribution cause no protected effect. Existing failed-reversion recovery stays required. Source work follows its current owner; native evidence is HELD. |
+| Clock/lifecycle, P4/S0.4 | Bind the selected setter to guarded synchronous privilege enable/use/disable, full API results, disabled baseline and actual outcome custody. Permanent removal is not a temporary guard. Keep retained-rate/ownership cleanup in the existing broker recovery contract. | Valid bounded operation and later owned cleanup work; enable/not-all-assigned/setter/disable/readback failures cannot produce false success or unguarded continuation. Native clock execution is HELD under the existing disposable-fixture gate. |
+| Package/platform, W11-W10/P6 with W11-W05 | Establish supported no-UI pre-start provisioning of exact nonempty lists, own-process type and object/identity policy; prove actual activation and preservation through update/repair/recovery. | Actual final package/service tokens match policy before ordinary work. The MSIX account/provisioning bridge remains OPEN; source API existence and elevation are insufficient. The retained child-launch alternative supplies no privilege exception. |
+| Security/QA with provider, storage and diagnostics owners | Apply the existing paired profile matrix to useful real-role workflows, same-account adversaries, complete token state, bounded secret-memory/provider behavior and denied extra authority. | Candidate-bound native results on the two-family matrix, with valid controls, useful failures and external restoration. Current source-only observations provide no native, package or release pass. |
+
+**Configuration and data contract.** Keep privilege names in the reviewed
+role-policy source used by both provisioning and admission; do not accept them
+from user settings, IPC or freely editable metadata. Serialize Windows
+`MULTI_SZ` explicitly; do not derive an empty-list safety guarantee. Account
+rights, service SID type, token privileges, token-object access masks and default
+owner are separate fields with separate effects. A late setter/observer cannot
+prove creation-time isolation or revoke already issued handles.
+
+**Routing and unchanged decisions.** Updated architecture, source rationale,
+MSIX compatibility note, hardening matrix, documentation guide, development
+queue, service metadata row, privilege/service skill entry points and shared
+service/Windows-evidence references. Existing IPC and package/security skill
+routes already reach the canonical contracts and remain applicable. Normal-user
+Slint UI and elevated lifecycle helper retain their distinct role contracts.
+Store-first complete MSIX, all-file/interim-MSI signing, the current Core/service
+queue, all Windows/fuzz/storage/UI holds and post-V1 formal work remain unchanged.
+
+#### Guidance validation and review
+
+**Judge review completed — READY for documentation and architectural handoff.**
+Separate read-only reviewer `/root/signing_coverage_judge` inspected the complete
+12-file diff, relevant canonical neighbors, the two changed skill entry points,
+both changed shared references and representative observation/admission source.
+It found no material revision-required issue and verified all candidate file
+lengths/hashes against manifest SHA-256
+`a5e522b0705624cf61e5d408ca7875118be88d1b2bfd874b915551db0f01bf1c`
+and tracked-diff SHA-256
+`a01576d6821631aa0c8cfaf1a34675e1e77a9855d1a0466a56a41c30cf4ea98e`.
+
+The reviewer's two comprehension paragraphs are retained verbatim:
+
+> The change selects one canonical privilege policy for NevroTick’s two runtime services: the engine retains only `SeChangeNotifyPrivilege`, and the broker additionally retains `SeSystemtimePrivilege`. It connects that policy to provisioning, complete token admission, identification-only IPC, guarded clock effects, existing qualification cases and the relevant skill entry points. This is an architectural and implementation handoff; it does not implement or qualify those behaviors.
+
+> The current repository has a portable privilege observer and query-only laboratory service adapters, but their retained observations cover three named forbidden engine privileges rather than either complete service profile. Broker observation likewise does not establish exact privilege admission. The handoff accurately separates this existing source from future enforcement, actual Windows compatibility and the still-unqualified MSIX account/provisioning bridge, while preserving the current work queue and execution holds.
+
+This was inherited-context review, not a fresh-context review. Earlier failed
+fresh launches supply no additional evidence. Its READY result applies only to
+this guidance/handoff stage, not implementation, native compatibility, service
+isolation or release. No blind skill-use trial or measured behavior improvement
+is claimed.
+
+**Parent static validation:** all 39 added local links/anchors resolved; metadata
+and UI records for all 66 registered skills matched the inventory; all 20 recorded
+imported-file hashes matched; registration/UI/frontmatter were unchanged;
+`git diff --check` passed. These checks parsed repository files as inert data;
+no repository Python module was imported or executed.
+
+The repository pack checker and its regression suite remain **NOT RUN**:
+the `security-audit` skill requires OS isolation unavailable in this session.
+Unchanged failed namespace setup was not retried and unisolated execution was
+not substituted. These parent-authored checks provide narrower structural
+evidence; the execution limitation is a session gap, not a new product gate.
+No repository code, build, test, Windows fixture or installer was executed.
+The final receipt changes only this review/evidence record; final parent
+validation and publication identity remain distinct from the reviewed hash.

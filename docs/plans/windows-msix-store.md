@@ -431,6 +431,15 @@ engine privilege removal, owner/`OWNER RIGHTS` and ACL isolation, process/token
 protection, no injection/duplication/reconfiguration route, broker network denial
 and legitimate IPC. [S20]
 
+**9 November privilege selection:** [architecture §4.1.1](../windows-time-architecture.md#411-service-privilege-profiles)
+now fixes the complete engine/broker privilege sets and clock-privilege lifetime.
+Provision the explicit nonempty role lists before ordinary service work and
+observe complete resulting tokens; three forbidden-name checks are insufficient.
+The setting filters existing account privileges at service start and cannot grant
+missing clock authority. Service SID, object rights/default owners, activation
+and supported no-UI provisioning remain separate requirements. This selection
+does not qualify either candidate account mapping or the final package.
+
 **Unknown:** a supported complete-package mechanism that establishes these
 settings before exposed service execution and preserves them through repair and
 update. Do not assume a service can authorize its own `ChangeServiceConfig2`,
@@ -936,6 +945,15 @@ substitutes for native token and denied-operation evidence.
 
 #### Restricted child: concrete benefit and restart tradeoff
 
+**Disposition after the 9 November privilege selection:** the following is
+retained research, not the selected service topology. The
+[broker profile](../windows-time-architecture.md#411-service-privilege-profiles)
+contains neither `SeIncreaseQuotaPrivilege` nor `SeAssignPrimaryTokenPrivilege`.
+A child-creation route requiring either privilege is incompatible with that
+profile; its investigation authorizes no retained duplicate token, expanded
+runtime set or alternate credential/launcher workaround. Reconsider any material
+topology/privilege tradeoff with David through the existing decision owner.
+
 `CreateRestrictedToken` can remove privileges, mark SIDs deny-only and add
 restricting SIDs. The documented access check evaluates both ordinary and
 restricting SID sets. Microsoft explicitly supports passing a restricted copy
@@ -956,8 +974,9 @@ combined with this restricted-token proposal.
 Permanent removal differs from disabling: a removed privilege cannot be restored
 to the same token. If the broker removes authority needed by the selected child
 creation path, its later engine-restart strategy must still work. Retaining a
-necessary minimal privilege or obtaining a fresh SCM process are alternatives
-to qualify. Keeping an unrestricted duplicate token merely to regain supposedly
+necessary minimal privilege or obtaining a fresh SCM process were alternatives
+in that research; neither is admitted by the current privilege selection.
+Keeping an unrestricted duplicate token merely to regain supposedly
 removed authority would preserve that authority. [S74]
 
 Account sharing remains a substantive boundary. Default process security derives

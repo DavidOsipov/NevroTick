@@ -282,6 +282,59 @@ Microsoft documents different activation points for different service settings. 
 
 The existing service record should distinguish configured value, documented activation point, observed token/policy and pending restart/reboot. A matching registry/configuration value is not enough to hand over clock authority. A restricted service SID also does not replace explicit read-confidentiality ACLs.
 
+### Service privilege source review — 9 November 2026
+
+David requested a concrete privilege choice for each existing service. The
+selected sets and admission/lifetime rules now live in
+[architecture §4.1.1](../windows-time-architecture.md#411-service-privilege-profiles);
+this section records their API basis and compatibility limits. It is a design
+decision supported by source review, not an observed Windows/MSIX token.
+[W11-W05's continuation](../../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026)
+retains S0.2/S0.3/P3/P4/P6 ownership and all current execution holds.
+
+| Actual or conditionally selected operation | Primary source and privilege conclusion |
+| --- | --- |
+| Configure the runtime privilege set | [`SERVICE_REQUIRED_PRIVILEGES_INFOW`][S6] filters at the next service start, retains `SeChangeNotifyPrivilege` and unions requirements in shared-process hosting. The explicit nonempty role lists avoid depending on unspecified empty-list interpretations. This is not an account-right grant or current-token proof. |
+| Read UTC, monotonic counters and current adjustment | [`GetSystemTimePreciseAsFileTime`](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimepreciseasfiletime), [`QueryPerformanceCounter`](https://learn.microsoft.com/windows/win32/api/profileapi/nf-profileapi-queryperformancecounter) and [`GetSystemTimeAdjustmentPrecise`](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeadjustmentprecise) document no extra `Se*` requirement for the reads. A combined getter/setter sample does not make clock-setting authority necessary for measurement. |
+| Step system UTC | [`SetSystemTime`](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtime) requires a present `SeSystemtimePrivilege` and enables/disables it internally. The engine must lack it, including its disabled form. Only the broker's guarded step path may invoke the setter. |
+| Set/restore the selected precise adjustment | [`SetSystemTimeAdjustmentPrecise`](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustmentprecise) uses the same clock privilege; its caller enables it before and disables it after the call. Sample code is not the product's guard, cleanup or error oracle. |
+| Adjust the broker's privilege state | [`AdjustTokenPrivileges`](https://learn.microsoft.com/windows/win32/api/securitybaseapi/nf-securitybaseapi-adjusttokenprivileges) cannot add absent privileges. Nonzero return with `ERROR_NOT_ALL_ASSIGNED` is not complete success; removal is irreversible. `TOKEN_ADJUST_PRIVILEGES`/`TOKEN_QUERY` are token-object access rights, not extra `Se*` privileges. |
+| Identify a named-pipe client | [`ImpersonateNamedPipeClient`][H13] permits identification-level capture without `SeImpersonatePrivilege`. [`OpenThreadToken`](https://learn.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-openthreadtoken) with `OpenAsSelf=TRUE` uses the process context for its access check; it does not bypass the token DACL. Require the explicit identification QoS and actual token level in architecture §5.4.2. |
+| Authorize the captured client | [`AccessCheck`](https://learn.microsoft.com/windows/win32/api/securitybaseapi/nf-securitybaseapi-accesscheck) and [`CheckTokenMembership`](https://learn.microsoft.com/windows/win32/api/securitybaseapi/nf-securitybaseapi-checktokenmembership) accept an explicit impersonation token with `TOKEN_QUERY`. Revert before application authorization/dispatch; check API outcomes and authorization outcome separately. No ambient/null-token fallback or effects under the client token. |
+| High-resolution waitable timer | [`CreateWaitableTimerExW`](https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createwaitabletimerexw) documents object rights and the high-resolution flag, not a requirement for clock-setting privilege. Qualify the selected scheduling/deadline behavior; do not add realtime process priority or `SeIncreaseBasePriorityPrivilege` as an accuracy shortcut. |
+| Service status/control and ordinary owned files/IPC | [SCM rights][H1] and [file/object rights][H8] are separate from token privileges. `SERVICE_CHANGE_CONFIG`, `WRITE_DAC`, `WRITE_OWNER` and `TOKEN_QUERY` are not entries in `RequiredPrivileges`. Runtime status ownership grants no installation or sibling-service reconfiguration authority. |
+| Change a default owner or provision an audit descriptor | [Token-object rights](https://learn.microsoft.com/windows/win32/secauthz/access-rights-for-access-token-objects) and [`TOKEN_OWNER` eligibility](https://learn.microsoft.com/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_token_owner) govern default-owner changes. They differ from changing an existing object's descriptor. [`SetSecurityInfo`](https://learn.microsoft.com/windows/win32/api/aclapi/nf-aclapi-setsecurityinfo) requires `SeSecurityPrivilege` for SACL access; any required provisioning belongs to the authorized lifecycle owner, not the runtime service allowlist. |
+| Lock a bounded secret buffer | [`VirtualLock`](https://learn.microsoft.com/windows/win32/api/memoryapi/nf-memoryapi-virtuallock) does not establish a need for `SeLockMemoryPrivilege`. Its working-set bound matters: [`SetProcessWorkingSetSize`](https://learn.microsoft.com/windows/win32/api/memoryapi/nf-memoryapi-setprocessworkingsetsize) requires `SeIncreaseWorkingSetPrivilege` when increasing either limit. Qualify the required finite lock budget and checked failure under the selected token; do not silently expand privileges or weaken required secret handling. |
+| NTS/TLS/CNG and protected storage | No reached requirement establishes broad impersonation, TCB, debug or clock authority for the engine. For the conditional [Schannel credential API](https://learn.microsoft.com/windows/win32/secauthn/acquirecredentialshandle--schannel), ordinary own-context credentials differ from acquiring another logon session's credentials; Schannel requires `pvLogonID=NULL`. [`BCryptGenRandom`](https://learn.microsoft.com/windows/win32/api/bcrypt/nf-bcrypt-bcryptgenrandom), selected key/provider ACLs and conditional [DPAPI](https://learn.microsoft.com/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata) still need exact-token/native qualification. This selects neither Schannel nor a DPAPI fallback and proves no complete provider/DNS/network closure. |
+
+**SID and privilege restrictions are independent.** Service `Restricted` uses
+a write-restricted token, as explained by [Microsoft's service-hardening
+guidance](https://techcommunity.microsoft.com/blog/askperf/ws2008-windows-service-hardening/372702)
+and the current [SID structure][S7]. Its restricting list also contains logon,
+Everyone and Write Restricted SIDs; the flag does not mean only an object with
+the service's own SID can be written. It does not replace confidentiality ACLs,
+object/default-owner proof, privilege filtering or
+[service network restriction](https://learn.microsoft.com/windows/win32/api/netfw/nf-netfw-inetfwservicerestriction-restrictservice).
+`SeChangeNotifyPrivilege`'s documented [traverse behavior](https://learn.microsoft.com/windows/win32/secauthz/privilege-constants)
+does not grant general target-object read/write access.
+
+**Conditional process-creation conflict.** The retained restricted-child
+alternative in [the MSIX research](windows-msix-store.md#restricted-child-concrete-benefit-and-restart-tradeoff)
+uses `CreateProcessAsUserW`, which typically requires `SeIncreaseQuotaPrivilege`.
+Its restricted-copy exception concerns `SeAssignPrimaryTokenPrivilege`, not
+every prerequisite. Neither extra privilege is in the selected broker profile.
+That unselected topology is not an admitted workaround for SCM provisioning.
+An additional required privilege or incompatible provider is a named gap for the
+existing owner, never an automatic privilege fallback.
+
+**Observed source scope at `13ce18d`:** `crates/windows-platform` supplies portable
+contracts; `tools/windows-service-fixture` supplies inert native laboratory
+adapters. The native privilege capture resolves three fixed forbidden-engine
+LUIDs, and the portable snapshot keeps those facts. Broker observation is
+descriptive; a full per-role allowlist and SID/ACL/owner qualification remain
+open. Do not relabel those narrower historical checks as implementation of
+architecture §4.1.1. Extend their existing owner rather than add a second verifier.
+
 ### Child-process policy and shutdown need composition checks
 
 Microsoft warns that child-process restriction can be bypassed if the process can acquire another process handle with rights such as `PROCESS_CREATE_PROCESS` or `PROCESS_VM_WRITE`. [S9] Extend the existing process/object access matrix with harmless requests for those rights under the actual installed identities. A denied ordinary child launch and a queried mitigation bit are insufficient by themselves. The existing unresolved SCM creation-policy route remains unresolved; this report does not authorize a custom launcher workaround.

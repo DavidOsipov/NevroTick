@@ -1308,6 +1308,36 @@ versus mandatory-continuity separation and UI-M0 deferrals. The current portable
 Core checkpoint, broad Windows execution stop, separate fuzz no-retry hold and
 storage pause remain under the [next-task plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
 
+#### Service privilege profile qualification
+
+The [selected service profiles](windows-time-architecture.md#411-service-privilege-profiles)
+and [source rationale](plans/windows11-integration.md#service-privilege-source-review--9-november-2026)
+refine existing W11-W05/S0.2/S0.3, W11-W10 and P4 work. The
+[handoff](../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026)
+keeps current source preparation separate from held Windows execution. The
+three-privilege laboratory observer is not the complete role verifier.
+
+| Existing owner / checks | Independent expected result and useful control |
+| --- | --- |
+| Platform/token admission; CHECK-1/27 | Compare the whole primary-token privilege set to the canonical role profile. A complete intended set is admitted; extra enabled, extra disabled, unknown LUID, missing required privilege, malformed/truncated buffer and query/lookup failure are rejected before normal work. Use independent host capture/consumer controls and later native observations of reachable account/policy cases; neither three forbidden-name checks nor inspecting only enabled entries qualifies the set. |
+| Installer/platform; CHECK-1/13/23/27 | Read back exact nonempty configured names and own-process hosting. Absent/empty/extra-name policy, shared-process union and the old token of a still-running service cannot pass as the new profile. Pair fresh legitimate start with the actual service-start activation boundary and repair/update/restart/reboot cases. No automatic missing-right grant or wider-account retry. |
+| Service/IPC; CHECK-1/2/27 | Genuine client capture works with both services lacking `SeImpersonatePrivilege`; explicit client SQOS and the observed token level are identification-only. Anonymous, unexpected stronger level, unopenable token, changing attribution and capture failure admit no protected effect. Temporary captured client tokens follow caller authorization, not the service's own privilege allowlist. |
+| IPC/lifecycle; CHECK-1/2/12/27 | Reject an unexpected ambient thread token before ordinary service/effect work. Reversion finishes on the same thread before authorization/dispatch; failed reversion follows the existing fatal-process/recovery contract. Positive tests use real allowed callers and preserve operation-specific identity checks after successful capture. |
+| Broker/clock; CHECK-1/3/10/12/27 | The broker's allowed operation uses its one clock privilege after current guards, then confirms a disabled baseline. Challenge enable failure, Boolean success with `ERROR_NOT_ALL_ASSIGNED`, setter failure/uncertain outcome, disable/readback failure and interleaving attempts. No new effect follows failed enablement; uncertain cleanup blocks ordinary actuation and reaches existing bounded recovery. A subsequent permitted operation/owned cleanup still works without irreversible privilege removal. |
+| Engine/clock; CHECK-1/27 | Inspect absence of clock privilege before any admitted disposable-fixture denial probe. A disabled-but-present privilege is already a failed token gate: do not invoke an auto-enabling setter on that known-bad token merely to collect denial evidence. Pair a correctly unprivileged engine denial with authorized bounded broker behavior and external restoration. |
+| Object/IPC/storage owners; CHECK-1/2/15/27 | Inspect actual user, service/restricted SIDs, owner/default owner, DACL, relevant handle rights and inheritance independently of `TokenPrivileges`. The intended service can use its objects; the sibling engine and a second same-account service cannot obtain prohibited file/process/token/pipe authority. Include runtime creation/replacement and already-issued handle limits. |
+| Provider/resources/diagnostics; CHECK-9/17/21/26/27 | Under the exact role token, qualify selected network/crypto/key, finite locked-memory, diagnostics and shutdown paths with healthy controls. Provider denial, insufficient lock budget and failed sinks do not silently widen privileges, lose required secret protection or create arbitrary fallback writes. Closed source-only logic and absent extra privileges do not establish this native compatibility. |
+
+Bind the result to executable/role, Windows build, account/policy, service
+configuration, process lifetime, complete token capture and actual observations.
+Startup query code must not normalize an overprivileged token before reporting
+that it passed. Keep process-primary adjustment separate from thread-local
+client identification, privilege names/LUIDs separate from object access masks,
+and documented activation separate from effective state.
+The final Windows two-family and package evidence remains required; this
+documentation adds no acceptance IDs, mandatory agent campaign or new native
+execution permission.
+
 ## 10. Native Windows qualification and safe experiment ownership
 
 Real Windows tests remain mandatory for service tokens/privileges, pipe identity and impersonation, protected files/registry, reparse/handle lifetime, process mitigations, DLL loading, clock effects, power/resume, accessibility and complete-package lifecycle. Cross-compilation or a Linux model cannot close those checks.
