@@ -71,6 +71,15 @@ proves no parser safety or truthful wording. This adds no workflow or execution.
 6. Inject failures at meaningful reached stages/reboot interruptions. Separate package publication, installed state, journal progress and acknowledgement. Package replacement/service stop is not proof of recovery or uninstall. Old-version removal cannot restore W32Time under its successor; uninstall respects later administrator/GPO changes. Neither NTS outage nor packaging convenience permits automatic weak-authentication clock-controller fallback.
 7. Store release trust needs exact package/publisher/release identity, catalog/content and actual loaded-image evidence, protected submission/release authority and incident/version policy. Checksums alone provide no independent release authentication. Reconcile local-to-Store changes and final lifecycle/mitigation evidence before broad release. Store certification is not an application security pass; acceptance cannot waive a technical blocker. Retained TUF research adopts no bespoke privileged updater.
 
+For a later-selected MSI route, treat
+[`SecureCustomProperties`](https://learn.microsoft.com/en-us/windows/win32/msi/securecustomproperties)
+as a forwarding allowlist, not validation of values or confidentiality. Trace
+public properties, transforms and deferred-action inputs to the existing fixed
+operation, component/release and actual-object guards. Apply the same input/custody
+contract to signed helpers and external payloads; package trust does not authorize
+a privileged parameter or dependency load. Reuse §19.6/W11-W10, without creating
+a downloader, custom verifier or parallel MSI deliverable.
+
 For changed workflow/scanner/gate policy, select the existing helper tests,
 workflow checker and pinned secret scanner through the
 [configured-tool workflows](../../testing/references/configured-tooling.md).

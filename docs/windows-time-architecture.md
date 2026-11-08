@@ -1818,6 +1818,18 @@ guarantee after abrupt death. See [lifecycle research](plans/windows11-integrati
 
 Use atomic replace with validated staging, appropriate flush behavior and tested crash semantics on the selected filesystem. Guard against reparse points, symlinks/hardlinks, path traversal and time-of-check/time-of-use replacement when privileged code opens files. Prefer fixed installer-owned paths and already-open validated handles over accepting paths from IPC.
 
+Apply this filesystem authority to every reached privileged side effect, including
+startup/error reporting, log rotation, product-owned crash records, rollback and
+cleanup. Admit the directory before creation and retain verified handle/object
+authority before append, truncation, replacement, deletion or permission changes.
+Shared logging code or a service-writable location does not establish the elevated
+helper's authority over that destination. Failure of the principal operation
+grants no path-based logger bypass or weaker fallback. Unsafe or unavailable sinks
+follow the existing bounded loss/failure policy without arbitrary privileged
+writes or blocking necessary broker cleanup. ST-W03 and
+[hardening §9.8](windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification)
+own the paired failure-side and useful-diagnostics checks.
+
 Windows-managed per-service directories/registry state are optional placement
 candidates, initially for disposable or optional state. Their lifetime follows
 the service installation: deleting/recreating a service can delete that state,
@@ -2285,6 +2297,11 @@ controls. See the [ETW composition cases](plans/windows11-integration-follow-up.
 Apply field policy at emission, before formatting and buffering. For every field record purpose, sensitivity, owner, recipients and retention. Never emit NTS keys/cookies, TLS key material, credentials, approval tokens, full IPC/packet objects or arbitrary memory, at any level. Avoid broad derived `Debug`, automatic argument capture, free-form dependency error chains and attacker-chosen field names. Central formatting cannot reliably remove a secret already embedded in an arbitrary string. Bound/escape allowed text so control characters cannot forge records. [S74]
 
 The proposed **10 MiB rotating local diagnostic budget is aggregate per installation**, divided into fixed component allocations; it is not multiplied by processes, sessions or users. Use bounded per-process queues/recent-event memory and fixed protected service sink paths. The normal UI may retain bounded memory instead of creating a persistent file at every launch. Explicit user-saved support exports have their own size cap; Windows Event Log retention is separately configured and qualified under section 15.3. Choose actual allocations, overflow counters and writer lifetimes before service integration.
+
+Apply [§12.1's filesystem authority](#121-state-separation) to privileged diagnostic
+failure paths and their fallback sinks. Product-owned crash files and
+administrator-controlled WER/LocalDumps/debugger collectors retain their separate
+ownership and qualification scopes.
 
 Keep expensive formatting and sink I/O off the time-control critical path with bounded admission and writer work. Guard optional expensive work before evaluation; bound encoded bytes after escaping, rate-limit keys/cardinality and counter arithmetic. Prioritize required records within a finite allocation, coalesce floods and retain first relevant cause/counters. Expose queue loss, unavailable sinks and incomplete export through bounded diagnostic health/status; never recursively log a sink failure into itself. A failed logger must not turn rejection into success, corrupt mandatory state or block necessary clock cleanup. Shutdown flush is finite; loss after the deadline or abrupt termination is reported as a limitation, not a durability guarantee.
 
@@ -3634,6 +3651,12 @@ The async transport adapter candidate is **`tokio-rustls` 0.26.6**, associated w
 Microsoft explicitly documents that a supplied chain-validation time does not control all trust-list, root or revocation checks; a CRL itself must be valid at current system time. Therefore section 8's provisional TLS clock cannot promise unchanged Windows revocation behavior while Windows UTC is grossly wrong. OPEN-8 must choose and document trust sources, enterprise CA/distrust behavior, end-cert versus chain revocation, soft/hard failure, offline policy, retrieval and cache rules, and the exact bootstrap exception or refusal behavior. Never label unknown revocation as a confirmed non-revoked result. A failed required policy blocks acquisition; plain NTP does not become authorized tracking. [S81]
 
 Windows chain validation may retrieve intermediates, roots or revocation material and may block. Observe whether each fetch is made by the engine or delegated Windows services; an engine firewall rule cannot be assumed to constrain delegated traffic. Apply explicit allowed resource/protocol policy, finite retrieval settings, bounded work and residual disclosure. If the chosen verifier cannot express the required policy, it fails admission until a qualified configuration/adapter resolves it. System-wide root updater behavior must not be silently disabled to make this application fit.
+
+Use [R-05's retrieval refinement](nevrotick-research-handoff.md#7-r-05--windows-trust-with-a-wrong-system-date)
+for the selected wrapper's separate chain/revocation cache controls, revocation
+retrieval timeout scope and paired native observations. These settings supplement
+section 17.1's actual-job lifetime contract; they establish neither an overall
+handshake deadline nor permission to weaken the selected trust policy.
 
 **HTTP scope gate:** OPEN-8 must identify each direct/delegated retrieval owner, protocol version and enforcement boundary. Resolve incoming/outgoing HTTP framing, prohibited HTTP/2/3 fields, receiver-compatible URI/header limits, encrypted transport and intended redirect behavior against the six conditional ASVS rows in section 14.8.4. If a route intentionally retrieves signed PKI material over plain HTTP, its object signatures do not satisfy literal transport encryption; record the scoped exception and residual exposure. Every permitted redirect hop and final destination must meet policy. Server-only HTTP exclusions remain distinct.
 

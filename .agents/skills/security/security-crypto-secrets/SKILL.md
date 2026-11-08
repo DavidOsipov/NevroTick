@@ -14,6 +14,18 @@ Read [the security contract](../CONTRACT.md), architecture sections 7–8, 12 an
 5. Keep secrets in association owner with restricted service-SID ACLs and qualified Windows-protected persistence. Machine-scoped DPAPI alone provides no per-service isolation: other machine users with blob access can decrypt under documented scope. Inspect restart/account/machine migration and recovery. Minimize clones/plaintext lifetime; use reviewed redacted wrappers and selected zeroization, claiming no elimination of all prior copies/crash dumps.
 6. Exclude keys, cookies, bearer approvals and raw sensitive packets from `Debug`, errors, traces, diagnostics and exports. Test negative decryption/trust/AEAD cases and valid neighbors without logging test secrets.
 
+For Windows certificate validation, apply
+[R-05](../../../../docs/nevrotick-research-handoff.md#7-r-05--windows-trust-with-a-wrong-system-date)
+and the [ordinary S2.2 trust/native-work card](../../../../tasks/s0.1-crypto-feasibility.md#ordinary-s22-trust-profile-and-native-work--5-november-2026).
+Keep the crypto provider, TLS implementation and certificate-verifier policy
+distinct; OS-backed primitives do not establish Schannel policy or certificate
+trust. Resolve actual wrapper controls and service context before claiming
+offline or bounded verification. For blocking calls and CNG owners, retain
+inputs, handles and admission charges through actual completion under
+[§17.1](../../../../docs/windows-time-architecture.md#171-bounded-async-and-native-work).
+Use the existing crypto task's initialization/shutdown/concurrency cases;
+a private-initializer cleanup result does not qualify cached or shutdown paths.
+
 Review equality/verification of secret authenticators, tags and bearer evidence
 for secret-dependent timing. Prefer the selected provider's authentication or
 verification API; ordinary equality or a handwritten loop is not a substitute

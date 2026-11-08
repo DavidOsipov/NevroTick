@@ -135,6 +135,14 @@ output. Query/setter success alone proves no such behavior. W11-W08/ST-W07 retai
 WER/LocalDumps/debugger synthetic-secret and retention cases; no UI is neither no
 dump nor no upload, and no global administrator policy change is authorized.
 
+Inventory privileged failure-side file effects as well as normal service work:
+startup errors, product-owned crash output, rollback and cleanup diagnostics.
+Apply the [shared persistence authority rules](../../../security/references/persistence-and-resources.md)
+before those effects; shared service logging code does not qualify an elevated
+helper's destination. W11-W05/W11-W08/W11-W10 and ST-W03 own the paired
+sentinel/useful-diagnostics case under CHECK-13/15/17/23. External OS collectors
+retain their separate privacy and ownership qualification.
+
 Keep event provider/channel resources with the selected package/lifecycle owner;
 runtime logging does not gain installation privilege. If a classic Event Log
 adapter is selected, [RegisterEventSourceW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-registereventsourcew)

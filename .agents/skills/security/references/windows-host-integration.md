@@ -134,6 +134,10 @@ traces and any evidence the task requires retaining.
    hops and cache/offline paths. Resolve allowed resource/protocol policy and
    finite work/deadlines under architecture section 18.7.2; do not disable the
    system root updater or silently authorize plaintext NTP when retrieval fails.
+   Use [R-05's retrieval receipt](../../../../docs/nevrotick-research-handoff.md#7-r-05--windows-trust-with-a-wrong-system-date)
+   for the selected chain/revocation cache controls and revocation timeout scope;
+   a process rule or one cache-only flag cannot establish the whole verifier's
+   network behavior.
 4. Separate declared intent, configured effective rules and observed enforcement.
    In an authorized Windows fixture, use reachable controlled endpoints and
    actual final service identities to pair permitted engine traffic with denied

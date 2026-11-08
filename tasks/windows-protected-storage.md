@@ -218,6 +218,10 @@ through an admitted sink and the legitimate operation still work. No logger
 exception, path-only precheck or LocalSystem workaround satisfies the contract.
 Reuse ST-T03/10/17 with W11-W05/W11-W08/W11-W10 and CHECK-13/15/17/23; optional
 storage, mandatory state and collector-specific privacy retain separate owners.
+The [canonical filesystem rule](../docs/windows-time-architecture.md#121-state-separation)
+and [hardening §9.8](../docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification)
+now carry this requirement and its paired check; the reusable skill routes are
+recorded in [the integration map](../docs/supporting-reviews/windows-os-integration-risk-research.md#8-skill-and-document-integration--9-november-2026).
 
 ### ST-W04 Qualify each CNG call and its crypto result
 

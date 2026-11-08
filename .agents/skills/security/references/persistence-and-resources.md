@@ -6,6 +6,16 @@ Separate admission, candidate preparation, validation, staging write/sync, publi
 
 Check relevant traversal, Windows drive/share/device forms, reparse points, replacement races, inherited rights and open-handle sharing. Confine fixtures to owned temporary paths. OS ACL/path proofs need native execution; string allowlists prove no hardened filesystem sandbox. Never log sensitive paths to prove rejection.
 
+Include incidental privileged writes in the operation inventory before its first
+effect: startup/error logs, rotation, product-owned crash records, rollback and
+cleanup. Admit the parent/root before creation and retain actual-object authority
+for subsequent data or security changes. A rejected main request does not make
+its error-reporting path safe. Follow
+[architecture §12.1](../../../../docs/windows-time-architecture.md#121-state-separation)
+and [ST-W03](../../../../tasks/windows-protected-storage.md#st-w03-constrain-directory-authority-before-destructive-effects);
+use [hardening §9.8's paired sentinel/diagnostic control](../../../../docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification).
+Optional storage, mandatory state and external collectors retain their owners.
+
 `Path::join` and `PathBuf::push` assemble paths; they do not establish containment.
 On Windows, an operand with a root but no prefix replaces the base's path while
 retaining its prefix; a drive-prefixed relative operand can replace the base

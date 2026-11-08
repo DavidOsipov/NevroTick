@@ -6,6 +6,12 @@ Use canonical [architecture](../../../../docs/windows-time-architecture.md): sel
 
 Record Windows edition/build, architecture, toolchain/SDK/linker, service identities, security profile, features, candidate hashes, VM/hardware characteristics. Windows-target WSL compilation proves only selected-configuration compilation. VMs exercise services/ACLs/packages; may distort oscillator/suspend/resource measurements. Name limits; use CHECK-21-required named hardware.
 
+When an OS advisory is relevant, bind its vendor affected/fixed range to the
+actual component, edition/build/UBR, architecture and servicing/KB state of each
+selected target. Family names, package signatures and database no-match results
+cannot establish a patched baseline; retain unresolved applicability explicitly.
+Reuse the existing two-family qualification matrix, not a new universal CVE gate.
+
 Disposable clock/service/installer machine: capture owned baseline service/W32Time configuration, clock/package state, recovery conditions. Ensure cleanup after service/process death; destructor cannot clean after abort. Account for other-user sessions/successors before restoration. No blind rate reset under successor controller ownership.
 
 ## Tokens, IPC and effects
@@ -15,6 +21,20 @@ Exercise real engine/broker/UI/helper tokens/allowed verbs (CHECK-1–3). Includ
 Observe the true Windows result: applied sign/rate/phase, quantization, privilege behavior and acknowledgement. Include cancellation before/during native work, native call failure, delayed completion, stale generations, lost acknowledgement and cumulative budgets. Verify no unwinding crosses FFI and no replacement permit is fabricated while cancelled work still owns one (CHECK-10/27).
 
 Exercise actual SCM start/stop pending/running status, failure/preshutdown controls, registration failure, restart, no-login startup. UI exit must not stop background service. Attribute handle/thread/resource counts to actual owner; unclear global counts insufficient.
+
+## Certificate and crypto-provider evidence
+
+For reached TLS/certificate/provider paths, use
+[R-05](../../../../docs/nevrotick-research-handoff.md#7-r-05--windows-trust-with-a-wrong-system-date)
+and the [S2.2 native-work card](../../../../tasks/s0.1-crypto-feasibility.md#ordinary-s22-trust-profile-and-native-work--5-november-2026)
+under CHECK-8/9/26/27. Bind observations to the actual service principal, verifier/
+provider build, effective stores, candidate and system time, retrieval settings
+and observed accepted/unknown/refused result. Use hardening
+[§9.11's paired retrieval controls](../../../../docs/windows-time-development-hardening.md#911-windows-integration-qualification-refinements);
+attribute direct and delegated traffic separately. Delayed native completion
+retains inputs/resources and admission charges while stale results stay ineligible.
+Use the existing CNG initialization/shutdown cases at their actual owner;
+an isolated initializer pass or process exit proves no broader cleanup guarantee.
 
 ## Native memory and resource ownership
 

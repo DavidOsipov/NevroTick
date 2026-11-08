@@ -23,6 +23,18 @@ primary release notes, manifests/source, security policy, Windows support and
 license grants. Separate patch/minor/major/zero-major, prerelease and git-source
 changes; SemVer proves no behavioral/license compatibility.
 
+Triage each advisory against the selected target/features and actual consumer,
+including host/build execution and local patches; a lockfile match alone does not
+establish runtime reachability. Distinguish security defects from maintenance or
+yanked notices. Exclusion needs current graph/source evidence and its scope;
+metadata-only placement or an old policy annotation is not an emitted-binary pass.
+Record incomplete/truncated/error responses separately from no-match results and
+corroborate consequential ranges/mechanisms in primary records. Preserve the
+existing warning/remediation policy instead of fabricating ignores or urgent
+runtime replacements from a maintenance notice. See the
+[dated OSV disposition](../../../../docs/supporting-reviews/windows-os-integration-risk-research.md#5-exact-version-dependency-lookups)
+for the method, not a permanent package allowlist.
+
 Before resolution, decide cohort and visible holds. Re-evaluate affected Serde/parser
 behavior, TLS provider/trust/licensing, NTS packet AEAD and Win32/service boundaries.
 Preserve held/optional candidates. Neither replace selected validation model nor

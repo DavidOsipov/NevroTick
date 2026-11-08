@@ -11,6 +11,13 @@ Before injection select actual failure seam/expected phase-specific state. Trace
 
 Inject disk-full/interrupted replacement, corrupt/old state, process death, lost acknowledgements, delayed native calls, source outage, managed/competing clock ownership. Verify prior valid policy survives failed updates; invalid mandatory authority blocks effects; optional cache corruption triggers documented reacquisition; budgets do not reset.
 
+For privileged filesystem failures, include secondary reporting and compensation
+effects under [hardening §9.8](../../../../docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification):
+the principal operation fails harmlessly, a substituted destination leaves an
+unrelated sentinel unchanged, and an admitted diagnostic/legitimate-operation
+control succeeds. Use ST-W03 with W11-W05/08/10; error returns alone establish
+no absence of privileged writes.
+
 Clock/installer faults: isolated Windows machine/external cleanup/restoration owner. Test mid-system-change interruption; assume no universal MSI custom-action reversal. Recovery must respect successor ownership; no blind rate reset.
 
 Use [architecture §20.2.1](../../../../docs/windows-time-architecture.md#2021-contract-review-acceptance-refinements)

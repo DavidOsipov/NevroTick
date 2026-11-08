@@ -44,4 +44,14 @@ Target applicable ASVS 5.0.0 L1/L2/L3 requirements under `docs/asvs-5.0.0-applic
 
 Use current source, resolved features/versions and official/upstream docs for uncertain APIs. Report canonical conflicts; never silently amend architecture. Windows proofs require actual relevant OS mechanism; mocks/host/cross-compilation prove narrower claims. Clock-changing work follows architecture section 14.9: disposable Windows VMs, bounded operations, observation/recovery.
 
+For advisory-led work, record the database/retrieval date and primary mechanism,
+affected/fixed range, actual OS build or package version, target/features/provider,
+reached caller and required attacker prerequisites. Separate an external analogue,
+affected candidate, evidenced exclusion, maintenance warning and unresolved
+applicability; a CVE label or another product's severity is not a NevroTick finding.
+No-match, failed or truncated lookups establish no safety result. Use the
+[bounded integration review](../../../docs/supporting-reviews/windows-os-integration-risk-research.md)
+as a worked example; keep dated CVE/version inventories there or in the owning
+task, rather than copying volatile lists into skills or adding a universal gate.
+
 Report changed owner/boundary, actual enforcement, executed checks with source/environment identity, observed forbidden-effect/legitimate-control results, uncertainty and next action. Documentation/pack validity, skill discovery, agent decisions, application behavior, package/signature and release readiness remain separate claims.

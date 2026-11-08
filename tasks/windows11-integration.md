@@ -5808,3 +5808,73 @@ Parent validation of the initial and corrected candidates checked all 32 added
 local links/anchors and `git diff --check`, with no failures.
 `docs/SHA256SUMS.txt` is absent, so no bundle manifest integrity is claimed.
 These documentation results remain separate from any future product result.
+
+
+#### 4.37.1 Skill and canonical guidance integration — 9 November 2026
+
+**Request and baseline:** David asked where the OS-integration findings must enter
+skills and documentation. The parent and two read-only inherited-context
+researchers inspected clean `bb4536b2a72d698bdb18bab600bce3c419ff1ac1`, its existing
+skill routes, canonical contracts and task owners. The
+[integration map](../docs/supporting-reviews/windows-os-integration-risk-research.md#8-skill-and-document-integration--9-november-2026)
+records changed surfaces and adequate existing coverage. This note uses
+Asia/Tbilisi; the preceding research evidence retains its 8 November UTC date.
+
+**Integration:** architecture §12.1 now explicitly includes privileged secondary
+failure writes; §12.3.4 routes diagnostic sinks to that contract. Hardening §9.8
+owns the paired sentinel/useful-diagnostics control, reached through persistence,
+privacy/logging, the service adapter guide and fault-recovery QA. Architecture
+§18.7.2, crypto/protocol skills, Windows host guidance and shared Windows QA now
+reach R-05/S2.2 and the existing actual-job lifetime owner; exact cache-only flags
+remain in R-05. Advisory triage and conditional MSI property forwarding are
+clarified in their current security/dependency/deployment owners. Native patch
+claims remain tied to the actual two-family component/build/servicing matrix.
+
+Existing token/pipe/completion, DLL/signature and package-QA contracts were checked
+and retained. No new skill leaf, schema, runtime verifier, dependency resolution,
+warning ignore or parallel gate is introduced. Current development ordering,
+Store-first/all-file/interim-signing policy and Windows/fuzz/storage/UI/post-V1
+proof dispositions remain. This source/document work resumes no native operation.
+
+**Validation scope and limits:** check changed Markdown links/anchors, unchanged
+skill registration/frontmatter/UI metadata and preserved imported inventories;
+review the exact integrated diff and relevant canonical neighbors. The
+`security-audit` skill's required OS isolation for target-controlled execution is
+unavailable in this session. Repository validators, application code and native
+fixtures were not executed, and unchanged failed namespace attempts were not
+repeated. Required `check_skills.py` and its regression execution remain unrun here;
+parent-authored static checks and read-only review supply narrower evidence.
+A later appropriately isolated pack-validation run retains its existing owner;
+this is a session evidence gap, not a new product gate or permanent execution hold.
+
+**Independent review completed — READY for guidance integration and documentary
+handoff.** Separate read-only reviewer `/root/signing_coverage_judge` read the
+complete 17-file diff, relevant canonical neighbors and actual skill entry points.
+It verified all candidate file hashes against manifest SHA-256
+`fc8280573be89304004b133d0ceb42e0fa755b73981f4ef77c8c1ba7badc7db0`
+and tracked-diff SHA-256
+`10559f04599581a1be7b03972c077c19f6457cbc07a592089e0f16b85d6e7176`.
+It found no material issue, corroborated the conditional MSI distinction in
+Microsoft's property/custom-action documentation, and confirmed that the unchanged
+service/IPC/privilege/lifecycle routes already cover their assigned boundaries.
+
+The reviewer's two comprehension paragraphs are retained verbatim:
+
+> This candidate moves the reusable lessons from the completed OS-integration research into existing implementation and verification routes. It makes privileged failure-side filesystem effects explicit in the architecture and diagnostic checks, connects certificate work to R-05 and the S2.2 handoff, and adds scoped advisory, servicing and MSI-input guidance. Dated CVE and package inventories remain in the research record rather than becoming permanent skill rules.
+
+> NevroTick’s guidance keeps distinct owners: the architecture defines requirements, tasks retain work and evidence, skills route executors, and shared QA references specify the observations needed for a claim. This change preserves that structure and the distinction between source preparation and qualified Windows behavior. Store-first delivery, all-file signing, the admitted interim self-signed MSI profile, current development order and execution holds remain intact.
+
+This was inherited-context review, not a fresh-context review. Earlier failed
+fresh launches supply no usable evidence. The reviewer inspected source-level
+routes; no blind skill-use trial, measured behavior improvement, product/native
+qualification or release approval follows from its result.
+
+**Parent static validation:** all 47 added local links/anchors resolved; metadata
+and UI records for 66 registered skills were checked as data; all 20 recorded
+imported-file hashes matched; registration/UI/frontmatter were unchanged;
+`git diff --check` passed. No repository Python module was imported or executed
+for these checks. The repository pack checker and its regression suite remain
+**NOT RUN** under the session limitation above; this is narrower structural
+validation. `docs/SHA256SUMS.txt` is absent, so no bundle-manifest pass is claimed.
+The final receipt changes only this review/evidence record; the parent's final
+candidate check and publication identity remain separate from the reviewed hash.

@@ -301,6 +301,37 @@ Revisit only affected conclusions when source/features/provider/packaging,
 service account, OS servicing, policy or advisory data changes. The next agent
 should take the relevant bounded owner row, not restart the whole CVE survey.
 
+## 8. Skill and document integration — 9 November 2026
+
+**Integration date:** 9 November 2026, Asia/Tbilisi. The research snapshot and
+lookup receipts above remain dated 8 November UTC. This follow-up carries the
+useful rules into existing implementation and QA entry points; it changes no
+product source, dependency graph or native qualification result.
+
+| Research lesson | Canonical or task owner | Reusable entry points and disposition |
+| --- | --- | --- |
+| Chain/revocation retrieval, time and native-job scope | [Architecture §18.7.2](../windows-time-architecture.md#1872-certificate-policy-is-a-separate-windows-integration-decision), [R-05](../nevrotick-research-handoff.md#7-r-05--windows-trust-with-a-wrong-system-date), existing S2.2 crypto card | Updated [security-crypto-secrets](../../.agents/skills/security/security-crypto-secrets/SKILL.md), [security-protocol-inputs](../../.agents/skills/security/security-protocol-inputs/SKILL.md) and [Windows host integration](../../.agents/skills/security/references/windows-host-integration.md#firewall-and-wfp) to reach those owners. Exact flag details remain in R-05. |
+| Actual verifier/service-context evidence | [Hardening §9.11](../windows-time-development-hardening.md#911-windows-integration-qualification-refinements), OPEN-8/CRYPTO-04 and CHECK-8/9/26/27 | Added a shared [certificate/provider QA route](../../.agents/skills/testing/references/windows-evidence.md#certificate-and-crypto-provider-evidence), already reached by security/lifecycle QA. Provider primitives, TLS implementation, certificate policy and actual completion retain distinct evidence. |
+| Privileged failure-side file effects | [Architecture §12.1](../windows-time-architecture.md#121-state-separation), §12.3.4 and [ST-W03](../../tasks/windows-protected-storage.md#st-w03-constrain-directory-authority-before-destructive-effects) | Explicit rule in [persistence/resources](../../.agents/skills/security/references/persistence-and-resources.md), reached from [security-privacy-logging](../../.agents/skills/security/security-privacy-logging/SKILL.md) and the [service adapter guide](../../.agents/skills/implementation/implement-rust/references/windows-service-adapters.md#establish-effective-unattended-error-behavior). Product-owned files and external OS collectors keep separate scopes. |
+| Failure without a secondary forbidden write, with useful diagnosis | [Hardening §9.8](../windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification), ST-W03/W11-W05/08/10; CHECK-13/15/17/23 | Updated [qa-fault-recovery](../../.agents/skills/testing/qa-fault-recovery/SKILL.md) to the unchanged-sentinel and admitted-diagnostics/legitimate-operation controls. A redaction check alone cannot establish destination authority. |
+| Advisory applicability and maintenance warnings | Architecture §18.10/CHECK-26; dated records in this review and existing task | [Security contract](../../.agents/skills/security/CONTRACT.md) now requires primary mechanism/range, actual target/path and prerequisites. [dependency-updates](../../.agents/skills/environment/dependency-updates/SKILL.md) separates maintenance notices, selected features, host execution, local patches and incomplete lookups. No dated package allowlist or warning suppression is adopted. |
+| OS servicing evidence | Existing two-family qualification matrix and applicable vendor record | [Windows evidence](../../.agents/skills/testing/references/windows-evidence.md#native-execution-and-isolation) binds relevant advisories to actual component/build/UBR/KB state. A family label or package signature does not establish patch state. |
+| Signed carrier and privileged maintenance inputs | Architecture §19.6 and W11-W10, conditional MSI route only | [security-build-deployment](../../.agents/skills/security/security-build-deployment/SKILL.md) clarifies that `SecureCustomProperties` forwards values without validating them or granting confidentiality. Existing component/release, fixed-operation, custody and load rules remain controlling. |
+
+Existing `implement-windows-service` already selects privacy/logging and the
+service guide; its entry point needs no copied paragraph. The inspected
+`security-windows-privileges`, `security-local-ipc`, native-proof and
+`qa-state-concurrency-lifecycle` instructions already cover effective tokens,
+pipe instance/identity/reversion, custody and real completion. Existing package
+QA, metadata/signing and DLL-load rules already cover authenticated content,
+actual dependencies and final delivered bytes. Their current contracts remain;
+this follow-up adds no duplicate CVE catalogue or new skill leaf.
+
+The documentation map and [W11 integration record](../../tasks/windows11-integration.md#4371-skill-and-canonical-guidance-integration--9-november-2026)
+retain candidate-specific review/validation and remaining gaps. The existing
+development queue already routes this research through W11 §4.37; its order,
+Core priority, Store-first/interim-signing decisions and execution holds remain.
+
 ## Primary references
 
 The references below are linked at the claims and dispositions they support.
