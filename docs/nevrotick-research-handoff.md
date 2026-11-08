@@ -63,6 +63,18 @@ amendment resumes no proof compiler/solver job or verifier/metadata repair and
 lifts no Windows, fuzz or storage hold; ordinary runtime, behavioral, coverage/
 mutation, security, native, package and release gates remain.
 
+**8 November 2026 OS-integration research:** the
+[source/API and CVE review](supporting-reviews/windows-os-integration-risk-research.md)
+maps implemented experiments separately from planned production boundaries.
+It substantiates no new exploitable project vulnerability. R-05 below explicitly
+separates Windows chain/revocation cache-only settings and timeout scope;
+[ST-W03](../tasks/windows-protected-storage.md#st-w03-constrain-directory-authority-before-destructive-effects)
+adds privileged failure-side writes to its existing directory-authority cases.
+[W11 §4.37](../tasks/windows11-integration.md#437-os-integration-vulnerability-research--8-november-2026)
+owns integration and the judge's review. Other findings reinforce current
+contracts and their still-open native evidence; no new survey or release gate
+is introduced.
+
 ## 1. Assignment and limits
 
 Investigate the unresolved questions below and produce concrete options with evidence. This assignment is research and planning. It does not authorize provider contact, accepting terms, submitting vendor/signing applications, spending money, generating release credentials, public releases or changes to the user's Windows clock/services/trust stores.
@@ -261,6 +273,22 @@ global clock step remains a separate, unselected authority alternative.
 Qualify the exact Rust TLS provider, verifier, native dependencies and selected Windows service context. A provisional time argument does not establish that every Windows trust/revocation operation uses that time.
 
 Document trust-store ownership, enterprise policy and explicit distrust, chain/hostname/EKU/algorithm checks, known-revoked versus unknown status, offline semantics, validity at candidate time, Windows API date range, resumption isolation and cached-association policy. Trace direct and delegated DNS/AIA/CRL/OCSP/network work, redirects and native cancellation/resource ownership. Preserve the existing conditional ASVS retrieval analysis.
+
+**8 November retrieval refinement:** record the selected wrapper's actual
+handling of `CERT_CHAIN_CACHE_ONLY_URL_RETRIEVAL` separately from
+`CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY`; the first does not restrict revocation
+retrieval. Record `dwUrlRetrievalTimeout` and whether
+`CERT_CHAIN_REVOCATION_ACCUMULATIVE_TIMEOUT` applies to cumulative revocation URL
+retrieval. Per-URL or cumulative revocation retrieval limits and an application
+timeout do not prove an overall native-job bound. See the
+[Microsoft API contract](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certgetcertificatechain)
+and [research disposition](supporting-reviews/windows-os-integration-risk-research.md#43-certificate-time-retrieval-and-timeout-settings-are-not-one-switch).
+Pair cold/missing/stale cache, wrong system date and prohibited/redirected
+retrieval with a permitted chain and usable admitted cache/network path. Observe
+direct and delegated traffic and preserve unknown/refused status accurately.
+This refines OPEN-8/CRYPTO-04 and CHECK-8/9/26/27; it selects neither blanket
+offline operation nor softer revocation policy. If the chosen wrapper cannot
+express the required policy, its existing admission gap remains open.
 
 ### Association and full-authentication lifetime
 

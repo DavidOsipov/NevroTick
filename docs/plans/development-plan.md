@@ -2014,6 +2014,17 @@ does not isolate every live secret or establish rollback-resistant storage.
 
 #### Imported hardening work queue
 
+**8 November OS-integration research:** use the
+[bounded source/CVE handoff](../supporting-reviews/windows-os-integration-risk-research.md)
+and its [W11 §4.37 integration record](../../tasks/windows11-integration.md#437-os-integration-vulnerability-research--8-november-2026)
+before dependent work. R-05/CRYPTO-04 records the distinct Windows chain/revocation
+cache-only controls and timeout scope; ST-W03 and W11-W05/08/10 include elevated
+failure-side writes in existing filesystem/diagnostic cases. Source preparation
+can continue under its current assignment; production integration and native
+qualification retain their existing prerequisites/holds. CVE analogues and
+inactive metadata-only advisory matches add neither a confirmed product finding
+nor a new Core prerequisite, release gate or replacement work queue.
+
 **Local adoption, 3 November 2026:** remote commit `a6c2401` is integrated with
 current dirty/staged development work. The
 [primary coordinator disposition](../../tasks/windows-protected-storage.md#66-primary-development-coordinator-disposition--3-november-2026)

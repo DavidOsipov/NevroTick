@@ -5719,3 +5719,92 @@ evidence, unexecuted rows and next action here. Keep documentation review in
 the linked plan. This entry executes no Windows/package/signing/credential/Store
 or Community operation and lifts none of the current holds. Post-V1 work still
 starts with MT-0, then Khronos.
+
+### 4.37 OS-integration vulnerability research — 8 November 2026
+
+**Request and inspected source:** identify NevroTick's actual/proposed OS
+integration points, research relevant vulnerability databases through MCP, and
+challenge applicability with separate agents. The read-only source baseline was
+clean `a78a8852bbd05dfd5f837a571fccb32b7b08fb81`. The
+[supporting review and handoff](../docs/supporting-reviews/windows-os-integration-risk-research.md)
+retains the inventory, primary sources, CVE dispositions, exact-version query
+scope, counterevidence, paired controls and research limitations.
+
+**Result:** no new exploitable NevroTick vulnerability was substantiated in this
+bounded pass. Existing service/IPC/file/loading/certificate/lifecycle contracts
+already cover most researched failure classes; their native implementation and
+qualification remain distinct. No complete code audit or complete Windows CVE
+inventory is claimed.
+
+| Existing owner | Integrated refinement / disposition |
+| --- | --- |
+| R-05 / CRYPTO-04; OPEN-8; CHECK-8/9/26/27 | Separate chain-building and revocation cache-only controls, per-URL versus cumulative revocation URL retrieval timeout, and actual native-job completion. Retain service-context, wrong-clock, unknown-status and direct/delegated-traffic cases. The selected wrapper/policy must be qualified; no blanket offline or soft-fail policy is adopted. |
+| ST-W03 and W11-W05/08/10; ST-T03/10/17; CHECK-13/15/17/23 | Include elevated error/crash/rollback/cleanup writes in the actual-object authority tests. A failed primary operation must leave unrelated sentinel files unchanged, with useful admitted diagnostics as its valid neighbor. Native execution remains held. |
+| S0.2/S0.3/P3, W11-W05 and THR-26 owners | Preserve already-defined effective-token, pipe-identity/rights, failed-reversion, continuous-custody and completion cases. Portable contracts/laboratory hosts establish no final service/provisioning or native IPC pass. |
+| W11-W10/P6–P7 and two-family matrix | Reuse signed-carrier/untrusted-input and DLL-search analogues, exact OS build/UBR/KB applicability and final package/component identity. Current CVE records do not prove an installed vulnerable target. |
+| CHECK-26 and existing exact graph owners | OSV summary: 629 registry tuples from five named lockfiles, five informational unmaintained matches. Every flagged row was fetched in full and is metadata-only, absent selected features in both maintained target rows. No fresh Cargo graph/build pass or blanket safety claim follows; local derivatives/native/toolchain surfaces remain separate. |
+
+The parent used static source/data inspection, NVD/OSV, Microsoft Learn and
+Ansvar freshness/KEV. Separate inherited-context researchers covered
+network/TLS/CNG and services/IPC/files; a separate judge reviews the integrated
+handoff. Database screens and primary-source access limits are recorded in the
+review, rather than described as exhaustive coverage. Existing architecture,
+skills and CHECK IDs remain the enforcing/qualification owners.
+
+**Current stage:** source-based research and documentary integration. The
+current development §7 queue, Store-first direction, admitted interim MSI
+signing profile and all Windows/fuzz/storage/UI/post-V1-proof dispositions
+remain. No product code, dependency policy, OS settings, installer, signing key
+or credential changes are made by this amendment. No target/native execution
+ran; the security-audit skill's required execution isolation is unavailable in
+this session, and no unchanged failed isolation attempt was repeated.
+
+**Independent review, completed on the initial candidate:** the separate
+read-only judge `/root/signing_coverage_judge` inspected the entire new report,
+all five routing additions and relevant neighboring/source authorities. It
+verified the six file hashes against manifest SHA-256
+`6ce00fe71ded8b5a012060bd0629a1de6513a8cfc6ea9cf638f072f8cbcff517`
+and tracked-diff SHA-256
+`4ec2b3173936d15e6ec46ca537a58c605bcb1205d7cc90d20881782913c566f3`.
+This reviewer inherited context; it was not a fresh-context review. Earlier
+failed fresh-context launches supplied no usable review or assurance.
+
+The judge's two comprehension paragraphs are retained verbatim:
+
+> This candidate adds a dated, bounded investigation of NevroTick’s Windows integration assumptions. It distinguishes implemented experiments from planned production boundaries, classifies external CVEs by applicability, records the scope of dependency lookups, and routes two concrete refinements into existing work: separate Windows certificate-retrieval controls, and protected handling of privileged failure-side writes.
+
+> The current system contains portable contracts, a constrained loopback observer, fixture UI adapters and standalone laboratory Windows hosts. Those sources do not establish production TLS/NTS, native IPC, service provisioning, package qualification or OS patch status. The existing architecture, owner decisions and CHECK/THR assignments remain authoritative; Store-first delivery, all-file signing, the admitted interim self-signed MSI profile, execution holds and post-V1 sequencing remain unchanged.
+
+**Initial verdict: NEEDS REVISION, documentation scope only.** The judge found
+no additional material scope/policy regression and retained two issue identities:
+
+- **OS-CVE-J01:** the fifth Rustls record needed its own upstream advisory and
+  explicit CVE-to-GHSA provenance. The corrected report links the 0.23.45 fix's
+  advisory, attributes mappings to NVD, retains the upstream "No known CVE"
+  discrepancy and does not mistake the analogous Go patch for a Rustls fix.
+- **OS-CVE-J02:** cumulative timeout wording needed the exact revocation URL
+  retrieval scope. The report, R-05 and this W11 summary now state that scope
+  while preserving the lack of any overall TLS/native-job deadline guarantee.
+
+**Bounded follow-up completed: READY — documentation and research handoff only.**
+The same read-only judge verified both corrections and the verbatim receipt,
+closed **OS-CVE-J01** and **OS-CVE-J02**, and found no further material issue in
+that bounded recheck. Revised manifest SHA-256:
+`a919336685098975eccd8ec43099b8f0a3088c2261b4b510860471ee59c0051e`;
+revised tracked-diff SHA-256:
+`47fbcdbb56f741f7a7c4908ede30d1dfdec01ce73d5b7f2631c94951fd61e18c`.
+The follow-up additionally retrieved exactly the five Rustls NVD records and
+confirmed their reference mappings. All were in `Received` status; this is
+association evidence, not independent NVD exploitability analysis. The original
+candidate's verdict remains historical. This final receipt records the returned
+result without extending its scope to product/native/release readiness.
+
+The judge corroborated the consequential vendor/CNA mechanisms, Windows affected
+rows, relevant dependency ranges, certificate semantics and the five maintenance
+classifications. It did not repeat the full 629-tuple query or every discovery
+screen, and its direct CISA catalog access failed; the parent's Ansvar KEV receipt
+does not become independently corroborated. No native/build/test execution ran.
+Parent validation of the initial and corrected candidates checked all 32 added
+local links/anchors and `git diff --check`, with no failures.
+`docs/SHA256SUMS.txt` is absent, so no bundle manifest integrity is claimed.
+These documentation results remain separate from any future product result.

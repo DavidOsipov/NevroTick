@@ -208,6 +208,17 @@ active. Pure name checks are narrower than actual Windows path/token/replace
 observations; skipped upstream tests are not passes. Native execution remains
 held. **Mapping:** ST-T03/05/10/17.
 
+**8 November failure-side refinement:** apply the same directory/object authority
+before elevated startup errors, rollback/cleanup logs and crash records write
+anything. The [OS-integration review](../docs/supporting-reviews/windows-os-integration-risk-research.md#3-cve-evidence-with-applicability-dispositions)
+uses hMailServer CVE-2026-107578 as an external analogue, not a NevroTick finding.
+Include a harmless principal-operation failure with a substituted service-writable
+parent/leaf: an unrelated sentinel remains unchanged, while useful diagnostics
+through an admitted sink and the legitimate operation still work. No logger
+exception, path-only precheck or LocalSystem workaround satisfies the contract.
+Reuse ST-T03/10/17 with W11-W05/W11-W08/W11-W10 and CHECK-13/15/17/23; optional
+storage, mandatory state and collector-specific privacy retain separate owners.
+
 ### ST-W04 Qualify each CNG call and its crypto result
 
 **Owners/prerequisites:** CNG and crypto owners; the relevant ST-W01 suite,
