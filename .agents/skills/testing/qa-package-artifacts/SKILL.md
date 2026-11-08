@@ -35,14 +35,26 @@ results leave these real consumer/native gates open.
 
 Identify frozen source/configuration/toolchain/dependency/feature inputs, actual final binary/package hashes. Inspect emitted PE/runtime protections, architecture, versions, manifests/resources, DLL loading dependencies, expected component/service inventory.
 
+Verify the complete [per-file signature inventory](../../../../docs/windows-time-signing-guide.md#41-required-signatures-for-the-shipped-inventory)
+under [architecture §19.7](../../../../docs/windows-time-architecture.md#197-signatures-for-the-complete-shipped-inventory).
+Include every shipped signable format, nonbinary files and nested/stream content;
+extension globs alone cannot find all PE images. Record the expected project or
+approved upstream signer and actual embedded/catalog/package source separately.
+Preserve approved upstream signatures; do not replace them just to obtain a pass.
+Challenge missing/removed/invalid or wrong-signer signatures, omitted nested PE
+and changed signed scripts beside the fully covered healthy inventory. Reconcile
+required inner signatures again on the actual Store-delivered package. Missing
+signing capability is open work/release blocked, not N/A; signature presence
+alone proves no runtime enforcement. Reuse existing CHECK-18/23/26 and receipt.
+
 Apply [PE-padding and final-byte qualification](../../../../docs/windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes)
 at the existing admitted artifact stage. Record embedded versus catalog/package
 verification and the effective strict Windows policy; a catalog-derived `Valid`
 result does not prove embedded-padding rejection. Pair the applicable harmless
 padding-negative case with a healthy signed PE, without executing either file.
 Bind full-file hashes and lengths to the protected approved release record and
-retain stage-specific custody. This does not require new embedded signatures on
-catalog-only Store payloads or lift current native execution holds.
+retain stage-specific custody. Every shipped PE now requires its own embedded
+signature; package/catalog trust cannot substitute. Current native holds remain.
 
 Trace any reached artifact-data consumer through
 [the canonical content-trust rule](../../../../docs/windows-time-architecture.md#196-authenticated-artifact-content-and-consumer-trust)
@@ -69,7 +81,7 @@ authority by itself.
 
 For the selected Store route, verify the exact installed package/publisher/release and content trust, not just a broad Microsoft/Store signer class. Challenge tampered, wrong-project, copied-out and unapproved old-release artifacts beside the intended healthy package. Common catalog trust does not establish independently embedded signatures on every extracted PE or helper authority. CIG admission must match the actual selected mode and runtime image closure, not the Cargo crate list.
 
-MSI/SignPath/OpenPGP workflows are retained fallback/reference only if David revisits delivery after rejection or concrete technical evidence. They are not parallel deliverables or MSIX prerequisites. If later selected, Authenticode needs actual publisher/chain/timestamp evidence; OpenPGP needs the trusted full key fingerprint, exact final MSI signature, signed manifest and qualified installed-code trust. Absent Authenticode is not passed, and no profile waives native gates or David's release approval.
+MSI delivery remains a later owner decision, not a parallel deliverable or automatic fallback. Every selected route needs the required individual signatures plus its package checks. SignPath may supply inner-file signatures even on MSIX if qualified. The unsigned-MSI/OpenPGP exception is superseded; detached verification cannot replace native signatures. No profile waives native gates or David's release approval.
 
 For a conditional SignPath configuration review, use [artifact signing restrictions](../../implementation/maintain-windows-metadata/references/artifact-signing-restrictions.md).
 Reconcile the effective selectors, per-file expectations and signature operations

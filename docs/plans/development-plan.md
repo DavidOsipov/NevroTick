@@ -849,8 +849,8 @@ before affected artifact consumers and release acceptance. Preserve actual
 signature coverage/source, applicable padding controls, approved complete-byte
 custody and independent consumer no-effect evidence. The
 [signing guide](../windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes)
-owns the procedure; catalog-only Store payloads do not acquire a new embedded-
-signature requirement. These are planned CHECK-18/23/26 refinements, with CHECK-25
+owns the padding procedure; the later [all-signable inventory requirement](../windows-time-signing-guide.md#41-required-signatures-for-the-shipped-inventory)
+requires per-file signatures in addition to package trust. These are planned CHECK-18/23/26 refinements, with CHECK-25
 for reached consumers and CHECK-27 for native verifier work; current holds remain.
 
 Deliver the owner-selected complete hardened MSIX containing UI, engine, broker,
@@ -892,8 +892,10 @@ manifest/payload controls and installed-file trust, retaining submitted and
 Store-delivered identities separately. A valid supported production candidate
 must work without developer roots or disabled Windows protections. Store-managed
 servicing is subject to the full lifecycle contract; no bespoke privileged
-updater or separate UI package is added. SignPath/OpenPGP MSI profiles remain
-alternatives for a later owner decision, not parallel implementation prerequisites.
+updater or separate UI package is added. MSI delivery remains a later owner
+choice. Resolve native signing for all supported shipped files under OD-05 §7.7,
+including inner files on MSIX; SignPath is a candidate, not a selected service.
+The unsigned-MSI/OpenPGP exception is superseded; source preparation can continue.
 
 Use the [release policy](../release-policy.md) for the proposed support baseline,
 exact release/status record, containment and compatible corrective releases.

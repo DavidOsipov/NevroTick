@@ -30,10 +30,13 @@ owns the technical qualification required before release.
 The complete MSIX must contain the UI, engine, broker, helper and required payloads.
 No MSI-service/MSIX-UI split, separate service prerequisite, broader LocalSystem
 broker or hidden orphan component follows from free signing.
-Keep the prior complete-MSI design and its SignPath/OpenPGP profiles as retained
-alternatives, not an automatic fallback, parallel v1 deliverable or predecessor
-to MSIX preparation. Bring an actual Store refusal or concrete unsupported
-technical requirement back to David with its evidence and alternatives.
+Keep complete MSI as a possible later owner-selected delivery alternative, not
+an automatic fallback, parallel v1 deliverable or predecessor to MSIX preparation.
+[OD-05 §7.7](../nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026)
+now requires all supported individual signatures plus the package on either route;
+the unsigned-MSI/OpenPGP permission is superseded. SignPath is a candidate for
+required inner-file signing even on MSIX, subject to actual eligibility. Bring an
+actual Store refusal or concrete incompatibility to David with evidence.
 
 This report records documented facts, project-specific inferences and unresolved
 questions separately. It establishes no Store permission, applicant eligibility,
@@ -49,7 +52,7 @@ for phase placement. This is not another acceptance catalog or execution plan.
 
 | Route | Documented responsibility | Consequence |
 | --- | --- | --- |
-| Complete MSIX through Store | Microsoft re-signs after certification; no developer CA-trusted certificate, signing token or HSM purchase is required for this submission route. [S01, S02] | Genuine free signing for the accepted Store package. |
+| Complete MSIX through Store | Microsoft re-signs after certification; no developer CA-trusted certificate/token/HSM purchase is required for the outer Store signature. [S01, S02] | Free outer-package signing does not supply the individual signatures required by amended OD-05; their production capability remains open. |
 | Complete MSI/EXE listed in Store | Publisher supplies an immutable versioned HTTPS installer URL; installer and all included PE files need trusted Authenticode signatures. Microsoft does not re-sign them. [S03, S08] | Listing the current MSI does not solve signing. OpenPGP sidecars do not satisfy this Store requirement. |
 | Developer-built MSIX distributed directly | Publisher establishes package signing and target-device trust. [S01, S02] | Store is not a general free certificate for arbitrary external builds or portable binaries. |
 | Complete MSI through SignPath Foundation | Free managed signing for accepted OSS projects, subject to provider conditions. [S27] | Existing conditional alternative; compare its actual eligibility and implementation cost with complete MSIX. |
@@ -105,10 +108,12 @@ on an otherwise unrelated outer archive. [S12]
 
 That evidence does not establish an independently usable embedded Authenticode
 signature in every EXE/DLL, or retained trust after copying a member elsewhere.
-The selected MSIX trust profile must qualify package/catalog verification rather
-than automatically requiring all MSI-specific embedded-signature assumptions.
-Neither a missing embedded signature nor a successful generic trust call alone
-settles that profile.
+The amended owner policy requires both package/catalog verification and each
+supported individual signature, including embedded Authenticode on every shipped
+PE. Verify them independently under
+[architecture §19.7](../windows-time-architecture.md#197-signatures-for-the-complete-shipped-inventory)
+and the [format/inventory procedure](../windows-time-signing-guide.md#41-required-signatures-for-the-shipped-inventory).
+A missing required signature blocks release; generic trust success is insufficient.
 
 Apply [architecture section 19.6](../windows-time-architecture.md#196-authenticated-artifact-content-and-consumer-trust)
 to the contents actually consumed by helpers, loaders and metadata readers.
@@ -117,7 +122,8 @@ embedded-padding result requires its own applicable
 [signing-guide check](../windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes).
 No valid carrier signature authorizes excluded application data or a substituted
 component. Reuse approved complete-byte custody at each actual delivery stage;
-this adds no separate signature requirement to catalog-only payloads.
+qualify required inner-signature preservation on the actual Store-delivered
+artifact. A catalog-only shipped PE no longer meets the owner requirement.
 
 **Project inference:** the intended helper must belong to the approved installed
 NevroTick package/release and permitted operation. An unrelated legitimately

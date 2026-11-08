@@ -19,7 +19,10 @@ technical lifecycle, protected-state and complete-package requirements.
 The selected target is one complete hardened Store MSIX, including services.
 Source/design preparation, permitted local mechanics, David's controlled Store
 submission and actual delivered-artifact qualification remain separate stages.
-MSI/SignPath/OpenPGP remain alternatives for a later owner decision. This policy
+MSI delivery remains a later owner choice. [OD-05 §7.7](nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026)
+requires the signed package and every supported individual file signature on
+either route; the unsigned-MSI/OpenPGP exception is superseded. SignPath can be a
+candidate for required inner signatures even on MSIX. This policy
 selects no TUF protocol, custom updater, remote kill switch, secondary installer
 or new privileged recovery service.
 
@@ -154,6 +157,11 @@ Bind approval to an auditable candidate evidence record containing:
   reasoned non-applicable outcomes kept distinct. Use the
   [existing verification procedure](windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes)
   and W11-W10/S6.4 receipt; a catalog result cannot supply embedded-padding evidence.
+- [Complete required signature inventory](windows-time-signing-guide.md#41-required-signatures-for-the-shipped-inventory):
+  actual format/nesting, expected project or approved upstream signer, separate
+  individual/package results and post-Store preservation. Reconcile every shipped
+  supported signable file, including nonbinary formats; retain exact bytes and
+  unresolved capability/coverage blockers. No catalog-only or OpenPGP exception.
 - Audience, visibility, flight/rollout state, observation/stop criteria, recovery
   target, approval owner/date and subsequent publication/availability observations.
 
@@ -502,10 +510,12 @@ device. No backup responder, independent warning channel or quorum is presumed;
 name a real arrangement before relying on it. David's absence does not delegate
 his approval. [W16]
 
-For Store MSIX, Microsoft supplies signing during publication; there is no
+For Store MSIX, Microsoft supplies outer-package signing during publication; there is no
 assumed project-owned Store signing certificate to revoke or renew. The inventory
-must address the actual identity and submission credentials. A later-selected
-MSI signing profile would need its own provider/key procedures. [MS-05, MS-13]
+must address the actual identity and submission credentials, plus the production
+signers required for inner artifacts by OD-05 §7.7. Their provider/approval/renewal
+and revocation procedures apply even on MSIX. A later selected MSI requires its
+own package-specific procedures as well. [MS-05, MS-13]
 
 ### 7.3 Contain authority and establish a trusted baseline
 

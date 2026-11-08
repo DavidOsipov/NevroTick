@@ -28,6 +28,12 @@ use [the existing artifact procedure](../../../docs/windows-time-signing-guide.m
 for applicable padding and full-file checks. Keep signature metadata inspection
 inert and safe parsing/current effect authorization independent of provenance.
 
+For production shipping, [architecture §19.7](../../../docs/windows-time-architecture.md#197-signatures-for-the-complete-shipped-inventory)
+additionally requires the signed package and every supported individual file
+signature, including nonbinary files. Use the canonical signing inventory and
+expected project/upstream identities; no catalog-only or unsigned-MSI/OpenPGP
+exception satisfies that requirement. Signature presence is not runtime enforcement.
+
 Preserve relevant raw representation and bound bytes/work before strict inert decoding; require shared garde/domain validation inside private fallible construction, then current trusted-owner authorization/state/budget guards at the sink, serialized effect and actual acknowledgement. Follow [contract enforcement](../implementation/implement-rust-contracts/references/contract-enforcement.md); NTP/NTS retains bounded protocol-specific parsers. Rust type safety/Serde admission prove no endpoint identity, freshness, source independence, UTC truth, clock ownership or permission. Unknown/corrupt mandatory policy fails closed; optional invalid drift priors may follow explicit reacquisition. Never lower authentication/source counts to hide outages.
 
 Challenge actual entry points independently of UI restrictions: malformed and valid-shaped unauthorized/stale inputs, plus repeated individually valid requests that exceed aggregate budgets. Verify bounded redacted errors, cleanup, preserved prior valid state and absence of forbidden effects alongside accepted neighbors. Apply these rules to implemented surfaces without expanding UI-M0 or reviving its deferred work.

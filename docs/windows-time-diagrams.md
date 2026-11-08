@@ -24,8 +24,9 @@ alternatives for a later owner decision.
 selects the complete Store MSIX preparation path; no Store preapproval is needed
 to prepare the candidate. The [MSIX plan](plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners)
 separates local mechanics, David's controlled submission and actual Store-delivered
-qualification before broad release. Retained OpenPGP/MSI permission supplies no
-Windows publisher trust or automatic fallback. These diagrams specify required
+qualification before broad release. [OD-05 §7.7](nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026)
+requires all supported individual signatures plus the package; the former
+unsigned-MSI/OpenPGP permission is superseded. These diagrams specify required
 behavior; they prove neither an available MSIX lifecycle hook nor native execution.
 
 The [release policy](release-policy.md) owns support-status proposals, operational

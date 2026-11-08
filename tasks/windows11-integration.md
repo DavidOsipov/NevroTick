@@ -1485,8 +1485,10 @@ asserted.
 
 **Changed and retained obligations:** MSIX preparation no longer waits for Store
 preapproval or completion of an MSI release. David owns the later submission
-and release action. MSI/SignPath/OpenPGP remain retained alternatives for a later
-decision, with no automatic fallback. Preserve the complete product, separate
+and release action. MSI delivery remains a later owner decision with no automatic
+fallback. The 8 November OD-05 §7.7 amendment below supersedes the then-retained
+unsigned-MSI/OpenPGP exception and requires all supported individual signatures.
+Preserve the complete product, separate
 engine/broker authority, independent mandatory-state owner, W32Time restoration,
 existing CHECK/AC/ST-T catalogs, Core priority, Windows execution STOP, separate
 fuzz no-retry hold, storage pause and UI-M0/D1–D3 boundaries. No new acceptance
@@ -2354,7 +2356,7 @@ Store-delivered qualification remain distinct. Current execution holds remain.
 | S6.1 | W11-W10 with platform/security; freeze per-binary mitigation/DLL policy including the actual Slint/backend/generated/native module closure | Effective installed-role protections for engine, broker, helper and UI, including permitted Slint rendering/editing and applicable assistive/IME workflows beside tamper/load refusals; compiler flags or old Win32/pilot evidence alone are insufficient. |
 | S6.2 | W11-W05/W11-W10 lifecycle; resolve supported provisioning/removal and recovery before the admitted lab card | Install/update/repair/Reset/interruption/removal preserve ownership and restoration; failed recovery is visible and safe. |
 | S6.3 | W11-W10 with service/UI owners; integrate the actual Slint executable/runtime/assets into complete one-product behavior | Unelevated launch, close-versus-service behavior, old-component refusal, downgrade policy and unattended/last-user removal preserve all required components and mandatory authority; the standalone pilot EXE is no package pass. |
-| S6.4 | W11-W10 with release/license owner and independent QA; prepare exact submission then qualify delivered bytes | Reconcile exact Slint/framework/backend/features, generated code, executable/runtime/assets, Cargo/native/build/proc-macro grants/notices and complete SBOM/payload/size inventory; bind submitted/delivered identities, trust and installed contents. Store signing is not helper authorization. |
+| S6.4 | W11-W10 with release/license owner and independent QA; prepare exact submission then qualify delivered bytes | Reconcile exact Slint/framework/backend/features, generated code, executable/runtime/assets, grants/notices and complete SBOM/payload/size inventory; bind submitted/delivered identities, every required individual signature under guide §4.1, package trust and installed contents. Qualify post-Store inner-signature preservation; Store signing is not helper authorization. |
 
 The full [P6 exit](../docs/plans/development-plan.md#p6--complete-installation-hardening-and-release-artifacts)
 remains CHECK-13/16/18/20/23, applicable CHECK-5/15/26/27 and AC-15/20 on
@@ -2387,7 +2389,7 @@ before dependent consumer integration and the S6.4 release checkpoint.
 | Existing owner / checkpoint | Required continuation and observable exit |
 | --- | --- |
 | Reached metadata/helper/loader/maintenance consumer owner; CHECK-18/25 | Trace artifact bytes through parsing/admission to a command, destination, configuration or load decision. Excluded certificate content supplies no application authority; harmless hostile markers have no protected effect while admitted input works. Preserve actual verified-object identity through use; record a source-based applicability decision where no such consumer exists. |
-| Applicable embedded PE; release/security verifier, CHECK-18 | Where the admitted profile requires embedded PE verification, freeze actual Windows/tool/architecture, signature source, trust action/flags, effective padding policy and restart evidence. Healthy embedded-signed PE succeeds; the otherwise-valid nonzero-padding case fails for that condition. A catalog result or unrelated chain failure cannot qualify this row. |
+| Every shipped PE under the later 8 November owner amendment; release/security verifier, CHECK-18 | Freeze actual Windows/tool/architecture, embedded signature source, trust action/flags, effective padding policy and restart evidence. Healthy embedded-signed PE succeeds; the otherwise-valid nonzero-padding case fails for that condition. A catalog result or unrelated chain failure cannot qualify this row. |
 | W11-W10/S6.4 with independent QA; CHECK-18/23/26 | Bind full-file SHA-256 and lengths to the protected approved stage record. Reject substituted final bytes or components; reconcile local, signed, submitted, Store-delivered and installed identities at their actual stages. Provider documentation alone supplies no candidate-bound verification result. |
 
 The existing candidate receipt must retain each applicable input/source identity,
@@ -2400,7 +2402,7 @@ added. These observations join existing S6.4/P7 evidence before broad release.
 **Next action:** at the next affected source integration, identify actual
 consumers and their enforcement owners in this task. At the admitted artifact
 checkpoint, qualify the existing guide's finite controls against the exact
-candidate. Keep complete MSIX/Store selected, catalog-only applicability explicit,
+candidate. Keep complete MSIX/Store selected and individual/package results distinct,
 all native holds, and David's submission/publication authority. No new downloader,
 updater, custom PE parser, customer-registry change or production signing is
 authorized by this documentation amendment.
@@ -2411,6 +2413,89 @@ passed, and all three changed skill frontmatters remain unchanged. The full
 skill-pack checker remains **not run** because the execution sandbox's required
 namespace isolation was unavailable in this session. Scoped static checks supply
 no skill-script, consumer, Windows or release qualification result.
+
+#### Sign every supported shipped artifact — 8 November 2026
+
+**Owner instruction and source basis:** against `f408ebed1fa522f756a80f16d0b2155c36a3d3e7`,
+David required signatures on the installer and all included binaries, then
+expanded that requirement to every signable shipped file, including nonbinary
+files. [OD-05 §7.7](../docs/nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026)
+records that superseding decision. [Architecture §19.7](../docs/windows-time-architecture.md#197-signatures-for-the-complete-shipped-inventory)
+owns acceptance; [signing guide §4.1](../docs/windows-time-signing-guide.md#41-required-signatures-for-the-shipped-inventory)
+owns the single format/inventory/signing-order procedure. The preceding padding
+receipt retains its original candidate scope; its catalog-only exception is
+superseded by this later instruction, while its content-trust controls remain.
+
+**Scope and current state:** source/documentation integration only. Every
+supported individual file signature is required in addition to the signed
+package, including every PE by real format and admitted signable scripts/data.
+Preserve approved upstream signatures and authenticate remaining data through
+the complete signed package. No new script host, product format, custom verifier,
+provider account, paid certificate, workflow, signing operation or runtime code
+is introduced. Production signing capability, emitted/delivered artifacts and
+native qualification remain **open / not run**, not waived by documentation.
+
+| Existing owner / checkpoint | Bounded continuation and observable exit |
+| --- | --- |
+| W11-W10/S6.4, package/build owner; CHECK-18/23/26 | Derive the complete shipping signature inventory from real format/container/stream contents, including nonstandard-extension PE and existing nonbinary signables. Bind expected project/upstream signer, supported signing/verifier profile, source, component/release identity and stage-specific exact bytes. Remaining data has explicit package coverage; lack of a key/provider is open work, not N/A. |
+| Release/security owner with R-06; CHECK-18 | Resolve production signer capability for required inner artifacts on the selected MSIX, provider eligibility and protected approval/rotation/revocation custody. SignPath is only a candidate. Preserve upstream signatures; resolve unsigned third-party inputs through provenance/licence/provider policy before shipment. No unsigned-MSI/OpenPGP release exception remains. |
+| Package owner and independent artifact QA; CHECK-18/23/26 | Finish metadata, sign/verify inner files and then containers inside-out. On the actual returned and Store-delivered candidate verify both individual and package signatures, inventory and required inner-signature survival. Qualify missing/removed/invalid/wrong-signer signatures, omitted nested PE, modified signed script and mismatched inventory beside a fully covered valid candidate. |
+| Existing installed-code/consumer owners; CHECK-16/18/23, CHECK-25/27 only when reached | Identify real launch/load/verifier boundaries. Signature presence does not prove automatic checking; keep PackageIntegrity, required CIG, protected paths and helper/IPC admission. Apply the existing PE-padding/content-trust and finite native-work controls without a new scanner or runtime download path. |
+
+**Release disposition:** missing required signatures, unresolved production
+capability or incompatible Store transformation blocks release pending resolution
+or an explicit owner decision. No catalog-only substitution, manual detached
+consumer verification or automatic MSI fallback can close the gap. Independent
+source preparation continues; complete MSIX/Store, Core priority, native/fuzz/
+storage/UI holds, David's submission/release authority and optional enhanced
+provenance retain their existing scope.
+
+**Next action:** at the next assigned S6.4 source checkpoint, populate the
+inventory and signer-capability card for actual intended artifacts, with unknown
+rows visibly unresolved. Run the finite native/provider/delivered-artifact cases
+only at their admitted stages. Documentation review and static validation are
+recorded below when completed; no Windows or signing pass is implied.
+
+**Documentation review and validation — 8 November 2026**
+
+The frozen 19-file candidate used base
+`f408ebed1fa522f756a80f16d0b2155c36a3d3e7`, manifest SHA-256
+`c63867f4d08ad3f4bd4f72ffcc955c8ca082cbc34ae88e6fd239a82d95e9c2b2`
+and diff SHA-256
+`8172bc9d7ccdcccb1151a34a8c555d200a018bc6bc9f7c06ef2199b5e2e274ff`.
+These identities precede this factual receipt.
+
+- `padding_primary_sources` completed the read-only primary-source/core-rule
+  review. SIGN-R1 (the cross-route evidence list still demanded MSI) and SIGN-R2
+  (the provider table limited SignPath to MSI) were corrected in signing guide
+  §§5–6, then verified against the frozen guide. The reviewer also verified the
+  narrow internal/external CAB and format-limited append clarifications.
+- `signing_coverage_judge` completed the separate read-only 19-file diff review,
+  applicable instructions and targeted conflict-language check; it matched the
+  frozen diff at start and finish. Its verdict was **READY for documentary
+  integration**, with no blocking findings. It retained prior conversation
+  context; it was not a fresh-context reviewer.
+- Two `fork_turns: none` attempts, `all_signables_judge` and
+  `all_signables_fresh_review`, returned the failure “Codex ran out of room in
+  the model's context window.” They produced no usable review or confirmed
+  inspection trace. Record them as **not run**, not zero findings or added coverage.
+
+The judge's comprehension paragraphs are preserved verbatim:
+
+> The candidate implements David’s 8 November decision as a production shipping requirement: the installer/package and every shipped artifact with a supported, format-appropriate signing mechanism must have verified signatures, including nonbinary formats. It supersedes the unsigned-MSI/OpenPGP exception, preserves acceptable upstream signatures, and makes missing production signing capability or incompatible Store transformation a release blocker. The technical rule lives in architecture §19.7; signing guide §4.1 owns the single format, inventory, verification and signing-order procedure.
+
+> The current workflow remains preparation of one complete Store-first MSIX, followed by admitted local qualification, David’s controlled submission, and qualification of the actual Store-delivered result before broad release. W11-W10/S6.4 and the existing CHECK owners carry the work. These documents do not implement signing, select a provider, approve a paid certificate, authorize account/publication actions or establish native results; they preserve the existing execution holds and keep source preparation available while production signing remains unresolved.
+
+Coordinator static validation passed the diff whitespace check and all **47**
+added/changed local link-and-anchor pairs. All three modified skill frontmatters
+are unchanged; no root documentation checksum bundle exists. The full
+`check_skills.py` check remains **not run**: the `security-audit` skill requires
+isolated execution of repository code, and the session's required OS namespace
+isolation was unavailable. Trusted static reads/checks did not execute repository
+code. These results establish neither a full skill-checker pass nor signing,
+consumer, Windows, provider or release qualification. The final receipt receives
+a whitespace/link-scope check before publication; its addition does not extend
+the reviewers' inspected candidate.
 
 ### 4.23 Optional build-provenance research — 4 November 2026
 

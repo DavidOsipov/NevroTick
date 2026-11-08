@@ -82,7 +82,7 @@ Return findings in Markdown. Each conclusion must say whether it is an observed 
 | R-03 — plain-NTP correction limits | OPEN-5/9; CHECK-3/6/7/10/12 | Proposed numerical envelope with attack and usability evidence | Plain-profile automatic actuation policy |
 | R-04 — source preset and provider use | DEC-5/7/8; OPEN-6/8 | Four-operator candidate assessment; Pool role and vendor requirements | Shipped default preset and associated claims |
 | R-05 — Windows certificate/time behavior | OPEN-1/8; CHECK-9/26/27 | Exact provider/trust/revocation/egress qualification design and evidence | NTS implementation paths relying on those guarantees |
-| R-06 — release profiles and signing eligibility | OPEN-11/12/14; CHECK-16/18/20/23 | Selected Store package/catalog, capability and installed-trust evidence; retained MSI signing alternatives only for a later delivery decision | Dependent release claims, not source/design preparation pending Store feedback |
+| R-06 — release profiles and signing eligibility | OPEN-11/12/14; CHECK-16/18/20/23/26 | Production signing for every supported shipped format, actual Store package/catalog and inner-signature preservation, capability and installed-trust evidence; MSI delivery remains a later owner choice | Dependent release claims, not independent source/design preparation; the unsigned-MSI/OpenPGP exception is superseded |
 | R-07 — concrete owner exceptions | OPEN-5/8/9 and affected clauses | Decision cards with compensating controls and bounded residual risk | Affected behavior or assurance claim |
 | R-08 — remaining native feasibility | OPEN-2/3/4/7/10/12/13/14 | Measured/verified options at the relevant phase | Dependent native integrations and release claims |
 
@@ -272,7 +272,9 @@ CHECK-8/9/15 cases must keep protected UDP responses arriving while full reauthe
 
 Test wrong name, expired/future certificates, revoked intermediates, unavailable responders, untrusted roots and extreme date conversions with valid neighboring controls. Reconcile OPEN-8's previously pinned source lead against the actual selected version. If the necessary policy cannot be enforced, report the blocked path and alternatives rather than disabling checks. A residual-risk change requires an OD-04 decision card.
 
-## 8. R-06 — signing eligibility and initial OpenPGP releases
+<a id="8-r-06--signing-eligibility-and-initial-openpgp-releases"></a>
+
+## 8. R-06 — signing eligibility and complete artifact coverage
 
 ### Accepted owner policy to preserve
 
@@ -292,31 +294,34 @@ account readiness, real access/recovery rehearsals and installed-state/native
 evidence remain open. Continue through
 [W11 task §4.21](../tasks/windows11-integration.md#421-release-operations-integration--4-november-2026)
 and OPEN-11/14 instead of repeating the release survey. This common operational
-work applies to the selected Store route; it is not limited to the retained
-MSI key-custody questions below.
+work applies to the selected Store route, including required inner-file signing
+capability; it is not limited to a later MSI route.
 
-**Retained alternatives:** SignPath Foundation's publisher display is acceptable
-and the earlier complete MSI/OpenPGP policy remains if David later chooses that
-route. The questions below apply then; they do not block selected MSIX preparation.
-**David Osipov** approves releases. Nothing here permits skipping qualification
-or an agent submitting/signing/publishing on his behalf.
+**8 November owner amendment:** [OD-05 §7.7](nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026)
+requires signatures on the package and every supported shipped artifact,
+including nonbinary files. The unsigned-MSI/OpenPGP permission is superseded.
+Use the [canonical format/inventory procedure](windows-time-signing-guide.md#41-required-signatures-for-the-shipped-inventory).
+SignPath Foundation's publisher display remains acceptable; its eligibility may
+matter for inner files on MSIX as well as a later selected MSI. Missing production
+capability blocks release, not independent source preparation. **David Osipov**
+approves releases; research supplies no submission/signing/publication authority.
 
 ### Research questions
 
 1. How do the provider's current terms treat a Rust port of Chrony, third-party/native payloads, the first-release condition and proprietary NevroTick brand assets? The current [SignPath conditions](https://signpath.org/terms.html) are labelled Draft. Give supported interpretations and questions for later authorized clarification; do not assert approval or rejection or change the artwork licence.
-2. For the OpenPGP profile, what is the precise chain from approved source/build to final MSI, trusted key fingerprint, verified download, elevated installation, protected helper/service paths and future maintenance? Review existing signed-helper assumptions, not just the final MSI signature.
-3. Which Windows 11 security configurations allow or block the unsigned installer and payloads? Test actual MSI, UI, helper and services; keep protections active for the claimed profile. A blocked configuration is an unsupported route/result to disclose, not a reason to advise disabling protection.
-4. What minimum release-key custody, expiry/revocation, backup and rotation process can David operate? Also investigate verification when the user's date is badly wrong: signature/key lifetime checks and a trustworthy time basis must not be bypassed by trusting the unverified installer as an oracle. Prepare a process without generating or exposing private keys. Do not automatically reuse a personal Git commit key.
-5. How does the later Authenticode transition preserve product identity, upgrade/repair/uninstall behavior and explicit anti-downgrade policy? Which trust checks remain channel-specific?
+2. Which actual shipped formats require individual signatures, which expected project/upstream issuer satisfies each row, and what supported production provider/tool profile can create and verify them? Include nested/stream PE, existing signable scripts/data and packages; keep unavailability distinct from true format non-applicability. Do not introduce new scripting or data envelopes to create signing work.
+3. Does the actual Store-delivered artifact preserve all required inner signatures and admitted component identities? Qualify package/catalog trust and embedded/per-format signatures independently, with missing, wrong-signer, modified and healthy controls. A generic Store signature or catalogue count cannot answer this.
+4. What minimum signing/submission custody, expiry/revocation, access-removal and rotation process can David operate for the actual signer roles? Preserve approved upstream signatures and qualify wrong-clock/offline verification. Prepare the process without generating/exposing keys or reusing a personal Git commit key.
+5. How does inside-out signing bind approved source/build, final metadata, exact signed members, submitted/delivered package and protected installed paths to maintenance and anti-downgrade policy? If MSI is later selected, qualify its actual cabinet/stream/custom-action and lifecycle relationships under the same signature requirement.
 
-If an MSI alternative is later selected, deliver its separate CHECK-18 evidence
-plan for Authenticode or OpenPGP. Include correct signer/bytes, tamper, wrong
-signer, stale/mismatched manifest, payload substitution, maintenance attacks and
-valid lifecycle controls. Preserve the Authenticode result as unqualified when
-only OpenPGP is available. Runtime DLL protections, ACLs, native mitigations and
-licence obligations remain mandatory for every selected release profile.
+Deliver the next bounded W11-W10/S6.4 CHECK-18/23/26 evidence card for the selected
+route, with signature coverage, correct signer/bytes, tamper, missing/removed
+signatures, stale/mismatched manifest, nested-payload substitution and valid
+controls. Missing required signatures/provider capability remains release-blocking;
+the historical OpenPGP-only profile cannot close it. Runtime DLL protections,
+ACLs, native mitigations and licence obligations remain mandatory.
 
-Primary references: [GnuPG verification and fingerprints](https://gnupg.org/download/integrity_check.html), [Microsoft UAC](https://learn.microsoft.com/en-us/windows/security/application-security/application-control/user-account-control/how-it-works), [Smart App Control](https://learn.microsoft.com/en-us/windows/apps/develop/smart-app-control/overview), [MSIX signing](https://learn.microsoft.com/en-us/windows/msix/package/signing-package-overview), [unsigned MSIX testing](https://learn.microsoft.com/en-us/windows/msix/package/unsigned-package).
+Primary references and their limits are maintained in the [signing guide](windows-time-signing-guide.md#9-sources-and-related-documents), including Microsoft per-format/Store guidance and SignPath's reference. Unsigned/test-signed laboratory artifacts do not qualify production signatures.
 
 Do not add a second application package, bespoke privileged updater, provider
 application, paid subscription or OS-protection bypass as a side effect of this

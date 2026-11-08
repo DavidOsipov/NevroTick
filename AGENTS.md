@@ -103,9 +103,11 @@ evidence, options, recommendation and the dependent action, then ask David.
 Routine work within accepted contracts continues. Record the outcome in the
 canonical documents; do not treat silence or research deferral as risk acceptance.
 Amended OD-05 selects complete hardened MSIX preparation and David's Store
-attempt with services. It retains Foundation display and initial OpenPGP/MSI
-policies as alternatives for a later delivery decision, with David as release
-approver; profile-specific trust and Windows qualification gates remain.
+attempt with services. Its 8 November §7.7 requires signatures on the package
+and every supported shipped file, including nonbinary files; use architecture
+§19.7 and signing guide §4.1. Foundation display and David's release authority
+remain; MSI delivery needs a later decision. The unsigned-MSI/OpenPGP exception
+is superseded. Missing signing capability blocks release, not source preparation.
 
 Windows exploit-protection work: read [architecture section 15.4](docs/windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission)
 and [hardening section 6.4](docs/windows-time-development-hardening.md#64-per-process-mitigation-qualification).

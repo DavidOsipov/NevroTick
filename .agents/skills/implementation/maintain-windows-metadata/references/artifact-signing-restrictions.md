@@ -2,9 +2,11 @@
 
 Use for signing-configuration research or a later admitted SignPath path.
 Source review: 8 November 2026. Keep [OD-05 and the signing guide](../../../../../docs/windows-time-signing-guide.md)
-authoritative: complete MSIX/Store remains selected; SignPath/MSI is a retained
-alternative. This reference selects no provider, certificate, account or new
-release gate. Reuse MD-P4–MD-P5, W11-W10/P6 and CHECK-18/20/23/26/27; record
+authoritative: complete MSIX/Store remains selected; SignPath is a candidate for
+required inner-file signatures on that route or a later owner-selected MSI.
+Apply the [all-signable shipping inventory](../../../../../docs/windows-time-signing-guide.md#41-required-signatures-for-the-shipped-inventory),
+including supported nonbinary files. This reference selects no provider,
+certificate, account or new gate hierarchy. Reuse MD-P4–MD-P5, W11-W10/P6 and CHECK-18/20/23/26/27; record
 execution in the existing task. No signing, upload or Windows execution follows
 from reading it.
 
@@ -67,6 +69,9 @@ Apply these project-specific review rules:
    ownership and exact expected multiplicity. Review optional or recursive
    matches explicitly. Reject ambiguous aliases and case-colliding payloads in
    the package inventory; do not guess provider collision behavior.
+   Account for real formats, nonbinary signables and nested/stream PE with
+   unusual or missing extensions; a successful EXE/DLL glob is not full coverage.
+   The lack of a signing key/provider is not format non-applicability.
 2. Independently reconcile every actual package entry, including unselected
    content. A successful selected-file match cannot establish package completeness
    or absence of extra executable content; do not assume a deny-unlisted policy.
@@ -112,6 +117,12 @@ certificate identity. Preserve third-party provenance and approved signatures;
 an example that adds or replaces a signature supplies no authorization to do so.
 Never substitute CompanyName, a filename pattern or any generally trusted chain
 for the approved project/release identity.
+
+Verify required individual signatures and package/catalog trust separately.
+Preserve approved upstream signatures as their own issuer's evidence, and record
+any unsupported production signing capability as open/release-blocking. Confirm
+required inner signatures survive the actual Store-delivered transformation;
+do not fall back to catalog-only acceptance or detached consumer verification.
 
 The [deep-signing example](https://docs.signpath.io/artifact-configuration/examples#deep-signing-an-msi-installer-with-nested-executables)
 signs inner PE files, rebuilds the MSI and signs its enclosing bytes. Reuse the

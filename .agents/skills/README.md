@@ -66,10 +66,13 @@ and [its staged work §7](../../docs/plans/windows-msix-store.md#7-bounded-conti
 source/design preparation, an admitted local/test-signed candidate, David's Store
 trial, then actual Store-delivered qualification before broad release. Prior Store
 approval/signing is not a prerequisite for preparing the candidate. This current
-decision overrides MSI-only directions in older research and references; retained
-MSI/SignPath/OpenPGP mechanics apply only if David later revisits delivery after
-rejection or concrete technical evidence. Preserve those historical sources and
-upstream provenance. No direction choice proves implementation, lifts the Windows
+decision overrides MSI-only directions in older research and references.
+[OD-05 §7.7](../../docs/nevrotick-owner-decisions.md#77-sign-every-supported-shipped-artifact--8-november-2026)
+also requires the signed package and every supported individual signature,
+including nonbinary files. SignPath is a candidate for inner-file signing on
+MSIX; MSI delivery still needs a later decision. The unsigned-MSI/OpenPGP
+exception is superseded. Preserve historical sources and upstream signatures.
+No direction choice proves implementation, lifts the Windows
 stop/separate fuzz hold/storage pause or displaces the current Core task.
 
 Preserve source skills' evidence discipline: existing work, producer → state →
