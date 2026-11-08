@@ -1,6 +1,6 @@
 # Signing the Windows time client: a practical package guide
 
-**Revision:** 1.0 with owner-decision, trust-lifecycle, selected-MSIX and release-operations amendments, 4 November 2026
+**Revision:** 1.0 with owner-decision, trust-lifecycle, selected-MSIX and release-operations amendments, 4 November 2026; PE certificate-padding qualification refined 8 November 2026
 
 **Research date:** 28 October 2026  
 **Status:** Preparation guide; Store acceptance, production package signing and native qualification are **not completed**.
@@ -22,11 +22,14 @@ account, access-removal, renewal or recovery rehearsal.
 
 **Retained alternatives:** sections 2–5 preserve the SignPath Foundation research and MSI Authenticode workflow; section 7 preserves the previously accepted initial OpenPGP MSI profile. Neither is a prerequisite for the selected Store MSIX, a simultaneous v1 distribution promise or an automatic fallback. If David later returns to MSI, the Foundation publisher display and David's human-approver role remain recorded, and that route still needs its own eligibility, trust and native qualification. The Foundation's conditions and application remain [S1–S3]; any later provider contact is a separate authorized action.
 
+Sections 5.1–5.2 also refine cross-route qualification where applicable: keep
+embedded PE, package/catalog and exact final-artifact evidence separate.
+
 **OPEN-11** remains open for actual selected-route acceptance and qualification. This guide does not claim that an account, certificate, signing integration, submitted package or release gate has been completed.
 
 ## 2. What “getting the certificate” means here
 
-This section and sections 3–5 retain the MSI Authenticode alternative for use only if the owner later selects it. Store package signing has the separate trust boundary described in section 6.1.
+This section, sections 3–4 and the opening MSI recipe in section 5 retain the MSI Authenticode alternative for use only if the owner later selects it. Sections 5.1–5.2 state their cross-route applicability; Store package signing has the separate trust boundary described in section 6.1.
 
 A public code-signing certificate identifies a publisher and contains a public key. Signing requires the corresponding private key. Downloading a public `.cer` file would not provide that capability.
 
@@ -199,6 +202,77 @@ verification; Microsoft separately specifies `WTD_CACHE_ONLY_URL_RETRIEVAL`.
 Qualify the required cache-only or admitted online mode, including stale/missing
 cache behavior. Selecting cache-only operation does not prove fresh revocation
 information, and this amendment does not approve disabling required checks. [S17]
+
+### 5.2 PE certificate padding and exact final bytes
+
+**Qualification refinement, 8 November 2026:** reuse W11-W10/P6 and
+CHECK-18/23/26/27. Apply the embedded-signature cases only to PE files whose
+admitted profile requires embedded Authenticode. This does not require a new
+embedded signature on every Store payload or transfer a PE-specific CVE to
+MSI/MSIX containers. Final-byte custody applies at every admitted release stage.
+Current Windows execution holds remain; these cases have **not been run**.
+
+CVE-2013-3900 concerns extra data after a PKCS#7 structure in `WIN_CERTIFICATE`.
+PE Authenticode does not hash every file byte. The opt-in
+`EnableCertPaddingCheck` control rejects nonzero padding there, but does not
+authenticate all other excluded content. Added data is not automatically
+executable; a consumer can create risk by trusting or interpreting it. This is
+certificate-table padding, not a choice of RSA signature padding. [S21, S22, S25]
+
+Refine the existing verification receipt and custody rules as follows:
+
+1. **Identify the actual verifier.** Record Windows build, tool/SDK version and
+   process architecture, signature source, trust action/flags, retrieval and
+   revocation policy, exact input hash and observed result. For the admitted
+   strict Windows qualification host, record `EnableCertPaddingCheck` in both
+   applicable registry views on x64 and restart state. Current Microsoft
+   guidance uses DWORD `1`; an existing string `"1"` is also supported. A registry
+   readback is configuration evidence, not the functional padding result. [S21]
+2. **Keep embedded and catalog results distinct.** Microsoft's catalog PE
+   verification path does not check embedded-signature padding.
+   `Get-AuthenticodeSignature` prefers the catalog when both forms exist. Its
+   `Valid` result therefore cannot establish this embedded check. The PE
+   SignTool recipe above uses embedded verification; do not add `/a` or catalog
+   selection switches merely to obtain a pass. `/all` selects signatures, not
+   every byte. Keep package/catalog, CIG and project-identity results with their
+   existing owners; record reasoned non-applicability for a catalog-only payload.
+   [S7, S22, S24]
+3. **Bind approval to complete final bytes.** Record full-file SHA-256 and byte
+   length after the stage's authorized signing, timestamping and packaging.
+   Bind these values to the approved candidate in the existing protected
+   release record, then compare the exact files through handoff and publication.
+   A new digest computed from an unapproved download, or a replaceable checksum
+   sidecar alone, supplies no approval authority. Keep pre-signing, returned,
+   submitted and Store-delivered observations distinct; an authorized later
+   transformation requires a new stage's verification and approved record.
+4. **Qualify provider and native behavior.** The SignPath reference's
+   `authenticode-verify` description does not establish its effective padding
+   policy or embedded/catalog selection. Obtain candidate-bound provider evidence
+   identifying the returned files, effective policy and signature source, or
+   perform independent strict Windows verification of those PE files.
+   If an admitted checker calls `WinVerifyTrust`, only return value **zero** is
+   success; the result is a `LONG`, not an `HRESULT` for `SUCCEEDED`. Reuse the
+   admitted Windows verifier; this refinement introduces no custom PE parser or
+   cryptographic verifier. [S5, S23]
+
+At the existing native qualification stage, use an owned harmless PE and its
+controlled modified counterpart. Inspect signatures without executing either PE.
+Keep the signing identity, chain and other inputs valid so unrelated trust
+failures do not masquerade as evidence for the changed condition.
+
+| Case | Required observation |
+| --- | --- |
+| Healthy approved PE with compliant padding | Required embedded verification succeeds under the recorded strict policy; full-file hash matches its approved record |
+| Otherwise valid PE with nonzero data after PKCS#7 inside `WIN_CERTIFICATE` | Strict embedded verification rejects the padding case; an unrelated broken chain or malformed signed content is insufficient evidence |
+| Changed final bytes against the previously approved full-file hash | Custody/admission comparison rejects the mismatch even if a generic signature check still reports valid |
+| Catalog-preferred verification of a PE that also has an embedded signature | Identify the selected signature source; that result cannot be recorded as an embedded-padding pass |
+
+Generate product metadata before signing. Do not personalize signed files by
+placing configuration, download URLs, commands or purportedly trusted metadata
+in unauthenticated certificate padding. Any separately distributed configuration
+keeps its own admitted authentication contract. The strict lab setting is not
+evidence about provider hosts or customer systems, and this qualification does
+not authorize an installer to change customers' global Wintrust policy.
 
 ## 6. What the other routes do and do not solve
 
@@ -378,6 +452,7 @@ See [NV-DEC-001 section 7](nevrotick-owner-decisions.md#7-od-05--signing-and-rel
 | Immutable normalized leap calendar/policy and reproducible provenance | Domain/build/release verifier | NV-LP-001 selects the same authenticated complete-release channel; generated data, revision/digest binding and final-artifact evidence remain to be implemented and qualified |
 | Valid/tampered/unsigned/substituted/unrelated-Store-package controls | Release/security verifier | Package trust, CIG and NevroTick role authorization require separate evidence; not executed |
 | Wrong-clock/offline activation and recovery | Windows/release/security verifier | Section 5.1 cases required on the selected artifact; not executed |
+| Applicable embedded PE padding checks and complete final-byte binding | Release/security verifier | Section 5.2 refines existing custody and negative controls; strict-policy readback and behavioral cases not executed |
 | Complete MSIX lifecycle on supported Windows, including reset/removal and W32Time restoration | Package/Windows verifier | Native execution remains held; final Store-artifact evidence required before broad release |
 | Exact-candidate visibility and broad release after post-Store qualification | David Osipov | Owner decision retained; no publication by this work |
 | SignPath eligibility or OpenPGP key/profile qualification if MSI is later selected | Maintainer / provider / verifier | Retained alternatives only; neither a selected-MSIX prerequisite nor an automatic fallback |
@@ -387,6 +462,19 @@ See [NV-DEC-001 section 7](nevrotick-owner-decisions.md#7-od-05--signing-and-rel
 **OPEN-11 tracks acceptance and qualification of the selected Store MSIX route, while preserving the earlier MSI alternatives.** Preparation does not wait for speculative Store preapproval. Initial controlled submission does not claim completed post-Store checks. Broad release requires the actual delivered artifact's authentication, installed-file trust, protection and lifecycle evidence, with David's exact-candidate decision. A provider account, a screenshot of a certificate or this guide alone is insufficient.
 
 ## 9. Sources and related documents
+
+Primary sources checked for the 8 November PE-padding refinement:
+
+- **S21:** [MSRC CVE-2013-3900](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2013-3900), current FAQ revision 2.4 of 23 December 2024, and [advisory 2915720](https://learn.microsoft.com/en-us/security-updates/securityadvisories/2014/2915720). The current FAQ accepts DWORD `1` and the earlier string `"1"`; the advisory describes opt-in activation and restart. This is source research, not a verifier-host readback.
+- **S22:** [Microsoft: Understanding executable file signing](https://learn.microsoft.com/en-us/windows/win32/secbp/understanding-pe-signatures), including the catalog-verification exception.
+- **S23:** [WinVerifyTrust](https://learn.microsoft.com/en-us/windows/win32/api/wintrust/nf-wintrust-winverifytrust), including strict-padding behavior and exact-zero success semantics.
+- **S24:** [Get-AuthenticodeSignature](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/get-authenticodesignature), including catalog preference.
+- **S25:** [MSRC: MS13-098 Authenticode security explanation](https://www.microsoft.com/en-us/msrc/blog/2013/12/ms13-098-update-to-enhance-the-security-of-authenticode/). Use its mechanism explanation; its historical planned default-enforcement date was superseded by the opt-in policy in S21.
+
+S7 and S5 were also checked for verification-source selection and the limits of
+the documented provider checks. Section 5.2's receipt and acceptance criteria
+are project engineering requirements derived from those sources, not claims of
+completed Windows, provider or Store qualification.
 
 Primary Microsoft sources checked for the 3 November selected-MSIX amendment:
 

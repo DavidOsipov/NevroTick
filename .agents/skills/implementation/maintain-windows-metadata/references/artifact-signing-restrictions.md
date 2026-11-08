@@ -98,6 +98,14 @@ support for PE/CAB/catalog. Run `authenticode-verify` before a modifying signing
 directive when verifying an existing signature. Its Windows trust checks do not
 document an expected-project/publisher pin.
 
+They also do not document the effective `EnableCertPaddingCheck` policy or
+embedded/catalog selection. Apply [signing guide §5.2](../../../../../docs/windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes)
+for applicable provider evidence or independent strict Windows verification,
+the harmless padding-negative case and approved full-file hash custody. Keep
+metadata generation before signing; certificate padding is not an authenticated
+metadata/configuration store. This PE qualification does not replace package
+trust or require a different signing provider or RSA padding algorithm.
+
 Reuse the existing separate description/URL fields; [SignTool](https://learn.microsoft.com/en-us/windows/win32/seccrypto/signtool)
 exposes them as sign-command `/d` and `/du`. They are not PE FileDescription or
 certificate identity. Preserve third-party provenance and approved signatures;

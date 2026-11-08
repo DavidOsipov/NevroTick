@@ -1,7 +1,7 @@
 # Primary sources
 
 Reviewed 5 November 2026 (UTC); service/artifact refinements checked 7 November
-2026; signing-configuration semantics checked 8 November 2026. This is an
+2026; signing-configuration and PE-padding semantics checked 8 November 2026. This is an
 original local workflow: no upstream implementation or third-party skill is
 vendored. Research used Microsoft Learn,
 GitHub, Context7, Firecrawl developer search/page extraction and web search/open.
@@ -102,6 +102,22 @@ semantics, not another metadata catalogue or a provider-selection decision.
 These are dated documentation observations. Provider locale/version extraction,
 unmatched-content handling and actual selected-service behavior require the
 named controls before adoption; documentation inspection is not a signing run.
+
+## PE certificate-padding qualification
+
+The [signing guide §5.2](../../../../../docs/windows-time-signing-guide.md#52-pe-certificate-padding-and-exact-final-bytes)
+owns the applicable Windows verification, negative case and complete final-byte
+custody requirements. Its S21–S25 sources were checked on 8 November 2026:
+
+| Primary source | Refinement and limit |
+| --- | --- |
+| [MSRC CVE-2013-3900](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2013-3900), [advisory 2915720](https://learn.microsoft.com/en-us/security-updates/securityadvisories/2014/2915720) | Opt-in policy and current accepted setting representations; documentation does not establish a host's effective configuration |
+| [Understanding executable file signing](https://learn.microsoft.com/en-us/windows/win32/secbp/understanding-pe-signatures), [WinVerifyTrust](https://learn.microsoft.com/en-us/windows/win32/api/wintrust/nf-wintrust-winverifytrust) | Partial PE digest coverage, strict-padding scope, catalog exception and exact-zero native success |
+| [Get-AuthenticodeSignature](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/get-authenticodesignature), [SignTool](https://learn.microsoft.com/en-us/windows/win32/seccrypto/signtool) | Catalog preference versus explicit embedded verification; a generic valid result is not padding or project-identity evidence |
+
+This is a dated source refinement, not an observed Windows rejection or a claim
+that NevroTick has a demonstrated exploit. Preserve profile applicability and
+existing execution holds; no custom cryptographic verifier is adopted.
 
 ## Standards and local owners
 
