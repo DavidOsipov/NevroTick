@@ -5942,8 +5942,40 @@ scaffold a second policy engine or expand the inert lab into production services
 
 #### Ordered continuation in the existing workstream
 
+**First stage — independently revalidate the implementation premise.** Before
+the dependent observer/provisioning extension, a reviewer other than its author
+must freeze the current HEAD and relevant dirty/source/evidence identities and
+try to confirm **or refute** each current-state assertion above. The earlier
+two-component inspection is a dated, bounded observation, not an instruction to
+reproduce a presumed missing feature.
+
+1. Trace raw capture, retained representation and actual admission callers from
+   [the portable observer](../crates/windows-platform/src/privilege_observation.rs)
+   and [the native adapter](../tools/windows-service-fixture/src/native_token.rs).
+   Distinguish structural checks on all captured entries from retention of only
+   three named facts. Search relevant alternative consumers before concluding
+   that complete role admission is absent.
+2. Inspect engine and broker paths separately, including startup and the guarded
+   clock-effect path. Establish whether complete present-set comparison and
+   required enabled-state checks actually reach the authoritative consumer;
+   a descriptive snapshot, unused helper or test-only check cannot establish it.
+3. Recheck current package/provisioning sources and candidate-bound receipts for
+   the complete MSIX pre-start bridge. Distinguish an available API, implemented
+   setup, effective running tokens and observed install/update/repair/recovery;
+   absence in the two observer files does not prove repository-wide absence.
+
+Record each claim as **confirmed for the inspected scope**, **refuted**,
+**partially supported** or **unresolved**, with exact source/consumer references,
+candidate identity, counterevidence and missing observations. If later code or
+receipts refute a stale assertion, correct current-status guidance and remove
+only the disproved work; preserve historical receipts and avoid a duplicate
+observer/provisioner. Assign implementation only for the substantiated residual
+gap. This review does not relax the selected role policy or lift execution holds;
+unavailable native evidence remains unresolved, not a passed check.
+
 | Owner / stage | Concrete next work | Observable exit and current disposition |
 | --- | --- | --- |
+| Read-only reviewer separate from the extension author, W11-W05/S0.2 with W11-W10 for packaging | Perform the premise revalidation above on the assigned current candidate before its dependent extension. | Per-claim confirm/refute/partial/unresolved record and evidence-based residual work. This explicit revalidation is OPEN; the earlier source review is retained at its original scope. |
 | Platform/security, W11-W05/S0.2 | Freeze the existing observer/consumer extension: complete bounded LUID/attribute capture, local allowed-name resolution, exact role comparison, explicit error states and expected non-impersonating service context. Keep configured policy and observation distinct. | Independent valid, extra-enabled, extra-disabled, unknown-LUID, missing-required and malformed/incomplete/failure controls through the real consumer. Source preparation follows the current assigned child; implementation/qualification is OPEN. |
 | IPC/platform, S0.3/P3 | Bind identification-only QoS on every open/reconnect to actual token type/level, request/read ownership, query-only capture and checked same-thread reversion. Authorize explicit captured identity after reversion, without adding `SeImpersonatePrivilege`. | Allowed real user/admin/engine paths work; anonymous, unexpected level, failed token open and ambiguous attribution cause no protected effect. Existing failed-reversion recovery stays required. Source work follows its current owner; native evidence is HELD. |
 | Clock/lifecycle, P4/S0.4 | Bind the selected setter to guarded synchronous privilege enable/use/disable, full API results, disabled baseline and actual outcome custody. Permanent removal is not a temporary guard. Keep retained-rate/ownership cleanup in the existing broker recovery contract. | Valid bounded operation and later owned cleanup work; enable/not-all-assigned/setter/disable/readback failures cannot produce false success or unguarded continuation. Native clock execution is HELD under the existing disposable-fixture gate. |
