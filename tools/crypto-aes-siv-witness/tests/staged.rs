@@ -223,6 +223,10 @@ fn maximum_outer_packet_authenticates_without_capacity_failure() -> TestResult {
 
 /// A consumer panic still drops the scratch owner and clears its full extent.
 #[test]
+#[expect(
+    clippy::panic,
+    reason = "The callback deliberately unwinds to verify full scratch cleanup"
+)]
 fn consumer_unwind_clears_all_scratch() -> TestResult {
     let wire = packet(&PLAIN)?;
     let parts = read_nts_authenticator_parts(&wire, outer_limits()?).map_err(|_| "outer-frame")?;
@@ -230,7 +234,7 @@ fn consumer_unwind_clears_all_scratch() -> TestResult {
     let calls = Cell::new(0);
     let limits = inner_limits(12, 2)?;
     let result = catch_unwind(AssertUnwindSafe(|| {
-        let _ = with_decrypted_frame(&parts, &KEY, &mut scratch, limits, |_| {
+        let _outcome = with_decrypted_frame(&parts, &KEY, &mut scratch, limits, |_| {
             calls.set(calls.get() + 1);
             panic!("fixed-consumer-unwind-control")
         });

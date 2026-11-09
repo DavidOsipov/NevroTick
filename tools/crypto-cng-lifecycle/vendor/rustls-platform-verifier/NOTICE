@@ -1,0 +1,90 @@
+LABORATORY-ONLY Windows derivative of rustls-platform-verifier 0.7.1.
+
+Upstream revision: 252e25161a91af476cbea620e29d277592d27ec7
+Published registry archive: rustls-platform-verifier-0.7.1.crate, 60698 bytes
+Archive SHA256: 1167586491e2b18b8bfbb293e8180ec17c201c4f076d7cb3070ca964e7598f98
+Acquisition: the retained checksum-matching archive was extracted by the owning
+coordinator; this derivative required no download. UPSTREAM-SOURCE.json records
+all 50 original published file identities (195524 bytes), their published POSIX modes and
+the supplied preparation-record hash. The original normalized manifest is retained at upstream/Cargo.toml; Cargo.toml.orig,
+Cargo.lock, VCS metadata, notices and both upstream license files remain unchanged.
+
+Upstream offers MIT OR Apache-2.0. This laboratory derivative uses the MIT grant;
+LICENSE-MIT and LICENSE-APACHE remain byte-identical. This identifies the chosen
+upstream grant, not an admitted complete dependency/license/security graph.
+
+The complete Windows implementation in this package now has the restrictive
+laboratory behavior below. It is not a shipping/service trust policy, a bootstrap
+profile, a product dependency adoption or a native verification result. Other
+platform implementations are unchanged and supply no substitute Windows evidence.
+
+The published Windows module and normalized Cargo manifest are changed; all other
+published files retain their original bytes. The Windows module original SHA256 is
+6b277079bdd38ddc7d13a813aaeeb0f290905c01e90639f6381d6c96d89f28a2;
+upstream/windows.rs preserves those exact original bytes separately. The owned
+Windows source SHA256 is
+8d1944f8a0fbdb23b102538eeb390cde3b84cd503a2548e752f90a34654a8a2b.
+
+Dependency binding: the owned normalized manifest narrows the Windows windows-sys
+requirement from >=0.52.0,<0.62.0 to exactly 0.61.2. Actual offline resolution otherwise
+selected 0.52.0 with older windows-targets/import-library packages. The reviewed
+0.61.2 binding matches this laboratory admission cohort and the current product
+binding family. No source/API upgrade of the CNG provider or new provider is made.
+Current normalized manifest SHA256: f97cadbade2e2833889bfb8421737c9a4fe3a0d10adf72f6002867efe32be5e5
+
+Windows delta:
+- Request both CERT_CHAIN_CACHE_ONLY_URL_RETRIEVAL and
+  CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY, check the non-root chain with
+  CERT_CHAIN_REVOCATION_CHECK_CHAIN_EXCLUDE_ROOT, and retain the upstream
+  accumulative-timeout and end-certificate-cache flags. The exact combined flags
+  are 0xc8000005. Set the defensive URL retrieval timeout to 2000 milliseconds.
+- Remove the unknown-revocation-ignore policy flag. Existing OS chain building,
+  SSL/server-name policy, requested serverAuth usage, algorithm/usage/distrust
+  handling and Rustls handshake-signature checks remain the verification owners.
+  Unknown/offline status without acceptable current cached evidence refuses.
+- Fully initialize CERT_CHAIN_POLICY_STATUS, including checked cbSize and a null
+  extra-status pointer, before its OS call. Preserve rejection of API failure and
+  nonzero policy error. Initial zero fields themselves establish no authentication.
+- Admit Unix seconds only from 0 through 4102444800 inclusive. Checked epoch
+  addition (+11644473600), 100-ns scaling (*10000000) and checked low/high FILETIME
+  words replace unchecked nanosecond scaling/casts. Unsupported dates refuse with
+  a bounded message; no clamping, wrapping, bootstrap or clock correction occurs.
+
+These API cache flags constrain the requested direct retrieval behavior; they do
+not prove absence of all delegated OS network activity or change machine-wide
+updaters, roots, policy, caches or services. The timeout is not a whole-operation
+deadline and proves no cancellation or actual native completion. The supplied
+FILETIME does not replace Windows' separate current-time CRL/root checks. A future
+strict laboratory caller must use the reviewed normal-date profile and ordinary
+Verifier::new, without extra/fake roots. Retained generic APIs confer no laboratory
+permission to select weaker trust.
+
+Four pure Windows regression tests are added in
+src/verification/windows/laboratory_tests.rs, SHA256
+136a343fc625b00aa07be5a8534845d007f16f1a2915aa5035c88bda9b12c1a5:
+laboratory_filetime_matches_literal_ticks_and_words;
+laboratory_filetime_refuses_outside_dates_with_bounded_errors;
+laboratory_chain_settings_match_the_call_site_contract;
+laboratory_policy_status_has_complete_initialized_inputs.
+They inspect the actual private parameter/date/status helpers. Literal integer
+oracles cover seconds 0, 1, 71, 72, the upper boundary and its neighbors, including
+the low-word carry; refusals include u64::MAX. They perform no OS verification,
+network operation or store change and do not create an authenticated producer.
+
+All published upstream tests/dev dependencies, including fake-root and AWS-LC
+fixtures, remain present for source provenance only. They are NOT admitted strict
+laboratory controls and were not executed. Pinned Rustfmt 1.99.1 formatting completed in an isolated, network-disabled
+namespace; source formatting alone is no compiler or behavior result. At that
+source-authoring checkpoint, no compiler, native, formal or test command had run.
+Subsequent Cargo graph, advisory and policy results identify their exact private
+source projections in tasks/s0.1-crypto-feasibility.md, under the S2.2 strict
+laboratory verifier source child. They do not qualify native behavior. Separate coordinator
+graph admission must exclude those execution edges and retain the reviewed
+default-off optional debug/FFI/certificate-logging features before a focused build.
+
+Open qualification: complete exact source/dependency/features/license/advisory
+admission; configured compiler/lint and focused helper execution;
+genuine Windows cached-evidence healthy/refusal, direct retrieval and native
+lifetime/completion observations; ordinary NTS-KE integration and publication
+currentness. This source slice implements no worker, TLS connection, NTS-KE
+exchange, successful authentication producer, packet AEAD or product readiness.

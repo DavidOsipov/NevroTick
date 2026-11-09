@@ -5973,9 +5973,48 @@ observer/provisioner. Assign implementation only for the substantiated residual
 gap. This review does not relax the selected role policy or lift execution holds;
 unavailable native evidence remains unresolved, not a passed check.
 
+**Independent premise revalidation — 9 November 2026:** completed for source
+`61fd244a6bbd12cee887e6974da1b730a5aa1561`, with a separate read-only reviewer
+and coordinator readback of the actual decoder/startup branch. The 36 relevant
+file identities were stable across closing reads; their sorted
+`path + NUL + SHA256 + newline` aggregate is
+`061ea9484365db0d0d2ed4995f1fd256f111873bfe598097cd6369b0bd62018a`.
+
+| Revalidated premise | Disposition and evidence |
+| --- | --- |
+| Complete raw capture versus retained facts | **Confirmed:** `native_token.rs` captures bounded `TokenPrivileges`; `PrivilegeSnapshot::decode` structurally checks every entry, but retains three named SystemTime/Debug/Impersonate facts. It is inaccurate to say only three raw privileges are queried. |
+| Actual role admission | **Confirmed:** `host.rs` calls `require_engine_absence` only for Engine before worker preparation. Neither that predicate nor the broker branch enforces the complete selected role sets or required enabled state. Existing test source explicitly accepts empty snapshots and broker observations with the three privileges present/enabled; those tests were not rerun. |
+| Context and clock effect | **Confirmed within this adapter:** thread-token checks surround primary-token observation; they supply no IPC-client capture or continuous context guarantee. The inspected composition uses an inert worker. Finite first-party searches found no guarded clock setter; P4/S0.4 implementation and native lifetime evidence remain open, rather than a demonstrated setter bypass. |
+| MSIX pre-start bridge | **Not established in the inspected source:** alternative-consumer searches found partial metadata/service authoring (`complete_manifest=False`), not a complete provisioner or installed-token proof. Effective activation/update/repair/recovery remain unresolved under W11-W10. |
+
+The actual reviewed parser/native/host hashes are respectively
+`f5862459e0cce5e69373b985288c3f81d6f1af11763e50a5a190067dcdbd5d33`,
+`4a8a5c4280cfccdcb470960b5cff55d083c1f278f9c5d4c835b52f8ca435e1c5`
+and `3ff3b32d717448e78994a76047be57c0567af7561e2d1936530626f6bb1fbb96`.
+Recovered local receipts are available under
+`artifacts/windows-services/recovery-20261107-v1`, but this is no current-caller
+qualification: `source-checkpoint-v2.json` (SHA-256
+`f1c6196a6538207acad7517af528fb8621900c97d72e1fdfacf0335759f270ac`)
+binds the parser/native adapter and **not current host.rs**. Its full source join
+is 408 matching/33 different; all 13 referenced receipt digests remain intact.
+`cross-sdk-ready-v1.json` has the same source join and explicitly records no
+native execution and failed bookends. Historical metrics/self-reported match
+flags do not qualify this candidate. Across the broader 78 top-level recovered
+JSON files, 22 bind the current native-token hash, 25 another hash and 31 lack
+that top-level binding; these counts are not the separate secret-scan cohort.
+
+The substantiated residual is the existing platform/security source child:
+retain the complete bounded LUID/attribute set, resolve allowed names locally,
+and enforce both exact role profiles through this shared startup consumer.
+Freeze that contract before implementation, using valid, extra-enabled,
+extra-disabled, unknown-LUID, missing-required and malformed/failure neighbors.
+Reuse the existing structural/context/cleanup owners. Provisioning stays with
+W11-W10 and clock effects with P4/S0.4. This review ran no Rust tests/builds or
+native commands, adopted no metrics and lifted no execution hold.
+
 | Owner / stage | Concrete next work | Observable exit and current disposition |
 | --- | --- | --- |
-| Read-only reviewer separate from the extension author, W11-W05/S0.2 with W11-W10 for packaging | Perform the premise revalidation above on the assigned current candidate before its dependent extension. | Per-claim confirm/refute/partial/unresolved record and evidence-based residual work. This explicit revalidation is OPEN; the earlier source review is retained at its original scope. |
+| Read-only reviewer separate from the extension author, W11-W05/S0.2 with W11-W10 for packaging | Preserve the source revalidation above; repeat affected claims only after relevant source/contract drift. | **Source revalidation complete** on the recorded candidate, with current-caller qualification and native gaps explicit. The residual observer/consumer contract freeze below remains OPEN. |
 | Platform/security, W11-W05/S0.2 | Freeze the existing observer/consumer extension: complete bounded LUID/attribute capture, local allowed-name resolution, exact role comparison, explicit error states and expected non-impersonating service context. Keep configured policy and observation distinct. | Independent valid, extra-enabled, extra-disabled, unknown-LUID, missing-required and malformed/incomplete/failure controls through the real consumer. Source preparation follows the current assigned child; implementation/qualification is OPEN. |
 | IPC/platform, S0.3/P3 | Bind identification-only QoS on every open/reconnect to actual token type/level, request/read ownership, query-only capture and checked same-thread reversion. Authorize explicit captured identity after reversion, without adding `SeImpersonatePrivilege`. | Allowed real user/admin/engine paths work; anonymous, unexpected level, failed token open and ambiguous attribution cause no protected effect. Existing failed-reversion recovery stays required. Source work follows its current owner; native evidence is HELD. |
 | Clock/lifecycle, P4/S0.4 | Bind the selected setter to guarded synchronous privilege enable/use/disable, full API results, disabled baseline and actual outcome custody. Permanent removal is not a temporary guard. Keep retained-rate/ownership cleanup in the existing broker recovery contract. | Valid bounded operation and later owned cleanup work; enable/not-all-assigned/setter/disable/readback failures cannot produce false success or unguarded continuation. Native clock execution is HELD under the existing disposable-fixture gate. |

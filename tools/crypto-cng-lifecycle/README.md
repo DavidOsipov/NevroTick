@@ -10,13 +10,13 @@ The earlier S52 outer-launch accounting gap remains historical. Native memory,
 cached-error/shutdown, concurrency and broader provider qualification remain open.
 Use the task's exact candidates and evidence limits when reusing observations.
 
-The only direct Windows dependencies are exact Rustls 0.23.46 with defaults off
-and `std`, and CNG 0.1.2 with defaults off. No verifier or AEAD root is present.
-The fixture lockfile is now frozen from the verified cache with no new registry
-versions/checksums or feature additions (53 lock records, 41 metadata records).
-The selected Windows normal/build graph has 34 unique identities, 33 external;
+The historical S51 public-API checkpoint's direct Windows dependencies were exact
+Rustls 0.23.46 with defaults off and `std`, and CNG 0.1.2 with defaults off.
+That candidate had no verifier or AEAD root. Its frozen lock contained 53 records
+and metadata contained 41 records, without new registry versions/checksums or
+feature additions. Its Windows normal/build graph had 34 unique identities, 33 external;
 the actual S51 compiler records match it, with no ring/AWS-LC compiler artifact.
-This minimal graph requires no duplicate-version allowance. It is separate from
+That minimal graph required no duplicate-version allowance. It is separate from
 the former 54-external-package proposal and admits no product dependency graph.
 Do not run the upstream CNG test manifests or
 dev graph: those explicitly request AWS-LC and are outside this experiment.
@@ -64,11 +64,78 @@ post-shutdown reuse as valid caller behavior. CRYPTO-02's partial-initialization
 failure/cleanup and cached-initializer panic still need separately reviewed owned
 fault instrumentation or correction that preserves actual native failure causes.
 
-No TLS connection, certificate/trust evaluation, NTS-KE, socket, DNS, service,
-clock, independent entropy assessment, secret-erasure or cleanup qualification
-is supplied by this fixture. CRYPTO-01–04 and provider/product adoption remain
+Those public-API observations supply no TLS connection, certificate/trust
+evaluation, NTS-KE, socket, DNS, service, clock, independent entropy assessment,
+secret-erasure or cleanup qualification. CRYPTO-01–04 and provider/product adoption remain
 open. Existing native memory/lifecycle requirements apply to any later admitted
 Windows experiment.
+
+## Bounded ordinary-validation KE producer source
+
+`nevrotick-nts-ke-probe` adds the actual Windows CNG/Rustls TLS-1.3-only connection,
+ordinary strict-profile verifier, NTS-KE exchange and both regular exporters.
+It admits exactly a numeric loopback peer with nonzero port and a separately
+checked verification identity. There is no DNS, alternative address, client
+certificate, resumption, early data, fake-root path or plain-NTP fallback.
+This is source under qualification: **do not run it while Windows execution is
+held**. The current checkpoint passes 24 host helper tests plus two actual CLI
+integration tests in ordinary,
+`verify-release` and `release` profiles, host Clippy,
+Windows-target compilation and Clippy. Earlier private Windows-target rustdoc
+and seven retained actual-module compiler consumers retain their recorded
+legal-use/private-owner refusal scope, without execution. A primary TLS-error precedence repair
+has actual-code RED/GREEN: later alert failures preserve the earlier invalid-data
+cause, while sticky faults still refuse nominal success. These checks execute no
+Windows TLS, verifier or exporter. Native permission, remaining contract controls
+and source-bound coverage/mutation remain separate
+gates in the [existing S2.2 source contract](../../tasks/s0.1-crypto-feasibility.md#s22-real-laboratory-keexporter-producer--source-contract-9-november-2026).
+The raw host coverage survey also exercises the actual unsupported-platform
+entrypoint and failed diagnostic sink; it does not execute Windows transport.
+Its exact 108-item mutation listing identifies constructor, generic-helper and
+Windows-generation gaps. Three isolated host controls detect the selected
+propagation/entrypoint defects. Cargo-discovered `host_refusal` now catches the
+listed default-success entrypoint through the same command that passes all 24
+healthy tests: the defective binary compiles, all 22 units pass and both actual
+CLI tests fail for exit zero versus required exit one. Future admitted mutation
+selection must retain both `--bin nevrotick-nts-ke-probe --test host_refusal`.
+Four private constructor controls additionally exercise the raw peer budget,
+typed verification identity, origin and deadline bindings. All 32 host-present
+generated descriptors are now accounted: 14 caught, 18 compiler-unviable with
+no kill credit, no survivor or timeout. An EOF detector now rejects a second
+read after EOF instead of hanging on the defective variant. The other 76
+Windows-only descriptors remain unexecuted; the generic resolver's empty viable
+denominator has no passing score. Fresh raw host coverage retains the actual
+CLI counter, inline-test contribution and additional legacy executable's failed
+threshold observation. No complete critical-file coverage/mutation or native
+gate is qualified by this bounded host checkpoint.
+
+The synchronous job retains real native custody; timeout never means a native
+verifier stopped. Connect/full handshake share the original origin plus twenty
+seconds; KE commit and ephemeral expiry use that same origin plus sixty seconds.
+Equality refuses. Stop and commit have explicit serialized outcomes. Response
+bytes, record count, scratch and copied cookie/key payloads have independent
+limits. Ordinary-drop zeroization covers application-owned buffers, not all
+library/OS copies or abort/crash cleanup. Known local close-notify flush failure
+prevents commit; EOM does not require an unbounded wait for the peer's alert.
+
+Only closed cause labels and bounded historical counts leave the job, after
+secret/TLS/shutdown owners have dropped. A successful laboratory result creates
+no current production authentication, Core eligibility, UDP, service or clock
+authority. The prospective endpoint remains bound to the saved actual peer and
+pre-admitted identity mapping. Production source/network/trust generation and
+installed principal/store/egress enforcement remain open before adoption.
+
+The source graph now names the owned verifier 0.7.1, `ntp-wire`, and exact already
+selected `rustls-pki-types` 1.15.1 / `zeroize` 1.9.1. The latter pure dependencies
+support host-side admission/response controls; they provide no host TLS route.
+The complete producer projection passes frozen Windows and host graph/policy
+checks against the retained fresh advisory/index snapshot: 39 Windows identities
+(four local, 35 registry), four host identities and no host TLS provider. The
+actually generated and tested 85-package lock (four local, 81 registry records)
+is now published in this standalone fixture. The exact Windows-link 0.1.3/0.2.1
+pair retains its reviewed parent/checksum contract; all other bans remain in
+force. Re-admit changed candidates before dependent checks; this is no native
+or product-provider qualification.
 
 The owned deny policy allows only the exact hash-bound presence of three upstream
 `untrusted 0.9.0` CI helper files. They are absent from selected Cargo build,

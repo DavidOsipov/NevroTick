@@ -11,7 +11,7 @@ description = "Held native Windows CNG lifecycle fixture with public API control
 # Experimental test infrastructure, outside the product workspace.
 [workspace]
 resolver = "3"
-exclude = ["vendor/rustls-cng-crypto"]
+exclude = ["vendor/rustls-cng-crypto", "vendor/rustls-platform-verifier"]
 
 [features]
 init-probe = ["rustls-cng-crypto/fixture-init-probe"]
@@ -21,12 +21,24 @@ name = "nevrotick-cng-init-probe"
 path = "src/bin/init-probe.rs"
 required-features = ["init-probe"]
 
+[[bin]]
+name = "nevrotick-nts-ke-probe"
+path = "src/bin/nts-ke-probe.rs"
+
 [patch.crates-io]
 rustls-cng-crypto = { path = "vendor/rustls-cng-crypto" }
+rustls-platform-verifier = { path = "vendor/rustls-platform-verifier" }
+
+# Pure typed admission/response owners; no host TLS provider or fallback.
+[dependencies]
+ntp-wire = { version = "=0.0.0", path = "../../crates/ntp-wire", default-features = false }
+rustls-pki-types = { version = "=1.15.1", default-features = false, features = ["std"] }
+zeroize = { version = "=1.9.1", default-features = false, features = ["alloc"] }
 
 [target.'cfg(windows)'.dependencies]
 rustls = { version = "=0.23.46", default-features = false, features = ["std"] }
 rustls-cng-crypto = { version = "=0.1.2", default-features = false }
+rustls-platform-verifier = { version = "=0.7.1", default-features = false }
 
 [lints.rust]
 warnings = { level = "deny", priority = -1 }
@@ -69,3 +81,20 @@ exit = "deny"
 all = { level = "deny", priority = -1 }
 broken_intra_doc_links = "deny"
 private_intra_doc_links = "deny"
+
+# Match the reviewed product optimization/arithmetic policy in this owned lab.
+# These settings do not select a shipping component fault policy.
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+overflow-checks = true
+debug-assertions = false
+panic = "unwind"
+incremental = false
+debug = "limited"
+strip = "none"
+
+[profile.verify-release]
+inherits = "release"
+debug-assertions = true

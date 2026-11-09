@@ -4,13 +4,16 @@
 //! RFC 5297 Appendix A.1 supplies the independent, public test values below:
 //! <https://www.rfc-editor.org/rfc/rfc5297.html#appendix-A.1>.
 //! They are fixture data, not keys or plaintext from an application. The tested
-//! RustCrypto crates are retained separately under their MIT OR Apache-2.0 terms;
+//! `RustCrypto` crates are retained separately under their MIT OR Apache-2.0 terms;
 //! this witness copies no algorithm implementation. Exact sources, dependencies,
 //! features, licenses and build evidence remain separately subject to admission.
 //! An observed error buffer is not by itself an API-violation or disclosure claim.
 
 /// Private staged-decryption experiment; no main-product crypto adoption.
 pub mod staged;
+
+/// Fixed-shape laboratory request sealing; no association or send authority.
+pub mod sealing;
 
 #[cfg(test)]
 mod tests {

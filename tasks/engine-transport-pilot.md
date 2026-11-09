@@ -2533,7 +2533,7 @@ for that actual commit, separately from the historical observations above.
 **Disposition:** source preparation against [upstream `5e98c79`](https://github.com/DavidOsipov/NevroTick/commit/5e98c79901c90de77db6c6047cb483ec10b8cbd5).
 Implementation, qualification and independent integration review remain open at
 this handoff. [Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-continues to own the current proof/Slint sequence; this card grants no execution
+continues to own the current product sequence and post-V1 proof deferral; this card grants no execution
 permission. Engine/protocol/crypto/platform owners reuse REQ-8/BND-2,
 CHECK-6/8/9/17/21/25/26/27 and OPEN-1/5/6/8. Numerical consumers additionally
 retain CHECK-7 and OD-10.
@@ -2545,8 +2545,9 @@ and an authentic but numerically refused exchange separately. Transport-only or
 authentication-only success is an intermediate receipt, not full S2.2 or P2.
 No clock writes, source-default selection or UI integration is required.
 
-The [engine manifest](../crates/nevrotick-engine/Cargo.toml) still contains only
-`getrandom`, `ntp-wire` and Tokio; real UDP ends in diagnostic `TransportFacts`.
+The [engine manifest](../crates/nevrotick-engine/Cargo.toml) contains `garde`,
+`getrandom`, `ntp-wire`, `time-domain` and Tokio, with no TLS/verifier/packet AEAD;
+real UDP ends in diagnostic `TransportFacts`.
 [Wire kernels](../crates/ntp-wire/src/lib.rs) provide inert KE/framing/exporter
 metadata, not a protected-NTP writer, authenticated association or Core bridge.
 Reuse the [S2.1 measurement and consumer card](#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026),
@@ -2556,6 +2557,35 @@ Reuse the [S2.1 measurement and consumer card](#s21-preparation--real-transport-
 Their contracts remain with those owners.
 
 ### Ordered implementation handoff
+
+The immediate prerequisite is the crypto owner's
+[strict laboratory verifier source child](s0.1-crypto-feasibility.md#s22-strict-laboratory-verifier-source-child--9-november-2026).
+Its verifier settings/conversion source is followed by the
+[real laboratory producer checkpoint](s0.1-crypto-feasibility.md#s22-real-laboratory-keexporter-producer--source-contract-9-november-2026):
+the expanded exact graph/policy, 24 host unit and two actual CLI tests in
+ordinary and both selected optimized profiles, host and Windows Clippy, and
+Windows-target compilation pass on its frozen candidate. Earlier private
+rustdoc retains its unchanged production-source scope.
+The tested standalone lock is now in this checkout. The primary TLS error now
+survives later alert failure, with retained actual-code RED/GREEN. Seven retained
+compiler consumers cover legal use and intended private-owner refusals. The raw
+host survey and 108-descriptor listing expose explicit target/generation gaps.
+Three isolated sensitivity controls detect the selected faults. The subsequent
+[Cargo-discovered CLI checkpoint](s0.1-crypto-feasibility.md#cargo-discovered-host-refusal-checks--9-november-2026)
+closes the host entrypoint selection gap. Subsequent constructor/EOF controls
+retain all 26 passing tests in ordinary and both optimized profiles. The complete
+32-descriptor host subset has 14 caught and 18 compiler-unviable variants, with
+no survivor or timeout; unviables receive no kill credit, and an empty helper
+denominator has no score. Fresh raw host coverage includes the actual CLI while
+retaining the extra legacy executable's failed threshold and inline-test limits.
+All 76 Windows-only descriptors and complete target/native gates remain open.
+Retain both Cargo targets in mutation selection; continue the ordered contract
+preparation below without adopting the laboratory provider before its gates.
+Retain genuine native
+ordinary-store trust, TLS/exporter, cleanup and resource observations as held,
+unfinished gates. This grants no native run, production association or
+Core-history authority. No Linux TLS substitute or repeat of completed inert
+formatter/Core work is needed.
 
 1. **Freeze dependent contracts.** Select and admit one exact TLS/provider/AEAD
    graph and execution arrangement, normal-validation lab profile, packet semantics,
@@ -2865,6 +2895,54 @@ UID/AEAD output, current association publication, admitted socket/send completio
 and authenticated response admission. `AcquisitionSession::prepare` and its
 `PreparedAcquisition`/report path remain the existing unauthenticated experiment;
 they cannot supply these facts or bypass the held Engine-to-Core edge.
+
+**Concrete issuer reconciliation — 9 November 2026:** independent read-only
+`association_contract_readiness` traced the current `bf16cd0` plus dirty source.
+Do not implement a parallel counter-only model to fill these gaps:
+
+| Required production fact | Actual current source and remaining owner |
+| --- | --- |
+| Logical source and approved configuration | Engine `Config`/`SeriesConfig` are immutable loopback experiment inputs. The future authorized policy path must supply the approved logical source and configuration revision; another address for that source is not another vote. |
+| Association incarnation and request identity | The engine must issue them from its exclusive complete-association/request owner with checked exhaustion. Caller-asserted `ntp-exchange` fixture counters and Core `DeclaredObservationContext` labels are not those issuers. |
+| Socket and path | Existing `prepare_slot` owns an actual pilot socket, but supplies no NTS association. Bind the selected actual socket/endpoint and admitted path owner; no current production path-revision supplier exists. |
+| Trust basis and revision | The qualified crypto/trust owner must provide the accepted profile and its current revision/invalidation signal. The laboratory invocation alone has no production trust-change supplier. |
+| Clock/mapping continuity | W11-W01 and the actual clock-domain owner must supply current mapping/continuity. `Control::epoch` is explicitly pilot-local aggregate invalidation, not a configuration, association or clock generation. A clock discontinuity retires affected exchanges; it does not by itself prove cryptographic keys invalid. |
+| Complete KE handoff | Current laboratory `InternalCandidate::finish` validates/commits, drops both exporter keys and all cookies, and returns only `Summary` counts. It exports no transferable association. Freeze a private, custody-preserving same-connection KE result and serialized receiving-owner publication before adoption; do not reconstruct secrets or authority from the summary. |
+
+The future candidate must retain its actual issuer/context through publication;
+equal numeric labels from another owner cannot substitute. Policy/path/trust
+cutover before invocation prevents a new stale send. Replacement failure preserves
+only an independently valid old association. Cancellation keeps actual-job
+custody, and late completion updates its receipt without reviving a retired
+request. These are existing §7.4/§17.1 obligations, not newly implemented owners.
+Their paired tests remain planned. Cookie reuse, zero-replacement handling,
+finite production lifetimes, ordinary trust/provider and native gates remain open.
+Meanwhile the independently reviewed
+[laboratory request-sealing child](s0.1-crypto-feasibility.md#s22-laboratory-request-sealing--source-contract-9-november-2026)
+now reuses the existing AES witness and formatter without minting any of these
+facts. Its initial Linux checkpoint passes exact both-target graph/policy rows,
+Clippy, 19 ordinary/19 release tests and eleven doctests, including independent
+complete-packet answers. Its four private source faults now reach the intended
+assertions, with zero generated-mutant credit. Fresh coverage meets each selected
+90% line gate (36/36 executable lines in each file). All seven generated mutations
+are compiler-unviable, so both mutation scores are undefined and both 95% gates
+remain open. The bounded review now permits recipe preparation for the separate
+mutation-only lint-capped instrument under hardening §9.4; execution is not yet
+admitted and ordinary compiler/release policy stays strict. Provider/native/product gates remain open under the
+crypto task.
+
+Fresh-context `nts_next_source_boundary` traced the actual KE producer again:
+`InternalCandidate::finish` validates and commits, then destroys both exporter
+keys and all cookies before returning `Summary` counts. `exchange_owned` first
+drops its TLS/socket state; `exchange` drops its outer CNG shutdown owner before
+returning. There is no actual receiving association function or callable engine
+TLS/AEAD edge. A useful future handoff must name its exclusive real receiver,
+move the same-connection profile/identity/endpoint/expiry with both keys and
+cookies, and settle its relationship to the CNG shutdown scope. Retaining
+secrets or adding counters without that receiver would not close the seam.
+This read-only source review authorizes no product integration or new native
+execution; the existing producer/receiver freeze and separate provider/currentness
+gates remain required.
 
 | Actual transition / sole owner | Allowed state/effect and failure custody |
 | --- | --- |

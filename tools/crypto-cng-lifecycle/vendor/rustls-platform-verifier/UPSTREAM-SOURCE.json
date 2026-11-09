@@ -1,0 +1,279 @@
+{
+  "archive_bytes": 60698,
+  "archive_sha256": "1167586491e2b18b8bfbb293e8180ec17c201c4f076d7cb3070ca964e7598f98",
+  "files": {
+    ".cargo_vcs_info.json": {
+      "bytes": 118,
+      "mode": "0644",
+      "sha256": "05bbb766d5f34a667314c7b13961fc6da94be43b594c8b431a4c50f2cf1e3c07"
+    },
+    "Cargo.lock": {
+      "bytes": 17855,
+      "mode": "0644",
+      "sha256": "d053a02d26c1394d6dff2ac0f8617f3a361a0e4e4d382db23e8f4abe203cbda7"
+    },
+    "Cargo.toml": {
+      "bytes": 3509,
+      "mode": "0644",
+      "sha256": "e3cc8a4ba76111e7c153d31ff28988117442c8f6b522b3f3b1efde9fba4509f2"
+    },
+    "Cargo.toml.orig": {
+      "bytes": 2799,
+      "mode": "0644",
+      "sha256": "2fbc1a26005be62a4c49ac02a01ea69bba3a5d5a91c16d3506a6efd8cd9d38bb"
+    },
+    "LICENSE-APACHE": {
+      "bytes": 11357,
+      "mode": "0644",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    "LICENSE-MIT": {
+      "bytes": 1066,
+      "mode": "0644",
+      "sha256": "1c7cf76689c837a68ed8d704994e52a0f2940c087958f860d17f3186afbdcc0c"
+    },
+    "README.md": {
+      "bytes": 17118,
+      "mode": "0644",
+      "sha256": "91f290f98ddd8c363e516f9f5a90db7948fff4d573cae041d2678e5badef393c"
+    },
+    "examples/update-certs.rs": {
+      "bytes": 1904,
+      "mode": "0644",
+      "sha256": "d6c042890bd0ebf0a89791643b460a03d6588f63eeaf1170c4733aebc575ed14"
+    },
+    "src/android.rs": {
+      "bytes": 8305,
+      "mode": "0644",
+      "sha256": "cbe27720c71efcec93322586dca56238c4861b6601a0dfc894d8a034f90d4b43"
+    },
+    "src/lib.rs": {
+      "bytes": 3101,
+      "mode": "0644",
+      "sha256": "cb63f0781eb232fb16dfaeacde94cbfe256c71c064bef09b58ca43625e7d605d"
+    },
+    "src/tests/ffi.rs": {
+      "bytes": 4679,
+      "mode": "0644",
+      "sha256": "32e293073534322eb994ce22513f0eb2e248f1d74f57d0292c225397103f3fb0"
+    },
+    "src/tests/mod.rs": {
+      "bytes": 1907,
+      "mode": "0644",
+      "sha256": "ef8c27626e4e6351408cff9c75783272e446fc19db05575ae3aeaba67beaf751"
+    },
+    "src/tests/verification_mock/ca.go": {
+      "bytes": 8467,
+      "mode": "0644",
+      "sha256": "6c3bec898f4a94cfc7ee0cd53d2aa416ae431d1f2f134c855b98fd9b2fdc80a2"
+    },
+    "src/tests/verification_mock/go.mod": {
+      "bytes": 113,
+      "mode": "0644",
+      "sha256": "3bf442f18319221c7cebaf98d445500491db07a6d0a66141fd78a5d85e68fc16"
+    },
+    "src/tests/verification_mock/go.sum": {
+      "bytes": 213,
+      "mode": "0644",
+      "sha256": "1f819b83f096791863d20089b4c9232b43036a75ef12591c90bfff9ea96b2501"
+    },
+    "src/tests/verification_mock/mod.rs": {
+      "bytes": 17422,
+      "mode": "0644",
+      "sha256": "e0c61c9e6156e073fd46d0ccb713acb328dae81cba7eaee0025924c24643f8f2"
+    },
+    "src/tests/verification_mock/root1-int1-ee_1-good.crt": {
+      "bytes": 414,
+      "mode": "0644",
+      "sha256": "1d7a5f5e7fe30b5732e5d5440ea3628ac9ea0ff7b3598efb97ef8d62a72740ab"
+    },
+    "src/tests/verification_mock/root1-int1-ee_1-good.ocsp": {
+      "bytes": 299,
+      "mode": "0644",
+      "sha256": "2415dc5c34702b31fb65efa5b10207542d2cf4b7fb7171030800da09edf32ce8"
+    },
+    "src/tests/verification_mock/root1-int1-ee_1-revoked.crt": {
+      "bytes": 412,
+      "mode": "0644",
+      "sha256": "c9813108fdd299a4955aeaed134e54edcfcfec23ed10720ccfa96e851f86cf5e"
+    },
+    "src/tests/verification_mock/root1-int1-ee_1-revoked.ocsp": {
+      "bytes": 316,
+      "mode": "0644",
+      "sha256": "d8742afb40b3f6f95f0150635c1b01701c33d68f0686c6e98193c8248b7184fc"
+    },
+    "src/tests/verification_mock/root1-int1-ee_1-wrong_eku.crt": {
+      "bytes": 413,
+      "mode": "0644",
+      "sha256": "0df5b07adf95de7712a76a8f74c0797bd895b406d79b9e41e041eee5013c211c"
+    },
+    "src/tests/verification_mock/root1-int1-ee_127.0.0.1-good.crt": {
+      "bytes": 401,
+      "mode": "0644",
+      "sha256": "6ab5deb6b9f5dd773e9f09600043c2892d69e004f26c78a279d20b631bcfa2b0"
+    },
+    "src/tests/verification_mock/root1-int1-ee_127.0.0.1-good.ocsp": {
+      "bytes": 299,
+      "mode": "0644",
+      "sha256": "29d7acfbad20226c8a58124e98119e6f7c00baa8ac3eaa4338bf6f7807c77f8f"
+    },
+    "src/tests/verification_mock/root1-int1-ee_127.0.0.1-revoked.crt": {
+      "bytes": 401,
+      "mode": "0644",
+      "sha256": "ff075ed6e84696e16e11f99273f39478718883033ffafffbc0b026eb704551b7"
+    },
+    "src/tests/verification_mock/root1-int1-ee_127.0.0.1-revoked.ocsp": {
+      "bytes": 316,
+      "mode": "0644",
+      "sha256": "4e147d08adf7f4a19766d965373e6ac4d66913fb7325c2659819d6a123cfbd98"
+    },
+    "src/tests/verification_mock/root1-int1-ee_127.0.0.1-wrong_eku.crt": {
+      "bytes": 402,
+      "mode": "0644",
+      "sha256": "086b150cb861b4b006b75d961909778633298ff549f1a47e466e9b6304105908"
+    },
+    "src/tests/verification_mock/root1-int1-ee_example.com-good.crt": {
+      "bytes": 409,
+      "mode": "0644",
+      "sha256": "cb799e94fea47372f3f62f9040213dfaab2e24627f4be7e526ba3b56e8529a18"
+    },
+    "src/tests/verification_mock/root1-int1-ee_example.com-good.ocsp": {
+      "bytes": 298,
+      "mode": "0644",
+      "sha256": "bdb10aa0879bf04e92bd31155d8999e04fef50d37c14d7a30ca7c621fe4e6ae1"
+    },
+    "src/tests/verification_mock/root1-int1-ee_example.com-revoked.crt": {
+      "bytes": 409,
+      "mode": "0644",
+      "sha256": "eb8898eb76bad21b3039dae314ccf8c97b34794238ed091c8548d0d5bb7da494"
+    },
+    "src/tests/verification_mock/root1-int1-ee_example.com-revoked.ocsp": {
+      "bytes": 315,
+      "mode": "0644",
+      "sha256": "d0418b73ad4befb932c630cd2edc063ea77e1ea0ab8c47a05bf82a6fb3f7cd06"
+    },
+    "src/tests/verification_mock/root1-int1-ee_example.com-wrong_eku.crt": {
+      "bytes": 408,
+      "mode": "0644",
+      "sha256": "7e9c8f4ca355f3a81e32c7259f5ea3ab27fcabe15248a13a46a7d00604098c71"
+    },
+    "src/tests/verification_mock/root1-int1.crt": {
+      "bytes": 441,
+      "mode": "0644",
+      "sha256": "14775f9b30527ab3627be9f370136271589ceebea2d03faaa2693fdda01bc5c9"
+    },
+    "src/tests/verification_mock/root1.crt": {
+      "bytes": 402,
+      "mode": "0644",
+      "sha256": "d226dae97dc69b801e23cafbd0970c299f71e2dce14ad098a07704f637112d8c"
+    },
+    "src/tests/verification_real_world/aws_amazon_com_valid_1.crt": {
+      "bytes": 1620,
+      "mode": "0644",
+      "sha256": "cfa6cb614dbd503d3e4990a3df3e36129425d9e962a29e5d6ffb72e623cdbd6c"
+    },
+    "src/tests/verification_real_world/aws_amazon_com_valid_2.crt": {
+      "bytes": 1122,
+      "mode": "0644",
+      "sha256": "138bdf6e23ac971eb4e626b279dd6a26f057510f1de394293a5eea2860de019b"
+    },
+    "src/tests/verification_real_world/aws_amazon_com_valid_3.crt": {
+      "bytes": 1174,
+      "mode": "0644",
+      "sha256": "87dcd4dc74640a322cd205552506d1be64f12596258096544986b4850bc72706"
+    },
+    "src/tests/verification_real_world/aws_amazon_com_valid_4.crt": {
+      "bytes": 1145,
+      "mode": "0644",
+      "sha256": "28689b30e4c306aab53b027b29e36ad6dd1dcf4b953994482ca84bdc1ecac996"
+    },
+    "src/tests/verification_real_world/letsencrypt_org_valid_1.crt": {
+      "bytes": 1098,
+      "mode": "0644",
+      "sha256": "a82dfa155d33e22a00fde0a2f6464623578d5b101d09923bd1b7f67f1714cecd"
+    },
+    "src/tests/verification_real_world/letsencrypt_org_valid_2.crt": {
+      "bytes": 656,
+      "mode": "0644",
+      "sha256": "97658de8c68dfa98ace1e5028a63d54a1aae911b3e21471076c6850cd08cbab4"
+    },
+    "src/tests/verification_real_world/letsencrypt_org_valid_3.crt": {
+      "bytes": 682,
+      "mode": "0644",
+      "sha256": "0fc0901cca2bae9e9fdbb02d50d02f1094f7b36672086991b9e897626dc485f0"
+    },
+    "src/tests/verification_real_world/letsencrypt_org_valid_4.crt": {
+      "bytes": 1140,
+      "mode": "0644",
+      "sha256": "ee5f7abd6981bb0255632cd8f49283451b4b18844d12040b44ee00f07b8fe2c6"
+    },
+    "src/tests/verification_real_world/mod.rs": {
+      "bytes": 11018,
+      "mode": "0644",
+      "sha256": "f8331682da4d6c94cbe38b96c9efacc6e717e392d2193be02d24d94f057c98b1"
+    },
+    "src/tests/verification_real_world/revoked_badssl_com_1.crt": {
+      "bytes": 1674,
+      "mode": "0644",
+      "sha256": "29abf614b2870ed70df11225e9ae2068e3074eb9845ae252c2064e31ce9fe8a1"
+    },
+    "src/tests/verification_real_world/revoked_badssl_com_1.ocsp": {
+      "bytes": 490,
+      "mode": "0644",
+      "sha256": "4fd0c3b8c0b3097df18779c002fbc15c1766721f0606fd521d2c378d5100b7dc"
+    },
+    "src/tests/verification_real_world/revoked_badssl_com_2.crt": {
+      "bytes": 1365,
+      "mode": "0644",
+      "sha256": "e6fa484a858940d101978555454aa466531ab6c4abc4ad2b000626aaac0d04f9"
+    },
+    "src/verification/android.rs": {
+      "bytes": 12137,
+      "mode": "0644",
+      "sha256": "4fa6ac10410feebe560660642fe784f5cdad631c3468a85249f556005f97db40"
+    },
+    "src/verification/apple.rs": {
+      "bytes": 13189,
+      "mode": "0644",
+      "sha256": "c874abb7dcb9b4542f8bddf51df0e3afaafd9ec710feb735c06db6d2988c5a70"
+    },
+    "src/verification/mod.rs": {
+      "bytes": 2639,
+      "mode": "0644",
+      "sha256": "7bca5f8cc5b80164b52a8290d250f32e5c5e470459d137eec850555efe9a215e"
+    },
+    "src/verification/others.rs": {
+      "bytes": 6953,
+      "mode": "0644",
+      "sha256": "afdd9c4cd053745603014ead548593944ac43ad7424e15b10d52a32e32f0ce22"
+    },
+    "src/verification/windows.rs": {
+      "bytes": 31134,
+      "mode": "0644",
+      "sha256": "6b277079bdd38ddc7d13a813aaeeb0f290905c01e90639f6381d6c96d89f28a2"
+    }
+  },
+  "license_expression": "MIT OR Apache-2.0",
+  "mode_scope": "Published archive file modes (0644), restored after private preparation used 0600; not a claim that Git preserves non-executable read/write permission bits.",
+  "package": "rustls-platform-verifier",
+  "preserved_modified_inputs": [
+    {
+      "published_path": "src/verification/windows.rs",
+      "retained_path": "upstream/windows.rs",
+      "sha256": "6b277079bdd38ddc7d13a813aaeeb0f290905c01e90639f6381d6c96d89f28a2"
+    },
+    {
+      "published_path": "Cargo.toml",
+      "retained_path": "upstream/Cargo.toml",
+      "sha256": "e3cc8a4ba76111e7c153d31ff28988117442c8f6b522b3f3b1efde9fba4509f2"
+    }
+  ],
+  "published_file_bytes": 195524,
+  "published_file_count": 50,
+  "schema_version": 2,
+  "scope": "Exact unmodified published package inputs for a laboratory-only Windows derivative; not graph or execution admission",
+  "selected_grant": "MIT; complete upstream MIT and Apache license files retained",
+  "source_preparation_sha256": "202176e624487013c6d61768a81ae36fba60bcbf81ed0df59db66730e0a6c4bc",
+  "upstream_commit": "252e25161a91af476cbea620e29d277592d27ec7",
+  "version": "0.7.1"
+}

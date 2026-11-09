@@ -1204,14 +1204,61 @@ zero-replacement-cookie decisions remain held for their dependent paths; provide
 graph, ordinary trust and runtime gates remain. Do not repeat completed Core
 contract or qualification stages. The five-GiB full-row/mutation floor and all
 isolation and metric requirements remain unchanged.
+The immediate crypto source child is the reviewed
+[strict laboratory certificate-verifier correction](../../tasks/s0.1-crypto-feasibility.md#s22-strict-laboratory-verifier-source-child--9-november-2026):
+cached-chain refusal settings, initialized policy-call status and checked date
+conversion in the existing Windows route. The subsequent
+[real laboratory KE/exporter producer](../../tasks/s0.1-crypto-feasibility.md#s22-real-laboratory-keexporter-producer--source-contract-9-november-2026)
+now has its source, exact Windows/host graph and advisory/licence policy checks.
+Its current checkpoint passes 24 host unit tests and two actual CLI cases in
+ordinary, verify-release and release profiles, plus both-target compiler/lint
+checks. Earlier private Windows rustdoc and seven external compiler consumers
+retain their unchanged production-source scopes. A demonstrated primary-error
+precedence defect has behavioral RED/GREEN. Its tested standalone lock is
+published locally; product dependencies are unchanged.
+Four constructor controls and the bounded EOF detector supplement the complete
+108-descriptor inventory. All 32 host-present descriptors reconcile as 14 caught
+and 18 compiler-unviable, with no survivor or timeout; unviables receive no kill
+credit, the empty generic-helper denominator has no score, and 76 Windows-only
+descriptors remain unexecuted. Fresh host coverage includes the real CLI while
+retaining the raw threshold failure for the additionally built legacy executable
+and inline-test/absent-Windows limits. These results close no complete 90%/95%
+or native gate.
+Continue the existing provider/packet-AEAD, cookie and production-generation
+contract preparation under that task. Genuine ordinary-store trust, real
+TLS/exporters, cleanup, target/native qualification and complete critical-file
+gates remain held or unfinished before product adoption. Packet AEAD admission
+still gates protected UDP. This selects no shipping
+trust policy and lifts no Windows/native or other execution hold.
+The next independent source child is the existing AES witness's
+[algorithm-15 request-sealing bridge](../../tasks/s0.1-crypto-feasibility.md#s22-laboratory-request-sealing--source-contract-9-november-2026),
+with an independently reviewed two-stage contract and complete-packet oracle.
+Its initial Linux checkpoint now passes both-target graph/policy checks, Clippy,
+19 ordinary/19 release tests and eleven doctests on its recorded candidate.
+Its four declared private source faults now reach the intended assertions, with
+zero generated-mutant credit. Fresh coverage meets each selected 90% line gate
+(36/36 executable lines in each file). The complete seven-mutant campaign has
+seven compiler-unviable outcomes, no runtime kills and no viable denominator;
+both 95% gates remain open. The bounded review now selects preparation of the
+separate mutation-only lint-capped instrument already permitted by hardening
+§9.4; its recipe and execution admission remain pending in the crypto task.
+Ordinary strict compiler/release policy stays unchanged. Provider and native
+qualification remain open. The engine's concrete issuer map
+also retains the missing custody-preserving KE handoff; count-only laboratory
+summaries and fixture counters cannot establish a production association.
 The finite child selects no shipping clock limits
 or defaults. Ordinary NTS retains its priority, while S2.2's provider/graph/trust/
 runtime and cookie-use/association gates remain open. The parallel W11-W05/S3.1
 cloud source child arrived as `c4f434c` under its existing task. Its imported source
-is disjoint from the checked Core inputs. The final private cloud raw evidence
-bundle remains unavailable locally and through PR16/Actions artifacts; obtain and
-independently review it before adopting reported final service metrics. Its
-native/product gaps and all execution holds remain. It owns no Core/engine
+is disjoint from the checked Core inputs. Recovered local service receipts are now
+present under `artifacts/windows-services/recovery-20261107-v1`; the
+[independent W11 revalidation](../../tasks/windows11-integration.md#ordered-continuation-in-the-existing-workstream)
+confirms the narrower three-fact admission and the residual exact-role work.
+The recovered checkpoint matches the parser/native adapter, but not the current
+startup caller (408 matching/33 different source bindings), so its historical
+metrics do not qualify the current service candidate. Retain the explicit source,
+raw-evidence and native/product gaps before adopting metrics. All execution holds
+remain. It owns no Core/engine
 algorithm, shared manifest/lockfile or coordinator qualification policy.
 
 The parallel portable service-diagnostics source arrived in `f9cc578`; its eight

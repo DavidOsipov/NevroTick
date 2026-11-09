@@ -51,3 +51,16 @@ S120 predates the adapter and its two new direct dependency edges. It does not
 qualify this candidate. Recheck the owned manifest/lock/features and both frozen
 policy rows before compiling; the current task record owns later results.
 All Windows execution is stopped under its unresolved Defender incident hold.
+
+The `sealing` module adds a source-prepared laboratory bridge to the existing
+two-stage request formatter: fixed supplied algorithm-15 key32/nonce16, empty
+plaintext, exact ordered AAD/nonce and a 16-byte tag. It exposes no caller-supplied
+shape, sender, association or cookie permission. Dropped preparation retains
+only the formatter's prefix; later failure returns no completed request. Empty
+plaintext cannot detect a K2-only key change through its tag.
+
+Its seven new integration cases and eight external doctest consumers require a
+fresh source/tool/graph admission and independently generated packet fixtures.
+They are not covered by S137/S138. Current execution and oracle results belong
+to the [request-sealing source contract](../../tasks/s0.1-crypto-feasibility.md#s22-laboratory-request-sealing--source-contract-9-november-2026).
+No new complete coverage/mutation, provider or native pass is claimed.

@@ -1,6 +1,6 @@
 # Owned CNG lifecycle fixture only; not product/provider adoption.
 # Exact source/grants and target graph: tasks/s0.1-crypto-feasibility.md, S47-S49.
-# No ring/AWS-LC/duplicate/private-root exception.
+# No ring/AWS-LC/private-root exception; exact Windows-link pair only.
 # Validated against cargo-deny 0.20.2, not rolling example schemas.
 # Run every admitted target/feature row, including build/dev dependencies.
 # This bootstrap policy approves no third-party runtime license yet. Extend the
@@ -46,7 +46,7 @@ deny = [
     { crate = "aws-lc-sys", reason = "Architecture OPEN-1: exact crypto/native license graph remains held." },
     { crate = "aws-lc-fips-sys", reason = "Architecture OPEN-1: AWS-LC native graph remains held." },
 ]
-skip = []
+skip = [{ crate = "windows-link@=0.1.3", reason = "Reviewed KE-only pair: existing Windows 0.61 parents use 0.1.3; verifier windows-sys 0.61.2 uses 0.2.1. Exact parents/features/checksums require separate admission." }]
 skip-tree = []
 
 [bans.build]
