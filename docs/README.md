@@ -28,9 +28,11 @@ to own requirements, and task records own executed evidence.
 
 The [9 November progress reconciliation](plans/development-plan.md#progress-reconciliation--9-november-2026)
 maps completed Core/engine/service and laboratory crypto children to the still-open
-P0–P7 product exits. Its next action is qualification of the authored private
-KE-to-request laboratory handoff, with metadata qualification in its separate
-assigned lane. Recorded fixture/hosted passes do not establish an integrated
+P0–P7 product exits. The private KE-to-request handoff now has its
+[bounded source/host qualification](../tasks/s0.1-crypto-feasibility.md#handoff-sourcehost-final-qualification--9-november-2026).
+The next action is the separately authorized hosted-Windows qualification of
+the laboratory producer/receiver; metadata qualification remains in its separate
+assigned lane. Recorded fixture/host passes do not establish an integrated
 authenticated client, native clock synchronization or release readiness.
 
 | Question | Source of truth |

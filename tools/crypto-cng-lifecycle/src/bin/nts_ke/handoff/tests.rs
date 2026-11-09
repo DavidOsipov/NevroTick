@@ -3,10 +3,11 @@
 use std::cell::Cell;
 use std::time::{Duration, Instant};
 
+use ntp_wire::NtsRequestEncodeError;
 use zeroize::Zeroizing;
 
 use super::{DirectionalKeys, PreparedRequest, prepare};
-use crate::nts_ke::{CancelOutcome, Control, Failure, Phase};
+use crate::nts_ke::{CancelOutcome, Control, Failure, Phase, request::RequestError};
 
 /// Independent complete packet, generated before this receiver existed.
 const PACKET: &[u8; 140] = include_bytes!(concat!(
@@ -120,7 +121,7 @@ fn retired_invocation_has_no_entropy_effect() -> Result<(), Failure> {
 /// # Errors
 /// Propagate setup or cancellation refusal.
 /// # Panics
-/// A refusal is replaced, or the post-entropy currentness guard is omitted.
+/// A refusal is replaced, entropy repeats, or retirement reaches formatting.
 #[test]
 fn entropy_failure_and_post_entropy_cancellation_refuse() -> Result<(), Failure> {
     let control = Control::new(Instant::now())?;
@@ -139,6 +140,60 @@ fn entropy_failure_and_post_entropy_cancellation_refuse() -> Result<(), Failure>
         Ok(())
     });
     assert!(matches!(cancelled, Err(Failure::Cancelled)));
+    assert!(matches!(
+        *control.phase.lock().map_err(|_| Failure::Control)?,
+        Phase::Cancelled
+    ));
+
+    // The same unusable cookie distinguishes the check before formatting from
+    // the later check after sealing; a valid cookie would mask its omission.
+    let unusable = [Zeroizing::new(Vec::new())];
+    for cancel_during_entropy in [false, true] {
+        let control = Control::new(Instant::now())?;
+        let calls = Cell::new(0);
+        let result = prepare(&control, keys(), &unusable, |output| {
+            calls.set(calls.get() + 1);
+            entropy(output)?;
+            if cancel_during_entropy {
+                assert_eq!(control.cancel()?, CancelOutcome::Cancelled);
+            }
+            Ok(())
+        });
+        assert_eq!(calls.get(), 1);
+        if cancel_during_entropy {
+            assert!(matches!(result, Err(Failure::Cancelled)));
+        } else {
+            assert!(matches!(
+                result,
+                Err(Failure::Packet(RequestError::Format(
+                    NtsRequestEncodeError::UnsupportedCookie
+                )))
+            ));
+        }
+        assert!(matches!(
+            (
+                cancel_during_entropy,
+                *control.phase.lock().map_err(|_| Failure::Control)?
+            ),
+            (false, Phase::Open) | (true, Phase::Cancelled)
+        ));
+    }
+
+    // A failed entropy call retains its own error even if it also retires work.
+    let control = Control::new(Instant::now())?;
+    let calls = Cell::new(0);
+    let failed = prepare(&control, keys(), &unusable, |output| {
+        calls.set(calls.get() + 1);
+        output.fill(0xa5);
+        assert_eq!(control.cancel()?, CancelOutcome::Cancelled);
+        Err(Failure::Entropy)
+    });
+    assert!(matches!(failed, Err(Failure::Entropy)));
+    assert_eq!(calls.get(), 1);
+    assert!(matches!(
+        *control.phase.lock().map_err(|_| Failure::Control)?,
+        Phase::Cancelled
+    ));
     Ok(())
 }
 

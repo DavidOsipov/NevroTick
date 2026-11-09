@@ -42,7 +42,10 @@ fn pair(c2s: [u8; 32], s2c: [u8; 32]) -> DirectionalKeys {
 fn complete_request_matches_existing_independent_answer() -> Result<(), RequestError> {
     let mut storage = [0xa5; 256];
     {
-        let request = pair(C2S, [0x55; 32]).seal_request(&COOKIE, &ENTROPY, &mut storage)?;
+        let keys = pair(C2S, [0x55; 32]);
+        assert_eq!(*keys.c2s_key, C2S);
+        assert_eq!(*keys.s2c_key, [0x55; 32]);
+        let request = keys.seal_request(&COOKIE, &ENTROPY, &mut storage)?;
         assert_eq!(request.packet_bytes(), PACKET);
     }
     assert!(storage[140..].iter().all(|byte| *byte == 0xa5));

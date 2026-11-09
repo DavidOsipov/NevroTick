@@ -67,7 +67,9 @@ impl PreparedRequest<'_> {
 /// # Errors
 /// Refuse original currentness before/after entropy and sealing, actual entropy
 /// failure or the real formatter/sealer's rejection. Return no completed packet
-/// or final summary on refusal.
+/// or final summary on refusal. After successful entropy, refuse retirement
+/// before entering the formatter/sealer. An entropy failure retains its error
+/// even if that same call also retires the invocation.
 pub(super) fn prepare<'a>(
     control: &'a Control,
     keys: DirectionalKeys,

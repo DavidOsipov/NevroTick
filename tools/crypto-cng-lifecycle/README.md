@@ -86,8 +86,12 @@ The current combined graph passes exact Linux/Windows admission; the receiver
 passes 40 units plus two actual CLI cases per ordinary/verify-release/release
 profile, both-target lint/compiler checks and nine actual privacy consumers.
 The [ordinary checkpoint](../../tasks/s0.1-crypto-feasibility.md#actual-handoff-ordinary-checkpoint--9-november-2026)
-retains the initial failures and exact scope. **Per-file metrics and native
-qualification remain open.** Earlier results below retain their historical
+retains the initial failures and exact scope. The
+[final source/host checkpoint](../../tasks/s0.1-crypto-feasibility.md#handoff-sourcehost-final-qualification--9-november-2026)
+passes the two selected line gates (51/54 handoff; 25/25 request) and the separate
+eight-fault-per-file manual instrument. Generated outcomes remain handoff seven
+caught/two unviable and request one unviable, with no request score. Native
+qualification remains open. Earlier results below retain their historical
 source scopes; product manifests/provider selection, ordinary trust/native
 cleanup and complete S2.2 remain separate. See the
 [reviewed handoff contract](../../tasks/s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026).

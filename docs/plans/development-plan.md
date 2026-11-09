@@ -1247,19 +1247,26 @@ or timeout remains. A corrected read-only union separately pins its reader and
 frozen native inputs; prior incomplete receipts remain unchanged. This closes
 neither physical confidence, production admission nor S1.4/P1.
 
-**Current executable product task:** qualify the newly authored
+**Completed bounded source/host child:** the
 [actual laboratory KE-to-request handoff](../../tasks/s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026)
 under the independently reviewed
 [S2.2 one-association/request preparation](../../tasks/engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request)
-in its existing ordered handoff. Its [ordinary checkpoint](../../tasks/s0.1-crypto-feasibility.md#actual-handoff-ordinary-checkpoint--9-november-2026)
-now passes fresh graph/policy rows, 40 units plus two actual CLI cases in each
-profile, both-target compiler/lint checks and nine external consumers. Continue
-affected 90%/95% gates and generation-gap review; prepare the separately authorized
-hosted-Windows route under W11 §4.19. Its
-observable exit is a qualified private, never-send laboratory receiver under
-the original control and CNG lifetime, not a production association. Use the
-existing finite one-heavy-job/one-inner-worker recipe and stop on resource
-preflight failure. Cookie reuse and
+now has [final qualification](../../tasks/s0.1-crypto-feasibility.md#handoff-sourcehost-final-qualification--9-november-2026):
+40 units plus two actual CLI cases in each of three profiles, both-target
+compiler/lint checks, private rustdoc, and the two selected 90% line/95% mutation
+gates. Generated and separately admitted manual fault instruments retain distinct
+denominators; the generated request denominator remains empty. Nine external
+consumers retain their exact unchanged-production-source scope. This closes the
+selected source/host child, not the Windows producer or a production association.
+
+**Current executable product task:** prepare and qualify the separately authorized
+hosted-Windows route under W11 §4.19 for the actual laboratory producer/receiver.
+Complete the bounded runner/profile admission before executing the exact probes;
+the local Device Guard refusal remains enforced. The observable exit requires
+actual Windows trust, exporter, closure, original-control handoff and cleanup
+results, not another portable model or cross-build. Use the existing finite
+one-heavy-job/one-inner-worker recipe and stop on resource preflight failure.
+Cookie reuse and
 zero-replacement-cookie decisions remain held for their dependent paths; provider,
 graph, ordinary trust and runtime gates remain. Do not repeat completed Core
 contract or qualification stages. The five-GiB full-row/mutation floor and all
@@ -1307,10 +1314,11 @@ variants and no survivor, timeout or exclusion. The
 retain actual flags, the compiled wipe-defect control and ungenerated guarantees.
 Ordinary strict compiler/release policy stays unchanged. The subsequent
 [actual KE-to-request handoff](../../tasks/s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026)
-now has producer/receiver source with a completed scoped ordinary checkpoint:
+now has producer/receiver source with a completed scoped
+[source/host checkpoint](../../tasks/s0.1-crypto-feasibility.md#handoff-sourcehost-final-qualification--9-november-2026):
 after successful TLS closure it seals the first exact cookie with C2S before
 final commit and original CNG shutdown, then destroys secrets and reports counts
-only. Complete its remaining per-file metrics and native evidence without
+only. Its two selected per-file gates pass; continue hosted/native evidence without
 repeating its contract freeze or the old sealer campaign. A production association/currentness issuer,
 provider and native qualification remain open; counts establish no authority.
 In parallel, the required W11-W05/S0.2
