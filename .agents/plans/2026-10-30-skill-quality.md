@@ -1212,3 +1212,64 @@ instruction/task files, rechecks the final tree, affected links and whitespace,
 and verifies remote `main` after the authorized update. The publication commit
 supplies durable final candidate identity. No product build, runtime experiment,
 native, formal, fuzz or benchmark campaign was run for this documentation slice.
+
+### Tokio Windows source follow-up — 9 November 2026
+
+The user's Windows compatibility/hidden-bug question extends the authorized
+Tokio guidance work. Baseline is published `main` at
+`913a6e8d8cb72c1ce80a419a84dba71aee6a83c2`, initially clean. Three bounded
+read-only research lanes covered runtime/time, networking and upstream fixes/
+advisories; a separate judge independently checked selected sources, current
+callers and existing owners. No numerical confidence is inferred from agreement.
+
+The integrated change preserves the runtime/pins and current S2.2 contract-freeze
+priority. It adds the selected IOCP/QPC resume-progress qualification to W11-W02,
+and the conditional concurrent-poller TCP readiness case to the existing KE
+driver choice. Final validity and timely wakeup remain distinct. Conditional
+thread-creation failure stays at T-R-02; unused ancillary, pipe and foreign-waker
+APIs stay in the dated existing OS review, not the reusable skill inventory.
+That review retains all ten current three-package RustSec exclusions and the
+remaining native evidence; it is no whole-graph audit or bug-free assurance.
+
+The judge corrected the upstream lane's socket2 #673 disposition: maintainer
+reproduction and merged #674 substantiate the alias violation, but the fix is
+absent from 0.6.5. Both Miri models are upstream modeled evidence, not a Windows
+failure; current engine callers remain excluded. The scratch lane was corrected
+before integration. The two principal findings survived source/caller challenge;
+no runtime, dependency, feature, timer workaround or native experiment was adopted.
+
+Serena/Probe and context-mode were not exposed in this session. Focused direct
+source reads were used as the documented fallback; a failed exact-version
+Context7 query supplied no evidence. Microsoft Learn/pinned upstream sources
+support the material rules. The existing skill routing is unchanged; only its
+conditional Tokio reference and source register are extended. Validation and
+integrated-review results follow on the final documentation candidate.
+
+The complete seven-file candidate was frozen as validation commit
+`2db1f0c54048f3c8d69078323d32b0ed07652f94`, tree
+`4efa7b49aeffdf07750d8410016f13939cddea22`, parent `913a6e8d`.
+A separate clean materialization matched all 1,991 tracked paths, modes and
+raw blob bytes; repository attributes introduced no transformations. Its skill
+checker passed all 66 packages and the matching skill-creator validator passed
+Implement Rust. All 704 local links/anchors across the seven changed Markdown
+files resolved. The initial heading-only link check flagged an existing explicit
+HTML compatibility anchor; verifying that anchor resolved the checker limitation
+without a repository link change. Staged whitespace checks passed.
+
+The independent judge read the complete seven-file diff, full revised Tokio
+reference and relevant canonical context. Its integrated content verdict was
+**READY**, with no required content fixes. The two decision-comprehension
+paragraphs were:
+
+> I would preserve the original deadline and fresh control checks at the actual pilot/series publication boundary, while treating post-resume execution latency as a separate unanswered question. When W11-W02's native gate permits it, I would compare an ordinary successful exchange with a quiet exchange suspended across expiry, recording the deadline, actual notification, first owner execution and refusal/retirement before a deliberately added wake could mask the delay. A short-suspend case must test generation invalidation even when expiry has not occurred, followed by fresh reacquisition. Same-driver Sleep controls, paused Tokio time and the 30-second laboratory cap would supply neither that evidence nor a service-stop bound.
+
+> I would freeze the actual TCP/TLS poller, reactor, resolver and synchronous-verifier ownership. An active Runtime::block_on on the same current-thread runtime is necessary for a worker using Handle::block_on, but the resulting concurrent polling arrangement also makes the Windows readiness concern relevant. At the admitted selected-adapter checkpoint, I would compare healthy complete KE with controlled partial/paused reads reaching WouldBlock while writable, observing CPU, useful progress, controls and retirement under an independent watchdog. A same-owner comparison remains a bounded fixture control; it does not authorize blocking certificate verification on the production control thread. The complete synchronous route retains its own permits, deadlines, actual completion and stop obligations.
+
+This is a reviewed document/decision-comprehension result, not an unseen skill
+trial, measured uplift or executed product qualification. The judge ran no checks;
+the validations above are publisher observations. The final publisher binds this
+receipt-only addition to the unchanged six judged guidance/task documents,
+rechecks the final tree, links and whitespace, and verifies remote `main` after
+the already-authorized commit. The publication commit supplies the durable final
+identity. Native progress, stop, resources and service behavior remain unqualified;
+all existing execution holds and post-V1 formal deferral are preserved.

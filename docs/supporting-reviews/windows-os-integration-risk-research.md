@@ -332,6 +332,174 @@ retain candidate-specific review/validation and remaining gaps. The existing
 development queue already routes this research through W11 §4.37; its order,
 Core priority, Store-first/interim-signing decisions and execution holds remain.
 
+## 9. Tokio and Windows follow-up — 9 November 2026
+
+**Scope and candidate:** bounded primary-source research against NevroTick
+`913a6e8d8cb72c1ce80a419a84dba71aee6a83c2`, dated 9 November 2026,
+Asia/Tbilisi. Three separate runtime, networking and upstream/advisory reviews
+were reconciled by an independent judge. This extends the existing OS review;
+it is neither a full dependency audit nor a native Windows result.
+
+The engine pins Tokio **1.54.1** with defaults disabled and only
+`rt/net/time/sync/macros`; the lock selects Mio **1.2.4** and socket2 **0.6.5**.
+Actual consumers privately drive a current-thread runtime, use numeric-address
+UDP, and submit no production blocking KE jobs. The separate KE laboratory
+uses synchronous standard TCP/Rustls. No current engine caller selects async TCP,
+`Handle::block_on`, named pipes, socket2 `MsgHdrMut`/`recvmsg`, a custom panicking
+waker, or catch-and-reuse recovery of the runtime. Named pipes can be available
+through `net`; their exclusion here is by caller, not disabled API availability.
+
+### 9.1 Suspend can delay delivery after an elapsed deadline
+
+**Current selected mechanism; native consequence remains unmeasured.**
+[Mio #2006](https://github.com/tokio-rs/mio/issues/2006) remains open; its Windows 11
+report used Mio 1.2.2/Tokio 1.53.1. The selected source was checked separately:
+[Rust 1.99.1 Instant](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/library/std/src/sys/time/windows.rs)
+uses QPC, the [pinned Tokio time driver](https://github.com/tokio-rs/tokio/blob/b53b2001ed2ccfd9b87e32a0c6da1a1eebdc80b8/tokio/src/runtime/time/mod.rs)
+passes a remaining duration to its underlying park, and
+[Mio 1.2.4 IOCP](https://github.com/tokio-rs/mio/blob/79d1417c94e3a45c8bdd796e5422e22e8c488086/src/sys/windows/iocp.rs)
+passes it to `GetQueuedCompletionStatusEx` through its
+[selector](https://github.com/tokio-rs/mio/blob/79d1417c94e3a45c8bdd796e5422e22e8c488086/src/sys/windows/selector.rs).
+Microsoft documents [QPC including suspend](https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps)
+while [IOCP relative waits exclude low-power time](https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-getqueuedcompletionstatusex)
+on Windows 8/Server 2012 and newer. No resume adjustment was found in those
+selected driver paths. [Tokio PR #8344](https://github.com/tokio-rs/tokio/pull/8344)
+was closed **unmerged**; the maintainer rejected its once-per-second wakeup approach.
+
+If the machine suspends during a quiet pending wait, the QPC deadline can pass
+while the native wait retains active time. Without another wake, post-resume
+delivery can wait approximately that remaining pre-suspend timeout, subject to
+scheduling. This is distinct from total lateness measured across sleep; it is
+not automatically an extra delay equal to the entire suspend or an infinite hang.
+The current lab's 30-second lifetime cap narrows exposure but establishes no
+service-stop latency guarantee.
+
+The engine's final `Instant`/control checks reject overdue results once execution
+resumes. That is meaningful contrary evidence against false-fresh acceptance,
+not evidence of prompt wakeup. Its stop/invalidation timers use the same Tokio
+`Sleep` driver. An independently invoked `ControlHandle` update can wake it,
+but there is no native automatic-resume observer in the current engine. A short
+suspend also needs the planned generation invalidation even if expiry has not
+occurred. The lab is not a qualified product resume adapter.
+
+[W11-W02](../../tasks/windows11-integration.md#w11-w02-reconcile-sleep-timers-and-clock-presentation)
+already explicitly owns this IOCP/low-power distinction, unattended resume and
+clock-generation behavior. Carry the exact selected-version evidence to that
+owner and the actual S2.1/S2.2 consumer, with W11-W05/S3.1 for service lifecycle;
+CHECK-27 owns progress/stop and CHECK-21 reached resource observations. When
+native execution is permitted, compare a healthy exchange with a quiet pending
+exchange suspended across its deadline. Record the authoritative deadline, native
+resume notification, first owner execution, final disposition and termination;
+pair a new valid exchange. A separately timed owned wake can distinguish parked
+driver delay from admission failure. A generic timer demo or paused Tokio time
+does not qualify the real consumer. No polling cap, power callback or global
+timer-resolution change is selected by this research.
+
+### 9.2 Concurrent TCP polling needs a Windows qualification at the KE choice
+
+**Future integration applicability; not reproduced in the current UDP owner.**
+[Mio #1963](https://github.com/tokio-rs/mio/issues/1963) and
+[Tokio #8054](https://github.com/tokio-rs/tokio/issues/8054) remain open. The concrete
+Windows 11 report used Tokio 1.52.0, Hyper TCP, a separate thread polling I/O
+under entered runtime context, and a concurrently active reactor. Re-arming a
+blocked read also re-arms writable interest; repeated writable notifications can
+change the shared readiness tick before the reader clears it, causing high CPU
+and delayed progress. The report does not establish the first affected release
+or a complete affected-version range.
+
+Selected [Mio `do_io`](https://github.com/tokio-rs/mio/blob/79d1417c94e3a45c8bdd796e5422e22e8c488086/src/sys/windows/mod.rs)
+still re-registers the full stored interest after `WouldBlock`, and pinned
+[Tokio ScheduledIo](https://github.com/tokio-rs/tokio/blob/b53b2001ed2ccfd9b87e32a0c6da1a1eebdc80b8/tokio/src/runtime/io/scheduled_io.rs)
+still has the shared tick and mismatch guard. [Tokio PR #8066](https://github.com/tokio-rs/tokio/pull/8066)
+is closed **unmerged**; [Mio PR #2001](https://github.com/tokio-rs/mio/pull/2001)
+is open and unmerged. Neither status establishes a shipped fix.
+
+The present private current-thread runtime polls its UDP futures and driver on
+the same owner thread. Its UDP receive also uses `Registration::async_io`, rather
+than the report's TCP `PollEvented::poll_read`. This excludes the concrete reported
+concurrent arrangement; it is no general proof against all readiness bugs.
+
+**Supported inference:** an offloaded async KE worker using `Handle::block_on`
+while another thread runs the same runtime's `Runtime::block_on` recreates the
+relevant reader/reactor concurrency. A live driver solves the driver-lifetime
+dependency but does not exclude this race. Before adopting that arrangement,
+qualify the actual selected TCP/TLS adapter with partial/paused controlled-peer
+reads reaching `WouldBlock` while the socket is writable. Observe CPU, useful
+progress, control-stop and retirement using an independent finite watchdog;
+pair a valid complete exchange and a same-owner polling control. A complete
+synchronous KE worker avoids this Tokio TCP path, while retaining all native
+verification, capacity, deadline and stop obligations. This refines existing
+S2.2/T-R-01 and CHECK-21/26/27; it selects no adapter or runtime replacement.
+
+### 9.3 Advisory exclusions and shipped Windows corrections
+
+All ten current RustSec records retrieved from the Tokio, Mio and socket2 crate
+directories at [advisory-db revision e384e80f](https://github.com/RustSec/advisory-db/tree/e384e80f7fa432a2a93fe39300237e3ba3f94b56/crates)
+classify the selected versions within a patched range. The table
+shows the modern patched branch relevant to these pins; older backport ranges
+remain in the linked records. This bounded result covers these three packages,
+not the entire dependency graph or unknown defects.
+
+| Record | Modern patched branch / selected-graph disposition |
+| --- | --- |
+| [Tokio 2021-0072](https://rustsec.org/advisories/RUSTSEC-2021-0072.html) | `>=1.8.1`; selected 1.54.1 is patched. LocalSet abort/drop-thread issue. |
+| [Tokio 2021-0124](https://rustsec.org/advisories/RUSTSEC-2021-0124.html) | `>=1.13.1`; patched. oneshot close race. |
+| [Tokio 2023-0001](https://rustsec.org/advisories/RUSTSEC-2023-0001.html) | `>=1.23.1`; patched; no current named-pipe caller. |
+| [Tokio 2023-0005](https://rustsec.org/advisories/RUSTSEC-2023-0005.html) | `>=1.24.2`; patched; the affected split/unsplit API's `io-util` feature is also absent. |
+| [Tokio 2025-0023](https://rustsec.org/advisories/RUSTSEC-2025-0023.html) | `>=1.44.2`; patched. Broadcast Send/Sync issue. |
+| [Tokio 2026-0384](https://rustsec.org/advisories/RUSTSEC-2026-0384.html) | `>=1.54.1`; only 1.54.0 Interval on the multi-thread runtime is affected; Sleep/Timeout are explicitly excluded. Already recorded in §3 above. |
+| [Tokio 2026-0386](https://rustsec.org/advisories/RUSTSEC-2026-0386.html) | `>=1.53.3`; advisory classifies the pin as patched; Unix AsyncFd is outside this Windows caller. Remediation deprecates old safe constructors in favor of unsafe registration; it does not make every legacy caller valid. |
+| [Mio 2020-0081](https://rustsec.org/advisories/RUSTSEC-2020-0081.html) | `>=0.7.6`; selected 1.2.4 is patched. SocketAddr layout assumption. |
+| [Mio 2024-0019](https://rustsec.org/advisories/RUSTSEC-2024-0019.html) | `>=0.8.11`; patched; the named-pipe deregistration/token issue excludes other I/O resources. |
+| [socket2 2020-0079](https://rustsec.org/advisories/RUSTSEC-2020-0079.html) | `>=0.3.16`; selected 0.6.5 is patched. SocketAddr layout assumption. |
+
+The [Mio 1.2.4 changelog](https://github.com/tokio-rs/mio/blob/79d1417c94e3a45c8bdd796e5422e22e8c488086/CHANGELOG.md)
+also records socket noninheritance in 1.2.1 and named-pipe submission-failure UAF
+repair in 1.2.4. The current UDP constructor independently uses std bind →
+nonblocking → Tokio import. socket2's
+[0.6.5 source changelog](https://github.com/rust-lang/socket2/blob/239dd83a4ced08e514d2c38942aab99791119f0d/CHANGELOG.md)
+inherits the 0.6.4 Windows `only_v6` boolean-width correction. These shipped fixes
+must not be presented as outstanding defects of the selected versions.
+
+### 9.4 Conditional callers and remaining evidence
+
+| Evidence / actual status on the review date | Current exclusion and integration trigger |
+| --- | --- |
+| [Tokio #8766](https://github.com/tokio-rs/tokio/pull/8766), merged 7 November, after 1.54.1 | Windows thread-creation error 1450 was not treated as temporary even when an existing blocking worker could later run the queued job. The fix is absent from the pin. No current engine blocking jobs; carry failure classification/progress into the actual S2.2 worker/resolver seam under T-R-02, CHECK-21/27. A merged change is no released upgrade. |
+| [socket2 #673](https://github.com/rust-lang/socket2/issues/673), closed by [#674](https://github.com/rust-lang/socket2/pull/674), merged 10 October after 0.6.5 | Maintainer reproduced `MsgHdrMut::with_addr` alias/provenance violation; the reporter confirmed both Stacked Borrows and Tree Borrows model fixes. Fix commit `da6885e6a2be84dbcec0b60b0dd1d70c473f62c9` is absent from the pin. No current engine caller; inspect the fixed API/source before any W11-W01 ancillary/timestamp adapter selects it. No Windows-native failure or miscompilation was demonstrated by this evidence. |
+| [Tokio #8733](https://github.com/tokio-rs/tokio/issues/8733), open against 1.54.1 | Foreign waker panic during a current-thread driver turn, caught unwind and runtime reuse can lose driver/core state; reported on macOS in a shared source path. The current engine has no such waker/reuse route. Reassess only if foreign callbacks or recovery make it reachable; ordinary task-panic settlement is a different mechanism. |
+| [Mio #2028](https://github.com/tokio-rs/mio/pull/2028), merged 4 November after 1.2.4 | Named-pipe reuse correction is absent from the pin and explicitly leaves #1944's handle leak unfixed. No current pipe consumer. Revisit at the actual IPC wrapper selection under existing §5.4/native lifetime owners; Tokio remains engine-only. |
+
+Current UDP handles Windows `WSAEMSGSIZE`/10040 as consumed oversize, never parses
+the partial buffer or invents sender identity, and bounds rejection. Winsock
+[recvfrom](https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-recvfrom)
+also documents ICMP-related `WSAECONNRESET`/10054; current ordinary receive errors
+terminate the request without publishing a measurement. These already-owned
+cases justify no blanket error suppression. Cancel-safe Tokio UDP reception
+uses synchronous nonblocking payload reads after readiness; it does not by itself
+leave that application buffer in an outstanding overlapped payload receive.
+Mio's separate asynchronous AFD poll-state lifetime still needs actual native
+completion/resource qualification under existing CHECK-27. No new leak was proved.
+
+The dramatic [Tokio #8342](https://github.com/tokio-rs/tokio/issues/8342) Windows
+multi-thread deadlock report was ultimately attributed by a maintainer to an
+application bug. It must not be substituted for the distinct IOCP suspend finding.
+Other interval-population, retained-observer, process or pipe reports need their
+actual consumer; compiled availability alone establishes no current exposure.
+
+**Limits and disposition:** issue discovery was bounded, not every upstream issue
+or dependency path; primary comments, merged flags, release/registry data and
+selected mechanisms were cross-checked. Serena/Probe and context-mode were not
+exposed, so focused direct source reads were used; the attempted exact-version
+Context7 query supplied no matching evidence. Microsoft Learn and pinned GitHub
+sources supplied the relevant facts. No native experiment, product build/test,
+benchmark, fuzzing or formal job was executed. Windows 11 26H2/Server 2025 native
+qualification, existing execution holds, provider/trust gates and S2.2's current
+contract-freeze priority remain unchanged. Confidence is strongest for documented
+OS semantics, inspected source and version/caller exclusions; exact NevroTick
+timing/failure behavior remains unmeasured. No numerical failure probability or
+bug-free assurance is supported.
+
 ## Primary references
 
 The references below are linked at the claims and dispositions they support.

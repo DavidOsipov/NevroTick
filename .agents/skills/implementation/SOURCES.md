@@ -103,6 +103,17 @@ The immutable upstream revision is
 declares 1.54.1, edition 2021 and Rust 1.85 minimum. That minimum fits the
 project's 1.99.1 toolchain; it supplies no new graph or Windows qualification.
 
+The [Windows follow-up](../../../docs/supporting-reviews/windows-os-integration-risk-research.md#9-tokio-and-windows-follow-up--9-november-2026)
+rechecks this source against NevroTick `913a6e8d`, Mio 1.2.4 at
+`79d1417c94e3a45c8bdd796e5422e22e8c488086` and socket2 0.6.5. Its primary
+Microsoft IOCP/QPC contracts and immutable Tokio/Mio paths support separate
+resume-wakeup and final-validity obligations. Mio full-interest rearming and
+Tokio's shared readiness tick also require a selected-consumer qualification
+when async I/O polling moves to a thread concurrent with the reactor. These are
+source-grounded qualification concerns, not NevroTick native reproductions.
+Dated issue/fix/advisory dispositions and conditional API callers stay in that
+existing review and the S2.2/W11-W02 tasks, outside reusable skill rules.
+
 | Primary evidence | Finding retained |
 | --- | --- |
 | [Handle](https://docs.rs/tokio/1.54.1/tokio/runtime/struct.Handle.html#method.block_on), [Runtime](https://docs.rs/tokio/1.54.1/tokio/runtime/struct.Runtime.html) | A current-thread worker using Handle::block_on needs another active Runtime::block_on for I/O/timers. Context, handle access, active driving and runtime ownership differ. Shutdown waiting does not terminate native work. |

@@ -3089,8 +3089,35 @@ packet-rate policy; retain burst/backoff bounds, current generations and final
 send eligibility, with adaptive one-shot `sleep_until` still an alternative.
 When that consumer exists, delay it across nominal periods and observe actual
 packet times/counts, invalidation and healthy-source progress under CHECK-21/27;
-W11-W01/CHECK-11 owns real suspend/mapping behavior. There is no current engine
+W11-W02/W11-W01 and CHECK-11 own native suspend/mapping evidence. There is no current engine
 Interval consumer. This later trigger does not precede or displace S2.2's freeze.
+
+#### Windows findings at the same freeze — 9 November 2026
+
+The [bounded Windows review](../docs/supporting-reviews/windows-os-integration-risk-research.md#9-tokio-and-windows-follow-up--9-november-2026)
+checked baseline `913a6e8d`, selected Tokio 1.54.1/Mio 1.2.4/socket2 0.6.5,
+actual engine callers and upstream status. It establishes source evidence,
+not a native failure reproduction or integration pass. Preserve S2.2's
+producer/receiver contract-freeze priority and all existing execution holds.
+
+| Existing refinement / owner | Additional condition at that real consumer |
+| --- | --- |
+| **T-R-01**, complete async KE arrangement; CHECK-21/26/27 | A worker polling Tokio TCP through `Handle::block_on` concurrently with the live reactor recreates the relevant arrangement of open Mio #1963/Tokio #8054. The inspected pins retain the mechanism; proposed Tokio #8066 is unmerged and Mio #2001 remains open. Freeze the actual read API/thread topology and eventual native qualification: paused/partial controlled-peer reads reaching WouldBlock, CPU/useful/control progress and retirement under an independent finite watchdog, beside healthy complete KE and a same-owner polling control. A live driver alone does not qualify this arrangement. A complete synchronous KE worker avoids this Tokio TCP path without relaxing native-work obligations. |
+| **T-R-02**, real worker/resolver submission; CHECK-21/27 | Tokio #8766's Windows error-1450 classification fix merged after 1.54.1 and is absent from the pin. Current production source submits no blocking jobs. At the selected seam, account for thread-creation failure and truthful refusal/queued-work custody beside healthy admitted completion; distinguish failure with and without an existing worker. Recheck released fix status through CHECK-26 when choosing the integration candidate. No current pin/cap/feature change follows. |
+
+For current and future timers, carry the selected IOCP/QPC suspend mismatch to
+[W11-W02](windows11-integration.md#w11-w02-reconcile-sleep-timers-and-clock-presentation)
+and the reached S2.1/S2.2 resume consumer, with W11-W05/S3.1 for service stop.
+Final elapsed-time checks remain necessary but do not make a parked driver wake
+promptly; stop/invalidation Sleeps on that driver are not independent resume
+wakes. The native resume-to-generation/control path remains to be integrated and
+qualified, including short suspend before expiry. Preserve existing valid-neighbor
+and stale-publication controls; the 30-second lab cap is no service-stop guarantee.
+
+The linked review keeps patched-advisory exclusions and conditional socket2
+ancillary, named-pipe and foreign-waker cases at their actual later callers.
+Revisit those if the frozen integration changes reachability; do not add unrelated
+APIs, a broad new campaign or runtime-replacement work to this contract slice.
 
 ### Observable exit and Windows boundary
 

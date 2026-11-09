@@ -3776,6 +3776,14 @@ even at/after expiry. Neither that value nor a wrapper timeout settles native
 work. The existing [S2.2 follow-up](../tasks/engine-transport-pilot.md#tokio-refinements-at-the-ke-boundary--9-november-2026)
 owns the pending integration cases. [S73]
 
+Keeping that driver active does not by itself qualify Windows TCP progress when
+an offloaded worker polls I/O concurrently with it. Before admitting that route,
+apply the [selected-version Windows findings](supporting-reviews/windows-os-integration-risk-research.md#92-concurrent-tcp-polling-needs-a-windows-qualification-at-the-ke-choice)
+at the actual KE adapter and the existing CHECK-21/26/27 owners. Separately,
+[W11-W02](../tasks/windows11-integration.md#w11-w02-reconcile-sleep-timers-and-clock-presentation)
+owns the native resume-to-generation/wakeup path: final elapsed-time guards and
+same-driver control timers do not establish prompt post-suspend execution.
+
 **Synchronous NTS-KE remains an allowed prototype route:** Rustls `StreamOwned` exposes ordinary `Read`/`Write` with access to its connection. A fixed, admitted worker can own the complete exchange instead of using `tokio-rustls`; choose and qualify one arrangement before integration. The same provider/license, certificate-policy, TLS 1.3, ALPN/exporter, complete-request flush, bounded parsing and generation checks apply. A socket timeout does not establish a deadline for native certificate verification or the whole exchange. Retain the actual job's permit and apply section 17.1's stop/recovery contract whichever transport is selected. This option clears no held TLS or Windows-trust gate. [S73, S75]
 
 #### 18.7.2 Certificate policy is a separate Windows integration decision

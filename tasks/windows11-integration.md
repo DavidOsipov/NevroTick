@@ -244,6 +244,26 @@ authoritative deadline on execution rather than treating that timeout as elapsed
 freshness. Cover unattended/automatic resume without UI activity and the
 sleep-to-hibernation transition; no power callback promises execution by a deadline.
 
+**Tokio selected-version refinement — 9 November 2026:** the
+[Windows follow-up](../docs/supporting-reviews/windows-os-integration-risk-research.md#91-suspend-can-delay-delivery-after-an-elapsed-deadline)
+traces Tokio 1.54.1/Mio 1.2.4 to the existing IOCP/QPC distinction. Mio #2006
+remains open; Tokio #8344 was closed unmerged. The engine's final elapsed-time
+guards reject overdue results once polled, but its stop/invalidation Sleeps use
+that same driver and it has no native automatic-resume observer. An externally
+invoked control update can wake it; that is no implemented resume integration.
+The lab's 30-second cap is no qualified service-stop bound. This is new exact-pin
+evidence for this existing owner, not a newly missing architectural contract.
+
+Carry the actual resume-to-generation/control consumer into S2.1/S2.2 and
+W11-W05/S3.1 as reached. When native execution is permitted, pair a healthy
+exchange with a quiet pending exchange suspended across expiry and resumed
+without UI/network activity. Observe deadline, notification, first owner execution,
+final rejection/retirement and a subsequent valid exchange; include short-suspend
+generation invalidation. A separately timed owned wake can distinguish parked
+driver delay from a faulty final guard. CHECK-27 retains progress/stop, CHECK-21
+reached resource observations, and existing CHECK-10/11/12 retain clock/mapping
+effects. No timer-resolution workaround or native execution is admitted here.
+
 **Controls/exit:** pure traces distinguish elapsed freshness from active work;
 healthy recovery accepts fresh results while stale ones fail. Later permitted
 native cases cover actual S3/S4 and Modern Standby hardware, AC/DC, delayed

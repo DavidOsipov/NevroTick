@@ -7,6 +7,7 @@ guidance; it selects no new runtime, TLS adapter, feature or execution campaign.
 
 - [Check the actual feature boundary](#check-the-actual-feature-boundary)
 - [Keep the driver alive and active](#keep-the-driver-alive-and-active)
+- [Qualify Windows driver and timer behavior](#qualify-windows-driver-and-timer-behavior)
 - [Review blocking-pool dependencies](#review-blocking-pool-dependencies)
 - [Settle owned tasks explicitly](#settle-owned-tasks-explicitly)
 - [Choose channels by delivery semantics](#choose-channels-by-delivery-semantics)
@@ -47,6 +48,39 @@ that route has no Tokio I/O-driver dependency for its synchronous transport.
 An async TLS adapter does not make its synchronous verifier nonblocking, and a
 timeout cannot interrupt that callback. Preserve the existing complete-worker
 choice and native stop/recovery contract; no nested runtime per request follows.
+
+## Qualify Windows driver and timer behavior
+
+An active driver is necessary but does not establish correct progress for every
+polling arrangement. Before selecting an offloaded async KE worker, compare the
+actual TCP/TLS read path and its polling thread with the I/O-driver thread.
+The [dated Windows review](../../../../../docs/supporting-reviews/windows-os-integration-risk-research.md#9-tokio-and-windows-follow-up--9-november-2026)
+records an unresolved Windows readiness race whose mechanism remains in the
+inspected pins. A worker running `Handle::block_on` while another thread drives
+the reactor recreates the relevant concurrent arrangement; keeping the driver
+active alone does not exclude it. The current private same-thread UDP owner
+does not reproduce that reported topology. Qualify the selected adapter with
+paused/partial peer reads, a healthy complete exchange, independent finite
+watchdog and actual CPU/control-progress observations. A complete synchronous
+KE worker avoids this Tokio TCP path while retaining its own custody/stop duties.
+
+Keep elapsed-time validity separate from wakeup delivery after Windows suspend.
+Windows QPC includes suspended time, while modern Windows IOCP relative waits
+exclude low-power time. A pending driver wait may therefore remain parked after
+its QPC deadline until another wake or the remaining active-time wait elapses.
+Final deadline checks reject overdue results once polled; they do not establish
+prompt resume or stop. Stop/invalidation `Sleep` jobs on that same driver are
+not independent resume wakes. Name the actual native resume-to-generation/control
+owner, preserve exchange invalidation even for a short suspend, and qualify the
+real consumer's unattended wake/progress path through
+[W11-W02](../../../../../tasks/windows11-integration.md#w11-w02-reconcile-sleep-timers-and-clock-presentation).
+The lab's finite timeout cap is no qualified service-stop bound. Neither paused
+Tokio time nor changing timer resolution supplies this Windows evidence.
+
+Recheck issue status, merged commit, published package and reached caller
+separately at integration. Keep dated advisories and conditional adapter cases
+in the linked review/task; do not treat an open issue as current exploitation,
+a closed PR as a shipped fix, or a dependency's presence as an executed API.
 
 ## Review blocking-pool dependencies
 
