@@ -3,6 +3,11 @@
 Read canonical architecture sections 9–11, 17.1 and 18.1 before boundary changes.
 Choices implement those responsibilities, not replacement service design.
 
+- [Unsafe and handle ownership](#unsafe-and-handle-ownership)
+- [Directional secret APIs](#directional-secret-apis)
+- [Async, bounded work and state](#async-bounded-work-and-state)
+- [Checks that correspond to claims](#checks-that-correspond-to-claims)
+
 For newer pointer/provenance, initialization, atomic or blocking-library APIs,
 use [modern stable Rust](modern-rust.md). Preserve this reference's ownership and
 completion contracts when substituting a newer mechanism.
@@ -29,11 +34,33 @@ prove no enduring caller identity. Check capacities, UTF-16 terminators and byte
 element lengths. Never transmute representations or add unsafe Send/Sync to bypass
 failed design.
 
+Use standard handle owners/borrows only where their destructor, rights and thread
+contract fit. Preserve explicit fallible completion when close failure affects
+acceptance; generic RAII alone does not preserve that outcome or thread affinity.
+
 Declare unsafe operations even inside unsafe functions; separate caller obligations
 from implementation's unsafe blocks. No unwinding across Windows FFI. Recoverable
 input/OS errors return explicit results. Chosen abort/SCM recovery needs Windows
 proof; RAII promises no cleanup after abort/process death. Critical persistent
 effects need recovery records/reconciliation at existing owner.
+
+## Directional secret APIs
+
+For same-shaped directional secrets, consider one private exclusive pair with
+direction-specific operations such as request sealing and response opening.
+Separate non-Clone key types are an alternative when real consumers need distinct
+custody; do not introduce them mechanically. Keep construction at the actual
+secret producer (the same-connection exporter for NTS), without public raw
+constructors/getters or generic key selectors that bypass the intended boundary.
+Retain byte/cookie bounds and cleanup.
+
+Direction does not prove correct exporter context, same-association binding,
+current trust/generation or authentication. Preserve those checks at their real
+producer and serialized effect owners. At the actual receiver seam, pair useful
+accepted behavior with independently specified wrong-context/wrong-key rejection.
+Use compile-fail controls only for capabilities the real API excludes; if an
+encapsulated pair removes caller key selection, invent no surrogate selector to
+obtain a type error. Type rejection cannot validate a buggy private constructor.
 
 ## Async, bounded work and state
 
@@ -47,6 +74,32 @@ including late native completion. Bound blocking queues, outstanding OS requests
 connections/retries as well as futures. Define shutdown drain/stop/late-completion
 behavior. Hold no state lock across arbitrary blocking/async calls unless owner
 deliberately requires it with understood deadlock/responsiveness consequences.
+
+If the selected worker boundary uses bounded Tokio `mpsc`, consider
+`Sender::try_reserve_owned` before submission to reserve completion capacity
+without waiting. Admit job count, completion slot and result-byte allowance as
+one transaction; bound admission attempts instead of accumulating reserve waiters.
+Arrange issuance or explicit not-started rollback so pre-submission refusal leaks
+no charge. Dropping a non-dropping actual-work permit does not roll it back, and
+its physical-completion operation must not report work that never started.
+
+Move completion capacity and actual-work custody with the real job. Channel
+permit destruction proves neither native completion nor result retirement. Keep
+result/secret bytes owned and bounded until acceptance or rejection and disposal;
+delivery, current-generation acceptance and physical completion are distinct.
+`OwnedPermit::send` returns a `Sender`, not a delivery acknowledgement or an
+unsent-value recovery result. Receiver drop, worker panic and stale completion
+must reach the real completion/recovery owner without losing that custody.
+
+`Receiver::close()` still permits already-reserved sends: retain the receiver and
+drain until `recv()` returns `None`. A stuck native job can retain its permit and
+prevent that drain from finishing; preserve truthful diagnosed shutdown/recovery,
+not an assumed finite termination guarantee. Fixed result slots or retained/joined
+job owners may be simpler for a small fixed population; add no channel just to use
+this API. Exercise the chosen real admission/retirement path with a held job,
+cancellation, close versus drop, panic and a healthy neighbor. Observe work/byte
+bounds, late-result retirement and denied stale effects independently; a channel
+demonstration alone qualifies no native stop or association integration.
 
 Use monotonic deadlines/injectable deterministic clocks for pure scheduling tests.
 Distinguish elapsed monotonic, Windows UTC and active-awake semantics; qualify

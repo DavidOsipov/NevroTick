@@ -45,6 +45,17 @@ execution permission.
 | [Cargo manifests and lockfiles](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) | Exact resolution preserves the selected dependency; intended-upstream identity remains a separate admission question. |
 | [Spracklen et al., package-hallucination research, v3](https://arxiv.org/abs/2406.10279v3) | Original Python/JavaScript research motivates checking generated package names against the intended upstream; it establishes no Rust or current-model prevalence. |
 
+### Publish-age watchlist — 9 November 2026
+
+The [Cargo reference](dependency-updates/references/cargo-operations.md#future-publish-age-watchlist--9-november-2026)
+retains a future evaluation trigger; it selects no delay, toolchain update or
+configuration. Registry-age policy cannot replace source/dependency admission.
+
+| Primary source inspected | Applied finding |
+| --- | --- |
+| [Beta Cargo configuration](https://doc.rust-lang.org/beta/cargo/reference/config.html#registryglobal-min-publish-age) and [stable configuration](https://doc.rust-lang.org/cargo/reference/config.html) | Beta documents the settings as respected from 1.100+; stable 1.99.1 lacks them. Lockfile exemptions, overrides and absent registry publication-time support limit coverage; recheck released behavior before any later adoption. |
+| [RFC 3923](https://rust-lang.github.io/rfcs/3923-cargo-min-publish-age.html) | Motivation and proposal history; the shipped configuration/resolver contract must control a future experiment. No delay or security-benefit measurement is established here. |
+
 ## Windows Sandbox management
 
 The original [manage-windows-sandbox](manage-windows-sandbox/SKILL.md) workflow was

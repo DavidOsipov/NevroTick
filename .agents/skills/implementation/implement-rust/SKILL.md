@@ -87,7 +87,8 @@ shared `diagnostics`/`windows-platform` responsibilities while keeping domain
 failures and recovery at their owners. Project permitted typed fields before
 formatting/buffering; verify the real failure, output and effect paths.
 
-For FFI, handles, panic policy, async work, cancellation or lifecycle changes, use
+For FFI, handles, panic policy, directional secret APIs, async work, cancellation
+or lifecycle changes, use
 [Rust and Windows boundaries](references/rust-windows.md). Pure core forbids unsafe;
 Windows adapters need small reviewed unsafe contracts. UI/engine have no
 clock-setting privilege.

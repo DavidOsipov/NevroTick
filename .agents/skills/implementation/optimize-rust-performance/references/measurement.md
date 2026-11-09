@@ -6,6 +6,12 @@ Use with [the optimization workflow](../SKILL.md) and
 owns budgets, clock domains, runtime limits and milestone applicability. This
 reference selects evidence; it admits no new tools or dependencies.
 
+- [Build optimization and Windows x64](#build-optimization-and-windows-x64)
+- [Comparison design](#define-a-comparison-that-can-answer-the-question)
+- [Bounded text and immutable publication](#bounded-text-and-immutable-publication)
+- [Observation selection](#select-an-observation-then-verify-the-real-workload)
+- [Stable Tokio observations](#stable-tokio-observations)
+
 ## Build optimization and Windows x64
 
 An explicit build-configuration request may select settings before comparative
@@ -240,6 +246,42 @@ keep very small durations above measurement noise. Do not substitute direct TSC
 reads or change global timer resolution. See Microsoft's
 [high-resolution timestamps](https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps).
 
+## Bounded text and immutable publication
+
+When repeated-prefix text accounting is the identified cost, consider a private
+output owner retaining its UTF-16 total alongside the string. Count only each new
+fragment with `str::encode_utf16`, or an already-decoded scalar with `char::len_utf16`.
+Compute checked byte/unit totals and reject before mutation; keep counter and
+string coherent on every append/clear/replace and expose no unchecked mutable
+string bypass. Preserve grammar, literal output, typed arguments, error behavior
+and both existing caps. This needs no repertoire, allocator or parser change.
+
+Compare ordinary and maximum actually admitted messages through their real
+snapshot/projection consumer, including escaped braces and typed argument edges.
+An admitted message may be unable to reach the separate output caps. Private
+writer cap-neighbor tests then establish helper defense in depth, not an externally
+reachable product rejection. Traversal counts explain the mechanism; use independent
+semantic expectations and uninstrumented consumer runs before claiming speed.
+
+Elide an unchanged publication only after input/fallback, terminal-failure and
+current projection guards, and only for the active immutable catalog with a
+previous admitted publication belonging to that same current catalog. Equality
+of semantic feedback alone cannot establish these facts. Initially retain the
+previous-publication check before returning; removing it requires a private
+validated immutable owner and explicit preservation of the existing invariant.
+Include unchanged requests with missing/malformed retained publication among the
+rejection controls, alongside changed-feedback and useful accepted neighbors.
+
+Preserve raw drafts, preferences, returned text, old-reader immutability, atomic
+new feedback and observable notification/restoration behavior. Fixture fallback
+text can change despite equal semantic requests; a replaced catalog must re-render
+coherently. Keep accessibility observations at their existing native trigger.
+Slint `SharedString` clones share character data, so count reconstruction/scans/
+publications without claiming one new string-content allocation per clone.
+Evaluate this small no-op candidate separately from static-prefix sharing; neither
+fewer publications nor allocator calls establish a user-visible benefit.
+Primary API contracts: [source register](../../SOURCES.md#conditional-ownership-and-resource-guidance--9-november-2026).
+
 ## Select an observation, then verify the real workload
 
 | Question | Smallest useful evidence and limits |
@@ -296,3 +338,21 @@ differences between instrumented and measurement artifacts. Host/Linux results
 support only their measured scope; Windows runtime/UI/service claims need
 the corresponding native observations. Local improvements leave applicable
 CHECK-21 and package qualification outstanding.
+
+### Stable Tokio observations
+
+During already-authorized resource qualification, consider bounded snapshots of
+stable `RuntimeMetrics`: `num_alive_tasks`, `global_queue_depth`, and supported
+`worker_total_busy_duration`/`worker_park_count`. Recheck the selected feature/target
+gates; enable no `tokio_unstable` configuration for this purpose. Task counts cover
+spawned tasks, not a complete census of the current-thread `block_on` coordinator;
+global queue depth is not all its pending work. Busy duration is not process CPU
+time, park count is not exact OS wakeups, and snapshots can miss transient peaks.
+
+Corroborate independent stop-observation/healthy-completion latency and actual
+native jobs, threads, handles and retained bytes; keep an uninstrumented control.
+Only after attributing delay to a long application-owned loop consider
+`consume_budget().await` between bounded units. It cannot preempt one synchronous
+native call or promise a scheduling order. Preserve no-await guard/effect regions
+and recheck currentness after suspension; these metrics justify no automatic yields
+or runtime change. See the [API/source limits](../../SOURCES.md#conditional-ownership-and-resource-guidance--9-november-2026).

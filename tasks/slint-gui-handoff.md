@@ -282,7 +282,7 @@ limits, lints, graph roles or trust to obtain green output.
 ## Next work and dependencies
 
 1. Continue from merged PR10 and the later numerical checkpoint. Preserve the
-   observation-to-Core contract priority in development section 7 and reconcile
+   current S2.2 producer/receiver freeze in development section 7 and reconcile
    only subsequent deltas. Preserve the canonical decision identities. Keep
    lock, manifest and graph policy changes with one owner; re-admit affected
    graphs before target execution.
@@ -291,6 +291,9 @@ limits, lints, graph roles or trust to obtain green output.
    Reuse unchanged evidence only after matching all relevant inputs; historical
    GUI42/43/44 counts do not establish results for later workspace bytes. Retain
    the two named wording-polish follow-ups above for a separate text revision.
+   At that localization checkpoint, consider the [R3-P-01/P-02 source experiments](s0.5-ui-comparison.md#localization-cost-experiments--9-november-2026)
+   with their approval, invariant-failure and notification controls; they are
+   unexecuted proposals and do not displace the current S2.2 producer/receiver freeze.
 3. Complete the independent exact-text review; revalidate any wording changes and
    their native/action/accessibility consumers. The supplied review bundle is
    review material, not approval.

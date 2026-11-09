@@ -3003,6 +3003,53 @@ This prepares no new framework, dependency, default, retry policy or source vote
 Current Core qualification, MD-P1–MD-P3/service ownership, native/fuzz/storage/UI
 holds and OD-10's post-V1 formal deferral remain unchanged.
 
+#### Rust refinements at the receiver freeze — 9 November 2026
+
+The [additional Rust research disposition](../.agents/plans/2026-10-30-skill-quality.md#additional-rust-opportunities--9-november-2026)
+retains the following proposals against `a31835d6`. Both are **unimplemented and
+unexecuted**; the next product work remains this actual KE-producer/receiver
+contract freeze. They add no provider, trust, cookie-policy or execution admission.
+
+**R3-C-01 — directional key API.** Engine association/crypto owners retain
+S2.2, REQ-8/BND-2, AC-04 and CHECK-6/8/9/17/21/25/26/27. At the real receiver
+freeze, compare one exclusive private pair exposing `seal_request`/`open_response`
+without public raw getters against separate non-Clone C2S/S2C owners only where
+actual consumers need separate custody. The current laboratory producer already
+checks both exporter contexts on the same connection, then destroys its keys
+when returning counts; **no existing key swap or product bug was established**.
+Preserve that producer provenance, joint association binding, cleanup and current
+effect guards. The useful test reaches the real receiver: correct-direction
+packet success beside an independently specified wrong-context/wrong-key
+authentication refusal with no publication. Exercise constructor/wrong-direction
+misuse at the claimed compile-time boundary; types alone cannot validate a private
+producer. If the pair removes key selection entirely, do not invent a surrogate
+key-parameter API merely to obtain a compile failure.
+
+**R3-R-01 — conditional completion reservation.** Engine/native-producer and
+W11-W05/S3.1 lifecycle owners retain CHECK-17/21/27 and THR-26. At this same
+worker/coordinator contract freeze, consider Tokio `try_reserve_owned` and
+`OwnedPermit` only if the actual design selects a bounded completion channel;
+fixed result slots or retained/joined job owners may be simpler for the small
+population. Freeze actual job and result-byte limits before submission. Make
+admission transactional without unbounded reserve waiters: the existing
+`WorkPermit` deliberately keeps its charge
+on Drop, so dropping an already-issued permit is not rollback. Refusal before
+submission must neither leak that charge nor assert unperformed physical
+completion. Channel capacity, physical completion, receiver acceptance and
+secret/result retirement remain separate events with their own custody.
+
+`Receiver::close()` still permits reserved sends and needs draining to `None`;
+receiver drop is a different failure. `OwnedPermit::send` supplies neither a
+consumption acknowledgement nor a recoverable unsent result. A permit retained
+by stuck native work can keep draining incomplete; preserve diagnosed shutdown/
+process recovery. The planned test must reach actual admission/retirement code:
+hold one job beyond cancellation beside a healthy accepted neighbor, refuse work
+beyond the frozen bound, observe retained bytes and physical completion
+independently, and reject the stale result without publication. Cover failed
+pre-submission admission, receiver close/drop and worker panic separately. A
+standalone channel demonstration establishes neither this integration nor native
+termination.
+
 ### Observable exit and Windows boundary
 
 Extend the existing bounded `nevrotick-observe` projection with actual KE/
@@ -3033,6 +3080,21 @@ the NTS socket’s Direct binding cannot establish their egress.
 | Recovery/resources; 6/9/21/27 | Exhaustion, ambiguous send, NTSN/refresh storms, old-key success and late native completion beside healthy progress. Observe actual sends, no plain fallback, same-transaction retry reset, retained permits and bounded teardown. |
 | Windows trust; 9/26/27 | Selected-profile valid chain beside wrong usage/date/name, revoked/distrusted, removed root, unavailable revocation, slow retrieval and policy cutover. Expected acceptance/refusal follows the frozen profile; observe actual fetch owners and responsiveness. |
 | Consumer; 6/7/8/25 | Authentic eligible evidence reaches actual history/estimator; authentic numerical refusal creates no vote/correction. Demonstrate sufficient history separately from first-observation insufficiency. Retain S2.1 numerical oracles and full-domain proof obligations. |
+
+**R3-R-02 — optional measurement at this existing resource qualification; not
+executed.** Engine/runtime and platform-resource owners retain CHECK-17/21/27.
+At the next admitted resource checkpoint, bounded stable Tokio task/queue and
+worker busy/park snapshots (`num_alive_tasks`, `global_queue_depth`,
+`worker_total_busy_duration`, `worker_park_count`) may supplement independent stop-observation latency,
+healthy completion and retained native jobs/bytes/threads/handles. The current
+coordinator runs through `block_on`; spawned-task counts and global queue depth
+are not a complete census of its work, and snapshots can miss peaks. Compare the
+same admitted workload with a healthy neighbor and an uninstrumented control;
+add a stalled real KE job only when that worker boundary exists. No starvation
+or measured improvement is established. Consider `consume_budget` only after
+attributing delay to an application-owned long loop; it cannot preempt a native
+call or enter an atomic guard/effect region. This selects no `tokio_unstable`
+configuration, scheduler change or new measurement campaign.
 
 Use controlled-peer facts and independent vectors/oracles, not only same-code
 round trips. Bind evidence to artifact/features/profile/Windows build and reached

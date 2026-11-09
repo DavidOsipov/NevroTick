@@ -800,3 +800,202 @@ No fresh behavioral skill comparison, Rust product test/build, Windows/native,
 formal or performance execution is claimed. This second pass establishes the
 bounded source review and instruction-package results above, with the two
 research-evidence qualifications retained and all product gates still separate.
+
+## Additional Rust opportunities — 9 November 2026
+
+### Request, candidate and scope
+
+David requested a new investigation of other Rust mechanisms that could benefit
+NevroTick after the two-year release survey. He then explicitly authorized
+committing the reviewed findings to `main`. This selects documentation and
+instruction integration, not implementation of every candidate or a new runtime,
+dependency, toolchain, security policy or execution campaign.
+
+The research and publication baseline is
+`a31835d6af400fa35f10bd5ccee68cf302b52505`, including the real laboratory KE producer
+and algorithm-15 sealing/mutation additions. The coordinator refreshed remote
+`main` and found the same head before editing. Rust 1.99.1, edition 2024, resolver 3,
+Windows MSVC x64/v3, checked arithmetic, unwind and the complete hardening policy
+remain selected. The next product work remains the actual S2.2 producer/receiver
+contract freeze; completed Core qualification is not repeated. OD-10's post-V1
+formal deferral and existing native/fuzz/storage/UI holds remain.
+
+This is a bounded source/primary-document survey, not a complete repository,
+dependency or security audit. No product vulnerability, measured speedup, native
+pass or additional dependency requirement was established. Source observations,
+integration proposals, existing work and future capabilities are distinct below.
+
+### Completed research and dispositions
+
+Three fresh-context researchers worked independently with `fork_turns: "none"`:
+`rust_opportunities_correctness` inspected correctness/security/ownership;
+`rust_opportunities_resources` inspected rendering/representation/resource paths;
+`rust_opportunities_runtime` inspected Tokio/native completion and ecosystem fit.
+They read actual source, relevant current owners and primary API documentation,
+reported bounded searches, and declared no sibling-report reads. The coordinator
+separately checked supply-chain candidates. All four scopes completed without
+repository edits, installations, builds or product/native/formal/fuzz execution.
+
+| Finding | Disposition and source-backed contribution | Existing owner / next trigger |
+| --- | --- | --- |
+| R3-C-01 | Conditional direction-specific NTS operations on one private exclusive key pair; separate non-Clone key types only if actual consumers need them. The laboratory already checks exporter contexts and same-connection derivation; no existing direction-swap defect is demonstrated. | Engine association + crypto, S2.2, REQ-8/BND-2 and applicable CHECK-6/8/9/17/21/25/26/27; actual receiver contract freeze. |
+| R3-C-02 | Existing asset: higher-ranked `with_decrypted_frame` consumer and whole-scratch ordinary-drop wipe. Reuse at the real receiver; no new plaintext framework or repeated library campaign. Owned copies and abort/native cleanup remain outside the borrow/wipe guarantees. | Existing packet-AEAD/receiver integration under S2.2. |
+| R3-C-03 | Reject blanket replacement of Windows resource owners with `OwnedHandle`. Current token acceptance depends on explicit fallible close and deliberate affinity; consider standard borrowing only at a compatible real interface. | Existing W11-W05/S3.1 adapter owner, only on a naturally arising change. |
+| R3-P-01 | New concrete source observation: `render` appends ordinary scalars while `append` recounts the entire UTF-16 prefix. Evaluate a private checked output owner with an incremental count. Practical cost remains unmeasured and bounded. | Existing S0.5 localization checkpoint, CHECK-21/25; preserve semantic approval and current queue. |
+| R3-P-02 | Conditional active-catalog no-op elision: unchanged typed feedback still rebuilds/checks/publishes 397 static + 29 feedback rows. SharedString clones share character data. Retain previous-publication validation and observable notification/fixture behavior. | Same S0.5/GUI checkpoint, applicable CHECK-21/22/25. |
+| R3-R-01 | New concrete mechanism for existing completion obligations: Tokio owned capacity reservation before native submission, only if a bounded channel fits the real design. Fixed slots/retained job owners remain alternatives; no new concurrency policy is selected. | Actual S2.2 worker/coordinator boundary, CHECK-17/21/27 and existing complete-KE gates. |
+| R3-R-02 | Optional stable Tokio metric snapshots to corroborate independent control/completion latency and retained resources. No observed starvation or reason to insert yields; unstable metrics are not admitted. | Existing engine/resource qualification at its ordinary authorized checkpoint. |
+| R3-S-01 | Dated future watchlist: beta Cargo documents minimum publish age as respected from 1.100+. It is unavailable in pinned stable 1.99.1; no delay or upgrade is selected. | Existing dependency/toolchain admission, only after a separately admitted later Cargo and released-document verification. |
+
+The source anchors are `InternalCandidate`, `prepare` and
+`InternalCandidate::finish` in the laboratory KE transport, the real
+sealer/staged decryptor, localization `render/append`,
+`catalog_workflow::write_many`, `catalog_projection::replace_feedback/check`,
+`ServiceLifecycle::begin_work`/`WorkPermit::complete`, and the engine's actual
+current-thread coordinator. Relevant same-connection custody, bounded completion,
+immutable publication and resource requirements already existed. The additional
+contribution is the specific implementation option or observed repeated work.
+
+Miri/Loom/fuzz/property/compile-fail workflows, no-std borrowed wire parsing,
+cargo-vet/auditable and conditional graph tools, PGO/LTO/CPU policy and post-V1
+parallelism already have owners. No attributed need justified an allocator,
+runtime, task-tracker, secret-wrapper or unsafe-storage migration. Exact zeroize
+1.9.1 API/source showed opaque Debug, contrary to an older search snippet; no
+secret-Debug leakage was established. Research does not qualify all secret copies.
+
+### Independent research judgment and corrections
+
+`rust_opportunities_judge` completed a separate fresh-context review of all four
+reports, actual source/task owners and consequential primary contracts. It ranked
+C-01 and conditional R-01 for the current S2.2 work, P-01 as the strongest direct
+algorithmic observation at the later localization checkpoint, then conditional
+P-02. R-02 remains instrumentation and S-01 remains a future watchlist. Its
+assessment is retained verbatim:
+
+> The reports support **two concrete source-derived cost observations, two useful refinements of the coming S2.2 integration, one optional measurement aid, and one future Cargo watchlist item**. They establish no current product vulnerability, missing Rust safety mechanism, measured speedup or reason to change the toolchain/runtime.
+
+The coordinator supplied interim source/version verifications after delegation;
+the judge checked those facts itself. It received the research conclusions as
+claims to adjudicate, not as an independent oracle. Agreement adds no executions
+or statistical independence. Its required qualifications are preserved:
+
+- **R3-J-01 / P-02:** an unchanged request must still diagnose a missing/malformed
+  private retained publication. Extend the existing changed-request fault control
+  when implementing the real optimization. Keep input, fallback, lifecycle and
+  projection guards; same feedback cannot bypass a changed catalog or fixture
+  text. Initially retain `check(previous)` before eliding reconstruction.
+- **R3-J-02 / R-01:** admission is transactional, but dropping the existing
+  non-dropping `WorkPermit` does not roll back its charge. Preserve truthful
+  issuance/rollback and actual completion. Channel permits, result bytes,
+  delivery, current acceptance and retirement have separate custody; close/drain
+  is different from receiver destruction, and send is no acknowledgement.
+- **R3-J-03 / P-01:** current admitted text is at most 1024 bytes/512 scalars with
+  one minute substitution where required; a conservative rendered envelope is
+  1043 bytes/531 UTF-16 units. It cannot reach the separate 4096-byte/2048-unit
+  output caps. Direct writer cap tests are defense-in-depth helper evidence;
+  useful comparison uses actual admitted `Snapshot`/projection consumers. The
+  protected production catalog review ledger remains empty.
+- **R3-J-04 / R-02:** the coordinator is driven through `block_on`; spawned-task
+  counts/global queue depth are not its complete work census. Snapshots can miss
+  peaks; busy duration is not CPU time and park counts are not exact OS wakeups.
+  Preserve independent useful-latency and actual retained-resource outcomes.
+
+For C-01, a private pair may remove caller key selection entirely. Do not invent a
+surrogate parameter API solely to get a type-mismatch test. The real constructor
+still needs an independently wrong-context/key behavioral control; types cannot
+prove the private producer correct or establish current association authority.
+For R-01, a capacity-two exercise does not choose product limits or prove Windows
+termination. The real admission/retirement owner and healthy neighbor are required.
+
+### Source provenance and durable routing
+
+Primary Rust, Tokio 1.54.1, Slint 1.18.1, Rustls 0.23.46, zeroize 1.9.1, RFC 8915
+and Cargo documentation were retrieved on 9 November. Some explicit-version
+Tokio pages failed retrieval; successful latest pages identified the matching
+version. Availability was read from documentation, not compiled in this pass.
+Beta Cargo configuration explicitly says 1.100+; stable configuration lacks the
+age keys and official Forge schedules 1.100 for 12 November. Recheck on adoption.
+The skill source register/references retain the useful primary URLs.
+
+The original intermediate reports were frozen in the owned `rust-opportunities/`
+directory. They can expire with host cleanup; substantive findings, corrections,
+owners and disposition are retained here and in the existing task cards.
+
+| Report | SHA-256 |
+| --- | --- |
+| `correctness-research.md` | `eda1da5ccf90515049956317cd3afdefb136dbcb76b0cdbdf759ee00c7afa21e` |
+| `resources-research.md` | `651ef73d1ea9f20e1f66265872639f9c76ce796a1d3f6186b4ae57fa9849b5e2` |
+| `runtime-research.md` | `0cc7c6bf72e0cf794ac6c2cbca599b4a1a4d576b06617a8672b01c7c3b95da97` |
+| `supply-chain-research.md` | `9959bdd5b442fbe19d2401ed3edb8dc27001acfb4b1e23af10cd88ce2cb41c9f` |
+| `judge-review.md` | `b3f303362bfb6b99989a8516423cd014b70cacbf5ecd630ee85f54b936616ded` |
+
+Reusable guidance goes into the existing Rust/Windows, performance-measurement
+and Cargo-operation references. Concrete pending work goes into the existing
+[S2.2 task](../../tasks/engine-transport-pilot.md) and
+[S0.5 task](../../tasks/s0.5-ui-comparison.md), with the
+[GUI handoff](../../tasks/slint-gui-handoff.md) retaining its checkpoint route.
+The development plan already links to those owners; no parallel plan, new
+requirement family or product-queue change is needed.
+
+### Documentation candidate verification
+
+The complete initial index was materialized as validation commit
+`011c67ae62e9219e01ff008b48082ced4b8a03a2`, tree
+`c949a906778a92c3b0ee3eaa35fdeeccd11d8a2e`, parent `a31835d6...`. All **1990** tracked
+path/mode/blob entries and materialized file bytes matched the staged candidate;
+only the eleven intended Markdown files changed. No active hooks, custom signing
+configuration, attribute transformations or submodules were found in this checkout.
+
+On that frozen candidate, `python3 -B .agents/skills/scripts/check_skills.py`
+passed **66 skills**, including metadata, UI prompts, local links and inventories.
+The skill-creator installation was byte-matched to its supplied guide;
+its `quick_validate.py` accepted `implement-rust`, `optimize-rust-performance`
+and `dependency-updates`. The changed-document check used the repository
+checker's prose/heading rules: **321 local links/anchors**, including **24 added
+occurrences**, passed without new or inherited errors. Whitespace checks passed.
+No `docs/SHA256SUMS.txt` exists; unrelated design-bundle manifests are unaffected.
+
+`rust_research_commit_judge` completed a fresh-context review with
+`fork_turns: "none"`. It independently matched the candidate and all eleven
+changed-file hashes, read the complete diff and pertinent source/owners, and
+checked consequential primary API/version claims. Its verdict is **READY for the
+documentation/instruction stage; no blocking substantive findings**. It excluded
+raw sibling research reports and private discussion/memory; the earlier research
+history/hashes remain coordinator provenance, not a separately audited execution
+history. The reviewed technical content stays unchanged; the only later delta
+replaces this pending receipt with actual outcomes. The judge's report hash is
+`34be02025bd586798a826d63d549420d0795cfb130ffea49a2f1e53a03d173fb`.
+
+Its two-paragraph comprehension statement is retained verbatim:
+
+> The patch records a bounded follow-up Rust investigation in NevroTick’s existing instruction and task chain. It adds conditional guidance for directional secret operations, completion-capacity reservation, text accounting, immutable UI publication and runtime observations, plus a future Cargo publish-age watchlist. The proposals have explicit implementation owners and activation points; the patch does not implement them, select a new dependency/runtime, change toolchain policy or claim a measured improvement.
+
+> The current repository contains a Rust 1.99.1, edition-2024 workspace with a current-thread Tokio engine prototype and a Slint GUI whose protected production catalog-approval ledger is still empty. The laboratory KE producer obtains both directional exporters from one TLS connection, but destroys those secrets before returning count-only summaries; the custody-preserving production association/receiver handoff is still the next S2.2 contract task. Existing service lifecycle code retains charges until explicit actual-work completion. Native qualification, provider/trust admission and the separate execution holds remain open, and formal execution is deferred until after V1.
+
+One bounded fresh-context use exercise, `rust_research_skill_use`, applied
+Implement Rust to the actual laboratory-to-engine handoff request without edits
+or product execution. The coordinator froze the task expectations before receiving
+its result. The agent reported reading the revised Rust/Windows reference, actual
+producer, engine/lifecycle owners and current task; it was instructed not to read
+this record or sibling reports. It identified the count-only/borrowed producer
+gap, proposed a consuming private result and directional pair, separated native
+work/result/channel custody, retained not-started rollback and stuck-job recovery,
+and supplied useful actual-consumer/healthy-neighbor checks. These met the scoped
+read-only expectations. Its one-job/fixed-slot and CNG-lifetime design choices
+remain proposals for the real owner, not decisions adopted by this exercise.
+
+The grader SHA-256 is
+`6427a372a9a14631f961ba0f2ca73434d849ae6d521474e4f7db45fac9f93edd`;
+the answer and its reported path register have SHA-256
+`be0d8f3213acd05aba82f1c7dbc95a6b19a37274e4d74786f234abd4f900b9d5`.
+This is **one development/regression exercise**, because the reference/task
+already teach this case. It is no unseen holdout, old/new comparison, measured
+skill uplift, full instruction-read trace or executed product qualification.
+
+The final publisher binds the receipt-only delta to the unchanged judged ten
+instruction/task files and rechecks the complete staged tree, document links and
+whitespace before publication. The publication commit supplies durable final
+candidate identity; remote `main` is verified after the authorized update.
+No Rust product build/test, benchmark, native Windows, formal or fuzz job was run
+for this documentation change. Product experiments and all existing acceptance
+gates retain the separate owners and triggers above.

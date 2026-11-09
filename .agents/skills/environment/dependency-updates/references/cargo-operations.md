@@ -77,6 +77,23 @@ and [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html)
 Do not change global cache/configuration, publish packages or adopt a new graph
 merely because a stable Cargo version supports it.
 
+### Future publish-age watchlist — 9 November 2026
+
+The [beta Cargo reference](https://doc.rust-lang.org/beta/cargo/reference/config.html#registryglobal-min-publish-age)
+documents `registry.global-min-publish-age`, per-registry `min-publish-age` and
+`resolver.incompatible-publish-age` as respected from **1.100+**. They are unavailable
+in the pinned **1.99.1**; retain this as a future watchlist, not current configuration
+or a reason to upgrade. Select no delay from a documentation example.
+
+At a separately admitted later-toolchain/update-policy evaluation, recheck released
+documentation and actual registry publication-time support. Use a disposable
+resolution fixture for eligible older versions, too-new-only refusal, lockfile
+exemptions, reviewed overrides and missing registry timestamps. This tests resolver
+policy, not compromised-package detection; infer no coverage for path/git sources,
+existing locked versions or `cargo install`. A delay can postpone a verified
+security fix. Preserve exact pins, lockfiles and source/graph admission; change no
+product/global configuration during that comparison. See [sources](../../SOURCES.md#publish-age-watchlist--9-november-2026).
+
 ## Qualify the final graph
 
 Use real repository CI/TOOLING commands from the shared configured-tool workflow

@@ -72,6 +72,26 @@ multithreaded calls despite its edition-2024 unsafe signature. Research is origi
 instructional synthesis; no upstream code, skill, dependency or licence grant was
 imported. Existing adapted-skill notices and upstream inventories remain intact.
 
+## Conditional ownership and resource guidance — 9 November 2026
+
+The existing [Rust boundary](implement-rust/references/rust-windows.md) and
+[measurement](optimize-rust-performance/references/measurement.md) references
+capture bounded refinements reviewed against `a31835d6af400fa35f10bd5ccee68cf302b52505`.
+They select no key-type/channel architecture, new dependency or benchmark campaign;
+source observations establish no current defect, measured gain or qualification.
+Rolling pages identified Tokio 1.54.1 and Slint 1.18.1; reconcile actual locked
+versions/features before use. Preserve all existing execution and admission holds.
+
+| Primary source | Applied finding |
+| --- | --- |
+| [Rust newtypes](https://doc.rust-lang.org/rust-by-example/generics/new_types.html) and [RFC 8915 §5.1](https://www.rfc-editor.org/rfc/rfc8915.html#section-5.1) | Directional operations or private types can prevent caller key selection mistakes; exact same-connection exporter contexts and current association checks remain separate. |
+| [Rustls 0.23.46 exporter](https://docs.rs/rustls/0.23.46/rustls/struct.ConnectionCommon.html#method.export_keying_material) and [zeroize 1.9.1](https://docs.rs/zeroize/1.9.1/zeroize/struct.Zeroizing.html) | Owned exporter output can retain zeroizing custody; a storage wrapper's conditional Clone is not an exclusive semantic API. No additional secret-wrapper dependency follows. |
+| [Tokio reservation](https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.Sender.html#method.try_reserve_owned), [owned send](https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.OwnedPermit.html#method.send) and [receiver close](https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.Receiver.html#method.close) | Nonblocking capacity reservation can precede work; reserved sends survive close and require draining. Delivery acknowledgement, physical completion, rollback and bounded result custody remain application obligations. |
+| [Rust UTF-16 iteration](https://doc.rust-lang.org/std/primitive.str.html#method.encode_utf16) and [scalar unit count](https://doc.rust-lang.org/std/primitive.char.html#method.len_utf16) | Longstanding stable APIs support incremental checked accounting without rescanning the emitted prefix; the private owner must keep counters and text coherent. |
+| [Slint SharedString](https://docs.slint.dev/latest/docs/rust/slint/struct.SharedString) | Clone shares character data; unchanged-publication experiments concern reconstruction/scans/notifications, not an assumed content allocation per clone. |
+| [Tokio RuntimeMetrics](https://docs.rs/tokio/latest/tokio/runtime/struct.RuntimeMetrics.html) and [current-thread source](https://docs.rs/tokio/latest/src/tokio/runtime/scheduler/current_thread/mod.rs.html) | Stable snapshots are incomplete corroboration; spawned-task counts and global queue depth do not enumerate the separately polled coordinator's work or native resources. |
+| [Tokio consume_budget](https://docs.rs/tokio/latest/tokio/task/coop/fn.consume_budget.html) | Conditional cooperation between bounded work units cannot preempt synchronous native work or establish deterministic fairness. |
+
 ## Windows service workflow — 7 November 2026
 
 The same-day metadata handoff extends [maintain-windows-metadata](maintain-windows-metadata/SKILL.md)

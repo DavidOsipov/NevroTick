@@ -74,6 +74,11 @@ candidate for comparison and existing user edits. Do not add a runtime, cache,
 allocator, worker pool, benchmark dependency or new unsafe code merely because
 it might be faster; each needs its existing admission/review and evidence.
 
+For repeated text accounting or equivalent immutable UI publications, use the
+[bounded text and publication guidance](references/measurement.md#bounded-text-and-immutable-publication).
+Use [stable Tokio observations](references/measurement.md#stable-tokio-observations)
+only as corroboration within existing resource qualification.
+
 Mandatory garde-backed construction, strict decoding, authorization/freshness
 checks, redaction, checked arithmetic and Windows mitigations remain enforced.
 Reuse proven immutable domain invariants without repeating unchanged validation;
