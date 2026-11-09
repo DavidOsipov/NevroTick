@@ -78,7 +78,7 @@ jobs:
         env:
           ACCESSKIT_CONTROLS: ${{ runner.temp }}/accesskit-subclass-controls
         run: |
-          python3 -B scripts/verify-accesskit-subclass.py \
+          env -u RUSTUP_TOOLCHAIN python3 -B scripts/verify-accesskit-subclass.py \
             --toolchain-dir "${RUSTUP_HOME}/toolchains/1.99.1-x86_64-unknown-linux-gnu" \
             --output-dir "${ACCESSKIT_CONTROLS}"
       - name: Acquire the reviewed vendor bytes without executing package code

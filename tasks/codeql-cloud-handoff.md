@@ -406,3 +406,16 @@ overselected an unmounted advisory executable; those setup failures remain
 separate from the successful graph commands. The current-lock fresh dependency
 row and actual Windows-target build/native/metric gates remain unfinished;
 no missing prerequisite was bypassed to execute package code.
+
+**Hosted invocation correction:** signed source checkpoint `8fce18b` passed
+Repository security. Its first hosted Rust run
+[42634859040](https://github.com/DavidOsipov/NevroTick/actions/runs/42634859040)
+stopped before the new facade compiler, vendor acquisition or advisory writer:
+the existing compiler setup exports `RUSTUP_TOOLCHAIN=1.99.1`, and the new direct
+runner deliberately rejects inherited compiler overrides. This was an
+integration error, not a Rust assertion or advisory-quota failure. The workflow
+now removes only that manager selector for this one command, while retaining
+the explicit pinned toolchain path, binary/version checks and rejection of other
+overrides. An actual-shell regression was RED with the inherited selector and
+GREEN after the change; a separate real invocation in that same inherited
+environment passes all13 cases. No global environment rule or hold changed.

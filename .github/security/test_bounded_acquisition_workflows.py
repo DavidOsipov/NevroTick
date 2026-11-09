@@ -45,6 +45,27 @@ sys.exit(0)
 
 
 class WorkflowAcquisitionControls(unittest.TestCase):
+    def test_facade_step_removes_only_rustup_selection_before_pinned_direct_execution(self):
+        with tempfile.TemporaryDirectory(prefix="facade-ci-environment-") as name:
+            root = Path(name)
+            probe = root / "python3"
+            probe.write_text(
+                "#!/usr/bin/python3\nimport os,sys\n"
+                "assert 'RUSTUP_TOOLCHAIN' not in os.environ, 'manager selection reached direct runner'\n"
+                "assert os.environ['RUSTFLAGS']=='rejection-control-remains-visible'\n"
+                "assert '--toolchain-dir' in sys.argv\n"
+                "assert sys.argv[sys.argv.index('--toolchain-dir')+1]=='/pinned-rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu'\n"
+            )
+            probe.chmod(0o700)
+            environment = {"PATH": str(root) + ":/usr/bin:/bin", "RUSTUP_TOOLCHAIN": "1.99.1",
+                           "RUSTUP_HOME": "/pinned-rustup", "RUSTFLAGS": "rejection-control-remains-visible",
+                           "ACCESSKIT_CONTROLS": str(root / "result")}
+            run = subprocess.run(["/bin/bash", "--noprofile", "--norc", "-euo", "pipefail", "-c",
+                                  acquisition_step(".github/workflows/rust.yml",
+                                      "Exercise the actual AccessKit subclass through the portable facade")],
+                                 cwd=root, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+            self.assertEqual(run.returncode, 0, run.stderr.decode())
+
     def run_step(self, file, title, mode):
         with tempfile.TemporaryDirectory(prefix="bounded-acquisition-shell-") as name:
             base = Path(name)
