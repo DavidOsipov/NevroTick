@@ -1089,3 +1089,126 @@ whitespace, and verifies remote `main` after the authorized update. The
 publication commit supplies durable final candidate identity. No product build,
 native, formal, fuzz or benchmark campaign was run for this documentation slice;
 pending product experiments keep the owners and activation points above.
+
+## Tokio research disposition — 9 November 2026
+
+**Request and baseline.** David authorized publishing the fourth Rust findings,
+then researching Tokio for NevroTick and creating/adjusting skills and docs.
+R4 is published as `e74fb270771b89b04bdbf4dccc9377af62def336`; local and remote
+`main` matched and the working tree was clean before this separate change.
+The first three research lanes inspected source baseline `33a4a44d`; R4 changed
+only documentation, so their actual-source observations still apply. The release
+lane inspected `e74fb270`. The next product task remains the S2.2 KE producer/
+receiver contract freeze; this slice changes no product code or feature graph.
+
+Four fresh-context read-only researchers examined runtime/worker lifetime,
+I/O/time, resource/channel/test support and recent release/API applicability.
+Each had a bounded question, primary-source requirement, actual-consumer and
+counterevidence requirement, separate report and no execution/mutation authority.
+All completed. `tokio_research_judge` independently checked the first three
+reports against source, API contracts and existing owners. Its initial verdict
+was conditional acceptance with wording/placement corrections, not an execution
+pass. The coordinator inspected its evidence, the release report and decisive
+primary/source facts. Shared source access does not make these experimental
+replications or an exhaustive audit.
+
+| Item | Disposition and placement |
+| --- | --- |
+| T-R-01, live I/O/timer driver | Retain at S2.2 only if the admitted worker polls async KE. Name the active current-thread Runtime::block_on owner and shutdown dependency; context/Handle alone is insufficient. |
+| T-R-02, shared blocking-pool progress | Retain at the same real worker/resolver boundary. Describe the conditional nested wait dependency, independent-deadline escape and separate hidden-work custody; preserve destination re-admission. No current deadlock or cap increase is selected. |
+| TIO-01, timeout versus eligibility | Retain original deadlines and strict final publication/effect guards at the actual future receiver. Current UDP/series guards already enforce the distinction; immediate timeout success is no authority to publish. |
+| TIO-02, Interval first/missed tick | Conditional later S2.1 production scheduler trigger; no current consumer, blanket Skip policy, one-shot replacement or prerequisite before S2.2. |
+| Channel/task/framing guidance | Consolidation only. Keep the appropriate current watch snapshot model and two explicit timer handles; link existing custody and framing guarantees instead of duplicating their matrices. |
+| Resource metrics and virtual time | Existing measurement/test references suffice. Link them; add no unstable feature, metrics crate, paused-time feature or independent campaign. |
+| Recent stable APIs and tuning | No immediate consumer/benefit established for worker_index, blocking semaphore methods, receiver is_closed or busy-I/O batch tuning. Record source fit in the source register; retain defaults and existing R3-R-02 attribution trigger. |
+
+One conditional [Tokio reference](../skills/implementation/implement-rust/references/tokio.md)
+inside Implement Rust carries the API-specific material. Its SKILL and native
+boundary reference route relevant work to it. A separate Tokio skill would repeat
+authority, feature, custody and evidence policy without a distinct workflow.
+The implementation source register retains provenance and rejected/conditional
+API leads. Architecture §17.1/§18.7.1 receives the small progress/driver/expiry
+refinement; §18.6's feature row now accurately names current `macros` and marks
+`io-util` conditional. The existing
+[engine task](../../tasks/engine-transport-pilot.md#tokio-refinements-at-the-ke-boundary--9-november-2026)
+owns discriminating real-consumer controls and the later scheduler trigger.
+Its verifier paragraph now explicitly places blocking verification inside the
+admitted complete worker, away from the responsive event-loop/control owner.
+
+The official latest-release endpoint identified Tokio 1.54.1, published
+21 October, already selected by the project. Immutable source at
+`b53b2001ed2ccfd9b87e32a0c6da1a1eebdc80b8` and the release's timer revert were
+checked. Record the revert so 1.54.0's removed runtime-handle behavior is not
+mistakenly taught as current. No outstanding project vulnerability was
+established. Versioned web retrievals were intermittent; successful rolling
+pages identified 1.54.1, and GitHub supplied consequential pinned source.
+The focused Context7 driver query returned no usable evidence. These are source/
+API observations, not archive parity, rebuilt graph or native qualification.
+
+The judge's material conditions are incorporated: finite independent deadlines
+can break outer waits without proving nested-work disposal; pre-resolution
+preserves actual destination admission; synchronous verification is allowed in
+the admitted complete worker; CHECK mappings remain specific to their guarantees.
+Detailed admission/reservation, secret retirement, panic output, stable metrics
+and test-time limitations keep their existing owners. Provider/trust decisions,
+all Windows/fuzz/storage/UI holds and the post-V1 formal deferral remain intact.
+
+### Tokio documentation delivery and use exercise
+
+The complete seven-file candidate was frozen as validation commit
+`6f02725d698692171adc632ab0875f036f0d9838`, tree
+`834a8d1230360c8e3b04dc95c149868d219f284d`, parent `e74fb270`.
+A separate clean materialization matched all 1,991 tracked entries by path,
+mode and raw Git blob bytes, including unchanged files and symlinks; repository
+attributes introduced no transformations. The candidate's `check_skills.py`
+passed all 66 packages, and the matching skill-creator validator passed Implement
+Rust. All 486 checked local links/anchors across the seven changed Markdown
+files resolved under the repository checker's prose/anchor rules. Staged
+whitespace checks passed. These are publisher checks, not judge execution.
+
+The independent judge reviewed the complete seven-file diff, including the full
+156-line reference, then separately verified the added release, timer-revert,
+manifest, Builder and Timeout claims against official immutable sources. Its
+integrated content verdict was **READY**, with no unresolved content blocker.
+Its two-paragraph comprehension statement was:
+
+> The integrated change gives engine-runtime work one conditional Tokio reference and places the three immediate contract refinements beside the existing S2.2 producer/receiver freeze. Architecture retains policy ownership; the task retains future consumer controls; the source register records evidence and rejected API leads. The periodic scheduler note remains a later trigger rather than new work before S2.2.
+
+> The reviewed candidate still describes the existing private current-thread engine, not an implemented KE pool. Complete synchronous KE workers remain permissible, the same selected features and provider/trust gates remain, and documentation supplies no native, performance or release qualification. The newly added release discussion says the already selected 1.54.1 contains the timer correction; it does not diagnose the present project as vulnerable or select an upgrade.
+
+One fresh-context `tokio_skill_use` planning/review exercise applied the revised
+skill to a proposed KE integration, with prompt/grader frozen before execution.
+The task agent was instructed to exclude this record and sibling researcher/
+judge/grader artifacts. Its supplied references explicitly teach this case, so
+this is **one development/regression exercise**, not unseen holdout or measured
+uplift. One delegated timer-source helper supported the same case; it adds no
+independent trial. Shared filesystem access is not an isolation boundary.
+
+The complete answer met the eight frozen semantic expectations: it distinguished
+current code from the proposed worker; found driver shutdown and nested-pool
+progress dependencies with the finite-deadline qualification; required fresh
+strict eligibility at the real receiver; preserved native/result custody; kept
+the allowed synchronous route and two explicit timer handles; identified the
+lab's count-only transfer gap; and proposed discriminating real-consumer cases
+with healthy neighbors and existing holds. No product behavior was executed.
+The agent reported reading Implement Rust, the Tokio/native-boundary references,
+shared contracts, relevant architecture/task and actual producer/receiver/timer
+source. Its path register is reported reading evidence, not a complete
+independently authenticated instruction trace.
+
+The exercise also reported direct source searches without Serena/Probe, despite
+the broader skill's configured navigation instructions. Thus it establishes the
+scoped semantic result, **not complete workflow compliance**. Unrelated pure-Rust
+trigger behavior, old/new comparisons and runtime/native correctness were not
+exercised. No semantic repair or broader campaign follows from this result.
+
+The frozen prompt SHA-256 is
+`7fc7bef21f5b3f93e00df627df3afe090756537a36636e060c2b41af1919210a`;
+grader `cc17603e488b6031f1499c9f9ca8c628c494d2f7c9e57e343977132372b37cb3`;
+answer `b333bd62efc5ebc02b978c2ff264d5c46415aa9f58bc949c4a81df2a8108da16`;
+Tokio reference `47275f0f000531bc16a3b77f01e51e37c3d026793fe689506edaa1d1cd204efa`.
+The final publisher binds this receipt-only delta to the unchanged six judged
+instruction/task files, rechecks the final tree, affected links and whitespace,
+and verifies remote `main` after the authorized update. The publication commit
+supplies durable final candidate identity. No product build, runtime experiment,
+native, formal, fuzz or benchmark campaign was run for this documentation slice.

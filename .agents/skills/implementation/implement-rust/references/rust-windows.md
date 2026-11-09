@@ -64,6 +64,10 @@ obtain a type error. Type rejection cannot validate a buggy private constructor.
 
 ## Async, bounded work and state
 
+For Tokio runtime drivers, shared blocking-pool dependencies, task/channel
+semantics and strict deadline checks, also read [Tokio at the engine boundary](tokio.md).
+The actual-work and result-custody rules below remain the shared owner.
+
 Identify authoritative state/serialized transitions. Capture expected revision/
 generation before work; recheck before publication/effect. Future cancellation
 proves no native-operation stop. Started Tokio `spawn_blocking` tasks cannot abort

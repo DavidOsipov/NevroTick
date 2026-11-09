@@ -3050,6 +3050,48 @@ pre-submission admission, receiver close/drop and worker panic separately. A
 standalone channel demonstration establishes neither this integration nor native
 termination.
 
+#### Tokio refinements at the KE boundary — 9 November 2026
+
+Research against source baseline `33a4a44d` (unchanged by the following R4 docs
+commit `e74fb270`) identified three conditional refinements for this same S2.2
+producer/receiver freeze. **No current runtime defect or executed integration
+result was established.** The actual engine privately drives current-thread
+Tokio 1.54.1 with I/O/time, `max_blocking_threads(2)` and two owned control timers;
+it submits no production blocking KE jobs. The laboratory producer currently
+uses synchronous numeric-address TCP/Rustls and returns counts after disposal.
+Use [the Tokio reference](../.agents/skills/implementation/implement-rust/references/tokio.md)
+and its pinned source register; this selects no async TLS adapter or new feature.
+
+| Refinement / existing owner | Contract to freeze and smallest meaningful later control |
+| --- | --- |
+| **T-R-01 — driver lifetime.** S2.2 complete KE worker/coordinator; W11-W05/S3.1 for lifecycle integration; CHECK-27 and resource CHECK-21. | If the worker uses `Handle::block_on`, name the owner keeping the same current-thread `Runtime::block_on` active for dependent I/O/timers through stop/retirement. A cloned Handle or `enter` is insufficient. At the real selected worker seam, hold a loopback I/O/timer dependency, request stop, release it and observe terminal retirement beside healthy completion. A deliberately retired-driver control needs an independent finite watchdog. The wholly synchronous route is a valid alternative. |
+| **T-R-02 — shared blocking-pool progress.** Same worker plus actual resolver/submission owner; §17.1/THR-26, CHECK-21/27. | Do not occupy all worker threads with outer closures awaiting nested jobs queued to that pool, including hidden DNS. Independent deadlines may release outer waits; account separately for any remaining queued/started work. Pre-resolution retains destination/path re-admission. At the actual submission seam, saturate the admitted outer population and show the selected bounded progress/refusal route and truthful work custody; pair a healthy numeric-address exchange. A generic deadlock demo or increased cap alone does not qualify this integration. |
+| **TIO-01 — strict expiry at acceptance.** Same-connection producer and serialized association/result receiver; CHECK-6/9/25/27, CHECK-21 when observing retained resources. | Retain original stage/total deadlines within the operation. `timeout_at` success grants no timely publication: test a valid pre-expiry candidate beside one immediately ready at/after expiry, and a poll starting before but completing after. Include fragmented progress crossing original expiry and policy/generation cutover before commit. Observe actual publication refusal and retained/retired custody, not just the wrapper result. Current UDP/series final guards already enforce this distinction. |
+
+These controls extend the existing R3 admission/retirement and receiver cases;
+do not start parallel campaigns or replace their actual consumer with a model.
+Any new dependency/feature selection still needs CHECK-26 graph admission;
+diagnostic/secret outputs retain CHECK-17. The feature pin, provider/trust gates, finite-limit
+decisions, all Windows/fuzz/storage/UI holds and post-V1 formal deferral remain.
+
+For an eventual async KE transport, apply the existing
+[§5.4.4 framing rule](../docs/windows-time-architecture.md#544-framing-cancellation-and-native-completion):
+retain header/body/write progress across resumable cancellation or retire the
+connection. Reuse the paired split/coalesced/truncated/partial-write controls
+through the actual selected transport. This is a cross-reference to an existing
+invariant, not a newly found synchronous-lab defect.
+
+**TIO-02 — later production polling trigger only.** If the actual S2.1 scheduler
+selects Interval, explicitly choose first-fire, missed-tick and resume behavior;
+`interval` fires first immediately and defaults to Burst. The inspected version's
+missed-tick strategies apply only beyond 5 ms lateness. Skip/Delay alone is no
+packet-rate policy; retain burst/backoff bounds, current generations and final
+send eligibility, with adaptive one-shot `sleep_until` still an alternative.
+When that consumer exists, delay it across nominal periods and observe actual
+packet times/counts, invalidation and healthy-source progress under CHECK-21/27;
+W11-W01/CHECK-11 owns real suspend/mapping behavior. There is no current engine
+Interval consumer. This later trigger does not precede or displace S2.2's freeze.
+
 ### Observable exit and Windows boundary
 
 Extend the existing bounded `nevrotick-observe` projection with actual KE/
@@ -3062,8 +3104,9 @@ Exclude keys, cookies, raw sensitive packets/UIDs and unsanitized native errors.
 The [ordinary trust-profile card](s0.1-crypto-feasibility.md#ordinary-s22-trust-profile-and-native-work--5-november-2026)
 and [Windows continuation](windows11-integration.md#430-ordinary-s22-windows-qualification--5-november-2026)
 own OPEN-8 and CHECK-9/26/27. Keep CNG-first/Schannel-second candidate order.
-Async `tokio-rustls` and synchronous `StreamOwned` remain alternatives to qualify;
-either can block in a synchronous verifier. Retain permits and native inputs in
+Async `tokio-rustls` and synchronous `StreamOwned` remain alternatives to qualify.
+Neither may block the responsive event-loop/control owner; a synchronous verifier
+may run inside the admitted complete-KE worker under §18.7.1. Retain permits and native inputs in
 the actual job until completion; cancellation removes publication eligibility,
 not capacity accounting. No replacement pools or detached retry growth.
 Use [§17.1/THR-26](../docs/windows-time-architecture.md#171-bounded-async-and-native-work)

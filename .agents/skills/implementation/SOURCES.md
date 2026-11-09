@@ -92,6 +92,59 @@ versions/features before use. Preserve all existing execution and admission hold
 | [Tokio RuntimeMetrics](https://docs.rs/tokio/latest/tokio/runtime/struct.RuntimeMetrics.html) and [current-thread source](https://docs.rs/tokio/latest/src/tokio/runtime/scheduler/current_thread/mod.rs.html) | Stable snapshots are incomplete corroboration; spawned-task counts and global queue depth do not enumerate the separately polled coordinator's work or native resources. |
 | [Tokio consume_budget](https://docs.rs/tokio/latest/tokio/task/coop/fn.consume_budget.html) | Conditional cooperation between bounded work units cannot preempt synchronous native work or establish deterministic fairness. |
 
+## Tokio engine guidance — 9 November 2026
+
+Primary evidence for [Tokio at the engine boundary](implement-rust/references/tokio.md).
+The inspected NevroTick source at `33a4a44d` and subsequent documentation-only
+`e74fb270` selects Tokio 1.54.1, defaults disabled, with `rt/net/time/sync/macros`.
+The immutable upstream revision is
+`b53b2001ed2ccfd9b87e32a0c6da1a1eebdc80b8`; its
+[manifest](https://github.com/tokio-rs/tokio/blob/b53b2001ed2ccfd9b87e32a0c6da1a1eebdc80b8/tokio/Cargo.toml)
+declares 1.54.1, edition 2021 and Rust 1.85 minimum. That minimum fits the
+project's 1.99.1 toolchain; it supplies no new graph or Windows qualification.
+
+| Primary evidence | Finding retained |
+| --- | --- |
+| [Handle](https://docs.rs/tokio/1.54.1/tokio/runtime/struct.Handle.html#method.block_on), [Runtime](https://docs.rs/tokio/1.54.1/tokio/runtime/struct.Runtime.html) | A current-thread worker using Handle::block_on needs another active Runtime::block_on for I/O/timers. Context, handle access, active driving and runtime ownership differ. Shutdown waiting does not terminate native work. |
+| [Builder blocking limit](https://docs.rs/tokio/1.54.1/tokio/runtime/struct.Builder.html#method.max_blocking_threads), [spawn_blocking](https://docs.rs/tokio/1.54.1/tokio/task/fn.spawn_blocking.html), [block_in_place](https://docs.rs/tokio/1.54.1/tokio/task/fn.block_in_place.html) | Shared DNS/optional file/std-I/O consumers, unbounded internal queue, started-work cancellation limits and current-thread applicability. The nested-worker progress case is a conditional design inference, not an observed project deadlock. |
+| [Pinned timeout poll](https://github.com/tokio-rs/tokio/blob/b53b2001ed2ccfd9b87e32a0c6da1a1eebdc80b8/tokio/src/time/timeout.rs#L205-L238), [timeout_at](https://docs.rs/tokio/1.54.1/tokio/time/fn.timeout_at.html) | The inner future is polled before the delay; immediate success can occur with an expired deadline. Preserve independent original-deadline and final-publication guards. |
+| [select](https://docs.rs/tokio/1.54.1/tokio/macro.select.html), [UDP](https://docs.rs/tokio/1.54.1/tokio/net/struct.UdpSocket.html), [AsyncReadExt](https://docs.rs/tokio/1.54.1/tokio/io/trait.AsyncReadExt.html), [AsyncWriteExt](https://docs.rs/tokio/1.54.1/tokio/io/trait.AsyncWriteExt.html) | Priority/fairness, nonblocking readiness, per-operation cancellation safety and partial stream progress. Existing framing/custody policy remains authoritative. |
+| [JoinHandle](https://docs.rs/tokio/1.54.1/tokio/task/struct.JoinHandle.html), [JoinSet](https://docs.rs/tokio/1.54.1/tokio/task/struct.JoinSet.html) | Detach versus abort versus joined settlement; convenience draining/collection does not preserve every required outcome. Two current timer handles need no replacement. |
+| [watch](https://docs.rs/tokio/1.54.1/tokio/sync/watch/index.html), [watch receiver](https://docs.rs/tokio/1.54.1/tokio/sync/watch/struct.Receiver.html), [mpsc sender](https://docs.rs/tokio/1.54.1/tokio/sync/mpsc/struct.Sender.html), [broadcast](https://docs.rs/tokio/1.54.1/tokio/sync/broadcast/index.html), [Notify](https://docs.rs/tokio/1.54.1/tokio/sync/struct.Notify.html) | Latest-state snapshots, individual messages, detectable lag and coalescing wakeups have different loss semantics. This consolidates existing correct control/custody guidance. |
+| [Interval](https://docs.rs/tokio/1.54.1/tokio/time/fn.interval.html), [MissedTickBehavior](https://docs.rs/tokio/1.54.1/tokio/time/enum.MissedTickBehavior.html) | Immediate first tick, default Burst and the greater-than-5-ms strategy threshold. Apply only when a real scheduler selects Interval; no default change or packet-rate guarantee follows. |
+
+The official [latest-release endpoint](https://api.github.com/repos/tokio-rs/tokio/releases/latest)
+identified [1.54.1](https://github.com/tokio-rs/tokio/releases/tag/tokio-1.54.1),
+published 21 October, on this review date; the project already pins it. Its
+[timer revert](https://github.com/tokio-rs/tokio/pull/8692) restores synchronization
+removed in 1.54.0. Upstream describes a concurrent timer-entry data race/use-after-free;
+this is no demonstrated outstanding defect in the project's patched current-thread
+consumers. Do not present the reverted removal of timer runtime handles as a
+current optimization.
+
+A bounded [1.54.0 release](https://github.com/tokio-rs/tokio/releases/tag/tokio-1.54.0)
+and pinned-API review found no immediate use for new
+[`worker_index`](https://github.com/tokio-rs/tokio/blob/b53b2001ed2ccfd9b87e32a0c6da1a1eebdc80b8/tokio/src/runtime/mod.rs),
+[blocking semaphore acquisition](https://github.com/tokio-rs/tokio/blob/b53b2001ed2ccfd9b87e32a0c6da1a1eebdc80b8/tokio/src/sync/semaphore.rs)
+or [`watch::Receiver::is_closed`](https://github.com/tokio-rs/tokio/blob/b53b2001ed2ccfd9b87e32a0c6da1a1eebdc80b8/tokio/src/sync/watch.rs).
+The current control owner deliberately retains an internal sender; external
+handle drop remains harmless. The stable
+[`max_io_events_per_busy_tick`](https://github.com/tokio-rs/tokio/blob/b53b2001ed2ccfd9b87e32a0c6da1a1eebdc80b8/tokio/src/runtime/builder.rs)
+knob is at most a future variable under existing R3-R-02 if actual I/O batching
+is shown to cause delay. The small current socket population supplies no tuning
+evidence; no capacity, assertion, feature or additional task is selected.
+
+Explicit-version web retrievals were intermittent. Successful rolling API pages
+displayed 1.54.1; consequential manifest/timeout and release/API source were
+also retrieved through GitHub at the immutable revision. Context7 resolved the
+library but its targeted driver query yielded no usable result; primary API/source
+inspection supplied that evidence. This bounded review is no archive-parity
+audit, rebuilt graph, benchmark or native execution. Existing
+[time-test](../testing/references/rust-techniques.md#time-and-asynchronous-execution)
+and [measurement](optimize-rust-performance/references/measurement.md#stable-tokio-observations)
+references retain their evidence limits. No upstream implementation/example code
+or third-party skill was copied into the new instructional reference.
+
 ## Windows service workflow — 7 November 2026
 
 The same-day metadata handoff extends [maintain-windows-metadata](maintain-windows-metadata/SKILL.md)
