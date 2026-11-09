@@ -37,9 +37,12 @@ completes before terminal reporting. These permits do not overlap or enlarge the
 one-slot capacity.
 
 The [8 November source handoff](../../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026)
-owns reuse for bounded S3.1 integration preparation. Current per-file qualification,
-product worker/composition adoption, supported identities/provisioning and native
-Windows evidence remain open; the fixture is not a completed production service.
+owns reuse for bounded S3.1 integration preparation. The
+[9 November portable privilege checkpoint](../../tasks/windows11-integration.md#portable-service-privilege-checkpoint-final-qualification--9-november-2026)
+closes the selected platform/caller ordinary and per-file coverage/mutation gates
+on its recorded Linux candidate. Product worker/composition adoption, supported
+identities/provisioning and native Windows evidence remain open; this fixture is
+not a completed production service.
 
 The source path is fixed executable → one dispatcher attempt → role-specific
 `ServiceMain` → fixed handler registration → private non-cloneable status token →

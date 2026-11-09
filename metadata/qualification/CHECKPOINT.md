@@ -1,6 +1,20 @@
 # Qualification restart checkpoint — 7 November 2026
 
-## Current owner amendment — 8 November 2026
+## Current assignment — 9 November 2026
+
+The subsequent [MD-P1–MD-P3 cloud assignment](../../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+authorizes complete portable metadata qualification with **four workers** and a
+portable raw-evidence bundle. Start from the repaired source below; freeze and
+re-admit the current tools/source and complete generated inventory, preserve
+isolation and all per-file gates, and exercise/read back validate → generate →
+check. This supersedes the earlier repair-only authorization; it does not mean
+the full campaign has run or passed. No completed current full-mutation exit is
+recorded here. The absent historical raw directory cannot supply reusable
+outcomes or a resumable checkpoint. W11-W10 retains results and any demonstrated
+metadata repairs; shared schema/manifest/lock/policy custody stays coordinated.
+All unrelated native/package, formal, fuzz, storage and UI holds remain.
+
+## Completed finite repair — 8 November 2026
 
 David explicitly requested fixing the seven-quote metadata defect. The finite
 repair is now implemented: the lexical scanner consumes at most two additional
@@ -23,8 +37,9 @@ cannot be freshly admitted, reused as current outcomes or resumed from the
 missing checkpoint. Fresh repair records use the existing coordinator chain's
 `phase-plan-20261108-v1/metadata-preflight-repair-v1` directory. Full per-file
 95% mutation qualification remains open; bounded causal controls add no score.
-The owner reopened this repair and its affected verification, not an automatic
-rerun of the entire historical 8,890-variant campaign. All native/package,
+At that checkpoint the owner reopened this repair and its affected verification,
+not the entire historical 8,890-variant campaign; the later assignment above
+authorizes fresh full qualification. All native/package,
 formal, fuzz, storage and UI holds remain.
 
 ## Historical snapshot — 7 November 2026

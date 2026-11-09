@@ -93,7 +93,7 @@ Quick navigation: [architecture](#3-component-architecture-and-authority), [NTS 
 **Implementation summary; historical main baseline, 5 November 2026:** the
 initial capsule was reconciled against
 [main at `5e98c79`](https://github.com/DavidOsipov/NevroTick/commit/5e98c79901c90de77db6c6047cb483ec10b8cbd5).
-The maintained table includes later 6–8 November engine, service and GUI source amendments;
+The maintained table includes later 6–9 November Core, engine, service and GUI amendments;
 that old pin does not identify their candidates. The [workspace manifest](../Cargo.toml),
 [lockfile](../Cargo.lock) and current source contain seven members. Source presence
 and task qualification are separate: linked tasks retain exact candidates,
@@ -106,7 +106,7 @@ qualify the combined integration candidate.
 | [ntp-wire](../crates/ntp-wire/Cargo.toml) | Bounded NTP decoding/framing, inert NTS-KE processing, NTS envelope/plaintext readers and a checked two-stage client request formatter | [Header](../tasks/s1.1-header.md), [framing](../tasks/s1.1-framing.md) and [protocol](../tasks/s0.1-protocol-comparison.md) tasks; the [formatter exit](../tasks/engine-transport-pilot.md#inert-request-formatter-final-qualification--8-november-2026) qualifies its three changed Linux owners. No TLS/AEAD, authenticated acquisition or sample authority |
 | [time-domain](../crates/time-domain/Cargo.toml) | Checked timestamps, eras, exchange arithmetic, rounding, distinct clock domains and pure leap knowledge/interpretation | [S1.1c](../tasks/s1.1-time-domain.md) and [S1.4](../tasks/s1.4-leap-policy.md); scoped arithmetic/knowledge evidence establishes no production eligibility or clock effects |
 | [ntp-exchange](../crates/ntp-exchange/Cargo.toml) | Single-slot unauthenticated fixture association and deterministic scenarios | [Association](../tasks/s1.1-exchange-association.md) and [harness](../tasks/s1.1-deterministic-harness.md) tasks; no production acquisition |
-| [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness, modeled correction accounting and pure conditioned-window/affine fitting | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md) retain fixture evidence. [Settled-rate](../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners), [N1b](../tasks/engine-transport-pilot.md#n1b-final-qualification--two-selected-core-owners) and [N2a](../tasks/engine-transport-pilot.md#n2a-final-qualification--two-selected-core-owners) complete their exact selected Linux scopes; full P1 and production history remain open |
+| [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness, modeled correction accounting, conditioned-window/affine fitting, finite phase plans and conditional frequency-prior/holdover | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md) retain fixture evidence. The [finite phase-plan](../tasks/s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners) and [frequency-prior](../tasks/s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners) exits add completed selected Linux scopes to the earlier numerical/selection work; full S1.4/P1 and production history remain open |
 | [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback observer and additive three-attempt same-source series with consume-once private receiver; conditional software-clock measurements, exact nominal values and common-origin relative views; `nevrotick-observe` remains the two-peer CLI | Recorded [measurement](../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026), [exact-nominal](../tasks/engine-transport-pilot.md#exact-nominal-terminal-qualification--6-november-2026), [rational-seconds](../tasks/s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners) and [common-run bridge](../tasks/engine-transport-pilot.md#common-run-reference-bridge--final-qualification-and-next-action) receipts retain their exact scopes. [N3a final qualification](../tasks/engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners) completes its selected Linux scope on407-input `e71aab7...`:91 ordinary/91 optimized tests,42 doctests, external contracts, both line gates and357 accounted variants (214 fresh library plus143 explicitly reused receiver outcomes; four reviewed equivalents, no unresolved survivor or timeout). The existing receiving-contract card retains its four transaction choices and supplier holds before integration. Observations stay unauthenticated/ineligible; production history, native Windows, P1 and product qualification remain open |
 | [windows-platform](../crates/windows-platform/Cargo.toml) | Portable lifecycle/status, SCM projection and checked privilege snapshots, with explicit completion custody | [W11-W05/S3.1 handoff](../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026); consumed by standalone laboratory hosts, with product adoption and native qualification open |
 
@@ -128,22 +128,28 @@ qualifies its three selected Linux source owners, including retirement on a
 within-series contradiction under the original declared allowance. Compatibility
 creates no mapping guarantee. Its separately completed runs, five exact
 equivalences, source/cause controls and outstanding factory observations retain
-their recorded scopes. The next independent protocol child is complete inert
-NTS request formatting under the existing S2.2 task; no crypto provider, runtime
-or production receiver is adopted by that routing.
+their recorded scopes. The independent inert NTS request formatter has completed
+its [selected qualification](../tasks/engine-transport-pilot.md#inert-request-formatter-final-qualification--8-november-2026).
+The standalone [algorithm-15 sealing child](../tasks/s0.1-crypto-feasibility.md#s22-qualified-mutation-instrument--9-november-2026)
+also has a bounded GNU exit. The subsequent [actual KE-to-request laboratory handoff](../tasks/s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026)
+has scoped ordinary/compiler/privacy evidence; per-file metrics and native gates
+remain open. It produces
+one never-sent packet and no production association. No product crypto provider,
+runtime or production receiver is adopted by these laboratory results.
 Production history/Core integration, native Windows and P1 remain open.
 
-**8 November service source handoff:** [windows-platform](../crates/windows-platform/Cargo.toml)
+**9 November service source checkpoint:** [windows-platform](../crates/windows-platform/Cargo.toml)
 owns portable lifecycle/status, SCM projection and checked privilege snapshots for
 the separate engine and broker roles. The standalone
 [laboratory hosts](../tools/windows-service-fixture/README.md) consume it through
 real Windows dispatcher, ServiceMain, callback, status and self-token adapter
 source; the portable crate itself contains no native calls. The
 [W11-W05/S3.1 handoff](../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026)
-records implemented source and retained host/static checks, with source integration
-preparation available. These are inert laboratory compositions, not production
-services. Product worker/composition adoption, current per-file qualification,
-final identities/provisioning and native service evidence remain open.
+records integration prerequisites. The [portable privilege observer/consumer exit](../tasks/windows11-integration.md#portable-service-privilege-checkpoint-final-qualification--9-november-2026)
+completes the selected platform/caller ordinary and per-file 90%/95% gates in
+Linux fixtures, including bounded invocation diagnostics. These remain inert
+laboratory compositions. Product worker/composition adoption, final
+identities/provisioning and native service evidence remain open.
 
 **6 November S2.1 amendment:** the engine now depends on `time-domain` alongside
 `ntp-wire`, Tokio and `getrandom`. Its explicit experimental model preserves

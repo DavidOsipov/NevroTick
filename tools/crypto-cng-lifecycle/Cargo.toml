@@ -31,6 +31,7 @@ rustls-platform-verifier = { path = "vendor/rustls-platform-verifier" }
 
 # Pure typed admission/response owners; no host TLS provider or fallback.
 [dependencies]
+nevrotick-s115-aes-siv-fixture = { version = "=0.0.0", path = "../crypto-aes-siv-witness" }
 ntp-wire = { version = "=0.0.0", path = "../../crates/ntp-wire", default-features = false }
 rustls-pki-types = { version = "=1.15.1", default-features = false, features = ["std"] }
 zeroize = { version = "=1.9.1", default-features = false, features = ["alloc"] }

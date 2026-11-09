@@ -2307,6 +2307,20 @@ evade the block, relax protection or substitute host execution. Retain the
 native gap and continue the existing S2.2 source contract; further diagnostics
 need a bounded reviewed job and a newly admitted guest.
 
+**9 November owner execution amendment:** David additionally authorizes GitHub
+Actions machines for this work, and permits main-host tests only if they will
+not crash his Windows instance. Prefer a disposable GitHub-hosted Windows job
+for native laboratory qualification; no such main-host safety guarantee has
+been established, so no main-host payload is selected. Freeze exact candidate,
+CPU/runtime/tool prerequisites, bounded test inventory, privacy/output limits
+and independent expected outcomes before dispatch. Record runner image/build,
+effective protections and actual exits; hosted Windows results do not qualify
+David's machine, the full support matrix, installed services or packages.
+This authorizes preparation of that bounded hosted route, not protection
+relaxation, retry of the blocked Sandbox image, S134/fuzz/storage work or a
+production TLS/trust/provider waiver. Existing source/dependency admission and
+critical-file gates remain mandatory.
+
 **Resource checkpoint:** the published `89f035e` verification copy and compiled
 LLVM targets from two superseded incomplete privilege campaigns were deleted:
 2,284 files / 302,154,214 logical bytes. Their source, reports and logs remain;

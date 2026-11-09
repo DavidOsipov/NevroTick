@@ -21,30 +21,32 @@ tray cleanup source repair retains its missing GUI/native evidence. H-ET1 remain
 the scheduling question recorded below, without a demonstrated contract defect.
 These gaps lift no hold. N1b's correction review closed N1-R1 and its
 [selected two-owner qualification](#n1b-final-qualification--two-selected-core-owners)
-is complete. The next bounded action is the N2 fit/suffix contract below.
+is complete. Its then-next N2 fit/suffix contract and subsequent selected children
+are also complete; the current continuation below supersedes that old routing.
 No commit/stage/push or Windows execution follows.
 
-**Current planned product action, 7 November 2026:** after the scoped leap, measurement
-and [two-owner numerical exits](s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners),
-development §7 selects this task's implemented
-[common-run reference/anchoring bridge](#next-bounded-bridge-common-run-reference-and-exact-anchoring--6-november-2026).
-Its [final selected-owner exit](#common-run-reference-bridge--final-qualification-and-next-action)
-passes134 ordinary,135 optimized and64 doctests across domain/engine, with
-96.201%/98.3516% library/relative coverage and complete viable mutation accounting.
-The task retains exact executed candidates, failed attempts and reviewed evidence
-reuse after the pull. Continue the existing
-[N2 contract entry](#n2-entry--conditioned-affine-fitting-and-suffix-contract), retaining
-`authentication=none eligible=0`. This is no estimator admission or clock effect.
-W11-W01 remains partially prepared; uncertainty, production scheduling and native
-qualification remain later scopes. Older proof-first wording below is historical
-under the current OD-10 amendment. Historical receipts retain their candidates.
+**Current product action — 9 November 2026:** [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+selects qualification of the authored [actual KE-to-request laboratory handoff](s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026)
+under this task's [one-association/request card](#next-source-contract-one-nts-association-and-one-outstanding-request).
+The numerical bridge, N1/N2/N3, conditional-quality, session/coherence and inert
+formatter children already have selected exits. Core finite phase-plan and
+frequency-prior exits are retained in the Core task. Do not repeat those stages.
+The standalone KE producer and algorithm-15 sealer exist; their newly combined
+private receiver now passes its [ordinary checkpoint](s0.1-crypto-feasibility.md#actual-handoff-ordinary-checkpoint--9-november-2026):
+fresh graph/policy, 42 cases per host profile, both-target compiler/lint and nine
+external privacy consumers. Complete source-bound 90%/95% gates and generation-gap
+review, plus the separately admitted native route, in the crypto/W11 tasks.
+It constructs no sendable production capability and transmits nothing. Current
+engine observations remain `authentication=none eligible=0`; genuine mapping,
+production association, history admission, providers/trust, native qualification
+and full P1/P2 remain open. Historical receipts retain their exact candidates.
 
 The [address-family continuation](#address-family-admission-and-bounded-acquisition-progress--5-november-2026)
 adds local-path admission and bounded alternative progress to later S2.1/S2.2
 acquisition. Its implementation and native qualification remain pending.
 
-**Status:** [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) is now the
-sixth main workspace member. The S25 114-input candidate passes the
+**Status:** [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) is one of
+seven current workspace members. The historical S25 114-input candidate passed the
 configured dependency, complete GNU portable and Windows cross-build lanes,
 plus twenty-four real GNU CLI cases and eight ordinary-user Windows CLI cases.
 Its [main checkpoint](#main-workspace-checkpoint) and
@@ -2907,7 +2909,7 @@ Do not implement a parallel counter-only model to fill these gaps:
 | Socket and path | Existing `prepare_slot` owns an actual pilot socket, but supplies no NTS association. Bind the selected actual socket/endpoint and admitted path owner; no current production path-revision supplier exists. |
 | Trust basis and revision | The qualified crypto/trust owner must provide the accepted profile and its current revision/invalidation signal. The laboratory invocation alone has no production trust-change supplier. |
 | Clock/mapping continuity | W11-W01 and the actual clock-domain owner must supply current mapping/continuity. `Control::epoch` is explicitly pilot-local aggregate invalidation, not a configuration, association or clock generation. A clock discontinuity retires affected exchanges; it does not by itself prove cryptographic keys invalid. |
-| Complete KE handoff | Current laboratory `InternalCandidate::finish` validates/commits, drops both exporter keys and all cookies, and returns only `Summary` counts. It exports no transferable association. Freeze a private, custody-preserving same-connection KE result and serialized receiving-owner publication before adoption; do not reconstruct secrets or authority from the summary. |
+| Complete KE handoff | The reviewed committed predecessor's `InternalCandidate::finish` dropped both exporter keys and all cookies before returning counts. The [authored laboratory handoff](s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026) now moves same-connection custody through a private never-send request receiver before final commit and original CNG shutdown. Its scoped graph/ordinary/compiler/privacy checkpoint passes; per-file metrics and native qualification remain open. It publishes no production association. Do not reconstruct secrets or authority from summary counts. |
 
 The future candidate must retain its actual issuer/context through publication;
 equal numeric labels from another owner cannot substitute. Policy/path/trust
@@ -2933,10 +2935,11 @@ survivor, timeout or exclusion. Its
 [accepted receipt](s0.1-crypto-feasibility.md#s22-qualified-mutation-instrument--9-november-2026)
 preserves the compiled wipe-defect control, actual capwarn flags and generation
 limits. Ordinary compiler/release policy stays strict. Continue the existing
-actual KE-producer-to-receiver freeze; provider/native/product gates remain open
+actual KE-to-request receiver qualification; provider/native/product gates remain open
 under the crypto task.
 
-Fresh-context `nts_next_source_boundary` traced the actual KE producer again:
+The retained fresh-context `nts_next_source_boundary` review traced the
+pre-handoff KE producer:
 `InternalCandidate::finish` validates and commits, then destroys both exporter
 keys and all cookies before returning `Summary` counts. `exchange_owned` first
 drops its TLS/socket state; `exchange` drops its outer CNG shutdown owner before
@@ -2945,9 +2948,14 @@ TLS/AEAD edge. A useful future handoff must name its exclusive real receiver,
 move the same-connection profile/identity/endpoint/expiry with both keys and
 cookies, and settle its relationship to the CNG shutdown scope. Retaining
 secrets or adding counters without that receiver would not close the seam.
-This read-only source review authorizes no product integration or new native
-execution; the existing producer/receiver freeze and separate provider/currentness
-gates remain required.
+This historical review established the missing seam; the later
+[actual handoff source contract](s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026)
+and dirty `handoff`/`request` implementation now name its private receiving owner.
+After successful TLS closure, that receiver seals the first exact cookie using
+C2S, retains the original control through final commit and destroys secrets before
+count-only output. The scoped ordinary checkpoint passes; per-file/native
+qualification remains pending. No production association,
+send/response receiver, new native execution or provider/currentness pass follows.
 
 | Actual transition / sole owner | Allowed state/effect and failure custody |
 | --- | --- |
@@ -3173,8 +3181,10 @@ aim where practical; an unavailable second peer remains an evidence gap.
 
 **Remaining gates:** complete graph/licence and selected provider/Windows trust
 admission, finite runtime contracts including the local zero-cookie disposition,
-the real numerical bridge and its proofs, and actual interoperability/resource/
-native evidence. A declared normal-validation controlled lab peer/root can prove
+the actual admitted numerical/Core consumer and behavioral qualification, and
+actual interoperability/resource/native evidence. Formal obligations remain
+post-V1 under OD-10 §14.1 and do not block this pre-V1 path. A declared
+normal-validation controlled lab peer/root can establish
 that narrow path; final installed service/store/enforcement checks remain P3/P6.
 Full MSIX, Slint migration and all P3 work are not prerequisites for the bounded
 S2.2 prototype. Cached/resumed associations, wrong-date recovery, source defaults

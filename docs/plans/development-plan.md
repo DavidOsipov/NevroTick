@@ -2,7 +2,7 @@
 
 **Created:** 29 October 2026; **documentation reconciliation:** 9 November 2026
 
-**Status:** P0–P7 remain open. The conditional frequency-prior child has completed its selected four-owner GNU fixture exit, alongside the earlier finite plan, session/coherence and inert formatter. Full S1.4/P1, production/native adoption, suppliers and Slint integration/backend/text approval remain open. Section 7 routes the next bounded source preparation.
+**Status:** P0–P7 remain open. Core frequency-prior, engine session/coherence, inert formatting, laboratory algorithm-15 sealing and portable service-privilege children have completed their selected exits. The actual laboratory KE-to-request handoff has passed its scoped ordinary/compiler/privacy checkpoint; affected per-file metrics and native qualification remain open. Full S1.4/P1, production acquisition/adoption, native evidence and Slint backend/text approval remain open. Section 7 routes the next bounded qualification.
 
 **Original planning baseline:** `f7ba1e7724a41cc846b1df6b9ddb20f095988b7a`
 
@@ -40,7 +40,7 @@ records what remains and how each guarantee closes. Completed helpers and green
 tooling do not complete their parent algorithm; this amendment schedules no
 pre-V1 formal work and changes no current product acceptance gate.
 
-**Immediate priority:** continue the reviewed S2.2 association/cookie/request source preparation after the [frequency-prior exit](../../tasks/s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners). Its finite budgets, actual providers/producers, graph, ordinary trust, runtime and pending privacy decisions gate implementation. W11-W01 owns actual capture/mapping suppliers; production admission and history integration remain open. Parallel metadata MD-P1–MD-P3 and service work retain their owners. All execution holds and post-V1 formal deferral remain.
+**Immediate priority:** freeze and qualify the newly authored [actual laboratory KE-to-request handoff](../../tasks/s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026) in the existing S2.2 chain. This standalone child constructs one untransmitted packet; its current graph and ordinary/compiler/privacy checkpoint passes, while source-bound per-file metrics and native gates remain open. Production association, cookie-use policy, providers/trust, actual capture/mapping suppliers and history integration remain separate open prerequisites. Parallel metadata MD-P1–MD-P3 and service work retain their owners. All execution holds and post-V1 formal deferral remain.
 
 **Current Core checkpoint:** the [frequency-prior four-owner exit](../../tasks/s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners) passes 509 ordinary/509 optimized tests, 98 doctests, scoped external/mechanism joins, all four line gates and the complete 699-variant union. Counts are 424 caught, 271 compiler-unviable and four reviewed equivalent misses; no timeout or unresolved survivor remains, and equivalents earn no kills. The task retains exact execution/reader identities, original failures and later metadata joins. This is a conditional GNU fixture exit; full S1.4/P1 and production/native qualification remain open.
 
@@ -106,6 +106,44 @@ selected Slint migration stays in `tasks/s0.5-ui-comparison.md`. New development
 may have bounded records under `tasks/`, linked here, without duplicating the
 architecture. Raw generated logs/builds belong in owned external output locations
 or the architecture's phase evidence location, not in the maintained design bundle.
+
+### Progress reconciliation — 9 November 2026
+
+This assessment reads committed `f2f0f52f7db3078e239f76d6780da1faa8175f4d`
+and the then-uncommitted CNG handoff source/lock and task amendments. Source
+presence, recorded bounded qualification and complete product exits are distinct.
+The Core ordinary/coverage/union receipts are present and match their recorded
+hashes; all four selected critical Core files still match. Fifteen of 466 broader
+source/helper bindings have since changed, so this is scoped evidence reuse,
+not a fresh whole-checkout qualification. No Rust/native/mutation campaign was
+rerun for this documentation assessment.
+
+| Phase | Progress supported by the current source and linked records | Remaining product exit |
+| --- | --- | --- |
+| P0 foundations | Seven-member workspace, source/provenance and configured checks; bounded crypto, UI and platform feasibility results exist. The [security repair checkpoint](../../tasks/codeql-cloud-handoff.md#imported-full-repository-findings--9-november-2026) records hosted portable/security passes at `f2f0f52`. | Complete relevant provider/trust, native/resource and platform qualification; a passing hosted source checkpoint does not close P0. |
+| P1 deterministic Core | Numerical, selection, modeled correction, finite phase-plan and conditional frequency-prior children have scoped fixture exits. | Complete controller/physical assumptions, production source/history admission and full S1.4/P1 acceptance. |
+| P2 acquisition | Controlled acquisition/session/coherence and inert request formatting are qualified in their recorded scopes. The standalone KE producer and algorithm-15 sealer exist; the real private KE-to-request receiver is newly authored. | Qualify that new handoff, then close actual provider/currentness/association, protected UDP/response, Core-consumer and native gates. No production authenticated pipeline exists yet. |
+| P3 services and secured state | Lifecycle/SCM foundation, exact-role privilege admission and bounded fixture diagnostics exist; selected platform/caller portable gates are complete. | Adopt real product workers, final identities/provisioning, secured IPC/state and actual native lifecycle/security behavior. |
+| P4 clock integration | Pure proposal/accounting and modeled acknowledged-delivery mechanisms exist in Core. | Implement and qualify the real broker, clock authority, W32Time handover/restoration and recovery in admitted Windows environments. |
+| P5 UI | Slint v0.4 fixture workflows and presentation/localization source exist; later AccessKit repairs have bounded controls. | Independent critical-text approval, live backend integration, triggered D1–D3 work and exact native/accessibility/resource/security qualification. |
+| P6 delivery | Complete MSIX/Store, all-file signing, metadata and WinGet work have selected owners and contracts. Metadata repair/typing/line checks are recorded. | Complete metadata mutation qualification, real complete package/provisioning/signing/lifecycle and required WinGet capability evidence. MSI remains conditional on David selecting it. |
+| P7 final qualification | Acceptance, support/incident and release procedures are documented. | An integrated exact candidate, required native/package/security/operational evidence, support decisions and David's release approval. |
+
+The software still does not synchronize the user's clock. Completed subcomponents
+are substantial progress, but neither task/test counts nor eight still-open
+phases measure a percentage of remaining effort. Do not infer velocity or a
+release date from the earlier rough 30% estimate. Formal work remains post-V1;
+the scoped Sandbox authorization and all separate execution holds remain intact.
+
+**Assessment validation:** three read-only reviewers checked Core/engine,
+crypto/security/metadata and platform/UI claims against current source and retained
+records. They used inherited context, not fresh-context review. Their review
+accepted the bounded next qualification after correcting stale queue, service
+status and GUI identities/counts; it supplied no new product pass. The 66-skill
+metadata/link/inventory checker, changed local link/heading checks and whitespace
+checks pass. Actual GUI lock/policy/checker identities agree. Existing dirty and
+untracked bytes, HEAD and index were preserved; only this documentation
+reconciliation was added, without staging or publication.
 
 ## 2. Development order and ownership
 
@@ -969,7 +1007,10 @@ explicit residual populations.
 [five imported source findings](../../tasks/codeql-cloud-handoff.md#imported-full-repository-findings--9-november-2026)
 now have source repairs and bounded host/facade regression evidence. The child repairs
 AccessKit callback custody and setup/CI acquisition limits and authority;
-host/facade results remain distinct from held Windows and release qualification.
+the task's final `f2f0f52` checkpoint records hosted Rust product and repository
+security passes, including actual quota-backed metadata-only acquisition and
+the current-lock dependency row. Native USER32/UIA/PowerShell, affected critical-file
+metrics and release qualification remain distinct and open where not executed.
 Retain those gaps at the existing owners and return to the NTS preparation below.
 It creates no formal, native, fuzz, storage or UI-deferral waiver.
 
@@ -1206,15 +1247,24 @@ or timeout remains. A corrected read-only union separately pins its reader and
 frozen native inputs; prior incomplete receipts remain unchanged. This closes
 neither physical confidence, production admission nor S1.4/P1.
 
-**Current executable product task:** continue the independently reviewed
+**Current executable product task:** qualify the newly authored
+[actual laboratory KE-to-request handoff](../../tasks/s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026)
+under the independently reviewed
 [S2.2 one-association/request preparation](../../tasks/engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request)
-in its existing ordered handoff. Settle actual producers and finite limits,
-then independently freeze the admitted implementation slice. Cookie reuse and
+in its existing ordered handoff. Its [ordinary checkpoint](../../tasks/s0.1-crypto-feasibility.md#actual-handoff-ordinary-checkpoint--9-november-2026)
+now passes fresh graph/policy rows, 40 units plus two actual CLI cases in each
+profile, both-target compiler/lint checks and nine external consumers. Continue
+affected 90%/95% gates and generation-gap review; prepare the separately authorized
+hosted-Windows route under W11 §4.19. Its
+observable exit is a qualified private, never-send laboratory receiver under
+the original control and CNG lifetime, not a production association. Use the
+existing finite one-heavy-job/one-inner-worker recipe and stop on resource
+preflight failure. Cookie reuse and
 zero-replacement-cookie decisions remain held for their dependent paths; provider,
 graph, ordinary trust and runtime gates remain. Do not repeat completed Core
 contract or qualification stages. The five-GiB full-row/mutation floor and all
 isolation and metric requirements remain unchanged.
-The immediate crypto source child is the reviewed
+The completed strict-verifier source correction follows the reviewed
 [strict laboratory certificate-verifier correction](../../tasks/s0.1-crypto-feasibility.md#s22-strict-laboratory-verifier-source-child--9-november-2026):
 cached-chain refusal settings, initialized policy-call status and checked date
 conversion in the existing Windows route. The subsequent
@@ -1240,7 +1290,7 @@ TLS/exporters, cleanup, target/native qualification and complete critical-file
 gates remain held or unfinished before product adoption. Packet AEAD admission
 still gates protected UDP. This selects no shipping
 trust policy and lifts no Windows/native or other execution hold.
-The next independent source child is the existing AES witness's
+The completed independent laboratory sealing child is the existing AES witness's
 [algorithm-15 request-sealing bridge](../../tasks/s0.1-crypto-feasibility.md#s22-laboratory-request-sealing--source-contract-9-november-2026),
 with an independently reviewed two-stage contract and complete-packet oracle.
 Its initial Linux checkpoint now passes both-target graph/policy checks, Clippy,
@@ -1255,11 +1305,14 @@ six of six viable staged-decoder mutations caught, with five type-unviable
 variants and no survivor, timeout or exclusion. The
 [accepted receipt and generation reconciliation](../../tasks/s0.1-crypto-feasibility.md#s22-qualified-mutation-instrument--9-november-2026)
 retain actual flags, the compiled wipe-defect control and ungenerated guarantees.
-Ordinary strict compiler/release policy stays unchanged. Continue the existing
-actual KE-producer-to-receiver contract freeze; provider and native
-qualification remain open. The engine's concrete issuer map
-also retains the missing custody-preserving KE handoff; count-only laboratory
-summaries and fixture counters cannot establish a production association.
+Ordinary strict compiler/release policy stays unchanged. The subsequent
+[actual KE-to-request handoff](../../tasks/s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026)
+now has producer/receiver source with a completed scoped ordinary checkpoint:
+after successful TLS closure it seals the first exact cookie with C2S before
+final commit and original CNG shutdown, then destroys secrets and reports counts
+only. Complete its remaining per-file metrics and native evidence without
+repeating its contract freeze or the old sealer campaign. A production association/currentness issuer,
+provider and native qualification remain open; counts establish no authority.
 In parallel, the required W11-W05/S0.2
 [exact-role privilege-admission source child](../../tasks/windows11-integration.md#exact-role-observation-and-startup-source-contract--9-november-2026)
 has completed contract review, actual-consumer RED→GREEN and the platform owner's
@@ -1294,8 +1347,9 @@ witnesses cross-link successfully, but application-control policy refused the
 probe's guest launch (exit 4551). CPU admission and all AES native tests remain
 incomplete. [W11 §4.19](../../tasks/windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026)
 retains runtime metadata admission, the refusal and verified owned-guest disposal.
-Preserve the block and continue the existing actual KE-producer/receiver contract
-freeze; no repeated native campaign, protection change or host fallback follows.
+Preserve the block and qualify the authored laboratory KE-to-request handoff
+through its admitted host/cross-target checks; no repeated native campaign,
+protection change or host fallback follows.
 
 The parallel portable service-diagnostics source arrived in `f9cc578`; its eight
 service fixture/task paths leave the checked Core product inputs unchanged.

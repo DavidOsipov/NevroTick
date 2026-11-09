@@ -446,3 +446,14 @@ three commands exited0. Its maintained test runs after CI compiler preparation.
 The refreshed acquisition controls pass34 tests (two targeted RED failures before
 repair, with27 healthy controls); current-lock hosted acquisition and subsequent
 dependency/product rows still require the next changed-candidate run.
+
+**Hosted final source checkpoint:** signed `f2f0f52` passed
+[Rust product checks, run42640100725](https://github.com/DavidOsipov/NevroTick/actions/runs/42640100725)
+and [Repository security, run42640100758](https://github.com/DavidOsipov/NevroTick/actions/runs/42640100758).
+The new real-Cargo control,13-case facade, actual quota-backed metadata-only
+acquisition and current-lock dependency row all passed. The complete configured
+portable format/compiler/Clippy/rustdoc, package tests/doctests and selected
+optimized rows then passed. This resolves both hosted integration failures
+above without increasing acquisition limits or weakening isolation. Raw output
+and final observation remain under `metadata-only-repair-v1` in the same local
+evidence root. No native Windows, new critical-file metric or release pass follows.

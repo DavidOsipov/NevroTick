@@ -72,6 +72,26 @@ Windows experiment.
 
 ## Bounded ordinary-validation KE producer source
 
+**9 November handoff source amendment:** the newly authored private receiver
+consumes the actual same-connection C2S key and first exact cookie through the
+existing algorithm-15 witness, after successful TLS closure and before CNG
+shutdown. It constructs one untransmitted packet using CNG UID32/nonce16 entropy;
+S2C remains separately owned. The prepared packet retains its original control
+until the fresh final commit. Cancellation, expiry or refusal returns no success;
+all application-owned secret buffers retire before reporting counts. The fixed
+zero-T1 header is a never-send laboratory input. Successful output adds
+`sealed_packet_bytes` and `transmitted=0`, never packet/key/cookie bytes.
+
+The current combined graph passes exact Linux/Windows admission; the receiver
+passes 40 units plus two actual CLI cases per ordinary/verify-release/release
+profile, both-target lint/compiler checks and nine actual privacy consumers.
+The [ordinary checkpoint](../../tasks/s0.1-crypto-feasibility.md#actual-handoff-ordinary-checkpoint--9-november-2026)
+retains the initial failures and exact scope. **Per-file metrics and native
+qualification remain open.** Earlier results below retain their historical
+source scopes; product manifests/provider selection, ordinary trust/native
+cleanup and complete S2.2 remain separate. See the
+[reviewed handoff contract](../../tasks/s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026).
+
 `nevrotick-nts-ke-probe` adds the actual Windows CNG/Rustls TLS-1.3-only connection,
 ordinary strict-profile verifier, NTS-KE exchange and both regular exporters.
 It admits exactly a numeric loopback peer with nonzero port and a separately

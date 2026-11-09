@@ -19,6 +19,8 @@ use ntp_wire::{
 use rustls_pki_types::ServerName;
 use zeroize::Zeroizing;
 
+mod handoff;
+mod request;
 #[cfg(test)]
 mod tests;
 #[cfg(windows)]
@@ -65,6 +67,10 @@ enum Failure {
     Negotiation(NtsKeNegotiationError),
     /// Cookie count, aggregate size or a checked copy exceeded its budget.
     Cookies,
+    /// The actual provider refused the one bounded UID/nonce entropy request.
+    Entropy,
+    /// The private fixed-shape request receiver refused its exact input.
+    Packet(request::RequestError),
     /// An unadmitted endpoint hint or zero port was supplied.
     Endpoint,
     /// Connecting the one numeric peer failed.
@@ -200,7 +206,6 @@ impl Control {
     }
 
     /// Observe actual fresh time while holding the current-publication guard.
-    #[cfg(windows)]
     ///
     /// # Errors
     /// Refuses a poisoned lock, cancelled/committed phase or expired deadline using fresh
@@ -251,7 +256,6 @@ impl Control {
     }
 
     /// Commit after a fresh time observation under the cancellation lock.
-    #[cfg(windows)]
     ///
     /// # Errors
     /// Refuses poisoned, cancelled, already committed or expired state; no commit occurs on
@@ -423,12 +427,13 @@ fn read_response(
 }
 
 /// Payload-free historical completion after all secret/native owners drop.
-#[cfg(windows)]
 struct Summary {
     /// Actual bounded initial cookie count.
     cookies: usize,
     /// Actual aggregate opaque cookie payload bytes.
     cookie_bytes: usize,
+    /// Complete untransmitted laboratory request length after final commit.
+    packet_bytes: usize,
 }
 
 /// Primary operation failure and a separately retained cancellation failure.
@@ -489,6 +494,8 @@ fn failure_labels(failure: Failure) -> (&'static str, &'static str) {
         Failure::Frame(_) => ("response", "framing"),
         Failure::Negotiation(_) => ("response", "negotiation"),
         Failure::Cookies => ("response", "cookie-budget"),
+        Failure::Entropy => ("request-sealing", "entropy"),
+        Failure::Packet(_) => ("request-sealing", "encoding"),
         Failure::Endpoint => ("response", "endpoint"),
         Failure::Connect(kind) => ("connect", io_label(kind)),
         Failure::Peer => ("connect", "peer-mismatch"),
@@ -551,7 +558,7 @@ pub(super) fn entry(mut arguments: impl Iterator<Item = OsString>) -> std::proce
     match run(config) {
         Ok(summary) => {
             let mut output = io::stdout().lock();
-            if writeln!(output, "scope=laboratory-ke completed=1 cookies={} cookie_bytes={} native_cleanup_qualified=0", summary.cookies, summary.cookie_bytes).is_err() || output.flush().is_err() {
+            if writeln!(output, "scope=laboratory-ke completed=1 cookies={} cookie_bytes={} sealed_packet_bytes={} transmitted=0 native_cleanup_qualified=0", summary.cookies, summary.cookie_bytes, summary.packet_bytes).is_err() || output.flush().is_err() {
                 return ExitCode::FAILURE;
             }
             ExitCode::SUCCESS

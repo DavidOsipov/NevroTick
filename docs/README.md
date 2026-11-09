@@ -26,6 +26,13 @@ contracts, mandatory skill reading by phase and phase-end acceptance. Use it to
 assign the next bounded development task; the canonical documents below continue
 to own requirements, and task records own executed evidence.
 
+The [9 November progress reconciliation](plans/development-plan.md#progress-reconciliation--9-november-2026)
+maps completed Core/engine/service and laboratory crypto children to the still-open
+P0–P7 product exits. Its next action is qualification of the authored private
+KE-to-request laboratory handoff, with metadata qualification in its separate
+assigned lane. Recorded fixture/hosted passes do not establish an integrated
+authenticated client, native clock synchronization or release readiness.
+
 | Question | Source of truth |
 | --- | --- |
 | What code exists now, and which results apply to it? | [Current implementation summary](windows-time-architecture.md#1-current-state-capsule), backed by the workspace manifests, lockfile, source and linked candidate-specific task evidence. Dated baseline and review records below remain historical. |

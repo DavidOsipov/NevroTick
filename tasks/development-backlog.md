@@ -59,16 +59,18 @@ resume through normal bounded planning after V1. The owner's report of more than
 a day without a newly identified product mathematical defect explains the
 priority change; it supplies no general correctness claim.
 
-**Ready product continuation:** freeze the existing
-[S2.1 observation-to-Core admission contract](engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission),
-following the [completed pure-leap checkpoint](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026)
-and [three-owner measurement qualification](engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026).
-That recorded three-owner candidate passed 47 ordinary tests, 12 doctests and
-complete per-file coverage/mutation gates, with two exactly reviewed equivalent
-survivors and no kill credit for them. Those receipts do not qualify later source
-or dependency graphs. The [refreshed graph's numerical critical-owner gates](s0.1-source-readiness.md#refreshed-graph-and-current-evidence)
-remain pending; reconcile them before the reviewed reference/anchoring bridge,
-in the order owned by [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+**Current product continuation — 9 November 2026:** qualify the authored
+[actual laboratory KE-to-request handoff](s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026)
+under [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+The earlier measurement, numerical bridge, N1/N2/N3, conditional quality,
+session/coherence, finite phase-plan and frequency-prior children have completed
+their selected exits; retain their exact candidates rather than repeating their
+contracts or treating an old refreshed-graph note as the current queue.
+The standalone KE producer and algorithm-15 sealer also exist. Their historical
+checks do not qualify the changed combined graph/private receiver. Its new
+[ordinary/target/privacy checkpoint](s0.1-crypto-feasibility.md#actual-handoff-ordinary-checkpoint--9-november-2026)
+passes, while source-bound 90%/95% gates remain open; production association,
+protected UDP, provider/trust and native gates remain separate.
 Freeze reference time, genuine date/scale provenance,
 uncertainty/divisor and actual receiver semantics before production history
 insertion. Authentication and eligibility remain absent; estimator admission,
@@ -667,8 +669,8 @@ must still fail explicitly instead of becoming Direct.
 
 | Future card / role owner | Prerequisites and next bounded action | Independent observation required for exit |
 | --- | --- | --- |
-| S2.1 UDP/DNS observation / engine/platform | [Three-owner measurement qualification](engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026) passes on its recorded host candidate. Next freeze the existing observation-to-Core admission contract. W11-W01/native, production scheduling/KoD, leap/scale and statistical admission retain separate contracts. | Actual controlled IPv4/IPv6 exchanges yield independently checked, explicitly ineligible nominal measurements or diagnosed refusal. Production wrong-endpoint/correlation/generation and forged/stale KoD controls remain required at their reached owners; no threshold or retry bypass. CHECK-6/8/21/25/27. |
-| [S2.2 ordinary composition](engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026) / engine/protocol/security | Source card prepared; implementation deferred. Exact TLS/provider/verifier/AEAD graph, ordinary Windows profile, finite runtime/lifetime contracts and local zero-cookie disposition precede dependent integration. | Fresh KE publishes one complete association; protected UDP completes once and eligible evidence reaches the actual Core consumer beside authentic numerical refusal. Paired path/packet/resource/trust controls retain independent vectors/interoperability. CHECK-6/7/8/9/17/20/21/25/26/27, AC-04. |
+| S2.1 UDP/DNS observation / engine/platform | Controlled measurement, numerical bridge, N3 acquisition and session/coherence children have selected host exits in the [engine task](engine-transport-pilot.md). Their receiving-transaction choices are settled; actual production suppliers/history admission remain open. W11-W01/native, scheduling/KoD, leap/scale and statistical admission retain separate contracts. | Actual controlled IPv4/IPv6 exchanges yield independently checked, explicitly ineligible nominal measurements or diagnosed refusal. Production wrong-endpoint/correlation/generation and forged/stale KoD controls remain required at their reached owners; no threshold or retry bypass. CHECK-6/8/21/25/27. |
+| [S2.2 ordinary composition](engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026) / engine/protocol/security | Laboratory KE source, qualified inert formatter and scoped algorithm-15 sealer exist. Qualify the newly authored [actual KE-to-request laboratory receiver](s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026); it sends no packet. Production implementation remains deferred behind actual issuers, exact provider/trust/AEAD graph, runtime/lifetime and cookie-policy gates. | Fresh KE publishes one complete association; protected UDP completes once and eligible evidence reaches the actual Core consumer beside authentic numerical refusal. Paired path/packet/resource/trust controls retain independent vectors/interoperability. CHECK-6/7/8/9/17/20/21/25/26/27, AC-04. |
 | S2.3 reuse/recovery / engine/security/storage | Qualified ordinary NTS first; OPEN-8/relevant recovery decisions and any optional-state construction/provider/pause gates; freeze one compatible-restart or provisional-recovery child. | Compatible reuse succeeds beside unavailable/stale/substituted state; strict authentication remains, no restored pending request, plain hint vote or global clock effect. Two-helper failure creates no silent one-helper path. CHECK-8/9/15/25/26, AC-02/09/10; applicable ST-T cases. |
 | S2.4 adversarial closure / protocol/security/QA | Reached S2.1–S2.3 entrypoints and frozen retry/endpoint/native-job contracts; choose the remaining discriminating failure case. | Replay/endpoint changes, storms, stuck native work and cancellation preserve bounded real-job custody, atomic state and redacted output while valid neighboring acquisition works. CHECK-6/8/9/17/26/27; complete the linked checklist. |
 

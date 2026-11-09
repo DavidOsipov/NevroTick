@@ -59,9 +59,16 @@ Its [handoff](tasks/slint-gui-handoff.md) records the implemented fixture workfl
 original GUI GPL-3.0-only grant, branch checks and remaining backend, native and
 critical-text approval gaps. Combined-tree qualification remains separate.
 
-The workspace contains a sample-data Windows UI, portable protocol/numerical
-fixtures and bounded, unauthenticated experimental acquisition with controlled
-measurement qualification. Its observations remain ineligible for clock control. Production NTP/NTS acquisition,
+As of 9 November, the seven-member workspace contains a sample-data Windows UI,
+portable protocol/numerical fixtures, bounded unauthenticated acquisition and
+portable service contracts. Core finite phase-plan and conditional frequency-prior,
+engine session/coherence, request formatting and service privilege children have
+completed their selected fixture gates. Standalone laboratory tools also implement
+NTS-KE and algorithm-15 request sealing; their newly authored combined handoff is
+still under qualification and sends no packet.
+See the [phase progress assessment](docs/plans/development-plan.md#progress-reconciliation--9-november-2026)
+for completed scopes and remaining exits. Experimental observations remain
+ineligible for clock control. Production NTP/NTS acquisition,
 installed services, clock changes, Android, DoQ, pinning and the complete
 installer remain future work.
 See the [current implementation summary](docs/windows-time-architecture.md#1-current-state-capsule)
@@ -82,6 +89,7 @@ proposed first-stable baseline and the preparation required for bad-release reco
 | [ntp-exchange](crates/ntp-exchange/) | Unauthenticated fixture association and deterministic scenarios. |
 | [time-core](crates/time-core/) | Pure time-estimation, source-selection/combination and modeled correction fixtures. |
 | [nevrotick-engine](crates/nevrotick-engine/) | Bounded, unauthenticated experimental acquisition and controlled measurements; no production service or clock authority. |
+| [windows-platform](crates/windows-platform/) | Portable service lifecycle, SCM projection and exact-role privilege contracts; laboratory consumers remain separate from production/native qualification. |
 
 ## Getting started with development
 

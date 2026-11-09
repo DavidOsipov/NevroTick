@@ -77,17 +77,27 @@ Do not reuse retired ordinals or equate the GUI build number with compatibility.
 
 GUI original code is GPL-3.0-only; inherited Core/workspace code remains
 GPL-2.0-only. Preserve [GUI provenance/licensing](../crates/nevrotick-ui/LICENSING.md),
-patch notices and separate brand/font/Unicode terms. The selected 534 registry
+patch notices and separate brand/font/Unicode terms. The selected 533 registry
 identities include inert resolution entries; that number is not the runtime
 package count. Distribution obligations remain separate from private checks.
 
 Current Slint runtime/build pin: 1.18.1; Rust: 1.99.1. Current lock SHA256:
-`9f31370aaf3649527926acf48a927ce2b627d8de633d8f7a50b467cf2f07c24e`.
+`fa9103e455e401c39f349c04b10a2d7058408d25210763321f56b7dad9c1afba`.
 Current schema3 policy anchor:
-`c1735811cefab5f108906b44c40bb634a18bed3490a253e724bc429c4a6dc5cf`.
-The 7 November documentation/source reconciliation changes only the UI package
-description and its bound manifest hash. It removes an unsupported unelevated-token
-claim; versions, features, grants, package scopes, patches and the lock stay fixed.
+`29f6a647b6038bdbbdc2bf407875a43af03257382821f13bda174e6147186b88`.
+The 9 November readback matches the actual lock, policy lock binding and checker's
+canonical JSON anchor. This is identity reconciliation, not a fresh GUI/native
+qualification. The later [AccessKit callback/advisory repair](codeql-cloud-handoff.md#imported-full-repository-findings--9-november-2026)
+records actual-module facade and final hosted portable/security passes at
+`f2f0f52`; native USER32/UIA, resources and GUI critical-file metrics remain open.
+The historical 7 November lock
+`9f31370aaf3649527926acf48a927ce2b627d8de633d8f7a50b467cf2f07c24e`
+and policy anchor
+`c1735811cefab5f108906b44c40bb634a18bed3490a253e724bc429c4a6dc5cf`
+retain their earlier scopes. That documentation/source reconciliation changed only the UI package
+description and its bound manifest hash. It removed an unsupported unelevated-token
+claim; versions, features, grants, package scopes, patches and the lock stayed fixed
+within that historical amendment.
 The prior anchor
 `6cf46ae3b59889507f5e78942ea68cd68f0d9c7afe0169d4cd7f04caaa98488b`
 identifies the [6 November dependency refresh](s0.1-source-readiness.md#refreshed-graph-and-current-evidence),
@@ -295,7 +305,7 @@ Their controls remain proposed; they add no current defect, release gate or
 execution exception and do not displace S2.2.
 
 1. Continue from merged PR10 and the later numerical checkpoint. Preserve the
-   current S2.2 producer/receiver freeze in development section 7 and reconcile
+   current S2.2 laboratory handoff qualification in development section 7 and reconcile
    only subsequent deltas. Preserve the canonical decision identities. Keep
    lock, manifest and graph policy changes with one owner; re-admit affected
    graphs before target execution.
@@ -306,7 +316,7 @@ execution exception and do not displace S2.2.
    the two named wording-polish follow-ups above for a separate text revision.
    At that localization checkpoint, consider the [R3-P-01/P-02 source experiments](s0.5-ui-comparison.md#localization-cost-experiments--9-november-2026)
    with their approval, invariant-failure and notification controls; they are
-   unexecuted proposals and do not displace the current S2.2 producer/receiver freeze.
+   unexecuted proposals and do not displace the current S2.2 handoff qualification.
 3. Complete the independent exact-text review; revalidate any wording changes and
    their native/action/accessibility consumers. The supplied review bundle is
    review material, not approval.

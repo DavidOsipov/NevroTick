@@ -1,7 +1,7 @@
 //! The sole real Windows TLS/KE producer, confined to one synchronous job.
 //!
-//! No authenticated association escapes: after strict TLS, negotiation and both
-//! exporters, only closed historical counts survive secret/native destruction.
+//! No authenticated association escapes: strict same-connection keys/cookies
+//! protect one untransmitted laboratory request before secret/native destruction.
 
 use std::io::{self, Read, Write};
 use std::net::{SocketAddr, TcpStream};
@@ -18,9 +18,9 @@ use zeroize::Zeroizing;
 
 use super::transport_fault::{self, TransportFault};
 use super::{
-    COOKIE_BYTES_LIMIT, COOKIE_LIMIT, Config, Control, Failed, Failure, IoPhase, SCRATCH_LIMIT,
-    Summary, encode_offer, read_response,
+    Config, Control, Failed, Failure, IoPhase, SCRATCH_LIMIT, Summary, encode_offer, read_response,
 };
+use super::{handoff, request::DirectionalKeys};
 
 /// One numeric socket whose every operation shares the original job deadlines.
 struct DeadlineStream<'a> {
@@ -225,12 +225,12 @@ struct InternalCandidate<'a> {
 }
 
 impl InternalCandidate<'_> {
-    /// Check the complete binding, commit once, and destroy secrets before return.
+    /// Check the binding, seal one private request, then commit and wipe once.
     ///
     /// # Errors
     /// Refuse an invalid profile, endpoint, invocation/expiry/AEAD binding,
-    /// cookie budget or final currentness/commit guard. Failure consumes and
-    /// drops the candidate's zeroizing owners without returning a summary.
+    /// cookie budget, entropy/sealing or final currentness/commit guard. Failure
+    /// destroys the candidate and private packet without returning a summary.
     fn finish(self) -> Result<Summary, Failure> {
         let Self {
             config,
@@ -251,21 +251,19 @@ impl InternalCandidate<'_> {
         if config.identity.is_empty() || expiry != control.expiry || aead != 15 {
             return Err(Failure::Control);
         }
-        if cookies.is_empty() || cookies.len() > COOKIE_LIMIT {
-            return Err(Failure::Cookies);
-        }
-        let cookie_bytes = cookies.iter().try_fold(0_usize, |total, cookie| {
-            total.checked_add(cookie.len()).ok_or(Failure::Cookies)
-        })?;
-        if cookie_bytes > COOKIE_BYTES_LIMIT {
-            return Err(Failure::Cookies);
-        }
-        let summary = Summary {
-            cookies: cookies.len(),
-            cookie_bytes,
-        };
-        control.commit()?;
-        drop((c2s_key, s2c_key, cookies));
+        let request = handoff::prepare(
+            control,
+            DirectionalKeys::new(c2s_key, s2c_key),
+            &cookies,
+            |output| {
+                use rustls::crypto::SecureRandom;
+                rustls_cng_crypto::SecureRandom
+                    .fill(output)
+                    .map_err(|_| Failure::Entropy)
+            },
+        )?;
+        let summary = request.finish()?;
+        drop(cookies);
         Ok(summary)
     }
 }
