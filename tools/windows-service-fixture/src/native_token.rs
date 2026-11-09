@@ -18,8 +18,9 @@ use windows_platform::privilege_observation::{
 use windows_sys::Win32::{
     Foundation::{CloseHandle, ERROR_NO_TOKEN, GetLastError, LUID},
     Security::{
-        GetTokenInformation, LUID_AND_ATTRIBUTES, LookupPrivilegeValueW, SE_DEBUG_NAME,
-        SE_IMPERSONATE_NAME, SE_SYSTEMTIME_NAME, TOKEN_PRIVILEGES, TOKEN_QUERY, TokenPrivileges,
+        GetTokenInformation, LUID_AND_ATTRIBUTES, LookupPrivilegeValueW, SE_CHANGE_NOTIFY_NAME,
+        SE_DEBUG_NAME, SE_IMPERSONATE_NAME, SE_SYSTEMTIME_NAME, TOKEN_PRIVILEGES, TOKEN_QUERY,
+        TokenPrivileges,
     },
     System::Threading::{GetCurrentProcess, GetCurrentThread, OpenProcessToken, OpenThreadToken},
 };
@@ -59,8 +60,8 @@ impl TokenObserver for NativeTokenObserver {
         // custody first prevents Drop or subsequent code from retrying a failure.
         let thread_cleanup = finish(&mut unexpected_thread);
         let primary_cleanup = finish(&mut primary);
-        let cause = match capture {
-            Err(cause) => Some(cause),
+        let cause = match &capture {
+            Err(cause) => Some(*cause),
             Ok(_) => match (thread_cleanup, primary_cleanup) {
                 (TokenCleanupOutcome::Failed(error), _)
                 | (_, TokenCleanupOutcome::Failed(error)) => {
@@ -208,17 +209,22 @@ fn open_primary() -> Result<QueryToken, TokenObservationCause> {
 /// Resolve every fixed local name; partial or duplicate lookup results prove nothing.
 ///
 /// # Errors
-/// Reject any failed fixed-name lookup or collision among the three complete LUIDs.
+/// Reject any failed fixed-name lookup or collision among the four complete LUIDs.
 fn resolve_ids() -> Result<ServicePrivilegeIds, TokenObservationCause> {
-    let mut values = [PrivilegeLuid::new(0, 0); 3];
-    for (slot, name) in [SE_SYSTEMTIME_NAME, SE_DEBUG_NAME, SE_IMPERSONATE_NAME]
-        .into_iter()
-        .enumerate()
+    let mut values = [PrivilegeLuid::new(0, 0); 4];
+    for (slot, name) in [
+        SE_SYSTEMTIME_NAME,
+        SE_DEBUG_NAME,
+        SE_IMPERSONATE_NAME,
+        SE_CHANGE_NOTIFY_NAME,
+    ]
+    .into_iter()
+    .enumerate()
     {
         let mut luid = LUID::default();
         #[expect(
             unsafe_code,
-            reason = "resolve only one of three static local privilege names"
+            reason = "resolve only one of four static local privilege names"
         )]
         // SAFETY: null selects this machine; generated constants are immutable
         // NUL-terminated UTF-16 names; luid is writable correctly aligned output.

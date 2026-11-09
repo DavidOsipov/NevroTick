@@ -979,18 +979,20 @@ reviewed equivalent misses, with no timeout or unresolved survivor. Equivalents
 receive no kill credit; no fresh library mutation, native Windows, service,
 production admission or release pass follows.
 
-**Service source handoff — 8 November 2026:** shared `windows-platform`
+**Service source checkpoint — 9 November 2026:** shared `windows-platform`
 lifecycle, SCM projection and privilege validation, plus two fixed-role laboratory
 SCM hosts, are implemented. Reuse this foundation for bounded integration
 preparation under the existing
 [W11-W05/S3.1 handoff](../../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026);
 do not scaffold replacement services. Retained host/static checks cover the
-recorded source candidate, not completed production services. The next service
-child must freeze adapter/worker ownership and refresh the current candidate's
-ordinary, per-file coverage/mutation and Windows artifact evidence before qualified
-source adoption. Final accounts/provisioning and actual Windows lifecycle/security
-evidence still gate installed integration. This parallel source handoff does not
-change the Core/engine continuation below or lift any execution hold. NTP/NTS
+recorded source candidate, not completed production services. The current
+[privilege continuation](../../tasks/windows11-integration.md#portable-service-privilege-checkpoint-final-qualification--9-november-2026)
+now passes ordinary checks and all six selected platform/caller 90%/95% gates.
+Reuse its exact evidence and the existing adapter/worker lifecycle and diagnostics
+owners. Final accounts/provisioning, Windows artifacts and actual native
+lifecycle/security evidence still gate installed integration. This parallel source
+checkpoint does not change the Core/engine continuation below; separately admitted
+guest jobs use W11 §4.19. NTP/NTS
 algorithms, clock discipline and complete package delivery retain their own owners.
 
 **Controlling owner amendment — 6 November 2026:**
@@ -1250,6 +1252,16 @@ actual KE-producer-to-receiver contract freeze; provider and native
 qualification remain open. The engine's concrete issuer map
 also retains the missing custody-preserving KE handoff; count-only laboratory
 summaries and fixture counters cannot establish a production association.
+In parallel, the required W11-W05/S0.2
+[exact-role privilege-admission source child](../../tasks/windows11-integration.md#exact-role-observation-and-startup-source-contract--9-november-2026)
+has completed contract review, actual-consumer RED→GREEN and the platform owner's
+ordinary/coverage/mutation gates. Both roles now use the complete captured set
+before worker preparation or Running. Complete the separate existing standalone
+host/error/diagnostics metric gates next; native qualification remains distinct.
+Core/engine, shared manifests,
+locks, schemas and verification policies remain coordinator-owned, and the cloud
+agent retains metadata MD-P1–MD-P3. This required source qualification can proceed while
+the NTS producer/receiver and provider prerequisites are prepared.
 The finite child selects no shipping clock limits
 or defaults. Ordinary NTS retains its priority, while S2.2's provider/graph/trust/
 runtime and cookie-use/association gates remain open. The parallel W11-W05/S3.1
@@ -1257,8 +1269,9 @@ cloud source child arrived as `c4f434c` under its existing task. Its imported so
 is disjoint from the checked Core inputs. Recovered local service receipts are now
 present under `artifacts/windows-services/recovery-20261107-v1`; the
 [independent W11 revalidation](../../tasks/windows11-integration.md#ordered-continuation-in-the-existing-workstream)
-confirms the narrower three-fact admission and the residual exact-role work.
-The recovered checkpoint matches the parser/native adapter, but not the current
+recorded the narrower historical three-fact admission; the current addenda retain
+the implemented exact-role extension and remaining caller/native qualification.
+At that recovery checkpoint, its evidence matched the parser/native adapter but not the then-current
 startup caller (408 matching/33 different source bindings), so its historical
 metrics do not qualify the current service candidate. Retain the explicit source,
 raw-evidence and native/product gaps before adopting metrics. All execution holds
@@ -1321,8 +1334,12 @@ new runtime framework/formal campaign.
 Mandatory garde-backed/private construction, checked arithmetic, independent
 unit/property/boundary tests, 90% security-primitive coverage, 95% per-critical-file
 mutation, source/graph/security/native/package/release gates remain required.
-Existing Windows/S134, separate AES fuzz, optional-storage and UI-M0 D1–D3 holds
-remain unchanged. OD-05's complete hardened MSIX and David's release authority
+David reaffirmed scoped owned-Sandbox native work on 9 November; apply
+[W11 §4.19](../../tasks/windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026)
+for current controller/session/resource and exact guest-job admission. Live-host
+configuration/security/service/clock/trust changes and the blocked S134 artifact
+remain outside that authorization. Separate AES fuzz, optional-storage and UI-M0
+D1–D3 holds remain unchanged. OD-05's complete hardened MSIX and David's release authority
 remain unchanged. The finite phase-plan and conditional frequency-prior children have selected
 GNU exits; continue the reviewed S2.2 source preparation above. Full S1.4/P1 remains open. Formal
 obligations remain post-V1.
@@ -2096,9 +2113,11 @@ does not isolate every live secret or establish rollback-resistant storage.
 and [W11 §4.38](../../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026)
 before dependent S0.2/S0.3/P3/P4/P6 work. W11-W05 owns full per-role token
 observation/admission and scoped broker clock privilege; W11-W10 owns supported
-pre-start provisioning and servicing. The existing three-privilege laboratory
-observer supplies narrower evidence. Source preparation follows its current
-assignment, native work remains held, and §7's next executable task is unchanged.
+pre-start provisioning and servicing. The complete portable representation and
+both-role comparison are implemented, with the current selected platform and
+standalone caller ordinary/90%/95% gates independently accepted. Earlier three-fact evidence retains its historical
+scope. Reviewed native guest jobs follow the owned-Sandbox authorization in W11
+§4.19; no live-host mutation or installed-service pass follows. Continue §7.
 
 **8 November OS-integration research:** use the
 [bounded source/CVE handoff](../supporting-reviews/windows-os-integration-risk-research.md)
@@ -2240,7 +2259,8 @@ default approval, residual-risk acceptance or release qualification.
 [API rationale](windows11-integration.md#service-privilege-source-review--9-november-2026)
 and [implementation handoff](../../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026)
 replace open-ended runtime privilege selection with explicit role policy.
-Extend the existing observer/admission owners; preserve identification-only IPC,
+Complete caller/native qualification of the implemented observer/admission owners;
+preserve identification-only IPC,
 same-account object isolation and bounded clock privilege cleanup. Full installed
 token/provider/package compatibility remains unqualified under existing CHECK
 owners; no new service, helper authority, dependency or execution permission.

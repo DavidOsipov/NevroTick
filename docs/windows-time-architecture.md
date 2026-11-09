@@ -527,11 +527,17 @@ do not claim successful restoration, reset the clock blindly or rely solely on a
 destructor. A live broker retains the ability to re-enable a present privilege;
 temporary disabling is not a security boundary against compromise of that broker.
 
-**Source/evidence limit.** The current portable observer and laboratory native
-adapter capture only the three named engine privilege facts; broker observation
-is descriptive. Their historical results do not implement or qualify this
-complete profile. Extend the existing observation/admission owners before product
-hosting; preserve existing Windows/fuzz/storage holds and post-V1 formal deferral.
+**Source/evidence limit — 9 November 2026.** The portable owner now retains the
+complete bounded LUID/attribute set, and laboratory native adapter source resolves
+four fixed names. Both laboratory callers compare the exact role profile before
+worker preparation. The [current qualification record](../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026)
+separates completed platform measurements, caller qualification and native gaps.
+Historical three-fact receipts retain their narrower scope. Native capture,
+cleanup, account/SID/ACL, effective SCM policy and installed behavior remain
+unqualified. Reviewed owned-Sandbox jobs follow the
+[current execution scope](../tasks/windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026);
+this supplies no live-host mutation permission. Separate fuzz/storage/UI holds and
+post-V1 formal deferral remain.
 
 ### 4.2 Operation authorization
 

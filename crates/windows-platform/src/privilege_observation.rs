@@ -6,25 +6,36 @@
 //! A snapshot is an observation, never a persistent authority grant.
 //!
 //! Snapshot fields cannot bypass checked decoding:
-//! ```compile_fail,E0451
-//! use windows_platform::privilege_observation::{PrivilegeSnapshot, PrivilegeState};
-//! let snapshot = PrivilegeSnapshot { states: [PrivilegeState::Absent; 3] };
+//! ```compile_fail,E0616
+//! use windows_platform::privilege_observation::{PrivilegeLuid, PrivilegeSnapshot, PrivilegeState, ServicePrivilegeIds};
+//! let ids = ServicePrivilegeIds::new([
+//!     PrivilegeLuid::new(1, 0), PrivilegeLuid::new(2, 0),
+//!     PrivilegeLuid::new(3, 0), PrivilegeLuid::new(4, 0),
+//! ]).unwrap();
+//! let mut snapshot = PrivilegeSnapshot::decode(&[0; 4], ids).unwrap();
+//! snapshot.states[0] = PrivilegeState::PresentEnabled;
 //! ```
 //! Fixed lookup identities cannot bypass duplicate checks:
-//! ```compile_fail,E0451
+//! ```compile_fail,E0616
 //! use windows_platform::privilege_observation::{PrivilegeLuid, ServicePrivilegeIds};
-//! let ids = ServicePrivilegeIds { values: [PrivilegeLuid::new(0, 0); 3] };
+//! let mut ids = ServicePrivilegeIds::new([
+//!     PrivilegeLuid::new(1, 0), PrivilegeLuid::new(2, 0),
+//!     PrivilegeLuid::new(3, 0), PrivilegeLuid::new(4, 0),
+//! ]).unwrap();
+//! ids.values[1] = PrivilegeLuid::new(1, 0);
 //! ```
 
 use garde::Validate;
 use std::{error::Error, fmt};
+
+use crate::service::ServiceRole;
 
 /// Maximum entries accepted from one complete token capture.
 pub const MAX_CAPTURE_PRIVILEGES: usize = 128;
 /// Exact upper bound: a four-byte count followed by 128 twelve-byte entries.
 pub const MAX_CAPTURE_BYTES: usize = 1540;
 
-/// The three fixed privileges examined by the laboratory observer.
+/// Fixed locally resolved privileges used by role admission and named observations.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ServicePrivilege {
     /// Permission to change system time.
@@ -33,6 +44,8 @@ pub enum ServicePrivilege {
     Debug,
     /// Permission to impersonate a client.
     Impersonate,
+    /// Traverse-notification privilege explicitly retained by both service roles.
+    ChangeNotify,
 }
 
 impl ServicePrivilege {
@@ -42,6 +55,7 @@ impl ServicePrivilege {
             Self::SystemTime => 0,
             Self::Debug => 1,
             Self::Impersonate => 2,
+            Self::ChangeNotify => 3,
         }
     }
 }
@@ -63,21 +77,23 @@ impl PrivilegeLuid {
     }
 }
 
-/// Three successfully resolved, pairwise distinct fixed privilege identities.
+/// Four successfully resolved, pairwise distinct fixed privilege identities.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ServicePrivilegeIds {
-    /// Identities in `SystemTime`, `Debug`, `Impersonate` order.
-    values: [PrivilegeLuid; 3],
+    /// Identities in `SystemTime`, `Debug`, `Impersonate`, `ChangeNotify` order.
+    values: [PrivilegeLuid; 4],
 }
 
 impl ServicePrivilegeIds {
-    /// Bind all three successful lookups; duplicate identities are indeterminate.
+    /// Bind all four successful lookups; duplicate identities are indeterminate.
     ///
     /// # Errors
     /// Returns `DuplicateTargetIds` if any pair denotes the same LUID.
-    pub fn new(values: [PrivilegeLuid; 3]) -> Result<Self, PrivilegeCaptureError> {
-        if values[0] == values[1] || values[0] == values[2] || values[1] == values[2] {
-            return Err(PrivilegeCaptureError::DuplicateTargetIds);
+    pub fn new(values: [PrivilegeLuid; 4]) -> Result<Self, PrivilegeCaptureError> {
+        for (index, value) in values.iter().enumerate() {
+            if values[..index].contains(value) {
+                return Err(PrivilegeCaptureError::DuplicateTargetIds);
+            }
         }
         Ok(Self { values })
     }
@@ -137,11 +153,37 @@ struct CaptureBounds {
     bytes: usize,
 }
 
-/// Complete structurally checked facts for the three fixed privileges.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+/// One private present privilege, retaining its complete accepted attribute bits.
+#[derive(Clone, Copy, Eq, PartialEq)]
+struct PresentPrivilege {
+    /// Full observed identity; unknown identities must remain present.
+    luid: PrivilegeLuid,
+    /// Exact accepted native bits, never reduced to enabled state alone.
+    attributes: u32,
+}
+
+/// Complete bounded representation facts; native provenance remains caller-owned.
+#[derive(Eq, PartialEq)]
 pub struct PrivilegeSnapshot {
-    /// Complete checked representation only; native success remains caller-owned.
-    states: [PrivilegeState; 3],
+    /// Named presence projections retained beside the complete original entries.
+    states: [PrivilegeState; 4],
+    /// Locally resolved name identities, not portable numeric constants.
+    ids: ServicePrivilegeIds,
+    /// Initialized fixed storage; only the checked prefix denotes present entries.
+    entries: [PresentPrivilege; MAX_CAPTURE_PRIVILEGES],
+    /// Checked occupied prefix, always at most `MAX_CAPTURE_PRIVILEGES`.
+    count: usize,
+}
+
+impl fmt::Debug for PrivilegeSnapshot {
+    /// Expose bounded named facts and count, never raw unknown identities or bytes.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("PrivilegeSnapshot")
+            .field("states", &self.states)
+            .field("count", &self.count)
+            .finish_non_exhaustive()
+    }
 }
 
 impl PrivilegeSnapshot {
@@ -160,22 +202,24 @@ impl PrivilegeSnapshot {
         }
         .validate()
         .map_err(|_| PrivilegeCaptureError::Bounds)?;
-        let entries = bytes.get(4..).ok_or(PrivilegeCaptureError::Length)?;
+        let raw_entries = bytes.get(4..).ok_or(PrivilegeCaptureError::Length)?;
         let count = usize::try_from(count).map_err(|_| PrivilegeCaptureError::Bounds)?;
-        if count.checked_mul(12) != Some(entries.len()) {
+        if count.checked_mul(12) != Some(raw_entries.len()) {
             return Err(PrivilegeCaptureError::Length);
         }
-        let mut states = [PrivilegeState::Absent; 3];
-        let mut seen = [PrivilegeLuid::new(0, 0); MAX_CAPTURE_PRIVILEGES];
-        for (index, entry) in entries.as_chunks::<12>().0.iter().enumerate() {
+        let mut states = [PrivilegeState::Absent; 4];
+        let mut entries = [PresentPrivilege {
+            luid: PrivilegeLuid::new(0, 0),
+            attributes: 0,
+        }; MAX_CAPTURE_PRIVILEGES];
+        for (index, entry) in raw_entries.as_chunks::<12>().0.iter().enumerate() {
             let luid = PrivilegeLuid::new(
                 u32::from_le_bytes([entry[0], entry[1], entry[2], entry[3]]),
                 i32::from_le_bytes([entry[4], entry[5], entry[6], entry[7]]),
             );
-            if seen[..index].contains(&luid) {
+            if entries[..index].iter().any(|present| present.luid == luid) {
                 return Err(PrivilegeCaptureError::DuplicatePrivilege);
             }
-            seen[index] = luid;
             let attributes = u32::from_le_bytes([entry[8], entry[9], entry[10], entry[11]]);
             if attributes & 4 != 0 {
                 return Err(PrivilegeCaptureError::RemovedEntry);
@@ -183,6 +227,7 @@ impl PrivilegeSnapshot {
             if attributes & !0x8000_0003 != 0 {
                 return Err(PrivilegeCaptureError::UnsupportedAttributes);
             }
+            entries[index] = PresentPrivilege { luid, attributes };
             for (slot, target) in ids.values.iter().enumerate() {
                 if *target == luid {
                     states[slot] = if attributes & 2 == 0 {
@@ -193,20 +238,34 @@ impl PrivilegeSnapshot {
                 }
             }
         }
-        Ok(Self { states })
+        Ok(Self {
+            states,
+            ids,
+            entries,
+            count,
+        })
     }
 
     /// Read one fixed privilege fact without implying current effect authority.
     #[must_use]
-    pub const fn state(self, privilege: ServicePrivilege) -> PrivilegeState {
+    pub const fn state(&self, privilege: ServicePrivilege) -> PrivilegeState {
         self.states[privilege.index()]
+    }
+
+    /// Read exact accepted bits of a named privilege without exposing unknown IDs.
+    #[must_use]
+    pub fn attributes(&self, privilege: ServicePrivilege) -> Option<u32> {
+        let luid = self.ids.values[privilege.index()];
+        self.entries[..self.count]
+            .iter()
+            .find_map(|entry| (entry.luid == luid).then_some(entry.attributes))
     }
 
     /// Require all three engine-forbidden privileges to be absent, even disabled.
     ///
     /// # Errors
     /// Returns the first present privilege in the fixed documented lookup order.
-    pub fn require_engine_absence(self) -> Result<(), EnginePrivilegeError> {
+    pub fn require_engine_absence(&self) -> Result<(), EnginePrivilegeError> {
         for privilege in [
             ServicePrivilege::SystemTime,
             ServicePrivilege::Debug,
@@ -218,6 +277,102 @@ impl PrivilegeSnapshot {
             }
         }
         Ok(())
+    }
+
+    /// Compare the complete present set with the fixed role's startup profile.
+    /// This establishes representation compatibility only, never live authority.
+    ///
+    /// # Errors
+    /// Reject every missing or extra privilege, including unknown/disabled extras,
+    /// and an enabled broker clock privilege. `ChangeNotify` may be enabled or disabled.
+    pub fn require_role(&self, role: ServiceRole) -> Result<(), ServicePrivilegeError> {
+        let forbidden: &[ServicePrivilege] = match role {
+            ServiceRole::Engine => &[
+                ServicePrivilege::SystemTime,
+                ServicePrivilege::Debug,
+                ServicePrivilege::Impersonate,
+            ],
+            ServiceRole::ClockBroker => &[ServicePrivilege::Debug, ServicePrivilege::Impersonate],
+        };
+        for &privilege in forbidden {
+            let state = self.state(privilege);
+            if state != PrivilegeState::Absent {
+                return Err(ServicePrivilegeError::Forbidden(EnginePrivilegeError {
+                    privilege,
+                    state,
+                }));
+            }
+        }
+        if self.state(ServicePrivilege::ChangeNotify) == PrivilegeState::Absent {
+            return Err(ServicePrivilegeError::MissingRequired(
+                ServicePrivilege::ChangeNotify,
+            ));
+        }
+        if role == ServiceRole::ClockBroker {
+            match self.state(ServicePrivilege::SystemTime) {
+                PrivilegeState::Absent => {
+                    return Err(ServicePrivilegeError::MissingRequired(
+                        ServicePrivilege::SystemTime,
+                    ));
+                }
+                PrivilegeState::PresentEnabled => {
+                    return Err(ServicePrivilegeError::BrokerClockEnabled);
+                }
+                PrivilegeState::PresentDisabled => {}
+            }
+        }
+        let change_notify = self.ids.values[ServicePrivilege::ChangeNotify.index()];
+        let system_time = self.ids.values[ServicePrivilege::SystemTime.index()];
+        for entry in &self.entries[..self.count] {
+            if entry.luid != change_notify
+                && !(role == ServiceRole::ClockBroker && entry.luid == system_time)
+            {
+                return Err(ServicePrivilegeError::UnexpectedPrivilege);
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Bounded role-profile refusal, containing no raw unknown LUID or captured data.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ServicePrivilegeError {
+    /// A formerly observed fixed forbidden privilege retains its typed facts.
+    Forbidden(EnginePrivilegeError),
+    /// One explicitly required named privilege is absent.
+    MissingRequired(ServicePrivilege),
+    /// A present entry lies outside the exact fixed-role set.
+    UnexpectedPrivilege,
+    /// Ordinary broker startup observed its clock privilege enabled.
+    BrokerClockEnabled,
+}
+
+impl fmt::Display for ServicePrivilegeError {
+    /// Format only reviewed categories and fixed named facts.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Forbidden(error) => fmt::Display::fmt(error, formatter),
+            Self::MissingRequired(privilege) => {
+                write!(
+                    formatter,
+                    "required service privilege {privilege:?} is absent"
+                )
+            }
+            Self::UnexpectedPrivilege => {
+                formatter.write_str("unexpected service privilege is present")
+            }
+            Self::BrokerClockEnabled => formatter.write_str("broker clock privilege is enabled"),
+        }
+    }
+}
+
+impl Error for ServicePrivilegeError {
+    /// Preserve the original typed known-privilege facts without raw capture data.
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Forbidden(error) => Some(error),
+            _ => None,
+        }
     }
 }
 
@@ -246,7 +401,7 @@ impl fmt::Display for EnginePrivilegeError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             formatter,
-            "engine forbidden privilege {:?} is {:?}",
+            "forbidden service privilege {:?} is {:?}",
             self.privilege, self.state
         )
     }

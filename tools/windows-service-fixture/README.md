@@ -26,9 +26,13 @@ not product defaults or measured Windows latency guarantees. The Running deadlin
 is anchored to the Ready observation, before control-loop work admission, and is
 never renewed. Pending/Running deadlines cannot interrupt an arbitrary native
 call. One startup permit owns synchronous self-token observation through explicit
-cleanup attempts; unknown capture/cleanup refuses Ready in either role. The engine
-requires the three fixed forbidden privileges absent; broker observation remains
-descriptive. A later sequential permit owns the genuine inert control loop and
+cleanup attempts; unknown capture/cleanup refuses Ready in either role. Both roles
+compare the complete present privilege set before worker preparation: Engine
+requires only ChangeNotify; Broker requires ChangeNotify plus disabled Systemtime.
+Missing or extra privileges, including unknown or disabled extras, refuse startup.
+ChangeNotify may be enabled or disabled. These are checked representation facts,
+not a native token or installed-identity qualification. A later sequential permit
+owns the genuine inert control loop and
 completes before terminal reporting. These permits do not overlap or enlarge the
 one-slot capacity.
 
@@ -124,3 +128,10 @@ status, monotonic observations and finite waits, plus both real GNU executable
 entries. They establish no Windows API failure, callback delivery, token, native
 latency, MSIX, installed-service or product qualification result. Compiler/lint,
 coverage/mutation, graph and actual native/package evidence remain separate.
+
+`qualification.py privilege-checkpoint` batches the existing twelve format,
+Clippy, debug/release test, doctest and rustdoc checks under one admission. The
+fixture metric consumer separately requires a current single-command
+`fixture-test` receipt. Use `metrics.py` for the host/error/diagnostics gates;
+platform-only measurements do not qualify those callers. The existing W11 task
+retains both evidence chains and their native limits.

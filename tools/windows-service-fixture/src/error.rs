@@ -7,7 +7,7 @@
 use std::{error::Error, fmt};
 
 use windows_platform::{
-    privilege_observation::{EnginePrivilegeError, PrivilegeCaptureError},
+    privilege_observation::{PrivilegeCaptureError, ServicePrivilegeError},
     service::{BudgetError, LifecycleError},
 };
 
@@ -24,7 +24,7 @@ pub enum NativeOperation {
     ThreadToken,
     /// Open the current process primary token with query rights only.
     ProcessToken,
-    /// Resolve one of the three fixed privilege identities locally.
+    /// Resolve one of the four fixed privilege identities locally.
     PrivilegeLookup,
     /// Query the bounded primary-token privilege capture.
     PrivilegeQuery,
@@ -104,8 +104,8 @@ pub enum FixtureError {
     Native(NativeError),
     /// Complete token capture/context/cleanup could not establish known facts.
     TokenObservation(TokenObservationFailure),
-    /// The fixed engine role observed a forbidden privilege, including disabled.
-    PrivilegeAdmission(EnginePrivilegeError),
+    /// A complete observation did not match the fixed service role's exact profile.
+    PrivilegeAdmission(ServicePrivilegeError),
     /// SCM returned without a successful clean terminal report from this fixture.
     ServiceFailed,
     /// Dispatcher returned before an actual owner-result receipt was available.
@@ -131,7 +131,7 @@ impl fmt::Display for FixtureError {
             Self::Lifecycle(_) => "laboratory service lifecycle failed",
             Self::Native(_) => "laboratory native service operation failed",
             Self::TokenObservation(_) => "laboratory token observation failed",
-            Self::PrivilegeAdmission(_) => "laboratory engine privilege admission failed",
+            Self::PrivilegeAdmission(_) => "laboratory service privilege admission failed",
             Self::ServiceFailed => "laboratory service did not finish cleanly",
             Self::OutcomeUnavailable => "laboratory service outcome receipt is unavailable",
             Self::Worker(_) => "laboratory service worker failed",

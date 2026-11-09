@@ -31,7 +31,7 @@ to own requirements, and task records own executed evidence.
 | What code exists now, and which results apply to it? | [Current implementation summary](windows-time-architecture.md#1-current-state-capsule), backed by the workspace manifests, lockfile, source and linked candidate-specific task evidence. Dated baseline and review records below remain historical. |
 | Which OS integration assumptions have been challenged against CVEs and platform documentation? | [8 November OS-integration research](supporting-reviews/windows-os-integration-risk-research.md) maps actual/proposed APIs, primary CVE analogues, version/feature exclusions and paired checks. [W11 §4.37](../tasks/windows11-integration.md#437-os-integration-vulnerability-research--8-november-2026) routes the work; R-05 and ST-W03 retain the two explicit refinements. The [9 November integration map](supporting-reviews/windows-os-integration-risk-research.md#8-skill-and-document-integration--9-november-2026) locates canonical rules, skill entry points, shared QA and intentionally unchanged coverage. This is bounded research, not a new confirmed vulnerability, full audit or native pass. |
 | Are the Windows services ready for integration? | [Current W11-W05/S3.1 handoff](../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026): portable lifecycle/SCM/privilege code and two laboratory SCM hosts are available for source integration preparation. Qualified product adoption, final identities/provisioning and native Windows validation remain open; the handoff names owners and observable exits. |
-| Which privileges may each service retain? | [Architecture §4.1.1](windows-time-architecture.md#411-service-privilege-profiles) owns the exact engine/broker sets, complete token admission and scoped clock privilege. The [API rationale](plans/windows11-integration.md#service-privilege-source-review--9-november-2026), [paired checks](windows-time-development-hardening.md#service-privilege-profile-qualification) and [W11-W05/W11-W10 handoff](../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026) distinguish selected policy from the narrower current laboratory observer and unqualified installed behavior. |
+| Which privileges may each service retain? | [Architecture §4.1.1](windows-time-architecture.md#411-service-privilege-profiles) owns the exact engine/broker sets, complete token admission and scoped clock privilege. The [API rationale](plans/windows11-integration.md#service-privilege-source-review--9-november-2026), [paired checks](windows-time-development-hardening.md#service-privilege-profile-qualification) and [W11-W05/W11-W10 handoff](../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026) record the complete portable representation, both-role startup gate, current platform/caller qualification and unqualified native/installed behavior. |
 | How is service management limited to NevroTick while preserving administrative recovery? | [Canonical route/admission policy](windows-time-architecture.md#421-service-management-admission-and-administrative-recovery), [Microsoft source review and hardening map](plans/windows11-integration.md#service-management-hardening--7-november-2026) and [W11-W05 assignment](../tasks/windows11-integration.md#w11-w05-observe-effective-scm-maintenance-and-process-policy). Separate SCM principal rights, protected application admission and current effect guards; MSIX peer/provisioning/recovery behavior remains unqualified. |
 | How should agents create, manage, harden, log and optimize Windows services? | [implement-windows-service](../.agents/skills/implementation/implement-windows-service/SKILL.md) routes the maintained SCM/native guide, canonical service/diagnostic/resource contracts and W11-W05/W11-W08/W11-W10. The [7 November source refinement](plans/windows11-integration-follow-up.md#additional-service-practices--7-november-2026) adds argument-channel separation, effective unattended errors, mutex crash/thread semantics and conditional environment/startup cases. Source preparation supplies no native permission or service/package pass. |
 | What should a development agent do next, and which skills must it read and use? | [Development execution plan](plans/development-plan.md), especially its phase skill map, acceptance gates and next executable task. |
@@ -80,7 +80,9 @@ requirements with their owners and restoration triggers.
 
 The [8 November service handoff](../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026)
 records portable lifecycle/SCM/privilege owners and two laboratory executable
-compositions with native adapter source. Reuse them for integration preparation;
+compositions with native adapter source. The [9 November privilege checkpoint](../tasks/windows11-integration.md#portable-service-privilege-checkpoint-final-qualification--9-november-2026)
+passes the selected platform/caller ordinary and 90%/95% gates in Linux fixtures.
+Reuse them for integration preparation;
 qualified production adoption, installed identities and native Windows service
 qualification remain incomplete.
 
@@ -388,9 +390,13 @@ Windows execution and retries are suspended under the
 [incident record](../tasks/s0.1-crypto-feasibility.md#defender-alert--windows-execution-stopped).
 The later [owner-ready Sandbox disposition and readiness result](../tasks/windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026)
 permit scoped owned-Sandbox management and separately admitted guest work. The
+owner explicitly reaffirmed Windows Sandbox use on 9 November; the coordinator
+corrected the overly broad carry-forward of the execution stop. Follow the
+current task's owned-session, candidate and job admission before guest effects.
+The
 blocked S134 stager/artifact remains blocked; this supersedes the blanket stop
 only within that recorded Sandbox scope. The [next-task plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-routes independent work to the current portable Core slice. The standalone
+routes ordinary NTS work and the selected parallel service source child. The standalone
 AES-SIV checkpoint remains evidence for its recorded candidate; the separately
 held fuzz runner must not be retried through another invocation or agent.
 Neither a confirmed false positive nor host compromise is established.

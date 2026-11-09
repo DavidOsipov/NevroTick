@@ -454,13 +454,20 @@ class ServiceAnalysisControls(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             for error in ("Bounds", "Length", "DuplicatePrivilege", "DuplicateTargetIds", "UnsupportedAttributes",
-                          "RemovedEntry", "EnginePrivilegeError { privilege: Debug, state: PresentDisabled }"):
+                          "RemovedEntry", "EnginePrivilegeError { privilege: Debug, state: PresentDisabled }",
+                          "Forbidden(EnginePrivilegeError { privilege: Debug, state: PresentDisabled })",
+                          "MissingRequired(ChangeNotify)", "MissingRequired(SystemTime)",
+                          "UnexpectedPrivilege", "BrokerClockEnabled"):
                 (directory / "cause.log").write_text(f"test {name} ... FAILED\n---- {name} stdout ----\nError: {error}\nfailures:\n")
                 result = MODULE.validate_causes(directory, {"outcomes": [row]}, policy, subject="privilege")
                 self.assertEqual(result["failures"]["privilege_guard"]["causes"][0]["kind"], "typed-positive-path-refusal")
-            (directory / "cause.log").write_text(f"test {name} ... FAILED\n---- {name} stdout ----\nError: Unknown\nfailures:\n")
-            with self.assertRaisesRegex(MODULE.Incomplete, "actual selected behavioral"):
-                MODULE.validate_causes(directory, {"outcomes": [row]}, policy, subject="privilege")
+            for error in ("Unknown", "MissingRequired(Unknown)", "UnexpectedPrivilegeOther",
+                          "BrokerClockEnabledOther", "Forbidden(Unknown)",
+                          "Forbidden(EnginePrivilegeError { privilege: ChangeNotify, state: Absent })"):
+                with self.subTest(error=error):
+                    (directory / "cause.log").write_text(f"test {name} ... FAILED\n---- {name} stdout ----\nError: {error}\nfailures:\n")
+                    with self.assertRaisesRegex(MODULE.Incomplete, "actual selected behavioral"):
+                        MODULE.validate_causes(directory, {"outcomes": [row]}, policy, subject="privilege")
 
     def test_privilege_named_tests_and_privacy_doctests_cannot_be_omitted(self):
         policy = policy_fixture()

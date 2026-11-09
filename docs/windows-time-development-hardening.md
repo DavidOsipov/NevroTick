@@ -1314,8 +1314,12 @@ The [selected service profiles](windows-time-architecture.md#411-service-privile
 and [source rationale](plans/windows11-integration.md#service-privilege-source-review--9-november-2026)
 refine existing W11-W05/S0.2/S0.3, W11-W10 and P4 work. The
 [handoff](../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026)
-keeps current source preparation separate from held Windows execution. The
-three-privilege laboratory observer is not the complete role verifier.
+records the complete portable representation and both-role startup comparison,
+their candidate-bound platform results, caller gates and remaining native work.
+The earlier three-fact receipts do not qualify that extension. Actual token,
+account and configured/effective SCM checks remain open; reviewed guest jobs use
+the [owned-Sandbox scope](../tasks/windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026),
+without live-host mutation permission.
 
 | Existing owner / checks | Independent expected result and useful control |
 | --- | --- |

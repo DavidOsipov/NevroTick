@@ -12,7 +12,7 @@ use windows_platform::privilege_observation::{
     ServicePrivilegeIds,
 };
 
-/// Use three independent fixed IDs in `SystemTime`, Debug, Impersonate order.
+/// Use four independent fixed IDs in `SystemTime`, Debug, Impersonate, Notify order.
 ///
 /// # Errors
 /// Propagate unexpected rejection of this pairwise-distinct fixture mapping.
@@ -21,6 +21,7 @@ fn fixed_ids() -> Result<ServicePrivilegeIds, PrivilegeCaptureError> {
         PrivilegeLuid::new(17, -1),
         PrivilegeLuid::new(29, 3),
         PrivilegeLuid::new(41, 0),
+        PrivilegeLuid::new(59, -7),
     ])
 }
 
@@ -50,7 +51,7 @@ fn unrelated_entries(count: u32) -> Vec<(u32, i32, u32)> {
 ///
 /// # Panics
 /// Fail if a complete unrelated capture invents presence or refuses absence.
-fn assert_all_absent(snapshot: PrivilegeSnapshot) {
+fn assert_all_absent(snapshot: &PrivilegeSnapshot) {
     for privilege in [
         ServicePrivilege::SystemTime,
         ServicePrivilege::Debug,
@@ -61,10 +62,10 @@ fn assert_all_absent(snapshot: PrivilegeSnapshot) {
     assert!(snapshot.require_engine_absence().is_ok());
 }
 
-/// Each isolated collision must be rejected even when the third ID differs.
+/// Each isolated collision must be rejected when all other identities differ.
 ///
 /// # Panics
-/// Fail if any one of the three pairwise duplicate guards can be bypassed.
+/// Fail if any one of the six pairwise duplicate guards can be bypassed.
 ///
 /// # Errors
 /// Propagate unexpected failure of the distinct mapping and empty neighbor.
@@ -73,14 +74,22 @@ fn each_isolated_lookup_collision_is_rejected() -> Result<(), Box<dyn Error>> {
     let a = PrivilegeLuid::new(7, 0);
     let b = PrivilegeLuid::new(8, -1);
     let c = PrivilegeLuid::new(9, i32::MIN);
-    for values in [[a, a, c], [a, b, a], [a, b, b]] {
+    let d = PrivilegeLuid::new(10, i32::MAX);
+    for values in [
+        [a, a, c, d],
+        [a, b, a, d],
+        [a, b, c, a],
+        [a, b, b, d],
+        [a, b, c, b],
+        [a, b, c, c],
+    ] {
         assert_eq!(
             ServicePrivilegeIds::new(values),
             Err(PrivilegeCaptureError::DuplicateTargetIds)
         );
     }
-    let ids = ServicePrivilegeIds::new([a, b, c])?;
-    assert_all_absent(PrivilegeSnapshot::decode(&[0, 0, 0, 0], ids)?);
+    let ids = ServicePrivilegeIds::new([a, b, c, d])?;
+    assert_all_absent(&PrivilegeSnapshot::decode(&[0, 0, 0, 0], ids)?);
     Ok(())
 }
 
@@ -97,6 +106,7 @@ fn equal_low_halves_preserve_all_signed_high_bits() -> Result<(), Box<dyn Error>
         PrivilegeLuid::new(10, i32::MIN),
         PrivilegeLuid::new(10, -1),
         PrivilegeLuid::new(10, i32::MAX),
+        PrivilegeLuid::new(10, 0),
     ])?;
     let bytes = raw_capture(&[(10, i32::MAX, 2), (10, 0, 1), (10, -1, 0)])?;
     let snapshot = PrivilegeSnapshot::decode(&bytes, ids)?;
@@ -112,6 +122,11 @@ fn equal_low_halves_preserve_all_signed_high_bits() -> Result<(), Box<dyn Error>
         snapshot.state(ServicePrivilege::Impersonate),
         PrivilegeState::PresentEnabled
     );
+    assert_eq!(
+        snapshot.state(ServicePrivilege::ChangeNotify),
+        PrivilegeState::PresentDisabled
+    );
+    assert_eq!(snapshot.attributes(ServicePrivilege::ChangeNotify), Some(1));
     let refusal = snapshot.require_engine_absence();
     assert!(refusal.is_err());
     if let Err(error) = refusal {
@@ -160,8 +175,22 @@ fn one_entry_requires_exactly_sixteen_bytes() -> Result<(), Box<dyn Error>> {
 #[test]
 fn count_neighbors_and_header_only_counts_remain_distinct() -> Result<(), Box<dyn Error>> {
     for count in [127, 128] {
-        let bytes = raw_capture(&unrelated_entries(count))?;
-        assert_all_absent(PrivilegeSnapshot::decode(&bytes, fixed_ids()?)?);
+        let mut entries = unrelated_entries(count);
+        let bytes = raw_capture(&entries)?;
+        let snapshot = PrivilegeSnapshot::decode(&bytes, fixed_ids()?)?;
+        assert_all_absent(&snapshot);
+        entries
+            .last_mut()
+            .ok_or("missing independently selected tail")?
+            .2 = 0x8000_0001;
+        let metadata_neighbor = PrivilegeSnapshot::decode(&raw_capture(&entries)?, fixed_ids()?)?;
+        assert_ne!(snapshot, metadata_neighbor);
+        entries
+            .last_mut()
+            .ok_or("missing independently selected tail")?
+            .1 = -7;
+        let identity_neighbor = PrivilegeSnapshot::decode(&raw_capture(&entries)?, fixed_ids()?)?;
+        assert_ne!(metadata_neighbor, identity_neighbor);
     }
     let excessive = raw_capture(&unrelated_entries(129))?;
     assert_eq!(
@@ -242,7 +271,7 @@ fn final_slot_targets_and_maximum_byte_neighbors_are_checked() -> Result<(), Box
 #[test]
 fn unrelated_attributes_cannot_be_filtered_into_absence() -> Result<(), Box<dyn Error>> {
     let good = raw_capture(&[(500, 5, 0x8000_0001)])?;
-    assert_all_absent(PrivilegeSnapshot::decode(&good, fixed_ids()?)?);
+    assert_all_absent(&PrivilegeSnapshot::decode(&good, fixed_ids()?)?);
     for attributes in [8, 16, 0x4000_0000] {
         let bytes = raw_capture(&[(500, 5, attributes)])?;
         assert_eq!(

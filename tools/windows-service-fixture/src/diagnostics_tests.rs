@@ -35,11 +35,12 @@ fn sensitive_observation_and_nested_cleanup_have_fixed_nonrecursive_categories()
         PrivilegeLuid::new(17, 0),
         PrivilegeLuid::new(23, 0),
         PrivilegeLuid::new(41, 0),
+        PrivilegeLuid::new(59, 0),
     ])?;
     let snapshot =
         PrivilegeSnapshot::decode(&[1, 0, 0, 0, 17, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], ids)?;
     let admission = snapshot
-        .require_engine_absence()
+        .require_role(windows_platform::service::ServiceRole::Engine)
         .err()
         .ok_or("disabled privilege admitted")?;
     assert_eq!(

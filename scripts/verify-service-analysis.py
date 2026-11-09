@@ -244,7 +244,11 @@ def validate_causes(directory: Path, outcomes: dict, policy: dict, *, subject: s
             assertion = re.search(r"panicked at ([^\n]+?):(\d+):\d+:\nassertion[^\n]*failed", body)
             if assertion is not None and selected_span(assertion[1]):
                 failures.append({"test": name, "kind": "assertion", "source": assertion[1], "line": int(assertion[2])})
-            elif re.search(r"^Error: (?:InvalidTransition|ReportingFailed|OutstandingWork|DeadlineElapsed|DeadlineOverflow|TimeReversed|BudgetError|WorkLimit|CheckpointOverflow|FailureOutcomeRequired|Report\(|Bounds|Length|DuplicatePrivilege|DuplicateTargetIds|UnsupportedAttributes|RemovedEntry|EnginePrivilegeError)\b", body, re.MULTILINE):
+            elif (re.search(r"^Error: (?:InvalidTransition|ReportingFailed|OutstandingWork|DeadlineElapsed|DeadlineOverflow|TimeReversed|BudgetError|WorkLimit|CheckpointOverflow|FailureOutcomeRequired|Report\(|Bounds|Length|DuplicatePrivilege|DuplicateTargetIds|UnsupportedAttributes|RemovedEntry|EnginePrivilegeError)\b", body, re.MULTILINE)
+                  or re.search(
+                      r"^Error: (?:Forbidden\(EnginePrivilegeError \{ privilege: (?:SystemTime|Debug|Impersonate), "
+                      r"state: (?:PresentDisabled|PresentEnabled) \}\)|MissingRequired\((?:ChangeNotify|SystemTime)\)"
+                      r"|UnexpectedPrivilege|BrokerClockEnabled)$", body, re.MULTILINE)):
                 failures.append({"test": name, "kind": "typed-positive-path-refusal"})
         if not failures:
             raise Incomplete("Service caught variant lacks an actual selected behavioral test cause.")

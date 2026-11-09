@@ -2156,6 +2156,35 @@ The requested compiler-lint cohort and existing Core work remain the active work
 
 ### 4.19 Owner-ready Sandbox scope — 3 November 2026
 
+**9 November coordinator correction and renewed owner instruction:** David
+explicitly says, “You may use Windows Sandbox.” The earlier scoped readiness
+permission was carried forward too narrowly as a blanket native stop. Reviewed
+native jobs may proceed in an explicitly owned disposable Sandbox after current
+CLI/session/resource and candidate/job admission. Necessary management and exact
+owned input/output staging remain distinct from payload execution in the guest.
+This permits no live-host configuration, elevation, installation, security,
+service, clock or trust-store changes. Keep the detected S134 stager/artifact
+blocked; do not restore, re-encode or reuse it. Separate fuzz/storage/UI holds and
+post-V1 formal deferral remain. Historical stop/readiness records below retain
+their original dates and scopes; an experiment still needs its named owner,
+expected observations, finite limits, explicit guest ID and cleanup custody.
+
+**9 November readiness refresh:** after David opened Sandbox for this work,
+the installed CLI `0.8.107.0` identified exactly
+`dd47331c-14ec-425c-ae79-b0e4c618540d`. Coordinator `/root` recorded ownership
+before guest execution and used explicit ID plus `ExistingLogin` for two built-in
+CMD commands. Parsed guest exits were **0 and 42**, while both host dispatches
+exited 0. This establishes the selected command/result path, not product
+qualification or an unelevated token. No new guest, shared folder, PowerShell,
+product image or host configuration change was used. The owner-opened guest's
+requested XML and effective networking/device/protection settings are unknown;
+the older offline configuration below does not describe it. Each command had a
+20-second outer deadline. The guest remains open for the next admitted payload;
+controller cancellation would not prove guest-job completion.
+Receipt: external `phase-plan-20261108-v1/nts-ke-graph-v1/`
+`sandbox-native-preflight-v1/session-adoption-readiness-v1.json`, SHA-256
+`19c12f1b575e1424802ddbc026250c7e21ad74f0291274da3b54ffd141c0975c`.
+
 David now reports Windows Sandbox ready for use and points to the prepared
 management skill. This is scoped authorization for Sandbox management/readiness
 and later admitted guest work; retain the Defender block and do not retry the
@@ -4750,7 +4779,7 @@ handoff. The raw records are local retained evidence, not committed artifacts.
 | --- | --- | --- |
 | Source integration preparation — W11-W05/platform/security | Available now: map existing role-specific hosts and portable APIs to one S3.1 adapter/worker startup/status/stop child. Freeze inputs, readiness meaning, failure results, actual-completion custody, cancellation and cleanup before implementation. | A reviewed producer/worker/status/stop ownership map and finite direct-call, healthy, denied, boundary and fault controls; no new account, production deadline, runtime or effect authority inferred from the lab. |
 | Qualified source adoption — platform/QA | Refresh ordinary candidate/bindings; finish current >=90% per-security-file coverage and >=95% per-critical-file mutation with complete reviewed inventories, guard/derive alternatives and applicable host/native-source scopes. Complete current Windows cross-link and independent image readback. | Candidate-bound source/contract/metric and static artifact evidence. Current mutation inventories are empty; no fresh metric pass or current Windows link/PE pass exists. The latest SDK readiness attempt is incomplete after index drift. |
-| Product service composition — platform with engine/broker/IPC/diagnostic owners | Consume qualified adapters and explicit worker/handler contracts; final SCM identities, intended tokens/SIDs, enforcement of [the selected privilege profiles](../docs/windows-time-architecture.md#411-service-privilege-profiles), creation-time object protection and supported pre-start provisioning must be resolved before ordinary installed hosting. | Truthful availability, enforced startup admission, bounded diagnosed stop/restart and management isolation. Current engine observation checks only its three forbidden privileges; broker observation is descriptive, not its full allowlist. [§4.38](#438-service-privilege-profile-handoff--9-november-2026) owns the profile continuation. Typed errors are not a complete diagnostic sink. |
+| Product service composition — platform with engine/broker/IPC/diagnostic owners | Consume qualified adapters and explicit worker/handler contracts; final SCM identities, intended tokens/SIDs, enforcement of [the selected privilege profiles](../docs/windows-time-architecture.md#411-service-privilege-profiles), creation-time object protection and supported pre-start provisioning must be resolved before ordinary installed hosting. | Truthful availability, enforced startup admission, bounded diagnosed stop/restart and management isolation. At this historical handoff, engine observation checked three forbidden privileges and broker observation was descriptive. [§4.38](#438-service-privilege-profile-handoff--9-november-2026) now records complete portable capture, both-role admission and its selected qualification. Native enforcement and product diagnostics remain separate. |
 | Native service qualification — W11-W05/security/QA | Existing Windows hold must be lifted separately; use admitted disposable fixtures and intended roles on the adopted two-family matrix. | Actual SCM callbacks/status failures, effective token/object isolation, native completion, resource retention and failure/recovery behavior satisfy CHECK-1/27 and reached CHECK-17/21 beside valid controls. Host injections and compiler checks do not close this stage. |
 
 **Next service action:** the owner-assigned child in [§4.35.9](#4359-w11-w05s31-worker-lifecycle-child--8-november-2026)
@@ -5912,9 +5941,16 @@ candidate check and publication identity remain separate from the reviewed hash.
 **Request, source and scope.** David asked to select the right privileges for
 each service and update documentation and relevant skills. Baseline:
 `13ce18d728e0ca552805c8160c2649b338d472f9`, initially clean. This is a
-documentation/skill change using Microsoft primary sources and bounded source
-inspection; it does not implement a runtime setter or lift native execution.
+documentation/skill amendment using Microsoft primary sources and bounded source
+inspection. The later implementation and final qualification below complete the
+selected portable observer/consumer checkpoint; no runtime setter or installed
+Windows qualification follows. Reviewed guest execution uses §4.19.
 Dates here use Asia/Tbilisi.
+
+**Current disposition:** the platform primitive and standalone caller checks,
+including all six selected files' 90%/95% gates, are independently accepted in
+their Linux fixture scope. See [final qualification](#portable-service-privilege-checkpoint-final-qualification--9-november-2026).
+Native token enforcement, provisioning and production adoption remain open.
 
 **Decision owner:** [architecture §4.1.1](../docs/windows-time-architecture.md#411-service-privilege-profiles).
 The engine's exact set is `{SeChangeNotifyPrivilege}`; the broker's exact set is
@@ -5938,7 +5974,7 @@ admitted application/actor/effect guards and current clock ownership.
 These refine existing BND-3/4/5 and CHECK-1/2/3/10/12/13/15/23/27; no new
 requirement/check identifier family or generic privilege framework is introduced.
 
-#### Current implementation boundary
+#### Implementation boundary inspected at the initial baseline — historical
 
 The parent and read-only researchers inspected
 `crates/windows-platform/src/privilege_observation.rs` and
@@ -6032,12 +6068,469 @@ Reuse the existing structural/context/cleanup owners. Provisioning stays with
 W11-W10 and clock effects with P4/S0.4. This review ran no Rust tests/builds or
 native commands, adopted no metrics and lifted no execution hold.
 
+#### Exact-role observation and startup source contract — 9 November 2026
+
+**Historical accepted preimplementation contract.** The implementation and
+candidate-specific platform/caller results follow in the addenda below; this
+contract card itself supplies no execution pass.
+This W11-W05/S0.2 child freezes only the substantiated residual above under
+BND-3/4/5 and CHECK-1/17/21/25/26/27. Architecture §4.1.1 and the existing
+hardening profile matrix supply the selected policy; no privilege, right,
+dependency, metadata, schema or verification-policy change is proposed.
+Preparation baseline is clean `a31835d6af400fa35f10bd5ccee68cf302b52505`.
+Current parser/native-observer/host bytes match the three hashes recorded above.
+Existing `error.rs` and `diagnostics.rs` bind respectively to
+`18b29f03f343edfcba22268eac2eaadc4ded468d72fc7076604f3c86f307826e` and
+`326c39efd8da786441bdeda446815f06507e80ff16fe279addf156f61ff5e78e`.
+
+The actual path is `NativeTokenObserver::observe` → `resolve_ids` and
+`capture_privileges` → `PrivilegeSnapshot::decode` →
+`host::start_invocation_with_diagnostics` → worker preparation/readiness.
+`start_invocation` delegates to that shared consumer. The current consumer calls
+`require_engine_absence` only for Engine; the extension must enforce the selected
+complete profile for **both** fixed roles before worker preparation, activation
+or any Running acknowledgement. Successful SCM registration/StartPending remains
+distinct from admitted ordinary work.
+
+| Existing boundary / owner | Inputs, checked output, refusal and permitted effects |
+| --- | --- |
+| `native_token::{NativeTokenObserver::observe, resolve_ids, capture_privileges}` | Query only the current process primary token, resolve admitted names on that Windows instance, and capture the complete successful `TokenPrivileges` result within the existing 128-entry/1,540-byte limits. Failed/partial lookup, lookup collision, capture failure or incomplete output yields no successful observation. Keep before/after unexpected-thread-token checks, unique handle custody, explicit closes and actual-completion work accounting. Preserve the primary cause and independent primary/thread cleanup outcomes; cleanup failure prevents admission. No token adjustment, extra access right, powerful duplicate or silent repair is permitted. |
+| `privilege_observation::{ServicePrivilegeIds, PrivilegeSnapshot::decode}` and their checked constructors | Retain the whole present LUID/attribute set in private bounded representation, including unknown entries. Preserve mandatory bounds validation, exact count/length agreement, complete 64-bit LUID identity, duplicate refusal, `SE_PRIVILEGE_REMOVED` refusal and the existing accepted attribute mask `0x8000_0003`; preserve actual accepted bits. Failure constructs no snapshot. Public raw decoding and caller-supplied lookup values establish representation only, never successful native capture, live role identity or current authority. Fresh OS facts, context and cleanup remain the native observer's obligations. |
+| Exact-role comparison in the same portable owner, consumed by the shared startup function | Bind the comparison to the actual fixed `LabRole`/`ServiceRole`, with locally resolved admitted identities. Engine's present set must be exactly `{SeChangeNotifyPrivilege}`; Broker's exactly `{SeChangeNotifyPrivilege, SeSystemtimePrivilege}`, with Systemtime disabled for ordinary startup. Every extra LUID, including an unknown or disabled privilege, and every missing required privilege refuses admission. This adds no enabled-state requirement for ChangeNotify. Retain the existing typed SystemTime/Debug/Impersonate diagnostic facts and absence/disabled/enabled distinctions where applicable; new refusal categories remain bounded and typed without exposing raw token data. |
+| `host::start_invocation_with_diagnostics`, error and diagnostic consumers | An observation or role refusal closes admission before any worker preparation/activation or Running. Preserve fixed-role selection, existing argument/Stop/time checks, typed observation/admission distinction, original failure, bounded secondary cleanup/report outcomes and required-event routing. Diagnostics cannot turn refusal into readiness. A successful portable comparison grants neither clock authority nor persistent/native token assurance; existing actor, thread-context, operation and current-authority checks retain their separate owners. |
+
+**Compatibility and next source-write boundary.** Review all current callers of
+the snapshot, lookup mapping, named projections and `require_engine_absence`
+before changing signatures. Retain their narrower useful representation and
+typed-error contracts where compatible; the old three-name helper cannot remain
+the authoritative startup gate. Concrete layout/API choices may vary within the
+checked contracts above. Expected source writes are limited to
+`crates/windows-platform/src/privilege_observation.rs`, its existing
+`tests/privilege_observation.rs` and `tests/privilege_observation_contracts.rs`,
+and `tools/windows-service-fixture/src/{native_token,host,host_tests,error,error_tests}.rs`.
+Adapt existing diagnostics mappings/tests only where the changed typed admission
+result requires it. Core/engine, shared manifests/locks, schemas, policies and
+qualification bindings remain coordinator-owned; provisioning and clock effects
+remain with W11-W10/P6 and P4/S0.4. No parallel observer or policy engine is needed.
+
+**Independent observations required after review, before full qualification.**
+First retain a behavioral RED through the actual shared startup consumer: a
+well-formed set with an extra unknown disabled LUID currently reaches worker
+startup, or a Broker set with Systemtime enabled does so. The expected refusal
+must fail for that admission defect, beside an independently encoded exact-set
+healthy neighbor that reaches acknowledged readiness. Make the smallest causal
+observer/representation/consumer repair, then establish GREEN for both roles;
+do not alter the selected oracle or qualify the known deficient caller first.
+The current source inspection is not an executed RED receipt.
+
+Use independently written raw captures to challenge empty/missing required sets,
+known and unknown extra privileges both enabled and disabled, Broker clock
+privilege enabled, duplicate LUIDs, removed/unsupported attributes, malformed/
+truncated/trailing data and 127/128/129-entry boundaries. Pair exact role sets
+with both ChangeNotify enabled states where the remaining attributes are valid.
+Exercise failed/colliding lookups, failed/incomplete capture, unexpected ambient
+thread token and each explicit cleanup failure through the reachable owner seams;
+preserve the primary failure alongside secondary facts and observe no worker
+preparation/Running on refusal. Fixture API failures test portable propagation,
+not actual Windows lookup, token or cleanup enforcement. External negative
+consumers must challenge private snapshot/mapping mutation and guard bypass with
+a compiling legal neighbor; do not claim that a public representation decoder
+proves native provenance. Preserve required diagnostic fields and bounded output.
+
+**Finite exit and next action.** After independent contract acceptance, author
+one coherent source repair and its focused RED→GREEN controls, format it, then
+freeze one resource-admitted configured qualification checkpoint. Require actual
+ordinary and release tests, external contracts, relevant lint/docs/target checks,
+at least 90% executable-line coverage for each affected security file and 95%
+mutation per affected critical file, with complete descriptor/guard reconciliation,
+independent alternatives for ungenerated behavior and no kill credit for unviable
+or equivalent variants. Retain failures, discovery, finite campaign budgets and
+candidate-bound results; no thresholds or resource floors change. Host tests cover
+portable representation/admission/lifecycle behavior. Windows-only lookup/capture/
+cleanup paths retain explicit coverage gaps; cross-builds establish compiler
+compatibility, not native enforcement. Following David's authorization to use
+Windows Sandbox, native guest checks require exact owned-Sandbox/job admission;
+live host changes remain unauthorized. The coordinator owns Sandbox management
+and guest execution; this draft author runs neither. Native token/account/thread,
+package and installed lifecycle qualification retain their actual prerequisites
+and unresolved evidence under the existing owners. Separate fuzz/storage/UI holds
+and the post-V1 proof deferral remain unchanged.
+No Rust/compiler, native, proof or fuzz execution occurred for this draft.
+**Independent review completed:** fresh reviewer `privilege_contract_review`
+traced both actual ServiceMain paths through the shared consumer, checked the
+selected architecture/hardening policy and all five source bindings, and returned
+READY without material findings. Its comprehension preserves whole-set versus
+three-fact observation, both-role gating, representation versus native authority,
+typed primary/cleanup outcomes and finite diagnostic projection. The reviewed
+draft task bytes hash to
+`3d2a36a31f2fd33be9edb60ea2137c0b202fb0aafed298d45ba216709c98d34d`;
+this acceptance and the owner-authorization clarification are later amendments.
+No compiler or Windows execution formed part of that read-only review.
+**One permitted next action:** add the focused actual-consumer RED and healthy
+neighbor, then perform the reviewed source repair and GREEN under the configured
+runner. Implementation owner is the coordinator's platform/security child;
+Git, shared manifests/locks/policies and all guest operations stay coordinator-owned.
+The completed NTS/Core metrics and cloud metadata assignment are unaffected.
+
+#### Exact-role repair — RED retained; source prepared — 9 November 2026
+
+The actual shared-host regression ran against preparation baseline `a31835d`:
+**84 passed, two intended failures**, with no ignored or filtered library cases.
+The exact Engine and Broker profiles passed the healthy readiness neighbor.
+Empty Engine, Engine with an unknown disabled extra, Broker with enabled clock
+privilege, and Broker with an unknown disabled extra all wrongly admitted work,
+reached Running and explicitly returned `Some(Ok(()))` after Stop. Each retained
+six-field observation includes admission, worker phases, statuses and final result;
+the tests did not manufacture the finalization transition. Later target cohorts
+were not executed after the failed library.
+
+The original outer result remains **incomplete**, Cargo exit 101, qualifier exit 1,
+outer exit 1: its reader missed Rust's numeric thread ID in the panic header.
+A separate bounded offline adjudication corrected only that anchored header
+recognition, retained the original tuple/count/healthy-control checks and challenged
+six malformed/incorrect neighbors plus a header without an ID. Independent review
+accepted the actual behavioral RED without rerunning Cargo or changing the five
+historical artifacts. External evidence under
+`phase-plan-20261108-v1/nts-ke-graph-v1/`:
+
+- `service-privilege-red-v2/fixture-test-command-0.log`, SHA-256
+  `94be25e8fc0e12e1895b9e9ce7b63bf82f078e9457c3d6a73d6e78dbb9754ae4`;
+- `adjudicate-service-privilege-red-v2-v1.py`, SHA-256
+  `a0f8dd6785f67e95bdf2f79aa9cbb7b74673fa4eb7723788029a17df1e62fb7f`;
+- `service-privilege-red-v2-offline-adjudication-v1.json`, SHA-256
+  `cf4247b355fcbded11de0d6941f4720410df6d4144e1f43c9b2e7a3eb1a90a5b`.
+
+The prepared repair retains all bounded LUID/attribute entries privately, resolves
+ChangeNotify with the three existing names, and checks the exact selected role
+before worker preparation. It borrows the complete snapshot, preserves typed known
+refusal and cleanup facts, and excludes unknown LUIDs/raw captures from diagnostic
+formatting. Both-role healthy fixtures now encode their actual required sets;
+raw missing/extra/attribute/lookup/length/boundary controls and external privacy
+consumers are updated. Source hashes after pinned formatting:
+`privilege_observation.rs` =
+`88fabdfc2f317cc38fdcd02f8f2fe2bcb84831be91ac01ad71aa7aceaea2c509`;
+`native_token.rs` =
+`56a1d575473ba85d40632ddf0c1a3b1dac1270a780040a991f0bb1a132c33791`;
+`host.rs` =
+`6139e99e3f7151afa885a7ce2b72befd481693f785d8c63c31947ee777774b22`.
+The intervening `33a4a44` imports documentation/skill guidance; it changes no
+product source. Its new guidance was preserved.
+
+Coordinator support changes recognize only the new closed typed-refusal log
+shapes, retain rejection of unknown/near-prefix errors, and rename the focused
+admission filter. The updated Python control failed for the missing recognition
+before that repair; **all 21 service-analysis Python controls then passed**.
+The qualifier's fixed `privilege-checkpoint` lane composes the existing twelve
+format/debug/release/doctest/GNU-and-Windows-Clippy/rustdoc commands under one
+source/tool/vendor admission and target. Existing isolation, per-command limits,
+bookends and stop-on-first-failure behavior remain. This avoids twelve independent
+compiler-store admissions and duplicate targets; it grants no Windows execution.
+
+**Next checkpoint:** independent source/runner review, a fresh frozen graph and
+the twelve configured commands under one heavy-job owner, 5 GiB startup / 4 GiB
+stop free-space limits, 768 MiB sampled aggregate owned output and 2 GiB sampled
+owned RSS. GREEN, current external contracts, coverage/mutation and native token
+qualification remain pending. The completed RED targets were deleted after review;
+raw evidence/source snapshots remain. No proof, fuzz, live-host mutation or
+service installation occurred in this source preparation.
+
+**First configured checkpoint, retained as partial:** the fresh graph passed.
+Both format commands, debug and release tests (**42 platform + 91 fixture cases
+per profile**), eight platform doctests and platform Clippy passed. The fixture
+contains zero doctests; no fixture-contract execution is claimed. Fixture Clippy
+then correctly rejected an expanded 102-line test against the 100-line limit;
+Windows Clippy and fixture rustdoc were not reached. Source/tool/vendor/index
+bookends passed; the original outer result remains incomplete and the configured
+lane remains failed. The repair extracts its unchanged finite refusal inventory
+into a checked helper, preserving every behavioral case and the original test
+name, followed by pinned formatting. A new checkpoint will use fresh labels and
+freeze; the previous outcome is not replaced. Its reader also records the existing
+zero-doctest fixture explicitly while requiring the nonzero platform contract
+cohort. Raw records: `privilege-green-{graph,checkpoint}-20261109-v1.json` under
+the existing service artifact directory; external supervisor result:
+`service-privilege-green-v1/result.json`. Coverage/mutation/native gates remain open.
+
+**Fresh GREEN v2 — independently accepted:** the graph and all twelve configured
+commands passed. Debug and release each executed **42 platform + 91 fixture
+tests**; all three original host regression/healthy tests passed once in each
+profile. Eight platform doctests passed, including the current external privacy
+consumers; fixture doctests remain zero. Format, GNU platform/fixture Clippy,
+Windows-target fixture Clippy and fixture rustdoc passed. Independent review
+rehashed all 467 freeze pins, both 461-file source inventories, twelve raw logs and
+receipt bindings. The test-helper extraction changed no refusal case or oracle.
+The 136.37-second outer run peaked at 492,953,600 sampled owned RSS bytes; its final
+sample retained 5,040,607,232 available filesystem bytes, above the 4 GiB stop floor.
+No native execution occurred.
+
+External evidence under the same `nts-ke-graph-v1/` owner:
+
+- `run-service-privilege-green-v2.py` SHA-256
+  `08d17975192e4d5752f023479576d8c7d86fa7fb111a82564a363b33a4b018ca`;
+- `service-privilege-green-freeze-v2.json` SHA-256
+  `6a37b0c8f90b17b6559225c621f8b8e147c1aa404d981454e75ff88703868a5d`;
+- `service-privilege-green-v2/result.json` SHA-256
+  `0e9c29870b6e6d6633d6886f0e26ba822e39983cf5ddf6e72cb977375d8e3f5e`.
+
+Main-repository checkpoint receipt:
+`privilege-green-checkpoint-20261109-v2.json`, SHA-256
+`a4b14000e5e9e3ff44d43d1cda1aba859f37911a2cd92f25171efd597f82fceb`.
+The current service-analysis binding now uses the actual **42 ordinary/eight
+doctest** inventory, current protected-helper hashes and the 436-file product
+identity `fef3c7bd5d84706b5a61f1ea2855ce7afd68bfcb41d2513d6f0a08f365574685`.
+Its old mutation inventories are cleared for fresh enumeration; no metric pass is
+inferred from rebinding. The standalone fixture's larger 461-file inventory
+includes its own source/runner, rather than changing the product metric scope.
+**Next:** current descriptor enumeration and coverage, independent generation-gap
+review, then the required per-file mutation campaign. Native lookup/token/SCM,
+provisioning and package evidence remain open; Sandbox permission supplies no pass.
+
+**Metric preflight correction:** the first enumeration attempt stopped before any
+analyzer command because the outer supervisor's deliberately narrow
+`PATH=/usr/bin:/bin` hid the already installed Cargo extensions. The configured
+consumer uses `shutil.which` followed by exact binary-hash admission. Preserve
+`analysis-privilege-role-enumerate-20261109-v1` and external
+`service-privilege-metrics-v1/result.json` as incomplete; coverage did not start.
+The next outer invocation supplies the literal existing Cargo-bin path through
+the admitted system `env` executable. It retains the configured consumer's hash
+checks, the unchanged supervisor and all resource/source/index controls. No tool
+installation, analyzer-policy change or product failure follows from this setup
+error. Native/product qualification remains unchanged.
+
+**Actual metric results after PATH correction:** enumeration passed with **119
+descriptors**, independently reconciled to current source/spans/diff hunks:
+
+| Owner | Descriptors | Inventory SHA-256 |
+| --- | ---: | --- |
+| Lifecycle | 53 | `6b0c26ca69165cc0b1eca40786c7883413835757a7c5be5b7a38a713a41ed031` |
+| SCM | 24 | `826a85bdb95825d972a1460054a8c05c76a6b33692d9592b23579e140281a5db` |
+| Privilege | 42 | `5c5aaaa980cee306352d59333ab865951c1fb57e2843d5213386ee555462540b` |
+
+These represent 50 of 55 concrete bodies. Constructors `PendingBudget::new`,
+`ServiceLifecycle::new`, `StopNotification::new`, `PrivilegeLuid::new` and
+`ServicePrivilegeIds::new` have no generated descriptors; the abstract reporter
+has no executable body. Garde/derived equality, literal projections and native
+capture/cleanup also need separate behavioral reconciliation. This enumeration
+is no campaign score. Its raw report SHA-256 is
+`4aca19745354b34a226bf22fd32780a98148bdf5d98efecee887b9c3e5ba7165`.
+
+Coverage ran all 42 instrumented tests successfully but correctly failed the
+**per-file 90% gate**: privilege 138/165 lines (**83.64%**), lifecycle 227/237
+(**95.78%**), SCM 63/63 (**100%**). The missed privilege lines primarily concern
+bounded useful error formatting and preserving the original typed error source.
+Both the coverage lane and outer result remain incomplete. Retained coverage JSON
+SHA-256: `996d8501dd46f62ffac59dacb1c1d8f456b95424e6b41e71709b0681b63fb1ca`.
+
+The tests-only follow-up adds three actual-produced-error contract checks to the
+platform test owner, covering redaction/useful categories, the known typed source
+chain and absence of fabricated sources. It also strengthens the snapshot Debug
+oracle: an empty string must not pass when named states and count are promised.
+No product source changed. New test file SHA-256:
+`82627b681210b56c7f4b845603bb5537736c1964a201ad80c0b2d47a081b11fa`.
+These controls still need execution; a fresh candidate rebind follows the next
+ordinary checkpoint. Old passes and the failed coverage report retain their scopes.
+
+**Follow-up checkpoint v3, retained partial:** the three new contract tests passed;
+debug and release each executed **45 platform + 91 fixture cases**, and eight
+platform doctests passed. Platform Clippy then rejected three nonempty-string
+assertions under `assert_is_empty`; the remaining lint/doc commands did not run.
+The repair uses `assert_ne!(value, "")`, preserving the assertions and improving
+failure output. The next fixed twelve-command batch runs format and Clippy before
+ordinary/release tests, avoiding late discovery of this kind of lint failure;
+it drops no check. Current binding expects the observed 45/eight test names.
+
+Independent review accepts the 119 descriptor identities for their unchanged
+production/tool/configuration scope. Those identities are now bound without
+crediting a campaign or reusing the failed coverage result. The independent
+generation-gap alternatives are the executed 81-input budget grid, typed
+count-129-header / 1,541-byte capture boundaries and valid neighbors, direct
+constructor/default/Stop cases, all six lookup-collision pairs, and raw high-bit/
+maximum-length/tail-attribute equality cases. These discriminate the omitted
+constructors and Garde invocation; another full historical fault campaign is not
+required absent a survivor or unresolved distinction. The new error/source/Debug
+oracles remain subject to current lint, coverage and mutation execution.
+Current product binding: `d64665077745c91ff8278149eaa5873fe40e80bc46b3db2a53c40deb22cf5654`.
+
+**Current ordinary checkpoint v4 passed:** all twelve commands completed after
+lint was moved earlier. Both profiles passed 45 platform + 91 fixture tests;
+eight platform doctests and the unchanged explicit zero fixture-doctest inventory
+were observed. The three original host regression/healthy cases passed once in
+each profile. Source/tool/vendor/index bookends passed. External result SHA-256:
+`85de2f1b7d86cfbc12d7303d782a83e0ffd508d2633bb36d46bf2da45130a59b`;
+main checkpoint receipt SHA-256:
+`be56a2d7eb23385440f72546719f6560661fd690f64fc65e37fdda6073918e15`.
+The prepared next run uses the configured `all` metric lane, so current coverage
+must pass before mutation starts. It retains the 90%/95% per-file gates, four
+mutation workers and existing compiler/test/time/isolation limits. Its separate
+sampled aggregate output allowance is **1 GiB**, to include the coverage image,
+four owned mutation targets and retained export together; 5 GiB startup / 4 GiB
+stop, 2 GiB sampled owned RSS and a 600-second outer pilot remain. This is a new
+bounded campaign budget, not a passed gate or weaker coverage/mutation threshold.
+Unique historical fault sources and primary coverage artifacts were preserved
+while unused compiler outputs and identical old source copies were deleted.
+
+**First complete metric execution — measurements retained, acceptance incomplete:**
+current coverage reached privilege **165/165 (100%)**, SCM **63/63 (100%)** and
+lifecycle **227/237 (95.78%)**, with 45 instrumented tests. All 119 generated
+mutation attempts ran: lifecycle **32 caught / 21 compiler-unviable**, SCM
+**21 / 3**, privilege **29 / 13**, with no survivors, timeouts or exclusions.
+Compiler-unviable cases receive no kill credit.
+
+The strict causal consumer then rejected three returned string errors, so the
+configured producer and outer result remain **incomplete**, not a qualified
+campaign. Independent inspection confirmed successful build → test exit 101,
+zero compiler errors and the intended named failure in each actual log:
+legacy absence replaced with `Ok(())` returned “present privilege admitted”;
+source replaced with `None` and its Forbidden arm deleted each returned “known
+refusal lost its original source.” These were meaningful behavioral catches,
+but `.ok_or(...)?` supplied no owned assertion span for this verifier.
+
+The minimal tests-only repair stores the result/option, adds a standard
+`assert!(refusal.is_err())` or `assert!(source.is_some())`, and retains fallible
+extraction. It changes neither production behavior nor the expected contract.
+No classifier whitelist or relaxed cause rule is introduced. Requalify the new
+candidate and require all three cases to fail at those assertions. Keep
+`analysis-privilege-role-all-20261109-v1` and external
+`service-privilege-metrics-v3/result.json` immutable as incomplete history.
+
+The standard assertion change passed the full ordinary checkpoint v5: all twelve
+commands, both 45 + 91 test profiles and eight platform doctests, with all
+bookends intact. Result SHA-256:
+`ac975ddd8739d891acdd56b0fd8161bbad422fa3957ea5145e0bf96948359c98`;
+checkpoint SHA-256:
+`0a8b058245e1a068127c3de8919381d4d5b0572d9e6dc7f40d25025b78299c88`.
+Current test source SHA-256:
+`eafe62765ce5f34776c4155e50bb3e6ddecbd21fefbd16c8af890b7af17ffcfd`.
+The final metric rerun uses product identity
+`5962e80bc494ee227d9a2a424af090f8d28ea91a1335870ee3cb530969de1b47`,
+the same production sources, 45/eight inventory and all 119 reviewed descriptors.
+No metric pass is inferred before that execution and independent classification.
+
+#### Platform checkpoint accepted; caller gates required at this stage — 9 November 2026
+
+The final platform run passed coverage and all 119 mutation attempts with current
+45-test/eight-doctest baselines. Independent review accepted every descriptor/diff,
+all 82 attributed behavioral catches and 37 selected-source compiler failures with
+zero kill credit. There were no survivors, timeouts or exclusions. Line results:
+lifecycle **227/237 (95.78%)**, SCM **63/63 (100%)**, privilege **165/165 (100%)**;
+per-file viable mutation results **32/32**, **21/21**, **29/29** respectively.
+All 909 exported-file hashes matched, and the three formerly boxed-string-only
+failures now have their intended owned assertion spans. Ordinary v5 checks and
+the agreed direct-constructor/handler generation-gap alternatives remain accepted.
+
+External final result `service-privilege-metrics-v4/result.json` SHA-256:
+`a5af17a0d27eecf49365817e0e5e716e1b7ac2ff61b1cfc44f9abfc7ee852cfc`;
+main record `analysis-privilege-role-all-20261109-v2/raw/verification.json`:
+`dce4f69bb9c7cf3e3f96abb65b48888cf2b2269d2083f1feb3db968482851172`.
+The 105.04-second run peaked at 1,715,318,784 sampled owned RSS bytes. Its outer
+final owned-output sample was 294,650,825 bytes; the command's earlier final sample
+was 258,608,145 bytes. These are separate observations, not interchangeable peaks.
+
+**Required scope reconciliation before commit:** platform metrics do not qualify
+the changed standalone `host.rs` and `error.rs`. Existing §4.35.9/§4.35.10 and
+`tools/windows-service-fixture/metrics.py` require current host/error/diagnostics
+90%/95% gates. Those remain pending. Its consumer requires a current single-command
+`fixture-test` receipt; the batched v5 receipt is not admissible. All 25 fixture
+Python admission/metric controls passed. Run a fresh graph and single fixture test,
+then fixture coverage/enumeration, independent inventory review and mutation,
+without relaxing receipt checks. Native token/SCM, installed identity and product
+adoption remain separate unresolved owners.
+
+The stale verification-manifest description now names complete representation and
+both-role comparison instead of denying a broker allowlist. This is a description-
+only semantic-delta rebind: registrations, thresholds, Rust source/tests, dependency
+graph, tools and actual platform compiler/mutation commands are unchanged. The
+retained platform results keep their original execution identities; they are not
+relabeled as new runs. Current metadata-admitted product identity is
+`212546396aff08c9b7bf84452137124d5ea91f7dff01627c0b271854d6b58a24`.
+Apply this correction before freezing the already-required fresh fixture graph.
+
+Before caller execution, local `main` fast-forwarded from `33a4a44` to `6b947c5`,
+importing three documentation/skill commits. All 22 owned dirty paths were
+preserved; architecture and this task were merged without conflicts, and staging
+stayed empty. The new Tokio/panic-boundary guidance and W11-W02 resume refinement
+retain their existing owners and native gaps. All 461 fixture execution inputs
+and the current platform metadata admission were unchanged. The unused v1 caller
+freeze/drivers remain unexecuted history; caller execution uses fresh v2 identities
+and the new HEAD/index. No platform Rust or mutation rerun is implied by this
+documentation-only integration.
+
+#### Portable service privilege checkpoint final qualification — 9 November 2026
+
+The previously pending standalone caller gates are now complete and independently
+accepted. This closes the selected portable privilege observer/consumer child,
+alongside the platform results above; it does not close W11-W05, S3.1, native
+Windows services or product adoption. Requirements remain BND-3/4/5 and the
+mapped CHECK-1/17/21/25/26/27 scope.
+
+Fresh `fixture-caller-{graph,test}-20261109-v2.json` receipts passed four graph
+commands and one exact ordinary fixture command: **91 named tests**, no failures,
+ignored or filtered tests. The 461-input fixture candidate is
+`fc85b335e9c9aa763499b89b63d406f72ec751305e64c2cfa25fc6ebfbb11b5e`.
+Enumeration and instrumented coverage used that same candidate and all 91 tests:
+
+| Selected caller | Executable lines | Generated | Behavioral caught | Compiler-unviable | Raw equivalent miss | Adjusted score |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `host.rs` | 505/536 (94.22%) | 83 | 47 | 35 | 1 | 47/47 (100%) |
+| `error.rs` | 127/127 (100%) | 40 | 16 | 24 | 0 | 16/16 (100%) |
+| `diagnostics.rs` | 119/119 (100%) | 16 | 3 | 13 | 0 | 3/3 (100%) |
+
+The complete **139-variant** campaign has no timeout or unresolved survivor.
+Actual mutation command exits are **2/0/0**; host raw coverage of viable faults
+is **47/48 (97.9167%)**. The one exact `S31-EQ-POLL-FROM` raw miss actually ran
+all 91 tests, retains `MissedMutant`, and earns zero kill credit. The separate
+`poll_finished` replacement is not equivalent. All 66 catches have selected
+semantic assertions; all 72 unviable variants have selected compiler/lint causes
+and zero kill credit. Each owner ran a successful 91-test baseline. Independent
+review reconciled every descriptor, diff and cause log, all ten omitted production
+bodies against direct tests, and the small viable denominators. No branch-coverage
+or native-collaborator claim follows.
+
+Execution used four mutation workers, one inner Cargo job/test thread, unchanged
+90-second build/60-second test limits, the configured aggregate 1200-second
+campaign allowance and an explicit 1800-second outer allowance. Actual duration
+was **119.92 seconds**, peak sampled owned RSS **1,440,985,088 bytes**, final
+sampled owned outputs **62,140,566 bytes**; 5/4 GiB free-space admission/stop floors,
+1 GiB output and 2 GiB RSS caps remained in force. Independent export readback
+matched all **774 files / 29,921,366 bytes**. These are observed scopes, not hard
+resource quotas or Windows measurements.
+After acceptance, 1,707 byte-identical metric cache files (73,000,053 logical
+bytes) were deleted; the complete primary raw archives and receipts remain.
+No compression was used.
+
+Current local evidence under `artifacts/windows-services/recovery-20261107-v1/`:
+
+- `fixture-caller-coverage-20261109-v2.json`, SHA256
+  `cd322746dbc2a7ab80f4db684a8ed51c134764d2d28e361b4b4584d49b41ff86`.
+- `fixture-caller-mutation-20261109-v3.json`, SHA256
+  `fa7582329b9d1025471d57fa22d5bcab85595e6ec917f75f59751eddb6cf7546`.
+- External `service-fixture-mutation-v2/result.json`, SHA256
+  `e58e63d967cc1f87fefa28279a96f9f05ce375e778a71d49fe32a83e865377ea`;
+  freeze `1573ecf1fdbf79b701012b2b270af86f22f2e93f9d1031dd4bac2bc9a7dba8c1`.
+
+David staged the same 22 work files before mutation. Coordinator Git-blob
+readback proved exact mode/byte parity for all 461 verification inputs plus the
+staged paths (471-file union), with unchanged HEAD and source hashes. Mutation
+therefore used the new raw index `6966e171…`; A2/B2 retain their original
+`8c713f4a…` execution identities. The index-only rebind record is
+`service-fixture-index-rebind-v1.json`, SHA256
+`41d5fca7e6c5248ce7b22518c1b00146da17157264184f01436f3bf7896dd591`.
+The executed equivalence document `bf571782…` is retained byte-exact in the
+archive; subsequent result documentation changes no compiled input or the
+maintained equivalence argument. No historical result is relabeled as a rerun.
+
+**Next:** finish staged-candidate/publication checks, then continue development
+§7. Scoped Windows work uses the owned Sandbox and separately admitted exact
+images/jobs under §4.19. Complete native token capture, role workflows, SCM,
+accounts/provisioning, cleanup and two-family/package evidence remain open.
+The blocked S134 artifact, live-host mutations, AES fuzz hold, optional-storage
+pause, UI deferrals and post-V1 formal work retain their boundaries.
+
 | Owner / stage | Concrete next work | Observable exit and current disposition |
 | --- | --- | --- |
-| Read-only reviewer separate from the extension author, W11-W05/S0.2 with W11-W10 for packaging | Preserve the source revalidation above; repeat affected claims only after relevant source/contract drift. | **Source revalidation complete** on the recorded candidate, with current-caller qualification and native gaps explicit. The residual observer/consumer contract freeze below remains OPEN. |
-| Platform/security, W11-W05/S0.2 | Freeze the existing observer/consumer extension: complete bounded LUID/attribute capture, local allowed-name resolution, exact role comparison, explicit error states and expected non-impersonating service context. Keep configured policy and observation distinct. | Independent valid, extra-enabled, extra-disabled, unknown-LUID, missing-required and malformed/incomplete/failure controls through the real consumer. Source preparation follows the current assigned child; implementation/qualification is OPEN. |
-| IPC/platform, S0.3/P3 | Bind identification-only QoS on every open/reconnect to actual token type/level, request/read ownership, query-only capture and checked same-thread reversion. Authorize explicit captured identity after reversion, without adding `SeImpersonatePrivilege`. | Allowed real user/admin/engine paths work; anonymous, unexpected level, failed token open and ambiguous attribution cause no protected effect. Existing failed-reversion recovery stays required. Source work follows its current owner; native evidence is HELD. |
-| Clock/lifecycle, P4/S0.4 | Bind the selected setter to guarded synchronous privilege enable/use/disable, full API results, disabled baseline and actual outcome custody. Permanent removal is not a temporary guard. Keep retained-rate/ownership cleanup in the existing broker recovery contract. | Valid bounded operation and later owned cleanup work; enable/not-all-assigned/setter/disable/readback failures cannot produce false success or unguarded continuation. Native clock execution is HELD under the existing disposable-fixture gate. |
+| Read-only reviewer separate from the extension author, W11-W05/S0.2 with W11-W10 for packaging | Preserve the source and contract reviews above; repeat affected claims only after relevant source/contract drift. | **Source revalidation and bounded contract review complete** on the recorded inputs. Current-caller implementation/qualification and native gaps remain explicit. |
+| Coordinator's platform/security child, W11-W05/S0.2 | Preserve the completed portable observer/consumer checkpoint and actual-consumer RED/healthy controls; prepare the next exact native job under §4.19 when its contract and environment are admitted. | Platform and standalone caller ordinary/90%/95% gates are independently accepted in their selected Linux fixture scope. Native and installed qualification remain OPEN. |
+| IPC/platform, S0.3/P3 | Bind identification-only QoS on every open/reconnect to actual token type/level, request/read ownership, query-only capture and checked same-thread reversion. Authorize explicit captured identity after reversion, without adding `SeImpersonatePrivilege`. | Allowed real user/admin/engine paths work; anonymous, unexpected level, failed token open and ambiguous attribution cause no protected effect. Existing failed-reversion recovery stays required. Native evidence remains OPEN; scoped guest work requires its admitted §4.19 contract/environment card. |
+| Clock/lifecycle, P4/S0.4 | Bind the selected setter to guarded synchronous privilege enable/use/disable, full API results, disabled baseline and actual outcome custody. Permanent removal is not a temporary guard. Keep retained-rate/ownership cleanup in the existing broker recovery contract. | Valid bounded operation and later owned cleanup work; enable/not-all-assigned/setter/disable/readback failures cannot produce false success or unguarded continuation. Native evidence remains OPEN pending the existing disposable-fixture contract and §4.19 job admission; live-host clock changes are outside scope. |
 | Package/platform, W11-W10/P6 with W11-W05 | Establish supported no-UI pre-start provisioning of exact nonempty lists, own-process type and object/identity policy; prove actual activation and preservation through update/repair/recovery. | Actual final package/service tokens match policy before ordinary work. The MSIX account/provisioning bridge remains OPEN; source API existence and elevation are insufficient. The retained child-launch alternative supplies no privilege exception. |
 | Security/QA with provider, storage and diagnostics owners | Apply the existing paired profile matrix to useful real-role workflows, same-account adversaries, complete token state, bounded secret-memory/provider behavior and denied extra authority. | Candidate-bound native results on the two-family matrix, with valid controls, useful failures and external restoration. Current source-only observations provide no native, package or release pass. |
 
@@ -6056,7 +6549,9 @@ service/Windows-evidence references. Existing IPC and package/security skill
 routes already reach the canonical contracts and remain applicable. Normal-user
 Slint UI and elevated lifecycle helper retain their distinct role contracts.
 Store-first complete MSIX, all-file/interim-MSI signing, the current Core/service
-queue, all Windows/fuzz/storage/UI holds and post-V1 formal work remain unchanged.
+queue and post-V1 formal work remain unchanged. Scoped owned-Sandbox jobs follow
+§4.19; the blocked S134 artifact, live-host mutation restriction and separate
+fuzz/storage/UI holds remain in force.
 
 #### Guidance validation and review
 

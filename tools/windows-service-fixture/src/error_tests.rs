@@ -311,7 +311,8 @@ fn token_observation_and_privilege_admission_preserve_typed_cause_custody()
 -> Result<(), Box<dyn Error>> {
     use super::{TokenCleanupOutcome, TokenObservationCause, TokenObservationFailure};
     use windows_platform::privilege_observation::{
-        PrivilegeLuid, PrivilegeSnapshot, PrivilegeState, ServicePrivilege, ServicePrivilegeIds,
+        PrivilegeLuid, PrivilegeSnapshot, PrivilegeState, ServicePrivilege, ServicePrivilegeError,
+        ServicePrivilegeIds,
     };
     let first = NativeError::new(NativeOperation::PrivilegeQuery, 0);
     let primary = TokenCleanupOutcome::Failed(NativeError::new(NativeOperation::TokenClose, 6));
@@ -350,22 +351,33 @@ fn token_observation_and_privilege_admission_preserve_typed_cause_custody()
         PrivilegeLuid::new(17, 0),
         PrivilegeLuid::new(23, 0),
         PrivilegeLuid::new(41, 0),
+        PrivilegeLuid::new(59, 0),
     ])?;
     let raw = [1, 0, 0, 0, 17, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0];
     let snapshot = PrivilegeSnapshot::decode(&raw, ids)?;
     let admission = snapshot
-        .require_engine_absence()
+        .require_role(windows_platform::service::ServiceRole::Engine)
         .err()
         .ok_or("disabled privilege admitted")?;
-    assert_eq!(admission.privilege(), ServicePrivilege::SystemTime);
-    assert_eq!(admission.state(), PrivilegeState::PresentDisabled);
+    let ServicePrivilegeError::Forbidden(facts) = admission else {
+        return Err("known forbidden privilege lost its typed facts".into());
+    };
+    assert_eq!(facts.privilege(), ServicePrivilege::SystemTime);
+    assert_eq!(facts.state(), PrivilegeState::PresentDisabled);
     let wrapped = FixtureError::PrivilegeAdmission(admission);
     assert_eq!(
         wrapped
             .source()
+            .and_then(|error| error.downcast_ref::<ServicePrivilegeError>()),
+        Some(&admission)
+    );
+    assert_eq!(
+        wrapped
+            .source()
+            .and_then(Error::source)
             .and_then(|error| error
                 .downcast_ref::<windows_platform::privilege_observation::EnginePrivilegeError>()),
-        Some(&admission)
+        Some(&facts)
     );
     assert_ne!(category(&wrapped), observation_category);
     for cause in [
@@ -391,5 +403,56 @@ fn token_observation_and_privilege_admission_preserve_typed_cause_custody()
             matches!(cause, TokenObservationCause::Capture(_))
         );
     }
+    Ok(())
+}
+
+/// Role-profile errors retain typed causes while outer formatting excludes every
+/// raw unknown privilege identity and accepted capture attribute.
+///
+/// # Errors
+/// Propagate checked identity/raw construction or absence of the expected refusal.
+/// # Panics
+/// Fails if Debug, Display or the typed source projects arbitrary token contents.
+#[test]
+fn role_profile_error_formatting_excludes_raw_unknown_token_data() -> Result<(), Box<dyn Error>> {
+    use windows_platform::privilege_observation::{
+        PrivilegeLuid, PrivilegeSnapshot, ServicePrivilegeError, ServicePrivilegeIds,
+    };
+    let ids = ServicePrivilegeIds::new([
+        PrivilegeLuid::new(17, 0),
+        PrivilegeLuid::new(23, 0),
+        PrivilegeLuid::new(41, 0),
+        PrivilegeLuid::new(59, 0),
+    ])?;
+    let mut raw = 2_u32.to_le_bytes().to_vec();
+    for (low, high, attributes) in [
+        (59_u32, 0_i32, 2_u32),
+        (0x5345_4352, -123_456_789, 0x8000_0001),
+    ] {
+        raw.extend(low.to_le_bytes());
+        raw.extend(high.to_le_bytes());
+        raw.extend(attributes.to_le_bytes());
+    }
+    let snapshot = PrivilegeSnapshot::decode(&raw, ids)?;
+    let refusal = snapshot
+        .require_role(windows_platform::service::ServiceRole::Engine)
+        .err()
+        .ok_or("unknown extra admitted")?;
+    assert_eq!(refusal, ServicePrivilegeError::UnexpectedPrivilege);
+    let error = FixtureError::PrivilegeAdmission(refusal);
+    assert_eq!(
+        format!("{error:?}"),
+        "PrivilegeAdmission(UnexpectedPrivilege)"
+    );
+    assert_eq!(
+        category(&error),
+        "laboratory service privilege admission failed"
+    );
+    assert_eq!(
+        error
+            .source()
+            .and_then(|cause| cause.downcast_ref::<ServicePrivilegeError>()),
+        Some(&ServicePrivilegeError::UnexpectedPrivilege)
+    );
     Ok(())
 }

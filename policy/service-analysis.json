@@ -28,8 +28,8 @@
   "maximum_mutants": 512,
   "mutation_equivalences": [],
   "binding": {
-    "source_file_count": 421,
-    "candidate_sha256": "ff8148597f0950d46e50b7986a5b318f8ea5fb61dc2e10c507242e9697a65346",
+    "source_file_count": 436,
+    "candidate_sha256": "212546396aff08c9b7bf84452137124d5ea91f7dff01627c0b271854d6b58a24",
     "inputs_sha256": {
       "Cargo.toml": "ed63de18dbcaa3dcb8dc0ac3142bb4c868373a6d21171e6181b3f5d754b5d84e",
       "Cargo.lock": "fa9103e455e401c39f349c04b10a2d7058408d25210763321f56b7dad9c1afba",
@@ -39,12 +39,12 @@
       "crates/windows-platform/tests/service.rs": "d531c98ed085c16dc8dfc4d3f1330b59ebd88ec40e78d38a0aba511cf5009c7a",
       "crates/windows-platform/src/scm.rs": "1502efbdf1f564d507e02767fd20964e0c87602278231b6c470652043518e9d0",
       "crates/windows-platform/tests/scm.rs": "3d61d23119eb418822870042788e9aed7b7e5cd314403fb6e83bb0e0d9cb703b",
-      "crates/windows-platform/src/privilege_observation.rs": "f5862459e0cce5e69373b985288c3f81d6f1af11763e50a5a190067dcdbd5d33",
-      "crates/windows-platform/tests/privilege_observation.rs": "e75c7969bc2534335f8b4e00aeb32c98b8e6effcdd9320aa04bf72e4933d1b69",
-      "crates/windows-platform/tests/privilege_observation_contracts.rs": "a4eaf4ae93c1a3c5cc3ff58c4f127e32779661364ec353e1e99e9fcf77e22e0b",
-      "scripts/verify-service-analysis.py": "cd068d78ee9c4946dba4a759224a113c663fd63e1e275f14d12f3f9f52dfc885",
-      "scripts/tests/test_verify_service_analysis.py": "51ea249e7659e8cd63a1961f8eb7f229879832f5a63bf7b4f9c29971071c4173",
-      "scripts/portable-analysis.py": "ee99bb49b77156a640ea53a6ede258d8f522b7ba0f8a962f480f277e148380ef",
+      "crates/windows-platform/src/privilege_observation.rs": "88fabdfc2f317cc38fdcd02f8f2fe2bcb84831be91ac01ad71aa7aceaea2c509",
+      "crates/windows-platform/tests/privilege_observation.rs": "eafe62765ce5f34776c4155e50bb3e6ddecbd21fefbd16c8af890b7af17ffcfd",
+      "crates/windows-platform/tests/privilege_observation_contracts.rs": "f8271c7fe6d4de2b979ab7daa74d6d596fdf262ed8ad84f75e67b679ad420eb7",
+      "scripts/verify-service-analysis.py": "13f4db09734ae8a61c74e0247ba75e964e6562ed8e5f57ae1fb929c0ebcf62f6",
+      "scripts/tests/test_verify_service_analysis.py": "78374338707cdbf00bc307efa75ec2db56d79fb5860c2d46381dfff57506cb4d",
+      "scripts/portable-analysis.py": "d4a369717aa56df32b70fdf4a12e11f0bccdb4e2173c491b796ad59f3eb836fa",
       "scripts/tests/test_portable_analysis.py": "ada21fc7d6b1b45133393b120b719ee8d693392386c9b0c12d2e233ed9c125df",
       "scripts/analysis-runtime.py": "0de6d23b2e52fea78ee81f038d216c962ef87511df53443984bb6e6aacb79dc9",
       "scripts/check-analysis.py": "debe3b31cb93bd8b1b588e777a8c138a9dd6fbadc9152e253f320e1f73cb77e8",
@@ -52,7 +52,7 @@
       "scripts/prepare-product.py": "1003f48480c5bc397e395fccd06cd290b093ffc1487efa27a434cf864bed81fd",
       "scripts/verify.py": "597e99afdcda566ac19fdd28f05db30b0c46cb0fe1f05c413a63750ac3eef9a5",
       "scripts/slint_dependency_profile.py": "1940751d0dfd4b4b390e9ee6fff66b4d86f63d169397b31612a25ff81fbe9c87",
-      "policy/verification-manifest.toml": "8842b3fe384fae437ab26085bf18800d3891040f8e7cd4dbc312415f6da0244c",
+      "policy/verification-manifest.toml": "f0bc6e9cb4b0288f9b974990efd20264205db000039667d8cb89973d616f3890",
       "policy/analysis-tools.json": "4da7796c6dd41a1a09dea9a7b1670480106fe1d1f260150385d78c8faa474234",
       "policy/tool-manifest.json": "48d120c94a3bb52a36bd28c1bbfc2f17a9297edae4579eb0ee6225b5766322fd",
       "policy/ui-m0-dependencies.json": "e6deed9d31a93547e61ec72ae75ffea471242c491abc7a855c598342c5d7dac9",
@@ -64,7 +64,7 @@
       "both_roles_follow_the_same_truthful_status_trace",
       "budget_admission_agrees_with_the_complete_small_boundary_grid",
       "checking_a_stuck_phase_does_not_fabricate_progress",
-      "complete_zero_and_unrelated_captures_allow_the_engine",
+      "complete_zero_and_unrelated_captures_preserve_named_absence_only",
       "completion_is_required_for_readiness_and_bounded_capacity",
       "concurrent_notifications_preserve_a_single_sticky_stop_request",
       "controls_decode_only_stop_and_interrogate",
@@ -78,6 +78,8 @@
       "error_projection_is_bounded_while_the_original_cause_remains_available",
       "every_lifecycle_phase_has_the_exact_seven_field_projection",
       "every_target_presence_and_known_attribute_combination_refuses_engine",
+      "exact_profiles_preserve_all_accepted_named_attributes",
+      "exact_profiles_reject_missing_extras_and_enabled_clock",
       "failed_cleanup_maps_the_exact_service_specific_error_code",
       "failed_cleanup_progress_retains_custody_and_the_original_deadline",
       "failed_start_or_running_report_fences_work_but_allows_cleanup",
@@ -89,10 +91,14 @@
       "one_entry_requires_exactly_sixteen_bytes",
       "parallel_completion_restores_only_the_explicit_job_capacity",
       "pending_limits_are_mandatory_without_product_defaults",
+      "produced_capture_refusals_have_bounded_useful_redacted_messages",
+      "produced_forbidden_refusals_preserve_named_sources_and_bounded_messages",
+      "produced_profile_refusals_without_sources_keep_useful_bounded_messages",
       "progress_does_not_extend_startup_and_exact_deadline_rejects",
       "raw_capture_failures_never_become_absence",
       "receiving_a_stop_is_separate_from_the_owners_authorized_transition",
       "repeated_stop_checks_time_without_repeating_the_status_effect",
+      "snapshot_and_role_refusals_keep_unknown_capture_data_private",
       "startup_deadline_failure_cannot_be_hidden_by_a_clean_terminal_outcome",
       "stop_deadline_overrun_requires_a_failed_terminal_outcome",
       "successful_pending_report_does_not_clear_the_permanent_failure_fence",
@@ -104,12 +110,25 @@
       "crates/windows-platform/src/lib.rs - (line 34) - compile fail",
       "crates/windows-platform/src/lib.rs - (line 40) - compile fail",
       "crates/windows-platform/src/lib.rs - (line 9)",
-      "crates/windows-platform/src/privilege_observation.rs - privilege_observation (line 14) - compile fail",
+      "crates/windows-platform/src/privilege_observation.rs - privilege_observation (line 19) - compile fail",
       "crates/windows-platform/src/privilege_observation.rs - privilege_observation (line 9) - compile fail",
       "crates/windows-platform/src/scm.rs - scm (line 18)",
       "crates/windows-platform/src/scm.rs - scm (line 30) - compile fail",
       "crates/windows-platform/src/scm.rs - scm (line 38) - compile fail"
     ]
   },
-  "mutation_inventories": {}
+  "mutation_inventories": {
+    "lifecycle": {
+      "count": 53,
+      "sha256": "6b0c26ca69165cc0b1eca40786c7883413835757a7c5be5b7a38a713a41ed031"
+    },
+    "scm": {
+      "count": 24,
+      "sha256": "826a85bdb95825d972a1460054a8c05c76a6b33692d9592b23579e140281a5db"
+    },
+    "privilege": {
+      "count": 42,
+      "sha256": "5c5aaaa980cee306352d59333ab865951c1fb57e2843d5213386ee555462540b"
+    }
+  }
 }

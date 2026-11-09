@@ -876,9 +876,7 @@ pub(super) fn start_invocation_with_diagnostics<A: StatusFactory, C: Clock, P: W
         });
         match capture {
             Ok(snapshot) => {
-                if role == LabRole::Engine
-                    && let Err(error) = snapshot.require_engine_absence()
-                {
+                if let Err(error) = snapshot.require_role(role.service_role()) {
                     failure = Some(FixtureError::PrivilegeAdmission(error));
                 }
             }

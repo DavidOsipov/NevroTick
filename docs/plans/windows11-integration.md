@@ -335,6 +335,14 @@ descriptive; a full per-role allowlist and SID/ACL/owner qualification remain
 open. Do not relabel those narrower historical checks as implementation of
 architecture §4.1.1. Extend their existing owner rather than add a second verifier.
 
+**9 November implementation follow-up:** the existing owner now retains the
+complete bounded privilege set and enforces both exact role profiles before
+laboratory worker preparation. The
+[current task](../../tasks/windows11-integration.md#438-service-privilege-profile-handoff--9-november-2026)
+records platform measurements, caller qualification and remaining native evidence.
+This extends the source snapshot above; it does not retroactively broaden its
+receipts or qualify native token, SID/ACL, provisioning or installed behavior.
+
 ### Child-process policy and shutdown need composition checks
 
 Microsoft warns that child-process restriction can be bypassed if the process can acquire another process handle with rights such as `PROCESS_CREATE_PROCESS` or `PROCESS_VM_WRITE`. [S9] Extend the existing process/object access matrix with harmless requests for those rights under the actual installed identities. A denied ordinary child launch and a queried mitigation bit are insufficient by themselves. The existing unresolved SCM creation-policy route remains unresolved; this report does not authorize a custom launcher workaround.

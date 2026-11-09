@@ -458,7 +458,7 @@ def lane_commands(lane, cargo):
         "platform-optimized": [[cargo, "test", "-p", "windows-platform", *frozen, "--release", "--all-targets", *tests]],
         "fixture-test": [[cargo, "test", *tool, *frozen, "--all-targets", *tests]],
         "fixture-admission-control": [[cargo, "test", *tool, *frozen, "--all-targets",
-                                       "real_host_engine_requires_absence_while_broker_observation_is_descriptive", *tests]],
+                                       "real_host_both_roles_enforce_exact_profiles_and_preserve_known_facts", *tests]],
         "fixture-role-control": [[cargo, "test", *tool, *frozen, "--all-targets",
                                   "both_fixed_roles_start_and_stop_after_a_real_notification", *tests]],
         "fixture-optimized": [[cargo, "test", *tool, *frozen, "--release", "--all-targets", *tests]],
@@ -471,6 +471,13 @@ def lane_commands(lane, cargo):
         "fixture-fmt": [[cargo, "fmt", *tool, "--all", "--", "--check"]],
         "platform-fmt": [[cargo, "fmt", "--package", "windows-platform", "--", "--check"]],
     }
+    if lane == "privilege-checkpoint":
+        # One frozen admission and worker-owned target for this finite source
+        # checkpoint; each command keeps the existing limits and stop-on-failure.
+        selected = ("platform-fmt", "fixture-fmt", "platform-clippy", "fixture-clippy",
+                    "windows-clippy", "platform-test", "fixture-test", "platform-optimized",
+                    "fixture-optimized", "platform-doc", "fixture-doc", "fixture-rustdoc")
+        return [command for selected_lane in selected for command in commands[selected_lane]]
     require(lane in commands, "Unknown source verification lane.")
     return commands[lane]
 
@@ -601,7 +608,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("lane", choices=("ready", "graph", "platform-test", "platform-optimized", "fixture-test",
                         "fixture-admission-control", "fixture-role-control", "fixture-optimized", "platform-clippy", "fixture-clippy", "windows-clippy", "platform-doc",
-                        "fixture-doc", "fixture-rustdoc", "fixture-fmt", "platform-fmt"))
+                        "fixture-doc", "fixture-rustdoc", "fixture-fmt", "platform-fmt", "privilege-checkpoint"))
     parser.add_argument("--label", required=True)
     parser.add_argument("--graph-receipt", type=Path)
     parser.add_argument("--vendor-dir", type=Path)

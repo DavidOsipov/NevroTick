@@ -388,16 +388,32 @@ fn fixture_privilege_ids()
         PrivilegeLuid::new(17, 0),
         PrivilegeLuid::new(23, 0),
         PrivilegeLuid::new(41, 0),
+        PrivilegeLuid::new(59, 0),
     ])
 }
 
-/// Construct only a complete successful zero-entry capture for healthy old traces.
+/// Independently encode the exact healthy fixed-role set for existing host traces.
 ///
 /// # Errors
 /// Propagate checked construction; failed/partial API output is never simulated as success.
-fn empty_snapshot() -> Result<PrivilegeSnapshot, TokenObservationFailure> {
+fn healthy_snapshot(role: LabRole) -> Result<PrivilegeSnapshot, TokenObservationFailure> {
+    let entries: &[(u32, i32, u32)] = match role {
+        LabRole::Engine => &[(59, 0, 2)],
+        LabRole::ClockBroker => &[(59, 0, 2), (17, 0, 0)],
+    };
+    let mut raw = match role {
+        LabRole::Engine => 1_u32,
+        LabRole::ClockBroker => 2_u32,
+    }
+    .to_le_bytes()
+    .to_vec();
+    for (low, high, attributes) in entries {
+        raw.extend(low.to_le_bytes());
+        raw.extend(high.to_le_bytes());
+        raw.extend(attributes.to_le_bytes());
+    }
     fixture_privilege_ids()
-        .and_then(|ids| PrivilegeSnapshot::decode(&[0; 4], ids))
+        .and_then(|ids| PrivilegeSnapshot::decode(&raw, ids))
         .map_err(|error| {
             TokenObservationFailure::new(
                 TokenObservationCause::Capture(error),
@@ -408,11 +424,11 @@ fn empty_snapshot() -> Result<PrivilegeSnapshot, TokenObservationFailure> {
 }
 
 /// Explicit healthy observer provided to every historical actual-host trace.
-struct HealthyTokenObserver;
+struct HealthyTokenObserver(LabRole);
 impl TokenObserver for HealthyTokenObserver {
-    /// Supply a complete empty capture; no optional observer or bypass is selected.
+    /// Supply a complete exact-role capture through the actual decoder.
     fn observe(&mut self) -> Result<PrivilegeSnapshot, TokenObservationFailure> {
-        empty_snapshot()
+        healthy_snapshot(self.0)
     }
 }
 
@@ -449,7 +465,7 @@ fn execute(
         role,
         argc,
         &mut factory,
-        &mut HealthyTokenObserver,
+        &mut HealthyTokenObserver(role),
         &mut clock,
         &mut wait,
         notification,
@@ -590,7 +606,7 @@ fn diagnostics_default_entry_emits_startup_facts_before_first_poll() -> Result<(
                 role,
                 argc,
                 &mut factory,
-                &mut HealthyTokenObserver,
+                &mut HealthyTokenObserver(role),
                 &mut clock,
                 &notification,
                 InertWorker::new(),
@@ -1127,7 +1143,7 @@ fn execute_scripted_clock(
         LabRole::Engine,
         0,
         &mut factory,
-        &mut HealthyTokenObserver,
+        &mut HealthyTokenObserver(LabRole::Engine),
         clock,
         &mut wait,
         notification,
@@ -1804,7 +1820,7 @@ enum CaptureAction {
 /// Fixed capture result and separate native-completion-side effects for host tests.
 struct ControlledTokenObserver<'a> {
     /// Complete known snapshot or explicit indeterminate failure.
-    result: Result<PrivilegeSnapshot, TokenObservationFailure>,
+    result: Option<Result<PrivilegeSnapshot, TokenObservationFailure>>,
     /// Actual calls made by the real host, including attempted repeated captures.
     calls: usize,
     /// Same monotonic source consumed by the real host.
@@ -1830,6 +1846,12 @@ impl TokenObserver for ControlledTokenObserver<'_> {
             CaptureAction::Reverse => self.time.borrow_mut().backwards_persistent = true,
         }
         self.result
+            .take()
+            .unwrap_or(Err(TokenObservationFailure::new(
+                TokenObservationCause::InvalidHandle,
+                TokenCleanupOutcome::NotOpened,
+                TokenCleanupOutcome::NotOpened,
+            )))
     }
 }
 
@@ -1849,7 +1871,7 @@ fn execute_observation(
         backwards_persistent: false,
     }));
     let mut observer = ControlledTokenObserver {
-        result,
+        result: Some(result),
         calls: 0,
         time: Rc::clone(&time),
         notification,
@@ -1884,32 +1906,53 @@ fn execute_observation(
 /// # Errors
 /// Propagate checked decoder/identity failure.
 fn present_snapshot(
+    role: LabRole,
     low: u32,
     attributes: u32,
 ) -> Result<PrivilegeSnapshot, windows_platform::privilege_observation::PrivilegeCaptureError> {
-    let mut raw = 1_u32.to_le_bytes().to_vec();
-    raw.extend(low.to_le_bytes());
-    raw.extend(0_i32.to_le_bytes());
-    raw.extend(attributes.to_le_bytes());
+    let include_clock = role == LabRole::ClockBroker && low != 17;
+    let mut raw = if include_clock { 3_u32 } else { 2_u32 }
+        .to_le_bytes()
+        .to_vec();
+    for (entry_low, entry_attributes) in [(59_u32, 2_u32), (low, attributes)] {
+        raw.extend(entry_low.to_le_bytes());
+        raw.extend(0_i32.to_le_bytes());
+        raw.extend(entry_attributes.to_le_bytes());
+    }
+    if include_clock {
+        raw.extend(17_u32.to_le_bytes());
+        raw.extend(0_i32.to_le_bytes());
+        raw.extend(0_u32.to_le_bytes());
+    }
     PrivilegeSnapshot::decode(&raw, fixture_privilege_ids()?)
 }
 
-/// Both real callers consume the snapshot: engine absence is mandatory; broker is descriptive.
+/// Both actual callers enforce their exact role and retain known forbidden facts.
 ///
 /// # Errors
 /// Propagate fixture construction failure and unexpected healthy-host failure.
 /// # Panics
-/// Fails if engine presence (even disabled/default-only) reaches Running, the
-/// broker gains an engine-only refusal, or either role skips/repeats capture.
+/// Fails if a forbidden privilege reaches Running, a valid broker neighbor fails,
+/// or either role skips/repeats capture.
 #[test]
-fn real_host_engine_requires_absence_while_broker_observation_is_descriptive()
+fn real_host_both_roles_enforce_exact_profiles_and_preserve_known_facts()
 -> Result<(), Box<dyn Error>> {
+    use windows_platform::privilege_observation::{PrivilegeState, ServicePrivilegeError};
     for (low, privilege) in [
         (17, ServicePrivilege::SystemTime),
         (23, ServicePrivilege::Debug),
         (41, ServicePrivilege::Impersonate),
     ] {
-        for attributes in [0, 1, 2, 0x8000_0001] {
+        for attributes in [
+            0,
+            1,
+            2,
+            3,
+            0x8000_0000,
+            0x8000_0001,
+            0x8000_0002,
+            0x8000_0003,
+        ] {
             for role in [LabRole::Engine, LabRole::ClockBroker] {
                 let observation = Rc::new(RefCell::new(Observations::default()));
                 let notification = StopNotification::new();
@@ -1917,34 +1960,41 @@ fn real_host_engine_requires_absence_while_broker_observation_is_descriptive()
                     role,
                     0,
                     &notification,
-                    Ok(present_snapshot(low, attributes)?),
+                    Ok(present_snapshot(role, low, attributes)?),
                     CaptureAction::None,
                     &observation,
                 );
                 assert_eq!(calls, 1);
-                if role == LabRole::Engine {
+                if role == LabRole::ClockBroker && low == 17 && attributes & 2 == 0 {
+                    result?;
+                    assert!(statuses(&observation).iter().any(|status| status[1] == 4));
+                    assert_eq!(waits(&observation), [Duration::from_secs(60)]);
+                } else {
                     let Err(FixtureError::PrivilegeAdmission(error)) = result else {
-                        return Err("engine admitted a present forbidden privilege".into());
+                        return Err("service admitted a forbidden privilege profile".into());
                     };
-                    assert_eq!(error.privilege(), privilege);
-                    assert_eq!(
-                        error.state(),
-                        if attributes & 2 == 0 {
-                            windows_platform::privilege_observation::PrivilegeState::PresentDisabled
-                        } else {
-                            windows_platform::privilege_observation::PrivilegeState::PresentEnabled
-                        }
-                    );
+                    if role == LabRole::ClockBroker && low == 17 {
+                        assert_eq!(error, ServicePrivilegeError::BrokerClockEnabled);
+                    } else {
+                        let ServicePrivilegeError::Forbidden(facts) = error else {
+                            return Err("known forbidden privilege lost its typed facts".into());
+                        };
+                        assert_eq!(facts.privilege(), privilege);
+                        assert_eq!(
+                            facts.state(),
+                            if attributes & 2 == 0 {
+                                PrivilegeState::PresentDisabled
+                            } else {
+                                PrivilegeState::PresentEnabled
+                            }
+                        );
+                    }
                     assert!(!statuses(&observation).iter().any(|status| status[1] == 4));
                     assert_eq!(waits(&observation), []);
                     assert_eq!(
                         statuses(&observation).last(),
                         Some(&[16, 1, 0, 1066, 1, 0, 0])
                     );
-                } else {
-                    result?;
-                    assert!(statuses(&observation).iter().any(|status| status[1] == 4));
-                    assert_eq!(waits(&observation), [Duration::from_secs(60)]);
                 }
             }
         }
@@ -1956,7 +2006,7 @@ fn real_host_engine_requires_absence_while_broker_observation_is_descriptive()
             role,
             0,
             &notification,
-            empty_snapshot(),
+            healthy_snapshot(role),
             CaptureAction::None,
             &observation,
         );
@@ -1967,15 +2017,11 @@ fn real_host_engine_requires_absence_while_broker_observation_is_descriptive()
     Ok(())
 }
 
-/// Unknown API/context/capture/cleanup facts refuse both real callers without retry.
+/// Build the finite independent API/context/capture/cleanup refusal inventory.
 ///
 /// # Errors
-/// Propagate independent identity construction failure.
-/// # Panics
-/// Fails if first-cause or separate cleanup outcomes change, or any unknown reaches Running.
-#[test]
-fn real_host_refuses_unknown_context_and_retains_both_cleanup_failures()
--> Result<(), Box<dyn Error>> {
+/// Propagate identity construction failure or unexpected acceptance of a bad input.
+fn unknown_token_observation_failures() -> Result<Vec<TokenObservationFailure>, Box<dyn Error>> {
     let primary_close =
         TokenCleanupOutcome::Failed(NativeError::new(NativeOperation::TokenClose, 6));
     let thread_close =
@@ -1997,6 +2043,29 @@ fn real_host_refuses_unknown_context_and_retains_both_cleanup_failures()
             TokenCleanupOutcome::NotOpened,
         ),
     ];
+    for (primary_cleanup, thread_cleanup) in [
+        (primary_close, TokenCleanupOutcome::NotOpened),
+        (TokenCleanupOutcome::Closed, thread_close),
+    ] {
+        failures.push(TokenObservationFailure::new(
+            TokenObservationCause::Native(NativeError::new(NativeOperation::TokenClose, 0)),
+            primary_cleanup,
+            thread_cleanup,
+        ));
+    }
+    let collision = ServicePrivilegeIds::new([
+        PrivilegeLuid::new(17, 0),
+        PrivilegeLuid::new(23, 0),
+        PrivilegeLuid::new(41, 0),
+        PrivilegeLuid::new(17, 0),
+    ])
+    .err()
+    .ok_or("colliding lookup identities admitted")?;
+    failures.push(TokenObservationFailure::new(
+        TokenObservationCause::Capture(collision),
+        TokenCleanupOutcome::Closed,
+        TokenCleanupOutcome::NotOpened,
+    ));
     for operation in [
         NativeOperation::ThreadToken,
         NativeOperation::ProcessToken,
@@ -2012,7 +2081,17 @@ fn real_host_refuses_unknown_context_and_retains_both_cleanup_failures()
             ));
         }
     }
-    for raw in [&[0; 3][..], &[1, 0, 0, 0][..]] {
+    for raw in [
+        &[0; 3][..],
+        &[1, 0, 0, 0][..],
+        &[0, 0, 0, 0, 0][..],
+        &[129, 0, 0, 0][..],
+        &[1, 0, 0, 0, 73, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0][..],
+        &[1, 0, 0, 0, 73, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0][..],
+        &[
+            2, 0, 0, 0, 59, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 59, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
+        ][..],
+    ] {
         let error = PrivilegeSnapshot::decode(raw, fixture_privilege_ids()?)
             .err()
             .ok_or("malformed fixture capture admitted")?;
@@ -2022,7 +2101,19 @@ fn real_host_refuses_unknown_context_and_retains_both_cleanup_failures()
             TokenCleanupOutcome::NotOpened,
         ));
     }
-    for failure in failures {
+    Ok(failures)
+}
+
+/// Unknown API/context/capture/cleanup facts refuse both real callers without retry.
+///
+/// # Errors
+/// Propagate independent failure-inventory construction errors.
+/// # Panics
+/// Fails if first-cause or separate cleanup outcomes change, or any unknown reaches Running.
+#[test]
+fn real_host_refuses_unknown_context_and_retains_both_cleanup_failures()
+-> Result<(), Box<dyn Error>> {
+    for failure in unknown_token_observation_failures()? {
         for role in [LabRole::Engine, LabRole::ClockBroker] {
             let observation = Rc::new(RefCell::new(Observations::default()));
             let notification = StopNotification::new();
@@ -2070,7 +2161,7 @@ fn real_host_rechecks_stop_and_time_after_capture() -> Result<(), Box<dyn Error>
                 role,
                 0,
                 &notification,
-                empty_snapshot(),
+                healthy_snapshot(role),
                 action,
                 &observation,
             );
@@ -2120,7 +2211,7 @@ fn denied_startup_never_invokes_the_token_observer() -> Result<(), Box<dyn Error
                 role,
                 if stopped { 0 } else { 2 },
                 &notification,
-                empty_snapshot(),
+                healthy_snapshot(role),
                 CaptureAction::None,
                 &observation,
             );
@@ -2199,7 +2290,7 @@ fn denied_startup_preserves_the_first_representable_shutdown_observation()
             LabRole::Engine,
             2,
             &mut factory,
-            &mut HealthyTokenObserver,
+            &mut HealthyTokenObserver(LabRole::Engine),
             &mut clock,
             &mut wait,
             &notification,
@@ -2285,7 +2376,7 @@ fn run_deadline_representability_precedes_running_and_preserves_startup_expiry()
                 role,
                 0,
                 &mut factory,
-                &mut HealthyTokenObserver,
+                &mut HealthyTokenObserver(role),
                 &mut clock,
                 &mut wait,
                 &notification,
@@ -2525,8 +2616,10 @@ mod worker_tests {
     /// Independently selected complete or denied startup token inputs.
     #[derive(Clone, Copy)]
     enum Capture {
-        /// A complete zero-entry privilege observation.
-        Empty,
+        /// A complete independently encoded exact-role privilege observation.
+        Healthy,
+        /// Independent raw LUID/attribute facts, including unrecognized entries.
+        Entries(&'static [(u32, i32, u32)]),
         /// A present but disabled forbidden engine privilege.
         Forbidden,
         /// An original native observation failure with explicit cleanup outcomes.
@@ -2539,14 +2632,25 @@ mod worker_tests {
     /// Propagate checked privilege identity or complete snapshot construction failure.
     fn snapshot(
         capture: Capture,
+        role: LabRole,
     ) -> TestResult<Result<PrivilegeSnapshot, TokenObservationFailure>> {
         let ids = ServicePrivilegeIds::new([
             PrivilegeLuid::new(17, 0),
             PrivilegeLuid::new(23, 0),
             PrivilegeLuid::new(41, 0),
+            PrivilegeLuid::new(59, 0),
         ])?;
         Ok(match capture {
-            Capture::Empty => Ok(PrivilegeSnapshot::decode(&[0; 4], ids)?),
+            Capture::Healthy => super::healthy_snapshot(role),
+            Capture::Entries(entries) => {
+                let mut raw = u32::try_from(entries.len())?.to_le_bytes().to_vec();
+                for (low, high, attributes) in entries {
+                    raw.extend(low.to_le_bytes());
+                    raw.extend(high.to_le_bytes());
+                    raw.extend(attributes.to_le_bytes());
+                }
+                Ok(PrivilegeSnapshot::decode(&raw, ids)?)
+            }
             Capture::Forbidden => {
                 let mut raw = 1_u32.to_le_bytes().to_vec();
                 raw.extend(17_u32.to_le_bytes());
@@ -2568,7 +2672,7 @@ mod worker_tests {
     /// Synchronous capture returns only the predetermined complete result.
     struct Observer {
         /// Independent capture facts, never inferred from the expected host result.
-        result: Result<PrivilegeSnapshot, TokenObservationFailure>,
+        result: Option<Result<PrivilegeSnapshot, TokenObservationFailure>>,
         /// Ordered evidence of whether startup admission reached this seam.
         trace: Rc<RefCell<Trace>>,
     }
@@ -2578,6 +2682,12 @@ mod worker_tests {
         fn observe(&mut self) -> Result<PrivilegeSnapshot, TokenObservationFailure> {
             self.trace.borrow_mut().events.push(Event::Capture);
             self.result
+                .take()
+                .unwrap_or(Err(TokenObservationFailure::new(
+                    TokenObservationCause::InvalidHandle,
+                    TokenCleanupOutcome::NotOpened,
+                    TokenCleanupOutcome::NotOpened,
+                )))
         }
     }
 
@@ -2722,7 +2832,7 @@ mod worker_tests {
             Self {
                 role: LabRole::Engine,
                 argc: 0,
-                capture: Capture::Empty,
+                capture: Capture::Healthy,
                 stopped_before_start: false,
                 report_failures: Vec::new(),
             }
@@ -2780,7 +2890,7 @@ mod worker_tests {
                 time: Rc::clone(&time),
             };
             let mut observer = Observer {
-                result: snapshot(settings.capture)?,
+                result: Some(snapshot(settings.capture, settings.role)?),
                 trace: Rc::clone(&trace),
             };
             let mut clock = TestClock {
@@ -3785,6 +3895,252 @@ mod worker_tests {
                     [16, 1, 0, 0, 0, 0, 0],
                 ]
             );
+        }
+        Ok(())
+    }
+
+    /// Architecture §4.1.1 admits exactly `ChangeNotify` for Engine and additionally
+    /// disabled Systemtime for Broker. LUID 59 is an independent fixture lookup
+    /// fact for `ChangeNotify`, not an assumed Windows identifier or policy output.
+    ///
+    /// # Errors
+    /// Propagate checked raw decoding or access to the actual retained owner.
+    /// # Panics
+    /// Fails if either exact neighboring profile cannot prepare and become Running.
+    #[test]
+    fn exact_role_profiles_reach_worker_readiness() -> TestResult {
+        /// Fixed independent lookup and enabled-state facts for the healthy engine.
+        const ENGINE: &[(u32, i32, u32)] = &[(59, 0, 2)];
+        /// Broker ordinary work adds present, disabled Systemtime.
+        const BROKER: &[(u32, i32, u32)] = &[(59, 0, 2), (17, 0, 0)];
+        for (role, entries) in [(LabRole::Engine, ENGINE), (LabRole::ClockBroker, BROKER)] {
+            let mut rig = Rig::start(Settings {
+                role,
+                capture: Capture::Entries(entries),
+                ..Settings::default()
+            })?;
+            assert!(rig.failure().is_none());
+            assert!(!rig.owner()?.admission_closed());
+            assert_eq!(rig.count(&Event::Prepare), 0);
+            rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+            let _observation = rig.poll()?;
+            assert_eq!(rig.owner()?.state(), Some(ServiceState::Running));
+            assert_eq!(
+                [
+                    rig.count(&Event::Capture),
+                    rig.count(&Event::Prepare),
+                    rig.count(&Event::Activate),
+                    rig.count(&Event::Running),
+                ],
+                [1, 1, 1, 1]
+            );
+            assert_eq!(
+                rig.statuses(),
+                [[16, 2, 0, 0, 0, 1, 1000], [16, 4, 1, 0, 0, 0, 0]]
+            );
+            assert_eq!(rig.settle(Ok(())), Some(Ok(())));
+        }
+        Ok(())
+    }
+
+    /// A disabled `ChangeNotify` is still present and explicitly admitted for both
+    /// roles; this must remain distinct from the missing-required counterexamples.
+    ///
+    /// # Errors
+    /// Propagate independent checked fixtures or missing actual owner errors.
+    /// # Panics
+    /// Fails if `ChangeNotify` enabledness becomes an additional startup requirement.
+    #[test]
+    fn both_roles_admit_disabled_change_notify() -> TestResult {
+        /// Independently encoded ordinary engine profile with Notify disabled.
+        const ENGINE: &[(u32, i32, u32)] = &[(59, 0, 0)];
+        /// Independently encoded broker profile with both required entries disabled.
+        const BROKER: &[(u32, i32, u32)] = &[(59, 0, 0), (17, 0, 0)];
+        for (role, entries) in [(LabRole::Engine, ENGINE), (LabRole::ClockBroker, BROKER)] {
+            let mut rig = Rig::start(Settings {
+                role,
+                capture: Capture::Entries(entries),
+                ..Settings::default()
+            })?;
+            rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+            let _observation = rig.poll()?;
+            assert!(rig.failure().is_none());
+            assert_eq!(rig.owner()?.state(), Some(ServiceState::Running));
+            assert_eq!(rig.count(&Event::Prepare), 1);
+            assert_eq!(rig.count(&Event::Activate), 1);
+            assert_eq!(rig.settle(Ok(())), Some(Ok(())));
+        }
+        Ok(())
+    }
+
+    /// Observe every supplied counterexample before asserting, so an early RED
+    /// cannot hide its neighboring case. Only the actual owner makes transitions;
+    /// explicit Ready would expose any accidental worker admission immediately.
+    ///
+    /// # Errors
+    /// Propagate checked decoding or access to the actual retained owner.
+    /// # Panics
+    /// Fails if refusal is absent, untyped, late, or reports a healthy terminal state.
+    fn assert_profiles_refused_before_worker(
+        role: LabRole,
+        captures: &[&'static [(u32, i32, u32)]],
+    ) -> TestResult {
+        let mut observations = Vec::new();
+        for &entries in captures {
+            let mut rig = Rig::start(Settings {
+                role,
+                capture: Capture::Entries(entries),
+                ..Settings::default()
+            })?;
+            let typed_startup_refusal =
+                matches!(rig.failure(), Some(FixtureError::PrivilegeAdmission(_)));
+            let closed_before_worker = rig.owner()?.admission_closed();
+            rig.script.borrow_mut().preparation = Poll::Ready(Ok(()));
+            let _observation = rig.poll()?;
+            let calls = [
+                rig.count(&Event::Capture),
+                rig.count(&Event::Prepare),
+                rig.count(&Event::Activate),
+                rig.count(&Event::Running),
+                rig.count(&Event::Cancel),
+                rig.count(&Event::Completion),
+            ];
+            let result = rig.settle(Ok(()));
+            observations.push((
+                typed_startup_refusal,
+                closed_before_worker,
+                calls,
+                rig.statuses(),
+                matches!(
+                    result.as_ref(),
+                    Some(Err(FixtureError::PrivilegeAdmission(_)))
+                ),
+                matches!(result.as_ref(), Some(Ok(()))),
+            ));
+        }
+        assert_eq!(
+            observations,
+            vec![
+                (
+                    true,
+                    true,
+                    [1, 0, 0, 0, 0, 0],
+                    vec![
+                        [16, 2, 0, 0, 0, 1, 1000],
+                        [16, 3, 0, 0, 0, 1, 1000],
+                        [16, 1, 0, 1066, 1, 0, 0],
+                    ],
+                    true,
+                    false,
+                );
+                captures.len()
+            ]
+        );
+        Ok(())
+    }
+
+    /// Complete-set admission must reject missing `ChangeNotify` and a disabled
+    /// unknown extra, even though all three formerly checked privileges are absent.
+    ///
+    /// # Errors
+    /// Propagate checked fixtures or missing actual owner errors.
+    /// # Panics
+    /// Fails if either independently encoded profile reaches a worker phase.
+    #[test]
+    fn engine_missing_or_extra_disabled_privileges_refuse_before_worker() -> TestResult {
+        assert_profiles_refused_before_worker(LabRole::Engine, &[&[], &[(59, 0, 2), (73, 0, 0)]])
+    }
+
+    /// Broker ordinary startup requires disabled Systemtime and no extra entry;
+    /// the disabled unknown privilege cannot disappear during snapshot decoding.
+    ///
+    /// # Errors
+    /// Propagate checked fixtures or missing actual owner errors.
+    /// # Panics
+    /// Fails if enabled clock privilege or a disabled extra reaches ordinary work.
+    #[test]
+    fn broker_enabled_clock_or_extra_disabled_privileges_refuse_before_worker() -> TestResult {
+        assert_profiles_refused_before_worker(
+            LabRole::ClockBroker,
+            &[
+                &[(59, 0, 2), (17, 0, 2)],
+                &[(59, 0, 2), (17, 0, 0), (73, 0, 0)],
+            ],
+        )
+    }
+
+    /// Additional missing, known-extra and unknown/full-LUID counterexamples use
+    /// the same actual consumer and forbidden-effect observations as retained RED.
+    ///
+    /// # Errors
+    /// Propagate independently encoded fixtures or missing actual owner errors.
+    /// # Panics
+    /// Fails if a partial set or enabled/disabled extra invokes any worker phase.
+    #[test]
+    fn both_roles_reject_partial_and_extra_profiles_before_worker() -> TestResult {
+        assert_profiles_refused_before_worker(
+            LabRole::Engine,
+            &[
+                &[(59, 0, 0), (73, 0, 2)],
+                &[(59, 0, 0), (59, 1, 0)],
+                &[(73, 0, 0)],
+            ],
+        )?;
+        assert_profiles_refused_before_worker(
+            LabRole::ClockBroker,
+            &[
+                &[],
+                &[(59, 0, 0)],
+                &[(17, 0, 0)],
+                &[(59, 0, 0), (17, 0, 0), (23, 0, 0)],
+                &[(59, 0, 0), (17, 0, 0), (41, 0, 2)],
+                &[(59, 0, 0), (17, 0, 0), (73, 0, 2)],
+                &[(59, 0, 0), (17, 0, 0), (59, 1, 0)],
+            ],
+        )
+    }
+
+    /// New profile failures retain the existing fixed required cause and never
+    /// emit a readiness event, even when the optional sink is absent.
+    ///
+    /// # Errors
+    /// Propagate independent raw fixtures or access to the actual retained owner.
+    /// # Panics
+    /// Fails if role refusal changes required routing, cause category or event order.
+    #[test]
+    fn both_role_refusals_emit_required_profile_failure_without_readiness() -> TestResult {
+        /// Missing required Engine privilege, independently encoded.
+        const ENGINE: &[(u32, i32, u32)] = &[];
+        /// Enabled clock privilege on otherwise exact Broker profile.
+        const BROKER: &[(u32, i32, u32)] = &[(59, 0, 2), (17, 0, 2)];
+        for (role, role_code, entries) in [
+            (LabRole::Engine, 1, ENGINE),
+            (LabRole::ClockBroker, 2, BROKER),
+        ] {
+            let mut rig = Rig::start_with_sinks(
+                Settings {
+                    role,
+                    capture: Capture::Entries(entries),
+                    ..Settings::default()
+                },
+                Sinks::new(MemorySink::new(true), None),
+            )?;
+            assert!(matches!(
+                rig.settle(Ok(())),
+                Some(Err(FixtureError::PrivilegeAdmission(_)))
+            ));
+            assert_eq!(
+                rig.owner()?.diagnostics.required().records(),
+                &[
+                    [1, role_code, 1, 1, 0, 1, 0, 0, 0],
+                    [1, role_code, 4, 2, 25, 2, 0, 0, 0],
+                    [1, role_code, 3, 1, 0, 3, 0, 0, 0],
+                    [1, role_code, 8, 1, 0, 4, 0, 0, 0],
+                ]
+            );
+            assert!(rig.owner()?.diagnostics.optional().is_none());
+            assert_eq!(rig.count(&Event::Prepare), 0);
+            assert_eq!(rig.count(&Event::Activate), 0);
         }
         Ok(())
     }
