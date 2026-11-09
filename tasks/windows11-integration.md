@@ -2185,6 +2185,137 @@ Receipt: external `phase-plan-20261108-v1/nts-ke-graph-v1/`
 `sandbox-native-preflight-v1/session-adoption-readiness-v1.json`, SHA-256
 `19c12f1b575e1424802ddbc026250c7e21ad74f0291274da3b54ffd141c0975c`.
 
+**Next lab source card — 9 November:** coordinator/build CHECK-19/20/26 and
+crypto S0.1 own the next ordinary AES witness. The selected std-only
+[`cpu-os-v3-admission.rs`](../tools/windows-sandbox/cpu-os-v3-admission.rs)
+must first pass pinned format/Clippy/rustdoc, baseline-only direct linking and
+PE/import admission. Exact accepted output plus guest exit 0 admits the later
+three v3 test images (6 library, 6 staged and 7 sealing cases); no fuzz, CNG,
+services, clock or trust-store effects enter this child. Baseline compilation is
+limited to this probe, retaining other hardening and workspace lint/profile
+settings. Source review accepted the guarded XGETBV path and finite three-positive/
+30-negative controls. The baseline cross-build below is complete; the later
+guest launch was refused by application-control policy, as recorded below.
+Require exact image/PDB/import identities, sequential jobs, 60 seconds per image,
+180 seconds for the test cohort and bounded output/completion custody. A timeout
+or dropped CLI observation cannot establish guest process completion.
+
+The current session was re-inventoried as the same ID. A fresh narrow writable
+output mapping and built-in guest CMD `ver` produced a 47-byte host-read-back
+file, reporting **10.0.26100.9818**, with host and parsed guest exits 0. This
+qualifies that output/version path, not the release platform matrix or an
+unelevated token. No product image or PowerShell ran. Receipt:
+`sandbox-native-preflight-v1/output-readiness-result-v1.json` under the existing
+external checkpoint. Effective networking/device/protection settings remain
+unknown. Freeze the exact source, flags, tools/SDK and guest job before payloads.
+The exact outer `cmd /d /c CHILD >stdout 2>stderr` route also passed nested
+built-in children exiting 0 and 42, with those parsed guest exits, both host
+dispatches 0 and all four redirected streams empty. Receipt:
+`sandbox-native-preflight-v1/mediated-exit-controls-v1.json`. Keep the image as
+the sole/final command; do not append a marker that can replace its exit status.
+This supplies console-route calibration, not detached-work completion. On a
+timeout or output-limit failure, retain an incomplete result and dispose only
+the exact owned guest; ID presence without state cannot prove it stopped.
+
+**Baseline probe cross-build accepted:** all seven isolated boundary/compiler/
+format/Clippy/rustdoc/link/LLVM commands passed, using only the one declared CPU
+flag substitution and all 40 workspace lint controls. Source SHA256:
+`7eb47dcb3b533011a873360eb2d11087614c8a90d40ce49f98af43018ea5c399`.
+Independent readback accepted AMD64/PE32+/console, 191 CFG functions, relocations,
+ASLR/DEP, both CET declarations and dependent-load flags `0xA00`; these remain
+static image declarations. EXE SHA256:
+`5aa099bc6522fc34bc98f738e160ae06ab3777f23a6f286a51096dbff2354188`.
+The emitted PDB hash/header and CodeView basename match; internal PDB GUID/age
+matching is unverified. Build record `cpu-os-v3-probe-build-v1/build.json` SHA256
+`e00a9eb504ea58d0540218b38f5bb4a12fa8134bb77ce427a1d541c4c2b91d16`;
+47.45 seconds, peak sampled owned RSS 218,202,112 bytes. All 43 named inputs,
+stable/SDK inventories and source bookends passed. The later signed service
+commit changes only Git publication custody; the build retains its actual
+`6b947c5`/`54b77d26…` execution identities. No Cargo or native probe ran.
+
+**Separate guest runtime prerequisite:** the probe's ten declared imports include
+`VCRUNTIME140.dll`. A fixed-path guest CMD query returned 42 for its absence
+(host dispatch 0), retained in `vcruntime-presence-v1.json`. Prepare the
+[Microsoft x64 v14 runtime](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist/)
+as a separate guest-only setup job: freeze its actual HTTPS source, bytes,
+SHA256, version and embedded Microsoft Authenticode signature before execution.
+Use explicit owned ID and guest `System` only for installation, direct WSB
+execution with `/install /quiet /norestart`, a separate 180-second limit and
+bounded setup logs. No host installer, host PowerShell, security/trust change or
+restart is authorized. A readable guest-only signature query makes no execution-
+policy change. Require a completed guest exit, installed runtime/version readback
+and successful CPU probe before any v3 image; reboot-required/timeout/overflow
+remains incomplete and invokes owned-guest disposal. Restore `ExistingLogin`
+for ordinary witnesses. This selects neither product runtime redistribution nor
+MSIX deployment mechanics, and changes no Cargo graph or product flags.
+
+**Owner installation disposition:** David subsequently chose to install C++
+himself. The assistant's setup path is therefore unexecuted: only the official
+18,731,856-byte installer was downloaded (SHA256
+`843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c`).
+No prepared installer-signature query, installer or guest elevation ran. David
+then reported installation complete. Read-only, explicitly guest-targeted
+PowerShell metadata queries found AMD64 `VCRUNTIME140.dll` 14.51.36247.0,
+178,616 bytes, SHA256
+`d1f4225df2cd877dbf130d5668a021dce3f94118455ff5ec952061c30afc9ce7`,
+and the installed x64 package in both registry views. The first check incorrectly
+compared that redistributable version with the Desktop import-library package
+14.51.36254 and returned 17. Preserve that failed expectation: the pinned
+Microsoft compiler-component manifest explicitly pairs Desktop 14.51.36254
+with Redist.X64 14.51.36247. Corrected lab metadata admission is retained in
+`sandbox-native-preflight-v1/runtime-admission-v2.json`, SHA256
+`d24218fffa3739dc7eda54ee86077b6cc3adca5fa45b67e3ab1b17a483847b62`.
+This establishes the guest metadata prerequisite, not successful loader
+resolution, redistribution policy or product runtime qualification. No host
+PowerShell, installation or trust/security mutation occurred.
+
+**AES cross-build accepted; native tests not run:** the unchanged AES source
+projection produced three fresh release/v3 test images and their PDBs. All five
+isolated boundary/build/LLVM commands passed with one Cargo job; independent
+review accepted all three PE/import readbacks and source/tool/SDK bookends.
+Build record `aes-witness-windows-build-v1/build.json`, SHA256
+`983656bae8fc198b93636141ab27085feddd10f8692d04e13743d72ee832fdb1`,
+binds the exact artifacts and 6/6/7 expected test names. Elapsed 251.93 seconds;
+peak sampled owned RSS 374,853,632 bytes. No native listing or test execution
+occurred, and no AES image entered the guest input mapping.
+
+**Native launch refusal and closeout:** the V1/V2 controllers stopped before
+image dispatch because they expected a JSON share acknowledgement and a denied-
+write diagnostic file respectively. Their incomplete receipts remain. V3
+accepted the CLI's empty share acknowledgement only for that operation, verified
+mapped input presence and denied writing, then attempted the exact baseline
+probe under `ExistingLogin`. Host dispatch returned 0; parsed guest exit was
+**4551**. Stdout was empty and the 166-byte stderr reported Device Guard policy
+blocking the file. The selected SDK calls this error
+`ERROR_SYSTEM_INTEGRITY_POLICY_VIOLATION`. The responsible policy, path rule,
+trust decision or dependency has not been established. The controller's
+`native_probe_started` flag means dispatch attempted, not execution of Rust
+`main`. CPU/OS admission and embedded controls remain unexecuted/unverified;
+the dependent AES native cohort remains incomplete.
+
+Failure receipt `sandbox-cpu-native-v3/result.json`, SHA256
+`e75853c969376a1a8b13ef33af8ebbd9d641e2c99349c544eb90669adf56e00b`,
+and independent review `independent-review-v1.json`, SHA256
+`ad45e23742d3b1a2e97e3809b56f624c601e2dd1c57f40211fe8042a32d94ad8`,
+preserve this boundary. Exported logs and unchanged two-file input hashes were
+verified before stopping only the owned guest; a fresh inventory was empty.
+Closeout `sandbox-cpu-native-v3/closeout-v1.json`, SHA256
+`b1b9df46d3103f670e6456b771ecbcc3693420b427ac3e8108e363864d86e930`,
+records guest disposal separately from product cleanup. Its installed runtime
+was disposable guest state. Do not retry this blocked image, relocate it to
+evade the block, relax protection or substitute host execution. Retain the
+native gap and continue the existing S2.2 source contract; further diagnostics
+need a bounded reviewed job and a newly admitted guest.
+
+**Resource checkpoint:** the published `89f035e` verification copy and compiled
+LLVM targets from two superseded incomplete privilege campaigns were deleted:
+2,284 files / 302,154,214 logical bytes. Their source, reports and logs remain;
+those old raw archives are intentionally partial. Current final platform and
+caller archives remain complete. Retirement map:
+`superseded-verification-payload-retirement-v1.json`, SHA256
+`8fc06026a0881f0f4c8a822f9a0aadce49ec5137e07ae343c6d4c60e8a7cd02e`.
+No compression was used.
+
 David now reports Windows Sandbox ready for use and points to the prepared
 management skill. This is scoped authorization for Sandbox management/readiness
 and later admitted guest work; retain the Defender block and do not retry the

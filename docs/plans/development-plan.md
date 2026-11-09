@@ -1256,8 +1256,10 @@ In parallel, the required W11-W05/S0.2
 [exact-role privilege-admission source child](../../tasks/windows11-integration.md#exact-role-observation-and-startup-source-contract--9-november-2026)
 has completed contract review, actual-consumer RED→GREEN and the platform owner's
 ordinary/coverage/mutation gates. Both roles now use the complete captured set
-before worker preparation or Running. Complete the separate existing standalone
-host/error/diagnostics metric gates next; native qualification remains distinct.
+before worker preparation or Running. The separate standalone host/error/
+diagnostics metric gates are also complete in the exact
+[final privilege checkpoint](../../tasks/windows11-integration.md#portable-service-privilege-checkpoint-final-qualification--9-november-2026),
+published as signed `6b9e3d1`; native qualification remains distinct.
 Core/engine, shared manifests,
 locks, schemas and verification policies remain coordinator-owned, and the cloud
 agent retains metadata MD-P1–MD-P3. This required source qualification can proceed while
@@ -1270,13 +1272,22 @@ is disjoint from the checked Core inputs. Recovered local service receipts are n
 present under `artifacts/windows-services/recovery-20261107-v1`; the
 [independent W11 revalidation](../../tasks/windows11-integration.md#ordered-continuation-in-the-existing-workstream)
 recorded the narrower historical three-fact admission; the current addenda retain
-the implemented exact-role extension and remaining caller/native qualification.
+the implemented exact-role extension, completed portable caller qualification and
+remaining native qualification.
 At that recovery checkpoint, its evidence matched the parser/native adapter but not the then-current
 startup caller (408 matching/33 different source bindings), so its historical
 metrics do not qualify the current service candidate. Retain the explicit source,
 raw-evidence and native/product gaps before adopting metrics. All execution holds
 remain. It owns no Core/engine
 algorithm, shared manifest/lockfile or coordinator qualification policy.
+
+**9 November Sandbox disposition:** the baseline CPU probe and three AES v3
+witnesses cross-link successfully, but application-control policy refused the
+probe's guest launch (exit 4551). CPU admission and all AES native tests remain
+incomplete. [W11 §4.19](../../tasks/windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026)
+retains runtime metadata admission, the refusal and verified owned-guest disposal.
+Preserve the block and continue the existing actual KE-producer/receiver contract
+freeze; no repeated native campaign, protection change or host fallback follows.
 
 The parallel portable service-diagnostics source arrived in `f9cc578`; its eight
 service fixture/task paths leave the checked Core product inputs unchanged.

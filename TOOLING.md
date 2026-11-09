@@ -1703,6 +1703,19 @@ explicit read-only backing-alias bind; keep all existing inner sandbox and
 per-command admission checks. The tmpfs view is volatile, uses about 3.7 GB RAM,
 and changes no installation pointer or shared configuration.
 
+The [Sandbox CPU/OS probe](tools/windows-sandbox/cpu-os-v3-admission.rs) is a
+std-only laboratory diagnostic under W11 §4.19 and build CHECK-19/20/26. Its
+reviewed direct-build recipe must pin the source as an extra input and reuse the
+admitted compiler, Windows std/SDK, isolation, release profile and workspace lint
+flags. Derive its vector from exact `MSVC_FLAGS`, replacing only
+`target-cpu=x86-64-v3` with `target-cpu=x86-64` for this prerequisite image.
+Run format, Windows-target Clippy, applicable rustdoc and cross-link/PE/import
+checks before staging the executable. Require its exact accepted stdout and
+guest exit 0 before executing v3 witness images. Embedded finite controls are
+not Rust test-discovery counts. This probe supplies no production startup,
+installer or effective mitigation qualification; the build task owns those gaps.
+All product and AES witness images retain the selected v3 flags.
+
 The separate [time-domain allocation observer](scripts/verify-time-domain-windows-allocation.py)
 has two explicit lanes. Build with `--lane build --profile release`, the admitted
 `--vendor-dir`, `--toolchain-dir`, `--xwin-config`, `--xwin-inventory` and a new

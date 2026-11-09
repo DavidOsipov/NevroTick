@@ -306,7 +306,23 @@ disable optional higher-feature kernels, never replace the product's v3 minimum.
 | Runtime/security; CHECK-16/18/23/26, W11-W05/W11-W10 | Implement and qualify the strongest applicable per-role runtime/package profile, including Strict CFG, supported strict CET, ACG, selected CIG, image/extension/handle/heap controls and compatible service Win32k/child restrictions. Record real SCM/UAC/package activation, effective fields/audit state, normal work and denied operations. Preserve GUI-required Win32k and approved activation. Missing production adapters are not implemented by flags. |
 | Numerical/performance; CHECK-21/25 | Preserve checked arithmetic, unwind/callback contracts, symbols and normal FP semantics. Qualify new code generation and native correctness/resources before claiming a speedup or complete release pass; keep useful measured higher-feature work under §8.1. |
 
-**Verification boundary:** local source/diff and configuration consistency checks
+**9 November lab prerequisite preparation:**
+[`tools/windows-sandbox/cpu-os-v3-admission.rs`](../tools/windows-sandbox/cpu-os-v3-admission.rs)
+is the selected std-only diagnostic for the next owned-Sandbox witness. Its
+direct-build recipe derives baseline x86-64 from the exact product flag vector
+for this probe only, preserving the other hardening/profile/lint settings. It
+checks complete v2/v3 bits and guarded OS XCR0 state, with three positive and 30
+negative embedded controls. Source, format/Clippy/rustdoc, baseline linking and
+static PE/import readback are independently accepted. David installed the paired
+x64 VC++ runtime in the guest, but the subsequent launch was refused by
+application-control policy (guest exit 4551). No CPU admission or native control
+execution was established; dependent v3 witnesses remain unexecuted. Retain the
+block under [W11 §4.19](windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026).
+The production prerequisite row above remains open: this tool does not establish
+installer/service/update launch enforcement, masked-VM execution or release
+support. Root CPU configuration and validators remain v3.
+
+**Historical policy-checkpoint verification boundary:** local source/diff and configuration consistency checks
 are possible, but local target-code execution is unavailable: bubblewrap cannot
 create the required network namespace and unshare cannot establish its UID map;
 Rust/Cargo are also absent from the inspected PATH. No local RED/GREEN, native
@@ -316,9 +332,11 @@ not an executed failing test. Exact automated results belong to the associated
 PR's checks and review record. Required failed/missing checks cannot be reported
 as passes.
 
-This change neither refreshes old proof receipts nor runs formal work. OD-10's
-post-V1 deferral, the native/S134 stop, separate fuzz/storage holds and UI-M0
-scope remain. Source preparation is authorized now; final release still needs
+That policy change neither refreshed old proof receipts nor ran formal work.
+Its native-stop statement is historical; current scoped Sandbox authorization
+and the new application-control refusal follow W11 §4.19 above. OD-10's
+post-V1 deferral, S134 block, separate fuzz/storage holds and UI-M0 scope remain.
+Source preparation is authorized; final release still needs
 the existing nonformal product, native, package and owner-approval gates.
 
 ### Interrupted-work continuation and hosted harness correction
