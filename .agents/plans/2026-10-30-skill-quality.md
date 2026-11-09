@@ -657,3 +657,146 @@ Markdown-only change's evidence. Existing product gates and execution holds
 remain with their owners. Final commit identity supplies the durable candidate;
 the frozen review hash above identifies the earlier pre-correction/pre-receipt
 bytes, not the final commit.
+
+## Modern Rust independent recheck — 9 November 2026
+
+David requested another multi-agent research pass, a separate judge of the
+findings and publication of justified changes to `main`. The starting main
+candidate was `bf16cd0d31caabba2c7c7db2df072dd1912872b2`, with a clean checkout.
+The same stable-release window, 2024-11-09–2026-11-09, and existing product
+contracts apply. The coordinator alone owns repository edits and publication;
+researchers and the judge have read-only repository scope.
+
+| Local acceptance | Independent expected result |
+| --- | --- |
+| R2-1 | Recheck the complete stable-release inventory and consequential feature/patch claims against official sources. |
+| R2-2 | Establish concrete usefulness or error against current source/configuration; preserve correct guidance and reject novelty-only additions. |
+| R2-3 | A separate fresh-context judge adjudicates every reported finding and the exact proposed instruction changes. |
+| R2-4 | Validate the final skill package, links and intended Markdown-only candidate; verify the authorized remote main update. |
+
+Three new researchers were launched with `fork_turns: "none"`: earlier releases
+(1.83.0–1.91.0), newer releases (1.91.1 through the latest stable), and actual
+project fit across numerical, parsing, concurrency, native and build boundaries.
+Each receives the request, source candidate and relevant canonical owners, without
+the prior conversation, desired findings or other researchers' reports. Their
+intermediate reports stay outside the skills pack. Fresh conversation context
+does not isolate the shared filesystem or establish statistical independence.
+The later judge receives the completed raw findings and their sources, then the
+frozen proposed diff; researcher agreement is not a correctness oracle.
+
+Budgets: at most 30 web batches and 30 repository-read batches for each release
+researcher; 25 web and 35 repository-read batches for the fit researcher. No
+builds, installs, native operations, formal jobs or product changes are admitted.
+The judge owns source adjudication and commit-readiness review, with one focused
+repair/recheck if needed. Existing application gates and execution holds remain.
+
+The initial package check passed for all 66 skills. The official release index
+still ends at 1.99.1; all 26 recorded release/date pairs match the previously
+acquired versioned upstream notes (17 feature releases, 9 patches). These are
+baseline checks, not yet a final-candidate or judge verdict.
+
+### Completed research and adjudicated dispositions
+
+| Researcher | Completed scope and inspected inputs | Finding IDs / adjudicated disposition |
+| --- | --- | --- |
+| `rust_recheck_early` | All release-note categories for 11 releases: 9 feature releases and 2 patches, 1.83.0–1.91.0; relevant API/edition contracts, current Rust/Windows/Cargo skills and project source. | R2-A-01: optional Windows read-only deletion clarification; no mandatory factual/version correction found. |
+| `rust_recheck_recent` | All release-note categories for 15 releases: 8 feature releases and 7 patches, 1.91.1–1.99.1; current index/latest redirect, exact API and Cargo contracts, affected references and source. | R2-B-01: correct one source URL. R2-B-02: defer additional scoped-thread TLS prose; the judge qualifies the report's no-use claim below. |
+| `rust_recheck_fit` | Actual seven-member workspace/configuration and relevant numerical, parsing, service-work, handle and build owners; independently checked consequential Rust contracts. Source enumeration was not an audit of every file. | R2-C-01–R2-C-06: retain the existing six scoped recommendations; no material wrong recommendation or missing required feature established. |
+
+All three returned usable completed reports and declared no sibling-report or
+prior-verdict reads. The coordinator received interim findings; no researcher
+was supplied another researcher's diagnosis. They performed no repository edits
+or product/native/formal execution. The only intermediate files they wrote were
+their assigned research reports. This is source research, not native reproduction
+or a fresh skill-effectiveness experiment.
+
+Raw reports were frozen under the owned intermediate `rust-recheck/` directory:
+
+| Report | SHA-256 |
+| --- | --- |
+| `early-report.md` | `042af5142ee02199ef7e02db46a9d31c8db45a92c556bc369b0284ed690ca555` |
+| `recent-report.md` | `38265cdae67a85cdd46a77c9b7321bb3e9d91503e5d1768dbfed08fba11e960d` |
+| `fit-report.md` | `e32fe211ae5e29f5229791292953275e1168213414436e272aeb7f9f4ed636a6` |
+
+These intermediate files can expire with host cleanup; the evidence scope and
+final dispositions are retained here. The judge receives the reports and their
+manifest plus the proposed two-file instruction diff, SHA-256
+`45ac6e0d6de7183cb50a97d90fb0e883befbbc62b9c87571357b550df60d4bf0`.
+That identity excludes this evolving coordinator receipt.
+
+The proposed compatibility paragraph records that Rust 1.86 can remove read-only
+files on recent Windows. It prevents an attribute-only deletion-failure fixture;
+the existing object/parent rights and intended-token owners still control actual
+denial. Existing ACL guidance already rejects the attribute as a security boundary,
+and the scoped review found no affected caller, so this is not a product-defect
+claim or a new native gate. Its source-register row gains only a short pointer.
+
+The proposed 1.94.1 source correction uses the official index's
+`/2026/03/26/1.94.1-release/` destination. The old URL was inaccessible through the
+researcher's web tool; no HTTP 404 was observed or claimed. The release date and
+patch description were correct. The coordinator then opened all 26 announcement
+links through the official index and checked that the proposed table exactly
+matches those successful destinations; no other source-link correction was found.
+
+**R2-J-01 qualifies R2-B-02.** The scoped-thread TLS observation remains conditional guidance: the report's
+claim of no current first-party `thread::scope` use was too broad. The judge and
+coordinator found it in seven current test files, including the Windows service/
+SCM and engine fixtures. Mere use does not demonstrate reliance on TLS-destructor
+completion; the existing completion/cleanup contracts still apply. The fit checks
+retain exact whole/half-nanosecond and
+ties-even representations, separately rounded floating operations, established
+chunk-length guards, retry-safe atomics and explicit permit completion, native
+handle identity/lifetimes and exact target/build policy. No migration is ordered.
+
+**R2-J-02 qualifies R2-C-02.** The subnormal even-median
+test rejects an alternative averaging formula; it does not show that current
+`f64::midpoint` changes that case. The inspected official implementation uses the
+same `(a + b) * 0.5` expression for those small operands. The existing
+`even_median_sum_overflow_is_rejected_with_healthy_controls` case supplies the
+relevant contrary example: the owner rejects the intermediate `MAX + MAX`,
+whereas `f64::midpoint(MAX, MAX)` avoids overflow. The no-mechanical-rewrite rule
+remains justified by the actual failure contract, without overstating the
+subnormal example. No new Rust or native test execution is claimed.
+
+### Judge verdict and verification
+
+The separate `rust_recheck_judge` completed its review with
+`fork_turns: "none"`. Its verdict was **READY WITH SPECIFIC CORRECTION for the
+final evidence record and authorized main integration; the frozen two-file
+instruction candidate is READY unchanged**. It accepted R2-A-01 and R2-B-01,
+retained the remaining no-change/deferred dispositions, and required the two
+evidence qualifications recorded above. Both qualifications are applied here;
+the original researcher reports remain frozen rather than silently rewritten.
+The judge's report SHA-256 is
+`63a968a02a8e9d164dec721bdd49b8a5f627d978fba1917f2d1207aefc66925c`.
+
+The judge's two-paragraph comprehension statement is retained verbatim:
+
+> This proposal makes two small changes to existing Rust-writing guidance: it adds the Rust 1.86 Windows read-only-file deletion caveat to the modern-Rust reference and its release row, and replaces the Rust 1.94.1 announcement link with the official canonical destination. It changes neither executable code nor the selected compiler. The proposed guidance tells a future cleanup-fixture author to establish a real denied operation and a healthy control; it does not initiate that experiment.
+
+> The existing workspace already selects Rust 1.99.1, edition 2024, resolver 3 and the Windows MSVC x64/v3 target. Its current source includes exact checked time arithmetic, bounded wire parsing, portable service lifecycle contracts, an engine-only current-thread Tokio pilot and the selected Slint/native-tray path. Those implementations and historical receipts do not establish integrated native Windows, final-package or release qualification. Formal execution remains deferred until after V1, and the existing Windows/fuzz/storage/UI boundaries remain with their current owners.
+
+The judge verified all supplied report/file/diff hashes, the release inventory,
+actual relevant source/tests and consequential primary contracts. It did not
+repeat every upstream PR or claim a complete product audit. Its broad guide reads
+exposed neighboring historical routing and non-Rust summaries; it reports no
+earlier Rust judge/coordinator verdict, private discussion or unrelated agent
+report reads. Coordinator progress about source checks and receipt corrections
+was disclosed; the judge independently checked those underlying facts. Ten web
+batches and fewer than 30 source/hash/Git read/search commands stayed within its
+budget. All four delegated reviews completed; agreement adds no executed tests.
+
+On the unchanged judged instruction content, the repository package checker
+passed **66 skills**, and the matching skill-creator `quick_validate.py` accepted
+`implement-rust`. All **26** release dates and URLs match the versioned notes and
+successfully opened official-index destinations. Whitespace checks passed.
+The final publisher check binds the complete intended staged tree to these
+instruction hashes and this corrected receipt, with only the three named
+Markdown files changed. No `docs/SHA256SUMS.txt` exists; unrelated design-bundle
+manifests are unaffected. The publication commit supplies durable candidate
+identity; remote-main verification remains a publisher action after the update.
+
+No fresh behavioral skill comparison, Rust product test/build, Windows/native,
+formal or performance execution is claimed. This second pass establishes the
+bounded source review and instruction-package results above, with the two
+research-evidence qualifications retained and all product gates still separate.

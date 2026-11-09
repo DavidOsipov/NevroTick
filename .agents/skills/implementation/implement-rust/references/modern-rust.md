@@ -268,6 +268,15 @@ symbols separate from compilation. Retain explicit Windows link dependencies;
 post-shutdown `BrokenPipe` in 1.97, require semantic error handling rather than
 unqualified exact-message expectations.
 
+For Windows cleanup, account for the
+[1.86 removal change](https://doc.rust-lang.org/releases.html#version-1860-2025-04-03):
+`std::fs::remove_file` can remove read-only files on recent Windows versions.
+The read-only attribute is neither an authorization boundary nor a reliable
+deletion-failure fixture. For a removal-denied case, qualify the actual
+object/parent permissions and selected operation under the intended token, with
+a removable healthy control. See the
+[current API contract](https://doc.rust-lang.org/std/fs/fn.remove_file.html).
+
 The already-selected `-C jump-tables=no` became stable in 1.93. Preserve the
 complete mitigation flag vector and existing artifact/native qualification;
 compiler defaults for another target or tables in prebuilt dependencies/assembly
