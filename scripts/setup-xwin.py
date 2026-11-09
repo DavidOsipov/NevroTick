@@ -5,14 +5,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import importlib.util
-import io
 import json
 import os
 from pathlib import Path
 import re
 import shutil
 import subprocess
-import tarfile
+import sys
 import tempfile
 import time
 import urllib.parse
@@ -26,6 +25,12 @@ if DOWNLOAD_SPEC is None or DOWNLOAD_SPEC.loader is None:
     raise RuntimeError("Bounded acquisition helper is unavailable.")
 BOUNDED = importlib.util.module_from_spec(DOWNLOAD_SPEC)
 DOWNLOAD_SPEC.loader.exec_module(BOUNDED)
+HOSTED_SPEC = importlib.util.spec_from_file_location("xwin_hosted", Path(__file__).with_name("xwin_hosted.py"))
+if HOSTED_SPEC is None or HOSTED_SPEC.loader is None:
+    raise RuntimeError("Hosted acquisition boundary is unavailable.")
+HOSTED = importlib.util.module_from_spec(HOSTED_SPEC)
+sys.modules[HOSTED_SPEC.name] = HOSTED
+HOSTED_SPEC.loader.exec_module(HOSTED)
 ARCHIVE_MAXIMUM = 32 * 1024 ** 2
 CHANNEL_MAXIMUM = 16 * 1024 ** 2
 PACKAGE_MAXIMUM = 64 * 1024 ** 2
@@ -51,13 +56,14 @@ def download(url: str, destination: Path, expected: str | None = None, *,
     return data
 
 
-def install_xwin(binary_bytes: bytes, executable: Path, expected_version: str, backup_dir: Path) -> str:
+def install_xwin(binary_bytes: bytes, executable: Path, expected_version: str, backup_dir: Path, *, version_runner=None) -> str:
     if executable.is_symlink() or (executable.exists() and not executable.is_file()):
         raise RuntimeError(f"Refusing non-regular xwin target: {executable}")
     executable.parent.mkdir(parents=True, exist_ok=True)
     wanted_hash = hashlib.sha256(binary_bytes).hexdigest()
     if executable.is_file() and digest(executable) == wanted_hash:
-        version = subprocess.check_output([str(executable), "--version"], text=True).strip()
+        version = (subprocess.check_output([str(executable), "--version"], text=True)
+                   if version_runner is None else version_runner(executable)).strip()
         if version != "xwin " + expected_version:
             raise RuntimeError("Installed xwin version does not match policy.")
         return version
@@ -67,7 +73,8 @@ def install_xwin(binary_bytes: bytes, executable: Path, expected_version: str, b
         with os.fdopen(fd, "wb") as stream:
             stream.write(binary_bytes)
             os.fchmod(stream.fileno(), 0o755)
-        version = subprocess.check_output([str(temporary), "--version"], text=True).strip()
+        version = (subprocess.check_output([str(temporary), "--version"], text=True)
+                   if version_runner is None else version_runner(temporary)).strip()
         if version != "xwin " + expected_version:
             raise RuntimeError("Downloaded xwin version does not match policy; existing target preserved.")
         if executable.is_symlink():
@@ -89,22 +96,35 @@ def install_xwin(binary_bytes: bytes, executable: Path, expected_version: str, b
 
 
 def verify_catalog_payloads(cache_dir: Path, packages: dict, package_manifest_sha256: str) -> list[dict]:
-    expected = {p["sha256"].lower() for item in packages["packages"]
-                for p in item.get("payloads", []) if p.get("sha256")}
+    entries = packages.get("packages") if type(packages) is dict else None
+    if type(entries) is not list or len(entries) > 65_536:
+        raise RuntimeError("Package catalog count/type differs.")
+    expected, count = set(), 0
+    for item in entries:
+        payloads = item.get("payloads", []) if type(item) is dict else None
+        if type(payloads) is not list or len(payloads) > 4096:
+            raise RuntimeError("Catalog payload count/type differs.")
+        for payload in payloads:
+            count += 1
+            if count > 262_144 or type(payload) is not dict:
+                raise RuntimeError("Catalog aggregate count/type differs.")
+            value = payload.get("sha256")
+            if value is not None:
+                if type(value) is not str or re.fullmatch(r"[0-9a-fA-F]{64}", value) is None:
+                    raise RuntimeError("Catalog payload digest is malformed.")
+                expected.add(value.lower())
     expected.add(package_manifest_sha256.lower())
     downloaded = []
-    for path in sorted((cache_dir / "dl").rglob("*")):
-        if not path.is_file():
-            continue
-        sha = digest(path)
-        if sha not in expected:
-            raise RuntimeError(f"Downloaded payload is absent from the pinned catalog: {path}")
-        downloaded.append({"path": str(path), "sha256": sha, "bytes": path.stat().st_size})
+    for relative, record in HOSTED.inventory(cache_dir / "dl").items():
+        if record["sha256"] not in expected:
+            raise RuntimeError("Downloaded payload is absent from the pinned catalog.")
+        downloaded.append({"path": str(cache_dir / "dl" / relative), **record})
     return downloaded
 
 
 def prune_generated_cache(cache_dir: Path, downloaded: list[dict], package_path: Path) -> dict:
     """Remove verified payload copies and matching unpack trees; retain unknown entries."""
+    HOSTED.inventory(cache_dir)
     dl = (cache_dir / "dl").resolve()
     selected = []
     for item in downloaded:
@@ -139,11 +159,12 @@ def prune_generated_cache(cache_dir: Path, downloaded: list[dict], package_path:
 
 
 def logical_bytes(directory: Path) -> int:
-    return sum(os.stat(Path(base) / name).st_size
-               for base, _, names in os.walk(directory) for name in names)
+    return sum(row["bytes"] for row in HOSTED.inventory(directory).values())
 
 
-def main() -> None:
+def main(*, _hosted_worker=False) -> None:
+    if _hosted_worker:
+        HOSTED.require_worker_boundary()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cache-dir", type=Path, required=True,
                         help="Cache on a Windows drive, outside this checkout; e.g. /mnt/c/.../NevroTick/xwin-cache")
@@ -152,38 +173,57 @@ def main() -> None:
     parser.add_argument("--receipt", type=Path)
     parser.add_argument("--keep-cache", action="store_true",
                         help="Retain verified CAB/VSIX/MSI copies and unpack intermediates for offline reacquisition")
+    parser.add_argument("--hosted-runner", action="store_true", help="Use a precreated owned hosted Linux quota profile")
     args = parser.parse_args()
     if not args.accept_license:
         parser.error("Review the Microsoft terms recorded in policy/tool-manifest.json; explicit --accept-license is required.")
-    cache = args.cache_dir.expanduser().resolve()
-    if not re.match(r"^/mnt/[a-z](?:/|$)", str(cache)) or cache == ROOT or ROOT in cache.parents:
-        parser.error("Use a Windows-drive cache outside the checkout to keep payloads off the WSL root disk.")
+    layout = None
+    if _hosted_worker and not args.hosted_runner:
+        parser.error("Internal worker requires the hosted profile.")
+    if args.hosted_runner:
+        if args.receipt is None:
+            parser.error("Hosted acquisition requires a new explicit receipt inside its payload.")
+        layout = HOSTED.admit_layout(args.cache_dir, args.receipt, worker=_hosted_worker)
+        if not _hosted_worker:
+            HOSTED.dispatch(ROOT, layout, keep_cache=args.keep_cache)
+            return
+        HOSTED.remaining_deadline(os.environ)
+        cache = layout.cache
+    else:
+        cache = args.cache_dir.expanduser().resolve()
+        if not re.match(r"^/mnt/[a-z](?:/|$)", str(cache)) or cache == ROOT or ROOT in cache.parents:
+            parser.error("Use a Windows-drive cache outside the checkout to keep payloads off the WSL root disk.")
     if args.receipt and (args.receipt.resolve() == ROOT or ROOT in args.receipt.resolve().parents):
         parser.error("Keep machine-specific setup receipts outside the checkout.")
-    policy = json.loads((ROOT / "policy/tool-manifest.json").read_text())
+    policy = json.loads(BOUNDED.bounded_file_bytes(ROOT / "policy/tool-manifest.json", 2 * 1024 ** 2))
     cross = policy["cross_toolchain"]
     tool, inputs = cross["xwin"], cross["microsoft_inputs"]
     if inputs["architecture"] != "x86_64" or inputs["variant"] != "desktop":
         raise RuntimeError("This setup supports only the admitted x64 desktop cohort.")
     if not inputs["sdk_version"] or not inputs["crt_version"]:
         raise RuntimeError("Resolve and review exact SDK/CRT selectors before installing.")
-    cache.mkdir(parents=True, exist_ok=True)
+    cache.mkdir(parents=True, exist_ok=True, mode=0o700 if layout else 0o755)
     provenance = cache / "provenance"
     provenance.mkdir(exist_ok=True)
 
-    archive = cache / "bootstrap" / Path(urllib.parse.urlparse(tool["url"]).path).name
+    archive = (layout.bootstrap if layout else cache / "bootstrap") / Path(urllib.parse.urlparse(tool["url"]).path).name
     blob = download(tool["url"], archive, tool["sha256"], maximum_bytes=ARCHIVE_MAXIMUM,
                     allowed_origins=("https://github.com", "https://release-assets.githubusercontent.com"))
-    with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as bundle:
-        binary = [item for item in bundle.getmembers() if item.isfile() and Path(item.name).name == "xwin"]
-        if len(binary) != 1:
-            raise RuntimeError("Expected exactly one regular xwin executable in the verified archive.")
-        binary_bytes = bundle.extractfile(binary[0]).read()
-        for item in bundle.getmembers():
-            if item.isfile() and Path(item.name).name in {"LICENSE-APACHE", "LICENSE-MIT", "README.md"}:
-                (provenance / ("xwin-" + Path(item.name).name)).write_bytes(bundle.extractfile(item).read())
-    executable = Path.home() / ".cargo/bin/xwin"
-    install_xwin(binary_bytes, executable, tool["version"], cache / "bootstrap")
+    members = HOSTED.tar_members(blob, tool["version"])
+    binary_bytes = members["xwin"]
+    for name in ["LICENSE-APACHE", "LICENSE-MIT", "README.md"]:
+        (provenance / ("xwin-" + name)).write_bytes(members[name])
+    executable = layout.bootstrap / "bin/xwin" if layout else Path.home() / ".cargo/bin/xwin"
+    def hosted_process(command, timeout):
+        environment = HOSTED.worker_environment(layout, float(os.environ["NEVROTICK_XWIN_DEADLINE"]))
+        return HOSTED.run_checked(HOSTED.namespace(ROOT, layout, worker=False, environment=environment) + command,
+            cwd=layout.payload, environment=environment,
+            timeout=min(timeout, HOSTED.remaining_deadline(os.environ)), runner=HOSTED.process_module(ROOT).run)
+    if layout:
+        install_xwin(binary_bytes, executable, tool["version"], layout.bootstrap,
+                     version_runner=lambda path: hosted_process([str(path), "--version"], 10))
+    else:
+        install_xwin(binary_bytes, executable, tool["version"], cache / "bootstrap")
 
     channel_url = inputs.get("channel_manifest_url") or (
         f"https://aka.ms/vs/{inputs['manifest_version']}/stable/channel"
@@ -221,14 +261,19 @@ def main() -> None:
                "--sdk-version", inputs["sdk_version"], "--crt-version", inputs["crt_version"],
                "--timeout", "120s", "splat", "--disable-symlinks", "--output", str(splat)]
     log = cache / "setup-xwin.log"
-    with log.open("w") as output:
-        result = subprocess.run(command, stdout=output, stderr=subprocess.STDOUT, check=False)
-    if result.returncode:
-        raise RuntimeError(f"xwin exited {result.returncode}; inspect {log}")
+    if layout:
+        output = hosted_process(command, HOSTED.WHOLE_SECONDS)
+        with log.open("x") as stream: stream.write(output)
+    else:
+        with log.open("w") as output:
+            result = subprocess.run(command, stdout=output, stderr=subprocess.STDOUT, check=False)
+        if result.returncode:
+            raise RuntimeError(f"xwin exited {result.returncode}; inspect {log}")
 
     libraries = [splat / "crt/lib/x86_64", splat / "sdk/lib/um/x86_64", splat / "sdk/lib/ucrt/x86_64"]
     for directory, name in zip(libraries, ["msvcrt.lib", "kernel32.lib", "ucrt.lib"]):
-        if not (directory / name).is_file():
+        candidate = directory / name
+        if candidate.is_symlink() or not candidate.is_file():
             raise RuntimeError(f"Required linker input missing: {directory / name}")
     downloaded = verify_catalog_payloads(cache, packages, inputs["package_manifest_sha256"])
     receipt = {
@@ -250,12 +295,25 @@ def main() -> None:
     else:
         receipt["cache_cleanup"] = prune_generated_cache(cache, downloaded, package_path)
     receipt["cache_logical_bytes"] = logical_bytes(cache)
-    LOCATION.parent.mkdir(parents=True, exist_ok=True)
-    LOCATION.write_text(json.dumps(receipt, indent=2) + "\n")
-    if args.receipt:
-        args.receipt.parent.mkdir(parents=True, exist_ok=True)
-        args.receipt.write_text(json.dumps(receipt, indent=2) + "\n")
-    print(json.dumps({"location": str(LOCATION), "root": str(splat),
+    location = layout.locator if layout else LOCATION
+    if layout:
+        files = HOSTED.inventory(cache)
+        receipt["library_files"] = [{"path": str(directory / name), **files[str((directory / name).relative_to(cache))]}
+            for directory, name in zip(libraries, ["msvcrt.lib", "kernel32.lib", "ucrt.lib"])]
+        receipt["inventory"] = {"schema_version": 1, "scope_root": str(cache), "file_count": len(files),
+            **HOSTED.write_json(layout.payload / "inventory.json", {"schema_version": 1, "files": files}, HOSTED.MAX_INVENTORY)}
+        receipt["hosted"] = {"profile": str(layout.profile), "payload": str(layout.payload), "cache": str(cache),
+            "uid": os.geteuid(), "mount": HOSTED.quota_facts(layout, worker=True),
+            "supervisor": {"status": "internal-worker-only; parent completion required"}}
+        HOSTED.write_json(location, receipt, 2 * 1024 ** 2)
+        HOSTED.write_json(args.receipt, receipt, 2 * 1024 ** 2)
+    else:
+        location.parent.mkdir(parents=True, exist_ok=True)
+        location.write_text(json.dumps(receipt, indent=2) + "\n")
+        if args.receipt:
+            args.receipt.parent.mkdir(parents=True, exist_ok=True)
+            args.receipt.write_text(json.dumps(receipt, indent=2) + "\n")
+    print(json.dumps({"location": str(location), "root": str(splat),
                       "sdk": inputs["sdk_version"], "crt": inputs["crt_version"],
                       "splat_logical_bytes": receipt["splat_logical_bytes"],
                       "downloaded_payload_bytes": receipt["downloaded_payload_bytes"],

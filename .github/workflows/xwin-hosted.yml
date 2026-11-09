@@ -1,0 +1,105 @@
+name: Hosted xwin acquisition experiment
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: xwin-hosted-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+jobs:
+  acquire:
+    name: Qualify bounded Linux SDK acquisition
+    if: github.repository == 'DavidOsipov/NevroTick' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the exact admitted main candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Prepare the existing Linux sandbox mechanism
+        run: |
+          timeout --kill-after=5s 180s sudo apt-get update
+          timeout --kill-after=5s 180s sudo apt-get install --yes --no-install-recommends bubblewrap apparmor-profiles
+          sudo apparmor_parser -r /usr/share/apparmor/extra-profiles/bwrap-userns-restrict
+          bwrap --unshare-all --die-with-parent --new-session --cap-drop ALL --clearenv \
+            --ro-bind / / -- /usr/bin/true
+          uname --kernel-release
+          python3 --version
+          bwrap --version
+          sha256sum /usr/bin/python3 /usr/bin/bwrap /usr/bin/prlimit
+      - name: Challenge the acquisition boundaries without network
+        run: |
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_xwin_setup.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_xwin_hosted.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_check_environment.py -v
+      - name: Acquire and independently inspect the quota-bound SDK
+        run: |
+          umask 077
+          runner_temp=$(realpath -e -- "${RUNNER_TEMP}")
+          if [[ "${runner_temp}" != "${RUNNER_TEMP}" || "${runner_temp}" == "${GITHUB_WORKSPACE}" || "${runner_temp}" == "${GITHUB_WORKSPACE}/"* ]]; then
+            exit 1
+          fi
+          profile=$(mktemp -d "${runner_temp}/nevrotick-xwin.XXXXXX")
+          readonly profile
+          payload="${profile}/payload"
+          probe="${profile}/quota-control"
+          readonly payload probe
+          payload_mounted=0
+          probe_mounted=0
+          cleanup_xwin() {
+            local status=$?
+            if [[ "${probe_mounted}" == 1 ]]; then
+              if sudo umount -- "${probe}"; then
+                probe_mounted=0
+              elif [[ "${status}" == 0 ]]; then
+                status=1
+              fi
+            fi
+            if [[ "${payload_mounted}" == 1 ]]; then
+              if sudo umount -- "${payload}"; then
+                payload_mounted=0
+              elif [[ "${status}" == 0 ]]; then
+                status=1
+              fi
+            fi
+            if [[ "${probe_mounted}" == 0 && "${payload_mounted}" == 0 ]]; then
+              if ! timeout --kill-after=5s 10s python3 -B .github/security/check_xwin_quota.py --root "${profile}" --assert-unmounted; then
+                if [[ "${status}" == 0 ]]; then status=1; fi
+              elif ! rm -rf -- "${profile}"; then
+                if [[ "${status}" == 0 ]]; then status=1; fi
+              fi
+            fi
+            if [[ "${status}" == 0 ]]; then
+              printf '%s\n' 'XWIN_HOSTED_OWNED_CLEANUP_OK'
+            fi
+            exit "${status}"
+          }
+          trap cleanup_xwin EXIT
+          mkdir -m 700 -- "${payload}" "${probe}"
+          quota_uid=$(id -u)
+          quota_gid=$(id -g)
+          sudo mount -t tmpfs -o "size=1m,nr_inodes=16,nodev,nosuid,noexec,mode=700,uid=${quota_uid},gid=${quota_gid}" tmpfs "${probe}"
+          probe_mounted=1
+          sudo mount --make-private -- "${probe}"
+          timeout --kill-after=5s 20s python3 -B .github/security/check_xwin_quota.py --root "${probe}"
+          sudo umount -- "${probe}"
+          probe_mounted=0
+          rmdir -- "${probe}"
+          sudo mount -t tmpfs -o "size=2g,nr_inodes=65536,nodev,nosuid,noexec,mode=700,uid=${quota_uid},gid=${quota_gid}" tmpfs "${payload}"
+          payload_mounted=1
+          sudo mount --make-private -- "${payload}"
+          timeout --kill-after=5s 620s python3 -B scripts/setup-xwin.py \
+            --hosted-runner --accept-license --cache-dir "${profile}" --receipt "${payload}/receipt.json"
+          timeout --kill-after=5s 120s python3 -B .github/security/check_xwin_hosted_receipt.py \
+            --profile "${profile}" --receipt "${payload}/receipt.json"

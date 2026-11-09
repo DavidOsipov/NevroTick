@@ -2350,6 +2350,93 @@ Artifact metadata limits and strict-digest Action inputs alone do not bound
 actual download writes; the transfer owner must implement and exercise that
 bound before claiming a finite download quota.
 
+**Hosted acquisition implementation contract — 9 November:** baseline `ffd47bb`
+completed the selected handoff source/host child. This continuation implements
+the preparation above under CHECK-19/20/21/26/27 and the existing REQ-8/BND-2
+S2.2 owner. The coordinator owns integration and execution; delegated source and
+test authors have separate writable scopes. Independent contract review accepted
+this bounded acquisition stage; no native Windows or product pass follows.
+
+The existing `setup-xwin.py` gains explicit `--hosted-runner`; its default WSL
+`/mnt/[a-z]` rule, exact download/catalog pins and Microsoft development terms
+remain. The hosted cache argument names a private canonical `RUNNER_TEMP` child,
+with a fresh cache and explicit new receipt below its dedicated payload mount.
+Bootstrap execution stays outside the payload's `noexec` mount. Tool, locator,
+provenance, temporary files and logs remain profile-owned; ambient home paths
+and Actions credentials are unavailable to acquired processes.
+
+The payload uses the repository's existing **tmpfs quota pattern**, rather than
+introducing a loop-device controller: total capacity at most 2 GiB and 65,536
+inodes, ordinary-UID ownership/mode 0700, effective `noexec,nodev,nosuid`, distinct
+device and exact mount identity. Admission rejects aliases, nested mounts,
+links and pre-existing payloads. These are experimental ceilings until an actual
+healthy hosted acquisition succeeds. Tmpfs storage consumes RAM/swap; the quota
+is not an aggregate process-memory limit. See the
+[kernel quota semantics](https://www.kernel.org/doc/html/latest/filesystems/tmpfs.html).
+
+One 600-second acquisition deadline, bounded output, existing owned-process
+supervision, PID/user isolation and process resource limits cover network stages
+as well as version and splat commands. There is no unbounded/host fallback.
+Finite archive expansion and descriptor-based no-follow inventory precede
+catalog hashes, library consumption, accounting and cleanup. Original pins,
+declared-versus-raw catalog checks and required library readback remain mandatory.
+
+The manual Linux workflow is restricted to this repository's `main`, checks out
+the exact triggering SHA, has read-only contents permission and no arbitrary
+inputs. Its first observable exit is actual quota-backed acquisition plus
+independent bounded receipt/library readback and owned-mount cleanup. A separate
+small quota control must observe byte/inode exhaustion. No upload, compiler,
+Windows execution, signing or package effect belongs to this stage. Without
+retained SDK outputs, this experiment supplies no reusable downstream SDK.
+
+Focused checks cover default compatibility, hosted admission before effects,
+archive/inventory limits, timeout/output refusal and cleanup preserving the
+original failure. A two-case RED already reproduces catalog symlink acceptance
+beside a healthy regular payload; raw results are in
+`phase-plan-20261108-v1/nts-ke-graph-v1/hosted-xwin-v1/catalog-red.{json,log}`.
+Implementation and hosted execution remain unfinished at this contract freeze.
+Preserve local Sandbox/S134 blocks and all unrelated execution holds.
+
+**Hosted acquisition source checkpoint — 9 November:** implementation now adds
+the explicit hosted profile, bounded bootstrap/inventory admission, whole-worker
+supervision and independent receipt/library readback. The public CLI always
+dispatches; its former internal worker selector is removed. The private entry
+checks actual UID, inherited limits, read-only root and private bwrap PID owner
+before acquisition. Its worker record remains unqualified until parent completion.
+The manual workflow checks out the exact main SHA and keeps its privileged mount
+operations confined to new owned runner directories, with independent mount-state
+admission before deletion and primary-failure preservation.
+
+Final local execution passes **72 selected tests**: 27 existing/setup cases,
+26 hosted controls, 12 readback/ownership cases and seven inert workflow-shell
+cases. Pinned actionlint, strict ShellCheck and offline pedantic zizmor pass all
+three workflows with their healthy/rejection controls. Actual benign unprivileged
+Linux namespace probes observe allowed payload/worker-bootstrap writes, refused
+root/device/native-bootstrap writes, ordinary UID, cleared synthetic credential
+and successful private-worker containment checks. Actual FD replacement and
+producer/consumer lock controls pass. Quota/mount facts and shell mount operations
+remain simulated in these local cases. The actual pinned cached xwin release
+archive also parses into the four admitted regular members; no installation ran.
+
+The source controls retained behavioral RED before repairing catalog symlink
+admission, final-open hardlink replacement, self-invalidating cache receipts,
+pre-existing payload admission and the new namespace's writable root. Initial
+archive fixtures and a shell-probe routing mismatch were repaired without
+relaxing production assertions. The first namespace-hardening attempt lacked
+the bwrap-required explicit user-namespace option; its setup refusal remains
+retained. The final route requires it and does not fall back to host execution.
+
+Receipt `hosted-xwin-v1/verification-v2.json` under the same external
+`phase-plan-20261108-v1/nts-ke-graph-v1` chain hashes to
+`e7415c571ee8d878d47ce28ae9b44de7aa4151675f217f116a591d55c81fc372`.
+Its 18 execution-input bookends match. Independent source/API review accepted
+the supported route; it supplies no separate execution. The next action is
+exact-candidate pre-commit qualification, signed publication and dispatch of
+the manual Linux acquisition experiment. Actual dedicated quota exhaustion,
+healthy acquisition, effective hosted observations and cleanup remain pending.
+This prepares the Windows builder/consumer; it is no Windows execution, reusable
+SDK export, provider adoption or completed S2.2/Core/engine result.
+
 **Resource checkpoint:** the published `89f035e` verification copy and compiled
 LLVM targets from two superseded incomplete privilege campaigns were deleted:
 2,284 files / 302,154,214 logical bytes. Their source, reports and logs remain;

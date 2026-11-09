@@ -195,6 +195,20 @@ class CatalogControls(TemporaryControls):
         self.assertEqual({row["sha256"] for row in rows}, {sha(self.metadata), sha(self.cab)})
         self.assertEqual(sum(row["bytes"] for row in rows), len(self.metadata) + len(self.cab))
 
+    def test_catalog_link_cannot_authorize_outside_bytes_even_with_a_valid_digest(self) -> None:
+        outside = self.root / "outside.cab"
+        outside.write_bytes(self.cab)
+        selected = self.dl / "sdk.cab"
+        selected.unlink()
+        selected.symlink_to(outside)
+        before = outside.read_bytes()
+
+        with self.assertRaises(RuntimeError):
+            XWIN.verify_catalog_payloads(self.root, self.packages, sha(self.metadata))
+
+        self.assertEqual(outside.read_bytes(), before)
+        self.assertTrue(selected.is_symlink())
+
     def test_changed_cab_or_unlisted_payload_cannot_be_reported_as_verified(self) -> None:
         (self.dl / "sdk.cab").write_bytes(b"unlisted CAB bytes")
         with self.assertRaises(RuntimeError):
@@ -257,6 +271,42 @@ class MetadataComplete(Exception):
     """Stop the isolated main-entrypoint fixture before terms/SDK acquisition."""
 
 
+class PlacementControls(TemporaryControls):
+    def test_hosted_markers_do_not_implicitly_bypass_default_windows_cache_admission(self) -> None:
+        markers = {"GITHUB_ACTIONS": "true", "RUNNER_ENVIRONMENT": "github-hosted",
+                   "RUNNER_OS": "Linux", "RUNNER_TEMP": str(self.root)}
+        for environment in [{}, markers]:
+            cache = self.root / "cache"
+            home = self.root / "home"
+            with self.subTest(environment=environment), \
+                 mock.patch.dict("os.environ", environment, clear=True), \
+                 mock.patch.object(Path, "home", return_value=home), \
+                 mock.patch.object(sys, "argv", ["setup-xwin.py", "--accept-license", "--cache-dir", str(cache)]), \
+                 mock.patch.object(XWIN, "download") as download, \
+                 mock.patch.object(XWIN, "install_xwin") as install, \
+                 contextlib.redirect_stderr(io.StringIO()) as diagnostic:
+                with self.assertRaises(SystemExit):
+                    XWIN.main()
+                self.assertIn("Windows-drive cache", diagnostic.getvalue())
+                download.assert_not_called()
+                install.assert_not_called()
+            self.assertFalse(cache.exists())
+            self.assertFalse(home.exists())
+
+    def test_explicit_terms_acceptance_precedes_acquisition_in_both_profiles(self) -> None:
+        for selector in [[], ["--hosted-runner"]]:
+            with self.subTest(selector=selector), \
+                 mock.patch.object(sys, "argv", ["setup-xwin.py", *selector, "--cache-dir", str(self.root / "cache")]), \
+                 mock.patch.object(XWIN, "download") as download, \
+                 mock.patch.object(XWIN, "install_xwin") as install, \
+                 contextlib.redirect_stderr(io.StringIO()) as diagnostic:
+                with self.assertRaises(SystemExit):
+                    XWIN.main()
+                self.assertIn("explicit --accept-license", diagnostic.getvalue())
+                download.assert_not_called()
+                install.assert_not_called()
+
+
 class ManifestDeclarationControls(TemporaryControls):
     def setUp(self) -> None:
         super().setUp()
@@ -275,10 +325,16 @@ class ManifestDeclarationControls(TemporaryControls):
         }).encode("utf-8")
         buffer = io.BytesIO()
         with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
-            payload = b"synthetic xwin; never executed"
-            entry = tarfile.TarInfo("xwin")
-            entry.size = len(payload)
-            archive.addfile(entry, io.BytesIO(payload))
+            prefix = "xwin-0.10.0-x86_64-unknown-linux-musl/"
+            directory = tarfile.TarInfo(prefix)
+            directory.type = tarfile.DIRTYPE
+            archive.addfile(directory)
+            members = {"xwin": b"synthetic xwin; never executed", "LICENSE-APACHE": b"fixture Apache notice",
+                       "LICENSE-MIT": b"fixture MIT notice", "README.md": b"fixture readme"}
+            for name, payload in members.items():
+                entry = tarfile.TarInfo(prefix + name)
+                entry.size = len(payload)
+                archive.addfile(entry, io.BytesIO(payload))
         self.archive = buffer.getvalue()
         self.archive_url = "https://example.invalid/xwin.tar.gz"
         self.policy = {"cross_toolchain": {

@@ -70,6 +70,7 @@ jobs:
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_advisory_snapshot_admission.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_bounded_download.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_xwin_setup.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_xwin_hosted.py -v
       - name: Check native keyboard and IME source custody
         run: python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_native_input_source.py -v
       - name: Acquire the pinned compiler in private runner storage

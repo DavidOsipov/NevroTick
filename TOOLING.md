@@ -1004,6 +1004,24 @@ Microsoft payloads against that exact catalog. This is a content pin acquired
 from the authenticated upstream source, not a claim that the incorrect
 publisher-declared catalog checksum verified. Any changed bytes require review.
 
+The explicit `setup-xwin.py --hosted-runner` profile preserves that WSL default.
+Its cache argument instead names a private canonical `RUNNER_TEMP` child with a
+dedicated quota-backed payload mount; a new receipt below that payload is
+mandatory. Tool, locator, provenance and temporary files stay profile-owned.
+Public invocations always use the existing supervised dispatcher. The private
+worker checks actual UID, limits, read-only root and PID containment before
+acquisition, and cannot itself finalize a qualified receipt.
+
+The manual [hosted acquisition experiment](.github/workflows/xwin-hosted.yml)
+runs only this repository's exact `main` candidate with read-only contents
+permission. It exercises tiny byte/inode exhaustion controls, acquires under the
+experimental 2-GiB/65,536-inode ceiling, independently reads back actual libraries
+and input identities, and cleans up the owned mounts. It uploads no SDK, builds
+no binary and runs no Windows payload. The
+[W11 §4.19 evidence chain](tasks/windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026)
+owns source checks, actual execution results and remaining builder/native work.
+Source/offline passes do not qualify the acquisition ceiling or native Windows.
+
 Native Windows Rust can be prepared without modifying persistent PATH:
 
 ```powershell
