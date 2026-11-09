@@ -411,3 +411,33 @@ The current receipt and tooling guidance now name the selected complete
 native/resource/package and submitted/Store-delivered MSIX reconciliation.
 That scope-label correction performs no new inventory generation and closes
 neither this raw-admission follow-up nor the complete-product SBOM gate.
+
+## Cargo intermediate-layout upgrade check — 9 November 2026
+
+**R4-B-02: future compatibility watch; no current failure or upgrade selected.**
+The [fourth Rust review](../.agents/plans/2026-10-30-skill-quality.md#fourth-rust-research-disposition--9-november-2026)
+checked the official [beta Cargo 1.100 changelog](https://doc.rust-lang.org/beta/cargo/CHANGELOG.html#cargo-1100-2026-11-12),
+dated 12 November, after this research date. It changes intermediate artifact
+layout; current Rust 1.99.1 remains pinned. Recheck the released behavior when
+admitting a later compiler. This is separate from the existing `build.build-dir`
+and publication-age guidance.
+
+The actual consumers include `verify-time-domain-windows-allocation.py`'s
+legacy custom-build/deps path validation, `verify-core-analysis.py`'s build-script
+`out_dir` validation and `copy_contract_dependencies`, and the ordinary engine/
+time-domain analysis collectors' `target/debug/deps` enumeration. Some consume
+Cargo JSON yet still assume old path shapes. Their current strict rejection
+protects evidence integrity; final top-level EXE/PDB exports are not established
+to break. No candidate compiler or consumer was executed by this research.
+
+**Owner/trigger:** existing build/toolchain admission CHECK-19/20/26, coordinated
+with the ordinary time-domain/Core/engine contract owners at the next admitted
+upgrade. Keep old healthy parser fixtures and add actual new-layout JSON from
+that compiler, with wrong package/host-target role/profile, redirected/escaped
+path, substituted bytes and incomplete inventory as rejection neighbors. Use one
+bounded admitted build reaching a library, host proc macro and build script,
+then the smallest affected external-consumer check. Discover artifacts through
+messages while retaining identity, root containment, inventory and byte custody.
+Do not resolve incompatibility by removing checks or accepting arbitrary paths.
+Native allocation observations retain their independent gate; formal work and
+its deferred consumers remain after V1. No parallel campaign is created.

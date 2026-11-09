@@ -999,3 +999,93 @@ candidate identity; remote `main` is verified after the authorized update.
 No Rust product build/test, benchmark, native Windows, formal or fuzz job was run
 for this documentation change. Product experiments and all existing acceptance
 gates retain the separate owners and triggers above.
+
+## Fourth Rust research disposition — 9 November 2026
+
+**Scope and authority.** David requested another search after the preceding
+commit, then authorized committing its findings to `main` and a separate Tokio
+research/update. This section records the completed fourth Rust search and its
+documentation delivery. Baseline local/remote `main` was
+`33a4a44d000cb11d9128c90da4da4b3bca0985cb`, clean. No Rust, Cargo configuration,
+dependency, native behavior or current execution gate is changed by this slice.
+The next product task remains S2.2's producer/receiver contract freeze.
+
+Three researchers and one judge used fresh contexts (`fork_turns: "none"`),
+bounded read-only source/primary-document assignments, and separate intermediate
+reports. The data, build and diagnostics researchers completed their assigned
+reviews; `rust_round4_judge` read all three reports and independently checked
+decisive source/API facts and current task/skill duplication. The coordinator
+also checked async control semantics and consequential source/primary claims.
+The judge received findings as claims, not a target verdict; shared files remain
+a possible common source. Agreement adds no experimental runs or statistical
+independence. Searches were focused, not an exhaustive repository audit.
+
+| Finding | Final disposition and existing owner |
+| --- | --- |
+| R4-B-01 | Optional current-pin Slint source-warning policy, including the cached unchanged-source transition; S0.5 GUI build, CHECK-19/20/26. No current warning-bearing defect or violation of the Rust-scoped lint policy was established. |
+| R4-B-02 | Future Cargo 1.100 intermediate-layout compatibility; next admitted toolchain/build checkpoint, CHECK-19/20/26 and actual ordinary artifact consumers. No current 1.99.1 failure or upgrade is selected. |
+| R4-G-02 | Conditional caught-payload destruction fault case through the real tray callback/UiWake seam; existing CHECK-27, CHECK-14/22 and CHECK-17 owners choose terminal-versus-recovery expectations. No actual NativeWake custom-payload producer or attacker route was established. |
+| R4-G-01 | Low-priority capture-scoped unwind assertions during a natural tray edit. Preserve checks for new separate captures; traits prove neither external-state consistency nor cleanup. |
+
+The judge prioritized B-01, then the B-02 upgrade trigger, then G-02 at the
+existing native checkpoint; G-01 needs no standalone campaign. Parser/layout
+replacement and calendar/general-numeric replacement were rejected as fresh
+opportunities: variable packet data is already borrowed/bounded, the fixed
+48-byte header serves retained consumers, exact-time semantics remain necessary,
+and the compact catalogue comparison already has a task. The current
+`commit_reply` already checks raw Instant order before subtraction; older task
+prose is not a current missing guard. The coordinator's async/control observation
+was scoped source review, not a comprehensive independent correctness result.
+
+The exact Slint v1.18.1 build-helper blob
+`f7fc09f9e8024ef8ea0fb1a06598d48cd870f4e8` was independently fetched. Rolling
+docs.rs retrievals disagreed on displayed version, so they are not the pinned
+authority. Cargo's beta changelog schedules 1.100 for 12 November; recheck actual
+released behavior at admission. Rust rustdoc identified the current 1.99.1.
+Reusable guidance and primary URLs are retained in the existing Slint integration,
+Cargo operations and error-handling references/source registers. Pending controls
+are routed to the [S0.5 task](../../tasks/s0.5-ui-comparison.md#build-diagnostics-and-tray-panic-follow-ups--9-november-2026),
+[GUI handoff](../../tasks/slint-gui-handoff.md#next-work-and-dependencies) and
+[build task](../../tasks/build-optimization.md#cargo-intermediate-layout-upgrade-check--9-november-2026).
+No new skill, project plan, requirement family or product-queue change is needed.
+
+Retain the judge's material qualifications: the warning gate must prove its cache
+transition; strict artifact rejection is protective and JSON alone supplies no
+custody; a synthetic drop-panicking payload supplies a fault case, not an observed
+vulnerability; the non-unwinding Rust ABI aborts rather than licensing inferred
+undefined behavior; capture checks cannot qualify native/TLS/shared state. No
+new runtime dependency, measured gain, source defect repair or native result was
+claimed. All existing Windows/UI/fuzz/storage holds and post-V1 formal deferral
+remain unchanged.
+
+### Documentation delivery checks
+
+The publisher froze the complete eleven-file staged candidate as validation commit
+`79937231737c00e779d93f02494e0d2effba5156`, tree
+`eb9a14b40f58be478a7c081c5258d4ba60ebf001`, with the baseline above as parent.
+A separate clean materialization matched all 1,990 tracked entries by path,
+mode and raw Git blob bytes, including unchanged files and symlinks; repository
+attributes introduced no transformations. The candidate's `check_skills.py`
+passed all 66 packages. The matching skill-creator validator passed Implement
+Rust, Implement Slint and Dependency Updates. The affected eleven Markdown
+files contained 235 local links/anchors, all resolving under the repository
+checker's prose/anchor rules; staged whitespace checks passed.
+
+A fresh-context `rust_round4_commit_review` read the complete candidate diff,
+current owners, relevant implementation and primary upstream sources. Its
+documentation-content verdict was **READY**, with no blocking findings. It
+independently checked candidate identity/clean state and consequential claims;
+the full unchanged-byte materialization and mechanical checks remain the
+publisher's evidence. It did not read raw researcher/judge reports or treat
+agreement as additional experiments. Its comprehension statement was:
+
+> This candidate adds reusable Rust and Slint guidance plus four bounded follow-ups: optional Slint source-warning enforcement, future Cargo intermediate-layout compatibility, caught-panic payload disposal, and narrower unwind assertions. It routes that work into existing build and GUI owners without changing product code, dependencies, configuration, or acceptance gates.
+
+> NevroTick currently pins Rust 1.99.1 and Slint/slint-build 1.18.1. Its tray implementation has a real Windows callback and a public wake seam, while its verifier scripts retain assumptions about Cargo intermediate paths. The active product continuation remains S2.2 association/request preparation; Windows/UI/fuzz/storage holds and the post-V1 formal deferral constrain later execution.
+
+The final publisher binds this receipt-only delta to the unchanged judged ten
+instruction/task files, rechecks the final complete tree, affected links and
+whitespace, and verifies remote `main` after the authorized update. The
+publication commit supplies durable final candidate identity. No product build,
+native, formal, fuzz or benchmark campaign was run for this documentation slice;
+pending product experiments keep the owners and activation points above.

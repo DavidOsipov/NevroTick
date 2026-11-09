@@ -56,6 +56,18 @@ configuration. Registry-age policy cannot replace source/dependency admission.
 | [Beta Cargo configuration](https://doc.rust-lang.org/beta/cargo/reference/config.html#registryglobal-min-publish-age) and [stable configuration](https://doc.rust-lang.org/cargo/reference/config.html) | Beta documents the settings as respected from 1.100+; stable 1.99.1 lacks them. Lockfile exemptions, overrides and absent registry publication-time support limit coverage; recheck released behavior before any later adoption. |
 | [RFC 3923](https://rust-lang.github.io/rfcs/3923-cargo-min-publish-age.html) | Motivation and proposal history; the shipped configuration/resolver contract must control a future experiment. No delay or security-benefit measurement is established here. |
 
+### Cargo intermediate-layout watch — 9 November 2026
+
+The [Cargo operations reference](dependency-updates/references/cargo-operations.md#future-intermediate-layout-compatibility--9-november-2026)
+adds a future upgrade check for actual verifier consumers, separate from the
+existing publication-age watch. No toolchain or runtime configuration changed.
+
+| Primary source inspected | Applied finding |
+| --- | --- |
+| [Beta Cargo 1.100 changelog](https://doc.rust-lang.org/beta/cargo/CHANGELOG.html#cargo-1100-2026-11-12) | Upcoming intermediate-layout change, dated 12 November; recheck released behavior at admission. |
+| [Beta build cache](https://doc.rust-lang.org/beta/cargo/reference/build-cache.html) | Intermediate layout is internal; distinguish it from final target-directory exports. |
+| [Cargo external-tool messages](https://doc.rust-lang.org/cargo/reference/external-tools.html#artifact-messages) | Discover emitted artifacts/output directories from messages; retain independent identity, containment, inventory and byte checks. |
+
 ## Windows Sandbox management
 
 The original [manage-windows-sandbox](manage-windows-sandbox/SKILL.md) workflow was

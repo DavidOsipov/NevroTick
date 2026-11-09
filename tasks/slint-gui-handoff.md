@@ -281,6 +281,13 @@ limits, lints, graph roles or trust to obtain green output.
 
 ## Next work and dependencies
 
+At the next applicable source/native checkpoints, carry the
+[R4 build-diagnostic and tray-panic follow-ups](s0.5-ui-comparison.md#build-diagnostics-and-tray-panic-follow-ups--9-november-2026)
+into their existing owners: optional cache-aware Slint warning denial, explicit
+caught-payload fault policy, and narrow unwind assertions during a natural edit.
+Their controls remain proposed; they add no current defect, release gate or
+execution exception and do not displace S2.2.
+
 1. Continue from merged PR10 and the later numerical checkpoint. Preserve the
    current S2.2 producer/receiver freeze in development section 7 and reconcile
    only subsequent deltas. Preserve the canonical decision identities. Keep

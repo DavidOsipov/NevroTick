@@ -52,7 +52,7 @@ load the whole architecture and reference corpus for a bounded Slint question.
 
 | Work | Read |
 | --- | --- |
-| `build.rs`, generated modules, callbacks, weak handles or async delivery | [Rust integration and ownership](references/rust-integration.md) |
+| `build.rs`, generator warnings/cache behavior, generated modules, callbacks, weak handles or async delivery | [Rust integration and ownership](references/rust-integration.md) |
 | `.slint` interfaces, editable drafts, bindings, lists, sorting or layouts | [Language and models](references/language-and-models.md) |
 | Native windows, HWND access, winit hooks, close/hide/tray or later UIA/DPI | [Windows integration](references/windows-integration.md) |
 | Dependency/features/licence admission, fonts, AVIF assets or embedding | [Dependencies and assets](references/dependencies-and-assets.md) |

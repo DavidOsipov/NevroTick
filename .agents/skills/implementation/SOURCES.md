@@ -319,6 +319,18 @@ Pinned revisions identify inspected upstream evidence, not a selected NevroTick
 Cargo graph. Rolling documentation must be reconciled with the actual locked
 versions/features before implementation. The adapted leaves retain their notices.
 
+### Panic-boundary refinements — 9 November 2026
+
+Rust rustdoc identified 1.99.1, matching the selected toolchain. These stable
+mechanisms refine existing error-handling guidance; no new dependency, executed
+native result or product vulnerability follows from source inspection.
+
+| Primary evidence | Finding used |
+| --- | --- |
+| [catch_unwind](https://doc.rust-lang.org/std/panic/fn.catch_unwind.html) and [panic_any](https://doc.rust-lang.org/std/panic/fn.panic_any.html) | A custom caught payload can panic during destruction; include disposal and post-catch effects in the process fault policy. |
+| [AssertUnwindSafe](https://doc.rust-lang.org/std/panic/struct.AssertUnwindSafe.html) and [UnwindSafe](https://doc.rust-lang.org/std/panic/trait.UnwindSafe.html) | Capture-scoped assertions retain checks for newly added separate captures; unwind traits remain advisory and cannot qualify external state. |
+| [Rust Reference unwinding](https://doc.rust-lang.org/reference/items/functions.html#unwinding) | An uncaught Rust panic at a non-unwinding ABI aborts; distinguish it from foreign-exception/undefined-behavior claims. |
+
 ## Prior Rust port supplied by the user
 
 Pinned overlay: [DavidOsipov/pdfcraft c9a02b378271f92a73cb44be9fd9e4acc6921516](https://github.com/DavidOsipov/pdfcraft/tree/c9a02b378271f92a73cb44be9fd9e4acc6921516),

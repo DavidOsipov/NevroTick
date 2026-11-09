@@ -94,6 +94,26 @@ existing locked versions or `cargo install`. A delay can postpone a verified
 security fix. Preserve exact pins, lockfiles and source/graph admission; change no
 product/global configuration during that comparison. See [sources](../../SOURCES.md#publish-age-watchlist--9-november-2026).
 
+### Future intermediate-layout compatibility — 9 November 2026
+
+At the next admitted toolchain upgrade, recheck Cargo's intermediate artifact
+layout against the actual verifier consumers. The [beta 1.100 changelog](https://doc.rust-lang.org/beta/cargo/CHANGELOG.html#cargo-1100-2026-11-12)
+announces a layout change for the scheduled **12 November 2026** release;
+the current Rust **1.99.1** pin is unchanged. Recheck released behavior before
+adoption. This is distinct from relocating intermediates with `build.build-dir`.
+
+Use emitted Cargo JSON for discovery while preserving package/target/profile,
+host-versus-target role, allowed-root, complete inventory and byte-custody checks.
+JSON consumption alone does not remove assumptions in path validation or copying:
+the current allocation and Core/engine/time-domain contract collectors still
+match legacy `build/{package}-{hash}` paths or enumerate `target/debug/deps`.
+Keep their fail-closed rejection; never accept arbitrary emitted paths to make
+an upgrade pass. Final EXE/PDB exports are a separate interface. At the existing
+[build checkpoint](../../../../../tasks/build-optimization.md#cargo-intermediate-layout-upgrade-check--9-november-2026),
+pair actual candidate-layout healthy artifacts with wrong-identity, redirected,
+substituted-byte and incomplete-inventory controls. This watchlist authorizes
+neither an upgrade nor native/formal execution. See [sources](../../SOURCES.md#cargo-intermediate-layout-watch--9-november-2026).
+
 ## Qualify the final graph
 
 Use real repository CI/TOOLING commands from the shared configured-tool workflow

@@ -48,6 +48,25 @@ configuration inputs, propagate compilation errors, and reject stale generated
 output. Follow the [Cargo build-script contract](https://doc.rust-lang.org/cargo/reference/build-scripts.html)
 and [build-script environment variables](https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts).
 
+Distinguish Slint source diagnostics from Rust/generated-code lints. In the
+[pinned 1.18.1 build helper](https://github.com/slint-ui/slint/blob/372cf0ee5577c3dfec309a45e7b778ba4e81b734/api/rs/build/lib.rs),
+`SLINT_COMPILER_DENY_WARNINGS` makes nonempty compiler diagnostics fatal when
+the variable is readable; the string `0` still enables it. Otherwise diagnostics
+are emitted as `cargo:warning`. Cargo's [build.warnings](https://doc.rust-lang.org/cargo/reference/config.html#buildwarnings)
+controls lint warnings, not every generator warning. Warning denial is an
+optional source-quality policy, not an already selected NevroTick release gate.
+If selected by the current build owner, bind it to the reviewed runner/config
+and build-script admission; do not rely on an ambient shell variable or add an
+unsafe `set_var` shortcut inside edition-2024 `build.rs`.
+
+The pinned helper's explicit rerun-variable list omits this switch. Verify the
+unchanged-source cached transition as well as a guaranteed rerun, using a
+warning-only fixture and a clean neighbor. Add reviewed input tracking or
+invalidation if needed; a [build-script JSON record](https://doc.rust-lang.org/cargo/reference/external-tools.html#build-script-output)
+can describe cached output. A successful prior build or variable change alone
+proves no enforced warning policy. Preserve existing source/graph/flag controls;
+see the [S0.5 follow-up](../../../../../tasks/s0.5-ui-comparison.md#build-diagnostics-and-tray-panic-follow-ups--9-november-2026).
+
 Read examples against the selected release, not `master` or unqualified `latest`.
 Even the pinned API prose contains older version literals. The inline `slint!`
 macro also passes through Rust's tokenizer: string interpolation and some hex

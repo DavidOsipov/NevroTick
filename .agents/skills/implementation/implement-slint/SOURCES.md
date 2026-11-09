@@ -45,6 +45,23 @@ When Context7/GitHub MCP tools are available, resolve the Slint Rust library,
 query the needed API and reconcile the answer with the selected GitHub revision;
 keep live-document retrieval separate from dependency or native qualification.
 
+## Build diagnostics follow-up — 9 November 2026
+
+The exact `v1.18.1` [build helper](https://github.com/slint-ui/slint/blob/372cf0ee5577c3dfec309a45e7b778ba4e81b734/api/rs/build/lib.rs)
+was retrieved through GitHub; blob `f7fc09f9e8024ef8ea0fb1a06598d48cd870f4e8`.
+It checks `SLINT_COMPILER_DENY_WARNINGS` by successful variable read, otherwise
+emits `cargo:warning`, and omits that variable from its explicit rerun list.
+Rolling docs.rs results differed across retrievals; the tagged source supplies
+the pinned evidence, not an unqualified `latest` page.
+
+[Cargo warning scope](https://doc.rust-lang.org/cargo/reference/config.html#buildwarnings),
+[build-script change detection](https://doc.rust-lang.org/cargo/reference/build-scripts.html#rerun-if-env-changed)
+and [cached output messages](https://doc.rust-lang.org/cargo/reference/external-tools.html#build-script-output)
+support the conditional warning/cache procedure in
+[Rust integration](references/rust-integration.md#build-and-version-contract).
+This source review demonstrates no current GUI warning, executed cache behavior
+or newly selected mandatory policy.
+
 ## Translation catalogs
 
 OD-15's [catalog design](../../../../docs/plans/ui-localization.md) uses an

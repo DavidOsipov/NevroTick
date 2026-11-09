@@ -159,6 +159,25 @@ clock correction with an inconsistent model. Abort/process death skips promised
 destructor cleanup; recovery requires the established owner/journal/SCM contract
 and separate native evidence.
 
+Include the recovery branch and destruction of the caught result in the panic
+boundary: an `Err` payload's destructor can panic after `catch_unwind` returned.
+State the process owner's terminal-versus-recovery expectation before changing
+payload custody; another process's abort policy does not select this one.
+Challenge the reached callback in an owned child process when that native scope
+is admitted, with healthy, ordinary-panic and drop-panicking-payload neighbors.
+An uncaught Rust panic at a non-unwinding ABI causes abort; do not infer undefined
+behavior or an attacker path from a synthetic custom payload. Neither repeated
+catches nor forgetting arbitrary payloads is a default recovery design.
+
+Prefer removing an unnecessary `AssertUnwindSafe` or asserting only the reviewed
+exceptional capture. A whole-closure assertion also approves future captures;
+keep the wrapper itself captured so new separate incompatible captures remain
+compiler-visible. The trait is advisory: it does not qualify TLS/native/shared
+state or cleanup, and an asserted owner still covers future fields inside it.
+Use the actual target/callback type check; a toy example proves only a language
+rule. See the [dated primary evidence](../../SOURCES.md#panic-boundary-refinements--9-november-2026)
+and the existing [tray owner](../../../../../tasks/s0.5-ui-comparison.md#build-diagnostics-and-tray-panic-follow-ups--9-november-2026).
+
 Respect fatal native-boundary exceptions to ordinary cleanup. In particular,
 failed impersonation reversion follows architecture
 [§5.4](../../../../../docs/windows-time-architecture.md#54-native-ipc-implementation-and-qualification):
