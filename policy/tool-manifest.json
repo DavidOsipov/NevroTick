@@ -151,6 +151,7 @@
       "channel_manifest_sha256": "81190fd42f993460f9a2172c42f8722d43bcb1f8ba1523f98a1d629994aacdb4",
       "package_manifest_sha256": "976b2ce70dfe7d8d8ab349663ef14d8c4a29a8c3ec840b96e5d38e118e0a5379",
       "terms_url": "https://go.microsoft.com/fwlink/?LinkId=2327714",
+      "terms_document_url": "https://visualstudio.microsoft.com/wp-content/uploads/2025/10/Visual_Studio_2026-License-Diagnostic_and_Build_Tools_ENU.docx",
       "terms_document_sha256": "ff03a242ec131e8353643612cdf58ae3d6cc9b51d7dce929351d140ba24a8b83",
       "channel_manifest_url": "https://download.visualstudio.microsoft.com/download/pr/9a3f23c2-cc94-49a0-88c0-f9f19f2ac9df/9169ccb033af2767e14d8733568de2216dbfe7f7965bd1682229ac1fe300fea5/VisualStudio.18.Release.chman",
       "package_manifest_declared_sha256": "b7aefeb168ba0be6c55db436328ef42f1800013146390350aed9ecb6d39f9bd6",

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import contextlib
+from email.message import Message
 import hashlib
 import importlib.util
 import io
@@ -40,18 +41,58 @@ class TemporaryControls(unittest.TestCase):
         self.root = Path(self.temporary.name)
 
 
+class NetworkResponse(io.BytesIO):
+    """Small offline HTTP body preserving the actual reader's bounded calls."""
+    status = 200
+
+    def __init__(self, body):
+        super().__init__(body)
+        self.headers = Message()
+
+    def read1(self, size=-1):
+        return self.read(size)
+
+
 class DownloadControls(TemporaryControls):
+    def test_consumed_bytes_are_rechecked_after_cached_download_admission(self) -> None:
+        reviewed = b"reviewed cached metadata"
+        destination = self.root / "replaced.vsman"
+        destination.write_bytes(reviewed)
+        actual_download = XWIN.BOUNDED.download_to_file
+
+        def replace_after_admission(*args, **kwargs):
+            result = actual_download(*args, **kwargs)
+            destination.write_bytes(b"different bytes before the consumer read")
+            return result
+
+        with mock.patch.object(XWIN.BOUNDED, "download_to_file", side_effect=replace_after_admission):
+            with self.assertRaisesRegex(RuntimeError, "digest|changed"):
+                XWIN.download("https://example.invalid/catalog", destination, sha(reviewed))
+
+    def test_network_body_is_never_requested_with_an_unbounded_read(self) -> None:
+        body = b"small reviewed body"
+        test = self
+
+        class BoundRequired(NetworkResponse):
+            def read(self, size=-1):
+                test.assertGreater(size, 0, "network read must carry an explicit positive byte budget")
+                return super().read(size)
+
+        destination = self.root / "bounded.vsman"
+        with mock.patch.object(XWIN.BOUNDED, "_open", return_value=BoundRequired(body)):
+            self.assertEqual(XWIN.download("https://example.invalid/catalog", destination, sha(body)), body)
+
     def test_declared_filename_does_not_replace_the_reviewed_content_pin(self) -> None:
         body = b"reviewed raw Microsoft metadata"
         declared = "1" * 64
         self.assertNotEqual(declared, sha(body))
         destination = self.root / ("pkg_manifest_" + declared + ".vsman")
         destination.write_bytes(body)
-        with mock.patch.object(XWIN.urllib.request, "urlopen") as network:
+        with mock.patch.object(XWIN.BOUNDED, "_open") as network:
             self.assertEqual(XWIN.download("https://example.invalid/catalog", destination, sha(body)), body)
             network.assert_not_called()
         destination.write_bytes(b"corrupted cache")
-        with mock.patch.object(XWIN.urllib.request, "urlopen", return_value=io.BytesIO(body)) as network:
+        with mock.patch.object(XWIN.BOUNDED, "_open", return_value=NetworkResponse(body)) as network:
             self.assertEqual(XWIN.download("https://example.invalid/catalog", destination, sha(body)), body)
             network.assert_called_once()
         self.assertEqual(destination.read_bytes(), body)
@@ -59,7 +100,7 @@ class DownloadControls(TemporaryControls):
     def test_wrong_content_digest_cannot_overwrite_the_previous_cached_file(self) -> None:
         destination = self.root / "catalog.vsman"
         destination.write_bytes(b"previous cache")
-        with mock.patch.object(XWIN.urllib.request, "urlopen", return_value=io.BytesIO(b"wrong body")):
+        with mock.patch.object(XWIN.BOUNDED, "_open", return_value=NetworkResponse(b"wrong body")):
             with self.assertRaises(RuntimeError):
                 XWIN.download("https://example.invalid/catalog", destination, sha(b"reviewed body"))
         self.assertEqual(destination.read_bytes(), b"previous cache")
@@ -249,6 +290,8 @@ class ManifestDeclarationControls(TemporaryControls):
                 "channel_manifest_sha256": sha(self.channel),
                 "package_manifest_declared_sha256": self.declared,
                 "package_manifest_sha256": sha(self.raw_metadata), "terms_url": self.terms_url,
+                "terms_document_url": self.terms_url,
+                "terms_document_sha256": sha(b"reviewed terms document"),
             },
         }}
 
@@ -262,10 +305,16 @@ class ManifestDeclarationControls(TemporaryControls):
                 return original_match(pattern, "/mnt/c/disposable-fixture")
             return original_match(pattern, value, *args, **kwargs)
 
-        def acquire(url, destination, expected=None):
+        def acquire(url, destination, expected=None, **kwargs):
             self.calls.append((url, destination, expected))
             if url == self.terms_url:
+                if hasattr(self, "terms_page"):
+                    return self.terms_page
                 raise MetadataComplete()
+            if url == getattr(self, "fixed_terms_url", None):
+                raise MetadataComplete()
+            if url == "https://127.0.0.1/private.docx":
+                self.fail("mutable terms HTML must never authorize this outbound request")
             return {self.archive_url: self.archive, self.channel_url: self.channel,
                     self.package_url: self.raw_metadata}[url]
 
@@ -291,6 +340,17 @@ class ManifestDeclarationControls(TemporaryControls):
         self.assertEqual(package_call[1].name, "pkg_manifest_" + self.declared + ".vsman")
         channel_call = next(call for call in self.calls if call[0] == self.channel_url)
         self.assertEqual(channel_call[2], sha(self.channel))
+
+    def test_mutable_terms_html_cannot_choose_the_document_request_target(self) -> None:
+        self.fixed_terms_url = "https://example.invalid/pinned-terms.docx"
+        self.terms_page = b'<a href="https%3A%2F%2F127.0.0.1%2Fprivate.docx">terms</a>'
+        inputs = self.policy["cross_toolchain"]["microsoft_inputs"]
+        inputs["terms_document_url"] = self.fixed_terms_url
+        inputs["terms_document_sha256"] = sha(b"reviewed terms document")
+        with self.assertRaises(MetadataComplete):
+            self.run_setup_to_metadata()
+        self.assertIn(self.fixed_terms_url, [call[0] for call in self.calls])
+        self.assertNotIn(self.terms_url, [call[0] for call in self.calls])
 
     def test_changed_declaration_is_rejected_before_package_acquisition(self) -> None:
         self.policy["cross_toolchain"]["microsoft_inputs"]["package_manifest_declared_sha256"] = "f" * 64

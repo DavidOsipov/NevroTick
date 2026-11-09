@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import io
 import json
 import os
@@ -15,10 +16,20 @@ import tarfile
 import tempfile
 import time
 import urllib.parse
-import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCATION = Path.home() / ".local/share/nevrotick/xwin.json"
+DOWNLOAD_SPEC = importlib.util.spec_from_file_location(
+    "xwin_bounded_download", Path(__file__).with_name("bounded_download.py")
+)
+if DOWNLOAD_SPEC is None or DOWNLOAD_SPEC.loader is None:
+    raise RuntimeError("Bounded acquisition helper is unavailable.")
+BOUNDED = importlib.util.module_from_spec(DOWNLOAD_SPEC)
+DOWNLOAD_SPEC.loader.exec_module(BOUNDED)
+ARCHIVE_MAXIMUM = 32 * 1024 ** 2
+CHANNEL_MAXIMUM = 16 * 1024 ** 2
+PACKAGE_MAXIMUM = 64 * 1024 ** 2
+TERMS_MAXIMUM = 1024 ** 2
 
 
 def digest(path: Path) -> str:
@@ -29,16 +40,15 @@ def digest(path: Path) -> str:
     return h.hexdigest()
 
 
-def download(url: str, destination: Path, expected: str | None = None) -> bytes:
-    if destination.is_file() and (expected is None or digest(destination) == expected.lower()):
-        return destination.read_bytes()
-    with urllib.request.urlopen(url, timeout=120) as response:
-        body = response.read()
-    if expected and hashlib.sha256(body).hexdigest() != expected.lower():
-        raise RuntimeError(f"SHA256 mismatch: {url}")
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_bytes(body)
-    return body
+def download(url: str, destination: Path, expected: str | None = None, *,
+             maximum_bytes: int = ARCHIVE_MAXIMUM, allowed_origins=()) -> bytes:
+    """Return one small bounded acquisition only after digest-checked publication."""
+    BOUNDED.download_to_file(url, destination, expected, maximum_bytes=maximum_bytes,
+                             allowed_origins=allowed_origins)
+    data = BOUNDED.bounded_file_bytes(destination, maximum_bytes)
+    if expected is not None and hashlib.sha256(data).hexdigest() != expected.lower():
+        raise RuntimeError("Downloaded bytes changed before digest-checked consumption.")
+    return data
 
 
 def install_xwin(binary_bytes: bytes, executable: Path, expected_version: str, backup_dir: Path) -> str:
@@ -162,7 +172,8 @@ def main() -> None:
     provenance.mkdir(exist_ok=True)
 
     archive = cache / "bootstrap" / Path(urllib.parse.urlparse(tool["url"]).path).name
-    blob = download(tool["url"], archive, tool["sha256"])
+    blob = download(tool["url"], archive, tool["sha256"], maximum_bytes=ARCHIVE_MAXIMUM,
+                    allowed_origins=("https://github.com", "https://release-assets.githubusercontent.com"))
     with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as bundle:
         binary = [item for item in bundle.getmembers() if item.isfile() and Path(item.name).name == "xwin"]
         if len(binary) != 1:
@@ -178,7 +189,9 @@ def main() -> None:
         f"https://aka.ms/vs/{inputs['manifest_version']}/stable/channel"
     )
     channel_path = provenance / ("manifest_" + inputs["manifest_version"] + ".json")
-    channel_bytes = download(channel_url, channel_path, inputs["channel_manifest_sha256"])
+    channel_bytes = download(channel_url, channel_path, inputs["channel_manifest_sha256"],
+                             maximum_bytes=CHANNEL_MAXIMUM,
+                             allowed_origins=("https://aka.ms", "https://download.visualstudio.microsoft.com"))
     channel = json.loads(channel_bytes)
     if str(channel["info"].get("productMilestoneIsPreRelease")).lower() != "false":
         raise RuntimeError("Refusing a preview Microsoft channel manifest.")
@@ -191,17 +204,16 @@ def main() -> None:
     if payload["sha256"].lower() != declared.lower():
         raise RuntimeError("Package-manifest declaration differs from policy.")
     package_path = cache / "dl" / ("pkg_manifest_" + payload["sha256"].lower() + ".vsman")
-    packages = json.loads(download(payload["url"], package_path, inputs["package_manifest_sha256"]))
+    packages = json.loads(download(payload["url"], package_path, inputs["package_manifest_sha256"],
+                                   maximum_bytes=PACKAGE_MAXIMUM,
+                                   allowed_origins=("https://download.visualstudio.microsoft.com",)))
 
-    # Retain the current catalog-linked terms as well as xwin's licence notices.
-    # Microsoft's terms are separate from xwin's MIT/Apache licences.
-    terms_page = download(inputs["terms_url"], provenance / "microsoft-terms.html").decode("utf-8")
-    encoded = re.search(r"https%3A%2F%2F[^\s\"'<>]+\.docx", terms_page)
-    if not encoded:
-        raise RuntimeError("Could not identify the current Microsoft terms document.")
-    terms_url = urllib.parse.unquote(encoded.group())
+    # Terms are a reviewed URL/content pair. Mutable HTML supplies no authority
+    # for another outbound request. The old terms_url field is provenance only.
+    terms_url = inputs["terms_document_url"]
     terms_path = provenance / "microsoft-buildtools-terms.docx"
-    download(terms_url, terms_path, inputs["terms_document_sha256"])
+    download(terms_url, terms_path, inputs["terms_document_sha256"], maximum_bytes=TERMS_MAXIMUM,
+             allowed_origins=("https://visualstudio.microsoft.com",))
 
     splat = cache / "splat"
     command = [str(executable), "--accept-license", "--cache-dir", str(cache),

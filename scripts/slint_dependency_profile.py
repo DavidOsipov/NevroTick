@@ -55,7 +55,7 @@ import re
 
 # Exact private build/test cohort. Source, role and primary-grant evidence is
 # recorded in S0.5; supplemental conveyance obligations remain explicitly open.
-REVIEWED_POLICY_SHA256: str | None = "474038ae9039940a7d3e5d76ebd603abbbf75891e53131827cd46820e7a48239"
+REVIEWED_POLICY_SHA256: str | None = "29f6a647b6038bdbbdc2bf407875a43af03257382821f13bda174e6147186b88"
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 TARGETS = (HOST_TARGET, WINDOWS_TARGET)
@@ -75,7 +75,8 @@ PATCH_PRESERVED_FILES = {"Cargo.toml.orig": "bca09dcf4b245bf5c27996374f6324da85b
                          "LICENSE-APACHE": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
                          ".cargo_vcs_info.json": "8eb3c99e9b7fe4cd3bd4757137992ba7bd023d096a3a38b54ba6d9aa7dcd8f4e"}
 # Second exact source substitution: Windows GUI-normal dependency only. It adds
-# no standalone package scope, feature expansion or Linux compilation grant.
+# no standalone package scope or Linux compilation grant. The subclass repair's
+# one reviewed Windows Threading feature enforces the existing owner-thread rule.
 ACCESSKIT_NAME = "accesskit_windows"
 ACCESSKIT_ID = "accesskit_windows@0.34.0"
 ACCESSKIT_PATH = "third-party/accesskit_windows"
@@ -90,7 +91,7 @@ ACCESSKIT_UPSTREAM = {'name': 'accesskit_windows',
  'upstream_checksum': '106c2b961215864d1c2e703ee63269c25c4e80a577ffb2c1017b9c17dcdf83a1',
  'upstream_files_sha256': '7b5aa35d98dbf1c4ba0d311f591de9486000b84f97190462de4266542d0306e7',
  'upstream_revision': 'c88605b96d04431f9c3c792464a0f2f253480e94'}
-ACCESSKIT_MODIFIED_FILES = {'Cargo.toml', 'NEVROTICK-PATCH.md', 'src/lib.rs', 'src/node.rs', 'src/range_state.rs', 'src/text.rs', 'src/value_input.rs'}
+ACCESSKIT_MODIFIED_FILES = {'Cargo.toml', 'NEVROTICK-PATCH.md', 'src/lib.rs', 'src/node.rs', 'src/range_state.rs', 'src/subclass.rs', 'src/text.rs', 'src/value_input.rs', 'tests/subclass_lifecycle_harness.rs'}
 ACCESSKIT_PRESERVED_FILES = {'.cargo_vcs_info.json': '7b556e30d8d54e863f20727b9547512b6955849fc5d6c1819b01301c8a0bd764',
  'CHANGELOG.md': 'a30775fb0f1a725f3e001db5182e8b88a7a39c6b4e4b6c0e07e02cf38432b1e3',
  'Cargo.lock': 'a45d3595200859d8a401238de180c1b2b6f749a7ec8c06ef44c95a5542663bb6',
@@ -105,7 +106,6 @@ ACCESSKIT_PRESERVED_FILES = {'.cargo_vcs_info.json': '7b556e30d8d54e863f20727b95
  'src/adapter.rs': '6519a7e59a380c8afadca814fd998d0697e91ad8be94da8e11ac8e5580d47edf',
  'src/context.rs': 'd67198d243aafe1e8940a6642765d66ce17fbb13e23f98d9e09d99d9400c09ae',
  'src/filters.rs': '744374b547065b153123c80028f129f5c6bb53052660205e1a2f231c3e169f64',
- 'src/subclass.rs': '69bb742d5451f2cff1c2110e77782948cb751aaad3302c5b1453ebf8b3d20a9e',
  'src/tests/mod.rs': '5ea818811560d2af26cade33f7ec162c5f718ee62b2c9b3dd3dc822677d30409',
  'src/tests/simple.rs': '8bd3eb20e258f2a9d5379671f5c3b4121623a66a95f6acfa9f70412323c87691',
  'src/tests/subclassed.rs': '0987f1d442d1b57657f17fac6a9623ae012603531f47afcb31ff6ca73cb8e932',

@@ -1774,10 +1774,33 @@ For first setup, select new external destinations and run acquisition separately
 
 ```sh
 python3 -B scripts/prepare-product.py --vendor-dir /path/to/new-vendor --configure --scratch-root /path/to/build-scratch
-python3 -B scripts/refresh-product-advisories.py --cargo-home /path/to/new-metadata --receipt /path/to/new-metadata-receipt.json
+python3 -B scripts/refresh-product-advisories.py --acquisition-root /path/to/private-quota-mount --cargo-home /path/to/new-metadata --receipt /path/to/new-metadata-receipt.json
 python3 -B scripts/verify.py --lane dependencies --advisory-receipt /path/to/new-metadata-receipt.json
 python3 -B scripts/verify.py
 ```
+
+Advisory acquisition now requires a caller-provisioned, empty, private dedicated
+filesystem with total capacity at most 512 MiB and 16,384 inodes. The script
+checks actual capacity before starting its writer; it never mounts or elevates.
+CI owns its temporary quota mount and cleanup. Metadata bodies, namespaces,
+receipts and exported copies have separate finite admission limits; a timeout
+alone is not a storage quota. Existing snapshots remain usable only after bounded
+content, lockfile and freshness checks. No fresh fetch or native qualification is
+implied by a helper test.
+
+[`bounded_download.py`](scripts/bounded_download.py) owns streamed setup/CI byte
+limits, HTTPS redirect-origin admission and digest-before-publication. The xwin
+terms request uses the fixed policy URL/hash pair, and consumers recheck their
+actual immutable bytes. The Windows PowerShell companion rejects redirects and
+requires timeout-capable body streams; its changed behavior still needs native
+qualification. These helpers perform no installation or security-policy change.
+
+The actual AccessKit subclass's std-only facade controls have a separate entry:
+`python3 -B scripts/verify-accesskit-subclass.py --toolchain-dir /path/to/pinned-toolchain --output-dir /path/to/new-external-result`.
+It uses the existing admitted tools and isolated runner, checks discovered and
+executed tests, and supplies no Linux AccessKit backend or native Windows result.
+The [imported-findings record](tasks/codeql-cloud-handoff.md#imported-full-repository-findings--9-november-2026)
+retains source results and remaining Windows/metric gates.
 
 `prepare-product.py` verifies bounded archives and their reviewed extracted-file
 maps against the complete current [schema-3 dependency policy](policy/ui-m0-dependencies.json)

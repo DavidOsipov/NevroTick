@@ -67,10 +67,20 @@ jobs:
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_slint_linux_sdk.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_prepare_product.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_refresh_product_advisories.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_advisory_snapshot_admission.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_bounded_download.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_xwin_setup.py -v
       - name: Check native keyboard and IME source custody
         run: python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_native_input_source.py -v
       - name: Acquire the pinned compiler in private runner storage
         run: python3 -B .github/security/prepare_rust.py
+      - name: Exercise the actual AccessKit subclass through the portable facade
+        env:
+          ACCESSKIT_CONTROLS: ${{ runner.temp }}/accesskit-subclass-controls
+        run: |
+          python3 -B scripts/verify-accesskit-subclass.py \
+            --toolchain-dir "${RUSTUP_HOME}/toolchains/1.99.1-x86_64-unknown-linux-gnu" \
+            --output-dir "${ACCESSKIT_CONTROLS}"
       - name: Acquire the reviewed vendor bytes without executing package code
         env:
           VENDOR_DIR: ${{ runner.temp }}/ui-m0-vendor
@@ -78,18 +88,29 @@ jobs:
       - name: Acquire pinned test and dependency tools and verify before execution
         working-directory: ${{ runner.temp }}
         run: |
-          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
-            --connect-timeout 20 --max-time 180 --retry 2 \
+          download_pinned() {
+            local attempt
+            for attempt in 1 2 3; do
+              if timeout --kill-after=5s 180s python3 -B "${GITHUB_WORKSPACE}/scripts/bounded_download.py" \
+                --url "$1" --destination "$2" --sha256 "$3" --maximum-bytes 33554432 \
+                --allowed-origin https://github.com \
+                --allowed-origin https://release-assets.githubusercontent.com; then
+                return 0
+              fi
+              if [[ "${attempt}" != 3 ]]; then sleep 2; fi
+            done
+            return 1
+          }
+          download_pinned \
             'https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-0.9.150/cargo-nextest-0.9.150-x86_64-unknown-linux-gnu.tar.gz' \
-            --output nextest.tar.gz
+            nextest.tar.gz b0959bc64232974224cf9fb22c915845398c0e8668fa7831eb5b43fb1eef781f
           echo 'b0959bc64232974224cf9fb22c915845398c0e8668fa7831eb5b43fb1eef781f  nextest.tar.gz' | sha256sum --check --strict
           mkdir nextest-tool
           tar --extract --gzip --file nextest.tar.gz --directory nextest-tool cargo-nextest
           echo '62dcc4348e189f5fbd5881f6b753c59d62f2e664b28c6357898644288d703c02  nextest-tool/cargo-nextest' | sha256sum --check --strict
-          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
-            --connect-timeout 20 --max-time 180 --retry 2 \
+          download_pinned \
             'https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz' \
-            --output deny.tar.gz
+            deny.tar.gz 9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f
           echo '9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f  deny.tar.gz' | sha256sum --check --strict
           mkdir deny-tool
           tar --extract --gzip --file deny.tar.gz --directory deny-tool --strip-components=1 \
@@ -101,7 +122,25 @@ jobs:
           METADATA_RECEIPT: ${{ runner.temp }}/ui-m0-metadata.json
           DENY_BINARY: ${{ runner.temp }}/deny-tool/cargo-deny
         run: |
+          metadata_quota=$(mktemp -d "${RUNNER_TEMP}/ui-m0-metadata-quota.XXXXXX")
+          cleanup_metadata_quota() {
+            local status=$?
+            if sudo umount -- "${metadata_quota}"; then
+              if ! rmdir -- "${metadata_quota}"; then
+                if [[ "${status}" == 0 ]]; then status=1; fi
+              fi
+            else
+              if [[ "${status}" == 0 ]]; then status=1; fi
+            fi
+            exit "${status}"
+          }
+          quota_uid=$(id -u)
+          quota_gid=$(id -g)
+          sudo mount -t tmpfs -o "size=512m,nr_inodes=16384,nodev,nosuid,noexec,mode=700,uid=${quota_uid},gid=${quota_gid}" \
+            tmpfs "${metadata_quota}"
+          trap cleanup_metadata_quota EXIT
           python3 -B scripts/refresh-product-advisories.py \
+            --acquisition-root "${metadata_quota}" \
             --cargo-home "${METADATA_HOME}" --receipt "${METADATA_RECEIPT}" \
             --deny "${DENY_BINARY}" \
             --toolchain-dir "${RUSTUP_HOME}/toolchains/1.99.1-x86_64-unknown-linux-gnu"

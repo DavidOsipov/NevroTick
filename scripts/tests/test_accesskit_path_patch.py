@@ -32,7 +32,7 @@ def accesskit_record():
             "upstream_revision": "c88605b96d04431f9c3c792464a0f2f253480e94",
             "files_sha256": "4" * 64,
             "modified_files_sha256": {name: "5" * 64 for name in
-                ("Cargo.toml", "NEVROTICK-PATCH.md", "src/lib.rs", "src/node.rs", "src/range_state.rs", "src/text.rs", "src/value_input.rs")}}
+                ("Cargo.toml", "NEVROTICK-PATCH.md", "src/lib.rs", "src/node.rs", "src/range_state.rs", "src/subclass.rs", "src/text.rs", "src/value_input.rs", "tests/subclass_lifecycle_harness.rs")}}
 
 
 def two_patch_policy():
@@ -81,6 +81,8 @@ class AccessKitPathPatchControls(unittest.TestCase):
             lambda p: p["patched_packages"][1].update(checksum="0" * 64),
             lambda p: p["patched_packages"][1]["modified_files_sha256"].pop("src/value_input.rs"),
             lambda p: p["patched_packages"][1]["modified_files_sha256"].pop("src/range_state.rs"),
+            lambda p: p["patched_packages"][1]["modified_files_sha256"].pop("src/subclass.rs"),
+            lambda p: p["patched_packages"][1]["modified_files_sha256"].pop("tests/subclass_lifecycle_harness.rs"),
         ):
             changed = copy.deepcopy(self.policy)
             mutate(changed)
@@ -213,7 +215,7 @@ class AccessKitPathPatchControls(unittest.TestCase):
                 record["modified_files_sha256"] = {name: files[name] for name in record["modified_files_sha256"]}
 
             refresh()
-            self.assertEqual(len(VERIFY.admit_patched_source(root, record)), 27)
+            self.assertEqual(len(VERIFY.admit_patched_source(root, record)), 28)
             for name in ("LICENSE-MIT", "LICENSE-APACHE", "LICENSE.chromium", "LICENSE-GPL-3.0-only", "Cargo.toml.upstream", "Cargo.lock", "src/adapter.rs"):
                 original = (directory / name).read_bytes()
                 (directory / name).write_bytes(original + b"\nchanged\n")
@@ -227,6 +229,17 @@ class AccessKitPathPatchControls(unittest.TestCase):
             refresh()
             with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "manifest may only change"):
                 VERIFY.admit_patched_source(root, record)
+            manifest.write_text(healthy)
+            refresh()
+            VERIFY.admit_patched_source(root, record)
+            for changed_features in (
+                healthy.replace('    "Win32_System_Threading",\n', ''),
+                healthy.replace('    "Win32_System_Threading",\n', '    "Win32_System_Threading",\n    "Win32_System_Registry",\n'),
+            ):
+                manifest.write_text(changed_features)
+                refresh()
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "reviewed owner-thread feature"):
+                    VERIFY.admit_patched_source(root, record)
             manifest.write_text(healthy)
             refresh()
             VERIFY.admit_patched_source(root, record)

@@ -5,6 +5,12 @@ This is a continuation guide, not a second implementation plan. The
 [S0.5 task](s0.5-ui-comparison.md) owns candidate history and evidence.
 Remote review: [PR10](https://github.com/DavidOsipov/NevroTick/pull/10).
 
+The [9 November imported-findings repair](codeql-cloud-handoff.md#imported-full-repository-findings--9-november-2026)
+adds process-owned AccessKit subclass custody and standalone actual-module facade
+controls. Reuse that exact source/evidence chain; this memory-safety correction
+does not activate D1–D3 or establish native USER32/UIPI/UIA, resource-retirement,
+critical-file metric or release qualification.
+
 ## Read first
 
 Read the current checkout's `AGENTS.md` and [documentation guide](../docs/README.md),

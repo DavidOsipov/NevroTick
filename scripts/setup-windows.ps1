@@ -24,6 +24,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
+. (Join-Path $PSScriptRoot 'bounded-download.ps1')
 if ($env:OS -ne 'Windows_NT' -or $env:PROCESSOR_ARCHITECTURE -ne 'AMD64') {
     throw 'Run this script in native x64 Windows PowerShell.'
 }
@@ -46,12 +47,8 @@ function Invoke-Checked {
 
 function Get-WebText {
     param([string]$Uri)
-    $content = (Invoke-WebRequest -UseBasicParsing -Uri $Uri).Content
-    # Windows PowerShell returns byte[] for Rust's octet-stream manifests.
-    if ($content -is [byte[]]) {
-        return [Text.Encoding]::UTF8.GetString($content)
-    }
-    return [string]$content
+    $bytes = Invoke-BoundedHttpsDownload -Uri $Uri -MaximumBytes 4096
+    return [Text.Encoding]::UTF8.GetString($bytes)
 }
 
 $userPathBefore = [Environment]::GetEnvironmentVariable('Path', 'User')
@@ -83,7 +80,7 @@ if ($installRustup) {
         throw 'Published Rustup SHA256 differs from the selected digest. Review version and checksum together.'
     }
     if (-not (Test-Path -LiteralPath $installer) -or (Get-FileHash -Algorithm SHA256 $installer).Hash -ne $RustupSha256) {
-        Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $installer
+        Invoke-BoundedHttpsDownload -Uri $url -Destination $installer -MaximumBytes 33554432 -ExpectedSha256 $RustupSha256
     }
     if ((Get-FileHash -Algorithm SHA256 $installer).Hash -ne $RustupSha256) {
         throw 'Rustup installer SHA256 mismatch; installer was not executed.'

@@ -13,7 +13,9 @@ i32::MIN move magnitude. Both SetValue paths retain context, node and disabled
 checks before value admission; text movement retains its existing range/context
 guards. The portable value_input helper is the same source included
 by the Windows adapter and the existing GUI test scope. There is no
-standalone AccessKit compilation or test scope. No native run has been made.
+standalone AccessKit Cargo package scope. The later subclass-module facade below
+is a separate std-only control, with no Linux AccessKit backend. No native run
+has been made.
 
 The pointer reader relies on the COM/PCWSTR ABI caller to provide readable,
 initialized, aligned, stable memory through a terminator or the bounded scan.
@@ -62,3 +64,56 @@ range_state.rs helpers are
 GPL-3.0-only and the unmodified GPLv3 text is retained in LICENSE-GPL-3.0-only.
 The composite Cargo license records these distinct components; it does not
 relicense third-party material or withdraw the original Apache alternative.
+
+## Subclass callback custody correction — 9 November 2026
+
+The selected accesskit_winit 0.33.2 Windows adapter calls SubclassingAdapter::new,
+so this is a selected dependency path, not an unused example. The original
+AccessKitAdapter HWND property could select a raw Rust address, and the original
+numeric WM_NCDESTROY flag could suppress uninstall while its callback remained
+installed. Microsoft documents that equal-integrity peers can call SetProp and
+SendMessage against the window; native peer-process reproduction remains open.
+
+The callback now selects only a registration in its owner thread's process-owned
+registry. A cloned registration plus an upgraded Rc retains the actual adapter
+through the complete current callback, including reentrant owner Drop. HWND
+properties supply no pointer, registration identity or lifetime fact. Rc makes
+the public adapter thread-affine; construction checks the native HWND owner
+thread before installing, using the additional Win32_System_Threading feature
+of the existing windows dependency. No package version/dependency is added.
+
+Uninstall always considers the actual chain rather than a message-derived
+terminal flag. It removes only its exact Rc registration generation and restores
+the predecessor only when its procedure is the current head. WM_NCDESTROY can
+prompt that same checked detach; the message does not prove window destruction.
+A forged message may therefore detach accessibility from a live window, but it
+cannot justify freeing an installed callback target. Updates after a successful
+detach return no events.
+
+When a later in-process subclass still owns the chain head, Drop deactivates and
+releases the adapter/handlers while retaining only forwarding metadata and a
+Weak control block. This avoids clobbering the later procedure or leaving a
+freed callback target. Only trusted adapter construction inserts registry entries;
+peer messages insert none. Retired forwarding records are limited by those owned
+window chains and are pruned after an owner-thread observation of an invalid
+HWND, or released with the owner thread. In-flight callbacks retain their own
+Rc until return. A still-registered HWND, including ambiguous handle reuse
+beneath a later subclass, refuses another installation rather than replacing its
+predecessor or letting an old owner remove a new generation. This does not claim
+immediate retirement of another subclass's chain or proven native cleanup.
+
+The GPL-3.0-only tests/subclass_lifecycle_harness.rs includes this exact source
+module with inert windows/accesskit facades. Its paired controls distinguish
+wrong-owner selection through another live object's property and skipped teardown
+after a forged destroy, without invoking a freed pointer. Additional controls
+cover normal focus/drop, later-subclass forwarding, duplicate construction,
+invalid HWNDs, detach/reuse generations, owner-thread checks and reentrant Drop.
+Those controls exercise Rust registration/lifetime logic, not USER32, UIPI,
+COM/UIA, window-handle generation or Windows scheduling. Configured compiler,
+source-policy and native-memory/native-UI qualification remain coordinator-owned;
+no native result or broader accessibility pass follows from preparing the harness.
+
+Primary contracts: [SetPropW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setpropw),
+[SendMessageW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendmessagew),
+[SetWindowLongPtrW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptrw),
+and [subclass chaining](https://learn.microsoft.com/en-us/windows/win32/controls/subclassing-overview).

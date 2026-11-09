@@ -1,12 +1,15 @@
 """Challenge metadata acquisition custody without network, Cargo or executable fixtures."""
 import contextlib
+import fcntl
 import hashlib
 import importlib.util
 import io
 import json
 import os
 from pathlib import Path
+import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -37,23 +40,32 @@ class MetadataAcquisitionControls(unittest.TestCase):
                   "rust": {"linux_binary_sha256": compiler_hashes}}
         (self.root / "policy/tool-manifest.json").write_text(json.dumps(policy))
         self.home = self.base / "metadata"
+        self.quota = self.base / "quota"
+        self.quota.mkdir(mode=0o700)
         self.receipt = self.base / "receipt.json"
         self.arguments = ["refresh-product-advisories.py", "--cargo-home", str(self.home),
+                          "--acquisition-root", str(self.quota),
                           "--receipt", str(self.receipt), "--deny", str(self.deny),
                           "--toolchain-dir", str(self.toolchain)]
 
     def acquisition(self, command, **kwargs):
+        transient = Path(kwargs["environment"]["CARGO_HOME"])
+        self.assertTrue(transient.is_relative_to(self.quota))
+        self.assertFalse(self.home.exists(), "No final export before acquisition terminates")
         for name in ("advisory-dbs/reviewed-db/advisory.toml", "registry/index/cache"):
-            path = self.home / name
+            path = transient / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("controlled public metadata")
-        self.assertEqual(set(kwargs["environment"]), {"PATH", "CARGO_HOME", "RUSTC", "LANG"})
+        self.assertEqual(set(kwargs["environment"]), {"PATH", "CARGO_HOME", "RUSTC", "LANG", "TMPDIR"})
+        self.assertTrue(Path(kwargs["environment"]["TMPDIR"]).is_relative_to(self.quota))
         self.assertEqual(command, [str(self.deny), "--locked", "fetch", "db", "index"])
         return {"command": command, "exit_code": 0, "failure": None, "output": "synthetic acquisition observation"}
 
-    def invoke(self, effect=None):
+    def invoke(self, effect=None, quota_error=None):
         with (patch.object(REFRESH, "ROOT", self.root), patch("sys.argv", self.arguments),
-              patch.object(REFRESH.ENV, "run", side_effect=effect or self.acquisition) as run,
+              patch.object(REFRESH.SNAPSHOT, "quota_root", side_effect=quota_error,
+                           return_value={"bytes": 512 * 1024 * 1024, "inodes": 16384, "device": 1}),
+              patch.object(REFRESH.SNAPSHOT, "run", side_effect=effect or self.acquisition) as run,
               contextlib.redirect_stdout(io.StringIO()) as output):
             status = REFRESH.main()
         return status, run, output.getvalue()
@@ -118,7 +130,7 @@ class MetadataAcquisitionControls(unittest.TestCase):
     def test_linked_metadata_is_not_followed_into_receipt(self):
         def linked(command, **kwargs):
             result = self.acquisition(command, **kwargs)
-            (self.home / "unexpected").symlink_to(self.root / "Cargo.lock")
+            (Path(kwargs["environment"]["CARGO_HOME"]) / "unexpected").symlink_to(self.root / "Cargo.lock")
             return result
         status, _, output = self.invoke(linked)
         self.assertEqual(status, 1)
@@ -130,6 +142,216 @@ class MetadataAcquisitionControls(unittest.TestCase):
             status, run, _ = self.invoke()
         self.assertEqual(status, 0)
         self.assertNotIn("NEVROTICK_SYNTHETIC_CREDENTIAL", run.call_args.kwargs["environment"])
+
+    def test_unbounded_acquisition_filesystem_refuses_before_execution(self):
+        status, run, output = self.invoke(quota_error=ValueError("filesystem byte or inode capacity"))
+        self.assertEqual(status, 1)
+        self.assertIn("capacity", output)
+        run.assert_not_called()
+        self.assertFalse(self.home.exists())
+        self.assertFalse(self.receipt.exists())
+
+    def test_failed_export_removes_only_the_new_partial_snapshot(self):
+        unrelated = self.base / "preserve"
+        unrelated.write_bytes(b"unrelated")
+        def failed(source, destination, expected):
+            (destination / "partial").write_bytes(b"partial")
+            raise ValueError("controlled export failure")
+        with patch.object(REFRESH.SNAPSHOT, "export", side_effect=failed):
+            status, run, output = self.invoke()
+        self.assertEqual(status, 1)
+        self.assertIn("controlled export failure", output)
+        run.assert_called_once()
+        self.assertFalse(self.home.exists())
+        self.assertFalse(self.receipt.exists())
+        self.assertEqual(list(self.quota.iterdir()), [])
+        self.assertEqual(unrelated.read_bytes(), b"unrelated")
+
+    def test_failed_fetch_clears_only_owned_transient_metadata(self):
+        def failed(command, **kwargs):
+            self.acquisition(command, **kwargs)
+            return {"command": command, "exit_code": 17, "failure": None, "output": "refusal"}
+        status, _, _ = self.invoke(failed)
+        self.assertEqual(status, 1)
+        self.assertEqual(list(self.quota.iterdir()), [])
+        self.assertFalse(self.home.exists())
+        self.assertFalse(self.receipt.exists())
+
+    def test_cleanup_failure_retains_the_first_fetch_failure(self):
+        def failed(command, **kwargs):
+            return {"command": command, "exit_code": 17, "failure": None,
+                    "output": "first controlled fetch failure"}
+        def cleanup_failure(directory):
+            # Actual TemporaryDirectory cleanup detaches this finalizer before
+            # removal; preserve that behavior in the controlled removal fault.
+            directory._finalizer.detach()
+            raise OSError("secondary controlled cleanup failure")
+        with patch.object(REFRESH.tempfile.TemporaryDirectory, "cleanup", autospec=True,
+                          side_effect=cleanup_failure):
+            status, _, output = self.invoke(failed)
+        self.assertEqual(status, 1)
+        self.assertIn("first controlled fetch failure", output)
+        self.assertIn("secondary controlled cleanup failure", output)
+        self.assertFalse(self.receipt.exists())
+        descriptor = os.open(self.quota, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        finally:
+            os.close(descriptor)
+
+    def test_oversized_snapshot_file_is_refused_before_content_reads(self):
+        self.home.mkdir()
+        oversized = self.home / "too-large"
+        with oversized.open("wb") as stream:
+            stream.truncate(64 * 1024 * 1024 + 1)
+        # The sparse extent proves metadata refusal without allocating its body.
+        with patch.object(Path, "read_bytes", return_value=b"not-read") as read:
+            with self.assertRaisesRegex(ValueError, "byte bound"):
+                REFRESH.inventory(self.home)
+        read.assert_not_called()
+
+    def test_snapshot_depth_is_refused_before_content_reads(self):
+        leaf = self.home
+        for _ in range(17):
+            leaf = leaf / "nested"
+        leaf.mkdir(parents=True)
+        (leaf / "record").write_bytes(b"bounded synthetic metadata")
+        with self.assertRaisesRegex(ValueError, "depth bound"):
+            REFRESH.inventory(self.home)
+
+
+class SnapshotBoundaryControls(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="product-metadata-boundary-")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.snapshot = self.root / "snapshot"
+        self.snapshot.mkdir()
+        self.owner = REFRESH.SNAPSHOT
+
+    def test_small_stable_tree_hashes_full_contents(self):
+        (self.snapshot / "a").write_bytes(b"alpha")
+        self.assertEqual(self.owner.inventory(self.snapshot), {"a": hashlib.sha256(b"alpha").hexdigest()})
+
+    def test_entry_and_aggregate_bounds_precede_content_hashing(self):
+        (self.snapshot / "a").write_bytes(b"alpha")
+        (self.snapshot / "b").write_bytes(b"beta")
+        for constant, maximum in (("MAX_ENTRIES", 1), ("MAX_TOTAL_BYTES", 8)):
+            with self.subTest(constant=constant), patch.object(self.owner, constant, maximum):
+                with patch.object(self.owner.CUSTODY, "digest") as digest:
+                    with self.assertRaisesRegex(ValueError, "bound"):
+                        self.owner.inventory(self.snapshot)
+                    digest.assert_not_called()
+
+    def test_path_budget_precedes_content_hashing(self):
+        (self.snapshot / "too-long").write_bytes(b"x")
+        with patch.object(self.owner, "MAX_PATH_BYTES", 4):
+            with self.assertRaisesRegex(ValueError, "path byte bound"):
+                self.owner.inventory(self.snapshot)
+
+    def test_fifo_and_linked_directory_are_refused_without_opening_contents(self):
+        os.mkfifo(self.snapshot / "fifo")
+        with self.assertRaisesRegex(ValueError, "linked or special"):
+            self.owner.inventory(self.snapshot)
+        (self.snapshot / "fifo").unlink()
+        (self.snapshot / "directory").symlink_to(self.root, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "linked or special"):
+            self.owner.inventory(self.snapshot)
+
+    def test_growth_or_replacement_during_body_read_is_refused(self):
+        (self.snapshot / "a").write_bytes(b"alpha")
+        original = self.owner.CUSTODY.digest
+        def mutation(path, maximum):
+            (self.snapshot / "later").write_bytes(b"later")
+            return original(path, maximum)
+        with patch.object(self.owner.CUSTODY, "digest", side_effect=mutation):
+            with self.assertRaisesRegex(ValueError, "changed during hashing"):
+                self.owner.inventory(self.snapshot)
+
+    def test_receipt_raw_bound_and_duplicate_fields(self):
+        receipt = self.root / "receipt"
+        receipt.write_bytes(b"123456789")
+        with patch.object(self.owner, "MAX_RECEIPT_BYTES", 8):
+            with self.assertRaisesRegex(ValueError, "byte bound"):
+                self.owner.read_receipt(receipt)
+        receipt.write_text('{"files":{},"files":{}}')
+        with self.assertRaisesRegex(ValueError, "Duplicate"):
+            self.owner.read_receipt(receipt)
+
+    def test_quota_requires_dedicated_backing_capacity(self):
+        self.snapshot.chmod(0o700)
+        with self.assertRaisesRegex(ValueError, "dedicated quota filesystem"):
+            self.owner.quota_root(self.snapshot)
+
+    def test_quota_uses_total_capacity_not_a_small_free_space_sample(self):
+        self.snapshot.chmod(0o700)
+        original = Path.stat
+        def distinct_parent(path, *args, **kwargs):
+            observed = original(path, *args, **kwargs)
+            if path == self.snapshot.parent:
+                return SimpleNamespace(st_dev=observed.st_dev + 1)
+            return observed
+        cases = (
+            (self.owner.MAX_TOTAL_BYTES, self.owner.MAX_ENTRIES, True),
+            (self.owner.MAX_TOTAL_BYTES + 1, self.owner.MAX_ENTRIES, False),
+            (self.owner.MAX_TOTAL_BYTES, self.owner.MAX_ENTRIES + 1, False),
+            (0, self.owner.MAX_ENTRIES, False),
+            (self.owner.MAX_TOTAL_BYTES, 0, False),
+        )
+        for byte_capacity, inode_capacity, accepted in cases:
+            capacity = SimpleNamespace(f_frsize=1, f_blocks=byte_capacity,
+                                       f_files=inode_capacity, f_bavail=1, f_favail=1)
+            with (self.subTest(bytes=byte_capacity, inodes=inode_capacity),
+                  patch.object(Path, "stat", distinct_parent),
+                  patch.object(self.owner.os, "statvfs", return_value=capacity)):
+                if accepted:
+                    self.assertEqual(self.owner.quota_root(self.snapshot)["bytes"], byte_capacity)
+                else:
+                    with self.assertRaisesRegex(ValueError, "capacity"):
+                        self.owner.quota_root(self.snapshot)
+
+
+class AcquisitionSupervisorControls(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="product-metadata-supervisor-")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.owner = REFRESH.SNAPSHOT
+
+    def run_child(self, code):
+        return self.owner.run([sys.executable, "-B", "-c", code], cwd=self.root,
+                              environment={"PATH": os.defpath, "LANG": "C.UTF-8"})
+
+    def test_healthy_command_is_collected_with_actual_exit(self):
+        result = self.run_child('print("healthy")')
+        self.assertEqual(result["exit_code"], 0)
+        self.assertIsNone(result["failure"])
+        self.assertEqual(result["output"], "healthy\n")
+
+    def test_output_budget_refuses_without_retaining_oversized_chunk(self):
+        with patch.object(self.owner, "MAX_OUTPUT_BYTES", 8):
+            result = self.run_child('print("x" * 32)')
+        self.assertEqual(result["failure"], "output budget exceeded")
+        self.assertLessEqual(len(result["output"]), 8)
+
+    def test_timeout_kills_and_reaps_owned_command(self):
+        with patch.object(self.owner, "MAX_SECONDS", 1):
+            result = self.run_child('import time; time.sleep(10)')
+        self.assertEqual(result["failure"], "wall timeout")
+        self.assertNotEqual(result["exit_code"], 0)
+
+    def test_per_file_hard_limit_reaches_real_write(self):
+        with patch.object(self.owner, "MAX_FILE_BYTES", 8):
+            result = self.run_child('from pathlib import Path; Path("bounded").write_bytes(b"x" * 32)')
+        self.assertNotEqual(result["exit_code"], 0)
+        self.assertLessEqual((self.root / "bounded").stat().st_size, 8)
+
+    def test_live_descendant_after_leader_exit_is_a_failed_group(self):
+        result = self.run_child(
+            'import os,time; p=os.fork(); '
+            'os._exit(0) if p else None; os.close(1); os.close(2); time.sleep(10)')
+        self.assertEqual(result["exit_code"], 0)
+        self.assertEqual(result["failure"], "descendant processes outlived command")
 
 
 if __name__ == "__main__":

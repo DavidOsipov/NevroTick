@@ -35,6 +35,9 @@ SLINT_SPEC.loader.exec_module(SLINT)
 SDK_SPEC = importlib.util.spec_from_file_location("slint_linux_sdk", ROOT / "scripts/slint_linux_sdk.py")
 SDK = importlib.util.module_from_spec(SDK_SPEC)
 SDK_SPEC.loader.exec_module(SDK)
+ADVISORY_SPEC = importlib.util.spec_from_file_location("advisory_snapshot", ROOT / "scripts/advisory_snapshot.py")
+ADVISORY = importlib.util.module_from_spec(ADVISORY_SPEC)
+ADVISORY_SPEC.loader.exec_module(ADVISORY)
 PACKAGE = "nevrotick-ui"
 MEMBER = "crates/nevrotick-ui"
 PACKAGES = {PACKAGE: MEMBER, "ntp-wire": "crates/ntp-wire", "time-domain": "crates/time-domain",
@@ -70,6 +73,7 @@ SOURCE_FILES = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rustfmt.toml
                 "deny.toml", ".cargo/config.toml", ".config/nextest.toml")
 CHECKER_FILES = ("scripts/verify.py", "scripts/check-environment.py", "scripts/check-strict.py",
                  "scripts/slint_dependency_profile.py", "scripts/slint_linux_sdk.py",
+                 "scripts/advisory_snapshot.py", "tools/crypto-aes-siv-witness/fuzz/input_custody.py",
                  "scripts/tests/test_verify_vendor_admission.py")
 UI_TEXT_CHECKER_FILES = ("scripts/check-ui-text.py", "scripts/check_ui_text_coverage.py",
                          "scripts/ui_source_io.py",
@@ -321,8 +325,13 @@ def admit_patched_source(root: Path, record: dict) -> dict[str, str]:
     if not is_spin:
         upstream = tomllib.loads((directory / "Cargo.toml.upstream").read_text())
         upstream["package"]["license"] = record["license"]
+        if record["name"] == SLINT.ACCESSKIT_NAME:
+            # The checked HWND owner-thread guard uses this existing dependency
+            # feature only; every other manifest field retains its upstream value.
+            features = upstream["dependencies"]["windows"]["features"]
+            upstream["dependencies"]["windows"]["features"] = sorted([*features, "Win32_System_Threading"])
         if manifest != upstream:
-            raise ENV.Incomplete("The AccessKit manifest may only change its exact composite source licence.")
+            raise ENV.Incomplete("The AccessKit manifest may only change its exact composite source licence and reviewed owner-thread feature.")
     else:
         if (set(manifest) != {"package"} or manifest["package"].get("name") != SLINT.PATCH_NAME
                 or manifest["package"].get("version") != "0.1.1"
@@ -1350,15 +1359,21 @@ def admit_advisories(receipt_path: Path | None, now: float, expected_lock: str) 
     """Require the separately acquired complete metadata snapshot and its freshness."""
     if receipt_path is None:
         raise ENV.Incomplete("Dependency checks require a current acquisition receipt.")
-    receipt = json.loads(receipt_path.read_text())
+    try:
+        receipt = ADVISORY.read_receipt(receipt_path)
+    except (OSError, ValueError) as error:
+        raise ENV.Incomplete(str(error)) from error
     if receipt.get("lockfile_sha256") != expected_lock:
         raise ENV.Incomplete("Advisory/index acquisition identifies a different product lockfile.")
     acquired = receipt.get("acquired_unix")
     if (isinstance(acquired, bool) or not isinstance(acquired, (int, float))
             or not 0 <= now - acquired <= 86400):
         raise ENV.Incomplete("Advisory/index acquisition is missing, future-dated or older than 24 hours.")
-    cargo_home = Path(receipt["cargo_home"]).resolve(strict=True)
-    files = inventory(cargo_home)
+    cargo_home = Path(receipt["cargo_home"])
+    try:
+        files = ADVISORY.inventory(cargo_home)
+    except (OSError, ValueError) as error:
+        raise ENV.Incomplete(str(error)) from error
     if (not files or files != receipt.get("files") or "config" in files or "config.toml" in files
             or not any(name.startswith("advisory-dbs/") for name in files)
             or not any(name.startswith("registry/index/") for name in files)):
@@ -1400,16 +1415,15 @@ def execute(root: Path, args, report: dict) -> None:
         raise ENV.Incomplete("Product scratch must be outside the checkout.")
     advisory = admit_advisories(args.advisory_receipt, time.time(), source_identity["Cargo.lock"]) if args.lane == "dependencies" else None
     if advisory:
-        report["advisory_receipt_sha256"] = sha256(args.advisory_receipt)
+        report["advisory_receipt_sha256"] = ADVISORY.receipt_digest(args.advisory_receipt)
     with tempfile.TemporaryDirectory(prefix="nevrotick-product-", dir=scratch) as temporary:
         temporary = Path(temporary)
         source, work = temporary / "source", temporary / "work"
         source.mkdir()
         work.mkdir()
         if advisory:
-            shutil.copytree(advisory[0], work / "cargo-home")
-            if inventory(work / "cargo-home") != advisory[1]:
-                raise ENV.Incomplete("Advisory/index snapshot changed during copying.")
+            (work / "cargo-home").mkdir()
+            ADVISORY.export(advisory[0], work / "cargo-home", advisory[1])
         else:
             (work / "cargo-home").mkdir()
         (work / "cargo-home/config.toml").write_text(
@@ -1526,7 +1540,7 @@ def execute(root: Path, args, report: dict) -> None:
             raise ENV.Incomplete("Microsoft library inputs changed during product verification.")
         if advisory:
             if (admit_advisories(args.advisory_receipt, time.time(), source_identity["Cargo.lock"]) != advisory
-                    or sha256(args.advisory_receipt) != report["advisory_receipt_sha256"]):
+                    or ADVISORY.receipt_digest(args.advisory_receipt) != report["advisory_receipt_sha256"]):
                 raise ENV.Incomplete("Advisory/index snapshot changed or expired during verification.")
             report["advisory_freshness"] = "separate acquisition receipt and snapshot verified; at most 24 hours old"
         report["status"] = "passed"

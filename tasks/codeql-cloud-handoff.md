@@ -316,3 +316,93 @@ is574398464 bytes; available5628305408 bytes was observed after deletion, before
 later build work. No new archive, compression, unregister or process stop occurred.
 Receipt `dependency-refresh-20261106-v1/codeql-derived-index-cleanup-v1.json`
 SHA256: `273510a445b4f87cdf9ea3e19a46dc48032bb45bc0ceed678896e0745e1d435d`.
+
+## Imported full-repository findings — 9 November 2026
+
+David supplied five findings observed at `6b947c5`; this repair starts from clean
+`fb57533ac0094e6f376ae314ea9a08ad641e86d4`. CSV input SHA256:
+`8365609c47be9d944fbf7dc3755fbc3c5194684914affa3e7b29d390d12fbfa3`.
+These are imported source findings, not a newly executed CodeQL scan. Coordinator
+owns integration, shared policy/workflows and compiler execution; complementary
+workers own the AccessKit, download and advisory boundaries. Formal work remains
+post-V1; the current Sandbox application-control block, S134, fuzz, storage and
+UI deferrals remain in force.
+
+| Imported occurrence suffix | Confirmed mechanism and source repair | Independent expected result |
+| --- | --- | --- |
+| `16baccac32171bfb1c7b3f4b` | AccessKit's callback used an externally mutable HWND property as a Rust pointer. Owner-thread registrations replace it; callback-held `Rc` retains state across reentrant Drop. | Replacing one window's property with another live owner's address cannot select the other owner. Normal focus and teardown still work. |
+| `63e6b7c74fb0e4d99ebdd8c0` | Numeric `WM_NCDESTROY` suppressed teardown. Removal now checks the actual registration, native owner thread and chain head; later subclasses retain state-free forwarding. | A forged message never authorizes freeing a still-addressable callback target. Drop, replacement generations, later chains and failures preserve safe custody. |
+| `2182802f85a15ac68451c386` | Setup/CI accepted unbounded response bodies before hashing. Python/PowerShell helpers stream within explicit limits, preserve digest/TLS checks and publish only after acceptance. | Missing/false length headers and oversize bodies cannot exceed the admitted body extent; failure preserves the previous destination and stops downstream extraction. |
+| `8a42e166996c147529486ce4` | Fresh advisory/index acquisition had no aggregate filesystem quota; inventory/receipt consumption was unbounded. Require a dedicated quota filesystem, bounded writer supervision and shared finite namespace/body/receipt/export custody. | Unbounded/nonprivate roots and excessive files, bytes, depth, linked/special or changing data refuse before acceptance; partial work cannot emit a valid receipt. |
+| `e8021239cf1bda9895a4782d` | Mutable terms HTML selected an unrestricted request URL. Xwin now requests only the reviewed policy-owned DOCX URL paired with its unchanged digest. | Hostile HTML cannot cause a new request authority; the pinned document remains usable. |
+
+The AccessKit threats require an allowed peer at equal/lower target integrity;
+Microsoft documents cross-process property changes under
+[SetPropW's UIPI rule](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setpropw).
+The safe old-source controls demonstrate wrong-owner selection and skipped
+teardown without dereferencing a freed object. They do not demonstrate a native
+peer-process exploit or privilege escalation. The repair adds only the existing
+Windows dependency's `Win32_System_Threading` feature and a checked owner-thread
+query; registry versions, lockfile and shipping roles remain unchanged. Exact
+derivative bytes and the expanded Windows feature row are re-admitted separately.
+
+Download controls use tiny synthetic responses, including the real setup entry
+point and its actual consumer. Review additionally reproduced a cache replacement
+between acquisition and consumer reopening; the immutable returned bytes now
+receive the expected hash check. Another review rejected the new PowerShell
+helper's assumption that Framework `ReadAsync` cancellation interrupts a pending
+body read. It now requires synchronous read-timeout support and checks elapsed
+time before/after reads. This is not a measured strict wall-time/native-completion
+guarantee; timeout-incapable streams fail closed. No Windows/PowerShell execution,
+installation, elevation, protection relaxation or host fallback occurred.
+
+CI archives retain their existing hashes, three-attempt limits and outer
+deadlines. Explicit body caps are 32 MiB for nextest, cargo-deny and Gitleaks,
+and 1 GiB for CodeQL's retained preparation. Official release metadata reports
+12,155,366 / 4,936,832 / 8,230,402 / 695,275,440 bytes respectively. This changes
+no CodeQL execution deferral. Xwin uses separate code-owned archive/catalog/terms
+ceilings; no mutable HTML expands its authority.
+
+Advisory acquisition requires total filesystem capacity ≤512 MiB and ≤16,384
+inodes, not merely sampled free space. The bounded consumer admits ≤64 MiB per
+file, ≤512 MiB in aggregate, depth16, paths1024 UTF-8 bytes and an 8-MiB receipt.
+The retained 1,550-file healthy snapshot remains within those bounds and matches
+its receipt, but belongs to a different standalone laboratory lockfile. It is
+not a current-main dependency admission pass. The caller owns the quota mount;
+CI prepares it and preserves a
+primary acquisition failure if cleanup also fails. Actual new quota-backed
+cargo-deny acquisition and inode/byte exhaustion have not been executed locally.
+
+Evidence is under the existing local maintenance root
+`/home/david_osipov/.local/share/nevrotick/security-findings-20261109-v1/`.
+The bounded actual-module facade runs on Linux with inert Win32/accesskit APIs;
+it does not compile a Linux AccessKit backend. Its maintained entry point is
+`scripts/verify-accesskit-subclass.py`, also wired into CI. The baseline projection
+executes only three safe controls; the unsafe old reentrant-lifetime cases are
+never run. Original controller/accounting failures remain recorded separately
+from intended behavioral RED. Native USER32/UIPI/UIA, actual HWND-generation and
+subclass-chain behavior, Application Verifier/PageHeap, resource retirement and
+the applicable critical-file coverage/mutation gates remain unqualified. A source
+repair and host facade pass do not close those Windows/release obligations.
+The restoration-failure control catches a Drop panic outside FFI; a restoration
+failure reached through `WM_NCDESTROY` can still abort at the extern boundary.
+General nested activation-state access also retains the pre-existing `RefCell`
+panic limitation. The reentrant Drop repair establishes neither of those broader
+reentrancy guarantees; retain them in the existing native/lifecycle review scope.
+
+**Integrated source result:** all five supplied mechanisms have causal repairs.
+The unchanged baseline projection passes the healthy control and fails both
+targeted AccessKit assertions; the repaired actual-module facade passes all
+13 discovered cases, including reentrant Drop, later-chain forwarding,
+constructor/restoration failures and detached update refusal. No ignored or
+filtered cases enter that count. Selected Python regression suites pass334
+distinct tests after correcting one stale fixture's exact file inventory; its
+original four errors remain in the receipt. The configured actionlint/ShellCheck/
+offline pedantic zizmor checks pass both workflows and their healthy/rejection
+controls. Both actual frozen Cargo metadata/tree target rows pass all20 commands;
+they establish the reviewed Windows feature delta, not compilation or advisory
+analysis. A controller initially selected the wrong tree-scope argument and then
+overselected an unmounted advisory executable; those setup failures remain
+separate from the successful graph commands. The current-lock fresh dependency
+row and actual Windows-target build/native/metric gates remain unfinished;
+no missing prerequisite was bypassed to execute package code.

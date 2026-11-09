@@ -965,6 +965,14 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
+**Owner-requested security repair — 9 November 2026:** the
+[five imported source findings](../../tasks/codeql-cloud-handoff.md#imported-full-repository-findings--9-november-2026)
+now have source repairs and bounded host/facade regression evidence. The child repairs
+AccessKit callback custody and setup/CI acquisition limits and authority;
+host/facade results remain distinct from held Windows and release qualification.
+Retain those gaps at the existing owners and return to the NTS preparation below.
+It creates no formal, native, fuzz, storage or UI-deferral waiver.
+
 **Completed N3 summary repair — 8 November 2026:** the affected critical-file
 qualification is recorded in the existing
 [final checkpoint repair](../../tasks/engine-transport-pilot.md#final-series-summary-checkpoint-repair--8-november-2026)

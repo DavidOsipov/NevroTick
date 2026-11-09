@@ -11,6 +11,7 @@ param([switch]$DownloadOnly, [switch]$ConfigureOnly)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
+. (Join-Path $PSScriptRoot 'bounded-download.ps1')
 if ($DownloadOnly -and $ConfigureOnly) { throw 'Select either DownloadOnly or ConfigureOnly.' }
 if ($env:OS -ne 'Windows_NT' -or [IntPtr]::Size -ne 8) {
     throw 'Use native x64 Windows PowerShell.'
@@ -121,7 +122,7 @@ foreach ($sid in @($owner, (New-Object Security.Principal.SecurityIdentifier('S-
 if (Test-Path -LiteralPath $directory) { throw 'Fresh setup directory unexpectedly exists.' }
 [IO.Directory]::CreateDirectory($directory, $security) | Out-Null
 $installer = Join-Path $directory 'winsdksetup.exe'
-Invoke-WebRequest -UseBasicParsing -Uri $pin.url -OutFile $installer -TimeoutSec 120
+Invoke-BoundedHttpsDownload -Uri $pin.url -Destination $installer -MaximumBytes 8388608 -ExpectedSha256 $pin.sha256
 if ((Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $pin.sha256) {
     throw "Installer hash mismatch; retained unexecuted download at $installer"
 }

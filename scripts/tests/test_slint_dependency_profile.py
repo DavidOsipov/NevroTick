@@ -108,7 +108,7 @@ def fixture_accesskit_patches():
          "upstream_revision": "c88605b96d04431f9c3c792464a0f2f253480e94", "files_sha256": "3" * 64,
          "modified_files_sha256": {name: "4" * 64 for name in
              ("Cargo.toml", "NEVROTICK-PATCH.md", "src/lib.rs", "src/node.rs", "src/range_state.rs",
-              "src/text.rs", "src/value_input.rs")}},
+              "src/subclass.rs", "src/text.rs", "src/value_input.rs", "tests/subclass_lifecycle_harness.rs")}},
         {"name": "accesskit_consumer", "version": "0.38.0", "path": "third-party/accesskit_consumer",
          "license": "(MIT OR Apache-2.0) AND GPL-3.0-only", "selected_license": "MIT AND GPL-3.0-only",
          "build_script": False, "proc_macro": False, "links": None,
