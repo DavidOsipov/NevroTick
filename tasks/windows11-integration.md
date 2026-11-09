@@ -2316,10 +2316,39 @@ CPU/runtime/tool prerequisites, bounded test inventory, privacy/output limits
 and independent expected outcomes before dispatch. Record runner image/build,
 effective protections and actual exits; hosted Windows results do not qualify
 David's machine, the full support matrix, installed services or packages.
-This authorizes preparation of that bounded hosted route, not protection
-relaxation, retry of the blocked Sandbox image, S134/fuzz/storage work or a
-production TLS/trust/provider waiver. Existing source/dependency admission and
-critical-file gates remain mandatory.
+This authorizes preparation and execution of the separately frozen, admitted
+hosted route, including reviewed probe bytes identical to the local guest's.
+Source/artifact reconciliation is technical admission and needs no additional
+owner permission. It authorizes no protection relaxation, retry in the blocked
+local Sandbox, S134/fuzz/storage work or production TLS/trust/provider waiver.
+Existing source/dependency admission and critical-file gates remain mandatory.
+
+**Hosted preparation follow-up, 9 November:** read-only source review selected
+an explicit hosted placement profile in the existing `setup-xwin.py`, preserving
+its default WSL storage rule and shared download/catalog/terms owners. Hosted
+tool, locator and receipts must stay in a fresh external runner-owned area.
+Placement alone is insufficient: current version commands lack wall/output
+bounds, splat lacks a whole-job/output quota, and the post-write recursive
+catalog scan is not bounded admission. Before invocation, the build owner must
+reuse owned-process supervision and a byte/inode quota, then strictly admit
+finite regular output files before hashing/consumption. No setup code or workflow
+has been changed or dispatched for this preparation.
+
+The concrete draft and researched artifact-Action candidates are retained under
+`phase-plan-20261108-v1/nts-ke-graph-v1/hosted-windows-preparation-v1`:
+`hosted-profile-contract.md`, SHA256
+`c2a8893428b4f107b5bae6dad53f32b82b541438d4fa5d0625debf1db902a13b`, and
+`actions-artifact-pins.json`, SHA256
+`5784afbeed52510808659aaae0f04d5580bfd06439b2ee2a5ff0952d9c9c100b`.
+These are unadopted preparation inputs. Continue with the portable Linux builder,
+fixed bounded same-run artifact transfer and owned Windows process controller;
+require the baseline CPU acceptance before listing the three AES test images.
+The existing 6/6/7 oracle, runtime/PE identities and effective-policy observations
+remain required. A fresh authorized hosted VM is a separate environment; preserve
+the blocked guest's result and never weaken its policy to obtain execution.
+Artifact metadata limits and strict-digest Action inputs alone do not bound
+actual download writes; the transfer owner must implement and exercise that
+bound before claiming a finite download quota.
 
 **Resource checkpoint:** the published `89f035e` verification copy and compiled
 LLVM targets from two superseded incomplete privilege campaigns were deleted:
