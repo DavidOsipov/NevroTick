@@ -419,3 +419,30 @@ the explicit pinned toolchain path, binary/version checks and rejection of other
 overrides. An actual-shell regression was RED with the inherited selector and
 GREEN after the change; a separate real invocation in that same inherited
 environment passes all13 cases. No global environment rule or hold changed.
+
+**Hosted quota correction:** the next Rust run
+[42636485830](https://github.com/DavidOsipov/NevroTick/actions/runs/42636485830),
+on signed `8abc57e`, passed the actual13-case facade, vendor acquisition and
+bounded nextest/cargo-deny downloads. The dedicated quota mount admitted
+successfully. Acquisition then stopped with `ENOSPC` while unpacking a dependency
+source: cargo-deny's `fetch index` invokes `cargo fetch`, so the intended metadata
+operation also downloaded crate sources. The log does not distinguish byte from
+inode exhaustion. The frozen dependency and portable product rows did not run.
+This was an acquisition-scope error; the storage limit remains unchanged.
+
+The repaired sequence uses pinned `cargo update --workspace --locked`, then
+`cargo-deny --locked fetch db`. Cargo's
+[workspace update rule](https://doc.rust-lang.org/cargo/commands/cargo-update.html)
+preserves locked non-workspace dependencies; `--locked` refuses a required lock
+change. Each stage additionally checks the exact lock hash and bounded metadata
+inventory, refusing source/archive payloads. Both actual commands and timestamps
+enter the receipt; freshness starts at the earlier stage. A real pinned-Cargo
+control inside the configured isolated network namespace passed: a local sparse
+registry first exposed1.0, then1.1; a fresh metadata-only home preserved the exact
+1.0 lock and requested zero archives, while a separate fresh `cargo fetch --locked`
+home requested exactly the checksum-bound1.0 archive. No package/build-script
+compilation or public registry request occurred. The server terminated and all
+three commands exited0. Its maintained test runs after CI compiler preparation.
+The refreshed acquisition controls pass34 tests (two targeted RED failures before
+repair, with27 healthy controls); current-lock hosted acquisition and subsequent
+dependency/product rows still require the next changed-candidate run.

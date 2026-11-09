@@ -1788,6 +1788,16 @@ alone is not a storage quota. Existing snapshots remain usable only after bounde
 content, lockfile and freshness checks. No fresh fetch or native qualification is
 implied by a helper test.
 
+The acquisition sequence is pinned `cargo update --workspace --locked`, then
+`cargo-deny --locked fetch db`. Cargo refreshes registry metadata while preserving
+the exact lockfile; cargo-deny's `fetch index` also fetches dependency sources and
+must not be used here. Each stage checks the lock and bounded inventory, refusing
+crate source/archive payloads. The receipt records both actual commands and uses
+the earliest acquisition start for freshness. The controlled sparse-registry test
+`scripts/tests/test_advisory_cargo_refresh.py` runs after compiler preparation in
+CI; it compares actual metadata-only acquisition against an archive-fetch control
+without compiling packages or contacting a public registry.
+
 [`bounded_download.py`](scripts/bounded_download.py) owns streamed setup/CI byte
 limits, HTTPS redirect-origin admission and digest-before-publication. The xwin
 terms request uses the fixed policy URL/hash pair, and consumers recheck their

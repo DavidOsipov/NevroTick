@@ -74,6 +74,8 @@ jobs:
         run: python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_native_input_source.py -v
       - name: Acquire the pinned compiler in private runner storage
         run: python3 -B .github/security/prepare_rust.py
+      - name: Verify registry refresh avoids dependency source downloads
+        run: python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_advisory_cargo_refresh.py -v
       - name: Exercise the actual AccessKit subclass through the portable facade
         env:
           ACCESSKIT_CONTROLS: ${{ runner.temp }}/accesskit-subclass-controls

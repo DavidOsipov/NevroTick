@@ -74,7 +74,13 @@ def main() -> int:
         if SNAPSHOT.stamp(os.fstat(quota_descriptor)) != SNAPSHOT.stamp(quota.lstat()):
             raise ValueError("Acquisition root changed before work admission")
         lock = ENV.digest(ROOT / "Cargo.lock")
-        command = [str(deny), "--locked", "fetch", "db", "index"]
+        # cargo-deny's `fetch index` invokes `cargo fetch`, including source
+        # downloads. Resolve only registry metadata, then fetch RustSec alone.
+        planned = (
+            ("registry-index", [str(toolchain / "bin/cargo"), "update", "--workspace", "--locked"]),
+            ("advisory-database", [str(deny), "--locked", "fetch", "db"]),
+        )
+        commands = []
         with tempfile.TemporaryDirectory(prefix="advisory-", dir=quota) as folder:
             work = Path(folder)
             transient, temporary = work / "cargo-home", work / "tmp"
@@ -82,22 +88,34 @@ def main() -> int:
             temporary.mkdir(mode=0o700)
             environment = {"PATH": f"{toolchain / 'bin'}:/usr/bin:/bin", "CARGO_HOME": str(transient),
                            "RUSTC": str(toolchain / "bin/rustc"), "LANG": "C.UTF-8", "TMPDIR": str(temporary)}
-            result = SNAPSHOT.run(command, cwd=ROOT, environment=environment)
-            ENV.require_ok(result)
-            acquired = time.time()
-            if ENV.digest(ROOT / "Cargo.lock") != lock:
-                raise ValueError("Lockfile changed during metadata acquisition")
-            files = inventory(transient)
-            if not any(path.startswith("advisory-dbs/") for path in files) or not any(path.startswith("registry/index/") for path in files):
-                raise ValueError("Acquisition omitted the RustSec database or registry index")
+            for stage, command in planned:
+                if ENV.digest(ROOT / "Cargo.lock") != lock:
+                    raise ValueError("Lockfile changed before metadata acquisition stage")
+                started = time.time()
+                result = SNAPSHOT.run(command, cwd=ROOT, environment=environment)
+                commands.append({**result, "stage": stage, "started_unix": started,
+                                 "finished_unix": time.time()})
+                ENV.require_ok(result)
+                if ENV.digest(ROOT / "Cargo.lock") != lock:
+                    raise ValueError("Lockfile changed during metadata acquisition")
+                files = inventory(transient)
+                if any(path.startswith(("registry/src/", "registry/cache/")) for path in files):
+                    raise ValueError("Metadata acquisition produced a crate source or archive payload")
+                if not any(path.startswith("registry/index/") for path in files):
+                    raise ValueError("Acquisition omitted the registry index")
+                if stage == "advisory-database" and not any(path.startswith("advisory-dbs/") for path in files):
+                    raise ValueError("Acquisition omitted the RustSec database")
             home.mkdir(parents=True, mode=0o700)
             created_home = home.lstat()
             SNAPSHOT.export(transient, home, files)
         output.parent.mkdir(parents=True, exist_ok=True)
-        record = {"schema_version": 1, "acquired_unix": acquired, "cargo_home": str(home),
+        record = {"schema_version": 1, "acquired_unix": commands[0]["started_unix"],
+                  "completed_unix": commands[-1]["finished_unix"], "commands": commands,
+                  "cargo_home": str(home),
                   "files": files, "lockfile_sha256": lock, "command": command,
                   "exit_code": result["exit_code"], "output": result["output"],
                   "tool_sha256": ENV.digest(deny),
+                  "cargo_sha256": ENV.digest(toolchain / "bin/cargo"),
                   "acquisition_filesystem": capacity,
                   "scope": "Public metadata acquisition only; no application/advisory check executed"}
         payload = json.dumps(record, indent=2).encode("utf-8")

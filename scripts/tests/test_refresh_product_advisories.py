@@ -52,14 +52,18 @@ class MetadataAcquisitionControls(unittest.TestCase):
         transient = Path(kwargs["environment"]["CARGO_HOME"])
         self.assertTrue(transient.is_relative_to(self.quota))
         self.assertFalse(self.home.exists(), "No final export before acquisition terminates")
-        for name in ("advisory-dbs/reviewed-db/advisory.toml", "registry/index/cache"):
-            path = transient / name
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text("controlled public metadata")
         self.assertEqual(set(kwargs["environment"]), {"PATH", "CARGO_HOME", "RUSTC", "LANG", "TMPDIR"})
         self.assertTrue(Path(kwargs["environment"]["TMPDIR"]).is_relative_to(self.quota))
-        self.assertEqual(command, [str(self.deny), "--locked", "fetch", "db", "index"])
-        return {"command": command, "exit_code": 0, "failure": None, "output": "synthetic acquisition observation"}
+        if command == [str(self.toolchain / "bin/cargo"), "update", "--workspace", "--locked"]:
+            name, output = "registry/index/cache", "synthetic index observation"
+        else:
+            self.assertEqual(command, [str(self.deny), "--locked", "fetch", "db"])
+            self.assertTrue((transient / "registry/index/cache").is_file())
+            name, output = "advisory-dbs/reviewed-db/advisory.toml", "synthetic database observation"
+        path = transient / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("controlled public metadata")
+        return {"command": command, "exit_code": 0, "failure": None, "output": output}
 
     def invoke(self, effect=None, quota_error=None):
         with (patch.object(REFRESH, "ROOT", self.root), patch("sys.argv", self.arguments),
@@ -73,13 +77,44 @@ class MetadataAcquisitionControls(unittest.TestCase):
     def test_complete_acquisition_records_lock_tools_files_and_freshness(self):
         status, run, _ = self.invoke()
         self.assertEqual(status, 0)
-        run.assert_called_once()
+        self.assertEqual(run.call_count, 2)
         record = json.loads(self.receipt.read_text())
         self.assertEqual(record["lockfile_sha256"], hashlib.sha256((self.root / "Cargo.lock").read_bytes()).hexdigest())
         self.assertEqual(record["tool_sha256"], hashlib.sha256(self.deny.read_bytes()).hexdigest())
         self.assertEqual(record["files"], REFRESH.inventory(self.home))
         self.assertGreater(record["acquired_unix"], 0)
+        self.assertEqual(record["acquired_unix"], record["commands"][0]["started_unix"])
+        self.assertGreaterEqual(record["completed_unix"], record["acquired_unix"])
+        self.assertEqual([item["command"] for item in record["commands"]],
+                         [call.args[0] for call in run.call_args_list])
+        self.assertEqual([item["output"] for item in record["commands"]],
+                         ["synthetic index observation", "synthetic database observation"])
+        self.assertEqual(record["command"], [str(self.deny), "--locked", "fetch", "db"])
+        self.assertEqual(record["output"], "synthetic database observation")
+        self.assertEqual(record["cargo_sha256"], hashlib.sha256((self.toolchain / "bin/cargo").read_bytes()).hexdigest())
         self.assertEqual(self.receipt.stat().st_mode & 0o777, 0o600)
+
+    def test_separate_metadata_commands_refresh_index_without_fetching_sources(self):
+        status, run, _ = self.invoke()
+        self.assertEqual(status, 0)
+        self.assertEqual([call.args[0] for call in run.call_args_list], [
+            [str(self.toolchain / "bin/cargo"), "update", "--workspace", "--locked"],
+            [str(self.deny), "--locked", "fetch", "db"],
+        ])
+
+    def test_successful_fetch_cannot_publish_crate_source_payload(self):
+        def sources(command, **kwargs):
+            result = self.acquisition(command, **kwargs)
+            path = Path(kwargs["environment"]["CARGO_HOME"]) / "registry/src/unexpected/Cargo.toml"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("unexpected duplicate source body")
+            return result
+        status, run, output = self.invoke(sources)
+        self.assertEqual(status, 1)
+        self.assertIn("source or archive payload", output)
+        run.assert_called_once()
+        self.assertFalse(self.receipt.exists())
+        self.assertFalse(self.home.exists())
 
     def test_substituted_tool_is_rejected_before_process_execution(self):
         self.deny.write_text("substituted executable")
@@ -107,7 +142,49 @@ class MetadataAcquisitionControls(unittest.TestCase):
         self.assertEqual(status, 1)
         self.assertIn("controlled network failure", output)
         run.assert_called_once()
+        self.assertEqual(run.call_args.args[0],
+                         [str(self.toolchain / "bin/cargo"), "update", "--workspace", "--locked"])
         self.assertFalse(self.receipt.exists())
+
+    def test_second_stage_failure_does_not_publish_a_partial_index(self):
+        def failure(command, **kwargs):
+            if command[0] == str(self.deny):
+                return {"command": command, "exit_code": 17, "failure": None,
+                        "output": "controlled database failure"}
+            return self.acquisition(command, **kwargs)
+        status, run, output = self.invoke(failure)
+        self.assertEqual(status, 1)
+        self.assertIn("controlled database failure", output)
+        self.assertEqual(run.call_count, 2)
+        self.assertFalse(self.receipt.exists())
+        self.assertFalse(self.home.exists())
+        self.assertEqual(list(self.quota.iterdir()), [])
+
+    def test_zero_database_exit_without_database_is_incomplete(self):
+        def omitted(command, **kwargs):
+            if command[0] == str(self.deny):
+                return {"command": command, "exit_code": 0, "failure": None, "output": "no database"}
+            return self.acquisition(command, **kwargs)
+        status, run, output = self.invoke(omitted)
+        self.assertEqual(status, 1)
+        self.assertIn("omitted the RustSec database", output)
+        self.assertEqual(run.call_count, 2)
+        self.assertFalse(self.receipt.exists())
+
+    def test_second_stage_cannot_publish_crate_archive_payload(self):
+        def archive(command, **kwargs):
+            result = self.acquisition(command, **kwargs)
+            if command[0] == str(self.deny):
+                path = Path(kwargs["environment"]["CARGO_HOME"]) / "registry/cache/unexpected.crate"
+                path.parent.mkdir(parents=True)
+                path.write_bytes(b"unneeded source archive")
+            return result
+        status, run, output = self.invoke(archive)
+        self.assertEqual(status, 1)
+        self.assertIn("source or archive payload", output)
+        self.assertEqual(run.call_count, 2)
+        self.assertFalse(self.receipt.exists())
+        self.assertFalse(self.home.exists())
 
     def test_zero_exit_with_missing_required_snapshot_is_incomplete(self):
         def empty(command, **kwargs):
@@ -125,6 +202,32 @@ class MetadataAcquisitionControls(unittest.TestCase):
         status, _, output = self.invoke(changed)
         self.assertEqual(status, 1)
         self.assertIn("Lockfile changed", output)
+        self.assertFalse(self.receipt.exists())
+
+    def test_lock_drift_after_database_invalidates_both_stages(self):
+        def changed(command, **kwargs):
+            result = self.acquisition(command, **kwargs)
+            if command[0] == str(self.deny):
+                (self.root / "Cargo.lock").write_text("changed graph")
+            return result
+        status, run, output = self.invoke(changed)
+        self.assertEqual(status, 1)
+        self.assertIn("Lockfile changed", output)
+        self.assertEqual(run.call_count, 2)
+        self.assertFalse(self.receipt.exists())
+        self.assertFalse(self.home.exists())
+
+    def test_drift_between_stage_checks_prevents_database_invocation(self):
+        original = REFRESH.inventory
+        def changed(directory):
+            files = original(directory)
+            (self.root / "Cargo.lock").write_text("changed between stage checks")
+            return files
+        with patch.object(REFRESH, "inventory", side_effect=changed):
+            status, run, output = self.invoke()
+        self.assertEqual(status, 1)
+        self.assertIn("Lockfile changed before", output)
+        run.assert_called_once()
         self.assertFalse(self.receipt.exists())
 
     def test_linked_metadata_is_not_followed_into_receipt(self):
@@ -161,7 +264,7 @@ class MetadataAcquisitionControls(unittest.TestCase):
             status, run, output = self.invoke()
         self.assertEqual(status, 1)
         self.assertIn("controlled export failure", output)
-        run.assert_called_once()
+        self.assertEqual(run.call_count, 2)
         self.assertFalse(self.home.exists())
         self.assertFalse(self.receipt.exists())
         self.assertEqual(list(self.quota.iterdir()), [])
