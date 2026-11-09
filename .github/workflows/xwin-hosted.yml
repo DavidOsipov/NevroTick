@@ -59,6 +59,8 @@ jobs:
           probe_mounted=0
           cleanup_xwin() {
             local status=$?
+            local primary_status="${status}"
+            local cleanup_complete=false
             if [[ "${probe_mounted}" == 1 ]]; then
               if sudo umount -- "${probe}"; then
                 probe_mounted=0
@@ -76,11 +78,15 @@ jobs:
             if [[ "${probe_mounted}" == 0 && "${payload_mounted}" == 0 ]]; then
               if ! timeout --kill-after=5s 10s python3 -B .github/security/check_xwin_quota.py --root "${profile}" --assert-unmounted; then
                 if [[ "${status}" == 0 ]]; then status=1; fi
-              elif ! rm -rf -- "${profile}"; then
+              elif rm -rf -- "${profile}"; then
+                cleanup_complete=true
+              else
                 if [[ "${status}" == 0 ]]; then status=1; fi
               fi
             fi
-            if [[ "${status}" == 0 ]]; then
+            printf 'XWIN_HOSTED_CLEANUP {"complete":%s,"primary_exit":%s,"final_exit":%s}\n' \
+              "${cleanup_complete}" "${primary_status}" "${status}"
+            if [[ "${cleanup_complete}" == true ]]; then
               printf '%s\n' 'XWIN_HOSTED_OWNED_CLEANUP_OK'
             fi
             exit "${status}"

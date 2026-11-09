@@ -6,6 +6,7 @@ import gzip
 import hashlib
 import importlib.util
 import io
+import json
 import os
 from pathlib import Path
 import sys
@@ -447,6 +448,74 @@ class NamespaceSurfaceControls(TemporaryControls):
                 self.assertEqual(result["exit_code"], 0, result["output"])
                 self.assertIn("NAMESPACE_WRITE_SURFACE_OK", result["output"])
 
+    def test_native_namespace_runs_inside_actual_worker(self) -> None:
+        import time
+
+        source_root = Path(__file__).resolve().parents[2]
+        home = Path.home().resolve(strict=True)
+        self.assertFalse(home.is_relative_to(Path("/tmp")) or home.is_relative_to(source_root),
+                         "Unsupported nested fixture: HOME must be outside /tmp and the checkout")
+        with tempfile.TemporaryDirectory(prefix="nevrotick-nested-xwin-", dir=home) as directory:
+            profile = Path(directory)
+            payload, bootstrap = profile / "payload", profile / "bootstrap"
+            for path in [payload, bootstrap, payload / "tmp", payload / "home"]:
+                path.mkdir(mode=0o700)
+            layout = SimpleNamespace(profile=profile, payload=payload, bootstrap=bootstrap)
+            inner = (
+                "import errno,os,pathlib,sys\n"
+                "p,b=map(pathlib.Path,sys.argv[1:3])\n"
+                "assert os.getuid()==os.geteuid()!=0\n"
+                "assert 'NEVROTICK_SYNTHETIC_CREDENTIAL' not in os.environ\n"
+                "assert os.stat('/proc/self/ns/pid').st_ino!=int(sys.argv[3])\n"
+                "assert os.stat('/proc/self/ns/user').st_ino!=int(sys.argv[4])\n"
+                "assert pathlib.Path.cwd()==p and os.path.samefile('/tmp',p/'tmp')\n"
+                "(p/'nested-payload-control').write_bytes(b'owned')\n"
+                "pathlib.Path('/tmp/nested-tmp-control').write_bytes(b'tmp')\n"
+                "assert (p/'tmp/nested-tmp-control').read_bytes()==b'tmp'\n"
+                "assert (b/'worker-control').read_bytes()==b'public'\n"
+                "for target in [pathlib.Path('/outside-owned-quota'),pathlib.Path('/dev/outside-owned-quota'),b/'native-forbidden']:\n"
+                " try:target.write_bytes(b'forbidden')\n"
+                " except OSError as error:assert error.errno in (errno.EROFS,errno.EACCES)\n"
+                " else:raise AssertionError('nested write escaped payload')\n"
+                "print('NESTED_NATIVE_SURFACE_OK')\n"
+            )
+            worker = (
+                "import importlib.util,json,os,pathlib,stat,sys,types\n"
+                "root,p,b=map(pathlib.Path,sys.argv[1:4])\n"
+                "def load(filename,name):\n"
+                " spec=importlib.util.spec_from_file_location(name,root/'scripts'/filename)\n"
+                " m=importlib.util.module_from_spec(spec);sys.modules[name]=m;spec.loader.exec_module(m);return m\n"
+                "h=load('xwin_hosted.py','nested_hosted');e=load('check-environment.py','nested_environment')\n"
+                "h.require_worker_boundary()\n"
+                "assert 'NEVROTICK_SYNTHETIC_CREDENTIAL' not in os.environ\n"
+                "for path in [p.parent,p,b,p/'home',p/'tmp']:\n"
+                " info=path.stat();assert info.st_uid==os.geteuid() and stat.S_IMODE(info.st_mode)==0o700\n"
+                "assert {path.name for path in p.iterdir()}=={'home','tmp'}\n"
+                "assert not any((p/'home').iterdir()) and not any((p/'tmp').iterdir())\n"
+                "assert os.path.samefile('/tmp',p/'tmp')\n"
+                "assert all(os.statvfs(root/'scripts'/name).f_flag&os.ST_RDONLY for name in ['xwin_hosted.py','check-environment.py'])\n"
+                "(b/'worker-control').write_bytes(b'public')\n"
+                "layout=types.SimpleNamespace(profile=p.parent,payload=p,bootstrap=b)\n"
+                "env=h.worker_environment(layout,float(os.environ['NEVROTICK_XWIN_DEADLINE']))\n"
+                "command=h.namespace(root,layout,worker=False,environment=env)+['/usr/bin/python3','-I','-B','-c',sys.argv[4],str(p),str(b),str(os.stat('/proc/self/ns/pid').st_ino),str(os.stat('/proc/self/ns/user').st_ino)]\n"
+                "result=e.run(command,cwd=p,environment=env,timeout=5,max_output=16384)\n"
+                "print(json.dumps({key:result[key] for key in ['exit_code','failure','output']},ensure_ascii=True),flush=True)\n"
+                "assert result['failure'] is None and result['exit_code']==0\n"
+                "assert result['output']=='NESTED_NATIVE_SURFACE_OK\\n'\n"
+            )
+            environment = HOSTED.worker_environment(layout, time.monotonic() + 12)
+            command = HOSTED.namespace(source_root, layout, worker=True, environment=environment)
+            result = ENV.run([*command, "/usr/bin/python3", "-I", "-B", "-c", worker,
+                              str(source_root), str(payload), str(bootstrap), inner], cwd=payload,
+                             timeout=12, max_output=16384, environment=environment | {
+                                 "NEVROTICK_SYNTHETIC_CREDENTIAL": "public-control-canary"})
+            self.assertIsNone(result["failure"], result["output"])
+            self.assertEqual(result["exit_code"], 0, result["output"])
+            observed = json.loads(result["output"])
+            self.assertEqual(observed, {"exit_code": 0, "failure": None, "output": "NESTED_NATIVE_SURFACE_OK\n"})
+            self.assertEqual((payload / "nested-payload-control").read_bytes(), b"owned")
+            self.assertEqual((payload / "tmp/nested-tmp-control").read_bytes(), b"tmp")
+
 
 class SupervisorAdapterControls(TemporaryControls):
     def run_child(self, code: str, *, timeout=1.0, max_output=1024):
@@ -457,6 +526,37 @@ class SupervisorAdapterControls(TemporaryControls):
     def test_actual_benign_child_has_a_healthy_version_output(self) -> None:
         result = self.run_child("print('xwin 0.10.0')")
         self.assertEqual(result.strip(), "xwin 0.10.0")
+
+    def test_actual_nonzero_preserves_an_escaped_diagnostic_tail(self) -> None:
+        payload = "\n::error::synthetic annotation\x1b[31m\r\n\x00HOSTED_CHILD_DIAGNOSTIC_MARKER"
+        code = "import os; os.write(1," + repr(payload.encode()) + "); raise SystemExit(7)"
+        with self.assertRaises(RuntimeError) as raised:
+            self.run_child(code)
+        message = str(raised.exception)
+        self.assertIn("HOSTED_CHILD_DIAGNOSTIC_MARKER", message)
+        record = json.loads(message)
+        self.assertEqual(record["exit_code"], 7)
+        self.assertIsNone(record["failure"])
+        self.assertEqual(record["output_tail"], payload)
+        self.assertLessEqual(len(message), 4096)
+        self.assertTrue(message.isascii())
+        self.assertFalse(any(ord(character) < 32 or ord(character) == 127 for character in message))
+
+    def test_actual_long_nonzero_diagnostic_stays_bounded_and_keeps_its_tail(self) -> None:
+        payload = "discarded-prefix" + "x" * 7000 + "\x00" * 1000 + "HOSTED_CHILD_FINAL_MARKER"
+        code = "import os; os.write(1," + repr(payload.encode()) + "); raise SystemExit(9)"
+        with self.assertRaises(RuntimeError) as raised:
+            self.run_child(code, max_output=16_384)
+        message = str(raised.exception)
+        self.assertIn("HOSTED_CHILD_FINAL_MARKER", message)
+        record = json.loads(message)
+        self.assertEqual(record["exit_code"], 9)
+        self.assertIsNone(record["failure"])
+        self.assertTrue(record["output_tail"].endswith("HOSTED_CHILD_FINAL_MARKER"))
+        self.assertNotIn("discarded-prefix", record["output_tail"])
+        self.assertLessEqual(len(message), 4096)
+        self.assertTrue(message.isascii())
+        self.assertFalse(any(ord(character) < 32 or ord(character) == 127 for character in message))
 
     def test_actual_nonzero_and_timeout_remain_failures(self) -> None:
         for code, timeout, expected in [("raise SystemExit(7)", 1.0, "7"),

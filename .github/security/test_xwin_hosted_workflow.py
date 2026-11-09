@@ -124,6 +124,17 @@ class HostedShellControls(unittest.TestCase):
                 self.assertTrue(any('--assert-unmounted' in row['args'] for row in calls))
                 self.assertNotIn(b"XWIN_HOSTED_OWNED_CLEANUP_OK", result.stdout)
 
+    def test_cleanup_observation_is_independent_of_the_primary_outcome(self):
+        for mode, primary, complete, final in [("healthy", 0, True, 0), ("setup", 37, True, 37),
+                                              ("unmount", 0, False, 1), ("setup-unmount", 37, False, 37)]:
+            with self.subTest(mode=mode):
+                result, _, profiles = self.run_step(mode)
+                observations = [json.loads(line.split(" ", 1)[1]) for line in result.stdout.decode().splitlines()
+                                if line.startswith("XWIN_HOSTED_CLEANUP ")]
+                self.assertEqual(observations, [{"complete": complete, "primary_exit": primary, "final_exit": final}])
+                self.assertEqual(result.returncode, final)
+                self.assertEqual(not profiles, complete)
+
 
 if __name__ == "__main__":
     unittest.main()

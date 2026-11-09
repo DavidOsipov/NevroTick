@@ -298,12 +298,16 @@ def tar_members(blob, version):
 
 
 def run_checked(command, *, cwd, environment, timeout, max_output=MAX_OUTPUT, runner):
-    """Use the shared owned-process supervisor; never consume failed output."""
+    """Use the shared supervisor; expose only an escaped finite failure tail."""
     _require(0 < timeout <= WHOLE_SECONDS and 0 < max_output <= MAX_OUTPUT, "Invalid process budget")
     result = runner(command, cwd=cwd, environment=environment, timeout=timeout,
                     stdin=subprocess.DEVNULL, max_output=max_output)
-    _require(result.get('failure') is None and result.get('exit_code') == 0,
-             f"Bounded acquisition process failed: {result.get('failure') or 'nonzero exit'} ({result.get('exit_code')})")
+    if result.get('failure') is not None or result.get('exit_code') != 0:
+        # Unicode surrogate pairs need at most twelve ASCII characters each;
+        # the supervisor's finite category/exit fields leave this below 4096.
+        diagnostic = {'error': 'Bounded acquisition process failed', 'failure': result.get('failure'),
+                      'exit_code': result.get('exit_code'), 'output_tail': result['output'][-256:]}
+        raise RuntimeError(json.dumps(diagnostic, ensure_ascii=True, separators=(',', ':')))
     return result['output']
 
 

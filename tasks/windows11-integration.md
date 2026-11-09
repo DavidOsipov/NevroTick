@@ -2437,6 +2437,47 @@ healthy acquisition, effective hosted observations and cleanup remain pending.
 This prepares the Windows builder/consumer; it is no Windows execution, reusable
 SDK export, provider adoption or completed S2.2/Core/engine result.
 
+**First hosted result and diagnostic continuation — 10 November:** signed source
+`6af28b6` was published and
+[manual run 42686681057](https://github.com/DavidOsipov/NevroTick/actions/runs/42686681057)
+checked out that exact commit. Its preparation and 27/26/24 offline cases passed.
+The real tiny filesystem emitted both byte and inode `ENOSPC` control success.
+The source-bound trace then reaches parent layout/ownership/quota admission and
+the supervised worker, which exits 1. Neither timeout nor output overflow is
+reported. Its child output was discarded, so namespace setup, worker admission,
+bootstrap and acquisition remain competing causes; no acquisition or ceiling
+sufficiency pass follows. The first raw log is retained as
+`hosted-xwin-v1/hosted-run-v1.log`, SHA256
+`844b8e2494632708978a2e57ff9c7e6a7976b13ea286c861f58024d86d2a4e28`.
+Owned-quota cleanup is unobserved in that failed run; generic runner cleanup
+establishes no such result.
+
+The bounded follow-up preserves actual exit/failure and an ASCII JSON-escaped
+256-character child-output tail, within a 4,096-character diagnostic. This is
+bounded diagnostic text, not general secret redaction; environments and full
+commands are not dumped. New real-child controls reproduce the missing diagnostic
+beside healthy output before repair. Cleanup now emits its own completion fact
+and primary/final exits after unmount, independent mount-state admission and
+removal; it preserves the primary failure. Inert cases first reproduce the
+missing observation, then pass healthy, failed-work and failed-cleanup neighbors.
+
+A real nested namespace control now launches the native namespace from inside
+the worker, using an owned non-`/tmp` fixture and the actual worker environment.
+It observes private PID/user namespaces, ordinary UID, fresh home/temp, intended
+payload/temp writes and refused root/device/native-bootstrap writes. It supplies
+no dedicated quota, SDK, network or Windows observation. These changes qualify
+one fresh diagnostic run; they do not establish or repair the unknown SDK cause.
+All original limits, pins, thresholds and protection holds remain.
+
+David also permits Windows Sandbox when useful and temporary accessibility
+detachment if needed. The current standalone crypto graph already excludes
+Slint/AccessKit and C++ REST SDK, so no accessibility detachment is selected.
+The earlier guest runtime prerequisite concerned Visual C++ Redistributable;
+the baseline probe's error 4551 still has no established policy/dependency cause.
+Use a freshly admitted owned Sandbox profile when appropriate; this grants no
+retry of the blocked image or protection relaxation. Keep this route separate
+from the current Linux acquisition failure and from product UI qualification.
+
 **Resource checkpoint:** the published `89f035e` verification copy and compiled
 LLVM targets from two superseded incomplete privilege campaigns were deleted:
 2,284 files / 302,154,214 logical bytes. Their source, reports and logs remain;
