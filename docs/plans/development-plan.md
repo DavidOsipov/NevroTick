@@ -1930,6 +1930,15 @@ completion qualification. A timeout cannot preempt a synchronous Windows verifie
 callback. Qualify the complete exchange off the responsive engine loop; engine-only
 Tokio does not mandate `tokio-rustls` or runtime dependencies in other components.
 
+The [current Tokio usage review](../../tasks/engine-transport-pilot.md#current-tokio-usage-review--10-november-2026)
+found no demonstrated correctness defect in the bounded UDP prototype. Carry
+pending admission/completion, driver/pool progress and strict-publication work
+through its existing S2.2 and Windows lifecycle owners; unused Tokio facilities
+alone justify no feature expansion or scheduler tuning. V1 blocking isolation,
+actual-completion custody and responsive control remain required, while broader
+multithreading retains [MT-0's post-V1 activation](post-v1-multithreading.md).
+This routing does not change the next task in §7 or lift an execution hold.
+
 Name hardware/VM, Windows build, token, power profile, Defender/protections,
 toolchain/SDK, target/features, fixtures, seeds/load, warm-up, sampling, duration,
 stop conditions and cleanup. Profile useful valid and hostile/recovery workloads.

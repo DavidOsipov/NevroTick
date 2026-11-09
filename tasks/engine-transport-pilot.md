@@ -3100,6 +3100,32 @@ packet times/counts, invalidation and healthy-source progress under CHECK-21/27;
 W11-W02/W11-W01 and CHECK-11 own native suspend/mapping evidence. There is no current engine
 Interval consumer. This later trigger does not precede or displace S2.2's freeze.
 
+#### Current Tokio usage review — 10 November 2026
+
+Read-only source review (Asia/Tbilisi) against
+`a4c5c3a318f83bda8df325d32e5bc56ada6eee5c` traced the engine manifest,
+[`lib.rs`](../crates/nevrotick-engine/src/lib.rs),
+[`series.rs`](../crates/nevrotick-engine/src/series.rs), focused test sources and
+the isolated synchronous KE laboratory. The relevant files were unchanged from
+`6af28b653b93640c5550483b2fc72cb63bdea33c`, used for the independent source passes.
+The inspected owners retain private current-thread I/O/time drivers,
+entered-runtime rejection, nonblocking socket import, bounded readiness/receive
+work, fresh control/deadline checks and abort-plus-await timer cleanup. No current
+Tokio correctness defect or additional-feature requirement was demonstrated.
+Tests were inspected, not rerun; this supplies no native, performance or
+service-stop result.
+
+The thread cap is not a production KE admission/completion system. Carry that
+integration through **R3-R-01**, **T-R-01/T-R-02** and **TIO-01** above;
+W11-W02 retains native resume/wakeup qualification and W11-W05/S3.1 owns service
+lifecycle integration. [H-ET1](#bug-hunt-scheduling-assessment--h-et1) retains the
+bounded receive-before-write behavior and unsent-neighbor fairness question;
+alternating peers does not supply a stronger send-progress guarantee. Reuse these
+owners before adding Tokio helpers or changing the scheduler. V1 isolation,
+admission, physical-completion custody and responsive control remain required;
+[MT-0](../docs/plans/post-v1-multithreading.md) keeps its post-V1 activation.
+This review creates no new implementation stage or execution permission.
+
 #### Windows findings at the same freeze — 9 November 2026
 
 The [bounded Windows review](../docs/supporting-reviews/windows-os-integration-risk-research.md#9-tokio-and-windows-follow-up--9-november-2026)

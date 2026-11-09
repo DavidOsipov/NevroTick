@@ -1,6 +1,6 @@
 # Tokio at the engine boundary
 
-Use when changing the engine's Tokio runtime, task ownership, blocking bridge,
+Use when reviewing or changing the engine's Tokio runtime, task ownership, blocking bridge,
 I/O, channels or scheduling. Follow architecture §§17.1, 18.6.1 and 18.7.1 and
 the actual task owner. This reference supplies API-specific implementation
 guidance; it selects no new runtime, TLS adapter, feature or execution campaign.
@@ -23,6 +23,15 @@ Re-read the engine manifest, lockfile and owner before applying examples. The
 and `execute_series` privately own current-thread runtimes, enable I/O/time,
 and set `max_blocking_threads(2)`. Their existing spawned work is at most two
 owned control timers; this is no implemented production KE worker pool.
+
+For a utilization review, trace actual acquisition, control and result consumers.
+Separate implemented behavior, required pending integration and deferred
+optimization. Recommend another API for a named ownership/progress guarantee or
+measured cost, not to maximize enabled features or spawned tasks. Keep V1 blocking
+isolation, bounded admission, actual-completion custody and responsive control at
+their existing S2.2/lifecycle owners; [MT-0](../../../../../docs/plans/post-v1-multithreading.md)
+owns justified concurrency improvements after actual V1 release. A scheduler
+switch alone does not parallelize one sequential request loop or one `select!`.
 
 The selected `sync` feature supplies the channels below; `rt` supplies ordinary
 task handles and JoinSet. Async buffered/framing helpers may require `io-util`
@@ -143,6 +152,15 @@ spurious; handle `WouldBlock` through readiness waiting with bounded attempts,
 not a busy retry loop. When using biased `select!`, place required control and
 deadline branches ahead of perpetually ready data and retain a bounded work
 quantum. Branch priority alone does not enforce a final deadline or generation.
+
+Inspect priority across operation classes as well as between peers. The current
+two-peer pilot alternates peer order but keeps both receives ahead of both
+writable branches; a ready receiver can delay another peer's first send through
+its remaining receive budget. The existing [H-ET1 assessment](../../../../../tasks/engine-transport-pilot.md#bug-hunt-scheduling-assessment--h-et1)
+records this as a design/qualification question, not a demonstrated contract
+defect. Define any required send-progress bound and observe the actual unsent-peer
+case before changing scheduling; a completed healthy neighbor does not establish
+first-send fairness.
 
 Keep original absolute stage/total deadlines across partial progress and retries.
 `timeout_at` may return `Ok` for an immediately ready future even at/after its

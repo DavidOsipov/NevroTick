@@ -93,10 +93,11 @@ or lifecycle changes, use
 Windows adapters need small reviewed unsafe contracts. UI/engine have no
 clock-setting privilege.
 
-For the engine's Tokio runtime, blocking bridge, task/channel ownership, I/O or
-deadline/scheduler changes, read [Tokio at the engine boundary](references/tokio.md).
-Keep its driver, progress and final-eligibility rules within the existing native
-custody and S2.2 contracts; ordinary Rust work needs no Tokio-specific review.
+For the engine's Tokio runtime, blocking bridge, task/channel ownership, I/O,
+deadline/scheduler changes or utilization review, read
+[Tokio at the engine boundary](references/tokio.md). Select mechanisms for an
+actual consumer; keep driver, progress and final eligibility within the existing
+native-custody and S2.2 contracts. Ordinary Rust work needs no Tokio-specific review.
 
 For Windows service registration, SCM callbacks/status, account isolation or
 stop/restart changes, use [implement-windows-service](../implement-windows-service/SKILL.md)
