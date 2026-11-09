@@ -1237,12 +1237,16 @@ Its initial Linux checkpoint now passes both-target graph/policy checks, Clippy,
 19 ordinary/19 release tests and eleven doctests on its recorded candidate.
 Its four declared private source faults now reach the intended assertions, with
 zero generated-mutant credit. Fresh coverage meets each selected 90% line gate
-(36/36 executable lines in each file). The complete seven-mutant campaign has
-seven compiler-unviable outcomes, no runtime kills and no viable denominator;
-both 95% gates remain open. The bounded review now selects preparation of the
-separate mutation-only lint-capped instrument already permitted by hardening
-§9.4; its recipe and execution admission remain pending in the crypto task.
-Ordinary strict compiler/release policy stays unchanged. Provider and native
+(36/36 executable lines in each file). The original seven-mutant strict
+instrument remains recorded with seven compiler-unviable outcomes and no score.
+The separately qualified mutation-only instrument permitted by hardening §9.4
+now passes both selected-file 95% gates: two of two viable sealer mutations and
+six of six viable staged-decoder mutations caught, with five type-unviable
+variants and no survivor, timeout or exclusion. The
+[accepted receipt and generation reconciliation](../../tasks/s0.1-crypto-feasibility.md#s22-qualified-mutation-instrument--9-november-2026)
+retain actual flags, the compiled wipe-defect control and ungenerated guarantees.
+Ordinary strict compiler/release policy stays unchanged. Continue the existing
+actual KE-producer-to-receiver contract freeze; provider and native
 qualification remain open. The engine's concrete issuer map
 also retains the missing custody-preserving KE handoff; count-only laboratory
 summaries and fixture counters cannot establish a production association.

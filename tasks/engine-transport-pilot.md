@@ -2924,12 +2924,17 @@ facts. Its initial Linux checkpoint passes exact both-target graph/policy rows,
 Clippy, 19 ordinary/19 release tests and eleven doctests, including independent
 complete-packet answers. Its four private source faults now reach the intended
 assertions, with zero generated-mutant credit. Fresh coverage meets each selected
-90% line gate (36/36 executable lines in each file). All seven generated mutations
-are compiler-unviable, so both mutation scores are undefined and both 95% gates
-remain open. The bounded review now permits recipe preparation for the separate
-mutation-only lint-capped instrument under hardening §9.4; execution is not yet
-admitted and ordinary compiler/release policy stays strict. Provider/native/product gates remain open under the
-crypto task.
+90% line gate (36/36 executable lines in each file). The original strict
+instrument's seven compiler-unviable outcomes remain without a score. The
+separate qualified mutation-only instrument under hardening §9.4 now passes
+both selected-file 95% gates: 2/2 viable sealer mutations and 6/6 viable
+staged-decoder mutations caught, with five type-unviable variants and no
+survivor, timeout or exclusion. Its
+[accepted receipt](s0.1-crypto-feasibility.md#s22-qualified-mutation-instrument--9-november-2026)
+preserves the compiled wipe-defect control, actual capwarn flags and generation
+limits. Ordinary compiler/release policy stays strict. Continue the existing
+actual KE-producer-to-receiver freeze; provider/native/product gates remain open
+under the crypto task.
 
 Fresh-context `nts_next_source_boundary` traced the actual KE producer again:
 `InternalCandidate::finish` validates and commits, then destroys both exporter
