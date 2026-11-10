@@ -48,11 +48,12 @@ roadmap item or request is not approval. A Linux port is not planned. Avoid
 treating a mockup, toolkit capability or upstream example as an implemented
 product feature.
 
-## Required QA for AI-assisted code
+## Required QA for all code
 
-AI-assisted code contributions must include new or updated tests for the changed
-behavior, mutation testing that challenges the code exercised by those new or
-updated tests, and all other applicable QA gates required by the repository
+All code contributions, whether written by a person, an AI agent or both, must
+include new or updated tests for the changed behavior, mutation testing that
+challenges the code exercised by those new or updated tests, and all other
+applicable QA gates required by the repository
 skills and owning task. Mutation testing must demonstrate that the tests detect
 meaningful faults; merely adding tests or reporting a green ordinary run is not
 sufficient. Preserve the configured per-file mutation requirements and report
