@@ -41,8 +41,12 @@ and personal data from logs and screenshots. A partial report is still useful;
 you do not need to identify the faulty code first.
 
 For features, describe the user problem, intended outcome and relevant existing
-plan. Avoid treating a mockup, toolkit capability or upstream example as an
-implemented product feature.
+plan. NevroTick prioritizes a simple Windows utility, security, reliability and
+minimal CPU, memory and disk use over feature count. New functionality requires
+an explicit project decision and careful implementation and qualification; a
+roadmap item or request is not approval. A Linux port is not planned. Avoid
+treating a mockup, toolkit capability or upstream example as an implemented
+product feature.
 
 ## Required QA for AI-assisted code
 
