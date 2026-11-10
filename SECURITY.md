@@ -2,9 +2,35 @@
 
 ## Reporting a vulnerability
 
-Please report potential security vulnerabilities privately to **David Osipov** at
-[personal@david-osipov.vision](mailto:personal@david-osipov.vision), with the subject
-**NevroTick security report**.
+Please report potential security vulnerabilities privately using
+[GitHub's private vulnerability reporting form](https://github.com/DavidOsipov/NevroTick/security/advisories/new).
+This is the preferred channel for coordinating a report with the maintainer,
+**David Osipov**. Do not create a public issue or pull request for an undisclosed
+vulnerability.
+
+### Encrypted email fallback
+
+If GitHub private reporting is unavailable or you cannot use it, email
+[personal@david-osipov.vision](mailto:personal@david-osipov.vision) with the subject
+**NevroTick security report**. Encrypt the report and any sensitive attachments
+with the maintainer's [OpenPGP public key](https://openpgpkey.david-osipov.vision/.well-known/openpgpkey/david-osipov.vision/D3FC4983E500AC3F7F136EB80E55C4A47454E82E.asc).
+
+Primary-key fingerprint:
+
+```text
+D3FC 4983 E500 AC3F 7F13 6EB8 0E55 C4A4 7454 E82E
+```
+
+Check the complete fingerprint before encrypting. The key contains the identity
+`David Osipov <personal@david-osipov.vision>`. Keep vulnerability details out of
+the subject line: email metadata is not protected by message encryption. If you
+cannot encrypt, send only a request to arrange private reporting, not the
+vulnerability details.
+
+This key is provided for confidential reporting; its presence here does not
+establish package-signing trust or replace the project's release-signing policy.
+
+### What to include
 
 Avoid posting exploit details in public issues or pull requests before the report
 has been assessed and disclosure coordinated. Ordinary bugs and feature requests
@@ -26,7 +52,8 @@ explain the issue, ask about a suitable transfer method before sending it.
 The maintainer will assess the report, request further information where needed,
 and coordinate remediation and disclosure with the reporter. A fixed response or
 remediation deadline is not currently established. If you have not received an
-acknowledgement, please follow up by email.
+acknowledgement, follow up through the same private report or the encrypted email
+fallback above.
 
 ## Development status and supported versions
 
@@ -42,13 +69,21 @@ proposal needs David's approval; the procedures need their recorded rehearsals
 and product evidence. Writing them establishes no supported version, response
 deadline or completed recovery control.
 
-The current workspace contains a fixture-only native Windows UI and portable
-protocol, arithmetic, exchange-fixture and numerical components, plus a bounded,
-unauthenticated two-peer loopback observer. Its observations are ineligible for
-clock control; it does not qualify production NTP/NTS acquisition, production IPC,
-installed services or system clock adjustment. The initial product target is
-Windows 11 x64; Linux/WSL checks and Windows cross-builds provide narrower evidence
-than native Windows tests.
+The workspace contains fixture UI, portable protocol, arithmetic and numerical
+components, controlled loopback observations, and Windows service/cryptographic
+laboratory work. The [current implementation summary](docs/windows-time-architecture.md#1-current-state-capsule)
+and task evidence distinguish those bounded implementations from the unqualified
+production integrations. Loopback observations remain unauthenticated and
+ineligible for clock control; laboratory results do not qualify an integrated
+authenticated client, installed product services or system clock synchronization.
+
+The intended initial product targets are **Windows 11 26H2 x64** and
+**Windows Server 2025 x64 with Desktop Experience**, with an **x86-64-v3** CPU
+minimum. These are selected targets, not a claim of released platform support or
+completed native qualification. Linux/WSL checks and Windows cross-builds provide
+narrower evidence than native Windows tests. See the
+[platform decision](docs/nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope)
+and [qualification matrix](tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026).
 
 The [product roadmap](ROADMAP.md) also records future Android timekeeping and
 DNS-over-QUIC with leaf/intermediate certificate pinning. Those capabilities are
