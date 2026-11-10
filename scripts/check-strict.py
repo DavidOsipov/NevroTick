@@ -206,6 +206,33 @@ pub fn two_owned<T: Clone>(value: T) -> (T, T) {
     return healthy, negatives
 
 
+
+def future_policy_controls() -> tuple[str, tuple[tuple[str, str, str], ...]]:
+    """Distinguish deliberate unpolled cancellation from implicit future loss.
+
+    This std-only compiler fixture establishes no task settlement or effect
+    completion. In particular, dropping a spawned task handle has other semantics.
+    """
+    healthy = '''
+/// Transfer the future to its next owner rather than silently discard it.
+#[must_use]
+pub fn forward_future<F: std::future::Future>(future: F) -> F {
+    future
+}
+
+/// Deliberately cancel an unpolled future whose cleanup contract permits Drop.
+pub fn cancel_unpolled_future<F: std::future::Future>(future: F) {
+    drop(future);
+}
+'''
+    original = "drop(future);"
+    if healthy.count(original) != 1:
+        raise ENV.Incomplete("Future control must select exactly one disposal.")
+    negative = healthy.replace(original, "let _ = future;", 1)
+    return healthy, (("future-implicit-discard-negative", negative,
+                      "clippy::let_underscore_future"),)
+
+
 def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
     require_clippy_locations(root)
     data = snapshot or {name: (root / name).read_bytes() for name in CONFIG_FILES}
@@ -652,6 +679,15 @@ def qualify_fixtures(root: Path, metadata: dict, extensions: dict, evidence: dic
         source.write_text(with_control(clone_healthy))
         execute("clone-policy-positive", clippy)
         for label, negative, diagnostic in clone_negatives:
+            source.write_text(with_control(negative))
+            execute(label, clippy, diagnostic)
+        source.write_text(SOURCE)
+        # all already supplies let_underscore_future. A deliberate Drop is
+        # cancellation, not execution; the forwarding neighbor retains ownership.
+        future_healthy, future_negatives = future_policy_controls()
+        source.write_text(with_control(future_healthy))
+        execute("future-policy-positive", clippy)
+        for label, negative, diagnostic in future_negatives:
             source.write_text(with_control(negative))
             execute(label, clippy, diagnostic)
         source.write_text(SOURCE)

@@ -376,6 +376,23 @@ class CloneFixtureConstructionTests(unittest.TestCase):
         self.assertIn("Clone::clone(&value)", negatives[1][1])
 
 
+class FutureFixtureConstructionTests(unittest.TestCase):
+    """Controls preserve deliberate cancellation, not proof of async execution."""
+
+    def test_only_implicit_discard_changes_and_diagnostic_is_specific(self):
+        healthy, negatives = STRICT.future_policy_controls()
+        self.assertEqual(len(negatives), 1)
+        label, negative, diagnostic = negatives[0]
+        self.assertEqual(label, "future-implicit-discard-negative")
+        self.assertEqual(diagnostic, "clippy::let_underscore_future")
+        self.assertEqual(healthy.count("drop(future);"), 1)
+        self.assertEqual(negative, healthy.replace("drop(future);", "let _ = future;", 1))
+        self.assertIn("pub fn forward_future", healthy)
+        self.assertIn("pub fn forward_future", negative)
+        self.assertNotIn("tokio", healthy)
+        self.assertEqual(STRICT.with_control(healthy).count(healthy), 1)
+
+
 class WorkspaceAdoptionTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix="nevrotick-adoption-control-")

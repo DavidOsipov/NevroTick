@@ -475,3 +475,15 @@ links are collected there. The supplied Reddit short link was not fully readable
 no exhaustive thread review or reproduced upstream defect is claimed. No external
 example code or skill was imported. Existing lint groups remain unchanged; new
 strict-runner controls require admitted compiler execution before qualification.
+
+## Additional Rust anti-pattern controls
+
+The [anti-pattern index](implement-rust/references/anti-patterns.md) links async,
+error, numeric, unsafe, dependency/API and test shortcuts to existing canonical
+references rather than replacing their contracts. Its sources include the Rust
+Future/f64 and Cargo build-script documentation, Tokio JoinHandle/select/channel
+documentation, and the documented Clippy rules linked inline. The linked Rust
+hallucination study/benchmark motivates exact dependency/API verification; no
+NevroTick-specific prevalence or general AI-versus-human defect-rate claim follows.
+New std-only controls exercise the already-enabled `let_underscore_future` lint;
+compiler qualification and product behavior remain separate from Python checks.
