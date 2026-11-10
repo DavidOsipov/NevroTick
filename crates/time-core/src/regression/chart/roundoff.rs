@@ -18,11 +18,14 @@ mod phase_plan;
 /// Conditional retained frequency moments and monotonic prediction enclosures.
 mod frequency_prior;
 
+pub(crate) use frequency_prior::{
+    BaselineMapNumbers, BaselineOperands, BaselineRequest, FrequencyAnchor, FrequencyPrediction,
+    FrequencyPrior, baseline_effect_coefficients, check_active_ratio_span,
+};
 pub use frequency_prior::{
     FixtureFrequencyNumericError, FixtureFrequencyNumericField, FixtureFrequencyNumericIssue,
     FixtureFrequencyNumericStep,
 };
-pub(crate) use frequency_prior::{FrequencyAnchor, FrequencyPrediction, FrequencyPrior};
 
 pub use phase_plan::{
     FixturePhaseNumericError, FixturePhaseNumericField, FixturePhaseNumericIssue,

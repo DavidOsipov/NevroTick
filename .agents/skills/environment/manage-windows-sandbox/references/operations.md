@@ -16,6 +16,7 @@ do not request it again merely because a command appears in this reference.
 - [Native command reference](#native-command-reference)
 - [Exit status and evidence collection](#exit-status-and-evidence-collection)
 - [Older client and configuration-file fallback](#older-client-and-configuration-file-fallback)
+- [Guest PowerShell script policy](#guest-powershell-script-policy)
 - [Failure and interruption rules](#failure-and-interruption-rules)
 - [Sources](#sources)
 
@@ -180,9 +181,26 @@ substitute executing the same script on the host. [O5]
 
 Guest restart support and viewer-close behavior depend on Windows/client/start
 path. Do not use window closure as a universal stop or persistence contract.
+An owner-prepared guest authorized for the task can be reused after reconciling
+its ID and setup; do not destroy it merely to create an agent-owned instance.
+For retained SAC remediation and installed runtimes, follow
+[the guest SAC procedure](troubleshooting.md#smart-app-control-inside-the-guest).
 Use explicit ID-based stopping for a CLI-managed run. Recreating a guest requires
 new identities and bootstrap; a preserved writable host share is not a saved
 guest checkpoint. [O2][O9]
+
+## Guest PowerShell script policy
+
+For an authorized guest script, first observe **GUEST** `Get-ExecutionPolicy -List`
+and the effective `Get-ExecutionPolicy`. A `Restricted` setup refusal is not a
+payload failure. After exact source/hash and guest-ID admission, the reviewed
+guest invocation may use `powershell.exe -NoProfile -NonInteractive
+-ExecutionPolicy RemoteSigned -File` with the admitted guest script and arguments.
+The CLI setting lasts for that process; it changes no host, CurrentUser or
+LocalMachine policy. Record actual version, effective policy, exits and files.
+Retain a Group Policy refusal; do not use `Bypass`, persistent policy changes or
+automatic file unblocking. RemoteSigned is not source or payload admission.
+See [O10] and [troubleshooting](troubleshooting.md#guest-powershell-policy-refusal).
 
 ## Failure and interruption rules
 
@@ -205,3 +223,4 @@ does not complete any native CHECK gate.
 - [O7: Microsoft winapp v0.7.1 — trusted alias resolution and bounded version probe](https://github.com/microsoft/winappCli/blob/e3cd0b94f3e7b776ac51ba0564f4908094e979b5/src/winapp-CLI/WinApp.Cli/ExecutionTargets/WindowsSandbox/WindowsSandboxHostProbe.cs).
 - [O8: Microsoft Learn — Windows Terminal's WSL alias caveat](https://learn.microsoft.com/en-us/windows/terminal/command-line-arguments#command-line-argument-examples); this illustrates an alias interoperability limitation, not a universal test result for `wsb.exe`.
 - [O9: Version-specific viewer lifetime](winapp.md#lifecycle-and-version-drift); distinguish its cited released sources from current Learn and development-branch descriptions.
+- [O10: Microsoft Learn — Windows PowerShell 5.1 execution policies](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-5.1) and [powershell.exe parameters](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_powershell_exe?view=powershell-5.1).

@@ -79,7 +79,8 @@ pub use chart::{
 };
 
 pub(crate) use chart::{
-    FrequencyAnchor, FrequencyPrediction, FrequencyPrior, PhaseDebt, PhaseRates,
+    BaselineMapNumbers, BaselineOperands, BaselineRequest, FrequencyAnchor, FrequencyPrediction,
+    FrequencyPrior, PhaseDebt, PhaseRates, check_active_ratio_span,
 };
 
 pub use history::{FixtureHistory, FixtureHistoryReport, HistoryError};

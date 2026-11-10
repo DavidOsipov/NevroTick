@@ -42,6 +42,7 @@ jobs:
         run: |
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_xwin_setup.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_xwin_hosted.py -v
+          python3 -X dev -Werror -B .github/security/xwin_nested_control.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_check_environment.py -v
       - name: Acquire and independently inspect the quota-bound SDK
         run: |

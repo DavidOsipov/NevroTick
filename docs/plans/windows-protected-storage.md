@@ -245,6 +245,14 @@ copy unverified constants, silently mix projection generations or treat source
 presence as a supported Windows build. Microsoft's VBS-flag prerelease notice
 and REQUIRE/PREFER distinction remain part of that evidence.
 
+**10 November alias reconciliation:** the [ST-W01 card](../../tasks/windows-protected-storage.md#72-binding-evidence-and-per-call-admission)
+identifies the existing typed `NCRYPT_USE_VIRTUAL_ISOLATION_FLAG` as the header's
+REQUIRE alias. A VBS-only candidate can therefore evaluate this one published
+projection without upgrading merely for the missing new name. This is source
+coverage evidence; SDK/package parity, status classification, target compilation
+and actual-key qualification remain open. No format, dependency or provider row
+is admitted by this correction.
+
 The [existing storage task §6.7](../../tasks/windows-protected-storage.md#67-windows-binding-coverage-and-reuse--5-november-2026)
 separates source coverage, target compilation and later ST-W04 actual-key/native
 qualification. The first card is source-only and does not resume the storage

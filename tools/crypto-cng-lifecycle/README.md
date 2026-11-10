@@ -113,6 +113,35 @@ cause, while sticky faults still refuse nominal success. These checks execute no
 Windows TLS, verifier or exporter. Native permission, remaining contract controls
 and source-bound coverage/mutation remain separate
 gates in the [existing S2.2 source contract](../../tasks/s0.1-crypto-feasibility.md#s22-real-laboratory-keexporter-producer--source-contract-9-november-2026).
+The later [10 November native refusal checkpoint](../../tasks/s0.1-crypto-feasibility.md#native-ke-refusal-checkpoint--10-november-2026)
+adds the exact non-test release/v3 link, separate static readback and five actual
+guest argument/connect/TLS-refusal cases. Malformed TLS and EOF preserve distinct
+primary errors and their secondary cleanup diagnostics; they establish no
+successful TLS closure, certificate verification, healthy KE/exporter or native
+cleanup result. The first build remains incomplete at its post-link five-GiB
+floor. The prepared Windows 26100 guest, configured SAC Off and process-only
+PowerShell `RemoteSigned` are laboratory scope, not the release OS/security
+profile. The [healthy fixture checkpoint](../../tasks/s0.1-crypto-feasibility.md#source-preparation-and-resource-stop--10-november-2026)
+owns the new peer-only binary, guest store helper and unexecuted controls.
+The peer changes only this tool's binary inventory; its dependencies and the
+qualified client/verifier remain unchanged. Preparation stopped before guest
+dispatch on insufficient host memory. Compile/native work awaits restored
+headroom and David's continuation; all remaining gates stay open.
+
+The authored peer CLI is `nevrotick-nts-ke-peer LEAF_DER LEAF_PKCS8_DER READY_PATH`.
+All three paths belong to the owned guest's private NTFS directory. It accepts
+one loopback connection, requires the literal 16-byte offer, replies with the
+literal 24-byte one-cookie response and checks TLS close-notify. Readiness is
+only `port=<number>\n`; the final stdout reports fixed counts. No certificate,
+cookie, exporter or signing-key bytes are logged. The original key read buffer
+is wiping-owned; the DER copy consumed by the provider and native copies remain
+unqualified. This is uncompiled fixture source, not a runnable/admitted peer.
+The separately [reviewed guest controller](../windows-sandbox/nts-ke-healthy-peer.ps1)
+owns the fixed untrusted → missing-status → healthy → wrong-identity sequence,
+bounded child outputs and exact temporary-store restoration. It remains
+unparsed/unexecuted; unknown child completion retains recovery custody and
+cannot become a successful result or automatic next case.
+
 The raw host coverage survey also exercises the actual unsupported-platform
 entrypoint and failed diagnostic sink; it does not execute Windows transport.
 Its exact 108-item mutation listing identifies constructor, generic-helper and

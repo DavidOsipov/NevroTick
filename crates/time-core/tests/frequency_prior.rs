@@ -9,11 +9,14 @@
 use std::{error::Error, fmt, io, num::NonZeroU64};
 
 use time_core::{
-    FixtureAdaptiveHistory, FixtureAffineChart, FixtureChartBatch, FixtureChartDomain,
+    ArithmeticIssue, ArithmeticOperation, ArithmeticStage, FitError, FixtureAdaptiveHistory,
+    FixtureAffineChart, FixtureBaselineCompletion, FixtureBaselineError, FixtureBaselineFeedback,
+    FixtureBaselineRetirement, FixtureBaselineSettlement, FixtureChartBatch, FixtureChartDomain,
     FixtureChartFrames, FixtureChartInterval, FixtureChartOutcome, FixtureCombinationParameters,
-    FixtureCombinationState, FixtureContext, FixtureFrequencyAdmission,
-    FixtureFrequencyClockAssociation, FixtureFrequencyError, FixtureFrequencyHistory,
-    FixtureFrequencyNumericError, FixtureFrequencyNumericField, FixtureFrequencyNumericIssue,
+    FixtureCombinationState, FixtureContext, FixtureControllerClockMap,
+    FixtureControllerClockMapInput, FixtureFrequencyAdmission, FixtureFrequencyClockAssociation,
+    FixtureFrequencyError, FixtureFrequencyHistory, FixtureFrequencyNumericError,
+    FixtureFrequencyNumericField, FixtureFrequencyNumericIssue, FixtureFrequencyNumericStep,
     FixtureFrequencyProfile, FixtureMinimum, FixtureObservation, FixturePhaseBaseline,
     FixturePhaseError, FixturePhaseNow, FixturePhasePlanOwner, FixturePhaseProfile,
     FixturePhaseReferenceAdmission, FixturePhaseResidualPermission, FixturePhaseRetirement,
@@ -1732,7 +1735,7 @@ fn genuine_numeric_growth_loss_recovers_only_from_new_ready_evidence() -> TestRe
         owner.project_model(one_nanosecond),
         Err(FixtureFrequencyError::Numeric {
             source: FixtureFrequencyNumericError::Arithmetic {
-                step: time_core::FixtureFrequencyNumericStep::Growth,
+                step: FixtureFrequencyNumericStep::Growth,
                 ..
             }
         })
@@ -1809,5 +1812,1742 @@ fn outward_growth_cap_equality_and_adjacent_caps_use_the_real_receiver() -> Test
         assert_eq!(snapshot(&history(&owner)?), before);
         assert_eq!(owner.cursor().next_ordinal(), Some(label(1)?));
     }
+    Ok(())
+}
+
+/// Explicit physical fixture coefficients; no shipped profile or issuer is chosen.
+struct BaseTrace {
+    /// Reference-minus-raw-clock gradient in exact Q32 per monotonic second.
+    raw_gradient: i128,
+    /// Mathematical chart displacement slope.
+    chart_rate: f64,
+    /// Known old achieved baseline per active second.
+    baseline: f64,
+    /// Actual source-to-clock displacement slope per monotonic second.
+    actual_rate: f64,
+    /// Explicit dA/dM; the nonunit witness is one half.
+    ratio: f64,
+    /// Explicit fixture aggregate cap, shared by phase and base proposals.
+    cap: f64,
+}
+/// Keep the actual public owner and all source producers on one explicit contract.
+/// # Errors
+/// Preserve checked profiles, association, cursor and old baseline admission.
+fn base_owner_at<'p, 'c>(
+    producer: &'p mut FixtureCombinationState,
+    chart: &'c FixtureAffineChart,
+    trace: &BaseTrace,
+    initial: FixturePhaseNow,
+) -> TestResult<FixturePhasePlanOwner<'p, 'c>> {
+    product_ok(FixturePhasePlanOwner::new_with_frequency(
+        producer,
+        chart,
+        FixtureRateSettlementCursor::new(chart, clocks()?, label(1)?),
+        initial,
+        product_ok(FixturePhaseProfile::new(
+            ActiveAwakeNs::new(8 * SECOND).duration_since(ActiveAwakeNs::new(0))?,
+            MonotonicNs::new(16 * SECOND).duration_since(MonotonicNs::new(0))?,
+            1.0,
+            1.0 / 128.0,
+            trace.cap,
+        ))?,
+        product_ok(FixturePhaseBaseline::new(trace.baseline))?,
+        frequency_profile(1.0, 0.0, 1.0, 16)?,
+        association()?,
+    ))
+}
+/// Keep the established nonunit fixture's initial pair; no conversion is inferred.
+/// # Errors
+/// Preserve the same checked owner admission as the explicit-initial variant.
+fn base_owner<'p, 'c>(
+    producer: &'p mut FixtureCombinationState,
+    chart: &'c FixtureAffineChart,
+    trace: &BaseTrace,
+) -> TestResult<FixturePhasePlanOwner<'p, 'c>> {
+    base_owner_at(producer, chart, trace, at(2, 4)?)
+}
+/// Bind actual declared coefficients to this full chart and exact clock readings.
+/// # Errors
+/// Preserve the mandatory map rule; zero inherited error means an exact fixture.
+fn base_map(
+    chart: &FixtureAffineChart,
+    trace: &BaseTrace,
+    now: FixturePhaseNow,
+) -> TestResult<FixtureControllerClockMap> {
+    product_ok(FixtureControllerClockMap::new(
+        chart,
+        product_ok(FixturePhaseBaseline::new(trace.baseline))?,
+        FixtureControllerClockMapInput {
+            reference: now,
+            valid_until: MonotonicNs::new(32 * SECOND),
+            active_ratio: trace.ratio,
+            active_ratio_error: 0.0,
+            actual_phase: trace.actual_rate
+                * f64::from(u32::try_from(now.monotonic().nanoseconds() / SECOND)?),
+            actual_phase_error: 0.0,
+            actual_rate: trace.actual_rate,
+            actual_rate_error: 0.0,
+        },
+    ))
+}
+/// Checked source chart used by the analytic fixture; the common reference is M=2.
+/// # Errors
+/// Preserve immutable chart/domain construction.
+fn base_chart(rate: f64) -> TestResult<FixtureAffineChart> {
+    base_chart_at_reference(rate, MonotonicNs::new(2 * SECOND))
+}
+/// Select a checked coefficient epoch without changing the source/history domain.
+/// # Errors
+/// Preserve the actual chart's frame, domain and numerical constructor refusals.
+fn base_chart_at_reference(rate: f64, reference: MonotonicNs) -> TestResult<FixtureAffineChart> {
+    let original = chart()?;
+    product_ok(FixtureAffineChart::new(
+        original.frames(),
+        product_ok(FixtureChartDomain::new(
+            original.domain().start(),
+            reference,
+            original.domain().end(),
+        ))?,
+        0.0,
+        rate,
+    ))
+}
+/// Construct a typed matched achieved receipt, keeping requested and actual separate.
+/// # Errors
+/// Preserve real spans, the explicit final frame/generation chain and actual baseline admission.
+fn base_receipt(
+    chart: &FixtureAffineChart,
+    ordinal: u64,
+    span: ((u64, u64), (u64, u64)),
+    rates: (f64, f64),
+    target: (u64, u64),
+) -> TestResult<FixtureBaselineFeedback> {
+    let delivery = interval(chart, ordinal, span.0, span.1, rates.0)?;
+    let final_frames = product_ok(FixtureChartFrames::new(
+        label(31)?,
+        label(7)?,
+        label(target.0)?,
+        label(target.1)?,
+    ))?;
+    Ok(FixtureBaselineFeedback::Known(product_ok(
+        FixtureBaselineCompletion::new(
+            delivery,
+            product_ok(FixturePhaseBaseline::new(rates.1))?,
+            final_frames,
+        ),
+    )?))
+}
+/// Extract only a semantically asserted committed known receipt.
+/// # Errors
+/// Preserve unexpected branch as a fixture failure, never a fabricated completion.
+/// # Panics
+/// Reject absence of the independently expected known-custody branch.
+fn base_known<'p>(
+    result: FixtureBaselineSettlement<'p, '_>,
+) -> TestResult<FixtureBaselineRetirement<'p>> {
+    assert!(matches!(result, FixtureBaselineSettlement::Known(_)));
+    match result {
+        FixtureBaselineSettlement::Known(value) => Ok(value),
+        _ => Err(io::Error::other("missing committed achieved-base receipt").into()),
+    }
+}
+/// The independently derived nonunit case, with no request→achievement shortcut.
+fn nonunit_trace() -> BaseTrace {
+    BaseTrace {
+        raw_gradient: 1 << 27,
+        chart_rate: 1.0 / 128.0,
+        baseline: 1.0 / 32.0,
+        actual_rate: 1.0 / 64.0,
+        ratio: 0.5,
+        cap: 1.0 / 8.0,
+    }
+}
+
+/// Check signed and clipped requests from actual fitted source observations.
+/// # Errors
+/// Preserve actual source, profile, map and proposal admission failures.
+/// # Panics
+/// Reject wrong literal rates, clipping, source credit or a premature modeled effect.
+#[test]
+fn actual_frequency_producer_converts_zero_fast_slow_and_clipped_requests() -> TestResult {
+    // Xs=M, T=M+INITIAL_PHASE+q*(M−2): q>0 means a slow local oscillator.
+    // Four rows anchor A=2+(M−4), dA/dM=1 and c=k=b0=0; fifth A=M/2.
+    for (raw, c, b, k, a, cap, desired, requested, clipped) in [
+        (0, 0.0, 0.0, 0.0, 1.0, 0.125, 0.0, 0.0, false),
+        (
+            1 << 27,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.125,
+            1.0 / 32.0,
+            1.0 / 32.0,
+            false,
+        ),
+        (
+            -(1 << 27),
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.125,
+            -1.0 / 32.0,
+            -1.0 / 32.0,
+            false,
+        ),
+        (
+            1 << 27,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0 / 64.0,
+            1.0 / 32.0,
+            1.0 / 64.0,
+            true,
+        ),
+        (
+            1 << 27,
+            1.0 / 128.0,
+            1.0 / 32.0,
+            1.0 / 64.0,
+            0.5,
+            0.125,
+            1.0 / 16.0,
+            1.0 / 16.0,
+            false,
+        ),
+    ] {
+        let trace = BaseTrace {
+            raw_gradient: raw,
+            chart_rate: c,
+            baseline: b,
+            actual_rate: k,
+            ratio: a,
+            cap,
+        };
+        let chart = base_chart(c)?;
+        let source = Source::new(0, INITIAL_PHASE, raw, 1 << 20)?;
+        let mut producer = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+        let mut owner = base_owner(&mut producer, &chart, &trace)?;
+        let now = at(2, 4)?;
+        let admitted = receive(&mut owner, &source, 4, 1.0 / 32.0, now)?;
+        accepted(&owner, &admitted, 1);
+        let before = snapshot(&history(&owner)?);
+        let proposal = product_ok(owner.issue_baseline(base_map(&chart, &trace, now)?, now))?;
+        assert_eq!(proposal.desired_rate(), desired);
+        assert_eq!(proposal.requested_rate(), requested);
+        assert_eq!(proposal.clipped(), clipped);
+        assert_eq!(proposal.emitted_round(), label(1)?);
+        assert_eq!(proposal.ordinal(), label(1)?);
+        assert!(proposal.desired_error().is_finite());
+        assert_eq!(
+            snapshot(&history(&owner)?),
+            before,
+            "prediction cannot apply the requested base"
+        );
+        assert!(matches!(
+            owner.issue(now, FixturePhaseResidualPermission::Allow),
+            Err(FixturePhaseError::OutstandingOperation)
+        ));
+    }
+    Ok(())
+}
+
+/// Check the exact nonunit physical witness against the actual committed outputs.
+/// # Errors
+/// Preserve absent actual model, map or replacement diagnostics.
+/// # Panics
+/// Reject requested-as-achieved, wrong epoch/sign, age reset or double constant charge.
+fn check_quantized_feedback(
+    retired: &FixtureBaselineRetirement<'_>,
+    before: &FixtureFrequencyHistory,
+) -> TestResult<FixtureControllerClockMap> {
+    assert_eq!(retired.achieved_baseline().rate(), 3.0 / 64.0);
+    assert_eq!(
+        retired
+            .cursor()
+            .and_then(FixtureRateSettlementCursor::next_ordinal),
+        Some(label(2)?)
+    );
+    let after = product_ok(
+        retired
+            .frequency_history()
+            .ok_or_else(|| io::Error::other("lost real frequency model")),
+    )?;
+    assert_eq!(after.mean_seconds_per_second(), 1.0 / 64.0); // m1=3/128−1/128.
+    assert_eq!(
+        after.skew_seconds_per_second(),
+        before.skew_seconds_per_second()
+    );
+    assert_eq!(
+        after.residual_seconds_per_second(),
+        before.residual_seconds_per_second()
+    );
+    assert_eq!(snapshot(&after).times, snapshot(before).times);
+    assert_eq!(after.emitted_round(), before.emitted_round());
+    // Old delivery=b0*(Aack−Aissue)=1/32. E(2)=−1/32 and E(4)=−1/64.
+    // Therefore combined effect at the common reference M=2 is zero; at Mp=4 it is1/64.
+    assert_eq!(
+        product_ok(retired.replacement())?.phase_at_reference_seconds(),
+        0.0
+    );
+    assert_eq!(
+        product_ok(retired.replacement())?.rate_seconds_per_second(),
+        1.0 / 64.0
+    );
+    assert_eq!(
+        after.anchor_phase_seconds(),
+        before.anchor_phase_seconds() - 1.0 / 64.0
+    );
+    let map = *product_ok(retired.clock_map())?;
+    assert_eq!(map.actual_rate(), 3.0 / 128.0);
+    assert_eq!(map.actual_phase(), 3.0 / 32.0); // Cold(6), with NO second old-delivery constant.
+    Ok(map)
+}
+
+/// Follow actual quantized achievement through rebase, fresh intake and replay refusal.
+/// # Errors
+/// Preserve genuine source, map, terminal and custody-transfer admission failures.
+/// # Panics
+/// Reject wrong achieved-coordinate feedback, minted phase debt or reused operation credit.
+#[test]
+fn quantized_achieved_base_rebases_actual_frequency_then_requires_fresh_phase_evidence()
+-> TestResult {
+    let trace = nonunit_trace();
+    let chart = base_chart(trace.chart_rate)?;
+    let source = Source::new(0, INITIAL_PHASE, trace.raw_gradient, 1 << 20)?;
+    let mut producer = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+    let mut owner = base_owner(&mut producer, &chart, &trace)?;
+    let admitted = receive(&mut owner, &source, 4, 1.0 / 32.0, at(2, 4)?)?;
+    accepted(&owner, &admitted, 1);
+    let before = history(&owner)?;
+    let map = base_map(&chart, &trace, at(2, 4)?)?;
+    assert_eq!(
+        product_ok(owner.issue_baseline(map, at(2, 4)?))?.requested_rate(),
+        1.0 / 16.0
+    );
+    let receipt = base_receipt(
+        &chart,
+        1,
+        ((2, 3), (4, 6)),
+        (trace.baseline, 3.0 / 64.0),
+        (37, 9),
+    )?;
+    let mut retired = base_known(owner.settle_baseline(receipt, at(3, 6)?))?;
+    let map = check_quantized_feedback(&retired, &before)?;
+    let mut next = product_ok(retired.resume(at(3, 6)?, FixturePhaseResidualPermission::Allow))?;
+    let stale_base = product_ok(FixtureControllerClockMap::new(
+        next.chart(),
+        product_ok(FixturePhaseBaseline::new(trace.baseline))?,
+        FixtureControllerClockMapInput {
+            reference: at(3, 6)?,
+            valid_until: MonotonicNs::new(32 * SECOND),
+            active_ratio: 0.5,
+            active_ratio_error: 0.0,
+            actual_phase: 3.0 / 32.0,
+            actual_phase_error: 0.0,
+            actual_rate: 3.0 / 128.0,
+            actual_rate_error: 0.0,
+        },
+    ))?;
+    assert!(matches!(
+        next.issue_baseline(stale_base, at(3, 6)?),
+        Err(FixtureBaselineError::Map)
+    ));
+    assert!(matches!(
+        next.issue(at(3, 6)?, FixturePhaseResidualPermission::Allow),
+        Err(FixturePhaseError::NoReference)
+    ));
+    assert!(
+        product_ok(next.project_model(at(3, 6)?))?
+            .nominal_phase_seconds()
+            .is_finite()
+    );
+    assert!(matches!(
+        next.issue_baseline(map, at(3, 6)?),
+        Err(FixtureBaselineError::ReusedEmission)
+    ));
+    // New genuine raw observations share the original q; assimilation must leave the same physical target.
+    let recovered = Source::new(2, INITIAL_PHASE + (1 << 28), trace.raw_gradient, 1 << 20)?;
+    let admitted = receive(&mut next, &recovered, 6, 1.0 / 32.0, at(3, 6)?)?;
+    accepted(&next, &admitted, 2);
+    assert_eq!(
+        product_ok(next.issue_baseline(map, at(3, 6)?))?.desired_rate(),
+        1.0 / 16.0
+    );
+    let replay = next.settle_baseline(receipt, at(3, 6)?);
+    assert!(matches!(
+        replay,
+        FixtureBaselineSettlement::OuterRejected {
+            error: FixtureBaselineError::Receipt,
+            ..
+        }
+    ));
+    let FixtureBaselineSettlement::OuterRejected { owner: next, .. } = replay else {
+        return Err(io::Error::other("lost replay-safe owner").into());
+    };
+    assert_eq!(
+        next.baseline_proposal().map(|value| value.ordinal()),
+        Some(label(2)?)
+    );
+    let healthy = FixtureBaselineFeedback::ProvenNoEffect {
+        context: clocks()?,
+        ordinal: label(2)?,
+    };
+    assert!(matches!(
+        next.settle_baseline(healthy, at(3, 6)?),
+        FixtureBaselineSettlement::ProvenNoEffect(_)
+    ));
+    Ok(())
+}
+
+/// Retain the original phase budget when actual achievement is bit-identical.
+/// # Errors
+/// Preserve genuine source, map, known receipt and residual-transfer setup failures.
+/// # Panics
+/// Reject changed original deadlines, stale map admission or reused base/source credit.
+#[test]
+fn known_unchanged_base_keeps_original_phase_deadlines_and_consumes_emission_credit() -> TestResult
+{
+    let trace = nonunit_trace();
+    let chart = base_chart(trace.chart_rate)?;
+    let source = Source::new(0, INITIAL_PHASE, trace.raw_gradient, 1 << 20)?;
+    let mut producer = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+    let mut owner = base_owner(&mut producer, &chart, &trace)?;
+    let admitted = receive(&mut owner, &source, 4, 1.0 / 32.0, at(2, 4)?)?;
+    accepted(&owner, &admitted, 1);
+    let deadlines = (owner.active_deadline(), owner.monotonic_deadline());
+    let before = history(&owner)?;
+    let stale_map = base_map(&chart, &trace, at(2, 4)?)?;
+    product_ok(owner.issue_baseline(stale_map, at(2, 4)?))?;
+    let receipt = base_receipt(
+        &chart,
+        1,
+        ((2, 3), (4, 6)),
+        (trace.baseline, trace.baseline),
+        (37, 9),
+    )?;
+    let mut retired = base_known(owner.settle_baseline(receipt, at(3, 6)?))?;
+    assert_eq!(retired.achieved_baseline().rate(), trace.baseline);
+    let after = product_ok(
+        retired
+            .frequency_history()
+            .ok_or_else(|| io::Error::other("lost unchanged model")),
+    )?;
+    assert_eq!(
+        after.mean_seconds_per_second(),
+        before.mean_seconds_per_second()
+    );
+    assert_eq!(
+        after.anchor_phase_seconds(),
+        before.anchor_phase_seconds() - 1.0 / 32.0
+    );
+    let map = *product_ok(retired.clock_map())?;
+    let mut next = product_ok(retired.resume(at(3, 6)?, FixturePhaseResidualPermission::Allow))?;
+    assert_eq!(
+        (next.active_deadline(), next.monotonic_deadline()),
+        deadlines
+    );
+    assert!(matches!(
+        next.issue_baseline(stale_map, at(3, 6)?),
+        Err(FixtureBaselineError::Map)
+    ));
+    assert!(matches!(
+        next.issue_baseline(map, at(3, 6)?),
+        Err(FixtureBaselineError::ReusedEmission)
+    ));
+    assert_eq!(
+        product_ok(next.issue(at(3, 6)?, FixturePhaseResidualPermission::Allow))?.ordinal(),
+        label(2)?
+    );
+    Ok(())
+}
+
+/// Distinguish no effect, uncertain effect and rejected replay on the actual cursor.
+/// # Errors
+/// Preserve real source/map setup and report an unexpected terminal custody branch.
+/// # Panics
+/// Reject lost pending custody, invented modeled effects or an unblocked uncertain cursor.
+#[test]
+fn no_effect_unknown_wrong_receipt_and_replay_keep_the_real_shared_cursor() -> TestResult {
+    for unknown in [false, true] {
+        let trace = nonunit_trace();
+        let chart = base_chart(trace.chart_rate)?;
+        let source = Source::new(0, INITIAL_PHASE, trace.raw_gradient, 1 << 20)?;
+        let mut producer = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+        let mut owner = base_owner(&mut producer, &chart, &trace)?;
+        let admitted = receive(&mut owner, &source, 4, 1.0 / 32.0, at(2, 4)?)?;
+        accepted(&owner, &admitted, 1);
+        let before = snapshot(&history(&owner)?);
+        let map = base_map(&chart, &trace, at(2, 4)?)?;
+        product_ok(owner.issue_baseline(map, at(2, 4)?))?;
+        let wrong = FixtureBaselineFeedback::ProvenNoEffect {
+            context: clocks()?,
+            ordinal: label(2)?,
+        };
+        let rejected = owner.settle_baseline(wrong, at(2, 4)?);
+        assert!(matches!(
+            rejected,
+            FixtureBaselineSettlement::OuterRejected {
+                error: FixtureBaselineError::Receipt,
+                ..
+            }
+        ));
+        let FixtureBaselineSettlement::OuterRejected { owner, .. } = rejected else {
+            return Err(io::Error::other("lost unchanged pending owner").into());
+        };
+        let event = if unknown {
+            FixtureBaselineFeedback::Unknown {
+                context: clocks()?,
+                ordinal: label(1)?,
+            }
+        } else {
+            FixtureBaselineFeedback::ProvenNoEffect {
+                context: clocks()?,
+                ordinal: label(1)?,
+            }
+        };
+        match owner.settle_baseline(event, at(2, 4)?) {
+            FixtureBaselineSettlement::Unknown(blocked) if unknown => {
+                assert_eq!(
+                    blocked.cursor().status(),
+                    FixtureRateCursorStatus::Unresolved
+                );
+                assert_eq!(
+                    snapshot(
+                        &blocked
+                            .frequency_history()
+                            .ok_or_else(|| io::Error::other("lost unknown history"))?
+                    ),
+                    before
+                );
+            }
+            FixtureBaselineSettlement::ProvenNoEffect(mut next) if !unknown => {
+                assert_eq!(snapshot(&history(&next)?), before);
+                assert_eq!(next.chart().rate_seconds_per_second(), trace.chart_rate);
+                assert!(matches!(
+                    next.issue_baseline(map, at(2, 4)?),
+                    Err(FixtureBaselineError::ReusedEmission)
+                ));
+                assert_eq!(
+                    product_ok(next.issue(at(2, 4)?, FixturePhaseResidualPermission::Allow))?
+                        .ordinal(),
+                    label(2)?
+                );
+                // Replaying the base event cannot settle the now-issued finite phase operation.
+                assert!(matches!(
+                    next.settle_baseline(event, at(2, 4)?),
+                    FixtureBaselineSettlement::OuterRejected { .. }
+                ));
+            }
+            _ => return Err(io::Error::other("wrong actual base terminal branch").into()),
+        }
+    }
+    Ok(())
+}
+
+/// Change exactly one declared public numeric operand for a bounded admission case.
+/// # Errors
+/// Reject a fixture field outside the six numeric map operands.
+fn changed_map_scalar(
+    mut input: FixtureControllerClockMapInput,
+    field: FixtureFrequencyNumericField,
+    value: f64,
+) -> TestResult<FixtureControllerClockMapInput> {
+    match field {
+        FixtureFrequencyNumericField::ActiveRatio => input.active_ratio = value,
+        FixtureFrequencyNumericField::ActiveRatioError => input.active_ratio_error = value,
+        FixtureFrequencyNumericField::MapPhase => input.actual_phase = value,
+        FixtureFrequencyNumericField::MapPhaseError => input.actual_phase_error = value,
+        FixtureFrequencyNumericField::ActualRate => input.actual_rate = value,
+        FixtureFrequencyNumericField::ActualRateError => input.actual_rate_error = value,
+        _ => return Err(io::Error::other("unexpected bounded map scalar field").into()),
+    }
+    Ok(input)
+}
+
+/// Challenge every public map scalar through its mandatory checked constructor.
+/// # Errors
+/// Preserve valid descriptor setup and reject an unexpected fixture field.
+/// # Panics
+/// Reject missing scalar validation, a wrong typed cause or loss of a legal neighbor.
+fn check_public_map_scalar_admission(chart: &FixtureAffineChart, baseline: f64) -> TestResult {
+    let baseline = product_ok(FixturePhaseBaseline::new(baseline))?;
+    let input = FixtureControllerClockMapInput {
+        reference: at(2, 4)?,
+        valid_until: MonotonicNs::new(32 * SECOND),
+        active_ratio: 0.5,
+        active_ratio_error: -0.0,
+        actual_phase: -1.0 / 16.0,
+        actual_phase_error: -0.0,
+        actual_rate: -1.0 / 64.0,
+        actual_rate_error: -0.0,
+    };
+    let healthy = product_ok(FixtureControllerClockMap::new(chart, baseline, input))?;
+    assert_eq!(healthy.actual_phase(), -1.0 / 16.0);
+    assert_eq!(healthy.actual_rate(), -1.0 / 64.0);
+    for field in [
+        FixtureFrequencyNumericField::ActiveRatio,
+        FixtureFrequencyNumericField::ActiveRatioError,
+        FixtureFrequencyNumericField::MapPhase,
+        FixtureFrequencyNumericField::MapPhaseError,
+        FixtureFrequencyNumericField::ActualRate,
+        FixtureFrequencyNumericField::ActualRateError,
+    ] {
+        let negative_issue = if field == FixtureFrequencyNumericField::ActiveRatio {
+            Some(FixtureFrequencyNumericIssue::NonPositive)
+        } else if matches!(
+            field,
+            FixtureFrequencyNumericField::ActiveRatioError
+                | FixtureFrequencyNumericField::MapPhaseError
+                | FixtureFrequencyNumericField::ActualRateError
+        ) {
+            Some(FixtureFrequencyNumericIssue::Negative)
+        } else {
+            None
+        };
+        let malformed = [
+            Some((f64::NAN, FixtureFrequencyNumericIssue::NonFinite)),
+            Some((f64::INFINITY, FixtureFrequencyNumericIssue::NonFinite)),
+            Some((f64::from_bits(1), FixtureFrequencyNumericIssue::Subnormal)),
+            negative_issue.map(|issue| (-1.0, issue)),
+        ];
+        for (value, issue) in malformed.into_iter().flatten() {
+            let changed = changed_map_scalar(input, field, value)?;
+            assert!(
+                matches!(FixtureControllerClockMap::new(chart, baseline, changed),
+                Err(FixtureBaselineError::Numeric {
+                    source: FixtureFrequencyNumericError::Input { field: actual_field, issue: actual_issue }
+                }) if actual_field == field && actual_issue == issue),
+                "{field:?}/{issue:?}"
+            );
+            assert!(FixtureControllerClockMap::new(chart, baseline, input).is_ok());
+        }
+    }
+    Ok(())
+}
+
+/// Check public map refusals and a legal neighboring actual proposal.
+/// # Errors
+/// Preserve genuine source, checked baseline, legal map and no-effect setup failures.
+/// # Panics
+/// Reject malformed maps, a contradictory clock pair or refreshed original evidence age.
+#[test]
+fn public_map_bad_inputs_stale_model_and_affine_segment_discontinuity_refuse_with_legal_neighbor()
+-> TestResult {
+    let trace = nonunit_trace();
+    let chart = base_chart(trace.chart_rate)?;
+    check_public_map_scalar_admission(&chart, trace.baseline)?;
+    for (ratio, ratio_error) in [(0.0, 0.0), (-0.5, 0.0), (f64::NAN, 0.0), (0.5, 0.5)] {
+        assert!(
+            FixtureControllerClockMap::new(
+                &chart,
+                product_ok(FixturePhaseBaseline::new(trace.baseline))?,
+                FixtureControllerClockMapInput {
+                    reference: at(2, 4)?,
+                    valid_until: MonotonicNs::new(32 * SECOND),
+                    active_ratio: ratio,
+                    active_ratio_error: ratio_error,
+                    actual_phase: 1.0 / 16.0,
+                    actual_phase_error: 0.0,
+                    actual_rate: trace.actual_rate,
+                    actual_rate_error: 0.0
+                }
+            )
+            .is_err()
+        );
+    }
+    let source = Source::new(0, INITIAL_PHASE, trace.raw_gradient, 1 << 20)?;
+    let mut producer = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+    let mut owner = base_owner(&mut producer, &chart, &trace)?;
+    let admitted = receive(&mut owner, &source, 4, 1.0 / 32.0, at(2, 4)?)?;
+    accepted(&owner, &admitted, 1);
+    let map = base_map(&chart, &trace, at(2, 4)?)?;
+    assert!(
+        matches!(
+            owner.issue_baseline(map, at(3, 5)?),
+            Err(FixtureBaselineError::Numeric { .. })
+        ),
+        "A advanced1 while M advanced1 violates a=1/2"
+    );
+    // A failed pair is not accepted as current readings; the exact legal neighbor can still issue.
+    product_ok(owner.issue_baseline(map, at(3, 6)?))?;
+    let event = FixtureBaselineFeedback::ProvenNoEffect {
+        context: clocks()?,
+        ordinal: label(1)?,
+    };
+    let FixtureBaselineSettlement::ProvenNoEffect(mut owner) =
+        owner.settle_baseline(event, at(3, 6)?)
+    else {
+        return Err(io::Error::other("no-effect neighbor refused").into());
+    };
+    assert!(matches!(
+        owner.issue_baseline(map, at(9, 18)?),
+        Err(FixtureBaselineError::Frequency {
+            source: FixtureFrequencyError::Expired
+        })
+    ));
+    Ok(())
+}
+
+/// Exercise known facts that cannot become useful continuation authority.
+/// # Errors
+/// Preserve real source/chart/receipt admission and reject an unknown literal row.
+/// # Panics
+/// Reject lost achieved facts, consumed custody or bypassed deadline/cap retirement.
+fn known_base_boundary_case(row: u8) -> TestResult {
+    let trace = if row == 2 {
+        BaseTrace {
+            raw_gradient: 0,
+            chart_rate: 0.0,
+            baseline: 0.0,
+            actual_rate: 0.0,
+            ratio: 0.5,
+            cap: 0.125,
+        }
+    } else {
+        nonunit_trace()
+    };
+    let chart = base_chart(trace.chart_rate)?;
+    let source = Source::new(0, INITIAL_PHASE, trace.raw_gradient, 1 << 20)?;
+    let mut producer = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+    let mut owner = base_owner(&mut producer, &chart, &trace)?;
+    let admitted = receive(&mut owner, &source, 4, 1.0 / 32.0, at(2, 4)?)?;
+    accepted(&owner, &admitted, 1);
+    product_ok(owner.issue_baseline(base_map(&chart, &trace, at(2, 4)?)?, at(2, 4)?))?;
+    let (ack_active, ack_mono, actual) = match row {
+        0 => (3, 6, 0.25), // Actual clipped/quantized output remains fact even above the declared cap.
+        1 => (10, 20, 3.0 / 64.0), // Exact original active AND monotonic deadlines.
+        2 => (3, 6, -0.0), // gpoint=0 is not bit-identical baseline identity.
+        _ => return Err(io::Error::other("unknown bounded achieved-base row").into()),
+    };
+    let receipt = base_receipt(
+        &chart,
+        1,
+        ((2, ack_active), (4, ack_mono)),
+        (trace.baseline, actual),
+        (37, 9),
+    )?;
+    let mut retired = base_known(owner.settle_baseline(receipt, at(ack_active, ack_mono)?))?;
+    assert_eq!(
+        retired.achieved_baseline().rate().to_bits(),
+        actual.to_bits()
+    );
+    assert_eq!(
+        retired
+            .cursor()
+            .and_then(FixtureRateSettlementCursor::next_ordinal),
+        Some(label(2)?)
+    );
+    assert!(
+        retired.replacement().is_ok(),
+        "known numeric geometry must remain observable"
+    );
+    if row == 2 {
+        let mut next =
+            product_ok(retired.resume(at(3, 6)?, FixturePhaseResidualPermission::Allow))?;
+        assert!(matches!(
+            next.issue(at(3, 6)?, FixturePhaseResidualPermission::Allow),
+            Err(FixturePhaseError::NoReference)
+        ));
+    } else {
+        assert!(matches!(
+            (row, retired.continuation_error()),
+            (0, Some(FixturePhaseError::DeliveredOutOfEnvelope))
+                | (1, Some(FixturePhaseError::Expired))
+        ));
+        assert!(
+            retired
+                .resume(
+                    at(ack_active, ack_mono)?,
+                    FixturePhaseResidualPermission::Allow
+                )
+                .is_err()
+        );
+        assert!(
+            retired.cursor().is_some(),
+            "refused resume cannot erase consumed custody"
+        );
+    }
+    Ok(())
+}
+
+/// Exercise literal cap, deadline and signed-zero known-feedback boundaries.
+/// # Errors
+/// Preserve each real fixture and actual known terminal transition failure.
+/// # Panics
+/// Reject wrong achieved facts or continuation authority in the assertion-bearing cases.
+#[test]
+fn known_base_cap_deadline_and_signed_zero_have_distinct_lifecycle_outcomes() -> TestResult {
+    for row in 0..=2 {
+        known_base_boundary_case(row)?;
+    }
+    Ok(())
+}
+
+/// Check actual handler custody before a healthy matching known receipt.
+/// # Errors
+/// Preserve real source, checked map and matching receipt setup failures.
+/// # Panics
+/// Reject substituted geometry, wrong old delivery or loss of the pending ordinal.
+#[test]
+fn real_base_handler_rechecks_substituted_geometry_and_old_rate_before_consumption() -> TestResult {
+    let trace = nonunit_trace();
+    let chart = base_chart(trace.chart_rate)?;
+    let substituted = base_chart(trace.chart_rate + 1.0 / 128.0)?;
+    let source = Source::new(0, INITIAL_PHASE, trace.raw_gradient, 1 << 20)?;
+    let mut producer = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+    let mut owner = base_owner(&mut producer, &chart, &trace)?;
+    let admitted = receive(&mut owner, &source, 4, 1.0 / 32.0, at(2, 4)?)?;
+    accepted(&owner, &admitted, 1);
+    let wrong_map = base_map(&substituted, &trace, at(2, 4)?)?;
+    assert!(matches!(
+        owner.issue_baseline(wrong_map, at(2, 4)?),
+        Err(FixtureBaselineError::Map)
+    ));
+    product_ok(owner.issue_baseline(base_map(&chart, &trace, at(2, 4)?)?, at(2, 4)?))?;
+    let wrong = base_receipt(
+        &chart,
+        1,
+        ((2, 3), (4, 6)),
+        (1.0 / 64.0, 3.0 / 64.0),
+        (37, 9),
+    )?;
+    let outcome = owner.settle_baseline(wrong, at(3, 6)?);
+    assert!(matches!(
+        outcome,
+        FixtureBaselineSettlement::OuterRejected {
+            error: FixtureBaselineError::Receipt,
+            ..
+        }
+    ));
+    let FixtureBaselineSettlement::OuterRejected { owner, .. } = outcome else {
+        return Err(io::Error::other("lost real pending base").into());
+    };
+    assert_eq!(
+        owner.baseline_proposal().map(|value| value.ordinal()),
+        Some(label(1)?)
+    );
+    let healthy = base_receipt(
+        &chart,
+        1,
+        ((2, 3), (4, 6)),
+        (trace.baseline, 3.0 / 64.0),
+        (37, 9),
+    )?;
+    let retired = base_known(owner.settle_baseline(healthy, at(3, 6)?))?;
+    assert_eq!(retired.achieved_baseline().rate(), 3.0 / 64.0);
+    Ok(())
+}
+
+/// Retain late known achievement after explicit useful-authority retirement.
+/// # Errors
+/// Preserve genuine source, map, known receipt and historical custody admission failures.
+/// # Panics
+/// Reject lost achieved facts/cursor custody or revived stopped authority.
+#[test]
+fn stopped_base_request_still_records_matched_achievement_without_reviving_authority() -> TestResult
+{
+    let trace = nonunit_trace();
+    let chart = base_chart(trace.chart_rate)?;
+    let source = Source::new(0, INITIAL_PHASE, trace.raw_gradient, 1 << 20)?;
+    let mut producer = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+    let mut owner = base_owner(&mut producer, &chart, &trace)?;
+    let admitted = receive(&mut owner, &source, 4, 1.0 / 32.0, at(2, 4)?)?;
+    accepted(&owner, &admitted, 1);
+    product_ok(owner.issue_baseline(base_map(&chart, &trace, at(2, 4)?)?, at(2, 4)?))?;
+    owner.retire(FixturePhaseRetirementReason::Stop);
+    assert!(owner.baseline_proposal().is_none());
+    let receipt = base_receipt(
+        &chart,
+        1,
+        ((2, 3), (4, 6)),
+        (trace.baseline, 3.0 / 64.0),
+        (37, 9),
+    )?;
+    let mut retired = base_known(owner.settle_baseline(receipt, at(3, 6)?))?;
+    assert_eq!(retired.achieved_baseline().rate(), 3.0 / 64.0);
+    assert_eq!(
+        retired
+            .cursor()
+            .and_then(FixtureRateSettlementCursor::next_ordinal),
+        Some(label(2)?)
+    );
+    assert!(matches!(
+        retired.resume(at(3, 6)?, FixturePhaseResidualPermission::Allow),
+        Err(FixtureBaselineError::Phase {
+            source: FixturePhaseError::Retired {
+                reason: FixturePhaseRetirementReason::Stop
+            }
+        })
+    ));
+    Ok(())
+}
+
+/// Declare a bounded uncertain ratio for the exact zero-base affine fixture.
+/// # Errors
+/// Preserve private map admission; no calibration is inferred from construction.
+fn uncertain_map(
+    chart: &FixtureAffineChart,
+    reference: FixturePhaseNow,
+) -> TestResult<FixtureControllerClockMap> {
+    product_ok(FixtureControllerClockMap::new(
+        chart,
+        product_ok(FixturePhaseBaseline::new(0.0))?,
+        FixtureControllerClockMapInput {
+            reference,
+            valid_until: MonotonicNs::new(32 * SECOND),
+            active_ratio: 1.0,
+            active_ratio_error: 1.0 / 8.0,
+            actual_phase: 0.0,
+            actual_phase_error: 0.0,
+            actual_rate: 0.0,
+            actual_rate_error: 0.0,
+        },
+    ))
+}
+
+/// Establish one real affine witness through actual owner/handler observations.
+/// # Errors
+/// Preserve real producer, immutable map and terminal admission failures.
+/// # Panics
+/// Reject a non-affine known receipt or loss of its healthy original pending owner.
+fn uncertain_ratio_case(
+    issue_active: u64,
+    bad_active: u64,
+    healthy: (u64, u64),
+    at_reference: bool,
+) -> TestResult {
+    let trace = BaseTrace {
+        raw_gradient: 0,
+        chart_rate: 0.0,
+        baseline: 0.0,
+        actual_rate: 0.0,
+        ratio: 1.0,
+        cap: 0.125,
+    };
+    let chart = base_chart(0.0)?;
+    let source = Source::new(0, INITIAL_PHASE, 0, 1 << 20)?;
+    let mut producer = seed(&source.entry(&chart, 8, 1.0 / 32.0)?, 8)?;
+    let mut owner = base_owner_at(&mut producer, &chart, &trace, at(0, 0)?)?;
+    let admitted = receive(&mut owner, &source, 8, 1.0 / 32.0, at(issue_active, 8)?)?;
+    accepted(&owner, &admitted, 1);
+    let map = uncertain_map(
+        &chart,
+        if at_reference {
+            at(issue_active, 8)?
+        } else {
+            at(0, 0)?
+        },
+    )?;
+    product_ok(owner.issue_baseline(map, at(issue_active, 8)?))?;
+    let owner = if at_reference {
+        owner
+    } else {
+        let bad = base_receipt(
+            &chart,
+            1,
+            ((issue_active, bad_active), (8, 16)),
+            (0.0, 0.0),
+            (37, 9),
+        )?;
+        let rejected = owner.settle_baseline(bad, at(bad_active, 16)?);
+        assert!(matches!(
+            rejected,
+            FixtureBaselineSettlement::OuterRejected {
+                error: FixtureBaselineError::Map | FixtureBaselineError::Numeric { .. },
+                ..
+            }
+        ));
+        let FixtureBaselineSettlement::OuterRejected { owner, .. } = rejected else {
+            return Err(io::Error::other("lost ratio-rejected pending owner").into());
+        };
+        assert_eq!(
+            owner.baseline_proposal().map(|value| value.ordinal()),
+            Some(label(1)?)
+        );
+        owner
+    };
+    let event = base_receipt(
+        &chart,
+        1,
+        ((issue_active, healthy.0), (8, healthy.1)),
+        (0.0, 0.0),
+        (37, 9),
+    )?;
+    let mut retired = base_known(owner.settle_baseline(event, at(healthy.0, healthy.1)?))?;
+    assert_eq!(
+        retired
+            .cursor()
+            .and_then(FixtureRateSettlementCursor::next_ordinal),
+        Some(label(2)?)
+    );
+    if issue_active == 8 && healthy == (12, 12) {
+        check_rebound_ratio_custody(&mut retired)?;
+    }
+    if healthy == (16, 16) {
+        assert!(matches!(
+            retired.continuation_error(),
+            Some(FixturePhaseError::Expired)
+        ));
+    }
+    Ok(())
+}
+
+/// A rebound changes the coefficient epoch, not the exact A/M ratio witness.
+/// # Errors
+/// Preserve take-once custody, real fresh intake and healthy terminal admission.
+/// # Panics
+/// Reject a newly chosen slope after rebinding or lost pending ordinal on refusal.
+fn check_rebound_ratio_custody(retired: &mut FixtureBaselineRetirement<'_>) -> TestResult {
+    let map = *product_ok(retired.clock_map())?;
+    let mut owner = product_ok(retired.resume(at(12, 12)?, FixturePhaseResidualPermission::Allow))?;
+    let source = Source::new(10, INITIAL_PHASE, 0, 1 << 20)?;
+    let admitted = receive(&mut owner, &source, 20, 1.0 / 32.0, at(20, 20)?)?;
+    accepted(&owner, &admitted, 2);
+    product_ok(owner.issue_baseline(map, at(20, 20)?))?;
+    // New epoch12/12: both endpoint17/16 and operation9/8 fit the coefficient
+    // interval, but neither is the retained exact ratio1 established before ack1.
+    // Known1 targets37/generation9; Known2 needs a distinct final generation11.
+    let bad = base_receipt(owner.chart(), 2, ((20, 29), (20, 28)), (0.0, 0.0), (41, 11))?;
+    let rejected = owner.settle_baseline(bad, at(29, 28)?);
+    assert!(matches!(
+        rejected,
+        FixtureBaselineSettlement::OuterRejected {
+            error: FixtureBaselineError::Map,
+            ..
+        }
+    ));
+    let FixtureBaselineSettlement::OuterRejected { owner, .. } = rejected else {
+        return Err(io::Error::other("lost rebound-ratio pending owner").into());
+    };
+    assert_eq!(
+        owner.baseline_proposal().map(|value| value.ordinal()),
+        Some(label(2)?)
+    );
+    let healthy = base_receipt(owner.chart(), 2, ((20, 27), (20, 27)), (0.0, 0.0), (41, 11))?;
+    let retired = base_known(owner.settle_baseline(healthy, at(27, 27)?))?;
+    assert_eq!(
+        retired
+            .cursor()
+            .and_then(FixtureRateSettlementCursor::next_ordinal),
+        Some(label(3)?)
+    );
+    Ok(())
+}
+
+/// Require exact affine clock custody through actual issued and rebound operations.
+/// # Errors
+/// Preserve the literal fixture, actual terminal and rebound-control setup failures.
+/// # Panics
+/// Reject inconsistent clock triples or loss of their healthy shared-cursor neighbors.
+#[test]
+fn matched_base_handler_requires_one_affine_ratio_across_issue_ack_and_rebound() -> TestResult {
+    // Reference0/0, a=1±1/8: each endpoint is allowed, but operation11/8 is not.
+    uncertain_ratio_case(7, 18, (14, 16), false)?;
+    // Every pair enclosure passes here; exact8/8 differs from17/16 nonetheless.
+    // The true affine neighbor12/12 also leaves time for the cross-rebound case.
+    uncertain_ratio_case(8, 17, (16, 16), false)?;
+    uncertain_ratio_case(8, 17, (12, 12), false)?;
+    // At issue==reference, ack1 is the first nonzero observation; custody must survive.
+    uncertain_ratio_case(8, 17, (12, 12), true)?;
+    Ok(())
+}
+
+/// `ProvenNoEffect` retains clock-only evidence without refilling source/base credit.
+/// # Errors
+/// Preserve real source admission and typed map/receipt construction.
+/// # Panics
+/// Reject a new affine slope hidden behind an original or newly declared Copy map.
+fn no_effect_ratio_case(at_reference: bool) -> TestResult {
+    let trace = BaseTrace {
+        raw_gradient: 0,
+        chart_rate: 0.0,
+        baseline: 0.0,
+        actual_rate: 0.0,
+        ratio: 1.0,
+        cap: 0.125,
+    };
+    let chart = base_chart(0.0)?;
+    let source = Source::new(0, INITIAL_PHASE, 0, 1 << 20)?;
+    let mut producer = seed(&source.entry(&chart, 8, 1.0 / 32.0)?, 8)?;
+    let mut owner = base_owner_at(&mut producer, &chart, &trace, at(0, 0)?)?;
+    let admitted = receive(&mut owner, &source, 8, 1.0 / 32.0, at(7, 8)?)?;
+    accepted(&owner, &admitted, 1);
+    let original_map = uncertain_map(&chart, if at_reference { at(7, 8)? } else { at(0, 0)? })?;
+    product_ok(owner.issue_baseline(original_map, at(7, 8)?))?;
+    let event = FixtureBaselineFeedback::ProvenNoEffect {
+        context: clocks()?,
+        ordinal: label(1)?,
+    };
+    let FixtureBaselineSettlement::ProvenNoEffect(mut owner) =
+        owner.settle_baseline(event, if at_reference { at(14, 16)? } else { at(7, 8)? })
+    else {
+        return Err(io::Error::other("no-effect relation custody lost").into());
+    };
+    let source = Source::new(10, INITIAL_PHASE, 0, 1 << 20)?;
+    let admitted = receive(&mut owner, &source, 16, 1.0 / 32.0, at(14, 16)?)?;
+    accepted(&owner, &admitted, 2);
+    // Original Copy map(None), or a new current-epoch declaration, cannot
+    // erase the original clock relation7/8 after genuine new source emission.
+    let incoming = if at_reference {
+        // This new declaration fits current14/16 with local slope1, but its
+        // origin13/15 contradicts the retained exact global7/8 relation.
+        let forged = uncertain_map(&chart, at(13, 15)?)?;
+        assert!(matches!(
+            owner.issue_baseline(forged, at(14, 16)?),
+            Err(FixtureBaselineError::Numeric {
+                source: FixtureFrequencyNumericError::ActiveRatioMismatch
+            })
+        ));
+        uncertain_map(&chart, at(14, 16)?)?
+    } else {
+        original_map
+    };
+    product_ok(owner.issue_baseline(incoming, at(14, 16)?))?;
+    let bad = base_receipt(&chart, 2, ((14, 22), (16, 24)), (0.0, 0.0), (37, 9))?;
+    let rejected = owner.settle_baseline(bad, at(22, 24)?);
+    assert!(matches!(
+        rejected,
+        FixtureBaselineSettlement::OuterRejected {
+            error: FixtureBaselineError::Map,
+            ..
+        }
+    ));
+    let FixtureBaselineSettlement::OuterRejected { owner, .. } = rejected else {
+        return Err(io::Error::other("lost ratio-safe pending ordinal2").into());
+    };
+    let healthy = base_receipt(&chart, 2, ((14, 21), (16, 24)), (0.0, 0.0), (37, 9))?;
+    let retired = base_known(owner.settle_baseline(healthy, at(21, 24)?))?;
+    assert_eq!(
+        retired
+            .cursor()
+            .and_then(FixtureRateSettlementCursor::next_ordinal),
+        Some(label(3)?)
+    );
+    Ok(())
+}
+
+/// Retain accepted clock evidence across no effect and genuine new source intake.
+/// # Errors
+/// Preserve both real no-effect, map and new-emission fixture failures.
+/// # Panics
+/// Reject a changed clock origin/slope or loss of the healthy pending operation.
+#[test]
+fn no_effect_keeps_validated_clock_ratio_across_real_new_emission() -> TestResult {
+    no_effect_ratio_case(false)?;
+    no_effect_ratio_case(true)?;
+    Ok(())
+}
+
+/// Recover from source loss through context-only custody after old phase expiry.
+/// # Errors
+/// Preserve real source, known receipt, take-once transfer and fresh intake failures.
+/// # Panics
+/// Reject renewed old debt, refreshed stale history or failure to recover from genuine evidence.
+#[test]
+fn unchanged_known_after_old_phase_expiry_can_transfer_context_for_real_source_recovery()
+-> TestResult {
+    let trace = BaseTrace {
+        raw_gradient: 0,
+        chart_rate: 0.0,
+        baseline: 0.0,
+        actual_rate: 0.0,
+        ratio: 0.5,
+        cap: 0.125,
+    };
+    let chart = base_chart(0.0)?;
+    let source = Source::new(0, INITIAL_PHASE, 0, 1 << 20)?;
+    let mut producer = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+    let mut owner = base_owner(&mut producer, &chart, &trace)?;
+    let admitted = receive(&mut owner, &source, 4, 1.0 / 32.0, at(2, 4)?)?;
+    accepted(&owner, &admitted, 1);
+    let old_deadlines = (owner.active_deadline(), owner.monotonic_deadline());
+    let map = base_map(&chart, &trace, at(2, 4)?)?;
+    product_ok(owner.issue_baseline(map, at(8, 16)?))?;
+    let receipt = base_receipt(&chart, 1, ((8, 11), (16, 22)), (0.0, 0.0), (37, 9))?;
+    let mut retired = base_known(owner.settle_baseline(receipt, at(11, 22)?))?;
+    assert_eq!(retired.original_phase_deadlines(), old_deadlines);
+    assert!(
+        retired.continuation_error().is_none(),
+        "base operation is within its own original cutoffs"
+    );
+    assert!(matches!(
+        retired.resume(at(11, 22)?, FixturePhaseResidualPermission::Allow),
+        Err(FixtureBaselineError::Phase {
+            source: FixturePhaseError::Expired
+        })
+    ));
+    let mut next = product_ok(retired.resume_fresh(at(11, 22)?))?;
+    assert!(matches!(
+        next.issue(at(11, 22)?, FixturePhaseResidualPermission::Allow),
+        Err(FixturePhaseError::NoReference)
+    ));
+    assert!(matches!(
+        next.project_model(at(11, 22)?),
+        Err(FixtureFrequencyError::Expired)
+    ));
+    let recovered = Source::new(12, INITIAL_PHASE, 0, 1 << 20)?;
+    let admitted = receive(&mut next, &recovered, 22, 1.0 / 32.0, at(11, 22)?)?;
+    accepted(&next, &admitted, 2);
+    assert_eq!(
+        product_ok(next.issue(at(11, 22)?, FixturePhaseResidualPermission::Allow))?.ordinal(),
+        label(2)?
+    );
+    Ok(())
+}
+
+/// Admit the original real source and reserve one base operation on the short map.
+/// # Errors
+/// Preserve actual source, checked map and proposal admission failures.
+/// # Panics
+/// Reject a missing first actual emission or refusal of the legal pending fixture.
+fn prepare_base_map_expiry<'p, 'c>(
+    producer: &'p mut FixtureCombinationState,
+    chart: &'c FixtureAffineChart,
+    source: &Source,
+    trace: &BaseTrace,
+) -> TestResult<(FixturePhasePlanOwner<'p, 'c>, HistorySnapshot)> {
+    let mut owner = base_owner(producer, chart, trace)?;
+    let admitted = receive(&mut owner, source, 4, 1.0 / 32.0, at(2, 4)?)?;
+    accepted(&owner, &admitted, 1);
+    let before = snapshot(&history(&owner)?);
+    let map = product_ok(FixtureControllerClockMap::new(
+        chart,
+        product_ok(FixturePhaseBaseline::new(trace.baseline))?,
+        FixtureControllerClockMapInput {
+            reference: at(2, 4)?,
+            valid_until: MonotonicNs::new(8 * SECOND),
+            active_ratio: 0.5,
+            active_ratio_error: 0.0,
+            actual_phase: 1.0 / 16.0,
+            actual_phase_error: 0.0,
+            actual_rate: 1.0 / 64.0,
+            actual_rate_error: 0.0,
+        },
+    ))?;
+    product_ok(owner.issue_baseline(map, at(2, 4)?))?;
+    Ok((owner, before))
+}
+
+/// Check actual known delivery/cursor facts before its map/history availability.
+/// # Errors
+/// Preserve an absent actual cursor or historical model as a fixture failure.
+/// # Panics
+/// Reject lost achieved facts, changed endpoints or extrapolated map/model history.
+fn check_base_map_expiry_known(
+    retired: &FixtureBaselineRetirement<'_>,
+    before: &HistorySnapshot,
+    row: u8,
+    ack: (u64, u64),
+) -> TestResult {
+    assert_eq!(retired.achieved_baseline().rate(), 3.0 / 64.0);
+    let cursor = product_ok(
+        retired
+            .cursor()
+            .ok_or_else(|| io::Error::other("missing committed expired-map cursor")),
+    )?;
+    assert_eq!(cursor.next_ordinal(), Some(label(2)?));
+    assert_eq!(
+        cursor.last_active_end(),
+        Some(ActiveAwakeNs::new(ack.0 * SECOND))
+    );
+    assert_eq!(
+        cursor.last_monotonic_end(),
+        Some(MonotonicNs::new(ack.1 * SECOND))
+    );
+    assert!(matches!(
+        retired.event(),
+        FixtureRateSettlement::Completed(_)
+    ));
+    if row == 3 {
+        assert!(matches!(
+            retired.feedback_error(),
+            Some(FixtureBaselineError::Map)
+        ));
+        assert!(matches!(
+            retired.replacement(),
+            Err(FixtureBaselineError::Map)
+        ));
+        assert!(matches!(
+            retired.clock_map(),
+            Err(FixtureBaselineError::Map)
+        ));
+        assert_eq!(
+            &snapshot(&product_ok(retired.frequency_history().ok_or_else(|| {
+                io::Error::other("lost pre-expiry historical model")
+            }))?),
+            before
+        );
+    } else {
+        assert!(
+            retired.replacement().is_ok(),
+            "inclusive/timely actual ack permits its actual chart effect"
+        );
+        assert!(retired.feedback_error().is_none());
+        assert_eq!(retired.clock_map().is_ok(), row != 1);
+    }
+    Ok(())
+}
+
+/// Exercise actual context transfer only after the literal knowledge checks.
+/// # Errors
+/// Preserve the healthy actual context-only transfer's original refusal.
+/// # Panics
+/// Reject a wrong expiry status or any useful transfer from an unavailable map.
+fn check_base_map_expiry_continuation(
+    retired: &mut FixtureBaselineRetirement<'_>,
+    row: u8,
+    published: (u64, u64),
+) -> TestResult {
+    if row == 0 {
+        assert!(retired.continuation_error().is_none());
+        product_ok(retired.resume_fresh(at(published.0, published.1)?))?;
+    } else {
+        assert!(matches!(
+            retired.continuation_error(),
+            Some(FixturePhaseError::Expired)
+        ));
+        assert!(retired.resume_fresh(at(published.0, published.1)?).is_err());
+    }
+    Ok(())
+}
+
+/// Match an actual base receipt across mathematical-map expiry without extrapolation.
+/// # Errors
+/// Preserve genuine source, fixed map, known interval and branch admission.
+/// # Panics
+/// Reject loss of known achieved facts, old delivery/cursor custody or expired-map gating.
+fn base_map_expiry_case(row: u8) -> TestResult {
+    let trace = nonunit_trace();
+    let chart = base_chart(trace.chart_rate)?;
+    let source = Source::new(0, INITIAL_PHASE, trace.raw_gradient, 1 << 20)?;
+    let mut producer = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+    let (owner, before) = prepare_base_map_expiry(&mut producer, &chart, &source, &trace)?;
+    if row == 4 {
+        let result = owner.settle_baseline(
+            FixtureBaselineFeedback::Unknown {
+                context: clocks()?,
+                ordinal: label(1)?,
+            },
+            at(6, 10)?,
+        );
+        assert!(matches!(&result, FixtureBaselineSettlement::Unknown(_)));
+        let FixtureBaselineSettlement::Unknown(blocked) = result else {
+            return Err(io::Error::other("expired Unknown custody lost").into());
+        };
+        assert_eq!(
+            blocked.cursor().status(),
+            FixtureRateCursorStatus::Unresolved
+        );
+        return Ok(());
+    }
+    let (ack, published) = match row {
+        0 => ((3, 6), (3, 6)), // Timely actual boundary and publication; positive future map remains.
+        1 => ((4, 8), (4, 8)), // Inclusive map endpoint: known effect, no positive new map segment.
+        2 => ((3, 6), (5, 10)), // Timely actual boundary, late publication beyond the original map end.
+        3 => ((6, 10), (6, 10)), // Outside map domain: do not extrapolate even to reject A/M=2/3.
+        _ => return Err(io::Error::other("unknown map-expiry row").into()),
+    };
+    let event = base_receipt(
+        &chart,
+        1,
+        ((2, ack.0), (4, ack.1)),
+        (trace.baseline, 3.0 / 64.0),
+        (37, 9),
+    )?;
+    let mut retired = base_known(owner.settle_baseline(event, at(published.0, published.1)?))?;
+    check_base_map_expiry_known(&retired, &before, row, ack)?;
+    check_base_map_expiry_continuation(&mut retired, row, published)
+}
+
+/// Keep actual knowledge and map availability distinct at five literal expiry rows.
+/// # Errors
+/// Preserve real fixture and actual terminal setup failures in each boundary case.
+/// # Panics
+/// Reject lost actual facts/custody, affine extrapolation or an incorrect continuation outcome.
+#[test]
+fn actual_base_knowledge_survives_map_expiry_without_affine_extrapolation() -> TestResult {
+    for row in 0..=4 {
+        base_map_expiry_case(row)?;
+    }
+    Ok(())
+}
+
+/// Observe actual commitment independently of the later model-feedback result.
+/// # Errors
+/// Preserve absent-cursor, replacement and rebound-map diagnostics after assertions.
+/// # Panics
+/// Reject lost actual endpoints, an unconsumed ordinal or an earlier chart/map failure.
+fn check_anchor_rebase_custody(
+    retired: &FixtureBaselineRetirement<'_>,
+    achieved: f64,
+    gradient: f64,
+) -> TestResult {
+    assert_eq!(
+        retired.achieved_baseline().rate().to_bits(),
+        achieved.to_bits()
+    );
+    assert!(matches!(
+        retired.event(),
+        FixtureRateSettlement::Completed(_)
+    ));
+    assert!(retired.cursor().is_some());
+    let cursor = retired
+        .cursor()
+        .ok_or_else(|| io::Error::other("lost committed base cursor"))?;
+    assert_eq!(cursor.status(), FixtureRateCursorStatus::Pending);
+    assert_eq!(cursor.next_ordinal(), Some(label(2)?));
+    assert_eq!(
+        cursor.last_active_end(),
+        Some(ActiveAwakeNs::new(8 * SECOND))
+    );
+    assert_eq!(
+        cursor.last_monotonic_end(),
+        Some(MonotonicNs::new(16 * SECOND))
+    );
+    assert_eq!(
+        retired.original_phase_deadlines(),
+        (
+            Some(ActiveAwakeNs::new(10 * SECOND)),
+            Some(MonotonicNs::new(20 * SECOND))
+        )
+    );
+    assert!(retired.continuation_error().is_none());
+    assert!(retired.replacement().is_ok());
+    let replacement = product_ok(retired.replacement())?;
+    assert_eq!(replacement.phase_at_reference_seconds(), 0.0);
+    assert_eq!(replacement.rate_seconds_per_second(), gradient);
+    assert_eq!(
+        replacement.domain().common_reference(),
+        MonotonicNs::new(16 * SECOND)
+    );
+    assert_eq!(
+        replacement.frames(),
+        product_ok(FixtureChartFrames::new(
+            label(17)?,
+            label(23)?,
+            label(37)?,
+            label(9)?,
+        ))?
+    );
+    assert!(retired.clock_map().is_ok());
+    let map = product_ok(retired.clock_map())?;
+    assert_eq!(map.reference().monotonic(), MonotonicNs::new(16 * SECOND));
+    assert_eq!(map.actual_phase(), 0.0);
+    assert_eq!(map.actual_rate(), gradient);
+    Ok(())
+}
+
+/// Keep a post-consumption numerical refusal distinct from cap/deadline refusal.
+/// # Errors
+/// Preserve the fixed current-clock fixture admission.
+/// # Panics
+/// Reject a lost exact arithmetic cause, a changed old model or either useful transfer.
+fn check_anchor_rebase_failure(
+    retired: &mut FixtureBaselineRetirement<'_>,
+    before: &HistorySnapshot,
+    after: &FixtureFrequencyHistory,
+) -> TestResult {
+    assert!(matches!(
+        retired.feedback_error(),
+        Some(FixtureBaselineError::Frequency {
+            source: FixtureFrequencyError::Numeric {
+                source: FixtureFrequencyNumericError::Arithmetic {
+                    step: FixtureFrequencyNumericStep::AffineAnchorRebase,
+                    source: FitError::Arithmetic {
+                        stage: ArithmeticStage::Coefficients,
+                        operation: ArithmeticOperation::Multiply,
+                        issue: ArithmeticIssue::NonFinite,
+                    },
+                },
+            },
+        })
+    ));
+    assert_eq!(&snapshot(after), before);
+    assert!(matches!(
+        retired.resume(at(8, 16)?, FixturePhaseResidualPermission::Allow),
+        Err(FixtureBaselineError::Receipt)
+    ));
+    assert!(matches!(
+        retired.resume_fresh(at(8, 16)?),
+        Err(FixtureBaselineError::Receipt)
+    ));
+    assert_eq!(
+        retired
+            .cursor()
+            .and_then(FixtureRateSettlementCursor::next_ordinal),
+        Some(label(2)?)
+    );
+    Ok(())
+}
+
+/// Exercise useful context transfer only for the independently healthy small rate.
+/// # Errors
+/// Preserve the actual context-only receiver transfer and fixture clock checks.
+/// # Panics
+/// Reject a wrong model transformation, refreshed history or recreated phase debt.
+fn check_anchor_rebase_healthy(
+    retired: &mut FixtureBaselineRetirement<'_>,
+    before: &HistorySnapshot,
+    after: &FixtureFrequencyHistory,
+) -> TestResult {
+    assert!(retired.feedback_error().is_none());
+    assert_eq!(after.mean_seconds_per_second(), -1.0 / 128.0);
+    assert_eq!(after.anchor_phase_seconds(), 1.0 / 8.0);
+    let changed = snapshot(after);
+    assert_eq!(changed.times, before.times);
+    assert_eq!(changed.source, before.source);
+    assert_eq!(changed.round, before.round);
+    assert_eq!(changed.skew, before.skew);
+    assert_eq!(changed.residual, before.residual);
+    assert_eq!(changed.statistics, before.statistics);
+    assert_eq!(changed.frames, product_ok(retired.replacement())?.frames());
+    let current = product_ok(retired.resume_fresh(at(8, 16)?))?;
+    assert_eq!(current.active_deadline(), None);
+    assert_eq!(current.monotonic_deadline(), None);
+    assert_eq!(current.cursor().next_ordinal(), Some(label(2)?));
+    Ok(())
+}
+
+/// Run one finite public trajectory with a separately specified achieved rate.
+/// # Errors
+/// Preserve genuine source, checked map/receipt and actual transfer failures.
+/// # Panics
+/// Reject a wrong branch, lost historical identity or an incorrect healthy rebase.
+fn anchor_rebase_receiver_case(achieved: f64, gradient: f64, overflow: bool) -> TestResult {
+    let trace = BaseTrace {
+        raw_gradient: 0,
+        chart_rate: 0.0,
+        baseline: 0.0,
+        actual_rate: 0.0,
+        ratio: 0.5,
+        cap: f64::from_bits(0x7fe0_0000_0000_0000), // Exactly 2^1023, finite and explicit.
+    };
+    let chart = base_chart_at_reference(0.0, MonotonicNs::new(16 * SECOND))?;
+    let source = Source::new(0, INITIAL_PHASE, 0, 1 << 20)?;
+    let mut producer = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+    let mut owner = base_owner(&mut producer, &chart, &trace)?;
+    let admitted = receive(&mut owner, &source, 4, 1.0 / 32.0, at(2, 4)?)?;
+    accepted(&owner, &admitted, 1);
+    let original = history(&owner)?;
+    let before = snapshot(&original);
+    assert_eq!(original.mean_seconds_per_second(), 0.0);
+    assert_eq!(original.anchor_phase_seconds(), 1.0 / 32.0);
+    assert_eq!(original.projected_at(), MonotonicNs::new(4 * SECOND));
+    {
+        let proposal =
+            product_ok(owner.issue_baseline(base_map(&chart, &trace, at(2, 4)?)?, at(2, 4)?))?;
+        assert_eq!(proposal.requested_rate(), 0.0);
+        assert_eq!(proposal.ordinal(), label(1)?);
+        assert_eq!(proposal.emitted_round(), label(1)?);
+    }
+    let receipt = base_receipt(&chart, 1, ((2, 8), (4, 16)), (0.0, achieved), (37, 9))?;
+    let mut retired = base_known(owner.settle_baseline(receipt, at(8, 16)?))?;
+    check_anchor_rebase_custody(&retired, achieved, gradient)?;
+    assert!(retired.frequency_history().is_some());
+    let after = retired
+        .frequency_history()
+        .ok_or_else(|| io::Error::other("lost anchor feedback history"))?;
+    if overflow {
+        check_anchor_rebase_failure(&mut retired, &before, &after)?;
+    } else {
+        check_anchor_rebase_healthy(&mut retired, &before, &after)?;
+    }
+    Ok(())
+}
+
+/// Preserve Known facts when a finite public input overflows model-anchor feedback.
+///
+/// The coefficient epoch equals the acknowledgement M=16, so E(16)=0 while
+/// g=2^1021 stays finite. At the real model epoch Mp=4, E(4)=-12*2^1021
+/// exceeds binary64's finite range. The small neighbor gives E(4)=-3/32,
+/// anchor 1/32-(-3/32)=1/8 and mean 0-1/128=-1/128.
+/// These explicit finite extremes select no physical or native clock profile.
+/// # Errors
+/// Preserve checked public fixture/receiver admission in both independent cases.
+/// # Panics
+/// Reject an early refusal, lost actual facts, wrong error or useful failed-model transfer.
+#[test]
+fn known_base_anchor_overflow_preserves_receipt_and_blocks_both_resume_paths() -> TestResult {
+    anchor_rebase_receiver_case(
+        f64::from_bits(0x7fd0_0000_0000_0000), // Exactly 2^1022 achieved per active second.
+        f64::from_bits(0x7fc0_0000_0000_0000), // Independently g=2^1021 per monotonic second.
+        true,
+    )?;
+    anchor_rebase_receiver_case(1.0 / 64.0, 1.0 / 128.0, false)
+}
+
+/// Observe the genuine initial state without creating intake or issuance authority.
+/// Fixed source/clock/ordinal facts belong to the A2/M4 fixture in the caller.
+/// # Errors
+/// Preserve checked literal labels or an unexpected missing genuine public history.
+/// # Panics
+/// Reject partial state publication, a consumed credit or changed source provenance.
+fn check_unissued_base_issue_custody(
+    owner: &FixturePhasePlanOwner<'_, '_>,
+    before: &HistorySnapshot,
+    phase: [Option<u64>; 2],
+) -> TestResult {
+    assert_eq!(&snapshot(&history(owner)?), before);
+    assert_eq!(
+        owner.current_time().active(),
+        ActiveAwakeNs::new(2 * SECOND)
+    );
+    assert_eq!(
+        owner.current_time().monotonic(),
+        MonotonicNs::new(4 * SECOND)
+    );
+    assert_eq!(owner.cursor().next_ordinal(), Some(label(1)?));
+    assert_eq!(owner.cursor().last_active_end(), None);
+    assert_eq!(owner.cursor().last_monotonic_end(), None);
+    assert_eq!(owner.cursor().status(), FixtureRateCursorStatus::Pending);
+    assert_eq!(
+        [
+            owner.remaining_phase_seconds().map(f64::to_bits),
+            owner.remaining_phase_error_seconds().map(f64::to_bits)
+        ],
+        phase
+    );
+    assert_eq!(
+        owner.active_deadline(),
+        Some(ActiveAwakeNs::new(10 * SECOND))
+    );
+    assert_eq!(
+        owner.monotonic_deadline(),
+        Some(MonotonicNs::new(20 * SECOND))
+    );
+    let provenance = product_ok(owner.provenance().ok_or("missing genuine phase provenance"))?;
+    assert_eq!(provenance.source_context(), before.source);
+    assert_eq!(provenance.emitted_round(), before.round);
+    assert_eq!(provenance.frames(), before.frames);
+    assert_eq!(
+        provenance.latest_observed_at().nanoseconds(),
+        before.times[1]
+    );
+    assert_eq!(provenance.projected_at().nanoseconds(), before.times[3]);
+    assert!(owner.baseline_proposal().is_none());
+    Ok(())
+}
+
+/// A new map must account for retained readings already inside its segment.
+/// The supplied issue pair A8/M8 fits a=1±1/8 from0/0, but retained A2/M4
+/// cannot fit that same segment. Refusal must precede credit or clock publication.
+/// # Errors
+/// Preserve genuine source/owner/map construction and the healthy retry failure.
+/// # Panics
+/// Reject a changed cause, partial admission or loss of the original once-only credit.
+#[test]
+fn baseline_issue_rechecks_retained_current_reading_before_reserving_credit() -> TestResult {
+    let trace = BaseTrace {
+        raw_gradient: 0,
+        chart_rate: 0.0,
+        baseline: 0.0,
+        actual_rate: 0.0,
+        ratio: 1.0,
+        cap: 0.125,
+    };
+    let chart = base_chart(0.0)?;
+    let source = Source::new(0, INITIAL_PHASE, 0, 1 << 20)?;
+    let mut producer = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+    let mut owner = base_owner(&mut producer, &chart, &trace)?;
+    let admitted = receive(&mut owner, &source, 4, 1.0 / 32.0, at(2, 4)?)?;
+    accepted(&owner, &admitted, 1);
+    let before = snapshot(&history(&owner)?);
+    let phase = [
+        owner.remaining_phase_seconds().map(f64::to_bits),
+        owner.remaining_phase_error_seconds().map(f64::to_bits),
+    ];
+    check_unissued_base_issue_custody(&owner, &before, phase)?;
+    assert!(owner.baseline_proposal().is_none());
+    assert!(matches!(
+        owner.issue_baseline(uncertain_map(&chart, at(0, 0)?)?, at(8, 8)?),
+        Err(FixtureBaselineError::Numeric {
+            source: FixtureFrequencyNumericError::ActiveRatioMismatch,
+        })
+    ));
+    check_unissued_base_issue_custody(&owner, &before, phase)?;
+    accepted(&owner, &admitted, 1);
+    let retry = at(8, 10)?;
+    let proposal = product_ok(owner.issue_baseline(uncertain_map(&chart, at(2, 4)?)?, retry))?;
+    assert_eq!(proposal.ordinal(), label(1)?);
+    assert_eq!(proposal.emitted_round(), label(1)?);
+    assert_eq!(proposal.desired_rate(), 0.0);
+    assert_eq!(proposal.requested_rate(), 0.0);
+    assert!(!proposal.clipped());
+    assert_eq!(snapshot(&history(&owner)?), before);
+    assert_eq!(owner.current_time().active(), retry.active());
+    assert_eq!(owner.current_time().monotonic(), retry.monotonic());
+    assert_eq!(owner.cursor().next_ordinal(), Some(label(1)?));
+    assert!(matches!(
+        owner.issue_baseline(uncertain_map(&chart, retry)?, retry),
+        Err(FixtureBaselineError::Phase {
+            source: FixturePhaseError::OutstandingOperation
+        })
+    ));
+    Ok(())
+}
+
+/// A fresh declared segment may begin after the owner's older retained reading.
+/// A3/M6→A4/M8 is exactly a=1/2; retained A2/M4 is outside that new segment
+/// and must not be extrapolated as though it were an admitted map observation.
+/// # Errors
+/// Preserve actual source/owner admission and the checked useful baseline request.
+/// # Panics
+/// Reject a refused legal segment, renewed source/debt or invented issuance credit.
+#[test]
+fn baseline_issue_future_map_origin_does_not_extrapolate_older_reading() -> TestResult {
+    let trace = BaseTrace {
+        raw_gradient: 0,
+        chart_rate: 0.0,
+        baseline: 0.0,
+        actual_rate: 0.0,
+        ratio: 0.5,
+        cap: 0.125,
+    };
+    let chart = base_chart(0.0)?;
+    let source = Source::new(0, INITIAL_PHASE, 0, 1 << 20)?;
+    let mut producer = seed(&source.entry(&chart, 4, 1.0 / 32.0)?, 4)?;
+    let mut owner = base_owner(&mut producer, &chart, &trace)?;
+    let admitted = receive(&mut owner, &source, 4, 1.0 / 32.0, at(2, 4)?)?;
+    accepted(&owner, &admitted, 1);
+    let before = snapshot(&history(&owner)?);
+    let phase = (
+        owner.remaining_phase_seconds(),
+        owner.remaining_phase_error_seconds(),
+        owner.active_deadline(),
+        owner.monotonic_deadline(),
+    );
+    let map = base_map(&chart, &trace, at(3, 6)?)?;
+    assert_eq!(map.reference().active(), ActiveAwakeNs::new(3 * SECOND));
+    assert_eq!(map.reference().monotonic(), MonotonicNs::new(6 * SECOND));
+    let now = at(4, 8)?;
+    let proposal = product_ok(owner.issue_baseline(map, now))?;
+    assert_eq!(proposal.ordinal(), label(1)?);
+    assert_eq!(proposal.emitted_round(), label(1)?);
+    assert_eq!(proposal.desired_rate(), 0.0);
+    assert_eq!(proposal.requested_rate(), 0.0);
+    assert!(!proposal.clipped());
+    assert_eq!(snapshot(&history(&owner)?), before);
+    assert_eq!(owner.current_time().active(), now.active());
+    assert_eq!(owner.current_time().monotonic(), now.monotonic());
+    assert_eq!(
+        (
+            owner.remaining_phase_seconds(),
+            owner.remaining_phase_error_seconds(),
+            owner.active_deadline(),
+            owner.monotonic_deadline()
+        ),
+        phase
+    );
+    assert_eq!(owner.cursor().next_ordinal(), Some(label(1)?));
+    assert!(matches!(
+        owner.issue_baseline(map, now),
+        Err(FixtureBaselineError::Phase {
+            source: FixturePhaseError::OutstandingOperation
+        })
+    ));
     Ok(())
 }

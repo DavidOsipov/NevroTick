@@ -1,13 +1,16 @@
 # Troubleshooting, evidence preservation and closeout
 
-Research checked 3 November 2026. Use this after
+Initial research checked 3 November 2026; SAC guidance checked 10 November 2026. Use this after
 [operations](operations.md) has established the allowed control path. The
-following diagnoses are possibilities to distinguish, not observed failures on
-David's laptop. Do not apply a speculative fix or retry unchanged prerequisites.
+table gives possibilities to distinguish; the SAC section separately records
+an owner-reported successful workaround. Do not apply a speculative fix or retry
+unchanged prerequisites.
 
 ## Contents
 
 - [Classify the first failure](#classify-the-first-failure)
+- [Smart App Control inside the guest](#smart-app-control-inside-the-guest)
+- [Guest PowerShell policy refusal](#guest-powershell-policy-refusal)
 - [Bound retries and cancellation](#bound-retries-and-cancellation)
 - [Collect evidence without extending authority](#collect-evidence-without-extending-authority)
 - [Close an owned run](#close-an-owned-run)
@@ -34,12 +37,88 @@ David's laptop. Do not apply a speculative fix or retry unchanged prerequisites.
 | Package installation fails | Package/dependency/architecture/signature/principal support and actual deployment diagnostics | Fix only the admitted guest cause. Do not trust a certificate on the host or infer Store rejection from a local harness error. |
 | Host or WSL becomes unresponsive | Actual memory/commit/CPU/disk pressure and attributable guest workload | End or defer the owned bounded experiment; preserve the long-running WSL job. No WSL shutdown, cache drop or unrelated process kill. |
 | Defender detects an artifact | Exact detection, artifact/staging path, blocked state and current incident owner | Preserve the block and record evidence. Do not bypass, exclude, rename or retry the held artifact. |
+| SAC blocks an app component or a guest process returns 4551 | Actual blocked path/component, guest policy and Code Integrity evidence; host policy is separate | Follow the guest-specific SAC procedure below. Error 4551 alone identifies neither SAC nor a missing runtime. |
+| PowerShell refuses the reviewed guest script | Guest policy scopes/effective policy, version, exact source and file origin | Preserve the setup refusal; use only the separately admitted process-only RemoteSigned route below. |
 | Closing a window leaves uncertainty | Actual CLI/client version and owned-instance inventory | Use explicit lifecycle observation. Window disappearance alone proves no successful product cleanup or guest termination. |
 
 Native CLI/client facts come from Microsoft Learn; the exit-classification
 detail and winapp transport come from the pinned Microsoft implementation
 discussed in [operations](operations.md) and [winapp](winapp.md). A symptom may
 have several causes; absence of evidence for one is not evidence for another.
+
+## Smart App Control inside the guest
+
+Treat host and Sandbox policy as separate observations. A SAC component-block
+notification can identify a loaded DLL even when its executable starts. A failed
+`CiTool -lp` query leaves policy enumeration unavailable; it does not establish
+that SAC is off. Microsoft documents the enforced policy names
+`VerifiedAndReputableDesktop` and `VerifiedAndReputableDesktopEvaluation`.
+Use [the component-block explanation](https://support.microsoft.com/en-us/windows/security/threat-malware-protection/smart-app-control-has-blocked-part-of-this-app)
+and [SAC testing guidance](https://learn.microsoft.com/en-us/windows/apps/develop/smart-app-control/test-your-app-with-smart-app-control)
+to distinguish these facts.
+
+The Sandbox maintainer records a guest SAC problem and the SAC team's suggested
+workaround in [Microsoft Windows-Sandbox issue 85](https://github.com/microsoft/Windows-Sandbox/issues/85#issuecomment-3025447682).
+It is a lab workaround, not a guaranteed repair for every installer or build;
+[another reporter retained a failure](https://github.com/microsoft/Windows-Sandbox/issues/85#issuecomment-3025799619).
+On 10 November David reported that it resolved his guest problem and made Sandbox
+ready. The [existing W11 task](../../../../../tasks/windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026)
+owns this report and subsequent execution; the skill is not a native test receipt.
+
+When this change is explicitly authorized for a disposable guest, first establish
+the exact instance and scope. If the owner already applied it successfully, reuse
+that prepared guest; do not reapply, reset or close it merely to follow a recipe.
+Otherwise run only **inside that guest**, in an administrator Command Prompt or
+PowerShell window, or through its explicitly ID-targeted privileged guest setup:
+
+```powershell
+# GUEST ONLY: changes this disposable guest's SAC setting.
+reg.exe add "HKLM\SYSTEM\ControlSet001\Control\CI\Policy" /v VerifiedAndReputablePolicyState /t REG_DWORD /d 0 /f
+reg.exe query "HKLM\SYSTEM\ControlSet001\Control\CI\Policy" /v VerifiedAndReputablePolicyState
+```
+
+Readback `REG_DWORD 0x0` establishes the configured Off value. Preserve the setting
+and retry result separately; registry success alone proves neither effective
+policy reload nor successful execution. Restart **inside the same guest**, then
+reconcile the instance and re-discover process/logon identities before the single
+bounded retest. Windows 11 22H2 and later preserve data through guest-initiated
+restarts; disposal/new launch loses the setting and installed prerequisites.
+[Microsoft Sandbox overview](https://learn.microsoft.com/en-us/windows/security/application-security/application-isolation/windows-sandbox/)
+documents that distinction.
+
+Never invoke this `reg.exe` command directly from WSL: that targets host Windows.
+Do not copy the broader recovery-mode, BitLocker, Defender-definition or policy-file
+replacement procedures from the general SAC testing article into this workaround.
+It authorizes no host security change, Defender exclusion or held-artifact retry.
+Record SAC-off as the guest lab profile; it supplies no SAC-enabled compatibility
+or production hardening pass.
+
+If the component remains blocked after the changed setting and same-guest restart,
+stop repeating the workaround. Collect a bounded guest Code Integrity sample:
+
+```powershell
+# GUEST, READ-ONLY: scope subsequent inspection to the actual failed artifact.
+Get-WinEvent -FilterHashtable @{
+    LogName = 'Microsoft-Windows-CodeIntegrity/Operational'
+    Id = 3077
+} -MaxEvents 10 | Format-List TimeCreated, Id, Message
+```
+
+Bound time and captured bytes through the admitted controller; preserve the actual
+policy/component and first failure. [Microsoft's event reference](https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/operations/event-id-explanations)
+identifies 3077 as an enforced App Control block. Do not infer that every 4551
+refusal shares the installer cause, or that SAC-off disables other App Control
+policies. Preserve any remaining required-policy gap with its CHECK owner.
+
+## Guest PowerShell policy refusal
+
+The 10 November run first stopped under `Restricted`; no fixture/native-client
+behavior followed. A read-only guest check found all five policy scopes
+`Undefined`. The later explicitly admitted process-only `RemoteSigned` invocation
+observed effective `RemoteSigned` in PowerShell `5.1.26100.9818` and completed
+the bounded controls. Follow [the operations procedure](operations.md#guest-powershell-script-policy):
+this is no host or persistent policy change, Group Policy override, `Bypass` or
+general script authorization. Retain the first failure and any remaining refusal.
 
 ## Bound retries and cancellation
 

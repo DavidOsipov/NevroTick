@@ -16,12 +16,15 @@
 mod rate_delivery;
 
 pub use rate_delivery::{
-    FixtureFrequencyAdmission, FixtureFrequencyClockAssociation, FixtureFrequencyError,
-    FixtureFrequencyHistory, FixtureFrequencyProfile, FixtureFrequencyProjection,
-    FixturePhaseBaseline, FixturePhaseBlocked, FixturePhaseConstructionRejected, FixturePhaseError,
-    FixturePhaseNow, FixturePhasePlanOwner, FixturePhaseProfile, FixturePhaseProposal,
-    FixturePhaseProvenance, FixturePhaseReferenceAdmission, FixturePhaseResidualPermission,
-    FixturePhaseRetirement, FixturePhaseRetirementReason, FixturePhaseSettlement, FixtureRateClock,
+    FixtureBaselineCompletion, FixtureBaselineError, FixtureBaselineFeedback,
+    FixtureBaselineProposal, FixtureBaselineRetirement, FixtureBaselineSettlement,
+    FixtureControllerClockMap, FixtureControllerClockMapInput, FixtureFrequencyAdmission,
+    FixtureFrequencyClockAssociation, FixtureFrequencyError, FixtureFrequencyHistory,
+    FixtureFrequencyProfile, FixtureFrequencyProjection, FixturePhaseBaseline, FixturePhaseBlocked,
+    FixturePhaseConstructionRejected, FixturePhaseError, FixturePhaseNow, FixturePhasePlanOwner,
+    FixturePhaseProfile, FixturePhaseProposal, FixturePhaseProvenance,
+    FixturePhaseReferenceAdmission, FixturePhaseResidualPermission, FixturePhaseRetirement,
+    FixturePhaseRetirementReason, FixturePhaseSettlement, FixtureRateClock,
     FixtureRateClockContext, FixtureRateCursorStatus, FixtureRateDeliveryError,
     FixtureRateSettlement, FixtureRateSettlementCompletion, FixtureRateSettlementCursor,
     FixtureRateSettlementKind, FixtureRateSpan, FixtureSettledRateInterval,

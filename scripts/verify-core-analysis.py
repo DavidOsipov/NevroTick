@@ -8271,6 +8271,74 @@ FREQUENCY_PRIOR_REQUIRED_DOCTESTS = (
 )
 
 
+BASELINE_FEEDBACK_SUBJECT = "baseline_feedback"
+BASELINE_FEEDBACK_POLICY = "policy/baseline-feedback-analysis.json"
+BASELINE_FEEDBACK_SUBJECTS = dict(COMMON.BASELINE_FEEDBACK_SUBJECTS)
+BASELINE_FEEDBACK_SCOPE = COMMON.Scope("time-core", tuple(BASELINE_FEEDBACK_SUBJECTS.items()), BASELINE_FEEDBACK_POLICY)
+BASELINE_FEEDBACK_FIXED = {
+    **FREQUENCY_PRIOR_FIXED, "critical_files": list(BASELINE_FEEDBACK_SUBJECTS.values()),
+    "external_consumer_limits": {"legal_executions": 2, "negative_compilations": 23},
+}
+BASELINE_FEEDBACK_BOUND_INPUTS = tuple(dict.fromkeys((
+    *(name for name in FREQUENCY_PRIOR_BOUND_INPUTS if name not in {
+        "scripts/tests/test_frequency_prior_analysis.py", "tasks/phase-plan-analysis-equivalences.md"}),
+    "crates/time-core/tests/chart.rs", "scripts/tests/test_baseline_feedback_analysis.py",
+    "tasks/phase-plan-analysis-equivalences.md",
+)))
+# Independently reconciled ordinary-v11 raw identities, not guessed counters.
+BASELINE_FEEDBACK_ROSTERS = {
+    "baseline": (660, "36be99ed5557dba3ecd772815cbfa97a45b68907eed9b2e95f589bac04bc5cec"),
+    "coverage": (335, "5b6dd2dc9ed64f71c7bbaea7a62034013db1718e515874d6e536e7af3fb66459"),
+}
+BASELINE_FEEDBACK_REQUIRED_TESTS = FREQUENCY_PRIOR_REQUIRED_TESTS | frozenset({
+    "baseline_issue_future_map_origin_does_not_extrapolate_older_reading",
+    "baseline_issue_rechecks_retained_current_reading_before_reserving_credit",
+    "reference_input::rate_delivery::phase_plan::tests::baseline_errors_expose_each_original_nested_cause_and_leaf_neighbors",
+    "reference_input::rate_delivery::phase_plan::tests::baseline_no_effect_after_map_expiry_consumes_without_extrapolating_ratio",
+    "reference_input::rate_delivery::phase_plan::tests::baseline_no_effect_latches_each_original_deadline_before_reissue",
+    "reference_input::rate_delivery::phase_plan::tests::baseline_terminal_relation_retains_first_known_and_no_effect_observations",
+    "reference_input::rate_delivery::phase_plan::tests::checked_controller_map_keeps_nonunit_ratio_and_inclusive_chart_end",
+    "reference_input::rate_delivery::phase_plan::tests::known_baseline_cap_is_inclusive_for_both_signs_without_losing_achievement",
+    "reference_input::rate_delivery::phase_plan::tests::private_clock_relation_rejects_each_order_fault_before_subtraction",
+    "reference_input::rate_delivery::phase_plan::tests::private_controller_map_observe_rechecks_context_and_expiry",
+    "regression::chart::roundoff::frequency_prior::tests::affine_anchor_distinguishes_exact_gradient_and_inherited_gradient_error",
+    "regression::chart::roundoff::frequency_prior::tests::equal_epoch_affine_effect_preserves_phase_zero_sign_and_anchor_identity",
+    "reference_input::rate_delivery::phase_plan::tests::private_baseline_receiver_rejects_each_chain_component_before_admission",
+    "actual_frequency_producer_converts_zero_fast_slow_and_clipped_requests",
+    "quantized_achieved_base_rebases_actual_frequency_then_requires_fresh_phase_evidence",
+    "known_unchanged_base_keeps_original_phase_deadlines_and_consumes_emission_credit",
+    "no_effect_unknown_wrong_receipt_and_replay_keep_the_real_shared_cursor",
+    "public_map_bad_inputs_stale_model_and_affine_segment_discontinuity_refuse_with_legal_neighbor",
+    "known_base_cap_deadline_and_signed_zero_have_distinct_lifecycle_outcomes",
+    "real_base_handler_rechecks_substituted_geometry_and_old_rate_before_consumption",
+    "stopped_base_request_still_records_matched_achievement_without_reviving_authority",
+    "matched_base_handler_requires_one_affine_ratio_across_issue_ack_and_rebound",
+    "no_effect_keeps_validated_clock_ratio_across_real_new_emission",
+    "unchanged_known_after_old_phase_expiry_can_transfer_context_for_real_source_recovery",
+    "actual_base_knowledge_survives_map_expiry_without_affine_extrapolation",
+    "known_base_anchor_overflow_preserves_receipt_and_blocks_both_resume_paths",
+    "reference_input::rate_delivery::phase_plan::tests::controller_basis_captures_and_checks_every_geometry_component_bit",
+    "reference_input::rate_delivery::phase_plan::tests::raw_baseline_completion_validation_checks_intermediate_and_endpoint_chains",
+    "reference_input::rate_delivery::phase_plan::tests::raw_baseline_terminal_validation_preserves_genuine_pending_custody",
+    "reference_input::rate_delivery::phase_plan::tests::raw_controller_map_validation_rejects_each_relationship_with_healthy_restoration",
+    "regression::chart::roundoff::frequency_prior::tests::raw_active_ratio_validation_requires_supported_positive_enclosure",
+    "regression::chart::roundoff::frequency_prior::tests::raw_affine_effect_validation_checks_each_point_and_bound",
+    "regression::chart::roundoff::frequency_prior::tests::raw_baseline_change_validation_checks_both_achieved_points_and_ratio",
+    "regression::chart::roundoff::frequency_prior::tests::raw_baseline_map_validation_checks_each_coefficient_and_bound",
+    "regression::chart::roundoff::frequency_prior::tests::raw_baseline_request_validation_checks_fields_and_exact_clipping",
+    "regression::chart::roundoff::frequency_prior::tests::raw_rate_shift_validation_checks_point_and_error_independently",
+})
+BASELINE_FEEDBACK_REQUIRED_DOCTESTS = (*FREQUENCY_PRIOR_REQUIRED_DOCTESTS,
+    (PHASE_PLAN_FILE, "reference_input::rate_delivery::phase_plan::FixtureBaselineCompletion", True, 1),
+    (PHASE_PLAN_FILE, "reference_input::rate_delivery::phase_plan::FixtureBaselineProposal", True, 1),
+    (PHASE_PLAN_FILE, "reference_input::rate_delivery::phase_plan::FixtureControllerClockMap", True, 2),
+    (PHASE_PLAN_FILE, "reference_input::rate_delivery::phase_plan::FixtureControllerClockMapInput", True, 1),
+    (BASELINE_FEEDBACK_SUBJECTS["chart"], "regression::chart::FixtureAdaptiveChartView", True, 1),
+    (BASELINE_FEEDBACK_SUBJECTS["chart"], "regression::chart::FixtureAffineChart", False, 1),
+    (BASELINE_FEEDBACK_SUBJECTS["chart"], "regression::chart::FixtureChartProjection", True, 2),
+)
+
+
 class ConditionedAnalysisRole(NamedTuple):
     """Code-owned selection data; policy cannot choose owners or execution targets."""
 
@@ -8319,6 +8387,8 @@ def _conditioned_inventory_bindings(policy, role, *, required=False):
     """Admit no review yet or both exact nonempty inventories within one cap."""
     if role.selector == FREQUENCY_PRIOR_SUBJECT:
         return frequency_inventory_bindings(policy, required=required)
+    if role.selector == BASELINE_FEEDBACK_SUBJECT:
+        return frequency_inventory_bindings(policy, required=required, role=role)
     bindings = policy.get("mutation_inventories")
     if type(bindings) is not dict:
         raise Incomplete(f"{role.label} inventory bindings must be an object.")
@@ -8350,6 +8420,10 @@ def _conditioned_test_inventories(policy, role):
                        or "\n" in name or "\r" in name for name in names)
                 or names != sorted(set(names))):
             raise Incomplete(f"{role.label} test inventories require bounded sorted unique native names.")
+    if role.selector == BASELINE_FEEDBACK_SUBJECT:
+        for lane, (count, digest) in BASELINE_FEEDBACK_ROSTERS.items():
+            if len(inventories[lane]) != count or COMMON.canonical_sha256(inventories[lane]) != digest:
+                raise Incomplete("Baseline-feedback requires its actual complete 648/323 host rosters.")
     coverage, baseline = set(inventories["coverage"]), set(inventories["baseline"])
     if (not (role.required_tests) <= coverage
             or not coverage <= baseline or any(" (line " in name for name in coverage)):
@@ -8371,6 +8445,8 @@ def _conditioned_test_inventories(policy, role):
 def _read_conditioned_policy(root, role):
     """Admit this exact two-owner child; never import historical scope or scores."""
     policy = inventory_document(root / role.scope.policy)
+    if role.selector == BASELINE_FEEDBACK_SUBJECT:
+        COMMON.require_baseline_feedback_role(role.scope, policy)
     extra = {"source_file_count", "candidate_sha256", "inputs_sha256", "mutation_inventories",
              "mutation_equivalences", "test_inventories", "scope"}
     if (type(policy) is not dict or set(policy) != set(role.fixed) | extra
@@ -8409,7 +8485,7 @@ def _conditioned_test_execution(text, policy, role, *, doctests):
     if type(doctests) is not bool:
         raise Incomplete(f"{role.label} doctest selection must be Boolean.")
     inventories = _conditioned_test_inventories(policy, role)
-    if (role.selector == FREQUENCY_PRIOR_SUBJECT
+    if (role.selector in {FREQUENCY_PRIOR_SUBJECT, BASELINE_FEEDBACK_SUBJECT}
             and re.search(r"(?m)^(?:thread .+ panicked at|Error:|error(?:\[|:)|fatal runtime error)", text)):
         raise Incomplete("Frequency-prior successful execution contains a panic or compiler/harness error.")
     records = successful_test_records(text, label=role.label)
@@ -8468,7 +8544,8 @@ def configure_phase_plan_mutation(session, policy, report, role):
     setting changes. The Session seals the replacement for every later command.
     """
     if (not ((role.selector == PHASE_PLAN_SUBJECT and role.scope == PHASE_PLAN_SCOPE)
-                 or (role.selector == FREQUENCY_PRIOR_SUBJECT and role.scope == FREQUENCY_PRIOR_SCOPE))
+                 or (role.selector == FREQUENCY_PRIOR_SUBJECT and role.scope == FREQUENCY_PRIOR_SCOPE)
+                 or (role.selector == BASELINE_FEEDBACK_SUBJECT and role.scope == BASELINE_FEEDBACK_SCOPE))
             or type(policy.get("mutation_debug_info")) is not int
             or policy["mutation_debug_info"] != 0):
         raise Incomplete("Only phase-plan mutation admits integer-zero debug information.")
@@ -8935,22 +9012,61 @@ def _frequency_prior_role():
         FREQUENCY_PRIOR_REQUIRED_DOCTESTS, ("frequency_prior", "phase_plan", "rate_delivery"))
 
 
-def frequency_inventory_bindings(policy, *, required=False):
-    """Admit none before discovery or the complete four-owner union, never a partial map."""
+def _baseline_feedback_role():
+    """Select the current five owners and exact chart-inclusive coverage targets."""
+    return ConditionedAnalysisRole(BASELINE_FEEDBACK_SUBJECT, "Baseline-feedback", BASELINE_FEEDBACK_SCOPE,
+        BASELINE_FEEDBACK_FIXED, BASELINE_FEEDBACK_BOUND_INPUTS, BASELINE_FEEDBACK_REQUIRED_TESTS,
+        BASELINE_FEEDBACK_REQUIRED_DOCTESTS, ("frequency_prior", "phase_plan", "rate_delivery", "chart"))
+
+
+def _frequency_analysis_role(role=None):
+    """Resolve only the two code-owned stable frequency roles, preserving the old default."""
+    if role is None:
+        return _frequency_prior_role()
+    if type(role) is not ConditionedAnalysisRole or role not in (_frequency_prior_role(), _baseline_feedback_role()):
+        raise Incomplete("Unknown exact stable frequency analysis role.")
+    return role
+
+
+def _frequency_artifact_key(role):
+    """Keep historical metadata unchanged while naming the additive role's raw closure."""
+    return "baseline_feedback_artifacts" if role.selector == BASELINE_FEEDBACK_SUBJECT else "frequency_artifacts"
+
+
+def read_baseline_feedback_policy(root):
+    """Reject pending/stale source, roster, manifest or helper pins before any Session."""
+    policy = _read_conditioned_policy(root, _baseline_feedback_role())
+    COMMON.require_baseline_feedback_role(BASELINE_FEEDBACK_SCOPE, policy)
+    if COMMON.RUNTIME.MAX_JOBS != 12:
+        raise Incomplete("Baseline-feedback requires the unchanged shared job budget.")
+    return policy
+
+
+def _baseline_feedback_contracts(session, policy, report):
+    """Use the appended closed 2/23 registry and both existing legal consumers."""
+    helper = COMMON.load_module("core_baseline_feedback_contracts", session.source / "scripts/core-frequency-contracts.py")
+    helper.baseline_feedback_contracts(session, policy, report, _external_contract_registry, phase_plan_contract_examples)
+
+
+def frequency_inventory_bindings(policy, *, required=False, role=None):
+    """Admit none before discovery or this role's complete owner union, never a partial map."""
+    role = _frequency_analysis_role(role)
+    owners = role.scope.select("all")
+    count = "five" if role.selector == BASELINE_FEEDBACK_SUBJECT else "four"
     rows = policy.get("mutation_inventories")
     if type(rows) is not dict or (not rows and required):
-        raise Incomplete("Frequency-prior mutation requires all four reviewed inventories.")
+        raise Incomplete(f"{role.label} mutation requires all {count} reviewed inventories.")
     if not rows:
         return rows
-    if set(rows) != set(FREQUENCY_PRIOR_SUBJECTS):
-        raise Incomplete("Frequency-prior inventory map omits or adds an owner.")
+    if set(rows) != set(owners):
+        raise Incomplete(f"{role.label} inventory map omits or adds an owner.")
     for row in rows.values():
         if (type(row) is not dict or set(row) != {"count", "sha256"}
                 or type(row["count"]) is not int or not 0 < row["count"] <= 512
                 or type(row["sha256"]) is not str or re.fullmatch(r"[0-9a-f]{64}", row["sha256"]) is None):
-            raise Incomplete("Frequency-prior inventories need bounded counts and exact hashes.")
+            raise Incomplete(f"{role.label} inventories need bounded counts and exact hashes.")
     if sum(row["count"] for row in rows.values()) > 2048:
-        raise Incomplete("Frequency-prior complete listing exceeds 2048 variants.")
+        raise Incomplete(f"{role.label} complete listing exceeds 2048 variants.")
     return rows
 
 
@@ -8963,16 +9079,19 @@ def read_frequency_prior_policy(root):
     return policy
 
 
-def frequency_selected_owners(policy, cohort_id):
+def frequency_selected_owners(policy, cohort_id, *, role=None):
     """Select a whole code-owned owner or an at-most-512 complete union, never file slices."""
-    rows = frequency_inventory_bindings(policy, required=True)
+    role = _frequency_analysis_role(role)
+    owners = role.scope.select("all")
+    rows = frequency_inventory_bindings(policy, required=True, role=role)
     if cohort_id is None:
         if sum(row["count"] for row in rows.values()) > 512:
-            raise Incomplete("Frequency-prior union exceeds 512; select one complete named owner cohort.")
-        return dict(FREQUENCY_PRIOR_SUBJECTS)
-    if type(cohort_id) is not str or cohort_id not in FREQUENCY_PRIOR_SUBJECTS:
-        raise Incomplete("Frequency-prior cohort must name one of its four fixed owners.")
-    return {cohort_id: FREQUENCY_PRIOR_SUBJECTS[cohort_id]}
+            raise Incomplete(f"{role.label} union exceeds 512; select one complete named owner cohort.")
+        return dict(owners)
+    if type(cohort_id) is not str or cohort_id not in owners:
+        raise Incomplete(f"{role.label} cohort must name one of its "
+            + ("five" if role.selector == BASELINE_FEEDBACK_SUBJECT else "four") + " fixed owners.")
+    return {cohort_id: owners[cohort_id]}
 
 
 def _frequency_captured(session, policy, role):
@@ -8991,19 +9110,20 @@ def _frequency_contracts(session, policy, report):
     helper.contracts(session, policy, report, _external_contract_registry, phase_plan_contract_examples)
 
 
-def execute_frequency_prior(args, report):
+def _execute_frequency_role(args, report, role, read_policy, contracts):
     """Reuse Session, exact roster readers, complete listing and normal per-file gates."""
-    role = _frequency_prior_role()
-    if (args.subject != FREQUENCY_PRIOR_SUBJECT or args.tool_admission_profile != "stable-core"
+    role = _frequency_analysis_role(role)
+    if (args.subject != role.selector or args.tool_admission_profile != "stable-core"
             or args.lane not in {"baseline", "enumerate", "coverage", "contracts", "mutation", "all", "cohort-union"}
             or getattr(args, "inventory_admission", None) or getattr(args, "cohort_plan", None)):
-        raise Incomplete("Frequency-prior requires its exact stable-only four-owner role.")
-    policy = read_frequency_prior_policy(ROOT)
+        raise Incomplete(f"{role.label} requires its exact stable-only "
+            + ("five" if role.selector == BASELINE_FEEDBACK_SUBJECT else "four") + "-owner role.")
+    policy = read_policy(ROOT)
     if args.lane == "cohort-union":
         return frequency_cohort_union(args, report, policy, role)
     if getattr(args, "cohort_receipt", None) or (args.cohort_id is not None and args.lane not in {"mutation", "all"}):
         raise Incomplete("Frequency-prior cohort flags are allowed only for their named mutation/union lane.")
-    selected = frequency_selected_owners(policy, args.cohort_id) if args.lane in {"mutation", "all"} else role.scope.select("all")
+    selected = frequency_selected_owners(policy, args.cohort_id, role=role) if args.lane in {"mutation", "all"} else role.scope.select("all")
     if args.lane in {"mutation", "all"}:
         COMMON._require_private_output(ROOT, args.output_dir)
         if shutil.disk_usage(args.output_dir.parent).free < policy["mutation_minimum_free_bytes"]:
@@ -9036,10 +9156,10 @@ def execute_frequency_prior(args, report):
             report["coverage"] = {name: COMMON.coverage_counts(role.scope, coverage, "/work/source/" + path)
                                   for name, path in role.scope.select("all").items()}
         if args.lane == "contracts":
-            _frequency_contracts(session, policy, report)
+            contracts(session, policy, report)
         if args.lane in {"mutation", "all"}:
             configure_phase_plan_mutation(session, policy, report, role)
-            report["mutation_debug_configuration"]["scope"] = "Private frequency-prior mutation enumeration/build/tests only; other profile settings unchanged."
+            report["mutation_debug_configuration"]["scope"] = f"Private {role.label.lower()} mutation enumeration/build/tests only; other profile settings unchanged."
             def run(label, command, timeout, **options):
                 value = session.run(label, command, timeout, **options)
                 if label.startswith("mutation-campaign:"):
@@ -9047,20 +9167,30 @@ def execute_frequency_prior(args, report):
                     report.setdefault("baseline_executions", {})[name] = _conditioned_baseline(session.work, policy, name, role)
                 return value
             COMMON.run_analysis_lanes(role.scope, selected, policy, session.work, session.tools, run, report, "mutation")
-            report["frequency_artifacts"] = {}
+            report[_frequency_artifact_key(role)] = {}
             for owner, filename in selected.items():
                 items, _ = COMMON.parse_mutation_listing(report["mutation_enumeration"][owner]["raw_output"], expected_jobs=10)
                 inventory = COMMON.mutation_inventory(role.scope, items, 512, filename)
-                report["frequency_artifacts"][owner] = frequency_artifact_manifest(
+                report[_frequency_artifact_key(role)][owner] = frequency_artifact_manifest(
                     session.work, report, policy, owner, inventory, session.identity,
-                    session.dependency_policy, session.vendor_identity)
+                    session.dependency_policy, session.vendor_identity, role=role)
     finally:
         session.finish()
     report["selected_lane_passed"] = True
     if args.lane in {"mutation", "all"}:
         report["cohort_complete"] = True
-        report["mutation_union_passed"] = set(selected) == set(FREQUENCY_PRIOR_SUBJECTS)
+        report["mutation_union_passed"] = set(selected) == set(role.scope.select("all"))
         report["qualification_passed"] = report["mutation_union_passed"]
+
+
+def execute_frequency_prior(args, report):
+    """Preserve the historical four-owner executor and metadata defaults."""
+    return _execute_frequency_role(args, report, _frequency_prior_role(), read_frequency_prior_policy, _frequency_contracts)
+
+
+def execute_baseline_feedback(args, report):
+    """Execute only the additive five-owner role through existing custodians."""
+    return _execute_frequency_role(args, report, _baseline_feedback_role(), read_baseline_feedback_policy, _baseline_feedback_contracts)
 
 
 def _frequency_source_name(value, identity):
@@ -9087,10 +9217,97 @@ def _frequency_source_name(value, identity):
     return name
 
 
-def _frequency_assertion(source_root, identity, filename, line, column, message):
+# Two actual chart-test owners omitted by the historical four-owner reader.
+# These are source/target admissions, not mutant exclusions or panic exceptions.
+_BASELINE_CHART_ASSERTION_OWNERS = {
+    "crates/time-core/tests/private/chart_composition.rs": (
+        "1d52638ab10f66c37b55bae2edac3e3b23898479531bb641b16d741181e4ba1a",
+        "crates/time-core/tests/chart.rs",
+        "6c556bdd92917803389b5867af2190fbd7055eb20120ac4c4dc14d1decc9aaac",
+        "private/chart_composition.rs", "chart_composition", "chart_composition", "--test chart", False),
+    "crates/time-core/src/combination/chart/receiving_tests.rs": (
+        "b4234295d21a3b5a0df40c99803ff7625f21143b44b9db87149eb2518919f132",
+        "crates/time-core/src/combination/chart/receiving.rs",
+        "4e0687bd5b3dd1e1ada09af7e17a561f5c1ee322761aae76f8c0c2964ff1c553",
+        "receiving_tests.rs", "tests", "combination::admission::chart_receiving::tests", "--lib", True),
+}
+
+
+# Exact observed assertion locations were independently traced to the named test
+# or its actual called helper in the two pinned files above. An existing sibling
+# test in the same namespace cannot borrow another test's assertion witness.
+_BASELINE_CHART_ASSERTION_CALLERS = {
+    "crates/time-core/tests/private/chart_composition.rs": {
+        ("composition_rejects_relationships_and_ordered_arithmetic_failures", 369, 9),
+    },
+    "crates/time-core/src/combination/chart/receiving_tests.rs": {
+        ("chart_tracking_receiver_keeps_actual_slots_and_complete_witness", 416, 9),
+        ("chart_tracking_receiver_keeps_actual_slots_and_complete_witness", 450, 9),
+        ("chart_tracking_receiver_keeps_actual_slots_and_complete_witness", 459, 9),
+        ("chart_tracking_receiver_keeps_actual_slots_and_complete_witness", 507, 9),
+        ("chart_tracking_receiver_rejects_wrong_relationships", 757, 5),
+        ("chart_tracking_receiver_requires_excluded_and_retained_tracking", 823, 9),
+        ("chart_tracking_reduction_contains_exact_stored_input_means", 912, 5),
+        ("chart_tracking_reduction_failure_preserves_prior_sums", 967, 5),
+        ("chart_tracking_singleton_copies_zero_denominator_attachment_bits", 1048, 5),
+        ("chart_tracking_singleton_copies_zero_denominator_attachment_bits", 1049, 5),
+    },
+}
+
+
+def _baseline_chart_assertion_target(cause, source_root, identity, role):
+    """Join two pinned test-only includes and their real test names, fail closed.
+
+    Other product sources and historical roles gain no assertion admission. A
+    second captured include is ambiguous even when it names the same Cargo target.
+    """
+    binding = _BASELINE_CHART_ASSERTION_OWNERS.get(cause["source"])
+    if binding is None or _frequency_analysis_role(role).selector != BASELINE_FEEDBACK_SUBJECT:
+        return None
+    digest, including, include_digest, path, module, namespace, target, cfg_test = binding
+    test = cause.get("test")
+    if type(test) is not str or re.fullmatch(re.escape(namespace) + r"::[A-Za-z_][A-Za-z0-9_]*", test) is None:
+        raise Incomplete("Chart assertion test has no exact owned module namespace.")
+    data = {}
+    for name, expected in ((cause["source"], digest), (including, include_digest)):
+        if identity.get(name) != expected:
+            raise Incomplete("Chart assertion test or including module has stale source identity.")
+        raw = COMMON.read_analysis_bytes(source_root / name, maximum=512 * 1024)
+        if hashlib.sha256(raw).hexdigest() != expected:
+            raise Incomplete("Chart assertion test or including module bytes changed.")
+        data[name] = raw.decode("utf-8")
+    function = test.rsplit("::", 1)[1]
+    if (function, cause.get("line"), cause.get("column")) not in _BASELINE_CHART_ASSERTION_CALLERS[cause["source"]]:
+        raise Incomplete("Chart test has no reviewed assertion location for its actual caller.")
+    if len(re.findall(r"(?m)^#\[test\]\s*fn " + re.escape(function) + r"\s*\(", data[cause["source"]])) != 1:
+        raise Incomplete("Chart assertion lacks its unique actual test function.")
+    declaration = (r"(?m)^" + (r"#\[cfg\(test\)\]\s*" if cfg_test else "")
+        + r'#\[path\s*=\s*"' + re.escape(path) + r'"\]\s*mod '
+        + re.escape(module) + r"\s*;")
+    if len(re.findall(declaration, data[including])) != 1:
+        raise Incomplete("Chart assertion lacks its exact test-only module declaration.")
+    includes = []
+    for name in identity:
+        if not name.startswith(("crates/time-core/src/", "crates/time-core/tests/")) or not name.endswith(".rs"):
+            continue
+        raw = COMMON.read_analysis_bytes(source_root / name, maximum=512 * 1024)
+        if hashlib.sha256(raw).hexdigest() != identity[name]:
+            raise Incomplete("Chart assertion include inventory source changed.")
+        for candidate, declared in re.findall(r'#\[path\s*=\s*"([^"\r\n]+)"\]\s*(?:pub(?:\([^)]*\))?\s+)?mod\s+([A-Za-z_][A-Za-z0-9_]*)\s*;', raw.decode("utf-8")):
+            if Path(candidate).name != Path(cause["source"]).name:
+                continue
+            if _frequency_source_name(str(Path(name).parent / candidate), identity) == cause["source"]:
+                includes.append((name, candidate, declared))
+    if includes != [(including, path, module)]:
+        raise Incomplete("Chart assertion has ambiguous or foreign captured module ownership.")
+    return target
+
+
+def _frequency_assertion(source_root, identity, filename, line, column, message, *, test=None, role=None):
     """Require an exact real test assertion or its same-file tracked success guard."""
     name = _frequency_source_name(filename, identity)
-    if not name.startswith("crates/time-core/tests/"):
+    if (not name.startswith("crates/time-core/tests/")
+            and _baseline_chart_assertion_target({"source": name, "test": test, "line": line, "column": column}, source_root, identity, role) is None):
         raise Incomplete("A product panic is not frequency semantic test evidence.")
     data = COMMON.read_analysis_bytes(source_root / name, maximum=512 * 1024)
     if hashlib.sha256(data).hexdigest() != identity[name]:
@@ -9151,9 +9368,12 @@ def _frequency_residual_failure(text):
                 or re.search(r"(?m)^[ \t]*(?:Error:|error(?:\[[A-Za-z0-9_]+\])?:|[A-Z0-9_]*HARNESS_)", text))
 
 
-def _frequency_failed_target(cause, source_root, identity):
+def _frequency_failed_target(cause, source_root, identity, *, role=None):
     """Derive Cargo's failed target from its already source-owned assertion."""
     source = cause["source"]
+    reviewed = _baseline_chart_assertion_target(cause, source_root, identity, role)
+    if reviewed is not None:
+        return reviewed
     target = re.fullmatch(r"crates/time-core/tests/([A-Za-z_][A-Za-z0-9_]*)[.]rs", source)
     if target:
         return "--test " + target[1]
@@ -9169,8 +9389,179 @@ def _frequency_failed_target(cause, source_root, identity):
     raise Incomplete("Frequency assertion has no owned Cargo test target.")
 
 
-def _frequency_caught_text(text, source_root, identity, policy):
-    """Require complete failed names and one owned assertion panic per failed section."""
+# Independently reviewed chart-v1 Result rosters. These are zero-credit facts,
+# not equivalent mutants, assertion witnesses or reusable historical test passes.
+_BASELINE_CHART_RESULT_SOURCE = ("crates/time-core/src/regression/chart.rs", "598f7870c27f69f1e4fe6abd7d820dd8ad85bef6b811f01b1ea90966c46c89ba")
+
+
+_BASELINE_CHART_RESULT_CASES = {
+    '01d8047f755b42f84fb3d9e7003e6e30048ada23b15992a89687466c295c2e13': ('4ef6b3d8fa478e888f2e53389572f1a044851f34cd183242bf8dc663e67b3ab2', 'c4bf95c99700be0ac7f1cd903d37f6e586adcbbfb5295fbbf2c98fc08046693d', 'ed22bb0c4ed49ad284c68656730e35114f2cf03c00b66e73fb9abe5eb8a96819'),
+    '03880a7dfbede6f22d5a484994dc315fdfc69408368389e21d3624d45d5cb2b7': ('71b5153c709542e7e5a81117343258db572787c4c9fb42f453b02a675f18b838', '7eec155076597897a34b290f425e23ccb3eb28e9f5e4adbfe74685850e0be6e7', 'f7bc1d9190359bb1b9196c2d2add88624b50b7d27c460ae257adad19060a2d1d'),
+    '0c741500ace0700649ab85bebe699896d1c61cc914c828a8c68c86dc2be1bd52': ('aa7158c6616818e5f21eeaf66085a7e7dd7f99840e390ad138c51882e5421946', '7c1afaf8671da15cc88119f71490ea82e4dcb99766d134b06f255be9c83c0626', '4fb8c79e864efca669f2aaa3c9ebea56a7078040328176a57790aaf939e633d0'),
+    '19f22b7d5c36964542b34933a58f1b0a2408758012ffc28e4b7995855fa3d741': ('6382165dabcdaa5931aa0048cbcf8b873cb73a2ac078a3d0e743663b534a6c15', '493c25eede576dc1bcb2d11b646632d89bfcf56305b4fb6aa1f73052d9b23d70', '34c860430889120c80a45afb896496d29250cd14f4ae52423ba1b24151635bc2'),
+    '2ef433f77b2319aace5a4f31c6503d3bebc01946bba5ae3478e144d08800f7ce': ('2903fb0513bd37edb1aaf51dfef5480a5af3da475e676b5a9f34b915bc75481b', '89c9da0cbfed25018733f3ed33ed4c3a6e0043234dd14c090719029c8d13a980', 'edb18192e0c689e2c5deebf9f505513f7ea0b2f9fa550fd5267a72e770cd467f'),
+    '35ada070e033028576942bd615e49c6549266bae6093c77c9b27a3fc9eba8799': ('023cdf2fc35abf5bff3a9c06539226242cb7878c33fcdf1f489ded395c263858', '573157b04a137017eddb8a6ee1ffd0886abff4a72ad69eca5784ad1d60e7557e', '34c860430889120c80a45afb896496d29250cd14f4ae52423ba1b24151635bc2'),
+    '3e7b958d146bd25ce7d3386529bb2772b9ad360853e4e8959e27e33014800402': ('b49969f6af21deac40954b9a9f325f07340854a6a70163e57f4a29650937877c', '5ffa7637828b8ed26ed200db423cfd77616d2a27de862d49f154b32a3e6adff2', 'b381caa0d5a699bfa4b9f4398ef5724a9ecf3d13c7de09d92bbc50d65c244273'),
+    '3fc1ab086988a629ddf1673eb72958f11a08502341add76203bc93486821b54d': ('3bef2397c91d48b1f3296302bce3997eb2f5471da5330371378d1890f1fe3f7b', '4dfcc798db993c601e8169cd33a01afa6280a36bf639e8a0c712f7c7eea632d9', '199d207d93918c898eefcdc6e7fafb52da5bb30da3d914ff43685d0532f8dfef'),
+    '52a143c3b8b457c999396646b73368a43a69bed55007329c34b9efbe53e7304f': ('ad7cced4de792e2bb393333f578e979263e66efba1223503be459dfdc5eccbf4', '19c7efdc9bcc07958b9459f35d1524d1c889711eb7084e9bbccbdd32431c5e6b', '60d2b19bac45c3548bc7234cb733f0a1af92cbc3b9098bfc2452e7914cf1f62a'),
+    '5e4e9bc9e303ad6fbbac9929323be41445ce025a65865de1364f0692eb9a8fc4': ('496179987eb6ac507dc8bfc3db9702a0702a128b57297b8e90f4798918827148', '7cfaa29288e99582820b15cefd12307c9b4b12ac388a8dfa7d40043fbcde5542', 'f5f2f75ca5c186e222a197105e70fe861ee6e25a0d726473483bce2500766328'),
+    '5fc32b12eee3f7afb22a86b5f2da0f462f51cfb5b1acfa683e5949e3769ee3dd': ('1139b54e9ad3e81c943e553c3c0a3a2719c54d855861747d57c87be3d44745e1', '4d61d5fdb8e9488b2fbe927f9d687bd6ce491d9df3fc214642b071821c7667f9', '60d2b19bac45c3548bc7234cb733f0a1af92cbc3b9098bfc2452e7914cf1f62a'),
+    '6925852b17fcf1792c3788c52e76db8f7b9d4c5e7e998965364030ed8b7e0a9b': ('7361548cc5f7041a76f491caad2a381c8886738e77c9db6a277b64692e06a893', '9c7745223213bf3325bb6868d68b677705d73486c6c79b5e62e067a69f0a2fcc', '200c9a7f77358ac8b1b2e3c856939c75c7ab3e04cc47d8bbcfe05afaf75d5222'),
+    '766585454c981259bd3d0589cbe45d985e27f6dcb1b8c87a123fb43b6deb8bc7': ('649adae81c0e2118c3932551a9471cc86acce09662bd96859ddd96b2ec105f2b', 'd57d4dc2cc2a0279cf597ea9c471c57cb801c73329930dc2137e081c1b7b1915', 'dbe3eaee732297fb7c7763ff23852b58b5fa8de79cdca6f5d86236210b8582fe'),
+    '7b9eb0fe820a4dc1c8658978ce7b4d6acdcf6b469cdb6815a230997e69d7561d': ('bd43a049a2a8ce0771eb64dd54f7d002ebf7161c91740f7a58df004190c37087', 'b5e776de90cc85707275cf19981ac8a0853289a8b83d0e8a643cd9d92a1e46dd', '21edf42a03efb2d169fb03380541c6293ead41724c4c1b7eb864da3bb66844a6'),
+    '86d64b5a8ff84f1b33fe96b08e84d3fab2916942239d52a7c1fef4c25f3b21ed': ('28b0064dd19d1503bf87157570c9ed54ded2a5b3a49706f6bd326cc38b68d4a5', '0f723d9e6ac580a7c0960d204584ea800105e9aafa362d6a6a567ec2c8dc79bc', 'edb18192e0c689e2c5deebf9f505513f7ea0b2f9fa550fd5267a72e770cd467f'),
+    '8748ec8297f09df96f0815e5a0e06a737de275e2db2454561bc0c655f65816dd': ('315762eebf7f9439ca1ed042647d82d4b1a7a8070f14dd4b50faaac3ed013615', 'e5dfd84b4f1a581985253297740e3934a88d164a7c3dfacea5845a2f73f35e74', '8f9311930ac1974c4bad54e2580d39bc085a9ffca6eea6591bed5a1aa04bde58'),
+    '8c7bd3114a620fbd96bda3a18457590ae0c57a0f521bf190b48c3896bc53c681': ('9640b1863a1c45e0cc572e239c332b2bedd5b6d26817159230f550c89a55d611', '13e51ecbcb61e00c7486c054c4f34cb634c651eb0684a816008df91cbceea790', '199d207d93918c898eefcdc6e7fafb52da5bb30da3d914ff43685d0532f8dfef'),
+    '9bcfe3bdf121bd0386262c656084212f54e0723bdddf2e1666d5e7c006042e4d': ('40796832a12c79f7f6516647a236debacfe520ee4b1754ef676a5aa00fb250c3', 'e771f9e080495d5053640f4ee9c57d730ad2e38822c4d3bc6b1badaf211b75e4', '199d207d93918c898eefcdc6e7fafb52da5bb30da3d914ff43685d0532f8dfef'),
+    'a43a633b98d72bee440676ad27b6c46960fd2f4e924b2ecf8cebecf76ea74c4f': ('7a3d213adc96c6da86a2c47d2c453d2cf6c817f5301865028b17485a9937a056', '1ebefc8c3267ea5dea8756404009e1f57083201933c8d8383483b917f0775300', 'b381caa0d5a699bfa4b9f4398ef5724a9ecf3d13c7de09d92bbc50d65c244273'),
+    'be4c2f430b8cd7dfb7b84d6b7d2c3bc35b2aa771a7ba3e7cb13f62728d83a7ce': ('4e645177cdd25494e14878e20e34eb32f02637541d3fd0a4b98edb211b040afb', '87730c85ef39cc7bd702ea3118928bf9f485ee260d9a5aa77b9fcc29884495c1', '4fb8c79e864efca669f2aaa3c9ebea56a7078040328176a57790aaf939e633d0'),
+    'cc57b1c7f9b32c4ac8cd2abdb28130f53e62643f9c6daa0150acea7fbb3ccc08': ('11bf5a32308114782ab629cf32421f371ada71e3f85053ec5b345960bd2023c0', '099830233cce6b683bd9cc73befe4ff61bb1be1443088d9eef2cd8d41c6c64da', '60d2b19bac45c3548bc7234cb733f0a1af92cbc3b9098bfc2452e7914cf1f62a'),
+    'cf7196d0bf2f0856fbca3cca4df2ceb58dec48b85b6bfb7e8e7b92cfb9ba00a5': ('bdc1be3cdca8dac53b7f6a4b203a9635c7d4c454073c0a33296966a9d385ccc6', '71834d309a19a7776a8d5b2107a1fc3209dd37076c1223ae9caa20330b94730b', 'ed967dce061757dbabd822c960f340d30bc56788cc361bb9a31884cf03e320ef'),
+    'e2a52800b439ee9a5f08d30abae83f663034741f476d2d10d7bf924c689c5104': ('f65fb4bbaa498cfcac51c58ba7837cb07c186573f9b3fc790419960fc3c8ab6c', '842547e78cfcc79cc7a08a79ed0e7c8df6507240a4c80546b9d779b391d74af7', '199d207d93918c898eefcdc6e7fafb52da5bb30da3d914ff43685d0532f8dfef'),
+    'e2d902b76d0a95a0362a1aaca40fd52a821c71b7212283bcb0dba2056c7fcde2': ('f837817d4418e0e96377b8937302027d8e54ae55fe6a13ffeb3e28b8642ca640', '025d2a52b7aeddcb574e2d6a0a5cdd74d23d2550dad0373291f859f80e6f6528', '90764611c37bd3984bb4b8d7a4adf42c63afd1ee33cd90f52af6d72db69eebb6'),
+    'fd307f8610cfa8136689cb790899208d270f612fd9d1e96ff37db4168be6af4c': ('13d9eb8941b1ef4befe7db8e2609222db4500643e26e4f04803fda5b515abba6', '5d648b1111635721b5c0a1c147d7e0ee3accba5194f232a6ded88e05930e9059', 'dbe3eaee732297fb7c7763ff23852b58b5fa8de79cdca6f5d86236210b8582fe'),
+}
+
+
+_BASELINE_CHART_RESULT_TESTS = {
+    'chart_batch::tests::raw_chart_batch_header_checks_inclusive_domain': 'crates/time-core/tests/private/chart_batch_guards.rs',
+    'combination::admission::chart_receiving::tests::chart_tracking_receiver_absence_requires_empty_metadata': 'crates/time-core/src/combination/chart/receiving_tests.rs',
+    'combination::admission::chart_receiving::tests::chart_tracking_receiver_keeps_actual_slots_and_complete_witness': 'crates/time-core/src/combination/chart/receiving_tests.rs',
+    'combination::admission::chart_receiving::tests::chart_tracking_receiver_rejects_wrong_relationships': 'crates/time-core/src/combination/chart/receiving_tests.rs',
+    'combination::admission::chart_receiving::tests::chart_tracking_receiver_requires_excluded_and_retained_tracking': 'crates/time-core/src/combination/chart/receiving_tests.rs',
+    'combination::admission::chart_receiving::tests::chart_tracking_reduction_contains_exact_stored_input_means': 'crates/time-core/src/combination/chart/receiving_tests.rs',
+    'combination::admission::chart_receiving::tests::chart_tracking_reduction_failure_preserves_prior_sums': 'crates/time-core/src/combination/chart/receiving_tests.rs',
+    'combination::admission::chart_receiving::tests::chart_tracking_singleton_copies_zero_denominator_attachment_bits': 'crates/time-core/src/combination/chart/receiving_tests.rs',
+    'combination::lifecycle::chart::guard_tests::chart_raw_count_seventeen_cannot_reuse_sixteen_slots': 'crates/time-core/tests/private/chart_combination_lifecycle_guards.rs',
+    'combination::lifecycle::chart::guard_tests::chart_raw_pair_guards_preserve_complete_relationships': 'crates/time-core/tests/private/chart_combination_lifecycle_guards.rs',
+    'reference_input::rate_delivery::phase_plan::tests::actual_unknown_reception_latches_frequency_before_private_projection': 'crates/time-core/tests/private/phase_plan_lifecycle.rs',
+    'reference_input::rate_delivery::phase_plan::tests::controller_basis_captures_and_checks_every_geometry_component_bit': 'crates/time-core/tests/private/phase_plan_lifecycle.rs',
+    'reference_input::rate_delivery::phase_plan::tests::no_effect_latches_each_deadline_before_later_issue_can_mask_it': 'crates/time-core/tests/private/phase_plan_lifecycle.rs',
+    'reference_input::rate_delivery::phase_plan::tests::private_baseline_receiver_rejects_each_chain_component_before_admission': 'crates/time-core/tests/private/phase_plan_lifecycle.rs',
+    'reference_input::rate_delivery::phase_plan::tests::raw_baseline_completion_validation_checks_intermediate_and_endpoint_chains': 'crates/time-core/tests/private/phase_plan_lifecycle.rs',
+    'reference_input::rate_delivery::phase_plan::tests::raw_baseline_terminal_validation_preserves_genuine_pending_custody': 'crates/time-core/tests/private/phase_plan_lifecycle.rs',
+    'reference_input::rate_delivery::phase_plan::tests::raw_controller_map_validation_rejects_each_relationship_with_healthy_restoration': 'crates/time-core/tests/private/phase_plan_lifecycle.rs',
+    'regression::chart::roundoff::tests::settled_rate_keeps_dyadic_and_signed_zero_points': 'crates/time-core/tests/private/chart_roundoff.rs',
+    'regression::chart::roundoff::tests::settled_rate_preserves_general_binary64_integration_error': 'crates/time-core/tests/private/chart_roundoff.rs',
+    'regression::chart::roundoff::tests::settled_rate_rejects_unsupported_rates_and_reachable_results': 'crates/time-core/tests/private/chart_roundoff.rs',
+    'regression::chart::roundoff::tests::settled_rate_uses_exact_active_duration_and_integer_neighbors': 'crates/time-core/tests/private/chart_roundoff.rs',
+}
+
+
+_BASELINE_CHART_RESULT_SOURCES = {
+    'crates/time-core/src/combination/chart/receiving_tests.rs': 'b4234295d21a3b5a0df40c99803ff7625f21143b44b9db87149eb2518919f132',
+    'crates/time-core/tests/private/chart_batch_guards.rs': 'c49c1c4d433a2b02b3d099450a1c61d6dc828a44f64823c103123cd5d3263580',
+    'crates/time-core/tests/private/chart_combination_lifecycle_guards.rs': 'f6d69edefe79ee7113c704041b0fbac3eb0a7ce8d86b37079be5fa92f1bacb29',
+    'crates/time-core/tests/private/chart_roundoff.rs': 'bde389e2de19652c4bd3b3a022c42e6c6b34bc95d4930d2a89bf3eb976f6c549',
+    'crates/time-core/tests/private/phase_plan_lifecycle.rs': 'aed3463cc8eb9477bd8e82e012baed3bb0f9fae2aeaee3af28fa62450c45bce9',
+}
+
+
+def _baseline_feedback_result_sections(sections, source_root, identity, mutant, diff, role):
+    """Retain only a complete reviewed chart Result roster, with zero kill credit.
+
+    A Result-returning test may report an upstream chart error while a different
+    real assertion catches the mutant. Neither the Result nor its Error text is
+    behavioral evidence. Complete output/count/target joins remain mandatory;
+    the caller must retain these observations and at least one separate owned
+    assertion. Unknown source, descriptor, diff, test or body is a refusal.
+    """
+    if _frequency_analysis_role(role).selector != BASELINE_FEEDBACK_SUBJECT:
+        raise Incomplete("Historical frequency roles admit no Result-section exception.")
+    binding = _BASELINE_CHART_RESULT_CASES.get(COMMON.canonical_sha256(mutant)) if type(mutant) is dict else None
+    filename, pristine = _BASELINE_CHART_RESULT_SOURCE
+    if (filename != BASELINE_FEEDBACK_SUBJECTS["chart"] or binding is None or type(diff) is not str or identity.get(filename) != pristine
+            or hashlib.sha256(diff.encode()).hexdigest() != binding[0]):
+        raise Incomplete("Chart Result sections have no exact reviewed mutation binding.")
+    compiled = _frequency_mutation_source(source_root, identity, mutant, diff, role=role)
+    if compiled is None or compiled[0] != filename or hashlib.sha256(compiled[1]).hexdigest() != binding[1]:
+        raise Incomplete("Chart Result sections differ from the reviewed applied mutation.")
+    bodies = {}; observations = []
+    for section in sections:
+        test, body = section["test"], section["body"]
+        source = _BASELINE_CHART_RESULT_TESTS.get(test)
+        if (source is None or test in bodies or re.fullmatch(r"Error: [^\r\n]{1,256}", body) is None
+                or re.search(INFRASTRUCTURE_FAILURE, body)):
+            raise Incomplete("Chart Result section is unreviewed, repeated or contains another failure.")
+        expected = _BASELINE_CHART_RESULT_SOURCES[source]
+        data = COMMON.read_analysis_bytes(source_root / source, maximum=512 * 1024)
+        if identity.get(source) != expected or hashlib.sha256(data).hexdigest() != expected:
+            raise Incomplete("Chart Result test source changed after independent causal review.")
+        if len(re.findall(r"(?m)^\s*fn " + re.escape(test.rsplit("::", 1)[-1]) + r"\s*\(", data.decode("utf-8"))) != 1:
+            raise Incomplete("Chart Result test is not the unique reviewed source function.")
+        bodies[test] = body
+        observations.append({"test": test, "source": source, "source_sha256": expected,
+            "section_sha256": section["section_sha256"], "body_sha256": hashlib.sha256(body.encode()).hexdigest(),
+            "reason": "reviewed Result error is inconclusive; only separate source assertions count",
+            "kill_credit": 0, "cargo_target": "--lib"})
+    if not bodies or COMMON.canonical_sha256(bodies) != binding[2]:
+        raise Incomplete("Chart Result sections differ from the complete reviewed test/body roster.")
+    return observations
+
+
+# Five independently reviewed phase-v2 diagnostic shapes, with zero auxiliary credit.
+_BASELINE_PHASE_AUXILIARY_SOURCE = ('crates/time-core/src/reference_input/rate_delivery/phase_plan.rs', '3ddf8f1a78e19874f18d03ba564e8117a3f7aa88356b1441601d2215278a7d43')
+_BASELINE_PHASE_AUXILIARY_TEST_SOURCE = ('crates/time-core/tests/private/phase_plan_lifecycle.rs', 'aed3463cc8eb9477bd8e82e012baed3bb0f9fae2aeaee3af28fa62450c45bce9')
+_BASELINE_PHASE_AUXILIARY_CASES = {
+    '0ba665a3fb0261ad73ee6d1f7cb296bfd0da2ce05e58bd815731c85ec7582f18': ('ff9b39a538166f047cabf57045ac429aeaebf1286d43ed8bf294543992c41e3f', '211b2f926f4ee0df0ec0949f61cb6922316e57b37fda347cc09c97cb5ca7fc62', 2062, 22, 'attempt to divide by zero', ('reference_input::rate_delivery::phase_plan::tests::baseline_no_effect_after_map_expiry_consumes_without_extrapolating_ratio', 'reference_input::rate_delivery::phase_plan::tests::baseline_no_effect_latches_each_original_deadline_before_reissue', 'reference_input::rate_delivery::phase_plan::tests::baseline_terminal_relation_retains_first_known_and_no_effect_observations', 'reference_input::rate_delivery::phase_plan::tests::known_baseline_cap_is_inclusive_for_both_signs_without_losing_achievement', 'reference_input::rate_delivery::phase_plan::tests::private_baseline_receiver_rejects_each_chain_component_before_admission', 'reference_input::rate_delivery::phase_plan::tests::raw_baseline_terminal_validation_preserves_genuine_pending_custody'), ('reference_input::rate_delivery::phase_plan::tests::private_clock_relation_rejects_each_order_fault_before_subtraction', 'crates/time-core/tests/private/phase_plan_lifecycle.rs', 1425, 5, 'assert!')),
+    '1d0fd10fadf04fde4a9232a8aa62e925bf3da647256ec3a36b5e14cce405e737': ('84f7b130dfc9e441f4a3ab1c22c000959f044a2f87e589428424fd69df72d5c2', 'e93c959abb8fef53d4a93450b9e032fb5889f66992a64d70c63ed9f849c746fa', 2063, 20, 'attempt to subtract with overflow', ('reference_input::rate_delivery::phase_plan::tests::private_clock_relation_rejects_each_order_fault_before_subtraction',), ('reference_input::rate_delivery::phase_plan::tests::private_clock_relation_rejects_each_order_fault_before_subtraction', 'crates/time-core/tests/private/phase_plan_lifecycle.rs', 1443, 9, 'assert!')),
+    '2dfa693e91ae3ec229a3849356ff7ab09d2c239513b565df08f82e7d01d147bf': ('275f9ebb8c9be490d532b615978a6cc6fabb5c1fb1d9f98c3b8b67e704650bd3', '45110e5edef8528fecae19f8f44404b5448c43666e7ac0e680d9dcec3086926f', 2230, 22, 'attempt to divide by zero', ('reference_input::rate_delivery::phase_plan::tests::baseline_no_effect_after_map_expiry_consumes_without_extrapolating_ratio', 'reference_input::rate_delivery::phase_plan::tests::baseline_no_effect_latches_each_original_deadline_before_reissue', 'reference_input::rate_delivery::phase_plan::tests::baseline_terminal_relation_retains_first_known_and_no_effect_observations', 'reference_input::rate_delivery::phase_plan::tests::checked_controller_map_keeps_nonunit_ratio_and_inclusive_chart_end', 'reference_input::rate_delivery::phase_plan::tests::known_baseline_cap_is_inclusive_for_both_signs_without_losing_achievement', 'reference_input::rate_delivery::phase_plan::tests::private_baseline_receiver_rejects_each_chain_component_before_admission', 'reference_input::rate_delivery::phase_plan::tests::raw_baseline_terminal_validation_preserves_genuine_pending_custody'), ('reference_input::rate_delivery::phase_plan::tests::private_controller_map_observe_rechecks_context_and_expiry', 'crates/time-core/tests/private/phase_plan_lifecycle.rs', 1466, 5, 'assert!')),
+    'd8db6a8d4e83fc1834ec476c37f29389aafa3328cbc78041ae5e9b78893365a0': ('0dd267967822d4e3be76b5df7eade1f2069eb2aae0268a68b9c04a6ae3bd0bc4', 'dadfbf059c13377cadd68edcd33d31f2aa96f817e56d8851c64b3bcb5536f10d', 2062, 22, 'attempt to subtract with overflow', ('reference_input::rate_delivery::phase_plan::tests::private_clock_relation_rejects_each_order_fault_before_subtraction',), ('reference_input::rate_delivery::phase_plan::tests::private_clock_relation_rejects_each_order_fault_before_subtraction', 'crates/time-core/tests/private/phase_plan_lifecycle.rs', 1443, 9, 'assert!')),
+    'f503f4006c414ff638cb382805d0b8ffdddd83ab1c3cc0163c88613355e96ec3': ('3b1a823b29ae7c054cc2017ca2d56ceaa85b56e22c6b74e95ebd8c526ba4f830', '7a6d40e821bc3ca23850aa105de32cb912ea2a33e3d22e62897d7e557fc6c52c', 2062, 22, 'attempt to subtract with overflow', ('reference_input::rate_delivery::phase_plan::tests::private_clock_relation_rejects_each_order_fault_before_subtraction',), ('reference_input::rate_delivery::phase_plan::tests::private_clock_relation_rejects_each_order_fault_before_subtraction', 'crates/time-core/tests/private/phase_plan_lifecycle.rs', 1443, 9, 'assert!')),
+}
+
+
+def _baseline_feedback_auxiliary_panic(body, test, source_root, identity, mutant, diff, role):
+    """Recognize one actually reviewed auxiliary arithmetic frame, never a kill.
+
+    Only five exact phase mutants are selected. Their dependent fixture panic
+    is retained with zero credit; a separately validated direct helper assertion
+    remains mandatory. No foreign, resource, native or arbitrary panic is masked.
+    """
+    filename, pristine = _BASELINE_PHASE_AUXILIARY_SOURCE
+    if "panicked at " + filename + ":" not in body:
+        return None
+    if _frequency_analysis_role(role).selector != BASELINE_FEEDBACK_SUBJECT:
+        raise Incomplete("Historical frequency roles admit no auxiliary panic exception.")
+    binding = _BASELINE_PHASE_AUXILIARY_CASES.get(COMMON.canonical_sha256(mutant)) if type(mutant) is dict else None
+    test_source, test_sha = _BASELINE_PHASE_AUXILIARY_TEST_SOURCE
+    manifest = "policy/tool-manifest.json"
+    compiler = "83deaf865a9b5df42b02a5b9b31ec0f1af3fdd3cbdd291fb064256b88a4d1d41"
+    if (binding is None or filename != BASELINE_FEEDBACK_SUBJECTS["phase_plan"]
+            or identity.get(filename) != pristine or identity.get(test_source) != test_sha
+            or identity.get(manifest) != compiler or type(diff) is not str
+            or hashlib.sha256(diff.encode()).hexdigest() != binding[0]
+            or test not in binding[5]):
+        raise Incomplete("Auxiliary arithmetic panic has no exact reviewed source/test/mutation binding.")
+    for name, expected in ((filename, pristine), (test_source, test_sha), (manifest, compiler)):
+        if hashlib.sha256(COMMON.read_analysis_bytes(source_root / name, maximum=512 * 1024)).hexdigest() != expected:
+            raise Incomplete("Auxiliary arithmetic panic source or compiler manifest changed.")
+    compiled = _frequency_mutation_source(source_root, identity, mutant, diff, role=role)
+    if compiled is None or compiled[0] != filename or hashlib.sha256(compiled[1]).hexdigest() != binding[1]:
+        raise Incomplete("Auxiliary arithmetic panic differs from its reviewed applied mutation.")
+    pattern = (r"(?m)^thread '" + re.escape(test) + r"'(?: \([0-9]{1,20}\))? panicked at "
+        + re.escape(filename) + ":" + str(binding[2]) + ":" + str(binding[3]) + r":\r?\n"
+        + re.escape(binding[4]) + r"(?=\r?\n|$)"
+        + r"(?:\r?\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace)?")
+    matches = list(re.finditer(pattern, body))
+    if len(matches) != 1 or body[:matches[0].start()].strip():
+        raise Incomplete("Auxiliary arithmetic frame has a foreign owner, location, message or prefix.")
+    frame = matches[0]
+    remaining = body[:frame.start()] + body[frame.end():]
+    if (remaining.strip() and re.match(r"\s*thread '" + re.escape(test)
+            + r"'(?: \([0-9]{1,20}\))? panicked at ", remaining) is None):
+        raise Incomplete("Auxiliary arithmetic frame has an unknown tail before its owned assertion.")
+    observation = {"test": test, "source": filename, "source_sha256": pristine,
+        "test_source": test_source, "test_source_sha256": test_sha,
+        "line": binding[2], "column": binding[3], "message": binding[4],
+        "panic_sha256": hashlib.sha256(frame[0].encode()).hexdigest(),
+        "kind": "auxiliary_arithmetic_panic", "kill_credit": 0, "cargo_target": "--lib",
+        "reason": "reviewed auxiliary panic is inconclusive; the exact direct source assertion alone counts"}
+    return remaining, observation, binding
+
+
+def _frequency_caught_text(text, source_root, identity, policy, *, mutant=None, mutant_diff=None, role=None, uncredited=None):
+    """Require complete failures and source assertions; reviewed Results earn no credit."""
     finals = list(re.finditer(r"(?m)^failures:\r?\n(?:\r?\n)?((?:    [A-Za-z_][A-Za-z0-9_:]*\r?\n)+)"
         r"\r?\ntest result: FAILED[.] (\d+) passed; (\d+) failed; 0 ignored; 0 measured; 0 filtered out;[^\r\n]*", text))
     failed = []
@@ -9185,7 +9576,7 @@ def _frequency_caught_text(text, source_root, identity, policy):
     if (not finals or len(set(failed)) != len(failed) or not set(failed) <= ordinary
             or sorted(records) != sorted(failed) or sorted(h[1] for h in headers) != sorted(failed)):
         raise Incomplete("Frequency caught output lacks complete owned failed-test blocks.")
-    spans = []; causes = []
+    spans = []; causes = []; result_sections = []; auxiliary = []; auxiliary_binding = None
     panic = r"(?m)^thread '([^'\r\n]+)'(?: \(\d+\))? panicked at ([^\r\n]+):(\d+):(\d+):\r?\n([^\r\n]+)"
     for index, header in enumerate(headers):
         following = [f.start() for f in finals if f.start() >= header.end()]
@@ -9193,20 +9584,51 @@ def _frequency_caught_text(text, source_root, identity, policy):
         if not following:
             raise Incomplete("Frequency failed section is unterminated.")
         end = min(following); body = text[header.end():end]
+        recovered = _baseline_feedback_auxiliary_panic(body, header[1], source_root, identity, mutant, mutant_diff, role)
+        if recovered is not None:
+            body, observation, auxiliary_binding = recovered
+            observation["section_sha256"] = hashlib.sha256(text[header.start():end].encode()).hexdigest()
+            auxiliary.append(observation)
+            if not body.strip():
+                spans.append((header.start(), end))
+                continue
         locations = list(re.finditer(panic, body))
+        if not locations and "panicked at " not in body and body.strip().startswith("Error:"):
+            result_sections.append({"test": header[1], "body": body.strip(),
+                "section_sha256": hashlib.sha256(text[header.start():end].encode()).hexdigest()})
+            spans.append((header.start(), end))
+            continue
         if len(locations) != 1 or body.count("panicked at ") != 1:
             raise Incomplete("Frequency failed section has extra or malformed panics.")
         location = locations[0]
         if location[1] != header[1] or re.search(r"(?m)^Error:", body):
             raise Incomplete("Frequency failure is an unowned thread or opaque Error-only result.")
         causes.append({"test": header[1], **_frequency_assertion(source_root, identity,
-            location[2], int(location[3]), int(location[4]), location[5])})
+            location[2], int(location[3]), int(location[4]), location[5], test=header[1], role=role)})
         if _frequency_residual_failure(body[:location.start()] + body[location.end():]):
             raise Incomplete("Frequency failed section contains a mixed infrastructure/compiler failure.")
         spans.append((header.start(), end))
+    observations = []
+    if auxiliary:
+        if type(uncredited) is not list:
+            raise Incomplete("Auxiliary panic observations must be retained explicitly.")
+        names = [item["test"] for item in auxiliary]
+        witness = auxiliary_binding[6]
+        if (len(names) != len(set(names)) or set(names) != set(auxiliary_binding[5])
+                or not any(tuple(cause.get(key) for key in ("test", "source", "line", "column", "kind")) == witness
+                           for cause in causes)):
+            raise Incomplete("Auxiliary panic roster or its exact separate direct assertion differs from review.")
+        observations.extend(auxiliary)
+    if result_sections:
+        if type(uncredited) is not list:
+            raise Incomplete("Chart Result-section observations must be retained explicitly.")
+        observations.extend(_baseline_feedback_result_sections(result_sections, source_root, identity, mutant, mutant_diff, role))
+    if not causes:
+        raise Incomplete("Frequency caught output has no separate owned semantic assertion.")
     outside = text
     for start, end in reversed(spans): outside = outside[:start] + outside[end:]
-    targets = {_frequency_failed_target(cause, source_root, identity) for cause in causes}
+    targets = ({_frequency_failed_target(cause, source_root, identity, role=role) for cause in causes}
+               | {item["cargo_target"] for item in observations})
     footer = r"(?m)^error: test failed, to rerun pass `-p time-core (--lib|--test [A-Za-z_][A-Za-z0-9_]*)`\r?$"
     footers = list(re.finditer(footer, outside))
     original_footers = list(re.finditer(footer, text))
@@ -9216,6 +9638,7 @@ def _frequency_caught_text(text, source_root, identity, policy):
     outside = outside[:footers[0].start()] + outside[footers[0].end():]
     if _frequency_residual_failure(outside):
         raise Incomplete("Frequency caught output contains an outside panic/error.")
+    if observations: uncredited.extend(observations)
     return outside, causes
 
 
@@ -9281,7 +9704,7 @@ def _frequency_null_let_chain(message, mutant, mutant_diff, source_root, identit
                                       "text": lines[line - 1].rstrip("\n")}])
 
 
-def _frequency_mutation_source(source_root, identity, mutant, diff):
+def _frequency_mutation_source(source_root, identity, mutant, diff, *, role=None):
     """Apply one reviewed native file diff, requiring every old byte and hunk count."""
     if mutant is None and diff is None:
         return None
@@ -9290,7 +9713,7 @@ def _frequency_mutation_source(source_root, identity, mutant, diff):
             or len(diff.encode()) > 2 * 1024 * 1024):
         raise Incomplete("Frequency diagnostic mutation context is incomplete or unbounded.")
     filename = _frequency_source_name(mutant.get("file"), identity)
-    if filename not in FREQUENCY_PRIOR_SUBJECTS.values():
+    if filename not in _frequency_analysis_role(role).scope.select("all").values():
         raise Incomplete("Frequency diagnostic diff is outside its four owned files.")
     data = COMMON.read_analysis_bytes(source_root / filename, maximum=512 * 1024)
     if hashlib.sha256(data).hexdigest() != identity[filename]:
@@ -9440,9 +9863,118 @@ def _frequency_const_trait_companion(records, record, mutant, diff, compiled, id
     return 1 <= counts[None] <= 2 and len(set(counts.values())) == 1
 
 
-def _frequency_compiler_errors(records, source_root, identity, *, mutant=None, mutant_diff=None):
+def _baseline_feedback_compiler_cause(records, record, mutant, diff, compiled, source_root, identity):
+    """Attribute only fourteen actual new-role compiler failures, never behavioral kills.
+
+    Current source, full descriptor/diff/compiled bytes and the admitted manifest
+    bind rustc 1.99.1 (58cf8f9c35b355199727627d07ae34a4e2846d67) and mutants27.1.0.
+    Session/tool bookends still establish the actual executables. No historical
+    four-owner case or generic uncoded message is admitted by this recognizer.
+    """
+    filename = "crates/time-core/src/reference_input/rate_delivery.rs"
+    pristine = "63a9d9a061f8e4573042d41c9e7c17762f27b1c88ce09742ea1e257ef3a0c245"
+    manifest = "policy/tool-manifest.json"
+    compiler = "83deaf865a9b5df42b02a5b9b31ec0f1af3fdd3cbdd291fb064256b88a4d1d41"
+    reviewed = {
+        "fd87b21449306d77cfa29e7a99928670583aae2368798a4e5ec69abd34ca443b": (
+            "439cf789cd67ea67edb83613239d4b080748482d6a2a78732d1f417b9b4ac3b5",
+            "a0465666e0247c0fbd6ea3a90fa996bc2d048efe5b4e95377b678e7099165efb", 461),
+        "412100c884b9b681f80ede6c570786e79abf5bac3fc2130242e0f3471fa3e826": (
+            "7e580fc37648bcfd98eb0ea397a4693a3284a7691c3fccf2946c139b4fcfa90d",
+            "466a32311ce23fcf04d9fd163f47eb6e3a110c15ead2c2cbbf0f1854206ffc1c", 605),
+        "9c6c592b11836df7ce5c334456d3565f842ecec215aee954b96883f6800e5c2a": (
+            "ba64fc918dffc69337bd1b2fd1f2933586d3b11fb1f7b3cf7882bfa4cff7bec4",
+            "2a67361efcc73885cce2d760b9ff88a8968edf61d8e4c5f8f09a325f1e077492", 610),
+    }
+    if type(mutant) is dict and mutant.get("file") == BASELINE_FEEDBACK_SUBJECTS["chart"]:
+        filename = BASELINE_FEEDBACK_SUBJECTS["chart"]
+        pristine = "598f7870c27f69f1e4fe6abd7d820dd8ad85bef6b811f01b1ea90966c46c89ba"
+        reviewed = {
+            '12582e28dbd394ba0f85c90b06c01d7e6d65d570d4f9bd799afcaac915fc08c5': ('6a25a643a0d3818907be8a4d5d5ba9f2cd1c7f0b400356d50f1152bfc9cad89d', '20f5956e7b11048cf5d8107bd5a46830a3df76ae52206b82e8b844a4f6605e9a', 433),
+            '2cecebb4a5838ea754fbd88a57fb9e195d2418af03cc9df065f7e0576a90da9c': ('81ce08f073004401bc7292866839c9fed3179ee1dc0dc12de48f46106427358d', 'dc67be6ec932594ad2a8007b1ca2e63015cb4683ae015c6da5987d33b8edf170', 445),
+            'c1943fab47074cb3c052a98f76f795b21f124cea160702cc803374711a1dd23a': ('01f7985db4b0260066611e9d72a212241a2a5fd871b720d318129a9de7c33cee', '1aaa7cae646ef937fc18f499e3add0c5d3490166689f9b1694de15317cef8901', 427),
+            'c964cc290194b19c85e99578bed6d015cd2940921e17efa4f2d96bafbcd224ad': ('5be2b82829c279eba91e14e6cc93d5218b4f2bae9720d0a35b7c201a1fe1d009', 'cd4b1ebfb5a7d4db063c23e99073f64777ca1cd819b38f15dd85db4408626d51', 439),
+        }
+    elif type(mutant) is dict and mutant.get("file") == BASELINE_FEEDBACK_SUBJECTS["phase_plan"]:
+        filename = BASELINE_FEEDBACK_SUBJECTS["phase_plan"]
+        pristine = "3ddf8f1a78e19874f18d03ba564e8117a3f7aa88356b1441601d2215278a7d43"
+        reviewed = {
+            '31b0d3c995f67745d29b0d4c30a578ffed4580f0cec73295101318e0e394feda': ('bd36afecbd3deab39fb5a9da073908ce5c1d2dc7aafac4199d104497630503a0', '4269b5c8505eebbfdbdadeb322c9e372df60f2f62eb08273c2a0d9da38a21588', 517),
+            '348e3ea4d9407afef3a70d9724b9a4ed398f265812b0e320224218eaf2ae7924': ('c670eab2904de24641eaac1fd2d48fd9ea197707cb9e3a5ee7cd1267b749269a', '03b668a911d853a700e85b69ff5bcecfba3a6e9a4bc6cbec7d28b9729da10e70', 2294),
+            '84b36ce076e6f23e17ffe91b55ffef2a03f1280041f9b0becae213f19f86f5b8': ('1d2974af5814d482c561b59beea012561a99a527e7be49ff317c49119ec289d8', '4ca7a9dae0d74ac58672d3079264ca697775c19b78005bce4427ffe4eb293690', 2299),
+            'd1c31ea44517d612242e37bee4eedc153502d112187e24847687dd9b11ad6662': ('35bdd73ffd4ab2932d932120f5c1135a784178e7df6a5327bb105001ba5fe9e1', '0c338d740d27c73497e8e497ddc1a0a04829ea5c564dd3b5c7fb2c2cd4b6ae22', 426),
+        }
+    elif type(mutant) is dict and mutant.get("file") == BASELINE_FEEDBACK_SUBJECTS["frequency_state"]:
+        filename = BASELINE_FEEDBACK_SUBJECTS["frequency_state"]
+        pristine = "81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7"
+        reviewed = {
+            '6bd1273186c15a107768e3c9b4ffdf1a537dfbdc3b5b39c6aea2a8315bc47ab9': ('3d8cfd71ad2bffba7c378f6963e32d3b1dd496f0371b8f4599ed47ea9176c0d0', '247592a1d388b20430b3c7b50b98e9e2bbc6dfd7413c2beb69c16c4260a3cdd1', 811),
+            '739c84e9c3f210c9c78ff9c909008878c6b5993b59151086c6655425cf4fad4d': ('efc129fc2666132bcd2a9e8a3027d24a20982bfa95c4c7a4a156621809550fd2', '7d1a10e3697d546fb1d80103f91cfa70ed26bd82dcbd89d49e100e04a04f4f0b', 743),
+            'b4a8e086768d821986b49d35a8e83abb608622a07135c546f3ff8c78f3ffc4cc': ('acd2dccf2275dab8bd86450d96783c9d815ccec8d95ddf4b7cb074da4c2a5519', '5e1c8385fc6efba8acf265ed64f5b4d32ef2aae706de702397d4c3cef254af4a', 474),
+        }
+    binding = reviewed.get(COMMON.canonical_sha256(mutant)) if type(mutant) is dict else None
+    if (binding is None or type(diff) is not str or compiled is None or compiled[0] != filename
+            or identity.get(filename) != pristine or identity.get(manifest) != compiler
+            or hashlib.sha256(diff.encode()).hexdigest() != binding[0]
+            or hashlib.sha256(compiled[1]).hexdigest() != binding[1]
+            or record["target"]["kind"] != ["lib"] or record["target"]["test"] is not True
+            or record["message"].get("code") is not None):
+        return False
+    if (hashlib.sha256(COMMON.read_analysis_bytes(source_root / filename, maximum=512 * 1024)).hexdigest() != pristine
+            or hashlib.sha256(COMMON.read_analysis_bytes(source_root / manifest, maximum=512 * 1024)).hexdigest() != compiler):
+        return False
+    line = binding[2]
+    if line == 461:
+        expected = {
+            None: ("`TryInto` is not yet stable as a const trait", 14, 26, 18209, 18221),
+            "E0658": ("cannot call conditionally-const method `<u64 as TryInto<NonZero<u64>>>::try_into` in constant functions", 16, 26, 18211, 18221),
+            "E0015": ("cannot call non-const method `Result::<NonZero<u64>, TryFromIntError>::unwrap` in constant functions", 27, 35, 18222, 18230),
+        }
+    elif (filename in {BASELINE_FEEDBACK_SUBJECTS["chart"], BASELINE_FEEDBACK_SUBJECTS["phase_plan"]}
+          or filename == BASELINE_FEEDBACK_SUBJECTS["frequency_state"] and line == 474):
+        offset = {427: 18207, 433: 18392, 439: 18585, 445: 18777,
+                  426: 17517, 517: 20838, 2294: 93352, 2299: 93526, 474: 18716}[line]
+        expected = {
+            None: ("`TryInto` is not yet stable as a const trait", 9, 21, offset, offset + 12),
+            "E0658": ("cannot call conditionally-const method `<u64 as TryInto<NonZero<u64>>>::try_into` in constant functions", 11, 21, offset + 2, offset + 12),
+            "E0015": ("cannot call non-const method `Result::<NonZero<u64>, TryFromIntError>::unwrap` in constant functions", 22, 30, offset + 13, offset + 21),
+        }
+    else:
+        column, offset = {605: (9, 24026), 610: (9, 24186), 743: (13, 29033), 811: (13, 31457)}[line]
+        expected = {None: ("`||` operators are not supported in let chain conditions", column, column + 2, offset, offset + 2)}
+    counts = dict.fromkeys(expected, 0)
+    for candidate in records:
+        if candidate["reason"] != "compiler-message" or candidate["message"]["level"] != "error":
+            continue
+        if any(candidate[key] != record[key] for key in ("package_id", "manifest_path", "target")):
+            return False
+        message = candidate["message"]
+        raw_code = message.get("code")
+        if raw_code is not None and (type(raw_code) is not dict or set(raw_code) != {"code", "explanation"}):
+            return False
+        code = raw_code.get("code") if type(raw_code) is dict else None
+        if (code is not None and type(code) is not str) or code not in expected:
+            return False
+        if (code is None and raw_code is not None) or message["message"] != expected[code][0]:
+            return False
+        if any(type(span) is not dict for span in message["spans"]):
+            return False
+        primary = [span for span in message["spans"] if span.get("is_primary") is True]
+        if len(primary) != 1:
+            return False
+        span = primary[0]
+        if (span.get("file_name") != filename or span.get("line_start") != line or span.get("line_end") != line
+                or tuple(span.get(key) for key in ("column_start", "column_end", "byte_start", "byte_end")) != expected[code][1:]):
+            return False
+        _frequency_owned_span(span, filename, compiled[1], pristine)
+        counts[code] += 1
+    return 1 <= counts[None] <= 2 and len(set(counts.values())) == 1
+
+
+def _frequency_compiler_errors(records, source_root, identity, *, mutant=None, mutant_diff=None, role=None):
     """Accept coded owned errors or exact observed source-bound syntax companions."""
-    compiled = _frequency_mutation_source(source_root, identity, mutant, mutant_diff)
+    role = _frequency_analysis_role(role)
+    compiled = _frequency_mutation_source(source_root, identity, mutant, mutant_diff, role=role)
     causes = []; workspace = None
     for record in records:
         if record["reason"] != "compiler-message": continue
@@ -9492,9 +10024,11 @@ def _frequency_compiler_errors(records, source_root, identity, *, mutant=None, m
             if compiled is not None and compiled[0] == filename:
                 data = compiled[1]
             locations.append(_frequency_owned_span(span, filename, data, identity[filename]))
-        if code is None and not (_frequency_null_let_chain(
-                message, mutant, mutant_diff, source_root, identity, target)
-                or _frequency_const_trait_companion(records, record, mutant, mutant_diff, compiled, identity)):
+        if code is None and not ((role.selector == FREQUENCY_PRIOR_SUBJECT and (
+                _frequency_null_let_chain(message, mutant, mutant_diff, source_root, identity, target)
+                or _frequency_const_trait_companion(records, record, mutant, mutant_diff, compiled, identity)))
+                or (role.selector == BASELINE_FEEDBACK_SUBJECT and _baseline_feedback_compiler_cause(
+                    records, record, mutant, mutant_diff, compiled, source_root, identity))):
             raise Incomplete("Frequency compiler error has no admitted source-bound cause.")
         targets = (["lib", *(["lib test"] if target["test"] else [])] if target["kind"] == ["lib"]
                    else ['test "' + target["name"] + '"'])
@@ -9502,12 +10036,16 @@ def _frequency_compiler_errors(records, source_root, identity, *, mutant=None, m
     return causes
 
 
-def _frequency_log_cause(outcome, text, source_root, identity, policy, *, mutant_diff=None):
+def _frequency_log_cause(outcome, text, source_root, identity, policy, *, mutant_diff=None, role=None, uncredited=None):
     """Reuse phase/JSON primitives without historical counters or span exceptions."""
+    role = _frequency_analysis_role(role)
     phases = cargo_phase_segments(outcome, text); causes = []
     for phase, segment in phases.items():
         if phase == "Test" and outcome["summary"] == "CaughtMutant":
-            segment, causes = _frequency_caught_text(segment, source_root, identity, policy)
+            scenario = outcome.get("scenario")
+            caught = scenario.get("Mutant") if type(scenario) is dict else None
+            segment, causes = _frequency_caught_text(segment, source_root, identity, policy,
+                mutant=caught, mutant_diff=mutant_diff, role=role, uncredited=uncredited)
         records, raw = cargo_json_records(segment)
         finished = [row for row in records if row["reason"] == "build-finished"]
         expected = outcome["summary"] != "Unviable"
@@ -9516,7 +10054,7 @@ def _frequency_log_cause(outcome, text, source_root, identity, policy, *, mutant
         scenario = outcome.get("scenario")
         mutant = scenario.get("Mutant") if type(scenario) is dict and not expected else None
         errors = _frequency_compiler_errors(records, source_root, identity,
-            mutant=mutant, mutant_diff=mutant_diff if not expected else None)
+            mutant=mutant, mutant_diff=mutant_diff if not expected else None, role=role)
         if not expected and errors:
             allowed = {target for error in errors for target in error["cargo_targets"]}
             footer = (r"(?m)^error: could not compile `time-core` \((lib(?: test)?|test \"[A-Za-z_][A-Za-z0-9_]*\")\) "
@@ -9533,7 +10071,7 @@ def _frequency_log_cause(outcome, text, source_root, identity, policy, *, mutant
         elif errors:
             raise Incomplete("Frequency caught/successful outcome contains compiler errors.")
     if outcome["summary"] in {"Success", "MissedMutant"}:
-        _conditioned_test_execution(text, policy, _frequency_prior_role(), doctests=True)
+        _conditioned_test_execution(text, policy, role, doctests=True)
     return causes
 
 
@@ -9568,10 +10106,12 @@ def _frequency_config(work, report, dependency_policy, vendor_identity=None):
 
 
 def frequency_artifact_manifest(work, report, policy, owner, inventory, identity,
-                                dependency_policy, vendor_identity=None):
+                                dependency_policy, vendor_identity=None, *, role=None):
     """Rebuild the closed actual outcome/log/diff/config manifest with causal observations."""
+    role = _frequency_analysis_role(role)
     source = work / "source"
-    if not COMMON.frequency_prior_equivalences_valid(policy):
+    if not (COMMON.baseline_feedback_equivalences_valid(policy)
+            if role.selector == BASELINE_FEEDBACK_SUBJECT else COMMON.frequency_prior_equivalences_valid(policy)):
         raise Incomplete("Frequency raw artifacts have an unreviewed equivalence scope.")
     equivalents = {entry["mutant"]["name"]: entry["mutant"] for entry in policy["mutation_equivalences"]}
     if PRODUCT.inventory(source) != identity:
@@ -9620,10 +10160,18 @@ def frequency_artifact_manifest(work, report, policy, owner, inventory, identity
         if log.is_absolute() or len(log.parts) != 2 or log.parts[0] != "log" or log.suffix != ".log":
             raise Incomplete("Frequency raw log escapes its owned artifact directory.")
         data = read(prefix / log, 16 * 1024 * 1024)
+        uncredited = []
         causes[identifier] = {"summary": row.get("summary"), "descriptor_sha256":
             COMMON.canonical_sha256(mutant) if mutant else None,
             "causes": _frequency_log_cause(row, data.decode("utf-8"), source, identity, policy,
-                mutant_diff=inventory[identifier]["diff"] if mutant else None)}
+                mutant_diff=inventory[identifier]["diff"] if mutant else None, role=role, uncredited=uncredited)}
+        if uncredited:
+            auxiliary = [item for item in uncredited if item.get("kind") == "auxiliary_arithmetic_panic"]
+            results = [item for item in uncredited if "kind" not in item]
+            if len(auxiliary) + len(results) != len(uncredited):
+                raise Incomplete("Frequency uncredited observations have an unknown fact family.")
+            if results: causes[identifier]["uncredited_result_sections"] = results
+            if auxiliary: causes[identifier]["uncredited_auxiliary_panics"] = auxiliary
     if baseline != 1 or observed != set(inventory):
         raise Incomplete("Frequency raw artifact union omits a baseline or mutant.")
     for kind in ("log", "diff"):
@@ -9639,17 +10187,18 @@ def frequency_artifact_manifest(work, report, policy, owner, inventory, identity
             "inventory_sha256": COMMON.canonical_sha256(inventory), "source_identity_sha256": COMMON.canonical_sha256(identity)}
 
 
-def frequency_cohort_receipt_owner(receipt, policy, identity, admitted):
+def frequency_cohort_receipt_owner(receipt, policy, identity, admitted, *, role=None):
     """Admit source/tool-bound terminal metadata; raw leaf evidence remains mandatory."""
+    owners = _frequency_analysis_role(role).scope.select("all")
     if (type(receipt) is not dict or type(receipt.get("analysis_admission")) is not dict
             or type(receipt.get("analysis_admission_after")) is not dict):
         raise Incomplete("Frequency-prior union metadata is malformed.")
     owner = receipt.get("cohort_id")
     if (receipt.get("status") != "passed" or receipt.get("selected_lane") != "mutation"
             or receipt.get("cohort_complete") is not True or type(owner) is not str
-            or owner not in FREQUENCY_PRIOR_SUBJECTS
-            or receipt.get("subjects") != {owner: FREQUENCY_PRIOR_SUBJECTS[owner]}
-            or receipt.get("complete_subjects") != FREQUENCY_PRIOR_SUBJECTS
+            or owner not in owners
+            or receipt.get("subjects") != {owner: owners[owner]}
+            or receipt.get("complete_subjects") != owners
             or receipt.get("candidate_sha256") != policy["candidate_sha256"]
             or receipt.get("source_sha256") != identity or receipt.get("tool_admission_profile") != "stable-core"
             or receipt.get("all_reviewed_inventory_bindings") != policy["mutation_inventories"]
@@ -9682,7 +10231,7 @@ def frequency_campaign_result(work, receipt, campaign, owner, role, policy, admi
     configuration = _frequency_config(work, receipt, dependency_policy)
     vendor, tools, stable = Path(configuration["vendor"]), work.parent / "tools", admitted["stable"]
     inner = [str(tools / "cargo-mutants"), "mutants", "--package", role.scope.package,
-             "--file", FREQUENCY_PRIOR_SUBJECTS[owner], "--test-workspace", "false",
+             "--file", role.scope.select("all")[owner], "--test-workspace", "false",
              "--cap-lints", "false", "--jobs", "10", "--jobserver", "true",
              "--jobserver-tasks", "10", "--cargo-arg=--message-format=json",
              "--baseline", "run", "--build-timeout", "90", "--timeout", "60",
@@ -9702,16 +10251,20 @@ def frequency_campaign_result(work, receipt, campaign, owner, role, policy, admi
 
 
 def frequency_cohort_union(args, report, policy, role):
-    """Join exactly four complete actual owner receipts through unchanged raw leaf validators."""
-    frequency_inventory_bindings(policy, required=True)
+    """Join this role's complete actual owner receipts through unchanged raw leaf validators."""
+    role = _frequency_analysis_role(role)
+    owners = role.scope.select("all")
+    frequency_inventory_bindings(policy, required=True, role=role)
     equivalences = COMMON.admit_mutation_equivalences(ROOT, role.scope, policy)
     paths = getattr(args, "cohort_receipt", [])
-    if args.cohort_id is not None or len(paths) != 4 or any(not path.is_absolute() for path in paths):
-        raise Incomplete("Frequency-prior union requires four distinct complete named-owner receipts.")
+    if args.cohort_id is not None or len(paths) != len(owners) or any(not path.is_absolute() for path in paths):
+        raise Incomplete(f"{role.label} union requires "
+            + ("five" if role.selector == BASELINE_FEEDBACK_SUBJECT else "four")
+            + " distinct complete named-owner receipts.")
     # The custodian sees the original spelling before resolve can hide a link.
     documents = [COMMON.read_analysis_json(path) for path in paths]
     canonical = [path.resolve(strict=True) for path in paths]
-    if len(set(canonical)) != 4:
+    if len(set(canonical)) != len(owners):
         raise Incomplete("Frequency-prior union duplicates an owned receipt path.")
     dependency_policy, product = PRODUCT.admit_product(ROOT)
     identity = dict(product)
@@ -9719,7 +10272,7 @@ def frequency_cohort_union(args, report, policy, role):
     admitted = COMMON.ANALYSIS.admit(ROOT, profile="stable-core")
     reviewed = {}; leaves = {}
     for path, receipt in zip(canonical, documents, strict=True):
-        owner = frequency_cohort_receipt_owner(receipt, policy, identity, admitted)
+        owner = frequency_cohort_receipt_owner(receipt, policy, identity, admitted, role=role)
         if owner in leaves:
             raise Incomplete("Frequency-prior union duplicates an owner.")
         work = path.resolve().parent / "work"
@@ -9732,7 +10285,7 @@ def frequency_cohort_union(args, report, policy, role):
             raise Incomplete("Frequency-prior union tool bytes differ.")
         raw = receipt.get("mutation_enumeration", {}).get(owner, {}).get("raw_output")
         items, _ = COMMON.parse_mutation_listing(raw, expected_jobs=10)
-        inventory = COMMON.mutation_inventory(role.scope, items, 512, FREQUENCY_PRIOR_SUBJECTS[owner])
+        inventory = COMMON.mutation_inventory(role.scope, items, 512, owners[owner])
         reviewed.update(COMMON.admit_reviewed_mutation_inventories(role.scope, policy, {owner: inventory}))
         campaigns = [row for row in receipt.get("lanes", []) if row.get("lane") == "mutation-campaign:" + owner]
         if len(campaigns) != 1:
@@ -9740,43 +10293,46 @@ def frequency_cohort_union(args, report, policy, role):
         campaign = campaigns[0]
         frequency_campaign_result(work, receipt, campaign, owner, role, policy, admitted, dependency_policy)
         outcomes = COMMON.read_analysis_json(work / "mutation" / owner / "mutants.out/outcomes.json")
-        result = COMMON.mutation_counts(role.scope, outcomes, inventory, FREQUENCY_PRIOR_SUBJECTS[owner],
+        result = COMMON.mutation_counts(role.scope, outcomes, inventory, owners[owner],
             native_exit_code=campaign["exit_code"], equivalences=[entry for entry in equivalences
-                if entry["mutant"]["file"] == FREQUENCY_PRIOR_SUBJECTS[owner]])
+                if entry["mutant"]["file"] == owners[owner]])
         if result != {key: value for key, value in receipt.get("mutation", {}).get(owner, {}).items()
                       if key != "baseline_tests_executed"}:
             raise Incomplete("Frequency-prior union raw per-file accounting changed.")
         baseline = _conditioned_baseline(work, policy, owner, role)
         if baseline != receipt.get("baseline_executions", {}).get(owner):
             raise Incomplete("Frequency-prior union full baseline identities changed.")
-        artifacts = frequency_artifact_manifest(work, receipt, policy, owner, inventory, identity, dependency_policy)
-        if receipt.get("frequency_artifacts") != {owner: artifacts}:
+        artifacts = frequency_artifact_manifest(work, receipt, policy, owner, inventory, identity, dependency_policy, role=role)
+        if receipt.get(_frequency_artifact_key(role)) != {owner: artifacts}:
             raise Incomplete("Frequency-prior retained raw artifacts/configuration/causes changed.")
         leaves[owner] = {"receipt": str(path.resolve()), "sha256": PRODUCT.sha256(path),
             "raw_artifact_manifest_sha256": COMMON.canonical_sha256(artifacts),
             "outcomes_sha256": PRODUCT.sha256(work / "mutation" / owner / "mutants.out/outcomes.json"),
             "mutation": result, "baseline": baseline}
-    if set(leaves) != set(FREQUENCY_PRIOR_SUBJECTS) or reviewed != policy["mutation_inventories"]:
+    if set(leaves) != set(owners) or reviewed != policy["mutation_inventories"]:
         raise Incomplete("Frequency-prior union is incomplete.")
     COMMON._require_private_output(ROOT, args.output_dir)
     args.output_dir.mkdir(mode=0o700)
-    report.update(owned_output=str(args.output_dir), subjects=FREQUENCY_PRIOR_SUBJECTS,
+    report.update(owned_output=str(args.output_dir), subjects=owners,
         candidate_sha256=policy["candidate_sha256"], source_sha256=identity,
         mutation_cohort_union=leaves, qualification_passed=True, mutation_union_passed=True,
-        full_role_qualification=False, scope="Complete four-owner mutation union only; coverage/contracts/native Windows remain separate.")
+        full_role_qualification=False, scope=("Complete five-owner mutation union only; coverage/contracts/native Windows remain separate."
+            if role.selector == BASELINE_FEEDBACK_SUBJECT else
+            "Complete four-owner mutation union only; coverage/contracts/native Windows remain separate."))
 
 
-def main_frequency_prior(args):
+def _main_frequency_role(args, role, execute_role):
     """Keep scoped lane/cohort success distinct from complete role or product qualification."""
     report = {"status": "incomplete", "selected_lane": args.lane,
-        "scope": "Conditional frequency four-owner " + args.lane,
+        "scope": (("Baseline-feedback five-owner " if role.selector == BASELINE_FEEDBACK_SUBJECT
+                   else "Conditional frequency four-owner ") + args.lane),
         "qualification_passed": False, "native_qualification": "not performed"}
     if args.cohort_id is not None:
         report["scope"] += " cohort " + args.cohort_id + " (one complete owner; full union pending)"
     try:
         if args.lane != "cohort-union" and args.vendor_dir is None:
             args.vendor_dir = Path(json.loads(PRODUCT.POINTER.read_text())["vendor_dir"])
-        execute_frequency_prior(args, report)
+        execute_role(args, report)
         report["status"] = "enumerated" if args.lane == "enumerate" else "passed"
     except REPORT_FAILURES as error:
         report.update(status="incomplete", qualification_passed=False, selected_lane_passed=False, error=str(error))
@@ -9788,8 +10344,20 @@ def main_frequency_prior(args):
     return 0 if report["status"] in {"passed", "enumerated"} else 1
 
 
+def main_frequency_prior(args):
+    """Preserve the original four-owner CLI report contract."""
+    return _main_frequency_role(args, _frequency_prior_role(), execute_frequency_prior)
+
+
+def main_baseline_feedback(args):
+    """Keep five-owner lane/cohort success distinct from full-role qualification."""
+    return _main_frequency_role(args, _baseline_feedback_role(), execute_baseline_feedback)
+
+
 def execute(args, report):
     """Run only selected current-admitted rows; preserve partial raw observations."""
+    if args.subject == BASELINE_FEEDBACK_SUBJECT:
+        return execute_baseline_feedback(args, report)
     if args.subject == FREQUENCY_PRIOR_SUBJECT:
         return execute_frequency_prior(args, report)
     if args.subject == WINDOW_VARIANCE_SUBJECT:
@@ -9934,7 +10502,7 @@ def main(argv=None):
     """Fresh owned outputs, fixed scopes and nonzero incomplete status only."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lane", choices=("inventory", "contracts", "baseline", "coverage", "mutation", "cohort-union", "enumerate", "all"), default="coverage")
-    parser.add_argument("--subject", choices=(*SUBJECTS, WINDOW_VARIANCE_SUBJECT, CONDITIONED_WINDOW_SUBJECT, CONDITIONED_FIT_SUBJECT, PHASE_PLAN_SUBJECT, FREQUENCY_PRIOR_SUBJECT, "all"), default="all")
+    parser.add_argument("--subject", choices=(*SUBJECTS, WINDOW_VARIANCE_SUBJECT, CONDITIONED_WINDOW_SUBJECT, CONDITIONED_FIT_SUBJECT, PHASE_PLAN_SUBJECT, FREQUENCY_PRIOR_SUBJECT, BASELINE_FEEDBACK_SUBJECT, "all"), default="all")
     parser.add_argument("--inventory-admission", type=Path)
     parser.add_argument('--cohort-plan', type=Path)
     parser.add_argument('--cohort-id')
@@ -9943,6 +10511,8 @@ def main(argv=None):
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--tool-admission-profile", choices=COMMON.ANALYSIS.ADMISSION_PROFILES, default="full")
     args = parser.parse_args(argv)
+    if args.subject == BASELINE_FEEDBACK_SUBJECT:
+        return main_baseline_feedback(args)
     if args.subject == FREQUENCY_PRIOR_SUBJECT:
         return main_frequency_prior(args)
     if args.subject == WINDOW_VARIANCE_SUBJECT:

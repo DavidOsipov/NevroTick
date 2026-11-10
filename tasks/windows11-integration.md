@@ -2478,6 +2478,144 @@ Use a freshly admitted owned Sandbox profile when appropriate; this grants no
 retry of the blocked image or protection relaxation. Keep this route separate
 from the current Linux acquisition failure and from product UI qualification.
 
+**Owner-reported guest SAC remediation — 10 November:** David now reports the
+attached guest-only workaround succeeded and Sandbox is ready for use. The
+handoff describes SAC blocking `wixstdba.dll` in the Visual C++ 2012 x64
+11.0.61030 installer; the coordinator received its text, not the underlying
+screenshot. Microsoft's [Sandbox collaborator](https://github.com/microsoft/Windows-Sandbox/issues/85#issuecomment-3025447682)
+provides the same `VerifiedAndReputablePolicyState` DWORD 0 guest workaround;
+[a counterexample](https://github.com/microsoft/Windows-Sandbox/issues/85#issuecomment-3025799619)
+limits its general applicability. Preserve David's prepared guest, reconcile its
+exact ID and authorized use before dispatch, and do not recreate or reapply the
+setting merely for agent ownership. This supersedes the earlier fresh-guest
+preference for this prepared instance. The next admitted native step may use
+this changed SAC-off lab profile after artifact, session, resource and execution
+preflight. Record configured setting, effective observations and actual result
+separately. The installer result does not establish the original probe's 4551
+cause or a successful probe, nor qualify SAC-enabled product behavior. No host
+security change or Defender-held artifact is authorized by this report.
+
+The [Sandbox skill](../.agents/skills/environment/manage-windows-sandbox/SKILL.md)
+and its troubleshooting/configuration/operations references now retain the exact
+guest command and readback, host/guest policy distinction, failed-`CiTool` meaning,
+in-guest restart versus disposal, bounded Code Integrity 3077 collection and the
+stop-on-unchanged-failure rule. Independent primary-source review confirmed the
+workaround's scope. This documentation checkpoint runs no Windows commands;
+David's successful result remains owner-reported until the next observed guest
+run. Accessibility detachment remains unnecessary for the standalone crypto graph.
+
+**Hosted Linux continuation parked:** exact diagnostic source `a4c5c3a` ran as
+[42692416447](https://github.com/DavidOsipov/NevroTick/actions/runs/42692416447).
+Setup's 27 cases passed; hosted controls ran 29 with one failure: the real nested
+native bwrap could not create a user namespace inside the worker. SDK acquisition
+was skipped. Raw log `hosted-xwin-v1/hosted-run-v2.log` is 37,694 bytes, SHA256
+`d2cbbd8aa869587fa8736644626efdc2d8760ab3abcedd64d8a3ff86b24fe89e`.
+The installed distro profile's inherited capability denial is the source-backed
+leading explanation; this run did not capture its actual worker label/audit denial.
+The nested control is now an explicit mandatory dedicated-workflow invocation,
+separate from generic controls in the main Rust lane, whose stricter profile is
+unchanged. The moved control additionally observes dropped capabilities and
+`NoNewPrivs`, records worker/native policy labels and challenges further native
+user-namespace creation. No assertion is skipped or budget increased.
+
+A dedicated per-executable AppArmor compatibility profile and same-run
+restrictive/compatible comparison were independently reviewed as a possible
+hosted repair, but remain unimplemented and unexecuted. No profile/sysctl change
+or new dispatch follows. David's newly available Sandbox takes priority over
+further SDK tooling; retain the hosted failure and reopen that route only for a
+named remaining native-environment gap. This closes neither SDK acquisition nor
+Windows/provider/Core/engine acceptance. Existing S134, AES-fuzz, storage and
+unrelated UI holds remain; formal work stays post-V1.
+
+**Observed prepared-guest CPU/AES result — 10 November:** David explicitly
+instructed use of his running clean guest with VC++ 14, 2013 and 2012 installed.
+CLI `0.8.107.0` identified exactly `387dbcc7-4cb4-4979-8d60-0d71523494d4`;
+the coordinator established its command channel, preserved the guest and used
+only ID-targeted `ExistingLogin` payloads; this is no standard-user token proof.
+Registry readback observes SAC's
+configured DWORD 0 and installed x64 VC++ `v14.51.36247.00`; no installer,
+registry mutation, restart or host PowerShell ran. Requested XML and effective
+network/device policy remain unknown. The guest reports **10.0.26100.9818**;
+this is a laboratory result outside the selected 26H2/Server 2025 release matrix.
+
+The exact previously admitted baseline probe, EXE `5aa099bc…`, now returns
+guest exit 0 and the exact 19-byte `cpu-os-v3=accepted\n`, with empty stderr.
+All six original source/configuration hashes and both artifact hashes match
+the retained build. Narrow read-only input and writable output mappings pass
+positive-read and denied-write controls; both mediated exits 0/42 retain their
+actual guest status. The first 975-MB host observation stopped preflight before
+staging. Independent workload-specific review found no universal 1-GiB rule;
+the refreshed observation before execution was 3,651 MB available physical and
+34,214 MB available virtual memory. An earlier controller field-name error is
+retained; neither setup stop counts as native execution. Build floors are unchanged.
+
+The subsequent three exact release/v3 AES images passed all **19 ordinary native
+tests**, with independently matched listing and completed names: library 6,
+staged 6, sealing 7; zero failed/ignored/filtered, all guest exits 0 and empty
+stderr. The sequential cohort took 6.28 seconds and produced 2,465 bytes of
+bounded collected output. All 37 current original-source and 36 projection
+hashes still match map `cd563b59…`; the six image/PDB hashes match the previously
+reviewed Windows build. No compilation, fuzz, CNG, service, trust-store or clock
+effects enter this cohort. Output limits are controller/readback limits, not a
+claimed automatic writable-share quota.
+
+Raw receipts under the existing external chain:
+`sandbox-owner-ready-20261110-v1/admission.json`, SHA256
+`13790ac87d377c77bbf50b3448293c72cb61e07e5187703d1f702f0c349a012d`,
+and `sandbox-owner-ready-20261110-v1/aes-ordinary/result.json`, SHA256
+`1779c0ac68df2ee8f6fb0a2935e4d195040646d1cfa8f3026b1c954d2a3f76c9`.
+Independent retained-evidence review inspected the actual raw outputs and
+reconciled every name, input/artifact/output hash and receipt link. This was a
+same-context follow-up after a fresh-context skill review, not another execution.
+The prior 4551 refusal remains historical evidence, without causal attribution
+to SAC alone. Successful execution in this changed guest does not prove that
+SAC is effectively disabled for every path or qualify SAC-enabled compatibility.
+The prepared guest remains open with its runtimes; no disposal masked product
+cleanup. Next: admit the real Windows laboratory KE/exporter/closure/handoff
+path in this guest. Provider/ordinary-store trust, native sensitive-copy cleanup,
+runtime protections, final OS matrix and production acquisition remain open.
+
+**Native KE refusal checkpoint — 10 November:** the
+[crypto task](s0.1-crypto-feasibility.md#native-ke-refusal-checkpoint--10-november-2026)
+now records the retained combined release/v3 link, separate static readback and
+five real guest cases. Missing/nonloopback arguments return exit 2; closed
+loopback returns exit 1 with `connect/refused`; malformed TLS and EOF each drain
+a 230-byte ClientHello and return client exit 1 with distinct primary
+`handshake/invalid-data` and `handshake/unexpected-eof` labels. Secondary
+`shutdown/invalid-data` and `response/unexpected-eof` remain recorded. Peer
+controllers complete without forced kill or capture/harness-cleanup gaps;
+this is no successful TLS-closure or native-cleanup qualification.
+
+Native receipt `ke-native-refusal-v1/result.json`, SHA256
+`f1589a77c1fae0cb14326c18d07377bcc7af6fe221f6037c906f8618781f95d5`,
+binds 18 output files / 3,975 bytes to the admitted EXE/PDB and guest source.
+Independent raw reconciliation and strict host readback pass their declared
+scope. The first build's five-GiB stop remains incomplete; later readback
+`d87444af94eeab3f1bd8f4bf79ccf5a4396d9bbdb8efb9f2318ee1c8a4e8e925`
+uses the preserved link without compiling again. The crypto task also retains
+the two omitted transitive tooling pins in older CPU/AES freezes; both were
+fixed before this KE build, without rewriting old receipts.
+
+The initial PowerShell `Restricted` setup stop is retained. All five baseline
+policy scopes were `Undefined`; only the explicitly targeted guest PowerShell
+process used `RemoteSigned`, with effective `RemoteSigned` and version
+`5.1.26100.9818` observed. No persistent/host policy change, `Bypass`, PKI, service
+or clock mutation occurred. The prepared guest remains open; Windows build
+26100 is outside the selected 26H2/Server matrix, and SAC configured Off proves
+no effective security profile. CNG/TLS first-flight rejection now ran; healthy
+TLS, certificate trust/revocation, KE/exporters, erasure and complete mitigation
+gates remain open. The [healthy fixture checkpoint](s0.1-crypto-feasibility.md#source-preparation-and-resource-stop--10-november-2026)
+now has a reviewed contract and uncompiled peer/store-helper source. Read-only
+preparation stopped before guest dispatch: observed host available memory was
+928 MB against the 2048 MB minimum. Keep compiler/native work held until David
+resumes after establishing headroom; preserve the guest and WSL settings.
+The controller is now authored and source-reviewed under the
+[source-only continuation](s0.1-crypto-feasibility.md#source-only-continuation-under-the-resource-hold);
+its parsing/execution and helper/graph/artifact admission remain pending.
+The HOST memory parser passes 18 pure tests without querying memory or changing
+the resource floor. Actual healthy execution is still pending. Existing artifact/fuzz/storage/
+UI holds and post-V1 formal deferral remain.
+
 **Resource checkpoint:** the published `89f035e` verification copy and compiled
 LLVM targets from two superseded incomplete privilege campaigns were deleted:
 2,284 files / 302,154,214 logical bytes. Their source, reports and logs remain;

@@ -14,6 +14,13 @@ check the current execution holds before any Windows command. This skill neither
 lifts a hold nor requires renewed approval for already authorized work. Keep the
 current Core priority, separate fuzz hold, storage pause and UI deferrals.
 
+For Smart App Control component blocks, failed `CiTool` enumeration or guest
+error 4551, read [the SAC troubleshooting procedure](references/troubleshooting.md#smart-app-control-inside-the-guest)
+before changing prerequisites. An explicitly authorized guest-only lab workaround
+is distinct from host security changes and from qualification with SAC enabled.
+Preserve an owner-prepared guest after establishing its ID and permitted use;
+recreating it discards its remediation and installed prerequisites.
+
 Record the existing task/CHECK owner, candidate, independent expected result,
 allowed guest effects, host changes, duration and resource budget. For research
 or skill maintenance, stop at documentation: do not probe or launch Windows.

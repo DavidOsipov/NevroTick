@@ -30,9 +30,17 @@ The [9 November progress reconciliation](plans/development-plan.md#progress-reco
 maps completed Core/engine/service and laboratory crypto children to the still-open
 P0–P7 product exits. The private KE-to-request handoff now has its
 [bounded source/host qualification](../tasks/s0.1-crypto-feasibility.md#handoff-sourcehost-final-qualification--9-november-2026).
-The next action is the separately authorized hosted-Windows qualification of
-the laboratory producer/receiver; metadata qualification remains in its separate
-assigned lane. Recorded fixture/host passes do not establish an integrated
+The [10 November prepared-Sandbox checkpoint](../tasks/s0.1-crypto-feasibility.md#ordinary-aes-native-checkpoint--10-november-2026)
+adds CPU admission and 19 ordinary AES native passes in its SAC-off laboratory
+profile. The [native KE refusal checkpoint](../tasks/s0.1-crypto-feasibility.md#native-ke-refusal-checkpoint--10-november-2026)
+adds a retained release/v3 link, separate static readback and five actual guest
+admission/connect/TLS-refusal cases. Healthy certificate trust, KE/exporters and
+cleanup qualification remain open. The [healthy fixture's source/resource checkpoint](../tasks/s0.1-crypto-feasibility.md#source-preparation-and-resource-stop--10-november-2026)
+records its reviewed contract and uncompiled source; compiler/native work stopped
+before guest dispatch at 928 MB available host memory, below the 2048 MB minimum.
+Preserve the guest and WSL settings until David resumes after establishing
+headroom. Metadata qualification remains in its separate assigned lane.
+These fixture results do not establish an integrated
 authenticated client, native clock synchronization or release readiness.
 
 | Question | Source of truth |

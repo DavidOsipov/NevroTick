@@ -949,8 +949,54 @@ impl FrequencyState {
         }
     }
 
+    /// Obtain command numbers from this owner's actual supported model only.
+    /// # Errors
+    /// Preserve current quality, basis, clock and numeric refusals without credit.
+    pub(super) fn baseline_request(
+        &mut self,
+        chart: &FixtureAffineChart,
+        context: FixtureRateClockContext,
+        now: MonotonicNs,
+        operands: crate::regression::BaselineOperands,
+    ) -> Result<(NonZeroU64, crate::regression::BaselineRequest), FixtureFrequencyError> {
+        let _projection = self.project(chart, context, now, false)?;
+        let model = self.model.ok_or(FixtureFrequencyError::NoModel)?;
+        if !matches!(self.admission, FixtureFrequencyAdmission::Accepted { emitted_round } if emitted_round == model.round)
+        {
+            return Err(FixtureFrequencyError::NoModel);
+        }
+        let numbers = model
+            .prior
+            .baseline_request(operands)
+            .map_err(|source| FixtureFrequencyError::Numeric { source })?;
+        Ok((model.round, numbers))
+    }
+
+    /// Rebase a committed base effect and retain its exact model transform cause.
+    /// # Errors
+    /// Preserve original model on failure, latch the same cause and permit no refund.
+    pub(super) fn rebase_baseline(
+        &mut self,
+        predecessor: &FixtureAffineChart,
+        effect: &FixtureAffineChart,
+        replacement: &FixtureAffineChart,
+    ) -> Result<(), FixtureFrequencyError> {
+        let model = self.model.ok_or(FixtureFrequencyError::NoModel)?;
+        match rebase_model(&model, predecessor, Ok(Some(effect)), Ok(Some(replacement))) {
+            Ok(next) => {
+                self.model = Some(next);
+                Ok(())
+            }
+            Err(error) => {
+                self.unavailable = Some(error);
+                Err(error)
+            }
+        }
+    }
+
     /// Re-express only through the parent's actual admitted total-effect descriptor.
     /// Failure preserves the historical whole record and committed delivery facts.
+    /// The legacy phase path retains its established bounded unavailable family.
     pub(super) fn rebase(
         &mut self,
         predecessor: &FixtureAffineChart,
@@ -965,7 +1011,7 @@ impl FrequencyState {
         };
         match rebase_model(&model, predecessor, effect, replacement) {
             Ok(model) => self.model = Some(model),
-            Err(()) => self.unavailable = Some(FixtureFrequencyError::AnchorRebaseUnavailable),
+            Err(_) => self.unavailable = Some(FixtureFrequencyError::AnchorRebaseUnavailable),
         }
     }
 }
@@ -1031,17 +1077,17 @@ fn predict(
     Ok((result, age))
 }
 
-/// Stage a constant-effect anchor re-expression while retaining all original ages.
+/// Stage a checked affine mean/anchor re-expression without fresh evidence.
 /// # Errors
-/// Preserve the whole model when descriptor/domain/zero-slope/numeric checks fail.
+/// Preserve the whole model when complete composition/domain/numeric checks fail.
 fn rebase_model(
     model: &Model,
     predecessor: &FixtureAffineChart,
     effect: Result<Option<&FixtureAffineChart>, FixtureChartError>,
     replacement: Result<Option<&FixtureAffineChart>, FixtureChartError>,
-) -> Result<Model, ()> {
+) -> Result<Model, FixtureFrequencyError> {
     let (Ok(Some(effect)), Ok(Some(replacement))) = (effect, replacement) else {
-        return Err(());
+        return Err(FixtureFrequencyError::AnchorRebaseUnavailable);
     };
     let old = predecessor.frames();
     let step = effect.frames();
@@ -1053,26 +1099,32 @@ fn rebase_model(
         || new.source_generation() != old.source_generation()
         || new.target_frame() != step.target_frame()
         || new.target_generation() != step.target_generation()
-        || effect.rate_seconds_per_second() != 0.0
-        || effect.rate_coefficient_roundoff_seconds_per_second() != 0.0
-        || replacement.rate_seconds_per_second().to_bits()
-            != predecessor.rate_seconds_per_second().to_bits()
-        || predecessor.domain().common_reference() != effect.domain().common_reference()
-        || replacement.domain().common_reference() != predecessor.domain().common_reference()
-        || replacement.domain().start() != predecessor.domain().start().max(effect.domain().start())
-        || replacement.domain().end() != predecessor.domain().end().min(effect.domain().end())
         || !contains(replacement.domain(), model.projected)
     {
-        return Err(());
+        return Err(FixtureFrequencyError::AnchorRebaseUnavailable);
+    }
+    // Recompute the exact checked composition, including all coefficient errors.
+    // Equal endpoint tags alone do not establish a transformed model's basis.
+    let expected = predecessor
+        .compose_intersection(effect)
+        .map_err(|_| FixtureFrequencyError::AnchorRebaseUnavailable)?;
+    if !Basis::from_chart(&expected).matches(replacement) {
+        return Err(FixtureFrequencyError::AnchorRebaseUnavailable);
     }
     let anchor = model
         .anchor
-        .rebase(
-            effect.phase_at_reference_seconds(),
-            effect.phase_coefficient_roundoff_seconds(),
+        .rebase_affine(effect, model.projected)
+        .map_err(|source| FixtureFrequencyError::Numeric { source })?;
+    let prior = model
+        .prior
+        .shift_rate(
+            effect.rate_seconds_per_second(),
+            effect.rate_coefficient_roundoff_seconds_per_second(),
         )
-        .map_err(|_| ())?;
+        .map_err(|source| FixtureFrequencyError::Numeric { source })?;
+
     Ok(Model {
+        prior,
         anchor,
         basis: Basis::from_chart(replacement),
         ..*model

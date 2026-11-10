@@ -91,6 +91,23 @@ tools such as Task Manager and Linux memory/process summaries; no new monitoring
 stack is needed. Preserve timestamps, units, observer identity and missing
 counters in the receipt.
 
+For already bounded, decoded English-profile **HOST** `systeminfo.exe` stdout,
+reuse [the pure memory-field parser](../../../../../tools/windows-sandbox/host_memory.py)
+and its [focused controls](../../../../../scripts/tests/test_windows_sandbox_memory.py).
+It handles consistent comma/space/NBSP/narrow-NBSP grouping and rejects duplicate,
+malformed or oversized observations. Bind that module into the caller's input
+freeze; the caller still owns the genuine host command, actual exit, bounded
+capture/decoding, measurement time and selected admission floor. Parser success
+is an observed count, not permission to run, and Linux memory is no substitute.
+Keep missing/out-of-profile data unavailable rather than supplying a default.
+
+The [10 November S2.2 source/resource checkpoint](../../../../../tasks/s0.1-crypto-feasibility.md#source-preparation-and-resource-stop--10-november-2026)
+retains its particular 2048-MB **available host memory** floor and resource hold.
+That is separate from Sandbox's documented minimum guest allocation above.
+Do not automatically change WSL configuration, dispose of the prepared guest or
+restart held work when a parser/test passes. A generated formatting regression
+does not reconstruct a discarded original observation.
+
 Cache reclaim, dropping a guest and aborting a test are different operations.
 Aborting a controller wait does not prove that the guest process stopped.
 Confirm termination or retain the operation as incomplete before admitting a

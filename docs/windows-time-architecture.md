@@ -3731,7 +3731,7 @@ The focused candidates' declared Rust 1.95 minimum fits the current workspace's
 | `windows-time`, `windows-collections`, `windows-version` | Use only at a concrete WinRT/diagnostic boundary. WinRT 100-ns date/duration values do not replace checked UTC/monotonic/active-time or NTP types or the post-V1 OD-10 proof obligations; collection projections do not replace internal bounded storage. A version query is diagnostic context, not proof of API/policy/hardware support. [S136] |
 | `windows-bindgen` | Conditional way to generate a small missing private ABI surface from pinned metadata. First establish the exact gap; keep generator/metadata/output provenance and compatible types. No blanket regeneration of working imports or generator execution on every consumer build is required. [S132, S136] |
 
-**VBS binding gap:** the release-associated `windows` 0.62.2 cryptography module
+**VBS binding names and compatibility:** the release-associated `windows` 0.62.2 cryptography module
 at `32c3144490c016fe496a0aed769bce60987a2e9d` contains
 `NCRYPT_USE_PER_BOOT_KEY_FLAG` but lacks `NCRYPT_REQUIRE_VBS_FLAG` and
 `NCRYPT_PREFER_VBS_FLAG`; the reviewed new header-based `Win32/ncrypt` module
@@ -3741,6 +3741,15 @@ choice before dependent storage implementation; supported actual-key behavior
 still needs its existing native evidence. REQUIRE and PREFER retain different
 fallback semantics, and Microsoft's VBS-flag prerelease notice remains material.
 This closes a documentation inventory gap, not the implementation/OS gate. [S135]
+
+**10 November source correction:** that same published projection already exposes
+`NCRYPT_USE_VIRTUAL_ISOLATION_FLAG`, which Microsoft's inspected header aliases
+as REQUIRE VBS. An explicit conversion through its existing `NCRYPT_FLAGS` is a
+viable single-projection engineering option for a VBS-only row. Missing newer
+names alone do not require a dependency upgrade or private regeneration. The
+[ST-W01 source card](../tasks/windows-protected-storage.md#72-binding-evidence-and-per-call-admission)
+records exact source identities and the remaining SDK/status/actual-key gates.
+This admits no dependency, target build, key mode, account or native result.
 
 Apply the [development-plan handoff](plans/development-plan.md#44-apply-windows-component-reuse)
 at each existing consumer's entry. Preserve Rustls/CNG and Schannel dispositions,

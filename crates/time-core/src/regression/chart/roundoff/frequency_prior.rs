@@ -39,14 +39,14 @@
 use std::fmt;
 
 use garde::Validate;
-use time_domain::MonotonicDurationNs;
+use time_domain::{MonotonicDurationNs, MonotonicNs};
 
 use super::{NANOSECONDS_PER_SECOND, bound_arithmetic, coefficient_addition_error};
 use crate::regression::normalization::integer_to_f64;
 use crate::regression::{
-    ArithmeticIssue, ArithmeticOperation, ArithmeticStage, FitError, FixtureChartBoundOperation,
-    FixtureChartError, NormalizationComponent, NormalizationError, arithmetic, checked_square_root,
-    scalar_issue,
+    ArithmeticIssue, ArithmeticOperation, ArithmeticStage, FitError, FixtureAffineChart,
+    FixtureChartBoundOperation, FixtureChartError, NormalizationComponent, NormalizationError,
+    arithmetic, checked_square_root, scalar_issue,
 };
 
 /// Closed scalar role in frequency-model numerical admission.
@@ -74,6 +74,46 @@ pub enum FixtureFrequencyNumericField {
     Growth,
     /// Finite nonnegative outward upper of the exact added extent.
     GrowthUpper,
+    /// Current chart displacement gradient, in seconds per monotonic second.
+    ChartRate,
+    /// Absolute error on the current chart gradient.
+    ChartRateError,
+    /// Known actual-clock displacement gradient in the same monotonic basis.
+    ActualRate,
+    /// Absolute error on the actual-clock gradient.
+    ActualRateError,
+    /// Positive affine active-awake seconds per monotonic second.
+    ActiveRatio,
+    /// Absolute error on the declared active/monotonic ratio.
+    ActiveRatioError,
+    /// Known achieved baseline in seconds per active-awake second.
+    Baseline,
+    /// Actual newly achieved baseline, distinct from a requested value.
+    AchievedBaseline,
+    /// Explicit positive requested aggregate-rate point cap.
+    AggregateCap,
+    /// Unclipped desired stable compensation point.
+    DesiredBaseline,
+    /// Absolute arithmetic/map error on the unclipped desired point.
+    DesiredBaselineError,
+    /// Policy-clipped requested point, never an achieved baseline.
+    RequestedBaseline,
+    /// Known displacement at the numeric map's reference instant.
+    MapPhase,
+    /// Absolute error on that displacement.
+    MapPhaseError,
+    /// Known gradient removed from a retained model mean.
+    RateShift,
+    /// Absolute error on the removed gradient.
+    RateShiftError,
+    /// Constructed affine effect displacement at its common reference.
+    EffectPhase,
+    /// Absolute error on the affine displacement coefficient.
+    EffectPhaseError,
+    /// Constructed affine effect gradient.
+    EffectRate,
+    /// Absolute error on the affine gradient coefficient.
+    EffectRateError,
 }
 
 /// Closed scalar or enclosure failure, without any rejected value.
@@ -116,6 +156,24 @@ pub enum FixtureFrequencyNumericStep {
     Growth,
     /// Subtract one checked actual-total constant phase effect.
     AnchorRebase,
+    /// Add chart gradient then subtract the known actual-clock gradient.
+    BaselineResidual,
+    /// Divide the residual by the independently declared positive active ratio.
+    BaselineIncrement,
+    /// Add the desired active-rate increment to the old achieved baseline.
+    BaselineRequest,
+    /// Shift a model mean by one known affine coordinate gradient.
+    RateRebase,
+    /// Compute the actual baseline change and its monotonic gradient.
+    AffineEffectRate,
+    /// Compute an affine effect's phase at a separately supplied epoch.
+    AffineEffectPhase,
+    /// Evaluate and subtract an affine effect at the actual model anchor epoch.
+    AffineAnchorRebase,
+    /// Check a supplied clock ratio against exact same-segment integer spans.
+    ActiveRatioSpan,
+    /// Advance the actual-clock displacement to a known acknowledgement epoch.
+    MapAdvance,
 }
 
 /// Bounded numerical refusal with no rates, phases, timestamps or reports retained.
@@ -158,6 +216,13 @@ pub enum FixtureFrequencyNumericError {
     IndeterminateWeights,
     /// Inherited skew intervals prevent a strictly positive weight denominator.
     SingularWeights,
+    /// Exact integer spans contradict the supplied affine clock-ratio enclosure.
+    ActiveRatioMismatch,
+    /// A checked chart-domain or transformed-chart invariant refused the effect.
+    Chart {
+        /// Existing bounded chart cause, without raw numeric values.
+        source: FixtureChartError,
+    },
     /// Mandatory validation disagreed with the complete maintained rule.
     ValidationInvariant,
 }
@@ -178,6 +243,10 @@ impl fmt::Display for FixtureFrequencyNumericError {
             Self::Duration { .. } => formatter.write_str("frequency numeric duration"),
             Self::IndeterminateWeights => formatter.write_str("frequency numeric zero weights"),
             Self::SingularWeights => formatter.write_str("frequency numeric singular enclosure"),
+            Self::ActiveRatioMismatch => {
+                formatter.write_str("frequency numeric clock-ratio mismatch")
+            }
+            Self::Chart { .. } => formatter.write_str("frequency numeric chart refusal"),
             Self::ValidationInvariant => {
                 formatter.write_str("frequency numeric validation invariant")
             }
@@ -190,12 +259,13 @@ impl std::error::Error for FixtureFrequencyNumericError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Arithmetic { source, .. } => Some(source),
-            Self::Bound { source, .. } => Some(source),
+            Self::Bound { source, .. } | Self::Chart { source } => Some(source),
             Self::Duration { source } => Some(source),
             Self::Input { .. }
             | Self::Enclosure { .. }
             | Self::IndeterminateWeights
             | Self::SingularWeights
+            | Self::ActiveRatioMismatch
             | Self::ValidationInvariant => None,
         }
     }
@@ -252,6 +322,107 @@ pub(crate) struct FrequencyPrediction {
     growth: f64,
     /// Outward upper enclosing exact conditional growth and the nominal point.
     growth_upper: f64,
+}
+
+/// Raw scalar request inputs; the numerical receiving method validates all fields.
+#[derive(Clone, Copy)]
+pub(crate) struct BaselineOperands {
+    /// Current chart gradient in displacement seconds per monotonic second.
+    pub(crate) chart_rate: f64,
+    /// Absolute arithmetic error on the chart gradient.
+    pub(crate) chart_rate_error: f64,
+    /// Known actual-clock gradient in the same source/monotonic basis.
+    pub(crate) actual_rate: f64,
+    /// Absolute error on the known actual-clock gradient.
+    pub(crate) actual_rate_error: f64,
+    /// Declared active-awake seconds per monotonic second.
+    pub(crate) active_ratio: f64,
+    /// Absolute error on the declared ratio.
+    pub(crate) active_ratio_error: f64,
+    /// Old achieved baseline, never the previous requested point.
+    pub(crate) baseline: f64,
+    /// Explicit existing aggregate point cap; no default is selected.
+    pub(crate) cap: f64,
+}
+
+/// Checked desired/requested numbers; this carries no acknowledgement authority.
+#[derive(Clone, Copy)]
+pub(crate) struct BaselineRequest {
+    /// Separately rounded unclipped desired rate.
+    desired: f64,
+    /// Absolute bound on the unclipped mathematical desire.
+    desired_error: f64,
+    /// Desired point after the declared symmetric policy clamp.
+    requested: f64,
+    /// Whether the point, rather than its arithmetic enclosure, was clipped.
+    clipped: bool,
+    /// Positive cap retained for complete transformed-output validation.
+    cap: f64,
+}
+
+impl fmt::Debug for BaselineRequest {
+    /// Keep all model and policy scalars outside diagnostics.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("BaselineRequest { checked: true, .. }")
+    }
+}
+
+/// Checked coefficients of one declared actual-clock map at a separate epoch.
+#[derive(Clone, Copy)]
+pub(crate) struct BaselineMapNumbers {
+    /// Positive declared active/monotonic ratio.
+    ratio: f64,
+    /// Absolute arithmetic/map error on that ratio.
+    ratio_error: f64,
+    /// Absolute actual-clock displacement at the lifecycle-owned reference.
+    phase: f64,
+    /// Absolute error on that displacement.
+    phase_error: f64,
+    /// Actual-clock gradient over the admitted affine segment.
+    rate: f64,
+    /// Absolute error on that gradient.
+    rate_error: f64,
+}
+
+impl fmt::Debug for BaselineMapNumbers {
+    /// Do not expose accepted map values or imply physical calibration.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("BaselineMapNumbers { checked: true, .. }")
+    }
+}
+
+/// Computed affine effect coefficients; only the checked factory constructs them.
+#[derive(Clone, Copy)]
+pub(crate) struct AffineEffectCoefficients {
+    /// Displacement seconds at the chart common reference.
+    phase: f64,
+    /// Absolute bound against the exact declared map/rate inputs.
+    phase_error: f64,
+    /// Displacement seconds per monotonic second.
+    rate: f64,
+    /// Absolute bound on the exact declared rate change.
+    rate_error: f64,
+}
+
+/// Raw achieved-change inputs, checked before arithmetic and without retained state.
+#[derive(Clone, Copy)]
+struct BaselineChange {
+    /// Declared active/monotonic ratio.
+    ratio: f64,
+    /// Absolute error on the ratio.
+    error: f64,
+    /// Previous known achieved baseline.
+    old: f64,
+    /// Newly known achieved baseline.
+    actual: f64,
+}
+
+/// One already checked point/range pair for a known baseline-gradient change.
+struct RateChange {
+    /// Prescribed separately rounded gradient point.
+    point: f64,
+    /// Outward enclosure of its exact declared operands.
+    range: Interval,
 }
 
 impl fmt::Debug for FrequencyPrediction {
@@ -352,6 +523,190 @@ fn prediction_rule(value: &FrequencyPrediction) -> Result<(), FixtureFrequencyNu
         return Err(FixtureFrequencyNumericError::ValidationInvariant);
     }
     Ok(())
+}
+
+/// Check a declared ratio and require its complete enclosure to be positive.
+/// # Errors
+/// Preserve scalar/error support before rejecting a singular ratio interval.
+fn ratio_rule((ratio, error): &(f64, f64)) -> Result<(), FixtureFrequencyNumericError> {
+    supported(*ratio, FixtureFrequencyNumericField::ActiveRatio)?;
+    nonnegative(*error, FixtureFrequencyNumericField::ActiveRatioError)?;
+    if *ratio <= 0.0 {
+        return Err(FixtureFrequencyNumericError::Input {
+            field: FixtureFrequencyNumericField::ActiveRatio,
+            issue: FixtureFrequencyNumericIssue::NonPositive,
+        });
+    }
+    if Interval::around(
+        *ratio,
+        *error,
+        FixtureFrequencyNumericStep::BaselineIncrement,
+    )?
+    .low <= 0.0
+    {
+        return Err(enclosure(
+            FixtureFrequencyNumericStep::BaselineIncrement,
+            FixtureFrequencyNumericIssue::NonPositive,
+        ));
+    }
+    Ok(())
+}
+
+/// Check every raw request scalar; clipping policy is separate from model error.
+/// # Errors
+/// Preserve the first rate/error/ratio/baseline/cap refusal.
+fn baseline_operands_rule(value: &BaselineOperands) -> Result<(), FixtureFrequencyNumericError> {
+    supported(value.chart_rate, FixtureFrequencyNumericField::ChartRate)?;
+    nonnegative(
+        value.chart_rate_error,
+        FixtureFrequencyNumericField::ChartRateError,
+    )?;
+    supported(value.actual_rate, FixtureFrequencyNumericField::ActualRate)?;
+    nonnegative(
+        value.actual_rate_error,
+        FixtureFrequencyNumericField::ActualRateError,
+    )?;
+    ratio_rule(&(value.active_ratio, value.active_ratio_error))?;
+    supported(value.baseline, FixtureFrequencyNumericField::Baseline)?;
+    supported(value.cap, FixtureFrequencyNumericField::AggregateCap)?;
+    if value.cap <= 0.0 {
+        return Err(FixtureFrequencyNumericError::Input {
+            field: FixtureFrequencyNumericField::AggregateCap,
+            issue: FixtureFrequencyNumericIssue::NonPositive,
+        });
+    }
+    Ok(())
+}
+
+/// Check the desired error and exact point-policy relationship before exposure.
+/// # Errors
+/// Reject unsupported output fields or a changed clamp/credit projection.
+fn baseline_request_rule(value: &BaselineRequest) -> Result<(), FixtureFrequencyNumericError> {
+    supported(value.desired, FixtureFrequencyNumericField::DesiredBaseline)?;
+    nonnegative(
+        value.desired_error,
+        FixtureFrequencyNumericField::DesiredBaselineError,
+    )?;
+    supported(
+        value.requested,
+        FixtureFrequencyNumericField::RequestedBaseline,
+    )?;
+    supported(value.cap, FixtureFrequencyNumericField::AggregateCap)?;
+    if value.cap <= 0.0
+        || value.clipped != (value.desired < -value.cap || value.desired > value.cap)
+        || value.requested.to_bits() != value.desired.clamp(-value.cap, value.cap).to_bits()
+    {
+        return Err(FixtureFrequencyNumericError::ValidationInvariant);
+    }
+    Ok(())
+}
+
+/// Check all retained declared map coefficients and their separate errors.
+/// # Errors
+/// Preserve positive-ratio, phase, rate and complete-bound refusals.
+fn map_rule(value: &BaselineMapNumbers) -> Result<(), FixtureFrequencyNumericError> {
+    ratio_rule(&(value.ratio, value.ratio_error))?;
+    supported(value.phase, FixtureFrequencyNumericField::MapPhase)?;
+    nonnegative(
+        value.phase_error,
+        FixtureFrequencyNumericField::MapPhaseError,
+    )?;
+    supported(value.rate, FixtureFrequencyNumericField::ActualRate)?;
+    nonnegative(
+        value.rate_error,
+        FixtureFrequencyNumericField::ActualRateError,
+    )
+}
+
+/// Check one known gradient shift; actual effect identity belongs to its receiver.
+/// # Errors
+/// Preserve unsupported delta/error before any prior or map transformation.
+fn shift_rule((delta, error): &(f64, f64)) -> Result<(), FixtureFrequencyNumericError> {
+    supported(*delta, FixtureFrequencyNumericField::RateShift)?;
+    nonnegative(*error, FixtureFrequencyNumericField::RateShiftError)
+}
+
+/// Check the ratio and both achieved points without interpreting a desired rate.
+/// # Errors
+/// Preserve ratio support and the old/new achieved-baseline scalar causes.
+fn change_rule(value: &BaselineChange) -> Result<(), FixtureFrequencyNumericError> {
+    ratio_rule(&(value.ratio, value.error))?;
+    supported(value.old, FixtureFrequencyNumericField::Baseline)?;
+    supported(value.actual, FixtureFrequencyNumericField::AchievedBaseline)
+}
+
+/// Check all computed coefficient points and nonnegative errors together.
+/// # Errors
+/// Reject unsupported affine point/error outputs before a chart can retain them.
+fn affine_effect_rule(
+    value: &AffineEffectCoefficients,
+) -> Result<(), FixtureFrequencyNumericError> {
+    supported(value.phase, FixtureFrequencyNumericField::EffectPhase)?;
+    nonnegative(
+        value.phase_error,
+        FixtureFrequencyNumericField::EffectPhaseError,
+    )?;
+    supported(value.rate, FixtureFrequencyNumericField::EffectRate)?;
+    nonnegative(
+        value.rate_error,
+        FixtureFrequencyNumericField::EffectRateError,
+    )
+}
+
+#[derive(Validate)]
+/// Mandatory complete raw baseline-request input admission.
+struct RawBaselineOperands {
+    #[garde(custom(|value: &BaselineOperands, (): &()| baseline_operands_rule(value).map_err(|_| garde::Error::new("invalid baseline operands"))))]
+    /// One maintained rule covers every raw scalar and ratio relation.
+    value: BaselineOperands,
+}
+
+#[derive(Validate)]
+/// Mandatory desired/requested output admission, including the policy projection.
+struct RawBaselineRequest {
+    #[garde(custom(|value: &BaselineRequest, (): &()| baseline_request_rule(value).map_err(|_| garde::Error::new("invalid baseline request"))))]
+    /// One maintained rule owns all numeric fields, clipping and cap.
+    value: BaselineRequest,
+}
+
+#[derive(Validate)]
+/// Mandatory declared-clock-map admission before construction or advancement.
+struct RawBaselineMap {
+    #[garde(custom(|value: &BaselineMapNumbers, (): &()| map_rule(value).map_err(|_| garde::Error::new("invalid baseline map"))))]
+    /// Typed numeric relationship; this grants no physical mapping authority.
+    value: BaselineMapNumbers,
+}
+
+#[derive(Validate)]
+/// Mandatory raw ratio admission for exact-span consistency checks.
+struct RawRatio {
+    #[garde(custom(|value: &(f64, f64), (): &()| ratio_rule(value).map_err(|_| garde::Error::new("invalid active ratio"))))]
+    /// Point/error pair checked together, including a positive lower bound.
+    value: (f64, f64),
+}
+
+#[derive(Validate)]
+/// Mandatory known gradient-shift input admission.
+struct RawShift {
+    #[garde(custom(|value: &(f64, f64), (): &()| shift_rule(value).map_err(|_| garde::Error::new("invalid rate shift"))))]
+    /// Separate immutable delta point and error.
+    value: (f64, f64),
+}
+
+#[derive(Validate)]
+/// Mandatory actual baseline-change admission shared by map and chart effects.
+struct RawBaselineChange {
+    #[garde(custom(|value: &BaselineChange, (): &()| change_rule(value).map_err(|_| garde::Error::new("invalid achieved baseline change"))))]
+    /// The rule covers both achieved rates and the full ratio enclosure.
+    value: BaselineChange,
+}
+
+#[derive(Validate)]
+/// Mandatory computed affine coefficient admission before returning any getter.
+struct RawAffineEffect {
+    #[garde(custom(|value: &AffineEffectCoefficients, (): &()| affine_effect_rule(value).map_err(|_| garde::Error::new("invalid affine rate effect"))))]
+    /// Complete point/error coefficient pair; no bound is reset to zero.
+    value: AffineEffectCoefficients,
 }
 
 #[derive(Validate)]
@@ -1311,6 +1666,493 @@ impl Interval {
             step,
         )
     }
+}
+
+impl FrequencyPrior {
+    /// Convert this actual retained model through an explicitly supplied basis.
+    /// No request acknowledges a baseline, refreshes evidence or grants authority.
+    /// # Errors
+    /// Reject raw ratios/scalars, arithmetic/enclosure failure or output admission.
+    pub(crate) fn baseline_request(
+        &self,
+        operands: BaselineOperands,
+    ) -> Result<BaselineRequest, FixtureFrequencyNumericError> {
+        let raw = RawBaselineOperands { value: operands };
+        let validated = raw.validate();
+        baseline_operands_rule(&raw.value)?;
+        validated.map_err(|_| FixtureFrequencyNumericError::ValidationInvariant)?;
+        let operands = raw.value;
+        let residual = point(
+            point(
+                self.mean,
+                operands.chart_rate,
+                ArithmeticOperation::Add,
+                FixtureFrequencyNumericStep::BaselineResidual,
+            )?,
+            operands.actual_rate,
+            ArithmeticOperation::Subtract,
+            FixtureFrequencyNumericStep::BaselineResidual,
+        )?;
+        let increment = point(
+            residual,
+            operands.active_ratio,
+            ArithmeticOperation::Divide,
+            FixtureFrequencyNumericStep::BaselineIncrement,
+        )?;
+        let desired = point(
+            operands.baseline,
+            increment,
+            ArithmeticOperation::Add,
+            FixtureFrequencyNumericStep::BaselineRequest,
+        )?;
+        let desired_error = self
+            .baseline_range(operands)?
+            .error(desired, FixtureFrequencyNumericStep::BaselineRequest)?;
+        BaselineRequest {
+            desired,
+            desired_error,
+            requested: desired.clamp(-operands.cap, operands.cap),
+            clipped: desired < -operands.cap || desired > operands.cap,
+            cap: operands.cap,
+        }
+        .admit()
+    }
+
+    /// Enclose the exact desired expression over admitted model/map inputs.
+    /// # Errors
+    /// Reject unavailable finite endpoints or a nonpositive ratio denominator.
+    fn baseline_range(
+        &self,
+        operands: BaselineOperands,
+    ) -> Result<Interval, FixtureFrequencyNumericError> {
+        let step = FixtureFrequencyNumericStep::BaselineResidual;
+        Interval::around(self.mean, self.mean_error, step)?
+            .add(
+                Interval::around(operands.chart_rate, operands.chart_rate_error, step)?,
+                step,
+            )?
+            .subtract(
+                Interval::around(operands.actual_rate, operands.actual_rate_error, step)?,
+                step,
+            )?
+            .divide(
+                Interval::around(operands.active_ratio, operands.active_ratio_error, step)?,
+                FixtureFrequencyNumericStep::BaselineIncrement,
+            )?
+            .add(
+                Interval::point(operands.baseline),
+                FixtureFrequencyNumericStep::BaselineRequest,
+            )
+    }
+
+    /// Re-express the mean under one known gradient shift, without new learning.
+    /// Residual/skew facts share that exact shift and retain their original bits.
+    /// # Errors
+    /// Reject delta/error input, unsupported subtraction or transformed bounds.
+    pub(crate) fn shift_rate(
+        &self,
+        delta: f64,
+        error: f64,
+    ) -> Result<Self, FixtureFrequencyNumericError> {
+        let raw = RawShift {
+            value: (delta, error),
+        };
+        let validated = raw.validate();
+        shift_rule(&raw.value)?;
+        validated.map_err(|_| FixtureFrequencyNumericError::ValidationInvariant)?;
+        let (delta, error) = raw.value;
+        if delta == 0.0 && error == 0.0 {
+            return Ok(*self);
+        }
+        let step = FixtureFrequencyNumericStep::RateRebase;
+        let mean = point(self.mean, delta, ArithmeticOperation::Subtract, step)?;
+        let mean_error = Interval::around(self.mean, self.mean_error, step)?
+            .subtract(Interval::around(delta, error, step)?, step)?
+            .error(mean, step)?;
+        Self {
+            mean,
+            mean_error,
+            ..*self
+        }
+        .admit()
+    }
+}
+
+impl BaselineRequest {
+    /// Validate every transformed numeric field and its clipping relationship.
+    /// # Errors
+    /// Preserve scalar, bound or mandatory-validation disagreement.
+    fn admit(self) -> Result<Self, FixtureFrequencyNumericError> {
+        let raw = RawBaselineRequest { value: self };
+        let validated = raw.validate();
+        baseline_request_rule(&raw.value)?;
+        validated.map_err(|_| FixtureFrequencyNumericError::ValidationInvariant)?;
+        Ok(raw.value)
+    }
+
+    /// Copy the unclipped desired active-rate point.
+    #[must_use]
+    pub(crate) const fn desired(&self) -> f64 {
+        self.desired
+    }
+    /// Copy its separate arithmetic/map error, without policy clipping.
+    #[must_use]
+    pub(crate) const fn desired_error(&self) -> f64 {
+        self.desired_error
+    }
+    /// Copy the policy-clipped requested point, never an acknowledgement.
+    #[must_use]
+    pub(crate) const fn requested(&self) -> f64 {
+        self.requested
+    }
+    /// Report point clipping separately from numerical uncertainty.
+    #[must_use]
+    pub(crate) const fn clipped(&self) -> bool {
+        self.clipped
+    }
+}
+
+impl BaselineMapNumbers {
+    /// Admit complete declared numeric map coefficients without physical assurance.
+    /// # Errors
+    /// Reject unsupported points/errors or a nonpositive ratio enclosure.
+    pub(crate) fn new(
+        ratio: f64,
+        ratio_error: f64,
+        phase: f64,
+        phase_error: f64,
+        rate: f64,
+        rate_error: f64,
+    ) -> Result<Self, FixtureFrequencyNumericError> {
+        Self {
+            ratio,
+            ratio_error,
+            phase,
+            phase_error,
+            rate,
+            rate_error,
+        }
+        .admit()
+    }
+
+    /// Advance absolute Cold to the known acknowledgement before changing its slope.
+    /// No old-rate constant chart rebase is added to this absolute map again.
+    /// # Errors
+    /// Reject actual-rate inputs, exact duration conversion or transformed output.
+    pub(crate) fn advance(
+        &self,
+        old_baseline: f64,
+        actual_baseline: f64,
+        elapsed: MonotonicDurationNs,
+    ) -> Result<Self, FixtureFrequencyNumericError> {
+        let change =
+            checked_rate_change(self.ratio, self.ratio_error, old_baseline, actual_baseline)?;
+        let (seconds, time) = seconds_interval(elapsed)?;
+        let step = FixtureFrequencyNumericStep::MapAdvance;
+        let phase = if elapsed.nanoseconds() == 0 {
+            self.phase
+        } else {
+            point(
+                self.phase,
+                point(self.rate, seconds, ArithmeticOperation::Multiply, step)?,
+                ArithmeticOperation::Add,
+                step,
+            )?
+        };
+        let phase_error = if elapsed.nanoseconds() == 0 {
+            self.phase_error
+        } else {
+            Interval::around(self.phase, self.phase_error, step)?
+                .add(
+                    Interval::around(self.rate, self.rate_error, step)?.multiply(time, step)?,
+                    step,
+                )?
+                .error(phase, step)?
+        };
+        let rate = if change.range.is_zero() {
+            self.rate
+        } else {
+            point(self.rate, change.point, ArithmeticOperation::Add, step)?
+        };
+        let rate_error = if change.range.is_zero() {
+            self.rate_error
+        } else {
+            Interval::around(self.rate, self.rate_error, step)?
+                .add(change.range, step)?
+                .error(rate, step)?
+        };
+        Self {
+            phase,
+            phase_error,
+            rate,
+            rate_error,
+            ..*self
+        }
+        .admit()
+    }
+
+    /// Require the complete numeric map rule before publishing any fields.
+    /// # Errors
+    /// Preserve exact field failure before validator disagreement.
+    fn admit(self) -> Result<Self, FixtureFrequencyNumericError> {
+        let raw = RawBaselineMap { value: self };
+        let validated = raw.validate();
+        map_rule(&raw.value)?;
+        validated.map_err(|_| FixtureFrequencyNumericError::ValidationInvariant)?;
+        Ok(raw.value)
+    }
+
+    /// Copy the declared active/monotonic ratio.
+    #[must_use]
+    pub(crate) const fn ratio(&self) -> f64 {
+        self.ratio
+    }
+    /// Copy its absolute error, not a calibration guarantee.
+    #[must_use]
+    pub(crate) const fn ratio_error(&self) -> f64 {
+        self.ratio_error
+    }
+    /// Copy absolute Cold at the lifecycle-owned reference.
+    #[must_use]
+    pub(crate) const fn phase(&self) -> f64 {
+        self.phase
+    }
+    /// Copy its carried absolute error for component checks.
+    #[cfg(test)]
+    #[must_use]
+    pub(crate) const fn phase_error(&self) -> f64 {
+        self.phase_error
+    }
+    /// Copy the known actual-clock displacement gradient.
+    #[must_use]
+    pub(crate) const fn rate(&self) -> f64 {
+        self.rate
+    }
+    /// Copy its separately carried absolute error.
+    #[must_use]
+    pub(crate) const fn rate_error(&self) -> f64 {
+        self.rate_error
+    }
+}
+
+/// Admit and compute one achieved active-rate change in monotonic-gradient units.
+/// # Errors
+/// Preserve actual-input, subtraction, product and outward-enclosure causes.
+fn checked_rate_change(
+    ratio: f64,
+    error: f64,
+    old: f64,
+    actual: f64,
+) -> Result<RateChange, FixtureFrequencyNumericError> {
+    let raw = RawBaselineChange {
+        value: BaselineChange {
+            ratio,
+            error,
+            old,
+            actual,
+        },
+    };
+    let validated = raw.validate();
+    change_rule(&raw.value)?;
+    validated.map_err(|_| FixtureFrequencyNumericError::ValidationInvariant)?;
+    let BaselineChange {
+        ratio,
+        error,
+        old,
+        actual,
+    } = raw.value;
+    let step = FixtureFrequencyNumericStep::AffineEffectRate;
+    let delta = point(actual, old, ArithmeticOperation::Subtract, step)?;
+    let result = point(ratio, delta, ArithmeticOperation::Multiply, step)?;
+    let range = Interval::around(ratio, error, step)?.multiply(
+        Interval::point(actual).subtract(Interval::point(old), step)?,
+        step,
+    )?;
+    Ok(RateChange {
+        point: result,
+        range,
+    })
+}
+
+/// Convert a signed exact integer difference, never either absolute timestamp.
+/// # Errors
+/// Preserve the inclusive 2^53 integer guard and checked seconds/enclosure cause.
+fn signed_seconds_interval(
+    at: MonotonicNs,
+    reference: MonotonicNs,
+) -> Result<(f64, Interval), FixtureFrequencyNumericError> {
+    let nanos = integer_to_f64(
+        at.nanoseconds().abs_diff(reference.nanoseconds()),
+        NormalizationComponent::Time,
+    )
+    .map_err(|source| FixtureFrequencyNumericError::Duration { source })?;
+    let step = FixtureFrequencyNumericStep::AffineEffectPhase;
+    let seconds = point(
+        nanos,
+        NANOSECONDS_PER_SECOND,
+        ArithmeticOperation::Divide,
+        step,
+    )?;
+    let range = Interval::point(nanos).divide(Interval::point(NANOSECONDS_PER_SECOND), step)?;
+    if at < reference {
+        Ok((
+            -seconds,
+            Interval {
+                low: -range.high,
+                high: -range.low,
+            },
+        ))
+    } else {
+        Ok((seconds, range))
+    }
+}
+
+/// Derive the continuous affine effect g*(M-Ma), retaining its computed bounds.
+/// # Errors
+/// Reject raw achieved/ratio inputs, unsupported integer difference or coefficients.
+pub(crate) fn baseline_effect_coefficients(
+    reference: MonotonicNs,
+    at: MonotonicNs,
+    ratio: f64,
+    ratio_error: f64,
+    old: f64,
+    actual: f64,
+) -> Result<AffineEffectCoefficients, FixtureFrequencyNumericError> {
+    let change = checked_rate_change(ratio, ratio_error, old, actual)?;
+    let (seconds, time) = signed_seconds_interval(reference, at)?;
+    let step = FixtureFrequencyNumericStep::AffineEffectPhase;
+    let phase = point(change.point, seconds, ArithmeticOperation::Multiply, step)?;
+    let value = AffineEffectCoefficients {
+        phase,
+        phase_error: change.range.multiply(time, step)?.error(phase, step)?,
+        rate: change.point,
+        rate_error: change
+            .range
+            .error(change.point, FixtureFrequencyNumericStep::AffineEffectRate)?,
+    };
+    let raw = RawAffineEffect { value };
+    let validated = raw.validate();
+    affine_effect_rule(&raw.value)?;
+    validated.map_err(|_| FixtureFrequencyNumericError::ValidationInvariant)?;
+    Ok(raw.value)
+}
+
+impl AffineEffectCoefficients {
+    /// Copy the computed displacement coefficient.
+    #[must_use]
+    pub(crate) const fn phase(&self) -> f64 {
+        self.phase
+    }
+    /// Copy its inherited/new error without resetting it at chart construction.
+    #[must_use]
+    pub(crate) const fn phase_error(&self) -> f64 {
+        self.phase_error
+    }
+    /// Copy the actual achieved-change gradient.
+    #[must_use]
+    pub(crate) const fn rate(&self) -> f64 {
+        self.rate
+    }
+    /// Copy its separate ratio/arithmetic error.
+    #[must_use]
+    pub(crate) const fn rate_error(&self) -> f64 {
+        self.rate_error
+    }
+}
+
+impl FrequencyAnchor {
+    /// Subtract the actual affine effect at this model's original projected epoch.
+    /// # Errors
+    /// Reject outside-domain queries, unsupported evaluation or unavailable bounds.
+    pub(crate) fn rebase_affine(
+        &self,
+        effect: &FixtureAffineChart,
+        at: MonotonicNs,
+    ) -> Result<Self, FixtureFrequencyNumericError> {
+        let domain = effect.domain();
+        if at < domain.start() || at > domain.end() {
+            return Err(FixtureFrequencyNumericError::Chart {
+                source: FixtureChartError::QueryOutsideDomain,
+            });
+        }
+        if effect.rate_seconds_per_second() == 0.0
+            && effect.rate_coefficient_roundoff_seconds_per_second() == 0.0
+        {
+            return self.rebase(
+                effect.phase_at_reference_seconds(),
+                effect.phase_coefficient_roundoff_seconds(),
+            );
+        }
+        let (seconds, time) = signed_seconds_interval(at, domain.common_reference())?;
+        let step = FixtureFrequencyNumericStep::AffineAnchorRebase;
+        let displacement = point(
+            effect.phase_at_reference_seconds(),
+            point(
+                effect.rate_seconds_per_second(),
+                seconds,
+                ArithmeticOperation::Multiply,
+                step,
+            )?,
+            ArithmeticOperation::Add,
+            step,
+        )?;
+        let range = Interval::around(
+            effect.phase_at_reference_seconds(),
+            effect.phase_coefficient_roundoff_seconds(),
+            step,
+        )?
+        .add(
+            Interval::around(
+                effect.rate_seconds_per_second(),
+                effect.rate_coefficient_roundoff_seconds_per_second(),
+                step,
+            )?
+            .multiply(time, step)?,
+            step,
+        )?;
+        if displacement == 0.0 && range.is_zero() {
+            return Ok(*self);
+        }
+        let phase = point(
+            self.phase,
+            displacement,
+            ArithmeticOperation::Subtract,
+            step,
+        )?;
+        let error = Interval::around(self.phase, self.error, step)?
+            .subtract(range, step)?
+            .error(phase, step)?;
+        Self { phase, error }.admit()
+    }
+}
+
+/// Check exact same-segment integer spans against a declared positive ratio.
+/// Zero/zero is consistency only; this never calibrates a map from timestamps.
+/// # Errors
+/// Reject raw ratio/error, integer envelope or a contradictory span relation.
+pub(crate) fn check_active_ratio_span(
+    active_ns: u64,
+    mono_ns: u64,
+    ratio: f64,
+    error: f64,
+) -> Result<(), FixtureFrequencyNumericError> {
+    let raw = RawRatio {
+        value: (ratio, error),
+    };
+    let validated = raw.validate();
+    ratio_rule(&raw.value)?;
+    validated.map_err(|_| FixtureFrequencyNumericError::ValidationInvariant)?;
+    let (ratio, error) = raw.value;
+    let active = integer_to_f64(active_ns, NormalizationComponent::Time)
+        .map_err(|source| FixtureFrequencyNumericError::Duration { source })?;
+    let mono = integer_to_f64(mono_ns, NormalizationComponent::Time)
+        .map_err(|source| FixtureFrequencyNumericError::Duration { source })?;
+    let step = FixtureFrequencyNumericStep::ActiveRatioSpan;
+    let range = Interval::around(ratio, error, step)?.multiply(Interval::point(mono), step)?;
+    if active < range.low || active > range.high {
+        return Err(FixtureFrequencyNumericError::ActiveRatioMismatch);
+    }
+    Ok(())
 }
 
 /// Private controls retain their actual compiled numerical-module identity.

@@ -1673,6 +1673,528 @@ The [current product queue][s21-development] remains first; formal work is post-
 loopback pilot and its first experimental measurement retain their bounded scope;
 neither gains production DNS, retry, NTS or local-path qualification here.
 
+### Fixed-snapshot address-round child — 10 November 2026
+
+David temporarily selects Core/Engine-only work. At baseline
+`a4c5c3a318f83bda8df325d32e5bc56ada6eee5c`, Core's current numerical children
+are closed within their recorded scopes; production Engine-to-Core admission
+still lacks its actual mapping/quality/authority suppliers. Two independent
+source reviews instead selected this existing acquisition child. All 32 existing
+changed paths were staged (index SHA256
+`40c9d5707aa153422d410b297978120d116a33d59598a1d2c38cb99481a1b8f0`);
+preserve that custody. Storage, UI, formal and optional tooling are parked.
+
+**Frozen source scope:** a separate laboratory address-round owner, consumed by
+real `prepare_slot`/`LiveSlot`/request send/receive machinery. Do not cycle the
+qualified same-peer `SeriesConfig`, mix endpoints into its fit/history, or add a
+Core dependency. REQ-8/BND-1 and the reached CHECK-6/8/21/25/27 obligations apply.
+
+- Admit 1–3 distinct nonzero loopback endpoints through mandatory Garde before
+  copying bounded inputs. Reject IPv6 scope/flow aliases. Caller explicitly
+  supplies positive per-attempt and total durations; `count * per_attempt <=
+  total <= 30 seconds`, with checked arithmetic. These are laboratory limits,
+  not production defaults. Stable input order, one attempt per address, one
+  socket at a time, no parallel race and no automatic new round.
+- Freeze the set for this round. There is no DNS/path-refresh input or reset API:
+  unchanged/reordered views cannot mutate this owner. Dynamic reconciliation and
+  cross-round source/aggregate admission remain with their unimplemented owners;
+  this child does not claim to qualify those cases. Network-context change uses
+  existing invalidation and retires the round.
+- Prepare exactly 24 entropy bytes once, reject zero/duplicate tokens without
+  regeneration, and bind no socket during preparation. Retain the original active
+  origin/global deadline across candidates. Per-attempt end is the earlier of
+  current time plus the admitted duration and the original deadline. After a
+  first blackhole, the next address becomes attemptable without refreshing that
+  deadline, subject to actual OS scheduling/setup. No fourth candidate can start.
+- Keep the private non-clonable cursor claim until the actual request is terminal
+  and its socket owner has dropped. Stale, duplicate or mismatched completions
+  cannot advance a successor. Fresh control/deadline guards serialize actual
+  bind/registration and actual sends with control publication, without executing
+  callbacks or awaiting under the guard. A per-attempt cutoff reached before
+  setup yields distinct `SetupDeadline` deferral and no socket; it is not global
+  expiry or candidate exhaustion. A correlated ordinary header ends the round as an unauthenticated
+  transport reply; a correlated control/KoD ends it separately and cannot be
+  evaded by trying another address. Timeout, bounded receive/send exhaustion and
+  native attempt-I/O failure may advance; preparation/setup/invariant or cleanup
+  failure stops the round and preserves the original cause.
+- Preserve each committed historical result before a fresh serialized control/time
+  summary checkpoint. A later stop/invalidation can suppress current success or
+  successor setup, but cannot erase that result. Controls serialized after the
+  final checkpoint cannot revise its summary. Reap both optional control timers
+  on every exit; Rust socket drop is not qualified native/AFD completion.
+- No experimental profile, physical mapping, authentication, source vote,
+  eligibility, clock/service/storage/UI effect or native-path evidence follows.
+
+Independent planned controls: empty/oversized/duplicate/invalid candidates and
+exact budget boundaries with healthy neighbors; A→AAAA, AAAA→A and same-family
+blackhole→working alternatives; final candidate/exhaustion/no fourth send;
+ordinary reply and KoD stopping further sends; rejected peer/token/header traffic
+not advancing the cursor; stale/duplicate/abandoned completion; stop/invalidation
+at setup/send/transfer/final summary; original deadline and every cleanup cause.
+Use actual received datagrams for traffic assertions, independent packet facts,
+and legal/compile-fail external consumers for privacy/consume-once guarantees.
+
+**Review disposition:** independent plan review required adequate remaining
+attempt budget, distinct control termination, preserved historical completion and
+explicit failure transitions; the frozen contract above includes all four.
+Source authoring/review may proceed. Fresh resource preflight found 635 MB
+available Windows physical memory (below 2048 MB), and 5,336,596,480 bytes free
+on WSL (below the configured 5 GiB startup floor). No Rust/compiler/native job is
+admitted under that observation. No behavioral RED/GREEN, format/compiler/Clippy,
+doctest, coverage or mutation pass is claimed. After headroom changes, use the
+existing configured entry points with fresh complete bindings, selected ordinary
+and optimized controls, both-target checks, 90% coverage and 95% viable mutation
+per critical owner, plus independent source/output review. Preserve all other
+execution holds and OD-10's post-V1 proof deferral.
+
+**Source checkpoint, not qualification:** the separate address-round module is
+now authored and exported by the Engine library. Its only changes to the existing
+series owner are the nested module declaration; the same-endpoint driver and
+receiving algorithms are unchanged. The private cursor carries a non-clonable
+borrowed claim, and the actual driver retains it through socket-to-report
+transfer. Fifteen independent configuration/entropy/actual-loopback/history/cause
+test bodies and eight cursor test bodies are authored. None has been executed.
+One active boxed slot avoids a large success/refusal enum; the cursor itself
+performs no allocation. Source guards do not qualify native AFD completion.
+
+Independent source review found and resolved two boundary defects in this new
+unexecuted child: a cutoff crossing could have been labelled exhaustion, and
+control publication could race between classification and native setup. The
+first now gets fresh serialized classification; the actual setup helper holds
+its read guard across bind/registration, separately diagnosing an expired
+per-attempt setup budget. Both reviewers accepted the revised driver. A separate
+review accepted the cursor. These are source-review conclusions, without
+behavioral RED/GREEN or compiler evidence. The independently authored traffic
+tests were also source-reviewed; actual native/setup/cleanup causes are classified
+before semantic query assertions, peers are joined before error propagation, and
+unwinding retains bounded secondary facts without replacing the original error.
+
+Final source SHA256 identities for this checkpoint:
+
+| Input | SHA256 |
+| --- | --- |
+| `crates/nevrotick-engine/src/address_round.rs` | `bda3c04212597473101ab6b7037ceffed8d2f0b2357d5e7b13a979786b727b0f` |
+| `crates/nevrotick-engine/src/address_round/progress.rs` | `c034dc9acf46e7143f346dce212a4e6544e82e77addeb6695112130e2b5d54de` |
+| `crates/nevrotick-engine/tests/private/address_round.rs` | `6acf373e4ed59669a1adabc177678e101dc3448162f3e30c17fd7e7d3c2021ff` |
+| `crates/nevrotick-engine/tests/private/address_progress.rs` | `6d25b1f05de71995b965f549322cba4e4dc3297a0b456a84c5a2b34617ddc227` |
+
+Tracked-diff whitespace and direct new-file whitespace/newline inspections pass;
+they are not Rust format or syntax checks. The original 32 staged paths and
+physical index identity above remain preserved. No commit, compiler, native,
+formal, PKI or storage job ran for this child. After resource recovery, first
+format the coherent source slice, then use `scripts/verify.py --lane portable`
+for ordinary/optimized/doctest evidence and its Windows lane for the affected
+target checks. Bind complete current inputs and extend the existing Engine
+analysis owner selection to these two new critical files before their required
+90%/95% coverage/mutation checkpoint. Keep outer wall limits and classify timeout,
+setup/compiler failure and generation gaps independently; they receive no kill
+credit. The broader address-family/DNS/NTS, production Core receiving, Windows,
+native-resource, package and release exits remain open.
+
+#### WSL ordinary exit and evidence retirement — 10 November 2026
+
+David requested the work available in WSL without Windows Sandbox, reserving
+native Windows work for a later main-system session. WSL had about 20 GiB of
+available memory. Bounded Linux verification uses one Cargo job/test thread;
+Windows-host/Sandbox readiness remains separate. Real checks corrected the
+explicit progress-module path and test-only compiler/Clippy issues missed by
+source review, without broad lint exemptions. Three additional tests reach exact
+global expiry, actual setup expiry and the final writable guard with healthy
+traffic; the driver now has 18 tests beside eight cursor tests.
+
+**Completed selected ordinary exit:**
+`~/.local/share/nevrotick/phase-plan-20261108-v1/address-round-v1/ordinary-v5/verification.json`,
+SHA256 `b7765af6ca3ae1a2974ef73a530a6c3c855288df4dac3873a8c37107a464f676`;
+candidate `a3856bd1ef4c32fe6f9a66bf5465ad6d340a4b4ffc38f406096ac9dae9fdbbae`.
+All ten commands exited zero: isolation, format, Linux check/Clippy,
+**169 ordinary tests, 69 doctests, 169 optimized tests**, rustdoc and Windows
+check/Clippy. Windows rows explicitly select `x86_64-pc-windows-msvc`; no Windows
+program, linker/package, service, clock or formal job ran. Command execution
+took about 163 seconds, excluding admission/editing/review. The sampled target
+maximum was 596.48 MiB, below the 768 MiB cap; this is no continuous peak claim.
+
+Independent raw review reconciled all names and running/summary blocks: all 26
+new tests ran once per profile, with one legal, three privacy and one consume-once
+new doctest; no failed/ignored/filtered cases. All 443 product, 32 helper,
+28 observed-import and pinned recipe identities matched current/captured bytes;
+source/vendor/tool and full used-stable bookends passed. Current hashes are in
+the retained receipt. This is ordinary/cross-check evidence, not a new mutation
+score or native qualification.
+
+**Remaining portable gate:** the new two critical owners still require selected
+90% executable-line/95% viable-mutation qualification, complete inventories and
+independent causal review. An external four-file role proposal is prepared,
+unbound and unadopted. Manifest registration changes the candidate: preserve v5
+and qualify a fresh ordinary candidate; never rewrite its original receipt hash.
+Review required complete transcript blocks and aggregate output accounting;
+the revised proposal adds those controls, pending actual tests/adoption.
+
+David then explicitly requested deletion of old audit/proof data and unused
+outputs. Old raw reports, archives, snapshots, advisory-cache copies and terminal
+targets were deleted without compression. Old policy-referenced replay data and
+optional state-guidance qualification/installation metadata were deliberately
+retired; do not weaken a consumer or reuse missing historical evidence as a pass.
+Its tool binary and repository sources remain, but future use needs fresh
+admitted preparation/qualification. Canonical source, patches and summaries stay.
+
+The store fell from about **17.12 GB to 3.09 GB** (remaining dependencies, tools,
+actual source/worktrees and current inputs); WSL had about **18.85 GB free**.
+Current v5 source/receipt and all required helper/recipe/vendor bytes were
+rechecked and preserved. Its generated target was retired after independent raw
+review. Genuine Git/worktrees, dirty publication copies and live CodeQL data
+were retained. Cleanup also matched 12 installed Python tool files: restored
+those exact files from policy-hashed existing wheels without download/version
+changes, then verified mypy 2.4.1 and a healthy strict type-check.
+
+HEAD remained `a4c5c3a318f83bda8df325d32e5bc56ada6eee5c`; the owner's 40-path
+staging stayed unchanged (index SHA256
+`f67ac27018e6a769708b240218a1572656df1f5df97dcd3a6163617fac77f426`).
+Cleanup preserved the source diff. No commit/push was attempted. Continue the
+new critical-file gate before dependent integration; broader P1, production,
+NTS, native/resource/package and release exits remain open.
+
+#### Address-round metrics admission and first measured gap — 10 November 2026
+
+The revised two-owner analysis role is now implemented in
+`scripts/verify-engine-analysis.py`, `policy/address-round-analysis.json` and the
+critical/security manifest. Its 11 synthetic controls pass. Retiring private
+historical evidence exposed nine quality-reader errors, two series-custody
+errors and one session source-hash mismatch in Python tests. Self-contained,
+explicitly synthetic reader/routing/custody fixtures replace those dependencies;
+historical production bindings and rejection checks remain unchanged. The four
+related suites pass **141 controls together** under isolated Python with
+development mode and warnings as errors. This supplies no historical product or
+mutation credit.
+
+Fresh `address-round-v1/ordinary-v6/verification.json` passes all ten ordinary
+lanes, including **169 ordinary/169 optimized tests and 69 doctests**. Its SHA256
+is `4ffeed8999af060397eef556df7915d79cccacc9e08b56527c759a23414ef75d`;
+443-input candidate
+`af600a5f2d94666f427666512b80491dc7e8d52ddb307b64b22e2eab9639b7ad`.
+Independent raw review reconciled complete blocks, identities, current/captured
+source/helpers, all twelve recipes and both Windows-target commands. Command
+execution took about 166 seconds. The terminal target was deleted after review;
+source and raw receipts remain.
+
+The first actual coverage run, `address-round-v1/coverage-v1`, is **incomplete**:
+all ordinary tests passed, but the driver reaches **345/393 executable lines
+(87.79%)**, below 90%; the cursor reaches **51/51**. Full source/vendor/tool
+bookends passed. Its raw coverage and failed command remain retained; its
+terminal target was deleted. Add discriminating diagnostic-redaction,
+entered-runtime, actual timer-reaping and sequential socket-custody controls,
+then qualify/rebind a fresh candidate. Keep the 90%/95% thresholds. No mutation
+inventory or score is established by this attempt. Source review confirms the
+setup/send read guards, but the precise mid-effect lock lifetime still lacks a
+deterministic behavioral discriminator through the present seams; record that
+generation/evidence limitation rather than crediting a timing race or source
+inspection as an executed fault control.
+
+The cleanup follow-up deleted another 909,881,344 bytes of terminal service
+exports/cache and obsolete observe binaries without compression. The external
+store then measured 2,664,148,992 bytes and WSL had about 19.72 GB available.
+Authored controls/patches, live tool data and source/staging were preserved.
+Current verification outputs remain bounded and terminal targets are retired.
+
+The four new driver tests now exercise actual rejected-input diagnostic
+redaction, entered execution beside a legal reply, real `Some` control-timer
+reaping while the runtime remains alive, and native Linux UDP exclusivity/rebind
+before successor setup. The timer test observes zero live tasks and one remaining
+external sender before runtime destruction. The socket test first establishes
+the in-use neighbor; native retention/error output receives no automatic mutation
+kill credit. These establish no Windows AFD-completion guarantee. Independent
+source review retains the precise mid-effect lock-lifetime limitation and
+untriggered timer setup-error paths.
+
+The first expanded ordinary attempt, v7, passed compilation but Clippy rejected
+a 103-line test and nested `if`; it executed no tests. A smaller pattern/error
+propagation expression fixes those test-only issues without lint exemptions.
+After admitted formatting, **ordinary-v8 passes all ten lanes**, including
+**173 ordinary/173 optimized tests and 69 doctests**, with 443 captured product
+inputs and unchanged source/vendor/tool/helper/recipe bookends. Receipt SHA256:
+`1a017ac5eb331f986c889d66b7d57de859c80c71c5dba477079457b648bb9e98`;
+candidate `eda0dd96ac7710e14cb23fd7bdc5abdc17ea1f53478ea993a15d74851b8395f9`.
+Command execution took about 164 seconds; sampled target allocation stayed below
+627 MB. All 30 new-owner tests have source-bound semantic assertion sites. The
+141 related Python controls also pass on the final helper versions. The address
+policy now binds this v8 receipt and its complete 173/69 identity sets. Coverage
+and mutation remain separate incomplete gates until their actual results below.
+
+**Selected coverage-v2 passes:** driver **369/393 lines (93.893%)**, cursor
+**51/51**, with all 173 ordinary identities, complete source/vendor/tool
+bookends and the unchanged v8 product/helper bindings. Receipt SHA256:
+`0856c957a54c24f559ecd0b2e71107ff212df3b51668d12e523b943d3daf104b`.
+This is coverage only; the role correctly leaves full qualification false. Its
+terminal target and v8's reviewed ordinary target were deleted, retaining source
+and raw results.
+
+**Enumeration-v1 completes:** 56 driver and 11 cursor descriptors, both native
+commands exit zero without warnings; independent review reconciles all raw
+descriptors, source files and inventory digests. Receipt SHA256:
+`eaf77cdd283f1bfa861654e9af73294b6c27656023464a2dbe46af428cb54784`.
+Driver inventory SHA256 is
+`c300e14c7eab8cc17180a6ec16c98c5494f8ef7ae6d0e4bd17b23936ea1f5e25`;
+cursor is `464751b3903c39cc9f1c41dd4bc36d6bdbabf97ef3abe17cc8023205830f6d7e`.
+The pinned visitor [excludes implementation methods named `new`](https://github.com/sourcefrog/cargo-mutants/blob/v27.1.0/src/visit.rs#L426-L445):
+25/26 driver functions and 3/4 cursor functions have generated faults. Garde
+expansion is also outside this source inventory. Constructor rejection/healthy
+controls and cursor transitions supply behavioral alternatives, not generated
+kill or equivalence credit. Whole-body substitutions do not independently target
+every lifecycle guard; retain the read-lock, timer-error and Budget/attempt-I/O
+continuation limitations above.
+
+The independent map identifies `address_round.rs:615:38`, `||` to `&&` in
+`reconcile_cleanup`, as a test gap: previous coverage supplied both errors to a
+report already marked Failure. Neither single cleanup error was independently
+tested against a non-Failure report. The coordinator stopped `mutation-v1`
+(exit 130) for that repair and verified its owned descendants had exited. Its
+partial native file contains one successful baseline, three unviable outcomes
+and five caught outcomes; this cancelled attempt supplies **no complete score**.
+Add neither/stop-only/invalidation-only/both cleanup cases, demonstrate the
+isolated operator fault is rejected, then freeze a fresh ordinary candidate
+before repeating the final selected coverage/mutation gates.
+
+**Single-error control RED→GREEN:** the improved test supplies four independent
+literal rows and preserves the existing actual Bind-primary checks. In
+`cleanup-or-fault-red-v1`, an isolated copy changes only the driver's `||` to
+`&&`. Format, compiler and Clippy pass; the new stop-only assertion at test
+line 1099 fails with **Exhausted versus Failure**, before native fixture setup;
+148 other library tests pass. Receipt SHA256:
+`3d2ad73037c6c3b5cb6a0f184b0ea09e2b8736df02f306a034ed912953fcae06`.
+The healthy **ordinary-v9** passes all ten lanes, **173 ordinary/173 optimized
+tests and 69 doctests**, on 443 product inputs. Its candidate is
+`0f91efcadb2956c3f5f7a16b0656f9b11442422b16f313f3dc4a5d8481015ad4`;
+receipt SHA256 `ee3e702b9b0aba5e7712c7d878de78512003ac76c819fa0d6bd86472a5bc270a`.
+Independent full-map comparison shows RED/GREEN differ in exactly the driver
+file, with the improved tests identical. The canonical driver retains its
+original correct operator. This is a sensitivity repair, not a demonstrated
+product defect or generated campaign score.
+
+**Current selected coverage-v3 passes** on that v9 candidate: **369/393 driver
+lines, 51/51 cursor lines**, all 173 actual ordinary identities and full
+bookends. Receipt SHA256:
+`d0aa4ef10ecd554c38a9b6f7ad0f921579f32d44ace54db32f61a5f355ed09a5`.
+The policy binds the current v9 ordinary receipt and improved test hash. Reuse
+of the 67 inventory expectations is justified by unchanged critical production
+bytes, manifests, lockfile and mutation/tool configuration; `mutation-v2`
+re-enumerates and checks those hashes before either campaign. Its completed
+results are below. Required thresholds, no-exclusion policy, budgets and holds remain.
+Reviewed terminal targets for RED, v9 and coverage-v3 were deleted; their
+source and raw results remain retained.
+
+#### Selected address-round host gates — 10 November 2026
+
+**The selected ordinary, cross-target, executable-line and generated-mutation
+gates pass** on v9 candidate
+`0f91efcadb2956c3f5f7a16b0656f9b11442422b16f313f3dc4a5d8481015ad4`.
+This does not complete all function/guard evidence, production acquisition, Core
+integration, P1 or native Windows qualification. Coverage and mutation were
+separate successful lanes; no `--lane all` execution or overall role flag is
+claimed.
+
+| Critical owner | Executable lines | Generated | Viable caught | Compiler-unviable | Survived / timeout / excluded |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `address_round.rs` | 369/393 (93.893%) | 56 | 27/27 (100%) | 29 | 0 / 0 / 0 |
+| `address_round/progress.rs` | 51/51 (100%) | 11 | 6/6 (100%) | 5 | 0 / 0 / 0 |
+
+`mutation-v2/verification.json` SHA256:
+`33d964416397d23f7bc853bd4b6f6e461f368fae9f1e0ada3402fb51f0b9fcdc`.
+Both actual native listings/campaigns exit zero; each baseline executes all
+**242 identities (173 ordinary + 69 doctests)**. All 33 caught variants have
+successful builds, test exit 101, complete native failure blocks and exact
+source-owned semantic assertions. All 34 unviable variants have actual build
+101 and source-caused denied lint, missing `Default` or invalid let-chain
+diagnostics. No setup/resource/native error, timeout or equivalence earns kill
+credit. The cleanup operator fault is caught at the newly demonstrated single
+error assertion.
+
+Independent raw review joins the identical **451-entry captured
+source/helper/policy maps** for coverage-v3 and mutation-v2 to the same 443-input
+ordinary-v9 candidate, its twelve recipes and current protected bytes. Full tool
+admission before/after, vendor and source bookends pass. The ordinary runner's
+32 helper bytes also still match after metrics. Review used a fresh-context
+source/inventory reviewer and a separate raw-results reviewer; agreement does
+not multiply native executions. Maximum sampled owned allocations were
+328,232,960 coverage bytes and 36,229,120 mutation bytes, with at least
+17,996,328,960 filesystem bytes available at command boundaries. These are
+samples, not continuous peak/quota or native resource-retention measurements.
+
+**Generation reconciliation:** `R`/`P` below are one-based positions in the
+retained `enumerate-v1/verification.json` raw arrays. Current mutation-v2
+re-enumeration matches their complete descriptor hashes.
+
+| Requirement-bearing functions | Actual faults | Independent behavior / remaining limit |
+| --- | --- | --- |
+| `config_issue`, `config_rule` | R2–R24 | Invalid count/endpoint/alias/duplicate/duration inputs and valid boundary/copy neighbors reach actual mandatory construction. |
+| Error/config/prepared formatting | R1, R25–R26 | Actual rejected-input categories and exact bounded redacted owner text. |
+| Both preparation functions | R27–R28 | Real traffic, one entropy fill, zero/duplicate rejection and entered preparation refusal. |
+| Attempt/report getters, construction/failure | R29–R39 | Actual ordered timeout/header/control histories; native primary and independent secondary retention. |
+| `current_end`, `end_at` | R40–R45 | Current controls, final Before/After publication and exact deadline neighbors. |
+| `guarded_writable`, `setup_address_request` | R46–R47, R50–R51 | Actual writable controls/quiet send, setup deadlines and setup failure; mid-effect lock lifetime remains source-reviewed. |
+| `run_attempt`, `run_round`, `run_round_with` | R48–R49, R52 | Real fallback/exhaustion, KoD, rejection and historical summary; actual socket exclusivity/rebind before successor setup. |
+| `reconcile_cleanup`, `run_owned`, execution | R53–R56 | Four cleanup truth-table cases, actual timers reaped before runtime drop, entered execution with legal neighbor. |
+| `claim_next`, `parts`, `finish` | P1–P11 | All eight cursor tests: order, clipping/cutoffs, exact parts, abandoned/wrong/stale completion and continued occupation. |
+| Both `new` methods and Garde expansion | No generated faults | Constructor rejection/healthy/copy cases, private external doctests and actual cursor transitions supply alternatives; no generated score or equivalence credit. |
+
+Whole-body faults do not target every internal guard. Preserve the precise
+setup/send read-lock lifetime limitation, untriggered timer-error paths and
+missing dedicated Budget/attempt-I/O continuation alternatives. The next bounded
+WSL action is to classify reachable versus source-domain-unconstructible failure
+cases, then add direct handler/continuation controls where the existing seams
+permit them. Keep native AFD/cancellation/retention and actual mapping suppliers
+at their existing owners; do not manufacture authority or add timing-race tests.
+
+**Evidence retirement after acceptance:** obsolete ordinary-v1–v8, formatting,
+coverage-v1/v2, cancelled mutation-v1 and duplicate RED-input outputs were deleted
+at David's request, without compression. Earlier dated retention statements
+describe their then-present records; those old replays are now unavailable.
+Keep current ordinary-v9, causal RED, coverage-v3, mutation-v2 source/raw results,
+the small original enumeration receipt and required recipe sources. The current
+address evidence directory measures **105,107,456 bytes**, with about **19.62 GB
+WSL space available**. All terminal build targets are retired. Source/staging and
+untracked work were unchanged by cleanup; no commit/push or Windows/formal job
+ran for this checkpoint.
+
+#### Address-round direct-handler continuation — 10 November 2026
+
+Continue the same owner under **CHECK-6** (bounded hostile/valid transport
+neighbors), **CHECK-25** (actual current-guard consumers) and the reached Rust
+task/cleanup subset of **CHECK-27**. This adds no numerical selection/voting,
+native Windows or production-acquisition qualification. The bounded source scope
+is the existing private address-round test file; production hooks, API/feature/
+dependency changes and invented races are not selected.
+
+Independent caller/source review selected five test groups before the next
+candidate freeze:
+
+| Receiving path | Independent expected observation |
+| --- | --- |
+| Actual setup handler after an earlier quiet outer checkpoint | Callback-delivered Stop/Invalidate reaches `setup_address_request` itself; Retired(Stopped/Stale), one callback, no historical request/query; quiet native setup and a real reply remain valid. |
+| Second timer-start failure | Directly seeded valid MAX/MAX−1 counter boundaries distinguish preserved GenerationExhausted from healthy Stale; the preceding future Stop job is reaped before runtime drop. Seeding explicitly skips the impractical public invalidation history. |
+| Completed future invalidation job | Actual timer notification and completed-job observation precede `finish_timer`; preserve GenerationExhausted versus Ok and zero remaining tasks/senders before runtime drop. Clock overshoot before spawn is fixture-incomplete. |
+| Receive-work boundary and continuation | Exactly 63 rejected headers plus a valid 64th finish the first address; 64 rejected headers reach Budget at the original request deadline and permit the next real reply. No counter assignment, renewed deadline or third query. |
+| Controlled readiness error and continuation | Genuine setup and `guarded_writable(Err(...))` retire the same owned socket, preserve the injected kind/code and permit the next real reply. Admit only the exact expected first I/O cause; all unrelated native/peer/cleanup failures remain errors. This does not reproduce an OS readiness failure. |
+
+The first `run_owned` Stop-start returned-error arm is unconstructible under its
+literal action: `start_timer(Stop)` returns Ok. Generation exhaustion is not
+universally public-unreachable: repeated public invalidation can theoretically
+reach MAX. Fresh preparation plus the selected bounded schedule cannot reach it
+alone. Generic `ControlTask` requires a panicked job; current timer bodies have
+no deliberate application-panic path. Runtime/socket construction failures remain
+environment-dependent, and no admitted profile-only Instant-overflow witness was
+identified. Do not turn these distinctions into guessed passes or toy faults.
+
+**Admission repair before freezing:** fresh module-load tracing found exactly
+one imported repository helper missing from the address role's protected closure,
+`scripts/analysis-controls.py`. It is now included among 30 inputs. An isolated
+fresh-import control restores the previous profiler in `finally`; intended RED
+then focused/full **12-control GREEN** establish the repair. V9's independent
+ordinary-helper bookends already checked those bytes, but its old metrics role
+did not enforce that pin. Preserve v9's exact historical scope; rebind all final
+inputs after the five test groups, format, run ordinary verification, then the
+required selected 90%/95% gates. Thresholds, one-worker budgets, source custody,
+current holds and post-V1 proof deferral remain unchanged.
+
+**Expanded candidate and first partial campaigns:** ordinary-v10 candidate
+`96b9cdfc5656c3fc5523fd7f209dc5a0dc3dd369dad6765e74a15d95ac43050b`
+passed all ten lanes: 178 ordinary/178 optimized tests, 69 doctests and both-target
+static checks. Its 27 driver and eight cursor tests include all five groups
+above. Independent raw review of coverage-v4 confirms 373/393 driver lines
+(94.911%) and 51/51 cursor lines; no branch coverage is claimed. Both maps and
+ordinary evidence join the same current product/helper bytes.
+
+The first extended mutation campaigns remain **incomplete**, not passing scores:
+driver mutation-v3 contains 26 clean semantic catches, one mixed log (R47), and
+29 source/compiler-unviable variants; mutation-cursor-v3 contains four clean
+catches, two mixed logs (P10/P11), and five source/compiler-unviable variants.
+Both complete Linux-host baselines execute 247 identities (178+69); no survivor or
+timeout occurred. Both full descriptor/diff inventories match the frozen 67.
+Their receipts remain unchanged at SHA256 `88b4d3be343fc5bc926ced53f0c77376eeddd072bcaaa5f698f5e529eaf3badd`
+and `6340bf70c40aaceaa613d7e889f5b87d8ea5db3dc33e9421159c9a32fcad1074`.
+
+**Causal qualification repairs:** P10/P11 expose a fixture-classification defect:
+the exact deliberately injected first I/O cause was relabeled as a host failure
+beside a semantic `InternalState` primary. Admit only that typed additional
+primary while retaining the exact injection and cleanup checks; unchanged history
+assertions must reject the semantic failure. Do not suppress unexpected I/O.
+R47's receive-cutoff section remains genuinely inconclusive. A narrowly reviewed
+decoder adjudication recognizes only its exact descriptor, test and cutoff-only
+body, records the section hash and zero credit, and requires the separate exact
+source-owned writable assertion after actual readiness. Extra errors, malformed
+records and global compiler/resource/abort/custody/cleanup failures still reject.
+No mutation, threshold, denominator, filter or budget was removed or weakened.
+The 12-control Python baseline passed; five added controls demonstrated intended
+RED before the decoder repair, then all 17 passed. The combined engine/series/
+session/address suite passes **147 controls**. Fresh ordinary-v11 and subsequent
+coverage/mutation, rather than rewritten v3 reports, own the repaired candidate.
+
+**Later evidence retirement:** David authorized deletion of old source replays,
+formatting copies, experiment archives and terminal compiler output without
+compression. The earlier v9/RED/coverage-v3/mutation-v2 retention statement above
+describes its historical snapshot; their deleted input copies cannot be replayed
+from those paths. Keep the small historical receipts and the current candidate's
+source/raw evidence. No Windows or formal execution follows from this cleanup.
+
+#### Direct-handler selected host gates — 10 November 2026
+
+**The repaired extension passes its selected ordinary, Windows-target static,
+executable-line and generated-mutation gates**, independently reconciled on
+candidate `a324b698ab73fd508b0d9cc00dc2b01f4422c5ccb1df2441d17c0ce8f9dae6af`.
+All ten ordinary-v11 commands pass: **178 ordinary/178 optimized tests and 69
+doctests**, including all 27 driver/eight cursor cases and five address doctests.
+Coverage-v5 and mutation-v4 pass separately; no `--lane all`, overall role,
+complete Engine/Core/P1 or native Windows qualification is claimed.
+
+| Critical owner | Executable lines | Generated | Viable caught | Source/compiler-unviable | Survivor / timeout / exclusion |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `address_round.rs` | 373/393 (94.911%) | 56 | 27/27 (100%) | 29 | 0 / 0 / 0 |
+| `address_round/progress.rs` | 51/51 (100%) | 11 | 6/6 (100%) | 5 | 0 / 0 / 0 |
+
+Retained receipts under the existing address-round root:
+
+- ordinary-v11: `fb131bd54f12fd35edf1010104f1ffc852fa2a9951c46741dbed97328a07fd1a`;
+- coverage-v5: `ffe0305197fca9bb92819eb7ffb251be398cb33ff7db17a8b5665c45ecdb01b1`;
+- mutation-v4: `5a52d13a9f11280fd02683b91f93fe49e4b4da7940f945af0142e9258af65b93`.
+
+Both Linux-host mutation baselines execute all **247 identities (178+69)**. All 67
+descriptors/full diffs match the frozen 56/11 inventories. Each of the 33 caught
+variants has a successful build, test exit 101 and actual source-owned semantic
+assertions; all 34 unviable variants have source-caused build-101 diagnostics.
+The fresh R47 log retains its exact cutoff section with **zero credit**, plus the
+separate actual-ready writable assertion. P10/P11 now reach the unchanged
+semantic history assertion (`Failure` versus `Reply`) instead of misclassifying
+the deliberately injected I/O as a host failure. No fixture/compiler/setup error
+earns kill credit; both original v3 receipts remain incomplete and unchanged.
+
+Independent review joins current/captured **443 product inputs, 32 helpers,
+28 observed imports, 12 recipes and 452 coverage/mutation inputs**. Policy
+`6c6703cba84282e7eb8ba7a2b1f50dc69cafa056d999b72212e96698496b2595`
+binds all 30 protected inputs, 35 semantic owners and exact inventories. Full
+tool/vendor/source bookends pass. Production driver/cursor bytes are unchanged
+from the reviewed predecessor; the causal repairs affect tests and admission.
+Branch/MCDC data is absent, and the 20 uncovered driver lines, constructor/Garde
+generation limits, precise mid-effect lock lifetime and native/production gaps
+remain explicit rather than receiving generated-fault credit.
+
+Owned output stays bounded: mutation command-boundary samples reach 36,323,328
+bytes; a separate coordinator mid-command observation saw 359,591,936 bytes.
+These are samples, not continuous peak/quota measurements. All observed free
+space exceeds 19 GB. Completed ordinary/coverage targets and duplicate formatting
+copies were deleted after live-use checks; mutation targets are already empty.
+Keep current source/raw results and required recipes, without compression.
+
+The next substantive Core operation is the independently reviewed
+[frequency-request/achieved-baseline extension](s1.3-source-selection-readiness.md#technical-freeze-candidate--actual-coordinate-conversion-and-base-feedback).
+Integrate its source draft only after these Engine bookends, then run its own
+admitted development and qualification checks. A later unrelated Core change
+does not turn this exact historical candidate into a new whole-product pass.
+
+The later Core continuation has now changed the complete candidate, shared
+analysis helper and verification manifest. Address-policy admission is therefore
+**closed against the current tree**, retaining its exact historical bindings
+and results. Re-admit a new complete candidate before another address-role run;
+unchanged Engine/transport source and retained receipts authorize no blind
+metadata rebind or fresh whole-product qualification.
+
 ### Contract and owner handoff
 
 Engine/protocol owns candidate admission, attempt ordering, actual next-send

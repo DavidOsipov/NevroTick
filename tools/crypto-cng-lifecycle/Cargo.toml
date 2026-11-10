@@ -25,6 +25,10 @@ required-features = ["init-probe"]
 name = "nevrotick-nts-ke-probe"
 path = "src/bin/nts-ke-probe.rs"
 
+[[bin]]
+name = "nevrotick-nts-ke-peer"
+path = "src/bin/nts-ke-peer.rs"
+
 [patch.crates-io]
 rustls-cng-crypto = { path = "vendor/rustls-cng-crypto" }
 rustls-platform-verifier = { path = "vendor/rustls-platform-verifier" }

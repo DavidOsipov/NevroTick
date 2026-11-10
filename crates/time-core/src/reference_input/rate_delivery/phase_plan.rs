@@ -32,6 +32,12 @@
 //! issuance. Known delivery commits before any replacement failure. No retained heap state,
 //! clocks, I/O, actual acknowledgement or physical mapping is supplied here.
 //! Failed Garde admission may allocate its bounded temporary validation report.
+//!
+//! 10 November 2026: stable-base requests extend this same exclusive owner. The
+//! reference/local/sys_generic requested-to-achieved feedback chain remains the
+//! Chrony 4.9 provenance; the explicit affine conversion is displacement-rate
+//! algebra in Core units, not a copy of upstream ppm or incremental dfreq units.
+//! A request alone never changes the known baseline, chart, estimator or clock.
 
 use std::{fmt, num::NonZeroU64};
 
@@ -46,10 +52,13 @@ use super::{
     FixtureReferenceInputState, frequency_prior::FrequencyState,
 };
 use crate::{
-    FixtureAffineChart, FixtureChartBatch, FixtureChartCombinationError, FixtureChartError,
-    FixtureChartFrames, FixtureCombinationState, FixtureContext, FixturePrincipalStratum,
-    FixtureReferenceInputError,
-    regression::{FixturePhaseNumericError, PhaseDebt, PhaseRates},
+    FixtureAffineChart, FixtureChartBatch, FixtureChartCombinationError, FixtureChartDomain,
+    FixtureChartError, FixtureChartFrames, FixtureCombinationState, FixtureContext,
+    FixtureFrequencyNumericError, FixturePrincipalStratum, FixtureReferenceInputError,
+    regression::{
+        BaselineMapNumbers, BaselineOperands, BaselineRequest, FixturePhaseNumericError, PhaseDebt,
+        PhaseRates, check_active_ratio_span,
+    },
 };
 
 /// Typed fixture readings; their context is asserted, never a clock supplier.
@@ -480,6 +489,19 @@ struct Issued {
     rates: PhaseRates,
 }
 
+/// One shared issued slot; a base request cannot coexist with phase work.
+#[derive(Clone, Copy)]
+#[expect(
+    clippy::large_enum_variant,
+    reason = "The fixed-size inline metadata preserves one Copy pending-operation slot without adding a success-path heap allocation; boxing the base descriptor would change that storage contract."
+)]
+enum PendingOperation {
+    /// Existing finite phase proposal and its real terminal identity.
+    Phase(Issued),
+    /// Model-derived stable-base request sharing the same operation slot.
+    Baseline(BaselineIssued),
+}
+
 /// An immutable view of one actual issued operation; it borrows its owner.
 pub struct FixturePhaseProposal<'view> {
     /// Borrow of the actual immutable issued record owned by the live lifecycle.
@@ -743,7 +765,11 @@ pub struct FixturePhasePlanOwner<'producer, 'chart> {
     /// Last known numerical debt, retained as history when useful admission fails.
     historical_debt: Option<PhaseDebt>,
     /// At most one issued operation, retained until its matching terminal admission.
-    issued: Option<Issued>,
+    issued: Option<PendingOperation>,
+    /// Last actual accepted frequency emission reserved for a base request.
+    baseline_round: Option<NonZeroU64>,
+    /// Same-context exact affine clock relation, independent of model/base credit.
+    clock_relation: Option<ControllerClockRelation>,
 }
 
 impl fmt::Debug for FixturePhasePlanOwner<'_, '_> {
@@ -904,6 +930,8 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
             provenance: None,
             historical_debt: None,
             issued: None,
+            baseline_round: None,
+            clock_relation: None,
         })
     }
 
@@ -1217,11 +1245,11 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
                 self.profile.aggregate_cap,
             )
             .map_err(|source| FixturePhaseError::Numeric { source })?;
-        self.issued = Some(Issued {
+        self.issued = Some(PendingOperation::Phase(Issued {
             ordinal,
             started: now,
             rates,
-        });
+        }));
         self.proposal()
             .ok_or(FixturePhaseError::ValidationInvariant)
     }
@@ -1233,7 +1261,10 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
             return None;
         }
         Some(FixturePhaseProposal {
-            issued: self.issued.as_ref()?,
+            issued: match self.issued.as_ref()? {
+                PendingOperation::Phase(issued) => issued,
+                PendingOperation::Baseline(_) => return None,
+            },
             obligation: self.obligation.as_ref()?,
         })
     }
@@ -1241,10 +1272,6 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
 
 /// One consuming terminal path; only outer rejection returns an unchanged owner.
 #[must_use]
-#[expect(
-    clippy::large_enum_variant,
-    reason = "The bounded inline result retains exclusive late-result custody and immutable model history without introducing a success-path heap allocation; the largest variant is constant-size, not input-sized."
-)]
 pub enum FixturePhaseSettlement<'producer, 'chart> {
     /// The event was not admitted and ownership is returned intact.
     OuterRejected {
@@ -1271,6 +1298,10 @@ impl fmt::Debug for FixturePhaseSettlement<'_, '_> {
 struct Continuation<'producer> {
     /// The same model/profile/clock association moves through the sole custody slot.
     frequency: FrequencyState,
+    /// Reserved source-emission credit survives every chart/owner transfer.
+    baseline_round: Option<NonZeroU64>,
+    /// Same exact clock relation moves through all take-once transfer paths.
+    clock_relation: Option<ControllerClockRelation>,
     /// Exclusively leased producer transferred once, never cloned or reconstructed.
     producer: &'producer mut FixtureCombinationState,
     /// Actual advanced cursor retaining consumption and historical endpoint marks.
@@ -1516,6 +1547,8 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
     fn into_continuation(self) -> Continuation<'producer> {
         Continuation {
             frequency: self.frequency,
+            baseline_round: self.baseline_round,
+            clock_relation: self.clock_relation,
             producer: self.producer,
             cursor: self.cursor,
             profile: self.profile,
@@ -1538,7 +1571,7 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
         observed_baseline: Option<FixturePhaseBaseline>,
         now: FixturePhaseNow,
     ) -> FixturePhaseSettlement<'producer, 'chart> {
-        let Some(issued) = self.issued else {
+        let Some(PendingOperation::Phase(issued)) = self.issued else {
             return FixturePhaseSettlement::OuterRejected {
                 owner: self,
                 error: FixturePhaseError::NoOutstandingOperation,
@@ -1757,6 +1790,8 @@ impl<'producer> FixturePhaseRetirement<'producer> {
             .ok_or(FixturePhaseError::TransferConsumed)?;
         Ok(FixturePhasePlanOwner {
             frequency: value.frequency,
+            baseline_round: value.baseline_round,
+            clock_relation: value.clock_relation,
             producer: value.producer,
             readiness: FixtureReferenceInputState::new(chart),
             cursor: value.cursor,
@@ -1847,3 +1882,1205 @@ impl<'producer> FixturePhaseRetirement<'producer> {
 #[cfg(test)]
 #[path = "../../../tests/private/phase_plan_lifecycle.rs"]
 mod tests;
+
+/// Bounded stable-compensation refusal; no rejected clocks, rates or maps escape.
+pub enum FixtureBaselineError {
+    /// Existing phase/cursor/context guard rejected this operation.
+    Phase {
+        /// Exact existing phase/cursor cause without rejected payloads.
+        source: FixturePhaseError,
+    },
+    /// Existing supported-model consumer refused this request.
+    Frequency {
+        /// Exact existing supported-model cause.
+        source: FixtureFrequencyError,
+    },
+    /// Checked conversion or affine feedback failed.
+    Numeric {
+        /// Original checked conversion/transform cause.
+        source: FixtureFrequencyNumericError,
+    },
+    /// The declared map does not match the actual basis, baseline or clock window.
+    Map,
+    /// This actual emission already reserved its one stable-base operation.
+    ReusedEmission,
+    /// The received event does not match this issued base operation.
+    Receipt,
+}
+impl fmt::Debug for FixtureBaselineError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("FixtureBaselineError { .. }")
+    }
+}
+impl fmt::Display for FixtureBaselineError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Phase { .. } => "fixture baseline: phase owner refused",
+            Self::Frequency { .. } => "fixture baseline: model refused",
+            Self::Numeric { .. } => "fixture baseline: numeric refusal",
+            Self::Map => "fixture baseline: clock map refused",
+            Self::ReusedEmission => "fixture baseline: emission already used",
+            Self::Receipt => "fixture baseline: unmatched receipt",
+        })
+    }
+}
+impl std::error::Error for FixtureBaselineError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Phase { source } => Some(source),
+            Self::Frequency { source } => Some(source),
+            Self::Numeric { source } => Some(source),
+            _ => None,
+        }
+    }
+}
+
+/// Untrusted explicit coefficients for one declared no-sleep mathematical segment.
+/// Constructing this input creates neither a map nor physical clock authority.
+/// Raw input cannot substitute for the checked map at the proposal consumer:
+///
+/// ```compile_fail,E0308
+/// use time_core::{FixtureControllerClockMapInput, FixturePhaseNow, FixturePhasePlanOwner};
+/// fn bypass(mut owner: FixturePhasePlanOwner<'_, '_>, input: FixtureControllerClockMapInput,
+///     now: FixturePhaseNow) {
+///     let _ = owner.issue_baseline(input, now);
+/// }
+/// ```
+#[derive(Clone, Copy)]
+pub struct FixtureControllerClockMapInput {
+    /// Independently tagged actual readings at the coefficient reference.
+    pub reference: FixturePhaseNow,
+    /// Inclusive monotonic end of this segment; no automatic extension exists.
+    pub valid_until: MonotonicNs,
+    /// Declared dA/dM; no unit ratio is assumed.
+    pub active_ratio: f64,
+    /// Absolute inherited uncertainty of the declared ratio.
+    pub active_ratio_error: f64,
+    /// Absolute source-to-actual displacement at the reference, not Cold-D.
+    pub actual_phase: f64,
+    /// Absolute inherited bound on the actual displacement.
+    pub actual_phase_error: f64,
+    /// Source-to-actual displacement gradient k in seconds per monotonic second.
+    pub actual_rate: f64,
+    /// Absolute inherited bound on k.
+    pub actual_rate_error: f64,
+}
+impl fmt::Debug for FixtureControllerClockMapInput {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("FixtureControllerClockMapInput { .. }")
+    }
+}
+
+/// Full immutable basis equality; no tag-only numerical substitution is admitted.
+#[derive(Clone, Copy)]
+struct ControllerBasis {
+    /// Full checked source/target equality labels.
+    frames: FixtureChartFrames,
+    /// Exact supported geometry including its coefficient epoch.
+    domain: FixtureChartDomain,
+    /// Phase/rate and their independent error bits, in fixed order.
+    coefficients: [u64; 4],
+}
+impl ControllerBasis {
+    /// Capture already checked immutable coefficients and their error bits.
+    fn from_chart(chart: &FixtureAffineChart) -> Self {
+        Self {
+            frames: chart.frames(),
+            domain: chart.domain(),
+            coefficients: [
+                chart.phase_at_reference_seconds().to_bits(),
+                chart.rate_seconds_per_second().to_bits(),
+                chart.phase_coefficient_roundoff_seconds().to_bits(),
+                chart
+                    .rate_coefficient_roundoff_seconds_per_second()
+                    .to_bits(),
+            ],
+        }
+    }
+    /// Compare complete geometry without granting any native identity.
+    fn matches(self, chart: &FixtureAffineChart) -> bool {
+        let other = Self::from_chart(chart);
+        self.frames == other.frames
+            && self.coefficients == other.coefficients
+            && self.domain.start() == other.domain.start()
+            && self.domain.common_reference() == other.domain.common_reference()
+            && self.domain.end() == other.domain.end()
+    }
+}
+
+/// Exact positive rational clock-span witness; this never supplies authority.
+/// The first admitted nonzero span fixes one affine ratio for later observations.
+#[derive(Clone, Copy)]
+struct ControllerRatioWitness {
+    /// Exact active nanoseconds in the first admitted nonzero span.
+    active: u64,
+    /// Exact positive monotonic nanoseconds in that same span.
+    monotonic: u64,
+}
+impl ControllerRatioWitness {
+    /// Compare exact ratios with checked integers, without floating division.
+    /// # Errors
+    /// Refuse a contradictory span or unsupported product without any mutation.
+    fn admits(self, active: u64, monotonic: u64) -> Result<(), FixtureBaselineError> {
+        let left = u128::from(self.active)
+            .checked_mul(u128::from(monotonic))
+            .ok_or(FixtureBaselineError::Map)?;
+        let right = u128::from(active)
+            .checked_mul(u128::from(self.monotonic))
+            .ok_or(FixtureBaselineError::Map)?;
+        if left != right {
+            return Err(FixtureBaselineError::Map);
+        }
+        Ok(())
+    }
+}
+
+/// Persistent clock-only relation custody; it contains no model or base authority.
+#[derive(Clone, Copy)]
+struct ControllerClockRelation {
+    /// Original exact clock pair, retained when a map's coefficient epoch moves.
+    reference: FixturePhaseNow,
+    /// Compatible exact ratio learned only from admitted nonzero spans.
+    witness: Option<ControllerRatioWitness>,
+}
+impl ControllerClockRelation {
+    /// Check an observation against the same fixed origin and coefficient bounds.
+    /// # Errors
+    /// Refuse context/order, ratio-enclosure or exact affine inconsistency.
+    fn observe(
+        mut self,
+        now: FixturePhaseNow,
+        ratio: f64,
+        error: f64,
+    ) -> Result<Self, FixtureBaselineError> {
+        if now.context != self.reference.context
+            || now.active < self.reference.active
+            || now.monotonic < self.reference.monotonic
+        {
+            return Err(FixtureBaselineError::Map);
+        }
+        let active = now.active.nanoseconds() - self.reference.active.nanoseconds();
+        let mono = now.monotonic.nanoseconds() - self.reference.monotonic.nanoseconds();
+        check_active_ratio_span(active, mono, ratio, error)
+            .map_err(|source| FixtureBaselineError::Numeric { source })?;
+        if let Some(witness) = self.witness {
+            check_active_ratio_span(witness.active, witness.monotonic, ratio, error)
+                .map_err(|source| FixtureBaselineError::Numeric { source })?;
+            witness.admits(active, mono)?;
+        } else if mono != 0 {
+            self.witness = Some(ControllerRatioWitness {
+                active,
+                monotonic: mono,
+            });
+        }
+        Ok(self)
+    }
+    /// Merge a changed chart/map declaration without losing original clock custody.
+    /// # Errors
+    /// Refuse a new intercept or incompatible ratio before any issuance credit.
+    fn admit_map(
+        self,
+        mut map: FixtureControllerClockMap,
+        now: FixturePhaseNow,
+    ) -> Result<(Self, FixtureControllerClockMap), FixtureBaselineError> {
+        let observed = self
+            .observe(
+                map.reference,
+                map.numbers.ratio(),
+                map.numbers.ratio_error(),
+            )?
+            .observe(now, map.numbers.ratio(), map.numbers.ratio_error())?;
+        if let (Some(old), Some(new)) = (observed.witness, map.witness) {
+            old.admits(new.active, new.monotonic)?;
+        }
+        map.witness = observed.witness;
+        Ok((observed, map.observe(now)?))
+    }
+}
+
+/// Checked, immutable declared map; it supplies no production physical issuer.
+///
+/// ```compile_fail,E0616
+/// use time_core::FixtureControllerClockMap;
+/// fn replace(map: &mut FixtureControllerClockMap) { map.baseline = 0; }
+/// ```
+/// ```compile_fail,E0599
+/// use time_core::FixtureControllerClockMap;
+/// let _ = FixtureControllerClockMap::default();
+/// ```
+#[derive(Clone, Copy)]
+pub struct FixtureControllerClockMap {
+    /// Actual complete chart basis to which this declaration belongs.
+    basis: ControllerBasis,
+    /// Exact clocks at the absolute Cold coefficient epoch.
+    reference: FixturePhaseNow,
+    /// Explicit segment end, never extended by a query or acknowledgement.
+    valid_until: MonotonicNs,
+    /// Known achieved baseline identity, including signed zero.
+    baseline: u64,
+    /// Privately checked affine coefficients and inherited errors.
+    numbers: BaselineMapNumbers,
+    /// Exact ratio custody survives rebinding the coefficient epoch to an ack.
+    witness: Option<ControllerRatioWitness>,
+}
+impl fmt::Debug for FixtureControllerClockMap {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("FixtureControllerClockMap { .. }")
+    }
+}
+
+/// Mandatory whole-group map/domain admission; numeric fields already have their owner.
+#[derive(Validate)]
+struct RawControllerMap<'a> {
+    #[garde(custom(|value: &(&FixtureAffineChart, &FixtureControllerClockMap), (): &()| {
+        controller_map_rule(value.0, value.1).map_err(|_| garde::Error::new("invalid controller clock map"))
+    }))]
+    /// Actual immutable chart/map group; optional caller validation cannot bypass it.
+    value: (&'a FixtureAffineChart, &'a FixtureControllerClockMap),
+}
+/// Validate the whole immutable map at its real owner boundary.
+/// # Errors
+/// Refuse unsupported domain or a substituted chart without any effect.
+fn controller_map_rule(
+    chart: &FixtureAffineChart,
+    map: &FixtureControllerClockMap,
+) -> Result<(), FixtureBaselineError> {
+    if !map.basis.matches(chart)
+        || map.reference.monotonic < chart.domain().start()
+        || map.valid_until > chart.domain().end()
+        || map.valid_until <= map.reference.monotonic
+    {
+        return Err(FixtureBaselineError::Map);
+    }
+    Ok(())
+}
+impl FixtureControllerClockMap {
+    /// Admit explicit coefficients; current issue/receipt guards still recheck context.
+    /// # Errors
+    /// Refuse numeric support, domain or mandatory-validation disagreement.
+    pub fn new(
+        chart: &FixtureAffineChart,
+        baseline: FixturePhaseBaseline,
+        input: FixtureControllerClockMapInput,
+    ) -> Result<Self, FixtureBaselineError> {
+        let numbers = BaselineMapNumbers::new(
+            input.active_ratio,
+            input.active_ratio_error,
+            input.actual_phase,
+            input.actual_phase_error,
+            input.actual_rate,
+            input.actual_rate_error,
+        )
+        .map_err(|source| FixtureBaselineError::Numeric { source })?;
+        let map = Self {
+            basis: ControllerBasis::from_chart(chart),
+            reference: input.reference,
+            valid_until: input.valid_until,
+            baseline: baseline.rate.to_bits(),
+            numbers,
+            witness: None,
+        };
+        let raw = RawControllerMap {
+            value: (chart, &map),
+        };
+        let validated = raw.validate();
+        controller_map_rule(chart, &map)?;
+        validated.map_err(|_| FixtureBaselineError::Phase {
+            source: FixturePhaseError::ValidationInvariant,
+        })?;
+        Ok(map)
+    }
+    /// Declared ratio; this is a mathematical assertion, not native calibration.
+    #[must_use]
+    pub const fn active_ratio(&self) -> f64 {
+        self.numbers.ratio()
+    }
+    /// Absolute source-to-actual displacement at the retained reference epoch.
+    #[must_use]
+    pub const fn actual_phase(&self) -> f64 {
+        self.numbers.phase()
+    }
+    /// Absolute source-to-actual gradient at the retained reference epoch.
+    #[must_use]
+    pub const fn actual_rate(&self) -> f64 {
+        self.numbers.rate()
+    }
+    /// Epoch of the actual displacement coefficients in the admitted segment.
+    #[must_use]
+    pub const fn reference(&self) -> FixturePhaseNow {
+        self.reference
+    }
+    /// Recheck both supplied readings against the declared affine segment.
+    /// # Errors
+    /// Refuse context, expiry, regression or non-unit clock inconsistency.
+    fn at(self, now: FixturePhaseNow) -> Result<(), FixtureBaselineError> {
+        self.observe(now).map(|_| ())
+    }
+    /// Admit one exact observation and retain one compatible fixed affine ratio.
+    /// # Errors
+    /// Refuse current context/domain/order, coefficient enclosure or joint ratio.
+    fn observe(mut self, now: FixturePhaseNow) -> Result<Self, FixtureBaselineError> {
+        if now.context != self.reference.context
+            || now.monotonic < self.reference.monotonic
+            || now.monotonic > self.valid_until
+            || now.active < self.reference.active
+        {
+            return Err(FixtureBaselineError::Map);
+        }
+        let active = now.active.nanoseconds() - self.reference.active.nanoseconds();
+        let monotonic = now.monotonic.nanoseconds() - self.reference.monotonic.nanoseconds();
+        check_active_ratio_span(
+            active,
+            monotonic,
+            self.numbers.ratio(),
+            self.numbers.ratio_error(),
+        )
+        .map_err(|source| FixtureBaselineError::Numeric { source })?;
+        if monotonic == 0 {
+            if active != 0 {
+                return Err(FixtureBaselineError::Map);
+            }
+        } else if let Some(witness) = self.witness {
+            witness.admits(active, monotonic)?;
+        } else {
+            self.witness = Some(ControllerRatioWitness { active, monotonic });
+        }
+        Ok(self)
+    }
+}
+
+/// Actual one-slot baseline command retained by the existing exclusive owner.
+#[derive(Clone, Copy)]
+struct BaselineIssued {
+    /// Current shared persistent cursor identity reserved by this operation.
+    ordinal: NonZeroU64,
+    /// Exact clocks at request admission, bounding the known old-rate span.
+    started: FixturePhaseNow,
+    /// Original active request cutoff; no acknowledgement renews it.
+    active_deadline: ActiveAwakeNs,
+    /// Original monotonic cutoff bounded by the declared map segment.
+    monotonic_deadline: MonotonicNs,
+    /// Genuine accepted frequency emission consumed by this request.
+    round: NonZeroU64,
+    /// Checked desired/clipped request and its arithmetic enclosure.
+    numbers: BaselineRequest,
+    /// Immutable full-basis map admitted at issue time.
+    map: FixtureControllerClockMap,
+    /// Known old achieved rate; requested rate never substitutes for it.
+    old_baseline: FixturePhaseBaseline,
+}
+/// Borrowed requested compensation; no method converts it into an achieved baseline.
+///
+/// ```compile_fail,E0505
+/// use time_core::{FixtureBaselineError, FixtureBaselineFeedback, FixtureControllerClockMap,
+///     FixturePhaseNow, FixturePhasePlanOwner};
+/// fn stale(mut owner: FixturePhasePlanOwner<'_, '_>, map: FixtureControllerClockMap,
+///     now: FixturePhaseNow, event: FixtureBaselineFeedback) -> Result<(), FixtureBaselineError> {
+///     let proposal = owner.issue_baseline(map, now)?;
+///     let settled = owner.settle_baseline(event, now);
+///     std::hint::black_box(proposal.ordinal());
+///     std::hint::black_box(settled);
+///     Ok(())
+/// }
+/// ```
+pub struct FixtureBaselineProposal<'a> {
+    /// Borrow of the actual one pending operation, never an owned issuer token.
+    issued: &'a BaselineIssued,
+}
+impl FixtureBaselineProposal<'_> {
+    /// Sole shared-cursor operation ordinal.
+    #[must_use]
+    pub const fn ordinal(&self) -> NonZeroU64 {
+        self.issued.ordinal
+    }
+    /// Actual accepted frequency emission reserved for this request.
+    #[must_use]
+    pub const fn emitted_round(&self) -> NonZeroU64 {
+        self.issued.round
+    }
+    /// Requested additive stable displacement per active second.
+    #[must_use]
+    pub fn requested_rate(&self) -> f64 {
+        self.issued.numbers.requested()
+    }
+    /// Unclipped desire, separate from policy clipping and achievement.
+    #[must_use]
+    pub fn desired_rate(&self) -> f64 {
+        self.issued.numbers.desired()
+    }
+    /// Arithmetic/map error on the unclipped desire, not statistical uncertainty.
+    #[must_use]
+    pub fn desired_error(&self) -> f64 {
+        self.issued.numbers.desired_error()
+    }
+    /// Whether the explicit aggregate cap clipped the numerical desire.
+    #[must_use]
+    pub fn clipped(&self) -> bool {
+        self.issued.numbers.clipped()
+    }
+    /// Original independent monotonic request deadline.
+    #[must_use]
+    pub const fn monotonic_deadline(&self) -> MonotonicNs {
+        self.issued.monotonic_deadline
+    }
+    /// Original active-awake request deadline.
+    #[must_use]
+    pub const fn active_deadline(&self) -> ActiveAwakeNs {
+        self.issued.active_deadline
+    }
+}
+impl fmt::Debug for FixtureBaselineProposal<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("FixtureBaselineProposal { .. }")
+    }
+}
+
+/// Checked Known receipt, distinct from a requested rate and native authority.
+///
+/// ```compile_fail,E0451
+/// use time_core::FixtureBaselineCompletion;
+/// fn bypass(base: FixtureBaselineCompletion) {
+///     let _ = FixtureBaselineCompletion { achieved: todo!(), ..base };
+/// }
+/// ```
+#[derive(Clone, Copy)]
+pub struct FixtureBaselineCompletion {
+    /// Known old total rate and exact effective boundary on both clocks.
+    delivery: super::FixtureSettledRateInterval,
+    /// Separately known achieved new base at the interval endpoint.
+    achieved: FixturePhaseBaseline,
+    /// Rate-effect chart step after the constant-delivery intermediate target.
+    final_frames: FixtureChartFrames,
+}
+impl FixtureBaselineCompletion {
+    /// Retain an explicitly known old-rate interval and achieved rate at its endpoint.
+    /// Current identity, exact start, actual old rate and clocks belong to the receiver.
+    /// # Errors
+    /// Reject a broken two-step frame chain without constructing a receipt.
+    pub fn new(
+        delivery: super::FixtureSettledRateInterval,
+        achieved: FixturePhaseBaseline,
+        final_frames: FixtureChartFrames,
+    ) -> Result<Self, FixtureBaselineError> {
+        let raw = RawBaselineCompletion {
+            value: Self {
+                delivery,
+                achieved,
+                final_frames,
+            },
+        };
+        let validated = raw.validate();
+        baseline_completion_rule(&raw.value)?;
+        validated.map_err(|_| FixtureBaselineError::Phase {
+            source: FixturePhaseError::ValidationInvariant,
+        })?;
+        Ok(raw.value)
+    }
+}
+/// Check the complete immutable two-step descriptor before publishing a receipt.
+/// # Errors
+/// Preserve mapping mismatch and the checked full endpoint-cycle refusal.
+fn baseline_completion_rule(value: &FixtureBaselineCompletion) -> Result<(), FixtureBaselineError> {
+    let delivery = value.delivery;
+    let final_frames = value.final_frames;
+    if final_frames.source_frame() != delivery.frames.target_frame()
+        || final_frames.source_generation() != delivery.frames.target_generation()
+    {
+        return Err(FixtureBaselineError::Receipt);
+    }
+    FixtureChartFrames::new(
+        delivery.frames.source_frame(),
+        delivery.frames.source_generation(),
+        final_frames.target_frame(),
+        final_frames.target_generation(),
+    )
+    .map_err(|source| FixtureBaselineError::Phase {
+        source: FixturePhaseError::Chart { source },
+    })?;
+    Ok(())
+}
+#[derive(Validate)]
+/// Mandatory whole immutable receipt-construction group.
+struct RawBaselineCompletion {
+    #[garde(custom(|value: &FixtureBaselineCompletion, (): &()| {
+        baseline_completion_rule(value).map_err(|_| garde::Error::new("invalid baseline receipt descriptor"))
+    }))]
+    /// Existing immutable typed operands plus their changed frame relationship.
+    value: FixtureBaselineCompletion,
+}
+impl fmt::Debug for FixtureBaselineCompletion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("FixtureBaselineCompletion { .. }")
+    }
+}
+/// Actual modeled terminal observation; equal rates never imply `ProvenNoEffect`.
+#[derive(Clone, Copy)]
+pub enum FixtureBaselineFeedback {
+    /// Known old-rate delivery and explicitly achieved new stable base.
+    Known(FixtureBaselineCompletion),
+    /// Explicit absence of a base change; no endpoint or delivered rate is invented.
+    ProvenNoEffect {
+        /// Actual clock association of the matching operation.
+        context: FixtureRateClockContext,
+        /// Exact pending shared cursor identity.
+        ordinal: NonZeroU64,
+    },
+    /// Uncertain effect or effective boundary, irreversibly blocking this cursor.
+    Unknown {
+        /// Actual uncertain operation's clock association.
+        context: FixtureRateClockContext,
+        /// Shared ordinal consumed into unresolved custody.
+        ordinal: NonZeroU64,
+    },
+}
+impl FixtureBaselineFeedback {
+    /// Retain the exact modeled terminal identity; no endpoint is invented.
+    fn terminal(self) -> FixtureRateSettlement {
+        match self {
+            Self::Known(receipt) => FixtureRateSettlement::Completed(receipt.delivery),
+            Self::ProvenNoEffect { context, ordinal } => {
+                FixtureRateSettlement::ProvenNoEffect { context, ordinal }
+            }
+            Self::Unknown { context, ordinal } => {
+                FixtureRateSettlement::Unknown { context, ordinal }
+            }
+        }
+    }
+}
+impl fmt::Debug for FixtureBaselineFeedback {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("FixtureBaselineFeedback { .. }")
+    }
+}
+
+/// Consume-once result of the same owner's baseline operation.
+#[must_use]
+#[expect(
+    clippy::large_enum_variant,
+    reason = "The bounded inline result returns the original owner on rejection and retains known producer/cursor custody and model history without a success-path heap allocation; no variant is input-sized."
+)]
+pub enum FixtureBaselineSettlement<'producer, 'chart> {
+    /// Admission failed without consuming the original issued owner.
+    OuterRejected {
+        /// Original actual owner, still retaining its pending request and credit.
+        owner: FixturePhasePlanOwner<'producer, 'chart>,
+        /// Exact bounded structural/current-context refusal.
+        error: FixtureBaselineError,
+    },
+    /// The request/ordinal was consumed without an invented correction.
+    ProvenNoEffect(FixturePhasePlanOwner<'producer, 'chart>),
+    /// Known effect custody, including post-consumption numerical failure.
+    Known(FixtureBaselineRetirement<'producer>),
+    /// Uncertain effect consumes/blocks the shared cursor.
+    Unknown(FixturePhaseBlocked<'producer>),
+}
+impl fmt::Debug for FixtureBaselineSettlement<'_, '_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("FixtureBaselineSettlement { .. }")
+    }
+}
+/// Known achieved-base history plus the same take-once producer/cursor continuation.
+pub struct FixtureBaselineRetirement<'producer> {
+    /// Existing take-once producer/cursor custody and committed chart/debt history.
+    inner: FixturePhaseRetirement<'producer>,
+    /// Known actual new base, retained independently of all later failures.
+    achieved: FixturePhaseBaseline,
+    /// Absolute Cold rebound to the actual final basis, or its original refusal.
+    map: Result<FixtureControllerClockMap, FixtureBaselineError>,
+    /// Bit-level baseline change, independently of a rounded zero gradient.
+    changed: bool,
+    /// Original post-consumption transform refusal, retained independently of custody.
+    failure: Option<FixtureBaselineError>,
+    /// Base-operation deadline/cap refusal, distinct from retired old phase debt.
+    operation_refusal: Option<FixturePhaseError>,
+}
+impl fmt::Debug for FixtureBaselineRetirement<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("FixtureBaselineRetirement { .. }")
+    }
+}
+impl<'producer> FixtureBaselineRetirement<'producer> {
+    /// Borrow the actual replacement or retained post-consumption chart failure.
+    /// # Errors
+    /// Return the exact retained descriptor/composition failure without a refund.
+    pub fn replacement(&self) -> Result<&FixtureAffineChart, &FixtureBaselineError> {
+        self.inner
+            .replacement
+            .as_ref()
+            .map_err(|_| self.failure.as_ref().unwrap_or(&INTERNAL_BASELINE_REFUSAL))
+    }
+    /// Exact retained transform failure after the matching event was consumed.
+    #[must_use]
+    pub fn feedback_error(&self) -> Option<&FixtureBaselineError> {
+        self.failure.as_ref()
+    }
+    /// Original finite obligation deadlines remain historical across the base change.
+    #[must_use]
+    pub fn original_phase_deadlines(&self) -> (Option<ActiveAwakeNs>, Option<MonotonicNs>) {
+        (
+            self.inner.active_deadline(),
+            self.inner.monotonic_deadline(),
+        )
+    }
+    /// Actual cap/deadline refusal after the achieved fact was retained.
+    #[must_use]
+    pub fn continuation_error(&self) -> Option<&FixturePhaseError> {
+        self.operation_refusal.as_ref()
+    }
+    /// Borrow the exact committed old finite-delivery event independently of feedback.
+    #[must_use]
+    pub const fn event(&self) -> &FixtureRateSettlement {
+        self.inner.event()
+    }
+    /// The shared consumed cursor remains observable until custody is transferred.
+    #[must_use]
+    pub fn cursor(&self) -> Option<&FixtureRateSettlementCursor> {
+        self.inner.cursor()
+    }
+    /// Known achieved fact survives numeric/profile failure and continuation consumption.
+    #[must_use]
+    pub const fn achieved_baseline(&self) -> FixturePhaseBaseline {
+        self.achieved
+    }
+    /// Borrow model history without granting current projection or issuance.
+    #[must_use]
+    pub const fn frequency_history(&self) -> Option<FixtureFrequencyHistory> {
+        self.inner.frequency_history()
+    }
+    /// Return the rebound current map or original post-consumption cause.
+    /// # Errors
+    /// Borrow the exact original map-transform refusal; no replacement is invented.
+    pub fn clock_map(&self) -> Result<&FixtureControllerClockMap, &FixtureBaselineError> {
+        self.map.as_ref()
+    }
+    /// Resume at most once; changed baseline admits context only, not fresh debt.
+    /// # Errors
+    /// Preserve unavailable map, profile/authority/cursor and consumed-transfer causes.
+    pub fn resume<'a>(
+        &'a mut self,
+        now: FixturePhaseNow,
+        permission: FixturePhaseResidualPermission,
+    ) -> Result<FixturePhasePlanOwner<'producer, 'a>, FixtureBaselineError> {
+        self.transfer_ready()?;
+        let owner = if self.changed || self.inner.original.is_none() {
+            self.inner.resume_fresh(now, self.achieved)
+        } else {
+            self.inner.resume(now, permission)
+        };
+        owner.map_err(|source| FixtureBaselineError::Phase { source })
+    }
+    /// Transfer context only, retaining history without creating fresh phase debt.
+    /// The known baseline is the private actual achieved fact, never a new input.
+    /// # Errors
+    /// Preserve consumed/retired/cursor/profile failures after admitting current clocks.
+    pub fn resume_fresh<'a>(
+        &'a mut self,
+        now: FixturePhaseNow,
+    ) -> Result<FixturePhasePlanOwner<'producer, 'a>, FixtureBaselineError> {
+        self.transfer_ready()?;
+        self.inner
+            .resume_fresh(now, self.achieved)
+            .map_err(|source| FixtureBaselineError::Phase { source })
+    }
+    /// Require all post-consumption numeric/map/base-operation gates before transfer.
+    /// # Errors
+    /// Refuse useful continuation while retaining exact historical failure getters.
+    fn transfer_ready(&self) -> Result<(), FixtureBaselineError> {
+        if self.failure.is_some() || self.map.is_err() || self.operation_refusal.is_some() {
+            return Err(FixtureBaselineError::Receipt);
+        }
+        Ok(())
+    }
+}
+
+impl FixturePhasePlanOwner<'_, '_> {
+    /// Reserve one model-derived requested base, never an acknowledged baseline.
+    /// The actual supported model, complete map/baseline and shared cursor are checked here.
+    /// # Errors
+    /// Refuse pending, retired, stale/reused emission, map/time or arithmetic failures.
+    pub fn issue_baseline(
+        &mut self,
+        map: FixtureControllerClockMap,
+        now: FixturePhaseNow,
+    ) -> Result<FixtureBaselineProposal<'_>, FixtureBaselineError> {
+        self.authority_ready()
+            .map_err(|source| FixtureBaselineError::Phase { source })?;
+        if self.issued.is_some() {
+            return Err(FixtureBaselineError::Phase {
+                source: FixturePhaseError::OutstandingOperation,
+            });
+        }
+        cursor_mapping(&self.cursor, self.chart())
+            .map_err(|source| FixtureBaselineError::Phase { source })?;
+        check_now(self.last_now, &self.cursor, now)
+            .map_err(|source| FixtureBaselineError::Phase { source })?;
+        if !map.basis.matches(self.chart())
+            || map.baseline != self.baseline.rate.to_bits()
+            || now.monotonic >= map.valid_until
+        {
+            return Err(FixtureBaselineError::Map);
+        }
+        let relation = self.clock_relation.unwrap_or(ControllerClockRelation {
+            reference: map.reference,
+            witness: map.witness,
+        });
+        // A newly declared segment cannot contradict already admitted current
+        // readings that lie inside it, even before the first base request.
+        let relation = if self.last_now.monotonic >= map.reference.monotonic
+            && self.last_now.monotonic <= map.valid_until
+        {
+            relation.observe(
+                self.last_now,
+                map.numbers.ratio(),
+                map.numbers.ratio_error(),
+            )?
+        } else {
+            relation
+        };
+        let (relation, map) = relation.admit_map(map, now)?;
+        self.clock_relation = Some(relation);
+        self.last_now = now;
+        let operands = BaselineOperands {
+            chart_rate: self.chart().rate_seconds_per_second(),
+            chart_rate_error: self.chart().rate_coefficient_roundoff_seconds_per_second(),
+            actual_rate: map.numbers.rate(),
+            actual_rate_error: map.numbers.rate_error(),
+            active_ratio: map.numbers.ratio(),
+            active_ratio_error: map.numbers.ratio_error(),
+            baseline: self.baseline.rate,
+            cap: self.profile.aggregate_cap,
+        };
+        let (round, numbers) = self
+            .frequency
+            .baseline_request(
+                self.readiness.chart,
+                self.cursor.context,
+                now.monotonic,
+                operands,
+            )
+            .map_err(|source| FixtureBaselineError::Frequency { source })?;
+        if self.baseline_round.is_some_and(|old| round <= old) {
+            return Err(FixtureBaselineError::ReusedEmission);
+        }
+        let (active_deadline, mono) = deadlines(self.profile, now)
+            .map_err(|source| FixtureBaselineError::Phase { source })?;
+        let ordinal = self
+            .cursor
+            .next_ordinal()
+            .ok_or(FixtureBaselineError::Phase {
+                source: FixturePhaseError::CursorUnavailable,
+            })?;
+        self.baseline_round = Some(round);
+        self.issued = Some(PendingOperation::Baseline(BaselineIssued {
+            ordinal,
+            started: now,
+            active_deadline,
+            monotonic_deadline: mono.min(map.valid_until),
+            round,
+            numbers,
+            map,
+            old_baseline: self.baseline,
+        }));
+        self.baseline_proposal()
+            .ok_or(FixtureBaselineError::Receipt)
+    }
+    /// Borrow the existing base proposal without another credit or clock read.
+    #[must_use]
+    pub fn baseline_proposal(&self) -> Option<FixtureBaselineProposal<'_>> {
+        if self.authority.is_some() {
+            return None;
+        }
+        match self.issued.as_ref()? {
+            PendingOperation::Baseline(issued) => Some(FixtureBaselineProposal { issued }),
+            PendingOperation::Phase(_) => None,
+        }
+    }
+}
+
+/// This sentinel is unreachable after a successful affine feedback construction;
+/// exact failure diagnostics are retained in `failure` before any useful resume.
+const INTERNAL_BASELINE_REFUSAL: FixtureBaselineError = FixtureBaselineError::Receipt;
+
+/// Current pending request and exact immutable terminal relationship.
+struct BaselineTerminal {
+    /// Actual pending operation retained by the exclusive owner.
+    issued: BaselineIssued,
+    /// Supplied immutable event whose current relationship is checked here.
+    event: FixtureBaselineFeedback,
+    /// Supplied current clocks containing every admitted known endpoint.
+    now: FixturePhaseNow,
+}
+/// Check all caller-declared receipt relationships before consuming any ordinal.
+/// # Errors
+/// Refuse context/identity, wrong old baseline, endpoint or affine segment mismatch.
+fn baseline_terminal(value: &BaselineTerminal) -> Result<(), FixtureBaselineError> {
+    let (context, ordinal) = match value.event {
+        FixtureBaselineFeedback::Known(receipt) => {
+            (receipt.delivery.context, receipt.delivery.ordinal)
+        }
+        FixtureBaselineFeedback::ProvenNoEffect { context, ordinal }
+        | FixtureBaselineFeedback::Unknown { context, ordinal } => (context, ordinal),
+    };
+    if context != value.issued.started.context || ordinal != value.issued.ordinal {
+        return Err(FixtureBaselineError::Receipt);
+    }
+    if let FixtureBaselineFeedback::Known(receipt) = value.event {
+        let span = receipt.delivery.span;
+        if receipt.delivery.rate.to_bits() != value.issued.old_baseline.rate.to_bits()
+            || span.active.0 != value.issued.started.active
+            || span.effective.0 != value.issued.started.monotonic
+            || span.active.1 > value.now.active
+            || span.effective.1 > value.now.monotonic
+        {
+            return Err(FixtureBaselineError::Receipt);
+        }
+        if span.effective.1 <= value.issued.map.valid_until {
+            value.issued.map.at(FixturePhaseNow::new(
+                context,
+                span.active.1,
+                span.effective.1,
+            ))?;
+            // Inside the admitted domain, the actual operation must also fit
+            // the same bounds; expired maps authorize no extrapolated guard.
+            let mono = span
+                .effective
+                .1
+                .duration_since(span.effective.0)
+                .map_err(|_| FixtureBaselineError::Map)?;
+            check_active_ratio_span(
+                span.active_elapsed.nanoseconds(),
+                mono.nanoseconds(),
+                value.issued.map.numbers.ratio(),
+                value.issued.map.numbers.ratio_error(),
+            )
+            .map_err(|source| FixtureBaselineError::Numeric { source })?;
+        }
+    }
+    Ok(())
+}
+#[derive(Validate)]
+/// Mandatory current pending-operation/terminal relationship adapter.
+struct RawBaselineTerminal {
+    #[garde(custom(|value: &BaselineTerminal, (): &()| {
+        baseline_terminal(value).map_err(|_| garde::Error::new("invalid matched baseline receipt"))
+    }))]
+    /// Complete actual relationship, validated before cursor consumption.
+    value: BaselineTerminal,
+}
+/// Mandatory whole-group validation of the same real pending-operation rule.
+/// # Errors
+/// Preserve the original relationship cause or report validation disagreement.
+fn check_baseline_terminal(value: BaselineTerminal) -> Result<(), FixtureBaselineError> {
+    let raw = RawBaselineTerminal { value };
+    let validated = raw.validate();
+    baseline_terminal(&raw.value)?;
+    validated.map_err(|_| FixtureBaselineError::Phase {
+        source: FixturePhaseError::ValidationInvariant,
+    })
+}
+
+/// Compose the already committed finite delivery with the continuous rate effect.
+/// # Errors
+/// Retain chart or numeric failure after commitment; no cursor is refunded.
+fn baseline_feedback_charts(
+    predecessor: &FixtureAffineChart,
+    completion: &super::FixtureRateSettlementCompletion,
+    issued: &BaselineIssued,
+    receipt: FixtureBaselineCompletion,
+) -> Result<(FixtureAffineChart, FixtureAffineChart), FixtureBaselineError> {
+    let constant = completion
+        .effect()
+        .map_err(|source| FixtureBaselineError::Phase {
+            source: FixturePhaseError::Chart { source },
+        })?
+        .ok_or(FixtureBaselineError::Receipt)?;
+    // The constant receiver has already committed and constructed its actual
+    // intermediate replacement; preserve its original failure before extending.
+    completion
+        .replacement()
+        .map_err(|source| FixtureBaselineError::Phase {
+            source: FixturePhaseError::Chart { source },
+        })?
+        .ok_or(FixtureBaselineError::Receipt)?;
+    if receipt.delivery.span.effective.1 > issued.map.valid_until {
+        return Err(FixtureBaselineError::Map);
+    }
+    let affine = FixtureAffineChart::baseline_rate_effect(
+        receipt.final_frames,
+        predecessor.domain(),
+        issued.map.numbers.ratio(),
+        issued.map.numbers.ratio_error(),
+        issued.old_baseline.rate,
+        receipt.achieved.rate,
+        receipt.delivery.span.effective.1,
+    )
+    .map_err(|source| FixtureBaselineError::Numeric { source })?;
+    // Fixed RN association is predecessor.compose(constant.compose(affine));
+    // sequential predecessor composition can have different point bits.
+    let effect = constant
+        .compose(&affine)
+        .map_err(|source| FixtureBaselineError::Phase {
+            source: FixturePhaseError::Chart { source },
+        })?;
+    let replacement =
+        predecessor
+            .compose(&effect)
+            .map_err(|source| FixtureBaselineError::Phase {
+                source: FixturePhaseError::Chart { source },
+            })?;
+    Ok((effect, replacement))
+}
+
+/// Rebind absolute Cold to the post-settlement basis without charging it twice.
+/// # Errors
+/// Preserve elapsed-time/numeric refusal after cursor consumption; no map extension.
+fn rebound_baseline_map(
+    issued: &BaselineIssued,
+    receipt: FixtureBaselineCompletion,
+    replacement: &FixtureAffineChart,
+) -> Result<FixtureControllerClockMap, FixtureBaselineError> {
+    let observed = issued.map.observe(FixturePhaseNow::new(
+        receipt.delivery.context,
+        receipt.delivery.span.active.1,
+        receipt.delivery.span.effective.1,
+    ))?;
+    // A boundary acknowledgement is inside the effect's inclusive domain but
+    // leaves no positive future segment for a newly rebound checked map.
+    if receipt.delivery.span.effective.1 >= issued.map.valid_until {
+        return Err(FixtureBaselineError::Map);
+    }
+    let elapsed = receipt
+        .delivery
+        .span
+        .effective
+        .1
+        .duration_since(issued.map.reference.monotonic)
+        .map_err(|_| FixtureBaselineError::Map)?;
+    let numbers = issued
+        .map
+        .numbers
+        .advance(issued.old_baseline.rate, receipt.achieved.rate, elapsed)
+        .map_err(|source| FixtureBaselineError::Numeric { source })?;
+    Ok(FixtureControllerClockMap {
+        basis: ControllerBasis::from_chart(replacement),
+        reference: FixturePhaseNow::new(
+            receipt.delivery.context,
+            receipt.delivery.span.active.1,
+            receipt.delivery.span.effective.1,
+        ),
+        valid_until: issued.map.valid_until,
+        baseline: receipt.achieved.rate.to_bits(),
+        numbers,
+        witness: observed.witness,
+    })
+}
+
+impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
+    /// Consume one matched stable-base receipt through the existing shared cursor.
+    /// Known achieved facts survive arithmetic, cap, stop and deadline refusal.
+    /// # Panics
+    /// None: absent pending state and malformed receipts are explicit outer refusals.
+    pub fn settle_baseline(
+        mut self,
+        event: FixtureBaselineFeedback,
+        now: FixturePhaseNow,
+    ) -> FixtureBaselineSettlement<'producer, 'chart> {
+        let Some(PendingOperation::Baseline(issued)) = self.issued else {
+            return FixtureBaselineSettlement::OuterRejected {
+                owner: self,
+                error: FixtureBaselineError::Phase {
+                    source: FixturePhaseError::NoOutstandingOperation,
+                },
+            };
+        };
+        let preflight = check_now(self.last_now, &self.cursor, now)
+            .map_err(|source| FixtureBaselineError::Phase { source })
+            .and_then(|()| check_baseline_terminal(BaselineTerminal { issued, event, now }));
+        if let Err(error) = preflight {
+            return FixtureBaselineSettlement::OuterRejected { owner: self, error };
+        }
+        let relation = match self.baseline_terminal_relation(&issued, event, now) {
+            Ok(value) => value,
+            Err(error) => return FixtureBaselineSettlement::OuterRejected { owner: self, error },
+        };
+        let predecessor = self.readiness.chart;
+        let terminal = event.terminal();
+        let consumed = match event {
+            FixtureBaselineFeedback::Known(receipt) => self.readiness.receive_baseline_settlement(
+                &mut self.cursor,
+                predecessor,
+                receipt.delivery,
+                receipt.final_frames,
+            ),
+            _ => self
+                .readiness
+                .receive_rate_settlement(&mut self.cursor, predecessor, terminal),
+        };
+        let completion = match consumed {
+            Ok(value) => value,
+            Err(source) => {
+                return FixtureBaselineSettlement::OuterRejected {
+                    owner: self,
+                    error: FixtureBaselineError::Phase {
+                        source: FixturePhaseError::Delivery { source },
+                    },
+                };
+            }
+        };
+        self.last_now = now;
+        self.clock_relation = relation;
+        self.issued = None;
+        match event {
+            FixtureBaselineFeedback::ProvenNoEffect { .. } => {
+                if let Some(old) = self.obligation.as_mut() {
+                    old.residual = true;
+                    old.expired |= now.active >= old.active_deadline
+                        || now.monotonic >= old.monotonic_deadline;
+                }
+                FixtureBaselineSettlement::ProvenNoEffect(self)
+            }
+            FixtureBaselineFeedback::Unknown { .. } => {
+                self.frequency.unknown();
+                let provenance = self.provenance;
+                let historical_debt = self.historical_debt;
+                FixtureBaselineSettlement::Unknown(FixturePhaseBlocked {
+                    continuation: self.into_continuation(),
+                    event: terminal,
+                    provenance,
+                    historical_debt,
+                })
+            }
+            FixtureBaselineFeedback::Known(receipt) => {
+                self.finish_baseline(predecessor, &completion, &issued, receipt, terminal, now)
+            }
+        }
+    }
+
+    /// Retain only clock observations inside the admitted map segment.
+    /// `ProvenNoEffect` changes neither baseline/model nor source credit; `Unknown` blocks.
+    /// # Errors
+    /// Refuse an inconsistent known/in-segment clock relation before consumption.
+    fn baseline_terminal_relation(
+        &self,
+        issued: &BaselineIssued,
+        event: FixtureBaselineFeedback,
+        now: FixturePhaseNow,
+    ) -> Result<Option<ControllerClockRelation>, FixtureBaselineError> {
+        let observed = match event {
+            FixtureBaselineFeedback::Known(receipt)
+                if receipt.delivery.span.effective.1 <= issued.map.valid_until =>
+            {
+                Some(FixturePhaseNow::new(
+                    receipt.delivery.context,
+                    receipt.delivery.span.active.1,
+                    receipt.delivery.span.effective.1,
+                ))
+            }
+            FixtureBaselineFeedback::ProvenNoEffect { .. }
+                if now.monotonic <= issued.map.valid_until =>
+            {
+                Some(now)
+            }
+            _ => None,
+        };
+        match (self.clock_relation, observed) {
+            (Some(relation), Some(now)) => relation
+                .observe(
+                    now,
+                    issued.map.numbers.ratio(),
+                    issued.map.numbers.ratio_error(),
+                )
+                .map(Some),
+            _ => Ok(self.clock_relation),
+        }
+    }
+
+    /// Finish post-consumption arithmetic; no outer rejection or refund is possible.
+    fn finish_baseline(
+        mut self,
+        predecessor: &FixtureAffineChart,
+        completion: &super::FixtureRateSettlementCompletion,
+        issued: &BaselineIssued,
+        receipt: FixtureBaselineCompletion,
+        terminal: FixtureRateSettlement,
+        now: FixturePhaseNow,
+    ) -> FixtureBaselineSettlement<'producer, 'chart> {
+        let charts = baseline_feedback_charts(predecessor, completion, issued, receipt);
+        let changed = receipt.achieved.rate.to_bits() != issued.old_baseline.rate.to_bits();
+        let mut failure = None;
+        let mut rebound = Err(FixtureBaselineError::Receipt);
+        let replacement = match charts {
+            Ok((effect, replacement)) => {
+                if let Err(source) =
+                    self.frequency
+                        .rebase_baseline(predecessor, &effect, &replacement)
+                {
+                    failure = Some(FixtureBaselineError::Frequency { source });
+                }
+                rebound = rebound_baseline_map(issued, receipt, &replacement);
+                Ok(replacement)
+            }
+            Err(error) => {
+                self.frequency.rebase(
+                    predecessor,
+                    Err(FixtureChartError::Invariant),
+                    Err(FixtureChartError::Invariant),
+                );
+                if matches!(&error, FixtureBaselineError::Map) {
+                    rebound = Err(FixtureBaselineError::Map);
+                }
+                failure = Some(error);
+                Err(FixtureChartError::Invariant)
+            }
+        };
+        let debt = settled_debt(
+            self.obligation,
+            terminal,
+            self.baseline,
+            Some(self.baseline),
+        );
+        let refusal = continuation_refusal(
+            self.profile,
+            self.baseline,
+            self.obligation,
+            terminal,
+            &debt,
+            now,
+        );
+        let operation_refusal = if receipt.achieved.rate.abs() > self.profile.aggregate_cap {
+            Some(FixturePhaseError::DeliveredOutOfEnvelope)
+        } else if now.active >= issued.active_deadline || now.monotonic >= issued.monotonic_deadline
+        {
+            Some(FixturePhaseError::Expired)
+        } else {
+            None
+        };
+        if changed {
+            self.baseline = receipt.achieved;
+        }
+        let original = self.obligation;
+        let provenance = self.provenance;
+        if let Ok(value) = &debt {
+            self.historical_debt = Some(*value);
+        }
+        let frequency_history = self.frequency.history();
+        let inner = FixturePhaseRetirement {
+            frequency_history,
+            continuation: Some(self.into_continuation()),
+            event: terminal,
+            replacement,
+            debt,
+            refusal,
+            original,
+            provenance,
+        };
+        FixtureBaselineSettlement::Known(FixtureBaselineRetirement {
+            inner,
+            achieved: receipt.achieved,
+            map: rebound,
+            changed,
+            failure,
+            operation_refusal,
+        })
+    }
+}

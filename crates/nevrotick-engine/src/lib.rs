@@ -29,6 +29,10 @@ pub use quality::{
 pub use relative::{
     ExperimentalReferenceNs, ExperimentalRelativeMeasurement, RelativeMeasurementRefusal,
 };
+pub use series::address_round::{
+    AddressAttempt, AddressRoundConfig, AddressRoundConfigError, AddressRoundEnd,
+    AddressRoundReport, PreparedAddressRound, execute_address_round, prepare_address_round,
+};
 pub use series::{
     PreparedSeries, SeriesAttempt, SeriesConfig, SeriesEnd, SeriesNotStartedCause, SeriesReport,
     execute_series, prepare_series,

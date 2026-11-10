@@ -19,10 +19,13 @@ pub use frequency_prior::{
 };
 
 pub use phase_plan::{
-    FixturePhaseBaseline, FixturePhaseBlocked, FixturePhaseConstructionRejected, FixturePhaseError,
-    FixturePhaseNow, FixturePhasePlanOwner, FixturePhaseProfile, FixturePhaseProposal,
-    FixturePhaseProvenance, FixturePhaseReferenceAdmission, FixturePhaseResidualPermission,
-    FixturePhaseRetirement, FixturePhaseRetirementReason, FixturePhaseSettlement,
+    FixtureBaselineCompletion, FixtureBaselineError, FixtureBaselineFeedback,
+    FixtureBaselineProposal, FixtureBaselineRetirement, FixtureBaselineSettlement,
+    FixtureControllerClockMap, FixtureControllerClockMapInput, FixturePhaseBaseline,
+    FixturePhaseBlocked, FixturePhaseConstructionRejected, FixturePhaseError, FixturePhaseNow,
+    FixturePhasePlanOwner, FixturePhaseProfile, FixturePhaseProposal, FixturePhaseProvenance,
+    FixturePhaseReferenceAdmission, FixturePhaseResidualPermission, FixturePhaseRetirement,
+    FixturePhaseRetirementReason, FixturePhaseSettlement,
 };
 
 use std::{fmt, num::NonZeroU64};
@@ -757,5 +760,44 @@ impl FixtureReferenceInputState<'_> {
             replacement,
             effect,
         })
+    }
+}
+
+impl FixtureReferenceInputState<'_> {
+    /// Admit a matched base receipt through the existing cursor exactly once.
+    /// The following affine coordinate change shares that consumed operation;
+    /// numerical failure cannot restore its ordinal or intermediate target.
+    /// # Errors
+    /// Reject the complete frame chain before existing current-state admission.
+    fn receive_baseline_settlement(
+        &mut self,
+        cursor: &mut FixtureRateSettlementCursor,
+        predecessor: &FixtureAffineChart,
+        interval: FixtureSettledRateInterval,
+        final_frames: FixtureChartFrames,
+    ) -> Result<FixtureRateSettlementCompletion, FixtureRateDeliveryError> {
+        if final_frames.source_frame() != interval.frames.target_frame()
+            || final_frames.source_generation() != interval.frames.target_generation()
+        {
+            return Err(FixtureRateDeliveryError::Chart {
+                source: FixtureChartError::CompositionMappingMismatch,
+            });
+        }
+        let first = predecessor.frames();
+        FixtureChartFrames::new(
+            first.source_frame(),
+            first.source_generation(),
+            final_frames.target_frame(),
+            final_frames.target_generation(),
+        )
+        .map_err(|source| FixtureRateDeliveryError::Chart { source })?;
+        let completion = self.receive_rate_settlement(
+            cursor,
+            predecessor,
+            FixtureRateSettlement::Completed(interval),
+        )?;
+        cursor.target_frame = final_frames.target_frame();
+        cursor.target_generation = final_frames.target_generation();
+        Ok(completion)
     }
 }

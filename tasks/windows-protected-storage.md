@@ -1,7 +1,7 @@
 # Protected optional storage: agent task and evidence record
 
 **Date:** 3 November 2026 (Asia/Tbilisi).  
-**Status:** Documentation, plan and task integration reviewed and recorded; source-only follow-up ready, implementation and native qualification unexecuted.  
+**Status:** Documentation integration and the bounded ST-W01 documentary card are reviewed; the engineering construction freeze, implementation and native qualification remain open.
 **Inspected project baseline:** [`6b28711f5510e3550039d5fcf8bbcf3ccba791a5`](https://github.com/DavidOsipov/NevroTick/tree/6b28711f5510e3550039d5fcf8bbcf3ccba791a5), tree `fbc8b31f827d55f2c2e85426268979b0d1f827eb`. This task was prepared from an API-derived partial snapshot; it establishes no local checkout or dirty/staged state.  
 **Owner request:** integrate the completed deeper GitHub research into repository documentation, the plan and tasks for the development agent.
 
@@ -110,8 +110,13 @@ created; source-only preparation and the storage pause retain their scope.
 ### ST-W01 Prepare one construction and failure contract
 
 **Owner:** storage lead, with bounded platform/security review.  
-**Readiness:** ready for the next source/documentation assignment; not executed by this integration.  
+**Readiness:** the documentary assignment is complete at the [10 November card](#7-st-w01-documentary-card--10-november-2026); its engineering row is not execution-ready.
 **Scope:** one proposed construction/provider/build/account/profile row, one operation-outcome table and one ownership/reconciliation map. Reuse the inventories; do not restart a general tool survey.
+
+**10 November continuation:** the [bounded ST-W01 card](#7-st-w01-documentary-card--10-november-2026)
+below supplies this assignment's proposed row, outcome/ownership map and precise
+engineering blockers. Its review status controls this documentary child; the
+construction freeze, implementation and storage experiments remain separate.
 
 Read the plan's [construction](../docs/plans/windows-protected-storage.md#4-candidate-construction-commit-and-restart),
 [platform admission](../docs/plans/windows-protected-storage.md#5-platform-admission-failure-classification-and-privacy)
@@ -624,3 +629,216 @@ Preserve the current complete-MSIX direction, separate mandatory-state owner,
 VBS -> policy-authorised fresh TPM -> NoPersistentCache optional-state policy,
 Core priority and Windows/fuzz/storage holds. This entry refines ST-W01/ST-W04;
 it starts no new storage workstream or experiment.
+
+## 7. ST-W01 documentary card — 10 November 2026
+
+**Documentary card complete; engineering row not execution-ready.** This is the source/documentation child,
+not a source-qualified executable construction or storage implementation. Root
+owns integration; independent retained-context workers reviewed the CNG and
+outcome sources separately. Local baseline is `a4c5c3a`, with existing staging
+preserved. Current S2.2 native work is held for owner resume/headroom; completing
+this already assigned card changes neither that priority nor the storage pause.
+No dependencies, keys, probes, compiler jobs or Windows commands are introduced.
+The existing plan §9 governs engineering details versus owner decisions.
+
+### 7.1 One proposed row and its exact limits
+
+`C1` is a task-local candidate label, not another acceptance identity. Purpose:
+one optional NTS-association snapshot. Compiled public leap history/rules remain
+release-authenticated domain data; an optional record may reference their
+revision/digest but cannot replace them. Broker continuity, clock reservations,
+ownership journals and privacy acknowledgments stay with their mandatory owners.
+Cache/key loss changes neither leap authority nor charged correction allowances.
+DNS learning and deferred authenticated proxy credentials are outside C1.
+
+| Field | C1 proposed engineering row / dependent gate |
+| --- | --- |
+| Protection/provider | Two separate generated, nonexportable private roots in Microsoft Software KSP, each requiring VBS. No PREFER, per-boot key, overwrite, legacy-store or weaker-root fallback. This tests a VBS-only construction; it selects no shipped policy pair or default. |
+| Wrapping | RSA-3072; OAEP with explicit SHA-256 and fixed label bytes `ASCII("NevroTick.NtsOptionalCache.DEK.C1")`, without NUL. Private usage is decryption-only; export-policy DWORD zero. Wrap exactly one fresh 32-byte DEK; admit exactly 384 ciphertext bytes. A decrypt sizing query may require up to384 bytes, but actual successful recovered DEK must be exactly32. |
+| Signing | Separate ECDSA P-256 signing-only root, export-policy DWORD zero. Sign SHA-256 of the frozen domain-separated unsigned envelope; input hash32 bytes, signature64 bytes in fixed `r` followed by `s`, not DER. Signature randomness is permitted; do not require deterministic signature bytes. |
+| Payload protection | One-shot AES-256-GCM, fresh DEK32 and nonce12 per independent preparation, tag16, explicit GCM mode and admitted AAD. One encryption use per DEK; interrupted/uncertain saves do not authorize regeneration or forbidden reuse. No plaintext is published before tag and semantic admission. |
+| Target/build | Proposed Windows11 26H2 x64, selected v3/MSVC product profile. Exact OS/SDK/compiler/provider/build and required effective mitigations are **unfrozen**. Current Windows26100 laboratory receipts qualify none of this row. Server2025 is a separate required platform row, not silently covered. |
+| Account/lifecycle | Intended own-process LocalService engine plus restricted service SID under architecture §4.1. Final SID, user/machine key scope, creation-time owner/DACL and MSIX provisioning are **unfrozen**. No broad LocalService grant, engine virtual-account substitution, broker identity or extra privilege is selected. |
+| Actual-key evidence | REQUIRE requests, successful reopen and provider names are insufficient. Both actual roots need bound origin/public identity, export/use/access policy, cross-boot and unattended evidence under the final account/profile. Until then protection is Unknown and protected restore is not admitted. |
+
+The primitive APIs are source-supported candidates, not a tested combination.
+Use explicit [OAEP parameters](https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/ns-bcrypt-bcrypt_oaep_padding_info)
+and separate [encrypt](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptencrypt)/
+[decrypt](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptdecrypt) byte counts.
+[ECDSA's prehash contract](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptsignhash)
+and the [pinned .NET CNG consumer](https://github.com/dotnet/runtime/blob/e43d4b9672de5d11a31da7ef40d78564c1e9d166/src/libraries/Common/src/System/Security/Cryptography/ECDsaCng.SignVerify.cs)
+support the proposed raw signature shape. Query GCM tag support and initialize
+the [authenticated-mode structure](https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/ns-bcrypt-bcrypt_authenticated_cipher_mode_info)
+with explicit nonce/AAD/tag; no block padding, streaming release or implicit KDF.
+Fresh material comes from the admitted OS RNG; RNG failure blocks preparation.
+
+**Authenticated bytes — precise remaining construction blocker.** Let `H` be
+the future canonical header containing domain/version/suite, installation/store/
+purpose, both root identities, root/data/privacy/policy epochs, snapshot sequence,
+wrapped DEK, nonce and bounded payload length. AEAD authenticates exact `H` as
+AAD. The unsigned envelope contains exactly `H`, ciphertext and tag; its signature
+also binds the sequence and complete ciphertext/tag, using a code-owned domain
+separator. The committed-content digest is SHA-256 of the **entire final encoded
+envelope including signature**, never a different decoded projection.
+Verification identity comes from the independently admitted catalogue/provisioning
+chain, not an envelope-supplied public key. Otherwise an attacker can choose a
+DEK and fabricate a self-consistent public-key-wrapped record.
+
+Canonical encoding/version/framing, signature-domain bytes, public-key identity
+encoding and exact envelope/header/payload/queue limits are **not selected by
+this card**. Storage/contract/security owners must freeze them before a codec,
+crypto fixture or production consumer is implemented. Thus `H` and the complete
+expected digest cannot yet be instantiated; this card is not that byte freeze.
+Independent published AEAD vectors plus separately implemented wrapping/signature
+fixtures must distinguish wrong hash, label, AAD, key, signature encoding and tag
+beside valid neighbors. Roundtrips alone cannot close ST-T05/18. Persisted records
+have no implemented old reader here; future version/rollback/migration admission
+must be frozen before writing, rather than inferred from this proposal.
+
+### 7.2 Binding evidence and per-call admission
+
+The current lock contains `windows 0.62.2`, checksum
+`527fadee13e0c05939a6a05d5bd6eec6cd2e3dbd648b9f8e447c6518133d8580`.
+Source at release-associated commit `32c3144490c016fe496a0aed769bce60987a2e9d`
+has Cryptography blob `76cecd33ec0463899d92eb31bfe319ecc17a95f5` and Foundation
+blob `9a6014bf3852efe3939efbd57d7f712ae12faaac`.
+Root independently fetched those exact blobs and the Microsoft header blob
+`6844be98409e111e45eb28ee78c44b85373eb7f1` through the GitHub connector.
+
+**Correction to the apparent missing-name blocker:** the
+[existing projection](https://github.com/microsoft/windows-rs/blob/32c3144490c016fe496a0aed769bce60987a2e9d/crates/libs/windows/src/Windows/Win32/Security/Cryptography/mod.rs#L13153)
+already exposes `NCRYPT_USE_VIRTUAL_ISOLATION_FLAG` and `NCRYPT_FLAGS(pub u32)`.
+The [pinned header blob](https://api.github.com/repos/microsoft/win32metadata/git/blobs/6844be98409e111e45eb28ee78c44b85373eb7f1)
+defines REQUIRE VBS as an alias of that existing constant. An explicit
+same-projection typed alias is therefore a viable engineering option; missing
+newer names alone do **not** require a dependency upgrade or copied numeric
+constant. C1 does not use PREFER. SDK/package parity and target compilation still
+need qualification. New upstream `Win32/ncrypt` has different module/signature
+shapes and is not an admitted replacement.
+
+The inspected Foundation projection lacks named VBS-unavailable status coverage.
+Preserve raw HRESULTs and fail closed; exact unsupported/unavailable/denied/UI
+classification remains a platform-owner gate, not permission to label unknown
+errors as fallback. [Provider implementation flags](https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers#ncrypt_impl_type_property)
+are expressly provider-wide. Header `Virtual Iso` or provider-root public blobs
+do not establish a documented actual-key proof. The actual-key evidence method
+needs its exact qualification protocol. The existing controlled-origin/public-
+identity plus cross-boot, unattended and refused-neighbor route remains a valid
+method to specify; no unidentified per-key property is made mandatory. Attestation
+is still a conditional reserve, not a newly adopted online dependency or extra
+root. Neither method has produced actual-key evidence for C1.
+
+| Call family / future adapter owner | Mandatory admission and refusal contract |
+| --- | --- |
+| Open provider, create distinct roots | Fixed provider/algorithm/key namespace from admitted lifecycle state. New roots only for explicit first provisioning/rotation, never missing-key recovery by enumeration. REQUIRE VBS, no overwrite and supported descriptor/finalization ordering; validate actual key state before use. `NCryptCreatePersistedKey` does not document SILENT in its flag table: do not add unsupported flags or infer silence from that omission. |
+| Set/get properties, finalize, reopen | Use documented per-call silence flags where supported; do not disable key validation at finalize. Reopen has no REQUIRE flag, so retain controlled origin/identity and actual-key evidence. DWORD properties require exact4 bytes. Variable data needs an engineering-frozen finite cap before allocation, valid version/layout and checked actual second-call length; absence/unsupported/denied remain distinct. A UI-requiring operation fails without retrying less strictly. |
+| Encrypt/decrypt/sign/verify | Explicit OAEP hash/label and private-use SILENT; ECDSA uses NULL padding plus SILENT for signing. Check size-query and actual lengths independently; unexpected lengths, authentication failures and parameter refusal publish no usable state. Verification accepts only the independently anchored identity. |
+| Retire/delete/free | Only attributable keys and files, current operation/generation guards, real completion and checked cleanup outcome. Retrying a possibly completed delete cannot claim a fresh root or release an occupied recovery slot. |
+
+Independent controls must distinguish an omitted/changed flag or parameter beside
+a valid supported neighbor. Removing REQUIRE or SILENT need not make an ordinary
+healthy API call fail. Use an appropriate VBS-unavailable/UI-requiring environment
+or an independent actual-boundary trace/contract oracle that detects omission;
+do not require an incidental native refusal or credit an unchanged success.
+Source spelling, provider-wide flags and successful compilation remain weaker
+than actual-key, no-login, second-service-denial and effective-profile evidence
+(ST-T01/05/12/13/16/18).
+
+### 7.3 Outcomes, ownership and uncertain publication
+
+The future single manager retains `(operation ID, expected catalogue generation,
+root/data/privacy/policy identities, exact prepared-envelope digest)` through
+completion and recovery. These are contract roles, not newly existing Rust types.
+One active, one prepared and at most one attributable retired root set, with
+equivalent snapshot slots, remain the inventory bound. Failed cleanup occupies
+its slot. Current committed reads may remain usable under their guards; a new
+transition must first reserve all capacity it could leave behind.
+
+| Operation outcome | Owner/transaction consequence | Forbidden inference |
+| --- | --- | --- |
+| Definitely not applied | Established before effects or by validated rollback. Owner is Ready only after its invariant is restored; a poisoned transaction cannot commit. | Any returned error means rollback. |
+| Committed with attributable receipt | Consume the transaction; only the exact current committed generation is eligible. Preserve cleanup debt separately and its occupied capacity. | Cleanup failure revives old state, refunds authority or permits another retired set. |
+| Reconciliation required | Partial/possibly committed/unknown-completion work retains the same operation, objects, handles, buffers and charges; affected owner remains RecoveryRequired. | Retry a fresh operation, regenerate ciphertext/signature, reuse a generation or recreate missing roots. |
+
+Ready, poisoned, RecoveryRequired and Closed belong to the **independent owner/
+transaction-usability axis**, not the operation-outcome enumeration. A poisoned
+transaction does not automatically poison every unaffected store operation.
+Closed grants no further operational use; pending native completion/recovery
+still has a custodian. Drop, reopen or logging alone supplies no Ready transition.
+
+| Boundary / enforcing owner | Required input, effect and output guarantee |
+| --- | --- |
+| Caller → lifecycle/admission | Check current policy/witness, exact operation/generation, fixed namespace, finite budgets and allowed purpose before effects. Initialized missing/corrupt/conflicting state is RecoveryRequired, never inferred first installation. |
+| Directory/key admission → preparation | Validate actual opened object/type/identity/owner/DACL/volume before destructive work. Prevent traversal/reparse/hard-link/substitution and shared-LocalService owner-mediated access. Hold exact directory/key authority through use; no arbitrary path/provider from an envelope. Prepare fresh immutable authenticated bytes without publishing eligibility. |
+| Preparation → native worker | Retain operation, key/file handles, sensitive buffers and resource charge until actual completion. Cancellation/timeout revokes publication, not completion custody; never equate an aborted waiter with finished native work. |
+| Native result → catalogue owner | Track issued writes, live bytes, successful/failed durability barriers, durable references and acknowledgments separately. After **durably preparing the exact content/digest**, check the current serialized policy/privacy/root/generation lease **immediately before issuing catalogue effects**. Retain that operation through actual completion, then validate post-effect file identity, owner/DACL and exact content/digest before any receipt/eligibility claim. Windows supplies no atomic key/file/catalogue transaction. |
+| Commit → receipt/retirement | Only the declared durable publication yields an attributable receipt/active mode. Revoke old eligibility, retain bounded cleanup obligations and acknowledge the actual transaction. Recovery that discovers a committed operation returns that operation's result without executing it again. |
+| Restore → NTS/privacy owner | Bounded framing/allowlist, independent envelope authentication, protected DEK opening, AEAD, mandatory typed semantic admission and current context precede publication. Stored ages or a valid signature do not create current NTS eligibility. Mandatory broker continuity and public leap authority are unchanged. |
+
+The proposed file adapter uses one attributable backup slot when replacing a
+catalogue, while immutable prepared snapshot bytes remain separately bound.
+Exact namespace, share modes, owner descriptor and durability/recovery sequence
+are still platform gates. No-backup behavior below is an adversarial neighbor,
+not an alternative default. Hold directory authority without promising universal
+handle-relative semantics; path-reconstructing calls and installer handle release
+need their actual native tests.
+
+| `ReplaceFileW` result | With admitted backup | Without backup |
+| --- | --- | --- |
+|1175| Both input names remain; reconcile backup/object state. | Both input names remain. |
+|1176| Both input names remain. | Old target is gone; staged replacement retains its name. |
+|1177| Staged file retains its name after inheriting old streams/attributes; old target uses the backup name. | Same staging consequence; old target survives under an unspecified different name. |
+|Other error| Both input names remain, no backup exists; metadata inheritance may be incomplete. | Same. |
+
+These [documented namespace effects](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-replacefilew)
+are **not durable-commit receipts**. Reconcile exact bytes/digest, native file ID,
+owner/DACL, attributes and streams before cleanup/retry; successful replacement
+uses the staged file's ID and all three files need one volume. Do not select
+unsupported WRITE_THROUGH or ignore-ACL/merge flags to pretend durability or
+permission continuity. Never delete staging merely because the call failed.
+
+### 7.4 Finite independent traces and engineering exit
+
+| Planned trace | Independent expected result / forbidden effect | Existing mapping |
+| --- | --- | --- |
+| Ordinary save | Independently fixed `E/hash`, completed barriers and catalogue `g+1/hash` yield one receipt; restart accepts exactly `E`, rejects another validly signed envelope. | ST-T05/10/16/18 |
+| Partial mutation | Poisoned transaction cannot acknowledge/commit. Preserve attributable objects; only validated rollback or same-operation reconciliation restores usability. | ST-T05/10/16/17/18 |
+| Possible commit then error | Reconcile the same operation; discover either declared noncommit or exact durable `g+1/hash`. Return an already committed receipt without repeating publication/rotation. | ST-T06/07/10/16/17/18 |
+| Expected root missing/wrong | RecoveryRequired; no fresh-install inference, enumeration-based replacement, root recreation or downgrade. Ordinary network/mandatory-state behavior follows its separate current policy. | ST-T05/06/07/17 |
+| Zero I/O progress | Zero write becomes WriteZero; premature read end becomes UnexpectedEof. No spin, acknowledgment or implicit capacity refund; classify already issued effects separately. | ST-T10/16/18 |
+| Cancellation/late completion | Before catalogue effects, a revoked lease refuses issuance. After an effect is issued, retain/reconcile the same possibly durable operation and occupied slot while suppressing stale eligibility. Wipe terminal working buffers without deleting required recovery evidence. Cancellation cannot prove noncommit or undo a historical committed receipt. | ST-T10/16/17/18 |
+| Recovery failure | Keep RecoveryRequired, exact identities/evidence and occupied slot. Logging/destruction supplies no Ready transition or destructive reset. | ST-T05/06/07/10/16/17 |
+| Second recovery interruption | Stop the independent model at the crash cut; later synthetic success adds no obligation. Next recovery uses the same operation and surviving evidence; no ID/generation reuse. | ST-T06/07/10/16/17/18 |
+
+No traces, crypto fixtures, property decoders, actual-key checks or durability
+models ran. Their future source-backed monitors must distinguish issued/live/
+durable/acknowledged state and detect the first invalid event. Required line,
+mutation, security, native and package gates are unchanged; formal work is post-V1.
+
+| Precise open engineering field / owner | Evidence and dependent no-go |
+| --- | --- |
+| Canonical encoding/domain/identity/budgets — storage/contracts/security | Freeze exact `H`, signed bytes, complete-envelope digest and independent fixtures plus strict version/rollback behavior. No codec/restore consumer or crypto composition before this. |
+| Binding/SDK/status parity — platform/dependency | Reconcile the existing typed REQUIRE alias with the selected SDK/package; freeze relevant features/status mapping and run admitted target controls later. No mixed-generation constants or unsupported downgrade classification. |
+| Actual-key origin/mode/reopen — crypto/platform | Qualify both actual roots under final account/build/profile, including VBS-unavailable and no-login neighbors. Unsupported/unknown stays unqualified; source aliases cannot close it. |
+| SID/key scope/owner/DACL/provisioning — W11-W05/W11-W10 | Supported MSIX creation-time isolation and second-service denial, including owner-mediated rights and finalization ordering. No product root provisioning before this. |
+| Durable catalogue protocol/backup recovery — storage/platform/model QA | Freeze exact barriers/filesystem assumptions and all replacement/recovery cuts, then admit an ST-W02 implementation slice. No durable-receipt or reset claim from API Booleans. |
+
+This card's documentary exit is review of the one proposed row, all eight traces
+and their owners/blockers. The **engineering construction freeze remains open**;
+ST-W02 is not automatically admitted and ST-W04/native storage remains paused.
+Product defaults/strict policy, stronger in-use goals, unsupported alternatives
+or trust-boundary changes use NV-DEC; this card grants none. Stop at this card.
+
+**Independent review receipt:** a retained-context reviewer accepted the card,
+architecture alias correction and storage-plan routing after four source-contract
+repairs and restoration of explicit durable-content-before-catalogue ordering.
+The second reviewer accepted the outcome/trace portion. Reviewed task SHA256,
+before this status/receipt addendum, was
+`1a8dee18521f9d7dfb7c4e38b2ecd407f776f808e01dab9ae1d7402cdeedb567`;
+architecture/storage-plan SHA256 were
+`eb462d0c33a975c762f2287c180eeace7439595fb129ebc8fce6263ba9c0d184` and
+`3546ec21552397b5289ef6c4c0b07d6a9fa75c75cdaf496e3ae08ad01a6ad69f`.
+These are documentary/source-consistency results only. No ST-T trace, primitive,
+actual key, owner/DACL, persistence, durability or native gate ran. ST-W02 remains
+behind its relevant frozen contracts and admitted implementation slice; the
+storage experiment pause and every other execution hold remain unchanged.

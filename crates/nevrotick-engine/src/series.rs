@@ -30,6 +30,9 @@ use super::{
 };
 use ntp_wire::FrameLimits;
 
+#[path = "address_round.rs"]
+pub(super) mod address_round;
+
 /// Fixed planned attempts, never a target count of successful measurements.
 const ATTEMPTS: usize = 3;
 

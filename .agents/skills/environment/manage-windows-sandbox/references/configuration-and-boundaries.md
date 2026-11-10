@@ -191,7 +191,10 @@ with Windows 11 **24H2**, the documented `AllowMappedFolders` and
 `AllowWriteToMappedFolders` policies can also restrict sharing. [C3, C4]
 
 Record policy interference and the effective result; do not edit policy or the
-registry to force a requested profile. The current CSP description of
+registry to force a requested profile. The separately authorized
+[guest-only SAC lab workaround](troubleshooting.md#smart-app-control-inside-the-guest)
+is a specific exception, with configured/effective/retest evidence and no host
+change; it does not qualify the SAC-enabled product profile. The current CSP description of
 `AllowWriteToMappedFolders` repeats an apparently inconsistent registry mapping
 for `AllowMappedFolders`. Use that page for supported policy semantics, not as
 an unverified registry recipe. Local policy state and observed behavior remain

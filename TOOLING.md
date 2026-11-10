@@ -1022,6 +1022,40 @@ no binary and runs no Windows payload. The
 owns source checks, actual execution results and remaining builder/native work.
 Source/offline passes do not qualify the acquisition ceiling or native Windows.
 
+The [10 November native KE checkpoint](tasks/s0.1-crypto-feasibility.md#native-ke-refusal-checkpoint--10-november-2026)
+retains a successful release/v3 Cargo link inside an otherwise incomplete build
+run (unchanged five-GiB pre-command floor), followed by separately frozen static
+readback of its exact exported EXE/PDB without compilation. Five subsequent
+guest refusal cases pass with 18 raw files / 3,975 bytes; no healthy trust/KE/
+exporter, native cleanup, complete mitigation or release-OS result follows.
+The two transitive tooling inputs omitted from older CPU/AES freezes are now
+required before the KE build; those older custody limits and receipts remain.
+For the reviewed guest scripts, use only the explicit process-scoped
+`RemoteSigned` procedure in the [Sandbox operations reference](.agents/skills/environment/manage-windows-sandbox/references/operations.md#guest-powershell-script-policy).
+Preserve Group Policy refusals and the prepared guest; no host or persistent
+execution-policy change or `Bypass` is selected.
+
+The guest-only [refusal peer](tools/windows-sandbox/nts-ke-malformed-peer.ps1)
+and [actual-function controls](tools/windows-sandbox/test-nts-ke-peer-contract.ps1)
+now contain the later v2 partial-launch custody repair. The v1 refusal cases and
+three controls passed only on their historical source pins; current v2 script
+parsing and all seven controls remain unexecuted, as recorded in the
+[source-only custody checkpoint](tasks/s0.1-crypto-feasibility.md#partial-process-launch-custody--source-only-repair-10-november-2026).
+The new [physical-store helper](tools/windows-sandbox/nts-ke-store.cs),
+its [read-only preparation controls](tools/windows-sandbox/test-nts-ke-store-contract.ps1)
+and the separate `nevrotick-nts-ke-peer` target are uncompiled source under the
+[healthy fixture checkpoint](tasks/s0.1-crypto-feasibility.md#source-preparation-and-resource-stop--10-november-2026).
+Insufficient host memory stopped preparation before guest dispatch; resume only
+after David continues with adequate headroom and the exact source/tool/graph
+preflight. No temporary root/CRL has been installed.
+The authored [healthy controller](tools/windows-sandbox/nts-ke-healthy-peer.ps1)
+owns four fixed cases and explicit unresolved-child recovery; source review is
+complete, but PowerShell parsing and execution are not. The pure
+[HOST memory parser](tools/windows-sandbox/host_memory.py) has 18 passing focused
+controls and no query/admission side effects. Bind it into the next preflight's
+input closure; caller provenance, actual exit, bounded decode, currentness and
+the selected floor still apply. Neither source checkpoint authorizes resume.
+
 Native Windows Rust can be prepared without modifying persistent PATH:
 
 ```powershell
@@ -1428,6 +1462,36 @@ from frozen native inputs; its original failed invocation remains incomplete.
 The task owns exact results, generation limits and publication metadata joins.
 Neither a complete controller nor Windows/native/product qualification follows.
 
+**Address-round selected host checkpoint, 10 November 2026:** the same engine
+verifier adds `--profile address_round --subject all`, with `--lane coverage`,
+`--lane enumerate` or `--lane mutation`, full tool admission, the explicit admitted
+vendor and a fresh external output. `policy/address-round-analysis.json` binds
+the historical selected ordinary receipt, exact host test identities and protected inputs;
+mutation execution requires both reviewed complete descriptor inventories. The
+[existing task's selected exit](tasks/engine-transport-pilot.md#selected-address-round-host-gates--10-november-2026)
+records the historical v9 exit. The
+[expanded direct-handler exit](tasks/engine-transport-pilot.md#direct-handler-selected-host-gates--10-november-2026)
+now binds ordinary-v11: 178 ordinary/178 optimized tests, 69 doctests, 373/393 and
+51/51 executable lines, and all 67 variants: 33 semantic catches, 34
+source/compiler-unviable, no survivor, timeout or exclusion. Coverage-v5 and
+mutation-v4 pass separately. The exact R47 cutoff section earns zero credit and
+requires its separate actual-writable semantic cause; native/resource/cleanup
+failures remain fatal. The original v3 campaigns remain incomplete. All 147
+Python controls pass; no whole-engine or native pass follows. The role keeps one
+worker/test thread, 5/4-GiB free-space
+reserves and a 768-MiB aggregate owned-output bound checked before/after commands.
+These samples are not a continuous quota or peak measurement. Constructor/Garde
+and lifecycle generation limits, actual handler alternatives and remaining
+native/product evidence stay explicit in that task.
+
+**Historical admission is closed after the Core continuation:** the retained
+address-round policy deliberately keeps its exact earlier candidate and helper
+bindings. Current shared analysis/manifest and Core inputs have changed, so its
+admission rejects this later tree before execution. The recorded two-owner
+results remain historical; the commands above require a newly reviewed complete
+binding before another run. Do not repin old receipts or interpret unchanged
+Engine source as a new whole-candidate pass.
+
 Its additive `verify-core-analysis.py --subject frequency_prior` role uses
 `policy/frequency-prior-analysis.json` and `--tool-admission-profile stable-core`.
 The separate `baseline`, `enumerate`, `contracts`, `coverage` and `mutation`
@@ -1442,6 +1506,20 @@ cohort replaces the union. Per-file 90% coverage/95% mutation, ten outer/one inn
 mutation workers and the five-GiB floor remain. External contracts select two
 legal consumers and eighteen intended compiler refusals, including the unchanged
 finite-phase set. These configured entry points supply no unexecuted pass.
+
+The current [baseline-feedback checkpoint](tasks/s1.3-source-selection-readiness.md#frequency-feedback-source-integration--10-november-2026)
+uses the additive `--subject baseline_feedback` selection in that same
+verifier with `policy/baseline-feedback-analysis.json`. It retains the four owners
+above and adds `chart`; the historical four-owner role and receipts stay separate.
+Its actual ordinary roster is 545 tests plus 103 doctests; selected coverage uses
+323 library/frequency/phase/rate/chart tests. Freeze the complete current helper
+closure before admission, run `baseline` then complete `enumerate`, and bind all
+five actual inventories before contracts/coverage and whole-owner mutation.
+The external registry adds five intended checked-map/completion/borrow refusals
+to the existing controls, retaining two legal consumers and 23 negative cases.
+Keep the existing per-file gates, ten mutation workers and finite resource bounds;
+five complete `--cohort-receipt` paths are required for its final `cohort-union`.
+Preparation and ordinary GREEN establish no unexecuted selected-gate pass.
 
 The pure fixture core uses [verify-core-analysis.py](scripts/verify-core-analysis.py)
 and [time-core-analysis.json](policy/time-core-analysis.json). Its recorded
@@ -1978,3 +2056,96 @@ This lane qualifies fixture forwarding, oracle/feedback sensitivity and finite
 search observations. It supplies no NTS, sanitizer, native Windows, performance
 budget or release result. Existing cargo-fuzz, Miri, Loom, Kani and native
 verification workflows retain their separate purposes.
+
+
+### Baseline-feedback final qualification
+
+**Completed 11 November 2026 — selected GNU-host fixture checkpoint only.**
+The [frozen Core task input](tasks/s1.3-source-selection-readiness.md#baseline-feedback-qualification-completion-routing--10-november-2026)
+owns REQ-8/10/11/14/15, CHECK-7/8/10/11/14/25 and AC-19. Actual achieved-baseline
+feedback is integrated with the existing chart, frequency, settlement and exclusive
+phase owners. The selected contracts, executable-line coverage, five whole-owner
+mutation campaigns and exact mutation union pass on one frozen admission.
+
+Product identity: `965ff48ba5da91e58aac12d45469601548ddd8720fcf1257ba156cdf8ac1ce36`
+(443 inputs). Final policy:
+`0b1c8e17d66b877fcabf7d199226afd5d053ebec8ad9ea2c2921cf83a265518b`.
+All eight final receipts join the same 473 captured source identities, 59 protected
+pins and admitted tools. Stable Rust 1.99.1 and ten isolated mutation workers retain
+the existing 90% executable-line/95% adjusted mutation gates and 90-second build,
+60-second test and 1,200-second campaign budgets.
+
+Ordinary-v11 passes 557 ordinary/557 optimized tests, 103 doctests and all eight
+selected lanes. Its receipt is
+`9b36d6f18c6639e5843c7dbde84b3f6c8d8052b4abee4e96a594eb67effc8873`;
+reuse is limited to unchanged product/configuration/tool identities, not its older
+helper admission. Every final mutation campaign independently executes the exact
+660-case baseline. Fresh coverage executes its exact 335-case roster. Fresh external
+contracts verify 23 intended compile-time refusals and two actual legal executions;
+the issue/settle legal helper remains compile-only, while ordinary integration tests
+supply actual trajectories.
+
+| Owner | Covered executable lines | Generated | Caught | Compiler-unviable | Equivalent misses | Adjusted score |
+| --- | --- | --- | --- | --- | --- | --- |
+| State | 597/613 (97.39%) | 194 | 95 | 93 | 6 | 100% |
+| Numeric | 1175/1263 (93.03%) | 277 | 201 | 74 | 2 | 100% |
+| Phase | 1604/1709 (93.86%) | 484 | 313 | 170 | 1 | 100% |
+| Rate delivery | 330/332 (99.40%) | 50 | 23 | 27 | 0 | 100% |
+| Chart | 594/618 (96.12%) | 140 | 69 | 71 | 0 | 100% |
+
+All 1,145 variants reconcile as 701 caught, 435 compiler-unviable and nine actual
+reviewed equivalent misses. There are zero timeouts or unresolved survivors.
+Equivalents receive **zero kill credit**. State's raw 95/101 score (94.05940594%) and
+native exit 2 remain recorded; only its six exact independently reviewed source
+equivalences yield the adjusted 95/95 score. Numeric and phase likewise retain
+native exit 2 and their two/one equivalent misses. The
+[source arguments](tasks/phase-plan-analysis-equivalences.md) are bounded human
+semantic reviews, not machine-checked product proofs.
+
+Independent raw review joins every descriptor, diff, actual compiler/assertion
+cause, complete baseline and retained configuration/tool identity. Exactly the
+34 formerly missed non-equivalent variants become catches: two state, eight
+numeric and 24 phase. The final reader passes 246 controls. The faithful intended
+candidate additionally passes 512 Python tests, 66-skill validation and all three
+workflow checks with healthy/rejection controls. Final publication binds the
+complete materialized Git tree and its redacted history/source scan, including
+these narrative updates.
+
+The generated inventory excludes 18 `new` constructors and Garde derive/callback
+wiring. Named direct-validation, geometry, exact-ratio, lifecycle, public-constructor
+and external-contract alternatives execute in their recorded scopes; see the
+[captured generation mapping](tasks/s1.3-source-selection-readiness.md#frequency-feedback-source-integration--10-november-2026).
+Generated scores establish sensitivity only to generated faults. Branch/MCDC,
+all-function and arbitrary-wiring-fault coverage are not established.
+
+Receipts are uncompressed `verification.json` files under
+`/home/david_osipov/.local/share/nevrotick/phase-plan-20261108-v1/<name>/`:
+
+| Receipt directory | SHA-256 |
+| --- | --- |
+| `base-feedback-contracts-v4` | `a585f1f789f8d0e4440c8e12ed745f2d826aace8c7ffa1dd89549fbf0e7f0e7e` |
+| `base-feedback-coverage-v4` | `df7606681b7d5808fbadade205e384e275a8e2e57aeefe4dc1eeebc9ae98be66` |
+| `base-feedback-mutation-state-v2` | `c57b377c91afe88b3359293424fe17056abd28d1ffbcfd5d3ae425721cd15c66` |
+| `base-feedback-mutation-numeric-v2` | `607b96cfe13b4e9822015b6ce30119972050ffe6e355b243c279958634941944` |
+| `base-feedback-mutation-phase-v3` | `6506a93638179054f17579bcb596461da8294e0161024b1be8118675ec4a50ee` |
+| `base-feedback-mutation-rate-v5` | `dd979d5786b5e43d31b4fe84782014cf984ec237edbab912e370777fa81b5466` |
+| `base-feedback-mutation-chart-v3` | `a7c50de2f4bad5123a97ca47feeca48d64961a004f2bcc2176fc2530e1e2fbea` |
+| `base-feedback-union-v1` | `586d6eec10f8a015d5078b5d6ffd863a007e83342c2d59200b1d6c155cb1f698` |
+
+Original incomplete diagnostic receipts remain unchanged; repaired historical
+reads were never relabelled as fresh passes. Superseded v3 contract/coverage build
+targets were deleted after their replacements passed, preserving source, raw
+receipts and current mutation-union artifacts. No evidence archive was created.
+
+This closes the selected Linux fixture checkpoint, not S1.4/P1, production sample
+eligibility, an integrated production controller, native Windows/TLS/trust/service/
+clock authority, package or release qualification. The Engine address-round source
+retains its separately recorded unchanged-source evidence; its older admission
+remains closed against the later Core/helper tree.
+
+Next prepare the [existing S2.2 association/request contract](tasks/engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request):
+currentness issuer, exact provider/packet-AEAD/runtime graph, normal validation,
+finite budgets/lifetimes and cookie dispositions. Pending cookie/privacy choices
+need their concrete NV-DEC-001 disposition before dependent implementation. Native,
+fuzz and storage holds remain; UI/storage/optional tooling stay parked and formal
+execution remains post-V1.

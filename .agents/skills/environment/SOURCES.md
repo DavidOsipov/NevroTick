@@ -84,3 +84,23 @@ The [existing Windows task](../../../tasks/windows11-integration.md#416-windows-
 owns the documentation delivery and checks. Source review does not install or
 qualify Sandbox, adopt the proposed 3072 MB profile, lift execution holds or
 establish native application behavior.
+
+The 10 November SAC troubleshooting amendment checks Microsoft's
+[Sandbox maintainer workaround](https://github.com/microsoft/Windows-Sandbox/issues/85#issuecomment-3025447682),
+its [reported counterexample](https://github.com/microsoft/Windows-Sandbox/issues/85#issuecomment-3025799619),
+[SAC test-mode documentation](https://learn.microsoft.com/en-us/windows/apps/develop/smart-app-control/test-your-app-with-smart-app-control),
+[component-block support explanation](https://support.microsoft.com/en-us/windows/security/threat-malware-protection/smart-app-control-has-blocked-part-of-this-app),
+[Sandbox restart/disposal semantics](https://learn.microsoft.com/en-us/windows/security/application-security/application-isolation/windows-sandbox/)
+and [Code Integrity event meanings](https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/operations/event-id-explanations).
+The procedure stays guest-only and distinguishes configured Off, effective
+execution, owner-reported success and SAC-enabled product qualification. It
+imports no general recovery/BitLocker/host-security procedure. The current case
+belongs to W11 §4.19; skill maintenance itself executes no Windows commands.
+
+The guest process-only PowerShell amendment uses Microsoft's Windows PowerShell
+5.1 [execution-policy scope/precedence](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-5.1)
+and [CLI policy parameter](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_powershell_exe?view=powershell-5.1).
+It preserves Group Policy refusals and source admission; no host/persistent
+setting, `Bypass` or automatic unblocking is adopted. W11 §4.19 and the existing
+crypto task retain the initial `Restricted` setup stop and later observed
+process-scoped `RemoteSigned` result separately from native product gates.

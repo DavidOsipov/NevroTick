@@ -232,6 +232,10 @@ class SessionAnalysisTests(unittest.TestCase):
             for name in {entry["mutant"]["file"] for entry in entries}:
                 target = root / name; target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes((ROOT / name).read_bytes())
+            # These entries exercise synthetic custody of the bytes just copied,
+            # not the historical native identities retained by validation tests.
+            for entry in entries:
+                entry["source_sha256"] = hashlib.sha256((root / entry["mutant"]["file"]).read_bytes()).hexdigest()
             proof = root / MODULE.SESSION_EQUIVALENCE_PROOF; proof.parent.mkdir(parents=True)
             content = "\n".join("## " + entry["id"] + "\nSynthetic custody control only.\n" for entry in entries)
             proof.write_text(content)
@@ -242,6 +246,12 @@ class SessionAnalysisTests(unittest.TestCase):
                 changed = copy.deepcopy(policy); changed["mutation_equivalences"][0][field] = "f" * 64
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SESSION_SCOPE, changed)
+            source = root / entries[0]["mutant"]["file"]
+            original = source.read_bytes()
+            source.write_bytes(original + b"\n// Synthetic custody alteration after binding.\n")
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SESSION_SCOPE, policy)
+            source.write_bytes(original)
             proof.write_text(content + "Changed after binding.\n")
             with self.assertRaises(MODULE.Incomplete): MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SESSION_SCOPE, policy)
             proof.write_text(content.replace("## " + entries[0]["id"], "### " + entries[0]["id"]))

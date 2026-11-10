@@ -75,13 +75,14 @@ use super::{
 /// Sole numerical owner of separately evaluated values and outward error bounds.
 mod roundoff;
 
+pub(crate) use roundoff::{
+    BaselineMapNumbers, BaselineOperands, BaselineRequest, FrequencyAnchor, FrequencyPrediction,
+    FrequencyPrior, PhaseDebt, PhaseRates, check_active_ratio_span,
+};
 pub use roundoff::{
     FixtureFrequencyNumericError, FixtureFrequencyNumericField, FixtureFrequencyNumericIssue,
     FixtureFrequencyNumericStep, FixturePhaseNumericError, FixturePhaseNumericField,
     FixturePhaseNumericIssue, FixturePhaseNumericStep,
-};
-pub(crate) use roundoff::{
-    FrequencyAnchor, FrequencyPrediction, FrequencyPrior, PhaseDebt, PhaseRates,
 };
 
 /// Inclusive integer magnitude that has an exact binary64 representation.
@@ -768,6 +769,50 @@ impl FixtureAffineChart {
         })
     }
 
+    /// Build the known continuous rate-change effect without erasing its bounds.
+    /// The receiving owner separately establishes acknowledgement and clock identity.
+    /// # Errors
+    /// Reject an outside-domain acknowledgement or unsupported computed coefficient.
+    pub(crate) fn baseline_rate_effect(
+        frames: FixtureChartFrames,
+        domain: FixtureChartDomain,
+        ratio: f64,
+        ratio_error: f64,
+        old: f64,
+        actual: f64,
+        at: MonotonicNs,
+    ) -> Result<Self, FixtureFrequencyNumericError> {
+        if !domain.contains(at) {
+            return Err(FixtureFrequencyNumericError::Chart {
+                source: FixtureChartError::QueryOutsideDomain,
+            });
+        }
+        let coefficients = roundoff::baseline_effect_coefficients(
+            domain.common_reference(),
+            at,
+            ratio,
+            ratio_error,
+            old,
+            actual,
+        )?;
+        let raw = AffineCandidate {
+            phase: coefficients.phase(),
+            rate: coefficients.rate(),
+            phase_error: coefficients.phase_error(),
+            rate_error: coefficients.rate_error(),
+        };
+        raw.admit()
+            .map_err(|source| FixtureFrequencyNumericError::Chart { source })?;
+        Ok(Self {
+            frames,
+            domain,
+            phase: raw.phase,
+            rate: raw.rate,
+            phase_error: raw.phase_error,
+            rate_error: raw.rate_error,
+        })
+    }
+
     /// Admit exact stored-bit coefficients with zero coefficient-error bounds.
     /// # Errors
     /// Reject displacement before rate, or mandatory Garde disagreement; no effects.
@@ -792,6 +837,39 @@ impl FixtureAffineChart {
             phase_error: raw.phase_error,
             rate_error: raw.rate_error,
         })
+    }
+
+    /// Compose checked descriptors over their intersection without rebasing coefficients.
+    ///
+    /// The common coefficient reference must remain identical. The new checked
+    /// domain never expands either input; all immutable coefficient/error bits
+    /// and labels retain their original owners before ordinary composition.
+    /// This private mathematical restriction grants no achieved-effect authority.
+    /// # Errors
+    /// Reject mapping, then reference/intersection admission, then composition.
+    pub(crate) fn compose_intersection(&self, next: &Self) -> Result<Self, FixtureChartError> {
+        if self.frames.target_frame != next.frames.source_frame
+            || self.frames.target_generation != next.frames.source_generation
+        {
+            return Err(FixtureChartError::CompositionMappingMismatch);
+        }
+        if self.domain.common_reference() != next.domain.common_reference() {
+            return Err(FixtureChartError::CompositionDomainMismatch);
+        }
+        let domain = FixtureChartDomain::new(
+            self.domain.start().max(next.domain.start()),
+            self.domain.common_reference(),
+            self.domain.end().min(next.domain.end()),
+        )?;
+        let restrict = |chart: &Self| Self {
+            frames: chart.frames,
+            domain,
+            phase: chart.phase,
+            rate: chart.rate,
+            phase_error: chart.phase_error,
+            rate_error: chart.rate_error,
+        };
+        restrict(self).compose(&restrict(next))
     }
 
     /// Compose A-to-B with B-to-C over one identical complete monotonic domain.

@@ -1,6 +1,7 @@
 """Pure four-owner analysis controls; no product, compiler or analyzer execution."""
 from __future__ import annotations
 
+from contextlib import contextmanager
 import copy
 import difflib
 import importlib.util
@@ -16,6 +17,137 @@ ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("frequency_prior_controls", ROOT / "scripts/verify-core-analysis.py")
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
+
+
+# These tiny context windows are synthetic parser fixtures, not complete Rust
+# source or reusable historical evidence. Blank padding retains diagnostic line
+# and byte locations. Only exact fixture bytes receive the old identity below.
+HISTORICAL_CONTEXTS = {
+    'crates/time-core/src/reference_input/rate_delivery.rs': [
+        (450, 17637, '            CursorProgress::Unresolved => FixtureRateCursorStatus::Unresolved,\n            CursorProgress::Exhausted => FixtureRateCursorStatus::Exhausted,\n        }\n    }\n\n    /// Copy the sole admissible local identity, absent after either terminal state.\n    #[must_use]\n    pub const fn next_ordinal(&self) -> Option<NonZeroU64> {\n        match self.progress {\n            CursorProgress::Pending(value) => Some(value),\n            _ => None,\n        }\n    }\n\n    /// Return the last known active endpoint without inventing Unknown delivery.\n    #[must_use]\n    pub const fn last_active_end(&self) -> Option<ActiveAwakeNs> {\n        self.last_active\n    }\n\n    /// Return the independently ordered last known effective endpoint.\n'),
+        (594, 23498, '    FixtureChartFrames::new(\n        first.source_frame(),\n        first.source_generation(),\n        interval.frames.target_frame(),\n        interval.frames.target_generation(),\n    )\n    .map_err(|source| FixtureRateDeliveryError::Chart { source })?;\n    if let Some(last) = cursor.last_active\n        && interval.span.active.0 < last\n    {\n        return Err(FixtureRateDeliveryError::ActiveOverlap);\n    }\n    if let Some(last) = cursor.last_monotonic\n        && interval.span.effective.0 < last\n    {\n        return Err(FixtureRateDeliveryError::MonotonicOverlap);\n    }\n    Ok(())\n}\n\n/// Admit the whole live relationship and calculate checked nonwrapping progress.\n/// # Errors\n'),
+    ],
+    'crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs': [
+        (466, 18397, '    /// Copy original fitted rate SD, not a gain weight.\n    #[must_use]\n    pub const fn rate_standard_deviation_seconds_per_second(&self) -> f64 {\n        self.model.rate_sd\n    }\n    /// Copy the original actual model-producing emission.\n    #[must_use]\n    pub const fn emitted_round(&self) -> NonZeroU64 {\n        self.model.round\n    }\n    /// Copy original source identity without changing its generation.\n    #[must_use]\n    pub const fn source_context(&self) -> FixtureContext {\n        self.model.source\n    }\n    /// Copy current mathematical frame tags, separate from original source tags.\n    #[must_use]\n    pub const fn frames(&self) -> FixtureChartFrames {\n'),
+        (735, 28771, '    }\n\n    /// Retain a committed source/readiness refusal without inventing a model.\n    pub(super) fn no_ready(&mut self, round: Option<NonZeroU64>) {\n        if !self.is_enabled() {\n            return;\n        }\n        if let Some(round) = round\n            && let Err(reason) = self.consume(round)\n        {\n            self.admission = FixtureFrequencyAdmission::Refused {\n                emitted_round: round,\n                reason,\n            };\n            return;\n        }\n        self.admission = FixtureFrequencyAdmission::NoReady {\n'),
+        (803, 31223, "        chart: &FixtureAffineChart,\n        now: MonotonicNs,\n        profile: FixtureFrequencyProfile,\n    ) {\n        if self.unavailable.is_some() {\n            return;\n        }\n        if let Some(model) = self.model\n            && let Err(error) = predict(&model, profile, chart, now)\n        {\n            self.unavailable = Some(match error {\n                FixtureFrequencyError::QueryBeforeReference\n                | FixtureFrequencyError::QueryOutsideDomain => {\n                    FixtureFrequencyError::AnchorRebaseUnavailable\n                }\n                other => other,\n            });\n        }\n    }\n\n    /// Stage a whole fresh record and its current support without publishing fields.\n    /// # Errors\n    /// Preserve old model on unsupported initialization/update/anchor/support.\n    fn prepare_model(\n        &self,\n        estimate: &FixtureChartCombinedEstimate<'_, '_, '_>,\n        round: NonZeroU64,\n"),
+    ],
+    'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': [
+        (409, 16645, '    /// Original numerical mean error, separate from statistics.\n    #[must_use]\n    pub const fn phase_error_seconds(&self) -> f64 {\n        self.error\n    }\n    /// Actual local emission ordinal of the exclusively leased producer.\n    #[must_use]\n    pub const fn emitted_round(&self) -> NonZeroU64 {\n        self.round\n    }\n    /// Original source context without remapping or source authority.\n    #[must_use]\n    pub const fn source_context(&self) -> FixtureContext {\n        self.context\n    }\n    /// Mathematical descriptor tags at acceptance.\n    #[must_use]\n'),
+        (487, 19421, "    /// Borrow of its original finite obligation and unchanged deadline metadata.\n    obligation: &'view Obligation,\n}\n\nimpl FixturePhaseProposal<'_> {\n    /// Existing cursor identity reserved for this issued operation.\n    #[must_use]\n    pub const fn ordinal(&self) -> NonZeroU64 {\n        self.issued.ordinal\n    }\n    /// Requested transient, never a delivery acknowledgement.\n    #[must_use]\n    pub fn transient_rate(&self) -> f64 {\n        self.issued.rates.transient_rate()\n    }\n    /// Numerical error of the transient proposal alone.\n    #[must_use]\n"),
+    ],
+}
+HISTORICAL_SOURCE_DIGESTS = {
+    "crates/time-core/src/reference_input/rate_delivery.rs": "5a6ed0953bf6e0be88338c52251ed594fcbaaf5cca530e1f541236eb3f8e042d",
+    "crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs": "a0a6af42cba3f012545d05ad5949f8934c28bd4bd65e503f695cc7fdf150c23a",
+    "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs": "a9770f085170b8c9ae52a5957761f99173ee3ff02294df56cb1e8e0c8b888b48",
+    "crates/time-core/src/regression/chart/roundoff/frequency_prior.rs": "c29c5461fc90820de0aef29503174a64b70dc18aca131b8592b247e123ad247b",
+}
+HISTORICAL_CHANGED_DIGESTS = {
+    ("crates/time-core/src/reference_input/rate_delivery.rs", 602): "c9790db06dd14bd2409e339ae202bae11e51f38506437e7f987a74ac072f3381",
+    ("crates/time-core/src/reference_input/rate_delivery.rs", 607): "bd80e359086a537ae652178540578f146caf255d0cfaa7acd8018e33b1973837",
+    ("crates/time-core/src/reference_input/rate_delivery.rs", 458): "8d8bbc09d0612b20712bda840de6dc0d4f0b4a09608624a519b6e047c9cc20a1",
+    ("crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs", 743): "92eb3ad3f67bfb40754f78780cba36576e4162473502a71a6060450b7c440cb9",
+    ("crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs", 811): "6faae4ce7b6695e9d32a35323caca83d278747932be5680cf08f12b14a3ff7a5",
+    ("crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs", 474): "669650ef337acf934c5ca71bc4ce069be7535d6a32df30a5e2c4922aec542daa",
+    ("crates/time-core/src/reference_input/rate_delivery/phase_plan.rs", 417): "c1bf2936a5841f59736a1977f747a73e1dad3defcdb664002d02322ecf1d1695",
+    ("crates/time-core/src/reference_input/rate_delivery/phase_plan.rs", 495): "2255974b6312cd40c668f3fd2f71f1c8a27645bd87fd8226ee3f6475d29f6ae5",
+}
+REAL_SHA256 = hashlib.sha256
+SYNTHETIC_CANDIDATE = {"synthetic_historical_parser_fixture": "no product admission"}
+
+
+def historical_source(filename):
+    """Build only immutable diagnostic windows, never a historical product copy."""
+    if filename not in HISTORICAL_CONTEXTS:
+        if filename not in HISTORICAL_SOURCE_DIGESTS:
+            raise ValueError("Unknown synthetic historical source.")
+        return b"// synthetic numerical-source identity; no executable Rust fixture\n"
+    data, line_count = b"", 0
+    for line, offset, text in HISTORICAL_CONTEXTS[filename]:
+        missing_lines, missing_bytes = line - 1 - line_count, offset - len(data)
+        if missing_lines <= 0 or missing_bytes < missing_lines:
+            raise ValueError("Synthetic historical context overlaps its predecessor.")
+        data += b" " * (missing_bytes - missing_lines) + b"\n" * missing_lines + text.encode()
+        line_count = line - 1 + len(text.splitlines())
+    return data
+
+
+def historical_changed(filename, line):
+    """Apply the exact reviewed operator/body payload to synthetic context only."""
+    lines = historical_source(filename).decode().splitlines(keepends=True)
+    if line in (602, 607, 743, 811):
+        lines[line - 1] = lines[line - 1].replace("&&", "|| /* ~ changed by cargo-mutants ~ */", 1)
+    elif line == 458:
+        lines[457:461] = ["        Some(1.try_into().unwrap()) /* ~ changed by cargo-mutants ~ */\n"]
+    else:
+        lines[line - 1] = "        1.try_into().unwrap() /* ~ changed by cargo-mutants ~ */\n"
+    return "".join(lines).encode()
+
+
+@contextmanager
+def historical_hashes(root, *, candidate=False):
+    """Inject only exact synthetic identities for parser mechanics, never ROOT."""
+    if root.resolve() == ROOT:
+        raise ValueError("Synthetic identity adapters cannot wrap the current checkout.")
+    bindings = {historical_source(name): digest for name, digest in HISTORICAL_SOURCE_DIGESTS.items()}
+    bindings.update({historical_changed(name, line): digest
+                     for (name, line), digest in HISTORICAL_CHANGED_DIGESTS.items()})
+    allowed = {(root / prefix / name).resolve() for name in HISTORICAL_SOURCE_DIGESTS
+               for prefix in (Path(), Path("source"))}
+    real_file_hash = MODULE.COMMON.PRODUCT.sha256
+    real_admit_product = MODULE.COMMON.PRODUCT.admit_product
+    if candidate:
+        marker = json.dumps(SYNTHETIC_CANDIDATE, sort_keys=True, separators=(",", ":")).encode()
+        bindings[marker] = "3c8ae8f191cba09742259957d491bb362f8301a39c7506c1a029e02be4ae7e90"
+
+    def exact_bytes(data=b"", *args, **kwargs):
+        if type(data) is bytes and data in bindings:
+            return SimpleNamespace(hexdigest=lambda: bindings[data])
+        return REAL_SHA256(data, *args, **kwargs)
+
+    def exact_file(path):
+        if Path(path).resolve() in allowed:
+            data = Path(path).read_bytes()
+            if data in bindings:
+                return bindings[data]
+        return real_file_hash(path)
+
+    def synthetic_candidate(path):
+        if Path(path).resolve() == root.resolve():
+            return {}, copy.deepcopy(SYNTHETIC_CANDIDATE)
+        return real_admit_product(path)
+
+    with patch.object(MODULE.hashlib, "sha256", side_effect=exact_bytes), \
+         patch.object(MODULE.COMMON.PRODUCT, "sha256", side_effect=exact_file):
+        if candidate:
+            with patch.object(MODULE.COMMON.PRODUCT, "admit_product", side_effect=synthetic_candidate):
+                yield
+        else:
+            yield
+
+
+def historical_review_root(root):
+    """Tiny synthetic admission mechanics; the maintained review stays unchanged."""
+    for name in HISTORICAL_SOURCE_DIGESTS:
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(historical_source(name))
+    proof = "tasks/phase-plan-analysis-equivalences.md"
+    path = root / proof
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes((ROOT / proof).read_bytes())
+    return root
+
+
+def parser_cause(work, outcome, raw, identity, payload, *, current=False):
+    """Keep real current-checkout rejection outside every synthetic adapter."""
+    if current:
+        captured = {name: REAL_SHA256((ROOT / name).read_bytes()).hexdigest()
+                    for name in MODULE.FREQUENCY_PRIOR_SUBJECTS.values()}
+        return MODULE._frequency_log_cause(outcome, raw, ROOT, captured, policy(), mutant_diff=payload)
+    with historical_hashes(work):
+        return MODULE._frequency_log_cause(outcome, raw, work / "source", identity, policy(), mutant_diff=payload)
 
 
 def policy():
@@ -92,7 +224,7 @@ def campaign_fixture(directory):
 
 
 def reviewed_profile_policy():
-    """One current source review; no mutant execution or miss is presumed."""
+    """Historical identity metadata for synthetic parser mechanics, not evidence."""
     p = policy()
     path = "tasks/phase-plan-analysis-equivalences.md"
     proof_sha = hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
@@ -239,14 +371,14 @@ def diagnostic_record():
 
 
 def let_chain_fixture(work, line):
-    """Reconstruct one independently pinned native payload; never execute it."""
+    """Reconstruct a historical diagnostic window; never execute or admit evidence."""
     identity = captured_sources(work)
     filename = "crates/time-core/src/reference_input/rate_delivery.rs"
-    data = (ROOT / filename).read_bytes()
+    data = historical_source(filename)
     destination = work / "source" / filename
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_bytes(data)
-    identity[filename] = hashlib.sha256(data).hexdigest()
+    identity[filename] = HISTORICAL_SOURCE_DIGESTS[filename]
     before = data.decode().splitlines(keepends=True)
     after = before.copy()
     after[line - 1] = after[line - 1].replace("&&", "|| /* ~ changed by cargo-mutants ~ */", 1)
@@ -283,6 +415,36 @@ def retained_config(work):
 
 class FrequencyPriorAnalysisTests(unittest.TestCase):
     """Require closed ownership, honest partial scopes and unchanged historical roles."""
+
+    def test_synthetic_identity_adapter_is_exact_and_unknown_bytes_keep_real_hashes(self):
+        filename = MODULE.FREQUENCY_PRIOR_SUBJECTS["frequency_state"]
+        data = historical_source(filename)
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory)
+            source = work / "source" / filename
+            source.parent.mkdir(parents=True)
+            source.write_bytes(data)
+            with historical_hashes(work):
+                self.assertEqual(hashlib.sha256(data).hexdigest(), HISTORICAL_SOURCE_DIGESTS[filename])
+                self.assertEqual(MODULE.COMMON.PRODUCT.sha256(source), HISTORICAL_SOURCE_DIGESTS[filename])
+                for unknown in (b"unknown", data + b"// tampered\n"):
+                    self.assertEqual(hashlib.sha256(unknown).hexdigest(), REAL_SHA256(unknown).hexdigest())
+                    source.write_bytes(unknown)
+                    self.assertEqual(MODULE.COMMON.PRODUCT.sha256(source), REAL_SHA256(unknown).hexdigest())
+                foreign = {"unrelated": True}
+                encoded = json.dumps(foreign, sort_keys=True, separators=(",", ":")).encode()
+                self.assertEqual(MODULE.COMMON.canonical_sha256(foreign), REAL_SHA256(encoded).hexdigest())
+            with historical_hashes(work, candidate=True):
+                self.assertEqual(MODULE.COMMON.canonical_sha256(SYNTHETIC_CANDIDATE),
+                                 "3c8ae8f191cba09742259957d491bb362f8301a39c7506c1a029e02be4ae7e90")
+                tampered = {**SYNTHETIC_CANDIDATE, "tampered": True}
+                encoded = json.dumps(tampered, sort_keys=True, separators=(",", ":")).encode()
+                self.assertEqual(MODULE.COMMON.canonical_sha256(tampered), REAL_SHA256(encoded).hexdigest())
+        with self.assertRaisesRegex(ValueError, "cannot wrap the current checkout"):
+            with historical_hashes(ROOT):
+                self.fail("The current checkout cannot enter an identity adapter.")
+        current = (ROOT / filename).read_bytes()
+        self.assertEqual(hashlib.sha256(current).hexdigest(), REAL_SHA256(current).hexdigest())
 
     def test_private_build_target_layout_is_explicit_and_closed(self):
         row = {"reason": "build-script-executed",
@@ -408,14 +570,18 @@ class FrequencyPriorAnalysisTests(unittest.TestCase):
         with self.assertRaises(MODULE.Incomplete):
             MODULE.COMMON.require_frequency_prior_role(MODULE.PHASE_PLAN_SCOPE, good)
 
-    def test_single_current_profile_review_has_exact_scope_and_real_proof_custody(self):
+    def test_single_historical_profile_review_has_exact_scope_and_synthetic_custody(self):
         p = reviewed_profile_policy()
         self.assertTrue(MODULE.COMMON.frequency_prior_equivalences_valid(policy()))
         self.assertTrue(MODULE.COMMON.frequency_prior_equivalences_valid(p))
         MODULE.COMMON.require_frequency_prior_role(MODULE.FREQUENCY_PRIOR_SCOPE, p)
-        with patch("subprocess.Popen", side_effect=AssertionError("Pure proof admission forbids execution")):
-            self.assertEqual(MODULE.COMMON.admit_mutation_equivalences(ROOT, MODULE.FREQUENCY_PRIOR_SCOPE, p),
-                p["mutation_equivalences"])
+        with tempfile.TemporaryDirectory() as directory:
+            root = historical_review_root(Path(directory))
+            with historical_hashes(root, candidate=True), patch("subprocess.Popen", side_effect=AssertionError("Parser mechanics forbid execution")):
+                self.assertEqual(MODULE.COMMON.admit_mutation_equivalences(root, MODULE.FREQUENCY_PRIOR_SCOPE, p),
+                    p["mutation_equivalences"])
+        with self.assertRaisesRegex(MODULE.Incomplete, "source or complete candidate differs"):
+            MODULE.COMMON.admit_mutation_equivalences(ROOT, MODULE.FREQUENCY_PRIOR_SCOPE, p)
         for fault in ("duplicate", "historical", "descriptor", "source", "candidate", "policy_candidate",
                       "proof_section", "proof_path", "proof_hash", "reviewer", "rationale"):
             changed = copy.deepcopy(p)
@@ -436,7 +602,7 @@ class FrequencyPriorAnalysisTests(unittest.TestCase):
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.COMMON.require_frequency_prior_role(MODULE.FREQUENCY_PRIOR_SCOPE, changed)
 
-    def test_four_current_reviews_require_unique_exact_cases_and_anchor_parent(self):
+    def test_four_historical_reviews_require_unique_exact_cases_and_anchor_parent(self):
         p = reviewed_four_policy()
         entries = p["mutation_equivalences"]
         self.assertEqual(len(entries), 4)
@@ -446,8 +612,12 @@ class FrequencyPriorAnalysisTests(unittest.TestCase):
             with self.subTest(subset=mask):
                 self.assertTrue(MODULE.COMMON.frequency_prior_equivalences_valid(selected))
                 MODULE.COMMON.require_frequency_prior_role(MODULE.FREQUENCY_PRIOR_SCOPE, selected)
-        with patch("subprocess.Popen", side_effect=AssertionError("Proof admission must not execute commands")):
-            self.assertEqual(MODULE.COMMON.admit_mutation_equivalences(ROOT, MODULE.FREQUENCY_PRIOR_SCOPE, p), entries)
+        with tempfile.TemporaryDirectory() as directory:
+            root = historical_review_root(Path(directory))
+            with historical_hashes(root, candidate=True), patch("subprocess.Popen", side_effect=AssertionError("Parser mechanics must not execute commands")):
+                self.assertEqual(MODULE.COMMON.admit_mutation_equivalences(root, MODULE.FREQUENCY_PRIOR_SCOPE, p), entries)
+        with self.assertRaisesRegex(MODULE.Incomplete, "source or complete candidate differs"):
+            MODULE.COMMON.admit_mutation_equivalences(ROOT, MODULE.FREQUENCY_PRIOR_SCOPE, p)
         for index in range(4):
             for fault in ("duplicate", "unknown", "source", "descriptor", "candidate", "proof", "rationale"):
                 changed = copy.deepcopy(p)
@@ -473,9 +643,12 @@ class FrequencyPriorAnalysisTests(unittest.TestCase):
         for entry in changed["mutation_equivalences"]:
             entry["proof"]["sha256"] = "a" * 64
         self.assertTrue(MODULE.COMMON.frequency_prior_equivalences_valid(changed))
-        with patch("subprocess.Popen", side_effect=AssertionError("Proof admission must not execute commands")), \
-             self.assertRaises(MODULE.Incomplete):
-            MODULE.COMMON.admit_mutation_equivalences(ROOT, MODULE.FREQUENCY_PRIOR_SCOPE, changed)
+        with tempfile.TemporaryDirectory() as directory:
+            root = historical_review_root(Path(directory))
+            with historical_hashes(root, candidate=True), \
+                 patch("subprocess.Popen", side_effect=AssertionError("Parser mechanics must not execute commands")), \
+                 self.assertRaisesRegex(MODULE.Incomplete, "proof bytes or exact section differ"):
+                MODULE.COMMON.admit_mutation_equivalences(root, MODULE.FREQUENCY_PRIOR_SCOPE, changed)
 
     def test_common_equivalence_requires_actual_miss_without_filtering_or_kill_credit(self):
         for entry in reviewed_four_policy()["mutation_equivalences"]:
@@ -955,7 +1128,7 @@ class FrequencyPriorAnalysisTests(unittest.TestCase):
                 with self.subTest(field=field), self.assertRaises(MODULE.Incomplete):
                     read(diagnostic=diagnostic)
 
-    def test_only_two_exact_current_let_chain_null_causes_are_unviable(self):
+    def test_only_two_exact_historical_let_chain_null_causes_are_unviable(self):
         expected = {
             602: ("1da25cb416e19236586a5c55b0193b3387abd5b83d6d83bba784dbed2c12779a",
                   "0f2849df1d7ad6e4bfec917615afab2801d136b42caf4c0dfb69e4f29fa8596c"),
@@ -970,11 +1143,12 @@ class FrequencyPriorAnalysisTests(unittest.TestCase):
                 self.assertEqual(hashlib.sha256(diff.encode()).hexdigest(), diff_sha)
                 self.assertEqual(identity[record["message"]["spans"][0]["file_name"]],
                     "5a6ed0953bf6e0be88338c52251ed594fcbaaf5cca530e1f541236eb3f8e042d")
-                def read(row=outcome, diagnostic=record, payload=diff, captured=identity):
+                def read(row=outcome, diagnostic=record, payload=diff, captured=identity, *, current=False):
                     raw = phase_log(row, build=json.dumps(diagnostic) + '\n{"reason":"build-finished","success":false}\n'
                         + 'error: could not compile `time-core` (lib) due to 1 previous error\n')
-                    return MODULE._frequency_log_cause(row, raw, work / "source", captured, policy(), mutant_diff=payload)
+                    return parser_cause(work, row, raw, captured, payload, current=current)
                 self.assertIsNone(read()[0]["code"])
+                with self.assertRaises(MODULE.Incomplete): read(current=True)
                 for fault in ("missing_diff", "diff", "descriptor", "missing_context", "message", "span", "end",
                               "byte", "text", "source", "extra_primary", "package", "target"):
                     row, diagnostic, captured = copy.deepcopy(outcome), copy.deepcopy(record), dict(identity)
@@ -1012,9 +1186,9 @@ class FrequencyPriorAnalysisTests(unittest.TestCase):
                 work = Path(directory)
                 captured = captured_sources(work)
                 filename = MODULE.FREQUENCY_PRIOR_SUBJECTS["frequency_state"]
-                before = (ROOT / filename).read_text().splitlines(keepends=True)
+                before = historical_source(filename).decode().splitlines(keepends=True)
                 (work / "source" / filename).write_text("".join(before))
-                captured[filename] = hashlib.sha256("".join(before).encode()).hexdigest()
+                captured[filename] = HISTORICAL_SOURCE_DIGESTS[filename]
                 after = before.copy()
                 after[line - 1] = after[line - 1].replace("&&", "|| /* ~ changed by cargo-mutants ~ */", 1)
                 title = f"replace && with || in {function}"
@@ -1033,10 +1207,11 @@ class FrequencyPriorAnalysisTests(unittest.TestCase):
                         "column_start": 13, "column_end": 15, "byte_start": offset, "byte_end": offset + 2,
                         "text": [{"text": after[line - 1].rstrip("\n"), "highlight_start": 13, "highlight_end": 15}]}])
                 row = {"summary": "Unviable", "phase_results": phases("Unviable"), "scenario": {"Mutant": mutant}}
-                def read(diagnostic=record, payload=diff):
+                def read(diagnostic=record, payload=diff, *, current=False):
                     raw = phase_log(row, build=json.dumps(diagnostic) + '\n{"reason":"build-finished","success":false}\n')
-                    return MODULE._frequency_log_cause(row, raw, work / "source", captured, policy(), mutant_diff=payload)
+                    return parser_cause(work, row, raw, captured, payload, current=current)
                 self.assertIsNone(read()[0]["code"])
+                with self.assertRaises(MODULE.Incomplete): read(current=True)
                 for field in ("message", "column", "byte", "text"):
                     bad = copy.deepcopy(record)
                     if field == "message": bad["message"]["message"] += " foreign"
@@ -1051,14 +1226,14 @@ class FrequencyPriorAnalysisTests(unittest.TestCase):
             work = Path(directory)
             captured = captured_sources(work)
             filename = "crates/time-core/src/reference_input/rate_delivery.rs"
-            before = (ROOT / filename).read_text().splitlines(keepends=True)
+            before = historical_source(filename).decode().splitlines(keepends=True)
             after = before.copy()
             changed_line = "        Some(1.try_into().unwrap()) /* ~ changed by cargo-mutants ~ */\n"
             after[457:461] = [changed_line]
             source = work / "source" / filename
             source.parent.mkdir(parents=True, exist_ok=True)
             source.write_text("".join(before))
-            captured[filename] = hashlib.sha256(source.read_bytes()).hexdigest()
+            captured[filename] = HISTORICAL_SOURCE_DIGESTS[filename]
             title = "replace FixtureRateSettlementCursor::next_ordinal -> Option<NonZeroU64> with Some(1.try_into().unwrap())"
             mutant = {"name": f"{filename}:458:9: {title}", "package": "time-core", "file": filename,
                 "function": {"function_name": "FixtureRateSettlementCursor::next_ordinal", "return_type": "-> Option<NonZeroU64>",
@@ -1084,11 +1259,12 @@ class FrequencyPriorAnalysisTests(unittest.TestCase):
                             "highlight_start": start, "highlight_end": end}]}])
                 records.append(record)
             outcome = {"summary": "Unviable", "phase_results": phases("Unviable"), "scenario": {"Mutant": mutant}}
-            def read(values, payload=diff):
+            def read(values, payload=diff, *, current=False):
                 raw = phase_log(outcome, build="".join(json.dumps(v) + "\n" for v in values)
                     + '{"reason":"build-finished","success":false}\n')
-                return MODULE._frequency_log_cause(outcome, raw, work / "source", captured, policy(), mutant_diff=payload)
+                return parser_cause(work, outcome, raw, captured, payload, current=current)
             self.assertEqual([v["code"] for v in read(records * 2)], ["E0658", None, "E0015"] * 2)
+            with self.assertRaises(MODULE.Incomplete): read(records * 2, current=True)
             for bad in (records[1:], records[:2], records * 2 + [records[1]], records[:1] + records[2:]):
                 with self.subTest(count=len(bad)):
                     if all(v["message"]["code"] is not None for v in bad):
@@ -1121,11 +1297,11 @@ class FrequencyPriorAnalysisTests(unittest.TestCase):
                 work = Path(directory)
                 captured = captured_sources(work)
                 filename = MODULE.FREQUENCY_PRIOR_SUBJECTS[owner]
-                before = (ROOT / filename).read_text().splitlines(keepends=True)
+                before = historical_source(filename).decode().splitlines(keepends=True)
                 source = work / "source" / filename
                 source.parent.mkdir(parents=True, exist_ok=True)
                 source.write_text("".join(before))
-                captured[filename] = hashlib.sha256(source.read_bytes()).hexdigest()
+                captured[filename] = HISTORICAL_SOURCE_DIGESTS[filename]
                 after = before.copy()
                 after[line - 1] = "        1.try_into().unwrap() /* ~ changed by cargo-mutants ~ */\n"
                 offset = len("".join(after[:line - 1]).encode()) + 8
@@ -1154,11 +1330,12 @@ class FrequencyPriorAnalysisTests(unittest.TestCase):
                                 "highlight_start": start, "highlight_end": end}]}])
                     records.append(record)
                 outcome = {"summary": "Unviable", "phase_results": phases("Unviable"), "scenario": {"Mutant": mutant}}
-                def read(values=records, row=outcome, payload=diff):
+                def read(values=records, row=outcome, payload=diff, *, current=False):
                     raw = phase_log(row, build="".join(json.dumps(v) + "\n" for v in values)
                         + '{"reason":"build-finished","success":false}\n')
-                    return MODULE._frequency_log_cause(row, raw, work / "source", captured, policy(), mutant_diff=payload)
+                    return parser_cause(work, row, raw, captured, payload, current=current)
                 self.assertEqual([v["code"] for v in read(records * 2)], ["E0658", None, "E0015"] * 2)
+                with self.assertRaises(MODULE.Incomplete): read(records * 2, current=True)
                 foreign = copy.deepcopy(records)
                 foreign[0]["target"]["name"] = "foreign"
                 wrong_span = copy.deepcopy(records)

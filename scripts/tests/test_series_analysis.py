@@ -63,17 +63,22 @@ class SeriesAnalysisControls(unittest.TestCase):
         policy["candidate_sha256"] = digest({"synthetic_checkpoint_sources": pins})
         return root, policy
 
-    def historical_series_product(self):
-        """Use the exact retained N3/Q1 ordinary source, not a later dirty tree."""
-        data = MODULE.COMMON.read_analysis_bytes(MODULE.QUALITY_ORDINARY_RECEIPT, maximum=512 * 1024)
-        self.assertEqual(hashlib.sha256(data).hexdigest(), MODULE.QUALITY_ORDINARY_SHA256)
-        receipt = json.loads(data)
-        self.assertEqual(receipt["candidate_sha256"], policy_fixture()["candidate_sha256"])
-        # The native snapshot also retains the historical role's protected helpers.
-        source = MODULE.QUALITY_ORDINARY_RECEIPT.parent.parent / "qualification-v1/work/source"
-        identity = receipt["source_sha256"]
-        self.assertEqual({name: MODULE.PRODUCT.sha256(source / name) for name in identity}, identity)
-        return source, identity
+    def synthetic_series_capture(self):
+        """Supply routing-only bytes; no historical candidate or gate is rebound."""
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        for name in MODULE.SERIES_CURRENT_BOUND_INPUTS:
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("synthetic routing input: " + name + "\n")
+        identity = {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+                    for name in MODULE.SERIES_CURRENT_BOUND_INPUTS}
+        policy = policy_fixture()
+        policy.update(candidate_sha256=digest(identity), source_file_count=len(identity),
+                      inputs_sha256=identity.copy(), mutation_equivalences=[])
+        (root / MODULE.SERIES_POLICY).write_text(json.dumps(policy))
+        return root, identity, policy
 
     def test_literal_inventory_and_legacy_defaults_remain_distinct(self):
         self.assertEqual(len(ORDINARY_NAMES), 113)
@@ -216,10 +221,9 @@ class SeriesAnalysisControls(unittest.TestCase):
         bindings = {
             "library": {"count": 1, "sha256": "1" * 64},
             "series": {"count": 1, "sha256": "2" * 64}}
-        historical, identity = self.historical_series_product()
-        policy = MODULE.read_json(historical / MODULE.SERIES_POLICY)
+        source, identity, policy = self.synthetic_series_capture()
         observed, finished = [], []
-        fake = SimpleNamespace(product_identity=identity, source=historical,
+        fake = SimpleNamespace(product_identity=identity, source=source,
                                work=Path("/unused/not-created"), tools={},
                                finish=lambda: finished.append(True))
         for subject in ("all", "library", "series"):
@@ -523,43 +527,74 @@ class SeriesAnalysisControls(unittest.TestCase):
         with self.assertRaises(MODULE.Incomplete): MODULE.validate_series_policy(policy)
 
     def test_series_equivalence_common_custody_binds_actual_source_candidate_and_review(self):
-        """Copy actual admitted bytes; exercise custody without running a mutant."""
+        """Exercise generic custody with current bytes and synthetic review records.
+
+        These records are deliberately outside the historical four-ID cohort.
+        The separate literal mapping test preserves that production admission;
+        this control supplies no historical proof, product or mutation credit.
+        """
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            historical, current = self.historical_series_product()
-            proof_name = "tasks/engine-analysis-equivalences.md"
-            for name in sorted(set(current) | set(MODULE.SERIES_CURRENT_BOUND_INPUTS) | {MODULE.SERIES_POLICY, proof_name}):
-                target = root / name; target.parent.mkdir(parents=True, exist_ok=True)
-                source = historical if name in current else ROOT
-                shutil.copyfile(source / name, target)
-            _, identity = MODULE.PRODUCT.admit_product(root)
-            entries = self.current_fallback_entries(digest(identity))
-            policy = policy_fixture(); policy["candidate_sha256"] = digest(identity)
-            policy["mutation_equivalences"] = entries
-            # Independent literal records must match the current copied source;
-            # this custody fixture supplies no mutant execution or kill credit.
-            for entry in entries:
-                self.assertEqual(entry["source_sha256"], hashlib.sha256((root / entry["mutant"]["file"]).read_bytes()).hexdigest())
-            MODULE.validate_series_equivalence_scope(entries)
-            self.assertEqual(MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SERIES_SCOPE, policy), entries)
-            bad = copy.deepcopy(policy); bad["mutation_equivalences"][0]["candidate_sha256"] = "a" * 64
-            with self.assertRaisesRegex(MODULE.Incomplete, "complete candidate"):
-                MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SERIES_SCOPE, bad)
-            proof = root / proof_name; proof_bytes = proof.read_bytes()
-            proof.write_bytes(proof_bytes + b"\nChanged review bytes.\n")
-            with self.assertRaisesRegex(MODULE.Incomplete, "proof bytes"):
-                MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SERIES_SCOPE, policy)
-            proof.write_bytes(proof_bytes.replace(b"## ENGINE-SERIES-COMMIT-DURATION-FALLBACK-SUB\n",
-                                                b"## Changed section\n"))
-            for entry in entries: entry["proof"]["sha256"] = hashlib.sha256(proof.read_bytes()).hexdigest()
-            with self.assertRaisesRegex(MODULE.Incomplete, "exact section"):
-                MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SERIES_SCOPE, policy)
-            proof.write_bytes(proof_bytes)
-            for entry in entries: entry["proof"]["sha256"] = hashlib.sha256(proof_bytes).hexdigest()
-            source = root / "crates/nevrotick-engine/src/lib.rs"
-            source.write_bytes(source.read_bytes() + b"\n// Changed source custody.\n")
-            with self.assertRaisesRegex(MODULE.Incomplete, "source or complete candidate"):
-                MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SERIES_SCOPE, policy)
+            for name in MODULE.SERIES_SUBJECTS.values():
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / name, target)
+
+            def copied_product(path):
+                """Only the product-map boundary is substituted; byte guards run."""
+                return {}, {name: hashlib.sha256((path / name).read_bytes()).hexdigest()
+                            for name in MODULE.SERIES_SUBJECTS.values()}
+
+            _, identity = copied_product(root)
+            proof_name = "tasks/synthetic-series-custody.md"
+            proof = root / proof_name
+            proof.parent.mkdir()
+            proof.write_text("Synthetic observer controls only; no equivalence approval.\n\n"
+                             "## SYNTHETIC-SERIES-CUSTODY-LIBRARY\n\n"
+                             "## SYNTHETIC-SERIES-CUSTODY-RECEIVER\n")
+            proof_bytes = proof.read_bytes()
+            entries = []
+            for owner, filename in MODULE.SERIES_SUBJECTS.items():
+                identifier = "SYNTHETIC-SERIES-CUSTODY-" + ("LIBRARY" if owner == "library" else "RECEIVER")
+                entries.append({
+                    "id": identifier, "candidate_sha256": digest(identity),
+                    "source_sha256": identity[filename],
+                    "mutant": {
+                        "name": filename + ":1:1: synthetic custody descriptor",
+                        "package": "nevrotick-engine", "file": filename,
+                        "function": {"function_name": "synthetic_guard", "return_type": "",
+                                     "span": {"start": {"line": 1, "column": 1},
+                                              "end": {"line": 2, "column": 1}}},
+                        "span": {"start": {"line": 1, "column": 1},
+                                 "end": {"line": 1, "column": 2}},
+                        "replacement": "-", "genre": "BinaryOperator"},
+                    "requirement": "Synthetic generic source/candidate/review custody control",
+                    "rationale": "Observer fixture only; no fault execution or equivalence credit.",
+                    "proof": {"path": proof_name, "sha256": hashlib.sha256(proof_bytes).hexdigest(),
+                              "section": identifier, "reviewer": "synthetic observer control",
+                              "verdict": "independently-justified-equivalent"}})
+            policy = {"maximum_mutants": 512, "mutation_equivalences": entries}
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_series_equivalence_scope(entries)
+            with patch.object(MODULE.PRODUCT, "admit_product", side_effect=copied_product):
+                self.assertEqual(MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SERIES_SCOPE, policy), entries)
+                bad = copy.deepcopy(policy); bad["mutation_equivalences"][0]["candidate_sha256"] = "a" * 64
+                with self.assertRaisesRegex(MODULE.Incomplete, "complete candidate"):
+                    MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SERIES_SCOPE, bad)
+                proof.write_bytes(proof_bytes + b"\nChanged review bytes.\n")
+                with self.assertRaisesRegex(MODULE.Incomplete, "proof bytes"):
+                    MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SERIES_SCOPE, policy)
+                proof.write_bytes(proof_bytes.replace(b"## SYNTHETIC-SERIES-CUSTODY-LIBRARY\n",
+                                                    b"## Changed section\n"))
+                for entry in entries: entry["proof"]["sha256"] = hashlib.sha256(proof.read_bytes()).hexdigest()
+                with self.assertRaisesRegex(MODULE.Incomplete, "exact section"):
+                    MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SERIES_SCOPE, policy)
+                proof.write_bytes(proof_bytes)
+                for entry in entries: entry["proof"]["sha256"] = hashlib.sha256(proof_bytes).hexdigest()
+                source = root / "crates/nevrotick-engine/src/lib.rs"
+                source.write_bytes(source.read_bytes() + b"\n// Changed source custody.\n")
+                with self.assertRaisesRegex(MODULE.Incomplete, "source or complete candidate"):
+                    MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SERIES_SCOPE, policy)
 
     def test_series_equivalence_native_observer_retains_misses_kills_and_timeouts(self):
         """Synthetic native records test accounting only; no execution credit."""

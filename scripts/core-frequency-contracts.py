@@ -293,3 +293,172 @@ def contracts(session, policy, report, execute_registry, phase_examples):
         raise ValueError("Frequency consumers differ from their fixed actual2+18 limits.")
     markers = {"phase_plan_legal": "legal-phase-plan-contract\n", LEGAL_NAME: LEGAL_MARKER}
     return execute_registry(session, policy, report, combined, markers, LEGAL_SCOPE)
+
+
+# The historical four-owner registry above remains unchanged. This additive
+# profile retains its two processes while extending their checked consumers.
+BASELINE_LIMITS = {"legal_executions": 2, "negative_compilations": 23}
+BASELINE_CODES = {
+    "baseline_feedback_raw_map_input": "E0308",
+    "baseline_feedback_map_default": "E0277",
+    "baseline_feedback_map_mutation": "E0616",
+    "baseline_feedback_completion_literal": "E0451",
+    "baseline_feedback_live_proposal_settlement": "E0505",
+}
+BASELINE_LEGAL_SCOPE = (
+    LEGAL_SCOPE + " Baseline map constructor assertions execute healthy checked admission, "
+    "exact typed nonpositive-ratio refusal and invalid-domain refusal in the same frequency binary. "
+    "Baseline completion constructor assertions execute checked healthy chains, intermediate "
+    "frame/generation mismatches and endpoint-cycle refusals with exact typed causes. "
+    "The issue/settle borrow helper compiles but is not called; it establishes an external legal "
+    "typed neighbor, not an executed baseline-feedback trajectory."
+)
+
+
+def _baseline_legal_source():
+    """Extend only the new profile's legal consumer; never rewrite historical truth."""
+    source = _legal_source()
+    hook = '    println!("legal-frequency-contract");'
+    if source.count(hook) != 1:
+        raise ValueError("Baseline feedback requires its unique legal execution hook.")
+    source = source.replace(hook, "    legal_baseline_map(&chart,base,now)?;\n"
+                            "    legal_baseline_completion_construction(&chart,context,base)?;\n" + hook, 1)
+    return source + r'''
+use time_core::{FixtureBaselineCompletion,FixtureBaselineError,FixtureBaselineFeedback,
+    FixtureChartError,FixtureControllerClockMap,FixtureControllerClockMapInput,FixtureFrequencyNumericError,
+    FixtureFrequencyNumericField,FixtureFrequencyNumericIssue,FixtureRateSpan,FixtureSettledRateInterval};
+fn legal_baseline_map(chart:&FixtureAffineChart,base:FixturePhaseBaseline,now:FixturePhaseNow)
+    ->Checked<()> {
+    let input=FixtureControllerClockMapInput { reference:now,valid_until:MonotonicNs::new(32_000_000_000),
+        active_ratio:0.5,active_ratio_error:0.0,actual_phase:1.0/16.0,actual_phase_error:0.0,
+        actual_rate:1.0/64.0,actual_rate_error:0.0 };
+    let map=FixtureControllerClockMap::new(chart,base,input)?;
+    assert_eq!(map.active_ratio(),0.5);
+    assert_eq!(map.actual_phase(),1.0/16.0);
+    assert_eq!(map.actual_rate(),1.0/64.0);
+    assert_eq!(map.reference().monotonic(),now.monotonic());
+    let invalid=FixtureControllerClockMapInput { active_ratio:0.0,..input };
+    assert!(matches!(FixtureControllerClockMap::new(chart,base,invalid),
+        Err(FixtureBaselineError::Numeric { source:FixtureFrequencyNumericError::Input {
+            field:FixtureFrequencyNumericField::ActiveRatio,issue:FixtureFrequencyNumericIssue::NonPositive } })));
+    let expired=FixtureControllerClockMapInput { valid_until:now.monotonic(),..input };
+    assert!(matches!(FixtureControllerClockMap::new(chart,base,expired),Err(FixtureBaselineError::Map)));
+    Ok(())
+}
+fn legal_baseline_completion(delivery:FixtureSettledRateInterval,achieved:FixturePhaseBaseline,
+    final_frames:FixtureChartFrames)->Result<FixtureBaselineCompletion,FixtureBaselineError> {
+    FixtureBaselineCompletion::new(delivery,achieved,final_frames)
+}
+fn legal_baseline_completion_construction(chart:&FixtureAffineChart,context:FixtureRateClockContext,
+    base:FixturePhaseBaseline)->Checked<()> {
+    let span=FixtureRateSpan::new((ActiveAwakeNs::new(0),ActiveAwakeNs::new(1_000_000_000)),
+        (MonotonicNs::new(0),MonotonicNs::new(2_000_000_000)))?;
+    let frames=FixtureChartFrames::new(chart.frames().target_frame(),chart.frames().target_generation(),nz(31)?,nz(7)?)?;
+    let delivery=FixtureSettledRateInterval::new(context,nz(1)?,span,base.rate(),frames,chart.domain())?;
+    let valid=FixtureChartFrames::new(nz(31)?,nz(7)?,nz(37)?,nz(9)?)?;
+    let _=legal_baseline_completion(delivery,base,valid)?;
+    for wrong in [FixtureChartFrames::new(nz(41)?,nz(7)?,nz(37)?,nz(9)?)?,
+                  FixtureChartFrames::new(nz(31)?,nz(11)?,nz(37)?,nz(9)?)?] {
+        assert!(matches!(legal_baseline_completion(delivery,base,wrong),Err(FixtureBaselineError::Receipt)));
+    }
+    for cycle in [FixtureChartFrames::new(nz(31)?,nz(7)?,chart.frames().target_frame(),nz(9)?)?,
+                  FixtureChartFrames::new(nz(31)?,nz(7)?,nz(37)?,chart.frames().target_generation())?] {
+        assert!(matches!(legal_baseline_completion(delivery,base,cycle),
+            Err(FixtureBaselineError::Phase { source:FixturePhaseError::Chart {
+                source:FixtureChartError::InvalidFrames } })));
+    }
+    assert_eq!(span.active_elapsed().nanoseconds(),1_000_000_000);
+    assert_eq!(frames.source_frame(),chart.frames().target_frame());
+    assert_eq!(frames.source_generation(),chart.frames().target_generation());
+    let _=legal_baseline_completion(delivery,base,valid)?;
+    Ok(())
+}
+fn legal_baseline_issue_then_settle(mut owner:FixturePhasePlanOwner<'_,'_>,map:FixtureControllerClockMap,
+    now:FixturePhaseNow,event:FixtureBaselineFeedback)->Result<(),FixtureBaselineError> {
+    { let proposal=owner.issue_baseline(map,now)?;
+      let _=std::hint::black_box((proposal.ordinal(),proposal.requested_rate())); }
+    let _=std::hint::black_box(owner.settle_baseline(event,now));
+    Ok(())
+}
+'''
+
+
+def baseline_feedback_examples():
+    """Five fixed negative consumers, added only to the five-owner profile."""
+    rows = []
+
+    def add(name, source, code, line, tokens, positive):
+        row = _negative(source, code, line, tokens, positive)
+        row["external_legal_neighbor"]["scope"] = (
+            "compiled typed neighbor; checked map/completion constructor assertions execute in main; "
+            "issue/settle helper compiles but is not called")
+        rows.append((name, row))
+
+    add("baseline_feedback_raw_map_input", '''use time_core::{FixtureControllerClockMapInput,FixturePhaseNow,FixturePhasePlanOwner};
+fn bypass(mut owner:FixturePhasePlanOwner<'_,'_>,input:FixtureControllerClockMapInput,now:FixturePhaseNow) {
+    let _ = owner.issue_baseline(input,now);
+}
+fn main() {}
+''', "E0308", "    let _ = owner.issue_baseline(input,now);",
+        ("FixtureControllerClockMap", "FixtureControllerClockMapInput"), "legal_baseline_issue_then_settle")
+    add("baseline_feedback_map_default", '''use time_core::FixtureControllerClockMap;
+fn main() {
+    let _: FixtureControllerClockMap = Default::default();
+}
+''', "E0277", "    let _: FixtureControllerClockMap = Default::default();",
+        ("FixtureControllerClockMap", "Default"), "legal_baseline_map")
+    add("baseline_feedback_map_mutation", '''use time_core::FixtureControllerClockMap;
+fn mutate(map:&mut FixtureControllerClockMap) {
+    map.baseline = 0;
+}
+fn main() {}
+''', "E0616", "    map.baseline = 0;", ("baseline", "private"), "legal_baseline_map")
+    add("baseline_feedback_completion_literal", '''use time_core::{FixtureBaselineCompletion,FixtureChartFrames,FixturePhaseBaseline,FixtureSettledRateInterval};
+fn bypass(delivery:FixtureSettledRateInterval,achieved:FixturePhaseBaseline,final_frames:FixtureChartFrames) {
+    let _ = FixtureBaselineCompletion { delivery,achieved,final_frames };
+}
+fn main() {}
+''', "E0451", "    let _ = FixtureBaselineCompletion { delivery,achieved,final_frames };",
+        ("FixtureBaselineCompletion", "private"), "legal_baseline_completion")
+    add("baseline_feedback_live_proposal_settlement", '''use time_core::{FixtureBaselineError,FixtureBaselineFeedback,FixtureControllerClockMap,
+    FixturePhaseNow,FixturePhasePlanOwner};
+fn overlap(mut owner:FixturePhasePlanOwner<'_,'_>,map:FixtureControllerClockMap,
+    now:FixturePhaseNow,event:FixtureBaselineFeedback)->Result<(),FixtureBaselineError> {
+    let proposal=owner.issue_baseline(map,now)?;
+    let settled=owner.settle_baseline(event,now);
+    let _=std::hint::black_box(proposal.ordinal());
+    let _=std::hint::black_box(settled);
+    Ok(())
+}
+fn main() {}
+''', "E0505", "    let settled=owner.settle_baseline(event,now);",
+        ("owner", "borrowed"), "legal_baseline_issue_then_settle")
+    return tuple(rows)
+
+
+def baseline_feedback_contracts(session, policy, report, execute_registry, phase_examples):
+    """Delegate exactly the historical controls plus five new causal consumers."""
+    legacy = phase_examples()
+    if (type(legacy) is not dict or set(legacy) != set(LEGACY_CODES)
+            or any(type(row) is not dict or row.get("code") != LEGACY_CODES[name]
+                   for name, row in legacy.items())):
+        raise ValueError("Baseline contracts require the unchanged affected phase registry.")
+    frequency = dict(examples())
+    rows = baseline_feedback_examples()
+    added = dict(rows)
+    if (len(rows) != len(BASELINE_CODES) or set(added) != set(BASELINE_CODES)
+            or any(type(row) is not dict or row.get("code") != BASELINE_CODES[name]
+                   for name, row in added.items())
+            or set(legacy) & set(frequency) or (set(legacy) | set(frequency)) & set(added)):
+        raise ValueError("Baseline feedback consumers differ from their closed source set.")
+    combined = {**legacy, **frequency, **added}
+    actual = {"legal_executions": sum(row["code"] is None for row in combined.values()),
+              "negative_compilations": sum(row["code"] is not None for row in combined.values())}
+    limits = policy.get("external_consumer_limits")
+    if (type(limits) is not dict or set(limits) != set(BASELINE_LIMITS)
+            or any(type(value) is not int for value in limits.values())
+            or limits != BASELINE_LIMITS or actual != BASELINE_LIMITS):
+        raise ValueError("Baseline consumers differ from their fixed actual2+23 limits.")
+    combined[LEGAL_NAME] = {"source": _baseline_legal_source(), "code": None}
+    markers = {"phase_plan_legal": "legal-phase-plan-contract\n", LEGAL_NAME: LEGAL_MARKER}
+    return execute_registry(session, policy, report, combined, markers, BASELINE_LEGAL_SCOPE)

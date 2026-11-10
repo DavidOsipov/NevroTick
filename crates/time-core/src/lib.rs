@@ -154,9 +154,12 @@ pub use selection::{
 mod reference_input;
 
 pub use reference_input::{
-    FixtureAchievedPhaseCompletion, FixtureCorrectionFeedback, FixtureFrequencyAdmission,
-    FixtureFrequencyClockAssociation, FixtureFrequencyError, FixtureFrequencyHistory,
-    FixtureFrequencyProfile, FixtureFrequencyProjection, FixturePhaseBaseline, FixturePhaseBlocked,
+    FixtureAchievedPhaseCompletion, FixtureBaselineCompletion, FixtureBaselineError,
+    FixtureBaselineFeedback, FixtureBaselineProposal, FixtureBaselineRetirement,
+    FixtureBaselineSettlement, FixtureControllerClockMap, FixtureControllerClockMapInput,
+    FixtureCorrectionFeedback, FixtureFrequencyAdmission, FixtureFrequencyClockAssociation,
+    FixtureFrequencyError, FixtureFrequencyHistory, FixtureFrequencyProfile,
+    FixtureFrequencyProjection, FixturePhaseBaseline, FixturePhaseBlocked,
     FixturePhaseConstructionRejected, FixturePhaseError, FixturePhaseNow, FixturePhasePlanOwner,
     FixturePhaseProfile, FixturePhaseProposal, FixturePhaseProvenance,
     FixturePhaseReferenceAdmission, FixturePhaseResidualPermission, FixturePhaseRetirement,

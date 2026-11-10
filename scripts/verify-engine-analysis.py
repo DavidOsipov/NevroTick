@@ -15,6 +15,7 @@ import math
 from pathlib import Path
 import re
 import shutil
+import stat
 import sys
 import time
 import tomllib
@@ -5087,11 +5088,467 @@ def execute_session_profile(args, report: dict) -> None:
         report["qualification_passed"] = True
 
 
+# Exact two-owner laboratory continuation. No historical Engine policy is rebound.
+ADDRESS_POLICY = "policy/address-round-analysis.json"
+ADDRESS_TESTS = "scripts/tests/test_address_round_analysis.py"
+ADDRESS_SUBJECTS = {
+    "address_round": "crates/nevrotick-engine/src/address_round.rs",
+    "address_progress": "crates/nevrotick-engine/src/address_round/progress.rs",
+}
+ADDRESS_SCOPE = COMMON.Scope("nevrotick-engine", tuple(ADDRESS_SUBJECTS.items()), ADDRESS_POLICY)
+ADDRESS_TEST_SOURCES = {
+    "series::address_round::tests::": "crates/nevrotick-engine/tests/private/address_round.rs",
+    "series::address_round::progress::tests::": "crates/nevrotick-engine/tests/private/address_progress.rs",
+}
+ADDRESS_HELPERS = {
+    "crates/nevrotick-engine/tests/private/address_round.rs": frozenset({
+        "checked_config", "blackhole_then_reply", "check_query", "require_query",
+        "observe_queries", "product_ok", "classify_writable_result", "owned_timer_case",
+        "setup_handler_control_case", "owned_counter_boundary_case",
+        "future_invalidation_boundary_case", "check_receive_boundary_history",
+        "receive_budget_case", "check_readiness_io_history",
+    }),
+    "crates/nevrotick-engine/tests/private/address_progress.rs": frozenset({
+        "config", "product_ok", "product_some",
+    }),
+}
+ADDRESS_BOUND_INPUTS = tuple(dict.fromkeys((
+    WRAPPER, ADDRESS_TESTS, *ADDRESS_SUBJECTS.values(), *ADDRESS_TEST_SOURCES.values(),
+    "crates/nevrotick-engine/src/lib.rs", "crates/nevrotick-engine/src/series.rs",
+    "Cargo.toml", "Cargo.lock", "crates/nevrotick-engine/Cargo.toml", "rust-toolchain.toml",
+    ".cargo/config.toml", ".cargo/mutants.toml", ".config/nextest.toml",
+    "scripts/portable-analysis.py", "scripts/analysis-runtime.py", "scripts/check-analysis.py",
+    "scripts/analysis-controls.py",
+    "scripts/verify.py", "scripts/check-environment.py", "scripts/check-strict.py",
+    "scripts/prepare-product.py", "scripts/slint_dependency_profile.py", "scripts/slint_linux_sdk.py",
+    "scripts/advisory_snapshot.py", "tools/crypto-aes-siv-witness/fuzz/input_custody.py",
+    "policy/tool-manifest.json", "policy/analysis-tools.json", "policy/verification-manifest.toml",
+)))
+ADDRESS_FIXED_POLICY = {
+    "schema_version": 1, "package": "nevrotick-engine",
+    "critical_files": list(ADDRESS_SUBJECTS.values()), "tool_admission_profile": "full",
+    "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+    "maximum_mutants": 512, "maximum_listed_per_file": 512, "maximum_listed_total": 512,
+    "coverage_wall_seconds": 300, "enumeration_wall_seconds": 240, "mutation_wall_seconds": 1200,
+    "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+    "jobs": 1, "test_threads": 1, "coverage_test_threads": 1,
+    "mutation_jobs": 1, "mutation_process_limit": 128, "mutation_message_format": "json",
+    "minimum_free_bytes": 5 * 1024**3, "stop_free_bytes": 4 * 1024**3,
+    "owned_output_maximum_allocated_bytes": 768 * 1024**2, "owned_output_maximum_entries": 32768,
+    "mutation_equivalences": [],
+}
+
+
+def address_test_inventory(binding: dict) -> tuple[list[str], list[str]]:
+    """Require the final ordinary Engine's complete 178/69 identity sets."""
+    inventory = binding.get("test_inventory")
+    if type(inventory) is not dict or set(inventory) != {"ordinary", "doctests", "sha256"}:
+        raise Incomplete("Address-round ordinary identities are unbound.")
+    for field, count in (("ordinary", 178), ("doctests", 69)):
+        names = inventory[field]
+        if (type(names) is not list or len(names) != count
+                or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
+                or names != sorted(set(names))):
+            raise Incomplete("Address-round requires its complete unique ordinary/doc inventory.")
+    ordinary, docs = inventory["ordinary"], inventory["doctests"]
+    hashes = {"ordinary": COMMON.canonical_sha256(ordinary), "doctests": COMMON.canonical_sha256(docs),
+              "baseline": COMMON.canonical_sha256(sorted(ordinary + docs))}
+    if inventory["sha256"] != hashes or len(set(ordinary + docs)) != 247:
+        raise Incomplete("Address-round native identity digests differ.")
+    if any(not any(name.startswith(prefix) for name in ordinary) for prefix in ADDRESS_TEST_SOURCES):
+        raise Incomplete("Both actual address-round test owners are required.")
+    selected = [name for name in docs if name.startswith(ADDRESS_SUBJECTS["address_round"] + " - series::address_round::")]
+    legal = [name for name in selected if "::AddressRoundConfig::new " in name and not name.endswith((" - compile fail", " - compile"))]
+    privacy = [name for name in selected if "::AddressRoundConfig " in name and name.endswith(" - compile fail")]
+    consume = [name for name in selected if "::PreparedAddressRound " in name and name.endswith(" - compile fail")]
+    if len(selected) != 5 or len(legal) != 1 or len(privacy) != 3 or len(consume) != 1:
+        raise Incomplete("Address-round legal/privacy/consume-once docs are missing.")
+    return ordinary, docs
+
+
+def validate_address_policy(policy: dict, *, campaign: bool = False) -> dict:
+    """Unbound ordinary evidence and empty campaign inventories always refuse."""
+    if (type(policy) is not dict or set(policy) != set(ADDRESS_FIXED_POLICY) | {"binding", "mutation_inventories"}
+            or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                   for key, value in ADDRESS_FIXED_POLICY.items())):
+        raise Incomplete("Address-round scope, limits or thresholds differ.")
+    binding = policy["binding"]
+    if type(binding) is not dict or set(binding) != {"candidate_sha256", "source_file_count", "inputs_sha256", "ordinary_evidence", "test_inventory"}:
+        raise Incomplete("Address-round final ordinary binding has not been admitted.")
+    if (type(binding["source_file_count"]) is not int or binding["source_file_count"] <= 0
+            or type(binding["candidate_sha256"]) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", binding["candidate_sha256"]) is None):
+        raise Incomplete("Address-round candidate identity is invalid.")
+    pins = binding["inputs_sha256"]
+    if (type(pins) is not dict or set(pins) != set(ADDRESS_BOUND_INPUTS)
+            or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None for value in pins.values())):
+        raise Incomplete("Address-round protected input closure is incomplete.")
+    address_test_inventory(binding)
+    inventories = policy["mutation_inventories"]
+    if type(inventories) is not dict or (not inventories and campaign):
+        raise Incomplete("Address-round campaign needs reviewed nonempty inventories.")
+    if inventories:
+        if set(inventories) != set(ADDRESS_SUBJECTS):
+            raise Incomplete("Both exact address-round inventories are required.")
+        for value in inventories.values():
+            if (type(value) is not dict or set(value) != {"count", "sha256"}
+                    or type(value["count"]) is not int or not 0 < value["count"] <= 512
+                    or type(value["sha256"]) is not str or re.fullmatch(r"[a-f0-9]{64}", value["sha256"]) is None):
+                raise Incomplete("Address-round inventory count/hash is invalid.")
+        if sum(value["count"] for value in inventories.values()) > 512:
+            raise Incomplete("Address-round complete inventory exceeds its finite campaign cap.")
+    return binding
+
+
+def address_execution(text: str, binding: dict, *, doctests: bool) -> dict:
+    """Reconcile actual complete native successes against the frozen identities."""
+    ordinary, docs = address_test_inventory(binding)
+    records = read_successful_address_records(text)
+    expected = sorted(ordinary + docs) if doctests else ordinary
+    if sorted(records) != expected:
+        raise Incomplete("Address-round execution lacks its complete actual baseline.")
+    return {"tests_executed": len(records), "test_names": records,
+            "inventory_sha256": COMMON.canonical_sha256(sorted(records))}
+
+
+def read_successful_address_records(text: str) -> list[str]:
+    """Require complete entered libtest blocks, exact declarations and terminal rows.
+
+    Reuse the session parser's complete-block/count reconciliation shape for the
+    success-only lane. Zero-test sub-binaries remain observable, never evidence
+    for a missing nonempty cohort. An unfinished trailing block cannot disappear.
+    """
+    if type(text) is not str:
+        raise Incomplete("Address-round native test capture must be decoded text.")
+    if any(re.fullmatch(r"test ([^\r\n]+?) \.\.\. ok", line) is None
+           for line in text.splitlines() if line.startswith("test ") and not line.startswith("test result:")):
+        raise Incomplete("Address-round native test is failed, ignored or incomplete.")
+    if any(line in {"ok", "FAILED", "ignored"} for line in text.splitlines()):
+        raise Incomplete("Address-round native completion lacks its identity.")
+    blocks = list(re.finditer(r"^running (\d{1,6}) tests?\n(.*?)^test result: ok\. "
+                             r"(\d{1,6}) passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;[^\r\n]*$",
+                             text, re.MULTILINE | re.DOTALL))
+    all_records = re.findall(r"(?m)^test ([^\r\n]+?) \.\.\. ok$", text)
+    if (not blocks or not all_records
+            or len(re.findall(r"(?m)^running ", text)) != len(blocks)
+            or len(re.findall(r"(?m)^test result:", text)) != len(blocks)):
+        raise Incomplete("Address-round native block declaration or summary is unmatched.")
+    records = []
+    for block in blocks:
+        running, body, passed = block.groups()
+        names = re.findall(r"(?m)^test ([^\r\n]+?) \.\.\. ok$", body)
+        if (int(running) != int(passed) or len(names) != int(running)
+                or re.search(r"(?m)^running |^test result:", body)):
+            raise Incomplete("Address-round entered count differs from its complete native records.")
+        records.extend(names)
+    if records != all_records or len(records) != len(set(records)):
+        raise Incomplete("Address-round native records are duplicated or outside an entered block.")
+    return records
+
+
+def address_storage_usage(directory: Path) -> dict:
+    """Charge unique allocated blocks across the entire owned output tree.
+
+    This deliberately includes source/tools/logs as well as the shared target,
+    every cargo-mutants worker target and work/tmp (also the private /tmp).
+    It is a bounded before/after sample, not a continuous filesystem quota.
+    """
+    if directory.is_symlink() or not directory.is_dir() or directory.resolve(strict=True) != directory:
+        raise Incomplete("Address-round storage root is not its canonical owned directory.")
+    pending, seen, allocated, entries = [directory], set(), 0, 0
+    while pending:
+        path = pending.pop()
+        observed = path.lstat()
+        if not stat.S_ISREG(observed.st_mode) and not stat.S_ISDIR(observed.st_mode):
+            raise Incomplete("Address-round owned output contains a linked or special entry.")
+        entries += 1
+        if entries > ADDRESS_FIXED_POLICY["owned_output_maximum_entries"]:
+            raise Incomplete("Address-round owned output exceeds its finite entry bound.")
+        identity = observed.st_dev, observed.st_ino
+        if identity not in seen:
+            seen.add(identity)
+            allocated += observed.st_blocks * 512
+        if stat.S_ISDIR(observed.st_mode):
+            for child in path.iterdir():
+                pending.append(child)
+                if len(pending) + entries > ADDRESS_FIXED_POLICY["owned_output_maximum_entries"]:
+                    raise Incomplete("Address-round pending storage inventory exceeds its finite bound.")
+    return {"allocated_bytes": allocated, "entries": entries}
+
+
+def address_storage_checkpoint(session, policy: dict, report: dict, label: str, phase: str) -> None:
+    """Keep one aggregate 768-MiB sample and the four-GiB free reserve per command."""
+    usage = address_storage_usage(session.output)
+    row = {"lane": label, "phase": phase, **usage, "available_bytes": shutil.disk_usage(session.output).free}
+    report.setdefault("storage_samples", []).append(row)
+    (session.output / "progress.json").write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
+    if row["allocated_bytes"] >= policy["owned_output_maximum_allocated_bytes"]:
+        raise Incomplete("Address-round aggregate owned output reached its 768-MiB allocated cap.")
+    if row["available_bytes"] < policy["stop_free_bytes"]:
+        raise Incomplete("Address-round four-GiB available reserve reached.")
+
+
+def admit_address_ordinary(binding: dict) -> dict:
+    """Require an actual final receipt and unchanged executed recipes, never placeholders."""
+    evidence = binding["ordinary_evidence"]
+    if (type(evidence) is not dict or set(evidence) != {"receipt", "sha256", "status", "recipes_sha256"}
+            or evidence["status"] != "passed-address-round-all" or type(evidence["receipt"]) is not str
+            or not Path(evidence["receipt"]).is_absolute() or type(evidence["sha256"]) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", evidence["sha256"]) is None
+            or type(evidence["recipes_sha256"]) is not dict or not evidence["recipes_sha256"]):
+        raise Incomplete("Address-round ordinary receipt is unbound.")
+    raw = COMMON.read_analysis_bytes(Path(evidence["receipt"]), maximum=2 * 1024**2)
+    if hashlib.sha256(raw).hexdigest() != evidence["sha256"]:
+        raise Incomplete("Address-round ordinary receipt changed.")
+    receipt = json.loads(raw, object_pairs_hook=COMMON.ANALYSIS.unique_object,
+                         parse_float=finite_number, parse_constant=invalid_number)
+    if (type(receipt) is not dict or receipt.get("status") != evidence["status"]
+            or receipt.get("bookends_unchanged") is not True
+            or receipt.get("candidate_sha256") != binding["candidate_sha256"]
+            or type(receipt.get("source_sha256")) is not dict
+            or len(receipt["source_sha256"]) != binding["source_file_count"]
+            or COMMON.canonical_sha256(receipt["source_sha256"]) != binding["candidate_sha256"]
+            or receipt.get("recipes_sha256") != evidence["recipes_sha256"]):
+        raise Incomplete("Address-round ordinary candidate/recipe custody differs.")
+    for name, digest in evidence["recipes_sha256"].items():
+        path = Path(name)
+        if (not path.is_absolute() or path.resolve(strict=True) != path or path.is_symlink()
+                or type(digest) is not str or PRODUCT.sha256(path) != digest):
+            raise Incomplete("Address-round executed recipe bytes changed.")
+    rows = receipt.get("lanes")
+    if (type(rows) is not list or any(type(row) is not dict for row in rows)
+            or [row.get("lane") for row in rows] != list(SESSION_ORDINARY_LANES)
+            or any(row.get("failure") is not None or type(row.get("exit_code")) is not int or row["exit_code"] != 0 for row in rows)):
+        raise Incomplete("Address-round ordinary receipt lacks all required successful lanes.")
+    ordinary, docs = address_test_inventory(binding)
+    for label, expected in (("engine-tests", ordinary), ("engine-optimized-tests", ordinary), ("engine-doctests", docs)):
+        row = next(row for row in rows if row["lane"] == label)
+        if (type(row.get("tests")) is not dict or row["tests"].get("executed") != len(expected)
+                or sorted(row["tests"].get("test_names", [])) != expected):
+            raise Incomplete("Address-round ordinary actual test records differ.")
+    return evidence
+
+
+def address_assertion_sites(root: Path, binding: dict) -> dict:
+    """Traverse only closed semantic helpers in the two source-bound test owners."""
+    ordinary, _docs = address_test_inventory(binding)
+    sites = {}
+    for prefix, filename in ADDRESS_TEST_SOURCES.items():
+        raw = COMMON.read_analysis_bytes(root / filename, maximum=512 * 1024)
+        if hashlib.sha256(raw).hexdigest() != binding["inputs_sha256"][filename]:
+            raise Incomplete("Address-round semantic source bytes changed.")
+        source = raw.decode("utf-8")
+        masked, functions = quality_rust_functions(source)
+        selected = [name for name in ordinary if name.startswith(prefix)]
+        declared = re.findall(r"(?m)^#\[test\]\s*\n(?:#\[[^\n]*\]\s*\n)*fn ([A-Za-z_][A-Za-z0-9_]*)\s*\(", source)
+        if sorted(prefix + name for name in declared) != selected:
+            raise Incomplete("Address-round declared and actually executed test owners differ.")
+        for test in selected:
+            pending, visited, found, facts = [test.removeprefix(prefix)], set(), [], set()
+            while pending:
+                owner = pending.pop()
+                if owner in visited:
+                    continue
+                if owner not in functions:
+                    raise Incomplete("Address-round selected semantic helper is absent.")
+                visited.add(owner)
+                start, end = functions[owner]["start"], functions[owner]["end"]
+                code = masked[start:end]
+                for helper in ADDRESS_HELPERS[filename]:
+                    for call in re.finditer(r"\b" + helper + r"\s*\(", code):
+                        pending.append(helper)
+                        if helper in {"product_ok", "product_some"}:
+                            arguments = session_call_arguments(masked, source, start + call.end() - 1, end)
+                            if len(arguments) == 2 and re.fullmatch(r'\s*"[^"\\]*"\s*', source[slice(*arguments[1])]):
+                                facts.add(session_static_fact(source, arguments))
+                for match in re.finditer(r"\b(assert|assert_eq|assert_ne)!\s*\(", code):
+                    offset = start + match.start()
+                    row = {"source": filename, "line": source.count("\n", 0, offset) + 1,
+                           "column": offset - source.rfind("\n", 0, offset), "owner": owner}
+                    marker = {"assert": "assertion failed:", "assert_eq": "assertion `left == right` failed",
+                              "assert_ne": "assertion `left != right` failed"}[match[1]]
+                    arguments = session_call_arguments(masked, source, start + match.end() - 1, end)
+                    if match[1] == "assert" and len(arguments) > 1:
+                        literal = source[slice(*arguments[1])].strip()
+                        if literal == '"{fact}"' and owner in {"product_ok", "product_some"}:
+                            found.append({**row, "fact_helper": True})
+                            continue
+                        if len(arguments) != 2 or re.fullmatch(r'"[^"\\{}]*"', literal) is None:
+                            raise Incomplete("Address-round assertion message shape needs explicit source review.")
+                        marker = json.loads(literal)
+                        found.append({**row, "marker": marker, "exact": True})
+                    else:
+                        found.append({**row, "marker": marker, "exact": False})
+            expanded = []
+            for row in found:
+                if row.get("fact_helper"):
+                    expanded.extend({key: value for key, value in {**row, "marker": fact, "exact": True}.items() if key != "fact_helper"} for fact in sorted(facts))
+                else:
+                    expanded.append(row)
+            if not expanded:
+                raise Incomplete("Address-round test has no admitted semantic assertion.")
+            sites[test] = expanded
+    return sites
+
+
+def address_caught_causes(directory: Path, outcomes: dict, sites: dict) -> dict:
+    """Require semantic causes; retain one exact independently reviewed R47 deferral."""
+    checked = {}
+    aliases = {"crates/nevrotick-engine/src/../tests/private/address_round.rs": ADDRESS_TEST_SOURCES["series::address_round::tests::"],
+               "crates/nevrotick-engine/src/address_round/../../tests/private/address_progress.rs": ADDRESS_TEST_SOURCES["series::address_round::progress::tests::"]}
+    r47_name = "crates/nevrotick-engine/src/address_round.rs:394:8: delete ! in guarded_writable"
+    r47_fixture = "series::address_round::tests::real_receive_budget_boundary_distinguishes_valid_sixty_fourth_from_all_rejected"
+    r47_body = 'Error: Custom { kind: TimedOut, error: "receive-boundary fixture exceeded its actual original cutoff" }'
+    r47_writable = "series::address_round::tests::final_writable_guard_rechecks_controls_after_actual_socket_readiness"
+    r47_marker = "quiet writable neighbor never sent its actual query"
+    for row in outcomes["outcomes"]:
+        if row.get("summary") != "CaughtMutant":
+            continue
+        raw = session_owned_mutation_bytes(directory, row.get("log_path", ""))
+        text = raw.decode("utf-8")
+        name = row["scenario"]["Mutant"]["name"]
+        # Run all raw compiler/resource/abort and complete-record checks first.
+        sections = session_complete_failures(text)
+        inconclusive = []
+        r47_section = None
+        marker_text = text
+        for section in sections:
+            if name == r47_name and section[1] == r47_fixture and section[2].strip() == r47_body:
+                r47_section = section
+                # Preserve every boundary/newline; mask only the exact admitted body.
+                marker_text = text[:section.start(2)] + re.sub(r"[^\r\n]", " ", section[2]) + text[section.end(2):]
+                inconclusive.append({"test": r47_fixture,
+                                     "section_sha256": hashlib.sha256(section[0].encode("utf-8")).hexdigest(),
+                                     "reason": "R47 receive cutoff is inconclusive; separate writable assertion supplies the cause",
+                                     "kill_credit": 0})
+        if re.search(r"(?m)^Error: |ADDRESS_ROUND_(?:PRIMARY|CLEANUP|ATTEMPT_IO|PEER|PEER_DROP|UNEXPECTED_ATTEMPT|WRITABLE_IO|SOCKET_RETAINED|RECEIVE_INCOMPLETE)\b", marker_text):
+            raise Incomplete("Address-round caught log retains native/fixture error; no kill credit.")
+        if text.count("panicked at ") != sum(section[2].count("panicked at ") for section in sections):
+            raise Incomplete("Address-round log has an unclassified panic.")
+        causes = []
+        for section in sections:
+            test, body = section.groups()
+            if test not in sites:
+                raise Incomplete("Address-round caught test is outside its semantic owners.")
+            if section is r47_section:
+                continue
+            locations = list(re.finditer(r"(?m)^thread '([^'\r\n]+)'(?: \(\d+\))? panicked at (?:/work/source/)?([^\r\n]+):(\d+):(\d+):\n([^\r\n]+)", body))
+            if not locations or body.count("panicked at ") != len(locations):
+                raise Incomplete("Address-round caught assertion is missing or malformed.")
+            for location in locations:
+                thread, filename, line, column, message = location.groups()
+                filename = aliases.get(filename, filename)
+                matches = [site for site in sites[test] if (site["source"], site["line"], site["column"]) == (filename, int(line), int(column))
+                           and (message == site["marker"] if site["exact"] else message.startswith(site["marker"]))]
+                if thread != test or len(matches) != 1:
+                    raise Incomplete("Address-round panic is not its exact source-owned semantic assertion.")
+                causes.append({"test": test, **matches[0]})
+        if inconclusive and not any(cause["test"] == r47_writable and cause["marker"] == r47_marker
+                                    and cause["exact"] is True
+                                    and cause["source"] == ADDRESS_TEST_SOURCES["series::address_round::tests::"]
+                                    and cause["owner"] == r47_writable.removeprefix("series::address_round::tests::")
+                                    for cause in causes):
+            raise Incomplete("R47 inconclusive receive section lacks its exact separate writable assertion.")
+        if name in checked:
+            raise Incomplete("Address-round caught identity is duplicated.")
+        checked[name] = {"log_sha256": hashlib.sha256(raw).hexdigest(), "causes": causes,
+                         "inconclusive_sections": inconclusive}
+    return {"checked_caught_logs": checked, "compiler_or_harness_kill_credit": 0}
+
+
+def execute_address_profile(args, report: dict) -> None:
+    """Select only the two new owners through unchanged shared custody and scoring."""
+    if args.tool_admission_profile != "full" or args.lane not in {"enumerate", "coverage", "mutation", "all"}:
+        raise Incomplete("Address-round admits only its full-profile metrics lanes.")
+    policy = read_json(ROOT / ADDRESS_POLICY)
+    binding = validate_address_policy(policy, campaign=args.lane in {"mutation", "all"})
+    subjects = ADDRESS_SCOPE.select(args.subject)
+    _, identity = PRODUCT.admit_product(ROOT)
+    if (len(identity) != binding["source_file_count"] or COMMON.canonical_sha256(identity) != binding["candidate_sha256"]
+            or any(PRODUCT.sha256(ROOT / name) != digest for name, digest in binding["inputs_sha256"].items())):
+        raise Incomplete("Address-round final candidate/helper binding differs.")
+    manifest = tomllib.loads((ROOT / "policy/verification-manifest.toml").read_text())
+    for filename in ADDRESS_SUBJECTS.values():
+        if (manifest.get("critical_files", []).count(filename) != 1
+                or sum(row.get("package") == "nevrotick-engine" and filename in row.get("files", []) for row in manifest.get("security_modules", [])) != 1):
+            raise Incomplete("Both address-round owners need exact critical/security registration.")
+    admit_address_ordinary(binding)
+    if shutil.disk_usage(args.output_dir.parent).free < policy["minimum_free_bytes"]:
+        raise Incomplete("Address-round metrics require five GiB before admission.")
+    selected = argparse.Namespace(**vars(args))
+    if args.lane == "enumerate":
+        selected.lane = "mutation"
+    report.update(profile="address_round", subjects=subjects, candidate_sha256=binding["candidate_sha256"],
+                  qualification_passed=False, ordinary_evidence=binding["ordinary_evidence"],
+                  scope="Selected two-owner laboratory address-round metrics; no native or production qualification",
+                  ordinary_rebinding="Manifest registration changes the product candidate: require a new ordinary receipt; never rewrite v5 or its metadata hashes.",
+                  storage_scope="768 MiB aggregate over the entire owned output including all Cargo/worker targets; before/after samples, not a continuous quota.",
+                  generation_gap_controls="Review every function/Garde guard against the actual inventory; direct alternatives receive no generated kill credit.")
+    session = COMMON.Session(ROOT, selected, report, ADDRESS_SCOPE, policy, ADDRESS_BOUND_INPUTS)
+    try:
+        if (COMMON.canonical_sha256(session.product_identity) != binding["candidate_sha256"]
+                or len(session.product_identity) != binding["source_file_count"]
+                or read_json(session.source / ADDRESS_POLICY) != policy
+                or any(PRODUCT.sha256(session.source / name) != digest
+                       for name, digest in binding["inputs_sha256"].items())):
+            raise Incomplete("Captured address-round candidate/policy/helper bytes differ.")
+        def run(label, command, timeout, **options):
+            address_storage_checkpoint(session, policy, report, label, "before")
+            try:
+                result = session.run(label, command, timeout, **options)
+            finally:
+                address_storage_checkpoint(session, policy, report, label, "after")
+            if label.startswith("mutation-campaign:"):
+                subject = label.removeprefix("mutation-campaign:")
+                directory = session.work / "mutation" / subject / "mutants.out"
+                outcomes = COMMON.read_analysis_json(directory / "outcomes.json")
+                listing, _warning = COMMON.parse_mutation_listing(report["mutation_enumeration"][subject]["raw_output"], expected_jobs=1)
+                inventory = COMMON.mutation_inventory(ADDRESS_SCOPE, listing, 512, subjects[subject])
+                COMMON.mutation_counts(ADDRESS_SCOPE, outcomes, inventory, subjects[subject], native_exit_code=result["exit_code"], defer_gate=True)
+                for row in outcomes["outcomes"]:
+                    if type(row.get("scenario")) is dict:
+                        descriptor = inventory[row["scenario"]["Mutant"]["name"]]
+                        if session_owned_mutation_bytes(directory, row.get("diff_path", "")) != descriptor["diff"].encode():
+                            raise Incomplete("Address-round mutation diff differs from its frozen descriptor.")
+                baseline = next(row for row in outcomes["outcomes"] if row["scenario"] == "Baseline")
+                baseline_raw = session_owned_mutation_bytes(directory, baseline.get("log_path", ""))
+                checked = address_execution(baseline_raw.decode(), binding, doctests=True)
+                checked["log_sha256"] = hashlib.sha256(baseline_raw).hexdigest()
+                checked["caught_cause_admission"] = address_caught_causes(directory, outcomes, address_assertion_sites(session.source, binding))
+                report.setdefault("baseline_execution", {})[subject] = checked
+            return result
+        if args.lane == "enumerate":
+            listing = COMMON.enumerate_mutation_inventories(ADDRESS_SCOPE, subjects, policy, session.tools, run, report,
+                deadline=time.monotonic() + policy["enumeration_wall_seconds"], maximum_per_file=512, maximum_total=512)
+            report.update(listed_inventories=listing.inventories, listed_inventory_bindings=listed_summary(listing.inventories),
+                          listed_total=listing.total, campaign_admission=False)
+        if args.lane in {"coverage", "all"}:
+            ignored = "(^|/)tests/|/rustlib/src/rust/library/|/crates/(ntp-wire|time-domain)/|/nevrotick-engine/src/(lib[.]rs|measurement[.]rs|relative[.]rs|series[.]rs|session[.]rs|quality[.]rs|quality/|bin/)"
+            raw = run("coverage", [str(session.tools / "cargo-llvm-cov"), "llvm-cov", "--package", "nevrotick-engine", "--frozen", "--jobs", "1",
+                "--lib", "--tests", "--json", "--output-path", "/work/coverage.json", "--failure-mode", "any",
+                "--ignore-filename-regex", ignored, "--fail-under-file-lines", "90", "--", "--test-threads=1"], policy["coverage_wall_seconds"])
+            report["coverage_execution"] = address_execution(raw, binding, doctests=False)
+            coverage = COMMON.read_analysis_json(session.work / "coverage.json")
+            report["coverage"] = {name: COMMON.coverage_counts(ADDRESS_SCOPE, coverage, "/work/source/" + filename) for name, filename in subjects.items()}
+        if args.lane in {"mutation", "all"}:
+            COMMON.run_analysis_lanes(ADDRESS_SCOPE, subjects, policy, session.work, session.tools, run, report, "mutation")
+    finally:
+        session.finish()
+        admit_address_ordinary(binding)
+    if args.lane != "enumerate":
+        report["selected_lane_passed"] = True
+        report["selected_qualification_passed"] = args.lane == "all"
+        report["qualification_passed"] = args.lane == "all" and subjects == ADDRESS_SCOPE.select("all")
+
+
 def execute(args, report: dict) -> None:
     """Execute only the fixed selected lane, with full shared custody bookends."""
     profile = getattr(args, "profile", "legacy")
-    if profile not in {"legacy", "series", "quality", "session"}:
+    if profile not in {"legacy", "series", "quality", "session", "address_round"}:
         raise Incomplete("Unknown engine analysis profile.")
+    if profile == "address_round":
+        execute_address_profile(args, report)
+        return
     if profile == "session":
         execute_session_profile(args, report)
         return
@@ -5153,13 +5610,17 @@ def execute(args, report: dict) -> None:
 def main(argv=None) -> int:
     """Keep listing completion distinct from selected host coverage/mutation gates."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--profile", choices=("legacy", "series", "quality", "session"), default="legacy")
+    parser.add_argument("--profile", choices=("legacy", "series", "quality", "session", "address_round"), default="legacy")
     parser.add_argument("--lane", choices=("contracts", "enumerate", "coverage", "mutation", "all"), required=True)
-    parser.add_argument("--subject", choices=(*SUBJECTS, "series", "quality", "session", "all"), default="all")
+    parser.add_argument("--subject", choices=(*SUBJECTS, "series", "quality", "session", *ADDRESS_SUBJECTS, "all"), default="all")
     parser.add_argument("--tool-admission-profile", choices=("full", "stable-core"), default="full")
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
+    if args.profile == "address_round" and args.subject not in {*ADDRESS_SUBJECTS, "all"}:
+        parser.error("--profile address_round selects only address_round, address_progress or all")
+    if args.profile != "address_round" and args.subject in ADDRESS_SUBJECTS:
+        parser.error("Address-round subjects require --profile address_round")
     if args.profile == "legacy" and args.subject == "series":
         parser.error("--subject series requires --profile series")
     if args.profile == "legacy" and args.subject == "quality":

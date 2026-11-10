@@ -103,6 +103,15 @@ FREQUENCY_PRIOR_SUBJECTS = (
     ("rate_delivery", "crates/time-core/src/reference_input/rate_delivery.rs"),
 )
 
+BASELINE_FEEDBACK_SUBJECTS = (
+    ("frequency_state", "crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs"),
+    ("numeric", "crates/time-core/src/regression/chart/roundoff/frequency_prior.rs"),
+    ("phase_plan", "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs"),
+    ("rate_delivery", "crates/time-core/src/reference_input/rate_delivery.rs"),
+    ("chart", "crates/time-core/src/regression/chart.rs"),
+)
+
+
 def load_module(name: str, path: Path):
     """Load reviewed repository tooling without running its CLI entry point."""
     specification = importlib.util.spec_from_file_location(name, path)
@@ -1414,9 +1423,9 @@ def frequency_prior_equivalences_valid(policy):
     return True
 
 
-def require_frequency_prior_role(scope, policy):
-    """Admit only the four-owner stable-only child, never a historical role alias."""
-    facts = {
+def frequency_prior_role_facts():
+    """Return the unchanged stable four-owner facts for explicit role admission."""
+    return {
         "schema_version": 1, "package": "time-core",
         "critical_files": list(dict(FREQUENCY_PRIOR_SUBJECTS).values()),
         "tool_admission_profile": "stable-core", "coverage_minimum_line_percent": 90,
@@ -1430,6 +1439,11 @@ def require_frequency_prior_role(scope, policy):
         "mutation_debug_info": 0, "contracts_wall_seconds": 300, "general_jobs": 12,
         "external_consumer_limits": {"legal_executions": 2, "negative_compilations": 18},
     }
+
+
+def require_frequency_prior_role(scope, policy):
+    """Admit only the four-owner stable-only child, never a historical role alias."""
+    facts = frequency_prior_role_facts()
     extra = {"source_file_count", "candidate_sha256", "inputs_sha256", "mutation_inventories",
              "mutation_equivalences", "test_inventories", "scope"}
     if (type(scope) is not Scope or scope.package != "time-core"
@@ -1441,6 +1455,183 @@ def require_frequency_prior_role(scope, policy):
         raise Incomplete("Frequency-prior requires its exact four-owner stable role and unchanged gates.")
 
 
+# These ordinary source reviews apply only to the exact current five-owner role.
+# A later catalog extension requires independent review and a source change here.
+BASELINE_FEEDBACK_EQUIVALENCE_PROOF = "tasks/phase-plan-analysis-equivalences.md"
+BASELINE_FEEDBACK_EQUIVALENCE_REQUIREMENT = "REQ-8/10/11/14/15; CHECK-7/8/10/11/14/25; AC-19"
+BASELINE_FEEDBACK_EQUIVALENCE_REVIEWERS = "/root; /root/handoff_final_review; /root/handoff_runner"
+BASELINE_FEEDBACK_EQUIVALENCE_REVIEWS = {'BF-STATE-GROWTH-NORMAL-POSITIVE': ('81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7',
+                                     'b5a0a6e706ec4a2cbe7f87283276804d97af40ccc03e1b1c1f8b4dbb1fe95355',
+                                     'Normality excludes signed zeros, subnormals, infinities and every NaN '
+                                     'before the growth comparison; positive and negative normal binary64 '
+                                     'values give identical >0 and >=0 results. Earlier profile fields, '
+                                     'short-circuit order, validation, errors and effects are unchanged. '
+                                     'This current-source review grants zero kills; the exact mutant must '
+                                     'still be an actual MissedMutant.',
+                                     {'crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs': '81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7'}),
+ 'BF-STATE-REBASE-INTERMEDIATE-LABELS': ('81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7',
+                                         '5c785761ecf495dad31ec98bfa6c55c6373e872a211c5dbde3867c1aa7b55508',
+                                         'The unchanged checked intersection composition rejects each '
+                                         'invalid intermediate label, and exact recomputed complete Basis '
+                                         'matching rejects each invalid replacement endpoint, before '
+                                         'anchor/prior transformation. All such composition failures map to '
+                                         'AnchorRebaseUnavailable. Returned cause, model and effects agree '
+                                         'over all admitted private operands; extra immutable recomposition '
+                                         'stays bounded without a timing or allocation-trace equality claim. '
+                                         'This current-source review grants zero kills; the exact mutant '
+                                         'must still be an actual MissedMutant.',
+                                         {'crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs': '81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7',
+                                          'crates/time-core/src/regression/chart.rs': '598f7870c27f69f1e4fe6abd7d820dd8ad85bef6b811f01b1ea90966c46c89ba'}),
+ 'BF-STATE-REBASE-STEP-GENERATION-SOURCE-FRAME': ('81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7',
+                                                  '856113b1e9e16e87c4f72b6ec8ebbb7a2e40733b8dcc139ff932721bb5bd9d66',
+                                                  'The unchanged checked intersection composition rejects '
+                                                  'each invalid intermediate label, and exact recomputed '
+                                                  'complete Basis matching rejects each invalid replacement '
+                                                  'endpoint, before anchor/prior transformation. All such '
+                                                  'composition failures map to AnchorRebaseUnavailable. '
+                                                  'Returned cause, model and effects agree over all admitted '
+                                                  'private operands; extra immutable recomposition stays '
+                                                  'bounded without a timing or allocation-trace equality '
+                                                  'claim. This current-source review grants zero kills; the '
+                                                  'exact mutant must still be an actual MissedMutant.',
+                                                  {'crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs': '81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7',
+                                                   'crates/time-core/src/regression/chart.rs': '598f7870c27f69f1e4fe6abd7d820dd8ad85bef6b811f01b1ea90966c46c89ba'}),
+ 'BF-STATE-REBASE-SOURCE-LABELS': ('81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7',
+                                   '2d0000995867fd3e8186e4d7035d776910069bbe78dd71054ffcf0dbc2f4c0c1',
+                                   'The unchanged checked intersection composition rejects each invalid '
+                                   'intermediate label, and exact recomputed complete Basis matching rejects '
+                                   'each invalid replacement endpoint, before anchor/prior transformation. '
+                                   'All such composition failures map to AnchorRebaseUnavailable. Returned '
+                                   'cause, model and effects agree over all admitted private operands; extra '
+                                   'immutable recomposition stays bounded without a timing or '
+                                   'allocation-trace equality claim. This current-source review grants zero '
+                                   'kills; the exact mutant must still be an actual MissedMutant.',
+                                   {'crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs': '81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7',
+                                    'crates/time-core/src/regression/chart.rs': '598f7870c27f69f1e4fe6abd7d820dd8ad85bef6b811f01b1ea90966c46c89ba'}),
+ 'BF-STATE-REBASE-SOURCE-GENERATION-TARGET-FRAME': ('81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7',
+                                                    '0618126bbf35bad79ab81e6056df17aed1728d67952c23b46a51bed234e75b44',
+                                                    'The unchanged checked intersection composition rejects '
+                                                    'each invalid intermediate label, and exact recomputed '
+                                                    'complete Basis matching rejects each invalid '
+                                                    'replacement endpoint, before anchor/prior '
+                                                    'transformation. All such composition failures map to '
+                                                    'AnchorRebaseUnavailable. Returned cause, model and '
+                                                    'effects agree over all admitted private operands; extra '
+                                                    'immutable recomposition stays bounded without a timing '
+                                                    'or allocation-trace equality claim. This current-source '
+                                                    'review grants zero kills; the exact mutant must still '
+                                                    'be an actual MissedMutant.',
+                                                    {'crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs': '81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7',
+                                                     'crates/time-core/src/regression/chart.rs': '598f7870c27f69f1e4fe6abd7d820dd8ad85bef6b811f01b1ea90966c46c89ba'}),
+ 'BF-STATE-REBASE-TARGET-LABELS': ('81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7',
+                                   '83e3f3e4d5a88097f4d2720d16bb09b47c96bd28165900b05f6d179727ee33c0',
+                                   'The unchanged checked intersection composition rejects each invalid '
+                                   'intermediate label, and exact recomputed complete Basis matching rejects '
+                                   'each invalid replacement endpoint, before anchor/prior transformation. '
+                                   'All such composition failures map to AnchorRebaseUnavailable. Returned '
+                                   'cause, model and effects agree over all admitted private operands; extra '
+                                   'immutable recomposition stays bounded without a timing or '
+                                   'allocation-trace equality claim. This current-source review grants zero '
+                                   'kills; the exact mutant must still be an actual MissedMutant.',
+                                   {'crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs': '81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7',
+                                    'crates/time-core/src/regression/chart.rs': '598f7870c27f69f1e4fe6abd7d820dd8ad85bef6b811f01b1ea90966c46c89ba'}),
+ 'BF-NUMERIC-ANCHOR-BOUND-ABS-SIGN': ('6dde6d91d6b70f1334f04f5ef8ade4062ec767c6762b15b399d4fdf302025cd0',
+                                      '634b2295f78ea61d46e336309fd366e8c04bd3bf2e2ecf0f16a5683798ab153e',
+                                      'Only the coefficient-bound operand changes sign; checked effect '
+                                      'admission, phase subtraction and the zero shortcut are unchanged. The '
+                                      'pinned parent coefficient_addition_error immediately takes both '
+                                      'operand magnitudes, yielding identical bound operands, failure order '
+                                      'and result bits for every admitted signed point including signed '
+                                      'zero. This current-source review grants zero kills; the exact mutant '
+                                      'must still be an actual MissedMutant.',
+                                      {'crates/time-core/src/regression/chart/roundoff/frequency_prior.rs': '6dde6d91d6b70f1334f04f5ef8ade4062ec767c6762b15b399d4fdf302025cd0',
+                                       'crates/time-core/src/regression/chart/roundoff.rs': '38405a55e5a85a34a04bd751cc51ef08be5363f21681691e6a955a4b6983128e'}),
+ 'BF-NUMERIC-INTERVAL-WHOLE-ZERO-PRODUCT': ('6dde6d91d6b70f1334f04f5ef8ade4062ec767c6762b15b399d4fdf302025cd0',
+                                            '6106e65c018c06850ad7b2e57d45ccb4caab74f15a792e8d0020e57b2bd5120a',
+                                            'Both whole-zero intervals take the same ZERO shortcut; neither '
+                                            'whole-zero interval uses identical four-pair work. With exactly '
+                                            'one whole-zero interval, the unchanged inner endpoint OR '
+                                            'returns literal positive-zero bounds for every pair and min/max '
+                                            'reduction returns canonical ZERO. Outputs, errors and effects '
+                                            'agree over finite ordered intervals; work stays at most four '
+                                            'pairs without timing equality. This current-source review '
+                                            'grants zero kills; the exact mutant must still be an actual '
+                                            'MissedMutant.',
+                                            {'crates/time-core/src/regression/chart/roundoff/frequency_prior.rs': '6dde6d91d6b70f1334f04f5ef8ade4062ec767c6762b15b399d4fdf302025cd0'}),
+ 'BF-PHASE-PROFILE-NORMAL-POSITIVE': ('3ddf8f1a78e19874f18d03ba564e8117a3f7aa88356b1441601d2215278a7d43',
+                                      '315fd436863d362ccf54569c33f7d00c5769dce339afb8ce8e07d28ca7e9e508',
+                                      'For every raw phase-cap binary64 value, unchanged normality excludes '
+                                      'both signed zeros, subnormals, infinities and every NaN before the '
+                                      'comparison. Positive normal values satisfy both >0 and >=0 and '
+                                      'negative normal values satisfy neither. Horizons, iteration order, '
+                                      'validation, refusal and effects are unchanged over the full private '
+                                      'profile domain. This current-source review grants zero kills; the '
+                                      'exact mutant must still be an actual MissedMutant.',
+                                      {'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': '3ddf8f1a78e19874f18d03ba564e8117a3f7aa88356b1441601d2215278a7d43'})}
+
+
+def baseline_feedback_equivalences_valid(policy):
+    """Admit no E, or the complete code-owned current-source review catalog.
+
+    Actual product/source/document hashing and section admission remain mandatory
+    in admit_mutation_equivalences. This check supplies no historical inheritance
+    or policy-controlled semantic approval and guesses no future candidate hash.
+    """
+    if type(policy) is not dict or type(policy.get("mutation_equivalences")) is not list:
+        return False
+    entries = policy["mutation_equivalences"]
+    if not entries:
+        return True
+    if len(entries) != len(BASELINE_FEEDBACK_EQUIVALENCE_REVIEWS):
+        return False
+    candidate, pins = policy.get("candidate_sha256"), policy.get("inputs_sha256")
+    if (type(candidate) is not str or re.fullmatch(r"[0-9a-f]{64}", candidate) is None
+            or type(pins) is not dict):
+        return False
+    fields = {"id", "candidate_sha256", "source_sha256", "mutant", "requirement", "rationale", "proof"}
+    seen = set()
+    for entry in entries:
+        if type(entry) is not dict or set(entry) != fields:
+            return False
+        identifier = entry["id"]
+        if (type(identifier) is not str or identifier not in BASELINE_FEEDBACK_EQUIVALENCE_REVIEWS
+                or identifier in seen):
+            return False
+        source, descriptor, rationale, dependencies = BASELINE_FEEDBACK_EQUIVALENCE_REVIEWS[identifier]
+        if (entry["candidate_sha256"] != candidate or entry["source_sha256"] != source
+                or type(entry["mutant"]) is not dict or canonical_sha256(entry["mutant"]) != descriptor
+                or entry["requirement"] != BASELINE_FEEDBACK_EQUIVALENCE_REQUIREMENT
+                or entry["rationale"] != rationale
+                or any(pins.get(name) != digest for name, digest in dependencies.items())):
+            return False
+        proof = entry["proof"]
+        if (type(proof) is not dict or set(proof) != {"path", "sha256", "section", "reviewer", "verdict"}
+                or proof["path"] != BASELINE_FEEDBACK_EQUIVALENCE_PROOF or proof["section"] != identifier
+                or proof["reviewer"] != BASELINE_FEEDBACK_EQUIVALENCE_REVIEWERS
+                or proof["verdict"] != "independently-justified-equivalent"
+                or type(proof["sha256"]) is not str or re.fullmatch(r"[0-9a-f]{64}", proof["sha256"]) is None
+                or pins.get(BASELINE_FEEDBACK_EQUIVALENCE_PROOF) != proof["sha256"]):
+            return False
+        seen.add(identifier)
+    return seen == set(BASELINE_FEEDBACK_EQUIVALENCE_REVIEWS)
+
+
+def require_baseline_feedback_role(scope, policy):
+    """Admit only the current five owners, without historical equivalence credit."""
+    facts = {**frequency_prior_role_facts(),
+             "critical_files": list(dict(BASELINE_FEEDBACK_SUBJECTS).values()),
+             "external_consumer_limits": {"legal_executions": 2, "negative_compilations": 23}}
+    extra = {"source_file_count", "candidate_sha256", "inputs_sha256", "mutation_inventories",
+             "mutation_equivalences", "test_inventories", "scope"}
+    if (type(scope) is not Scope or scope.package != "time-core"
+            or scope.policy != "policy/baseline-feedback-analysis.json"
+            or scope.subjects != BASELINE_FEEDBACK_SUBJECTS or type(policy) is not dict
+            or set(policy) != set(facts) | extra
+            or any(type(policy.get(k)) is not type(v) or policy[k] != v for k, v in facts.items())
+            or not baseline_feedback_equivalences_valid(policy)):
+        raise Incomplete("Baseline-feedback requires its exact five-owner stable role and current closed equivalences.")
+
+
 def admission_profile(args, scope, policy):
     """Require an exact stable role before narrowing analysis-tool custody."""
     profile = getattr(args, "tool_admission_profile", "full")
@@ -1448,6 +1639,12 @@ def admission_profile(args, scope, policy):
         raise Incomplete("Unknown analysis admission profile.")
     if policy.get("tool_admission_profile", "full") != profile:
         raise Incomplete("Analysis admission profile differs from the current policy.")
+    if (scope.policy == "policy/baseline-feedback-analysis.json"
+            or scope.subjects == BASELINE_FEEDBACK_SUBJECTS):
+        require_baseline_feedback_role(scope, policy)
+        if profile != "stable-core" or args.lane not in {"contracts", "coverage", "mutation", "all"}:
+            raise Incomplete("Baseline-feedback admits only stable compiler/coverage/mutation lanes.")
+        return profile
     if (scope.policy == "policy/frequency-prior-analysis.json"
             or scope.subjects == FREQUENCY_PRIOR_SUBJECTS):
         require_frequency_prior_role(scope, policy)

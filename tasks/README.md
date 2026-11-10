@@ -178,6 +178,10 @@ parents; it creates no second execution sequence.
 ## Cross-cutting records and evidence
 
 - [Windows integration](windows11-integration.md) and [protected optional storage](windows-protected-storage.md) own W11-W01–W11-W10/ST-W01–ST-W07 dispositions. Apply their mapped contracts before dependent adapters; source-ready does not authorize a native probe.
+
+The [10 November ST-W01 documentary card](windows-protected-storage.md#7-st-w01-documentary-card--10-november-2026)
+is complete; its exact engineering construction, implementation admission and
+native qualification remain open. Keep the current NTS priority and all holds.
 - [Build/CPU optimization](build-optimization.md), [catalogue/statistics](server-catalogue-and-statistics.md) and [future time assurance](time-assurance-integration.md) keep their existing owners, prerequisites and evidence chains. They add no blanket prerequisite to current Core work.
 - `*-equivalence*.md` / `*-equivalences.md`, cohort plans, inventory-admission JSON and the Chrony ledger support their owning tasks. They are evidence/review/accounting records, not independent implementation assignments or proof that a phase passed.
 

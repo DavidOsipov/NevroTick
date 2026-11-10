@@ -248,3 +248,334 @@ current set. Every exact variant still executes and must actually finish as
 unviable, absent, changed or timed-out variants cannot receive this treatment.
 All exclusions remain raw misses and receive zero kill credit. The earlier
 incomplete campaigns and completed proofs retain only their original scopes.
+
+
+# Baseline-feedback current-source mutation reviews — 10 November 2026
+
+These ordinary source arguments belong only to the new five-owner
+`baseline_feedback` role. None imports or renews a historical four-owner
+frequency or finite-phase exclusion. They are not formal proofs, native runs or
+semantic kills. Admission still binds the fresh complete product candidate,
+exact production/supporting source bytes, this entire document and each named
+section. Every exact reviewed fault must be an actual complete `MissedMutant`;
+all raw misses remain visible, earn zero kills and leave any other survivor
+unresolved. The closed source-owned catalog may be empty or complete; policy
+cannot extend its identities, rationale, source dependencies or review metadata.
+
+The reviewed raw input candidate was
+`1980db699fb2231a4b1079cb13183c09d82491c50e2921331b29ad601c421308`.
+The state194 cohort remains its original incomplete93caught/93unviable/eightsurvivor
+receipt. The numeric277 cohort remains its original incomplete raw campaign.
+All nine selected variants compiled and passed the complete648-test baseline.
+Later test, policy or document integration needs fresh candidate/helper/document
+pins and qualification; no future hash is invented here. Distinct uncovered
+state identity/typed-cause and numeric behavioral cases need actual regression
+controls, not equivalent exclusions.
+
+## BF-STATE-GROWTH-NORMAL-POSITIVE
+
+**Reviewed 10 November 2026:** `/root`, `/root/handoff_final_review` and
+`/root/handoff_runner`. REQ-8/10/11/14/15; CHECK-7/8/10/11/14/25; AC-19.
+
+Exact source `crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs`, SHA256
+`81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7`. Exact native descriptor:
+
+`crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs:180:19: replace > with >= in profile_valid`.
+
+Half-open operator span `180:19` to
+`180:20`; canonical complete seven-field
+descriptor SHA256 `b5a0a6e706ec4a2cbe7f87283276804d97af40ccc03e1b1c1f8b4dbb1fe95355`.
+Raw diff SHA256 `8252d2903b1bef3a9f56801a7b871da96aef90721a6adca8187e90657915eae0`;
+raw successful log SHA256 `738c92cc7799199fc531da28c7e54cf836f03ed8f8a973aeaaeb19663ee2fbdd`.
+
+Normality excludes signed zeros, subnormals, infinities and every NaN before the growth comparison; positive and negative normal binary64 values give identical >0 and >=0 results. Earlier profile fields, short-circuit order, validation, errors and effects are unchanged. This current-source review grants zero kills; the exact mutant must still be an actual MissedMutant.
+
+This partitions all raw binary64 bit patterns, not merely previously
+constructed profiles. The existing scalar reads and short-circuit predicates
+are pure and unchanged. Changing any preceding normality/type admission needs
+new review; no adjacent positivity comparison is covered automatically.
+
+## BF-STATE-REBASE-INTERMEDIATE-LABELS
+
+**Reviewed 10 November 2026:** `/root`, `/root/handoff_final_review` and
+`/root/handoff_runner`. REQ-8/10/11/14/15; CHECK-7/8/10/11/14/25; AC-19.
+
+Exact source `crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs`, SHA256
+`81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7`. Exact native descriptor:
+
+`crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs:1097:9: replace \|\| with && in rebase_model`.
+
+Half-open operator span `1097:9` to
+`1097:11`; canonical complete seven-field
+descriptor SHA256 `5c785761ecf495dad31ec98bfa6c55c6373e872a211c5dbde3867c1aa7b55508`.
+Raw diff SHA256 `5d556d3435242db56a9f19e7fac1b05e605c478430d16795dcceabe64ebba074`;
+raw successful log SHA256 `e3474f86bc391cb36c3dd358869ec387e527ba01fad700231c660c8b3333f4af`.
+
+Supporting source `crates/time-core/src/regression/chart.rs`, SHA256
+`598f7870c27f69f1e4fe6abd7d820dd8ad85bef6b811f01b1ea90966c46c89ba`, remains an independently pinned dependency.
+
+The unchanged checked intersection composition rejects each invalid intermediate label, and exact recomputed complete Basis matching rejects each invalid replacement endpoint, before anchor/prior transformation. All such composition failures map to AnchorRebaseUnavailable. Returned cause, model and effects agree over all admitted private operands; extra immutable recomposition stays bounded without a timing or allocation-trace equality claim. This current-source review grants zero kills; the exact mutant must still be an actual MissedMutant.
+
+`&&` has higher precedence than `||`, so this variant changes only the
+adjacent pair shown by its exact descriptor. Other disjuncts retain their own
+original truth values and evaluation order. If the original guard accepts,
+the remaining path is identical. If only one paired label fails, the mutant
+can enter immutable recomposition: `compose_intersection` independently checks
+both intermediate labels with OR before numeric work; the computed complete
+Basis independently captures predecessor source and effect target labels and
+compares them, domain, both coefficients and both error bits with replacement.
+Any mapping/domain/cycle/numeric failure and any replacement mismatch returns
+`AnchorRebaseUnavailable` before the anchor or prior is transformed. No operand
+or retained model is changed. This covers all individually checked operands,
+including narrowed private intersections; no current-public-caller restriction
+is assumed. Extra bounded recomposition can occur, but its work/storage stay
+within the unchanged admitted composition path. Identical timing, instruction
+counts and allocation traces are not promised. A change to grouping, mapping,
+Basis, error projection or private operand contracts invalidates this argument.
+
+## BF-STATE-REBASE-STEP-GENERATION-SOURCE-FRAME
+
+**Reviewed 10 November 2026:** `/root`, `/root/handoff_final_review` and
+`/root/handoff_runner`. REQ-8/10/11/14/15; CHECK-7/8/10/11/14/25; AC-19.
+
+Exact source `crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs`, SHA256
+`81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7`. Exact native descriptor:
+
+`crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs:1098:9: replace \|\| with && in rebase_model`.
+
+Half-open operator span `1098:9` to
+`1098:11`; canonical complete seven-field
+descriptor SHA256 `856113b1e9e16e87c4f72b6ec8ebbb7a2e40733b8dcc139ff932721bb5bd9d66`.
+Raw diff SHA256 `3ca8e7cd93adff090c244571a92d8bf2bd7ee43f389e8cb53b3529b86a01eced`;
+raw successful log SHA256 `96c1f8bdef991e1eb5f3000570ad6d958e44ea171fa6e21a73844ac9e445152c`.
+
+Supporting source `crates/time-core/src/regression/chart.rs`, SHA256
+`598f7870c27f69f1e4fe6abd7d820dd8ad85bef6b811f01b1ea90966c46c89ba`, remains an independently pinned dependency.
+
+The unchanged checked intersection composition rejects each invalid intermediate label, and exact recomputed complete Basis matching rejects each invalid replacement endpoint, before anchor/prior transformation. All such composition failures map to AnchorRebaseUnavailable. Returned cause, model and effects agree over all admitted private operands; extra immutable recomposition stays bounded without a timing or allocation-trace equality claim. This current-source review grants zero kills; the exact mutant must still be an actual MissedMutant.
+
+`&&` has higher precedence than `||`, so this variant changes only the
+adjacent pair shown by its exact descriptor. Other disjuncts retain their own
+original truth values and evaluation order. If the original guard accepts,
+the remaining path is identical. If only one paired label fails, the mutant
+can enter immutable recomposition: `compose_intersection` independently checks
+both intermediate labels with OR before numeric work; the computed complete
+Basis independently captures predecessor source and effect target labels and
+compares them, domain, both coefficients and both error bits with replacement.
+Any mapping/domain/cycle/numeric failure and any replacement mismatch returns
+`AnchorRebaseUnavailable` before the anchor or prior is transformed. No operand
+or retained model is changed. This covers all individually checked operands,
+including narrowed private intersections; no current-public-caller restriction
+is assumed. Extra bounded recomposition can occur, but its work/storage stay
+within the unchanged admitted composition path. Identical timing, instruction
+counts and allocation traces are not promised. A change to grouping, mapping,
+Basis, error projection or private operand contracts invalidates this argument.
+
+## BF-STATE-REBASE-SOURCE-LABELS
+
+**Reviewed 10 November 2026:** `/root`, `/root/handoff_final_review` and
+`/root/handoff_runner`. REQ-8/10/11/14/15; CHECK-7/8/10/11/14/25; AC-19.
+
+Exact source `crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs`, SHA256
+`81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7`. Exact native descriptor:
+
+`crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs:1099:9: replace \|\| with && in rebase_model`.
+
+Half-open operator span `1099:9` to
+`1099:11`; canonical complete seven-field
+descriptor SHA256 `2d0000995867fd3e8186e4d7035d776910069bbe78dd71054ffcf0dbc2f4c0c1`.
+Raw diff SHA256 `018fa946a3074231b66a64884521b3f74990cba16fd48cdb53c03a94f8ee831c`;
+raw successful log SHA256 `bf0635c378d2db7dbecde076b16826a1055215478f7d7ccb8dbffa26855bd971`.
+
+Supporting source `crates/time-core/src/regression/chart.rs`, SHA256
+`598f7870c27f69f1e4fe6abd7d820dd8ad85bef6b811f01b1ea90966c46c89ba`, remains an independently pinned dependency.
+
+The unchanged checked intersection composition rejects each invalid intermediate label, and exact recomputed complete Basis matching rejects each invalid replacement endpoint, before anchor/prior transformation. All such composition failures map to AnchorRebaseUnavailable. Returned cause, model and effects agree over all admitted private operands; extra immutable recomposition stays bounded without a timing or allocation-trace equality claim. This current-source review grants zero kills; the exact mutant must still be an actual MissedMutant.
+
+`&&` has higher precedence than `||`, so this variant changes only the
+adjacent pair shown by its exact descriptor. Other disjuncts retain their own
+original truth values and evaluation order. If the original guard accepts,
+the remaining path is identical. If only one paired label fails, the mutant
+can enter immutable recomposition: `compose_intersection` independently checks
+both intermediate labels with OR before numeric work; the computed complete
+Basis independently captures predecessor source and effect target labels and
+compares them, domain, both coefficients and both error bits with replacement.
+Any mapping/domain/cycle/numeric failure and any replacement mismatch returns
+`AnchorRebaseUnavailable` before the anchor or prior is transformed. No operand
+or retained model is changed. This covers all individually checked operands,
+including narrowed private intersections; no current-public-caller restriction
+is assumed. Extra bounded recomposition can occur, but its work/storage stay
+within the unchanged admitted composition path. Identical timing, instruction
+counts and allocation traces are not promised. A change to grouping, mapping,
+Basis, error projection or private operand contracts invalidates this argument.
+
+## BF-STATE-REBASE-SOURCE-GENERATION-TARGET-FRAME
+
+**Reviewed 10 November 2026:** `/root`, `/root/handoff_final_review` and
+`/root/handoff_runner`. REQ-8/10/11/14/15; CHECK-7/8/10/11/14/25; AC-19.
+
+Exact source `crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs`, SHA256
+`81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7`. Exact native descriptor:
+
+`crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs:1100:9: replace \|\| with && in rebase_model`.
+
+Half-open operator span `1100:9` to
+`1100:11`; canonical complete seven-field
+descriptor SHA256 `0618126bbf35bad79ab81e6056df17aed1728d67952c23b46a51bed234e75b44`.
+Raw diff SHA256 `d18b2411a73cfb8b9e5f39541d0d4987092eb83bdc423d057e117e8bc120aa2e`;
+raw successful log SHA256 `aaf4198a3b7144794c4770891884823b90cdf4025fe066715986f7b480080db9`.
+
+Supporting source `crates/time-core/src/regression/chart.rs`, SHA256
+`598f7870c27f69f1e4fe6abd7d820dd8ad85bef6b811f01b1ea90966c46c89ba`, remains an independently pinned dependency.
+
+The unchanged checked intersection composition rejects each invalid intermediate label, and exact recomputed complete Basis matching rejects each invalid replacement endpoint, before anchor/prior transformation. All such composition failures map to AnchorRebaseUnavailable. Returned cause, model and effects agree over all admitted private operands; extra immutable recomposition stays bounded without a timing or allocation-trace equality claim. This current-source review grants zero kills; the exact mutant must still be an actual MissedMutant.
+
+`&&` has higher precedence than `||`, so this variant changes only the
+adjacent pair shown by its exact descriptor. Other disjuncts retain their own
+original truth values and evaluation order. If the original guard accepts,
+the remaining path is identical. If only one paired label fails, the mutant
+can enter immutable recomposition: `compose_intersection` independently checks
+both intermediate labels with OR before numeric work; the computed complete
+Basis independently captures predecessor source and effect target labels and
+compares them, domain, both coefficients and both error bits with replacement.
+Any mapping/domain/cycle/numeric failure and any replacement mismatch returns
+`AnchorRebaseUnavailable` before the anchor or prior is transformed. No operand
+or retained model is changed. This covers all individually checked operands,
+including narrowed private intersections; no current-public-caller restriction
+is assumed. Extra bounded recomposition can occur, but its work/storage stay
+within the unchanged admitted composition path. Identical timing, instruction
+counts and allocation traces are not promised. A change to grouping, mapping,
+Basis, error projection or private operand contracts invalidates this argument.
+
+## BF-STATE-REBASE-TARGET-LABELS
+
+**Reviewed 10 November 2026:** `/root`, `/root/handoff_final_review` and
+`/root/handoff_runner`. REQ-8/10/11/14/15; CHECK-7/8/10/11/14/25; AC-19.
+
+Exact source `crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs`, SHA256
+`81810b88c2e856e8bcd861a53b775deee2d479f7ed494281659ed70dffd536c7`. Exact native descriptor:
+
+`crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs:1101:9: replace \|\| with && in rebase_model`.
+
+Half-open operator span `1101:9` to
+`1101:11`; canonical complete seven-field
+descriptor SHA256 `83e3f3e4d5a88097f4d2720d16bb09b47c96bd28165900b05f6d179727ee33c0`.
+Raw diff SHA256 `deb9f591c7ca0683508d10980fd20e239ef61adc3415461f8b3fe9f281c6d134`;
+raw successful log SHA256 `19500681c8ee4a12eb533ef75d932dd8cec3f8d7864b5c969eb40058a98919d8`.
+
+Supporting source `crates/time-core/src/regression/chart.rs`, SHA256
+`598f7870c27f69f1e4fe6abd7d820dd8ad85bef6b811f01b1ea90966c46c89ba`, remains an independently pinned dependency.
+
+The unchanged checked intersection composition rejects each invalid intermediate label, and exact recomputed complete Basis matching rejects each invalid replacement endpoint, before anchor/prior transformation. All such composition failures map to AnchorRebaseUnavailable. Returned cause, model and effects agree over all admitted private operands; extra immutable recomposition stays bounded without a timing or allocation-trace equality claim. This current-source review grants zero kills; the exact mutant must still be an actual MissedMutant.
+
+`&&` has higher precedence than `||`, so this variant changes only the
+adjacent pair shown by its exact descriptor. Other disjuncts retain their own
+original truth values and evaluation order. If the original guard accepts,
+the remaining path is identical. If only one paired label fails, the mutant
+can enter immutable recomposition: `compose_intersection` independently checks
+both intermediate labels with OR before numeric work; the computed complete
+Basis independently captures predecessor source and effect target labels and
+compares them, domain, both coefficients and both error bits with replacement.
+Any mapping/domain/cycle/numeric failure and any replacement mismatch returns
+`AnchorRebaseUnavailable` before the anchor or prior is transformed. No operand
+or retained model is changed. This covers all individually checked operands,
+including narrowed private intersections; no current-public-caller restriction
+is assumed. Extra bounded recomposition can occur, but its work/storage stay
+within the unchanged admitted composition path. Identical timing, instruction
+counts and allocation traces are not promised. A change to grouping, mapping,
+Basis, error projection or private operand contracts invalidates this argument.
+
+## BF-NUMERIC-ANCHOR-BOUND-ABS-SIGN
+
+**Reviewed 10 November 2026:** `/root`, `/root/handoff_final_review` and
+`/root/handoff_runner`. REQ-8/10/11/14/15; CHECK-7/8/10/11/14/25; AC-19.
+
+Exact source `crates/time-core/src/regression/chart/roundoff/frequency_prior.rs`, SHA256
+`6dde6d91d6b70f1334f04f5ef8ade4062ec767c6762b15b399d4fdf302025cd0`. Exact native descriptor:
+
+`crates/time-core/src/regression/chart/roundoff/frequency_prior.rs:980:64: delete - in FrequencyAnchor::rebase`.
+
+Half-open operator span `980:64` to
+`980:65`; canonical complete seven-field
+descriptor SHA256 `634b2295f78ea61d46e336309fd366e8c04bd3bf2e2ecf0f16a5683798ab153e`.
+Raw diff SHA256 `f9da51f1b88bf9967da7d8564972a0791053760d75382a80b56477d11a26d8c5`;
+raw successful log SHA256 `fba332dfbf25f05fda77d42d33032371d88415d64d48c23cbb4642a101884463`.
+
+Supporting source `crates/time-core/src/regression/chart/roundoff.rs`, SHA256
+`38405a55e5a85a34a04bd751cc51ef08be5363f21681691e6a955a4b6983128e`, remains an independently pinned dependency.
+
+Only the coefficient-bound operand changes sign; checked effect admission, phase subtraction and the zero shortcut are unchanged. The pinned parent coefficient_addition_error immediately takes both operand magnitudes, yielding identical bound operands, failure order and result bits for every admitted signed point including signed zero. This current-source review grants zero kills; the exact mutant must still be an actual MissedMutant.
+
+The private anchor is checked finite normal-or-zero with a supported
+nonnegative error. Raw effect fields receive the same actual `Self::new`
+validation first; invalid raw inputs therefore have the same ordered refusal.
+The point subtraction, its overflow/refusal and zero-error shortcut precede
+and do not depend on this sign. At the changed bound call, the parent's first
+operation takes `left.abs()` and `right.abs()`. Both signed zeros map to the
+same positive zero; every admitted finite magnitude is identical. The following
+outward additions/multiplication receive identical bits, so cancellation,
+extreme magnitudes, bound overflow and all returned causes agree. Negation
+cannot overflow an admitted finite binary64 point. No sign of the actual phase
+subtraction changes. This excludes no other unary operator.
+
+## BF-NUMERIC-INTERVAL-WHOLE-ZERO-PRODUCT
+
+**Reviewed 10 November 2026:** `/root`, `/root/handoff_final_review` and
+`/root/handoff_runner`. REQ-8/10/11/14/15; CHECK-7/8/10/11/14/25; AC-19.
+
+Exact source `crates/time-core/src/regression/chart/roundoff/frequency_prior.rs`, SHA256
+`6dde6d91d6b70f1334f04f5ef8ade4062ec767c6762b15b399d4fdf302025cd0`. Exact native descriptor:
+
+`crates/time-core/src/regression/chart/roundoff/frequency_prior.rs:1551:27: replace \|\| with && in Interval::multiply`.
+
+Half-open operator span `1551:27` to
+`1551:29`; canonical complete seven-field
+descriptor SHA256 `6106e65c018c06850ad7b2e57d45ccb4caab74f15a792e8d0020e57b2bd5120a`.
+Raw diff SHA256 `90f0a559dc37f069799729ce3c413645631dd0dcf5590fa498dd6912489cf270`;
+raw successful log SHA256 `5fad1d4f523b2640a39431adb7fc186165b5059494d57624b0604e599ef245af`.
+
+Both whole-zero intervals take the same ZERO shortcut; neither whole-zero interval uses identical four-pair work. With exactly one whole-zero interval, the unchanged inner endpoint OR returns literal positive-zero bounds for every pair and min/max reduction returns canonical ZERO. Outputs, errors and effects agree over finite ordered intervals; work stays at most four pairs without timing equality. This current-source review grants zero kills; the exact mutant must still be an actual MissedMutant.
+
+The type contract is a finite ordered enclosure, including singleton
+signed-zero endpoints; neither today's callers nor a smaller numeric envelope
+are assumed. Exactly one whole-zero operand gives four endpoint pairs, each
+with at least one zero. The unchanged inner OR selects literal `(0.0, 0.0)`
+without multiplying by an extreme/subnormal endpoint or calling outward.
+Reduction starts at positive/negative maximum finite values and ends at positive
+zero in both fields, identical to `Self::ZERO`. If both whole-zero flags agree,
+the paths are identical. No raw unsupported/nonordered Interval is fabricated.
+The additional fixed work has no retained effect or new failure; no equality of
+execution time or instruction count is asserted. Either zero predicate or the
+inner shortcut changing invalidates this review.
+
+
+## BF-PHASE-PROFILE-NORMAL-POSITIVE
+
+**Reviewed 10 November 2026:** `/root`, `/root/handoff_final_review`,
+`/root/address_generation_review` and `/root/handoff_runner`.
+REQ-8/10/11/14/15; CHECK-7/8/10/11/14/25; AC-19.
+
+Exact source `crates/time-core/src/reference_input/rate_delivery/phase_plan.rs`,
+SHA256 `3ddf8f1a78e19874f18d03ba564e8117a3f7aa88356b1441601d2215278a7d43`.
+Exact descriptor: `crates/time-core/src/reference_input/rate_delivery/phase_plan.rs:187:42: replace > with >= in profile_valid`.
+Half-open span187:42 to187:43; canonical complete descriptor SHA256
+`315fd436863d362ccf54569c33f7d00c5769dce339afb8ce8e07d28ca7e9e508`.
+Raw diff SHA256 `a66843446b7de51b8b41b27c992e03233d4250e2fe5cb14c3cf42bdd4137b1e2`;
+raw648-success log SHA256
+`57285bcbaa63df89e8c8af7644b95a06f90c4027c915963168dced0f30038237`.
+The terminal phase484 campaign remains incomplete:289caught,170compiler-unviable,
+25rawmisses and zero timeouts. This single disposition closes no other miss.
+
+For every raw phase-cap binary64 value, unchanged normality excludes both signed zeros, subnormals, infinities and every NaN before the comparison. Positive normal values satisfy both >0 and >=0 and negative normal values satisfy neither. Horizons, iteration order, validation, refusal and effects are unchanged over the full private profile domain. This current-source review grants zero kills; the exact mutant must still be an actual MissedMutant.
+
+This is a fresh argument on the currently changed phase owner, not the old
+finite-phase or four-owner exclusion. The helper's arbitrary private profile
+fields may contain any binary64 cap bit pattern. On each array element,
+`is_normal()` returns false for both signed zeros, all subnormals, all NaNs and
+both infinities, so the changed comparison is unevaluated. Every remaining
+normal value is finite and nonzero: positive values satisfy both comparisons;
+negative values satisfy neither. Array iteration, `all` short-circuiting and the
+earlier active/monotonic horizon guards are unchanged. The Boolean predicate is
+pure, and both mandatory Garde and direct construction receive the same result.
+Changing the preceding normality rule or helper input contract requires fresh
+review. No other positivity fault or ungenerated adapter gets exclusion credit.

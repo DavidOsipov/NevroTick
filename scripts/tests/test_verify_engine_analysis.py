@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+from contextlib import contextmanager
 import hashlib
 import importlib.util
 import io
@@ -1254,6 +1255,106 @@ class EngineExternalContractTests(unittest.TestCase):
 class QualityAnalysisTests(unittest.TestCase):
     """Q1 registration controls use synthetic native logs; no analyzer is invoked."""
 
+    @staticmethod
+    def assertion_sources():
+        """Small parser fixtures, not historical Rust source or executed product tests."""
+        private = """fn exact() { assert_eq!(17, 17); }
+fn facts() { assert_eq!(41, 41); }
+fn computed_policy_boundaries_preserve_strict_and_inclusive_comparisons() { assert_eq!(1, 1); }
+fn declared_getters_and_constructor_precedence_preserve_original_bits() { assert_eq!(1, 1); }
+fn dyadic_calculation_borrows_original_facts_and_assumptions() { facts(); exact(); assert!(true); }
+fn evaluator_failure_precedence_preserves_original_observation() { assert_eq!(1, 1); }
+fn finite_input_overflow_is_refused_at_the_first_computed_stage() { assert_eq!(1, 1); }
+fn generated_garde_dispatch_covers_nested_and_computed_fields() { assert_eq!(1, 1); }
+fn gradual_underflow_does_not_claim_exact_zero_uncertainty() { assert_eq!(1, 1); }
+fn mandatory_assumption_admission_preserves_bits_and_rejects_invalid_fields() { facts(); assert!(true); }
+fn negative_local_wall_interval_grows_declared_frequency_dispersion() { assert_eq!(1, 1); }
+fn negative_server_interval_processing_limit_uses_absolute_magnitude() { assert_eq!(1, 1); }
+fn original_measurement_refusal_and_redacted_diagnostics_are_preserved() { assert_eq!(1, 1); }
+fn precision_clamps_have_exact_boundary_and_neighbor_values() { assert_eq!(1, 1); }
+fn raw_round_trip_is_converted_once_before_cancellation() { assert_eq!(1, 1); }
+fn raw_scalar_and_interval_helpers_preserve_full_admitted_domains() { assert_eq!(1, 1); }
+fn refusal_families_keep_bounded_diagnostics_and_typed_sources() { assert_eq!(1, 1); }
+fn signed_server_interval_and_unsigned_root_words_are_retained() { assert_eq!(1, 1); }
+fn zero_raw_rtt_uses_combined_precision_floor() { assert_eq!(1, 1); }
+"""
+        external = """fn check(_value: bool, _fact: &str) {}
+fn facts() { assert_eq!(41, 41); }
+fn run_series() { assert_eq!(43, 43); }
+fn check_report() { assert_eq!(47, 47); }
+fn diagnostic() { assert_eq!(53, 53); }
+fn serve() { assert_eq!(59, 59); }
+fn check_ratio() { assert_eq!(2, 2); }
+fn check_near() { check(true, "fixture quality arithmetic differs"); }
+fn check_quality() { check_ratio(); check_near(); }
+fn absent_measurement_refuses_quality_with_actual_valid_neighbor() { check_quality(); }
+fn actual_quality_limits_refuse_without_rewriting_completion_or_age() { check_quality(); }
+fn actual_series_quality_retains_signed_intervals_source_and_original_age() {
+    facts(); run_series(); check_report(); diagnostic(); serve(); check_quality();
+    check(true, "conditional quality changed literal peer claims");
+}
+"""
+        return {
+            "crates/nevrotick-engine/src/quality/tests.rs": private.encode(),
+            "crates/nevrotick-engine/tests/quality.rs": external.encode(),
+        }
+
+    def semantic_policy(self):
+        """Bind only synthetic assertion inputs at this unit boundary, never production policy."""
+        policy = self.policy()
+        pins = {name: hashlib.sha256(data).hexdigest()
+                for name, data in self.assertion_sources().items()}
+        policy["inputs_sha256"].update(pins)
+        policy["candidate_sha256"] = independent_digest(pins)
+        return policy
+
+    def write_assertion_sources(self, root):
+        """Materialize the two fixed parser inputs without reading private evidence."""
+        for filename, data in self.assertion_sources().items():
+            target = root / filename
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+
+    @contextmanager
+    def ordinary_fixture(self):
+        """Temporary synthetic receipt/recipes exercise the real reader, not product evidence."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            recipes = root / "recipes"
+            recipes.mkdir()
+            recipe_names = (
+                "quality_ordinary_v2.py", "quality_ordinary_v1.py", "relative_bridge_ordinary.py",
+                "conditioned_fit_ordinary_v2.py", "series_ordinary_v1.py", "series_ordinary_v3.py",
+            )
+            recipe_pins = {}
+            for name in recipe_names:
+                data = ("# Synthetic reader fixture only: " + name + "\n").encode()
+                (recipes / name).write_bytes(data)
+                recipe_pins[name] = hashlib.sha256(data).hexdigest()
+            policy = self.policy()
+            source = {f"synthetic/source-{index:03}.rs": f"{index:064x}" for index in range(421)}
+            policy["candidate_sha256"] = independent_digest(source)
+            inventory = policy["test_inventory"]
+            receipt_data = {
+                "scope": "Synthetic receipt-reader fixture; no Rust execution or qualification.",
+                "status": "passed-q1-quality-all", "bookends_unchanged": True,
+                "candidate_sha256": policy["candidate_sha256"], "source_sha256": source,
+                "recipes_sha256": {str(recipes / name): digest for name, digest in recipe_pins.items()},
+                "lanes": [{"lane": lane, "tests": {"executed": len(inventory[key]),
+                    "test_names": inventory[key]}} for lane, key in (
+                        ("engine-tests", "ordinary"), ("engine-optimized-tests", "ordinary"),
+                        ("engine-doctests", "doctests"))],
+            }
+            receipt = root / "receipt.json"
+            raw = json.dumps(receipt_data, sort_keys=True, separators=(",", ":")).encode()
+            receipt.write_bytes(raw)
+            policy["ordinary_evidence"] = {"receipt": str(receipt),
+                "sha256": hashlib.sha256(raw).hexdigest(), "recipes_sha256": recipe_pins}
+            with patch.object(MODULE, "QUALITY_EVIDENCE_ROOT", recipes), \
+                 patch.object(MODULE, "QUALITY_ORDINARY_RECEIPT", receipt), \
+                 patch.object(MODULE, "QUALITY_ORDINARY_RECIPES", recipe_pins):
+                yield policy, receipt, recipes
+
     def test_current_roles_keep_distinct_source_scopes_and_bound_input_sets(self):
         """Current package identities do not merge the two qualification owners."""
         policy = self.policy()
@@ -1294,10 +1395,7 @@ class QualityAnalysisTests(unittest.TestCase):
             "replacement": "!=", "genre": "BinaryOperator"}
 
     def baseline_fixture(self, root):
-        for filename in ("crates/nevrotick-engine/src/quality/tests.rs", "crates/nevrotick-engine/tests/quality.rs"):
-            target=root/"source"/filename
-            target.parent.mkdir(parents=True,exist_ok=True)
-            shutil.copyfile(MODULE.QUALITY_ORDINARY_RECEIPT.parent/"source"/filename,target)
+        self.write_assertion_sources(root / "source")
         directory = root / "mutation/quality/mutants.out"
         directory.mkdir(parents=True)
         (directory / "baseline.log").write_text(self.execution())
@@ -1307,8 +1405,11 @@ class QualityAnalysisTests(unittest.TestCase):
         return directory, report
 
     def semantic_sites(self):
-        """Use exactly the admitted receipt copy, never mutable checkout line literals."""
-        return MODULE.quality_semantic_assertion_sites(MODULE.QUALITY_ORDINARY_RECEIPT.parent/"source",self.policy())
+        """Use fixed synthetic parser bytes; no historical product-source claim follows."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.write_assertion_sources(root)
+            return MODULE.quality_semantic_assertion_sites(root, self.semantic_policy())
 
     @staticmethod
     def failed_execution(failures):
@@ -1477,33 +1578,38 @@ class QualityAnalysisTests(unittest.TestCase):
             observe(bad, native=0)
 
     def test_quality_ordinary_evidence_rejects_changed_actual_receipt_and_recipe_bytes(self):
-        policy = self.policy()
-        admitted = MODULE.admit_quality_ordinary(policy)
-        self.assertFalse(admitted["fresh_execution"])
-        with patch.object(MODULE.COMMON,"read_analysis_bytes",return_value=b"changed actual receipt"):
+        with self.ordinary_fixture() as (policy, receipt, recipes):
+            admitted = MODULE.admit_quality_ordinary(policy)
+            self.assertFalse(admitted["fresh_execution"])
+            original = receipt.read_bytes()
+            receipt.write_bytes(b"changed synthetic receipt")
             with self.assertRaisesRegex(MODULE.Incomplete,"receipt bytes"):
                 MODULE.admit_quality_ordinary(policy)
-        with patch.object(MODULE.PRODUCT,"sha256",return_value="a"*64):
+            receipt.write_bytes(original)
+            recipe = recipes / "quality_ordinary_v2.py"
+            original_recipe = recipe.read_bytes()
+            recipe.write_bytes(b"# changed synthetic recipe\n")
             with self.assertRaisesRegex(MODULE.Incomplete,"recipes"):
                 MODULE.admit_quality_ordinary(policy)
+            recipe.write_bytes(original_recipe)
+            self.assertFalse(MODULE.admit_quality_ordinary(policy)["fresh_execution"])
+            with self.assertRaisesRegex(MODULE.Incomplete, "Unreviewed quality"):
+                MODULE.validate_quality_policy(policy)
+        policy = self.policy()
         with patch.object(MODULE,"read_json",return_value=policy), \
              patch.object(MODULE.PRODUCT,"admit_product",return_value=({}, {"new-source.rs":"a"*64})):
             with self.assertRaisesRegex(MODULE.Incomplete,"complete current product"):
                 MODULE.read_quality_policy(ROOT)
 
     def test_quality_ordinary_parses_only_the_exact_hashed_raw_byte_observation(self):
-        policy=self.policy()
-        original=MODULE.QUALITY_ORDINARY_RECEIPT.read_bytes()
-        with tempfile.TemporaryDirectory() as temporary:
-            receipt=Path(temporary)/"receipt.json"
-            receipt.write_bytes(original)
+        with self.ordinary_fixture() as (policy, receipt, _recipes):
+            original=receipt.read_bytes()
             read=MODULE.COMMON.read_analysis_bytes
             def replaced_after_read(path,**kwargs):
                 data=read(path,**kwargs)
                 receipt.write_text('{"status":"replaced-after-hash"}')
                 return data
-            with patch.object(MODULE,"QUALITY_ORDINARY_RECEIPT",receipt), \
-                 patch.object(MODULE.COMMON,"read_analysis_bytes",side_effect=replaced_after_read), \
+            with patch.object(MODULE.COMMON,"read_analysis_bytes",side_effect=replaced_after_read), \
                  patch.object(MODULE,"read_json",side_effect=AssertionError("receipt was reopened")):
                 admitted=MODULE.admit_quality_ordinary(policy)
             self.assertEqual(admitted["sha256"],hashlib.sha256(original).hexdigest())
@@ -1555,18 +1661,18 @@ class QualityAnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             directory, report = self.baseline_fixture(root)
-            result = MODULE.validate_quality_baseline(root, "quality", self.policy())
+            result = MODULE.validate_quality_baseline(root, "quality", self.semantic_policy())
             self.assertEqual(result["tests_executed"], self.policy()["test_inventory"]["baseline_count"])
             with self.assertRaises(MODULE.Incomplete):
-                MODULE.validate_quality_baseline(root, "library", self.policy())
+                MODULE.validate_quality_baseline(root, "library", self.semantic_policy())
             for rows in [[], report["outcomes"]*2, [{**report["outcomes"][0],"summary":"CaughtMutant"}]]:
                 (directory/"outcomes.json").write_text(json.dumps({"outcomes":rows}))
                 with self.assertRaises(MODULE.Incomplete):
-                    MODULE.validate_quality_baseline(root, "quality", self.policy())
+                    MODULE.validate_quality_baseline(root, "quality", self.semantic_policy())
             (directory/"outcomes.json").write_text(json.dumps(report))
             (directory/"baseline.log").write_text("test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0s\n")
             with self.assertRaises(MODULE.Incomplete):
-                MODULE.validate_quality_baseline(root, "quality", self.policy())
+                MODULE.validate_quality_baseline(root, "quality", self.semantic_policy())
 
     def test_quality_caught_causes_require_owned_selected_behavioral_assertions(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -1636,14 +1742,12 @@ class QualityAnalysisTests(unittest.TestCase):
             for sites in mapping["tests"].values() for site in sites))
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary)
-            for filename in mapping["source_sha256"]:
-                target=root/filename;target.parent.mkdir(parents=True,exist_ok=True)
-                shutil.copyfile(MODULE.QUALITY_ORDINARY_RECEIPT.parent/"source"/filename,target)
-            self.assertEqual(MODULE.quality_semantic_assertion_sites(root,self.policy()),mapping)
+            self.write_assertion_sources(root)
+            self.assertEqual(MODULE.quality_semantic_assertion_sites(root,self.semantic_policy()),mapping)
             private=root/"crates/nevrotick-engine/src/quality/tests.rs"
             private.write_text("\n"+private.read_text())
             with self.assertRaisesRegex(MODULE.Incomplete,"admitted bytes"):
-                MODULE.quality_semantic_assertion_sites(root,self.policy())
+                MODULE.quality_semantic_assertion_sites(root,self.semantic_policy())
 
     def test_quality_correct_filename_requires_exact_named_site_and_assertion_kind(self):
         mapping=self.semantic_sites()

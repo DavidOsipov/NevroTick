@@ -598,7 +598,7 @@ fn saved_record(value: &FixtureFrequencyHistory) -> SavedRecord {
 struct RebaseCharts {
     /// Actual component predecessor; the genuine model is separately admitted.
     predecessor: FixtureAffineChart,
-    /// Checked constant-effect descriptor, never a physical acknowledgment.
+    /// Checked actual-effect descriptor, never a physical acknowledgment.
     effect: FixtureAffineChart,
     /// Checked replacement descriptor for the component's relationship check.
     replacement: FixtureAffineChart,
@@ -611,10 +611,13 @@ struct RebaseCharts {
 /// Reject refusal of valid descriptor geometry.
 fn rebase_charts(reference: u64) -> TestResult<RebaseCharts> {
     let support = domain([0, reference, 64 * SECOND])?;
+    let predecessor = predecessor(reference)?;
+    let effect = chart([19, 29, 31, 7], support, 5.0 / 512.0, 0.0)?;
+    let replacement = product_ok(predecessor.compose(&effect))?;
     Ok(RebaseCharts {
-        predecessor: predecessor(reference)?,
-        effect: chart([19, 29, 31, 7], support, 5.0 / 512.0, 0.0)?,
-        replacement: chart([17, 23, 31, 7], support, 5.0 / 512.0, 0.0)?,
+        predecessor,
+        effect,
+        replacement,
     })
 }
 
@@ -633,7 +636,7 @@ fn rate_error_effect(support: FixtureChartDomain) -> TestResult<FixtureAffineCha
     Ok(effect)
 }
 
-/// Derive one isolated A–O relationship failure from checked constructors.
+/// Derive one isolated A–P relationship failure from checked constructors.
 /// # Errors
 /// Preserve descriptor/domain admission failures or refuse an unknown row.
 /// # Panics
@@ -644,7 +647,10 @@ fn invalid_rebase(row: char) -> TestResult<RebaseCharts> {
     match row {
         'A' => {
             values.predecessor = chart([17, 23, 19, 29], support, 1.0 / 1024.0, 0.0)?;
-            values.replacement = chart([17, 23, 31, 7], support, 11.0 / 1024.0, 0.0)?;
+            // Keep the foreign predecessor's actual composed coefficient bounds;
+            // a separately reconstructed exact chart would mask the identity guard.
+            values.replacement =
+                product_ok(values.predecessor.compose_intersection(&values.effect))?;
         }
         'B'..='G' => replace_rebase_tags(row, &mut values)?,
         'H' => values.effect = chart([19, 29, 31, 7], support, 5.0 / 512.0, 1.0 / 1024.0)?,
@@ -655,6 +661,10 @@ fn invalid_rebase(row: char) -> TestResult<RebaseCharts> {
             let short = domain([0, 2 * SECOND, 3 * SECOND])?;
             values.effect = chart([19, 29, 31, 7], short, 5.0 / 512.0, 0.0)?;
             values.replacement = chart([17, 23, 31, 7], short, 5.0 / 512.0, 0.0)?;
+        }
+        'P' => {
+            assert!(values.replacement.phase_coefficient_roundoff_seconds() > 0.0);
+            values.replacement = chart([17, 23, 31, 7], support, 5.0 / 512.0, 0.0)?;
         }
         _ => return Err(io::Error::other("unknown reviewed rebase row").into()),
     }
@@ -791,7 +801,7 @@ fn check_rebase_success(original: &FixtureAffineChart, values: &RebaseCharts) ->
 #[test]
 fn rebase_checks_each_descriptor_relationship_and_preserves_whole_history() -> TestResult {
     let original = predecessor(2 * SECOND)?;
-    for row in 'A'..='O' {
+    for row in 'A'..='P' {
         check_rebase_refusal(&original, &invalid_rebase(row)?)?;
         check_rebase_success(&original, &rebase_charts(2 * SECOND)?)?;
     }
@@ -799,6 +809,8 @@ fn rebase_checks_each_descriptor_relationship_and_preserves_whole_history() -> T
 }
 
 /// Support of the genuine projected epoch is inclusive on both sides.
+/// Private component descriptors may restrict the original mathematical domain;
+/// these checked operands do not assert a public or physical effect receipt.
 /// # Errors
 /// Preserve genuine histories and checked descriptor construction failures.
 /// # Panics
@@ -822,7 +834,9 @@ fn rebase_projected_epoch_support_has_both_inclusive_neighbors() -> TestResult {
             let mut values = rebase_charts(reference)?;
             let support = domain(times)?;
             values.effect = chart([19, 29, 31, 7], support, 5.0 / 512.0, 0.0)?;
-            values.replacement = chart([17, 23, 31, 7], support, 5.0 / 512.0, 0.0)?;
+            values.replacement =
+                product_ok(values.predecessor.compose_intersection(&values.effect))?;
+            check_typed_rebase_support(&original, &values, accepted)?;
             if accepted {
                 check_rebase_success(&original, &values)?;
             } else {
@@ -830,6 +844,111 @@ fn rebase_projected_epoch_support_has_both_inclusive_neighbors() -> TestResult {
             }
         }
     }
+    Ok(())
+}
+
+/// Preserve the private receiver's exact support cause before legacy cause collapse.
+/// All descriptors and the saved model come from their actual checked producers;
+/// no public baseline feedback or physical completion is asserted by this call.
+/// # Errors
+/// Preserve genuine admission, history and independently valid descriptor failures.
+/// # Panics
+/// Reject a changed typed refusal, partial history, or refused inclusive neighbor.
+fn check_typed_rebase_support(
+    original: &FixtureAffineChart,
+    values: &RebaseCharts,
+    accepted: bool,
+) -> TestResult {
+    let mut state = admitted(original)?;
+    let before = history(&state)?;
+    let actual = state.rebase_baseline(&values.predecessor, &values.effect, &values.replacement);
+    if accepted {
+        product_ok(actual)?;
+        let after = history(&state)?;
+        assert_eq!(after.anchor_phase_seconds(), 11.0 / 512.0);
+        assert!(after.anchor_roundoff_seconds() >= before.anchor_roundoff_seconds());
+        assert_eq!(after.frames(), values.replacement.frames());
+        assert_eq!(after.domain(), values.replacement.domain());
+        assert_eq!(state.unavailable, None);
+        let projection = product_ok(state.project(
+            &values.replacement,
+            clocks()?,
+            MonotonicNs::new(4 * SECOND),
+            false,
+        ))?;
+        assert_eq!(projection.nominal_phase_seconds(), 11.0 / 512.0);
+        assert_eq!(saved_record(projection.history()), saved_record(&after));
+    } else {
+        assert_eq!(actual, Err(FixtureFrequencyError::AnchorRebaseUnavailable));
+        assert_eq!(saved_record(&history(&state)?), saved_record(&before));
+        assert_eq!(
+            state.unavailable,
+            Some(FixtureFrequencyError::AnchorRebaseUnavailable)
+        );
+        assert!(matches!(
+            state.project(original, clocks()?, MonotonicNs::new(4 * SECOND), false),
+            Err(FixtureFrequencyError::AnchorRebaseUnavailable)
+        ));
+        assert_eq!(saved_record(&history(&state)?), saved_record(&before));
+    }
+    Ok(())
+}
+
+/// Restriction retains inherited errors instead of reconstructing exact inputs.
+/// # Errors
+/// Preserve checked source, domain and ordinary-composition construction failures.
+/// # Panics
+/// Reject changed operands, expanded support, dropped bounds or wrong refusal order.
+#[test]
+fn intersection_composition_retains_both_operand_bounds_and_input_identity() -> TestResult {
+    let first = composed(GEOMETRY)?;
+    let next_geometry = Geometry {
+        tags: [31, 7, 37, 41],
+        times: [0, 2 * SECOND, 4 * SECOND],
+        ..GEOMETRY
+    };
+    let next = composed(next_geometry)?;
+    let first_basis = Basis::from_chart(&first);
+    let next_basis = Basis::from_chart(&next);
+    for operand in [&first, &next] {
+        assert!(operand.phase_coefficient_roundoff_seconds() > 0.0);
+        assert!(operand.rate_coefficient_roundoff_seconds_per_second() > 0.0);
+    }
+    let restricted_first = composed(Geometry {
+        times: next_geometry.times,
+        ..GEOMETRY
+    })?;
+    let expected = product_ok(restricted_first.compose(&next))?;
+    let actual = product_ok(first.compose_intersection(&next))?;
+    assert_eq!(differences(&actual, &expected), [false; 6]);
+    assert_eq!(actual.phase_at_reference_seconds(), 0.0);
+    assert_eq!(actual.rate_seconds_per_second(), 0.0);
+    assert!(
+        actual.phase_coefficient_roundoff_seconds() >= first.phase_coefficient_roundoff_seconds()
+    );
+    assert!(
+        actual.rate_coefficient_roundoff_seconds_per_second()
+            >= next.rate_coefficient_roundoff_seconds_per_second()
+    );
+    assert!(first_basis.matches(&first));
+    assert!(next_basis.matches(&next));
+    let wrong_reference = composed(Geometry {
+        times: [0, 3 * SECOND, 4 * SECOND],
+        ..next_geometry
+    })?;
+    assert!(matches!(
+        first.compose_intersection(&wrong_reference),
+        Err(FixtureChartError::CompositionDomainMismatch)
+    ));
+    let wrong_mapping = composed(Geometry {
+        tags: [43, 7, 37, 41],
+        times: [0, 3 * SECOND, 4 * SECOND],
+        ..next_geometry
+    })?;
+    assert!(matches!(
+        first.compose_intersection(&wrong_mapping),
+        Err(FixtureChartError::CompositionMappingMismatch)
+    ));
     Ok(())
 }
 
@@ -981,5 +1100,43 @@ fn disabled_latches_are_noops_and_enabled_empty_state_retains_no_model() -> Test
         empty.project(&original, clocks()?, MonotonicNs::new(4 * SECOND), false),
         Err(FixtureFrequencyError::NoModel)
     ));
+    Ok(())
+}
+
+/// Private checked-model operand control, not a public physical source trace.
+/// Genuine admission supplies provenance; only the component's numerical anchor
+/// operand is replaced with an independently checked finite extreme. No emission
+/// or completion is created by this helper.
+/// # Errors
+/// Preserve genuine intake, checked anchor/chart and original history admission.
+/// # Panics
+/// Reject swallowed exact numeric cause, partial model publication or missing healthy neighbor.
+#[test]
+fn private_checked_anchor_rebase_failure_retains_exact_cause_and_whole_model() -> TestResult {
+    let original = predecessor(2 * SECOND)?;
+    let effect = chart([19, 29, 31, 7], original.domain(), -(f64::MAX / 2.0), 0.0)?;
+    let replacement = product_ok(original.compose(&effect))?;
+    for (phase, fails) in [(1.0 / 32.0, false), (f64::MAX, true)] {
+        let mut state = admitted(&original)?;
+        let checked = product_ok(crate::regression::FrequencyAnchor::new(phase, 0.0))?;
+        let Some(model) = state.model.as_mut() else {
+            return Err(io::Error::other("missing genuinely admitted model").into());
+        };
+        model.anchor = checked;
+        let before = saved_record(&history(&state)?);
+        let actual = state.rebase_baseline(&original, &effect, &replacement);
+        if fails {
+            assert!(matches!(actual, Err(FixtureFrequencyError::Numeric { .. })));
+            assert_eq!(saved_record(&history(&state)?), before);
+            assert!(matches!(
+                state.project(&original, clocks()?, MonotonicNs::new(4 * SECOND), false),
+                Err(FixtureFrequencyError::Numeric { .. })
+            ));
+        } else {
+            product_ok(actual)?;
+            assert_eq!(history(&state)?.anchor_phase_seconds(), f64::MAX / 2.0);
+            assert_eq!(history(&state)?.frames(), replacement.frames());
+        }
+    }
     Ok(())
 }
