@@ -18,8 +18,12 @@ product requirements, not a claim of tested platform support.
 ## Why I am building this
 
 Windows 11's built-in time synchronization has repeatedly let me down, including
-on my own laptop. I am building NevroTick for myself first: dependable
-timekeeping, clear status and modest resource use.
+on my own laptop. I am building NevroTick for myself first: a relatively simple
+Windows utility that prioritizes security, reliability, clear status and a very
+small CPU, memory and disk footprint over a large feature set. A Linux port is
+not planned; chrony and NTPsec already serve that ecosystem. New features require
+an explicit decision and careful, potentially lengthy implementation and
+qualification; a roadmap entry is not a promise to ship.
 
 Thank you to the developers of
 [BktTimeSync](https://www.maniaradio.it/en/bkttimesync.html) for their work; I used BktTimeSync for almost a year.
@@ -29,16 +33,16 @@ integrations are outside the planned timekeeping scope.
 
 ## What is being built
 
-- **Windows first:** authenticated network time, chrony-derived estimation,
+- **Windows focus:** authenticated network time, chrony-derived estimation,
   source agreement and a lightweight Slint UI. The planned engine and clock
   broker have separate privileges and ship in one complete MSIX. The selected
   [packaging plan](docs/plans/windows-msix-store.md) targets strong process and
   package protections, followed by a Microsoft Store submission with services;
   packaging, native qualification and Store acceptance remain future work.
-- **Android next:** an NTS-backed companion supplying a local SNTP endpoint to
-  Android's existing time service, subject to device qualification.
-- **Encrypted DNS later:** **DNS over QUIC (DoQ)** with leaf and intermediate
-  certificate pinning. DoH and DoT are outside this feature.
+- **Long-term proposals:** an Android companion and **DNS over QUIC (DoQ)**
+  with leaf/intermediate certificate pinning are recorded for future consideration,
+  not committed delivery. Device qualification, design and explicit decisions
+  remain necessary. DoH and DoT are outside the proposed DNS feature.
 
 See the [product roadmap](ROADMAP.md) and
 [Windows feature plan](docs/windows-time-features.md) for the design and open work.
