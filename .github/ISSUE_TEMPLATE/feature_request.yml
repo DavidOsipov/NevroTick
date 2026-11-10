@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Check the [roadmap](https://github.com/DavidOsipov/NevroTick/blob/main/ROADMAP.md) and existing issues first. Planned capabilities and supported releases are different things; a proposal does not change accepted product scope.
+        Check the [roadmap](https://github.com/DavidOsipov/NevroTick/blob/main/ROADMAP.md) and existing issues first. Planned capabilities and supported releases are different things; a proposal does not change accepted product scope. NevroTick prioritizes a simple, secure, reliable and lightweight Windows utility. New functionality requires an explicit decision and careful qualification; a Linux port is not planned.
 
         Do not disclose vulnerabilities here. Use [private vulnerability reporting](https://github.com/DavidOsipov/NevroTick/security/advisories/new) or the fallback in [SECURITY.md](https://github.com/DavidOsipov/NevroTick/blob/main/SECURITY.md).
   - type: textarea
