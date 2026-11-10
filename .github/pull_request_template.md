@@ -23,10 +23,11 @@ For a behavioral fix, describe the independent failing expectation and healthy
 neighboring control, or explain why reproduction was unavailable.
 For docs-only changes, link/canonical-consistency checks are sufficient. -->
 
-## AI-assisted code: tests, mutation testing, and QA gates
+## Required code QA: tests, mutation testing, and gates
 
-<!-- For AI-assisted code contributions, tests must be written for the changed
-behavior/contracts, the new tests must be challenged through mutation testing
+<!-- For all code contributions, whether written by a person, an AI agent or both,
+tests must be written for the changed behavior/contracts, the new tests must be
+challenged through mutation testing
 of the affected production code, and the other applicable QA gates from the
 repository skills/workflows must be completed. Green existing tests alone are
 not sufficient. Preserve the configured mutation scope and thresholds.
