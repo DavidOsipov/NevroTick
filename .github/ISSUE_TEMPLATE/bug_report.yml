@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a non-security defect in code, tooling, or documentation.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For suspected vulnerabilities, use [private vulnerability reporting](https://github.com/DavidOsipov/NevroTick/security/advisories/new), not this public form. If unavailable, follow [SECURITY.md](https://github.com/DavidOsipov/NevroTick/blob/main/SECURITY.md).
+
+        NevroTick is in development; planned features are not necessarily implemented or qualified. Reports about development snapshots and documentation are welcome. Share only redacted logs; never include credentials, keys, NTS cookies, or personal data.
+  - type: input
+    id: revision
+    attributes:
+      label: Affected revision or artifact
+      description: Commit SHA, version, or artifact name; note local modifications. Say unknown if necessary.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS edition/build, native Windows or Linux/WSL, and relevant component/configuration. For build failures, include Rust toolchain, target and selected features.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How to reproduce
+      description: Minimal steps, commands, or a sanitized fixture. Identify whether this concerns running code or a documented plan; if not reproducible, describe what you observed.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Explain the independent expectation; link the relevant documentation or requirement if known.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include frequency, errors, and relevant redacted output. Distinguish a successful build from behavior you actually ran.
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional evidence or workaround
+      description: Optional screenshots, regression range, relevant existing issue, or safe workaround. Do not change system clocks, services, trust stores, or protections just to reproduce a report on your everyday machine.
