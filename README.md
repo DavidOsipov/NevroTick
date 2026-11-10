@@ -39,10 +39,10 @@ integrations are outside the planned timekeeping scope.
   [packaging plan](docs/plans/windows-msix-store.md) targets strong process and
   package protections, followed by a Microsoft Store submission with services;
   packaging, native qualification and Store acceptance remain future work.
-- **Long-term proposals:** an Android companion and **DNS over QUIC (DoQ)**
-  with leaf/intermediate certificate pinning are recorded for future consideration,
-  not committed delivery. Device qualification, design and explicit decisions
-  remain necessary. DoH and DoT are outside the proposed DNS feature.
+- **Longer-term plans:** an Android companion and **DNS over QUIC (DoQ)**
+  with leaf/intermediate certificate pinning remain planned, not implemented or
+  promised for a particular release. Their existing roadmap decisions, design
+  work and qualification gates apply. DoH and DoT are outside the DNS scope.
 
 See the [product roadmap](ROADMAP.md) and
 [Windows feature plan](docs/windows-time-features.md) for the design and open work.
