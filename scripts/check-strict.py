@@ -171,6 +171,41 @@ def with_control(addition: str) -> str:
     return SOURCE.replace(marker, addition + "\n" + marker, 1)
 
 
+def clone_policy_controls() -> tuple[str, tuple[tuple[str, str, str], ...]]:
+    """Return healthy ownership code and independently selected clone rejections.
+
+    These fixture strings do not detect product defects. The configured Clippy
+    runner must compile the healthy neighbor and reject each negative with the
+    named diagnostic before reporting a qualified control.
+    """
+    healthy = '''
+/// Copy an ordinary scalar without an unnecessary trait call.
+#[must_use]
+pub const fn copy_tick(value: u64) -> u64 {
+    value
+}
+
+/// Produce two owned values when the contract requires both outputs.
+#[must_use]
+pub fn two_owned<T: Clone>(value: T) -> (T, T) {
+    (value.clone(), value)
+}
+'''
+    original = "pub const fn copy_tick(value: u64) -> u64 {\n    value\n}"
+    if healthy.count(original) != 1:
+        raise ENV.Incomplete("Clone control must select exactly one scalar body.")
+    negatives = tuple(
+        (label, healthy.replace(original,
+         "pub fn copy_tick(value: u64) -> u64 {\n    " + expression + "\n}", 1),
+         "clippy::clone_on_copy")
+        for label, expression in (
+            ("clone-on-copy-method-negative", "value.clone()"),
+            ("clone-on-copy-ufcs-negative", "Clone::clone(&value)"),
+        )
+    )
+    return healthy, negatives
+
+
 def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
     require_clippy_locations(root)
     data = snapshot or {name: (root / name).read_bytes() for name in CONFIG_FILES}
@@ -611,6 +646,15 @@ def qualify_fixtures(root: Path, metadata: dict, extensions: dict, evidence: dic
         execute("format-positive", ["cargo", "fmt", "--all", "--", "--check"])
         execute("compiler-positive", cargo)
         execute("clippy-positive", clippy)
+        # Existing clippy::all supplies clone_on_copy; these are new controls,
+        # not a newly enabled rule or proof that all accidental clones are found.
+        clone_healthy, clone_negatives = clone_policy_controls()
+        source.write_text(with_control(clone_healthy))
+        execute("clone-policy-positive", clippy)
+        for label, negative, diagnostic in clone_negatives:
+            source.write_text(with_control(negative))
+            execute(label, clippy, diagnostic)
+        source.write_text(SOURCE)
         # One genuine neighbor exercises all four selected lint alternatives.
         # Each negative below changes only its own construct in this same source.
         # In particular, use an owned String rather than a mutex: the existing

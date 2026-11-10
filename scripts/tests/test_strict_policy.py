@@ -254,6 +254,27 @@ class PolicyAdmissionTests(unittest.TestCase):
     def test_string_slice_cannot_be_removed_or_lowered(self):
         self.assert_four_lint_is_required("string_slice")
 
+    def test_clone_policy_groups_cannot_be_removed_or_lowered(self):
+        """Existing broad groups own the clone guard; no duplicate rule needed."""
+        original = (self.root / "policy/rust-workspace.toml").read_bytes()
+        for name in ("all", "pedantic"):
+            before = f'{name} = {{ level = "deny", priority = -1 }}'
+            # rustdoc also has an `all` entry: alter only the Clippy table.
+            for replacement, diagnostic in (
+                ("", "Required strict lint missing"),
+                (before.replace('"deny"', '"warn"'), "Unexpected non-deny"),
+            ):
+                with self.subTest(group=name, replacement=replacement):
+                    path = self.root / "policy/rust-workspace.toml"
+                    text = original.decode("utf-8")
+                    start = text.index("[workspace.lints.clippy]")
+                    end = text.index("[workspace.lints.rustdoc]", start)
+                    table = text[start:end]
+                    self.assertEqual(table.count(before), 1)
+                    path.write_text(text[:start] + table.replace(before, replacement, 1)
+                                    + text[end:], encoding="utf-8")
+                    self.assert_refused(diagnostic)
+
     def test_security_restrictions_cannot_be_removed(self):
         original = (self.root / "policy/rust-workspace.toml").read_bytes()
         for name in ("allow_attributes", "multiple_unsafe_ops_per_block", "unused_result_ok"):
@@ -336,6 +357,23 @@ class PolicyAdmissionTests(unittest.TestCase):
         self.replace("clippy.toml", "allow-unwrap-in-tests = false", "allow-unwrap-in-tests = true")
         self.assertEqual(STRICT.read_configuration(self.root, snapshot), expected)
         self.assert_refused("configuration keys or values: clippy")
+
+
+class CloneFixtureConstructionTests(unittest.TestCase):
+    """Check fixture construction only; actual lint behavior requires Clippy."""
+
+    def test_controls_preserve_required_owned_outputs(self):
+        healthy, negatives = STRICT.clone_policy_controls()
+        self.assertIn("(value.clone(), value)", healthy)
+        self.assertIn("pub const fn copy_tick", healthy)
+        self.assertEqual(len(negatives), 2)
+        self.assertEqual(len({label for label, _, _ in negatives}), 2)
+        for _, source, diagnostic in negatives:
+            self.assertIn("(value.clone(), value)", source)
+            self.assertEqual(diagnostic, "clippy::clone_on_copy")
+            self.assertNotEqual(source, healthy)
+        self.assertIn("value.clone()", negatives[0][1].split("pub fn two_owned")[0])
+        self.assertIn("Clone::clone(&value)", negatives[1][1])
 
 
 class WorkspaceAdoptionTests(unittest.TestCase):

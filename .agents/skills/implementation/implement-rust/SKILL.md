@@ -38,6 +38,12 @@ For a pure-crate boundary or lint-policy change, use
 Keep ambient reads and effects in their designated adapters; named Clippy bans
 supplement ownership review and do not prove transitive purity.
 
+For cloning, shared ownership, mutation or hot-path allocation, apply
+[ownership and allocation anti-patterns](references/anti-patterns.md). Forbid
+detached-copy updates presented as owner updates and borrow-checker workarounds
+that obscure authority; preserve justified snapshots and bounded shared ownership.
+Lint controls complement, never replace, real-owner behavioral checks.
+
 Choose smallest model that makes meaningful mistakes hard to express:
 
 - Private newtypes for units/identity; enums for explicit states/outcomes;

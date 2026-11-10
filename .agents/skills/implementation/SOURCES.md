@@ -465,3 +465,13 @@ application implementation. Context7/GitHub MCP tools were unavailable in the
 authoring session, including after explicit tags; the actual evidence came
 from official HTTPS documentation and pinned GitHub source. No MCP use,
 dependency adoption or Slint/Windows runtime qualification is claimed.
+
+## Ownership and allocation anti-patterns — 11 November 2026
+
+The [Rust anti-pattern reference](implement-rust/references/anti-patterns.md) adds
+original project rules for lost mutations on detached clones, mistaken sharing
+semantics and unreviewed hot-path costs. Primary Rust `Clone`/`Arc` and Clippy
+links are collected there. The supplied Reddit short link was not fully readable;
+no exhaustive thread review or reproduced upstream defect is claimed. No external
+example code or skill was imported. Existing lint groups remain unchanged; new
+strict-runner controls require admitted compiler execution before qualification.
