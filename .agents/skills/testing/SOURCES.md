@@ -27,6 +27,18 @@ The repeated-proposal review also checks [RFC 9109 §§3.2–4](https://www.rfc-
 and [RFC 8915 §5.7](https://www.rfc-editor.org/rfc/rfc8915.html#section-5.7)
 for port-lifecycle qualification and the control-only KoD/NAK test distinction.
 
+## ntp_usg comparison refinements — 11 November 2026
+
+The [source assessment](../../../docs/supporting-reviews/ntp-usg-reuse-assessment.md)
+pins ntp_usg `bfab924b9a7f550d46eae53c53d9b77fb046e815`, actual continuous and
+one-shot callers, protocol tests and benchmark/CI evidence. Existing
+[numerical/protocol QA](references/numerical-protocol.md) gains independent
+feedback-convergence, nonzero-uncertainty, repeated-cookie-inventory and actual
+RATE-send cases. RFC 8915's correlated-control exception and pending S2.2
+zero-replacement/reuse decisions remain intact. These original local procedures
+import no source/test bodies, numerical constants, dependency graph or runtime
+qualification; source reading is not a donor/native test run.
+
 ## Sanitizer selection and controls — 31 October 2026
 
 The original local [sanitizer reference](references/sanitizers.md) extends the

@@ -68,6 +68,17 @@ existing publication-age watch. No toolchain or runtime configuration changed.
 | [Beta build cache](https://doc.rust-lang.org/beta/cargo/reference/build-cache.html) | Intermediate layout is internal; distinguish it from final target-directory exports. |
 | [Cargo external-tool messages](https://doc.rust-lang.org/cargo/reference/external-tools.html#artifact-messages) | Discover emitted artifacts/output directories from messages; retain independent identity, containment, inventory and byte checks. |
 
+### File grants and feature expansion — 11 November 2026
+
+The [ntp_usg assessment](../../../docs/supporting-reviews/ntp-usg-reuse-assessment.md#rights-and-dependency-boundary)
+records the exact `bfab924b9a7f550d46eae53c53d9b77fb046e815` manifest/file-notice
+discrepancy and nested NTS/provider features, alongside primary licensing
+guidance. [Cargo evidence](dependency-updates/references/cargo-operations.md)
+now explicitly reconciles file-specific grants before source/test reuse and
+traces convenience features to the constructed provider. This is original local
+procedure, not a definitive donor licence ruling, imported code, dependency
+admission or measured emitted-binary result. Existing inventories are unchanged.
+
 ## Windows Sandbox management
 
 The original [manage-windows-sandbox](manage-windows-sandbox/SKILL.md) workflow was

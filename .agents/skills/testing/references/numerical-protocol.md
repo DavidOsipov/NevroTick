@@ -42,6 +42,13 @@ the specific API contract, not a universal test recipe.
 
 Maintain independent UTC/monotonic/active-awake clocks. Wall-clock step cannot extend monotonic authorization deadline; suspend time is not delivered active slew. Configuration/association/clock generations invalidate late responses/proposals. Model actual/lost acknowledgements/ambiguous effects; retries must not duplicate step/reset cumulative budgets (CHECK-10–12).
 
+For a convergence claim, drive the independent oscillator/actuator model with
+actual controller outputs and achieved effects. Prerecorded decreasing offsets
+test response to those inputs; they do not establish feedback convergence. Use
+the existing [physical-effect recipe](../../implementation/implement-rust/references/chrony-port-simulator.md)
+and distinguish requested, quantized, partially delivered, refused and unknown
+effects. Select no new plant, law or tuning constant from a donor test.
+
 For source/controller integration, include these independent paired trajectories:
 
 - Stable coordinates versus correctly remapped history for the same physical
@@ -49,6 +56,10 @@ For source/controller integration, include these independent paired trajectories
   external steps have distinct effects. A proposed correction cannot change history.
 - One good observation followed by silence and repeated selection: age and modeled
   uncertainty grow, quality expires under the frozen policy, and no new vote appears.
+- Agreeing phase estimates with positive individual uncertainty versus disagreeing
+  estimates: trace admitted uncertainty terms through the actual selection,
+  combination and publication consumers. Zero disagreement cannot erase required
+  within-source or other uncertainty; assume no source-independence benefit.
 - Stable drift/noise versus a real drift change; a weak new fit must not destroy a
   sound prior, and temporary phase correction must end without contaminating drift.
 - One anomaly versus fresh sustained agreement under the existing recovery bounds;
@@ -106,6 +117,9 @@ control packets and a healthy protected reply. Observe only the permitted bounde
 control/recovery effects: no sample, cookie acceptance, observation/authentication
 freshness refresh or plain fallback. Apply §7.4's control exception explicitly; a blanket AEAD prerequisite
 would reject this legitimate path (CHECK-6/9/27).
+Observe the actual next permitted send after RATE, including policy limit cases;
+exercise continuous-poll and recovery callers as reached. A correct one-shot
+helper does not qualify another caller's control branch.
 
 Qualify every split point of representative valid KE messages and coalesced
 records, required/unknown record cases and valid nonce/padding/cookie alternatives.
@@ -113,6 +127,15 @@ Assert no partial association publication; a failed replacement retains only
 still-valid old state. Exhaust cookies, cancel/fail KE and restore incomplete state
 while observing the actual sender: normal NTS mode must never emit plain fallback.
 Vary the wire token with physical T1–T4 fixed; arithmetic must remain unchanged.
+
+Exercise many protected exchanges through the actual association owner, including
+loss, fewer/excess replacements and exhaustion. Bound both cookie count and
+aggregate available/reserved/staged bytes; derive placeholders from the admitted
+unused-inventory deficit and packet budget. Per-datagram bounds cannot cap
+accumulated state. Freeze zero-replacement completion/retry and cookie reuse/privacy
+policy before asserting those outcomes; the existing S2.2 decisions remain open.
+Rejected replies publish no replacement state, and a useful valid neighbor still
+progresses within the admitted budgets (CHECK-6/9/21/27).
 
 Flap connectivity and issue repeated refresh/NAK events while KE succeeds but
 protected UDP fails. Check per-operation earliest times, aggregate/per-source

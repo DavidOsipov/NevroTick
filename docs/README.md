@@ -721,6 +721,7 @@ These preserve first-pass findings and correction checks, not competing specific
 - [state-guided-fuzzing-experiment.md](supporting-reviews/state-guided-fuzzing-experiment.md): completed four-defect mutation/oracle comparison, retained defaults, per-class results, reusable lessons and frozen evidence references.
 - [verus-assessment.md](supporting-reviews/verus-assessment.md): historical source assessment and dated bounded Core pilot, retained Kani evidence, same-contract comparison, proof/trust boundaries and conditional adoption criteria.
 - [hifitime-lessons.md](supporting-reviews/hifitime-lessons.md): critically checked proof-specification, harness-reachability, conversion-anchor and leap-data lessons; current proof-status corrections and bounded adoption through existing domain/leap owners, without a new numerical dependency.
+- [ntp-usg-reuse-assessment.md](supporting-reviews/ntp-usg-reuse-assessment.md): pinned comparison of protected exchanges, cookie/control lifecycles, numerical consumers, clock feedback, benchmarks and feature-specific CI; concrete cases routed to existing S0.1/S1.3/S1.4/S2.2/P4 owners, with file-grant and dependency limits. Selects no donor code, controller or new dependency.
 
 Some records retain workspace paths, initial hashes and source identifiers for provenance. Read correction addenda alongside the first-pass findings. Main documents control current requirements; the tooling record identifies completed tool controls separately from pending application, native-product and signing qualification.
 

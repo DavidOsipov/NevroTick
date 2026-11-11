@@ -403,6 +403,24 @@ D1–D3 deferrals remain separate. Existing CHECK-21/22/26/27 and ST-T owners
 supply checks at the selected boundary; optional candidates are not first-release
 blockers. No saving in time, memory or binary size is claimed before measurement.
 
+### 4.5 Apply the ntp_usg comparison
+
+**11 November 2026:** the [pinned assessment](../supporting-reviews/ntp-usg-reuse-assessment.md)
+adds concrete comparison cases under existing contracts. Treat ntp_usg as a
+secondary test-design source; retain the selected Chrony estimator/controller,
+current §7 queue and completed bounded receipts. No donor dependency, numerical
+law, provider/runtime, platform or tuning constant is selected.
+
+| Existing owner | Refinement before the dependent integration |
+| --- | --- |
+| [S0.1/P2 protocol](../../tasks/s0.1-protocol-comparison.md#ntp_usg-comparison-handoff--11-november-2026); CHECK-6/8/9/17/27 | Check RATE interval direction and correlated KoD at the actual continuous caller and next-send guard. A correct one-shot helper is insufficient. |
+| [S2.2 association/receiver](../../tasks/engine-transport-pilot.md#paired-acceptance-evidence--planned-not-run); AC-04, CHECK-6/8/9/17/21/25/26/27 | Compose a protected exchange using admitted primitives and independent expectations; run repeated inventory/control sequences with count and aggregate-byte bounds. Preserve pending zero-replacement/reuse decisions and the full KE/consumer exit. |
+| [S1.3/S1.4 consumers](../../tasks/s1.3-source-selection-readiness.md#ntp_usg-consumer-integration-refinement--11-november-2026); CHECK-7/8/10/11/14/25/27 | Carry identity/age/uncertainty to publication; require controller-driven independent plant trajectories for convergence claims. Native effects retain the existing P4 owner. |
+| §8 performance and S0.1 graph/feature owners; CHECK-21/26/27 as reached | Adapt stage/pipeline benchmark structure only for a concrete measurement question. Preserve exact tested feature/target rows; reconcile file grants and nested crypto features before any future reuse. |
+
+These cases refine existing exits; a written scenario closes no CHECK or
+implementation gate. Preserve all execution holds and post-V1 formal deferral.
+
 ## 5. Required skill reading and use by phase
 
 The repository's skills supply implementation and verification methods. Reading
@@ -2024,6 +2042,16 @@ Keep AppVerifier/PageHeap corruption checks separate from uninstrumented resourc
 measurements; neither alone proves leak freedom. Pure host tests, Windows
 cross-builds, native execution, package lifecycle and final artifact trust are
 separate evidence layers.
+
+The [ntp_usg comparison](../supporting-reviews/ntp-usg-reuse-assessment.md#useful-patterns-and-their-limits)
+supplies a stage-plus-pipeline benchmark pattern for the existing
+[build/performance owner](../../tasks/build-optimization.md). At a concrete
+optimization question, measure the reached NevroTick stages and full useful
+operation, including normal/disagreement/stale/rejection and admitted-limit
+neighbors, allocation count/bytes and time as relevant. Keep the 16-source bound,
+independent numerical answers, final protections and exact target/features;
+do not copy the donor's 20-source workload as valid product input. This selects
+no benchmark framework, campaign, performance claim or new qualification gate.
 
 ### 8.1 x64 baseline and runtime optimization workstream
 

@@ -47,6 +47,9 @@ explicitly. Published-base audits do not attest to changed local path dependenci
 Features are additive/unified under applicable resolver rules. Direct
 `default-features = false` cannot prove no other enabling path. Inspect actual
 features, source, checksum, patches, build.rs, proc macros and native libraries.
+For convenience features such as NTS, trace nested TLS/provider/post-quantum
+activation and the provider actually constructed; the name or resolved graph
+alone does not prove shipped or executed code.
 Preserve and verify the actual virtual workspace's explicit resolver setting:
 Rust 2024 implies resolver 3 for packages, but a virtual workspace does not infer
 it from a package edition. The reviewed NevroTick workspace already selects 3;
@@ -143,6 +146,14 @@ a pass. Chrony-derived
 code's GPLv2-only constraints and selected transitive license grants need concrete
 review. A permissive UI example license does not license its framework. Avoid
 unsupported universal claims about Rust TLS providers or Windows trust parity.
+
+Reconcile package-level licence metadata with the notices and grants on the exact
+files or test material selected for reuse. A permissive workspace declaration
+does not resolve a conflicting file header: record the ambiguity and obtain
+adequate file-specific grant/provenance evidence before copying or adapting it.
+Keep independently specified ideas/tests distinct from copied material and retain
+required notices; rewriting code alone establishes no clean-room or relicensing
+claim.
 
 Final receipt identifies source/lock/toolchain/features/target, graph delta,
 advisory/licensing results, commands/statuses and actual artifacts. Unsigned

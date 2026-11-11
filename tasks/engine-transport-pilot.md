@@ -3707,6 +3707,39 @@ the NTS socket’s Direct binding cannot establish their egress.
 | Windows trust; 9/26/27 | Selected-profile valid chain beside wrong usage/date/name, revoked/distrusted, removed root, unavailable revocation, slow retrieval and policy cutover. Expected acceptance/refusal follows the frozen profile; observe actual fetch owners and responsiveness. |
 | Consumer; 6/7/8/25 | Authentic eligible evidence reaches actual history/estimator; authentic numerical refusal creates no vote/correction. Demonstrate sufficient history separately from first-observation insufficiency. Retain S2.1 numerical oracles and full-domain proof obligations. |
 
+**11 November comparison refinement — planned, not run.** The
+[ntp_usg assessment](../docs/supporting-reviews/ntp-usg-reuse-assessment.md) adds
+the following cases to these same S2.2 owners and AC-04/CHECK rows, once their
+actual provider, association and receiving boundaries are admitted:
+
+- Compose protected request → controlled server → reply → actual association
+  receiver, with independent packet/crypto expectations and wrong-direction-key,
+  AAD/tag/UID, replay and trailing-unprotected-field neighbors. A manual-key
+  protocol fixture is an intermediate result; it cannot close normal TLS/KE,
+  actual exporter custody or the numerical-consumer exit.
+- Run a finite many-exchange sequence with varying cookie sizes, successful and
+  fewer/excess replacements, loss, invalid replies and exhaustion. Observe
+  available/reserved/staged counts and bytes throughout, including successful
+  responses; a per-packet cap alone is insufficient. Derive placeholders from
+  the admitted unused-inventory deficit and packet budget. Freeze the existing
+  zero-replacement acceptance/completion/retry and reuse/privacy decisions before
+  asserting those outcomes; this refinement does not choose them. Rejected
+  packets publish no cookies, valid pending replies remain usable, and failed
+  replacement retains only independently valid old state without plain fallback.
+- At the real control-to-scheduler path, admit a correlated KoD only for its
+  bounded control effect. Wrong origin/UID/endpoint/socket, stale/expired and
+  duplicate controls change no permitted send time or fresh evidence. Exercise
+  RATE direction and limits at actual sends through the
+  [existing protocol handoff](s0.1-protocol-comparison.md#ntp_usg-comparison-handoff--11-november-2026),
+  rather than inferring coverage from a one-shot helper.
+- At the later Core consumer, retain observation identity/age and each admitted
+  uncertainty term. Equal phase values with positive individual uncertainty
+  cannot yield zero total uncertainty merely because disagreement is zero;
+  repeated publication/evaluation supplies no new observation credit. Use the
+  [existing Core integration cases](s1.3-source-selection-readiness.md#ntp_usg-consumer-integration-refinement--11-november-2026).
+
+No CHECK closes here; the current S2.2 preparation order and all holds remain.
+
 **R3-R-02 — optional measurement at this existing resource qualification; not
 executed.** Engine/runtime and platform-resource owners retain CHECK-17/21/27.
 At the next admitted resource checkpoint, bounded stable Tokio task/queue and
