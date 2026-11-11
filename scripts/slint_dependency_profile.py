@@ -55,7 +55,7 @@ import re
 
 # Exact private build/test cohort. Source, role and primary-grant evidence is
 # recorded in S0.5; supplemental conveyance obligations remain explicitly open.
-REVIEWED_POLICY_SHA256: str | None = "29f6a647b6038bdbbdc2bf407875a43af03257382821f13bda174e6147186b88"
+REVIEWED_POLICY_SHA256: str | None = "f81ce4921053e2b586cdd1df5dabac06989219862c5731240b833a55b0245c9b"
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 TARGETS = (HOST_TARGET, WINDOWS_TARGET)
@@ -145,16 +145,48 @@ CONSUMER_PRESERVED_FILES = {
 WINDOWS_PATCHES = ((ACCESSKIT_NAME, ACCESSKIT_ID), (CONSUMER_NAME, CONSUMER_ID))
 PATCH_NAME_SETS = ((), (PATCH_NAME,), (PATCH_NAME, ACCESSKIT_NAME),
                    (PATCH_NAME, ACCESSKIT_NAME, CONSUMER_NAME))
+EP1_PROFILE = "engine-ke-association"
+EP1_FIELD = "engine_ke_association"
+EP1_FEATURE = "ke-association-prototype"
+EP1_FEATURE_ARGUMENT = "nevrotick-engine/" + EP1_FEATURE
+EP1_AES_NAME = "nevrotick-s115-aes-siv-fixture"
+EP1_AES_ID = EP1_AES_NAME + "@0.0.0"
+EP1_AES_PATH = "tools/crypto-aes-siv-witness"
+EP1_PATCH_UPSTREAM = {
+    "rustls-cng-crypto": {"name": "rustls-cng-crypto", "version": "0.1.2",
+        "path": "tools/crypto-cng-lifecycle/vendor/rustls-cng-crypto", "license": "MIT",
+        "selected_license": "MIT", "build_script": False, "proc_macro": False, "links": None,
+        "upstream_checksum": "ce24a0492dd515a9def8c39fc6b4ea6797336ca12b2fb1c1f3d05063a9cb9973",
+        "upstream_revision": "955b52e27ac76041e04459122ab4652875ab39a8"},
+    "rustls-platform-verifier": {"name": "rustls-platform-verifier", "version": "0.7.1",
+        "path": "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier",
+        "license": "MIT OR Apache-2.0", "selected_license": "MIT", "build_script": False,
+        "proc_macro": False, "links": None,
+        "upstream_checksum": "1167586491e2b18b8bfbb293e8180ec17c201c4f076d7cb3070ca964e7598f98",
+        "upstream_revision": "252e25161a91af476cbea620e29d277592d27ec7"},
+}
+EP1_PATCH_NAMES = tuple(EP1_PATCH_UPSTREAM)
+EP1_PATCH_IDS = {value["name"] + "@" + value["version"] for value in EP1_PATCH_UPSTREAM.values()}
+EP1_MODIFIED_FILES = {
+    "rustls-cng-crypto": {"Cargo.toml", "NOTICE", "src/alg.rs", "src/alg/probe.rs", "src/lib.rs",
+                          "src/kx.rs", "src/tls12.rs", "src/tls12/tests.rs"},
+    "rustls-platform-verifier": {"Cargo.toml", "NOTICE", "src/verification/windows.rs"},
+}
+PATCH_NAME_SETS += tuple(names + EP1_PATCH_NAMES for names in PATCH_NAME_SETS)
+
+
+EP1_PRESERVED_FILES = {'rustls-cng-crypto': {'LICENSE': 'ad0ccf0668024f6ce1b6b285448a0b5dd67f018cef4182993e35397bee610a03', 'Cargo.toml.orig': '5d3bed81aba799934fd31c8f02f62658331b9d1da5c9fb851c7a2fb2745e4398', 'Cargo.toml.upstream': 'd3f483fa1c97701f12ead96172e3579c03d5bc3ef50013df2c243193e202f899'}, 'rustls-platform-verifier': {'LICENSE-MIT': '1c7cf76689c837a68ed8d704994e52a0f2940c087958f860d17f3186afbdcc0c', 'LICENSE-APACHE': 'c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4', 'Cargo.toml.orig': '2fbc1a26005be62a4c49ac02a01ea69bba3a5d5a91c16d3506a6efd8cd9d38bb', 'upstream/Cargo.toml': 'e3cc8a4ba76111e7c153d31ff28988117442c8f6b522b3f3b1efde9fba4509f2', 'upstream/windows.rs': '6b277079bdd38ddc7d13a813aaeeb0f290905c01e90639f6381d6c96d89f28a2', 'UPSTREAM-SOURCE.json': 'ff89853f61899776d5a6158fae203d495f3904e8338ea73ac225d13497796bd6'}}
 
 
 def patch_names(policy: dict) -> tuple[str, ...]:
     """Select only the closed ordered path-patch cohort; never arbitrary names."""
     patches = policy.get("patched_packages", [])
-    if type(patches) is not list or len(patches) > 3 or any(type(item) is not dict for item in patches):
-        raise Incomplete("Only the exact Spin and optional Windows AccessKit patches are admitted.")
+    if (type(patches) is not list or len(patches) > max(map(len, PATCH_NAME_SETS))
+            or any(type(item) is not dict for item in patches)):
+        raise Incomplete("Only the exact reviewed path-patch cohorts are admitted.")
     names = tuple(item.get("name") for item in patches)
     if names not in PATCH_NAME_SETS:
-        raise Incomplete("Only the exact ordered Spin and optional Windows AccessKit patches are admitted.")
+        raise Incomplete("Only the exact ordered reviewed path-patch cohorts are admitted.")
     return names
 
 
@@ -255,6 +287,44 @@ def selected_records(policy: dict) -> dict[str, dict]:
     return {identity(record): record for record in policy["packages"] + policy.get("patched_packages", [])}
 
 
+def profile_rows(policy: dict, profile: str = "default") -> dict:
+    """Select only the default row or the one code-owned Engine prototype."""
+    if profile == "default":
+        return policy["rows"]
+    if profile != EP1_PROFILE or EP1_FIELD not in policy:
+        raise Incomplete("Unknown or unadmitted dependency profile.")
+    return policy[EP1_FIELD]["rows"]
+
+
+def first_party_dependency(policy: dict) -> dict | None:
+    """Admit the exact existing nonmember library without adding a workspace root."""
+    value = policy.get(EP1_FIELD)
+    if value is None:
+        return None
+    if type(value) is not dict or set(value) != {"rows", "first_party_dependency"}:
+        raise Incomplete("Unadmitted Engine prototype profile fields.")
+    record = value["first_party_dependency"]
+    expected = {"name": EP1_AES_NAME, "version": "0.0.0", "path": EP1_AES_PATH,
+                "license": "GPL-2.0-only", "selected_license": "GPL-2.0-only",
+                "build_script": False, "proc_macro": False, "links": None}
+    if (type(record) is not dict or set(record) != set(expected) | {"files_sha256", "manifest_sha256"}
+            or any(type(record.get(key)) is not type(wanted) or record[key] != wanted
+                   for key, wanted in expected.items())
+            or not _hash(record["files_sha256"]) or not _hash(record["manifest_sha256"])):
+        raise Incomplete("Unadmitted first-party nonmember identity, path, grant or source.")
+    return record
+
+
+def profile_locals(profile: str, *, scope: str = "workspace") -> dict:
+    """Require exact first-party features and keep dependency locals out of roots."""
+    members = MEMBERS if scope == "workspace" else LOCAL_SCOPE_MEMBERS[scope]
+    result = {name + "@0.0.0": {"target": [[]]} for name in members}
+    if profile == EP1_PROFILE and (scope == "workspace" or scope == "nevrotick-engine"):
+        result["nevrotick-engine@0.0.0"] = {"target": [[EP1_FEATURE]]}
+        result[EP1_AES_ID] = {"target": [[]]}
+    return result
+
+
 def validate_path_patch(patch: dict) -> None:
     """Bind each of the three exact derivatives to separate immutable provenance."""
     if type(patch) is not dict:
@@ -265,6 +335,12 @@ def validate_path_patch(patch: dict) -> None:
         upstream, modified = ACCESSKIT_UPSTREAM, ACCESSKIT_MODIFIED_FILES
     elif patch.get("name") == CONSUMER_NAME:
         upstream, modified = CONSUMER_UPSTREAM, CONSUMER_MODIFIED_FILES
+    elif patch.get("name") in EP1_PATCH_UPSTREAM:
+        upstream = EP1_PATCH_UPSTREAM[patch["name"]]
+        modified = EP1_MODIFIED_FILES[patch["name"]]
+        if (not _hash(patch.get("upstream_files_sha256"))):
+            raise Incomplete("The prototype patch lacks its original file-map identity.")
+        upstream = {**upstream, "upstream_files_sha256": patch["upstream_files_sha256"]}
     else:
         raise Incomplete("Unknown local path-patch identity.")
     if (set(patch) != set(upstream) | {"files_sha256", "modified_files_sha256"}
@@ -279,7 +355,7 @@ def validate_policy_shape(policy: dict) -> None:
     """Check closed bounded schema and role consistency; this grants no admission."""
     required = {"schema_version", "scope", "lockfile_sha256", "manifests_sha256", "packages",
                 "metadata_only_packages", "rows", "first_party_build_scripts"}
-    optional = {"patched_packages", "archive_file_bypasses"}
+    optional = {"patched_packages", "archive_file_bypasses", EP1_FIELD}
     if (type(policy) is not dict or not required <= set(policy) or set(policy) - required - optional
             or type(policy["schema_version"]) is not int
             or policy["schema_version"] != 3 or type(policy["scope"]) is not str
@@ -293,6 +369,11 @@ def validate_policy_shape(policy: dict) -> None:
             or set(policy["first_party_build_scripts"]) != {UI_BUILD}
             or not _hash(policy["first_party_build_scripts"][UI_BUILD])):
         raise Incomplete("Manifest or first-party build-script identity differs from the profile.")
+    dependency = first_party_dependency(policy)
+    names = patch_names(policy)
+    if (bool(dependency) != all(name in names for name in EP1_PATCH_NAMES)
+            or any(name in names for name in EP1_PATCH_NAMES) != bool(dependency)):
+        raise Incomplete("The prototype requires its exact provider pair and nonmember source.")
     selected, inert = {}, {}
     base_keys = {"name", "version", "checksum", "license", "files_sha256"}
     for field, destination, extra in (
@@ -364,11 +445,13 @@ def validate_policy_shape(policy: dict) -> None:
         if key in seen_bypasses:
             raise Incomplete("Duplicate exact archive-file bypass.")
         seen_bypasses.add(key)
-    rows = policy["rows"]
-    if type(rows) is not dict or set(rows) != set(TARGETS):
+    row_sets = [("default", policy["rows"])]
+    if dependency:
+        row_sets.append((EP1_PROFILE, policy[EP1_FIELD]["rows"]))
+    if any(type(rows) is not dict or set(rows) != set(TARGETS) for _, rows in row_sets):
         raise Incomplete("Missing or unadmitted target/host dependency row.")
     reached = set()
-    for target, row in rows.items():
+    for profile, target, row in ((profile, target, row) for profile, rows in row_sets for target, row in rows.items()):
         keys = {"features", "local_features", "metadata_features", "allowed_build_scripts",
                 "allowed_proc_macros", "duplicate_exceptions", "package_scopes"}
         if type(row) is not dict or set(row) != keys:
@@ -376,8 +459,7 @@ def validate_policy_shape(policy: dict) -> None:
         features, locals_, metadata = row["features"], row["local_features"], row["metadata_features"]
         if (type(features) is not dict or not set(features) <= set(selected)
                 or not features or not all(_roles(value) for value in features.values())
-                or type(locals_) is not dict or set(locals_) != LOCAL_IDENTITIES
-                or any(value != {"target": [[]]} for value in locals_.values())
+                or type(locals_) is not dict or locals_ != profile_locals(profile)
                 or type(metadata) is not dict or not set(features) <= set(metadata)
                 or not set(metadata) <= selected.keys() | inert.keys()
                 or not all(_features(value) for value in metadata.values())):
@@ -396,6 +478,23 @@ def validate_policy_shape(policy: dict) -> None:
                 or any(set(features[key]) != {"host"} for key in macros)):
             raise Incomplete("Build/proc-macro/duplicate roles differ from the selected graph.")
         scopes = row["package_scopes"]
+        prototype_sources = EP1_PATCH_IDS | {"rustls@0.23.46", "rustls-pki-types@1.15.1", "zeroize@1.9.1",
+            "aes-siv@0.8.0", "aes@0.9.3", "cmac@0.8.0"}
+        if profile == "default" and any(key.split("@", 1)[0] in {item.split("@", 1)[0] for item in prototype_sources}
+                                            for key in features):
+            raise Incomplete("Prototype dependencies leaked into the default selected graph.")
+        if profile == EP1_PROFILE:
+            required = {"rustls-pki-types@1.15.1", "zeroize@1.9.1", "aes-siv@0.8.0", "aes@0.9.3", "cmac@0.8.0"}
+            if target == WINDOWS_TARGET:
+                required |= EP1_PATCH_IDS | {"rustls@0.23.46"}
+            elif any(key.split("@", 1)[0] in {"rustls", *EP1_PATCH_NAMES} for key in features):
+                raise Incomplete("The GNU prototype may not select a TLS/provider/verifier backend.")
+            if not required <= set(features):
+                raise Incomplete("The prototype lacks its exact selected crypto roots.")
+            if any(features[key] != {"target": [[]]} for key in EP1_PATCH_IDS & set(features)):
+                raise Incomplete("The prototype providers require empty-feature normal target roles.")
+            if target == WINDOWS_TARGET and features["rustls@0.23.46"] != {"target": [["std"]]}:
+                raise Incomplete("The prototype TLS feature must remain std-only.")
         if PATCH_NAME in names and features.get(PATCH_ID) != {"host": [[]]}:
             raise Incomplete("The spin_on patch may only enter the product's host-tool graph.")
         for patch_name, patch_id in WINDOWS_PATCHES:
@@ -415,7 +514,7 @@ def validate_policy_shape(policy: dict) -> None:
                 if scope != {"features": {PATCH_ID: {"target": [[]]}}, "local_features": {}}:
                     raise Incomplete("The standalone patched package scope must remain dependency/feature-free.")
                 continue
-            local = {member + "@0.0.0": {"target": [[]]} for member in LOCAL_SCOPE_MEMBERS[name]}
+            local = profile_locals(profile, scope=name)
             if (type(scope) is not dict or set(scope) != {"features", "local_features"}
                     or scope["local_features"] != local or type(scope["features"]) is not dict
                     or not set(scope["features"]) <= set(features)
@@ -436,8 +535,10 @@ def validate_policy_shape(policy: dict) -> None:
                         raise Incomplete("Windows GUI scope lacks its exact AccessKit target dependency.")
             elif any(key.split("@", 1)[0].startswith(("slint", "i-slint-")) for key in scope["features"]):
                 raise Incomplete("Slint dependencies must remain isolated from pure/engine package selections.")
-            elif patched_ids & set(scope["features"]):
-                raise Incomplete("Path patches belong only to their exact GUI host/target graph roles.")
+            elif (patched_ids & set(scope["features"])) - (EP1_PATCH_IDS if profile == EP1_PROFILE and name == "nevrotick-engine" else set()):
+                raise Incomplete("Path patches belong only to their exact GUI or prototype Engine roles.")
+            if profile == EP1_PROFILE and name != "nevrotick-engine" and set(scope["features"]) & prototype_sources:
+                raise Incomplete("Prototype crypto cannot leak into unrelated package scopes.")
         reached.update(features)
     if reached != set(selected):
         raise Incomplete("Selected package inventory contains an unreachable execution grant.")
@@ -481,15 +582,16 @@ def _decode_metadata(output: str) -> dict:
     return data
 
 
-def validate_metadata(target: str, output: str, policy: dict) -> dict:
+def validate_metadata(target: str, output: str, policy: dict, *, profile: str = "default") -> dict:
     """Validate the frozen metadata overapproximation without selecting its extras."""
     validate_policy(policy)
     if target not in TARGETS:
         raise Incomplete("Unadmitted metadata target.")
-    data, row = _decode_metadata(output), policy["rows"][target]
+    data, row = _decode_metadata(output), profile_rows(policy, profile)[target]
     records = {identity(item): item for item in policy["packages"] + policy["metadata_only_packages"] + policy.get("patched_packages", [])}
     selected = selected_records(policy)
     patches = patch_records(policy)
+    dependency = first_party_dependency(policy)
     nodes = {}
     for node in data["resolve"]["nodes"]:
         if (type(node) is not dict or type(node.get("id")) is not str or node["id"] in nodes
@@ -511,6 +613,13 @@ def validate_metadata(target: str, output: str, policy: dict) -> dict:
                     or key in registry or package.get("license") != patches[key]["license"]):
                 raise Incomplete("The patched package is outside its exact source/licence path.")
             registry[key] = nodes[package_id]["features"]
+        elif package["source"] is None and key == EP1_AES_ID and dependency:
+            if (key in locals_ or package.get("manifest_path") != data["workspace_root"].rstrip("/") + "/" + EP1_AES_PATH + "/Cargo.toml"
+                    or package.get("license") != "GPL-2.0-only" or nodes[package_id]["features"] != []
+                    or any("custom-build" in target.get("kind", []) or "proc-macro" in target.get("kind", [])
+                           for target in package.get("targets", []))):
+                raise Incomplete("The first-party nonmember acquired a foreign path, grant, feature or execution role.")
+            locals_[key] = []
         elif package["source"] is None:
             if (key not in LOCAL_IDENTITIES or key in locals_
                     or package.get("license") != ("GPL-3.0-only" if key == "nevrotick-ui@0.0.0" else "GPL-2.0-only")):
@@ -531,8 +640,11 @@ def validate_metadata(target: str, output: str, policy: dict) -> dict:
             if (build != selected[key]["build_script"] or macro != selected[key]["proc_macro"]
                     or package.get("links") != selected[key]["links"]):
                 raise Incomplete("Selected Cargo build/proc-macro/native role drifted.")
+    expected_locals = {key: roles["target"][0] for key, roles in row["local_features"].items()}
+    if profile == "default" and EP1_AES_ID in locals_ and dependency:
+        expected_locals[EP1_AES_ID] = []
     if (ids != set(nodes) or registry != row["metadata_features"]
-            or locals_ != {key: [] for key in LOCAL_IDENTITIES}
+            or locals_ != expected_locals
             or type(data.get("workspace_members")) is not list
             or not all(type(value) is str for value in data["workspace_members"])
             or len(set(data["workspace_members"])) != len(MEMBERS)
@@ -552,13 +664,13 @@ def validate_metadata(target: str, output: str, policy: dict) -> dict:
 
 
 def validate_tree(target: str, output: str, policy: dict, *, scope: str = "workspace",
-                  include_edges: bool = False) -> dict:
+                  include_edges: bool = False, profile: str = "default") -> dict:
     """Check frozen Cargo's selected role/feature tree, rejecting ambiguous dedupes."""
     validate_policy(policy)
     if (target not in TARGETS or type(output) is not str or len(output.encode("utf-8")) > MAX_TREE_BYTES
             or type(include_edges) is not bool):
         raise Incomplete("Unadmitted or oversized selected Cargo tree.")
-    full_row = policy["rows"][target]
+    full_row = profile_rows(policy, profile)[target]
     if scope != "workspace" and scope not in package_scopes(policy):
         raise Incomplete("Unknown Cargo package selection scope.")
     row = full_row if scope == "workspace" else full_row["package_scopes"][scope]
@@ -592,8 +704,8 @@ def validate_tree(target: str, output: str, policy: dict, *, scope: str = "works
         depth, key = len(prefix) // 4, name + "@" + version
         if depth > 128 or key not in expected:
             raise Incomplete("Cargo tree promoted an unselected dependency or depth.")
-        if key in LOCAL_IDENTITIES or key in patches:
-            path = patches[key]["path"] if key in patches else "crates/" + name
+        if key in LOCAL_IDENTITIES or key in patches or key == EP1_AES_ID:
+            path = patches[key]["path"] if key in patches else EP1_AES_PATH if key == EP1_AES_ID else "crates/" + name
             if not re.fullmatch(r" \(/[^()\r\n]*/" + re.escape(path) + r"\)", annotation):
                 raise Incomplete("Unexpected local Cargo tree source annotation.")
             macro = False
@@ -714,7 +826,7 @@ def _project_feature_refs(definitions: dict, active: set[str], dependencies: dic
 
 
 def selected_metadata(target: str, metadata_output: str, tree_output: str, policy: dict,
-                      *, package_trees: dict[str, str] | None = None) -> dict:
+                      *, package_trees: dict[str, str] | None = None, profile: str = "default") -> dict:
     """Build a closed scanner view from the product and optional Spin edge graphs.
 
     This scratch projection preserves package identity, licences and all source
@@ -723,18 +835,18 @@ def selected_metadata(target: str, metadata_output: str, tree_output: str, polic
     Node features stay exactly the reviewed workspace union. Source manifests,
     grants, compiler inputs and archived observations are never rewritten.
     """
-    validate_metadata(target, metadata_output, policy)
+    validate_metadata(target, metadata_output, policy, profile=profile)
     scopes = package_scopes(policy)
     if type(package_trees) is not dict or set(package_trees) != set(scopes):
         raise Incomplete("Selected projection requires all admitted product and the admitted standalone Spin package-tree observations.")
-    graphs = [validate_tree(target, tree_output, policy, include_edges=True)]
-    graphs.extend(validate_tree(target, package_trees[name], policy, scope=name, include_edges=True)
+    graphs = [validate_tree(target, tree_output, policy, include_edges=True, profile=profile)]
+    graphs.extend(validate_tree(target, package_trees[name], policy, scope=name, include_edges=True, profile=profile)
                   for name in scopes)
     selected_edges = {(edge["parent"], edge["child"], edge["kind"])
                       for graph in graphs for edge in graph["dependency_edges"]}
     data = copy.deepcopy(_decode_metadata(metadata_output))
-    row = policy["rows"][target]
-    wanted = set(row["features"]) | LOCAL_IDENTITIES
+    row = profile_rows(policy, profile)[target]
+    wanted = set(row["features"]) | set(row["local_features"])
     data["packages"] = [package for package in data["packages"] if identity(package) in wanted]
     ids = {package["id"] for package in data["packages"]}
     packages = {package["id"]: package for package in data["packages"]}
@@ -742,7 +854,7 @@ def selected_metadata(target: str, metadata_output: str, tree_output: str, polic
     data["resolve"]["nodes"] = [node for node in data["resolve"]["nodes"] if node["id"] in ids]
     nodes = {node["id"]: node for node in data["resolve"]["nodes"]}
     for node in data["resolve"]["nodes"]:
-        roles = row["features"].get(identities[node["id"]], {"target": [[]]})
+        roles = row["features"].get(identities[node["id"]], row["local_features"].get(identities[node["id"]], {"target": [[]]}))
         node["features"] = sorted({feature for sets in roles.values() for features in sets for feature in features})
     observed_edges = set()
     for node in data["resolve"]["nodes"]:

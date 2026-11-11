@@ -1,27 +1,12 @@
-//! Held loopback-only ordinary-validation NTS-KE/exporter laboratory executable.
+// SPDX-License-Identifier: GPL-2.0-only
+//! Live caller of the Engine-owned, controlled-loopback KE prototype.
 //!
-//! A successful result is historical laboratory completion, with no UDP, clock,
-//! service or Core effect. Native execution requires separate task admission.
+//! The Engine owns the sole strict producer, association and never-send consumer.
+//! Native execution and provider qualification remain separately admitted.
 
 #![forbid(unsafe_code)]
 
-#[cfg(any(windows, test))]
-mod nts_ke;
-
-/// Use the actual Windows producer, or explicitly refuse another platform.
+/// Delegate actual arguments to the feature-selected Engine owner.
 fn main() -> std::process::ExitCode {
-    #[cfg(windows)]
-    {
-        nts_ke::entry(std::env::args_os())
-    }
-    #[cfg(not(windows))]
-    {
-        use std::io::Write;
-        // Preserve unsupported-platform failure even if its bounded report fails.
-        let _diagnostic_result = writeln!(
-            std::io::stderr().lock(),
-            "stage=admission cause=unsupported-platform"
-        );
-        std::process::ExitCode::FAILURE
-    }
+    nevrotick_engine::experimental_nts_ke_probe(std::env::args_os())
 }

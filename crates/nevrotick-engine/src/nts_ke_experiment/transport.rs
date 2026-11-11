@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 //! The sole real Windows TLS/KE producer, confined to one synchronous job.
 //!
 //! No authenticated association escapes: strict same-connection keys/cookies
@@ -9,18 +10,15 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use ntp_wire::{NtsKeAccumulatorError, NtsKeFrameError};
-use rustls::{
-    CipherSuite, ClientConfig, ClientConnection, HandshakeKind, ProtocolVersion, StreamOwned,
-    SupportedCipherSuite,
-};
-use rustls_cng_crypto::ShutdownHandle;
+use rustls::{CipherSuite, ClientConfig, ClientConnection, StreamOwned, SupportedCipherSuite};
 use zeroize::Zeroizing;
 
+use super::profile::StrictProfile;
 use super::transport_fault::{self, TransportFault};
+use super::{AssociationCandidate, AssociationOwner, ProviderScope, request::DirectionalKeys};
 use super::{
     Config, Control, Failed, Failure, IoPhase, SCRATCH_LIMIT, Summary, encode_offer, read_response,
 };
-use super::{handoff, request::DirectionalKeys};
 
 /// One numeric socket whose every operation shares the original job deadlines.
 struct DeadlineStream<'a> {
@@ -148,58 +146,6 @@ impl Write for DeadlineStream<'_> {
     }
 }
 
-/// Actual negotiated values captured only after the ordinary strict verifier.
-struct StrictProfile {
-    /// Actual protocol returned by this completed connection.
-    protocol: ProtocolVersion,
-    /// Actual selected suite from the sole explicit CNG provider.
-    suite: CipherSuite,
-    /// Full handshakes with or without `HelloRetryRequest` are admitted.
-    handshake: HandshakeKind,
-}
-
-impl StrictProfile {
-    /// Capture the completed connection's profile after exact ALPN admission.
-    ///
-    /// # Errors
-    /// Return `Failure::TlsProfile` for an unfinished handshake, absent profile
-    /// metadata, wrong ALPN, unsupported suite/protocol or resumed handshake.
-    fn capture(connection: &ClientConnection) -> Result<Self, Failure> {
-        if connection.is_handshaking() || connection.alpn_protocol() != Some(b"ntske/1".as_slice())
-        {
-            return Err(Failure::TlsProfile);
-        }
-        let profile = Self {
-            protocol: connection.protocol_version().ok_or(Failure::TlsProfile)?,
-            suite: connection
-                .negotiated_cipher_suite()
-                .ok_or(Failure::TlsProfile)?
-                .suite(),
-            handshake: connection.handshake_kind().ok_or(Failure::TlsProfile)?,
-        };
-        profile.check()?;
-        Ok(profile)
-    }
-
-    /// Admit only the captured full TLS 1.3/CNG profile; no resumption qualifies.
-    ///
-    /// # Errors
-    /// Return `Failure::TlsProfile` unless the captured protocol, suite and full
-    /// handshake kind all meet the fixed laboratory profile.
-    fn check(&self) -> Result<(), Failure> {
-        if self.protocol != ProtocolVersion::TLSv1_3
-            || !matches!(
-                self.handshake,
-                HandshakeKind::Full | HandshakeKind::FullWithHelloRetryRequest
-            )
-            || suite_priority(self.suite) == 3
-        {
-            return Err(Failure::TlsProfile);
-        }
-        Ok(())
-    }
-}
-
 /// Complete ephemeral result of this actual connection, never product authority.
 struct InternalCandidate<'a> {
     /// Borrowed immutable original identity/name and configured numeric endpoint.
@@ -224,14 +170,14 @@ struct InternalCandidate<'a> {
     cookies: Vec<Zeroizing<Vec<u8>>>,
 }
 
-impl InternalCandidate<'_> {
+impl<'a> InternalCandidate<'a> {
     /// Check the binding, seal one private request, then commit and wipe once.
     ///
     /// # Errors
     /// Refuse an invalid profile, endpoint, invocation/expiry/AEAD binding,
     /// cookie budget, entropy/sealing or final currentness/commit guard. Failure
     /// destroys the candidate and private packet without returning a summary.
-    fn finish(self) -> Result<Summary, Failure> {
+    fn publish(self, provider: &'a ProviderScope<'a>) -> Result<AssociationOwner<'a>, Failure> {
         let Self {
             config,
             control,
@@ -244,27 +190,22 @@ impl InternalCandidate<'_> {
             s2c_key,
             cookies,
         } = self;
-        profile.check()?;
         if peer != config.peer || udp.ip() != peer.ip() || udp.port() == 0 {
             return Err(Failure::Endpoint);
         }
         if config.identity.is_empty() || expiry != control.expiry || aead != 15 {
             return Err(Failure::Control);
         }
-        let request = handoff::prepare(
+        let candidate = AssociationCandidate::new(
+            config,
             control,
+            provider,
+            udp,
+            profile,
             DirectionalKeys::new(c2s_key, s2c_key),
-            &cookies,
-            |output| {
-                use rustls::crypto::SecureRandom;
-                rustls_cng_crypto::SecureRandom
-                    .fill(output)
-                    .map_err(|_| Failure::Entropy)
-            },
-        )?;
-        let summary = request.finish()?;
-        drop(cookies);
-        Ok(summary)
+            cookies,
+        );
+        AssociationOwner::receive(config, control, provider, candidate)
     }
 }
 
@@ -447,7 +388,11 @@ fn close(stream: &mut StreamOwned<ClientConnection, DeadlineStream<'_>>) -> Resu
 /// Refuse numeric connect/peer, TLS/KE preparation, local close or final candidate
 /// commit failure. Retain an independently observed close refusal alongside a
 /// primary preparation failure; no TLS or secret owner escapes either outcome.
-fn exchange_owned(config: &Config, control: &Control) -> Result<Summary, Failed> {
+fn exchange_owned<'a>(
+    config: &'a Config,
+    control: &'a Control,
+    provider: &'a ProviderScope<'a>,
+) -> Result<Summary, Failed> {
     let timeout = control.remaining(IoPhase::Handshake)?;
     let socket = TcpStream::connect_timeout(&config.peer, timeout)
         .map_err(|error| Failure::Connect(error.kind()))?;
@@ -476,7 +421,24 @@ fn exchange_owned(config: &Config, control: &Control) -> Result<Summary, Failed>
             admission_cleanup: None,
         }),
         (Err(primary), Ok(())) | (Ok(_), Err(primary)) => Err(primary.into()),
-        (Ok(candidate), Ok(())) => candidate.finish().map_err(Failed::from),
+        (Ok(candidate), Ok(())) => {
+            let mut association = candidate.publish(provider).map_err(Failed::from)?;
+            let population = association.cookie_population().map_err(Failed::from)?;
+            let request = association
+                .prepare_preview(|output| {
+                    use rustls::crypto::SecureRandom;
+                    rustls_cng_crypto::SecureRandom
+                        .fill(output)
+                        .map_err(|_| Failure::Entropy)
+                })
+                .map_err(Failed::from)?;
+            let mut summary = request.finish().map_err(Failed::from)?;
+            // Keep the existing KE-batch counts after the one-cookie reservation.
+            summary.cookies = population.0;
+            summary.cookie_bytes = population.1;
+            drop(association);
+            Ok(summary)
+        }
     }
 }
 
@@ -485,10 +447,11 @@ fn exchange_owned(config: &Config, control: &Control) -> Result<Summary, Failed>
 /// # Errors
 /// Refuse setup, strict trust/profile, bounded KE, exporter, cleanup, deadline or
 /// cancellation failure. No error contains peer, identity, cookie or key bytes.
-pub(super) fn exchange(config: &Config, control: &Control) -> Result<Summary, Failed> {
+pub(super) fn exchange<'a>(
+    config: &'a Config,
+    control: &'a Control,
+    provider: &'a ProviderScope<'a>,
+) -> Result<Summary, Failed> {
     control.remaining(IoPhase::Handshake)?;
-    let shutdown = ShutdownHandle {};
-    let result = exchange_owned(config, control);
-    drop(shutdown);
-    result
+    exchange_owned(config, control, provider)
 }

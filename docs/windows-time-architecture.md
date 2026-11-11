@@ -110,6 +110,19 @@ qualify the combined integration candidate.
 | [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback observer and additive three-attempt same-source series with consume-once private receiver; conditional software-clock measurements, exact nominal values and common-origin relative views; `nevrotick-observe` remains the two-peer CLI | Recorded [measurement](../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026), [exact-nominal](../tasks/engine-transport-pilot.md#exact-nominal-terminal-qualification--6-november-2026), [rational-seconds](../tasks/s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners) and [common-run bridge](../tasks/engine-transport-pilot.md#common-run-reference-bridge--final-qualification-and-next-action) receipts retain their exact scopes. [N3a final qualification](../tasks/engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners) completes its selected Linux scope on407-input `e71aab7...`:91 ordinary/91 optimized tests,42 doctests, external contracts, both line gates and357 accounted variants (214 fresh library plus143 explicitly reused receiver outcomes; four reviewed equivalents, no unresolved survivor or timeout). The existing receiving-contract card retains its four transaction choices and supplier holds before integration. Observations stay unauthenticated/ineligible; production history, native Windows, P1 and product qualification remain open |
 | [windows-platform](../crates/windows-platform/Cargo.toml) | Portable lifecycle/status, SCM projection and checked privilege snapshots, with explicit completion custody | [W11-W05/S3.1 handoff](../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026); consumed by standalone laboratory hosts, with product adoption and native qualification open |
 
+**11 November KE ownership source checkpoint:** the default-off Engine feature
+`ke-association-prototype` now owns the existing strict Windows KE/exporter path,
+its private association and the borrowed-key never-send request consumer. The
+existing standalone probe delegates to that actual owner. The
+[EP1 task](../tasks/engine-transport-pilot.md#ep1-graph-admission-and-first-compile--11-november-2026)
+records exact dependency admission, selected Linux component/CLI checks and
+Windows-target source checks, including incomplete attempts. Nine external
+compiler consumers pass their legal/private-module expectations; selected
+coverage/mutation remain unfinished. Healthy Windows
+trust/exporters and actual native cleanup retain their holds. This prototype
+sends no UDP request, publishes no time observation or fresh synchronization,
+and introduces no Core Cargo edge or shipping provider adoption.
+
 **8 November engine continuation:** the
 [series-summary checkpoint repair](../tasks/engine-transport-pilot.md#final-series-summary-checkpoint-repair--8-november-2026)
 serializes current control/time classification after historical completion
@@ -1425,8 +1438,30 @@ joins the existing kernels to fresh KE, atomic association publication, protecte
 UDP and the real numerical consumer. Freeze finite ephemeral key/association
 validity and invalidation before ordinary runtime use, even without caching.
 Initial KE cookies and zero replacement cookies in a protected UDP reply are
-different questions: the local acceptance/completion/retry disposition for the
-latter remains pending before dependent implementation. The [protocol appendix](../tasks/s0.1-protocol-comparison.md#ordinary-s22-composition-clarifications--5-november-2026)
+different questions. David's [11 November cookie decisions](nevrotick-owner-decisions.md#61-s22-cookie-reissuance)
+select fresh cookies on the wire: only an explicit never-invoked return may make
+an unchanged reservation issuable again, after retiring its UID and checking the
+same live association and original expiry. Drop, error, short completion,
+cancellation or ambiguity after invocation grants no reuse. Cookie exhaustion
+uses bounded KE recovery or unavailability, never plain fallback.
+
+Under the separately [accepted zero-cookie rule](nevrotick-owner-decisions.md#62-s22-zero-replacement-cookies),
+reject a protected reply containing zero encrypted replacement-cookie fields
+without publishing time or cookies. Preserve a healthy pending request's original
+deadline and remaining receive-work budget; a conforming neighbor may complete
+once. Charge admitted processing work before its parsing/crypto stage. Rejection
+does not refund that charge, restore the initial budget, renew the deadline or
+restore request credit. Budget exhaustion retires the request through its existing
+terminal path. Cookie exhaustion requires bounded KE recovery with backoff or
+another suitable configured trusted source, under aggregate recovery limits;
+there is no tight retry loop or silent plain-NTP fallback. Failed attempts cannot
+renew last-success time or freshness in published/UI state. Preserve any older
+valid result's original age separately from the failed current attempt.
+Initial KE cookie count, a zero-length cookie body and zero replacement
+fields are distinct. The RFC requires the server's encrypted cookies but does not
+prescribe this local client disposition. Implementation and qualification remain
+open under S2.2; neither choice supplies numerical eligibility or lifts a provider
+or native hold. The [protocol appendix](../tasks/s0.1-protocol-comparison.md#ordinary-s22-composition-clarifications--5-november-2026)
 retains the precise RFC/source distinction, TLS completion boundaries and RFC
 SHOULD strength for size guidance. Packet/cookie completion never establishes
 numerical eligibility.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 //! One private untransmitted request, bound to its original publication owner.
 //!
 //! This component accepts owned laboratory material, not authenticated evidence.
@@ -60,7 +61,8 @@ impl PreparedRequest<'_> {
 ///
 /// The actual producer supplies CNG entropy; component controls use public fixed
 /// bytes. No caller label or entropy callback grants TLS or send authority.
-/// Keys, entropy and the entire packet retire on refusal. Cookie bytes remain
+/// Entropy and the entire packet retire on refusal; the association retains keys.
+/// Cookie bytes remain
 /// borrowed from the candidate and are never rewritten, copied or substituted.
 /// Check the complete population before selecting its first exact body.
 ///
@@ -72,7 +74,7 @@ impl PreparedRequest<'_> {
 /// even if that same call also retires the invocation.
 pub(super) fn prepare<'a>(
     control: &'a Control,
-    keys: DirectionalKeys,
+    keys: &DirectionalKeys,
     cookies: &[Zeroizing<Vec<u8>>],
     fill: impl FnOnce(&mut [u8; 48]) -> Result<(), Failure>,
 ) -> Result<PreparedRequest<'a>, Failure> {

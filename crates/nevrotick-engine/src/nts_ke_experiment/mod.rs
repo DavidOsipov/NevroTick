@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 //! One bounded laboratory KE job; this module grants no product authority.
 //!
 //! CLI construction checks immutable endpoint/identity inputs before effects.
@@ -11,6 +12,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
+use garde::Validate;
 use ntp_wire::{
     NtsKeAccumulator, NtsKeAccumulatorError, NtsKeExporterContext, NtsKeExporterDirection,
     NtsKeFrameLimits, NtsKeNegotiationError, NtsKeNtpv4Offer, NtsKeProgress,
@@ -19,8 +21,22 @@ use ntp_wire::{
 use rustls_pki_types::ServerName;
 use zeroize::Zeroizing;
 
+mod association;
+mod process;
+mod profile;
+
+#[cfg(windows)]
+use association::{AssociationCandidate, AssociationOwner};
+#[cfg(windows)]
+use process::{ProcessAdmission, ProviderScope};
+
+/// Process-wide one-shot admission; cached CNG providers cannot be reinitialized.
+#[cfg(windows)]
+static PROCESS_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+
 mod handoff;
 mod request;
+mod response;
 #[cfg(test)]
 mod tests;
 #[cfg(windows)]
@@ -55,6 +71,12 @@ enum Failure {
     Cancelled,
     /// The control lock or consume-once state is unavailable.
     Control,
+    /// A process invocation was already claimed, including after its retirement.
+    ProcessUsed,
+    /// The invocation already spent its sole never-send preview allowance.
+    PreviewSpent,
+    /// Closed request-custody or protected-response refusal; no secret payload.
+    Ledger(association::ledger::LedgerError),
     /// Fixed encoder parameters or the actual request were rejected.
     Offer(NtsKeRequestEncodeError),
     /// Fixed framing limits were rejected before parsing.
@@ -126,18 +148,12 @@ impl Config {
             return Err(Failure::Arguments);
         }
         let peer: SocketAddr = peer.parse().map_err(|_| Failure::Arguments)?;
-        if !peer.ip().is_loopback() || peer.port() == 0 {
-            return Err(Failure::Arguments);
-        }
-        if let SocketAddr::V6(address) = peer
-            && (address.scope_id() != 0 || address.flowinfo() != 0)
-        {
-            return Err(Failure::Arguments);
-        }
         let identity = identity.into_string().map_err(|_| Failure::Arguments)?;
-        if identity.is_empty() || identity.len() > 253 || !identity.is_ascii() {
-            return Err(Failure::Arguments);
+        ConfigCandidate {
+            values: (peer, &identity),
         }
+        .validate()
+        .map_err(|_| Failure::Arguments)?;
         let server_name = ServerName::try_from(identity.clone()).map_err(|_| Failure::Arguments)?;
         Ok(Self {
             peer,
@@ -145,6 +161,36 @@ impl Config {
             server_name,
         })
     }
+}
+
+/// One maintained structured-input rule runs inside the private constructor.
+#[derive(Validate)]
+struct ConfigCandidate<'a> {
+    /// Parsed endpoint and exact bounded verification identity; no effects occur.
+    #[garde(custom(config_rule))]
+    values: (SocketAddr, &'a str),
+}
+
+/// Enforce the loopback and literal-identity contract before provider admission.
+/// # Errors
+/// Return a fixed redacted violation for invalid endpoint/name envelope.
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "Garde custom rules borrow fields and their unit context"
+)]
+fn config_rule(values: &(SocketAddr, &str), (): &()) -> garde::Result {
+    let (peer, identity) = *values;
+    let scoped = matches!(peer, SocketAddr::V6(address) if address.scope_id() != 0 || address.flowinfo() != 0);
+    if !peer.ip().is_loopback()
+        || peer.port() == 0
+        || scoped
+        || identity.is_empty()
+        || identity.len() > 253
+        || !identity.is_ascii()
+    {
+        return Err(garde::Error::new("invalid loopback KE configuration"));
+    }
+    Ok(())
 }
 
 /// Socket phase chooses a deadline, never a fresh relative timeout budget.
@@ -161,6 +207,8 @@ enum IoPhase {
 enum Phase {
     /// The sole job still has permission to prepare and commit.
     Open,
+    /// Genuine KE completion was consumed; invocation currentness remains live.
+    Published,
     /// Cancellation has irrevocably closed publication.
     Cancelled,
     /// Complete publication already won its final guard.
@@ -215,6 +263,39 @@ impl Control {
         self.remaining_locked(*state, phase, Instant::now())
     }
 
+    /// Run a bounded, non-I/O state commit under fresh published authority.
+    ///
+    /// The caller stages allocations and fallible preparation first. Its effect
+    /// must be failure-atomic and must not re-enter this control. This check
+    /// leaves the association Published; a request completion never renews or
+    /// commits the enclosing association's lifetime.
+    /// # Errors
+    /// Refuse unavailable, unpublished, cancelled or expired authority before
+    /// the effect; preserve the effect's closed failure without changing phase.
+    fn with_published<T>(
+        &self,
+        effect: impl FnOnce(Instant) -> Result<T, Failure>,
+    ) -> Result<T, Failure> {
+        self.with_published_observing(Instant::now, effect)
+    }
+
+    /// Sample the trusted local clock after acquiring the actual phase guard.
+    /// # Errors
+    /// Preserve the same publication/currentness guard and caller failure.
+    fn with_published_observing<T>(
+        &self,
+        observe: impl FnOnce() -> Instant,
+        effect: impl FnOnce(Instant) -> Result<T, Failure>,
+    ) -> Result<T, Failure> {
+        let state = self.phase.lock().map_err(|_| Failure::Control)?;
+        let now = observe();
+        self.remaining_locked(*state, IoPhase::Exchange, now)?;
+        if !matches!(*state, Phase::Published) {
+            return Err(Failure::Control);
+        }
+        effect(now)
+    }
+
     /// Testable time boundary with the same mandatory phase guard and rule.
     #[cfg(test)]
     ///
@@ -240,7 +321,7 @@ impl Control {
         match state {
             Phase::Cancelled => return Err(Failure::Cancelled),
             Phase::Committed => return Err(Failure::Control),
-            Phase::Open => {}
+            Phase::Open | Phase::Published => {}
         }
         if now < self.origin {
             return Err(Failure::Deadline);
@@ -253,6 +334,43 @@ impl Control {
             .checked_duration_since(now)
             .filter(|value| !value.is_zero())
             .ok_or(Failure::Deadline)
+    }
+
+    /// Consume one genuine KE completion under the still-live invocation guard.
+    /// # Errors
+    /// Refuse cancellation, expiry, duplicate publication or unavailable control.
+    fn publish_ke(&self) -> Result<(), Failure> {
+        self.publish_ke_observing(Instant::now)
+    }
+
+    /// Sample publication time only after acquiring the actual phase guard.
+    /// The sole normal caller supplies the trusted monotonic observation.
+    /// # Errors
+    /// Preserve lock/currentness/duplicate refusal without partial publication.
+    fn publish_ke_observing(&self, observe: impl FnOnce() -> Instant) -> Result<(), Failure> {
+        let mut state = self.phase.lock().map_err(|_| Failure::Control)?;
+        self.publish_ke_locked(&mut state, observe())
+    }
+
+    /// Apply the same publication checkpoint to an explicitly observed instant.
+    /// # Errors
+    /// Refuse a closed, foreign-stage or expired publication without changing it.
+    #[cfg(test)]
+    fn publish_ke_at(&self, now: Instant) -> Result<(), Failure> {
+        let mut state = self.phase.lock().map_err(|_| Failure::Control)?;
+        self.publish_ke_locked(&mut state, now)
+    }
+
+    /// Publish once using an observation sampled within the held owner guard.
+    /// # Errors
+    /// Refuse stale or non-open authority without mutating its existing phase.
+    fn publish_ke_locked(&self, state: &mut Phase, now: Instant) -> Result<(), Failure> {
+        self.remaining_locked(*state, IoPhase::Exchange, now)?;
+        if !matches!(*state, Phase::Open) {
+            return Err(Failure::Control);
+        }
+        *state = Phase::Published;
+        Ok(())
     }
 
     /// Commit after a fresh time observation under the cancellation lock.
@@ -282,6 +400,9 @@ impl Control {
     /// Refuses the same mandatory phase/time rule before mutating the held state.
     fn commit_locked(&self, state: &mut Phase, now: Instant) -> Result<(), Failure> {
         self.remaining_locked(*state, IoPhase::Exchange, now)?;
+        if !matches!(*state, Phase::Published) {
+            return Err(Failure::Control);
+        }
         *state = Phase::Committed;
         Ok(())
     }
@@ -294,7 +415,7 @@ impl Control {
     fn cancel(&self) -> Result<CancelOutcome, Failure> {
         let mut state = self.phase.lock().map_err(|_| Failure::Control)?;
         match *state {
-            Phase::Open => {
+            Phase::Open | Phase::Published => {
                 *state = Phase::Cancelled;
                 Ok(CancelOutcome::Cancelled)
             }
@@ -467,7 +588,11 @@ impl From<Failure> for Failed {
 /// failures; returns no success on rejection.
 fn run(config: Config) -> Result<Summary, Failed> {
     let control = Control::new(Instant::now()).map_err(Failed::from)?;
-    let result = transport::exchange(&config, &control);
+    let claim = PROCESS_ADMISSION.claim().map_err(Failed::from)?;
+    let provider = ProviderScope::new(&claim);
+    let result = transport::exchange(&config, &control, &provider);
+    // The actual association/preview and TLS state are gone before this shutdown.
+    drop(provider);
     // Consume this one-shot input before reporting; it cannot start a second job
     // after the process-global CNG shutdown owner has finished.
     drop(config);
@@ -489,6 +614,9 @@ fn failure_labels(failure: Failure) -> (&'static str, &'static str) {
         Failure::Deadline => ("currentness", "deadline"),
         Failure::Cancelled => ("currentness", "cancelled"),
         Failure::Control => ("currentness", "control"),
+        Failure::ProcessUsed => ("admission", "process-used"),
+        Failure::PreviewSpent => ("resources", "preview-spent"),
+        Failure::Ledger(_) => ("protected-request", "refused"),
         Failure::Offer(_) | Failure::Limits => ("request", "parameters"),
         Failure::Response(kind) => ("response", io_label(kind)),
         Failure::Frame(_) => ("response", "framing"),
@@ -558,7 +686,7 @@ pub(super) fn entry(mut arguments: impl Iterator<Item = OsString>) -> std::proce
     match run(config) {
         Ok(summary) => {
             let mut output = io::stdout().lock();
-            if writeln!(output, "scope=laboratory-ke completed=1 cookies={} cookie_bytes={} sealed_packet_bytes={} transmitted=0 native_cleanup_qualified=0", summary.cookies, summary.cookie_bytes, summary.packet_bytes).is_err() || output.flush().is_err() {
+            if writeln!(output, "scope=engine-ke-prototype completed=1 cookies={} cookie_bytes={} sealed_packet_bytes={} transmitted=0 native_cleanup_qualified=0", summary.cookies, summary.cookie_bytes, summary.packet_bytes).is_err() || output.flush().is_err() {
                 return ExitCode::FAILURE;
             }
             ExitCode::SUCCESS

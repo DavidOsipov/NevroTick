@@ -17,6 +17,34 @@ mod relative;
 mod series;
 mod session;
 
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+mod nts_ke_experiment;
+
+/// Run the explicitly selected, controlled-loopback KE association prototype.
+///
+/// The existing probe is the live caller. Only historical public counts leave
+/// the private owner after secret/provider cleanup; no UDP or clock effect occurs.
+/// Unsupported hosts refuse without invoking a substitute TLS provider.
+#[cfg(feature = "ke-association-prototype")]
+pub fn experimental_nts_ke_probe(
+    arguments: impl IntoIterator<Item = std::ffi::OsString>,
+) -> std::process::ExitCode {
+    #[cfg(windows)]
+    {
+        nts_ke_experiment::entry(arguments.into_iter())
+    }
+    #[cfg(not(windows))]
+    {
+        use std::io::Write;
+        drop(arguments);
+        let _diagnostic_result = writeln!(
+            io::stderr().lock(),
+            "stage=admission cause=unsupported-platform"
+        );
+        std::process::ExitCode::FAILURE
+    }
+}
+
 pub use measurement::{
     ExperimentalMeasurement, ExperimentalProfile, MeasurementRefusal, NominalPhaseNs,
     NominalRoundTripNs,

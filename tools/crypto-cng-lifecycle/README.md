@@ -10,6 +10,17 @@ The earlier S52 outer-launch accounting gap remains historical. Native memory,
 cached-error/shutdown, concurrency and broader provider qualification remain open.
 Use the task's exact candidates and evidence limits when reusing observations.
 
+**11 November EP1 source preparation:** `nevrotick-nts-ke-probe` now delegates to
+the Engine-owned private KE/association/request implementation through the
+explicit, default-off `ke-association-prototype` feature. The old tool module was
+removed after relocation; peer/init binaries remain separate. The explicit
+[compiler consumers](tests/contracts/README.md) now challenge the actual external
+library boundary. Graph admission and fresh compiler/behavioral qualification of
+this migration remain pending under the [existing EP1 task](../../tasks/engine-transport-pilot.md#ep1--actual-ke-producer-into-engine-ownership).
+Passes and graph descriptions below retain their exact historical source scopes;
+they do not qualify this changed candidate. Native execution remains separately
+held.
+
 The historical S51 public-API checkpoint's direct Windows dependencies were exact
 Rustls 0.23.46 with defaults off and `std`, and CNG 0.1.2 with defaults off.
 That candidate had no verifier or AEAD root. Its frozen lock contained 53 records

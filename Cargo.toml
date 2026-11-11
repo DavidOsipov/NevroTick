@@ -1,6 +1,6 @@
 [workspace]
 members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange", "crates/time-core", "crates/nevrotick-engine", "crates/windows-platform"]
-exclude = ["third-party/spin_on", "third-party/accesskit_windows", "third-party/accesskit_consumer"]
+exclude = ["third-party/spin_on", "third-party/accesskit_windows", "third-party/accesskit_consumer", "tools/crypto-cng-lifecycle/vendor/rustls-cng-crypto", "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier", "tools/crypto-aes-siv-witness"]
 resolver = "3"
 
 [workspace.package]
@@ -14,6 +14,9 @@ spin_on = { path = "third-party/spin_on" }
 accesskit_windows = { path = "third-party/accesskit_windows" }
 # Preserve inclusive text-run endpoints in backward word navigation.
 accesskit_consumer = { path = "third-party/accesskit_consumer" }
+# Default-off Engine KE ownership prototype; shipping-provider adoption is held.
+rustls-cng-crypto = { path = "tools/crypto-cng-lifecycle/vendor/rustls-cng-crypto" }
+rustls-platform-verifier = { path = "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier" }
 
 # Workspace policy adopted from the canonical bootstrap Cargo fragment.
 # Every first-party member must opt in with

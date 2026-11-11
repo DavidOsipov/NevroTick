@@ -3672,5 +3672,94 @@ class EngineContractAdmissionTests(unittest.TestCase):
                 self.assertFalse(args.output_dir.exists())
 
 
+class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
+    """Synthetic admission controls; no product equivalence or kill is asserted."""
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.filename = dict(MODULE.ENGINE_KE_SUBJECTS)["ke_ledger"]
+        source = self.root / self.filename
+        source.parent.mkdir(parents=True)
+        source.write_text("Synthetic checked caller, never compiled.\n")
+        self.identity = {self.filename: MODULE.PRODUCT.sha256(source), "another-invariant-owner": "a" * 64}
+        self.candidate = MODULE.canonical_sha256(self.identity)
+        proof = self.root / MODULE.ENGINE_KE_EQUIVALENCE_PROOF
+        proof.parent.mkdir()
+        proof.write_text("Synthetic review only.\n" + "".join("## " + name + "\n" for name in sorted(MODULE.ENGINE_KE_EQUIVALENCE_IDS)))
+        self.proof_sha = MODULE.PRODUCT.sha256(proof)
+        self.catalog, entries = {}, []
+        for index, name in enumerate(sorted(MODULE.ENGINE_KE_EQUIVALENCE_IDS)):
+            mutant = {"name": name, "package": "nevrotick-engine", "file": self.filename,
+                "function": {"function_name": "synthetic_checked_caller", "return_type": "-> bool",
+                    "span": {"start": {"line": 1, "column": 1}, "end": {"line": 2, "column": 2}}},
+                "span": {"start": {"line": 1, "column": index + 1}, "end": {"line": 1, "column": index + 2}},
+                "replacement": "&&", "genre": "BinaryOperator"}
+            rationale = "Synthetic independently reviewed caller argument " + name
+            self.catalog[name] = (self.identity[self.filename], MODULE.canonical_sha256(mutant), rationale)
+            entries.append({"id": name, "candidate_sha256": self.candidate,
+                "source_sha256": self.identity[self.filename], "mutant": mutant,
+                "requirement": MODULE.ENGINE_KE_EQUIVALENCE_REQUIREMENT, "rationale": rationale,
+                "proof": {"path": MODULE.ENGINE_KE_EQUIVALENCE_PROOF, "sha256": self.proof_sha,
+                    "section": name, "reviewer": MODULE.ENGINE_KE_EQUIVALENCE_REVIEWERS,
+                    "verdict": "independently-justified-equivalent"}})
+        self.policy = {**MODULE.engine_ke_role_facts(), "binding": {"candidate_sha256": self.candidate},
+            "campaigns_admitted": False, "mutation_inventories": {}, "mutation_equivalences": entries}
+        self.scope = MODULE.Scope("nevrotick-engine", MODULE.ENGINE_KE_SUBJECTS, MODULE.ENGINE_KE_POLICY)
+
+    @contextmanager
+    def reviewed(self):
+        """Substitute synthetic code-owned approvals, never Main policy or source."""
+        with patch.multiple(MODULE, ENGINE_KE_EQUIVALENCE_CANDIDATE=self.candidate,
+                ENGINE_KE_EQUIVALENCE_PROOF_SHA256=self.proof_sha, ENGINE_KE_EQUIVALENCE_REVIEWS=self.catalog):
+            yield
+
+    def test_preparatory_catalog_refuses_nonempty_and_preserves_empty_default(self):
+        self.assertFalse(MODULE.engine_ke_equivalences_valid(self.policy))
+        empty = copy.deepcopy(self.policy)
+        empty["mutation_equivalences"] = []
+        self.assertTrue(MODULE.engine_ke_equivalences_valid(empty))
+        MODULE.require_engine_ke_role(self.scope, empty)
+
+    def test_exact_complete_review_catalog_still_requires_generic_live_custody(self):
+        with self.reviewed(), patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, self.identity)):
+            self.assertTrue(MODULE.engine_ke_equivalences_valid(self.policy))
+            MODULE.require_engine_ke_role(self.scope, self.policy)
+            self.assertEqual(MODULE.admit_mutation_equivalences(self.root, self.scope, self.policy),
+                             self.policy["mutation_equivalences"])
+            for relative in (self.filename, MODULE.ENGINE_KE_EQUIVALENCE_PROOF):
+                path = self.root / relative
+                original = path.read_bytes()
+                path.write_bytes(original + b"changed\n")
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_mutation_equivalences(self.root, self.scope, self.policy)
+                path.write_bytes(original)
+            changed = {**self.identity, "another-invariant-owner": "b" * 64}
+            with patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, changed)), self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_mutation_equivalences(self.root, self.scope, self.policy)
+
+    def test_neighbors_subsets_and_policy_controlled_approval_refuse(self):
+        edits = [lambda p: p["binding"].update(candidate_sha256="f" * 64),
+            lambda p: p["mutation_equivalences"].pop(),
+            lambda p: p["mutation_equivalences"].append(copy.deepcopy(p["mutation_equivalences"][0])),
+            lambda p: p["mutation_equivalences"][0].update(id="UNREVIEWED"),
+            lambda p: p["mutation_equivalences"][0].update(candidate_sha256="f" * 64),
+            lambda p: p["mutation_equivalences"][0].update(source_sha256="f" * 64),
+            lambda p: p["mutation_equivalences"][0].update(rationale="Policy invented an approval"),
+            lambda p: p["mutation_equivalences"][0]["mutant"].update(replacement="||"),
+            lambda p: p["mutation_equivalences"][0]["proof"].update(reviewer="self-approved"),
+            lambda p: p["mutation_equivalences"][0]["proof"].update(sha256="f" * 64),
+            lambda p: p["mutation_equivalences"][0]["proof"].update(path="tasks/foreign.md"),
+            lambda p: p["mutation_equivalences"][0].update(skip_function=True)]
+        with self.reviewed():
+            for edit in edits:
+                policy = copy.deepcopy(self.policy)
+                edit(policy)
+                self.assertFalse(MODULE.engine_ke_equivalences_valid(policy))
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.require_engine_ke_role(self.scope, policy)
+
+
 if __name__ == "__main__":
     unittest.main()

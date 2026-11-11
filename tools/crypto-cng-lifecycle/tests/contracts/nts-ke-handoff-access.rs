@@ -1,11 +1,11 @@
 //! Compile-only attempt to reach and rebind the actual private packet owner.
-//! Windows-target compiler controls must reject its real private module/fields.
+//! Windows-target compiler controls must reject the real private Engine module.
 
 #![forbid(unsafe_code)]
 
-/// Actual laboratory owner, including the newly integrated private receiver.
-#[path = "../../src/bin/nts_ke/mod.rs"]
-mod nts_ke;
+// The actual library's outer module must reject this external access.
+// Deeper constructor/field privacy may be masked by that first barrier.
+use nevrotick_engine::nts_ke_experiment as nts_ke;
 
 /// Caller outside the receiver owner's subtree.
 mod sibling {
@@ -24,8 +24,8 @@ mod sibling {
     }
 }
 
-/// Keep the legal CLI call graph live beside the expected privacy refusal.
+/// Keep the legal public Engine bridge live beside the expected privacy refusal.
 fn main() -> std::process::ExitCode {
     sibling::attack();
-    nts_ke::entry(std::env::args_os())
+    nevrotick_engine::experimental_nts_ke_probe(std::env::args_os())
 }

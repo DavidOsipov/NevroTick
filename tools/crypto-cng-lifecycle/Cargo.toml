@@ -2,7 +2,7 @@
 name = "nevrotick-crypto-cng-lifecycle"
 version = "0.0.0"
 edition = "2024"
-rust-version = "1.99"
+rust-version = "1.99.1"
 license = "GPL-2.0-only"
 publish = false
 build = false
@@ -35,6 +35,7 @@ rustls-platform-verifier = { path = "vendor/rustls-platform-verifier" }
 
 # Pure typed admission/response owners; no host TLS provider or fallback.
 [dependencies]
+nevrotick-engine = { version = "=0.0.0", path = "../../crates/nevrotick-engine", default-features = false, features = ["ke-association-prototype"] }
 nevrotick-s115-aes-siv-fixture = { version = "=0.0.0", path = "../crypto-aes-siv-witness" }
 ntp-wire = { version = "=0.0.0", path = "../../crates/ntp-wire", default-features = false }
 rustls-pki-types = { version = "=1.15.1", default-features = false, features = ["std"] }

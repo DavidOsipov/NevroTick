@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 //! Actual private receiver controls with public material, never TLS evidence.
 
 use std::cell::Cell;
@@ -7,13 +8,22 @@ use ntp_wire::NtsRequestEncodeError;
 use zeroize::Zeroizing;
 
 use super::{DirectionalKeys, PreparedRequest, prepare};
-use crate::nts_ke::{CancelOutcome, Control, Failure, Phase, request::RequestError};
+use crate::nts_ke_experiment::{CancelOutcome, Control, Failure, Phase, request::RequestError};
 
 /// Independent complete packet, generated before this receiver existed.
 const PACKET: &[u8; 140] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../crypto-aes-siv-witness/tests/fixtures/sealing-zero.bin"
+    "/../../tools/crypto-aes-siv-witness/tests/fixtures/sealing-zero.bin"
 ));
+
+/// Explicit component-only publication; it establishes no actual KE evidence.
+/// # Errors
+/// Propagate checked original-deadline construction or publication refusal.
+fn published_control() -> Result<Control, Failure> {
+    let control = Control::new(Instant::now())?;
+    control.publish_ke()?;
+    Ok(control)
+}
 
 /// Construct public component keys without claiming an authenticated producer.
 fn keys() -> DirectionalKeys {
@@ -49,12 +59,12 @@ fn cookies() -> Vec<Zeroizing<Vec<u8>>> {
 /// A complete packet, unchanged open phase or final counts differ from the oracle.
 #[test]
 fn real_sealer_prepares_then_commits_exact_packet() -> Result<(), Failure> {
-    let control = Control::new(Instant::now())?;
-    let request = prepare(&control, keys(), &cookies(), entropy)?;
+    let control = published_control()?;
+    let request = prepare(&control, &keys(), &cookies(), entropy)?;
     assert_eq!(&request.packet[..request.length], PACKET);
     assert!(matches!(
         *control.phase.lock().map_err(|_| Failure::Control)?,
-        Phase::Open
+        Phase::Published
     ));
     let summary = request.finish()?;
     assert_eq!(
@@ -73,8 +83,8 @@ fn real_sealer_prepares_then_commits_exact_packet() -> Result<(), Failure> {
 /// The completed packet differs, or cancellation permits a final summary.
 #[test]
 fn cancellation_after_sealing_refuses_final_completion() -> Result<(), Failure> {
-    let control = Control::new(Instant::now())?;
-    let request = prepare(&control, keys(), &cookies(), entropy)?;
+    let control = published_control()?;
+    let request = prepare(&control, &keys(), &cookies(), entropy)?;
     assert_eq!(&request.packet[..request.length], PACKET);
     assert_eq!(control.cancel()?, CancelOutcome::Cancelled);
     assert!(matches!(request.finish(), Err(Failure::Cancelled)));
@@ -89,8 +99,8 @@ fn cancellation_after_sealing_refuses_final_completion() -> Result<(), Failure> 
 /// Drop committed, so the first later cancellation cannot close admission.
 #[test]
 fn abandoned_packet_leaves_no_completion() -> Result<(), Failure> {
-    let control = Control::new(Instant::now())?;
-    let request = prepare(&control, keys(), &cookies(), entropy)?;
+    let control = published_control()?;
+    let request = prepare(&control, &keys(), &cookies(), entropy)?;
     drop(request);
     assert_eq!(control.cancel()?, CancelOutcome::Cancelled);
     Ok(())
@@ -104,10 +114,10 @@ fn abandoned_packet_leaves_no_completion() -> Result<(), Failure> {
 /// A retired invocation requests entropy or returns prepared work.
 #[test]
 fn retired_invocation_has_no_entropy_effect() -> Result<(), Failure> {
-    let control = Control::new(Instant::now())?;
+    let control = published_control()?;
     control.cancel()?;
     let calls = Cell::new(0);
-    let result = prepare(&control, keys(), &cookies(), |output| {
+    let result = prepare(&control, &keys(), &cookies(), |output| {
         calls.set(calls.get() + 1);
         entropy(output)
     });
@@ -124,17 +134,17 @@ fn retired_invocation_has_no_entropy_effect() -> Result<(), Failure> {
 /// A refusal is replaced, entropy repeats, or retirement reaches formatting.
 #[test]
 fn entropy_failure_and_post_entropy_cancellation_refuse() -> Result<(), Failure> {
-    let control = Control::new(Instant::now())?;
-    let failed = prepare(&control, keys(), &cookies(), |output| {
+    let control = published_control()?;
+    let failed = prepare(&control, &keys(), &cookies(), |output| {
         output.fill(0xa5);
         Err(Failure::Entropy)
     });
     assert!(matches!(failed, Err(Failure::Entropy)));
     assert!(matches!(
         *control.phase.lock().map_err(|_| Failure::Control)?,
-        Phase::Open
+        Phase::Published
     ));
-    let cancelled = prepare(&control, keys(), &cookies(), |output| {
+    let cancelled = prepare(&control, &keys(), &cookies(), |output| {
         entropy(output)?;
         control.cancel()?;
         Ok(())
@@ -149,9 +159,9 @@ fn entropy_failure_and_post_entropy_cancellation_refuse() -> Result<(), Failure>
     // the later check after sealing; a valid cookie would mask its omission.
     let unusable = [Zeroizing::new(Vec::new())];
     for cancel_during_entropy in [false, true] {
-        let control = Control::new(Instant::now())?;
+        let control = published_control()?;
         let calls = Cell::new(0);
-        let result = prepare(&control, keys(), &unusable, |output| {
+        let result = prepare(&control, &keys(), &unusable, |output| {
             calls.set(calls.get() + 1);
             entropy(output)?;
             if cancel_during_entropy {
@@ -175,14 +185,14 @@ fn entropy_failure_and_post_entropy_cancellation_refuse() -> Result<(), Failure>
                 cancel_during_entropy,
                 *control.phase.lock().map_err(|_| Failure::Control)?
             ),
-            (false, Phase::Open) | (true, Phase::Cancelled)
+            (false, Phase::Published) | (true, Phase::Cancelled)
         ));
     }
 
     // A failed entropy call retains its own error even if it also retires work.
-    let control = Control::new(Instant::now())?;
+    let control = published_control()?;
     let calls = Cell::new(0);
-    let failed = prepare(&control, keys(), &unusable, |output| {
+    let failed = prepare(&control, &keys(), &unusable, |output| {
         calls.set(calls.get() + 1);
         output.fill(0xa5);
         assert_eq!(control.cancel()?, CancelOutcome::Cancelled);
@@ -206,11 +216,11 @@ fn entropy_failure_and_post_entropy_cancellation_refuse() -> Result<(), Failure>
 #[test]
 fn first_unusable_cookie_refuses_despite_valid_second() -> Result<(), Failure> {
     for first in [vec![], vec![0x55; 11], vec![0x55; 3972]] {
-        let control = Control::new(Instant::now())?;
+        let control = published_control()?;
         let mut population = vec![Zeroizing::new(first)];
         population.extend(cookies());
         assert!(matches!(
-            prepare(&control, keys(), &population, entropy),
+            prepare(&control, &keys(), &population, entropy),
             Err(Failure::Packet(_))
         ));
         assert_eq!(control.cancel()?, CancelOutcome::Cancelled);
@@ -234,9 +244,9 @@ fn whole_cookie_population_is_bounded_before_entropy() -> Result<(), Failure> {
             Zeroizing::new(vec![0; 131_072]),
         ],
     ] {
-        let control = Control::new(Instant::now())?;
+        let control = published_control()?;
         let calls = Cell::new(0);
-        let result = prepare(&control, keys(), &population, |output| {
+        let result = prepare(&control, &keys(), &population, |output| {
             calls.set(calls.get() + 1);
             entropy(output)
         });
@@ -259,8 +269,8 @@ fn exact_cookie_population_limits_have_healthy_neighbors() -> Result<(), Failure
     let mut maximum = cookies();
     maximum.extend((0..2).map(|_| Zeroizing::new(vec![0; 65_530])));
     for (population, count, total) in [(eight, 8, 12), (maximum, 3, 131_072)] {
-        let control = Control::new(Instant::now())?;
-        let request = prepare(&control, keys(), &population, entropy)?;
+        let control = published_control()?;
+        let request = prepare(&control, &keys(), &population, entropy)?;
         assert_eq!(&request.packet[..request.length], PACKET);
         let summary = request.finish()?;
         assert_eq!(
@@ -268,7 +278,7 @@ fn exact_cookie_population_limits_have_healthy_neighbors() -> Result<(), Failure
             (count, total, 140)
         );
     }
-    let control = Control::new(Instant::now())?;
+    let control = published_control()?;
     let mut over = cookies();
     over.extend([
         Zeroizing::new(vec![0; 65_530]),
@@ -276,7 +286,7 @@ fn exact_cookie_population_limits_have_healthy_neighbors() -> Result<(), Failure
     ]);
     let calls = Cell::new(0);
     assert!(matches!(
-        prepare(&control, keys(), &over, |output| {
+        prepare(&control, &keys(), &over, |output| {
             calls.set(calls.get() + 1);
             entropy(output)
         }),
@@ -294,19 +304,19 @@ fn exact_cookie_population_limits_have_healthy_neighbors() -> Result<(), Failure
 /// An expired prepared packet commits or its original phase changes on refusal.
 #[test]
 fn prepared_packet_cannot_outlive_bound_expiry() -> Result<(), Failure> {
-    let mut control = Control::new(Instant::now())?;
+    let mut control = published_control()?;
     // Reduce only this private component fixture's wait; production remains60s.
     control.expiry = Instant::now()
         .checked_add(Duration::from_secs(1))
         .ok_or(Failure::Deadline)?;
-    let request: PreparedRequest<'_> = prepare(&control, keys(), &cookies(), entropy)?;
+    let request: PreparedRequest<'_> = prepare(&control, &keys(), &cookies(), entropy)?;
     std::thread::sleep(
         control.expiry.saturating_duration_since(Instant::now()) + Duration::from_millis(1),
     );
     assert!(matches!(request.finish(), Err(Failure::Deadline)));
     assert!(matches!(
         *control.phase.lock().map_err(|_| Failure::Control)?,
-        Phase::Open
+        Phase::Published
     ));
     Ok(())
 }

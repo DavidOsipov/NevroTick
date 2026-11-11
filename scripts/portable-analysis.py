@@ -314,6 +314,153 @@ class Scope(NamedTuple):
         return relative
 
 
+
+ENGINE_KE_POLICY = "policy/engine-ke-association-analysis.json"
+ENGINE_KE_SUBJECTS = (
+    ("ke_core", "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs"),
+    ("ke_association", "crates/nevrotick-engine/src/nts_ke_experiment/association.rs"),
+    ("ke_process", "crates/nevrotick-engine/src/nts_ke_experiment/process.rs"),
+    ("ke_handoff", "crates/nevrotick-engine/src/nts_ke_experiment/handoff.rs"),
+    ("ke_request", "crates/nevrotick-engine/src/nts_ke_experiment/request.rs"),
+    ("ke_fault", "crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs"),
+    ("ke_ledger", "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs"),
+    ("ke_response", "crates/nevrotick-engine/src/nts_ke_experiment/response.rs"),
+)
+ENGINE_KE_CRITICAL = (
+    "crates/nevrotick-engine/src/lib.rs",
+    *(path for _name, path in ENGINE_KE_SUBJECTS),
+    "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
+    "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs",
+)
+
+# Exact current source, complete typed descriptors and independently challenged
+# caller arguments. Any source/candidate/proof drift requires a new review.
+ENGINE_KE_EQUIVALENCE_PROOF = "tasks/engine-ke-association-equivalences.md"
+ENGINE_KE_EQUIVALENCE_REQUIREMENT = "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27"
+ENGINE_KE_EQUIVALENCE_REVIEWERS = "/root; /root/ep1_graph_readiness; /root/ep1_source_review; /root/deletion_reference_audit"
+ENGINE_KE_EQUIVALENCE_IDS = frozenset({
+    "KE-RETURN-POOL-BYTES-OR", "KE-RETURN-POOL-CAPACITY-OR",
+    "KE-SEND-ARCHIVE-BYTES-OR", "KE-SEND-ARCHIVE-CAPACITY-OR", "KE-SEND-ARCHIVE-VALUE-OR",
+    "KE-SEND-ARCHIVE-BYTES-EQUALITY", "KE-SEND-ARCHIVE-BYTES-INCLUSIVE",
+    "KE-RECEIVE-STABLE-SLOT-OR",
+})
+ENGINE_KE_EQUIVALENCE_CANDIDATE = '1cb52d94c0b9b073b137a4ae90de8898a5040ea004482a58708ee76c7581f46c'
+ENGINE_KE_EQUIVALENCE_PROOF_SHA256 = 'a09603a31912e57c0c5ec803d4293c58405ff67ac27c328e153de2a68d3871a7'
+ENGINE_KE_EQUIVALENCE_REVIEWS = {
+    'KE-RETURN-POOL-BYTES-OR': ('1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe', '62bfc478a60a9cf3549bd5e13557a0fc9cac355b35c90fcf5bad57276b5492df', 'After the unchanged ticket/currentness/phase checks, one exact cookie is removed from a previously checked pool of at most eight. No method changes that available pool before this explicit return. Thus available count is at most seven and available-plus-reserved bytes remain at most 131,072. Removal preserves the original Vec capacity, which exceeds its current length. All three rejection terms are false; both operator forms return the same cookie without copying or renewing an allowance. Earlier rejected arguments and dropped values are unchanged.'),
+    'KE-RETURN-POOL-CAPACITY-OR': ('1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe', '92eef5b246e812e8b94af9891a7549c143450a877442f2ca37d6fd43dd946f09', "The same checked return domain makes count, bytes and capacity rejection terms false. In particular no accepted return can have `capacity <= available.len()`: the removed cookie's original slot remains allocated. At exact maximum bytes the original strict byte comparison remains false. Reordering pure false reads changes neither disposition, returned allocation, retirement nor budget."),
+    'KE-SEND-ARCHIVE-BYTES-OR': ('1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe', 'ea608b8f7042eda800cb96df7f57d2be35674b867abb3dfbc62b0f34b05fb0dd', 'At most 32 original checkouts exist. The current prepared checkout has not yet been archived, so archive length is at most 31; initial capacity is at least 32 and never shrinks. Checkout filters every value already in this archive and exclusive mutable ownership permits no intervening archive publication. The actual formatter bounds a sendable cookie to 3968 bytes: 4096 packet bytes minus the 128-byte minimum header, UID, cookie-header and algorithm-15 authenticator overhead. Including the current cookie, at most 32 bodies total at most 126,976 bytes, strictly below 131,072. Therefore all four rejection terms are false. Both forms archive once before the same adapter invocation; every adapter outcome retains its original no-reuse and completion custody.'),
+    'KE-SEND-ARCHIVE-CAPACITY-OR': ('1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe', '37299ec3edfaa5d5a50b4759d12221908d89c702eb1cbe5650189ebab3bdbfa4', 'The preceding send-domain argument applies independently to the changed connector. Archive capacity is at least 32 while pre-push length is at most 31. Count, byte, capacity and used-value checks are all false. The reserved value moves once, the request becomes Invoked before exposure, and failed/short/unknown/panicking callbacks cannot restore cookie permission in either variant.'),
+    'KE-SEND-ARCHIVE-VALUE-OR': ('1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe', 'bdd0f93496279fcaf772f8e59c1590bc56d97ccee8b1ded0c106eea6f6f6cbac', '`reserve` removes known used values before moving the selected exact cookie. No other invocation can append an archive value while that request owns the single slot. Consequently the final used-value predicate is false, alongside the count/byte/capacity predicates. The change may skip a pure bounded comparison; it changes no checked value, error, callback, archive entry or lifecycle fact.'),
+    'KE-SEND-ARCHIVE-BYTES-EQUALITY': ('1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe', '33f5824cf14656f9bced0ab67a09c7584a416eb6fff68c0cce8990ac13fe1e96', "Every encoded cookie is at most 3968 bytes and at most 32 can reach this archive. The checked sum is at most 126,976, so both `sum > 131072` and `sum == 131072` are false throughout this caller's domain, with no integer overflow. This does not weaken a raw/helper aggregate-capacity contract at its independent boundary."),
+    'KE-SEND-ARCHIVE-BYTES-INCLUSIVE': ('1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe', 'c5c0c083e28b8d0d38e99d755f99ced7f3de4f6964c4516723ca38b6dbd7d6c5', 'The same strict upper bound, 126,976, excludes equality and excess. Both comparisons are false for every admitted prepared invocation, including the 32nd checkout. A changed packet size, minimum encoding extent or attempt limit invalidates this argument even if current tests still pass.'),
+    'KE-RECEIVE-STABLE-SLOT-OR': ('1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe', 'b99adc69f1b8bf4a99c8671891eed5fc921dbc6d9efc3951c5de2620eb34d8f4', "The initial guarded charge requires Pending and saves that slot's serial. Subsequent synchronous authentication/staging only immutably borrows the owner; no await, external owner-mutating callback or active-slot replacement occurs. Staging failure returns before the final closure. On success, the final original Control guard rejects cancellation/expiry before entering that closure. Therefore the active serial and Pending phase equal their captured values when the changed expression executes. Both mismatch predicates are false and both variants commit the same cookies/receipt atomically once. No future asynchronous or native completion path inherits this argument."),
+}
+
+
+def engine_ke_equivalences_valid(policy: dict) -> bool:
+    """Allow no E, or all eight exact independently reviewed caller identities.
+
+    Full current product/source/proof admission remains mandatory in
+    admit_mutation_equivalences. No checked-caller argument narrows another
+    helper's input domain, grants a kill or silently changes the 95-percent gate.
+    """
+    if type(policy) is not dict or type(policy.get("mutation_equivalences")) is not list:
+        return False
+    entries = policy["mutation_equivalences"]
+    if not entries:
+        return True
+    if (len(entries) != 8 or set(ENGINE_KE_EQUIVALENCE_REVIEWS) != ENGINE_KE_EQUIVALENCE_IDS
+            or re.fullmatch(r"[a-f0-9]{64}", ENGINE_KE_EQUIVALENCE_CANDIDATE) is None
+            or re.fullmatch(r"[a-f0-9]{64}", ENGINE_KE_EQUIVALENCE_PROOF_SHA256) is None
+            or type(policy.get("binding")) is not dict
+            or policy["binding"].get("candidate_sha256") != ENGINE_KE_EQUIVALENCE_CANDIDATE):
+        return False
+    fields = {"id", "candidate_sha256", "source_sha256", "mutant", "requirement", "rationale", "proof"}
+    seen = set()
+    for entry in entries:
+        if type(entry) is not dict or set(entry) != fields:
+            return False
+        identifier = entry["id"]
+        if type(identifier) is not str or identifier not in ENGINE_KE_EQUIVALENCE_IDS or identifier in seen:
+            return False
+        review = ENGINE_KE_EQUIVALENCE_REVIEWS[identifier]
+        if (type(review) is not tuple or len(review) != 3
+                or any(type(value) is not str for value in review)
+                or any(re.fullmatch(r"[a-f0-9]{64}", value) is None for value in review[:2])):
+            return False
+        source, descriptor, rationale = review
+        if (entry["candidate_sha256"] != ENGINE_KE_EQUIVALENCE_CANDIDATE or entry["source_sha256"] != source
+                or entry["requirement"] != ENGINE_KE_EQUIVALENCE_REQUIREMENT or entry["rationale"] != rationale
+                or type(entry["mutant"]) is not dict):
+            return False
+        try:
+            if canonical_sha256(entry["mutant"]) != descriptor:
+                return False
+        except (TypeError, ValueError):
+            return False
+        if entry["proof"] != {"path": ENGINE_KE_EQUIVALENCE_PROOF,
+                "sha256": ENGINE_KE_EQUIVALENCE_PROOF_SHA256, "section": identifier,
+                "reviewer": ENGINE_KE_EQUIVALENCE_REVIEWERS, "verdict": "independently-justified-equivalent"}:
+            return False
+        seen.add(identifier)
+    return seen == ENGINE_KE_EQUIVALENCE_IDS
+
+
+def engine_ke_features(scope: Scope) -> tuple[str, ...]:
+    """Grant the one feature only to its exact package, policy and eight owners."""
+    if scope.policy != ENGINE_KE_POLICY and scope.subjects != ENGINE_KE_SUBJECTS:
+        return ()
+    if (type(scope) is not Scope or scope.package != "nevrotick-engine"
+            or scope.policy != ENGINE_KE_POLICY or scope.subjects != ENGINE_KE_SUBJECTS):
+        raise Incomplete("Engine KE feature requires its exact closed analysis scope.")
+    return ("ke-association-prototype",)
+
+
+def engine_ke_role_facts() -> dict:
+    """Keep the full critical inventory separate from the reached GNU selection."""
+    return {
+        "schema_version": 1, "package": "nevrotick-engine",
+        "admission_status": "admitted-engine-ke-source-analysis",
+        "subjects": dict(ENGINE_KE_SUBJECTS), "critical_files": list(ENGINE_KE_CRITICAL),
+        "features": ["ke-association-prototype"], "test_workspace": False,
+        "tool_admission_profile": "stable-core",
+        "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+        "maximum_mutants": 512, "maximum_listed_per_file": 512, "maximum_listed_total": 3072,
+        "baseline_wall_seconds": 300, "coverage_wall_seconds": 300,
+        "enumeration_wall_seconds": 240, "mutation_wall_seconds": 1200,
+        "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+        "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
+        "mutation_jobs": 10, "mutation_process_limit": 512, "mutation_message_format": "json",
+        "minimum_free_bytes": 5 * 1024**3, "stop_free_bytes": 4 * 1024**3,
+        "owned_output_maximum_allocated_bytes": 768 * 1024**2,
+        "owned_output_maximum_entries": 32768, "mutation_equivalences": [],
+    }
+
+
+def require_engine_ke_role(scope: Scope, policy: dict) -> None:
+    """Refuse a renamed scope, weaker gate, foreign feature or premature campaign."""
+    engine_ke_features(scope)
+    facts = engine_ke_role_facts()
+    if (not engine_ke_features(scope) or type(policy) is not dict
+            or set(policy) != set(facts) | {"binding", "mutation_inventories", "campaigns_admitted"}
+            or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                   for key, value in facts.items() if key != "mutation_equivalences")
+            or not engine_ke_equivalences_valid(policy)
+            or type(policy["campaigns_admitted"]) is not bool):
+        raise Incomplete("Engine KE analysis requires its exact role, feature and unchanged gates.")
+    reviewed = policy["mutation_inventories"]
+    if type(reviewed) is not dict or (reviewed and set(reviewed) != set(dict(ENGINE_KE_SUBJECTS))):
+        raise Incomplete("Engine KE reviewed inventory must cover all eight host owners.")
+    if any(type(spec) is not dict or set(spec) != {"count", "sha256"}
+           or type(spec["count"]) is not int or not 0 < spec["count"] <= facts["maximum_listed_per_file"]
+           or type(spec["sha256"]) is not str or re.fullmatch(r"[a-f0-9]{64}", spec["sha256"]) is None
+           for spec in reviewed.values()):
+        raise Incomplete("Engine KE reviewed inventory records need exact positive counts and hashes.")
+    if policy["campaigns_admitted"] and not reviewed:
+        raise Incomplete("Engine KE campaigns require the independently reviewed complete enumeration.")
+
 def require_unchanged(root: Path, identity: dict[str, str]) -> None:
     """Reject changed, removed, linked or replaced admitted input bytes."""
     if any(PRODUCT.sha256(root / name) != expected for name, expected in identity.items()):
@@ -541,7 +688,8 @@ def mutation_phases(scope: Scope, outcome: dict) -> None:
     observed_format = None
     for phase in phases:
         arguments = ["cargo", "test", *(["--no-run"] if phase["phase"] == "Build" else []),
-                     "--verbose", "--package=" + scope.package + "@0.0.0", "--frozen"]
+                     "--verbose", "--package=" + scope.package + "@0.0.0",
+                     *("--features=" + value for value in engine_ke_features(scope)), "--frozen"]
         json_arguments = [*arguments[:-1], "--message-format=json", arguments[-1]]
         actual_format = ("human" if phase.get("argv") == arguments else
                          "json" if phase.get("argv") == json_arguments else None)
@@ -899,6 +1047,14 @@ def mutation_campaign_command(scope: Scope, tools: Path, subject: str, command: 
                 "--jobserver", "true", "--jobserver-tasks", str(jobs)]
     if message_format == "json":
         expected.append("--cargo-arg=--message-format=json")
+    for feature in engine_ke_features(scope):
+        expected.extend(["--features", feature])
+    if engine_ke_features(scope):
+        if policy is None:
+            raise Incomplete("Engine KE campaign requires its reviewed role policy.")
+        require_engine_ke_role(scope, policy)
+        if not policy["campaigns_admitted"] or not policy["mutation_inventories"]:
+            raise Incomplete("Engine KE campaign admission remains closed at the effect boundary.")
     expected.extend(per_subject_mutation_error_args(scope, filename, {} if policy is None else policy))
     domain_campaign = (type(scope) is Scope and scope.package == "time-domain"
                        and scope.policy == "policy/time-domain-analysis.json"
@@ -1232,6 +1388,8 @@ def enumerate_mutation_inventories(scope, subjects, policy, tools, run, report, 
                   "--jobserver", "true", "--jobserver-tasks", str(workers)]
         if message_format == "json":
             common.append("--cargo-arg=--message-format=json")
+        for feature in engine_ke_features(scope):
+            common.extend(["--features", feature])
         common.extend(per_subject_mutation_error_args(scope, filename, policy))
         commands[name] = common
         listed = run("mutation-enumeration:" + name, [*common, "--list", "--json"],
@@ -1639,6 +1797,11 @@ def admission_profile(args, scope, policy):
         raise Incomplete("Unknown analysis admission profile.")
     if policy.get("tool_admission_profile", "full") != profile:
         raise Incomplete("Analysis admission profile differs from the current policy.")
+    if engine_ke_features(scope):
+        require_engine_ke_role(scope, policy)
+        if profile != "stable-core" or args.lane not in {"baseline", "coverage", "mutation", "all"}:
+            raise Incomplete("Engine KE admits only its stable baseline/coverage/listing/campaign owner.")
+        return profile
     if (scope.policy == "policy/baseline-feedback-analysis.json"
             or scope.subjects == BASELINE_FEEDBACK_SUBJECTS):
         require_baseline_feedback_role(scope, policy)

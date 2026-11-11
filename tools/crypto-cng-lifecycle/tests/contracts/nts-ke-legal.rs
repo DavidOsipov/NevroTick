@@ -1,14 +1,10 @@
-//! Compile-only legal caller of the actual Windows laboratory CLI module.
+//! Compile-only legal external caller of the Engine-owned KE prototype.
 //!
-//! Check this fixture for the admitted Windows target; never execute it.
+//! Require the admitted feature and Windows target; never execute this fixture.
 
 #![forbid(unsafe_code)]
 
-/// Actual producer source, with its original private child modules unchanged.
-#[path = "../../src/bin/nts_ke/mod.rs"]
-mod nts_ke;
-
-/// Type-check the actual CLI entry and complete producer call graph without execution.
+/// Type-check the actual public bridge without importing private source modules.
 fn main() -> std::process::ExitCode {
-    nts_ke::entry(std::env::args_os())
+    nevrotick_engine::experimental_nts_ke_probe(std::env::args_os())
 }

@@ -5541,9 +5541,405 @@ def execute_address_profile(args, report: dict) -> None:
         report["qualification_passed"] = args.lane == "all" and subjects == ADDRESS_SCOPE.select("all")
 
 
+
+# One EP1 role; Windows-only and standalone-callsite owners remain in the full inventory.
+ENGINE_KE_POLICY = COMMON.ENGINE_KE_POLICY
+ENGINE_KE_HOST_SUBJECTS = dict(COMMON.ENGINE_KE_SUBJECTS)
+ENGINE_KE_SCOPE = COMMON.Scope("nevrotick-engine", COMMON.ENGINE_KE_SUBJECTS, ENGINE_KE_POLICY)
+ENGINE_KE_TEST_SOURCES = (
+    "crates/nevrotick-engine/src/nts_ke_experiment/tests.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/association/tests.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/handoff/tests.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/request_tests.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/tests.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/response/tests.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/response/fixtures.rs",
+)
+ENGINE_KE_BOUND_INPUTS = tuple(dict.fromkeys((
+    WRAPPER, TESTS, *COMMON.ENGINE_KE_CRITICAL, *ENGINE_KE_TEST_SOURCES,
+    "scripts/portable-analysis.py", "scripts/analysis-runtime.py", "scripts/check-analysis.py",
+    "scripts/prepare-product.py", "policy/analysis-tools.json", "policy/verification-manifest.toml",
+    "policy/tool-manifest.json", "policy/ui-m0-dependencies.json", ".cargo/mutants.toml",
+    "Cargo.toml", "Cargo.lock", "crates/nevrotick-engine/Cargo.toml",
+    "tools/crypto-cng-lifecycle/Cargo.toml", "tools/crypto-cng-lifecycle/Cargo.lock",
+)))
+ENGINE_KE_FIXTURE_SOURCE = "tools/crypto-aes-siv-witness/tests/ep2_response_fixtures.rs"
+ENGINE_KE_FIXTURE_MANIFEST = "tools/crypto-aes-siv-witness/Cargo.toml"
+ENGINE_KE_FIXTURE_LOCK = "tools/crypto-aes-siv-witness/Cargo.lock"
+ENGINE_KE_FIXTURE_NAMES = frozenset((
+    "HEALTHY ZERO_COOKIES EMPTY_COOKIE TWO_COOKIES EIGHT_COOKIES NINE_COOKIES "
+    "MISSING_UID SHORT_UID DUPLICATE_UID CLEAR_COOKIE CLEAR_PLACEHOLDER INNER_UID INNER_AUTH "
+    "INNER_PLACEHOLDER UNKNOWN_FIELDS_AND_SUFFIX SUFFIX_DUPLICATE_UID_AUTH MALFORMED_INNER "
+    "MAX_INNER_FIELDS TOO_MANY_INNER MAX_OUTER_FIELDS TOO_MANY_OUTER MAX_PACKET_BYTES "
+    "TOO_MANY_PACKET_BYTES WRONG_UID WRONG_ORIGIN WRONG_VERSION WRONG_MODE UNSYNCHRONIZED "
+    "STRATUM_ZERO STRATUM_SIXTEEN NONCE_ZERO NONCE_ONE NONCE_TWELVE").split())
+
+
+def validate_engine_ke_fixture_output(text: str) -> tuple[str, dict]:
+    """Admit one entered generator and only its complete bounded public literals."""
+    name = "generate_ep2_response_fixtures"
+    if type(text) is not str or len(text.encode()) > 256 * 1024:
+        raise Incomplete("Public fixture capture exceeds its finite text bound.")
+    if read_successful_address_records(text) != [name]:
+        raise Incomplete("Public fixtures require exactly their one actual successful generator.")
+    lines = text.splitlines(keepends=True)
+    starts = [index for index, line in enumerate(lines) if line.rstrip("\r\n") == f"---- {name} stdout ----"]
+    if len(starts) != 1:
+        raise Incomplete("Public fixtures require one captured generator output block.")
+    end = next((index for index in range(starts[0] + 1, len(lines)) if lines[index].strip() == "successes:"), None)
+    if end is None or next((line.strip() for line in lines[end + 1:] if line.strip()), None) != name:
+        raise Incomplete("Public fixture capture lacks its complete success footer.")
+    source = "".join(lines[starts[0] + 1:end]).strip() + "\n"
+    if len(source.encode()) > 128 * 1024:
+        raise Incomplete("Public fixture source exceeds its finite text bound.")
+    rows = source.splitlines()
+    header = ["// SPDX-License-Identifier: GPL-2.0-only",
+        "//! Public component fixtures generated through the existing maintained AES-SIV API.",
+        "//! No TLS/exporter/native/entropy or production authentication provenance is claimed."]
+    if rows[:3] != header:
+        raise Incomplete("Public fixture source lacks its fixed public provenance header.")
+    position, total, fixtures = 3, 0, {}
+    while position < len(rows):
+        if not rows[position].strip():
+            position += 1
+            continue
+        document = re.fullmatch(r"/// Public independently generated valid-tag fixture: ([A-Z_]+)[.]", rows[position])
+        position += 1
+        declaration = re.fullmatch(r"pub\(in crate::nts_ke_experiment\) const ([A-Z_]+): &\[u8\] = &\[", rows[position]) if position < len(rows) else None
+        if (document is None or declaration is None or document[1] != declaration[1]
+                or declaration[1] not in ENGINE_KE_FIXTURE_NAMES or declaration[1] in fixtures):
+            raise Incomplete("Public fixture declarations are unknown, duplicated or malformed.")
+        position += 1
+        payload = bytearray()
+        while position < len(rows) and rows[position] != "];":
+            line = rows[position].strip()
+            position += 1
+            if not line:
+                continue
+            tokens = line.split(",")
+            if tokens[-1] or any(re.fullmatch(r"0x[0-9a-f]{2}", token.strip()) is None for token in tokens[:-1]):
+                raise Incomplete("Public fixture bodies permit only comma-terminated literal bytes.")
+            if len(payload) + len(tokens) - 1 > 4100:
+                raise Incomplete("Public fixture packet exceeds its 4100-byte extent.")
+            payload.extend(int(token.strip()[2:], 16) for token in tokens[:-1])
+        if not payload or position == len(rows):
+            raise Incomplete("Public fixture packet is empty or unterminated.")
+        position += 1
+        total += len(payload)
+        if total > 128 * 1024:
+            raise Incomplete("Public fixture aggregate payload exceeds its finite bound.")
+        fixtures[declaration[1]] = {"bytes": len(payload), "sha256": hashlib.sha256(payload).hexdigest()}
+    if set(fixtures) != ENGINE_KE_FIXTURE_NAMES:
+        raise Incomplete("Public fixtures omit part of the fixed thirty-three-case inventory.")
+    return source, {"generated": True, "tests_executed": 1, "payload_bytes": total, "fixtures": fixtures}
+
+
+def admit_engine_ke_fixture_lock(root: Path, dependency: dict) -> dict:
+    """Require the actual standalone lock to use only selected Root registry identities."""
+    standalone = tomllib.loads(COMMON.read_analysis_text(root / ENGINE_KE_FIXTURE_LOCK))
+    root_lock = tomllib.loads(COMMON.read_analysis_text(root / "Cargo.lock"))
+    packages = standalone.get("package")
+    if (standalone.get("version") != 4 or type(packages) is not list or not 0 < len(packages) <= 512
+            or any(type(item) is not dict or type(item.get("name")) is not str
+                   or type(item.get("version")) is not str for item in packages)):
+        raise Incomplete("Public fixture standalone lock has an invalid bounded package inventory.")
+    frozen = {(item["name"], item["version"]): item for item in root_lock["package"]}
+    selected = {(item["name"], item["version"]): item for item in dependency["packages"]}
+    identities, registry, locals_ = set(), [], set()
+    for item in packages:
+        identity = (item["name"], item["version"])
+        if identity in identities or identity not in frozen:
+            raise Incomplete("Public fixture standalone lock escapes or duplicates Root identities.")
+        identities.add(identity)
+        if "source" not in item:
+            if "source" in frozen[identity] or "checksum" in item:
+                raise Incomplete("Public fixture local identity differs from Root.")
+            locals_.add(identity)
+        elif (item["source"] != "registry+https://github.com/rust-lang/crates.io-index"
+                or item["source"] != frozen[identity].get("source")
+                or identity not in selected or type(item.get("checksum")) is not str
+                or item["checksum"] != frozen[identity].get("checksum")
+                or item["checksum"] != selected[identity]["checksum"]):
+            raise Incomplete("Public fixture registry source/checksum lacks selected Root admission.")
+        else:
+            registry.append("@".join(identity))
+    if locals_ != {("nevrotick-s115-aes-siv-fixture", "0.0.0"), ("ntp-wire", "0.0.0")}:
+        raise Incomplete("Public fixture standalone lock acquired an unadmitted local owner.")
+    return {"standalone_lock_sha256": PRODUCT.sha256(root / ENGINE_KE_FIXTURE_LOCK),
+            "registry_packages": sorted(registry)}
+
+
+def execute_engine_ke_fixtures(args, report: dict) -> None:
+    """Generate public constants under fresh custody without stale Engine test credit."""
+    if (getattr(args, "profile", "legacy") != "ke_association" or args.lane != "fixtures"
+            or args.subject != "all" or args.tool_admission_profile != "stable-core"):
+        raise Incomplete("Public fixtures require their exact Engine KE role, stable tools and all selection.")
+    policy = read_json(ROOT / ENGINE_KE_POLICY)
+    COMMON.require_engine_ke_role(ENGINE_KE_SCOPE, policy)
+    if policy["campaigns_admitted"] or policy["mutation_inventories"]:
+        raise Incomplete("Public fixture preparation requires closed mutation campaign admission.")
+    dependency, identity = PRODUCT.admit_product(ROOT)
+    PRODUCT.SLINT.profile_rows(dependency, PRODUCT.SLINT.EP1_PROFILE)
+    if any(name not in identity for name in (ENGINE_KE_FIXTURE_SOURCE, ENGINE_KE_FIXTURE_LOCK)):
+        raise Incomplete("The actual public generator is outside the admitted product source inventory.")
+    graph = admit_engine_ke_fixture_lock(ROOT, dependency)
+    if shutil.disk_usage(args.output_dir.parent).free < policy["minimum_free_bytes"]:
+        raise Incomplete("Public fixtures require five GiB before admission.")
+    inputs = (*ENGINE_KE_BOUND_INPUTS, ENGINE_KE_FIXTURE_SOURCE, ENGINE_KE_FIXTURE_MANIFEST, ENGINE_KE_FIXTURE_LOCK)
+    current = {name: PRODUCT.sha256(ROOT / name) for name in inputs}
+    selected = argparse.Namespace(**vars(args))
+    selected.lane = "baseline"
+    report.update(profile="ke_association", scope="Public fixture generation only; no Engine test or metric credit",
+        candidate_sha256=COMMON.canonical_sha256(identity), source_file_count=len(identity),
+        fixture_generation={"generated": False}, fixture_graph=graph, qualification_passed=False,
+        selected_host_metrics_passed=False, selected_host_qualification_passed=False,
+        native_windows_qualification="not performed")
+    session = COMMON.Session(ROOT, selected, report, ENGINE_KE_SCOPE, policy, inputs)
+    try:
+        if (session.product_identity != identity or read_json(session.source / ENGINE_KE_POLICY) != policy
+                or any(PRODUCT.sha256(session.source / name) != value for name, value in current.items())):
+            raise Incomplete("Captured public fixture source, helpers or policy differs before execution.")
+        def run(label, argv):
+            address_storage_checkpoint(session, policy, report, label, "before")
+            try:
+                return session.run(label, argv, 120)
+            finally:
+                address_storage_checkpoint(session, policy, report, label, "after")
+        run("fixture-tree", ["cargo", "tree", "--package", "nevrotick-s115-aes-siv-fixture",
+            "--manifest-path", "/work/source/" + ENGINE_KE_FIXTURE_MANIFEST,
+            "--target", "x86_64-unknown-linux-gnu", "--frozen", "--edges", "normal,build,features"])
+        raw = run("fixture-generator", ["cargo", "test", "--package", "nevrotick-s115-aes-siv-fixture",
+            "--manifest-path", "/work/source/" + ENGINE_KE_FIXTURE_MANIFEST,
+            "--test", "ep2_response_fixtures", "--frozen", "--jobs", "1", "--", "--exact",
+            "generate_ep2_response_fixtures", "--show-output", "--test-threads=1"])
+        source, facts = validate_engine_ke_fixture_output(raw)
+        artifact = session.output / "ep2-response-fixtures.rs"
+        with artifact.open("xb") as destination:
+            destination.write(source.encode())
+        facts.update(source_path=str(artifact), source_sha256=hashlib.sha256(source.encode()).hexdigest())
+        if PRODUCT.sha256(artifact) != facts["source_sha256"]:
+            raise Incomplete("Stored public fixtures differ from the actual complete emitted source.")
+        report["fixture_generation"] = facts
+        address_storage_checkpoint(session, policy, report, "fixture-source", "stored")
+    finally:
+        session.finish()
+    if PRODUCT.sha256(artifact) != facts["source_sha256"]:
+        raise Incomplete("Public fixture artifact changed during its final custody bookend.")
+
+
+def validate_engine_ke_policy(policy: dict, *, campaign: bool = False) -> dict:
+    """Bind the exact current source/helper set and all actual ordinary test identities."""
+    COMMON.require_engine_ke_role(ENGINE_KE_SCOPE, policy)
+    binding = policy["binding"]
+    fields = {"candidate_sha256", "source_file_count", "inputs_sha256", "test_inventory",
+              "source_context_sha256", "ordinary_evidence", "root_graph_evidence"}
+    if type(binding) is not dict or set(binding) != fields:
+        raise Incomplete("Engine KE source/evidence binding is incomplete.")
+    for field in ("candidate_sha256", "source_context_sha256"):
+        if type(binding[field]) is not str or re.fullmatch(r"[a-f0-9]{64}", binding[field]) is None:
+            raise Incomplete("Engine KE candidate/context digest is malformed.")
+    pins = binding["inputs_sha256"]
+    if (type(binding["source_file_count"]) is not int or binding["source_file_count"] <= 0
+            or type(pins) is not dict or set(pins) != set(ENGINE_KE_BOUND_INPUTS)
+            or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None for value in pins.values())):
+        raise Incomplete("Engine KE source/helper inputs differ from the exact fixed set.")
+    names = binding["test_inventory"]
+    if (type(names) is not list or len(names) != 261
+            or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
+            or names != sorted(set(names))
+            or sum(name.startswith("nts_ke_experiment::") for name in names) != 83):
+        raise Incomplete("Engine KE requires all 261 actual Engine tests including its 83 KE cases.")
+    for key in ("ordinary_evidence", "root_graph_evidence"):
+        evidence = binding[key]
+        if (type(evidence) is not dict or set(evidence) != {"path", "sha256"}
+                or type(evidence["path"]) is not str or not Path(evidence["path"]).is_absolute()
+                or type(evidence["sha256"]) is not str
+                or re.fullmatch(r"[a-f0-9]{64}", evidence["sha256"]) is None):
+            raise Incomplete("Engine KE prior evidence must have exact external custody.")
+    if campaign and (not policy["campaigns_admitted"] or not policy["mutation_inventories"]):
+        raise Incomplete("Engine KE mutation is held until the complete enumeration is reviewed and rebound.")
+    return binding
+
+
+def validate_engine_ke_execution(text: str, binding: dict, *, include_doctests: bool = False) -> dict:
+    """Use real entered libtest blocks, not metadata-only names or borrowed counts."""
+    records = read_successful_address_records(text)
+    ordinary = binding["test_inventory"]
+    extra = set(records) - set(ordinary)
+    if (not set(ordinary) <= set(records)
+            or (extra and not include_doctests)
+            or any(re.fullmatch(r"[^\r\n]+[.]rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile(?: fail)?)?", name) is None
+                   for name in extra)):
+        raise Incomplete("Engine KE did not execute every current actual library/integration case.")
+    result = {"tests_executed": len(records), "ke_tests_executed": 83,
+              "test_names": records, "inventory_sha256": COMMON.canonical_sha256(sorted(records))}
+    if include_doctests:
+        result["additional_doctests"] = sorted(extra)
+    return result
+
+
+def validate_engine_ke_doctests(text: str) -> dict:
+    """Keep complete Rustdoc observations separate from ordinary tests and native work."""
+    records = read_successful_address_records(text)
+    if any(re.fullmatch(r"[^\r\n]+[.]rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile(?: fail)?)?", name) is None
+           for name in records):
+        raise Incomplete("Engine KE doctest lane contains an unknown non-Rustdoc case.")
+    return {"tests_executed": len(records), "test_names": records,
+            "compilation_only": [name for name in records if name.endswith((" - compile", " - compile fail"))]}
+
+
+
+def admit_engine_ke_evidence(binding: dict) -> dict:
+    """Bound and recheck the same exact reference bytes before and after jobs."""
+    result = {}
+    for key in ("ordinary_evidence", "root_graph_evidence"):
+        evidence = binding[key]
+        raw = COMMON.read_analysis_bytes(Path(evidence["path"]), maximum=COMMON.ANALYSIS_JSON_MAX_BYTES)
+        result[key] = hashlib.sha256(raw).hexdigest()
+        if result[key] != evidence["sha256"]:
+            raise Incomplete("Engine KE prior evidence bytes changed.")
+    return result
+
+def execute_engine_ke_profile(args, report: dict) -> None:
+    """Run only the admitted Root-lock feature, with explicit initial campaign hold."""
+    if args.tool_admission_profile != "stable-core" or args.lane not in {"baseline", "enumerate", "coverage", "mutation", "all"}:
+        raise Incomplete("Engine KE requires the selected stable host analysis lane.")
+    policy = read_json(ROOT / ENGINE_KE_POLICY)
+    binding = validate_engine_ke_policy(policy, campaign=args.lane in {"mutation", "all"})
+    subjects = ENGINE_KE_SCOPE.select(args.subject)
+    dependency, identity = PRODUCT.admit_product(ROOT)
+    try:
+        PRODUCT.SLINT.profile_rows(dependency, PRODUCT.SLINT.EP1_PROFILE)
+    except PRODUCT.SLINT.Incomplete as error:
+        raise Incomplete(str(error)) from error
+    if (len(identity) != binding["source_file_count"]
+            or COMMON.canonical_sha256(identity) != binding["candidate_sha256"]
+            or any(PRODUCT.sha256(ROOT / name) != value for name, value in binding["inputs_sha256"].items())):
+        raise Incomplete("Engine KE actual Root source/helper/graph candidate differs.")
+    manifest = tomllib.loads((ROOT / "policy/verification-manifest.toml").read_text())
+    for filename in COMMON.ENGINE_KE_CRITICAL:
+        package = "nevrotick-crypto-cng-lifecycle" if filename.startswith("tools/") else "nevrotick-engine"
+        if (manifest.get("critical_files", []).count(filename) != 1
+                or sum(row.get("package") == package and filename in row.get("files", [])
+                       for row in manifest.get("security_modules", [])) != 1):
+            raise Incomplete("Engine KE requires the complete twelve-owner critical/security inventory.")
+    evidence_before = admit_engine_ke_evidence(binding)
+    if shutil.disk_usage(args.output_dir.parent).free < policy["minimum_free_bytes"]:
+        raise Incomplete("Engine KE metrics require five GiB before admission.")
+    selected = argparse.Namespace(**vars(args))
+    if args.lane == "enumerate":
+        selected.lane = "mutation"
+    report.update(profile="ke_association", subjects=subjects, qualification_passed=False,
+                  full_critical_files=list(COMMON.ENGINE_KE_CRITICAL),
+                  scope="Eight reached GNU KE owners; four remaining owners and Windows arms stay open",
+                  source_context_sha256=binding["source_context_sha256"],
+                  source_context_scope="Historical Tool preparation reference; current Root identity is candidate_sha256/source_sha256",
+                  candidate_sha256=binding["candidate_sha256"],
+                  ordinary_reference=binding["ordinary_evidence"],
+                  ordinary_reference_scope="Historical predecessor under a standalone Tool lock; aggregate receipt incomplete. Later source/test deltas require separate reconciliation; no Root graph or metric credit transferred.",
+                  pending_metric_owners=[name for name in COMMON.ENGINE_KE_CRITICAL if name not in ENGINE_KE_HOST_SUBJECTS.values()],
+                  pending_windows="StrictProfile::capture, transport, provider shutdown and Windows-only control/error arms",
+                  generation_gap_policy="Reconcile every constructor, generic helper, Garde expansion and atomic guard against actual descriptors; no manual-control kill credit.")
+    session = COMMON.Session(ROOT, selected, report, ENGINE_KE_SCOPE, policy, ENGINE_KE_BOUND_INPUTS)
+    try:
+        if (COMMON.canonical_sha256(session.product_identity) != binding["candidate_sha256"]
+                or read_json(session.source / ENGINE_KE_POLICY) != policy
+                or any(PRODUCT.sha256(session.source / name) != value
+                       for name, value in binding["inputs_sha256"].items())):
+            raise Incomplete("Captured Engine KE candidate/policy/helper differs before its first command.")
+        def run(label, command, timeout, **options):
+            address_storage_checkpoint(session, policy, report, label, "before")
+            try:
+                result = session.run(label, command, timeout, **options)
+                if label.startswith("mutation-campaign:"):
+                    subject = label.removeprefix("mutation-campaign:")
+                    directory = session.work / "mutation" / subject / "mutants.out"
+                    outcomes = COMMON.read_analysis_json(directory / "outcomes.json")
+                    baseline = next(row for row in outcomes["outcomes"] if row["scenario"] == "Baseline")
+                    relative = COMMON.analysis_output_path(baseline["log_path"])
+                    if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+                        raise Incomplete("Engine KE baseline log leaves its owned output.")
+                    report.setdefault("baseline_execution", {})[subject] = validate_engine_ke_execution(
+                        COMMON.read_analysis_text(directory / relative), binding, include_doctests=True)
+                return result
+            finally:
+                address_storage_checkpoint(session, policy, report, label, "after")
+        if args.lane == "baseline":
+            run("ke-format", ["cargo", "fmt", "--all", "--", "--check"], policy["baseline_wall_seconds"])
+            # Admit held Windows source before repeating host execution/optimization.
+            # Check emits metadata only; its actual artifact records remain available
+            # for the separately held external-privacy route. No linking/native run.
+            run("ke-windows-check", ["cargo", "check", "--package", "nevrotick-engine",
+                "--features", "ke-association-prototype", "--all-targets", "--target", "x86_64-pc-windows-msvc",
+                "--frozen", "--jobs", "6", "--message-format=json"], policy["baseline_wall_seconds"])
+            raw = run("ke-baseline", ["cargo", "test", "--package", "nevrotick-engine",
+                "--features", "ke-association-prototype", "--frozen", "--jobs", "6", "--lib", "--tests",
+                "--", "--test-threads=1"], policy["baseline_wall_seconds"])
+            report["baseline_execution"] = validate_engine_ke_execution(raw, binding)
+            run("ke-clippy", ["cargo", "clippy", "--package", "nevrotick-engine",
+                "--features", "ke-association-prototype", "--all-targets", "--frozen", "--jobs", "6",
+                "--", "-D", "warnings"], policy["baseline_wall_seconds"])
+            raw = run("ke-release", ["cargo", "test", "--package", "nevrotick-engine",
+                "--features", "ke-association-prototype", "--release", "--frozen", "--jobs", "6", "--lib", "--tests",
+                "--", "--test-threads=1"], policy["baseline_wall_seconds"])
+            report["release_execution"] = validate_engine_ke_execution(raw, binding)
+            raw = run("ke-doctests", ["cargo", "test", "--package", "nevrotick-engine",
+                "--features", "ke-association-prototype", "--frozen", "--jobs", "6", "--doc",
+                "--", "--test-threads=1"], policy["baseline_wall_seconds"])
+            report["doctest_execution"] = validate_engine_ke_doctests(raw)
+            run("ke-windows-clippy", ["cargo", "clippy", "--package", "nevrotick-engine",
+                "--features", "ke-association-prototype", "--all-targets", "--target", "x86_64-pc-windows-msvc",
+                "--frozen", "--jobs", "6", "--", "-D", "warnings"], policy["baseline_wall_seconds"])
+        if args.lane == "enumerate":
+            listing = COMMON.enumerate_mutation_inventories(ENGINE_KE_SCOPE, subjects, policy, session.tools,
+                run, report, deadline=time.monotonic() + policy["enumeration_wall_seconds"],
+                maximum_per_file=512, maximum_total=min(3072, 512 * len(subjects)))
+            report.update(listed_inventories=listing.inventories,
+                          listed_inventory_bindings=listed_summary(listing.inventories),
+                          listed_total=listing.total, campaign_admission=False)
+        if args.lane in {"coverage", "all"}:
+            # Keep the native per-file threshold scoped to exactly the selected
+            # production files; all other current source files remain in custody.
+            ignored = [re.escape("/work/source/" + name) + "$" for name in session.product_identity
+                       if name.endswith(".rs") and name not in subjects.values()]
+            ignored.append("/rustlib/src/rust/library/")
+            regex = "|".join(ignored)
+            if len(regex.encode()) > 65_536:
+                raise Incomplete("Engine KE exact coverage filename filter exceeds its bound.")
+            raw = run("coverage", [str(session.tools / "cargo-llvm-cov"), "llvm-cov",
+                "--package", "nevrotick-engine", "--features", "ke-association-prototype", "--frozen",
+                "--jobs", "6", "--lib", "--tests", "--json", "--output-path", "/work/coverage.json",
+                "--failure-mode", "any", "--ignore-filename-regex", regex,
+                "--fail-under-file-lines", "90", "--", "--test-threads=1"], policy["coverage_wall_seconds"])
+            report["coverage_execution"] = validate_engine_ke_execution(raw, binding)
+            coverage = COMMON.read_analysis_json(session.work / "coverage.json")
+            report["coverage"] = {name: COMMON.coverage_counts(ENGINE_KE_SCOPE, coverage,
+                "/work/source/" + filename) for name, filename in subjects.items()}
+        if args.lane in {"mutation", "all"}:
+            COMMON.run_analysis_lanes(ENGINE_KE_SCOPE, subjects, policy, session.work, session.tools,
+                                      run, report, "mutation")
+    finally:
+        session.finish()
+        if admit_engine_ke_evidence(binding) != evidence_before:
+            raise Incomplete("Engine KE reference evidence changed during the job.")
+    report["selected_lane_passed"] = args.lane != "enumerate"
+    report["selected_host_metrics_passed"] = args.lane == "all" and subjects == ENGINE_KE_HOST_SUBJECTS
+    report["selected_host_qualification_passed"] = False
+    report["independent_mutation_classification"] = "Required for every caught, unviable or missed descriptor; pending separate review."
+    # An eight-owner host pass never closes all twelve files, Windows or native custody.
+    report["qualification_passed"] = False
+
 def execute(args, report: dict) -> None:
     """Execute only the fixed selected lane, with full shared custody bookends."""
     profile = getattr(args, "profile", "legacy")
+    if args.lane in {"baseline", "fixtures"} and profile != "ke_association":
+        raise Incomplete("The baseline and fixture lanes belong solely to the Engine KE role.")
+    if profile == "ke_association":
+        if args.lane == "fixtures":
+            execute_engine_ke_fixtures(args, report)
+            return
+        execute_engine_ke_profile(args, report)
+        return
     if profile not in {"legacy", "series", "quality", "session", "address_round"}:
         raise Incomplete("Unknown engine analysis profile.")
     if profile == "address_round":
@@ -5610,13 +6006,21 @@ def execute(args, report: dict) -> None:
 def main(argv=None) -> int:
     """Keep listing completion distinct from selected host coverage/mutation gates."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--profile", choices=("legacy", "series", "quality", "session", "address_round"), default="legacy")
-    parser.add_argument("--lane", choices=("contracts", "enumerate", "coverage", "mutation", "all"), required=True)
-    parser.add_argument("--subject", choices=(*SUBJECTS, "series", "quality", "session", *ADDRESS_SUBJECTS, "all"), default="all")
+    parser.add_argument("--profile", choices=("legacy", "series", "quality", "session", "address_round", "ke_association"), default="legacy")
+    parser.add_argument("--lane", choices=("contracts", "baseline", "fixtures", "enumerate", "coverage", "mutation", "all"), required=True)
+    parser.add_argument("--subject", choices=(*SUBJECTS, "series", "quality", "session", *ADDRESS_SUBJECTS, *ENGINE_KE_HOST_SUBJECTS, "all"), default="all")
     parser.add_argument("--tool-admission-profile", choices=("full", "stable-core"), default="full")
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
+    if args.profile == "ke_association" and args.subject not in {*ENGINE_KE_HOST_SUBJECTS, "all"}:
+        parser.error("Engine KE selects only its eight exact host owners or all")
+    if args.profile != "ke_association" and args.subject in ENGINE_KE_HOST_SUBJECTS:
+        parser.error("Engine KE subjects require --profile ke_association")
+    if args.lane in {"baseline", "fixtures"} and args.profile != "ke_association":
+        parser.error("--lane baseline/fixtures requires --profile ke_association")
+    if args.lane == "fixtures" and args.subject != "all":
+        parser.error("--lane fixtures requires --subject all")
     if args.profile == "address_round" and args.subject not in {*ADDRESS_SUBJECTS, "all"}:
         parser.error("--profile address_round selects only address_round, address_progress or all")
     if args.profile != "address_round" and args.subject in ADDRESS_SUBJECTS:

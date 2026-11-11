@@ -8,16 +8,35 @@ license.workspace = true
 repository.workspace = true
 description = "Bounded NevroTick observe-only engine transport experiment"
 
+[features]
+# Explicitly activated only by the existing controlled-loopback KE probe.
+ke-association-prototype = [
+    "dep:nevrotick-s115-aes-siv-fixture",
+    "dep:rustls-pki-types",
+    "dep:zeroize",
+    "dep:rustls",
+    "dep:rustls-cng-crypto",
+    "dep:rustls-platform-verifier",
+]
+
 [dependencies]
 garde = { version = "=0.23.0", default-features = false, features = ["derive"] }
 getrandom = { version = "=0.4.3", default-features = false }
 ntp-wire = { version = "=0.0.0", path = "../ntp-wire" }
 time-domain = { version = "=0.0.0", path = "../time-domain" }
 tokio = { version = "=1.54.1", default-features = false, features = ["rt", "net", "time", "sync", "macros"] }
+nevrotick-s115-aes-siv-fixture = { version = "=0.0.0", path = "../../tools/crypto-aes-siv-witness", default-features = false, optional = true }
+rustls-pki-types = { version = "=1.15.1", default-features = false, features = ["std"], optional = true }
+zeroize = { version = "=1.9.1", default-features = false, features = ["alloc"], optional = true }
 
 # The reviewed tokio-macros 2.7.2 lock uses Syn 3 on the host; garde keeps Syn 2.
 # Both target and per-package feature rows admit these separate macro closures.
 # Do not add an unused direct macro dependency or call its private helpers.
+
+[target.'cfg(windows)'.dependencies]
+rustls = { version = "=0.23.46", default-features = false, features = ["std"], optional = true }
+rustls-cng-crypto = { version = "=0.1.2", default-features = false, optional = true }
+rustls-platform-verifier = { version = "=0.7.1", default-features = false, optional = true }
 
 [[bin]]
 name = "nevrotick-observe"

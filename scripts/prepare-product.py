@@ -37,6 +37,10 @@ MAX_TOTAL_EXPANDED = 1024 * 1024 * 1024
 # Bind their measured tar/payload ceilings to both source identities; another
 # version or source map receives the ordinary limits and needs its own review.
 REVIEWED_EXPANSION_LIMITS = {
+    ("windows", "0.61.3",
+     "9babd3a767a4c1aef6900409f85f5d53ce2544ccdfaa86dad48c91782c6d6893",
+     "47ccf625f7c4d2bcb7c8721cd038491ffd48469f5beb430ec39195e7dad40601"):
+        (114_900_480, 114_341_344),
     ("windows", "0.62.2",
      "527fadee13e0c05939a6a05d5bd6eec6cd2e3dbd648b9f8e447c6518133d8580",
      "0d6039b4d5fb8873d1272689a5b10347b8c612147d680943966a4756b1926773"):

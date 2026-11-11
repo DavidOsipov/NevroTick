@@ -1578,6 +1578,40 @@ to other owners. Historical policies/receipts and the inert168-input
 constructor role retain their original scopes. No threshold, worker/process
 budget or native gate changes.
 
+**EP1/EP2 selected source analysis, 11 November 2026:** the same
+[Engine verifier](scripts/verify-engine-analysis.py) has the exact
+`--profile ke_association` [role](policy/engine-ke-association-analysis.json).
+Select `--lane baseline`, `coverage` or `enumerate`, `--subject all`,
+`--tool-admission-profile stable-core`, the admitted Root vendor and a fresh
+external Linux `--output-dir`. The actual Engine package and
+`ke-association-prototype` feature use the Root lock; the UI is not compiled.
+Baseline checks format, Windows-target source compatibility, 261 entered GNU
+cases (83 KE), full GNU Clippy, 261 optimized cases, 69 doctests and Windows
+Clippy, with warnings denied. Windows checks neither link nor execute a product.
+Coverage selects eight GNU owners at the unchanged 90% per-file line gate.
+All twelve critical owners remain registered; the four other owners, native
+paths and complete product qualification retain their separate open gates.
+
+Complete current discovery contains 283 descriptors, including 124 for the
+request ledger and 44 for the response reader. Reviewed source-bound inventories
+are required before `--lane mutation --subject ke_ledger` or another exact
+subject; mutation uses ten workers and the unchanged 95% adjusted threshold.
+[Eight manual equivalence records](tasks/engine-ke-association-equivalences.md)
+are tied to the complete candidate, exact source, typed descriptors and
+independent caller-domain reviews. They receive zero kill credit; raw counts,
+raw scores, exclusions and adjusted scores remain distinct. Current outcomes
+must still contain each exact missed variant before adjustment. Source, graph,
+constructor or integration changes invalidate these bindings. These are ordinary
+source reviews, not formal solver work or a native qualification.
+
+The `fixtures` preparation lane runs the existing maintained AES witness under
+its actual excluded manifest and sealed Root-vendor subset. Its one entered
+generator emits 33 bounded public valid-tag fixtures; the lane grants no Engine,
+TLS/exporter, coverage or mutation credit. Its closed-campaign prerequisite is
+intentional. The [existing Engine task](tasks/engine-transport-pilot.md#ep2--protected-request-custody-and-s2c-source-contract--11-november-2026)
+owns exact results, retained initial failures, scope and next action. New external
+privacy specimens remain source preparation in their existing Tool route.
+
 **Historical engine analysis admission, 1 November 2026:**
 [verify-engine-analysis.py](scripts/verify-engine-analysis.py) and
 [engine-analysis.json](policy/engine-analysis.json) select the engine library and
@@ -1840,9 +1874,20 @@ python3 -B scripts/verify.py
 
 | Row | Work and evidence limit |
 | --- | --- |
-| `--lane portable` (default) | Format, all-target compiler/Clippy and library rustdoc for the six admitted members; explicit observe CLI build, separate per-package library/integration tests and nonempty doctests, plus configured optimized owner tests with actual discriminating cases. Missing, empty, skipped or wrong-package selections fail; package and aggregate counts are retained. |
+| `--lane portable` (default) | Format, all-target compiler/Clippy and library rustdoc for the seven admitted members; explicit observe CLI build, separate per-package library/integration tests and nonempty doctests, plus configured optimized owner tests with actual discriminating cases. Missing, empty, skipped or wrong-package selections fail; package and aggregate counts are retained. |
 | `--lane dependencies --advisory-receipt /path/to/current-receipt.json` | Frozen Linux and Windows metadata/feature checks followed by target-specific cargo-deny, using a separately acquired RustSec/index snapshot bound to the lockfile and at most 24 hours old. |
 | `--lane windows --output-dir /path/to/new-build-output` | Windows-target compiler/Clippy and separate release links for the UI and observe CLI; exports both executables and matching PDBs to new external output, preserving existing UI receipt keys and adding the engine artifact record. Native execution remains separate. |
+
+For [EP1](tasks/engine-transport-pilot.md#ep1--actual-ke-producer-into-engine-ownership),
+add `--profile engine-ke-association` to the selected dependency, portable or
+Windows row. It requires the exact separately reviewed feature graph and keeps
+the default graph unchanged. The feature is applied only to workspace/Engine
+selections; other package checks retain their default scope. Ordinary and
+optimized Engine reports must include the selected private KE-owner controls.
+These checks do not execute the standalone probe's CLI journey, a healthy
+Windows TLS exchange or native cleanup. Those retain their separate task gates.
+Use an explicit matching `--vendor-dir`; a historical local pointer is not
+admission for this expanded lockfile. Current results belong to the existing task.
 
 Portable UI, wire, time-domain and Core test builds use six Cargo build jobs to
 bound concurrent LLVM test-binary links within the ordinary 128-task sandbox.
@@ -2145,7 +2190,10 @@ remains closed against the later Core/helper tree.
 
 Next prepare the [existing S2.2 association/request contract](tasks/engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request):
 currentness issuer, exact provider/packet-AEAD/runtime graph, normal validation,
-finite budgets/lifetimes and cookie dispositions. Pending cookie/privacy choices
-need their concrete NV-DEC-001 disposition before dependent implementation. Native,
+finite budgets/lifetimes and the [11 November receiver-first continuation](tasks/engine-transport-pilot.md#receiver-first-integration-continuation--11-november-2026).
+David accepted both cookie-policy A choices under NV-DEC-001: fresh wire cookies
+with explicit never-invoked return, and zero-cookie rejection preserving healthy
+Pending state. Implement their exact dependent transitions after the actual
+producer/graph/lifetime prerequisites are admitted. Native,
 fuzz and storage holds remain; UI/storage/optional tooling stay parked and formal
 execution remains post-V1.

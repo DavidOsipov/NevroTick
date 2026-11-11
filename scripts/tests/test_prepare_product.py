@@ -153,13 +153,17 @@ class ArchiveControls(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, error):
                     PREPARE.archive_files(data, self.package)
 
-    def test_large_windows_allowance_matches_only_the_current_reviewed_identity(self):
+    def test_large_windows_allowance_matches_only_the_reviewed_identities(self):
         policy = json.loads((ROOT / "policy/ui-m0-dependencies.json").read_text())
         package = next(item for item in policy["packages"]
                        if item["name"] == "windows" and item["version"] == "0.62.2")
         identity = tuple(package[key] for key in ("name", "version", "checksum", "files_sha256"))
         self.assertEqual(PREPARE.REVIEWED_EXPANSION_LIMITS,
-                         {identity: (114_755_072, 114_212_919)})
+                         {identity: (114_755_072, 114_212_919),
+                          ("windows", "0.61.3",
+                           "9babd3a767a4c1aef6900409f85f5d53ce2544ccdfaa86dad48c91782c6d6893",
+                           "47ccf625f7c4d2bcb7c8721cd038491ffd48469f5beb430ec39195e7dad40601"):
+                              (114_900_480, 114_341_344)})
 
     def test_directory_members_count_toward_iteration_budget(self):
         directories = []

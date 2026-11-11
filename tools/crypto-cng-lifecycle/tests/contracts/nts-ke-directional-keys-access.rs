@@ -3,9 +3,9 @@
 
 #![forbid(unsafe_code)]
 
-/// Actual laboratory owner, with its original private child declarations.
-#[path = "../../src/bin/nts_ke/mod.rs"]
-mod nts_ke;
+// The actual library's outer module must reject this external access.
+// Deeper constructor/field privacy may be masked by that first barrier.
+use nevrotick_engine::nts_ke_experiment as nts_ke;
 
 /// Caller outside the directional-key owner's subtree.
 mod sibling {
@@ -17,12 +17,16 @@ mod sibling {
         fn expose(keys: &nts_ke::request::DirectionalKeys) -> &[u8; 32] {
             &keys.c2s_key
         }
+        fn expose_response(keys: &nts_ke::request::DirectionalKeys) -> &[u8; 32] {
+            &keys.s2c_key
+        }
         let _getter = expose;
+        let _response_getter = expose_response;
     }
 }
 
-/// Keep the legal CLI call graph live beside the expected privacy refusal.
+/// Keep the legal public Engine bridge live beside the expected privacy refusal.
 fn main() -> std::process::ExitCode {
     sibling::attack();
-    nts_ke::entry(std::env::args_os())
+    nevrotick_engine::experimental_nts_ke_probe(std::env::args_os())
 }

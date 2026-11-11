@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 //! Restore bounded transport causes without losing an earlier TLS refusal.
 
 use std::io;

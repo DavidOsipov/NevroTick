@@ -414,7 +414,7 @@ law, provider/runtime, platform or tuning constant is selected.
 | Existing owner | Refinement before the dependent integration |
 | --- | --- |
 | [S0.1/P2 protocol](../../tasks/s0.1-protocol-comparison.md#ntp_usg-comparison-handoff--11-november-2026); CHECK-6/8/9/17/27 | Check RATE interval direction and correlated KoD at the actual continuous caller and next-send guard. A correct one-shot helper is insufficient. |
-| [S2.2 association/receiver](../../tasks/engine-transport-pilot.md#paired-acceptance-evidence--planned-not-run); AC-04, CHECK-6/8/9/17/21/25/26/27 | Compose a protected exchange using admitted primitives and independent expectations; run repeated inventory/control sequences with count and aggregate-byte bounds. Preserve pending zero-replacement/reuse decisions and the full KE/consumer exit. |
+| [S2.2 association/receiver](../../tasks/engine-transport-pilot.md#paired-acceptance-evidence--planned-not-run); AC-04, CHECK-6/8/9/17/21/25/26/27 | Compose a protected exchange using admitted primitives and independent expectations; run repeated inventory/control sequences with count and aggregate-byte bounds. Preserve the accepted zero-replacement/reuse decisions and the full KE/consumer exit. |
 | [S1.3/S1.4 consumers](../../tasks/s1.3-source-selection-readiness.md#ntp_usg-consumer-integration-refinement--11-november-2026); CHECK-7/8/10/11/14/25/27 | Carry identity/age/uncertainty to publication; require controller-driven independent plant trajectories for convergence claims. Native effects retain the existing P4 owner. |
 | §8 performance and S0.1 graph/feature owners; CHECK-21/26/27 as reached | Adapt stage/pipeline benchmark structure only for a concrete measurement question. Preserve exact tested feature/target rows; reconcile file grants and nested crypto features before any future reuse. |
 
@@ -1064,8 +1064,17 @@ and [frozen task routing](../../tasks/s1.3-source-selection-readiness.md#baselin
 for exact receipts, admission joins, generation limits and remaining gaps.
 This selected checkpoint completes neither P1 nor native or release qualification.
 Next prepare the [existing S2.2 association/request contract](../../tasks/engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request):
-currentness issuer, provider/AEAD/runtime graph, finite budgets and the pending
-cookie/privacy decision cards before dependent implementation.
+currentness issuer, provider/AEAD/runtime graph and finite budgets. The
+[11 November receiver-first continuation](../../tasks/engine-transport-pilot.md#receiver-first-integration-continuation--11-november-2026)
+records the actual missing owners and protected-datagram adapter. David accepted
+both cookie-policy A choices: fresh wire cookies with explicit never-invoked
+return, and zero-cookie rejection preserving healthy Pending state. Apply those
+exact transitions at their dependent paths. The
+[EP2 source contract](../../tasks/engine-transport-pilot.md#ep2--protected-request-custody-and-s2c-source-contract--11-november-2026)
+now owns the bounded cookie/request ledger and authenticated response consumer;
+its current qualification record, rather than the source card alone, controls
+the next executable action. Production suppliers/graph/native qualification
+remain separate prerequisites.
 This engineering contract needs no blanket OD-04
 permission; unresolved production defaults, real mapping issuers, adaptive
 horizon, step authority and complete S1.4/P1 retain their own gates.

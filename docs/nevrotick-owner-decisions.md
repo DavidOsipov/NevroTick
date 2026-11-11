@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.22<br>
+**Document:** NV-DEC-001, revision 1.23<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
@@ -228,6 +228,110 @@ Revisit trigger and unaffected work that can continue:
 Bring a card for a wider clock authority envelope, weaker trust/authentication/revocation rule, ASVS exception, incompatible licence, material security/performance tradeoff, paid commitment or new release channel. An external provider's eligibility decision is evidence to obtain, not a policy agents can approve on David's behalf.
 
 David decides exceptions **individually**. This is not blanket acceptance of ASVS deviations, TLS soft failure, weaker source counts, or a compromised engine's residual clock authority. Keep those items open and stop only the dependent feature/claim. Once accepted, update the canonical rule, threat/risk record, relevant applicability rows and verification expectations together. Do not ask again without new evidence or a meaningful scope change.
+
+### 6.1 S2.2 cookie reissuance
+
+**Card:** S2.2-COOKIE-01; REQ-8/BND-2, AC-04, CHECK-6/8/9/17/21/25/26/27.
+**Status:** Accepted by David, 11 November 2026 — option A. Fresh cookies on the
+wire; explicit return only before actual adapter invocation, under the same live
+association and original expiry. No post-invocation reuse is approved.
+The dependent action is the association owner's explicit cookie-return/reuse
+transition in the [existing S2.2 request contract](../tasks/engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request).
+
+Current source has no production association. The laboratory seals an unsendable
+request and wipes its secrets; its summary is not an association or send receipt.
+The former request draft recorded emission facts without granting reissuance.
+The accepted transition below supersedes that pending policy status; it does not
+supply an authenticated association or an implemented return operation.
+[RFC 8915 §5.7](https://www.rfc-editor.org/rfc/rfc8915.html#section-5.7)
+prefers fresh cookies while allowing a user/application resilience choice;
+[§9.1](https://www.rfc-editor.org/rfc/rfc8915.html#section-9.1)
+explains the network-linkability concern. Neither establishes a local default.
+
+| Option | Concrete behavior and cost |
+| --- | --- |
+| A — fresh on the wire; return only before invocation (**selected**) | Never reissue a cookie after its send adapter was invoked, including error, short, cancelled or ambiguous results. An explicit owner operation may return an unchanged cookie only after proving that adapter was never invoked, retiring its old UID and rechecking the same live association and original expiry. When no fresh cookie remains, use bounded KE recovery. KE outages may interrupt acquisition. |
+| B — one resilience reuse | Additionally permit one reuse of a possibly sent cookie after KE is unavailable, only within the same still-current association/path/trust context and original expiry, with a fresh UID and a retained reuse count. This improves outage resilience but exposes a repeatable wire identifier. No network/path-change reuse is allowed. |
+| C — retire every reserved cookie | Never return even a proven-uninvoked reservation. This simplifies disposition but can consume cookies during local failures without any privacy benefit from avoiding an actual transmission. |
+
+Recommendation A avoids wire reuse while recovering resources on a genuinely
+uninvoked path. A transport error, dropped future or numeric byte count is not
+that proof. An unqualified native no-send result remains ambiguous. Cookie age,
+association expiry and request credit never reset on return; drop alone does not
+return anything. No option permits plain fallback, weaker authentication or
+unbounded retries. Persistent secret storage remains under its separate hold.
+
+**Owner/date:** David, 11 November 2026. Exact reply: “Fresh cookies; pre-send
+return only (Recommended)”. This accepts option A only; B and C remain unselected.
+Implementation and qualification remain open. Validate actual
+pre-invocation return, stale/expired return refusal, fresh-UID issuance and every
+post-invocation/ambiguous refusal with genuine owner and adapter controls.
+Revisit only for contrary interoperability/privacy evidence or a changed scope.
+Association transfer, one-slot reservation and emission accounting can proceed
+independently once their own real producer/graph/lifetime prerequisites are met.
+
+### 6.2 S2.2 zero replacement cookies
+
+**Card:** S2.2-COOKIE-02; same S2.2 requirements and receiving owner as above.
+**Status:** Accepted by David, 11 November 2026 — option A. Reject zero-cookie
+responses without publishing an observation or new cookies, preserving a healthy
+pending request under its original deadline and receive-work budget. No
+interoperability tolerance or receiver pass is recorded.
+The dependent action is protected-response acceptance/completion when the
+authenticated plaintext contains zero replacement-cookie fields.
+
+[RFC 8915 §5.7](https://www.rfc-editor.org/rfc/rfc8915.html#section-5.7)
+requires the server's protected response to carry at least one encrypted cookie;
+its client checks bind UID and S2C authentication to the outstanding request.
+It does not prescribe the client's zero-cookie acceptance/completion policy.
+David selected the strict local disposition below. Structural acceptance of an
+empty plaintext is not a decision to admit that response or its time sample.
+
+| Option | Concrete behavior and cost |
+| --- | --- |
+| A — reject the nonconforming response (**selected**) | Publish no observation or replacement cookies and leave the original healthy pending request usable until its unchanged deadline, within its existing receive-work budget. A later conforming reply may complete it once. Expiry retires it normally; a fresh request needs another issuable cookie or bounded KE recovery. No immediate retry loop or renewed deadline follows. |
+| B — tolerate authenticated zero-cookie responses | After all other current UID, AEAD, endpoint, NTP and admission checks pass, complete the request once and expose its otherwise admissible observation, recording zero new cookies. Next issuance still needs another fresh cookie or bounded KE recovery. This is a local interoperability tolerance for a server that violates its sending requirement; RFC 8915 does not select the client's disposition. |
+
+Recommendation A keeps the first product profile strict and preserves the existing
+rule that rejected packets cannot consume a healthy pending request. Its cost is
+loss of observations from an otherwise authentic but nonconforming peer. Option B
+does not authorize reuse, infer physical time quality or relax any other guard.
+One cookie with a zero-length body is a separate representability question; it is
+not the zero-field case addressed here.
+
+**Owner/date:** David, 11 November 2026. Exact reply: “Reject; preserve pending
+request (Recommended)”. This accepts option A only; B remains unselected.
+Implementation and qualification remain open. Required controls are
+zero versus one encrypted cookie, wrong UID/tag/endpoint, late and duplicate
+responses, a valid neighboring reply after rejection, original deadline and
+finite receive budgets, and no history/phase effects on refusal. No first-send,
+provider/native or production-history hold is lifted by either choice.
+
+### 6.3 Mandatory cookie-policy acceptance — 11 November 2026
+
+David added the following requirements after accepting both A choices. These
+clarify their implementation; they are not additional pending decisions.
+
+- Charge each received packet's admitted processing work before the affected
+  parsing/cryptographic stage. Rejection preserves the **remaining** budget after
+  that charge, never the initial budget or an earlier snapshot. No refund or
+  deadline renewal follows from rejection. Budget exhaustion uses the existing
+  terminal path and cannot leave an indefinitely usable request.
+- Cookie exhaustion uses finite, rate-limited KE recovery with backoff or another
+  suitable configured trusted source. Bound the aggregate recovery work as well
+  as each invocation. No tight reconnect loop, implicit cookie reuse, duplicate
+  source vote, reduced agreement requirement or silent plain-NTP fallback follows.
+- Published state distinguishes an unsuccessful current attempt from the last
+  successful synchronization. Rejected replies cannot update last-success time,
+  renew freshness or claim a fresh synchronization. A still-valid older result
+  keeps its own unchanged age and expiry; failed attempts do not manufacture a
+  newer result or erase the distinction.
+- Required paired cases cover cancellation before and after actual send
+  invocation, repeated authenticated zero-cookie replies through budget
+  exhaustion, cookie-pool exhaustion/backoff, and return attempted after
+  association replacement. Observe actual effects and genuine valid neighbors,
+  not only returned error variants. Native and UI execution retain their own
+  environments and holds; the state contract applies before those bindings.
 
 ## 7. OD-05 — signing and release ownership
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 //! Public component controls; supplied keys and entropy simulate no TLS success.
 
 use super::{DirectionalKeys, RequestError};
@@ -8,7 +9,7 @@ use zeroize::Zeroizing;
 /// Inputs and provenance remain in the AES witness fixture README.
 const PACKET: &[u8; 140] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../crypto-aes-siv-witness/tests/fixtures/sealing-zero.bin"
+    "/../../tools/crypto-aes-siv-witness/tests/fixtures/sealing-zero.bin"
 ));
 /// Public C2S fixture key, whose first half affects this empty-plaintext tag.
 const C2S: [u8; 32] = [
@@ -43,10 +44,13 @@ fn complete_request_matches_existing_independent_answer() -> Result<(), RequestE
     let mut storage = [0xa5; 256];
     {
         let keys = pair(C2S, [0x55; 32]);
+        let DirectionalKeys { s2c_key, .. } = &keys;
         assert_eq!(*keys.c2s_key, C2S);
-        assert_eq!(*keys.s2c_key, [0x55; 32]);
+        assert_eq!(**s2c_key, [0x55; 32]);
         let request = keys.seal_request(&COOKIE, &ENTROPY, &mut storage)?;
         assert_eq!(request.packet_bytes(), PACKET);
+        assert_eq!(*keys.c2s_key, C2S);
+        assert_eq!(**s2c_key, [0x55; 32]);
     }
     assert!(storage[140..].iter().all(|byte| *byte == 0xa5));
     Ok(())

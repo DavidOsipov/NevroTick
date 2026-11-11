@@ -1926,5 +1926,515 @@ fn actual_series_quality_retains_signed_intervals_source_and_original_age() {
                 session.assert_not_called()
 
 
+
+class EngineKeAnalysisRoleTests(unittest.TestCase):
+    """Synthetic admission controls only; no product, compiler or analyzer runs."""
+
+    HOST = {
+        "ke_core": "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs",
+        "ke_association": "crates/nevrotick-engine/src/nts_ke_experiment/association.rs",
+        "ke_process": "crates/nevrotick-engine/src/nts_ke_experiment/process.rs",
+        "ke_handoff": "crates/nevrotick-engine/src/nts_ke_experiment/handoff.rs",
+        "ke_request": "crates/nevrotick-engine/src/nts_ke_experiment/request.rs",
+        "ke_fault": "crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs",
+        "ke_ledger": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
+        "ke_response": "crates/nevrotick-engine/src/nts_ke_experiment/response.rs",
+    }
+
+    class SessionReached(Exception):
+        """A healthy admission reached Session; stop before any execution."""
+
+    def policy_fixture(self):
+        """Independently specified limits and clearly synthetic 261/83 identities."""
+        critical = ["crates/nevrotick-engine/src/lib.rs", *self.HOST.values(),
+            "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
+            "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
+            "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"]
+        names = sorted([f"ordinary_fixture_{index:03}" for index in range(178)] +
+                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(83)])
+        return {
+            "schema_version": 1, "package": "nevrotick-engine",
+            "admission_status": "admitted-engine-ke-source-analysis",
+            "subjects": self.HOST.copy(), "critical_files": critical,
+            "features": ["ke-association-prototype"], "test_workspace": False,
+            "tool_admission_profile": "stable-core",
+            "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+            "maximum_mutants": 512, "maximum_listed_per_file": 512, "maximum_listed_total": 3072,
+            "baseline_wall_seconds": 300, "coverage_wall_seconds": 300,
+            "enumeration_wall_seconds": 240, "mutation_wall_seconds": 1200,
+            "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+            "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
+            "mutation_jobs": 10, "mutation_process_limit": 512, "mutation_message_format": "json",
+            "minimum_free_bytes": 5 * 1024**3, "stop_free_bytes": 4 * 1024**3,
+            "owned_output_maximum_allocated_bytes": 768 * 1024**2,
+            "owned_output_maximum_entries": 32768, "mutation_equivalences": [],
+            "campaigns_admitted": False, "mutation_inventories": {},
+            "binding": {"candidate_sha256": "a" * 64, "source_file_count": 2,
+                "inputs_sha256": {name: "b" * 64 for name in MODULE.ENGINE_KE_BOUND_INPUTS},
+                "test_inventory": names, "source_context_sha256": "c" * 64,
+                "ordinary_evidence": {"path": "/synthetic/ordinary.json", "sha256": "d" * 64},
+                "root_graph_evidence": {"path": "/synthetic/graph.json", "sha256": "e" * 64}},
+        }
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.base = Path(temporary.name)
+        self.root = self.base / "source"
+        self.root.mkdir(mode=0o700)
+        self.policy = self.policy_fixture()
+        for name in MODULE.ENGINE_KE_BOUND_INPUTS:
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("Synthetic admitted source marker; never compiled.\n")
+        critical = self.policy["critical_files"]
+        manifest = ("critical_files = " + json.dumps(critical) + "\nsecurity_modules = [\n" +
+            '{package="nevrotick-engine",files=' + json.dumps(critical[:-1]) + '},\n' +
+            '{package="nevrotick-crypto-cng-lifecycle",files=' + json.dumps(critical[-1:]) + '},\n]\n')
+        (self.root / "policy/verification-manifest.toml").write_text(manifest)
+        self.identity = {name: MODULE.PRODUCT.sha256(self.root / name)
+                         for name in ("Cargo.lock", "crates/nevrotick-engine/Cargo.toml")}
+        binding = self.policy["binding"]
+        binding["candidate_sha256"] = independent_digest(self.identity)
+        binding["inputs_sha256"] = {name: MODULE.PRODUCT.sha256(self.root / name)
+                                    for name in MODULE.ENGINE_KE_BOUND_INPUTS}
+        for field in ("ordinary_evidence", "root_graph_evidence"):
+            path = self.base / (field + ".json")
+            path.write_text('{"scope":"synthetic reference; no product evidence"}\n')
+            binding[field] = {"path": str(path), "sha256": MODULE.PRODUCT.sha256(path)}
+        self.args = SimpleNamespace(profile="ke_association", lane="baseline", subject="all",
+            tool_admission_profile="stable-core", output_dir=self.base / "new-output", vendor_dir=self.base / "vendor")
+
+    def invoke(self, *, accepted=False, free=5 * 1024**3):
+        """Exercise real pre-Session guards with assumed prior product admission."""
+        (self.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(self.policy))
+        dependency = {"engine_ke_association": {"rows": {}}}
+        with patch.object(MODULE, "ROOT", self.root), \
+                patch.object(MODULE.PRODUCT, "admit_product", return_value=(dependency, self.identity)), \
+                patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=free)), \
+                patch.object(MODULE.COMMON, "Session", side_effect=self.SessionReached) as session:
+            with self.assertRaises(self.SessionReached if accepted else MODULE.Incomplete):
+                MODULE.execute_engine_ke_profile(self.args, {})
+            if accepted:
+                session.assert_called_once()
+            else:
+                session.assert_not_called()
+
+    def test_closed_scope_features_and_gates_keep_healthy_neighbor(self):
+        self.assertEqual(MODULE.ENGINE_KE_SCOPE.select("all"), self.HOST)
+        MODULE.validate_engine_ke_policy(self.policy)
+        for field, value in (("features", []), ("features", ["foreign"]),
+            ("features", ["ke-association-prototype", "foreign"]), ("test_workspace", True),
+            ("coverage_minimum_line_percent", 89), ("mutation_minimum_viable_killed_percent", 94),
+            ("jobs", 12), ("critical_files", self.policy["critical_files"][:-1])):
+            bad = copy.deepcopy(self.policy); bad[field] = value
+            with self.subTest(field=field, value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_policy(bad)
+        for scope in (MODULE.COMMON.Scope("foreign", tuple(self.HOST.items()), MODULE.ENGINE_KE_POLICY),
+                      MODULE.COMMON.Scope("nevrotick-engine", tuple(self.HOST.items()), "policy/foreign.json"),
+                      MODULE.COMMON.Scope("nevrotick-engine", tuple(self.HOST.items())[:-1], MODULE.ENGINE_KE_POLICY)):
+            with self.subTest(scope=scope), self.assertRaises(MODULE.Incomplete):
+                MODULE.COMMON.require_engine_ke_role(scope, self.policy)
+        self.invoke(accepted=True)
+
+    def test_source_helper_and_candidate_pin_drift_refuse_before_session(self):
+        for name in ("scripts/portable-analysis.py", "crates/nevrotick-engine/src/nts_ke_experiment/association.rs"):
+            path = self.root / name; original = path.read_bytes()
+            path.write_bytes(original + b"changed bytes\n")
+            with self.subTest(source=name): self.invoke()
+            path.write_bytes(original)
+        original = self.policy["binding"]["candidate_sha256"]
+        self.policy["binding"]["candidate_sha256"] = "f" * 64
+        self.invoke()
+        self.policy["binding"]["candidate_sha256"] = original
+        self.invoke(accepted=True)
+
+    def test_reference_byte_drift_refuses_before_session(self):
+        for field in ("ordinary_evidence", "root_graph_evidence"):
+            path = Path(self.policy["binding"][field]["path"]); original = path.read_bytes()
+            path.write_bytes(original + b" ")
+            with self.subTest(reference=field): self.invoke()
+            path.write_bytes(original)
+        self.invoke(accepted=True)
+
+    def test_five_gib_startup_boundary_refuses_below_and_accepts_exact(self):
+        self.invoke(free=5 * 1024**3 - 1)
+        self.invoke(accepted=True, free=5 * 1024**3)
+
+    def test_premature_campaign_and_empty_review_refuse_before_session(self):
+        for lane in ("mutation", "all"):
+            self.args.lane = lane
+            with self.subTest(lane=lane): self.invoke()
+        self.policy["campaigns_admitted"] = True
+        self.invoke()
+        self.args.lane = "baseline"; self.policy["campaigns_admitted"] = False
+        self.invoke(accepted=True)
+
+    def test_malformed_complete_inventory_cannot_admit_campaign(self):
+        self.policy["campaigns_admitted"] = True
+        for record in ({}, {"count": 0, "sha256": "a" * 64},
+                       {"count": True, "sha256": "a" * 64}, {"count": 1, "sha256": "bad"}):
+            self.policy["mutation_inventories"] = {name: copy.deepcopy(record) for name in self.HOST}
+            with self.subTest(record=record), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_policy(self.policy, campaign=True)
+
+    def phases(self, *, feature=True):
+        """Pinned native Cargo argument format; synthetic phase observations only."""
+        return {"summary": "Success", "phase_results": [
+            {"phase": phase, "argv": ["cargo", "test", *(["--no-run"] if phase == "Build" else []),
+                "--verbose", "--package=nevrotick-engine@0.0.0",
+                *(["--features=ke-association-prototype"] if feature else []),
+                "--message-format=json", "--frozen"], "duration": 0.01, "process_status": "Success"}
+            for phase in ("Build", "Test")]}
+
+    def test_emitted_feature_argv_requires_exact_pinned_order_and_legacy_stays_closed(self):
+        healthy = self.phases()
+        MODULE.COMMON.mutation_phases(MODULE.ENGINE_KE_SCOPE, healthy)
+        MODULE.COMMON.mutation_phases(MODULE.SCOPE, self.phases(feature=False))
+        for change in ("omitted", "foreign", "all", "order"):
+            bad = copy.deepcopy(healthy)
+            for phase in bad["phase_results"]:
+                args = phase["argv"]; index = args.index("--features=ke-association-prototype")
+                if change == "omitted": del args[index]
+                elif change == "foreign": args[index] = "--features=foreign"
+                elif change == "all": args[index] = "--all-features"
+                else: args.append(args.pop(index))
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.COMMON.mutation_phases(MODULE.ENGINE_KE_SCOPE, bad)
+        with self.assertRaises(MODULE.Incomplete): MODULE.COMMON.mutation_phases(MODULE.SCOPE, healthy)
+
+    def test_campaign_effect_boundary_refuses_before_any_execution(self):
+        tools = Path("/owned/synthetic-tools")
+        command = [str(tools / "cargo-mutants"), "mutants", "--package", "nevrotick-engine",
+            "--file", self.HOST["ke_association"], "--test-workspace", "false", "--cap-lints", "false",
+            "--jobs", "10", "--jobserver", "true", "--jobserver-tasks", "10",
+            "--cargo-arg=--message-format=json", "--features", "ke-association-prototype",
+            "--baseline", "run", "--build-timeout", "90", "--timeout", "60", "--output", "/work/mutation/ke_association"]
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.COMMON.mutation_campaign_command(MODULE.ENGINE_KE_SCOPE, tools, "ke_association", command,
+                expected_jobs=10, expected_message_format="json", policy=self.policy)
+        self.policy["campaigns_admitted"] = True
+        self.policy["mutation_inventories"] = {name: {"count": 1, "sha256": "a" * 64} for name in self.HOST}
+        MODULE.COMMON.mutation_campaign_command(MODULE.ENGINE_KE_SCOPE, tools, "ke_association", command,
+            expected_jobs=10, expected_message_format="json", policy=self.policy)
+        bad = command.copy(); bad[bad.index("--test-workspace") + 1] = "true"
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.COMMON.mutation_campaign_command(MODULE.ENGINE_KE_SCOPE, tools, "ke_association", bad,
+                expected_jobs=10, expected_message_format="json", policy=self.policy)
+
+    def execution(self, names):
+        """Build synthetic complete entered libtest output, never product evidence."""
+        return (f"running {len(names)} tests\n" + "".join(f"test {name} ... ok\n" for name in names) +
+                f"test result: ok. {len(names)} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n")
+
+    def test_entered_blocks_require_all_261_cases_and_83_ke_neighbors(self):
+        binding = self.policy["binding"]; names = binding["test_inventory"]
+        healthy = self.execution(names)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 261)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 83)
+        missing = [name for name in names if name != "nts_ke_experiment::fixture_case_00"]
+        old = [name for name in names if not name.startswith("nts_ke_experiment::")]
+        variants = [self.execution([]), self.execution(old), self.execution(missing),
+            self.execution([*names, names[0]]), healthy.replace(" ... ok", " ... FAILED", 1),
+            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 261", "running 260"),
+            healthy.replace("test result: ok. 261 passed", "test result: ok. 260 passed"),
+            "\n".join(line for line in healthy.splitlines() if not line.startswith("running "))]
+        for text in variants:
+            with self.subTest(sample=text[-120:]), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_execution(text, binding)
+        altered = copy.deepcopy(binding); altered["test_inventory"][0] = "nts_ke_experiment::unexecuted_other_case"
+        with self.assertRaises(MODULE.Incomplete): MODULE.validate_engine_ke_execution(healthy, altered)
+
+    def test_doctest_forms_require_opt_in_and_preserve_the_complete_ordinary_inventory(self):
+        binding = self.policy["binding"]; names = binding["test_inventory"]
+        ordinary = self.execution(names)
+        # Rustdoc no_run success is compilation-only evidence, not execution of its body.
+        doc_forms = ["src/lib.rs - Example::checked (line 10)",
+                     "src/lib.rs - Example::private (line 20) - compile fail",
+                     "src/lib.rs - Example::prepared (line 30) - compile"]
+        for doc in doc_forms:
+            text = ordinary + self.execution([doc])
+            with self.subTest(doctest=doc):
+                result = MODULE.validate_engine_ke_execution(text, binding, include_doctests=True)
+                self.assertEqual(result["additional_doctests"], [doc])
+                self.assertEqual(result["tests_executed"], 262)
+                self.assertEqual(result["ke_tests_executed"], 83)
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.validate_engine_ke_execution(text, binding)
+        invalid = [self.execution(names[1:]) + self.execution([doc_forms[0]]),
+                   ordinary + self.execution([doc_forms[0] + " - execute"]),
+                   ordinary + self.execution([doc_forms[2], doc_forms[2]]),
+                   ordinary + self.execution([doc_forms[1]]) + self.execution([doc_forms[1]])]
+        for text in invalid:
+            with self.subTest(sample=text[-160:]), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_execution(text, binding, include_doctests=True)
+
+    def test_reviewed_descriptors_must_match_actual_listing_not_only_count(self):
+        inventories = {name: {name + " synthetic fault": {"name": name + " synthetic fault",
+            "file": path, "package": "nevrotick-engine", "replacement": "false"}}
+            for name, path in self.HOST.items()}
+        self.policy["mutation_inventories"] = {name: {"count": 1, "sha256": independent_digest(items)}
+            for name, items in inventories.items()}
+        MODULE.COMMON.admit_reviewed_mutation_inventories(MODULE.ENGINE_KE_SCOPE, self.policy, inventories)
+        bad = copy.deepcopy(inventories); bad["ke_association"]["ke_association synthetic fault"]["replacement"] = "true"
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.COMMON.admit_reviewed_mutation_inventories(MODULE.ENGINE_KE_SCOPE, self.policy, bad)
+
+    def test_historical_six_owner_scope_cannot_qualify_new_owners(self):
+        self.assertIn("ke_ledger", MODULE.ENGINE_KE_HOST_SUBJECTS)
+        self.assertIn("ke_response", MODULE.ENGINE_KE_HOST_SUBJECTS)
+        bad = copy.deepcopy(self.policy)
+        for name in ("ke_ledger", "ke_response"):
+            del bad["subjects"][name]
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.validate_engine_ke_policy(bad)
+        bad = copy.deepcopy(self.policy)
+        bad["binding"]["test_inventory"] = bad["binding"]["test_inventory"][:233]
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.validate_engine_ke_policy(bad)
+
+    def test_doctest_lane_preserves_compilation_only_meaning(self):
+        names = ["src/lib.rs - Example::new (line 1)", "src/lib.rs - Example::no_run (line 2) - compile",
+                 "src/lib.rs - Example::private (line 3) - compile fail"]
+        result = MODULE.validate_engine_ke_doctests(self.execution(names))
+        self.assertEqual(result["tests_executed"], 3)
+        self.assertEqual(result["compilation_only"], names[1:])
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.validate_engine_ke_doctests(self.execution(["ordinary_case"]))
+
+    def test_baseline_keeps_full_release_docs_and_windows_source_checks_separate(self):
+        (self.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(self.policy))
+        calls = []
+        outer = self
+        class Session:
+            def __init__(self, root, *_arguments):
+                self.product_identity = outer.identity
+                self.source = root
+                self.output = outer.args.output_dir
+                self.output.mkdir(mode=0o700)
+            def run(self, label, argv, timeout):
+                calls.append((label, argv, timeout))
+                if label in {"ke-baseline", "ke-release"}:
+                    return outer.execution(outer.policy["binding"]["test_inventory"])
+                if label == "ke-doctests":
+                    return outer.execution(["src/lib.rs - Example::no_run (line 1) - compile"])
+                return "Synthetic compiler result only; no product execution.\n"
+            def finish(self):
+                calls.append(("finish", [], 0))
+        report = {}
+        with patch.object(MODULE, "ROOT", self.root), \
+                patch.object(MODULE.PRODUCT, "admit_product", return_value=({"engine_ke_association": {"rows": {}}}, self.identity)), \
+                patch.object(MODULE.COMMON, "Session", Session):
+            MODULE.execute_engine_ke_profile(self.args, report)
+        self.assertEqual([row[0] for row in calls], ["ke-format", "ke-windows-check", "ke-baseline", "ke-clippy",
+            "ke-release", "ke-doctests", "ke-windows-clippy", "finish"])
+        self.assertIn("--release", calls[4][1])
+        self.assertIn("--message-format=json", calls[1][1])
+        for label, argv, _timeout in (calls[1], calls[6]):
+            self.assertEqual(argv[argv.index("--target") + 1], "x86_64-pc-windows-msvc")
+            self.assertIn("--all-targets", argv)
+            self.assertNotIn("build", argv)
+            self.assertNotIn("run", argv)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 261)
+        self.assertEqual(report["release_execution"]["ke_tests_executed"], 83)
+        self.assertEqual(report["doctest_execution"]["compilation_only"],
+                         ["src/lib.rs - Example::no_run (line 1) - compile"])
+        self.assertFalse(report["qualification_passed"])
+
+class EngineKeFixtureLaneTests(unittest.TestCase):
+    """One public generator, never synthetic Engine qualification evidence."""
+
+    NAMES = ("HEALTHY ZERO_COOKIES EMPTY_COOKIE TWO_COOKIES EIGHT_COOKIES NINE_COOKIES "
+        "MISSING_UID SHORT_UID DUPLICATE_UID CLEAR_COOKIE CLEAR_PLACEHOLDER INNER_UID INNER_AUTH "
+        "INNER_PLACEHOLDER UNKNOWN_FIELDS_AND_SUFFIX SUFFIX_DUPLICATE_UID_AUTH MALFORMED_INNER "
+        "MAX_INNER_FIELDS TOO_MANY_INNER MAX_OUTER_FIELDS TOO_MANY_OUTER MAX_PACKET_BYTES "
+        "TOO_MANY_PACKET_BYTES WRONG_UID WRONG_ORIGIN WRONG_VERSION WRONG_MODE UNSYNCHRONIZED "
+        "STRATUM_ZERO STRATUM_SIXTEEN NONCE_ZERO NONCE_ONE NONCE_TWELVE").split()
+
+    def output(self, names=None, body="    0x00, 0xff,\n"):
+        """Clearly synthetic public literals inside a complete captured libtest block."""
+        source = ("// SPDX-License-Identifier: GPL-2.0-only\n"
+            "//! Public component fixtures generated through the existing maintained AES-SIV API.\n"
+            "//! No TLS/exporter/native/entropy or production authentication provenance is claimed.\n")
+        for name in self.NAMES if names is None else names:
+            source += (f"/// Public independently generated valid-tag fixture: {name}.\n"
+                f"pub(in crate::nts_ke_experiment) const {name}: &[u8] = &[\n{body}];\n\n")
+        return ("running 1 test\ntest generate_ep2_response_fixtures ... ok\n\nsuccesses:\n\n"
+            "---- generate_ep2_response_fixtures stdout ----\n" + source +
+            "\nsuccesses:\n    generate_ep2_response_fixtures\n\n"
+            "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n")
+
+    def test_exact_public_roster_and_complete_actual_case(self):
+        source, facts = MODULE.validate_engine_ke_fixture_output(self.output())
+        self.assertEqual(set(facts["fixtures"]), set(self.NAMES))
+        self.assertTrue(facts["generated"])
+        self.assertEqual(facts["tests_executed"], 1)
+        self.assertEqual(facts["payload_bytes"], 66)
+        self.assertTrue(source.startswith("// SPDX-License-Identifier:"))
+        self.assertNotIn("successes:", source)
+        self.assertNotIn("FIXTURES_GENERATED", source)
+        self.assertEqual(facts["fixtures"]["HEALTHY"],
+            {"bytes": 2, "sha256": hashlib.sha256(bytes([0, 255])).hexdigest()})
+
+    def test_missing_extra_duplicate_malformed_and_incomplete_refuse(self):
+        healthy = self.output()
+        bad = [self.output(self.NAMES[:-1]), self.output([*self.NAMES, "FOREIGN"]),
+            self.output([*self.NAMES, self.NAMES[0]]), self.output(body=""),
+            self.output(body="    0xgg,\n"), self.output(body="    255,\n"),
+            self.output(body="    0x00,,\n"), self.output(body="    include_bytes!(\"secret\"),\n"),
+            healthy.replace("running 1 test\n", ""), healthy.replace(" ... ok", " ... FAILED"),
+            healthy.replace("0 filtered out", "1 filtered out"),
+            healthy.replace("fixture: HEALTHY.", "fixture: FOREIGN.")]
+        for text in bad:
+            with self.subTest(tail=text[-100:]), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_fixture_output(text)
+
+    def test_finite_byte_and_source_bounds_keep_healthy_neighbor(self):
+        MODULE.validate_engine_ke_fixture_output(self.output().replace(
+            "    0x00, 0xff,\n", "    " + "0x00, " * 4100 + "\n", 1))
+        for text in (self.output().replace("    0x00, 0xff,\n", "    " + "0x00, " * 4101 + "\n", 1),
+                     self.output(body="    " + "0x00, " * 4100 + "\n")):
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_fixture_output(text)
+
+    def fixture_context(self):
+        """Reuse admission fixtures, deliberately leaving the ordinary binding stale."""
+        support = EngineKeAnalysisRoleTests()
+        support.setUp()
+        self.addCleanup(support.doCleanups)
+        support.args.lane = "fixtures"
+        support.policy["binding"] = {"deliberately_stale": True}
+        generator = support.root / MODULE.ENGINE_KE_FIXTURE_SOURCE
+        generator.parent.mkdir(parents=True, exist_ok=True)
+        generator.write_text("Synthetic public generator, never compiled.\n")
+        support.identity[MODULE.ENGINE_KE_FIXTURE_SOURCE] = MODULE.PRODUCT.sha256(generator)
+        lock = ('version = 4\n[[package]]\nname="nevrotick-s115-aes-siv-fixture"\nversion="0.0.0"\n'
+            '[[package]]\nname="ntp-wire"\nversion="0.0.0"\n[[package]]\nname="aes-siv"\nversion="0.8.0"\n'
+            'source="registry+https://github.com/rust-lang/crates.io-index"\nchecksum="' + "a" * 64 + '"\n')
+        (support.root / "Cargo.lock").write_text(lock)
+        (support.root / MODULE.ENGINE_KE_FIXTURE_LOCK).write_text(lock)
+        support.identity["Cargo.lock"] = MODULE.PRODUCT.sha256(support.root / "Cargo.lock")
+        support.identity[MODULE.ENGINE_KE_FIXTURE_LOCK] = MODULE.PRODUCT.sha256(support.root / MODULE.ENGINE_KE_FIXTURE_LOCK)
+        (support.root / MODULE.ENGINE_KE_FIXTURE_MANIFEST).write_text("Synthetic manifest marker; never compiled.\n")
+        support.fixture_dependency = {"engine_ke_association": {"rows": {}},
+            "packages": [{"name": "aes-siv", "version": "0.8.0", "checksum": "a" * 64}]}
+        return support
+
+    def test_fixed_commands_source_bookends_and_no_engine_credit(self):
+        support = self.fixture_context()
+        (support.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(support.policy))
+        calls = []
+        outer = self
+        class Session:
+            def __init__(self, root, args, report, scope, policy, inputs):
+                outer.assertEqual(args.lane, "baseline")
+                outer.assertIn(MODULE.ENGINE_KE_FIXTURE_SOURCE, inputs)
+                self.product_identity = support.identity
+                self.source = root
+                self.output = support.args.output_dir
+                self.output.mkdir(mode=0o700)
+            def run(self, label, argv, timeout):
+                calls.append((label, argv, timeout))
+                return "nevrotick-s115-aes-siv-fixture v0.0.0\n" if label == "fixture-tree" else outer.output()
+            def finish(self):
+                calls.append(("finish",))
+        report = {}
+        with patch.object(MODULE, "ROOT", support.root), \
+                patch.object(MODULE.PRODUCT, "admit_product", return_value=(support.fixture_dependency, support.identity)), \
+                patch.object(MODULE.COMMON, "Session", Session), \
+                patch.object(MODULE, "validate_engine_ke_policy", side_effect=AssertionError("stale ordinary binding used")):
+            MODULE.execute_engine_ke_fixtures(support.args, report)
+        self.assertEqual(calls, [("fixture-tree", ["cargo", "tree", "--package", "nevrotick-s115-aes-siv-fixture",
+            "--manifest-path", "/work/source/tools/crypto-aes-siv-witness/Cargo.toml",
+            "--target", "x86_64-unknown-linux-gnu", "--frozen", "--edges", "normal,build,features"], 120),
+            ("fixture-generator", ["cargo", "test", "--package", "nevrotick-s115-aes-siv-fixture",
+                "--manifest-path", "/work/source/tools/crypto-aes-siv-witness/Cargo.toml", "--test",
+                "ep2_response_fixtures", "--frozen", "--jobs", "1", "--", "--exact",
+                "generate_ep2_response_fixtures", "--show-output", "--test-threads=1"], 120), ("finish",)])
+        self.assertTrue(report["fixture_generation"]["generated"])
+        self.assertFalse(report["qualification_passed"])
+        self.assertFalse(report["selected_host_metrics_passed"])
+        artifact = support.args.output_dir / "ep2-response-fixtures.rs"
+        self.assertEqual(MODULE.PRODUCT.sha256(artifact), report["fixture_generation"]["source_sha256"])
+
+    def test_wrong_role_lane_subject_or_open_campaign_refuses_before_session(self):
+        for change in (lambda s: setattr(s.args, "profile", "legacy"), lambda s: setattr(s.args, "lane", "baseline"),
+                lambda s: setattr(s.args, "subject", "ke_core"), lambda s: setattr(s.args, "tool_admission_profile", "full"),
+                lambda s: s.policy.update(campaigns_admitted=True), lambda s: s.policy.update(jobs=1),
+                lambda s: s.policy.update(features=["foreign"]),
+                lambda s: s.policy.update(mutation_inventories={name: {"count": 1, "sha256": "a" * 64}
+                    for name in EngineKeAnalysisRoleTests.HOST})):
+            support = self.fixture_context()
+            change(support)
+            (support.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(support.policy))
+            with patch.object(MODULE, "ROOT", support.root), patch.object(MODULE.COMMON, "Session") as session:
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.execute_engine_ke_fixtures(support.args, {})
+                session.assert_not_called()
+
+    def test_cli_cannot_borrow_fixture_lane_for_other_profile_or_subject(self):
+        for extra in (["--profile", "legacy"], ["--profile", "ke_association", "--subject", "ke_core"]):
+            with patch.object(MODULE.COMMON, "Session") as session, patch.object(MODULE.sys, "stderr", io.StringIO()):
+                with self.assertRaises(SystemExit) as error:
+                    MODULE.main(["--lane", "fixtures", "--output-dir", "/unused/synthetic", *extra])
+                self.assertEqual(error.exception.code, 2)
+                session.assert_not_called()
+
+    def test_fixture_startup_free_space_is_enforced_before_session(self):
+        support = self.fixture_context()
+        (support.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(support.policy))
+        for free, accepted in ((5 * 1024**3 - 1, False), (5 * 1024**3, True)):
+            with patch.object(MODULE, "ROOT", support.root), \
+                    patch.object(MODULE.PRODUCT, "admit_product", return_value=(support.fixture_dependency, support.identity)), \
+                    patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=free)), \
+                    patch.object(MODULE.COMMON, "Session", side_effect=EngineKeAnalysisRoleTests.SessionReached) as session:
+                with self.assertRaises(EngineKeAnalysisRoleTests.SessionReached if accepted else MODULE.Incomplete):
+                    MODULE.execute_engine_ke_fixtures(support.args, {})
+                self.assertEqual(session.call_count, int(accepted))
+
+    def test_standalone_lock_requires_exact_selected_root_identities(self):
+        support = self.fixture_context()
+        facts = MODULE.admit_engine_ke_fixture_lock(support.root, support.fixture_dependency)
+        self.assertEqual(facts["registry_packages"], ["aes-siv@0.8.0"])
+        lock = support.root / MODULE.ENGINE_KE_FIXTURE_LOCK
+        original = lock.read_text()
+        for changed in (original.replace('version="0.8.0"', 'version="0.7.0"'),
+                        original.replace("a" * 64, "b" * 64),
+                        original.replace('name="ntp-wire"', 'name="foreign-owner"'),
+                        original + '[[package]]\nname="ntp-wire"\nversion="0.0.0"\n'):
+            lock.write_text(changed)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_engine_ke_fixture_lock(support.root, support.fixture_dependency)
+        lock.write_text(original)
+        dependency = copy.deepcopy(support.fixture_dependency)
+        dependency["packages"] = []
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admit_engine_ke_fixture_lock(support.root, dependency)
+
+    def test_invalid_capture_writes_no_artifact_and_finishes_custody(self):
+        support = self.fixture_context()
+        (support.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(support.policy))
+        finished = []
+        class Session:
+            def __init__(self, root, *_arguments):
+                self.product_identity = support.identity
+                self.source = root
+                self.output = support.args.output_dir
+                self.output.mkdir(mode=0o700)
+            def run(self, *_arguments):
+                return "Invalid synthetic output; never a product result.\n"
+            def finish(self):
+                finished.append(True)
+        report = {}
+        with patch.object(MODULE, "ROOT", support.root), \
+                patch.object(MODULE.PRODUCT, "admit_product", return_value=(support.fixture_dependency, support.identity)), \
+                patch.object(MODULE.COMMON, "Session", Session):
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.execute_engine_ke_fixtures(support.args, report)
+        self.assertEqual(finished, [True])
+        self.assertFalse(report["fixture_generation"]["generated"])
+        self.assertFalse((support.args.output_dir / "ep2-response-fixtures.rs").exists())
+
+
 if __name__ == "__main__":
     unittest.main()

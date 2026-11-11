@@ -3536,17 +3536,26 @@ send/response receiver, new native execution or provider/currentness pass follow
 | Request-retired → terminal reconciliation | Record the actual terminal send fact, including late known full submission, without restoring this request's publication eligibility. Release capacity only after real completion/cleanup. A separately current usable association and another issuable cookie may then support a fresh request/UID; an invalidated association still requires its own recovery/replacement. |
 
 The cookie ledger distinguishes reserved, known locally submitted, proven not
-sent and emission-unknown facts. None authorizes reuse. Any allowed return or
-reuse, including after proven no-send, still needs its pending privacy-policy
-disposition; this draft selects neither automatic burning nor return-to-pool.
+sent and emission-unknown facts. David accepted [fresh-on-wire policy A](../docs/nevrotick-owner-decisions.md#61-s22-cookie-reissuance)
+on 11 November: an explicit return may occur only when the actual send adapter
+was never invoked, the old UID is retired, and the same association and original
+expiry remain current. Drop is not return. Invocation followed by error, short
+completion, cancellation or ambiguity never grants reissuance. This supersedes
+the earlier pending privacy disposition; implementation and native qualification
+remain separate.
 [RFC 8915 §5.7](https://www.rfc-editor.org/rfc/rfc8915.html#section-5.7)
 permits reuse subject to the application/user's resilience/privacy preference;
 this local hold is not an RFC mandatory-burn rule. Preserve that section's
 outstanding-UID/S2C verification and successful-new-KE replacement boundary in
 the dependent receiver/association work.
-Zero replacement cookies are a separate pending acceptance/completion/retry
-decision in NV-DEC-001 before the dependent receiver path. Keep initial KE cookie
-cardinality, wire representability and replacement-cookie policy separate.
+David separately accepted [zero-cookie policy A](../docs/nevrotick-owner-decisions.md#62-s22-zero-replacement-cookies)
+on 11 November: reject the response without publishing an observation/cookies,
+preserving the healthy pending request, its original deadline and the remaining
+receive-work allowance after charging the rejected response. Rejection never
+refunds work or restores an earlier budget; exhaustion follows the normal
+terminal path. A conforming neighbor may still complete once. There is no immediate
+retry loop or renewed authority. Keep initial KE cookie cardinality, a zero-length
+cookie body, wire representability and zero replacement fields separate.
 
 | Independent paired trajectory / future receiving boundary | Required observation |
 | --- | --- |
@@ -3566,8 +3575,9 @@ those branches. Native observations require their separate execution admission.
 **Source-contract review:** READY for bounded preparation; implementation remains gated.
 The freeze table, outcome/ownership boundaries and paired oracles identify the
 remaining dependencies here. Exact TLS/provider/AEAD graph, ordinary trust profile,
-execution arrangement, finite values, privacy reuse and zero-cookie dispositions
-still gate dependent implementation; W11-W01 owns actual mapping suppliers.
+execution arrangement and finite values still gate dependent implementation;
+the two accepted cookie policies govern it rather than remaining open choices.
+Their implementation evidence is pending. W11-W01 owns actual mapping suppliers.
 Before selecting the Windows verifier, apply [R-05](../docs/nevrotick-research-handoff.md#7-r-05--windows-trust-with-a-wrong-system-date)
 and the existing crypto trust/native-work card: identify delegated retrieval,
 actual wrapper controls and actual-completion custody. The imported research
@@ -3575,6 +3585,765 @@ adds no native pass or Core prerequisite.
 This prepares no new framework, dependency, default, retry policy or source vote.
 Current Core qualification, MD-P1–MD-P3/service ownership, native/fuzz/storage/UI
 holds and OD-10's post-V1 formal deferral remain unchanged.
+
+#### Receiver-first integration continuation — 11 November 2026
+
+**Current baseline:** clean `2c57b1dbc2faaec3ed44d293ccdefd4277e933e2`.
+David selects Core/Engine integration; GitHub Actions policy work is parked.
+All work and future handoffs use English. Concise updates do not abbreviate
+contracts, identifiers or executable checks.
+The [baseline-feedback completion ledger](../TOOLING.md#baseline-feedback-final-qualification)
+closes its selected Linux checkpoint, including the actual chart/frequency/phase
+feedback path. This continuation owns REQ-8/BND-2, AC-04 and
+CHECK-6/8/9/17/21/25/26/27. The later observation-to-history edge also retains
+REQ-8/10/11/14/15, CHECK-7/8/10/11/14/25 and AC-19. This is source-contract preparation,
+not an admitted authenticated sender or production receiver.
+
+Three bounded source reviews examined the actual Engine, Core, wire and crypto
+callers. Engine has no `time-core`, TLS/provider or packet-AEAD dependency. Its real
+session reports and conditional quality preserve historical facts; neither they
+nor `DeclaredObservationContext` can issue production eligibility. The laboratory
+`transport::InternalCandidate::finish` does transfer same-connection keys/cookies
+to `handoff::prepare`, but its receiver seals a zero-T1 never-send request,
+commits under the original control and wipes secrets before returning counts.
+The current `PreparedRequest::finish` is not a transferable association or packet.
+No sender may transmit that laboratory request or reconstruct secrets from its
+summary. The present pilot send guards already exist; duplicate counters would
+not add a currentness supplier.
+
+**Selected next boundary:** the real KE completion must enter one Engine-owned
+association receiver before any protected sender or Core-history integration.
+The following names describe the proposed ownership contract, not implemented
+APIs. No public constructor from labels, counters, copied measurements or raw
+key/cookie tuples may stand in for the producer.
+
+| Boundary / enforcing owner to implement | Required actual path and disposition |
+| --- | --- |
+| `KeJobOwner` → private association candidate | The Engine TLS invocation owns its actual offer, ordinary verifier/profile, connected peer, negotiation and exporters. Its sole completion path moves both directional keys, exact cookies, admitted UDP endpoint, original KE publication deadline, separately admitted association/key validity and issuer context together. The real completion is consumed once; a count-only CLI report cannot enter this path. |
+| Candidate → `AssociationOwner` publication | Under one exclusive turn, recheck the same live source/configuration/path/trust/clock context and original expiry, then publish the complete candidate together. Refusal destroys the candidate and preserves only an independently current old association. No fresh numeric generation label grants authority. |
+| `AssociationOwner` → one `RequestOwner` | Reserve one exact cookie and fresh UID exclusively; Busy precedes entropy and encoding. Borrow C2S into sealing while the association retains S2C and provider lifetime. Use the real separately saved T1. Preserve exact formatter/AAD stages and aggregate available/reserved/retired secret accounting. No packet accessor or reservation alone authorizes invocation. |
+| `RequestOwner` → actual datagram submission | Recheck all affected currentness and deadlines immediately before a serialized protected-datagram invocation. Existing pilot guards are precedents, not an NTS packet adapter: its storage is 48-byte requests/49-byte receive buffer and full-send completion means exactly 48. Implement bounded protected-packet storage, its actual expected-length completion and complete-datagram receive admission at the real sender. Packet/socket/permit custody follows actual completion. Record uninvoked, full local submission and unknown emission separately; cancellation retires publication without asserting completion. Apply accepted [S2.2-COOKIE-01](../docs/nevrotick-owner-decisions.md#61-s22-cookie-reissuance); only its explicit never-invoked return is permitted. Retired/possibly emitted cookies remain nonissuable. |
+| Protected reply → observation owner | Only the current request's endpoint, UID, S2C-authenticated and bounded semantic response may consume completion and publish permitted cookies/observations together. Malformed or unauthenticated traffic preserves a healthy pending request and its original deadline. [S2.2-COOKIE-02](../docs/nevrotick-owner-decisions.md#62-s22-zero-replacement-cookies) controls the accepted zero-cookie rejection with preserved pending state. Authentication alone supplies no physical uncertainty or Core eligibility. |
+| Eligible completion → source-history transaction | Reuse the [receiving reconciliation](#receiving-transaction-reconciliation--7-november-2026): consume genuine completion once, derive rows privately, stage oldest-only replacement within 64 fitted rows, run N1/N2 and final current-authority checks, then publish rows/diagnostics/revision atomically. One/two-row collection may commit without a fit. Numerical/final-guard refusal preserves prior history/fit/age and never returns consumed request credit. This transaction is separate from downstream `receive_reference`: its `AdmittedNoPlan` may retain chart advancement and consumed producer credit; do not promise to roll those facts back. |
+
+**Issuer and lifetime prerequisites:** implement no positive branch by substituting
+the pilot's `Control::epoch`, Core fixture constructors or declared assumptions.
+
+| Required supplier | Actual current state / next owning action |
+| --- | --- |
+| Approved logical source/configuration and cutover | Existing `Config`/`SeriesConfig` select a loopback experiment. The actual authorized configuration receiver must issue the immutable production source context and its cutover signal; the protected policy path is not implemented here. |
+| Association/request incarnation | Issue privately inside the real exclusive receiving owners, with checked exhaustion and actual object provenance. Existing `RequestOwner`/completion identities are useful custody precedents, not NTS-association authority. |
+| Socket/path and endpoint delegation | Reuse the actual selected socket and admitted KE peer. Establish the current path owner and validate any negotiated delegation before resolution/send. An equal address or a second alternative is not a new source vote. |
+| Ordinary trust/provider/AEAD | The separate laboratory currently pins rustls 0.23.46, patched rustls-cng-crypto 0.1.2, patched rustls-platform-verifier 0.7.1 and the AES-SIV witness. This is evidence of existing source, not adoption of that graph in Engine. Exact product graph/feature/licence admission, normal verification, provider-init failure and native lifecycle qualification remain necessary. |
+| Provider and actual-job lifetime | The Engine process owner must retain the provider scope until every actual dependent job and cleanup completes. A KE CLI's outer shutdown guard cannot drop while a published association or submitted operation still depends on it. The exact CNG arrangement remains to be qualified; no per-future shutdown or cancellation-as-completion assumption is selected. |
+| Clock/mapping, date/scale and calibrated quality | Reuse [W11-W01's supplier contract](#w11-w01-finite-capturemapping-supplier-contract--8-november-2026). Missing native continuity, current precision, physical allowances or date/scale evidence cannot become zero error, unit weights or fresh authority. |
+| Finite aggregate resources | Freeze explicit stage/total deadlines, byte/copy/scratch budgets, job permits and association validity on the selected actual graph before implementation. Existing 128 KiB/20-second/two-job candidates remain candidates, not shipping defaults. The laboratory `InternalCandidate.expiry` is its KE invocation's `Control.expiry`, not production association/key validity. Those two lifetimes require separate admission. Original cookie/association/sample ages survive transfer and rejection. |
+
+**Independent review and implementation exit:** independently review the exact
+real producer/receiver signatures, provider scope, issuer/cutover inputs and finite
+budgets now. Both cookie cards were accepted on 11 November; enforce their exact
+transitions when implementing the dependent paths. Each missing supplier keeps its dependent
+positive branch held, not every unrelated source task.
+Cookie reuse/return choices do not block recording actual emission facts;
+zero-replacement handling blocks response acceptance, not the first request.
+Neither decision alone supplies the missing producer or admits its graph.
+
+**Owner-mandated acceptance, 11 November:** the
+[canonical clarification](../docs/nevrotick-owner-decisions.md#63-mandatory-cookie-policy-acceptance--11-november-2026)
+requires charging packet processing before its parsing/crypto stage and keeping
+the resulting remaining budget on rejection. No path may restore the initial
+budget or deadline. Distinguish spent processing allowance from reusable memory
+capacity, whose permit still follows actual cleanup. Exhaustion terminates the
+request; it does not grant a retry or another cookie.
+
+Cookie-pool exhaustion must exercise finite KE backoff/aggregate recovery bounds
+or another suitable configured trusted source, preserving logical-source identity
+and agreement minima. Repeated zero-cookie replies, cancellation before versus
+after invocation, and return to a replaced association need behavioral refusal
+beside a genuine allowed neighbor. Inspect packet/job counts and remaining
+allowances, not only error text. Published attempt status must not claim a fresh
+synchronization or advance last-success/freshness on rejection; an older valid
+result retains only its original age/expiry. The UI consumer remains under its
+existing deferred/native scope, with this producer-state contract mandatory.
+
+Use the existing configured ordinary/contract/coverage/mutation workflow when
+the source slice is admitted. Healthy evidence must reach the real selected
+producer, receiver and sender; synthetic authenticated labels do not qualify it.
+Pair that path with Busy-before-entropy, incomplete/foreign/stale KE publication,
+expiry/cutover immediately before invocation, short/ambiguous/cancelled sends,
+late completion custody and original failure preservation. At the Core edge
+retain actual ineligible-Engine rejection, genuine eligible neighboring issuance,
+replay/foreign-session refusal, original age, half ticks, 0/1/2/3-row behavior,
+full-capacity atomic refusal and the existing independent oscillator expectation.
+No reject-all adapter, uncalled wrapper or laboratory-only model closes this exit.
+
+Both NV-DEC-001/OD-04 owner cards are accepted, with their exact replies recorded
+in the canonical decision document. No Cargo graph, Rust implementation or
+execution policy is changed by this continuation. Formal work remains post-V1; native, fuzz, storage
+and UI holds remain. WSL source preparation continues at these existing owners.
+
+##### EP1 — actual KE producer into Engine ownership
+
+**11 November source-slice admission:** the coordinator selects a default-off
+`ke-association-prototype` Engine feature for the existing controlled-loopback
+probe. This reconciles the older preparation-only status for this slice alone.
+Architecture §§18.7.1/18.10 permit synchronous KE prototyping. Source authoring
+does not require a production producer to pre-exist its implementation; exact
+graph admission must precede compilation/execution of the new feature. No shipping
+provider adoption, Core Cargo edge/history or native execution is admitted.
+
+**Real caller and exit:** the existing `nevrotick-nts-ke-probe` delegates to one
+feature-gated Engine entrypoint taking bounded `OsString` arguments and returning
+`ExitCode`. Move its maintained strict KE/exporter path and existing never-send
+request consumer into private Engine modules. The actual same-connection candidate
+must enter a private `AssociationOwner`; do not copy a summary or preserve a
+parallel producer. Keep configuration, control, keys, candidate and association
+private. No public authenticated flag, raw-key constructor or secret accessor is
+needed. All existing peer/init binaries retain their separate responsibilities.
+
+The first slice deliberately performs **no UDP send or response processing**.
+Preserve the existing private zero-T1, wiped, unsendable request preview and its
+independent packet oracle. Borrow C2S for that real consumer while retaining S2C
+in the association until retirement. Do not regress the existing probe by silently
+removing sealing, clone keys to escape ownership, or expose the preview as a packet
+capability. Protected datagrams and production observation acceptance are later
+actual-consumer slices, carrying every accepted cookie/budget/UI requirement.
+
+**Frozen prototype bounds and lifecycle:**
+
+- One synchronous invocation and one KE job, with no queue, retry, blocking-pool
+  submission or Engine event-loop handshake. Claim process admission before
+  provider initialization. A second/reentrant invocation refuses before provider
+  work; completion, failure and cancellation never reset admission. This prevents
+  reuse of CNG's cached handles after global shutdown.
+- Keep one outer `ShutdownHandle` through TLS closure/drop, association, request
+  consumption and actual cleanup. No per-request shutdown or fictitious reference
+  count closes global providers. All dependent secret owners retire first.
+- Preserve the actual original-origin 20-second connect/handshake bound and
+  60-second KE/publication expiry. The prototype association is capped by that
+  original invocation expiry; this selects no production key/association lifetime.
+  Separate consume-once KE completion from still-live cancellation/expiry checks:
+  the old `Control::commit`/`remaining` combination cannot supply both.
+- Keep 131,072 admitted KE-plaintext bytes, 32,768 records, 4,096 read scratch
+  bytes, eight copied cookies with at most 131,072 aggregate payload bytes, two
+  32-byte exporter keys, one 48-byte UID/nonce entropy acquisition and a 4,096-byte
+  preview buffer. Move cookie vectors into the association without recopying.
+- During copying, response/scratch/cookies coexist: at most 266,240 logical payload
+  bytes plus the 16-byte offer. Candidate cookies/keys total at most 131,136;
+  sealing cookies/keys/entropy/packet total at most 135,280. These figures exclude
+  metadata, allocator rounding, compiler copies, cipher state and TLS/native
+  objects; 128 KiB is not an aggregate memory or RSS promise.
+- Existing bounded scratch may deliver one rejecting chunk beyond the admitted
+  plaintext limit, at most 135,168 delivered bytes. Preserve original counters and
+  deadlines through refusal. Raw TLS/native-call work currently relies on the
+  original deadlines, not an implemented numeric call counter. Do not claim a
+  hard cancellation/termination guarantee for certificate verification or a hung
+  native operation. Retain actual custody and refuse late publication.
+- Output only bounded public result categories/counts after secret cleanup. KE
+  completion/request preview is never fresh synchronization, sample eligibility
+  or clock authority; no last-success/freshness state may advance.
+
+**Graph owner:** root coordinator owns manifests, locks, patch routing, source/
+licence maps, explicit GNU/Windows feature rows and acquisition/advisory receipts.
+Reuse the existing pinned CNG/verifier derivatives and AES witness under this
+experimental feature; preserve their upstream provenance and separate shipping
+holds. AES is a first-party nonmember dependency, not a registry patch or an added
+workspace member. Keep default workspace rows unchanged and crypto providers
+absent from the GNU feature row. Existing default-only checks cannot qualify EP1.
+
+**Source owners:** Engine `lib.rs` entrypoint and private `nts_ke_experiment/`
+modules own migrated config/control/transport/association/request/handoff/tests.
+The tool's probe entrypoint becomes the actual delegating caller; remove its old
+duplicate implementation after migration. Peer/init source stays in the tool.
+Admission helpers gain only the exact named feature/profile and source roles
+required for this graph, preserving default, foreign-feature and patch refusals.
+
+**Required evidence:** retain existing behavioral controls and external privacy
+refusals; add actual process-admission refusal, foreign/duplicate completion,
+post-KE cancellation/expiry, no deadline renewal, publication atomicity, C2S/S2C
+direction/lifetime, exact cookie/aggregate limits and ordinary cleanup ordering.
+Verify the public bridge's actual unsupported-platform/refusal behavior in WSL.
+Run selected strict ordinary/compiler/Clippy/doctest checks for the real feature,
+then required selected coverage/mutation with their generation gaps explicit.
+Windows-target checks inspect source integration only. Healthy ordinary-trust
+TLS/exporters and actual CNG cleanup remain unexecuted until the native hold is
+lifted in its proper environment. Future UDP budget/cancellation/pool/association-
+replacement/zero-cookie/UI cases remain mandatory, not falsely executed by EP1.
+
+Independent source review: `engine_core_path`, `nts_contract_readiness` and
+`core_integration_seams` traced distinct graph, producer/lifetime and Core-boundary
+questions on the 2c57b1d baseline. The corrected slice separates source authoring,
+graph admission, native qualification and production adoption. Graph generation/
+admission and implementation results are still pending; no new pass is recorded.
+
+##### EP1 relocation custody check — 11 November 2026
+
+The owner requested review of the eight unstaged deletions under
+`tools/crypto-cng-lifecycle/src/bin/nts_ke/`. All eight have maintained
+counterparts under `crates/nevrotick-engine/src/nts_ke_experiment/`; the tool
+entrypoint delegates to the actual feature-gated Engine bridge. Inspection of
+the source diffs retained all 40 original test functions, with 50 test functions
+now present across the new module. These counts describe source inventory,
+not executed tests. The fixed independent packet fixture still resolves with
+SHA-256 `98466947920c13450f73487cc44373bd43c17ff133b66eb0fe62c8d774291a35`.
+The deletions implement the selected relocation rather than accidental loss;
+the untracked replacements and delegating caller must accompany them in the
+eventual reviewed candidate.
+
+The review found an incomplete migration: all nine explicit compiler fixtures
+still imported the deleted tool module. Their legal control would fail for
+missing source, so negative exits could not establish privacy. The fixtures now
+consume the actual Engine library: one legal bridge caller and eight attempted
+private-owner bypasses. Their README requires the admitted Windows feature row
+and intended `E0603` for the actual private module, without credit for deeper
+field/method restrictions hidden by that first barrier. The tool README
+separates historical results from this unqualified migration. No duplicate
+producer, copied owner or visibility shim was restored.
+
+Independent review found no other active source/script/policy consumer of the
+removed paths; dated historical task references retain their original scope.
+Source inventory, fixture-path resolution, caller tracing and whitespace checks
+were performed in WSL. No Cargo/compiler/native execution was performed for
+this check. Exact graph admission, the legal/refusal compiler checks and EP1's
+behavioral/coverage/mutation evidence remain pending. Concurrent documentation
+commits moved HEAD from `2c57b1d` to `2a3e591` during the check; all previously
+audited source/configuration bytes were unchanged and staging remained empty.
+
+##### EP1 graph admission and first compile — 11 November 2026
+
+The exact graph is now adopted for the default-off prototype, without shipping
+provider adoption or a Core dependency. Root lock SHA-256 is
+`2ccabde33a800b745c42b4fe96dc4a6c300b1961ac87e149d313cae41fde5f2e`;
+the standalone tool lock is
+`86bd5f239d7260a25482935936ab1cb14ad5a90e40868f0509a55adaa45afe48`.
+All original root/tool package identities are preserved. An isolated proposal's
+unnecessary tool `cc`/`log` upgrades were corrected before promotion. The policy
+has 293 selected and 292 metadata-only registry records, five exact patches and
+one first-party AES nonmember. Its reviewed canonical SHA-256 is
+`7a3bbb6a1dfda2c4492b49a08b890b12f736b887b9ee1a2398764925a99e0247`;
+both default rows are unchanged. GNU excludes TLS/providers; Windows selects
+Rustls `std` with the existing CNG/verifier derivatives. Ring/AWS-LC remain
+unselected. Only `generic-array` and Rustls add build-script roles, on Windows;
+no new proc-macro role is introduced.
+
+Independent source/licence/graph review preceded promotion. Actual source and
+vendor admission covers 576 source/configuration inputs and 29,447 vendor files
+for 585 packages. The Windows 0.61.3 extraction exception is bound to its exact
+archive and complete source-map identities; its measured tar/payload ceilings
+are 114,900,480/114,341,344 bytes. The original size refusal, healthy actual
+archive, existing 0.62.2 neighbor and wrong-identity refusals are retained.
+Archive/member/aggregate limits are unchanged. Three existing laboratory
+`untrusted` CI-file exceptions are exact path/hash scanner allowances, not
+execution or build-script grants.
+
+Fresh RustSec/index acquisition used a private user/mount namespace and an owned
+512-MiB/16,384-inode tmpfs. The network-disabled canary established ordinary UID
+and zero capabilities; earlier canary import-layout failures remain setup
+failures. The actual acquisition exported 2,039 metadata files. Namespace exit
+left the host mount unchanged and its owned mountpoint empty. No package code,
+Windows command or protection change ran during acquisition.
+
+Both configured dependency profiles passed all 28 lanes: `default` and
+`engine-ke-association`, each including GNU/Windows metadata, every selected
+package tree and cargo-deny advisories/bans/licences/sources. Receipts under
+`~/.local/share/nevrotick/dependency-refresh-20261106-v1/engine-ke-association-v1/`
+are `dependencies-default-v1.json` (SHA-256
+`246820be1fa81a5e9a89d596f7621eb3b33fe71012c537edda00d691f9eb9a9b`)
+and `dependencies-ke-v1.json` (SHA-256
+`8c9bccf0307abd86e7813ccadae15382041faf583496ec16cbb3c195b61b5aeb`).
+These identify their exact helper/source bytes; later helper changes require
+explicit reconciliation or re-admission, not relabelling the receipts.
+
+The named profile now selects the existing portable/Windows ordinary lanes and
+requires twelve actual KE unit controls in ordinary and optimized Engine reports.
+It preserves default commands, full source/vendor admission and the graph
+preflight. The real Cargo counterexample for applying an Engine feature to an
+unrelated package selection is retained; only metadata/workspace/Engine
+selections receive the feature. The obsolete three-patch cap was repaired with
+closed-cohort controls. A configured formatter refusal was corrected in eight
+new Engine files before the compiler candidate.
+
+The first actual portable attempt, `portable-ke-v1.json`, passed graph/patch
+preflight and formatting, then stopped in the workspace compiler: concurrent ICU
+build-script LLVM linkers reported `Resource temporarily unavailable` under the
+existing 128-task limit. This is an execution-resource failure, not a KE test
+failure or product pass; the new KE tests did not execute. The bounded repair
+reduces only the prototype's workspace/Engine build concurrency to the existing
+six-job value. Compiler/security flags, task limits and acceptance thresholds
+remain unchanged. The repaired attempt, actual standalone probe journey,
+Windows-source checks and selected coverage/mutation remain pending. Native
+trust/exporters/cleanup and production cookie/UDP/freshness gates remain open.
+
+The second attempt, `portable-ke-v2.json`, used six jobs, passed the earlier
+linker-resource point and then stopped at the unrelated portable UI's
+`yeslogic-fontconfig-sys` build script: `fontconfig.pc` is absent. This remains an
+incomplete full-workspace compiler row, with no new KE test execution claimed.
+WSL has glibc 2.39 and pkgconf 1.8; the optional private cloud SDK pins different
+host runtime bytes and cannot be substituted or silently rebound. Noninteractive
+sudo is unavailable. Continue the actual standalone tool/Engine graph for its
+selected non-GUI guarantee while retaining this full-workspace prerequisite.
+This does not waive a required phase/release gate or turn a selected result into
+a whole-workspace pass.
+
+`resource-repair-readmission.json` reconciles the six-job change: the entire
+dependency command list matches the passed receipt, and only `verify.py` plus
+its focused control changed among the 576 frozen inputs. Graph data, policy,
+lockfiles and all other inputs are unchanged. The second portable attempt also
+reran the real feature metadata/tree preflight before compilation. Independent
+review and 173 Python controls preserve the default/graph/security arguments;
+the original failed receipts retain their own hashes and outcomes.
+
+**Qualification inventory before campaign:** retain ten production owners:
+Engine `lib.rs`; `nts_ke_experiment/{mod,association,process,handoff,request,`
+`transport_fault,profile,transport}.rs`; and the actual tool's
+`src/bin/nts-ke-probe.rs`. GNU evidence covers only reached host branches and
+the real unsupported-platform caller. Windows `StrictProfile::capture`,
+transport, provider and Windows-only control/error arms remain explicit gaps;
+an absent branch or the representable-profile component test receives no
+coverage/mutation credit for them. Preserve 90% executable-line coverage and
+95% viable mutation per admitted critical file, the complete generated
+inventory, healthy baselines and actual generation-gap accounting. Constructors,
+generic/`impl Trait` helpers, Garde expansion and atomic operations need explicit
+reconciliation. Manual controls supplement uncovered behavior without becoming
+generated kills. This host selection cannot close complete EP1 or native gates.
+
+The pre-freeze independent review identified additional direct receiver controls:
+cookie counts 8/9, aggregate payload 131,071/131,072/131,073, endpoint/family/port
+refusals, original expiry at/around its exact cap, valid-time Open-to-commit
+refusal and publish-then-commit success, and spent preview credit after entropy
+failure or successful preparation followed by abandonment. Existing handoff
+controls do not substitute for those new association-owner guards. Add the
+controls before freezing; use the actual source/test discovery rather than
+retaining the earlier 50-test source count as a future execution denominator.
+
+**Actual selected Tool/Engine host checkpoint:** the direct receiver controls
+were added and formatted before freezing 55 declared KE tests. The standalone
+graph has its own 114 exact registry inputs and fresh Tool-lock-bound advisory
+snapshot (1,609 metadata files). It selects the actual Engine through the actual
+probe dependency, with no GUI or copied Rust implementation. `graph-v2/verification.json`
+under the existing `engine-ke-association-v1/tool-host-preparation-v1/` root passed
+both target metadata/tree/Engine selection and cargo-deny gates; SHA-256 is
+`b862ee344018eeff138b18fd1adf532adf6e3026b984647d71c9bbb2174265ca`.
+The independent runner review repaired frozen-context binding before helper
+imports and the Windows specimen's direct PKI dependency before execution.
+Its pre-import inventory covers 757 exact files, including the explicit helper
+context; those controls establish runner admission, not Rust behavior.
+
+`host-v1/verification.json` retains the first real Engine compiler refusal:
+redundant `std::io::stderr()` under `unused_qualifications`. The one-line repair
+uses the existing `io` import; no package, API or policy change followed.
+After exact context re-admission, `host-v2/verification.json` records 233 ordinary
+Engine tests, including all 55 KE cases, explicit Engine Clippy, the actual
+delegating CLI's two refusal/sink-failure cases and its Clippy pass. These
+selected checks passed; the aggregate receipt remains **incomplete**, SHA-256
+`80c2a183f7e39f7ae6dba901182869682fcccc6a95273478b6e32b531cf7d763`.
+Its first optimized build was stopped when accumulated output reached the
+805,306,368-byte sampled target limit; the observed peak was 811,839,488 bytes.
+The inherited failure string says 512 MiB, while the retained numeric configuration
+and enforced bound are 768 MiB. This is a resource stop, not an optimized test
+failure or pass. Remaining profiles move to separate fresh owned targets under
+the same bound, with the healthy ordinary evidence retained under its exact
+identity. No acceptance threshold or source test is removed.
+
+Both stopped targets were deleted after ownership/process/Git checks, with
+1,034,883,072 bytes of measured net filesystem availability recovered. Source,
+vendor inputs, raw logs and receipts remain. No compression or shared tool/IDE/MCP
+cleanup occurred. The full workspace Fontconfig prerequisite, selected optimized
+checks, Windows-source consumers, coverage/mutation and all native/product
+obligations remain separate unfinished work.
+
+**Selected optimized and Windows-source continuation:** the two fresh targets
+now pass `verify-release` and `release`, each executing the same 55 KE tests and
+the actual CLI's two cases. These are 55 unique KE cases, not 110; unrelated
+Engine cases were explicitly filtered in these selected optimized runs, while
+the ordinary run above executed all 233 Engine cases. Both profiles enable
+overflow checks; `verify-release` also enables debug assertions. Their receipts
+are `host-verify-release-v1/verification.json`, SHA-256
+`137ff9d69dc5a1965094e0092f7f0b71e0485e9c72775981d16f3ff141972555`,
+and `host-release-v1/verification.json`, SHA-256
+`95505f0c0f9ce64857cea2db6b1b91097aab76bbca11f424c1053824e11d50d4`.
+The earlier resource-stopped aggregate receipt remains incomplete.
+
+Actual Windows-target Engine and probe checks and Clippy all pass. The
+`windows-source-v1/verification.json` receipt, SHA-256
+`21f98d9d4e21dfea2d7f1f83dfc36757a40c4b95ba61b53669a0e03429b7653b`,
+remains incomplete because the source reader rejected Cargo's two internal
+hardlink aliases for Engine metadata before running the external consumers.
+An artifact-only guard now verifies the complete owned alias set, exact payload
+and stable namespace; the source reader still rejects hardlinks. The guarded
+resume reused the four completed checks and ran only the nine real external
+compiler fixtures: one legal caller passed and eight bypasses failed with
+`E0603` at the actual private module. There were no unrelated compiler/setup
+errors. `windows-contracts-v1/verification.json`, SHA-256
+`611e6a6894392e7502b9c9a3b8be644376c62f84dd9efde6081229f1e877c23a`,
+records all ten final custody checks true. No Windows executable was linked or
+run, and these refusals establish only the outer private-module barrier.
+
+These receipts share the frozen source context SHA-256
+`bd4cf7c678143869d0e165f6dcce64a9937fe9736943f4134058490598153e69`.
+Independent review inspected the actual optimized outcomes, Windows source
+checks and raw external diagnostics without adding executions. All eight
+removed tool files still have maintained Engine counterparts, with all 40
+original test names retained among the current 55. The legal/refusal migration
+checks are complete for this candidate. Selected coverage/mutation, the full
+workspace prerequisite and native/product obligations remain open; neither the
+relocation nor these selected passes close EP1, P1 or release qualification.
+
+After recording these outcomes, all 752 Main-mapped inputs were compared with
+the frozen context. Only the compiler-fixture README changed, to replace its
+preparation-time pending statement with the observed scoped outcomes. All Rust,
+manifest, lockfile, policy and verification code bytes remain unchanged. The
+receipts retain their original complete input identities; this documentation
+reconciliation does not relabel them as a new whole-tree qualification.
+
+**EP1 selected Root host analysis:** the existing Engine analysis wrapper now
+has the closed `ke_association` role, using `stable-core` admission and the Root
+lock, its full 576 product inputs and 30 explicitly bound owner/helper inputs.
+The complete ten-owner security/critical inventory is registered; six GNU
+owners are selected for metrics. Controls reproduced and repaired two admission
+gaps before Rust execution: a missing declared five-GiB startup check and
+malformed reviewed-inventory records accepted before Session. The latter RED
+was observed in tool output; no separate raw RED file was retained. Focused
+GREEN is retained under `analysis-role-draft-v1/ke-role-controls-green.txt`.
+The current related Python regression set passes 275 tests (84 Engine-wrapper,
+144 shared-analysis, 28 runtime and 19 feature-profile controls). These are
+verification-tool controls, not product executions.
+
+Fresh `root-analysis-baseline-v1/verification.json`, SHA-256
+`4ee2d7be7fa77ddc768dc3f0001f5c0041c21e19506316d1a9ce0d00b3cd9c92`,
+passes all 233 actual Engine tests including 55 KE cases under the Root graph.
+Independent review checked all nine entered blocks, actual feature fingerprints,
+587 captured inputs, final compiler/tool custody and absent GUI/provider builds.
+Fresh `root-analysis-coverage-v1/verification.json`, SHA-256
+`3d91021ad6c85bb96f327b8f94b5415e73a63027bcd93ca21f88a980f15afe95`,
+passes all six selected executable-line gates: module 191/192, association 65/67,
+process 26/26, handoff 51/54, request 29/29 and fault resolver 72/72. Inline tests
+contribute to these file totals; no branch or native guarantee follows.
+
+Complete `root-analysis-enumerate-v1/verification.json`, SHA-256
+`4b7a280f115302bc525fb299ba715b6caaa2641ee644e13f944fcdedfd64b054`,
+lists 97 exact descriptors: 65/19/1/9/1/2 in those same owner positions. Source
+review identifies 17 inactive-Windows descriptors (16 module, one fault resolver)
+that cannot test GNU behavior. They remain visible platform gaps, with no kill or
+equivalence credit. Constructors/Garde expansion, atomic compare-exchange and
+preview-credit guards lack direct generated faults. Whole-function replacements
+may be compiler-unviable; actual outcomes must establish this. Existing raw
+admission, transaction, retry-credit and independent packet controls are separate
+behavioral evidence, never invented mutation kills or a score with no denominator.
+
+Before campaigns, review found that the new baseline reader omitted legitimate
+`no_run` doctest records ending in ` - compile`. The mutation-only opt-in now
+admits normal, compile-fail and compile-only docs alongside every ordinary case;
+new controls reject missing cases, duplicates and foreign suffixes. No product
+Rust/configuration changed. The earlier three receipts retain their exact policy
+and helper hashes; only this future-campaign reader/test and inventory-admission
+records changed. Their baseline/coverage/listing commands, product candidate
+`f40ba28760b1c8a2d777494f7f99bb392434b864dc776a47fc2356b629546147`
+and all actual source bytes remain unchanged. Current policy SHA-256 is
+`84a5ad3a94d65d045e8f2e1f9ceab8852c3fb29bccc9166994b0b75c7e69d019`.
+The independently reviewed complete inventory permits the first 19-variant
+association campaign with ten workers, original timeouts and sampled 768-MiB
+owned-output/five-to-four-GiB reserve controls. Remaining campaigns depend on
+that actual resource/outcome observation. All unexecuted/native owners and full
+EP1/P1/release qualification remain open.
+
+The first association campaign now passes its selected generated-mutant gate:
+`root-analysis-association-mutation-v1/verification.json`, SHA-256
+`1601d4acd1fa17f4e397d857d47eb04864e3899cfd06f85bf08c1f3e69cd192a`,
+accounts all 19 descriptors as 17 caught and two compiler-unviable, with no
+survivor, timeout or exclusion. Its healthy baseline enters 302 cases: the same
+233 ordinary cases plus 69 doctests, with compile-only cases retaining that
+scope. The ten-worker campaign completes within the original controls; sampled
+owned output peaks at 34,799,616 bytes. This does not measure every transient
+namespace allocation or qualify the ungenerated preview-credit guard by itself.
+Remaining five owners run sequentially through the same unchanged entrypoint;
+empty viable denominators and platform-unreached variants retain failing/open
+gates rather than receiving invented scores.
+
+After independent raw/payload inspection, five completed compiler targets were
+deleted under the owner's cleanup instruction: the two optimized standalone
+targets, Windows source target and Root baseline/coverage targets. Source,
+tool/vendor inputs, LLVM JSON, raw logs and receipts remain; current mutation
+work is untouched. `retired-completed-targets-v1.json` records 1,280,589,824 bytes
+of net filesystem availability recovered and unchanged Git state. These retired
+binary payloads are no longer available for direct reinspection; their existing
+source-bound receipts retain their original observations, not a new execution.
+
+**Original complete campaign accounting:** all 97 descriptors completed across
+the six separately owned cohorts: module 25 caught/21 unviable/19 missed;
+association 17/2/0; process 0/1/0; handoff 7/2/0; request 0/1/0; fault resolver
+0/1/1. Total: 49 caught, 28 compiler-unviable and 20 missed, with no timeout or
+exclusion. The handoff receipt is
+`root-analysis-ke_handoff-mutation-v1/verification.json`, SHA-256
+`ea4a61d7dcf9226b43eb171f75996ac02de059c515f1e569ae4867fedab4b48a`.
+Association and handoff pass their generated viable gates. Process/request have
+no viable denominator and remain incomplete; module/fault gates fail. Independent
+raw review verified successful builds followed by actual named test failures
+for every catch, and causal compiler/lint diagnostics for every unviable case.
+Every healthy baseline entered 233 ordinary cases and 69 doctests. Final
+source/tool custody matches the original frozen candidate. The coordinator's
+first continuation stopped after reading the wrong report error-field name;
+the corrected continuation reused that completed cohort without rerunning it.
+
+Seventeen misses are inactive Windows code. The other three change `config_rule`
+at lines 184–186 from `||` to `&&`: they admit empty, 254-byte ASCII and bounded
+Unicode identities at the actual `ConfigCandidate.validate()` boundary.
+`Config::new` still rejects these through its earlier length guard and later
+`ServerName` conversion; this is a helper-boundary test gap, not a demonstrated
+constructor bypass or an equivalent helper. The existing configuration test now
+directly challenges those three raw candidates and two healthy neighbors through
+mandatory Garde validation. Its original constructor assertions and the 55/233
+roster are preserved. The original misses are retained as RED assurance evidence;
+the repeated module campaign must demonstrate the new catches.
+
+`root-analysis-baseline-v2/verification.json`, SHA-256
+`52e5d7d1b4062f9d8bc1b5160261b0ddc1a568f7805b544c0bf9ed61cf7c8fd6`,
+records formatting and all 233 tests passing, then five real errors in the newly
+expanded all-targets Clippy check. Earlier library-only Clippy did not establish
+test-code lint coverage. The repair elides a receiver lifetime with identical
+exclusive borrowing and uses private test destructuring to inspect retained
+profile/key fields. It preserves assertions, key custody and visibility, without
+lint allowances. Repaired `root-analysis-baseline-v3/verification.json`, SHA-256
+`af399532e05aac18cc942599e63d58c747efe74692a5307cbaaa16fb93e699d5`,
+passes formatting, all 233 tests and full Engine Clippy with warnings denied.
+Independent review checks its exact 587 captured inputs and final tool custody.
+
+The repaired product candidate is
+`7caf97a2eb51e3c5ae2f157fac8ffd8a6042c6d3aef8e7f3ffaf28785c9cac72`.
+Only the association descriptor's return-lifetime spelling changed; fresh
+`root-analysis-association-enumerate-v2/verification.json`, SHA-256
+`70510cf1fda89156bf4a055362b98b40f7074cfc9fb65e528c9ed8ec3bed86da`,
+supplies its 19 exact records. The other five production-owner files and tool
+are byte-identical to the complete earlier listing, permitting their unchanged
+enumeration identities to be joined, not behavioral scores transferred. The
+reviewed total remains 97; current policy SHA-256 is
+`c2abbc24770cdc6aed25f70d23e682fa6990343a53f4e16576fe76bb927d5ded`.
+The fresh full 65-descriptor module replay keeps all Windows misses in scope and
+does not turn its expected native gap into a 95% pass.
+
+**Repaired candidate current results:**
+`root-analysis-ke_core-mutation-v2/verification.json`, SHA-256
+`cfb1bb0410324980df5041e7c7c59efa69cf41301efb36f1d80171ab9f76cf62`,
+records all three former helper survivors caught by actual failures at the new
+Garde rejection assertion. Its healthy baseline passes all 302 cases. Logs do
+not identify the failing identity; loop order supports the narrower conclusion
+that the three mutants are caught, without claiming three separately observed
+distinct-input RED executions. All 65 descriptors reconcile as 28 caught,
+21 compiler-unviable and 16 inactive-Windows survivors, with zero timeout or
+exclusion. The actual 28/44 score is 63.636%; the gate remains incomplete.
+Independent raw review confirms the new catches, source/tool custody and all
+remaining survivor identities. No Windows equivalence exclusion is introduced.
+
+Fresh `root-analysis-coverage-v2/verification.json`, SHA-256
+`2b827fe8bc9d709bfb53dfdbfadef53aad875bd6fa2188251652ca9122d9ef38`,
+executes all 233/55 cases and passes the same six line gates on the repaired
+candidate. Fresh `root-analysis-association-mutation-v2/verification.json`,
+SHA-256 `77cc6135f4b0b43071a1b41d0e44bfc45d6356477d56dd638088cfc1f54ebcda`,
+accounts its refreshed 19 descriptors as 17 behavioral catches and two causal
+compiler failures, with a healthy 302-case baseline and no survivor or timeout.
+Both exact current receipts and their actual outputs were independently
+reviewed. Original handoff/process/request/fault outcomes retain their original
+candidate scopes. Empty viable denominators, generation gaps, the four other
+critical owners and all Windows/native/production obligations remain open.
+
+Final Python wrapper controls pass all 84 cases; the related 275-control set,
+strict workspace-policy check and whitespace check retain their separate scopes.
+All owned EP1 execution handles are terminal. After independent inspection of the actual
+baseline/coverage binaries, three further unused compiler targets were deleted,
+recovering another 1,037,717,504 bytes. `retired-completed-targets-v2.json` retains
+the inspected binary-inventory identities and unchanged Git custody. Current
+source, raw outcomes, LLVM JSON and receipts remain. Nothing was compressed,
+staged, committed or pushed; this is not a completed EP1/P1/release checkpoint.
+
+**Next source preparation, with these gates still open:** resume the existing
+receiver-first child for one private association/request ledger and staged S2C
+response consumer. Its sole normal issuer remains the actual KE producer;
+component tests may use public fixed-key packets without claiming TLS success.
+Before authoring, freeze finite request/receive-work/secret-memory/aggregate-
+recovery limits and independently review the actual enforcing chain. Apply the
+accepted explicit never-invoked cookie return and zero-cookie rejection with
+decreasing remaining budget. Busy precedes entropy; pending deadlines never
+renew; result/cookie publication is atomic and current. Actual UDP, healthy
+ordinary trust, native completion/provider lifetime, production observation and
+Core-history admission remain held. No new owner decision is needed for this
+restricted source child; shipping lifetime/trust/recovery policy retains R-05
+and OPEN-8 prerequisites. This preparation neither completes EP1 nor waives any
+unresolved metric or native gate.
+
+##### EP2 — protected request custody and S2C source contract — 11 November 2026
+
+**Mode/owner:** admitted source implementation and WSL component qualification
+under REQ-8/BND-2, AC-04 and CHECK-6/8/9/17/21/25/26/27. Retain the genuine
+`exchange_owned -> candidate.publish -> AssociationOwner::receive` issuer.
+The normal never-send preview must now pass through the same private cookie
+reservation/retirement ledger. Its final laboratory-count commit remains
+separate from per-request completion. No public key getter, authenticated flag,
+raw authenticated constructor, UDP effect or eligible observation is introduced.
+This source child does not close EP1's remaining gates.
+
+| Original-context limit | Frozen prototype contract |
+| --- | --- |
+| Lifetime/currentness | Original `Control` origin and strict 60-second cap; KE publication remains Published across sequential requests. Cancellation, original expiry and same-owner identity are rechecked under its guard. No return, packet or cookie renews it. |
+| Issuance | One outstanding reservation/request; at most 32 admitted checkout/entropy attempts across the original context. Busy precedes entropy. Duplicate-scan and failed checkout attempts consume this allowance; explicit returns and replacements do not refund it. |
+| Receive work | At most 32 raw packets and 131,072 raw bytes across the original context, before parsing/crypto. Reject oversize/truncation, endpoint, correlation and authentication failures without refunds. A last permitted healthy packet may complete; rejection at zero remainder retires the logical request. |
+| Packet/parser bounds | 4,096 bytes; 64 outer and 64 decrypted inner fields. UID32 and nonce16 use the maintained encoder and AEAD. Save wire transmit/correlation bits separately from declared local T1; preview zero T1 remains unsendable. |
+| Cookie custody | Available pool at most eight/131,072 bytes. Move one cookie into a reservation; archive possibly-sent bodies before adapter exposure. At most 32 archived bodies/131,072 bytes; no eviction within the context. Checkout never sends a known used value, including duplicate initial/refilled bodies. |
+| Replacement allowance | At most one plus that request's recorded placeholders, independently of pool capacity. Request at most seven placeholders, reduced only by the maintained encoder's size refusal; no repeated entropy or seal on a capacity retry. |
+| Recovery | At most one consumed/coalesced intent per original context, with not-before at its original expiry. It grants no KE execution, replacement context, plain fallback or freshness. Actual cross-context backoff/recovery remains the later bounded worker owner. |
+| Logical payload | At most 300 KiB in the source-owned ledger buffers, including available/reserved/archived cookie bodies, packet, decrypt scratch, staged cookie copies, UID history and entropy. Initial payload plus globally charged incoming bytes bounds retained cookie bodies. Account live UID aliases explicitly. Allocator, cipher state, compiler/library copies, provider and native memory remain separate unqualified scopes. |
+
+**Irreversible request transitions:** checkout creates one opaque, non-Clone,
+same-owner ticket. Preparation may acquire entropy once; failure never restores
+that credit. Only explicit never-invoked return retires its UID and restores the
+unchanged cookie under the same still-current association. Drop/forgotten tickets
+do not clear Busy or return cookies. Before packet exposure, irreversibly archive
+its cookie and close return permission under current serialized authority.
+Full, short, error, cancellation, panic and unknown-emission outcomes never
+restore reuse. Unconfirmed physical completion retains Busy and buffer custody;
+no source callback label or drop establishes native completion. The eventual
+actual adapter must supply its independently qualified operation/custody owner.
+
+**Transactional response path:** reuse `read_nts_authenticator_parts` and the
+existing scoped `with_decrypted_frame` through an S2C-only private key method.
+Require the current UID and saved wire correlation; never infer local T1 from
+wire bits. Stage bounded owned cookies only after actual tag verification and
+complete plaintext framing. Enforce NTS field placement/cardinality on the
+authenticated prefix/plaintext; discard unauthenticated suffix fields. Unknown
+non-NTS fields remain bounded and inert. Zero encrypted Cookie fields reject
+while preserving a healthy Pending request's original deadline and already
+decreased allowance. One empty field is not zero fields. A packet with Cookie
+fields containing only known used values may complete packet admission without
+usable refill; checkout then enters bounded recovery. No such packet grants
+time-sample eligibility. Recheck `send <= arrival <= processing_now < deadline`
+and current owner before one atomic cookie/result commit. Stage allocations and
+replacement capacity before this short non-I/O commit; failure preserves old
+cookies and last successful receipt, apart from independently charged work.
+
+Protocol expectations were checked against
+[RFC 8915 §5.7](https://www.rfc-editor.org/rfc/rfc8915.html#section-5.7).
+Independent engineering/security review identified the separate association and
+request lifetimes, total-attempt cap, same-value cookie archive, request-bound
+replacement count and coalesced recovery requirement before authoring. These
+implement the already accepted A/A policies, not a shipping lifetime/fallback
+decision. Component send callbacks and public fixed-key packets prove their
+actual portable transitions/crypto only; real socket/time/generation issuers,
+native completion, ordinary trust and Core-history eligibility stay held.
+
+**Exit/checks:** preserve existing healthy/failure neighbors and actual GNU
+unsupported-platform CLI refusal. Add direct receiver cases for pre/post-send
+cancellation, drop/panic/unknown completion, repeated valid-tag zero-cookie
+packets through decreasing-budget exhaustion, pool and attempt exhaustion,
+duplicate cookie values, stale-association returns and valid response neighbors.
+Generate semantic-negative packets with valid tags using the already-admitted
+maintained AEAD, not byte tampering or copied crypto. Freeze/format the coherent
+source before selected ordinary/optimized/compiler/Clippy, privacy, 90%/95%
+coverage/mutation gates; independently classify generation/platform gaps.
+Extend the existing inventory and verifier only for real new owners/tests,
+without a dependency/toolchain refresh or another analysis framework. All
+native/UDP/proof/storage/UI/release holds remain unchanged.
+
+###### EP2 portable source checkpoint — 11 November 2026
+
+The actual Engine receiver now retains its private association and uses the
+original-context ledger even for the unsendable preview. Packet preparation,
+callback submission and authenticated response admission have checked private
+boundaries; none supplies a UDP/native adapter, time-sample eligibility or a
+fresh-sync UI result. Available-cookie status counts distinct unused bodies;
+the maintained encoder requires at least twelve aligned cookie octets and copies
+them unchanged, so any encodable archived value is its exact wire value.
+
+One concrete source defect was demonstrated and repaired: selected algorithm15
+accepted a valid-tag zero-length nonce. The actual RED entered 237 library cases,
+with 236 passes and only the nonce-minimum assertion failing. Nonce1/12 valid-tag
+neighbors already passed. The minimal guard now rejects nonce0 without imposing
+an incoming fixed-sixteen rule. The 33 independent public packet fixtures were
+actually generated by the maintained AES implementation; later backticks/formatting
+changed comments, not their bytes. The first Root `-p` generator selection failed;
+its successful successor uses the real excluded witness manifest. Its two stale
+lock entries were aligned to already-admitted Root packages without widening the
+Root graph or acquiring another crypto implementation.
+
+Final product identity: **`1cb52d94c0b9b073b137a4ae90de8898a5040ea004482a58708ee76c7581f46c`**
+(582 product files, plus explicitly bound verification inputs). The context is
+Main HEAD `2a3e591`; HEAD alone is not this dirty candidate. Receipts remain under
+`/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/engine-ke-association-v1/`.
+
+| Executed scope | Result / receipt SHA-256 |
+| --- | --- |
+| Final baseline `ep2-baseline-green-v7` | Format, Engine Windows source check, 261 GNU tests including83 KE, GNU Clippy, 261 optimized tests, 69 doctests, Windows Clippy all pass; `056f5366933eb01ddf37f4fde1403b1875b3fedc2dc612da2c0832812746b562`. Doctests contain13 entered examples, one `no_run` and55 compile-fail cases. |
+| Final coverage `ep2-coverage-v2` | All eight selected 90% line gates pass with261 actual cases. Ledger504/535 (94.21%); response109/110 (99.09%). No branch coverage claim. Receipt `10747341f87151b6b515e28d40a084d4fcadde1a04fc1dea582442eb21596de6`. |
+| Response mutation `ep2-response-mutation-v1` |44 descriptors:24 caught,20 compiler-unviable, no survivor/timeout/exclusion. Its exact response source remains unchanged; whole-candidate reuse is separately reconciled. Receipt `fb2ec8c5e9856cf82aca5ad5f1650f12a61446c78f00e050ea769b7fee9f25bf`. |
+| Initial ledger mutation `ep2-ledger-mutation-v1` |118 descriptors:57 caught,31 compiler-unviable,30 missed, no timeout; incomplete. Retained unchanged. Twenty-two missing behavioral/boundary controls were addressed; eight checked-caller equivalence candidates received independent domain reviews. |
+| Final ledger mutation |`ep2-ledger-mutation-v2`:124 descriptors,80 caught,36 compiler-unviable, eight exact independently reviewed equivalents, no timeout or unresolved survivor. Raw80/88=90.91%; adjusted80/80=100%. Native tool exit2 is retained because the eight raw survivors remain; unchanged generic accounting accepts only their exact source-bound records. Receipt `5bcbbc76b471f2421742f3c7d56fefeb165aadaadca7c8c68f2c3d252594f318`. |
+
+Fresh complete discovery is283 descriptors across eight owners. The ledger's
+124 current descriptors include the non-generic time-order check and bounded
+immutable placeholder retry helper. Existing eighteen ledger test names remain;
+new helpers extend their actual ticket, formatting, packet/byte, refill and time
+controls. Refill-helper tests exercise that helper's admitted pool/staged-input
+domain; they establish no Pending/TLS trajectory or product vulnerability.
+The exact131072-byte return case belongs to the receiver-component domain,
+not demonstrated normal TLS reachability. The
+[manual equivalence record](engine-ke-association-equivalences.md) admits no
+forged checked state and supplies no solver/formal-proof result. Raw survivors
+remain visible with zero kill credit and the existing adjusted95% requirement.
+
+**Final evidence reconciliation:** the response44 campaign is the retained
+`03025674039c6f5169412823dd64cb38343218adf58f8c4d0447de4b32223d5b`
+execution, explicitly reused for the unchanged response source under the current
+`1cb52d...` candidate. Both raw reviewers verified74 relevant source/graph/runtime
+inputs unchanged, the exact44 descriptors unchanged, all24 catches independently
+failing an unchanged response-unit assertion, and20 causal local compiler/lint
+refusals. Current healthy330 records preserve all earlier case identities. This
+is source-file gate reuse, not a new whole-candidate44-variant run.
+
+The final staged whitespace check found one extra EOF newline in the manual
+record. Removing only that newline changed its digest from `9bc609a3...` to
+`a09603a31912e57c0c5ec803d4293c58405ff67ac27c328e153de2a68d3871a7`.
+Only the corresponding common-helper literal, eight policy proof digests and
+bound helper digest changed. Independent AST/policy comparison confirmed no
+semantic, descriptor, rationale, threshold, Rust or product-candidate change.
+Current strict admission and complete retained124-outcome accounting replay pass
+in `ep2-metadata-eof-reconciliation-v1.json`; original Rust receipts remain
+unchanged. The existing Python controls pass288 cases after final admission-data
+preparation. No Rust rerun or new native result is claimed for EOF normalization.
+
+Initial harness failures remain incomplete: the static roster omitted one
+multiline-attribute panic test, although the actual healthy command entered261;
+Clippy then required fixture comment formatting, scalar-only assertion output
+and narrow ownership-signature expectations. Windows compilation required named,
+non-test dead-code expectations for held consumers; those items stay compiled,
+with stale expectations denied. No module-wide warning allowance was added.
+The final caller-domain records receive no native or future-async authority.
+
+Source/record reviews used the coordinator and three complementary workers with
+inherited context, not blind or statistically independent runs. They inspected
+actual raw lanes, fixture identities, failure causality, staged updates and the
+complete inventories. All original forty relocated tests remain among83 KE cases.
+Twelve external privacy specimens now include three new challenges and S2C access;
+the new specimens have not run. Earlier outer-module privacy results retain only
+their exact historical scope. The complete twelve-file critical manifest, normal trust/TLS/KE,
+actual send/completion custody, cross-context backoff/continuity, timestamp
+issuers, Core admission, native/fuzz/storage/UI and release exits remain open.
+Post-V1 formal deferral remains in force.
+
+The two-owner selected source result is ready only for its recorded next bounded
+source integration. Before native/continuous work, retain the imported retry/hot-loop
+controls and freeze its failure-to-next-operation table and cumulative budgets.
+No source card, successful primitive or recovery intent lifts those prerequisites.
+
+**Remote integration reconciliation — 11 November 2026:** the ntp_usg
+comparison and anti-hot-retry refinements from remote commits `9875bde` and
+`bc0f452` apply to this existing S2.2 chain. EP2 owns only one original context:
+its finite checkout/receive allowances and sole consumed recovery intent cannot
+be reset by return, rejection or replacement. It does not implement the later
+continuous worker's failure-to-next-operation table, KE backoff, RATE/NTSN
+handling, lifecycle continuity, native wakeups or hostile-load metrics. Carry
+those existing planned controls into that worker before enabling repeated real
+operations; the inert intent alone closes none of them. The fixed-key component
+packets likewise supply no normal TLS/exporter or Core numerical-consumer pass.
+Remote Rust 1.100 research (`252fe22`) selects no upgrade; this checkpoint retains
+the admitted Rust 1.99.1 compiler and existing dependency graph.
 
 #### Rust refinements at the receiver freeze — 9 November 2026
 

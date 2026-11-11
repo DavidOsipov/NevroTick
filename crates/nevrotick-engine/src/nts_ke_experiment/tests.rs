@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: GPL-2.0-only
 //! Independent plaintext and publication controls; none simulates TLS success.
 
 use super::{
-    CancelOutcome, Config, Control, Failure, IoPhase, Phase, Reply, copy_cookies, encode_offer,
-    endpoint, read_response,
+    CancelOutcome, Config, ConfigCandidate, Control, Failure, IoPhase, Phase, Reply, copy_cookies,
+    encode_offer, endpoint, read_response,
 };
+use garde::Validate;
 use ntp_wire::{NtsKeAccumulatorError, NtsKeFrameError, NtsKeNegotiationError};
 use rustls_pki_types::ServerName;
 use std::ffi::OsString;
@@ -488,6 +490,21 @@ fn configuration_admission_and_typed_identity() -> Result<(), Failure> {
     );
     assert_eq!(name.len(), 253);
     let _maximum = Config::new("127.0.0.1:4460".into(), name.clone().into())?;
+    // Exercise the actual structured-input rule with independent boundary facts.
+    for identity in [configuration.identity.as_str(), name.as_str()] {
+        let candidate = ConfigCandidate {
+            values: (configuration.peer, identity),
+        };
+        assert!(candidate.validate().is_ok());
+    }
+    let overlong = format!("{name}d");
+    assert_eq!(overlong.len(), 254);
+    for identity in ["", overlong.as_str(), "tíme.example"] {
+        let candidate = ConfigCandidate {
+            values: (configuration.peer, identity),
+        };
+        assert!(candidate.validate().is_err());
+    }
     for identity in [
         String::new(),
         String::from("bad name"),
@@ -657,6 +674,7 @@ fn strict_deadline_neighbors_and_fixed_expiry() -> Result<(), Failure> {
     );
     for offset in [59_999_999_999, 60_000_000_000, 60_000_000_001] {
         let candidate = Control::new(start)?;
+        candidate.publish_ke_at(start)?;
         assert_eq!(
             candidate.commit_at(at(start, offset)?),
             if offset < 60_000_000_000 {
@@ -674,6 +692,32 @@ fn strict_deadline_neighbors_and_fixed_expiry() -> Result<(), Failure> {
             }
         );
     }
+    Ok(())
+}
+
+/// A valid time observation cannot replace the required KE publication phase.
+/// # Errors
+/// Preserve control construction, phase observation and legal transition refusal.
+/// # Panics
+/// Fail if an open control commits, loses its original cap, or blocks its neighbor.
+#[test]
+fn open_control_cannot_skip_ke_publication_before_commit() -> Result<(), Failure> {
+    let start = Instant::now();
+    let control = Control::new(start)?;
+    let original_expiry = control.expiry;
+    assert_eq!(control.commit_at(start), Err(Failure::Control));
+    assert!(matches!(
+        *control.phase.lock().map_err(|_| Failure::Control)?,
+        Phase::Open
+    ));
+    assert_eq!(control.expiry, original_expiry);
+    control.publish_ke_at(start)?;
+    control.commit_at(start)?;
+    assert!(matches!(
+        *control.phase.lock().map_err(|_| Failure::Control)?,
+        Phase::Committed
+    ));
+    assert_eq!(control.expiry, original_expiry);
     Ok(())
 }
 
@@ -709,6 +753,7 @@ fn pre_origin_refusal_preserves_open_phase() -> Result<(), Failure> {
         control.remaining_at(IoPhase::Exchange, start)?,
         Duration::from_secs(60)
     );
+    control.publish_ke_at(start)?;
     control.commit_at(start)?;
     assert_eq!(control.cancel()?, CancelOutcome::AlreadyCommitted);
     Ok(())
@@ -753,6 +798,7 @@ fn poisoned_mutex_refuses_and_preserves_open_phase() -> Result<(), Failure> {
         healthy.remaining_at(IoPhase::Exchange, start)?,
         Duration::from_secs(60)
     );
+    healthy.publish_ke_at(start)?;
     healthy.commit_at(start)?;
     assert_eq!(healthy.cancel()?, CancelOutcome::AlreadyCommitted);
     Ok(())
@@ -777,6 +823,7 @@ fn cancellation_and_commit_are_consume_once() -> Result<(), Failure> {
         Err(Failure::Cancelled)
     );
     let committed = Control::new(start)?;
+    committed.publish_ke_at(start)?;
     committed.commit_at(start)?;
     assert_eq!(committed.cancel()?, CancelOutcome::AlreadyCommitted);
     assert_eq!(committed.commit_at(start), Err(Failure::Control));
@@ -795,6 +842,7 @@ fn cancellation_and_commit_are_consume_once() -> Result<(), Failure> {
 fn concurrent_cancel_and_commit_have_one_winner() -> Result<(), Failure> {
     let start = Instant::now();
     let control = Control::new(start)?;
+    control.publish_ke_at(start)?;
     let barrier = std::sync::Barrier::new(2);
     let (commit, cancel) = std::thread::scope(|scope| {
         let job = scope.spawn(|| {
@@ -830,4 +878,44 @@ fn non_unicode_arguments_refuse() {
         Config::new("127.0.0.1:4460".into(), OsString::from_vec(vec![0xff])),
         Err(Failure::Arguments)
     ));
+}
+
+/// The actual shared publication path samples time while its phase is locked.
+/// These explicit observations are component boundaries, not a native-clock pass.
+/// # Errors
+/// Preserve control construction or fresh neighboring publication refusal.
+/// # Panics
+/// Fail if observation precedes locking or equality publishes/renews authority.
+#[test]
+fn publication_observation_is_inside_the_actual_phase_guard() -> Result<(), Failure> {
+    let start = Instant::now();
+    let expired = Control::new(start)?;
+    assert_eq!(
+        expired.publish_ke_observing(|| {
+            assert!(matches!(
+                expired.phase.try_lock(),
+                Err(std::sync::TryLockError::WouldBlock)
+            ));
+            expired.expiry
+        }),
+        Err(Failure::Deadline)
+    );
+    assert!(matches!(
+        *expired.phase.lock().map_err(|_| Failure::Control)?,
+        Phase::Open
+    ));
+    let healthy = Control::new(start)?;
+    healthy.publish_ke_observing(|| {
+        assert!(matches!(
+            healthy.phase.try_lock(),
+            Err(std::sync::TryLockError::WouldBlock)
+        ));
+        start
+    })?;
+    assert!(matches!(
+        *healthy.phase.lock().map_err(|_| Failure::Control)?,
+        Phase::Published
+    ));
+    assert_eq!(healthy.expiry, expired.expiry);
+    Ok(())
 }

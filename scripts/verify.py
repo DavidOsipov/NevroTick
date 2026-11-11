@@ -66,6 +66,22 @@ OPTIMIZED_DISCRIMINATORS = {
     "nevrotick-engine": "prepare_rejects_entered_runtime_before_native_startup",
 }
 ENGINE_PROCESSING_GUARD = "processing_guard_tests::processing_uses_fresh_deadline_and_current_control"
+# Nonempty EP1 selection across actual private owners, required in ordinary and
+# optimized Engine unit binaries. These are component tests, not native KE proof.
+ENGINE_KE_TEST_CASES = {
+    "nts_ke_experiment::tests::configuration_admission_and_typed_identity",
+    "nts_ke_experiment::tests::strict_deadline_neighbors_and_fixed_expiry",
+    "nts_ke_experiment::process::tests::claim_is_permanent_before_and_after_provider_scope",
+    "nts_ke_experiment::association::tests::genuine_owner_boundary_moves_cookies_and_consumes_completion_once",
+    "nts_ke_experiment::association::tests::foreign_completion_refuses_without_partial_publication",
+    "nts_ke_experiment::association::tests::post_ke_cancellation_refuses_before_entropy",
+    "nts_ke_experiment::association::tests::association_expiry_after_ke_prevents_preview",
+    "nts_ke_experiment::association::tests::published_association_reaches_actual_sealer_and_finishes_once",
+    "nts_ke_experiment::association::tests::preview_refusal_does_not_reset_work_credit",
+    "nts_ke_experiment::request::tests::complete_request_matches_existing_independent_answer",
+    "nts_ke_experiment::request::tests::s2c_changes_do_not_select_the_outgoing_key",
+    "nts_ke_experiment::handoff::tests::cancellation_after_sealing_refuses_final_completion",
+}
 PATCH_TEST_CASES = {"tests::ready", "tests::count",
                     "non_unpin_future_keeps_its_address_and_drops_once_after_pending_polls"}
 POINTER = Path.home() / ".local/share/nevrotick/ui-m0.json"
@@ -74,7 +90,7 @@ SOURCE_FILES = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rustfmt.toml
 CHECKER_FILES = ("scripts/verify.py", "scripts/check-environment.py", "scripts/check-strict.py",
                  "scripts/slint_dependency_profile.py", "scripts/slint_linux_sdk.py",
                  "scripts/advisory_snapshot.py", "tools/crypto-aes-siv-witness/fuzz/input_custody.py",
-                 "scripts/tests/test_verify_vendor_admission.py")
+                 "scripts/tests/test_verify_vendor_admission.py", "scripts/tests/test_engine_ke_dependency_profile.py")
 UI_TEXT_CHECKER_FILES = ("scripts/check-ui-text.py", "scripts/check_ui_text_coverage.py",
                          "scripts/ui_source_io.py",
                          "scripts/slint_text_graph.py", "scripts/ui_text_bindings.py", "scripts/protected_json.py",
@@ -241,12 +257,12 @@ def validated_dependency_records(policy: dict, *, include_metadata: bool = False
     return [dict(record) for record in records]
 
 
-def validate_dependency_metadata(target: str, output: str, policy: dict) -> dict:
+def validate_dependency_metadata(target: str, output: str, policy: dict, *, profile: str = "default") -> dict:
     """Compare actual frozen Cargo target identities/features with admitted policy."""
     validate_dependency_policy(policy)
     if policy["schema_version"] == 3:
         try:
-            return SLINT.validate_metadata(target, output, policy)
+            return SLINT.validate_metadata(target, output, policy, profile=profile)
         except SLINT.Incomplete as error:
             raise ENV.Incomplete(str(error)) from error
     if target not in policy["rows"] or len(output.encode("utf-8")) > ENV.MAX_OUTPUT:
@@ -303,6 +319,23 @@ def admit_patched_source(root: Path, record: dict) -> dict[str, str]:
         SLINT.validate_path_patch(record)
     except SLINT.Incomplete as error:
         raise ENV.Incomplete(str(error)) from error
+    if record["name"] in SLINT.EP1_PATCH_UPSTREAM:
+        path = record["path"]
+        directory = root / path
+        if any(parent.is_symlink() for parent in (directory, *directory.parents) if parent != root.parent):
+            raise ENV.Incomplete("Linked prototype-source ancestors are not admitted.")
+        files = inventory(directory)
+        digest = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        if (digest != record["files_sha256"]
+                or any(files.get(name) != value for name, value in record["modified_files_sha256"].items())
+                or any(files.get(name) != value for name, value in SLINT.EP1_PRESERVED_FILES[record["name"]].items())):
+            raise ENV.Incomplete("Prototype patch source or preserved upstream rights changed.")
+        manifest = tomllib.loads((directory / "Cargo.toml").read_text())
+        if (manifest.get("package", {}).get("name") != record["name"]
+                or manifest["package"].get("version") != record["version"]
+                or manifest["package"].get("license") != record["license"]):
+            raise ENV.Incomplete("Prototype patch manifest identity changed.")
+        return {path + "/" + name: value for name, value in files.items()}
     is_spin = record["name"] == SLINT.PATCH_NAME
     path = record["path"]
     directory = root / path
@@ -346,6 +379,32 @@ def admit_patched_source(root: Path, record: dict) -> dict[str, str]:
     return {path + "/" + name: value for name, value in files.items()}
 
 
+def admit_first_party_dependency(root: Path, record: dict) -> dict[str, str]:
+    """Freeze the exact existing AES library without promoting its workspace role."""
+    directory = root / record["path"]
+    if any(parent.is_symlink() for parent in (directory, *directory.parents) if parent != root.parent):
+        raise ENV.Incomplete("Linked nonmember-source ancestors are not admitted.")
+    files = inventory(directory)
+    digest = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if digest != record["files_sha256"] or files.get("Cargo.toml") != record["manifest_sha256"]:
+        raise ENV.Incomplete("The first-party nonmember source or manifest differs from admission.")
+    manifest = tomllib.loads((directory / "Cargo.toml").read_text())
+    expected_dependencies = {
+        "aes-siv": {"version": "=0.8.0", "default-features": False, "features": ["zeroize"]},
+        "aes": {"version": "=0.9.3", "default-features": False, "features": ["zeroize"]},
+        "cmac": {"version": "=0.8.0", "default-features": False, "features": ["zeroize"]},
+        "ntp-wire": {"version": "=0.0.0", "path": "../../crates/ntp-wire"},
+        "zeroize": {"version": "=1.9.1", "default-features": False},
+    }
+    if (set(manifest) != {"package", "workspace", "lib", "dependencies"}
+            or manifest["package"] != {"name": SLINT.EP1_AES_NAME, "version": "0.0.0", "edition": "2024",
+                "rust-version": "1.99", "license": "GPL-2.0-only", "publish": False, "build": False}
+            or manifest["workspace"] != {"resolver": "3"} or manifest["lib"] != {"path": "lib.rs"}
+            or manifest["dependencies"] != expected_dependencies or "lib.rs" not in files):
+        raise ENV.Incomplete("The AES nonmember requires only its exact reviewed pure library graph.")
+    return {record["path"] + "/" + name: value for name, value in files.items()}
+
+
 def validate_patched_lock(packages: list[dict], patches: list[dict]) -> None:
     """Bind local substitution to exact lock identities and unchanged normal edges."""
     try:
@@ -360,6 +419,25 @@ def validate_patched_lock(packages: list[dict], patches: list[dict]) -> None:
                                      "static_assertions", "windows", "windows-core"]},
                 SLINT.CONSUMER_NAME: {"name": SLINT.CONSUMER_NAME, "version": "0.38.0",
                     "dependencies": ["accesskit", "hashbrown 0.16.1"]}}
+    if any(record["name"] in SLINT.EP1_PATCH_NAMES for record in patches):
+        expected.update({
+            "rustls-cng-crypto": {"name": "rustls-cng-crypto", "version": "0.1.2",
+                "dependencies": ["once_cell", "pkcs1", "pkcs8", "rustls", "sec1", "windows 0.61.3", "zeroize"]},
+            "rustls-platform-verifier": {"name": "rustls-platform-verifier", "version": "0.7.1",
+                "dependencies": ["core-foundation 0.10.1", "core-foundation-sys", "jni", "log", "once_cell",
+                    "rustls", "rustls-native-certs", "rustls-platform-verifier-android", "rustls-webpki",
+                    "security-framework", "security-framework-sys", "webpki-root-certs", "windows-sys 0.61.2"]},
+        })
+        expected[SLINT.ACCESSKIT_NAME]["dependencies"] = [
+            "windows 0.62.2" if edge == "windows" else "windows-core 0.62.2" if edge == "windows-core" else edge
+            for edge in expected[SLINT.ACCESSKIT_NAME]["dependencies"]]
+        counts = {name: sum(package["name"] == name for package in packages)
+                  for name in {package["name"] for package in packages}}
+        for value in expected.values():
+            value["dependencies"] = sorted(edge if counts.get(edge.split(" ")[0], 0) > 1 else edge.split(" ")[0]
+                                           for edge in value.get("dependencies", []))
+            if not value["dependencies"]:
+                del value["dependencies"]
     names = {record["name"] for record in patches}
     actual = [package for package in packages if package["name"] in names]
     if (len(actual) != len(names) or {package["name"] for package in actual} != names
@@ -389,8 +467,11 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     slint_profile = policy["schema_version"] == 3
     patches = policy.get("patched_packages", [])
     expected_patch = {"crates-io": {record["name"]: {"path": record["path"]} for record in patches}} if patches else {}
+    expected_excludes = [record["path"] for record in patches]
+    if SLINT.EP1_FIELD in policy:
+        expected_excludes.append(SLINT.EP1_AES_PATH)
     if (workspace.get("patch", {}) != expected_patch or "replace" in workspace
-            or workspace["workspace"].get("exclude", []) != [record["path"] for record in patches]):
+            or workspace["workspace"].get("exclude", []) != expected_excludes):
         raise ENV.Incomplete("Unadmitted patch routing, replacement or workspace exclusion.")
     workspace_package = workspace["workspace"].get("package", {})
     if (workspace_package.get("license") != "GPL-2.0-only"
@@ -504,7 +585,34 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                 "tokio": {"version": "=1.54.1", "default-features": False,
                           "features": ["rt", "net", "time", "sync", "macros"]},
             }
-            if (set(member) != {"package", "lints", "dependencies", "bin"}
+            required_keys = {"package", "lints", "dependencies", "bin"}
+            expected_target = None
+            if SLINT.EP1_FIELD in policy:
+                required.update({
+                    SLINT.EP1_AES_NAME: {"version": "=0.0.0", "path": "../../tools/crypto-aes-siv-witness",
+                        "default-features": False, "optional": True},
+                    "rustls-pki-types": {"version": "=1.15.1", "default-features": False,
+                        "features": ["std"], "optional": True},
+                    "zeroize": {"version": "=1.9.1", "default-features": False,
+                        "features": ["alloc"], "optional": True},
+                })
+                expected_target = {"cfg(windows)": {"dependencies": {
+                    "rustls": {"version": "=0.23.46", "default-features": False, "features": ["std"], "optional": True},
+                    "rustls-cng-crypto": {"version": "=0.1.2", "default-features": False, "optional": True},
+                    "rustls-platform-verifier": {"version": "=0.7.1", "default-features": False, "optional": True},
+                }}}
+                expected_feature = {SLINT.EP1_FEATURE: ["dep:" + name for name in
+                    (SLINT.EP1_AES_NAME, "rustls-pki-types", "zeroize", "rustls", "rustls-cng-crypto", "rustls-platform-verifier")]}
+                if (member.get("features") != expected_feature or member.get("target") != expected_target
+                        or member.get("dependencies") != required):
+                    raise ENV.Incomplete("The Engine prototype requires its exact default-off feature and Windows-only provider graph.")
+                declarations = [member["dependencies"][name] for name in (SLINT.EP1_AES_NAME, "rustls-pki-types", "zeroize")]
+                declarations += list(member["target"]["cfg(windows)"]["dependencies"].values())
+                if any(type(item.get(field)) is not bool for item in declarations
+                       for field in ("default-features", "optional")):
+                    raise ENV.Incomplete("The Engine prototype requires boolean optional/default feature declarations.")
+                required_keys |= {"features", "target"}
+            if (set(member) != required_keys
                     or member["package"].get("version") != "0.0.0"
                     or member.get("dependencies") != required
                     or type(member["dependencies"]["garde"].get("default-features")) is not bool
@@ -513,6 +621,9 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                     or member.get("bin") != [{"name": "nevrotick-observe", "path": "src/bin/nevrotick-observe.rs"}]):
                 raise ENV.Incomplete("The engine requires its exact reviewed validation/runtime/wire/domain dependencies and observe entrypoint.")
         local_packages.add((package, member["package"]["version"]))
+    dependency = SLINT.first_party_dependency(policy) if slint_profile else None
+    if dependency:
+        local_packages.add((dependency["name"], dependency["version"]))
     local_packages.update((record["name"], record["version"]) for record in patches)
     if policy.get("lockfile_sha256") != sha256(root / "Cargo.lock"):
         raise ENV.Incomplete("The product lockfile differs from its dependency admission.")
@@ -529,6 +640,10 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     # including versions inactive in this package's selected feature scope.
     engine_random = ("getrandom 0.4.3" if sum(p["name"] == "getrandom" for p in packages) > 1
                      else "getrandom")
+    engine_edges = ["garde", engine_random, "ntp-wire", "time-domain", "tokio"]
+    if dependency:
+        engine_edges = sorted([*engine_edges, SLINT.EP1_AES_NAME, "rustls", "rustls-cng-crypto",
+                               "rustls-pki-types", "rustls-platform-verifier", "zeroize"])
     external = {(p["name"], p["version"], p.get("checksum")) for p in packages if "source" in p}
     local = [p for p in packages if "source" not in p]
     if (external != expected or len([p for p in packages if "source" in p]) != len(expected)
@@ -539,15 +654,22 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             or any(p.get("dependencies") != ["garde", "time-domain"] for p in local if p["name"] == "time-core")
             # Cargo.lock combines dependency kinds; the manifest guard above owns their roles.
             or any(p.get("dependencies") != ["ntp-wire", "time-core", "time-domain"] for p in local if p["name"] == "ntp-exchange")
-            or any(p.get("dependencies") != ["garde", engine_random, "ntp-wire", "time-domain", "tokio"] for p in local if p["name"] == "nevrotick-engine")
+            or any(p.get("dependencies") != engine_edges for p in local if p["name"] == "nevrotick-engine")
             or not any(p["name"] == "garde" and p["version"] == "0.23.0" for p in packages if "source" in p)):
         raise ENV.Incomplete("The lock graph contains missing or unexpected packages.")
     if any(p.get("source") != "registry+https://github.com/rust-lang/crates.io-index" for p in packages if "source" in p):
         raise ENV.Incomplete("Unadmitted dependency origin.")
+    if dependency:
+        aes = [item for item in local if item["name"] == SLINT.EP1_AES_NAME]
+        if aes != [{"name": SLINT.EP1_AES_NAME, "version": "0.0.0",
+                    "dependencies": ["aes", "aes-siv", "cmac", "ntp-wire", "zeroize"]}]:
+            raise ENV.Incomplete("The nonmember AES lock identity or normal edges changed.")
     validate_patched_lock(packages, patches)
     inputs = {name: sha256(root / name) for name in SOURCE_FILES}
     for record in patches:
         inputs.update(admit_patched_source(root, record))
+    if dependency:
+        inputs.update(admit_first_party_dependency(root, dependency))
     for member in PACKAGES.values():
         for name, digest in inventory(root / member).items():
             if (name.endswith("Cargo.toml") and name != "Cargo.toml") or ".cargo" in Path(name).parts:
@@ -566,7 +688,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     return policy, inputs
 
 
-def product_deny(base: str, policy: dict, target: str) -> str:
+def product_deny(base: str, policy: dict, target: str, *, profile: str = "default") -> str:
     """Add only this reviewed graph's license grants and exact build-script versions."""
     parsed = tomllib.loads(base)
     validate_dependency_policy(policy)
@@ -578,7 +700,7 @@ def product_deny(base: str, policy: dict, target: str) -> str:
                 or "bypass" in parsed["bans"]["build"]):
             raise ENV.Incomplete("Bootstrap dependency policy was unexpectedly broadened.")
         records = SLINT.selected_records(policy)
-        row = policy["rows"][target]
+        row = SLINT.profile_rows(policy, profile)[target]
         exceptions = [{"crate": key, "allow": records[key]["selected_license"].split(" AND ")}
                       for key in sorted(row["features"])]
         exceptions.append({"crate": "nevrotick-ui@0.0.0", "allow": ["GPL-3.0-only"]})
@@ -941,13 +1063,15 @@ def validate_text_coverage_result(output: str) -> dict:
 
 
 def commands(lane: str, *, schema_version: int = 2,
-             patched_packages: tuple[str, ...] = ()) -> list[tuple[str, list[str]]]:
+             patched_packages: tuple[str, ...] = (), profile: str = "default") -> list[tuple[str, list[str]]]:
     """Select explicit product commands; never replace execution by bootstrap controls."""
     if type(schema_version) is not int or schema_version not in (2, 3):
         raise ENV.Incomplete("Unknown product dependency schema.")
     if (type(patched_packages) is not tuple or patched_packages not in SLINT.PATCH_NAME_SETS
             or patched_packages and schema_version != 3):
         raise ENV.Incomplete("Unknown patched package verification scope.")
+    if profile not in {"default", SLINT.EP1_PROFILE} or profile != "default" and schema_version != 3:
+        raise ENV.Incomplete("Unknown or non-schema-3 prototype profile.")
     cargo = ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
              "--config", 'source.reviewed.directory="/vendor"']
     base = ["--workspace", "--frozen", "--jobs", "12"]
@@ -974,6 +1098,11 @@ def commands(lane: str, *, schema_version: int = 2,
                 preflight.append(("dependency-" + target, ["/tools/cargo-deny", "--frozen", "--target", target,
                                                            "--metadata-path", "/work/selected-metadata-" + target + ".json",
                                                            "check", "--deny", "warnings"]))
+        if profile == SLINT.EP1_PROFILE:
+            for _, command in preflight:
+                if command[0] == "cargo" and ("metadata" in command or "--workspace" in command
+                        or "--package" in command and command[command.index("--package") + 1] == "nevrotick-engine"):
+                    command.extend(["--features", SLINT.EP1_FEATURE_ARGUMENT])
         if lane == "dependencies":
             return preflight
         patch_checks = []
@@ -992,7 +1121,18 @@ def commands(lane: str, *, schema_version: int = 2,
                     ("doctests:spin_on", [*cargo, "test", "--manifest-path", manifest,
                                           "--frozen", "--jobs", "6", "--doc"]),
                 ])
-        return preflight + patch_checks + commands(lane)
+        ordinary = commands(lane)
+        if profile == SLINT.EP1_PROFILE:
+            for _, command in ordinary:
+                if command[0] == "cargo" and ("--workspace" in command
+                        or "--package" in command and command[command.index("--package") + 1] == "nevrotick-engine"):
+                    index = command.index("--") if "--" in command else len(command)
+                    command[index:index] = ["--features", SLINT.EP1_FEATURE_ARGUMENT]
+                    # Reduce concurrency after the EP1 compiler's actual task-
+                    # resource failure; keep other rows and security flags intact.
+                    job_flag = "--build-jobs" if "--build-jobs" in command else "--jobs"
+                    command[command.index(job_flag) + 1] = str(TEST_BUILD_JOBS)
+        return preflight + patch_checks + ordinary
     if lane == "portable":
         return [
             ("format", ["cargo", "fmt", "--all", "--", "--check"]),
@@ -1191,8 +1331,10 @@ def export_slint_captures(work: Path, output: Path) -> dict:
     return {"scope": "Public software platform on Linux; no native Windows observation", "files": records}
 
 
-def validate_test_result(lane: str, output: str, work: Path) -> dict | None:
+def validate_test_result(lane: str, output: str, work: Path, *, profile: str = "default") -> dict | None:
     """Reject empty, wrong-package or skipped behavior despite a zero runner exit."""
+    if profile not in {"default", SLINT.EP1_PROFILE}:
+        raise ENV.Incomplete("Unknown test-accounting profile.")
     kind, _, package = lane.partition(":")
     if kind not in {"product-tests", "doctests", "optimized-tests"}:
         return None
@@ -1215,6 +1357,11 @@ def validate_test_result(lane: str, output: str, work: Path) -> dict | None:
         names = [case.get("name") for case in cases]
         if package == "nevrotick-engine" and ENGINE_PROCESSING_GUARD not in names:
             raise ENV.Incomplete("Engine tests did not execute the processing guard unit.")
+        if package == "nevrotick-engine" and profile == SLINT.EP1_PROFILE:
+            unit_names = {case.get("name") for suite in suites if suite.get("name") == package
+                          for case in suite.findall("testcase")}
+            if not ENGINE_KE_TEST_CASES <= unit_names:
+                raise ENV.Incomplete("Engine KE tests did not execute every selected private-owner unit control.")
         if package == SLINT.PATCH_NAME and not PATCH_TEST_CASES <= set(names):
             raise ENV.Incomplete("Patched spin_on tests did not execute its unit and non-Unpin/drop regression controls.")
         if kind == "optimized-tests" and OPTIMIZED_DISCRIMINATORS[package] not in names:
@@ -1383,7 +1530,18 @@ def admit_advisories(receipt_path: Path | None, now: float, expected_lock: str) 
 
 def execute(root: Path, args, report: dict) -> None:
     """Freeze candidate inputs, run the selected row and reject input drift."""
+    profile = getattr(args, "profile", "default")
+    if profile not in {"default", SLINT.EP1_PROFILE}:
+        raise ENV.Incomplete("Unknown prototype profile.")
     policy, source_identity = admit_product(root)
+    if profile != "default":
+        if policy["schema_version"] != 3:
+            raise ENV.Incomplete("The Engine prototype requires its admitted schema-3 feature graph.")
+        try:
+            SLINT.profile_rows(policy, profile)
+        except SLINT.Incomplete as error:
+            raise ENV.Incomplete(str(error)) from error
+    report["dependency_profile"] = profile
     vendor = args.vendor_dir.resolve(strict=True)
     vendor_identity = admit_vendor(vendor, policy)
     toolchain = args.toolchain_dir.resolve(strict=True)
@@ -1462,7 +1620,7 @@ def execute(root: Path, args, report: dict) -> None:
             if label.startswith("dependency-"):
                 flag = "--filter-platform" if label.startswith("dependency-metadata-") else "--target"
                 target = command[command.index(flag) + 1]
-                (source / "deny.toml").write_text(product_deny(deny_base, policy, target))
+                (source / "deny.toml").write_text(product_deny(deny_base, policy, target, profile=profile))
                 report.setdefault("effective_deny_sha256_by_target", {})[target] = sha256(source / "deny.toml")
             clear_test_report(label, work)
             output_budget = ({"max_output": SLINT.MAX_METADATA_BYTES}
@@ -1483,7 +1641,7 @@ def execute(root: Path, args, report: dict) -> None:
             if label.startswith("dependency-metadata-"):
                 if target is None:
                     raise ENV.Incomplete("Dependency metadata lacks its selected target.")
-                record["dependency_metadata"] = validate_dependency_metadata(target, output, policy)
+                record["dependency_metadata"] = validate_dependency_metadata(target, output, policy, profile=profile)
                 if policy["schema_version"] == 3:
                     metadata_outputs[target] = output
                     tree_outputs[target] = {}
@@ -1492,13 +1650,13 @@ def execute(root: Path, args, report: dict) -> None:
                     raise ENV.Incomplete("Selected tree needs its preceding validated metadata row.")
                 try:
                     scope = command[command.index("--package") + 1] if "--package" in command else "workspace"
-                    record["dependency_tree"] = SLINT.validate_tree(target, output, policy, scope=scope)
+                    record["dependency_tree"] = SLINT.validate_tree(target, output, policy, scope=scope, profile=profile)
                     tree_outputs[target][scope] = output
                     scopes = SLINT.package_scopes(policy)
                     complete = set(tree_outputs[target]) == {"workspace", *scopes}
                     projection = (SLINT.selected_metadata(
                         target, metadata_outputs[target], tree_outputs[target]["workspace"], policy,
-                        package_trees={package: tree_outputs[target][package] for package in scopes})
+                        package_trees={package: tree_outputs[target][package] for package in scopes}, profile=profile)
                         if complete else None)
                 except SLINT.Incomplete as error:
                     raise ENV.Incomplete(str(error)) from error
@@ -1506,7 +1664,7 @@ def execute(root: Path, args, report: dict) -> None:
                     projected = work / ("selected-metadata-" + target + ".json")
                     projected.write_text(json.dumps(projection, sort_keys=True, separators=(",", ":")))
                     record["selected_metadata_sha256"] = sha256(projected)
-            counts = validate_test_result(label, output, work)
+            counts = validate_test_result(label, output, work, profile=profile)
             if counts:
                 record["tests"] = counts
             print(f"PASSED: {label}", flush=True)
@@ -1517,7 +1675,7 @@ def execute(root: Path, args, report: dict) -> None:
         for label, command in text_contract_commands(args.lane, schema_version=policy["schema_version"]):
             run(label, command)
         patched_names = tuple(record["name"] for record in policy.get("patched_packages", []))
-        for label, command in commands(args.lane, schema_version=policy["schema_version"], patched_packages=patched_names):
+        for label, command in commands(args.lane, schema_version=policy["schema_version"], patched_packages=patched_names, profile=profile):
             run(label, command)
         if capture_requested:
             run("slint-capture-build", slint_capture_build_command())
@@ -1562,6 +1720,7 @@ def main(argv=None) -> int:
     """Resolve explicit/default paths without installing or fetching anything."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lane", choices=("portable", "windows", "dependencies"), default="portable")
+    parser.add_argument("--profile", choices=("default", SLINT.EP1_PROFILE), default="default")
     parser.add_argument("--capture-slint", action="store_true")
     for name in ("vendor-dir", "scratch-root", "toolchain-dir", "nextest", "deny", "xwin-config", "xwin-inventory",
                  "advisory-receipt", "output-dir", "json", "linux-sdk-dir"):
