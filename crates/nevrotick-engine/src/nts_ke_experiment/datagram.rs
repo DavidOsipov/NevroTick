@@ -1,0 +1,490 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! One private protected UDP operation after genuine association publication.
+//!
+//! The Windows backend owns its socket through synchronous syscall returns. The
+//! deterministic backend exercises the same owner without opening a socket.
+//! Neither historical completion nor software-clock captures confer eligibility.
+
+use std::io;
+
+/// Closed adapter failures; never retain packet, endpoint or library-error text.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum DatagramError {
+    /// A nested runtime cannot own this synchronous invocation.
+    #[cfg(windows)]
+    EnteredRuntime,
+    /// Current-thread runtime construction failed.
+    Runtime(io::ErrorKind),
+    /// One bounded loopback socket could not be bound.
+    #[cfg(windows)]
+    Bind(io::ErrorKind),
+    /// The socket could not become nonblocking.
+    #[cfg(windows)]
+    Nonblocking(io::ErrorKind),
+    /// The actual local endpoint could not be captured/admitted.
+    #[cfg(windows)]
+    Local(io::ErrorKind),
+    /// Tokio could not register the owned nonblocking socket.
+    #[cfg(windows)]
+    Registration(io::ErrorKind),
+    /// A readiness wait failed without establishing datagram consumption.
+    Readiness(io::ErrorKind),
+    /// A receive failed without establishing datagram consumption.
+    Receive(io::ErrorKind),
+    /// The original finite readiness/receive-attempt allowance is exhausted.
+    Attempts,
+    /// Actual operation captures could not form a coherent historical record.
+    Capture,
+}
+
+#[cfg(any(windows, test))]
+/// Concrete Windows operation and the identical deterministic receiving path.
+mod reached {
+    use std::io;
+    use std::net::SocketAddr;
+    use std::sync::Arc;
+    use std::time::Instant;
+
+    #[cfg(windows)]
+    use tokio::net::UdpSocket;
+    use zeroize::Zeroizing;
+
+    use super::DatagramError;
+    use crate::SoftwareClock;
+    use crate::nts_ke_experiment::association::AssociationOwner;
+    use crate::nts_ke_experiment::association::ledger::{
+        Receipt, RequestInput, RequestPhase, SendOutcome,
+    };
+    use crate::nts_ke_experiment::{Control, Failure, IoPhase, Summary};
+
+    /// One counter covers readiness waits and nonblocking receive attempts.
+    const ATTEMPTS: usize = 64;
+    /// An extra octet detects every successful receive above the admitted limit.
+    const RECEIVE_BYTES: usize = 4097;
+
+    /// Preserve a closed adapter failure without formatting its source.
+    const fn failed(error: DatagramError) -> Failure {
+        Failure::Datagram(error)
+    }
+
+    /// No reset is possible after a wake, refusal or received packet.
+    pub(super) struct Attempts(usize);
+
+    impl Attempts {
+        /// Consume before the bounded operation, including a spurious wake.
+        /// # Errors
+        /// Refuse attempt 65 without performing it.
+        pub(super) fn spend(&mut self) -> Result<(), Failure> {
+            self.0 = self
+                .0
+                .checked_sub(1)
+                .ok_or(failed(DatagramError::Attempts))?;
+            Ok(())
+        }
+    }
+
+    /// The only two readiness classes in this one-operation owner.
+    #[derive(Clone, Copy)]
+    pub(super) enum Interest {
+        /// Preparation has finished but no adapter has been invoked.
+        Write,
+        /// Exact full local submission established Pending.
+        Read,
+    }
+
+    /// One selected native return; unknown extents never expose a prefix.
+    pub(super) enum Read {
+        /// Complete selected bytes/source, still requiring all packet guards.
+        Datagram(usize, SocketAddr),
+        /// Readiness was spurious; no datagram consumption is established.
+        WouldBlock,
+        /// A datagram was consumed but its complete extent is unavailable.
+        ConsumedUnknown,
+        /// No datagram consumption is established by this error.
+        Failed(io::ErrorKind),
+    }
+
+    /// A native socket is never cloned, exported or reconstructed from endpoints.
+    pub(super) enum Io {
+        /// Sole runtime-registered native socket.
+        #[cfg(windows)]
+        Native(UdpSocket),
+        /// Closed public-material component cases; never a TLS/native substitute.
+        #[cfg(test)]
+        Script(Box<Script>),
+    }
+
+    /// Socket and immutable endpoint identity stay together through retirement.
+    pub(super) struct Backend {
+        /// Sole owned native socket or closed component script, never cloned.
+        pub(super) io: Io,
+        /// Captured actual local endpoint; it supplies no independent socket identity.
+        pub(super) local: SocketAddr,
+        /// Immutable association-admitted destination for this whole operation.
+        pub(super) remote: SocketAddr,
+        /// Original socket-instance identity retained by historical completion.
+        pub(super) identity: Arc<()>,
+        /// Exact before/after software captures and expected complete packet length.
+        pub(super) send: Option<(SoftwareClock, SoftwareClock, usize)>,
+    }
+
+    impl Backend {
+        /// Bind and register exactly one actual same-family loopback socket.
+        /// # Errors
+        /// Preserve bounded bind, nonblocking, local-endpoint and registration causes.
+        #[cfg(windows)]
+        fn bind(remote: SocketAddr) -> Result<Self, Failure> {
+            use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, UdpSocket as StdSocket};
+
+            let ip = match remote {
+                SocketAddr::V4(_) => IpAddr::V4(Ipv4Addr::LOCALHOST),
+                SocketAddr::V6(_) => IpAddr::V6(Ipv6Addr::LOCALHOST),
+            };
+            let socket = StdSocket::bind(SocketAddr::new(ip, 0))
+                .map_err(|error| failed(DatagramError::Bind(error.kind())))?;
+            socket
+                .set_nonblocking(true)
+                .map_err(|error| failed(DatagramError::Nonblocking(error.kind())))?;
+            let local = socket
+                .local_addr()
+                .map_err(|error| failed(DatagramError::Local(error.kind())))?;
+            if !local.ip().is_loopback() || local.port() == 0 || !remote.ip().is_loopback() {
+                return Err(Failure::Endpoint);
+            }
+            let socket = UdpSocket::from_std(socket)
+                .map_err(|error| failed(DatagramError::Registration(error.kind())))?;
+            Ok(Self {
+                io: Io::Native(socket),
+                local,
+                remote,
+                identity: Arc::new(()),
+                send: None,
+            })
+        }
+
+        /// Wait only for readiness; the caller retains currentness/deadline checks.
+        /// # Errors
+        /// Preserve readiness failure without fabricating a selected datagram.
+        async fn ready(&mut self, interest: Interest, control: &Control) -> Result<(), Failure> {
+            control.remaining(IoPhase::Exchange)?;
+            match &mut self.io {
+                #[cfg(windows)]
+                Io::Native(socket) => match interest {
+                    Interest::Write => socket.writable().await,
+                    Interest::Read => socket.readable().await,
+                }
+                .map_err(|error| failed(DatagramError::Readiness(error.kind()))),
+                #[cfg(test)]
+                Io::Script(script) => script.ready(interest, control).await,
+            }
+        }
+
+        /// Serialize actual cancellation acknowledgement with one concrete send.
+        ///
+        /// No arbitrary callback, allocation, formatter, crypto or await runs
+        /// under this guard. The closed test branch returns predeclared facts.
+        /// # Errors
+        /// Refuse stale authority before the syscall and retain the original cause.
+        pub(super) fn send_guarded(
+            &mut self,
+            control: &Control,
+            packet: &[u8],
+            remote: SocketAddr,
+        ) -> Result<SendOutcome, Failure> {
+            if remote != self.remote || self.send.is_some() {
+                return Err(Failure::Endpoint);
+            }
+            #[cfg(test)]
+            match &mut self.io {
+                #[cfg(windows)]
+                Io::Native(_) => {}
+                Io::Script(script) => script.before_guard(control)?,
+            }
+            let guard = control.published_guard()?;
+            let before = SoftwareClock::capture();
+            control.remaining_locked(*guard, IoPhase::Exchange, before.monotonic_after())?;
+            let (outcome, cancel_after) = match &mut self.io {
+                #[cfg(windows)]
+                Io::Native(socket) => (
+                    match socket.try_send_to(packet, remote) {
+                        Ok(length) => SendOutcome::Completed(length),
+                        Err(error) => SendOutcome::Failed(error.kind()),
+                    },
+                    false,
+                ),
+                #[cfg(test)]
+                Io::Script(script) => script.send(packet),
+            };
+            let after = SoftwareClock::capture();
+            drop(guard);
+            self.send = Some((before, after, packet.len()));
+            if cancel_after {
+                control.cancel()?;
+            }
+            Ok(outcome)
+        }
+
+        /// Observe one synchronous return before interpreting any packet bytes.
+        fn receive(&mut self, buffer: &mut [u8; RECEIVE_BYTES]) -> (Read, SoftwareClock) {
+            match &mut self.io {
+                #[cfg(windows)]
+                Io::Native(socket) => {
+                    let result = socket.try_recv_from(buffer);
+                    let observed = SoftwareClock::capture();
+                    (classify_read(result), observed)
+                }
+                #[cfg(test)]
+                Io::Script(script) => {
+                    let result = script.receive(buffer);
+                    (result, SoftwareClock::capture())
+                }
+            }
+        }
+    }
+
+    /// Translate only the compiled platform's consumed-oversize code.
+    pub(super) fn classify_read(result: io::Result<(usize, SocketAddr)>) -> Read {
+        match result {
+            Ok((RECEIVE_BYTES, _)) => Read::ConsumedUnknown,
+            Ok((length, source)) => Read::Datagram(length, source),
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => Read::WouldBlock,
+            Err(error)
+                if (cfg!(windows) && error.raw_os_error() == Some(10040))
+                    || (cfg!(target_os = "linux") && error.raw_os_error() == Some(90)) =>
+            {
+                Read::ConsumedUnknown
+            }
+            Err(error) => Read::Failed(error.kind()),
+        }
+    }
+
+    /// Check inclusive ordering of two already captured monotonic coordinates.
+    ///
+    /// This pure helper grants no clock provenance or current authority. Its
+    /// callers supply the actual send-end/send-return or send-return/read-return
+    /// captures and retain their separate original-deadline/control checks.
+    /// # Errors
+    /// Refuse reversed observations; equal coordinates remain a valid neighbor.
+    pub(super) fn check_capture_order(
+        before_end: Instant,
+        after_start: Instant,
+    ) -> Result<(), Failure> {
+        if before_end > after_start {
+            return Err(failed(DatagramError::Capture));
+        }
+        Ok(())
+    }
+
+    /// Historical completion owns all capture/identity facts and is not Clone.
+    pub(super) struct ProtectedCompletion<'control> {
+        /// Same live control checked against the association before any packet work.
+        control: &'control Control,
+        /// Genuine once-consumed authenticated receipt, without eligibility authority.
+        pub(super) receipt: Receipt,
+        /// Software observations immediately before the concrete send attempt.
+        pub(super) send_before: SoftwareClock,
+        /// Software observations immediately after that synchronous return.
+        pub(super) send_after: SoftwareClock,
+        /// Actual selected receive-return observations, captured before parsing.
+        pub(super) read_return: SoftwareClock,
+        /// Captured bound endpoint from the original owned socket.
+        pub(super) local: SocketAddr,
+        /// Same immutable association endpoint that received the submitted packet.
+        pub(super) remote: SocketAddr,
+        /// Same socket instance as the operation, not inferred from numeric endpoints.
+        pub(super) identity: Arc<()>,
+        /// Actual complete protected request extent, never a fixed 48-byte assumption.
+        pub(super) packet_bytes: usize,
+        /// Post-admission pool entries retained under the original context's budgets.
+        pub(super) cookies: usize,
+        /// Corresponding checked aggregate opaque pool payload, without copying bytes.
+        pub(super) cookie_bytes: usize,
+    }
+
+    impl ProtectedCompletion<'_> {
+        /// Discard history only after the socket owner has retired, then project counts.
+        /// # Errors
+        /// A stop/expiry before the enclosing final commit prevents success output;
+        /// a completed historical packet is not rolled back or reissued.
+        pub(super) fn finish(self) -> Result<Summary, Failure> {
+            let Self {
+                control,
+                receipt,
+                send_before,
+                send_after,
+                read_return,
+                local,
+                remote,
+                identity,
+                packet_bytes,
+                cookies,
+                cookie_bytes,
+            } = self;
+            control.commit()?;
+            let summary = Summary {
+                cookies,
+                cookie_bytes,
+                packet_bytes,
+                transmitted: true,
+            };
+            // Retain the complete historical header and actual capture/identity
+            // through projection, with no numerical or fresh-sync admission.
+            drop((
+                receipt,
+                send_before,
+                send_after,
+                read_return,
+                local,
+                remote,
+                identity,
+            ));
+            Ok(summary)
+        }
+    }
+
+    /// Register cancellation before reading its authoritative latched state.
+    /// # Errors
+    /// Preserve cancellation/expiry/readiness failure with the original deadline.
+    async fn wait(
+        backend: &mut Backend,
+        control: &Control,
+        interest: Interest,
+        attempts: &mut Attempts,
+    ) -> Result<(), Failure> {
+        attempts.spend()?;
+        let cancelled = control.cancelled.notified();
+        tokio::pin!(cancelled);
+        cancelled.as_mut().enable();
+        drop(control.published_guard()?);
+        tokio::select! {
+            biased;
+            () = &mut cancelled => return Err(Failure::Cancelled),
+            () = tokio::time::sleep_until(tokio::time::Instant::from_std(control.expiry)) => return Err(Failure::Deadline),
+            ready = backend.ready(interest, control) => ready?,
+        }
+        drop(control.published_guard()?);
+        Ok(())
+    }
+
+    /// Drive the same bounded packet owner with either concrete backend.
+    /// # Errors
+    /// Retain original adapter, currentness and packet refusals; never retry a send.
+    pub(super) async fn operation<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+        backend: &mut Backend,
+    ) -> Result<ProtectedCompletion<'control>, Failure> {
+        if association.check_context(control)? != backend.remote {
+            return Err(Failure::Endpoint);
+        }
+        let ticket = association.reserve(RequestInput::Observed)?;
+        association.prepare_observed(&ticket, fill)?;
+        let mut attempts = Attempts(ATTEMPTS);
+        wait(backend, control, Interest::Write, &mut attempts).await?;
+        let mut submission_failure = None;
+        let submitted = association.invoke_sender(ticket, |packet, remote| {
+            match backend.send_guarded(control, packet, remote) {
+                Ok(outcome) => outcome,
+                Err(error) => {
+                    submission_failure = Some(error);
+                    SendOutcome::Unknown
+                }
+            }
+        });
+        if let Some(error) = submission_failure {
+            return Err(error);
+        }
+        submitted?;
+        let (send_before, send_after, packet_bytes) =
+            backend.send.ok_or(failed(DatagramError::Capture))?;
+        check_capture_order(send_before.monotonic_after(), send_after.monotonic())?;
+        let mut buffer = Zeroizing::new([0; RECEIVE_BYTES]);
+        wait(backend, control, Interest::Read, &mut attempts).await?;
+        loop {
+            attempts.spend()?;
+            drop(control.published_guard()?);
+            let (read, observed) = backend.receive(&mut buffer);
+            match read {
+                Read::WouldBlock => wait(backend, control, Interest::Read, &mut attempts).await?,
+                Read::Failed(kind) => return Err(failed(DatagramError::Receive(kind))),
+                Read::ConsumedUnknown => {
+                    association.charge_consumed_unknown()?;
+                    return Err(failed(DatagramError::Capture));
+                }
+                Read::Datagram(length, remote) => {
+                    check_capture_order(send_after.monotonic_after(), observed.monotonic())?;
+                    let packet = buffer.get(..length).ok_or(failed(DatagramError::Capture))?;
+                    match association.receive_reply(packet, remote, observed.monotonic()) {
+                        Ok(receipt) => {
+                            let (cookies, cookie_bytes) = association.cookie_population()?;
+                            return Ok(ProtectedCompletion {
+                                control,
+                                receipt,
+                                send_before,
+                                send_after,
+                                read_return: observed,
+                                local: backend.local,
+                                remote: backend.remote,
+                                identity: Arc::clone(&backend.identity),
+                                packet_bytes,
+                                cookies,
+                                cookie_bytes,
+                            });
+                        }
+                        Err(error) => {
+                            if !matches!(association.status().phase, RequestPhase::Pending) {
+                                return Err(error);
+                            }
+                            if matches!(
+                                error,
+                                Failure::Cancelled | Failure::Deadline | Failure::Control
+                            ) {
+                                return Err(error);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Own one active current-thread driver through socket retirement.
+    /// # Errors
+    /// Refuse nested runtime, socket setup and the genuine bounded operation.
+    #[cfg(windows)]
+    pub(in super::super) fn exchange(
+        association: &mut AssociationOwner<'_>,
+        control: &Control,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+    ) -> Result<Summary, Failure> {
+        if tokio::runtime::Handle::try_current().is_ok() {
+            return Err(failed(DatagramError::EnteredRuntime));
+        }
+        let remote = association.check_context(control)?;
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_io()
+            .enable_time()
+            .max_blocking_threads(2)
+            .build()
+            .map_err(|error| failed(DatagramError::Runtime(error.kind())))?;
+        let result = runtime.block_on(async {
+            let mut backend = Backend::bind(remote)?;
+            let completion = operation(association, control, fill, &mut backend).await;
+            drop(backend);
+            completion
+        });
+        drop(runtime);
+        result.and_then(ProtectedCompletion::finish)
+    }
+
+    #[cfg(test)]
+    use super::tests::Script;
+}
+
+#[cfg(windows)]
+pub(super) use reached::exchange;
+
+#[cfg(test)]
+#[path = "datagram/tests.rs"]
+mod tests;

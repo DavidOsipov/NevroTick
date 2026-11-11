@@ -23,7 +23,9 @@ mod nts_ke_experiment;
 /// Run the explicitly selected, controlled-loopback KE association prototype.
 ///
 /// The existing probe is the live caller. Only historical public counts leave
-/// the private owner after secret/provider cleanup; no UDP or clock effect occurs.
+/// the private owner after secret/provider cleanup. The default seals a never-send
+/// preview; `--protected-datagram` explicitly selects one bounded UDP operation.
+/// Neither mode changes a clock or grants production sample/freshness authority.
 /// Unsupported hosts refuse without invoking a substitute TLS provider.
 #[cfg(feature = "ke-association-prototype")]
 pub fn experimental_nts_ke_probe(

@@ -83,6 +83,15 @@ Windows experiment.
 
 ## Bounded ordinary-validation KE producer source
 
+**11 November Engine continuation:** the live CLI delegates to Engine. Its
+two-argument default remains a never-send preview. The exact optional
+`--protected-datagram` flag selects one bounded protected loopback operation;
+this new journey is source/component preparation and has not been executed.
+Only final-committed success reports `transmitted=1`, meaning a complete local
+send returned, not peer delivery or synchronization. Keys, socket and provider
+retire before output. Follow the [existing EP3 task](../../tasks/engine-transport-pilot.md#ep3--private-protected-datagram-source-integration--11-november-2026)
+for current checks and holds; the following dated results remain historical.
+
 **9 November handoff source amendment:** the newly authored private receiver
 consumes the actual same-connection C2S key and first exact cookie through the
 existing algorithm-15 witness, after successful TLS closure and before CNG

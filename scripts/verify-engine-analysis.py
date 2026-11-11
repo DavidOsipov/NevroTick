@@ -5554,6 +5554,7 @@ ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/response/tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/response/fixtures.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/datagram/tests.rs",
 )
 ENGINE_KE_BOUND_INPUTS = tuple(dict.fromkeys((
     WRAPPER, TESTS, *COMMON.ENGINE_KE_CRITICAL, *ENGINE_KE_TEST_SOURCES,
@@ -5744,11 +5745,11 @@ def validate_engine_ke_policy(policy: dict, *, campaign: bool = False) -> dict:
             or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None for value in pins.values())):
         raise Incomplete("Engine KE source/helper inputs differ from the exact fixed set.")
     names = binding["test_inventory"]
-    if (type(names) is not list or len(names) != 261
+    if (type(names) is not list or len(names) != 285
             or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
             or names != sorted(set(names))
-            or sum(name.startswith("nts_ke_experiment::") for name in names) != 83):
-        raise Incomplete("Engine KE requires all 261 actual Engine tests including its 83 KE cases.")
+            or sum(name.startswith("nts_ke_experiment::") for name in names) != 107):
+        raise Incomplete("Engine KE requires all 285 actual Engine tests including its 107 KE cases.")
     for key in ("ordinary_evidence", "root_graph_evidence"):
         evidence = binding[key]
         if (type(evidence) is not dict or set(evidence) != {"path", "sha256"}
@@ -5771,7 +5772,7 @@ def validate_engine_ke_execution(text: str, binding: dict, *, include_doctests: 
             or any(re.fullmatch(r"[^\r\n]+[.]rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile(?: fail)?)?", name) is None
                    for name in extra)):
         raise Incomplete("Engine KE did not execute every current actual library/integration case.")
-    result = {"tests_executed": len(records), "ke_tests_executed": 83,
+    result = {"tests_executed": len(records), "ke_tests_executed": 107,
               "test_names": records, "inventory_sha256": COMMON.canonical_sha256(sorted(records))}
     if include_doctests:
         result["additional_doctests"] = sorted(extra)
@@ -5822,7 +5823,7 @@ def execute_engine_ke_profile(args, report: dict) -> None:
         if (manifest.get("critical_files", []).count(filename) != 1
                 or sum(row.get("package") == package and filename in row.get("files", [])
                        for row in manifest.get("security_modules", [])) != 1):
-            raise Incomplete("Engine KE requires the complete twelve-owner critical/security inventory.")
+            raise Incomplete("Engine KE requires the complete current critical/security inventory.")
     evidence_before = admit_engine_ke_evidence(binding)
     if shutil.disk_usage(args.output_dir.parent).free < policy["minimum_free_bytes"]:
         raise Incomplete("Engine KE metrics require five GiB before admission.")
@@ -5831,7 +5832,7 @@ def execute_engine_ke_profile(args, report: dict) -> None:
         selected.lane = "mutation"
     report.update(profile="ke_association", subjects=subjects, qualification_passed=False,
                   full_critical_files=list(COMMON.ENGINE_KE_CRITICAL),
-                  scope="Eight reached GNU KE owners; four remaining owners and Windows arms stay open",
+                  scope="Nine selected GNU KE owners; four remaining owners and Windows arms stay open",
                   source_context_sha256=binding["source_context_sha256"],
                   source_context_scope="Historical Tool preparation reference; current Root identity is candidate_sha256/source_sha256",
                   candidate_sha256=binding["candidate_sha256"],
@@ -5926,7 +5927,7 @@ def execute_engine_ke_profile(args, report: dict) -> None:
     report["selected_host_metrics_passed"] = args.lane == "all" and subjects == ENGINE_KE_HOST_SUBJECTS
     report["selected_host_qualification_passed"] = False
     report["independent_mutation_classification"] = "Required for every caught, unviable or missed descriptor; pending separate review."
-    # An eight-owner host pass never closes all twelve files, Windows or native custody.
+    # A selected GNU pass never closes the remaining owners, Windows or native custody.
     report["qualification_passed"] = False
 
 def execute(args, report: dict) -> None:
@@ -6014,7 +6015,7 @@ def main(argv=None) -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.profile == "ke_association" and args.subject not in {*ENGINE_KE_HOST_SUBJECTS, "all"}:
-        parser.error("Engine KE selects only its eight exact host owners or all")
+        parser.error("Engine KE selects only its exact named host owners or all")
     if args.profile != "ke_association" and args.subject in ENGINE_KE_HOST_SUBJECTS:
         parser.error("Engine KE subjects require --profile ke_association")
     if args.lane in {"baseline", "fixtures"} and args.profile != "ke_association":

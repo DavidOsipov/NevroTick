@@ -919,3 +919,102 @@ fn publication_observation_is_inside_the_actual_phase_guard() -> Result<(), Fail
     assert_eq!(healthy.expiry, expired.expiry);
     Ok(())
 }
+
+/// CLI compatibility is never-send; protected UDP needs one exact explicit flag.
+/// # Errors
+/// Preserve valid configuration construction failures.
+/// # Panics
+/// Fail if missing/extra/unknown arguments or non-loopback peers are admitted.
+#[test]
+fn protected_mode_requires_exact_explicit_cli_admission() -> Result<(), Failure> {
+    let preview = Config::from_arguments(
+        ["127.0.0.1:4460", "Time.Example"]
+            .map(OsString::from)
+            .into_iter(),
+    )?;
+    assert_eq!(preview.mode, super::ExchangeMode::Preview);
+    let protected = Config::from_arguments(
+        ["127.0.0.1:4460", "Time.Example", "--protected-datagram"]
+            .map(OsString::from)
+            .into_iter(),
+    )?;
+    assert_eq!(protected.mode, super::ExchangeMode::ProtectedDatagram);
+    for arguments in [
+        vec![],
+        vec!["127.0.0.1:4460"],
+        vec!["127.0.0.1:4460", "Time.Example", "--protected-datagrams"],
+        vec![
+            "127.0.0.1:4460",
+            "Time.Example",
+            "--protected-datagram",
+            "extra",
+        ],
+        vec!["192.0.2.1:4460", "Time.Example", "--protected-datagram"],
+    ] {
+        assert!(matches!(
+            Config::from_arguments(arguments.into_iter().map(OsString::from)),
+            Err(Failure::Arguments)
+        ));
+    }
+    Ok(())
+}
+
+/// The dedicated syscall guard is exclusive and available only while published.
+/// # Errors
+/// Preserve actual Control construction and publication failures.
+/// # Panics
+/// Fail if an unready/closed/expired context gains a syscall guard.
+#[test]
+fn syscall_guard_preserves_original_phase_and_expiry() -> Result<(), Failure> {
+    let control = Control::new(Instant::now())?;
+    assert!(matches!(control.published_guard(), Err(Failure::Control)));
+    control.publish_ke()?;
+    {
+        let guard = control.published_guard()?;
+        assert!(matches!(*guard, Phase::Published));
+        assert!(matches!(
+            control.phase.try_lock(),
+            Err(std::sync::TryLockError::WouldBlock)
+        ));
+    }
+    assert_eq!(control.cancel()?, CancelOutcome::Cancelled);
+    assert!(matches!(control.published_guard(), Err(Failure::Cancelled)));
+    let mut expired = Control::new(Instant::now())?;
+    expired.publish_ke()?;
+    expired.expiry = expired.origin;
+    assert!(matches!(expired.published_guard(), Err(Failure::Deadline)));
+    let committed = Control::new(Instant::now())?;
+    committed.publish_ke()?;
+    committed.commit()?;
+    assert!(matches!(committed.published_guard(), Err(Failure::Control)));
+    Ok(())
+}
+
+/// A registered waiter sees cancellation even when it occurs before its await.
+/// This exercises no socket, TLS or native operation.
+/// # Errors
+/// Preserve actual Control construction/cancellation or timer-runtime failures.
+/// # Panics
+/// Fail if registered cancellation is lost.
+#[test]
+fn cancellation_wakes_an_already_registered_waiter() -> Result<(), Failure> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_time()
+        .build()
+        .map_err(|error| {
+            Failure::Datagram(super::datagram::DatagramError::Runtime(error.kind()))
+        })?;
+    runtime.block_on(async {
+        let control = Control::new(Instant::now())?;
+        let notified = control.cancelled.notified();
+        tokio::pin!(notified);
+        assert!(!notified.as_mut().enable());
+        assert_eq!(control.cancel()?, CancelOutcome::Cancelled);
+        assert!(
+            tokio::time::timeout(Duration::from_secs(1), notified)
+                .await
+                .is_ok()
+        );
+        Ok(())
+    })
+}

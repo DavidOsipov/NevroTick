@@ -10,7 +10,8 @@
     "ke_request": "crates/nevrotick-engine/src/nts_ke_experiment/request.rs",
     "ke_fault": "crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs",
     "ke_ledger": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
-    "ke_response": "crates/nevrotick-engine/src/nts_ke_experiment/response.rs"
+    "ke_response": "crates/nevrotick-engine/src/nts_ke_experiment/response.rs",
+    "ke_datagram": "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs"
   },
   "critical_files": [
     "crates/nevrotick-engine/src/lib.rs",
@@ -22,6 +23,7 @@
     "crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/response.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
     "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"
@@ -55,8 +57,8 @@
   "mutation_equivalences": [
     {
       "id": "KE-RETURN-POOL-BYTES-OR",
-      "candidate_sha256": "1cb52d94c0b9b073b137a4ae90de8898a5040ea004482a58708ee76c7581f46c",
-      "source_sha256": "1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe",
+      "candidate_sha256": "c5a663d4ac9d680f41001c7fb07175ee373c5165eaa11087b569cffe189b1ff8",
+      "source_sha256": "832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83",
       "mutant": {
         "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
         "function": {
@@ -65,26 +67,26 @@
           "span": {
             "end": {
               "column": 6,
-              "line": 668
+              "line": 744
             },
             "start": {
               "column": 5,
-              "line": 621
+              "line": 697
             }
           }
         },
         "genre": "BinaryOperator",
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:654:17: replace || with && in AssociationOwner<'a>::return_unused",
+        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:730:17: replace || with && in AssociationOwner<'a>::return_unused",
         "package": "nevrotick-engine",
         "replacement": "&&",
         "span": {
           "end": {
             "column": 19,
-            "line": 654
+            "line": 730
           },
           "start": {
             "column": 17,
-            "line": 654
+            "line": 730
           }
         }
       },
@@ -92,7 +94,7 @@
       "rationale": "After the unchanged ticket/currentness/phase checks, one exact cookie is removed from a previously checked pool of at most eight. No method changes that available pool before this explicit return. Thus available count is at most seven and available-plus-reserved bytes remain at most 131,072. Removal preserves the original Vec capacity, which exceeds its current length. All three rejection terms are false; both operator forms return the same cookie without copying or renewing an allowance. Earlier rejected arguments and dropped values are unchanged.",
       "proof": {
         "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "a09603a31912e57c0c5ec803d4293c58405ff67ac27c328e153de2a68d3871a7",
+        "sha256": "1ad2d42fc36afbeaf1ad0ab085bb065ba4f593d5cb94d194fe3f76e737b23d9d",
         "section": "KE-RETURN-POOL-BYTES-OR",
         "reviewer": "/root; /root/ep1_graph_readiness; /root/ep1_source_review; /root/deletion_reference_audit",
         "verdict": "independently-justified-equivalent"
@@ -100,8 +102,8 @@
     },
     {
       "id": "KE-RETURN-POOL-CAPACITY-OR",
-      "candidate_sha256": "1cb52d94c0b9b073b137a4ae90de8898a5040ea004482a58708ee76c7581f46c",
-      "source_sha256": "1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe",
+      "candidate_sha256": "c5a663d4ac9d680f41001c7fb07175ee373c5165eaa11087b569cffe189b1ff8",
+      "source_sha256": "832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83",
       "mutant": {
         "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
         "function": {
@@ -110,26 +112,26 @@
           "span": {
             "end": {
               "column": 6,
-              "line": 668
+              "line": 744
             },
             "start": {
               "column": 5,
-              "line": 621
+              "line": 697
             }
           }
         },
         "genre": "BinaryOperator",
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:655:17: replace || with && in AssociationOwner<'a>::return_unused",
+        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:731:17: replace || with && in AssociationOwner<'a>::return_unused",
         "package": "nevrotick-engine",
         "replacement": "&&",
         "span": {
           "end": {
             "column": 19,
-            "line": 655
+            "line": 731
           },
           "start": {
             "column": 17,
-            "line": 655
+            "line": 731
           }
         }
       },
@@ -137,7 +139,7 @@
       "rationale": "The same checked return domain makes count, bytes and capacity rejection terms false. In particular no accepted return can have `capacity <= available.len()`: the removed cookie's original slot remains allocated. At exact maximum bytes the original strict byte comparison remains false. Reordering pure false reads changes neither disposition, returned allocation, retirement nor budget.",
       "proof": {
         "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "a09603a31912e57c0c5ec803d4293c58405ff67ac27c328e153de2a68d3871a7",
+        "sha256": "1ad2d42fc36afbeaf1ad0ab085bb065ba4f593d5cb94d194fe3f76e737b23d9d",
         "section": "KE-RETURN-POOL-CAPACITY-OR",
         "reviewer": "/root; /root/ep1_graph_readiness; /root/ep1_source_review; /root/deletion_reference_audit",
         "verdict": "independently-justified-equivalent"
@@ -145,8 +147,8 @@
     },
     {
       "id": "KE-SEND-ARCHIVE-BYTES-OR",
-      "candidate_sha256": "1cb52d94c0b9b073b137a4ae90de8898a5040ea004482a58708ee76c7581f46c",
-      "source_sha256": "1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe",
+      "candidate_sha256": "c5a663d4ac9d680f41001c7fb07175ee373c5165eaa11087b569cffe189b1ff8",
+      "source_sha256": "832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83",
       "mutant": {
         "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
         "function": {
@@ -155,26 +157,26 @@
           "span": {
             "end": {
               "column": 6,
-              "line": 790
+              "line": 859
             },
             "start": {
               "column": 5,
-              "line": 694
+              "line": 770
             }
           }
         },
         "genre": "BinaryOperator",
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:739:17: replace || with && in AssociationOwner<'a>::invoke_sender",
+        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:808:17: replace || with && in AssociationOwner<'a>::invoke_sender",
         "package": "nevrotick-engine",
         "replacement": "&&",
         "span": {
           "end": {
             "column": 19,
-            "line": 739
+            "line": 808
           },
           "start": {
             "column": 17,
-            "line": 739
+            "line": 808
           }
         }
       },
@@ -182,7 +184,7 @@
       "rationale": "At most 32 original checkouts exist. The current prepared checkout has not yet been archived, so archive length is at most 31; initial capacity is at least 32 and never shrinks. Checkout filters every value already in this archive and exclusive mutable ownership permits no intervening archive publication. The actual formatter bounds a sendable cookie to 3968 bytes: 4096 packet bytes minus the 128-byte minimum header, UID, cookie-header and algorithm-15 authenticator overhead. Including the current cookie, at most 32 bodies total at most 126,976 bytes, strictly below 131,072. Therefore all four rejection terms are false. Both forms archive once before the same adapter invocation; every adapter outcome retains its original no-reuse and completion custody.",
       "proof": {
         "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "a09603a31912e57c0c5ec803d4293c58405ff67ac27c328e153de2a68d3871a7",
+        "sha256": "1ad2d42fc36afbeaf1ad0ab085bb065ba4f593d5cb94d194fe3f76e737b23d9d",
         "section": "KE-SEND-ARCHIVE-BYTES-OR",
         "reviewer": "/root; /root/ep1_graph_readiness; /root/ep1_source_review; /root/deletion_reference_audit",
         "verdict": "independently-justified-equivalent"
@@ -190,8 +192,8 @@
     },
     {
       "id": "KE-SEND-ARCHIVE-CAPACITY-OR",
-      "candidate_sha256": "1cb52d94c0b9b073b137a4ae90de8898a5040ea004482a58708ee76c7581f46c",
-      "source_sha256": "1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe",
+      "candidate_sha256": "c5a663d4ac9d680f41001c7fb07175ee373c5165eaa11087b569cffe189b1ff8",
+      "source_sha256": "832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83",
       "mutant": {
         "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
         "function": {
@@ -200,26 +202,26 @@
           "span": {
             "end": {
               "column": 6,
-              "line": 790
+              "line": 859
             },
             "start": {
               "column": 5,
-              "line": 694
+              "line": 770
             }
           }
         },
         "genre": "BinaryOperator",
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:740:17: replace || with && in AssociationOwner<'a>::invoke_sender",
+        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:809:17: replace || with && in AssociationOwner<'a>::invoke_sender",
         "package": "nevrotick-engine",
         "replacement": "&&",
         "span": {
           "end": {
             "column": 19,
-            "line": 740
+            "line": 809
           },
           "start": {
             "column": 17,
-            "line": 740
+            "line": 809
           }
         }
       },
@@ -227,7 +229,7 @@
       "rationale": "The preceding send-domain argument applies independently to the changed connector. Archive capacity is at least 32 while pre-push length is at most 31. Count, byte, capacity and used-value checks are all false. The reserved value moves once, the request becomes Invoked before exposure, and failed/short/unknown/panicking callbacks cannot restore cookie permission in either variant.",
       "proof": {
         "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "a09603a31912e57c0c5ec803d4293c58405ff67ac27c328e153de2a68d3871a7",
+        "sha256": "1ad2d42fc36afbeaf1ad0ab085bb065ba4f593d5cb94d194fe3f76e737b23d9d",
         "section": "KE-SEND-ARCHIVE-CAPACITY-OR",
         "reviewer": "/root; /root/ep1_graph_readiness; /root/ep1_source_review; /root/deletion_reference_audit",
         "verdict": "independently-justified-equivalent"
@@ -235,8 +237,8 @@
     },
     {
       "id": "KE-SEND-ARCHIVE-VALUE-OR",
-      "candidate_sha256": "1cb52d94c0b9b073b137a4ae90de8898a5040ea004482a58708ee76c7581f46c",
-      "source_sha256": "1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe",
+      "candidate_sha256": "c5a663d4ac9d680f41001c7fb07175ee373c5165eaa11087b569cffe189b1ff8",
+      "source_sha256": "832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83",
       "mutant": {
         "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
         "function": {
@@ -245,26 +247,26 @@
           "span": {
             "end": {
               "column": 6,
-              "line": 790
+              "line": 859
             },
             "start": {
               "column": 5,
-              "line": 694
+              "line": 770
             }
           }
         },
         "genre": "BinaryOperator",
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:741:17: replace || with && in AssociationOwner<'a>::invoke_sender",
+        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:810:17: replace || with && in AssociationOwner<'a>::invoke_sender",
         "package": "nevrotick-engine",
         "replacement": "&&",
         "span": {
           "end": {
             "column": 19,
-            "line": 741
+            "line": 810
           },
           "start": {
             "column": 17,
-            "line": 741
+            "line": 810
           }
         }
       },
@@ -272,7 +274,7 @@
       "rationale": "`reserve` removes known used values before moving the selected exact cookie. No other invocation can append an archive value while that request owns the single slot. Consequently the final used-value predicate is false, alongside the count/byte/capacity predicates. The change may skip a pure bounded comparison; it changes no checked value, error, callback, archive entry or lifecycle fact.",
       "proof": {
         "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "a09603a31912e57c0c5ec803d4293c58405ff67ac27c328e153de2a68d3871a7",
+        "sha256": "1ad2d42fc36afbeaf1ad0ab085bb065ba4f593d5cb94d194fe3f76e737b23d9d",
         "section": "KE-SEND-ARCHIVE-VALUE-OR",
         "reviewer": "/root; /root/ep1_graph_readiness; /root/ep1_source_review; /root/deletion_reference_audit",
         "verdict": "independently-justified-equivalent"
@@ -280,8 +282,8 @@
     },
     {
       "id": "KE-SEND-ARCHIVE-BYTES-EQUALITY",
-      "candidate_sha256": "1cb52d94c0b9b073b137a4ae90de8898a5040ea004482a58708ee76c7581f46c",
-      "source_sha256": "1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe",
+      "candidate_sha256": "c5a663d4ac9d680f41001c7fb07175ee373c5165eaa11087b569cffe189b1ff8",
+      "source_sha256": "832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83",
       "mutant": {
         "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
         "function": {
@@ -290,26 +292,26 @@
           "span": {
             "end": {
               "column": 6,
-              "line": 790
+              "line": 859
             },
             "start": {
               "column": 5,
-              "line": 694
+              "line": 770
             }
           }
         },
         "genre": "BinaryOperator",
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:739:26: replace > with == in AssociationOwner<'a>::invoke_sender",
+        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:808:26: replace > with == in AssociationOwner<'a>::invoke_sender",
         "package": "nevrotick-engine",
         "replacement": "==",
         "span": {
           "end": {
             "column": 27,
-            "line": 739
+            "line": 808
           },
           "start": {
             "column": 26,
-            "line": 739
+            "line": 808
           }
         }
       },
@@ -317,7 +319,7 @@
       "rationale": "Every encoded cookie is at most 3968 bytes and at most 32 can reach this archive. The checked sum is at most 126,976, so both `sum > 131072` and `sum == 131072` are false throughout this caller's domain, with no integer overflow. This does not weaken a raw/helper aggregate-capacity contract at its independent boundary.",
       "proof": {
         "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "a09603a31912e57c0c5ec803d4293c58405ff67ac27c328e153de2a68d3871a7",
+        "sha256": "1ad2d42fc36afbeaf1ad0ab085bb065ba4f593d5cb94d194fe3f76e737b23d9d",
         "section": "KE-SEND-ARCHIVE-BYTES-EQUALITY",
         "reviewer": "/root; /root/ep1_graph_readiness; /root/ep1_source_review; /root/deletion_reference_audit",
         "verdict": "independently-justified-equivalent"
@@ -325,8 +327,8 @@
     },
     {
       "id": "KE-SEND-ARCHIVE-BYTES-INCLUSIVE",
-      "candidate_sha256": "1cb52d94c0b9b073b137a4ae90de8898a5040ea004482a58708ee76c7581f46c",
-      "source_sha256": "1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe",
+      "candidate_sha256": "c5a663d4ac9d680f41001c7fb07175ee373c5165eaa11087b569cffe189b1ff8",
+      "source_sha256": "832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83",
       "mutant": {
         "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
         "function": {
@@ -335,26 +337,26 @@
           "span": {
             "end": {
               "column": 6,
-              "line": 790
+              "line": 859
             },
             "start": {
               "column": 5,
-              "line": 694
+              "line": 770
             }
           }
         },
         "genre": "BinaryOperator",
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:739:26: replace > with >= in AssociationOwner<'a>::invoke_sender",
+        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:808:26: replace > with >= in AssociationOwner<'a>::invoke_sender",
         "package": "nevrotick-engine",
         "replacement": ">=",
         "span": {
           "end": {
             "column": 27,
-            "line": 739
+            "line": 808
           },
           "start": {
             "column": 26,
-            "line": 739
+            "line": 808
           }
         }
       },
@@ -362,7 +364,7 @@
       "rationale": "The same strict upper bound, 126,976, excludes equality and excess. Both comparisons are false for every admitted prepared invocation, including the 32nd checkout. A changed packet size, minimum encoding extent or attempt limit invalidates this argument even if current tests still pass.",
       "proof": {
         "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "a09603a31912e57c0c5ec803d4293c58405ff67ac27c328e153de2a68d3871a7",
+        "sha256": "1ad2d42fc36afbeaf1ad0ab085bb065ba4f593d5cb94d194fe3f76e737b23d9d",
         "section": "KE-SEND-ARCHIVE-BYTES-INCLUSIVE",
         "reviewer": "/root; /root/ep1_graph_readiness; /root/ep1_source_review; /root/deletion_reference_audit",
         "verdict": "independently-justified-equivalent"
@@ -370,8 +372,8 @@
     },
     {
       "id": "KE-RECEIVE-STABLE-SLOT-OR",
-      "candidate_sha256": "1cb52d94c0b9b073b137a4ae90de8898a5040ea004482a58708ee76c7581f46c",
-      "source_sha256": "1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe",
+      "candidate_sha256": "c5a663d4ac9d680f41001c7fb07175ee373c5165eaa11087b569cffe189b1ff8",
+      "source_sha256": "832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83",
       "mutant": {
         "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
         "function": {
@@ -380,34 +382,34 @@
           "span": {
             "end": {
               "column": 6,
-              "line": 944
+              "line": 1037
             },
             "start": {
               "column": 5,
-              "line": 831
+              "line": 926
             }
           }
         },
         "genre": "BinaryOperator",
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:918:40: replace || with && in AssociationOwner<'a>::receive_reply",
+        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:1011:40: replace || with && in AssociationOwner<'a>::receive_reply",
         "package": "nevrotick-engine",
         "replacement": "&&",
         "span": {
           "end": {
             "column": 42,
-            "line": 918
+            "line": 1011
           },
           "start": {
             "column": 40,
-            "line": 918
+            "line": 1011
           }
         }
       },
       "requirement": "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27",
-      "rationale": "The initial guarded charge requires Pending and saves that slot's serial. Subsequent synchronous authentication/staging only immutably borrows the owner; no await, external owner-mutating callback or active-slot replacement occurs. Staging failure returns before the final closure. On success, the final original Control guard rejects cancellation/expiry before entering that closure. Therefore the active serial and Pending phase equal their captured values when the changed expression executes. Both mismatch predicates are false and both variants commit the same cookies/receipt atomically once. No future asynchronous or native completion path inherits this argument.",
+      "rationale": "The initial guarded charge requires Pending and saves that slot's serial. Subsequent synchronous authentication/staging only immutably borrows the owner; no await, external owner-mutating callback or active-slot replacement occurs. Staging failure returns before the final closure. On success, the final original Control guard rejects cancellation/expiry before entering that closure. Therefore the active serial and Pending phase equal their captured values when the changed expression executes. Both mismatch predicates are false and both variants commit the same cookies/receipt atomically once. The current adapter's waits and native calls occur outside this synchronous receiving transaction. This argument supplies no native completion, trust or future asynchronous-staging qualification.",
       "proof": {
         "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "a09603a31912e57c0c5ec803d4293c58405ff67ac27c328e153de2a68d3871a7",
+        "sha256": "1ad2d42fc36afbeaf1ad0ab085bb065ba4f593d5cb94d194fe3f76e737b23d9d",
         "section": "KE-RECEIVE-STABLE-SLOT-OR",
         "reviewer": "/root; /root/ep1_graph_readiness; /root/ep1_source_review; /root/deletion_reference_audit",
         "verdict": "independently-justified-equivalent"
@@ -417,8 +419,8 @@
   "campaigns_admitted": true,
   "mutation_inventories": {
     "ke_core": {
-      "count": 68,
-      "sha256": "8ac4b9ae7aa3d96f546a106678e2d8b6f1cc02fe0e3149afb3c07160cfe712d0"
+      "count": 78,
+      "sha256": "74d18a1d4f7c10a73c02cb57b5c930533838a72b83a34efd0eb1022de54bf6fc"
     },
     "ke_association": {
       "count": 29,
@@ -430,7 +432,7 @@
     },
     "ke_handoff": {
       "count": 9,
-      "sha256": "b626cceb619f8f8ae49f0ea8ec7832684a1454c661461dcd486174056400b3fd"
+      "sha256": "b516429e6ed3865e792f28b51546ac1bbaf76ac2e4490f011bdc12d46b2cf533"
     },
     "ke_request": {
       "count": 6,
@@ -441,45 +443,51 @@
       "sha256": "a8d2b2cd1d9fd0145ab0f8f0ce25780a76ac0a8352cb77513873e4ea3a7b5320"
     },
     "ke_ledger": {
-      "count": 124,
-      "sha256": "478c467968ddb35333cda94ffd24ef2ca4a682367b7e31c96057a1b97e0dd3ab"
+      "count": 139,
+      "sha256": "ea9b4515b31aea3b437fee060c999b515197f51eef6b32c79e773918ff5c40dc"
     },
     "ke_response": {
-      "count": 44,
-      "sha256": "44f014613ffff6de859d0288a2ad5e60168df5753dfd4b164bd7aeeaff6a67ab"
+      "count": 45,
+      "sha256": "5600322398887671b3e0f9a430ea916545309b1b1dd890bd9e5b54884a635dfb"
+    },
+    "ke_datagram": {
+      "count": 34,
+      "sha256": "06e63f3c15fb27f990f395d20f4edcca4e679b88eacf83f28781e2271beee1fd"
     }
   },
   "binding": {
-    "candidate_sha256": "1cb52d94c0b9b073b137a4ae90de8898a5040ea004482a58708ee76c7581f46c",
-    "source_file_count": 582,
+    "candidate_sha256": "c5a663d4ac9d680f41001c7fb07175ee373c5165eaa11087b569cffe189b1ff8",
+    "source_file_count": 584,
     "inputs_sha256": {
-      "scripts/verify-engine-analysis.py": "c348dcb2e0afe6eed01f9d6a7b426c7a92b7ea72163c37d0998adc35c35f5446",
-      "scripts/tests/test_verify_engine_analysis.py": "0d49ff4338dbdaab6f38b0ca43eddd5a89bde26d143c7496cf3ac10353dc0e76",
-      "crates/nevrotick-engine/src/lib.rs": "f3d6bd6313360f55f5ae8d319676430384fe6414c95e2a5c854f7c5a21386cd3",
-      "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs": "4ae2e0216edef5980721ebc6a54e27e75e6df2e632291e7678e30ced8d4c1621",
+      "scripts/verify-engine-analysis.py": "5f16e08b2d82c0cbb63dc26a977f4b3f310d9e1dc3a3e1c70003f04a447d34c1",
+      "scripts/tests/test_verify_engine_analysis.py": "2276ca8407b03055f27f99aa1212428ef16fd4c37ac454df386e05528ff98aad",
+      "crates/nevrotick-engine/src/lib.rs": "7407cd00d62c7dd0f483f2ae45da972e8a2a7e1a03f335f7a76ce98ea3dd9b44",
+      "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs": "6bedeb6fecb39545005792cc7cc1f3b9383b25af7e642c3567b8cdafdaf1c9e8",
       "crates/nevrotick-engine/src/nts_ke_experiment/association.rs": "40cce53ecef59ce461fb0155441a4ea92a38c9dfe2a98708b0ca3ab4e4f4dc53",
       "crates/nevrotick-engine/src/nts_ke_experiment/process.rs": "ab4dcaaca4d82c6bd06643fd8c02d48ab49cb8d68217740b45eac519aed4a863",
-      "crates/nevrotick-engine/src/nts_ke_experiment/handoff.rs": "2c0714f25b8cb451a47c1609a1aca28e471960741c8202d0bf0e157f86c32e35",
+      "crates/nevrotick-engine/src/nts_ke_experiment/handoff.rs": "62cb2739080ebdc9dc8955fab950856378ae0cb79a3793cd624b9c87dc84b773",
       "crates/nevrotick-engine/src/nts_ke_experiment/request.rs": "1efaca2025c5dd4ab74f195b63e7ef85fcb7156663c9a282b9700626819e2c5a",
       "crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs": "cf5903b5a2c3353b8140f5fa2538917b507dd103e11b47e8ceeb68dc3dd4507f",
-      "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs": "1c853b6f062b5288bb485bab52caad275b41ad0646886b4594b80845592a92fe",
-      "crates/nevrotick-engine/src/nts_ke_experiment/response.rs": "c224dfe67975af3c463d7156541df6bdb55d4e99b0d67899768fb76b7ea8c17c",
+      "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs": "832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83",
+      "crates/nevrotick-engine/src/nts_ke_experiment/response.rs": "72376fd20a5323d7be785d158125f3358cc0393d8db58b3c7ce690d6ac62c550",
+      "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs": "a5b2e4f3f713e4bb52cf5c7d0bcbebd204ed477cbb352a13963f5127b5cd726e",
       "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs": "276cdb4b43e23610fd51fcd598d66ed2d84912ce2b0d56f317309b33eb7baeab",
-      "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs": "2953702921b1e63d41c536e5140364a412684018efeea42dbdeed1687f6474ba",
-      "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs": "e058e845d90bd33b2ccb591c76bc46be2e8e40f1983d6482a8f8e1dc3a79f111",
-      "crates/nevrotick-engine/src/nts_ke_experiment/tests.rs": "27a7b295ff3c36a1de0f2f0136457ae40c973e9e27827132ea6f209813c02fae",
+      "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs": "04420d25444090ab499222ecd5d657958d589ee3de3d800c7b0b32d945089780",
+      "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs": "893da89369ddbbb67583f2722bf25e22c8a2c438c4e07a62780719bbdf5a65a1",
+      "crates/nevrotick-engine/src/nts_ke_experiment/tests.rs": "f699611fc38123cadda36b77cbfe5f3b917fff08d7da9741f2de9d796a02b08c",
       "crates/nevrotick-engine/src/nts_ke_experiment/association/tests.rs": "3e731fe2f054fc96382c1bccabee33f4ce96c90e44d9234153d12f0a5707150c",
-      "crates/nevrotick-engine/src/nts_ke_experiment/handoff/tests.rs": "ce4b74ef84a07066046fca39914901607536ae4113c30af38e7a1c7e40bdebd0",
+      "crates/nevrotick-engine/src/nts_ke_experiment/handoff/tests.rs": "99db85374f071bc9453c6ab44efb405bb0d882c118a0bf909ad9d6c19398d014",
       "crates/nevrotick-engine/src/nts_ke_experiment/request_tests.rs": "51c98de256d862dd9e974ff3f6471ede5d21c76d8046c93e1c3fc528d43fa857",
-      "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/tests.rs": "7afeee0f1343d17b45df01f3da05ae9ab574b614c3cde3bbefbf13a0c9876c4c",
-      "crates/nevrotick-engine/src/nts_ke_experiment/response/tests.rs": "13e6c87ff88ba62103d0a5e795e80100e7ae7f02c84c3a3eb16c26ca0f744333",
+      "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/tests.rs": "ddb0ef28923bf3b590798554d1930937419f6b2650e23b2e67b3135312ca1f48",
+      "crates/nevrotick-engine/src/nts_ke_experiment/response/tests.rs": "4a59f006f545e8f7e688b42f2f0cefac80f287002a01d07eb7129d326f2e6b15",
       "crates/nevrotick-engine/src/nts_ke_experiment/response/fixtures.rs": "ad95ea25c3e3505f566cd90d2a3914ad2ae8168ae5c940597729b34b56d4dfbb",
-      "scripts/portable-analysis.py": "7cae6e8e6d30a4db963d4b6b3e937e64383ad8f033a30622dba0f538db926d42",
+      "crates/nevrotick-engine/src/nts_ke_experiment/datagram/tests.rs": "a7c4f6a3253bc469cc9bfce4964b21f85b53d73148ec1f510afe7a9c207df2c5",
+      "scripts/portable-analysis.py": "52395247918c72d153231099f315dd9977f52916f6e391af6e6e886864ed719e",
       "scripts/analysis-runtime.py": "0de6d23b2e52fea78ee81f038d216c962ef87511df53443984bb6e6aacb79dc9",
       "scripts/check-analysis.py": "debe3b31cb93bd8b1b588e777a8c138a9dd6fbadc9152e253f320e1f73cb77e8",
       "scripts/prepare-product.py": "7b53bad33d10ea10d0dd6f334c12ae851a53996ff9b1344cfa38a1f0ad4c21f1",
       "policy/analysis-tools.json": "4da7796c6dd41a1a09dea9a7b1670480106fe1d1f260150385d78c8faa474234",
-      "policy/verification-manifest.toml": "aefbe415027a076586cc41a048a516ca4ebdeb602ca2d999d9d4fb87bad6b1d4",
+      "policy/verification-manifest.toml": "7d6d378fdf8d310d8120785f5da0c1b70eed78411262ce51414f9331ec8ad6d6",
       "policy/tool-manifest.json": "83deaf865a9b5df42b02a5b9b31ec0f1af3fdd3cbdd291fb064256b88a4d1d41",
       "policy/ui-m0-dependencies.json": "61a9fea129b0ddd1fe5dc013022e75b213d175c9173aceb12e778c2225743c21",
       ".cargo/mutants.toml": "af0e3b1d7774464fb6d3b8566b61472a853ce2e6b0ba26a1c4fbe82f676b5f5b",
@@ -548,14 +556,19 @@
       "nts_ke_experiment::association::ledger::tests::entropy_failure_requires_explicit_return_and_keeps_spent_credit",
       "nts_ke_experiment::association::ledger::tests::foreign_return_does_not_restore_a_cookie",
       "nts_ke_experiment::association::ledger::tests::future_arrival_preserves_pending_and_charged_work",
+      "nts_ke_experiment::association::ledger::tests::observed_request_retains_authenticated_header_without_declared_t1",
+      "nts_ke_experiment::association::ledger::tests::observed_zero_token_spends_preparation_without_resampling",
       "nts_ke_experiment::association::ledger::tests::opaque_preview_uses_real_reservation_and_explicit_return",
       "nts_ke_experiment::association::ledger::tests::preparation_once_and_retired_uid_are_enforced",
+      "nts_ke_experiment::association::ledger::tests::preparing_request_cannot_stage_before_uid_retirement",
       "nts_ke_experiment::association::ledger::tests::preview_cannot_enter_sender_callback",
       "nts_ke_experiment::association::ledger::tests::raw_byte_allowance_has_an_exact_healthy_neighbor",
       "nts_ke_experiment::association::ledger::tests::raw_refusals_are_charged_before_healthy_reply",
       "nts_ke_experiment::association::ledger::tests::reservation_busy_and_explicit_return_preserve_global_credit",
+      "nts_ke_experiment::association::ledger::tests::reserved_request_cannot_finish_preparation_before_begin",
       "nts_ke_experiment::association::ledger::tests::returned_cookies_never_renew_attempts_or_recovery_intent",
       "nts_ke_experiment::association::ledger::tests::send_outcomes_keep_value_retirement_and_distinct_custody",
+      "nts_ke_experiment::association::ledger::tests::unknown_extent_exhausts_bytes_once_and_preserves_previous_receipt",
       "nts_ke_experiment::association::ledger::tests::used_only_cookie_reply_completes_without_usable_refill",
       "nts_ke_experiment::association::ledger::tests::zero_cookie_exhaustion_retires_request_without_refund",
       "nts_ke_experiment::association::ledger::tests::zero_cookie_rejections_keep_remaining_budget_and_last_healthy_neighbor",
@@ -570,6 +583,22 @@
       "nts_ke_experiment::association::tests::rejected_endpoint_preserves_atomic_publication",
       "nts_ke_experiment::association::tests::rejected_expiry_binding_preserves_atomic_publication",
       "nts_ke_experiment::association::tests::rejected_population_preserves_atomic_publication",
+      "nts_ke_experiment::datagram::tests::cancellation_after_archive_before_syscall_blocks_actual_submission",
+      "nts_ke_experiment::datagram::tests::cancellation_before_and_after_exposure_preserves_send_facts",
+      "nts_ke_experiment::datagram::tests::cancellation_wakes_registered_pending_readiness",
+      "nts_ke_experiment::datagram::tests::capture_order_has_inclusive_equal_and_adjacent_neighbors",
+      "nts_ke_experiment::datagram::tests::complete_receive_sentinel_and_platform_error_classification_are_closed",
+      "nts_ke_experiment::datagram::tests::concrete_sender_refuses_wrong_endpoint_and_repeated_submission",
+      "nts_ke_experiment::datagram::tests::consumed_unknown_extent_exhausts_bytes_and_retires_pending",
+      "nts_ke_experiment::datagram::tests::dropped_pending_operation_keeps_cookie_and_exclusive_slot",
+      "nts_ke_experiment::datagram::tests::false_readiness_wrong_endpoint_and_uid_remain_bounded",
+      "nts_ke_experiment::datagram::tests::healthy_operation_retains_full_header_and_distinct_capture_provenance",
+      "nts_ke_experiment::datagram::tests::original_absolute_expiry_ends_parked_receive_without_publication",
+      "nts_ke_experiment::datagram::tests::outer_commit_distinguishes_stop_before_and_after_historical_completion",
+      "nts_ke_experiment::datagram::tests::readiness_receive_and_wrong_key_failures_preserve_original_categories",
+      "nts_ke_experiment::datagram::tests::shared_attempt_limit_stops_spurious_readiness_without_refund",
+      "nts_ke_experiment::datagram::tests::short_failed_wouldblock_and_unknown_sends_never_reissue",
+      "nts_ke_experiment::datagram::tests::thirty_one_zero_cookie_refusals_preserve_final_healthy_packet",
       "nts_ke_experiment::handoff::tests::abandoned_packet_leaves_no_completion",
       "nts_ke_experiment::handoff::tests::cancellation_after_sealing_refuses_final_completion",
       "nts_ke_experiment::handoff::tests::entropy_failure_and_post_entropy_cancellation_refuse",
@@ -599,6 +628,7 @@
       "nts_ke_experiment::response::tests::unknown_fields_and_unauthenticated_suffix_cannot_change_staged_material",
       "nts_ke_experiment::response::tests::valid_tag_header_uid_origin_and_reserved_placement_refuse",
       "nts_ke_experiment::tests::cancellation_and_commit_are_consume_once",
+      "nts_ke_experiment::tests::cancellation_wakes_an_already_registered_waiter",
       "nts_ke_experiment::tests::concurrent_cancel_and_commit_have_one_winner",
       "nts_ke_experiment::tests::configuration_admission_and_typed_identity",
       "nts_ke_experiment::tests::configuration_keeps_typed_verification_identity",
@@ -614,10 +644,12 @@
       "nts_ke_experiment::tests::peer_error_warning_and_late_shape_checks",
       "nts_ke_experiment::tests::poisoned_mutex_refuses_and_preserves_open_phase",
       "nts_ke_experiment::tests::pre_origin_refusal_preserves_open_phase",
+      "nts_ke_experiment::tests::protected_mode_requires_exact_explicit_cli_admission",
       "nts_ke_experiment::tests::publication_observation_is_inside_the_actual_phase_guard",
       "nts_ke_experiment::tests::response_total_cap_neighbors",
       "nts_ke_experiment::tests::sixty_four_kib_neighbors_are_complete_responses",
       "nts_ke_experiment::tests::strict_deadline_neighbors_and_fixed_expiry",
+      "nts_ke_experiment::tests::syscall_guard_preserves_original_phase_and_expiry",
       "nts_ke_experiment::tests::unknown_records_and_unoffered_algorithm",
       "nts_ke_experiment::transport_fault::tests::retry_obscured_fault_keeps_original_category",
       "nts_ke_experiment::transport_fault::tests::suppressed_fault_never_becomes_success",
@@ -752,10 +784,10 @@
       "two_requested_series_share_chart_keep_distinct_runs_and_old_handles_isolated",
       "unavailable_measurements_still_consume_once_after_rejected_neighbors"
     ],
-    "source_context_sha256": "bd4cf7c678143869d0e165f6dcce64a9937fe9736943f4134058490598153e69",
+    "source_context_sha256": "53854ebcd2eabae4a2a27c6b6b5d4f248cb1acc7e5e568a9520000575f200e1f",
     "ordinary_evidence": {
-      "path": "/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/engine-ke-association-v1/tool-host-preparation-v1/host-v2/verification.json",
-      "sha256": "80c2a183f7e39f7ae6dba901182869682fcccc6a95273478b6e32b531cf7d763"
+      "path": "/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/engine-ke-association-v1/ep3-baseline-v4/verification.json",
+      "sha256": "2323fc0c6c15cdffa3d148ce9dba287ff64217d2663827fd61a6891cac0c4ddc"
     },
     "root_graph_evidence": {
       "path": "/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/engine-ke-association-v1/dependencies-ke-v1.json",

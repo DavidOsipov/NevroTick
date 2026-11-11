@@ -22,6 +22,7 @@ use rustls_pki_types::ServerName;
 use zeroize::Zeroizing;
 
 mod association;
+mod datagram;
 mod process;
 mod profile;
 
@@ -77,6 +78,8 @@ enum Failure {
     PreviewSpent,
     /// Closed request-custody or protected-response refusal; no secret payload.
     Ledger(association::ledger::LedgerError),
+    /// Closed protected-datagram adapter failure, without packet or endpoint text.
+    Datagram(datagram::DatagramError),
     /// Fixed encoder parameters or the actual request were rejected.
     Offer(NtsKeRequestEncodeError),
     /// Fixed framing limits were rejected before parsing.
@@ -129,9 +132,39 @@ struct Config {
     identity: String,
     /// The standard checked DNS/IP identity used by the actual TLS constructor.
     server_name: ServerName<'static>,
+    /// Explicit one-shot selection; two-argument compatibility never sends UDP.
+    mode: ExchangeMode,
+}
+
+/// Closed experimental operation selection, never a production acquisition mode.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ExchangeMode {
+    /// Default: seal the laboratory preview and expose no packet to a sender.
+    Preview,
+    /// Explicit request for one bounded protected loopback datagram operation.
+    ProtectedDatagram,
 }
 
 impl Config {
+    /// Admit two required arguments and at most one exact operation flag.
+    /// # Errors
+    /// Refuse missing/extra arguments and every unrecognized mode before effects.
+    fn from_arguments(mut arguments: impl Iterator<Item = OsString>) -> Result<Self, Failure> {
+        let peer = arguments.next().ok_or(Failure::Arguments)?;
+        let identity = arguments.next().ok_or(Failure::Arguments)?;
+        let mode = match arguments.next() {
+            None => ExchangeMode::Preview,
+            Some(flag) if flag == "--protected-datagram" => ExchangeMode::ProtectedDatagram,
+            Some(_) => return Err(Failure::Arguments),
+        };
+        if arguments.next().is_some() {
+            return Err(Failure::Arguments);
+        }
+        let mut config = Self::new(peer, identity)?;
+        config.mode = mode;
+        Ok(config)
+    }
+
     /// Parse exact bounded inputs before any provider or connection is touched.
     ///
     /// Invalid Unicode, names, ports, non-loopback peers and scoped IPv6 refuse.
@@ -159,6 +192,7 @@ impl Config {
             peer,
             identity,
             server_name,
+            mode: ExchangeMode::Preview,
         })
     }
 }
@@ -234,8 +268,11 @@ struct Control {
     handshake_deadline: Instant,
     /// Full-job deadline and candidate expiry, never reset by progress.
     expiry: Instant,
-    /// Cancellation and commit share this short, non-I/O critical section.
+    /// Cancellation and commit serialize with the concrete nonblocking UDP send.
+    /// General state effects remain non-I/O; no blocking operation or await is allowed.
     phase: Mutex<Phase>,
+    /// Wake registered readiness waiters when cancellation closes admission.
+    cancelled: tokio::sync::Notify,
 }
 
 impl Control {
@@ -250,6 +287,7 @@ impl Control {
             handshake_deadline: start.checked_add(HANDSHAKE_TIME).ok_or(Failure::Deadline)?,
             expiry: start.checked_add(EXCHANGE_TIME).ok_or(Failure::Deadline)?,
             phase: Mutex::new(Phase::Open),
+            cancelled: tokio::sync::Notify::new(),
         })
     }
 
@@ -263,10 +301,28 @@ impl Control {
         self.remaining_locked(*state, phase, Instant::now())
     }
 
+    /// Hold actual published authority for the concrete nonblocking UDP syscall.
+    ///
+    /// The adapter retains this guard only for capture/check/try-send/capture.
+    /// It must never await, allocate, perform blocking I/O or call an arbitrary
+    /// collaborator while holding it. General state effects use `with_published`.
+    /// # Errors
+    /// Refuse poisoned, unpublished, cancelled, committed or expired authority.
+    fn published_guard(&self) -> Result<std::sync::MutexGuard<'_, Phase>, Failure> {
+        let state = self.phase.lock().map_err(|_| Failure::Control)?;
+        self.remaining_locked(*state, IoPhase::Exchange, Instant::now())?;
+        if !matches!(*state, Phase::Published) {
+            return Err(Failure::Control);
+        }
+        Ok(state)
+    }
+
     /// Run a bounded, non-I/O state commit under fresh published authority.
     ///
-    /// The caller stages allocations and fallible preparation first. Its effect
-    /// must be failure-atomic and must not re-enter this control. This check
+    /// Stage allocations and fallible publication preparation first. Packet,
+    /// cookie and receipt publication must be failure-atomic. Explicit resource
+    /// charges, retirement and recovery may survive refusal; never refund them
+    /// or renew authority. Effects must not re-enter this control. This check
     /// leaves the association Published; a request completion never renews or
     /// commits the enclosing association's lifetime.
     /// # Errors
@@ -414,14 +470,19 @@ impl Control {
     /// from cancellation.
     fn cancel(&self) -> Result<CancelOutcome, Failure> {
         let mut state = self.phase.lock().map_err(|_| Failure::Control)?;
-        match *state {
+        let outcome = match *state {
             Phase::Open | Phase::Published => {
                 *state = Phase::Cancelled;
-                Ok(CancelOutcome::Cancelled)
+                CancelOutcome::Cancelled
             }
-            Phase::Cancelled => Ok(CancelOutcome::AlreadyCancelled),
-            Phase::Committed => Ok(CancelOutcome::AlreadyCommitted),
+            Phase::Cancelled => CancelOutcome::AlreadyCancelled,
+            Phase::Committed => CancelOutcome::AlreadyCommitted,
+        };
+        drop(state);
+        if outcome != CancelOutcome::AlreadyCommitted {
+            self.cancelled.notify_waiters();
         }
+        Ok(outcome)
     }
 }
 
@@ -553,8 +614,10 @@ struct Summary {
     cookies: usize,
     /// Actual aggregate opaque cookie payload bytes.
     cookie_bytes: usize,
-    /// Complete untransmitted laboratory request length after final commit.
+    /// Complete request length; transmission is reported separately and explicitly.
     packet_bytes: usize,
+    /// A complete local datagram send returned; this asserts no peer delivery.
+    transmitted: bool,
 }
 
 /// Primary operation failure and a separately retained cancellation failure.
@@ -617,6 +680,7 @@ fn failure_labels(failure: Failure) -> (&'static str, &'static str) {
         Failure::ProcessUsed => ("admission", "process-used"),
         Failure::PreviewSpent => ("resources", "preview-spent"),
         Failure::Ledger(_) => ("protected-request", "refused"),
+        Failure::Datagram(_) => ("protected-datagram", "refused"),
         Failure::Offer(_) | Failure::Limits => ("request", "parameters"),
         Failure::Response(kind) => ("response", io_label(kind)),
         Failure::Frame(_) => ("response", "framing"),
@@ -666,7 +730,7 @@ fn report_failure(failure: &Failed, code: std::process::ExitCode) -> std::proces
     code
 }
 
-/// Admit exactly two bounded CLI arguments, then run the one Windows job.
+/// Admit two bounded CLI arguments and an optional exact protected-datagram flag.
 ///
 /// Only safe historical counts survive the job. Output occurs after all TLS,
 /// secret and shutdown owners have returned; native cleanup remains unqualified.
@@ -675,18 +739,14 @@ pub(super) fn entry(mut arguments: impl Iterator<Item = OsString>) -> std::proce
     use std::io::Write;
     use std::process::ExitCode;
     let _program = arguments.next();
-    let (Some(peer), Some(identity), None) = (arguments.next(), arguments.next(), arguments.next())
-    else {
-        return report_failure(&Failed::from(Failure::Arguments), ExitCode::from(2));
-    };
-    let config = match Config::new(peer, identity) {
+    let config = match Config::from_arguments(arguments) {
         Ok(config) => config,
         Err(primary) => return report_failure(&Failed::from(primary), ExitCode::from(2)),
     };
     match run(config) {
         Ok(summary) => {
             let mut output = io::stdout().lock();
-            if writeln!(output, "scope=engine-ke-prototype completed=1 cookies={} cookie_bytes={} sealed_packet_bytes={} transmitted=0 native_cleanup_qualified=0", summary.cookies, summary.cookie_bytes, summary.packet_bytes).is_err() || output.flush().is_err() {
+            if writeln!(output, "scope=engine-ke-prototype completed=1 cookies={} cookie_bytes={} sealed_packet_bytes={} transmitted={} native_cleanup_qualified=0", summary.cookies, summary.cookie_bytes, summary.packet_bytes, u8::from(summary.transmitted)).is_err() || output.flush().is_err() {
                 return ExitCode::FAILURE;
             }
             ExitCode::SUCCESS

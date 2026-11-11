@@ -67,6 +67,7 @@ fn real_sealer_prepares_then_commits_exact_packet() -> Result<(), Failure> {
         Phase::Published
     ));
     let summary = request.finish()?;
+    assert!(!summary.transmitted);
     assert_eq!(
         (summary.cookies, summary.cookie_bytes, summary.packet_bytes),
         (1, 12, 140)

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Live caller of the Engine-owned, controlled-loopback KE prototype.
 //!
-//! The Engine owns the sole strict producer, association and never-send consumer.
+//! The Engine owns the strict producer, association and default never-send preview.
+//! Its explicit protected-datagram flag selects a separate bounded source path.
 //! Native execution and provider qualification remain separately admitted.
 
 #![forbid(unsafe_code)]

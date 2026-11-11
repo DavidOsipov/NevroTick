@@ -7,7 +7,7 @@
 
 use nevrotick_s115_aes_siv_fixture::staged::StagedDecryptError;
 use ntp_wire::{
-    FrameError, FrameLimits, NtpTimestamp, NtsAuthenticatorError, NtsPlaintextLimits,
+    FrameError, FrameLimits, NtpTimestamp, NtsAuthenticatorError, NtsPlaintextLimits, RawHeader,
     RawNtsPlaintext, frame_no_legacy_mac_datagram, read_nts_authenticator_parts,
 };
 use zeroize::Zeroizing;
@@ -56,22 +56,30 @@ pub(super) enum ReplyError {
 /// Raw authenticated coordinates, carrying no era, eligibility or clock authority.
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub(super) struct ReplyFields {
-    /// Exact echoed wire correlation coordinate, separately checked against send.
-    origin: NtpTimestamp,
-    /// Exact server receive bits, retained for the later numerical owner.
-    receive: NtpTimestamp,
-    /// Exact server transmit bits, retained for the later numerical owner.
-    transmit: NtpTimestamp,
+    /// Complete header from the actual authenticated AAD, not reconstructed scalars.
+    header: RawHeader,
 }
 
 impl ReplyFields {
+    /// Retain every authenticated header bit without physical/era/eligibility authority.
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "EP3 historical full-header and numerical consumer remains held; opaque completion retains the actual header"
+        )
+    )]
+    pub(super) const fn header(&self) -> RawHeader {
+        self.header
+    }
+
     /// Return the checked wire origin without substituting it for real local T1.
     #[cfg_attr(
         not(test),
         expect(dead_code, reason = "EP2 numerical-consumer integration remains held.")
     )]
     pub(super) const fn origin(&self) -> NtpTimestamp {
-        self.origin
+        self.header.origin_timestamp()
     }
 
     /// Return server receive bits without unfolding an era or admitting a sample.
@@ -80,7 +88,7 @@ impl ReplyFields {
         expect(dead_code, reason = "EP2 numerical-consumer integration remains held.")
     )]
     pub(super) const fn receive(&self) -> NtpTimestamp {
-        self.receive
+        self.header.receive_timestamp()
     }
 
     /// Return server transmit bits without an uncertainty or freshness claim.
@@ -89,7 +97,7 @@ impl ReplyFields {
         expect(dead_code, reason = "EP2 numerical-consumer integration remains held.")
     )]
     pub(super) const fn transmit(&self) -> NtpTimestamp {
-        self.transmit
+        self.header.transmit_timestamp()
     }
 }
 
@@ -181,11 +189,7 @@ pub(super) fn stage_reply(
     if !uid_seen {
         return Err(ReplyError::UniqueIdentifier);
     }
-    let fields = ReplyFields {
-        origin: header.origin_timestamp(),
-        receive: header.receive_timestamp(),
-        transmit: header.transmit_timestamp(),
-    };
+    let fields = ReplyFields { header: *header };
     let parts = read_nts_authenticator_parts(raw, limits).map_err(ReplyError::Envelope)?;
     if parts.nonce().is_empty() {
         return Err(ReplyError::Nonce);

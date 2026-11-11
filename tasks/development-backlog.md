@@ -129,6 +129,17 @@ tests, 92 doctests, scoped external contracts and per-file coverage/mutation.
 Its 376 variants include four exact reviewed equivalents with no kill credit.
 The [frequency-prior four-owner exit](s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners) now completes its selected GNU scope. Continue reviewed S2.2 association/request source preparation under
 [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+The [EP3 WSL source exit](engine-transport-pilot.md#ep3-wsl-source-exit--11-november-2026)
+now connects the genuine KE association to the explicitly selected protected
+operation while preserving the default never-send preview. Its source checks
+pass 285/285/69 and all nine line gates. Source-file mutation gates are scoped:
+association (explicit reuse), handoff, request, ledger and response; Core/control,
+process, fault and datagram retain native-inactive or empty-viable generation
+gates. Keep the full critical manifest and 95% requirement, actual normal trust/
+provider/socket/capture qualification, real receiving issuers and cumulative
+backoff/recovery work open. Receipts grant no Core history or fresh-sync authority.
+This changes no native, fuzz, storage, UI or post-V1 formal hold.
+
 The remaining production controller law and S2.2 finite/provider contracts
 remain open; source preparation selects no shipped correction limits.
 W11-W01's actual capture/mapping contract is settled as

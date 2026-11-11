@@ -70,6 +70,9 @@ fn healthy_response_stages_exact_coordinates_and_cookie_once() -> Result<(), Rep
     assert_eq!(staged.cookie_count(), 1);
     assert_eq!(staged.cookie_bytes(), 12);
     let (fields, cookies) = staged.into_parts();
+    let expected_header =
+        ntp_wire::decode_fixed_header(&fixtures::HEALTHY[..48]).map_err(|_| ReplyError::Header)?;
+    assert_eq!(fields.header(), expected_header);
     assert_eq!(fields.origin().bits(), ORIGIN);
     assert_eq!(fields.receive().bits(), RECEIVE);
     assert_eq!(fields.transmit().bits(), TRANSMIT);

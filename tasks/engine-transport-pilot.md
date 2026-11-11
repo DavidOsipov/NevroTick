@@ -4345,6 +4345,181 @@ packets likewise supply no normal TLS/exporter or Core numerical-consumer pass.
 Remote Rust 1.100 research (`252fe22`) selects no upgrade; this checkpoint retains
 the admitted Rust 1.99.1 compiler and existing dependency graph.
 
+#### EP3 — private protected-datagram source integration — 11 November 2026
+
+**Candidate and scope.** Start from clean `08f274c`. Engine owns this next
+S2.2 child under REQ-8/BND-1/BND-2 and CHECK-6/8/9/15/17/21/25/26/27.
+The actual Windows KE success arm must have an explicit one-shot protected UDP
+mode, alongside the unchanged default never-send preview. This is source and
+deterministic component work in WSL; executing TLS/UDP, native Windows, ordinary
+trust/provider adoption, continuous recovery and production Core admission stay
+held. No new dependency or Core graph edge is selected.
+
+**Selected contract.** The existing association remains sole key, cookie and
+original 60-second context owner. Reserve before entropy; one bounded entropy
+batch supplies UID, nonce and a nonzero random wire token separately from actual
+local time (wire8, UID32, nonce16). Zero wire bits refuse without resampling.
+Preparation/refusal cannot refund attempts. The concrete nonblocking
+socket adapter archives the cookie before invocation, then rechecks published
+authority under the same cancellation mutex as its single nonblocking send.
+No arbitrary callback, blocking I/O or await runs under that guard. A full local
+byte count alone permits Pending; short, error (including WouldBlock), unknown
+or cancelled completion never returns the cookie or starts a second send.
+
+Use the existing engine-only current-thread Tokio runtime pattern and pinned
+features. Readiness waits register cancellation before checking currentness,
+retain the original absolute expiry and recheck after waking. Bound readiness/
+receive attempts to 64, separately from the ledger's nonrenewable 32 datagrams
+and 131072 received octets; one shared counter covers each selected readiness
+wait and each receive attempt. Spurious readiness/WouldBlock consumes an attempt;
+it does not consume a fabricated datagram. A 4097-byte receive buffer detects
+packets beyond the 4096-byte admission limit. A consumed oversize/error with
+unknown extent exhausts remaining byte allowance explicitly; never fabricate
+packet bytes or process a truncated prefix as a complete packet.
+
+The actual sender retains software-clock brackets immediately around its
+nonblocking call; the actual receiver captures return time before parsing.
+Authenticated admission retains the complete `RawHeader`, genuine operation/
+socket identity, endpoints and original processing time in a private non-Clone
+historical completion. A declared component T1 is distinguishable from absent
+provenance; the adapter's actual clock captures cannot be reconstructed from
+copied receipt scalars. After socket/runtime retirement, that completion borrows
+its original Control and consumes the final job commit: a stop that wins first
+refuses the summary; a commit that wins first makes a later stop explicitly
+AlreadyCommitted. Intermediate packet admission remains historical. Output
+remains bounded redacted counts, after socket,
+packet, key and provider retirement. No completion supplies era/scale knowledge,
+physical error, calibrated weights, freshness or Core eligibility.
+
+**Independent expected observations and exit.** A scripted private backend must
+exercise the same operation/receiver path without opening sockets: full versus
+short/failed/unknown submission, cancellation before invocation and after
+exposure, false readiness, wrong endpoint/UID/key, repeated authenticated
+zero-cookie replies, finite attempts and unknown-extent consumed oversize.
+Rejected replies preserve the original deadline and decreased allowances.
+Valid neighboring fixtures retain all authenticated header bits and distinct
+actual-clock versus wire-token provenance. Default preview never invokes UDP.
+Run configured GNU ordinary/optimized/docs/Clippy and Windows-target static
+checks on the settled source; then complete selected security line-coverage and
+critical-file mutation gates before claiming this checkpoint qualified. Prior
+EP2 receipts remain historical; changed source invalidates its eight manual
+equivalence bindings until independently reconciled. Independent plan/source
+review must inspect the actual KE caller and concrete syscall guard, not only
+helper tests. No formal jobs or live/native execution follows from this card.
+
+**Qualification progression, 11 November.** The first integrated candidate
+`eb267c8a…` passed baseline-v2 (281 ordinary/281 optimized, 69 doctests and
+both-target static checks) and all nine selected executable-line gates. Complete
+discovery retained 345 descriptors. These are exact historical results, not
+passes for the subsequent test refinement. Independent pre-campaign review
+required a two-second cancellation watchdog, classifier/sender negative
+neighbors and deterministic capture-order equality cases. The refined candidate
+therefore needs fresh binding/checks; expected discovery is 283 ordinary cases,
+including 105 KE cases and 16 scripted datagram tests.
+
+The raw source/campaign records remain under
+`~/.local/share/nevrotick/dependency-refresh-20261106-v1/engine-ke-association-v1/`.
+The complete generated inventory includes Windows-only faults erased on GNU,
+and some owners may have only compiler-unviable generated bodies. Preserve every
+outcome and each unresolved file gate: neither category supplies behavioral
+kills or automatic equivalence. The unchanged 95% per-file requirement, native
+execution hold and independent generation-gap obligations remain in force.
+Source implementation, selected host evidence, native qualification and complete
+critical-file qualification remain separate statuses.
+
+#### EP3 WSL source exit — 11 November 2026
+
+**Implementation prepared; complete qualification remains open.** Product
+candidate `c5a663d4ac9d680f41001c7fb07175ee373c5165eaa11087b569cffe189b1ff8`
+contains 584 product inputs. The genuine KE success arm now selects either the
+unchanged default never-send preview or the exact explicit protected-datagram
+flag. The latter owns one socket/runtime, original Control, full authenticated
+header and actual software-clock brackets through retirement and final commit.
+It has no Core dependency, numerical/history admission or fresh-sync authority.
+No protected TLS/UDP journey or native Windows code was executed in this child.
+
+Current baseline-v4 passes 285 ordinary tests (107 KE, including 16 datagram
+cases), 285 optimized tests, 69 doctests and both-target compiler/Clippy checks.
+The doctests comprise 13 executed cases, one no-run consumer and 55 compile-fail
+consumers. Windows checks compile; they neither link nor establish native effects.
+Coverage-v3 passes all nine unchanged 90% executable-line gates; ledger is
+599/616, response 108/109 and datagram 192/195. Branch coverage was not measured.
+Enumeration-v3 contains all 343 exact typed descriptors and retained diffs.
+
+The table reconciles those descriptors without giving compiler failures,
+timeouts, Windows-inactive code or reviewed equivalences kill credit. Core,
+association and process use explicitly reviewed **source-file-specific reuse**
+from candidate `3a1cb747…`: every owner, relevant graph/tool identity, descriptor,
+diff and detecting test is unchanged. Its 352-case baseline remains historical,
+not a newly executed 354-case baseline. The only Rust delta is the append-only
+pair of ledger-helper tests. Current fresh campaigns enter 354 cases, comprising
+285 ordinary tests plus 69 doctests.
+
+| Owner | G | K | U | M | E | Selected file disposition |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Core/control | 78 | 32 | 30 | 16 | 0 | Open: all 16 misses are Windows-only, erased on GNU; raw 32/48. |
+| Association | 29 | 27 | 2 | 0 | 0 | 27/27 viable; source-file-specific reuse only. |
+| Process | 1 | 0 | 1 | 0 | 0 | Open: no viable denominator. |
+| Preview handoff | 9 | 7 | 2 | 0 | 0 | 7/7 viable. |
+| Request | 6 | 3 | 3 | 0 | 0 | 3/3 viable; detects placeholder admission faults, not a cryptographic defect. |
+| Fault precedence | 2 | 0 | 1 | 1 | 0 | Open: the missed Windows connector is non-equivalent and unexecuted on GNU. |
+| Ledger | 139 | 88 | 43 | 8 | 8 | Raw 88/96; adjusted 88/88 after eight exact independently reviewed, zero-kill classifications. |
+| Response | 45 | 24 | 21 | 0 | 0 | 24/24 viable. |
+| Datagram | 34 | 12 | 14 | 8 | 0 | Open: seven Windows-only bodies/guards and one inactive Windows classifier operand; raw 12/20. |
+
+G/K/U/M/E denote generated, behavioral catches, causal compiler refusals,
+complete viable survivors and reviewed exclusions (a subset of M). All cohorts
+have zero timeouts. The descriptor union is 343 = 193 K + 117 U + 33 M, with
+eight of those M classified E. This total is accounting, not an aggregate gate.
+The original all-owner campaign stopped correctly at the process's empty viable
+denominator; remaining owners then ran separately under unchanged limits.
+
+The first ledger campaign's ten survivors included two real **test gaps** at
+`finish_preparation` and `stage_ready`. Genuine Reserved/Preparing states can
+challenge those private helper guards without forging owner fields. Two new
+tests preserve exact error/UID/packet/budget behavior and healthy neighbors.
+Fresh ledger-v2 builds both bad variants successfully, then each fails its own
+new assertion; the unmodified 354-case baseline passes. Production ledger bytes
+did not change. Its other eight actual current survivors match the independently
+reviewed [current source-domain record](engine-ke-association-equivalences.md).
+`ep3-ledger-classification-v1.json` applies the existing generic reader after
+execution; the original incomplete receipt and native exit 2 remain unchanged.
+Neither helper gap nor any Windows-inactive case is an equivalence exclusion.
+
+**Generation and alternative-evidence inventory.** These obligations remain
+beside each numerical score; no generated percentage covers absent faults.
+
+| Owner/guarantee | Generated scope and independent alternative / remaining gap |
+| --- | --- |
+| Core/control | Configuration, state/deadline and notification guards have actual named positive/negative controls; notification suppression is caught within watchdogs. Windows entry/report/run bodies remain unexecuted. |
+| Association | Identity, endpoint and payload predicates are generated and challenged through the actual checked receiver. Candidate constructor/provenance still needs direct contract review and normal TLS/native evidence. |
+| Process | Only a `Default` body replacement was generated and is unviable. Constructor/CAS/latch/provider lifetime uses direct controls; meaningful mutation and native shutdown gates remain open. |
+| Handoff | Count/aggregate guards are generated. Work-credit, pre/post-entropy currentness and commit/wipe ordering rely on direct controls and ownership review; native erasure is unqualified. |
+| Request | Three placeholder predicates are behavioral catches. Directional key construction, HRTB opening/forwarding and encoder/sealer ordering retain independent fixed-answer/negative fixtures and source review, not extra mutation kills. |
+| Ledger | Phase/ticket/budget predicates and the two broader helper boundaries are tested. Entropy split, one-batch/no-resample, UID indexing, unknown-extent charges and exact header retention also use direct independent controls; assignments are not all generated faults. |
+| Response | Header/UID/origin/placement/cookie guards have actual catches. Direction/nonce/AEAD/decoder and full-header copying retain independently generated valid-tag fixtures and source review; no whole-domain crypto proof follows. |
+| Datagram | Sender/classifier/order/operation guards have actual catches. Closed scripted I/O covers false readiness, cancellation, drop, expiry and final commit. Tokio select/registration, actual syscall, truncation and physical resource/capture obligations remain native gaps. |
+| Other critical owners | Engine library, strict profile, actual TLS transport and probe entrypoint retain their separate full-file, native and product gates. Source availability and cross-checks do not close them. |
+
+Independent reviewers inspected complete inventories and actual catches,
+compiler diagnostics, baselines and survivors. Current records live in the
+existing external `engine-ke-association-v1` directory: `ep3-baseline-v4`,
+`ep3-coverage-v3`, `ep3-enumeration-v3`, the owner mutation directories,
+`ep3-ledger-classification-v1.json` and `ep3-wsl-source-exit-v1.json`. Historical
+attempts remain labelled with their actual candidates/results. Closed compiler
+targets were deleted without compression; source, raw outcomes, tools and vendor
+inputs remain. No new dependency, threshold reduction or execution hold change.
+
+**Next action.** Finish complete-index/publication checks for this source
+checkpoint. Continue the existing receiver/issuer and observation-to-Core chain;
+copied receipt fields cannot replace real source/configuration/path/trust/date/
+scale/leap/mapping and quality issuers. Before repeated contexts, freeze and
+implement the existing failure-to-next-operation/backoff/cumulative budget table.
+Native owners must separately qualify normal trust/provider cleanup, actual UDP
+completion/captures, lifecycle/resource behavior and Windows mutation controls
+when execution is released. The four open selected file gates and other critical
+owners remain obligations. This source exit completes neither S2.2, P1 nor release.
+
 #### Rust refinements at the receiver freeze — 9 November 2026
 
 The [additional Rust research disposition](../.agents/plans/2026-10-30-skill-quality.md#additional-rust-opportunities--9-november-2026)

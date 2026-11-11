@@ -1578,6 +1578,19 @@ to other owners. Historical policies/receipts and the inert168-input
 constructor role retain their original scopes. No threshold, worker/process
 budget or native gate changes.
 
+**EP3 WSL source exit, 11 November 2026:** the private protected-datagram adapter
+is integrated under the [existing Engine task](tasks/engine-transport-pilot.md#ep3-wsl-source-exit--11-november-2026).
+Current candidate `c5a663d4…` passes 285 ordinary/285 optimized tests, 69 doctests,
+both-target static checks and all nine selected executable-line gates. Complete
+discovery contains 343 descriptors. Current exact inventories are admitted with
+ten mutation workers; eight freshly reviewed ledger classifications receive
+zero kill credit and must match actual current raw survivors. Association,
+handoff, request, ledger and response have scoped file gates; association uses
+explicit source-file-specific reuse. Core, process, fault and datagram file
+gates remain open for native-inactive or unviable-generation limits. Preserve
+all native/full-critical-scope obligations and original incomplete raw receipts.
+The following EP2 counts and signed historical review retain their earlier scope.
+
 **EP1/EP2 selected source analysis, 11 November 2026:** the same
 [Engine verifier](scripts/verify-engine-analysis.py) has the exact
 `--profile ke_association` [role](policy/engine-ke-association-analysis.json).

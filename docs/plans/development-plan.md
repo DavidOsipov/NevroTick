@@ -1073,7 +1073,18 @@ exact transitions at their dependent paths. The
 [EP2 source contract](../../tasks/engine-transport-pilot.md#ep2--protected-request-custody-and-s2c-source-contract--11-november-2026)
 now owns the bounded cookie/request ledger and authenticated response consumer;
 its current qualification record, rather than the source card alone, controls
-the next executable action. Production suppliers/graph/native qualification
+the next executable action. The selected EP2 two-owner qualification is complete
+within its recorded original-context Linux component scope. Continue with
+[EP3's private protected-datagram source integration](../../tasks/engine-transport-pilot.md#ep3--private-protected-datagram-source-integration--11-november-2026):
+the [WSL source exit](../../tasks/engine-transport-pilot.md#ep3-wsl-source-exit--11-november-2026)
+connects the genuine KE owner to one explicitly selected nonblocking operation,
+retaining actual clock captures and the complete authenticated header. Its
+285/285/69 checks and nine line gates pass; the complete 343-descriptor accounting
+retains four open mutation-file gates and the separate native/critical scope.
+The eight current ledger classifications are newly source-bound manual reviews,
+not inherited EP2 credit or formal proofs. Continue the receiving/issuer chain
+and required backoff contract without manufacturing Core eligibility from receipts.
+Production suppliers/graph/native qualification
 remain separate prerequisites.
 This engineering contract needs no blanket OD-04
 permission; unresolved production defaults, real mapping issuers, adaptive

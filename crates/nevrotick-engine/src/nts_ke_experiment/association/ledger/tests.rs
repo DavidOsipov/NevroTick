@@ -757,7 +757,10 @@ fn zero_cookie_rejections_keep_remaining_budget_and_last_healthy_neighbor() -> R
         }
         let receipt = owner.receive_reply(fixtures::HEALTHY, owner.material.udp, Instant::now())?;
         assert_eq!(receipt.cookie_counts(), (1, 1));
-        assert_eq!(receipt.local_t1().bits(), 0);
+        assert_eq!(
+            receipt.local_t1().map(|timestamp| timestamp.bits()),
+            Some(0)
+        );
         assert_eq!(receipt.fields().origin().bits(), WIRE);
         assert_eq!(owner.status().frames, 0);
         assert_eq!(owner.status().phase, RequestPhase::Idle);
@@ -1041,6 +1044,238 @@ fn entropy_failure_requires_explicit_return_and_keeps_spent_credit() -> Result<(
         assert_eq!(owner.status().available, 1);
         assert_eq!(owner.status().uids, 0);
         assert_eq!(owner.status().attempts, 31);
+        Ok(())
+    })
+}
+
+/// One observed batch issues wire correlation without a declared local timestamp.
+/// # Errors
+/// Preserve actual checked owner, entropy, encoder, sender and reply failures.
+/// # Panics
+/// Fail if Busy/mode mismatch calls entropy, the split changes or T1 is fabricated.
+#[test]
+fn observed_request_retains_authenticated_header_without_declared_t1() -> Result<(), Failure> {
+    with_owner(cookies(), |owner, control| {
+        assert_eq!(owner.check_context(control)?, owner.material.udp);
+        let foreign = Control::new(control.origin)?;
+        assert_eq!(owner.check_context(&foreign), Err(Failure::Control));
+        let ticket = owner.reserve(RequestInput::Observed)?;
+        let calls = Cell::new(0);
+        assert!(matches!(
+            owner.reserve(RequestInput::Observed),
+            Err(Failure::Ledger(LedgerError::Busy))
+        ));
+        assert_eq!(
+            owner.prepare(&ticket, |_| {
+                calls.set(calls.get() + 1);
+                Ok(())
+            }),
+            Err(refused(LedgerError::Phase))
+        );
+        assert_eq!(calls.get(), 0);
+        assert_eq!(owner.status().phase, RequestPhase::Reserved);
+        owner.prepare_observed(&ticket, |output| {
+            calls.set(calls.get() + 1);
+            output[..8].copy_from_slice(&WIRE.to_be_bytes());
+            entropy(
+                (&mut output[8..])
+                    .try_into()
+                    .map_err(|_| Failure::Control)?,
+            );
+            Ok(())
+        })?;
+        assert_eq!(calls.get(), 1);
+        owner.invoke_sender(ticket, |packet, _| {
+            assert_eq!(&packet[40..48], &WIRE.to_be_bytes());
+            assert_eq!(&packet[52..84], &C2S);
+            SendOutcome::Completed(packet.len())
+        })?;
+        let receipt = owner.receive_reply(fixtures::HEALTHY, owner.material.udp, Instant::now())?;
+        assert_eq!(receipt.local_t1(), None);
+        let expected_header = ntp_wire::decode_fixed_header(&fixtures::HEALTHY[..48])
+            .map_err(|_| Failure::Control)?;
+        assert_eq!(receipt.fields().header(), expected_header);
+        assert_eq!(receipt.fields().origin().bits(), WIRE);
+        assert_eq!(owner.status().used, 1);
+        assert_eq!(owner.status().uids, 1);
+        assert_eq!(owner.status().phase, RequestPhase::Idle);
+        Ok(())
+    })
+}
+
+/// An unusable random token cannot trigger another draw or restore preparation.
+/// # Errors
+/// Preserve healthy component construction and explicit uninvoked return.
+/// # Panics
+/// Fail if zero entropy permits encoding, an automatic refund or a second fill.
+#[test]
+fn observed_zero_token_spends_preparation_without_resampling() -> Result<(), Failure> {
+    with_owner(cookies(), |owner, _| {
+        let ticket = owner.reserve(RequestInput::Observed)?;
+        let calls = Cell::new(0);
+        assert_eq!(
+            owner.prepare_observed(&ticket, |output| {
+                calls.set(calls.get() + 1);
+                output.fill(0);
+                Ok(())
+            }),
+            Err(refused(LedgerError::ZeroWireToken))
+        );
+        assert_eq!(calls.get(), 1);
+        assert_eq!(owner.status().attempts, 31);
+        assert_eq!(owner.status().uids, 0);
+        assert_eq!(owner.status().used, 0);
+        assert_eq!(owner.status().available, 0);
+        assert_eq!(owner.status().phase, RequestPhase::Preparing);
+        assert_eq!(
+            owner.prepare_observed(&ticket, |_| {
+                calls.set(calls.get() + 1);
+                Ok(())
+            }),
+            Err(refused(LedgerError::PreparationSpent))
+        );
+        assert_eq!(calls.get(), 1);
+        owner.return_unused(ticket)?;
+        assert_eq!(owner.status().attempts, 31);
+        assert_eq!(owner.status().available, 1);
+        assert!(owner.last_receipt().is_none());
+        Ok(())
+    })
+}
+
+/// A consumed unknown extent retires Pending without manufactured parser bytes.
+/// # Errors
+/// Preserve genuine first completion, second preparation and owner controls.
+/// # Panics
+/// Fail if an unknown extent refunds work, overwrites receipt or charges twice.
+#[test]
+fn unknown_extent_exhausts_bytes_once_and_preserves_previous_receipt() -> Result<(), Failure> {
+    with_owner(cookies(), |owner, control| {
+        let original = owner.status();
+        assert_eq!(
+            owner.charge_consumed_unknown(),
+            Err(refused(LedgerError::Phase))
+        );
+        assert_eq!(owner.status(), original);
+        pending(owner)?;
+        let first = owner.receive_reply(fixtures::HEALTHY, owner.material.udp, Instant::now())?;
+        let ticket = owner.reserve(RequestInput::Observed)?;
+        owner.prepare_observed(&ticket, |output| {
+            output[..8].copy_from_slice(&WIRE.to_be_bytes());
+            entropy(
+                (&mut output[8..])
+                    .try_into()
+                    .map_err(|_| Failure::Control)?,
+            );
+            output[8] = 0xff;
+            Ok(())
+        })?;
+        let prepared = owner.status();
+        assert_eq!(
+            owner.charge_consumed_unknown(),
+            Err(refused(LedgerError::Phase))
+        );
+        assert_eq!(owner.status(), prepared);
+        owner.invoke_sender(ticket, |packet, _| SendOutcome::Completed(packet.len()))?;
+        let before = owner.status();
+        let expiry = control.expiry;
+        assert_eq!(
+            owner.charge_consumed_unknown(),
+            Err(refused(LedgerError::ReceiveWork))
+        );
+        assert_eq!(owner.status().bytes, 0);
+        assert_eq!(owner.status().frames, before.frames - 1);
+        assert_eq!(owner.status().phase, RequestPhase::Idle);
+        assert_eq!(owner.status().used, 2);
+        assert_eq!(owner.status().attempts, before.attempts);
+        let last = owner.last_receipt().ok_or(Failure::Control)?;
+        assert_eq!(last.serial(), first.serial());
+        assert_eq!(last.accepted_at(), first.accepted_at());
+        assert_eq!(last.fields().header(), first.fields().header());
+        assert_eq!(control.expiry, expiry);
+        let terminal = owner.status();
+        assert_eq!(
+            owner.charge_consumed_unknown(),
+            Err(refused(LedgerError::Phase))
+        );
+        assert_eq!(owner.status(), terminal);
+        assert_eq!(
+            owner.take_recovery_intent().map(RecoveryIntent::reason),
+            Some(RecoveryReason::ReceiveWork)
+        );
+        assert!(owner.take_recovery_intent().is_none());
+        Ok(())
+    })
+}
+
+/// A genuine Reserved request cannot skip the helper's preparation admission.
+/// # Errors
+/// Preserve real owner construction, reservation and the valid preparing neighbor.
+/// # Panics
+/// Fail if premature finishing issues a UID, publishes Ready or changes spent credit.
+#[test]
+fn reserved_request_cannot_finish_preparation_before_begin() -> Result<(), Failure> {
+    with_owner(cookies(), |owner, _| {
+        let ticket = owner.reserve(packet_input()?)?;
+        let reserved = owner.status();
+        let mut public_entropy = [0; 48];
+        entropy(&mut public_entropy);
+        assert_eq!(
+            owner.finish_preparation(&public_entropy),
+            Err(refused(LedgerError::PreparationSpent))
+        );
+        assert_eq!(owner.status(), reserved);
+        let active = owner.ledger.active.as_ref().ok_or(Failure::Control)?;
+        assert_eq!(active.uid, None);
+        assert!(active.ready.is_none());
+        owner.begin_preparation(&ticket, false)?;
+        owner.finish_preparation(&public_entropy)?;
+        assert_eq!(owner.status().phase, RequestPhase::Prepared);
+        assert_eq!(owner.status().uids, 1);
+        assert_eq!(owner.status().attempts, reserved.attempts);
+        assert_eq!(owner.status().frames, reserved.frames);
+        assert_eq!(owner.status().bytes, reserved.bytes);
+        assert_eq!(owner.status().used, reserved.used);
+        let active = owner.ledger.active.as_ref().ok_or(Failure::Control)?;
+        assert_eq!(active.uid, Some(0));
+        assert!(active.ready.is_some());
+        owner.return_unused(ticket)?;
+        Ok(())
+    })
+}
+
+/// A genuine Preparing request cannot encode before its UID is retired.
+/// # Errors
+/// Preserve real owner construction, admission and the valid UID-retired neighbor.
+/// # Panics
+/// Fail if missing UID custody yields a staged packet or changes any allowance.
+#[test]
+fn preparing_request_cannot_stage_before_uid_retirement() -> Result<(), Failure> {
+    with_owner(cookies(), |owner, _| {
+        let ticket = owner.reserve(packet_input()?)?;
+        owner.begin_preparation(&ticket, false)?;
+        let preparing = owner.status();
+        let mut public_entropy = [0; 48];
+        entropy(&mut public_entropy);
+        assert!(matches!(
+            owner.stage_ready(&public_entropy),
+            Err(Failure::Ledger(LedgerError::Phase))
+        ));
+        assert_eq!(owner.status(), preparing);
+        let active = owner.ledger.active.as_ref().ok_or(Failure::Control)?;
+        assert_eq!(active.uid, None);
+        assert!(active.ready.is_none());
+        owner.finish_preparation(&public_entropy)?;
+        assert_eq!(owner.status().phase, RequestPhase::Prepared);
+        assert_eq!(owner.status().uids, 1);
+        assert_eq!(owner.status().attempts, preparing.attempts);
+        assert_eq!(owner.status().frames, preparing.frames);
+        assert_eq!(owner.status().bytes, preparing.bytes);
+        assert_eq!(owner.status().used, preparing.used);
+        let active = owner.ledger.active.as_ref().ok_or(Failure::Control)?;
+        assert_eq!(active.uid, Some(0));
+        assert!(active.ready.is_some());
+        owner.return_unused(ticket)?;
         Ok(())
     })
 }

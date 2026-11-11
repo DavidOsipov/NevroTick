@@ -44,6 +44,8 @@ pub(in super::super) enum LedgerError {
     PreparationSpent,
     /// The entropy owner repeated an already issued UID.
     RepeatedUid,
+    /// The one observed entropy batch supplied an unusable all-zero wire token.
+    ZeroWireToken,
     /// An unsendable laboratory preview cannot enter a sender.
     Preview,
     /// A synchronous adapter returned a short or otherwise wrong byte count.
@@ -69,6 +71,8 @@ pub(in super::super) enum LedgerError {
 pub(in super::super) enum RequestInput {
     /// Zero-T1 laboratory packet; no sender may expose its bytes.
     Preview,
+    /// The concrete adapter supplies actual captures; preparation issues only wire correlation.
+    Observed,
     /// Save the random wire token separately from the declared local T1.
     #[cfg_attr(
         not(test),
@@ -97,22 +101,10 @@ pub(in super::super) struct Ticket<'a> {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in super::super) enum SendOutcome {
     /// The synchronous adapter returned a completed local byte count.
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "The actual EP2 packet adapter remains held.")
-    )]
     Completed(usize),
     /// The synchronous adapter returned this original bounded error.
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "The actual EP2 packet adapter remains held.")
-    )]
     Failed(io::ErrorKind),
     /// No completion fact exists; custody and Busy remain sticky.
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "The actual EP2 packet adapter remains held.")
-    )]
     Unknown,
 }
 
@@ -184,8 +176,8 @@ impl RecoveryIntent {
 pub(in super::super) struct Receipt {
     /// Original finite request identity.
     serial: usize,
-    /// Local T1 remains distinct from every server/wire timestamp.
-    local_t1: NtpTimestamp,
+    /// Optional declared component T1; actual adapter captures are retained separately.
+    local_t1: Option<NtpTimestamp>,
     /// Authenticated inert header fields from the maintained consumer.
     fields: ReplyFields,
     /// Fresh original-context processing observation at atomic publication.
@@ -209,7 +201,7 @@ impl Receipt {
         self.serial
     }
 
-    /// Preserve the separately supplied local timestamp.
+    /// Preserve only a declared component T1; observed capture provenance stays separate.
     #[cfg_attr(
         not(test),
         expect(
@@ -217,7 +209,7 @@ impl Receipt {
             reason = "EP2 production receipt consumer remains held; component tests inspect historical metadata"
         )
     )]
-    pub(in super::super) const fn local_t1(self) -> NtpTimestamp {
+    pub(in super::super) const fn local_t1(self) -> Option<NtpTimestamp> {
         self.local_t1
     }
 
@@ -226,7 +218,7 @@ impl Receipt {
         not(test),
         expect(
             dead_code,
-            reason = "EP2 production receipt consumer remains held; component tests inspect historical metadata"
+            reason = "EP3 historical full-header and numerical consumer remains held; opaque completion retains the actual receipt"
         )
     )]
     pub(in super::super) const fn fields(self) -> ReplyFields {
@@ -316,6 +308,8 @@ struct Active<'a> {
     phase: RequestPhase,
     /// UID history position; no second live UID copy is retained.
     uid: Option<usize>,
+    /// Checked nonzero wire token issued only by observed preparation.
+    observed_wire: Option<NonZeroU64>,
     /// One private complete packet, absent on preparation failure.
     ready: Option<ReadyPacket<'a>>,
     /// Recorded request-bound response allowance.
@@ -495,6 +489,7 @@ impl<'a> AssociationOwner<'a> {
                 cookie: Some(cookie),
                 phase: RequestPhase::Reserved,
                 uid: None,
+                observed_wire: None,
                 ready: None,
                 maximum_cookies: 0,
                 sent_at: None,
@@ -515,20 +510,22 @@ impl<'a> AssociationOwner<'a> {
         Ok(())
     }
 
-    /// Acquire entropy once and retain one private prepared request.
-    ///
-    /// Failed entropy, formatting or encryption never restores preparation
-    /// credit. Capacity retries reuse entropy and reach sealing only once.
+    /// Bind a concrete adapter to this actual owner and current publication.
     /// # Errors
-    /// Preserve currentness, foreign ticket, repeated UID and codec failures.
-    pub(in super::super) fn prepare(
-        &mut self,
-        ticket: &Ticket<'_>,
-        fill: impl FnOnce(&mut [u8; 48]) -> Result<(), Failure>,
-    ) -> Result<(), Failure> {
+    /// Refuse a foreign control, cancellation, expiry or unpublished context.
+    pub(in super::super) fn check_context(&self, control: &Control) -> Result<SocketAddr, Failure> {
+        if !std::ptr::eq(control, self.material.control) {
+            return Err(Failure::Control);
+        }
+        control.with_published(|_| Ok(self.material.udp))
+    }
+
+    /// Spend one preparation attempt only for the selected request representation.
+    /// # Errors
+    /// Refuse foreign/spent tickets, mode mismatch or stale publication before entropy.
+    fn begin_preparation(&mut self, ticket: &Ticket<'_>, observed: bool) -> Result<(), Failure> {
         self.check_ticket(ticket)?;
-        let control = self.material.control;
-        control.with_published(|_| {
+        self.material.control.with_published(|_| {
             let active = self
                 .ledger
                 .active
@@ -537,11 +534,75 @@ impl<'a> AssociationOwner<'a> {
             if active.phase != RequestPhase::Reserved {
                 return Err(refused(LedgerError::PreparationSpent));
             }
+            if matches!(active.input, RequestInput::Observed) != observed {
+                return Err(refused(LedgerError::Phase));
+            }
             active.phase = RequestPhase::Preparing;
             Ok(())
-        })?;
+        })
+    }
+
+    /// Acquire one UID/nonce batch for a declared component packet or preview.
+    ///
+    /// Failed entropy, formatting or encryption never restores preparation credit.
+    /// Capacity retries reuse entropy and reach sealing only once.
+    /// # Errors
+    /// Preserve currentness, ticket/mode, repeated UID and actual codec failures.
+    pub(in super::super) fn prepare(
+        &mut self,
+        ticket: &Ticket<'_>,
+        fill: impl FnOnce(&mut [u8; 48]) -> Result<(), Failure>,
+    ) -> Result<(), Failure> {
+        self.begin_preparation(ticket, false)?;
         let mut entropy = Zeroizing::new([0; 48]);
         fill(&mut entropy)?;
+        self.finish_preparation(&entropy)
+    }
+
+    /// Issue wire correlation, UID and nonce from one observed-request entropy batch.
+    ///
+    /// The first eight bytes are big-endian wire bits, followed by UID32 and nonce16.
+    /// Zero wire bits refuse without resampling, refund or a fabricated local T1.
+    /// The actual adapter separately retains its own software-clock observations.
+    /// # Errors
+    /// Preserve ticket/currentness/mode, entropy, zero token, UID and codec refusal.
+    pub(in super::super) fn prepare_observed(
+        &mut self,
+        ticket: &Ticket<'_>,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+    ) -> Result<(), Failure> {
+        self.begin_preparation(ticket, true)?;
+        let mut entropy = Zeroizing::new([0; 56]);
+        fill(&mut entropy)?;
+        let bytes = entropy
+            .first_chunk::<8>()
+            .ok_or(refused(LedgerError::Capacity))?;
+        let wire = NonZeroU64::new(u64::from_be_bytes(*bytes))
+            .ok_or(refused(LedgerError::ZeroWireToken))?;
+        let material: &[u8; 48] = entropy
+            .get(8..)
+            .and_then(|bytes| bytes.try_into().ok())
+            .ok_or(refused(LedgerError::Capacity))?;
+        self.ledger
+            .active
+            .as_mut()
+            .ok_or(refused(LedgerError::Ticket))?
+            .observed_wire = Some(wire);
+        self.finish_preparation(material)
+    }
+
+    /// Retire a new UID once, then stage and publish this request's private packet.
+    /// # Errors
+    /// Preserve spent-phase, UID history, currentness and encoding refusals.
+    fn finish_preparation(&mut self, entropy: &[u8; 48]) -> Result<(), Failure> {
+        let active = self
+            .ledger
+            .active
+            .as_ref()
+            .ok_or(refused(LedgerError::Ticket))?;
+        if active.phase != RequestPhase::Preparing || active.uid.is_some() {
+            return Err(refused(LedgerError::PreparationSpent));
+        }
         let uid = entropy
             .first_chunk::<32>()
             .ok_or(refused(LedgerError::Capacity))?;
@@ -562,49 +623,14 @@ impl<'a> AssociationOwner<'a> {
             .ok_or(refused(LedgerError::Capacity))?;
         saved.copy_from_slice(uid);
         self.ledger.uid_count += 1;
-        let active = self
-            .ledger
+        self.ledger
             .active
             .as_mut()
-            .ok_or(refused(LedgerError::Ticket))?;
-        active.uid = Some(index);
+            .ok_or(refused(LedgerError::Ticket))?
+            .uid = Some(index);
+        let control = self.material.control;
         control.with_published(|_| Ok(()))?;
-        let cookie = active.cookie.as_ref().ok_or(refused(LedgerError::Phase))?;
-        let (ready, maximum_cookies) = match active.input {
-            RequestInput::Preview => {
-                let prepared = handoff::prepare(
-                    control,
-                    &self.material.keys,
-                    std::slice::from_ref(cookie),
-                    |output| {
-                        output.copy_from_slice(entropy.as_ref());
-                        Ok(())
-                    },
-                )?;
-                (ReadyPacket::Preview(prepared), 1)
-            }
-            RequestInput::Packet { wire, local_t1: _ } => {
-                let mut raw_header = [0; 48];
-                raw_header[0] = 0x23;
-                raw_header[40..].copy_from_slice(&wire.get().to_be_bytes());
-                let header = decode_fixed_header(&raw_header)
-                    .map_err(|error| Failure::Packet(RequestError::Header(error)))?;
-                let mut storage = Zeroizing::new([0; PACKET_BYTES]);
-                let vacancies = COOKIE_LIMIT
-                    .checked_sub(self.material.cookies.len())
-                    .ok_or(refused(LedgerError::Capacity))?;
-                let maximum_placeholders = vacancies.saturating_sub(1).min(7);
-                let (length, maximum_cookies) = encode_packet(
-                    &self.material.keys,
-                    &header,
-                    cookie,
-                    &entropy,
-                    maximum_placeholders,
-                    &mut storage,
-                )?;
-                (ReadyPacket::Packet { storage, length }, maximum_cookies)
-            }
-        };
+        let (ready, maximum_cookies) = self.stage_ready(entropy)?;
         control.with_published(|_| {
             let active = self
                 .ledger
@@ -616,6 +642,56 @@ impl<'a> AssociationOwner<'a> {
             active.phase = RequestPhase::Prepared;
             Ok(())
         })
+    }
+
+    /// Encode only the occupied preparing request with its retired UID and own cookie.
+    /// # Errors
+    /// Refuse missing custody/observed wire, capacity or actual formatter/sealer failure.
+    fn stage_ready(&self, entropy: &[u8; 48]) -> Result<(ReadyPacket<'a>, usize), Failure> {
+        let active = self
+            .ledger
+            .active
+            .as_ref()
+            .ok_or(refused(LedgerError::Ticket))?;
+        if active.phase != RequestPhase::Preparing || active.uid.is_none() {
+            return Err(refused(LedgerError::Phase));
+        }
+        let cookie = active.cookie.as_ref().ok_or(refused(LedgerError::Phase))?;
+        let wire = match active.input {
+            RequestInput::Preview => {
+                let prepared = handoff::prepare(
+                    self.material.control,
+                    &self.material.keys,
+                    std::slice::from_ref(cookie),
+                    |output| {
+                        output.copy_from_slice(entropy);
+                        Ok(())
+                    },
+                )?;
+                return Ok((ReadyPacket::Preview(prepared), 1));
+            }
+            RequestInput::Packet { wire, local_t1: _ } => wire,
+            RequestInput::Observed => active.observed_wire.ok_or(refused(LedgerError::Phase))?,
+        };
+        let mut raw_header = [0; 48];
+        raw_header[0] = 0x23;
+        raw_header[40..].copy_from_slice(&wire.get().to_be_bytes());
+        let header = decode_fixed_header(&raw_header)
+            .map_err(|error| Failure::Packet(RequestError::Header(error)))?;
+        let mut storage = Zeroizing::new([0; PACKET_BYTES]);
+        let vacancies = COOKIE_LIMIT
+            .checked_sub(self.material.cookies.len())
+            .ok_or(refused(LedgerError::Capacity))?;
+        let maximum_placeholders = vacancies.saturating_sub(1).min(7);
+        let (length, maximum_cookies) = encode_packet(
+            &self.material.keys,
+            &header,
+            cookie,
+            entropy,
+            maximum_placeholders,
+            &mut storage,
+        )?;
+        Ok((ReadyPacket::Packet { storage, length }, maximum_cookies))
     }
 
     /// Explicitly retire an uninvoked UID and return its exact moved cookie.
@@ -701,13 +777,6 @@ impl<'a> AssociationOwner<'a> {
     #[expect(
         clippy::needless_pass_by_value,
         reason = "consuming the non-Clone ticket prevents return or repeated invocation after submission"
-    )]
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "EP2 actual protected-datagram adapter remains held; synchronous callbacks are component controls"
-        )
     )]
     pub(in super::super) fn invoke_sender(
         &mut self,
@@ -828,19 +897,38 @@ impl<'a> AssociationOwner<'a> {
         })
     }
 
+    /// Charge a consumed datagram whose original extent cannot be established.
+    ///
+    /// A full truncation-detecting buffer or a qualified consumed-size error must
+    /// enter here once, rather than passing a manufactured prefix to the parser.
+    /// Spend one remaining frame and all remaining bytes, then retire Pending and
+    /// coalesce recovery. No cookie, receipt, deadline or request credit is restored.
+    /// # Errors
+    /// Refuse stale/wrong phase unchanged; a charged retirement returns `ReceiveWork`.
+    pub(in super::super) fn charge_consumed_unknown(&mut self) -> Result<(), Failure> {
+        let control = self.material.control;
+        control.with_published(|_| {
+            let active = self
+                .ledger
+                .active
+                .as_ref()
+                .ok_or(refused(LedgerError::Phase))?;
+            if active.phase != RequestPhase::Pending {
+                return Err(refused(LedgerError::Phase));
+            }
+            self.ledger.frames = self.ledger.frames.saturating_sub(1);
+            self.ledger.bytes = 0;
+            self.ledger.retire_exhausted(control.expiry);
+            Err(refused(LedgerError::ReceiveWork))
+        })
+    }
+
     /// Charge one complete raw component datagram before parse or decryption.
     ///
     /// Rejection preserves the original pending deadline and decreased work.
     /// Last-allowance success may commit; rejection at exhaustion retires it.
     /// # Errors
     /// Preserve admission, original budgets, endpoint/time, AEAD and shape errors.
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "EP2 actual protected-datagram receiver remains held; component tests exercise staged admission"
-        )
-    )]
     pub(in super::super) fn receive_reply(
         &mut self,
         raw: &[u8],
@@ -858,8 +946,13 @@ impl<'a> AssociationOwner<'a> {
                 if active.phase != RequestPhase::Pending {
                     return Err(refused(LedgerError::Phase));
                 }
-                let RequestInput::Packet { wire, local_t1 } = active.input else {
-                    return Err(refused(LedgerError::Preview));
+                let (wire, local_t1) = match active.input {
+                    RequestInput::Packet { wire, local_t1 } => (wire, Some(local_t1)),
+                    RequestInput::Observed => (
+                        active.observed_wire.ok_or(refused(LedgerError::Phase))?,
+                        None,
+                    ),
+                    RequestInput::Preview => return Err(refused(LedgerError::Preview)),
                 };
                 let uid = active.uid.ok_or(refused(LedgerError::Phase))?;
                 let sent_at = active.sent_at.ok_or(refused(LedgerError::Phase))?;
@@ -944,13 +1037,6 @@ impl<'a> AssociationOwner<'a> {
     }
 
     /// Inspect finite metadata without exposing cookies, UIDs, packets or keys.
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "EP2 production scheduling consumer remains held; component tests inspect bounded ledger state"
-        )
-    )]
     pub(in super::super) fn status(&self) -> Status {
         let available = self
             .material

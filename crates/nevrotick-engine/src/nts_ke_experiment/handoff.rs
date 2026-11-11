@@ -53,6 +53,7 @@ impl PreparedRequest<'_> {
             cookies: cookie_count,
             cookie_bytes,
             packet_bytes: length,
+            transmitted: false,
         })
     }
 }

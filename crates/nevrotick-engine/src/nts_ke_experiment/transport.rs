@@ -424,15 +424,28 @@ fn exchange_owned<'a>(
         (Ok(candidate), Ok(())) => {
             let mut association = candidate.publish(provider).map_err(Failed::from)?;
             let population = association.cookie_population().map_err(Failed::from)?;
-            let request = association
-                .prepare_preview(|output| {
-                    use rustls::crypto::SecureRandom;
-                    rustls_cng_crypto::SecureRandom
-                        .fill(output)
-                        .map_err(|_| Failure::Entropy)
-                })
-                .map_err(Failed::from)?;
-            let mut summary = request.finish().map_err(Failed::from)?;
+            let mut summary = match config.mode {
+                super::ExchangeMode::Preview => {
+                    let request = association
+                        .prepare_preview(|output| {
+                            use rustls::crypto::SecureRandom;
+                            rustls_cng_crypto::SecureRandom
+                                .fill(output)
+                                .map_err(|_| Failure::Entropy)
+                        })
+                        .map_err(Failed::from)?;
+                    request.finish().map_err(Failed::from)?
+                }
+                super::ExchangeMode::ProtectedDatagram => {
+                    super::datagram::exchange(&mut association, control, |output| {
+                        use rustls::crypto::SecureRandom;
+                        rustls_cng_crypto::SecureRandom
+                            .fill(output)
+                            .map_err(|_| Failure::Entropy)
+                    })
+                    .map_err(Failed::from)?
+                }
+            };
             // Keep the existing KE-batch counts after the one-cookie reservation.
             summary.cookies = population.0;
             summary.cookie_bytes = population.1;

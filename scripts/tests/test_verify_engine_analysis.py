@@ -1939,19 +1939,20 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         "ke_fault": "crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs",
         "ke_ledger": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
         "ke_response": "crates/nevrotick-engine/src/nts_ke_experiment/response.rs",
+        "ke_datagram": "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs",
     }
 
     class SessionReached(Exception):
         """A healthy admission reached Session; stop before any execution."""
 
     def policy_fixture(self):
-        """Independently specified limits and clearly synthetic 261/83 identities."""
+        """Independently specified limits and clearly synthetic 285/107 identities."""
         critical = ["crates/nevrotick-engine/src/lib.rs", *self.HOST.values(),
             "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
             "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
             "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"]
         names = sorted([f"ordinary_fixture_{index:03}" for index in range(178)] +
-                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(83)])
+                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(107)])
         return {
             "schema_version": 1, "package": "nevrotick-engine",
             "admission_status": "admitted-engine-ke-source-analysis",
@@ -2127,17 +2128,17 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         return (f"running {len(names)} tests\n" + "".join(f"test {name} ... ok\n" for name in names) +
                 f"test result: ok. {len(names)} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n")
 
-    def test_entered_blocks_require_all_261_cases_and_83_ke_neighbors(self):
+    def test_entered_blocks_require_all_285_cases_and_107_ke_neighbors(self):
         binding = self.policy["binding"]; names = binding["test_inventory"]
         healthy = self.execution(names)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 261)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 83)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 285)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 107)
         missing = [name for name in names if name != "nts_ke_experiment::fixture_case_00"]
         old = [name for name in names if not name.startswith("nts_ke_experiment::")]
         variants = [self.execution([]), self.execution(old), self.execution(missing),
             self.execution([*names, names[0]]), healthy.replace(" ... ok", " ... FAILED", 1),
-            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 261", "running 260"),
-            healthy.replace("test result: ok. 261 passed", "test result: ok. 260 passed"),
+            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 285", "running 284"),
+            healthy.replace("test result: ok. 285 passed", "test result: ok. 284 passed"),
             "\n".join(line for line in healthy.splitlines() if not line.startswith("running "))]
         for text in variants:
             with self.subTest(sample=text[-120:]), self.assertRaises(MODULE.Incomplete):
@@ -2157,8 +2158,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             with self.subTest(doctest=doc):
                 result = MODULE.validate_engine_ke_execution(text, binding, include_doctests=True)
                 self.assertEqual(result["additional_doctests"], [doc])
-                self.assertEqual(result["tests_executed"], 262)
-                self.assertEqual(result["ke_tests_executed"], 83)
+                self.assertEqual(result["tests_executed"], 286)
+                self.assertEqual(result["ke_tests_executed"], 107)
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.validate_engine_ke_execution(text, binding)
         invalid = [self.execution(names[1:]) + self.execution([doc_forms[0]]),
@@ -2183,9 +2184,15 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
     def test_historical_six_owner_scope_cannot_qualify_new_owners(self):
         self.assertIn("ke_ledger", MODULE.ENGINE_KE_HOST_SUBJECTS)
         self.assertIn("ke_response", MODULE.ENGINE_KE_HOST_SUBJECTS)
+        self.assertIn("ke_datagram", MODULE.ENGINE_KE_HOST_SUBJECTS)
         bad = copy.deepcopy(self.policy)
         for name in ("ke_ledger", "ke_response"):
             del bad["subjects"][name]
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.validate_engine_ke_policy(bad)
+        bad = copy.deepcopy(self.policy)
+        del bad["subjects"]["ke_datagram"]
+        bad["critical_files"].remove(self.HOST["ke_datagram"])
         with self.assertRaises(MODULE.Incomplete):
             MODULE.validate_engine_ke_policy(bad)
         bad = copy.deepcopy(self.policy)
@@ -2235,8 +2242,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             self.assertIn("--all-targets", argv)
             self.assertNotIn("build", argv)
             self.assertNotIn("run", argv)
-        self.assertEqual(report["baseline_execution"]["tests_executed"], 261)
-        self.assertEqual(report["release_execution"]["ke_tests_executed"], 83)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 285)
+        self.assertEqual(report["release_execution"]["ke_tests_executed"], 107)
         self.assertEqual(report["doctest_execution"]["compilation_only"],
                          ["src/lib.rs - Example::no_run (line 1) - compile"])
         self.assertFalse(report["qualification_passed"])
@@ -2292,7 +2299,7 @@ class EngineKeFixtureLaneTests(unittest.TestCase):
     def test_finite_byte_and_source_bounds_keep_healthy_neighbor(self):
         MODULE.validate_engine_ke_fixture_output(self.output().replace(
             "    0x00, 0xff,\n", "    " + "0x00, " * 4100 + "\n", 1))
-        for text in (self.output().replace("    0x00, 0xff,\n", "    " + "0x00, " * 4101 + "\n", 1),
+        for text in (self.output().replace("    0x00, 0xff,\n", "    " + "0x00, " * 4107 + "\n", 1),
                      self.output(body="    " + "0x00, " * 4100 + "\n")):
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_engine_ke_fixture_output(text)
