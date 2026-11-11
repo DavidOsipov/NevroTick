@@ -4520,6 +4520,225 @@ completion/captures, lifecycle/resource behavior and Windows mutation controls
 when execution is released. The four open selected file gates and other critical
 owners remain obligations. This source exit completes neither S2.2, P1 nor release.
 
+#### EP3 ordinary-user Windows test preparation — 11 November 2026
+
+David now authorizes needed tests on his main Windows machine. This replaces
+the earlier Windows execution stop only for that bounded test scope; it does
+not authorize host clock, service, registry, mitigation, protection or trust
+changes, elevation, or the blocked encoded PowerShell artifact. The separate
+fuzz/storage/UI holds and post-V1 formal deferral remain.
+
+The Engine coordinator owns this continuation from signed main `a771089`.
+Acceptance remains S2.2/EP3 and CHECK-10/21/27: first qualify ordinary-user
+test-process custody, then discover the actual Windows library roster and run
+the scripted KE component cohort. Source inspection predicts 260 library tests
+and 106 KE cases; the GNU 285/107 oracle remains unchanged. These component
+cases use scripted datagram I/O and component provider guards, not actual
+TLS/CNG, UDP, Core admission, clock effects or service hosting.
+
+Reuse the admitted LLVM/xwin cross-link route, unchanged v3 Engine flags and
+the allocation observer's ordinary-user supervisor. A fixed-mode baseline-x64
+test launcher must accept exactly BOM + `G` + EOF before starting its fixed
+child. The supervisor owns a non-breakaway kill-on-close job and verifies the
+launcher token before releasing that gate. Lock/hash and inspect inherited
+image settings for both images. Validate missing/wrong-gate refusal, healthy
+exit, exit-code preservation and intentional timeout/descendant cleanup before
+the CPU/OS admission diagnostic, actual `--list`, and serial KE run. Retain
+raw failures and total/active job counts. This diagnostic baseline exception
+does not change the product CPU floor or qualify effective mitigations.
+
+Read-only main-host preflight observed Windows 10.0.26300 x64, PowerShell
+5.1.26100.9818 and a non-administrator process. Available physical memory was
+1,908,156 KiB, below the retained 2 GiB admission floor. No test image, build,
+elevated process or heavy owned job was started. Native execution and heavy
+build preparation are held pending David's resource-ready response; do not
+automatically resume merely because a later observation is higher. Lightweight
+runner source preparation may continue. No native test or mutation pass is
+claimed; the four selected file gates remain open.
+
+**Prepared source, not a native exit.** The fixed-mode launcher and
+`scripts/verify-engine-native.py` now reuse the existing supervisor, strict
+bounded evidence reader and cross-link helpers. Independent static review found
+and repaired staging traversal, unbounded receipt admission, malformed-record
+failure handling and a missing import before any Windows test invocation.
+The launcher retains only a fixed failure stage and optional native error number
+on stderr, so an actual OS block can be distinguished from gate refusal without
+logging supplied paths or error text. Ten host-only Python controls pass under
+`-X dev -Werror`; all three Rust diagnostic sources pass the pinned isolated
+formatter. The first launcher formatting refusal and its corrected pass remain
+in the existing external chain at `ep3-native-preparation-v1`. These controls
+test the runner's admission/accounting, not native Win32 behavior. Windows
+linking, compiler/Clippy, actual gate/timeout controls and the 106-case cohort
+remain unexecuted. Source is uncommitted pending those checks and the resource
+response. No product source, manifest, dependency or verification threshold changed.
+
+**Resource-blocked handoff.** A later read-only main-host query completed with
+exit 0 and observed 1,947,964 KiB available, still below 2,097,152 KiB. Its exact
+command/output is retained at `ep3-native-preparation-v1/resource-recheck.json`.
+The resource-ready reply remains pending across three goal turns. All review
+workers have completed; no owned compiler or Windows test job was started or
+remains live. Lightweight runner preparation and the receiving-boundary review
+below have reached their recorded exits. Keep the goal blocked until David
+restores headroom and resumes it; do not automatically launch heavy work.
+Preserve the unstaged/untracked source and documentation. Next revalidate the
+exact candidate and resource admission, then link the Windows library test image
+and execute the existing gate/exit/timeout/CPU/discovery/KE sequence. Commit/push
+remains pending its actual required checks; no native or recovery gate is closed.
+
+**Owner-authorized WSL continuation.** David subsequently requested work in WSL
+now and said he would close Windows applications in about two hours. This
+authorizes WSL compilation/verification after its own resource preflight;
+Windows execution remains held until a fresh ready response. WSL currently
+has about 17 GiB available RAM and 13 GiB free disk. The native-runner cross-link
+uses six Cargo jobs within the existing twelve-job ceiling. It builds and
+inspects Windows artifacts in WSL without executing them. The two-hour estimate
+is not an automatic Windows launch time. Continue the typed-failure source child
+after this exact-candidate build's bookends complete.
+
+**WSL build and first native observations.** Build-v3 completed all 17 selected
+steps and both integrity bookends: 584 product inputs, 13 helper inputs, the
+unchanged v3 Engine test image and three baseline diagnostics. Format/Clippy,
+linking, independent raw PE and LLVM import inspections pass. Earlier v1 stopped
+at test-only home lookup; v2 linked Engine but stopped on launcher documentation
+and an unfulfilled lint expectation. The bounded import fixture and launcher
+docs were repaired; no global HOME, lint reduction or unstable API was adopted.
+The raw incomplete attempts remain unchanged. All four exported PE/PDB pairs
+remain; the two closed compiler targets were deleted (923,693,056 allocated
+bytes). Clean-page cache advice on closed inputs changed no file contents or
+settings; Windows available RAM subsequently exceeded its 2 GiB guard.
+
+David then authorized main-Windows tests after reducing WSL's cap to 18 GB.
+Native-v1 stopped before child execution at 888,656 KiB available memory. Its
+raw cause is retained; the outer malformed-object summary is a demonstrated
+reporting defect with behavioral RED in `ep3-native-preflight-report-v1`.
+Native-v2 reached the intended missing-gate refusal: exit126, exact gate stderr,
+ordinary token and successful cleanup with zero active job members. It stopped
+because the job's lifetime association count was two rather than the assumed
+one. No CPU probe or Engine test ran. The separately frozen read-only job
+diagnostic then observed exactly the launcher PID before G (total/active/listed
+all one), but lifetime total two after refusal; cleanup again reached zero.
+Its source/PE bookends pass. The second association's identity remains unknown;
+do not relax the oracle or claim an Engine pass. Continue the bounded owned-job
+membership investigation before the remaining native controls and 106 KE cases.
+Current evidence is under `ep3-native-build-v3`, `ep3-native-run-v1/v2` and
+`ep3-native-job-diagnostic-v1`. All owned jobs are terminal at this handoff.
+
+#### EP3 Windows scripted-component exit
+
+David resumed execution after reducing WSL's cap to 12 GB. The bounded IOCP
+diagnostic identified the extra job association as `conhost.exe`; it was not
+another authored test. The corrected runner keeps these roles separate using
+current owned-job handles and full kernel-reported paths. A strict child-PID
+marker joins the authored child to its actual NEW identity. Only the fixed
+launcher, selected child and verified System32 console hosts are accepted;
+unknown/unreadable identities, missing/duplicate NEWs or counter mismatches fail
+closed. Successful setting of ActiveProcessLimit4 bounds the owned job; the
+16-event collector and eight-member snapshot add finite observation bounds.
+The collector releases query handles and retires before final active-zero
+checking. Console-file hashes are pre/post OS-file provenance, not measurements
+of mapped image bytes. No global Windows settings changed.
+
+The launcher uses only CREATE_NO_WINDOW beyond default process creation,
+preserving job inheritance. Its 250 ms handle-retention interval gives the
+collector an observation opportunity; missing evidence still refuses success.
+Every child is actually waited, including PID-marker sink failure. Full nonzero
+child status remains primary; zero plus report failure refuses completion.
+The prior memory-preflight summary defect now has retained RED/GREEN on the
+same actual receipt and a host regression. Earlier incomplete receipts remain
+unchanged, including the original incorrect one-process-count assumption.
+
+**Actual results:** 18 host-only Python controls pass. Build-v4 passes all
+17 isolated format/compiler/Clippy/link/PE/import/control steps and both
+source/tool/vendor/SDK integrity bookends. Native-v4 passes its eight observations:
+missing/wrong gate each126 with no authored child; healthy0; deliberate child7;
+intentional timeout1 with its original timeout retained; CPU/OS v3 admission;
+260 unique discovered Windows library tests; and all 106 selected KE tests,
+zero failed/ignored, 154 filtered, in 2.23 seconds. Every case reaches successful
+stream/process/collector/port cleanup and zero active job members. Ordinary
+supervisor/launcher tokens were observed; the selected child inherits its primary
+context. Counts of two/four join the exact observed authored/console identities.
+An independent reviewer replayed all eight raw requests/receipts through the
+current reader and compared exact discovered/entered test sets.
+
+Evidence remains in the existing external `engine-ke-association-v1` chain:
+`ep3-native-build-v4/verification.json` SHA256
+`7dd2ea71866a18600f0e34c2d0a4b47ec467dc53bde0306e33b3dc0d88e28be0`,
+and `ep3-native-run-v4/verification.json` SHA256
+`b56fdb7c13d89e011dafa46da2015f863c4cb71544f4f3a1ce565e795542fc5f`.
+Both bind product identity `c5a663d4…`: 584 unchanged product inputs plus the
+13 exact helper inputs. The current supervisor type also passed a separate
+Windows C# compile smoke before the substantial build, without a test image/job.
+All owned jobs are terminal. Keep exported PE/PDB/source/current raw receipts;
+closed compiler targets are disposable under David's cleanup instruction.
+
+**Limits and next action:** this is Windows debug **scripted KE component**
+qualification. It does not execute the real KE/TLS/CNG provider or UDP backend,
+grant Core admission, qualify service identities, prove effective mitigations or
+close the four open mutation-file gates. No fifth-process native admission fault
+was run; the job limit's successful configuration and observed bounded workload
+are separate from such a negative enforcement test. The selected source exit
+still completes neither S2.2, P1 nor release. Complete staged/publication checks
+for this runner checkpoint, then implement the existing typed-failure projection
+child below before enabling any continuous recovery.
+
+#### Recovery receiving-boundary reconciliation — 11 November 2026
+
+Two independent read-only source assessments reconciled architecture §7.3's
+failure-to-next-operation prerequisite against `a771089`, under
+REQ-8/BND-2 and CHECK-6/8/9/10/11/15/21/25/27. No Rust edit, build or Windows
+call was made. The continuous worker and Core positive admission remain absent;
+this records the next concrete source child without enabling repeated work.
+
+The ephemeral producer already transfers genuine configuration/control/provider
+object identity through `AssociationOwner::receive`, and the ledger issues
+same-context tickets and finite serials. The default-off Windows TLS/CNG graph
+also exists. Older prerequisite tables retain their historical dates. Production
+configuration/path/trust revisions, separate association/key validity, actual
+clock/mapping/date/scale and calibrated quality/freshness issuers still do not
+exist. `ProtectedCompletion::finish` commits its Control and deliberately
+discards history into counts. Core's declared labels and checked rows issue no
+eligibility; wiring receipt scalars into them would bypass the missing owners.
+
+A retry loop around `run()` is invalid: process admission is permanent, and the
+sole invocation drops/shuts down its provider. The future worker must retain
+one actual process claim/provider around all dependent transactions and actual
+cleanup. It must consume association/recovery facts before terminal CLI count
+projection; neither reopening a committed Control nor resetting the latch is
+permitted. Taking the copyable `RecoveryIntent` consumes one notification,
+not an execution permission. Cookie/attempt/receive exhaustion waits for the
+maximum applicable original-intent, source, KE-backoff and aggregate boundary.
+Zero-cookie rejection keeps Pending's original deadline and decreased allowance;
+only protected success using that same KE transaction can reset its backoff.
+The existing anti-hot-retry controls still own RATE/NTSN, persistent refusal,
+continuity, cumulative work and healthy-neighbor recovery. No retry constants,
+jitter, default, store or execution hold changes here.
+
+**Next source child after the current native preparation checkpoint:** preserve
+payload-free typed failure facts at the actual transport projection before
+implementing the continuous worker. `prepare` currently reduces `complete_io`
+failure to `Failure::Handshake(error.kind())`, while `TlsSetup` combines
+provider-suite admission, verifier and TLS-configuration construction failures.
+CNG initialization/panic/shutdown handling retains its separate provider gate.
+Pinned Rustls 0.23.46
+`conn.rs` wraps the actual TLS error in `InvalidData` after best-effort alert
+I/O. Classify before discarding that cause, at the existing `transport_fault`
+boundary and caller, rather than adding an unconnected scheduler helper.
+
+| Independent control at the actual projection | Required result |
+| --- | --- |
+| Genuine transient socket failure and permitted healthy neighbor | Retain the typed native cause; permit only later policy/budget-eligible recovery. |
+| Typed certificate/trust or protocol refusal | Preserve its closed cause; require the applicable correction/re-enable rule without logging library payloads. |
+| Native `InvalidData` without a typed TLS cause, or an unrecognized library cause | Remain explicitly unclassified/unavailable; never infer trust failure or automatic retryability from the I/O kind alone. |
+| Primary TLS refusal followed by failing alert write or deadline | Keep the primary TLS cause and separate cleanup facts; preserve the existing precedence. |
+| Local provider/verifier/configuration refusal | Identify the actual local stage; do not blame the peer or immediately resubmit due work. |
+| Nominal library success after retained transport/control refusal | Restore the first actual refusal; publish no success or fresh-sync state. |
+
+These are integration acceptance cases, not newly executed tests or a defect
+claim against the current one-shot command. After that source child, freeze the
+complete worker's provider → transaction → association → request ownership,
+finite delay growth/cap/jitter and total work window before enabling repeats.
+The native scripted cohort and its current resource hold remain unchanged.
+
 #### Rust refinements at the receiver freeze — 9 November 2026
 
 The [additional Rust research disposition](../.agents/plans/2026-10-30-skill-quality.md#additional-rust-opportunities--9-november-2026)

@@ -1084,6 +1084,16 @@ retains four open mutation-file gates and the separate native/critical scope.
 The eight current ledger classifications are newly source-bound manual reviews,
 not inherited EP2 credit or formal proofs. Continue the receiving/issuer chain
 and required backoff contract without manufacturing Core eligibility from receipts.
+The [ordinary-user Windows scripted-component exit](../../tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit)
+records 18 host controls, all 17 build/inspection steps and eight native
+observations, including all 106 selected KE cases on the actual 260-test Windows
+library roster. Handle-bound process identities, bounded console helpers and
+actual cleanup replace the earlier incorrect lifetime-count assumption. Real
+TLS/CNG/UDP, production issuers/Core admission and native mutation gates remain open.
+The [recovery receiving-boundary reconciliation](../../tasks/engine-transport-pilot.md#recovery-receiving-boundary-reconciliation--11-november-2026)
+records the next source child: retain typed TLS/setup causes at their actual
+projection before implementing the complete bounded worker. Neither retrying
+the one-shot entrypoint nor wiring receipt scalars into Core supplies that owner.
 Production suppliers/graph/native qualification
 remain separate prerequisites.
 This engineering contract needs no blanket OD-04

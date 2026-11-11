@@ -238,8 +238,12 @@ association and original expiry. No post-invocation reuse is approved.
 The dependent action is the association owner's explicit cookie-return/reuse
 transition in the [existing S2.2 request contract](../tasks/engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request).
 
-Current source has no production association. The laboratory seals an unsendable
-request and wipes its secrets; its summary is not an association or send receipt.
+No production-qualified association exists. EP3's default-off source now moves
+one genuine KE result into a private original-context association. Its default
+preview remains unsendable; explicit `--protected-datagram` selects one bounded
+protected UDP source path. Real KE/TLS and protected-UDP execution and production
+adoption remain unqualified; the linked Windows scripted component cohort has
+passed separately. Its count summary is not an association or send receipt.
 The former request draft recorded emission facts without granting reissuance.
 The accepted transition below supersedes that pending policy status; it does not
 supply an authenticated association or an implemented return operation.
@@ -263,7 +267,10 @@ unbounded retries. Persistent secret storage remains under its separate hold.
 
 **Owner/date:** David, 11 November 2026. Exact reply: “Fresh cookies; pre-send
 return only (Recommended)”. This accepts option A only; B and C remain unselected.
-Implementation and qualification remain open. Validate actual
+The selected source transitions exist within EP2/EP3's original-context scope;
+continuous recovery and native/product qualification remain open. Follow the
+[current source exit and recovery receiving boundary](../tasks/engine-transport-pilot.md#recovery-receiving-boundary-reconciliation--11-november-2026).
+Validate actual
 pre-invocation return, stale/expired return refusal, fresh-UID issuance and every
 post-invocation/ambiguous refusal with genuine owner and adapter controls.
 Revisit only for contrary interoperability/privacy evidence or a changed scope.
@@ -276,7 +283,8 @@ independently once their own real producer/graph/lifetime prerequisites are met.
 **Status:** Accepted by David, 11 November 2026 — option A. Reject zero-cookie
 responses without publishing an observation or new cookies, preserving a healthy
 pending request under its original deadline and receive-work budget. No
-interoperability tolerance or receiver pass is recorded.
+interoperability tolerance is selected; this decision supplies no native or
+production receiver qualification.
 The dependent action is protected-response acceptance/completion when the
 authenticated plaintext contains zero replacement-cookie fields.
 
@@ -301,7 +309,9 @@ not the zero-field case addressed here.
 
 **Owner/date:** David, 11 November 2026. Exact reply: “Reject; preserve pending
 request (Recommended)”. This accepts option A only; B remains unselected.
-Implementation and qualification remain open. Required controls are
+EP2/EP3 implement this rejection in their bounded original-context source and
+retain linked Linux and Windows scripted-component evidence. Real TLS/transport,
+product qualification and continuous recovery remain open. Required controls are
 zero versus one encrypted cookie, wrong UID/tag/endpoint, late and duplicate
 responses, a valid neighboring reply after rejection, original deadline and
 finite receive budgets, and no history/phase effects on refusal. No first-send,

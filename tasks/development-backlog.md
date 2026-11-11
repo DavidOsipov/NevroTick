@@ -129,6 +129,12 @@ tests, 92 doctests, scoped external contracts and per-file coverage/mutation.
 Its 376 variants include four exact reviewed equivalents with no kill credit.
 The [frequency-prior four-owner exit](s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners) now completes its selected GNU scope. Continue reviewed S2.2 association/request source preparation under
 [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+The [recovery receiving-boundary reconciliation](engine-transport-pilot.md#recovery-receiving-boundary-reconciliation--11-november-2026)
+owns the next source child after native preparation: preserve typed TLS/setup
+causes before the complete bounded recovery worker. Its actual provider/context
+custody and acceptance cases are source-reconciled; the worker, numeric retry
+policy, production issuers and positive Core admission remain unimplemented.
+
 The [EP3 WSL source exit](engine-transport-pilot.md#ep3-wsl-source-exit--11-november-2026)
 now connects the genuine KE association to the explicitly selected protected
 operation while preserving the default never-send preview. Its source checks
@@ -138,6 +144,10 @@ process, fault and datagram retain native-inactive or empty-viable generation
 gates. Keep the full critical manifest and 95% requirement, actual normal trust/
 provider/socket/capture qualification, real receiving issuers and cumulative
 backoff/recovery work open. Receipts grant no Core history or fresh-sync authority.
+The [Windows scripted-component exit](engine-transport-pilot.md#ep3-windows-scripted-component-exit)
+now adds all 106 selected native KE cases, exact Windows discovery and eight
+bounded runner observations. It qualifies the debug/scripted cohort only; real
+TLS/CNG/UDP, native mutation and production receiving remain separate work.
 This changes no native, fuzz, storage, UI or post-V1 formal hold.
 
 The remaining production controller law and S2.2 finite/provider contracts

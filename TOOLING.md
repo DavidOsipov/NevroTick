@@ -1859,6 +1859,28 @@ not Rust test-discovery counts. This probe supplies no production startup,
 installer or effective mitigation qualification; the build task owns those gaps.
 All product and AES witness images retain the selected v3 flags.
 
+The bounded [Engine native test runner](scripts/verify-engine-native.py)
+has separate `--lane build` and `--lane native` invocations. Build requires the
+same explicit admitted vendor, toolchain, xwin acquisition/inventory and fresh
+external output arguments as the observer below. It links the Engine KE
+library tests with unchanged v3 flags, plus three baseline-x64 test diagnostics
+with the release profile. The native lane requires that build's
+`--build-receipt`, a fresh `--native-dir` below the current workspace's Windows
+`C:\Users\perso\AppData\Local\NevroTick`, and a fresh Linux `--output-dir`.
+It qualifies gate/exit/timeout custody controls, then CPU/OS admission, actual
+test discovery and the serial scripted KE cohort. Its ordinary-user supervisor
+uses `-File`, locks both images and makes no registry/protection/service/clock
+changes. The owned job allows at most four active processes. Bounded process
+notifications and handle-bound full-path identities distinguish authored images
+from System32 console hosts; missing or unknown identities remain incomplete.
+The child PID marker is joined to kernel identity rather than trusted alone.
+See the [Windows scripted-component exit](tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit)
+for exact receipts: 18 host admission controls, all 17 build/inspection steps,
+eight native observations, 260 discovered library tests and all 106 selected KE
+cases pass. This is Windows debug/scripted component evidence; actual TLS/CNG,
+UDP transport, Core receiving, effective runtime mitigations and mutation gates
+retain their separate qualification requirements.
+
 The separate [time-domain allocation observer](scripts/verify-time-domain-windows-allocation.py)
 has two explicit lanes. Build with `--lane build --profile release`, the admitted
 `--vendor-dir`, `--toolchain-dir`, `--xwin-config`, `--xwin-inventory` and a new
