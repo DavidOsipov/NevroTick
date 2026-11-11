@@ -117,6 +117,20 @@ pair actual candidate-layout healthy artifacts with wrong-identity, redirected,
 substituted-byte and incomplete-inventory controls. This watchlist authorizes
 neither an upgrade nor native/formal execution. See [sources](../../SOURCES.md#cargo-intermediate-layout-watch--9-november-2026).
 
+### Rust 1.100 candidate reconciliation — 11 November 2026
+
+For the broader compiler/library/lint/Windows changes, use the
+[dated research inventory](../../../../../docs/supporting-reviews/rust-1.100-upgrade-review.md)
+and [existing build checkpoint](../../../../../tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026).
+Keep this reference's publish-age/layout controls; do not duplicate their tests.
+Rolling beta/nightly docs and channel names can already refer to 1.101: record
+actual compiler/Cargo/component identities and recheck final release metadata
+before attributing a check or feature to 1.100. Current product pin stays 1.99.1.
+The candidate's Cargo-lint and cargo-install lockfile behavior need their own
+exact-version qualification; neither changes workspace frozen-build semantics,
+permits automatic dependency deletion, or supplies tool admission. No upgrade,
+new Cargo policy, graph change or execution hold is lifted by this research.
+
 ## Qualify the final graph
 
 Use real repository CI/TOOLING commands from the shared configured-tool workflow

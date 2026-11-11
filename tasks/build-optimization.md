@@ -459,3 +459,59 @@ messages while retaining identity, root containment, inventory and byte custody.
 Do not resolve incompatibility by removing checks or accepting arbitrary paths.
 Native allocation observations retain their independent gate; formal work and
 its deferred consumers remain after V1. No parallel campaign is created.
+
+## Rust 1.100 candidate admission — 11 November 2026
+
+**Research prepared; no toolchain upgrade or candidate execution.** The
+[dated release review](../docs/supporting-reviews/rust-1.100-upgrade-review.md)
+adds language/library/lint/Windows/tool coverage to R4-B-02 above. Its inspected
+notes are still a candidate for 12 November; rolling beta docs may already
+identify another release. Keep the actual 1.99.1 product baseline and all
+existing execution holds. CHECK-19/20/26 and the existing affected product/native
+owners retain this work; no parallel upgrade campaign or new prerequisite for
+unrelated current implementation is created.
+
+At the next admitted toolchain checkpoint:
+
+1. Reconcile the final 1.100 release/tag against the review, including omitted or
+   changed entries. Freeze an exact compiler/Cargo/rustfmt/Clippy cohort, source
+   and lockfile, targets/features, installer/manifest and binary identities.
+   `beta` alone is not a version: inspect `rustc -Vv` and `cargo -V`. An available
+   newer beta cannot supply a 1.100 result under that label.
+2. Inventory the coupled controls before changing any pin: `rust-toolchain.toml`,
+   workspace `rust-version`, `policy/tool-manifest.json`, environment admission,
+   `.github/security/prepare_rust.py` and the CI toolchain-directory paths.
+   Decide MSRV separately from the build compiler rather than raising it
+   incidentally. Obtain and verify real new distribution/compiler/LLVM/tool
+   identities; preserve wrong-release/commit/LLVM, substituted-byte and source-
+   override rejection controls in `test_tool_admission.py`. Never manufacture
+   hashes or loosen admission so an unqualified candidate can run.
+3. Extend the existing R4-B-02 collectors and parser fixtures with candidate
+   layout evidence. Include host proc-macro/build-script and target-library
+   identity, missing/multiple artifacts and escaped/redirected paths. Preserve
+   original healthy controls and copied byte custody. A separately pinned Kani
+   verifier already knowing another layout is not a product pass; leave formal
+   execution and its deferred consumers after V1.
+4. With the admitted candidate and unchanged graph first, select the existing
+   format/compiler/Clippy/rustdoc/doctest and contract suites that cover the
+   review's inference, trait, macro, lint, Unicode/output and ABI changes.
+   Include generated code, explicit vendored regressions and host build tools.
+   Match negative tests to intended diagnostics with a legal-use neighbor;
+   retain meaningful expectations instead of bulk suppressions or automatic
+   snapshot updates. Compare effective test-harness arguments/discovery.
+5. Run the affected native Windows/MSVC boundary, mitigation and resource
+   qualification only in its authorized environment when its prerequisites and
+   holds allow. Rebuild consistent final artifacts; source/host/cross-link
+   success is not native correctness, compatibility or performance evidence.
+   Retain the v3 floor, overflow checks, panic policy, complete hardening vector,
+   symbols and numerical/security contracts. New allocator APIs, sample PGO and
+   Windows conveniences remain optional separate proposals, not upgrade repairs.
+6. Record exact candidate, commands/results, inherited versus new failures,
+   review dispositions and unresolved native/companion-tool checks here. Promote
+   only after the required current gates pass; retain a rollback baseline and
+   never relabel old receipts as results for the new compiler. Diagnose genuine
+   dependency incompatibility before any separately scoped graph change.
+
+Documentation-only verification is separate from these planned acceptance steps.
+This amendment performs no build, beta installation, global-toolchain switch,
+format sweep, dependency change or native/formal execution.
