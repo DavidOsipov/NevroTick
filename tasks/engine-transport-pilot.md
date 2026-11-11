@@ -2304,6 +2304,49 @@ coverage and execution holds remain with their existing Windows/CHECK owners.
 Historical receipts above establish none of these new results; the coordinator's
 documentation review receipt is separate from future implementation acceptance.
 
+### Anti-hot-retry integration controls — 11 November 2026
+
+**Planned S2.1/S2.2 evidence, not implemented retry policy.** This refines the
+existing shared-scheduler, bounded-progress and resource cases above under
+CHECK-6/9/21/27. It adds no scheduler, chosen interval, storage format, dependency
+or execution campaign. The inspected `9875bde8d9cb86fffd529d06a681a69fd1dda3fc`
+pilot and frozen address round remain bounded loopback fixtures: an opaque
+correlated control terminates a round, while timeout/budget/I/O may advance to
+the next fixed address. Neither establishes RATE pacing, DENY/RSTR cessation,
+production retries or their continuity across restarts.
+
+Before dependent integration, the engine/protocol owner records in this task:
+failure class and permitted next operation; source/provider/operation identity;
+clock domain and earliest time; finite attempt/work window and bounds; delay
+growth/cap/jitter; reset/re-enable conditions; and lifecycle continuity owner.
+Reuse [architecture section 7.3](../docs/windows-time-architecture.md#73-ntp-client-behavior)
+and the [KoD source-to-scheduler review](s0.1-protocol-comparison.md#kod-source-to-scheduler-review).
+Preserve RFC 8915's KE retry guidance and same-transaction reset rule, distinct
+from NTP poll/KoD timing. An unchanged persistent KE error must not be handled as
+ordinary transient loss; resolve its RFC-specific disposition in that table.
+No guessed constants or generic retry wrapper can substitute for this freeze.
+
+| Controlled case and useful neighbor | Required oracle at the real owner/effect |
+| --- | --- |
+| Immediate connection/send/resolver refusal, blackhole timeout and local queue/resource refusal; then an eligible recovered peer | Record actual attempted operations and their timestamps, including refused submissions. No already-due resubmission loop or nested-layer retry amplification; retain the original operation/window limits and actual native permits. Deferral sleeps/waits; bounded recovery eventually attempts the admitted healthy peer. Local refusal is not a remote reliability penalty. |
+| Refresh + repeated online notifications + reordered DNS + address/family switches during failure, beside normal scheduled progress | One combined sequence, not only isolated event tests: no fresh burst, duplicate in-flight work, early operation or cumulative-budget reset. Observe actual UDP sends, DNS/KE starts, refusals and dropped/coalesced events. Existing alternative-progress and source-vote controls still apply. |
+| Before, exactly at and after earliest eligibility; delay cap/overflow; deterministic minimum/maximum jitter draws | Independent expected times obey the frozen boundary, applicable minimum and maximum. A redraw cannot move an admitted deadline earlier; overflow fails closed rather than wraps to zero. Jitter cannot undo RATE reduction. Eligibility time alone cannot re-enable a source whose reviewed refusal requires correction or authorized action. Pure injected-clock results are separate from native timer/wakeup behavior. |
+| Valid correlated RATE versus forged, stale and replayed controls; DENY/RSTR versus an independently permitted peer; extreme poll values | Enforce the reviewed code-specific disposition at the actual next-send guard. Invalid controls do not alter a healthy schedule; RATE cannot accelerate sends or evade limits through another address. DENY/RSTR cease the affected association under the reviewed re-enable policy. Unknown codes and untrusted poll values cannot invent unlimited waiting, a durable administrator ban or fresh time. Preserve the existing RFC 8915 control exception, not a blanket AEAD rule. |
+| Correlated/uncorrelated NTSN storm; KE success with protected UDP failure; old-key success beside current-transaction authenticated success | Only permitted bounded control/recovery effects occur. Neither NTSN nor KE alone resets backoff; no instant KE storm, stale-key reset or plain-NTP downgrade. Preserve the RFC-specific opportunity for a valid protected reply before re-establishment. A current valid protected exchange retains useful progress under the same aggregate limits. |
+| Same-boot service restart; reboot; missing/corrupt/stale continuity data; forward/backward UTC correction | Exercise the separately frozen lifecycle policies. No serialized process-local instant, old pending request or unverified UTC age becomes authority. Optional path-hint loss cannot erase mandatory restrictions or grant a fresh burst. Conservative recovery has a finite policy-eligible reprobe for transient failure, or an explicit correction/re-enable action when automatic work is denied. Cross-boot enforcement is unqualified until the selected continuity/persistence owner is implemented and tested. |
+| Short/long suspend spanning eligibility and a large overdue interval, with missed/duplicate resume notifications | Invalidate old exchange context, recompute permitted work and coalesce missed activity; no catch-up burst or dependence on a new external notification for all future recovery. An independent native observer checks real wake/control progress; paused Tokio time alone is insufficient. |
+| Bounded combined refusal/KoD/refresh storm and subsequent recovery | Measure cumulative sends/KE attempts/refusals, CPU time, wakeups, pending timers/tasks/native slots, diagnostic bytes and control responsiveness before teardown. Record failed/missing observations and first failure. Preserve a working peer and recovery progress so reject-all cannot pass. Freeze hostile-load guard metrics beforehand; idle 0.1% CPU/four-wakeup targets are not invented hostile-load thresholds. |
+
+Use synthetic controlled peers, finite externally enforced duration/work budgets,
+independent expected schedules and captured operation counts. Separate pure
+decision tests from actual engine sends, Windows lifecycle/wakeup observations
+and resource measurements; mocks or the current loopback controls cannot close
+production/native or CHECK-21 baseline/soak gates. Retain existing H-ET1
+send-progress/fairness work rather than creating another fairness campaign.
+The next step is the existing S2.1/S2.2 contract freeze and scoped implementation,
+subject to current development priorities and execution holds, not a public-server
+test or immediate activation of this plan.
+
 ### Documentation integration and review receipt
 
 **Candidate:** base `8a66af924c509e898a9bab9bb3282f11b24fba93`, with additive

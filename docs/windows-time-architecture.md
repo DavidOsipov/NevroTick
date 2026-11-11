@@ -1014,6 +1014,44 @@ data; an old association's success cannot reset a failing replacement's retry.
 This policy requires no shared timer or blocking DNS/TLS work in the core.
 [S17, S20, S122]
 
+**Retry-delay and lifecycle continuity.** At S2.1/S2.2 integration, freeze the
+failure-to-next-operation table at that existing scheduler, not a generic
+retryable-error loop. Distinguish transient transport loss, local admission or
+resource refusal, persistent configuration/trust/protocol errors, and admitted
+control messages. Immediate refusal must not create an unbounded immediately due
+resubmission loop for the same operation; waiting must not spin. Preserve finite
+already-eligible progress to another permitted address/peer under the existing
+round and aggregate guards. Bound both
+concurrent work and cumulative attempts/work over the declared observation
+window, including refused submissions and diagnostic work. A local refusal is
+not evidence of a dishonest server. For transient failures, recovery must retain
+a permitted healthy neighbor and a finite policy-eligible reprobe, not silence
+all work to satisfy a budget. Persistent refusal/configuration errors instead
+need their reviewed correction or authorized re-enable condition; this rule
+does not automatically retry DENY/RSTR or bypass an administrative restriction.
+
+Keep ordinary NTP polling/KoD limits distinct from NTS-KE retry timing. Freeze
+checked delay growth, lower/upper bounds, jitter support and the saturation
+behavior before implementation. Randomization must not shorten an applicable
+minimum or earliest-permitted operation, including RATE; redraws, arithmetic
+overflow and timer granularity cannot create zero-delay retries. A correlated
+KoD still uses the existing protocol-specific admission and control-only effects;
+do not require AEAD on every NTS KoD/NAK or turn correlation into time authority.
+
+Distinguish same-boot service restart, reboot, suspend/resume and ordinary
+network churn. Reconcile clock-domain/boot identity before reusing a deadline;
+never restore a process-local monotonic instant or trust corrected UTC to decide
+that a wait expired. Freeze how mandatory provider/administrative restrictions
+and retry obligations survive each lifecycle separately from disposable path
+hints. Missing, stale or corrupt continuity state must not grant a fresh burst:
+define conservative bounded recovery admission and its policy-permitted recovery
+exit, or the explicit correction/re-enable action when automatic work is denied.
+Recompute eligible waits after resume without replaying missed ticks. This is a
+product continuity obligation, not an RFC requirement to persist every retry or
+permission to add a new store; the persistence/trust choice remains with its
+existing owners before claiming cross-restart/boot enforcement. Qualify these
+cases through [the existing engine task's anti-hot-retry controls](../tasks/engine-transport-pilot.md#anti-hot-retry-integration-controls--11-november-2026).
+
 Define an explicit NTP-era pivot and plausible date range. The 32-bit seconds field wraps in 2036; a grossly wrong OS date cannot safely serve as the only era anchor. A persisted authenticated floor, operator date anchor and release policy can constrain interpretation. If interpretation remains ambiguous, block automatic stepping and explain the required remedy.
 
 #### Address-family admission and alternative progress
