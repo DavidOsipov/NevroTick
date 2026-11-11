@@ -44,6 +44,9 @@ dependency/API choices or their tests, apply
 detached-copy updates presented as owner updates and borrow-checker workarounds
 that obscure authority; preserve justified snapshots and bounded shared ownership.
 Lint controls complement, never replace, real-owner behavioral checks.
+For unresolved or newly proposed APIs, imports, features and dependencies, use
+[API evidence and diagnostic triage](references/api-evidence.md) before changing
+the graph or retrying generated code.
 
 Choose smallest model that makes meaningful mistakes hard to express:
 

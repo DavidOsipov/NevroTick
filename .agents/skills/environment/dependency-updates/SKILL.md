@@ -35,6 +35,12 @@ runtime replacements from a maintenance notice. See the
 [dated OSV disposition](../../../../docs/supporting-reviews/windows-os-integration-risk-research.md#5-exact-version-dependency-lookups)
 for the method, not a permanent package allowlist.
 
+For generated or unresolved dependency/API claims, first use
+[API evidence and diagnostic triage](../../implementation/implement-rust/references/api-evidence.md).
+Separate Rust names, Cargo keys/package aliases, feature/target/version gates and
+actual package identity. Neither a compiler error nor a registry near-match
+authorizes adding or replacing a package.
+
 Before resolution, decide cohort and visible holds. Re-evaluate affected Serde/parser
 behavior, TLS provider/trust/licensing, NTS packet AEAD and Win32/service boundaries.
 Preserve held/optional candidates. Neither replace selected validation model nor

@@ -487,3 +487,39 @@ hallucination study/benchmark motivates exact dependency/API verification; no
 NevroTick-specific prevalence or general AI-versus-human defect-rate claim follows.
 New std-only controls exercise the already-enabled `let_underscore_future` lint;
 compiler qualification and product behavior remain separate from Python checks.
+
+## Generated Rust dependency/API evidence — 11 November 2026
+
+The [API evidence workflow](implement-rust/references/api-evidence.md) refines the
+existing anti-pattern and dependency-admission rules with causal name-resolution
+triage, bounded repair and safe evaluation boundaries. It changes no dependency,
+compiler policy or product QA threshold and imports no benchmark code.
+
+- [When LLMs Invent Rust Crates, arXiv 2606.08444v2](https://arxiv.org/html/2606.08444v2):
+  empirical motivation to distinguish Rust namespaces, package claims and similar
+  names. The study classifies names in generated source, not successful Cargo
+  dependency resolution, compilation or malicious-package execution. Its reported
+  rate must not be relabelled as the probability that an agent installs malware
+  or that NevroTick has a defect. Some reported denominators differ across the
+  presentation; no numerical prevalence or model ranking is adopted here. Its
+  exclusion of OS-specific/FFI tasks limits direct transfer to Windows adapters.
+  Self-review, retrieval and multiple-model agreement remain aids, not authority
+  over exact upstream documentation or product behavior. The study's linked
+  Figshare artifact is separate from the GitHub benchmark below.
+- [Rust hallucination benchmark, revision
+  f21f35dc51dd8c51ac266e2b7a3a57c55567eb60](https://github.com/collinzrj/rust_hallucination_benchmark/tree/f21f35dc51dd8c51ac266e2b7a3a57c55567eb60):
+  a separate public task/response/compiler-diagnostic collection, not an
+  independent oracle for root cause, semantic correctness or NevroTick quality.
+  [Its grader](https://github.com/collinzrj/rust_hallucination_benchmark/blob/f21f35dc51dd8c51ac266e2b7a3a57c55567eb60/grade.py)
+  checks generated projects/manifests with Cargo; the separate
+  [analyzer](https://github.com/collinzrj/rust_hallucination_benchmark/blob/f21f35dc51dd8c51ac266e2b7a3a57c55567eb60/analyze_hallucinations.py)
+  classifies diagnostics. Diagnostic patterns need causal validation; unknown/setup/timeout outcomes
+  cannot be folded into clean passes. The runner's online dependency processing
+  and inherited environment are unsuitable as a security boundary for untrusted
+  generated projects. It is not adopted or executed by this update.
+
+The linked reference's Rust/Cargo/docs.rs primary documentation governs the
+technical procedure. Registry existence is not provenance, a near-match is only
+an investigation signal, and a successful compiler result is not an independent
+behavioral oracle. Both studies motivate scoped improvements, not a mandatory
+whole-project model contest or another unqualified lint.
