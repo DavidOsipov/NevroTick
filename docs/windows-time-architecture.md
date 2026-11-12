@@ -90,11 +90,13 @@ Quick navigation: [architecture](#3-component-architecture-and-authority), [NTS 
 
 ## 1. Current-state capsule
 
-**Implementation summary; historical main baseline, 5 November 2026:** the
-initial capsule was reconciled against
-[main at `5e98c79`](https://github.com/DavidOsipov/NevroTick/commit/5e98c79901c90de77db6c6047cb483ec10b8cbd5).
-The maintained table includes later 6–9 November Core, engine, service and GUI amendments;
-that old pin does not identify their candidates. The [workspace manifest](../Cargo.toml),
+**Implementation summary, reconciled 12 November 2026:** current source was
+checked against
+[main at `a0ad73a`](https://github.com/DavidOsipov/NevroTick/commit/a0ad73abcb587293016af84f77654d4d28613527).
+The initial capsule's
+[5 November baseline `5e98c79`](https://github.com/DavidOsipov/NevroTick/commit/5e98c79901c90de77db6c6047cb483ec10b8cbd5)
+remains historical; it does not identify later Core, engine, service or GUI
+candidates. The [workspace manifest](../Cargo.toml),
 [lockfile](../Cargo.lock) and current source contain seven members. Source presence
 and task qualification are separate: linked tasks retain exact candidates,
 environments, completed checks and remaining work. Historical receipts do not
@@ -106,24 +108,40 @@ qualify the combined integration candidate.
 | [ntp-wire](../crates/ntp-wire/Cargo.toml) | Bounded NTP decoding/framing, inert NTS-KE processing, NTS envelope/plaintext readers and a checked two-stage client request formatter | [Header](../tasks/s1.1-header.md), [framing](../tasks/s1.1-framing.md) and [protocol](../tasks/s0.1-protocol-comparison.md) tasks; the [formatter exit](../tasks/engine-transport-pilot.md#inert-request-formatter-final-qualification--8-november-2026) qualifies its three changed Linux owners. No TLS/AEAD, authenticated acquisition or sample authority |
 | [time-domain](../crates/time-domain/Cargo.toml) | Checked timestamps, eras, exchange arithmetic, rounding, distinct clock domains and pure leap knowledge/interpretation | [S1.1c](../tasks/s1.1-time-domain.md) and [S1.4](../tasks/s1.4-leap-policy.md); scoped arithmetic/knowledge evidence establishes no production eligibility or clock effects |
 | [ntp-exchange](../crates/ntp-exchange/Cargo.toml) | Single-slot unauthenticated fixture association and deterministic scenarios | [Association](../tasks/s1.1-exchange-association.md) and [harness](../tasks/s1.1-deterministic-harness.md) tasks; no production acquisition |
-| [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness, modeled correction accounting, conditioned-window/affine fitting, finite phase plans and conditional frequency-prior/holdover | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md) retain fixture evidence. The [finite phase-plan](../tasks/s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners) and [frequency-prior](../tasks/s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners) exits add completed selected Linux scopes to the earlier numerical/selection work; full S1.4/P1 and production history remain open |
-| [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback observer and additive three-attempt same-source series with consume-once private receiver; conditional software-clock measurements, exact nominal values and common-origin relative views; `nevrotick-observe` remains the two-peer CLI | Recorded [measurement](../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026), [exact-nominal](../tasks/engine-transport-pilot.md#exact-nominal-terminal-qualification--6-november-2026), [rational-seconds](../tasks/s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners) and [common-run bridge](../tasks/engine-transport-pilot.md#common-run-reference-bridge--final-qualification-and-next-action) receipts retain their exact scopes. [N3a final qualification](../tasks/engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners) completes its selected Linux scope on407-input `e71aab7...`:91 ordinary/91 optimized tests,42 doctests, external contracts, both line gates and357 accounted variants (214 fresh library plus143 explicitly reused receiver outcomes; four reviewed equivalents, no unresolved survivor or timeout). The existing receiving-contract card retains its four transaction choices and supplier holds before integration. Observations stay unauthenticated/ineligible; production history, native Windows, P1 and product qualification remain open |
+| [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness, modeled correction accounting, conditioned-window/affine fitting, finite phase plans, requested/achieved-baseline feedback and conditional frequency-prior/holdover | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md) retain fixture evidence. The [finite phase-plan](../tasks/s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners), [frequency-prior](../tasks/s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners) and [baseline-feedback](../TOOLING.md#baseline-feedback-final-qualification) records retain their selected Linux source/qualification scopes; full S1.4/P1 and production history remain open |
+| [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback observer and additive three-attempt same-source series with consume-once private receiver; conditional software-clock measurements, exact nominal values and common-origin relative views; `nevrotick-observe` remains the two-peer CLI. Bounded address rounds and a default-off NTS-KE/protected-datagram prototype are also present, as scoped below | Recorded [measurement](../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026), [exact-nominal](../tasks/engine-transport-pilot.md#exact-nominal-terminal-qualification--6-november-2026), [rational-seconds](../tasks/s1.2-regression-readiness.md#exact-rational-seconds-final-qualification--two-selected-owners) and [common-run bridge](../tasks/engine-transport-pilot.md#common-run-reference-bridge--final-qualification-and-next-action) receipts retain their exact scopes. [N3a final qualification](../tasks/engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners) completes its selected Linux scope on407-input `e71aab7...`:91 ordinary/91 optimized tests,42 doctests, external contracts, both line gates and357 accounted variants (214 fresh library plus143 explicitly reused receiver outcomes; four reviewed equivalents, no unresolved survivor or timeout). The existing receiving-contract card retains its four transaction choices and supplier holds before integration. The observer/series measurements remain unauthenticated; all experimental observations remain ineligible for clock control. Production Core history, complete native NTS execution, P1 and product qualification remain open |
 | [windows-platform](../crates/windows-platform/Cargo.toml) | Portable lifecycle/status, SCM projection and checked privilege snapshots, with explicit completion custody | [W11-W05/S3.1 handoff](../tasks/windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026); consumed by standalone laboratory hosts, with product adoption and native qualification open |
 
-**11 November KE ownership source checkpoint:** the default-off Engine feature
-`ke-association-prototype` now owns the existing strict Windows KE/exporter path,
-its private association and the borrowed-key never-send request consumer. The
-existing standalone probe delegates to that actual owner. The
+**Historical EP1 KE ownership checkpoint, 11 November:** the default-off Engine
+feature `ke-association-prototype` took ownership of the strict Windows
+KE/exporter path, its private association and the borrowed-key never-send request
+consumer. The existing standalone probe delegated to that actual owner. The
 [EP1 task](../tasks/engine-transport-pilot.md#ep1-graph-admission-and-first-compile--11-november-2026)
-records exact dependency admission, selected Linux component/CLI checks and
+retains exact dependency admission, selected Linux component/CLI checks and
 Windows-target source checks, including incomplete attempts. Nine external
-compiler consumers pass their legal/private-module expectations; selected
-coverage/mutation remain unfinished. Healthy Windows
-trust/exporters and actual native cleanup retain their holds. This prototype
-sends no UDP request, publishes no time observation or fresh synchronization,
-and introduces no Core Cargo edge or shipping provider adoption.
+compiler consumers passed their legal/private-module expectations; selected
+coverage/mutation were unfinished at that checkpoint. Its consumer sent no UDP
+request and introduced no Core Cargo edge or shipping provider adoption.
 
-**8 November engine continuation:** the
+**Current NTS integration checkpoint, 12 November:** the feature now includes
+protected-request custody, authenticated-response admission and an explicitly
+selected bounded UDP source path. The [EP3 source exit](../tasks/engine-transport-pilot.md#ep3-wsl-source-exit--11-november-2026)
+records the connected association/request/datagram completion path. The
+[recovery checkpoint](../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026)
+adds same-invocation failure/work/backoff ownership and consuming transfer of
+prior cookie/UID history. The normal probe remains one-shot and defaults to a
+never-send preview; `--protected-datagram` selects one protected UDP operation.
+Repeated recovery/context-lifetime policies are currently selected through
+private test-only constructors.
+
+The [Windows scripted-component exit](../tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit)
+records component execution, not execution of the real KE/TLS/CNG or UDP backend.
+The complete native journey, worker stop/actual-completion integration, remaining
+critical-owner gates and production Core admission remain open. The feature
+introduces no Core Cargo edge, eligible time observation, fresh synchronization
+claim or shipping provider adoption. All existing execution holds remain.
+
+**Historical 8–9 November engine/laboratory continuation:** the
 [series-summary checkpoint repair](../tasks/engine-transport-pilot.md#final-series-summary-checkpoint-repair--8-november-2026)
 serializes current control/time classification after historical completion
 transfer; later controls cannot revise that selected summary. The engine also
@@ -145,10 +163,10 @@ their recorded scopes. The independent inert NTS request formatter has completed
 its [selected qualification](../tasks/engine-transport-pilot.md#inert-request-formatter-final-qualification--8-november-2026).
 The standalone [algorithm-15 sealing child](../tasks/s0.1-crypto-feasibility.md#s22-qualified-mutation-instrument--9-november-2026)
 also has a bounded GNU exit. The subsequent [actual KE-to-request laboratory handoff](../tasks/s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026)
-has scoped ordinary/compiler/privacy evidence; per-file metrics and native gates
-remain open. It produces
+had scoped ordinary/compiler/privacy evidence; per-file metrics and native gates
+remained open at that checkpoint. It produced
 one never-sent packet and no production association. No product crypto provider,
-runtime or production receiver is adopted by these laboratory results.
+runtime or production receiver was adopted by those laboratory results.
 Production history/Core integration, native Windows and P1 remain open.
 
 **9 November service source checkpoint:** [windows-platform](../crates/windows-platform/Cargo.toml)

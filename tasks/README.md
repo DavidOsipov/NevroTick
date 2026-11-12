@@ -11,15 +11,24 @@ The [selected portable privilege exit](windows11-integration.md#portable-service
 completes the platform/caller ordinary and per-file coverage/mutation gates.
 The existing
 [W11-W05/S3.1 handoff](windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026)
-owns their reuse, integration prerequisites and remaining qualification. Source
-integration preparation can proceed; qualified product adoption, final account/
+owns their reuse, integration prerequisites and remaining qualification. Reuse
+these owners when service work resumes; qualified product adoption, final account/
 provisioning admission and native Windows lifecycle evidence remain open.
 
-**Current continuation:** [plan §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-routes qualification of the newly authored [actual laboratory KE-to-request handoff](s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026)
-under the reviewed [S2.2 association/request preparation](engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request)
-after the [frequency-prior four-owner exit](s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners).
-The latter passes its selected GNU scope: 509 ordinary/509 optimized tests,
+**Current Core/Engine continuation — 12 November 2026:**
+[plan §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+routes the [current source checkpoint](engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026).
+EP2–EP4 association/protected-datagram and receipt/history custody plus bounded
+same-invocation recovery are authored; the accepted cookie policies have bounded
+source transitions. Next freeze the invocation-level worker stop and
+actual-completion contract before its dependent implementation. Public execution
+remains one-shot and never-send by default. Remaining critical/native gates,
+the native resource stop, separate fuzz/storage/UI holds and post-V1 formal
+deferral remain; no parent phase or release exit follows.
+
+**Earlier scoped checkpoints:** the
+[frequency-prior four-owner exit](s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners)
+passes its recorded GNU scope: 509 ordinary/509 optimized tests,
 98 doctests, scoped contract/mechanism joins and all four line/mutation gates.
 Its 699 variants are 424 caught, 271 compiler-unviable and four reviewed
 non-killed equivalents, without timeout or unresolved survivor. The corrected
@@ -28,9 +37,8 @@ S1.4/P1, production policy and S2.2 provider/trust/runtime integration remain op
 The [phase progress assessment](../docs/plans/development-plan.md#progress-reconciliation--9-november-2026)
 distinguishes those exits from integrated V1 readiness. Laboratory algorithm-15
 sealing has its own completed selected GNU gates; its old results do not qualify
-the changed CNG graph and new never-send receiver. Metadata MD-P1–MD-P3 remains
-assigned separately with four workers and raw-evidence delivery; its complete
-mutation exit is not yet recorded.
+a changed graph or receiver. Metadata MD-P1–MD-P3 retains its separate owner and
+incomplete mutation exit; it is outside the current Core/Engine continuation.
 The engine's [receiving transaction reconciliation](engine-transport-pilot.md#receiving-transaction-reconciliation--7-november-2026)
 retains its settled identity/accumulation/capacity/commit choices. Q1's conditional
 quality calculation's [final qualification](engine-transport-pilot.md#q1-final-qualification--conditional-source-quality)
@@ -58,10 +66,10 @@ passes its three-owner Linux scope with 143 ordinary/143 optimized tests,
 64 doctests and every per-file coverage/mutation gate. Its 303 unique variants
 are 185 caught, 113 compiler-unviable and five equivalent misses, with zero
 timeout or unresolved survivor; six focused controls add no denominator or
-compiler/harness kill credit. Current execution follows
-[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent):
-continue reviewed association/request preparation after the qualified
-conditional frequency-prior child. The inert S2.2
+compiler/harness kill credit. Their former association/request preparation route
+is historical. Current execution follows
+[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+and the worker stop/completion contract above. The inert S2.2
 formatter child now passes 119 ordinary/119 optimized tests, 86 doctests,
 external-consumer contracts and all three affected line/mutation gates. Its
 108 generated variants are 79 caught and 29 compiler-unviable, with no survivor,
@@ -152,7 +160,7 @@ retain their existing prerequisites and re-entry gates.
 | P1 S1.3 | [Selection/principal/combination](s1.3-source-selection-readiness.md); numerical Core | [Actual source-counter invariant](s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026) passed five full raw2^80/three-defect/restored jobs,145 properties and291 Python checks;32 inputs/nine executed Python sources bound. Earlier ordinal/append-depth/rational evidence remains preserved. [Complete constructor source preparation](s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026) now has six genuine Garde-backed Cargo projects,14 authenticated vendor packages,51 source checks and independent review; zero compiler/proof commands, execution unready. Source-specific admission/target/allocator/drop/unwinding/constructor proof, transactional lifecycle, prefix/depth/topology/whole-selection, held fraction models/bridge/import/addition, Garde admission, `EndpointParts`, complete enclosure and Core/P1 remain open. All holds and the full P0–P7 objective remain. |
 | P1 S1.4 | [Core completion parent](development-backlog.md#p1-core-completion), [leap entry table](s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint); Core/domain | The complete abstract discipline/holdover parent remains open; its finite-plan and conditional-frequency children have selected GNU exits. The separate pure-leap owner has completed its recorded final host qualification; preserve current receipts and continue with the observation-to-Core contract under plan §7. Formal obligations are post-V1. Later protocol/native scopes remain open. |
 | P1 S1.5 | [Core completion / verifier maintenance](development-backlog.md#p1-core-completion); tooling/dependency/QA | Cross-cutting verification and eventual phase closure; existing actual gates remain mandatory. Deferred maintenance is not a new implementation prerequisite. |
-| P2 S2.1–S2.4 | [Acquisition parent](development-backlog.md#p2-acquisition), [observation-to-Core contract](engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission); engine/protocol/security | The common-run bridge, N1b/N2a/N3a, Q1 and session/coherence children have completed their selected host exits. The inert formatter and standalone algorithm-15 sealer also have scoped exits. Qualify the authored [actual laboratory KE-to-request handoff](s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026) next. Production history, actual association/protected UDP/response admission, provider/trust and native gates remain open under the [ordinary S2.2 card](engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026). Reuse existing owners without inheriting production qualification. |
+| P2 S2.1–S2.4 | [Acquisition parent](development-backlog.md#p2-acquisition), [observation-to-Core contract](engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission); engine/protocol/security | Earlier bridge, numerical, session, formatter and laboratory handoff children retain their scoped exits. The [12 November source checkpoint](engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026) now owns EP2–EP4 association/protected-datagram, receipt/history custody and bounded same-invocation recovery. Next freeze the invocation-level worker stop and actual-completion contract. Public execution stays one-shot/never-send by default; production issuers/history, real TLS/CNG/UDP, remaining critical-owner and native gates remain open. Reuse existing owners without inheriting production qualification or lifting holds. |
 | P3 S3.1–S3.4 | [Service-boundary parent](development-backlog.md#p3-service-boundary), [source handoff](windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026); platform/IPC/security/Core | S3.1 integration preparation reuses the implemented service foundation; product/native adoption remains gated. Authenticated handlers → mandatory state → simulated-backend integration retain their prerequisites. W11/ST-W assignments apply; optional storage retains its separate pause. |
 | P4 S4.1–S4.5 | [Clock parent](development-backlog.md#p4-clock-integration); clock/platform/security/QA | Deferred measured backend/accounting → finite policy → power generations → ownership/recovery → soak; relevant P0/P3 evidence and bounded native admission precede effects. |
 | P5 S5.1–S5.4 | [Production-UI parent](development-backlog.md#p5-production-ui); UI/accessibility/platform | Deferred Slint status → settings/helper → diagnostics/tray → accessibility/resources, consuming the admitted adapter and its exact feature graph. Restore D2 before live status/commands and D1/D3 at their preview/qualification triggers. |

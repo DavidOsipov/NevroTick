@@ -25,27 +25,48 @@ is complete. Its then-next N2 fit/suffix contract and subsequent selected childr
 are also complete; the current continuation below supersedes that old routing.
 No commit/stage/push or Windows execution follows.
 
-**Current product action — 9 November 2026:** [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-selects qualification of the authored [actual KE-to-request laboratory handoff](s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026)
-under this task's [one-association/request card](#next-source-contract-one-nts-association-and-one-outstanding-request).
-The numerical bridge, N1/N2/N3, conditional-quality, session/coherence and inert
-formatter children already have selected exits. Core finite phase-plan and
-frequency-prior exits are retained in the Core task. Do not repeat those stages.
-The standalone KE producer and algorithm-15 sealer exist; their newly combined
-private receiver now passes its [ordinary checkpoint](s0.1-crypto-feasibility.md#actual-handoff-ordinary-checkpoint--9-november-2026):
-fresh graph/policy, 42 cases per host profile, both-target compiler/lint and nine
-external privacy consumers. Complete source-bound 90%/95% gates and generation-gap
-review, plus the separately admitted native route, in the crypto/W11 tasks.
-It constructs no sendable production capability and transmits nothing. Current
-engine observations remain `authentication=none eligible=0`; genuine mapping,
-production association, history admission, providers/trust, native qualification
-and full P1/P2 remain open. Historical receipts retain their exact candidates.
+**Current product action — 12 November 2026:** [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+selects WSL-only preparation of the invocation-level worker stop latch and
+actual-completion custody contract, with independent review before dependent
+implementation. Reuse the actual Config/claim/provider and operation owners;
+add no service source, shared graph change, production retry/default or
+Core-positive issuer. Native Windows execution remains paused after resource
+preflight; the healthy Windows KE exit stays separate and pending. David's
+Core/Engine-only focus and all unrelated holds remain.
 
-The [address-family continuation](#address-family-admission-and-bounded-acquisition-progress--5-november-2026)
-adds local-path admission and bounded alternative progress to later S2.1/S2.2
-acquisition. Its implementation and native qualification remain pending.
+The default-off `ke-association-prototype` now owns the strict Windows KE path,
+private associations, protected-request custody, authenticated-response admission
+and an explicitly selected bounded UDP source path. The existing probe delegates
+to that owner and remains one-shot: never-send preview by default, with explicit
+`--protected-datagram` selecting one protected operation. Bounded private recovery
+and consuming predecessor cookie/UID history transfer exist in source; repeated
+recovery/context-lifetime policies are selected through test-only constructors.
+No recurring native client, production observation or Core admission follows.
+The [11 November cookie decisions](../docs/nevrotick-owner-decisions.md#63-mandatory-cookie-policy-acceptance--11-november-2026)
+are accepted: fresh wire cookies, explicit return only before adapter invocation,
+and zero-cookie rejection preserving the healthy Pending request's original
+deadline and reduced receive budget.
 
-**Status:** [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) is one of
+The [materialized cutoff checkpoint](#materialized-cutoff-control-gnu-checkpoint--12-november-2026)
+records 348 ordinary/348 optimized tests, 69 doctests, both-target static checks
+and all eleven GNU line gates on its frozen source. Recovery, native-inactive,
+process-generation and other critical-owner gaps remain; the recovery/ledger
+reruns are not a fresh whole-Engine mutation qualification. The separate
+[Windows scripted-component exit](#ep3-windows-scripted-component-exit) records
+106 selected KE component tests on its earlier frozen candidate, without
+executing the real KE/TLS/CNG or UDP backend. Complete native execution,
+production mapping/quality issuers, Core history and P1/P2 remain open.
+
+The earlier laboratory KE-to-request handoff and Core
+[frequency-request/achieved-baseline checkpoint](../TOOLING.md#baseline-feedback-final-qualification)
+have completed their selected host exits. The
+[address-family preparation](#address-family-admission-and-bounded-acquisition-progress--5-november-2026)
+led to the later [fixed-snapshot address-round source and host exit](#direct-handler-selected-host-gates--10-november-2026).
+Do not repeat those completed stages. Dated checkpoints below retain their exact
+candidates and then-next directions; this current summary and development §7
+control the active task.
+
+**Historical observer baseline:** [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) is one of
 seven current workspace members. The historical S25 114-input candidate passed the
 configured dependency, complete GNU portable and Windows cross-build lanes,
 plus twenty-four real GNU CLI cases and eight ordinary-user Windows CLI cases.
@@ -102,7 +123,7 @@ broker, UI and helper gain no runtime dependency. UI-M0 remains unchanged.
 
 ## Dependency gate before compilation
 
-**Current gate, reconciled 7 November 2026:** use the
+**Default graph baseline, reconciled 7 November 2026:** use the
 [owner-requested dependency refresh](s0.1-source-readiness.md#refreshed-graph-and-current-evidence),
 the current manifest/lockfile and exact schema-3 policy. The admitted graph now
 uses `tokio-macros 2.7.2` with its engine-scoped Syn 3 host closure; Garde retains
@@ -114,6 +135,12 @@ ordinary/cross evidence and the completed
 The later [reference bridge](#bridge-source-activation--7-november-2026) retains
 its own candidate and remaining changed-owner qualification; neither result is
 full engine, Windows or production-acquisition qualification.
+
+The later default-off `ke-association-prototype` additionally admits the bounded
+Engine TLS/provider/AEAD graph through the [EP1 graph checkpoint](#ep1-graph-admission-and-first-compile--11-november-2026).
+Use the current [Engine manifest](../crates/nevrotick-engine/Cargo.toml), lockfile
+and exact policy for that feature; its experimental admission does not select a
+shipping provider or qualify native trust, cleanup or production acquisition.
 
 **Historical initial-engine gate:** the proposal and sixteen-package/2.7.1
 directions below record the earlier candidate. They do not override the current
@@ -3422,16 +3449,16 @@ production source, clock, native Windows, P1/P2 or release exit follows. Fuzz/al
 still refuse the seven-owner analysis versus six-owner fuzz scope, and all
 execution holds and OD-10's post-V1 formal deferral remain.
 
-**Current coordinator continuation:** the subsequent
+**Historical coordinator continuation — 9 November 2026:** the subsequent
 [finite phase-plan child](s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners)
 passes its selected two-owner Linux fixture qualification (455 ordinary/455
 optimized tests, 92 doctests, scoped external contracts and per-file coverage/
-mutation gates). Next freeze the remaining S1.4 frequency-prior update/aging/
-holdover contract under
-[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
-The exact remaining law needs independent review before coding. The completed
-finite mechanism and another inert helper do not clear S2.2's provider/trust/
-runtime and association gates.
+mutation gates). The then-next S1.4 frequency-prior update/aging/holdover
+contract and its selected qualification subsequently completed in the
+[Core task](s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners).
+Current work follows [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+and the 12 November summary above. These completed finite mechanisms do not
+close production provider/trust/runtime, native or Core-admission gates.
 
 ### Next source contract: one NTS association and one outstanding request
 

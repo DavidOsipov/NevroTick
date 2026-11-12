@@ -264,10 +264,16 @@ continuation follows [development §7](docs/plans/development-plan.md#7-next-exe
 These scoped results do not establish production sample eligibility, an integrated
 controller, clock authority or P1.
 [nevrotick-engine](crates/nevrotick-engine/Cargo.toml) owns the engine-only
-[bounded transport pilot](tasks/engine-transport-pilot.md): two explicit loopback
-peers, a private current-thread runtime and the unauthenticated, ineligible
-`nevrotick-observe` CLI. Its host experiment does not qualify production
-acquisition, native Windows teardown, NTS, services or clock effects.
+[bounded transport pilot](tasks/engine-transport-pilot.md): the unauthenticated
+loopback observer and a default-off NTS association/protected-datagram source
+path. The NTS probe remains one-shot and never-send by default. The
+[12 November source checkpoint](tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026)
+records bounded same-invocation recovery and scoped GNU qualification; critical
+owner and native gates remain open. The current Core/Engine action is to freeze
+the invocation-level worker stop and actual-completion contract before its
+dependent implementation. Source, cross-build and scripted Windows receipts do
+not establish integrated acquisition, Core eligibility, native TLS/CNG/UDP
+qualification, services or clock effects.
 [windows-platform](crates/windows-platform/Cargo.toml) owns portable service
 lifecycle/SCM/privilege contracts. Two fixed-role inert
 [laboratory hosts](tools/windows-service-fixture/README.md) supply native SCM

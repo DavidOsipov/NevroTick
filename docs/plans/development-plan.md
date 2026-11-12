@@ -1,8 +1,8 @@
 # NevroTick development and acceptance plan
 
-**Created:** 29 October 2026; **documentation reconciliation:** 9 November 2026
+**Created:** 29 October 2026; **documentation reconciliation:** 12 November 2026
 
-**Status:** P0–P7 remain open. Core frequency-prior, engine session/coherence, inert formatting, laboratory algorithm-15 sealing and portable service-privilege children have completed their selected exits. The actual laboratory KE-to-request handoff has passed its scoped ordinary/compiler/privacy checkpoint; affected per-file metrics and native qualification remain open. Full S1.4/P1, production acquisition/adoption, native evidence and Slint backend/text approval remain open. Section 7 routes the next bounded qualification.
+**Status:** P0–P7 remain open. Core frequency-request/achieved-baseline feedback and the earlier laboratory KE-to-request handoff have completed their selected host exits. The default-off Engine NTS prototype now contains private association/request custody, authenticated-response admission, an explicitly selected protected-datagram path and bounded private recovery. Its latest source checkpoint retains unresolved recovery, generation and native gates; it is not a whole-Engine qualification. Production sample admission, integrated services/clock control, full S1.4/P1/P2, Slint backend/text approval and release qualification remain open. [Section 7](#7-next-executable-task-for-a-development-agent) owns the current Core/Engine continuation and exact evidence boundaries.
 
 **Original planning baseline:** `f7ba1e7724a41cc846b1df6b9ddb20f095988b7a`
 
@@ -40,11 +40,11 @@ records what remains and how each guarantee closes. Completed helpers and green
 tooling do not complete their parent algorithm; this amendment schedules no
 pre-V1 formal work and changes no current product acceptance gate.
 
-**Immediate priority:** freeze and qualify the newly authored [actual laboratory KE-to-request handoff](../../tasks/s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026) in the existing S2.2 chain. This standalone child constructs one untransmitted packet; its current graph and ordinary/compiler/privacy checkpoint passes, while source-bound per-file metrics and native gates remain open. Production association, cookie-use policy, providers/trust, actual capture/mapping suppliers and history integration remain separate open prerequisites. Parallel metadata MD-P1–MD-P3 and service work retain their owners. All execution holds and post-V1 formal deferral remain.
+**Immediate priority:** within David's temporary Core/Engine-only focus, freeze the invocation-level worker stop latch and actual-completion custody contract in the [existing Engine continuation](../../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026), with independent review before dependent implementation. Reuse the actual Config/claim/provider and operation owners. This is WSL-only preparation; native Windows execution remains paused after resource preflight. The healthy Windows KE exit stays separate and pending. Other workstreams retain their owners and prerequisites; this does not schedule service, metadata, UI, storage, formal or optional-tooling work, change production defaults or lift any execution hold.
 
-**Current Core checkpoint:** the [frequency-prior four-owner exit](../../tasks/s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners) passes 509 ordinary/509 optimized tests, 98 doctests, scoped external/mechanism joins, all four line gates and the complete 699-variant union. Counts are 424 caught, 271 compiler-unviable and four reviewed equivalent misses; no timeout or unresolved survivor remains, and equivalents earn no kills. The task retains exact execution/reader identities, original failures and later metadata joins. This is a conditional GNU fixture exit; full S1.4/P1 and production/native qualification remain open.
+**Current Core checkpoint:** the [frequency-request/achieved-baseline completion ledger](../../TOOLING.md#baseline-feedback-final-qualification) records 557 ordinary/557 optimized tests, 103 doctests, selected contracts and all five line gates. Its complete 1,145-variant union contains 701 caught, 435 compiler-unviable and nine reviewed equivalent misses, with no timeout or unresolved survivor and no added kills for equivalents. The [existing Core task](../../tasks/s1.3-source-selection-readiness.md#baseline-feedback-qualification-completion-routing--10-november-2026) retains frozen routing and source-specific evidence. These selected Linux fixture gates are complete; full S1.4/P1 and production/native qualification remain open.
 
-**Earlier selected Core checkpoints:** the [finite phase-plan two-owner exit](../../tasks/s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners) passes its selected Linux fixture gates with 455 ordinary/455 optimized tests, 92 doctests, scoped external contracts and complete per-file coverage/mutation reconciliation. Full S1.4/P1 remains open. Earlier [modeled settled active-time delivery](../../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners) completed its selected four-owner Linux fixture qualification on the sealed 158-input V8 product: portable, contracts, coverage, four mutation cohorts and exact union passed. Its task retains exact bindings, original failures and evidence limits. The [pure-leap final qualification](../../tasks/s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026) and [three-owner controlled-measurement qualification](../../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026) complete their recorded bounded scopes; section 7 now routes reviewed S2.2 source preparation after the conditional frequency-prior exit; production observation-to-Core admission remains open. Do not repeat completed finite contract or qualification stages or infer production date policy. The preceding [S1.4c modeled achieved-phase checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14c-final-qualification--one-selected-owner) retains its completed selected Linux-fixture gates on the sealed 156-input preimage. The [S1.4b composition checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14b-final-qualification--three-selected-owners) retains its completed selected Linux-fixture gates on the preceding 156-input candidate. The [S1.4a reference-input checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14a-final-qualification--one-selected-owner) retains its completed 154-input scope. The [S158 nine-owner checkpoint](../../tasks/s1.3-source-selection-readiness.md#s158-final-qualification--nine-selected-owners), [S157](../../tasks/s1.3-source-selection-readiness.md#s157-selected-three-owner-linux-fixture-checkpoint--complete), [S155](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete) and [S156](../../tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete) retain their earlier exact candidates and completed scopes; full S1.4/P1 remains open. [Section 7](#7-next-executable-task-for-a-development-agent) owns current routing; linked tasks retain historical candidates and detailed results.
+**Earlier selected Core checkpoints:** the [finite phase-plan two-owner exit](../../tasks/s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners) passes its selected Linux fixture gates with 455 ordinary/455 optimized tests, 92 doctests, scoped external contracts and complete per-file coverage/mutation reconciliation. Full S1.4/P1 remains open. Earlier [modeled settled active-time delivery](../../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners) completed its selected four-owner Linux fixture qualification on the sealed 158-input V8 product: portable, contracts, coverage, four mutation cohorts and exact union passed. Its task retains exact bindings, original failures and evidence limits. The [pure-leap final qualification](../../tasks/s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026) and [three-owner controlled-measurement qualification](../../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026) complete their recorded bounded scopes; section 7 routes the later Engine continuation; production observation-to-Core admission remains open. Do not repeat completed finite contract or qualification stages or infer production date policy. The preceding [S1.4c modeled achieved-phase checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14c-final-qualification--one-selected-owner) retains its completed selected Linux-fixture gates on the sealed 156-input preimage. The [S1.4b composition checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14b-final-qualification--three-selected-owners) retains its completed selected Linux-fixture gates on the preceding 156-input candidate. The [S1.4a reference-input checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14a-final-qualification--one-selected-owner) retains its completed 154-input scope. The [S158 nine-owner checkpoint](../../tasks/s1.3-source-selection-readiness.md#s158-final-qualification--nine-selected-owners), [S157](../../tasks/s1.3-source-selection-readiness.md#s157-selected-three-owner-linux-fixture-checkpoint--complete), [S155](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete) and [S156](../../tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete) retain their earlier exact candidates and completed scopes; full S1.4/P1 remains open. [Section 7](#7-next-executable-task-for-a-development-agent) owns current routing; linked tasks retain historical candidates and detailed results.
 
 The [engine controlled-measurement checkpoint](../../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026)
 records bounded, unauthenticated experimental acquisition and controlled host
@@ -95,8 +95,8 @@ that workstream's experiment pause or select its product default.
 | Cargo | [Workspace](../../Cargo.toml), lockfile, fixture [UI](../../crates/nevrotick-ui/Cargo.toml), inert [wire](../../crates/ntp-wire/Cargo.toml), checked [time-domain](../../crates/time-domain/Cargo.toml), fixture [exchange](../../crates/ntp-exchange/Cargo.toml), pure [time-core](../../crates/time-core/Cargo.toml) and bounded [engine](../../crates/nevrotick-engine/Cargo.toml) owners exist. | Inspect current files and linked task evidence; fixture numerical source and loopback acquisition do not establish the complete core or production acquisition. |
 | UI | `main` → `slint_host` → checked fixture/presentation/native-input owners → v0.4 Slint views. The original GUI is GPL-3.0-only; Core/engine retains GPL-2.0-only. Win32 is retained historical source. | Follow the [GUI handoff](../../tasks/slint-gui-handoff.md) and [S0.5 active goal](../../tasks/s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui). Keep backend effects unavailable until their actual owners/contracts; reconcile the combined candidate before reusing branch receipts. One Slint product UI, no automatic Win32 fallback. |
 | UI evidence | [S0.5](../../tasks/s0.5-ui-comparison.md) retains historical GUI42/43/44 and separate final-head/merge hosted results in the [GUI handoff](../../tasks/slint-gui-handoff.md#hosted-merge-reconciliation--6-november-2026). [UI-M0](../../tasks/ui-m0.md) retains exact Win32 history and its incomplete native-memory instrumentation. | Reconcile actual receipt inputs before reuse; private cloud raw evidence is absent locally. Hosted portable/security/secret-scan passes coexist with failed PR aggregate CodeQL/GitGuardian and open external dispositions. Native/backend/text approval, GUI coverage/mutation and package qualification remain open. The old Win32 instrumentation gap does not qualify or block independent Slint source work. |
-| Production software | Header/framing, checked arithmetic, fixture exchange, pure regression/history/selection and bounded experimental engine acquisition/measurements exist. Production sample admission, acquisition, broker, SCM services, production IPC and the complete MSIX remain incomplete. | Follow exact-candidate task receipts; create only what an authorized slice needs. |
-| Dependencies | The workspace combines the branch Slint GUI GPL3 graph and retained engine Tokio/getrandom graph. Exchange and Core keep reviewed local edges; production TLS/provider/AEAD and service graphs remain gated. | Preserve both owners' exact feature/grant/source constraints and the compatible compiler repair; qualify the combined graph/configuration separately. Branch receipts and the [engine checkpoint](../../tasks/engine-transport-pilot.md#current-acquisition-evidence--1-november-2026) apply only to their recorded inputs. |
+| Production software | Header/framing, checked arithmetic, fixture exchange, pure regression/history/selection and achieved-baseline feedback exist, alongside bounded Engine acquisition and the default-off NTS association/protected-datagram/recovery prototype. Production sample admission, acquisition, broker, SCM services, production IPC and the complete MSIX remain incomplete. | Follow exact-candidate task receipts; create only what an authorized slice needs. |
+| Dependencies | The workspace combines the Slint GUI GPL3 graph and minimal Engine Tokio/getrandom graph, plus the default-off `ke-association-prototype` TLS/provider/AEAD feature graph admitted for the bounded experiment. Exchange and Core keep reviewed local edges; production provider adoption and service integration remain gated. | Preserve both owners' exact feature/grant/source constraints and the compatible compiler repair; qualify the combined graph/configuration separately. Branch receipts and the [engine checkpoint](../../tasks/engine-transport-pilot.md#current-acquisition-evidence--1-november-2026) apply only to their recorded inputs. |
 | Protected optional storage | [NV-STORAGE-PLAN-001 revision 1.3](windows-protected-storage.md) and its pinned upstream inventory exist; exact construction/provider/account/profile freeze and native qualification remain open. | Prepare the bounded design handoff in section 8.4. Root protection does not qualify live-secret isolation, NTS restoration or mandatory broker-state continuity. |
 | Windows 11 integration research | [Completed Microsoft-source investigation](windows11-integration.md) and [bounded agent assignments](../../tasks/windows11-integration.md) refine existing platform, DNS, lifecycle and resource owners. | Source-only follow-up is ready when its slice is assigned; documentation establishes no implemented mechanism, native support or installed-package result. Current task ordering and the native-experiment pause remain. |
 
@@ -108,6 +108,10 @@ architecture. Raw generated logs/builds belong in owned external output location
 or the architecture's phase evidence location, not in the maintained design bundle.
 
 ### Progress reconciliation — 9 November 2026
+
+This is the retained assessment of the dated baseline below. The current source
+summary is above and [section 7](#7-next-executable-task-for-a-development-agent)
+owns the next action; this historical table is not the 12 November inventory.
 
 This assessment reads committed `f2f0f52f7db3078e239f76d6780da1faa8175f4d`
 and the then-uncommitted CNG handoff source/lock and task amendments. Source
@@ -1021,11 +1025,27 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
-**Temporary Core/Engine focus — 10 November 2026:** David selects only these
-workstreams for now. Continue the existing Engine
-[fixed-snapshot address-round child](../../tasks/engine-transport-pilot.md#fixed-snapshot-address-round-child--10-november-2026):
-a bounded real-transport owner across 1–3 controlled alternatives, preserving the
-qualified same-endpoint series and Core's held production receiving boundary.
+**Current executable product task — 12 November 2026:** prepare and freeze the
+invocation-level worker stop latch and actual-completion custody contract in the
+[existing Engine task](../../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026),
+with independent review before dependent implementation. Reuse the actual
+Config/claim/provider and operation owners. This is WSL-only preparation under
+David's temporary Core/Engine-only focus; it adds no service source, shared graph
+change, production retry/default or Core-positive issuer. Native Windows work
+remains paused after resource preflight, and the healthy native KE exit remains
+separate and pending. Public execution stays one-shot and never-send by default.
+All existing native/fuzz/storage/UI holds and the post-V1 formal deferral remain.
+
+The checkpoints below explain completed prerequisites and remaining gates. Their
+results apply to their recorded candidates; older next-step instructions do not
+supersede the current action above.
+
+**Temporary Core/Engine focus — 10 November 2026:** David selected only these
+workstreams. The existing Engine
+[fixed-snapshot address-round child](../../tasks/engine-transport-pilot.md#fixed-snapshot-address-round-child--10-november-2026)
+implemented a bounded real-transport owner across 1–3 controlled alternatives,
+preserving the qualified same-endpoint series and Core's held production
+receiving boundary.
 Its [selected v9 host gates](../../tasks/engine-transport-pilot.md#selected-address-round-host-gates--10-november-2026)
 passed 173 ordinary/173 optimized tests and all 67 generated variants within
 that historical scope. The [direct-handler continuation](../../tasks/engine-transport-pilot.md#address-round-direct-handler-continuation--10-november-2026)
@@ -1063,8 +1083,9 @@ five-owner union passes. These selected Linux fixture gates are complete. Follow
 and [frozen task routing](../../tasks/s1.3-source-selection-readiness.md#baseline-feedback-qualification-completion-routing--10-november-2026)
 for exact receipts, admission joins, generation limits and remaining gaps.
 This selected checkpoint completes neither P1 nor native or release qualification.
-Next prepare the [existing S2.2 association/request contract](../../tasks/engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request):
-currentness issuer, provider/AEAD/runtime graph and finite budgets. The
+The subsequent [S2.2 association/request contract](../../tasks/engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request)
+prepared currentness ownership, the experimental provider/AEAD/runtime graph and
+finite budgets for the Engine children below. The
 [11 November receiver-first continuation](../../tasks/engine-transport-pilot.md#receiver-first-integration-continuation--11-november-2026)
 records the actual missing owners and protected-datagram adapter. David accepted
 both cookie-policy A choices: fresh wire cookies with explicit never-invoked
@@ -1074,16 +1095,17 @@ exact transitions at their dependent paths. The
 now owns the bounded cookie/request ledger and authenticated response consumer;
 its current qualification record, rather than the source card alone, controls
 the next executable action. The selected EP2 two-owner qualification is complete
-within its recorded original-context Linux component scope. Continue with
-[EP3's private protected-datagram source integration](../../tasks/engine-transport-pilot.md#ep3--private-protected-datagram-source-integration--11-november-2026):
-the [WSL source exit](../../tasks/engine-transport-pilot.md#ep3-wsl-source-exit--11-november-2026)
-connects the genuine KE owner to one explicitly selected nonblocking operation,
+within its recorded original-context Linux component scope. The subsequent
+[EP3 private protected-datagram source integration](../../tasks/engine-transport-pilot.md#ep3--private-protected-datagram-source-integration--11-november-2026)
+has a [WSL source exit](../../tasks/engine-transport-pilot.md#ep3-wsl-source-exit--11-november-2026)
+that connects the genuine KE owner to one explicitly selected nonblocking operation,
 retaining actual clock captures and the complete authenticated header. Its
 285/285/69 checks and nine line gates pass; the complete 343-descriptor accounting
 retains four open mutation-file gates and the separate native/critical scope.
 The eight current ledger classifications are newly source-bound manual reviews,
-not inherited EP2 credit or formal proofs. Continue the receiving/issuer chain
-and required backoff contract without manufacturing Core eligibility from receipts.
+not inherited EP2 credit or formal proofs. Production receiving/issuer integration
+and a qualified repeated-work client remain open; component receipts establish
+no Core eligibility.
 The [ordinary-user Windows scripted-component exit](../../tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit)
 records 18 host controls, all 17 build/inspection steps and eight native
 observations, including all 106 selected KE cases on the actual 260-test Windows
@@ -1103,7 +1125,7 @@ nine selected line gates. Its complete 378-variant accounting has independent
 raw review: five file gates pass; entrypoint/fault/datagram native-inactive
 survivors and the process owner's absent viable generation retain four open
 gates. Source accounting is complete within that GNU fixture scope, with no
-whole-Engine or P1 pass. The next connected recovery-owner contract is now frozen
+whole-Engine or P1 pass. The subsequent connected recovery-owner contract was frozen
 and implemented in candidate `b8741e48`: one immutable Config/provider scope,
 original cutoff, irreversible work/observation caps and a terminal first
 establishment success. Public execution remains one-shot. Its full baseline
@@ -1122,9 +1144,9 @@ after the RAM preflight refusal;
 no dependent native or Core-positive claim follows.
 
 The [cancellation prerequisite](../../tasks/engine-transport-pilot.md#cancellation-prerequisite--12-november-2026)
-has genuine behavioral RED and 52 focused GREEN cases on `48d7c039`; full new
-baseline/metrics are not yet claimed. Continue with the independently reviewed
-[exhausted-context source child](../../tasks/engine-transport-pilot.md#exhausted-context-continuation--source-contract-freeze-12-november-2026):
+has genuine behavioral RED and 52 focused GREEN cases on `48d7c039`; that focused
+checkpoint alone supplies no full baseline/metrics. The subsequent independently
+reviewed [exhausted-context source child](../../tasks/engine-transport-pilot.md#exhausted-context-continuation--source-contract-freeze-12-november-2026):
 one bounded replacement before any protected success, shorter checked private
 context lifetime inside the original outer cutoff, and retained predecessor
 cookie/UID history. Current Rust candidate `0aa75da8` passes its separate full
@@ -1161,6 +1183,10 @@ Old raw audit/proof data was retired at David's request; current inputs/results
 remain retained. The healthy Windows KE child retains its separate
 pending exit. Park storage, UI, formal and optional tooling work; this routing
 changes none of their contracts, qualification gates or execution holds.
+
+**Retained predecessor checkpoints:** the dated records below preserve earlier
+source/evidence scopes. Their then-next routes are historical; the 12 November
+Core/Engine action above controls current work.
 
 **Owner-requested security repair — 9 November 2026:** the
 [five imported source findings](../../tasks/codeql-cloud-handoff.md#imported-full-repository-findings--9-november-2026)
@@ -1199,8 +1225,8 @@ now passes ordinary checks and all six selected platform/caller 90%/95% gates.
 Reuse its exact evidence and the existing adapter/worker lifecycle and diagnostics
 owners. Final accounts/provisioning, Windows artifacts and actual native
 lifecycle/security evidence still gate installed integration. This parallel source
-checkpoint does not change the Core/engine continuation below; separately admitted
-guest jobs use W11 §4.19. NTP/NTS
+checkpoint does not schedule service work during the current Core/Engine-only
+focus; separately admitted guest jobs retain W11 §4.19 prerequisites. NTP/NTS
 algorithms, clock discipline and complete package delivery retain their own owners.
 
 **Controlling owner amendment — 6 November 2026:**
@@ -1420,9 +1446,10 @@ denominators; the generated request denominator remains empty. Nine external
 consumers retain their exact unchanged-production-source scope. This closes the
 selected source/host child, not the Windows producer or a production association.
 
-**Current executable product task:** prepare and qualify the separately authorized
-Windows laboratory producer/receiver under W11 §4.19 using David's running
-prepared Sandbox. Its [10 November checkpoint](../../tasks/s0.1-crypto-feasibility.md#ordinary-aes-native-checkpoint--10-november-2026)
+**Retained Windows laboratory checkpoint — 10 November 2026:** the separately
+authorized producer/receiver work under W11 §4.19 used David's then-prepared
+Sandbox. Its healthy native exit remains pending under the resource stop; the
+current WSL-only action is at the start of this section. Its [10 November checkpoint](../../tasks/s0.1-crypto-feasibility.md#ordinary-aes-native-checkpoint--10-november-2026)
 passes baseline CPU admission and 19 ordinary AES tests in the changed SAC-off
 guest. Preserve the historical Device Guard refusal and the separate held S134
 artifact. The hosted SDK route retains its diagnosed preflight failure and is
@@ -1431,16 +1458,18 @@ source/graph/artifact/job admission before the KE probes. The observable exit re
 actual Windows trust, exporter, closure, original-control handoff and cleanup
 results, not another portable model or cross-build. Use the existing finite
 one-heavy-job/one-inner-worker recipe and stop on resource preflight failure.
-Cookie reuse and
-zero-replacement-cookie decisions remain held for their dependent paths; provider,
-graph, ordinary trust and runtime gates remain. Do not repeat completed Core
+The later [11 November cookie decisions](../nevrotick-owner-decisions.md#61-s22-cookie-reissuance)
+accepted fresh wire cookies with explicit never-invoked return and
+[zero-cookie rejection preserving healthy Pending state](../nevrotick-owner-decisions.md#62-s22-zero-replacement-cookies).
+Their accepted policy no longer awaits a decision; production provider, graph,
+ordinary trust, runtime and native qualification retain their separate gates. Do not repeat completed Core
 contract or qualification stages. The five-GiB full-row/mutation floor and all
 isolation and metric requirements remain unchanged.
 The [native KE refusal checkpoint](../../tasks/s0.1-crypto-feasibility.md#native-ke-refusal-checkpoint--10-november-2026)
 now completes five admitted argument/connect/malformed-TLS/EOF cases in this
 guest, with 18 outputs / 3,975 bytes and original primary/secondary errors
 retained. A successful release/v3 link and later static readback are separate
-from the original build run's retained five-GiB stop. The next bounded action is
+from the original build run's retained five-GiB stop. Its then-next native action was
 the [healthy loopback fixture](../../tasks/s0.1-crypto-feasibility.md#controlled-healthy-windows-ke-fixture--10-november-2026),
 whose contract is reviewed and source is authored but uncompiled. Its read-only
 preparation stopped before guest dispatch; 928 MB available physical host memory
@@ -1475,12 +1504,13 @@ descriptors remain unexecuted. Fresh host coverage includes the real CLI while
 retaining the raw threshold failure for the additionally built legacy executable
 and inline-test/absent-Windows limits. These results close no complete 90%/95%
 or native gate.
-Continue the existing provider/packet-AEAD, cookie and production-generation
-contract preparation under that task. Genuine ordinary-store trust, real
-TLS/exporters, cleanup, target/native qualification and complete critical-file
-gates remain held or unfinished before product adoption. Packet AEAD admission
-still gates protected UDP. This selects no shipping
-trust policy and lifts no Windows/native or other execution hold.
+That standalone checkpoint left provider/packet-AEAD, cookie and
+production-generation preparation to its successors. The later Engine feature
+now contains protected UDP and the accepted cookie transitions, as recorded
+above. Genuine ordinary-store trust, real TLS/exporters, cleanup, target/native
+qualification and complete critical-file gates remain held or unfinished before
+product adoption. These source checkpoints select no shipping
+trust policy and lift no Windows/native or other execution hold.
 The completed independent laboratory sealing child is the existing AES witness's
 [algorithm-15 request-sealing bridge](../../tasks/s0.1-crypto-feasibility.md#s22-laboratory-request-sealing--source-contract-9-november-2026),
 with an independently reviewed two-stage contract and complete-packet oracle.
@@ -1502,10 +1532,11 @@ now has producer/receiver source with a completed scoped
 [source/host checkpoint](../../tasks/s0.1-crypto-feasibility.md#handoff-sourcehost-final-qualification--9-november-2026):
 after successful TLS closure it seals the first exact cookie with C2S before
 final commit and original CNG shutdown, then destroys secrets and reports counts
-only. Its two selected per-file gates pass; continue hosted/native evidence without
-repeating its contract freeze or the old sealer campaign. A production association/currentness issuer,
+only. Its two selected per-file gates pass; hosted/native follow-up remains
+subject to the current routing and holds, without repeating its contract freeze
+or the old sealer campaign. A production association/currentness issuer,
 provider and native qualification remain open; counts establish no authority.
-In parallel, the required W11-W05/S0.2
+At that earlier checkpoint, the parallel W11-W05/S0.2
 [exact-role privilege-admission source child](../../tasks/windows11-integration.md#exact-role-observation-and-startup-source-contract--9-november-2026)
 has completed contract review, actual-consumer RED→GREEN and the platform owner's
 ordinary/coverage/mutation gates. Both roles now use the complete captured set
@@ -1515,11 +1546,12 @@ diagnostics metric gates are also complete in the exact
 published as signed `6b9e3d1`; native qualification remains distinct.
 Core/engine, shared manifests,
 locks, schemas and verification policies remain coordinator-owned, and the cloud
-agent retains metadata MD-P1–MD-P3. This required source qualification can proceed while
-the NTS producer/receiver and provider prerequisites are prepared.
+agent's metadata MD-P1–MD-P3 assignment is retained. These earlier assignments
+do not schedule parallel work during the current Core/Engine-only focus.
 The finite child selects no shipping clock limits
-or defaults. Ordinary NTS retains its priority, while S2.2's provider/graph/trust/
-runtime and cookie-use/association gates remain open. The parallel W11-W05/S3.1
+or defaults. Ordinary NTS retains its priority; the later experimental Engine association
+and accepted cookie transitions do not close S2.2's production provider/trust,
+runtime, native or receiving-issuer gates. The parallel W11-W05/S3.1
 cloud source child arrived as `c4f434c` under its existing task. Its imported source
 is disjoint from the checked Core inputs. Recovered local service receipts are now
 present under `artifacts/windows-services/recovery-20261107-v1`; the
@@ -2332,7 +2364,7 @@ four owners regardless of `--subject`. Bind source/corpus/binaries and retain
 earlier results. Harness-only changes need no automatic replay of unaffected
 product coverage/mutation campaigns; changed product owners require their gates.
 
-**Current next action:** follow section 7's active Core checkpoint. The
+**Current next action:** follow section 7's current Core/Engine continuation. The
 verification maintainer takes QF-02 at its next affected recipe checkpoint;
 QF-01/QF-03 are retained results, not open implementation assignments. Qualify
 future invalidating changes in new receipts while preserving prior evidence,

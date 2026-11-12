@@ -54,13 +54,14 @@ cleanup qualification remain open. The [healthy fixture's source/resource checkp
 records its reviewed contract and uncompiled source; compiler/native work stopped
 before guest dispatch at 928 MB available host memory, below the 2048 MB minimum.
 Preserve the guest and WSL settings until David resumes after establishing
-headroom. Metadata qualification remains in its separate assigned lane.
+headroom. Metadata qualification retains its separate owner and incomplete exit;
+it is not the current Core/Engine action.
 These fixture results do not establish an integrated
 authenticated client, native clock synchronization or release readiness.
 
 | Question | Source of truth |
 | --- | --- |
-| Where is protected NTS datagram integration now? | [EP3 WSL source exit](../tasks/engine-transport-pilot.md#ep3-wsl-source-exit--11-november-2026): genuine KE-owned association reaches an explicit one-shot protected operation with full header/capture custody. Default remains never-send preview. The [Windows scripted-component exit](../tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit) adds 106 native KE cases on its recorded source. The [typed-failure continuation](../tasks/engine-transport-pilot.md#typed-tls-failure-projection--implementation-in-progress) passes 288 ordinary/optimized cases, 69 doctests and nine GNU line gates; native-only mutation survivors and the host-RAM execution stop remain open. Real TLS/CNG/UDP, full critical-file mutation, production issuers/Core history and release remain unqualified. |
+| Where is protected NTS datagram integration now? | The [12 November source checkpoint](../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026) records EP2–EP4 association, protected-datagram and receipt/history custody plus bounded same-invocation recovery. The accepted [cookie-return](nevrotick-owner-decisions.md#61-s22-cookie-reissuance) and [zero-cookie](nevrotick-owner-decisions.md#62-s22-zero-replacement-cookies) policies have bounded source transitions. Public execution remains one-shot and never-send by default. The earlier [Windows scripted-component exit](../tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit) records 106 scripted KE component tests on Windows, on its earlier source candidate only. Real TLS/CNG/UDP, remaining critical-owner gates, production issuers/Core history and release remain unqualified; the native resource stop remains. Next freeze the invocation-level worker stop and actual-completion contract. |
 | What needs checking before Rust/Cargo 1.100 adoption? | [11 November candidate-release review](supporting-reviews/rust-1.100-upgrade-review.md) covers language, library, lint, Cargo, Windows and companion-tool changes; the [existing build checkpoint](../tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026) owns exact-version admission and affected tests. Rust 1.99.1 remains selected; source research establishes no candidate/native pass. |
 | What code exists now, and which results apply to it? | [Current implementation summary](windows-time-architecture.md#1-current-state-capsule), backed by the workspace manifests, lockfile, source and linked candidate-specific task evidence. Dated baseline and review records below remain historical. |
 | Which OS integration assumptions have been challenged against CVEs and platform documentation? | [8 November OS-integration research](supporting-reviews/windows-os-integration-risk-research.md) maps actual/proposed APIs, primary CVE analogues, version/feature exclusions and paired checks. [W11 §4.37](../tasks/windows11-integration.md#437-os-integration-vulnerability-research--8-november-2026) routes the work; R-05 and ST-W03 retain the two explicit refinements. The [9 November integration map](supporting-reviews/windows-os-integration-risk-research.md#8-skill-and-document-integration--9-november-2026) locates canonical rules, skill entry points, shared QA and intentionally unchanged coverage. This is bounded research, not a new confirmed vulnerability, full audit or native pass. |
@@ -229,9 +230,10 @@ credit. The [frequency-prior four-owner exit](../tasks/s1.3-source-selection-rea
 now passes 509 ordinary/509 optimized tests, 98 doctests, scoped contracts and
 all four line/mutation gates. Its 699 variants comprise 424 caught, 271 unviable
 and four reviewed equivalent misses without kill credit; the task separates
-frozen native inputs from corrected read-only union verification. Continue the
-reviewed [S2.2 association/request preparation](../tasks/engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request)
-under development §7. Full S1.4/P1, production controller policy and engine
+frozen native inputs from corrected read-only union verification. Its former
+association/request preparation route is historical; current Core/Engine work
+follows the [12 November source checkpoint](../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026)
+and development §7. Full S1.4/P1, production controller policy and engine
 integration remain open. The actual
 capture/mapping supplier contract is settled as source
 preparation under

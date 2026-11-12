@@ -48,7 +48,7 @@ The additional analysis tools below were installed separately on 29 October;
 their compiler experiments do not change the repository's shipping Rust pin.
 
 Those dated bootstrap and first-crate records are historical. The current
-[workspace manifest](Cargo.toml) and [lockfile](Cargo.lock) cover six members;
+[workspace manifest](Cargo.toml) and [lockfile](Cargo.lock) cover seven members;
 the [implementation summary](docs/windows-time-architecture.md#1-current-state-capsule)
 routes each member to its task evidence. Use the
 [development plan's current task](docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
@@ -2311,12 +2311,16 @@ clock authority, package or release qualification. The Engine address-round sour
 retains its separately recorded unchanged-source evidence; its older admission
 remains closed against the later Core/helper tree.
 
-Next prepare the [existing S2.2 association/request contract](tasks/engine-transport-pilot.md#next-source-contract-one-nts-association-and-one-outstanding-request):
-currentness issuer, exact provider/packet-AEAD/runtime graph, normal validation,
-finite budgets/lifetimes and the [11 November receiver-first continuation](tasks/engine-transport-pilot.md#receiver-first-integration-continuation--11-november-2026).
+The association/request preparation route at this checkpoint is historical.
+Current Core/Engine work follows the
+[12 November source checkpoint](tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026):
+freeze the invocation-level worker stop and actual-completion contract before
+its dependent implementation. Public execution remains one-shot and never-send
+by default; the source/host exit does not close native or product gates.
 David accepted both cookie-policy A choices under NV-DEC-001: fresh wire cookies
 with explicit never-invoked return, and zero-cookie rejection preserving healthy
-Pending state. Implement their exact dependent transitions after the actual
-producer/graph/lifetime prerequisites are admitted. Native,
+Pending state. Their bounded EP2/EP3 source transitions exist; do not reopen the
+choices or repeat their source preparation. Production issuers and qualification
+remain separate obligations. Native,
 fuzz and storage holds remain; UI/storage/optional tooling stay parked and formal
 execution remains post-V1.

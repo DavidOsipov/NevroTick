@@ -69,14 +69,22 @@ original GUI GPL-3.0-only grant, branch checks and remaining backend, native and
 critical-text approval gaps. Combined-tree qualification remains separate.
 
 The seven-member Rust workspace contains portable protocol/numerical fixtures,
-bounded unauthenticated loopback acquisition, portable service contracts and the
-sample-data UI. Current Core work includes finite phase plans and achieved-baseline
-feedback; the engine includes bounded address rounds. These are development
-components, not an integrated time synchronization service.
+bounded loopback acquisition and address rounds, portable service contracts and
+the sample-data UI. Current Core work includes finite phase plans and
+achieved-baseline feedback. These are development components, not an integrated
+time synchronization service.
 
-Standalone laboratory tools explore NTS-KE and authenticated request construction.
-Their scoped results do not qualify a production NTS client. Experimental
-observations remain ineligible for clock control. Production NTP/NTS acquisition,
+The Engine's default-off NTS prototype now owns the strict Windows KE path,
+private associations, protected-request custody and authenticated-response
+admission. Its existing probe remains one-shot: the default constructs a
+never-sent preview, while explicit `--protected-datagram` selects one bounded
+UDP operation. The [12 November Engine checkpoint](tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026)
+records bounded recovery and receipt/history custody source, scoped component
+evidence and the remaining gates; recurring native operation is not enabled by
+the probe.
+
+Experimental results remain ineligible for clock control. The complete native
+KE/TLS/CNG/UDP journey, production NTP/NTS acquisition and Core admission,
 installed services, clock changes, Android, DoQ, pinning and the complete
 installer remain future work.
 
@@ -100,7 +108,7 @@ proposed first-stable baseline and the preparation required for bad-release reco
 | [time-domain](crates/time-domain/) | Checked timestamp, era, offset and elapsed-time arithmetic. |
 | [ntp-exchange](crates/ntp-exchange/) | Unauthenticated fixture association and deterministic scenarios. |
 | [time-core](crates/time-core/) | Pure time-estimation, source-selection/combination and modeled correction fixtures. |
-| [nevrotick-engine](crates/nevrotick-engine/) | Bounded, unauthenticated experimental acquisition and controlled measurements; no production service or clock authority. |
+| [nevrotick-engine](crates/nevrotick-engine/) | Bounded experimental loopback/address acquisition and a feature-gated NTS-KE/protected-datagram prototype; no production service or clock authority. |
 | [windows-platform](crates/windows-platform/) | Portable service lifecycle, SCM projection and exact-role privilege contracts; laboratory consumers remain separate from production/native qualification. |
 
 ## Getting started with development

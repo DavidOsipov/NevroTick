@@ -245,8 +245,10 @@ protected UDP source path. Real KE/TLS and protected-UDP execution and productio
 adoption remain unqualified; the linked Windows scripted component cohort has
 passed separately. Its count summary is not an association or send receipt.
 The former request draft recorded emission facts without granting reissuance.
-The accepted transition below supersedes that pending policy status; it does not
-supply an authenticated association or an implemented return operation.
+The accepted transition below supersedes that pending policy status. The
+decision establishes policy; the implemented EP2/EP3 transitions and their
+source-specific evidence are recorded below, separately from native/product
+qualification.
 [RFC 8915 §5.7](https://www.rfc-editor.org/rfc/rfc8915.html#section-5.7)
 prefers fresh cookies while allowing a user/application resilience choice;
 [§9.1](https://www.rfc-editor.org/rfc/rfc8915.html#section-9.1)

@@ -59,22 +59,26 @@ resume through normal bounded planning after V1. The owner's report of more than
 a day without a newly identified product mathematical defect explains the
 priority change; it supplies no general correctness claim.
 
-**Current product continuation — 9 November 2026:** qualify the authored
-[actual laboratory KE-to-request handoff](s0.1-crypto-feasibility.md#s22-actual-ke-to-request-laboratory-handoff--9-november-2026)
+**Current Core/Engine continuation — 12 November 2026:** follow the
+[current source checkpoint](engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026)
 under [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+EP2–EP4 association/protected-datagram and receipt/history custody plus bounded
+same-invocation recovery are authored. Next freeze the invocation-level worker
+stop and actual-completion contract before its dependent implementation. Public
+execution remains one-shot and never-send by default; accepted cookie policies
+have bounded source transitions and are not reopened.
 The earlier measurement, numerical bridge, N1/N2/N3, conditional quality,
 session/coherence, finite phase-plan and frequency-prior children have completed
 their selected exits; retain their exact candidates rather than repeating their
 contracts or treating an old refreshed-graph note as the current queue.
-The standalone KE producer and algorithm-15 sealer also exist. Their historical
-checks do not qualify the changed combined graph/private receiver. Its new
-[ordinary/target/privacy checkpoint](s0.1-crypto-feasibility.md#actual-handoff-ordinary-checkpoint--9-november-2026)
-passes, while source-bound 90%/95% gates remain open; production association,
-protected UDP, provider/trust and native gates remain separate.
+The standalone KE producer/sealer and earlier combined handoff retain their
+recorded source/host exits. Those receipts do not qualify a changed candidate;
+remaining critical-owner, native provider/trust/socket and product gates stay open.
 Freeze reference time, genuine date/scale provenance,
 uncertainty/divisor and actual receiver semantics before production history
-insertion. Authentication and eligibility remain absent; estimator admission,
-production scheduling and native Windows retain their separate contracts and
+insertion. Protected-response authentication source exists, but production
+eligibility remains absent; estimator admission, production scheduling and
+native Windows retain their separate contracts and
 holds. Runtime validation,
 checked arithmetic, independent tests/property/boundary cases, the existing
 90%/95% thresholds, security/native/package/release gates and all execution holds
@@ -127,23 +131,23 @@ S2.2. The subsequent
 now passes its selected two-owner Linux fixture gates: 455 ordinary/455 optimized
 tests, 92 doctests, scoped external contracts and per-file coverage/mutation.
 Its 376 variants include four exact reviewed equivalents with no kill credit.
-The [frequency-prior four-owner exit](s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners) now completes its selected GNU scope. Continue reviewed S2.2 association/request source preparation under
-[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
-The [recovery receiving-boundary reconciliation](engine-transport-pilot.md#recovery-receiving-boundary-reconciliation--11-november-2026)
-owns the next source child after native preparation: preserve typed TLS/setup
-causes before the complete bounded recovery worker. Its actual provider/context
-custody and acceptance cases are source-reconciled; the worker, numeric retry
-policy, production issuers and positive Core admission remain unimplemented.
+The [frequency-prior four-owner exit](s1.3-source-selection-readiness.md#frequency-prior-final-qualification--four-selected-owners)
+completes its recorded GNU scope. Its former association/request preparation
+route and the later typed-failure-first handoff are historical. Current
+[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+follows the 12 November stop/completion contract above; private typed failure and
+bounded same-invocation recovery source already exist. Continuous public work,
+production issuers and positive Core admission remain unimplemented.
 
-The [EP3 WSL source exit](engine-transport-pilot.md#ep3-wsl-source-exit--11-november-2026)
-now connects the genuine KE association to the explicitly selected protected
+The earlier [EP3 WSL source exit](engine-transport-pilot.md#ep3-wsl-source-exit--11-november-2026)
+connected the genuine KE association to the explicitly selected protected
 operation while preserving the default never-send preview. Its source checks
 pass 285/285/69 and all nine line gates. Source-file mutation gates are scoped:
 association (explicit reuse), handoff, request, ledger and response; Core/control,
 process, fault and datagram retain native-inactive or empty-viable generation
 gates. Keep the full critical manifest and 95% requirement, actual normal trust/
-provider/socket/capture qualification, real receiving issuers and cumulative
-backoff/recovery work open. Receipts grant no Core history or fresh-sync authority.
+provider/socket/capture qualification, real receiving issuers and complete
+production recovery open. Receipts grant no Core history or fresh-sync authority.
 The [Windows scripted-component exit](engine-transport-pilot.md#ep3-windows-scripted-component-exit)
 now adds all 106 selected native KE cases, exact Windows discovery and eight
 bounded runner observations. It qualifies the debug/scripted cohort only; real
