@@ -18,6 +18,8 @@ use super::super::request::{DirectionalKeys, RequestError};
 use super::super::response::{ReplyError, ReplyFields, StagedReply, stage_reply};
 use super::{AssociationOwner, COOKIE_BYTES_LIMIT, COOKIE_LIMIT, Control, Failure};
 
+pub(in super::super) mod retirement;
+
 /// Nonrenewable checkout and entropy attempts in one original context.
 const ATTEMPTS: usize = 32;
 /// Nonrenewable datagram work in that same original context.
@@ -147,13 +149,6 @@ pub(in super::super) struct RecoveryIntent {
 
 impl RecoveryIntent {
     /// Return the unchanged original expiry, without scheduling work.
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "EP2 recovery scheduling consumer remains held; component tests inspect the inert intent"
-        )
-    )]
     pub(in super::super) const fn not_before(self) -> Instant {
         self.not_before
     }
@@ -318,6 +313,18 @@ struct Active<'a> {
     sent_at: Option<Instant>,
 }
 
+/// Actual final authenticated count refusal, still requiring current-time admission.
+#[derive(Clone, Copy)]
+enum ExhaustedResponse {
+    /// Saved local submission and actual caller observation remain distinct.
+    Cookies {
+        /// Original monotonic observation taken before invoking the sender.
+        sent_at: Instant,
+        /// Supplied receive observation, rechecked by consuming retirement.
+        arrival: Instant,
+    },
+}
+
 /// Original-context state; the parent creates it before publishing KE.
 pub(in super::super) struct LedgerState<'a> {
     /// One reserved/prepared/invoked/pending request, never inferred from Drop.
@@ -340,6 +347,10 @@ pub(in super::super) struct LedgerState<'a> {
     recovery: Option<RecoveryIntent>,
     /// Sticky even after the intent is taken; repeated calls cannot mint more.
     recovery_issued: bool,
+    /// One exact predecessor; it cannot enlarge this context's own allowances.
+    previous: Option<retirement::PastRequests<'a>>,
+    /// Produced only by the real final authenticated cookie-count refusal.
+    exhausted_response: Option<ExhaustedResponse>,
 }
 
 impl LedgerState<'_> {
@@ -363,26 +374,28 @@ impl LedgerState<'_> {
             last: None,
             recovery: None,
             recovery_issued: false,
+            previous: None,
+            exhausted_response: None,
         })
     }
 
-    /// Coalesce the first intent without performing work or renewing authority.
-    fn recover(&mut self, expiry: Instant, reason: RecoveryReason) {
-        if !self.recovery_issued {
-            self.recovery = Some(RecoveryIntent {
-                not_before: expiry,
-                reason,
-            });
-            self.recovery_issued = true;
-        }
+    /// Inspect both immutable predecessor and local possibly-sent cookie history.
+    /// This grants no reservation, return or permission to expose packet bytes.
+    fn cookie_was_used(&self, body: &[u8]) -> bool {
+        was_used(&self.used, body)
+            || self
+                .previous
+                .as_ref()
+                .is_some_and(|past| past.cookie_was_used(body))
     }
 
-    /// Retire only logical reply custody after its already completed send.
-    fn retire_exhausted(&mut self, expiry: Instant) {
-        if self.frames == 0 || self.bytes == 0 {
-            self.active = None;
-            self.recover(expiry, RecoveryReason::ReceiveWork);
-        }
+    /// Inspect issued UID prefixes without retiring a new value or drawing entropy.
+    fn uid_was_issued(&self, uid: &[u8; 32]) -> bool {
+        self.uids.iter().take(self.uid_count).any(|old| old == uid)
+            || self
+                .previous
+                .as_ref()
+                .is_some_and(|past| past.uid_was_issued(uid))
     }
 }
 
@@ -452,6 +465,55 @@ fn encode_packet(
 }
 
 impl<'a> AssociationOwner<'a> {
+    /// Coalesce only a genuine checkout refusal from current owner state.
+    ///
+    /// Call after the Busy check but before charging the next checkout, preserving
+    /// the original refusal priority. A fresh or occupied owner creates no intent.
+    /// No lock is acquired: ordinary admission callers already hold Published.
+    /// The inert original-expiry record grants no retry, return or renewed credit.
+    fn recover_checkout(&mut self) {
+        if self.ledger.active.is_some() || self.ledger.recovery_issued {
+            return;
+        }
+        let reason = if self.ledger.attempts == 0 {
+            RecoveryReason::Attempts
+        } else if self.ledger.frames == 0 || self.ledger.bytes == 0 {
+            RecoveryReason::ReceiveWork
+        } else if !self
+            .material
+            .cookies
+            .iter()
+            .any(|body| !self.ledger.cookie_was_used(body))
+        {
+            RecoveryReason::Cookies
+        } else {
+            return;
+        };
+        self.ledger.recovery = Some(RecoveryIntent {
+            not_before: self.material.control.expiry,
+            reason,
+        });
+        self.ledger.recovery_issued = true;
+    }
+
+    /// Retire exhausted logical reply custody and coalesce its actual work cause.
+    ///
+    /// This observes only the unchanged local budgets; it grants no physical
+    /// completion fact. No lock/time admission is added, so cleanup also runs
+    /// after cancellation or expiry. An earlier owned intent remains unchanged.
+    fn retire_exhausted(&mut self) {
+        if self.ledger.frames == 0 || self.ledger.bytes == 0 {
+            self.ledger.active = None;
+            if !self.ledger.recovery_issued {
+                self.ledger.recovery = Some(RecoveryIntent {
+                    not_before: self.material.control.expiry,
+                    reason: RecoveryReason::ReceiveWork,
+                });
+                self.ledger.recovery_issued = true;
+            }
+        }
+    }
+
     /// Reserve one never-used cookie under the current original-context guard.
     ///
     /// Busy has no entropy or checkout effect. Every admitted scan/failed
@@ -464,21 +526,19 @@ impl<'a> AssociationOwner<'a> {
             if self.ledger.active.is_some() {
                 return Err(refused(LedgerError::Busy));
             }
+            self.recover_checkout();
             if self.ledger.attempts == 0 {
-                self.ledger
-                    .recover(control.expiry, RecoveryReason::Attempts);
                 return Err(refused(LedgerError::Attempts));
             }
             self.ledger.attempts -= 1;
             if self.ledger.frames == 0 || self.ledger.bytes == 0 {
-                self.ledger
-                    .recover(control.expiry, RecoveryReason::ReceiveWork);
                 return Err(refused(LedgerError::ReceiveWork));
             }
-            let used = &self.ledger.used;
-            self.material.cookies.retain(|body| !was_used(used, body));
+            let ledger = &self.ledger;
+            self.material
+                .cookies
+                .retain(|body| !ledger.cookie_was_used(body));
             if self.material.cookies.is_empty() {
-                self.ledger.recover(control.expiry, RecoveryReason::Cookies);
                 return Err(refused(LedgerError::Cookies));
             }
             let cookie = self.material.cookies.remove(0);
@@ -606,13 +666,7 @@ impl<'a> AssociationOwner<'a> {
         let uid = entropy
             .first_chunk::<32>()
             .ok_or(refused(LedgerError::Capacity))?;
-        if self
-            .ledger
-            .uids
-            .iter()
-            .take(self.ledger.uid_count)
-            .any(|old| old == uid)
-        {
+        if self.ledger.uid_was_issued(uid) {
             return Err(refused(LedgerError::RepeatedUid));
         }
         let index = self.ledger.uid_count;
@@ -720,6 +774,9 @@ impl<'a> AssociationOwner<'a> {
                 return Err(refused(LedgerError::Phase));
             }
             let cookie = active.cookie.as_ref().ok_or(refused(LedgerError::Phase))?;
+            if self.ledger.cookie_was_used(cookie) {
+                return Err(refused(LedgerError::Phase));
+            }
             let bytes = self
                 .material
                 .cookies
@@ -808,6 +865,11 @@ impl<'a> AssociationOwner<'a> {
                 || bytes > COOKIE_BYTES_LIMIT
                 || self.ledger.used.capacity() <= self.ledger.used.len()
                 || was_used(&self.ledger.used, cookie)
+                || self
+                    .ledger
+                    .previous
+                    .as_ref()
+                    .is_some_and(|past| past.cookie_was_used(cookie))
             {
                 return Err(refused(LedgerError::Capacity));
             }
@@ -858,6 +920,35 @@ impl<'a> AssociationOwner<'a> {
         }
     }
 
+    /// Stage bounded response data with this owner's keys and saved coordinates.
+    ///
+    /// The supplied UID position, wire token and allowance come from the caller's
+    /// charged request snapshot. This pure helper creates no receipt, marker,
+    /// charge, currentness or publication authority; only the receiver may commit.
+    /// # Errors
+    /// Refuse raw extent, absent issued UID, actual framing/AEAD/count admission
+    /// or bounded replacement staging without changing any owner or Control state.
+    fn stage_current_reply(
+        &self,
+        raw: &[u8],
+        uid_index: usize,
+        wire: NonZeroU64,
+        maximum_cookies: usize,
+    ) -> Result<StagedReplacement, Failure> {
+        if raw.len() > PACKET_BYTES {
+            return Err(refused(LedgerError::Capacity));
+        }
+        let uid = self
+            .ledger
+            .uids
+            .get(..self.ledger.uid_count)
+            .and_then(|issued| issued.get(uid_index))
+            .ok_or(refused(LedgerError::Capacity))?;
+        let reply = stage_reply(&self.material.keys, raw, uid, wire.get(), maximum_cookies)
+            .map_err(|error| refused(LedgerError::Reply(error)))?;
+        self.stage_replacement(reply)
+    }
+
     /// Preallocate a complete bounded replacement without changing live custody.
     ///
     /// Input already passed actual S2C and complete response admission. Archive
@@ -873,14 +964,14 @@ impl<'a> AssociationOwner<'a> {
             .map_err(|_| Failure::Allocation)?;
         let retained = cookies
             .iter()
-            .filter(|body| !was_used(&self.ledger.used, body))
+            .filter(|body| !self.ledger.cookie_was_used(body))
             .count();
         let (count, bytes) = self
             .material
             .cookies
             .iter()
             .chain(cookies.iter())
-            .filter(|body| !was_used(&self.ledger.used, body))
+            .filter(|body| !self.ledger.cookie_was_used(body))
             .try_fold((0_usize, 0_usize), |(count, bytes), body| {
                 Some((count.checked_add(1)?, bytes.checked_add(body.len())?))
             })
@@ -918,7 +1009,7 @@ impl<'a> AssociationOwner<'a> {
             }
             self.ledger.frames = self.ledger.frames.saturating_sub(1);
             self.ledger.bytes = 0;
-            self.ledger.retire_exhausted(control.expiry);
+            self.retire_exhausted();
             Err(refused(LedgerError::ReceiveWork))
         })
     }
@@ -959,7 +1050,7 @@ impl<'a> AssociationOwner<'a> {
                 if self.ledger.frames == 0 || raw.len() > self.ledger.bytes {
                     self.ledger.frames = self.ledger.frames.saturating_sub(1);
                     self.ledger.bytes = 0;
-                    self.ledger.retire_exhausted(control.expiry);
+                    self.retire_exhausted();
                     return Err(refused(LedgerError::ReceiveWork));
                 }
                 self.ledger.frames -= 1;
@@ -980,28 +1071,24 @@ impl<'a> AssociationOwner<'a> {
             if remote != self.material.udp {
                 return Err(refused(LedgerError::Endpoint));
             }
-            let uid = self
-                .ledger
-                .uids
-                .get(uid_index)
-                .ok_or(refused(LedgerError::Capacity))?;
-            let reply = stage_reply(&self.material.keys, raw, uid, wire.get(), maximum_cookies)
-                .map_err(|error| refused(LedgerError::Reply(error)))?;
-            self.stage_replacement(reply)
-        })();
+            self.stage_current_reply(raw, uid_index, wire, maximum_cookies)
+        })()
+        .inspect_err(|&error| {
+            // Only the actual staging call returns this authenticated count cause.
+            if error == refused(LedgerError::Reply(ReplyError::Cookies)) && self.ledger.frames == 0
+            {
+                self.ledger.exhausted_response =
+                    Some(ExhaustedResponse::Cookies { sent_at, arrival });
+            }
+            self.retire_exhausted();
+        })?;
         let StagedReplacement {
             fields,
             cookies,
             mut next,
             received_cookies,
             retained,
-        } = match staged {
-            Ok(staged) => staged,
-            Err(error) => {
-                self.ledger.retire_exhausted(control.expiry);
-                return Err(error);
-            }
-        };
+        } = staged;
         let result = control.with_published(|now| {
             let active = self
                 .ledger
@@ -1013,7 +1100,7 @@ impl<'a> AssociationOwner<'a> {
             }
             check_receive_times(sent_at, arrival, now)?;
             for body in self.material.cookies.drain(..).chain(cookies) {
-                if !was_used(&self.ledger.used, &body) {
+                if !self.ledger.cookie_was_used(&body) {
                     next.push(body);
                 }
             }
@@ -1030,10 +1117,7 @@ impl<'a> AssociationOwner<'a> {
             self.ledger.last = Some(receipt);
             Ok(receipt)
         });
-        if result.is_err() {
-            self.ledger.retire_exhausted(control.expiry);
-        }
-        result
+        result.inspect_err(|_| self.retire_exhausted())
     }
 
     /// Inspect finite metadata without exposing cookies, UIDs, packets or keys.
@@ -1044,7 +1128,7 @@ impl<'a> AssociationOwner<'a> {
             .iter()
             .enumerate()
             .filter(|(index, body)| {
-                !was_used(&self.ledger.used, body.as_slice())
+                !self.ledger.cookie_was_used(body.as_slice())
                     && !self
                         .material
                         .cookies
@@ -1081,15 +1165,37 @@ impl<'a> AssociationOwner<'a> {
     }
 
     /// Consume the sole coalesced intent; repeated calls cannot mint another.
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "EP2 bounded recovery worker remains held; component tests consume the inert intent"
-        )
-    )]
     pub(in super::super) fn take_recovery_intent(&mut self) -> Option<RecoveryIntent> {
         self.ledger.recovery.take()
+    }
+
+    /// Check an opaque completion against this actual, still-published owner.
+    ///
+    /// The receipt's serial is the charged reservation ordinal, not a new identity.
+    /// No later charged attempt may follow it, including a failed or returned one.
+    /// This check grants no committed fact and performs no final Control commit.
+    /// The consuming caller retains exclusive owner borrowing through that commit.
+    /// # Errors
+    /// Refuse foreign/stale context, an active slot, or a noncurrent receipt/ordinal
+    /// without changing request state, budgets, history or either Control.
+    #[cfg(any(windows, test))]
+    pub(in super::super) fn check_completed(
+        &self,
+        control: &Control,
+        receipt: &Receipt,
+    ) -> Result<(), Failure> {
+        if !std::ptr::eq(control, self.material.control) {
+            return Err(Failure::Control);
+        }
+        control.with_published(|_| {
+            if self.ledger.active.is_some()
+                || self.ledger.last.map(|last| last.serial) != Some(receipt.serial)
+                || ATTEMPTS.checked_sub(self.ledger.attempts) != Some(receipt.serial)
+            {
+                return Err(refused(LedgerError::Ticket));
+            }
+            Ok(())
+        })
     }
 }
 

@@ -2274,29 +2274,78 @@ class EvidenceTests(unittest.TestCase):
             MODULE.mutation_counts(SCOPE, report, {mutant["name"]: mutant}, filename)
 
     def test_complete_missed_file_does_not_hide_later_campaign(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            work = Path(temporary); tools = work / "tools"; tools.mkdir()
-            subjects = dict(FILES[:2]); report = {}; observed = []
-            policy = {"mutation_wall_seconds": 1200, "maximum_mutants": 512}
-            def run(label, command, timeout, **options):
-                name = label.split(":")[1]; filename = subjects[name]
-                mutant = {"name": name, "file": filename, "package": "time-domain"}
-                if label.startswith("mutation-enumeration:"):
-                    return json.dumps([mutant])
-                observed.append(name)
-                phases = phase_records()
-                summary = "MissedMutant" if name == "coordinate" else "CaughtMutant"
-                actual = phase_records(summary)
-                directory = work / "mutation" / name / "mutants.out"; directory.mkdir(parents=True)
-                (directory / "baseline.log").write_text("test result: ok. 1 passed; 0 failed; 0 ignored;")
-                (directory / "outcomes.json").write_text(json.dumps(complete_report({"cargo_mutants_version": "27.1.0", "total_mutants": 1,
-                    "outcomes": [{"scenario": "Baseline", "summary": "Success", "phase_results": phases, "log_path": "baseline.log"},
-                                 {"scenario": {"Mutant": mutant}, "summary": summary, "phase_results": actual}]})))
-                return {"exit_code": 2 if summary == "MissedMutant" else 0, "failure": None, "output": "observed"}
-            with self.assertRaises(MODULE.Incomplete):
-                MODULE.run_analysis_lanes(SCOPE, subjects, policy, work, tools, run, report, "mutation")
-            self.assertEqual(observed, ["coordinate", "era"])
-            self.assertEqual(set(report["mutation"]), set(subjects))
+        for first_summary in ("MissedMutant", "Unviable", "CaughtMutant"):
+            with self.subTest(first_summary=first_summary), tempfile.TemporaryDirectory() as temporary:
+                work = Path(temporary); tools = work / "tools"; tools.mkdir()
+                subjects = dict(FILES[:2]); report = {}; observed = []
+                policy = {"mutation_wall_seconds": 1200, "maximum_mutants": 512}
+                def run(label, command, timeout, **options):
+                    name = label.split(":")[1]; filename = subjects[name]
+                    mutant = {"name": name, "file": filename, "package": "time-domain"}
+                    if label.startswith("mutation-enumeration:"):
+                        return json.dumps([mutant])
+                    observed.append(name)
+                    summary = first_summary if name == "coordinate" else "CaughtMutant"
+                    directory = work / "mutation" / name / "mutants.out"; directory.mkdir(parents=True)
+                    (directory / "baseline.log").write_text("test result: ok. 1 passed; 0 failed; 0 ignored;")
+                    (directory / "outcomes.json").write_text(json.dumps(complete_report({"cargo_mutants_version": "27.1.0", "total_mutants": 1,
+                        "outcomes": [{"scenario": "Baseline", "summary": "Success", "phase_results": phase_records(), "log_path": "baseline.log"},
+                                     {"scenario": {"Mutant": mutant}, "summary": summary, "phase_results": phase_records(summary)}]})))
+                    return {"exit_code": 2 if summary == "MissedMutant" else 0, "failure": None, "output": "observed"}
+                if first_summary == "CaughtMutant":
+                    MODULE.run_analysis_lanes(SCOPE, subjects, policy, work, tools, run, report, "mutation")
+                    self.assertTrue(all(row["gate_passed"] for row in report["mutation"].values()))
+                else:
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.run_analysis_lanes(SCOPE, subjects, policy, work, tools, run, report, "mutation")
+                self.assertEqual(observed, ["coordinate", "era"])
+                self.assertEqual(set(report["mutation"]), set(subjects))
+                if first_summary == "Unviable":
+                    self.assertIs(report["mutation"]["coordinate"]["gate_passed"], False)
+                    self.assertIsNone(report["mutation"]["coordinate"]["adjusted_viable_killed_percent"])
+                    self.assertIs(report["mutation"]["era"]["gate_passed"], True)
+
+    def test_all_unviable_report_is_unscored_only_when_explicitly_deferred(self):
+        filename = FILES[0][1]
+        mutant = {"name": "unviable-control", "file": filename, "package": "time-domain"}
+        report = complete_report({"cargo_mutants_version": "27.1.0", "total_mutants": 1,
+            "outcomes": [{"scenario": "Baseline", "summary": "Success"},
+                         {"scenario": {"Mutant": mutant}, "summary": "Unviable"}]})
+        frozen = MODULE.mutation_inventory(SCOPE, [mutant], 512, filename)
+        for deferred in (False, 0, 1, None, "true"):
+            with self.subTest(deferred=deferred), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_counts(SCOPE, report, frozen, filename, defer_gate=deferred)
+        actual = MODULE.mutation_counts(SCOPE, report, frozen, filename, defer_gate=True)
+        self.assertEqual((actual["generated"], actual["viable"], actual["killed"], actual["survived"],
+                          actual["unviable"], actual["excluded"]), (1, 0, 0, 0, 1, 0))
+        self.assertEqual((actual["raw_denominator"], actual["adjusted_denominator"]), (0, 0))
+        self.assertIs(actual["gate_passed"], False)
+        for field in ("raw_viable_killed_percent", "viable_killed_percent", "adjusted_viable_killed_percent"):
+            self.assertIsNone(actual[field])
+        edits = [lambda p: p.update(unviable=0), lambda p: p.update(total_mutants=True),
+            lambda p: p["outcomes"].pop(), lambda p: p["outcomes"][0].update(summary="Unviable"),
+            lambda p: p["outcomes"][1].update(summary="Timeout"),
+            lambda p: p["outcomes"][1]["phase_results"][0].update(process_status="Success"),
+            lambda p: p["outcomes"][1]["phase_results"][0].update(duration=float("nan")),
+            lambda p: p["outcomes"][1]["scenario"]["Mutant"].update(unreviewed=True)]
+        for edit in edits:
+            bad = copy.deepcopy(report); edit(bad)
+            with self.subTest(edit=edit), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_counts(SCOPE, bad, frozen, filename, defer_gate=True)
+        for native in (2, 3, -9, True):
+            with self.subTest(native=native), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_counts(SCOPE, report, frozen, filename, native_exit_code=native, defer_gate=True)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.mutation_counts(SCOPE, report, {}, filename, defer_gate=True)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.mutation_counts(SCOPE, report, frozen, filename,
+                                   equivalences=[{"mutant": mutant}], defer_gate=True)
+        missed = copy.deepcopy(report)
+        missed["outcomes"][1].update(summary="MissedMutant", phase_results=phase_records("MissedMutant"))
+        missed = complete_report(missed)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.mutation_counts(SCOPE, missed, frozen, filename, native_exit_code=2,
+                                   equivalences=[{"mutant": mutant}], defer_gate=True)
 
     def test_equivalence_admission_binds_source_candidate_proof_and_exact_review_section(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -3723,6 +3772,18 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
         MODULE.require_engine_ke_role(self.scope, empty)
 
     def test_exact_complete_review_catalog_still_requires_generic_live_custody(self):
+        self.assertEqual(MODULE.ENGINE_KE_EQUIVALENCE_IDS, frozenset({
+            'KE-RETURN-POOL-CAPACITY-OR',
+            'KE-RETURN-POOL-BYTES-OR',
+            'KE-SEND-PREDECESSOR-VALUE-OR',
+            'KE-SEND-ARCHIVE-VALUE-OR',
+            'KE-SEND-ARCHIVE-CAPACITY-OR',
+            'KE-SEND-ARCHIVE-BYTES-OR',
+            'KE-SEND-ARCHIVE-BYTES-EQUALITY',
+            'KE-SEND-ARCHIVE-BYTES-INCLUSIVE',
+            'KE-RECEIVE-STABLE-SLOT-OR',
+        }))
+        self.assertEqual(len(self.policy["mutation_equivalences"]), 9)
         with self.reviewed(), patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, self.identity)):
             self.assertTrue(MODULE.engine_ke_equivalences_valid(self.policy))
             MODULE.require_engine_ke_role(self.scope, self.policy)
@@ -3743,6 +3804,10 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
         edits = [lambda p: p["binding"].update(candidate_sha256="f" * 64),
             lambda p: p["mutation_equivalences"].pop(),
             lambda p: p["mutation_equivalences"].append(copy.deepcopy(p["mutation_equivalences"][0])),
+            lambda p: p.update(mutation_equivalences=[entry for entry in p["mutation_equivalences"]
+                if entry["id"] != "KE-SEND-PREDECESSOR-VALUE-OR"]),
+            lambda p: p["mutation_equivalences"].append({**copy.deepcopy(p["mutation_equivalences"][0]),
+                "id": "UNREVIEWED-TENTH"}),
             lambda p: p["mutation_equivalences"][0].update(id="UNREVIEWED"),
             lambda p: p["mutation_equivalences"][0].update(candidate_sha256="f" * 64),
             lambda p: p["mutation_equivalences"][0].update(source_sha256="f" * 64),

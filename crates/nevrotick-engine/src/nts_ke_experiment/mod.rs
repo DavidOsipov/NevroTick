@@ -25,9 +25,13 @@ mod association;
 mod datagram;
 mod process;
 mod profile;
+#[cfg(any(windows, test))]
+mod recovery;
 
 #[cfg(windows)]
-use association::{AssociationCandidate, AssociationOwner};
+use association::AssociationCandidate;
+#[cfg(any(windows, test))]
+use association::AssociationOwner;
 #[cfg(windows)]
 use process::{ProcessAdmission, ProviderScope};
 
@@ -86,6 +90,9 @@ enum Failure {
     Limits,
     /// A response read failed with this payload-free typed category.
     Response(io::ErrorKind),
+    /// The actual direct TLS wrapper supplied a bounded typed refusal.
+    #[cfg(any(windows, test))]
+    Tls(transport_fault::TlsFailure),
     /// The actual incremental framing operation refused its input.
     Frame(NtsKeAccumulatorError),
     /// Actual offer/response negotiation refused its input.
@@ -99,28 +106,28 @@ enum Failure {
     /// An unadmitted endpoint hint or zero port was supplied.
     Endpoint,
     /// Connecting the one numeric peer failed.
-    #[cfg(windows)]
+    #[cfg(any(windows, test))]
     Connect(io::ErrorKind),
     /// The actual connected endpoint differs from the admitted endpoint.
     #[cfg(windows)]
     Peer,
     /// Explicit provider, verifier or TLS configuration construction failed.
-    #[cfg(windows)]
-    TlsSetup,
+    #[cfg(any(windows, test))]
+    TlsSetup(transport_fault::SetupStage),
     /// The real handshake failed; arbitrary error text is not retained.
-    #[cfg(windows)]
+    #[cfg(any(windows, test))]
     Handshake(io::ErrorKind),
     /// Negotiated protocol, ALPN or full-handshake requirements did not hold.
     #[cfg(windows)]
     TlsProfile,
     /// Complete request write or its mandatory flush failed.
-    #[cfg(windows)]
+    #[cfg(any(windows, test))]
     Request(io::ErrorKind),
     /// A regular same-connection exporter failed.
     #[cfg(windows)]
     Exporter,
     /// Required local close-notify flush failed.
-    #[cfg(windows)]
+    #[cfg(any(windows, test))]
     Shutdown(io::ErrorKind),
 }
 
@@ -260,11 +267,11 @@ enum CancelOutcome {
     AlreadyCommitted,
 }
 
-/// One invocation's immutable time bounds and serialized publication authority.
+/// One transaction's immutable time bounds and serialized publication authority.
 struct Control {
     /// Original monotonic origin; earlier supplied times cannot gain lifetime.
     origin: Instant,
-    /// Connect/handshake deadline from the original invocation origin.
+    /// Connect/handshake deadline from this transaction's original origin.
     handshake_deadline: Instant,
     /// Full-job deadline and candidate expiry, never reset by progress.
     expiry: Instant,
@@ -289,6 +296,22 @@ impl Control {
             phase: Mutex::new(Phase::Open),
             cancelled: tokio::sync::Notify::new(),
         })
+    }
+
+    /// Preserve the original phase maxima inside one immutable invocation window.
+    /// The receiving owner supplies its internally captured origin and cutoff;
+    /// ordinary effect guards still observe fresh time under the phase lock.
+    /// # Errors
+    /// Refuse deadline overflow and an empty or reversed window before effects.
+    #[cfg(any(windows, test))]
+    fn clamped(start: Instant, cutoff: Instant) -> Result<Self, Failure> {
+        if start >= cutoff {
+            return Err(Failure::Deadline);
+        }
+        let mut control = Self::new(start)?;
+        control.handshake_deadline = control.handshake_deadline.min(cutoff);
+        control.expiry = control.expiry.min(cutoff);
+        Ok(control)
     }
 
     /// Observe actual fresh time while holding the current-publication guard.
@@ -589,7 +612,7 @@ fn read_response(
     loop {
         let count = reader
             .read(scratch.as_mut())
-            .map_err(|error| Failure::Response(error.kind()))?;
+            .map_err(|error| transport_fault::response_error(&error))?;
         if count == 0 {
             break;
         }
@@ -621,7 +644,8 @@ struct Summary {
 }
 
 /// Primary operation failure and a separately retained cancellation failure.
-#[cfg(windows)]
+#[cfg(any(windows, test))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Failed {
     /// Original operation failure, never replaced by cleanup.
     primary: Failure,
@@ -631,7 +655,7 @@ struct Failed {
     admission_cleanup: Option<Failure>,
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 impl From<Failure> for Failed {
     /// Retain one original failure before any additional cleanup was attempted.
     fn from(primary: Failure) -> Self {
@@ -653,23 +677,98 @@ fn run(config: Config) -> Result<Summary, Failed> {
     let control = Control::new(Instant::now()).map_err(Failed::from)?;
     let claim = PROCESS_ADMISSION.claim().map_err(Failed::from)?;
     let provider = ProviderScope::new(&claim);
-    let result = transport::exchange(&config, &control, &provider);
+    let result = {
+        let mut invocation =
+            recovery::Invocation::one_shot(&config, &provider, control).map_err(Failed::from)?;
+        match recovery::step_with(&mut invocation, &mut recovery::Native) {
+            Ok(recovery::Step::Complete(summary)) => Ok(summary),
+            Err(failure) => Err(failure),
+            Ok(recovery::Step::Closed(end)) => Err(match invocation.last_failure() {
+                Some(failure) => *failure,
+                None => Failed::from(match end {
+                    recovery::End::Window | recovery::End::Arithmetic => Failure::Deadline,
+                    recovery::End::Context(_, cause) => cause,
+                    recovery::End::Completed
+                    | recovery::End::Failure
+                    | recovery::End::Transactions
+                    | recovery::End::Contexts
+                    | recovery::End::Refusals
+                    | recovery::End::Observations
+                    | recovery::End::Jitter(_) => Failure::Control,
+                }),
+            }),
+            Ok(recovery::Step::Deferred(_)) => Err(match invocation.last_failure() {
+                Some(failure) => *failure,
+                None => Failed::from(Failure::Control),
+            }),
+        }
+    };
     // The actual association/preview and TLS state are gone before this shutdown.
     drop(provider);
     // Consume this one-shot input before reporting; it cannot start a second job
     // after the process-global CNG shutdown owner has finished.
     drop(config);
-    match result {
-        Ok(summary) => Ok(summary),
-        Err(mut failure) => {
-            failure.admission_cleanup = control.cancel().err();
-            Err(failure)
-        }
-    }
+    result
+}
+
+/// The same one-shot owner captures initial counts before unsendable preview work.
+/// All inputs are the actual checked association and its one bounded entropy fill.
+/// # Errors
+/// Preserve population, preview/preparation and final currentness refusal; no
+/// protected-completion fact is constructed on this branch.
+#[cfg(any(windows, test))]
+fn preview_once(
+    association: &mut AssociationOwner<'_>,
+    fill: impl FnOnce(&mut [u8; 48]) -> Result<(), Failure>,
+) -> Result<Summary, Failure> {
+    let population = association.cookie_population()?;
+    let mut summary = association.prepare_preview(fill)?.finish()?;
+    summary.cookies = population.0;
+    summary.cookie_bytes = population.1;
+    Ok(summary)
+}
+
+/// Receive only a retired opaque operation before committing/projecting its facts.
+/// The private producer is called once before either final guard; no callback or
+/// await occurs between association validation and the final Control commit.
+/// # Errors
+/// Preserve actual producer, population, wrong/stale context or commit refusal.
+/// Every rejected operation creates no fact or success summary and refunds no work.
+#[cfg(test)]
+fn protected_once<'association, 'control>(
+    association: &mut AssociationOwner<'association>,
+    exchange: impl FnOnce(
+        &mut AssociationOwner<'association>,
+    ) -> Result<datagram::ProtectedCompletion<'control>, Failure>,
+) -> Result<Summary, Failure> {
+    protected_receiving(association, exchange, |committed| {
+        Ok(committed.into_summary())
+    })
+}
+
+/// Share actual commit/count handling with the invocation's exclusive receiver.
+/// The receiver consumes the committed fact before any terminal projection.
+/// # Errors
+/// Preserve producer, association, commit and receiver rejection without refunds.
+#[cfg(any(windows, test))]
+fn protected_receiving<'association, 'control>(
+    association: &mut AssociationOwner<'association>,
+    exchange: impl FnOnce(
+        &mut AssociationOwner<'association>,
+    ) -> Result<datagram::ProtectedCompletion<'control>, Failure>,
+    receive: impl FnOnce(datagram::CommittedProtected<'control>) -> Result<Summary, Failure>,
+) -> Result<Summary, Failure> {
+    let population = association.cookie_population()?;
+    let completion = exchange(association)?;
+    let committed = completion.commit(association)?;
+    let mut summary = receive(committed)?;
+    summary.cookies = population.0;
+    summary.cookie_bytes = population.1;
+    Ok(summary)
 }
 
 /// Project only closed, bounded failure labels; payload-bearing errors stay out.
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 fn failure_labels(failure: Failure) -> (&'static str, &'static str) {
     match failure {
         Failure::Arguments => ("admission", "arguments"),
@@ -683,25 +782,33 @@ fn failure_labels(failure: Failure) -> (&'static str, &'static str) {
         Failure::Datagram(_) => ("protected-datagram", "refused"),
         Failure::Offer(_) | Failure::Limits => ("request", "parameters"),
         Failure::Response(kind) => ("response", io_label(kind)),
+        Failure::Tls(failure) => failure.labels(),
         Failure::Frame(_) => ("response", "framing"),
         Failure::Negotiation(_) => ("response", "negotiation"),
         Failure::Cookies => ("response", "cookie-budget"),
         Failure::Entropy => ("request-sealing", "entropy"),
         Failure::Packet(_) => ("request-sealing", "encoding"),
         Failure::Endpoint => ("response", "endpoint"),
+        #[cfg(any(windows, test))]
         Failure::Connect(kind) => ("connect", io_label(kind)),
+        #[cfg(windows)]
         Failure::Peer => ("connect", "peer-mismatch"),
-        Failure::TlsSetup => ("tls", "setup"),
+        Failure::TlsSetup(_) => ("tls", "setup"),
+        #[cfg(any(windows, test))]
         Failure::Handshake(kind) => ("handshake", io_label(kind)),
+        #[cfg(windows)]
         Failure::TlsProfile => ("handshake", "profile"),
+        #[cfg(any(windows, test))]
         Failure::Request(kind) => ("request", io_label(kind)),
+        #[cfg(windows)]
         Failure::Exporter => ("exporter", "export"),
+        #[cfg(any(windows, test))]
         Failure::Shutdown(kind) => ("shutdown", io_label(kind)),
     }
 }
 
 /// Classify a typed I/O cause without exposing its original error or source.
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 fn io_label(kind: io::ErrorKind) -> &'static str {
     match kind {
         io::ErrorKind::TimedOut => "timeout",

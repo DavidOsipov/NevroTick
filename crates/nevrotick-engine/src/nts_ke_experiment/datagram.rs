@@ -11,7 +11,7 @@ use std::io;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum DatagramError {
     /// A nested runtime cannot own this synchronous invocation.
-    #[cfg(windows)]
+    #[cfg(any(windows, test))]
     EnteredRuntime,
     /// Current-thread runtime construction failed.
     Runtime(io::ErrorKind),
@@ -275,8 +275,8 @@ mod reached {
         Ok(())
     }
 
-    /// Historical completion owns all capture/identity facts and is not Clone.
-    pub(super) struct ProtectedCompletion<'control> {
+    /// Historical operation result; no final-commit API exists on this raw value.
+    pub(super) struct OperationCompletion<'control> {
         /// Same live control checked against the association before any packet work.
         control: &'control Control,
         /// Genuine once-consumed authenticated receipt, without eligibility authority.
@@ -301,13 +301,63 @@ mod reached {
         pub(super) cookie_bytes: usize,
     }
 
-    impl ProtectedCompletion<'_> {
-        /// Discard history only after the socket owner has retired, then project counts.
+    /// Opaque receiving input, constructed only after backend/runtime retirement.
+    /// Neither historical receipts nor raw operation results can construct it.
+    pub(in super::super) struct ProtectedCompletion<'control> {
+        /// Same genuine operation, with its original context and complete history.
+        operation: OperationCompletion<'control>,
+    }
+
+    /// One committed protected exchange, not live permission or Core eligibility.
+    /// No Clone/Copy or public raw constructor can duplicate this fact.
+    pub(in super::super) struct CommittedProtected<'control> {
+        /// Actual history survives until its one terminal count projection.
+        operation: OperationCompletion<'control>,
+    }
+
+    impl<'control> ProtectedCompletion<'control> {
+        /// Inspect historical component facts without duplicating commit custody.
+        #[cfg(test)]
+        pub(super) const fn history(&self) -> &OperationCompletion<'control> {
+            &self.operation
+        }
+
+        /// Consume this retired operation at its actual current receiving owner.
+        ///
+        /// Exclusive owner borrowing spans validation and the final commit. There
+        /// is no callback, await or retained lock between the two fresh guards.
+        /// A late stop/expiry still wins the existing final Control decision.
         /// # Errors
-        /// A stop/expiry before the enclosing final commit prevents success output;
-        /// a completed historical packet is not rolled back or reissued.
-        pub(super) fn finish(self) -> Result<Summary, Failure> {
-            let Self {
+        /// Refuse foreign/stale owner, later charged work, stop or expiry. Refusal
+        /// creates no fact and restores no request, cookie, deadline or work credit.
+        pub(in super::super) fn commit(
+            self,
+            association: &mut AssociationOwner<'_>,
+        ) -> Result<CommittedProtected<'control>, Failure> {
+            association.check_completed(self.operation.control, &self.operation.receipt)?;
+            self.operation.control.commit()?;
+            Ok(CommittedProtected {
+                operation: self.operation,
+            })
+        }
+    }
+
+    impl CommittedProtected<'_> {
+        /// Bind this historical fact to the receiving transaction without reopening it.
+        /// # Errors
+        /// Refuse another actual Control; no Published check follows commit.
+        pub(in super::super) fn check_control(&self, control: &Control) -> Result<(), Failure> {
+            if std::ptr::eq(self.operation.control, control) {
+                Ok(())
+            } else {
+                Err(Failure::Control)
+            }
+        }
+
+        /// Consume the historical fact once; return only existing bounded counts.
+        /// No Published check follows commit, and later stop cannot rewrite history.
+        pub(in super::super) fn into_summary(self) -> Summary {
+            let OperationCompletion {
                 control,
                 receipt,
                 send_before,
@@ -319,8 +369,7 @@ mod reached {
                 packet_bytes,
                 cookies,
                 cookie_bytes,
-            } = self;
-            control.commit()?;
+            } = self.operation;
             let summary = Summary {
                 cookies,
                 cookie_bytes,
@@ -330,6 +379,7 @@ mod reached {
             // Retain the complete historical header and actual capture/identity
             // through projection, with no numerical or fresh-sync admission.
             drop((
+                control,
                 receipt,
                 send_before,
                 send_after,
@@ -338,7 +388,7 @@ mod reached {
                 remote,
                 identity,
             ));
-            Ok(summary)
+            summary
         }
     }
 
@@ -374,7 +424,7 @@ mod reached {
         control: &'control Control,
         fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
         backend: &mut Backend,
-    ) -> Result<ProtectedCompletion<'control>, Failure> {
+    ) -> Result<OperationCompletion<'control>, Failure> {
         if association.check_context(control)? != backend.remote {
             return Err(Failure::Endpoint);
         }
@@ -418,7 +468,7 @@ mod reached {
                     match association.receive_reply(packet, remote, observed.monotonic()) {
                         Ok(receipt) => {
                             let (cookies, cookie_bytes) = association.cookie_population()?;
-                            return Ok(ProtectedCompletion {
+                            return Ok(OperationCompletion {
                                 control,
                                 receipt,
                                 send_before,
@@ -453,11 +503,29 @@ mod reached {
     /// # Errors
     /// Refuse nested runtime, socket setup and the genuine bounded operation.
     #[cfg(windows)]
-    pub(in super::super) fn exchange(
+    pub(in super::super) fn exchange<'control>(
         association: &mut AssociationOwner<'_>,
-        control: &Control,
+        control: &'control Control,
         fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
-    ) -> Result<Summary, Failure> {
+    ) -> Result<ProtectedCompletion<'control>, Failure> {
+        exchange_with(association, control, fill, Backend::bind)
+    }
+
+    /// Own the actual driver and selected backend through their real retirement.
+    ///
+    /// The native caller supplies only its fixed bind function; Script controls
+    /// create their closed backend through the same path inside this driver.
+    /// Only this return boundary constructs a committable completion. Raw
+    /// operation output remains historical and has no commit method.
+    /// # Errors
+    /// Preserve nested-context, association, driver/backend setup or operation
+    /// refusal; retire owned resources before returning either success or failure.
+    pub(super) fn exchange_with<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+        make_backend: impl FnOnce(SocketAddr) -> Result<Backend, Failure>,
+    ) -> Result<ProtectedCompletion<'control>, Failure> {
         if tokio::runtime::Handle::try_current().is_ok() {
             return Err(failed(DatagramError::EnteredRuntime));
         }
@@ -469,13 +537,13 @@ mod reached {
             .build()
             .map_err(|error| failed(DatagramError::Runtime(error.kind())))?;
         let result = runtime.block_on(async {
-            let mut backend = Backend::bind(remote)?;
+            let mut backend = make_backend(remote)?;
             let completion = operation(association, control, fill, &mut backend).await;
             drop(backend);
             completion
         });
         drop(runtime);
-        result.and_then(ProtectedCompletion::finish)
+        result.map(|operation| ProtectedCompletion { operation })
     }
 
     #[cfg(test)]
@@ -484,6 +552,9 @@ mod reached {
 
 #[cfg(windows)]
 pub(super) use reached::exchange;
+
+#[cfg(any(windows, test))]
+pub(super) use reached::{CommittedProtected, ProtectedCompletion};
 
 #[cfg(test)]
 #[path = "datagram/tests.rs"]

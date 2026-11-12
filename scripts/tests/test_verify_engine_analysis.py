@@ -7,6 +7,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import tempfile
@@ -1938,21 +1939,23 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         "ke_request": "crates/nevrotick-engine/src/nts_ke_experiment/request.rs",
         "ke_fault": "crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs",
         "ke_ledger": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
+        "ke_retirement": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/retirement.rs",
         "ke_response": "crates/nevrotick-engine/src/nts_ke_experiment/response.rs",
         "ke_datagram": "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs",
+        "ke_recovery": "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs",
     }
 
     class SessionReached(Exception):
         """A healthy admission reached Session; stop before any execution."""
 
     def policy_fixture(self):
-        """Independently specified limits and clearly synthetic 285/107 identities."""
+        """Independently specified limits and clearly synthetic 348/170 identities."""
         critical = ["crates/nevrotick-engine/src/lib.rs", *self.HOST.values(),
             "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
             "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
             "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"]
         names = sorted([f"ordinary_fixture_{index:03}" for index in range(178)] +
-                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(107)])
+                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(170)])
         return {
             "schema_version": 1, "package": "nevrotick-engine",
             "admission_status": "admitted-engine-ke-source-analysis",
@@ -2128,17 +2131,17 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         return (f"running {len(names)} tests\n" + "".join(f"test {name} ... ok\n" for name in names) +
                 f"test result: ok. {len(names)} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n")
 
-    def test_entered_blocks_require_all_285_cases_and_107_ke_neighbors(self):
+    def test_entered_blocks_require_all_348_cases_and_170_ke_neighbors(self):
         binding = self.policy["binding"]; names = binding["test_inventory"]
         healthy = self.execution(names)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 285)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 107)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 348)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 170)
         missing = [name for name in names if name != "nts_ke_experiment::fixture_case_00"]
         old = [name for name in names if not name.startswith("nts_ke_experiment::")]
         variants = [self.execution([]), self.execution(old), self.execution(missing),
             self.execution([*names, names[0]]), healthy.replace(" ... ok", " ... FAILED", 1),
-            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 285", "running 284"),
-            healthy.replace("test result: ok. 285 passed", "test result: ok. 284 passed"),
+            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 348", "running 347"),
+            healthy.replace("test result: ok. 348 passed", "test result: ok. 347 passed"),
             "\n".join(line for line in healthy.splitlines() if not line.startswith("running "))]
         for text in variants:
             with self.subTest(sample=text[-120:]), self.assertRaises(MODULE.Incomplete):
@@ -2158,8 +2161,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             with self.subTest(doctest=doc):
                 result = MODULE.validate_engine_ke_execution(text, binding, include_doctests=True)
                 self.assertEqual(result["additional_doctests"], [doc])
-                self.assertEqual(result["tests_executed"], 286)
-                self.assertEqual(result["ke_tests_executed"], 107)
+                self.assertEqual(result["tests_executed"], 349)
+                self.assertEqual(result["ke_tests_executed"], 170)
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.validate_engine_ke_execution(text, binding)
         invalid = [self.execution(names[1:]) + self.execution([doc_forms[0]]),
@@ -2214,13 +2217,32 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         calls = []
         outer = self
         class Session:
-            def __init__(self, root, *_arguments):
+            def __init__(self, root, _args, report, *_arguments):
                 self.product_identity = outer.identity
                 self.source = root
                 self.output = outer.args.output_dir
                 self.output.mkdir(mode=0o700)
+                self.work = self.output / "work"
+                self.work.mkdir(mode=0o700)
+                (self.work / "target").mkdir(mode=0o700)
+                self.release = self.work / "target/release"
+                self.release.mkdir(mode=0o700)
+                self.keep = [self.work / "target/debug/keep", self.work / "target/unrelated/keep",
+                             self.output / "raw.log", self.source / "source-sentinel"]
+                for path in self.keep:
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text("retained synthetic sentinel\n")
+                self.report = report
+                report["lanes"] = []
             def run(self, label, argv, timeout):
                 calls.append((label, argv, timeout))
+                self.report["lanes"].append({"lane": label, "exit_code": 0, "failure": None})
+                if label == "ke-release":
+                    (self.release / "completed-artifact").write_bytes(b"x" * 65536)
+                if label == "ke-doctests":
+                    outer.assertFalse(self.release.exists(), "completed release target must retire before doctests")
+                    for path in self.keep:
+                        outer.assertEqual(path.read_text(), "retained synthetic sentinel\n")
                 if label in {"ke-baseline", "ke-release"}:
                     return outer.execution(outer.policy["binding"]["test_inventory"])
                 if label == "ke-doctests":
@@ -2242,11 +2264,112 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             self.assertIn("--all-targets", argv)
             self.assertNotIn("build", argv)
             self.assertNotIn("run", argv)
-        self.assertEqual(report["baseline_execution"]["tests_executed"], 285)
-        self.assertEqual(report["release_execution"]["ke_tests_executed"], 107)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 348)
+        self.assertEqual(report["release_execution"]["ke_tests_executed"], 170)
         self.assertEqual(report["doctest_execution"]["compilation_only"],
                          ["src/lib.rs - Example::no_run (line 1) - compile"])
+        retired = report["release_target_retirement"]
+        self.assertEqual((retired["path"], retired["completed_lane"], retired["removed"]),
+                         ("work/target/release", "ke-release", True))
+        self.assertGreaterEqual(retired["before"]["allocated_bytes"], 65536)
+        self.assertEqual([row["phase"] for row in report["storage_samples"]
+                          if row["lane"] == "ke-release-target-retirement"], ["before", "after"])
         self.assertFalse(report["qualification_passed"])
+
+    def release_retirement_fixture(self):
+        """Real private files plus explicitly synthetic completed-child observations."""
+        temporary = tempfile.TemporaryDirectory(prefix="retirement-", dir=self.base)
+        self.addCleanup(temporary.cleanup)
+        output = Path(temporary.name)
+        work = output / "work"; work.mkdir(mode=0o700)
+        target = work / "target"; target.mkdir(mode=0o700)
+        release = target / "release"; release.mkdir(mode=0o700)
+        (release / "artifact").write_bytes(b"owned release artifact")
+        (output / "raw.log").write_text("retained raw child output")
+        session = SimpleNamespace(output=output, work=work)
+        report = {"lanes": [{"lane": "ke-release", "exit_code": 0, "failure": None}],
+                  "release_execution": {"tests_executed": 348, "ke_tests_executed": 170}}
+        MODULE.address_storage_checkpoint(session, self.policy, report, "ke-release", "after")
+        return session, report, release
+
+    def test_release_retirement_refuses_links_special_and_noncanonical_or_public_parents(self):
+        for case in ("release-link", "child-link", "fifo", "target-link", "noncanonical", "public-work"):
+            with self.subTest(case=case):
+                session, report, release = self.release_retirement_fixture()
+                outside = session.output.parent / (session.output.name + "-outside")
+                outside.mkdir(mode=0o700)
+                self.addCleanup(shutil.rmtree, outside)
+                sentinel = outside / "release/keep"; sentinel.parent.mkdir()
+                sentinel.write_text("unrelated external sentinel")
+                if case == "release-link":
+                    shutil.rmtree(release)
+                    release.symlink_to(outside / "release", target_is_directory=True)
+                elif case == "child-link":
+                    (release / "linked").symlink_to(outside, target_is_directory=True)
+                elif case == "fifo":
+                    os.mkfifo(release / "pipe", mode=0o600)
+                elif case == "target-link":
+                    release.parent.rename(session.work / "saved-target")
+                    (session.work / "target").symlink_to(outside, target_is_directory=True)
+                elif case == "noncanonical":
+                    (session.output / "alias").mkdir(mode=0o700)
+                    session.work = session.output / "alias/../work"
+                else:
+                    session.work.chmod(0o755)
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.retire_engine_ke_release_target(session, self.policy, report)
+                self.assertEqual(sentinel.read_text(), "unrelated external sentinel")
+                self.assertEqual((session.output / "raw.log").read_text(), "retained raw child output")
+                self.assertNotIn("release_target_retirement", report)
+
+    def test_failed_release_validation_or_postlane_cap_prevents_retirement_and_later_lanes(self):
+        (self.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(self.policy))
+        for mode in ("command", "validation", "storage"):
+            with self.subTest(mode=mode):
+                self.args.output_dir = self.base / ("negative-release-" + mode)
+                calls = []; report = {}; outer = self
+                artifact = self.args.output_dir / "work/target/release/artifact"
+                class Session:
+                    def __init__(self, root, _args, report, *_arguments):
+                        self.product_identity = outer.identity; self.source = root
+                        self.output = outer.args.output_dir; self.output.mkdir(mode=0o700)
+                        self.work = self.output / "work"; self.work.mkdir(mode=0o700)
+                        (self.work / "target").mkdir(mode=0o700)
+                        artifact.parent.mkdir(mode=0o700)
+                        self.report = report; report["lanes"] = []
+                    def run(self, label, argv, timeout):
+                        calls.append(label)
+                        self.report["lanes"].append({"lane": label, "exit_code": 1 if label == "ke-release" and mode == "command" else 0,
+                                                     "failure": None})
+                        if label == "ke-release":
+                            artifact.write_text("completed or failed release evidence")
+                            if mode == "command":
+                                raise MODULE.Incomplete("Synthetic release child failure")
+                            names = outer.policy["binding"]["test_inventory"]
+                            return outer.execution(names[:-1] if mode == "validation" else names)
+                        if label == "ke-baseline":
+                            return outer.execution(outer.policy["binding"]["test_inventory"])
+                        return "Synthetic compiler result only; no product execution.\n"
+                    def finish(self):
+                        calls.append("finish")
+                original_usage = MODULE.address_storage_usage
+                def measured_usage(directory):
+                    usage = original_usage(directory)
+                    if mode == "storage" and artifact.exists():
+                        return {**usage, "allocated_bytes": 805306368}
+                    return usage
+                with patch.object(MODULE, "ROOT", self.root), \
+                        patch.object(MODULE.PRODUCT, "admit_product", return_value=({"engine_ke_association": {"rows": {}}}, self.identity)), \
+                        patch.object(MODULE.COMMON, "Session", Session), \
+                        patch.object(MODULE, "address_storage_usage", side_effect=measured_usage):
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.execute_engine_ke_profile(self.args, report)
+                self.assertEqual(calls, ["ke-format", "ke-windows-check", "ke-baseline", "ke-clippy", "ke-release", "finish"])
+                self.assertEqual(artifact.read_text(), "completed or failed release evidence")
+                self.assertNotIn("release_target_retirement", report)
+                if mode == "storage":
+                    self.assertEqual((report["storage_samples"][-1]["lane"], report["storage_samples"][-1]["phase"],
+                                      report["storage_samples"][-1]["allocated_bytes"]), ("ke-release", "after", 805306368))
 
 class EngineKeFixtureLaneTests(unittest.TestCase):
     """One public generator, never synthetic Engine qualification evidence."""

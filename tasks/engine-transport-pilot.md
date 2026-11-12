@@ -4739,6 +4739,1626 @@ complete worker's provider → transaction → association → request ownership
 finite delay growth/cap/jitter and total work window before enabling repeats.
 The native scripted cohort and its current resource hold remain unchanged.
 
+#### Typed TLS failure projection — implementation in progress
+
+The preceding native runner checkpoint is published as signed `4731a30` on
+`main`; its tree is `3b382e2c988128d03dc9f3a8be2ba0b2a5d23d49`.
+The complete staged candidate passed 18 host runner controls, local-link checks
+and the pinned Gitleaks healthy/fault controls, full retained history and working
+tree scans. All 597 product/helper inputs matched the qualified index blobs.
+GitHub accepted the push while reporting two expected required checks bypassed;
+the [product run](https://github.com/DavidOsipov/NevroTick/actions/runs/43095284970)
+and [security run](https://github.com/DavidOsipov/NevroTick/actions/runs/43095286128)
+then reported `startup_failure`. Neither supplies hosted test or security credit.
+The separate CodeQL run was queued at readback. No workflow policy was changed.
+
+**Owner and scope.** The Engine coordinator owns the existing receiving-boundary
+child under REQ-8/BND-2 and CHECK-6/8/9/10/11/15/21/25/27. The source slice is
+`nts_ke_experiment/{transport_fault.rs,transport.rs,mod.rs}`. Preserve typed,
+closed, payload-free TLS causes before the actual I/O adapters discard the
+Rustls error. Distinguish provider-suite, verifier, protocol-version and client
+construction failures. Preserve existing CLI labels, process admission, provider
+lifetime, currentness checks and failure/cleanup ownership. This slice enables
+no retry loop, repeated transaction, Core eligibility or new dependency.
+
+**Independent expected results.** Typed Rustls provenance may preserve the
+primary TLS failure over later alert I/O or deadline failure, including an
+unclassified Rustls cause. Native `InvalidData` alone has no such provenance;
+retain an earlier transport/control refusal. Project request writes/flushes,
+response reads, already-buffered reads and close writes/flushes as well as the
+handshake. Unknown library errors remain unclassified, with no formatted text,
+payload inspection or inferred retry permission. Setup failure stays local.
+
+**Actual behavioral RED and healthy control.** Before changing production logic,
+the existing `resolve` API was exercised with retained `Cancelled` and a bare
+`Response(InvalidData)`. The new test entered once and failed at its assertion:
+actual `Err(Response(InvalidData))`, independently expected `Err(Cancelled)`.
+The unchanged unfaulted-result neighbor entered once and passed. This is an
+executed failure-precedence counterexample against the new explicit-provenance
+contract, not evidence of an exploitable defect in the one-shot command.
+The configured read-only product sandbox, network/environment boundary control,
+pinned complete stable payload and Root vendor were admitted; all source/helper,
+vendor and tool identities matched after execution. Six Cargo build jobs were
+used. The complete RED candidate is
+`87d5167242ce0eb4453a625b5f1610ed22308055b8c9bffd348cfbce3141feee`.
+Raw receipt: `engine-ke-association-v1/tls-failure-source-v1/red/verification.json`
+under the existing external qualification root. The focused development recipe
+grants no coverage/mutation or Windows execution credit.
+
+**Implemented source and focused GREEN.** The three-file repair retains private
+TLS provenance, bounded certificate/protocol/alert/local/unclassified facts and
+four local setup stages. It preserves existing public labels and first-fault
+ownership, including genuine typed-but-unclassified TLS failures. Independent
+source review found no concrete blocker in the final patch. The pinned formatter
+and eight focused GNU controls pass, with zero ignored or failed tests; actual
+complete ordinary discovery contains 288 unique cases, including 110 KE cases.
+Candidate: `631914208e2e5c00aae29a2dfadea51894d8ed9be1db1407f76d5a9be82d591c`
+over 584 product inputs. `tls-failure-source-v1/green/verification.json` retains
+all source/helper/vendor/stable-payload bookends. These are source/projection
+controls, not a live TLS/CNG/trust or genuine socket-failure result. Forced local
+setup-constructor failures also remain separate from the setup-label controls.
+
+The existing verifier and its synthetic controls now require exactly 288/110;
+all 96 affected Python controls pass. The policy's source/helper and eight exact
+ledger-disposition bindings are reconciled; historical ordinary/graph references
+keep their explicit predecessor scope. All eight retained typed descriptors and
+actual mutant hunks match the unchanged ledger source. Re-enumeration and current
+outcomes remain required: campaign admission is closed and inventory bindings
+are empty until fresh review. There is no new equivalence exclusion or kill credit.
+
+**Windows build and resource stop.** `tls-failure-source-v1/native-build-v1`
+passes all 17 build/inspection steps, including the actual Engine Windows library
+test link and unchanged v3 protections. The four new Windows-only Rustls
+projection/privacy controls compile but have not executed. The native attempt's
+first preflight observed 2,047,960 KiB available host RAM, below the unchanged
+2 GiB floor, and exited before any test child started. The retained primary
+failure is the actual memory refusal, not a malformed missing `Execution`
+object. Raw result: `tls-failure-source-v1/native-run-v1/verification.json`.
+No new discovery or application test count follows from this attempt. The
+Windows lane is stopped; no repeated native probe, system setting change or
+unrelated process termination follows. David is unavailable for signing; new
+work remains uncommitted until his return.
+
+**Configured baseline and coverage continuation.** The first full baseline
+executed 288 ordinary cases, 288 optimized cases and 69 doctests successfully,
+but its last Windows Clippy step rejected a collapsible `if` and the test's
+`io::Error::new(Other, ...)`. The retained `baseline-v1` receipt is incomplete.
+The correction preserves the ordered borrowed conditions through a let chain
+and uses `io::Error::other` with the same kind/payload. Independent pinned-source
+review confirms no owning temporary, guard-lifetime or application behavior
+change. The subsequent complete candidate is
+`1ae6d21080cc476d4d9afc7b7c4146e454d1abc19371b4e339895dfff16f40cc`.
+All seven `baseline-v2` steps now pass, including actual 288 ordinary/288
+optimized/69 doctest executions and both-target compiler/Clippy checks, with
+complete before/after admission. Its receipt SHA256 is
+`f81c773997f363cedcd8d166b64b310c2968ffe8014dbc0aae6911d0b7c0b07d`.
+This does not rebind the earlier Windows link to the later source or qualify
+the four still-unexecuted Windows classifier controls.
+
+`coverage-v1` executed all 288 cases successfully on this later candidate, then
+failed the unchanged per-file line gate: `mod.rs` covers 240/271 lines (88.56%).
+The other eight selected owners pass, including `transport_fault.rs` at 154/154.
+The newly portable compatibility check compiles the existing public-label mapper,
+exposing legacy categories that the focused typed/setup test did not exercise.
+The admitted next test-only change extends the existing compatibility control
+against those published legacy labels; no product branch, denominator, exclusion
+or threshold is changed. Coverage remains incomplete until the repaired candidate
+passes. The raw coverage JSON and failed receipt remain in `coverage-v1`.
+
+Closed unused Cargo targets from the RED, focused GREEN, first baseline and
+superseded native build were deleted (1,900,711,936 allocated bytes). Source
+snapshots, raw outcomes and current qualification inputs remain; no compression
+or unrelated process cleanup was performed.
+
+**Current frozen source results.** The compatibility repair is complete. A later
+independent inventory review also replaced the native expected-value test's
+circular `stage.native(...)` oracle with literal stage-to-`Failure` pairs. Its
+Windows-only test module now uses equivalent stacked `cfg(test)` / `cfg(windows)`
+attributes, letting the pinned tool recognize its test-only helpers. Fresh
+discovery removed exactly those 15 helper descriptors: every retained production
+descriptor and raw diff, plus the other eight inventories, remained identical.
+No removed helper earns kill or equivalence credit. There is no production,
+threshold or tool-filter change in those two final test repairs.
+
+The final 584-input product candidate is
+`4bd8694f583117943217ea5f0bdd750769f0940ac51f4acbe2aa4f270fbf840d`.
+`transport_fault.rs` SHA256:
+`b62672b9b538f3247bf573950709f28cd6936146825bcfdc77e0dd003b7fe4e0`.
+`baseline-v4` passes all seven steps: 288 ordinary cases, 288 optimized cases,
+69 doctests, format and both-target compiler/Clippy checks. `coverage-v3` executes
+all 288 cases and passes every selected GNU line gate: Core 266/271, association
+78/83, process 26/26, handoff 52/55, request 50/51, fault 199/199, ledger 599/616,
+response 108/109 and datagram 192/195. These percentages cover the compiled GNU
+scope; Windows classifier, provider, transport and other native branches remain
+separate. The same final source's complete discovery contains 368 production
+descriptors, including 27 in the fault owner. Independent review verifies exact
+descriptors/diffs, all captured inputs and stable-tool bookends before admission.
+The policy now admits precisely that inventory, with ten mutation workers and
+unchanged thresholds/timeouts.
+
+Both changed-file campaigns completed their entire inventories and independent
+causal review; both file gates remain **incomplete**:
+
+| Changed owner | Generated | Behavioral caught | Compiler/lint-unviable | Survived | Timeout | Raw/adjusted score |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `ke_fault` | 27 | 2 | 7 | 18 | 0 | 2/20 = 10%; zero exclusions |
+| `ke_core` | 78 | 37 | 36 | 5 | 0 | 37/42 = 88.095%; zero exclusions |
+
+The two fault catches reach the intended label-compatibility assertion. Four
+tuple substitutions fail denied `dead_code`, the OR-let substitution fails
+syntax, and two `Default` replacements fail actual trait bounds: none receives
+behavioral kill credit. All 18 fault survivors are Windows-only production code
+(native mapping 1, classifier 15, direct projector 2). The 37 Core catches have
+actual configuration, control/currentness/notification, endpoint, cookie-bound,
+response-termination or literal-label failures. Its 36 unviable variants have
+specific compiler/lint diagnostics. Its five survivors alter Windows-only
+`Failed::from`, `run`, `report_failure` or `entry` code. No GNU-executed survivor,
+timeout or setup failure remains in either campaign. Baseline and each survivor
+enter the complete 357-case roster (288 ordinary plus 69 doctests), including
+110 KE cases. Admission/source bookends match. These native-inactive survivors
+remain visible; hypothetical Windows compiler results cannot rewrite GNU
+outcomes, and none is an equivalence, exclusion or passed 95% gate.
+
+Exact receipts below are relative to the existing
+`engine-ke-association-v1/tls-failure-source-v1/` qualification root:
+
+| Receipt | SHA256 |
+| --- | --- |
+| `baseline-v4/verification.json` | `fd61d42e13435ee5ec56ff9b754cad2cdffffff5cd492518f86d6de0df20d7e9` |
+| `coverage-v3/verification.json` | `34ceacceebb84221d66360eb175f26a66dd334a56a4cb560d3811ce75c00a287` |
+| `enumeration-v2/verification.json` | `0024f36905eca15c9b8fd5d0954537fe1f0b44f4ef947a3c0d3ca1386723c27e` |
+| `fault-mutation-v1/verification.json` | `26c24b9171afed7423515ed18361b98d756126016cb5744901897e5836c4ab35` |
+| `core-mutation-v1/verification.json` | `4c405e20e300f54a22a26e059b4443b8e061ed148634d988c90ab583cfc34dfd` |
+
+**Remaining exit and next action.** Preserve the genuine RED and healthy
+neighbors, current per-file raw outcomes and all previously open gates. Windows
+execution remains stopped after its resource refusal; David's return/resource
+resumption is required before the next native attempt. Rebuild the final source
+and exercise its actual Rustls classifier controls and Windows mutant cases
+through an admitted bounded runner. Real TLS/CNG trust, forced local constructor
+failures, genuine socket/UDP completion, other critical-file gates and production
+Core receiving remain open. There is no full Engine, P1 or release pass. The
+reviewed next child below prepares the one-shot receiving owner; it does not
+enable retries, lift native holds or qualify the remaining gates. New work stays
+uncommitted while David is unavailable for signing.
+
+#### Next receiving-boundary child — reviewed source contract
+
+Two independent read-only assessments identify a necessary receiving boundary
+before a scheduler or retry helper. This is the next source child after the
+typed-failure WSL checkpoint; it changes no retry defaults or execution holds.
+The Engine coordinator owns REQ-8/BND-2 and CHECK-6/8/9/10/11/15/21/25/27.
+Reuse OD-04's bounded source preparation and the accepted cookie policies; no
+new owner decision is needed to preserve the existing one-shot behavior.
+
+`run` retains its sole process claim and provider. Split the current transport
+composition so KE establishment completes its existing TLS close/drop and
+publishes the actual `AssociationOwner` before the same one-shot decision owner
+selects preview or protected UDP. Consume the opaque `ProtectedCompletion` at
+that owner before terminal count projection. Socket/runtime retirement must
+still precede final commit; association retirement precedes provider shutdown.
+Preserve primary and cleanup failures and the existing initial-KE-cookie-count
+override in CLI output.
+
+Bind the completion to its actual live association, Control, KE context and
+request **before** `Control.commit()`: `AssociationOwner::check_context` requires
+Published and cannot be used as a postcommit check. An exclusive lease or checked
+serial/current-slot invariant must prevent an old completion from crossing a
+later request. Only successful final commit may issue one private, non-Clone,
+non-Copy committed authenticated-completion fact. A copied receipt, historical
+`last_receipt`, `Summary.transmitted`, socket identity, endpoint, available-cookie
+count or `RecoveryIntent` cannot issue that fact. Preview and failures issue none.
+The fact proves only the same-association protected completion; it grants no
+Core eligibility, independent freshness, retry permission or clock authority.
+
+The admitted writable source is the existing `mod.rs`, `transport.rs`,
+`datagram.rs` and the smallest required association/ledger boundary and existing
+tests, with verification policies coordinator-owned. Freeze the concrete type
+and borrow interface before editing. Meaningful WSL controls use the actual
+checked association and existing Script I/O: healthy consume-once success,
+successful preview without a fact, wrong association with identical endpoint and
+serial, stop before/after commit, dropped/stale completion and later pending
+work, preserved zero-cookie/authentication/send/exhaustion failure budgets,
+historical receipt rejection and TLS-close primary/cleanup preservation.
+Do not fabricate a trusted owner or treat modeled fields as production issuers.
+Ordinary/optimized/doctest, both-target checks and the unchanged coverage/mutation
+gates remain required. Native TLS/provider/UDP/resource and Core positive-admission
+gaps remain open. No loop around `run`, latch reset, repeated provider shutdown,
+secret cloning, new dependency or storage choice is selected by this child.
+
+#### EP4 receiving-owner interface freeze — source preparation only
+
+The coordinator and two independent source reviews select the concrete interface
+below under the preceding receiving-boundary contract. Native-only gates remain
+open; this authorizes bounded source preparation, not dependent execution or
+phase acceptance. The typed-failure source is separately preserved in the
+external `typed-source-checkpoint-v1.json` record and complete Git tree
+`a059228184052723ab633cced38575f03aa67aa0`; no commit or main-index change was
+made. This keeps that exact checkpoint reviewable while source work continues.
+
+* `transport::establish(config, control, provider)` returns the existing borrowed
+  `AssociationOwner` only after the unchanged prepare/close/drop/publication
+  match. Keep primary and independently observed close failures intact.
+* The same one-shot owner under `run` selects preview/protected operation,
+  consumes its outcome, preserves initial KE population counts and retires the
+  association before the existing provider scope ends. No repeated work follows.
+* `datagram::exchange` returns an opaque `ProtectedCompletion` after backend and
+  runtime retirement. Preserve this sole normal return boundary; do not widen
+  the raw operation into an alternative production commit route. Ledger checks
+  and socket identity alone cannot prove native retirement. Script controls must
+  observe wrapper retirement before the receiving decision.
+* `completion.commit(&mut association)` calls a new checked association/ledger
+  boundary before the existing final `Control.commit()`. Require the actual
+  stored Control pointer, current Published context, no active slot, matching
+  last-receipt serial and
+  `ATTEMPTS.checked_sub(ledger.attempts) == Some(completion.serial)`.
+  Reservation serial already follows irreversible attempt consumption; add no
+  new identifier. One association is published per actual Control, whose borrow
+  prevents address reuse. Returning a cookie never refunds the attempt.
+* The rule is **no later charged attempt**, not no later failed API call.
+  Busy, exhausted-budget or currentness refusal before decrement does not
+  advance that ordinal. A later charged failed/returned reservation does and
+  must stale the old completion, even with an idle slot and unchanged receipt.
+* Exclusive association borrowing holds ledger state unchanged across the two
+  lock acquisitions. There is no await/callback between check and final commit;
+  final commit rechecks cancellation/expiry. Do not retain a publication guard
+  across either locking call or perform a Published check after commit.
+* Successful commit alone creates private, non-Clone/non-Copy
+  `CommittedProtected`; `into_summary` then projects the unchanged terminal
+  counts. Neither raw receipt, last receipt, counts, endpoint, socket identity
+  nor recovery intent has a conversion into this fact. Drop, wrong/stale context
+  or rejected commit creates no fact/commit/refund/retry. The existing caller's
+  failure path still records admission cleanup. Later stop preserves committed
+  history; the fact supplies no live permission or Core eligibility.
+
+Before production edits, retain an existing-API behavioral RED: obtain a genuine
+Script completion, start a newer reservation and call current `finish()`; it
+currently commits without receiving the association. Repeat after explicitly
+returning that newer reservation to expose a last-receipt-only guard. Retain an
+immediate healthy neighbor with actual Script/backend retirement. These are
+counterexamples for the new private composition contract: the current CLI calls
+finish immediately and does not interpose another request, so this is not a
+demonstrated current CLI defect. A missing new method is not behavioral RED.
+Afterward cover the wrong-owner, stop/drop, preview, spent-budget, original-count
+and cleanup cases in the preceding contract, then requalify the changed owners
+without reusing the frozen checkpoint as current-source evidence.
+
+**Existing-API RED retained.** The two genuine Script cases execute after
+explicit backend/runtime retirement. Both then fail at the intended assertion:
+current `finish()` accepts the stale completion over a newer reservation, and
+also after that newer never-invoked reservation is explicitly returned. Each
+case verifies that the new reservation is real, the remaining attempt count is
+30 and the earlier receipt is unchanged before attempting finalization. The
+unchanged immediate-success neighbor enters once and passes. The RED command
+enters exactly two tests and exits 101 with two assertion failures; this is not
+a missing-method or setup failure. The full RED candidate is
+`f35d155e27fafdc0091f0939655fafc0c369cc56109cac6d135c2b0ba65c8703`.
+Source/helper, Root vendor and complete stable-payload bookends match, and the
+configured namespace/environment/network boundary control passes. Receipt:
+`engine-ke-association-v1/ep4-completion-source-v1/red/verification.json` under
+the existing external qualification root. Production implementation is now
+authorized within the frozen five-file source/test slice; new work stays
+uncommitted and all Windows execution holds remain.
+
+**EP4 source implementation and focused GREEN — 12 November 2026.** The shared
+`exchange_with` wrapper now creates and retires its own runtime and backend
+before constructing `ProtectedCompletion`. Its sole commit path checks the
+actual association and charged-attempt ordinal before the existing final
+Control commit. Preview and protected one-shot projections preserve the initial
+KE population. Independent source review found no blocker within this bounded
+contract; it does not establish native retirement or product readiness.
+
+The focused GREEN candidate is
+`bbbaea24773c84146c4fd7b53bbb8f02be5b762018109f20f9e12bd2ce30e25d`
+(584 product inputs). `green-v2/verification.json` under the EP4 external root
+records passing namespace/boundary and format controls, complete discovery of
+296 Engine tests (118 KE), and all 24 entered datagram tests passing, with no
+ignored tests. These include both retained stale-completion REDs, a foreign
+owner with equal endpoint/serial, dropped completion, original-count projection,
+spent-budget failure/cleanup and exhausted-but-uncharged reservation controls.
+Weak-owner witnesses observe backend and runtime-task custody retired before
+the receiving decision. They do not claim physical Windows completion.
+
+The preceding `green-v1` compiler stop from four redundant test qualifications
+is retained as incomplete; no Rust test entered that attempt. Removing those
+qualifications changes no production path or lint policy. Full baseline,
+coverage, fresh mutation discovery/outcomes and native Windows qualification
+remain separate pending gates. No commit is made while David is asleep.
+
+**Full baseline and fresh discovery.** Candidate
+`53304723dafcdb10a674b209925b03e0e313ece2796e8ab84b1f51cd83f7c7e1`
+changes only the datagram test file relative to that focused GREEN: captured
+Arcs are used after the permanently pending await, and a non-Drop ticket ends
+at its lexical scope. The failed `baseline-v1` retains three test-only Clippy
+diagnostics; no lint was relaxed. Independent review confirms that destruction
+of an unpolled or polled future releases the captured Arc, so the witness does
+not depend on executing the pending task or dropping its JoinHandle.
+
+Configured `baseline-v2` passes all seven lanes: format, Windows-target check,
+296 ordinary tests (118 KE), GNU Clippy, 296 optimized tests, 69 doctests and
+Windows-target Clippy. Configured `enumeration-v2` lists 378 production variants:
+Core 80, association 29, process 1, handoff 9, request 6, fault 27, ledger 145,
+response 45 and datagram 36. All eight E descriptors and raw diffs match exactly;
+six unchanged-owner inventories also match their typed-failure predecessors.
+This is discovery, not current kill or exclusion accounting.
+
+Generation covers six new `check_completed` variants and whole-function variants
+for the two one-shot helpers, completion commit/projection and shared wrapper.
+It does not individually generate omitted commit calls, initial-count overrides,
+backend/runtime retirement reordering or private-constructor bypasses. The
+independent behavioral controls and private checked source boundaries retain
+those distinct obligations; they add no generated mutation credit. Coverage,
+actual current mutant outcomes and native qualification remain open.
+
+**Current selected line coverage.** `coverage-v1/verification.json` on candidate
+`53304723dafcdb10a674b209925b03e0e313ece2796e8ab84b1f51cd83f7c7e1`
+passes all nine 90% line gates with all 296 ordinary tests entered: Core 290/295,
+association 78/83, process 26/26, handoff 52/55, request 50/51, fault 199/199,
+ledger 617/634, response 108/109 and datagram 230/235. This is executable-line
+coverage of the compiled GNU scope; the zero-entry branch data provides no
+branch-coverage claim. Windows-only paths, actual mutation outcomes and full
+critical-file qualification remain separate.
+
+**First complete ledger campaign and a discriminating test gap.** On candidate
+`53304723dafcdb10a674b209925b03e0e313ece2796e8ab84b1f51cd83f7c7e1`,
+`ledger-mutation-v1` accounts for all 145 variants: 94 causal test catches,
+42 compiler/lint refusals, nine survivors and no timeout. Baseline and every
+survivor enter 365 cases (296 ordinary plus 69 doctests). The eight exact E
+records apply; the new first-connector `||` to `&&` variant in
+`check_completed` remains unresolved, so the gate correctly stays incomplete.
+Its whole-body replacement is compiler-unviable for unused parameters, not a
+kill. Independent raw/source reviews confirm this accounting.
+
+Both reviewers rejected a ninth equivalence: a genuine foreign receipt with
+serial 1 can be paired at the independent helper boundary with a local owner
+after its first reserve/explicit return. That owner is Published, idle, has 31
+attempts and no local receipt. With its own actual Control, the original guard
+rejects `Ticket`; the mutant accepts. No trusted field is fabricated. The
+opaque production completion prevents this pairing, so this is a helper-boundary
+test gap rather than a demonstrated current CLI defect. The broader helper
+contract cannot inherit an unstated pairing restriction from its sole caller.
+
+The existing foreign-completion test now checks that genuine-value misbinding,
+exact refusal and unchanged local state/currentness while retaining equal-serial
+wrong-Control rejection and the actual own-owner committed healthy neighbor.
+`red-receipt-binding-v1` applies the exact retained mutant only to an isolated
+source copy: one test enters and fails at the required foreign-receipt assertion
+(exit 101), while its one-test healthy neighbor passes. Source/vendor/tool
+bookends match; the repository's production guard is unchanged. This is a
+test-sensitivity RED, not an original-source failure. Fresh GREEN and complete
+qualification of the expanded test candidate remain required; no new E is added.
+
+**Expanded-test candidate.**
+`bdc34dd4fd64fd4f084065098eb82f279d27145ea5afe1f18ebcebb0f161b591`
+changes only the datagram test file among the 584 product inputs. The configured
+isolated-development `green-receipt-binding-v1` passes source format, complete
+296-name discovery and all 24 datagram tests, with matching source/vendor/tool
+bookends. The 118 KE roster is unchanged. Both independent source reviews
+confirm the new genuine-value guard check. Shared-analysis 147 and Engine-wrapper
+96 Python controls pass; those synthetic harness checks grant no product metric
+credit. Configured `baseline-v3` now passes all seven lanes on this exact
+candidate: 296 ordinary/296 optimized tests, 69 doctests and both-target static
+checks. Fresh `enumeration-v3` retains all 378 complete descriptor/diff identities;
+independent readmission accepts the same eight E records, with no ninth or
+outcome transfer. Configured `coverage-v2` also passes all nine selected line
+gates with the same counts recorded above and all 296 ordinary tests entered.
+Actual mutation qualification remains pending. The
+historical-reference scope annotation now uses the actual
+referenced receipt's source/lock/result scope rather than assuming every
+predecessor used an incomplete standalone Tool run. No predecessor credit follows.
+
+**Current ledger gate.** Configured `ledger-mutation-v2` on the expanded
+candidate completes all 145 variants: 95 causal test catches, 42 compiler/lint
+refusals, eight exact reviewed equivalents and no timeout. Baseline and each
+survivor enter 365 cases. The first-connector variant is now caught by the
+required foreign-receipt assertion. Raw viable score is 95/103 (92.23%);
+excluding only the eight reviewed equivalents gives 95/95, with no unresolved
+survivor and no equivalence kill credit. The configured 95% file gate passes.
+Independent raw and causal reviews accept this exact result: all 145
+descriptor/diff pairs match, all 42 compiler diagnostic sets are unchanged, and
+the sole outcome change is the intended foreign-receipt catch after successful
+compilation. Its healthy neighbor still passes. Datagram/Core mutation and the
+broader native/critical gates remain separate.
+
+**Current datagram accounting.** Configured `datagram-mutation-v1` completes all
+36 variants on the same expanded candidate: 12 caught, 16 compiler-unviable,
+eight survivors and no timeout. Baseline and each survivor enter 365 cases.
+No equivalence applies; the 12/20 viable score is 60%, so the file gate remains
+incomplete. The six native bind, one Windows read-error and one native exchange
+survivor require independent cfg/raw reconciliation and native execution; their
+GNU survival supplies no Windows pass or exclusion. The completion-factory and
+new guard generation limits remain as recorded above.
+
+Independent raw/cfg reviews confirm all 36 descriptors/diffs, causal catches,
+compiler refusals, 365-case baseline/survivor runs and unchanged source/tool
+bookends. Seven survivors are wholly Windows-only. The eighth is in the
+GNU-tested classifier, but changes only the Windows comparison behind false
+`cfg!(windows) && ...`; its GNU/platform controls run and pass. No reached GNU
+survivor was found. Opaque commit, summary and wrapper whole-body replacements
+fail compilation for missing `Default` implementations; they add no behavioral
+sensitivity to omitted calls or altered retirement.
+
+**Current Engine KE entrypoint accounting.** Configured `core-mutation-v1`
+completes 80 variants on the same candidate: 37 caught, 38 compiler-unviable,
+five survivors and no timeout/exclusion. Baseline and each survivor enter 365
+cases. The 37/42 viable score is 88.095%, so this file gate remains incomplete.
+The five survivors concern Windows-only `Failed::from`, `run`, `report_failure`
+and two `entry` variants. Independent raw/cfg review accepts all 80 exact
+descriptors/diffs, causal catches, compiler refusals, 365-case baseline/survivor
+runs and unchanged source/tool bookends. All five survivors are Windows-gated;
+no reached GNU survivor or setup failure was found. The two new one-shot
+whole-body variants are compiler-unviable for `Summary: Default`, not behavioral
+catches. No native, whole-Engine or Core-positive qualification follows.
+
+**Next bounded guard-control follow-up.** Source review identified the shared
+wrapper's newly GNU-reached nested-runtime guard as lacking a direct negative
+control despite the passing line gate. Before closing the EP4 source checkpoint,
+exercise actual entered-runtime refusal with no backend, entropy, ledger or
+currentness effects, beside the existing outside-runtime healthy neighbor.
+Complete the bounded new-helper guard survey before the next freeze; retain
+infeasible runtime-construction faults and native/constructor/retirement
+generation limitations explicitly. Current source remains frozen and all heavy
+campaigns have ended. This is a missing regression obligation, not an observed
+defect in the existing nested-runtime guard. No ninth E is selected.
+
+The bounded independent guard survey selects one coherent follow-up in the
+existing datagram test file, retaining all prior cases:
+
+1. Extend wrapper failures with genuine nested-runtime, foreign-Control,
+   cancelled-Control and backend-setup refusals. Require exact errors, zero
+   backend/entropy effects before admission, unchanged status/history/expiry,
+   and runtime-task retirement on setup error. Extend the healthy wrapper with
+   postcommit refusal before backend or entropy use.
+2. Extend final-commit controls with a genuinely retired completion that reaches
+   its original expiry through bounded actual waiting, without field rewriting.
+   Wrapper and commit must refuse Deadline without changing budget/history.
+   Preserve the existing before/after-stop cases and healthy neighbor; choose
+   enough initial headroom to avoid an occupied-host setup race.
+3. Extend preview controls with pre-cancellation/no entropy and entropy failure
+   charged exactly once, followed by `PreviewSpent` without a second fill,
+   receipt, refund or renewed expiry.
+4. Route existing real Script failure cases and a foreign/stale refusal through
+   `protected_once` while preserving the actual wrapper retirement, spent-budget,
+   original-count and own-owner healthy assertions.
+
+Reuse existing Control deadline/poison/concurrency and terminal-projection
+controls. Do not fabricate impossible invalid owner populations. Deterministic
+runtime-builder failure lacks an admitted fixture seam here; preserve that
+resource/setup gap rather than exhaust the host. Individual guard/Drop/privacy
+faults and actual native/provider behavior retain their separate obligations.
+This survey found no new production defect and introduces no new test framework.
+
+For this settled control batch, first run focused controls and freeze their
+actual roster, then the existing full `baseline` and fresh `enumerate` lanes.
+After exact inventory readmission, use the configured `--lane all --subject all`
+for the nine selected GNU owners: it combines coverage and mutation in one
+admitted session, reducing repeated tool/payload traversal. It does **not** run
+the separate format/compiler/Clippy/optimized baseline. Keep the admitted 1200s
+mutation-cohort, 90s build/60s test limits, ten workers and 90%/95% thresholds.
+Current parent-path control changes justify the full selected scope; unchanged
+production bytes do not automatically transfer old test/cohort outcomes.
+Native-inactive survivors, missing generation and resource/budget stops retain
+their actual partial status. No gate or tool-integrity check is weakened.
+
+The complete partial source checkpoint is preserved without committing in Git
+tree `e75c7f0264ba579eadbc398663e45a5986fbfbcf`, with its external
+`source-checkpoint-v1.json`/private-index record. Main HEAD and staging are
+unchanged. That tree precedes these final handoff notes; all current Rust source
+and qualification candidate bytes matched it before the guard-control follow-up
+below. It retains the prior `bdc34dd4` checkpoint, not the added tests. New work
+stays uncommitted while David is asleep, and the Windows RAM-preflight hold
+remains in force.
+
+**Guard-control batch development — 12 November 2026.** Current candidate
+`4ee5d703f5f94f1905945ab3f105bb2dfd0d15fa10202f17a965b20980ed6ffa`
+retains all 24 previous datagram tests and adds five clearly named controls,
+giving 29. All 584 product inputs are unchanged except that test file
+(SHA256 `85dee2c77206072feb54e92c1b4768c772b3191884b1c7daeb78a0205a4a7343`).
+All production owners remain byte-identical. Independent review accepts genuine
+Published foreign-Control isolation, exact refusal categories, unchanged
+history/budgets/expiry, zero pre-admission backend/entropy effects, setup-task
+retirement before handle disposal, preview-once charge and protected-parent
+refusal routing. Original-expiry testing leaves five seconds for genuine setup,
+uses a six-second component timer watchdog and checks Deadline before cancel;
+it neither rewrites trusted fields nor asserts scheduling-duration equality.
+
+`guard-controls-development-v2` passes boundary isolation, source format,
+complete discovery of 301 ordinary tests (123 KE), all 29 datagram executions,
+GNU Clippy and Windows-target Clippy, with matching source/vendor/tool bookends.
+The preceding development attempt retains its one test-doc Markdown lint stop;
+adding the required backticks changes no behavior and occurs before qualification
+freezing. Shared-analysis 147 and wrapper 96 Python controls pass. Metadata now
+requires the exact discovered 301/123 roster; thresholds and rejection logic are
+unchanged. These development checks supply no mutation, native or release credit.
+
+Full baseline, fresh complete discovery/readmission and the combined selected
+coverage/mutation campaign are now the pending qualification actions. Runtime
+builder failure, individual call/Drop/privacy generation faults and actual
+native/provider behavior retain their explicit separate obligations.
+
+**Bounded collection repair before the combined campaign.** The process owner's
+sole generated whole-function variant requests `Default` for a non-Default
+claim. Preflight found that the shared collector would stop on such a complete
+all-compiler-unviable file even under `defer_gate=True`, hiding later owners.
+Two independent reviews accept a narrow reporting repair: only explicit True
+may retain a fully validated nonempty all-unviable row with zero denominators,
+three unavailable/null scores and `gate_passed=False`. Default mode, malformed
+or empty evidence, failed baselines, timeouts, wrong native exits, invalid E
+records and all-E empty adjusted denominators still reject immediately. The
+unchanged aggregate gate rejects after later files are collected. No percentage,
+kill, exclusion, threshold or release waiver is supplied to the unscored file.
+
+The retained `deferred-unviable-red-v1.log` demonstrates both missing unscored
+reporting and missing second-file execution (one error and one assertion failure).
+The smallest shared scoring change makes all 148 shared controls pass, including
+all-U/missed/healthy first-owner collection, explicit-mode/default refusal,
+malformed-neighbor and all-E controls. Independent code, consumer and parser
+reviews found no promotion of null scores. The 96 wrapper controls also pass.
+These are synthetic reporting controls, not product mutation or native evidence.
+
+KE now binds the shared regression source alongside the helper, increasing its
+closed helper/test input set from 37 to 38. The initial binding edit was caught
+in an earlier profile and corrected before the new binding was exercised;
+that unrelated profile retains its prior input set. The Rust candidate remains
+`4ee5d703` with production unchanged. `guard-controls-baseline-v1` passed all
+seven lanes at 301 ordinary/301 optimized/69 doctests before this reporting
+repair; fresh `baseline-v2` and `enumeration-v2` re-admit the new helper/test
+bindings before the combined campaign. Earlier outputs retain their exact
+scopes. Main staging/HEAD remain unchanged and all native holds remain.
+
+`guard-controls-baseline-v2` now passes the full seven-lane baseline at
+301 ordinary/301 optimized/69 doctests on the same Rust candidate, with the
+final 38 helper/test bindings. Fresh `guard-controls-enumeration-v2` preserves
+all 378 descriptors/diffs. The combined `guard-controls-metrics-v1` session is
+running under those exact bindings: its coverage command passes all nine line
+gates, and complete failed-file collection continues without granting a pass.
+Final source/tool/reference bookends and full per-owner raw review remain
+pending. No repository source/helper/policy edits are permitted during that
+session; task/guide progress notes do not change its frozen inputs.
+
+**Guard-control final selected accounting — 12 November 2026.** The combined
+session has ended on the same `4ee5d703` candidate. All nine line gates pass with
+all 301 ordinary tests entered. All 378 mutation descriptors are accounted for:
+207 causal catches, 132 compiler-unviable variants, 39 survivors and no timeout.
+Eight survivors are the exact reviewed ledger equivalences; the other 31 are
+Windows-inactive paths on GNU. All nine baselines and each survivor enter 370
+cases (301 ordinary, including 123 KE, plus 69 doctests), with no ignored or
+filtered cases. Compile-only doctest identities retain their actual scope.
+
+| Selected owner | Generated | Caught | Compiler-unviable | Survived | E | File gate |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| KE entrypoint | 80 | 37 | 38 | 5 | 0 | Open: 88.095%; Windows-only survivors |
+| Association | 29 | 27 | 2 | 0 | 0 | Pass: 100% |
+| Process claim | 1 | 0 | 1 | 0 | 0 | Open: unscored; no viable generated fault |
+| Handoff | 9 | 7 | 2 | 0 | 0 | Pass: 100% |
+| Request | 6 | 3 | 3 | 0 | 0 | Pass: 100% |
+| Fault projection | 27 | 2 | 7 | 18 | 0 | Open: 10%; Windows-only survivors |
+| Ledger | 145 | 95 | 42 | 8 | 8 | Pass: raw 92.233%; adjusted 100% |
+| Response | 45 | 24 | 21 | 0 | 0 | Pass: 100% |
+| Datagram | 36 | 12 | 16 | 8 | 0 | Open: 60%; native-inactive survivors |
+
+The actual process compiler refusal is the unavailable `ProcessClaim: Default`
+implementation, with its associated unused-import diagnostic. Its record has
+zero denominators, three null percentages and a false gate; all six later
+campaigns still run. This proves actual continued collection, not a passing
+process mutation score. Existing behavioral process-guard controls remain
+distinct from the absent generated viable fault. No contract is weakened to
+make the marker default-constructible or inflate the denominator.
+
+Independent raw/source reviews validate all descriptors/diffs, causal failure
+blocks, compiler diagnostics, survivor/baseline rosters and exact E matches.
+They identify no setup/resource failures or new reached GNU survivor. All 597
+captured source/helper bytes, copied tools, final installed-tool inventories,
+policy and retained references match. The final receipt is
+`guard-controls-metrics-v1/verification.json`, SHA256
+`af9842f155f13c65a6aaf09bae742130880729fd1081292eb64680f5bce43ee8`.
+Its status is correctly **incomplete** for entrypoint, process, fault and
+datagram; whole-product qualification remains false and native Windows is not
+performed. Individual call/retirement/privacy faults, runtime-builder failure,
+native TLS/CNG/UDP and the four remaining critical owners retain their separate
+obligations. Source-accounting completion neither closes P1 nor lifts a hold.
+
+The guard-control follow-up is implemented and its selected accounting is
+complete within those exact limits. Next prepare the connected recovery-owner
+technical freeze below, including operational caps and cleanup/time authority,
+before its bounded source implementation. Public repeats, shipped defaults,
+Core-positive issuers and native execution remain held. No commit is made while
+David is asleep.
+
+**First connected recovery slice — technical freeze.** After the complete guard
+accounting above, the coordinator and two independent source reviewers select
+the following bounded implementation under the same requirements. This is the
+first connected source slice, not completion of the recovery worker or approval
+of repeated native operation.
+
+* One public `run` retains the actual immutable Config, one process claim and
+  one provider scope, and calls the shared statically dispatched `step_with`
+  once. Invocation retains the actual provider borrow; steps accept no
+  replaceable provider parameter or stored raw identity. Public construction
+  creates the original checked Control before claim/provider at the prior
+  run-origin point and moves it into the owner. A native producer delegates the existing establish/exchange/entropy
+  functions; a private Script producer reaches that same decision owner with
+  one outer checked Config/claim/component-provider across steps. No dependency,
+  service channel, persistence, new sink or public retry option is added.
+* Private experimental construction has hard ceilings: invocation window at
+  most the existing 60 seconds, four charged KE producer submissions, eight
+  no-producer scheduling refusals and sixteen transaction-level typed
+  observations. All actual selected values are explicit checked inputs, not
+  shipped retry defaults. Nonzero integers alone do not establish these caps.
+  Public one-shot exhaustion terminates before retry scheduling or jitter,
+  rather than merely declining to call the step again afterward.
+* Reserve two observation slots atomically before each producer call: admission
+  and its eventual transaction outcome, including cleanup. Each scheduling
+  refusal consumes one. Thus `2N + R <= 16`; the eighth refusal closes in that
+  same record. Exhausted/closed re-entry creates no fresh observation, producer
+  call or jitter draw. Charges are irreversible. This bounds these typed
+  transaction observations, not parser/crypto decisions, encoded bytes, CLI
+  rendering, native memory or hostile CPU/wakeups. No pseudo-byte quota is added.
+  Precompute the entire checked submission/observation update before committing
+  it: either reserve all allowance and call the producer once, or refuse without
+  partial new charges. Previously charged work stays spent. Observation
+  exhaustion cannot suppress cleanup or replace the original operation failure.
+* Production-effect admission and failure transitions sample `Instant::now()`
+  internally. A pure `plan_at`/checked-duration calculation may accept time for
+  deterministic tests but returns no charge, Control, receiver or effect permit;
+  the real step accepts no caller-supplied plan or injected effect clock.
+* Preserve public run-origin timing: first handshake and total context retain
+  the original 20/60-second origins, so later step construction cannot renew
+  the first handshake window. Later eligible retry Controls start only after
+  fresh checked admission and clamp both deadlines to the immutable invocation
+  cutoff. Current publication/commit guards still recheck real time.
+* Retry eligibility is limited to the previously reviewed direct-establish
+  transient native failures before any successful association. The first KE
+  success permits exactly one preview/protected path, then the invocation is
+  terminal on either outcome. UDP failures and recovery intents grant no KE
+  route. Protected success resets backoff only as recorded terminal route state;
+  it grants no successor context. This explicitly avoids assuming per-context
+  archives or fixed Script entropy prove cross-context cookie/UID freshness.
+* Use integer Duration/Instant arithmetic: positive minimum, minimum no greater
+  than maximum, maximum no greater than window, growth at least one and bounded
+  nonnegative jitter. The first eligible failure uses the minimum base; each
+  later eligible failure grows the prior base by checked multiplication capped
+  at maximum. Refusal/wake probes neither grow nor reset it. The bounded
+  draw headroom is `min(jitter_max, maximum - base)`. One bounded draw commits
+  with not-before, never redraws on notification and cannot exceed total maximum
+  delay. Unrepresentable arithmetic/timestamps refuse. No native jitter source
+  is selected for the public one-shot path. Effective not-before is the maximum
+  of checked failure-observation-plus-delay, source, global and original-intent
+  constraints. Equality at not-before admits only strictly before cutoff. If the
+  nominal boundary already reaches cutoff, terminate without a draw; if the one
+  draw reaches cutoff, terminate without shortening or redrawing. Preserve the
+  original failed operation separately from an arithmetic/budget terminal reason.
+* Only an admitted charged step constructs the exclusive active receiver. A
+  genuine committed fact must match its actual Control before backoff reset and
+  terminal projection; no Published recheck follows commit. Preserve initial
+  cookie counts. Facts/Control identities cannot escape the local transaction.
+* A failed transaction owns cancellation after association/backend/runtime retirement
+  and before another admission. Successful preview/protected commit followed by
+  terminal closure requires no redundant cancellation. Preserve a preexisting admission-cleanup error
+  and terminate without a redundant cancellation. Otherwise retain the actual
+  one cancellation result. Never overwrite an earlier fact with None, eagerly
+  observe then discard a later failure, or infer physical completion from Drop.
+  A necessary additional distinct cleanup observation first needs a bounded
+  extra fact slot and review; the current optional slot cannot hold two errors.
+
+Existing per-context protocol/ledger/adapter limits retain their exact scopes.
+They do not imply total TLS wire-byte, handshake CPU, repeated-provider, native
+completion or hostile-load qualification. Later successful-context cycles and
+actual exhausted-cookie recovery still require explicit cross-context
+cookie/UID/entropy custody and reviewed scheduling before admission; this first
+slice does not close those parent requirements. Source work is limited to the
+actual composition owner, connected private recovery module, committed-fact
+receiver seam and corresponding Script controls. The coordinator retains shared
+manifests, critical-owner registration and qualification policies. All execution
+holds and post-V1 formal deferral remain; no commit occurs before David returns.
+
+**Connected source implementation in progress.** The complete reviewed guard
+checkpoint is separately preserved in Git tree
+`5c01880b3191601f69400f639481cf25b4ba94ae` and external
+`source-checkpoint-v2.json`; no commit or main-index change was made. The live
+tree now advances beyond its exact `4ee5d703` source/test/helper identities, so
+those passes do not qualify the new implementation automatically.
+
+The production owner implements the actual `run`/Control/receiver seams and
+new connected `recovery.rs`; a separate test owner reuses the existing private
+Script backend through a nested recovery test module and one outer
+Config/claim/provider. Independent source review runs separately. The two
+recovery-intent methods now consumed by that owner lose only stale non-test
+dead-code expectations; their runtime bodies and the unused reason-method hold
+remain. No Rustls classifier is moved onto GNU.
+
+The coordinator registers recovery in both critical and security inventories:
+ten selected GNU owners and fourteen full critical owners. Fresh campaigns are
+closed and old inventories cleared until the implementation, actual roster,
+source/recipe bindings and all shifted E descriptors are reviewed and frozen.
+Synthetic 148 shared/96 wrapper controls pass with the new owner registration;
+these are metadata controls, not new product execution. Source authors perform
+no Cargo/native/Windows/signing jobs; the coordinator runs configured development
+checks only after both source handoffs stop editing.
+
+Development v1 discovered 323 Engine tests, including 145 KE cases, and executed
+all 51 selected datagram controls (29 retained and 22 new): all passed. Strict
+GNU Clippy then rejected 22 production/test code-quality issues; the first result
+is retained, not a qualification pass. The authors corrected borrowed test
+results, checked fixture-time subtraction, exact empty-array assertions,
+documentation and range style. Two narrow Garde callback expectations preserve
+the required borrowed unit-context API; no lint policy was weakened.
+Independent review also identified a private retry cutoff race: after a genuine
+KE failure, preemption between due planning and Control admission could replace
+the retained failure with Deadline without a new producer call. Both admission
+refusals now share a closing transition that preserves the most recent actual
+producer/mode failure, and only synthesizes an admission cause when none exists.
+The controls challenge that actual owner after a genuine failed step and include
+a no-prior-failure neighbor. OS preemption itself is not forced; direct transition
+coverage does not claim deterministic end-to-end reproduction of that race.
+
+The settled development-v4 candidate is
+`3af1e8866741ba009e58df98e0ab94084a97f729f4454b310209bb6018ddd35e`:
+586 product inputs and forty closed source/helper pins, with actual 323/145
+ordinary/KE discovery. Format, boundary control, all 51 selected controls and
+strict GNU/Windows-target Clippy passed; source/vendor/tool bookends matched.
+The retained development-v4 receipt SHA-256 is
+`cd775bb4caf63d9cd51b5813e1342a1fb26c276835800b1c548a02428ef4c41f`.
+Intermediate v2/v3 failures are retained: the lint-suggested empty-array cast
+conflicted with the existing as-conversions denial; exact typed empty arrays
+resolved that without a policy exception. Windows-target checks additionally
+required lexical Invocation scope before provider/config retirement and one
+non-test dead-code expectation on the private Deferred boundary. No native
+scheduler or meaningless field read was added.
+An isolated diagnostic restores only the admission consumer's old overwrite
+semantics: the genuine prior-failure control fails on Deadline versus
+Connect(ConnectionReset), while the one-shot healthy neighbor passes. This is
+behavioral RED for failure preservation, not forced reproduction of thread
+preemption or mutation kill credit. Independent source review binds all six
+settled production/test hashes in `independent-source-review-v1.json` (SHA-256
+`ea32ccfebf628f8161015d8def0a934abadb2e95e24b5210f0430228b74f8c30`).
+The current policy is rebound to this candidate and the full actual roster;
+mutation admission remains closed. Its eight historical E entries are retained
+separately, with none applied to the changed candidate before fresh descriptor,
+caller-domain and dossier review. Enumerate all ten owners first, then use the
+existing single-subject cohorts where needed to preserve the unchanged 512
+aggregate/1200-second campaign limits. No threshold, timeout, worker or isolation
+gate is weakened. Full baseline/coverage and independent outcome classification
+remain the next qualification work. Native execution and commits remain paused.
+
+Full baseline-v1 then passed seven lanes: format, Windows-target compatibility,
+323 ordinary tests, strict GNU Clippy, 323 optimized tests, 69 doctests and
+Windows-target Clippy. Receipt SHA-256:
+`6a7165a77e8f4859792b882200975e4470ada9cd12a5e6d46114b4b17b09021c`.
+All 598 captured product/helper/policy inputs and tool/reference bookends matched;
+overall qualification remains false. Coverage-v1 passed all ten GNU file gates:
+core 323/327, association 78/83, process 26/26, handoff 52/55, request 50/51,
+fault 199/199, ledger 617/634, response 108/109, datagram 235/240 and recovery
+407/421. Coverage receipt SHA-256:
+`0c65ab52ab966c45d1a68deba1e50a6c7b4423e178f5c32179b39acee592cbee`.
+Fresh enumeration-v1 lists 461 variants: core 82, association 29, process 1,
+handoff 9, request 6, fault 27, ledger 145, response 45, datagram 37 and
+recovery 80. Its receipt SHA-256 is
+`ca8fa9f07befe7e3375dab120ba0e2cf09210bada21f5015f20f5efb753544c7`.
+Independent descriptor/diff and generation-gap review precedes campaign
+admission. No current mutation score follows from listing or historical outcomes.
+Only closed owned compilation targets were deleted after terminal results;
+current raw outputs, source snapshots, vendor/tools and receipts remain.
+
+Independent execution review (`independent-execution-review-v1.json`, SHA-256
+`7d46630401aa73e53288f265c94c60a782e5ffe1893959502ab83217e5f4fa3f`)
+confirms the exact 323-case ordinary/optimized rosters with no ignored/filtered
+ordinary cases, 69 doctests (56 compile-only and thirteen runnable), the 51-case
+focused roster and the causal RED/healthy pair. Its scope distinguishes enforced
+bookends from duplicating tool/vendor traversal.
+Independent enumeration reviews validate all 461 raw diffs against current
+source and all ten descriptor bindings. Six unchanged catalogues are exactly
+117 prior descriptor/diff dictionaries; all 145 ledger dictionaries differ only
+by the two authorized seven-line attribute removals (137 shift by seven lines,
+eight by fourteen), with no runtime-body change. Eight historical E caller
+arguments remain conditionally valid, but none are adopted for this candidate.
+The review records are `independent-enumeration-new-owners-v1.json` (SHA-256
+`29407c2761af7771b4df42258c24ecb9bbcb753a8996606fc4e13e991d684f44`)
+and `enumeration-v1/independent-enumeration-ledger-v1.json` (SHA-256
+`720496393f53abb04c9583536c5cedc32eb1849025ff7df98689ec4101c2d1d9`).
+The coordinator admits that exact complete catalogue with E=[] and starts only
+the bounded eighty-variant recovery cohort. Seventy-six descriptors are in
+GNU-compiled paths; four belong to Windows-only Native delegates. Generator
+omissions include test-only checked/Garde constructors and assignment/guard
+variants: whole-body replacements returning local Failed lack Default. Manual
+controls and static review cover their stated behavior but grant no generated
+kill credit. No score is asserted before complete outcomes and independent
+failure-cause classification.
+
+The first recovery cohort completed all eighty variants and exact bookends:
+52 caught, 21 compiler-unviable, seven survivors and no timeout. With E=[],
+52/59 viable variants are caught (88.1356%), below the unchanged 95% gate;
+the report correctly remains incomplete. Four survivors modify Windows-only
+Native delegates. Three expose missing regression distinctions: legitimate
+shorter original Control expiry, inclusive planning at the exact origin and
+admission when precisely one observation pair remains. Independent reviewers
+find current source handles those boundaries correctly; the test owner extends
+three existing control paths using genuine checked state. No production repair,
+native-inactive exclusion, weakened threshold or invented equivalence follows.
+The first source-bound outcomes remain retained; campaign admission closes
+while the test candidate changes. New source/test bindings and actual causal
+RED/GREEN precede rerunning the complete recovery inventory.
+
+The test-only follow-up settles candidate
+`b8741e481aaadee024f186f19a9f2b10634f977fdc8d32aebad35ac61e3382e3`.
+Only recovery/tests.rs differs from 3af1e886; all 22 test names and the full
+323/145 discovery roster remain. Development-v5 applies each of the three
+actual reviewed operator variants to an isolated copy. Each fails its new
+behavioral control; the exact original source is restored between variants.
+All 51 focused controls, format and strict GNU/Windows-target Clippy then pass,
+with unchanged source/vendor/tool bookends. This supplies direct RED/GREEN
+for regression discrimination, not generated campaign kill credit. Receipt
+SHA-256: `9e67e9270ac9abd55495ae74491c5364df1c7fa3f49e32ddbd4ff2dbc8c112b6`.
+Fresh full baseline, ten-owner listing/coverage and the complete eighty-variant
+recovery rerun remain pending before current qualification accounting. No
+production logic, admitted cap, threshold, timeout, worker count or native hold
+changes. Exact GNU-native scope still matters: even three new kills would leave
+the four Windows-only survivors below the file's full 95% gate.
+
+Current b874 baseline-v2 passes 323 ordinary, 323 optimized and 69 doctests,
+with both-target checks and exact bookends (receipt SHA-256
+`6863b6aaeb679f00bbf75e8e7b04eecc20aedeb30ee23630d83c75da08673e47`).
+Coverage-v2 repeats all ten passing line gates with the same exact counts
+(receipt `0806b62a2395f7b926aae80cf5a550aff73054483b752b0545bab0eb4e0b0e8e`).
+Enumeration-v2 matches all 461 previous descriptor/raw-diff dictionaries exactly
+(receipt `1847b7ed64420f2f54163857307cfed30d00c6126822cc9706b1be49035b4106`).
+The fresh complete recovery-v2 cohort is 55 caught, 21 unviable, four native-only
+survivors and no timeout. All three earlier GNU gaps are now caught. Raw score
+55/59 = 93.2203% remains below 95%; no recovery E or exclusions exist. Receipt
+SHA-256: `909e43d01074311bf75ef744817d826eec71de5dfc5c0d3ec806b792a2714b8b`.
+Independent v2 review binds all eighty actual outcomes and baseline/survivor
+392-case rosters, with causal failures and no setup/headroom defect (review
+`cdf8d2e45ebcf9484d3c76f588dd4b91408ce2aad39a5c9d219ef9cc5cc25635`).
+The composition core-v1 cohort independently accounts for all 82 variants:
+38 caught, forty unviable, four actual Windows-gated survivors and no timeout.
+Its 38/42 = 90.4762% gate remains open; no reached GNU survivor is reported.
+Receipt `63691074cc041324167447de9e19a6f1907329bf3c86c4fd3dc60bf51bc690e7`;
+review `6754a79dc22523060cfcda5ecd34271c39ee2d8f1abcd81b459d766b2fe32c25`.
+The changed roster and cfg scope explain actual descriptor/classification changes;
+old 378-variant scores are not transferred.
+
+At the stable source checkpoint, the coordinator adopts only the same eight
+ledger equivalents with fresh b874/e009 typed descriptors, dossier digest and
+reviewer bindings. The external prepared patch was independently reproduced
+and accepted (`f7c26719e667dd1e093ddeaa9a1c06a46a987e306a1289e7037071af4c5e6c37`).
+All helper AST outside four data assignments is unchanged; no function, bound,
+threshold, selector or mutator setting changes. Exact source/dossier/code/policy
+admission accepts eight records; 148 shared and 96 wrapper controls pass.
+Campaigns stay closed until the final helper-bound baseline passes. This is
+ordinary mutation-equivalence metadata, with no formal compiler/solver work,
+new E, native exclusion or current ledger score credit. Fresh matching ledger
+missed outcomes remain required. Prior E0 recovery/core/coverage receipts keep
+their original metadata identities; scoped reuse across this ledger-only data
+change requires explicit reconciliation, not a claim of identical full inputs.
+
+Final helper-bound baseline-v3 passes all seven lanes, with 323 ordinary,
+323 optimized and 69 doctests. Its 599 captured inputs include the current
+E dossier; source/tool/reference bookends match. Receipt SHA-256:
+`fa03258d3f53d069d86073e85ea205453ae349a8a8c5e29957ff82031c504105`.
+The subsequent campaign flag alone changes false to true. Independent scoped
+reconciliation (`574036dc4e46200c51a4fb8ff77626dbaa27dd784cd4739a87e69a512ae157e1`)
+confirms all 586 Rust/product/test inputs and execution logic are identical.
+It records each earlier E0 policy exactly: coverage had no inventory bindings;
+core/recovery had the same ten bindings and an open campaign flag. Prior raw
+coverage and non-ledger outcomes retain their original identities and scores;
+this is no claim that their complete 598-input captures equal the new 599.
+
+Current ledger-v1 passes after full fresh execution: 145 generated = 95 caught,
+42 unviable and eight actual missed equivalents; zero timeout. Raw 95/103 is
+92.2330%; adjusted 95/95 is 100%, with zero E kill credit. Receipt SHA-256:
+`eb7e4f2ac6daa453e4e4872199ea61e4faca47e458200a98ff9a6360d5abf81b`.
+Independent raw review validates every actual cause, all eight exact E joins,
+source/dossier/helper bindings and the 392-case baseline/survivor rosters
+(`c2baeaac65f7b56491801ddcc98c9e3fe07abaa728a2a12a01ec37c59ed1d8f7`).
+Current datagram-v1 completes 37 = 12 caught, 17 unviable and eight native-inactive
+survivors; 60% remains below 95%. Receipt
+`48d3e8cd9ed653abc50e2bc645eb5a340b3d0bac34c30a520649edbe8d7029fb`;
+independent review `156db3c30ae140bec6dd38e028c1f8ae151e852559e47b2c632d2f6814647b79`.
+The added check_control whole-body variant is unviable because its unused
+control parameter is denied; its direct negative regression grants no kill.
+Association-v1 completes 29 = 27 caught + 2 unviable, gate 100%; handoff-v1
+completes 9 = 7 caught + 2 unviable, gate 100%. Process-v1 completes its one
+unviable variant with zero viable denominator and null percentages; gate false.
+All three have 392-case baselines and current 599-input bookends. Their combined
+independent review and the request/fault/response cohorts remain underway.
+
+A bounded source-level assessment rejects the proposed process-only --error
+configuration. The supported literal error body would remove Ordering's sole
+use under the unchanged denied-warning policy, so it would not supply a viable
+behavioral fault. The retained Default mutant concretely reports that unused
+import plus missing ProcessClaim Default. No new Err campaign was run, and no
+application/lint/tool change or side-effecting error expression is introduced
+merely to obtain a percentage. The generation gap remains explicit (assessment
+`f81235e42aaedc6f06fff72653794130455ab04e26439f4750f7633431010d75`).
+
+
+
+
+
+
+
+
+
+
+#### First connected recovery GNU accounting checkpoint — 12 November 2026
+
+The source implementation and selected GNU accounting are complete for product
+candidate `b8741e481aaadee024f186f19a9f2b10634f977fdc8d32aebad35ac61e3382e3`. This does not close S2.2, whole-Engine/P1,
+native completion, trust, service, package or release qualification. Public
+execution remains one-shot; the private repeated route ends at first successful
+KE establishment and its one mode result.
+
+| Selected owner | Generated | Caught | Unviable | Missed | E | File gate |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| KE composition | 82 | 38 | 40 | 4 | 0 | Open 90.4762% |
+| Association | 29 | 27 | 2 | 0 | 0 | Pass 100% |
+| Process/provider | 1 | 0 | 1 | 0 | 0 | Unscored; open |
+| Handoff | 9 | 7 | 2 | 0 | 0 | Pass 100% |
+| Request | 6 | 3 | 3 | 0 | 0 | Pass 100% |
+| TLS/I/O classification | 27 | 2 | 7 | 18 | 0 | Open 10% |
+| Ledger | 145 | 95 | 42 | 8 | 8 | Pass 100% |
+| Response | 45 | 24 | 21 | 0 | 0 | Pass 100% |
+| Datagram | 37 | 12 | 17 | 8 | 0 | Open 60% |
+| Recovery | 80 | 55 | 21 | 4 | 0 | Open 93.2203% |
+
+All 461 variants are accounted for: 263 caught + 156 compiler-unviable + 42
+missed, with zero timeout. Eight missed ledger equivalents are excluded only
+from their adjusted denominator and receive no kill credit. The remaining 34
+misses are in actual native-inactive paths; none is excluded. Five selected file
+gates pass, four retain native work and process retains an absent viable
+generator. All ten line gates pass; four other registered critical owners remain
+outside the selected GNU metrics. Source/tool/reference bookends and complete
+392-case mutation baselines/survivor rosters are independently reviewed.
+The E0 core/recovery rows retain their exact 598-input configuration captures;
+the other rows have the current 599-input E8 captures. Scoped metadata reuse is
+explicitly reconciled, rather than described as identical full inputs. The final
+helper-bound baseline passes 323 ordinary, 323 optimized and 69 doctest cases.
+
+The final request/fault/response group review is
+`4968f2a208fa85ac227d23dcc62d7640f49e5293b95be72eb549ba103e9dbd64`;
+the association/process/handoff group review is
+`2c9d1b804017b8d45e18d33240ffdcd8c4777df06df7d2a4f23edd6db9090f2f`.
+`selected-accounting-v1.json` retains the exact ten receipt identities and
+metadata differences; it remains unchanged. Independent aggregate review
+`8797136a4d8cf05c24b3083deb41430198b17146a8d7e185ba4ffd8f0e7f8d61`
+verifies every raw descriptor/diff/summary join, all 5,988 captured-file hashes,
+the complete current product set and all 52 complete mutation baseline/survivor
+runs. Accepted `selected-accounting-v2.json` has SHA-256 `7432414accd516c59ec61ed151ce4ec7a307c33940d055f67496d115a76b44f8`.
+The final full checkout is preserved by the external `source-checkpoint-v1.json`
+record and a private Git index/tree. Main index and HEAD stay unchanged; this is
+no commit, signature, push, product progress bar or release qualification.
+
+Next work stays in this task/plan chain. Prepare and independently review the
+next receiving-owner contract before admitting post-success context cycles:
+actual outer process/provider/worker custody, cross-context cookie/UID/entropy
+freshness, bounded scheduling and failure preservation. Preserve the original
+pending request's deadline and remaining receive budget; no silent NTP downgrade
+or fresh-synchronization claim follows failure. Reuse the existing S2.1/W11-W01
+capture/mapping card before Core-positive measurement integration. No Core
+eligibility issuer, service/native activation, new default or wider execution
+permission is introduced by this source checkpoint. Native work stays paused
+until owner/resource resumption. No commit or push occurs before David returns.
+
+#### Cancellation prerequisite — 12 November 2026
+
+The next receiving-owner trace found a real private-helper defect beyond the
+historical `b8741e48` checkpoint: a genuine producer could cancel its supplied
+Control and then return a transient establishment failure. Discarding the
+successful `cancel()` disposition through `.err()` lost `AlreadyCancelled` and
+allowed recovery despite the terminal-cancellation contract. The public CLI has
+no cancellation handle; this is not a demonstrated public/native exploit.
+
+The receiver now retains that disposition separately from the unchanged primary,
+TLS-cleanup and admission-cleanup facts. Only its own fresh `Cancelled` permits
+establishment recovery. `AlreadyCancelled`, `AlreadyCommitted`, cancellation
+error and an existing admission-cleanup error remain terminal. A future live
+worker also needs its invocation-level stop latch; this prerequisite does not
+resolve cancellation after the fresh observation.
+
+The genuine-Control behavioral RED, with an uncancelled healthy reprobe first,
+fails the intended assertion against the old receiver. External raw receipt
+`recovery-source-v1/cancelled-establishment-red-v1/verification.json` has SHA-256
+`c4df9f3f2aea4acf8e1b922a247191f5780c476bbe11f7aea9ff8c6ca3b4cba5`.
+The repaired candidate is
+`48d7c03998b8fe947befa77eb4d2600ec7f384e6fa8681930155671d3cb556f6`;
+GREEN receipt `cancelled-establishment-green-v1/verification.json`, SHA-256
+`e7c0d95332868bf1960220a051f7665fa19fefa91b3b4a42a86775d18a72a419`,
+passes isolation, format, discovery, 52 focused actual shared-path tests, GNU
+Clippy and MSVC-target Clippy. Discovery lists 324 tests; this is not execution
+of the full baseline, optimized/docs, metrics or native tests.
+`/root/native_source_independent` independently verified every live/frozen product
+and extra input, recipe/child receipt, exact roster and bookend. The new candidate
+keeps campaign admission false until the next settled source freeze. The original
+full GNU checkpoint remains historical and unchanged.
+
+#### Exhausted-context continuation — source contract freeze, 12 November 2026
+
+This is the next bounded S2.2 child under REQ-8/BND-2, AC-04 and
+CHECK-6/8/9/10/11/15/17/21/25/26/27. Source owners are the existing recovery
+receiver, association/ledger and actual datagram Script composition. Root owns
+shared policies/registration. No new dependency, service channel, persistence,
+Core eligibility issuer, public retry option or native execution is selected.
+The source prerequisite above is independently reviewed; the following contract
+is independently reviewed as ready for this bounded source child by
+`/root/recovery_contract_review`, `/root/job_count_cause_review` and
+`/root/native_source_independent`, with coordinator reconciliation. Their completed
+reviews inspected the actual source and freeze in their retained task contexts:
+the first checked ownership/retirement, the second independent behavioral controls
+and the third the source/plan seams. All retain the narrower evidence boundary;
+review agreement is not implementation or execution evidence.
+
+**Selected disposition.** Permit at most one replacement of an established
+context before any protected success. The sole recovery path is actual frame
+exhaustion with no active request or prior accepted receipt, the internally owned
+`ReceiveWork` intent, and a closed ledger marker produced only when the actual
+final response admission returns `ReplyError::Cookies`. This category includes
+zero encrypted Cookie fields and excess/invalid aggregate cookie counts; it does
+not prove every earlier rejection was authenticated or had zero fields. Thus 31
+malformed charged replies followed by the qualifying authenticated count refusal
+are also within this explicitly selected disposition. Other allocation, entropy,
+native, send, unknown-completion, time/control, parser/authentication and mode
+errors remain terminal even when an inert intent exists. No packet is reparsed
+by recovery and a caller-supplied error/intent alone creates no retirement fact.
+
+**Time and counts.** A new checked private experimental context lifetime is
+positive and no greater than its checked outer window (maximum 60 seconds).
+The actual original internal origin fixes the immutable outer cutoff; each
+Control expires at the lesser of its own original context bound and that cutoff.
+Public one-shot keeps its original shorter supplied Control and 20/60-second
+stage/total maxima. Rejection, progress, cookie return and retry never renew a
+deadline. At most two successful contexts share the existing irreversible N4
+producer-entry, R8 scheduling-refusal and D16 observation ceilings. Transient
+establishment failures consume N/D normally. First genuine protected commit
+remains terminal. No post-success cycle, production lifetime or shipped timing
+default is chosen.
+
+**Consuming retirement.** After actual backend/runtime retirement, consume the
+actual association while its original Control/config/provider are still live.
+Its private marker, owned intent, zero remaining frames, empty active slot and
+absent receipt are checked at that owner. A non-Clone retirement fact borrows
+those actual inputs and contains only the unchanged original not-before plus
+owned history. Its receiver checks those actual references and fresh Published
+authority before observing one cancellation disposition. Only fresh `Cancelled`
+can schedule replacement; cleanup/cancellation refusal remains terminal and
+preserves the original primary and secondary facts. Old keys, pool, outstanding
+tickets and packet storage retire before another admission. Releasing/dropping
+logical custody never asserts physical completion. A future worker stop latch,
+job-submission/completion owner and real repeated TLS/CNG qualification remain
+separate prerequisites.
+
+The actual final-count refusal precedes the normal success-only time check.
+Therefore its private marker retains the saved send observation and actual
+arrival supplied by the shared adapter; consuming retirement rechecks their
+ordering against fresh processing time under Published authority. A direct-call
+invalid-time refusal cannot gain recovery merely by exhausting frames.
+
+**History custody.** Keep existing local 32-attempt/32-frame/131,072-byte budgets
+and local possibly-sent-cookie/UID archives. Move the first retired context's
+exact bounded archive into invocation custody, then into a pristine same-owner
+replacement before any preview/entropy/send effect. This one predecessor keeps
+at most 32 cookie entries/131,072 cookie bytes and 32 UID32 values; together with
+the successor's independent local archive the fixed maximum is 64 entries,
+262,144 cookie bytes and 2,048 UID bytes. These are history bounds, not complete
+TLS/native memory bounds. Refuse over-capacity history or nonpristine attachment;
+never evict history to admit work. Known cookie values are removed before usable
+replacement inventory and refused again before sender exposure. Known issued
+UIDs are rejected after the one actual entropy draw, before sealing/exposure,
+without redraw or refund. Response-cookie filtering also includes predecessor
+history; zero encrypted fields remains distinct from zero usable retained values.
+No raw getters, secret cloning, Debug output or transferred old key/ticket exists.
+Replacement uses the existing producer and its same-connection directional
+exporters, unchanged full-handshake/no-resumption profile and provider lifetime.
+Fixed component material cannot prove native entropy or TLS success.
+
+**Scheduling and failure.** Preserve the prior original failure separately from
+plan state. A positive checked KE backoff, its one bounded draw, original intent,
+source/global restrictions and fresh internal time jointly determine the maximum
+not-before. Early probes charge only the existing finite refusal allowance; they
+cannot draw, submit or replenish budgets. Source/global restrictions and outer
+cutoff never reset. A failure to retire, attach, schedule or obtain capacity is
+terminal; no plain-NTP fallback or fresh-synchronization presentation follows.
+Retirement/projection/attachment refusals retain their newly observed bounded
+cause and stage in a separate closed plan fact; they must not replace the prior
+mode primary or occupy the cancellation-cleanup slot. An actual cancellation
+failure still uses that existing slot without overwriting earlier facts.
+
+**Independent expected results.** Exercise the actual shared producer/receiver:
+32 authenticated zero-cookie refusals spend the original allowance, preserve its
+deadline, retire real Script resources and yield one genuine intent; no early KE;
+one distinct declared-material replacement may reach genuine protected commit.
+Add 31 refusals plus healthy final reply, mixed malformed/count-refusal history,
+wrong reason/phase/foreign owner, cancellation, cleanup, unchanged cutoff and
+irreversible N/R/D controls. Challenge old packet/UID/cookie values against fresh
+neighbors, nonpristine attachment and history limits. Old/stale completion,
+preview and failed retirement cannot reset state. Complete ordinary, optimized,
+doctest, both-target lint and required registered coverage/mutation gates only
+after this bounded source slice settles; preserve every native/generator gap
+without exclusions or reduced thresholds. No formal, native, commit or push job
+is authorized while David sleeps.
+
+**Implementation in progress.** Time-only preparation plus the new actual
+exhaustion/healthy tests produced candidate
+`95b0f51fdeba96a79c41bb202bdf80404d07cedbd4aeb85f64d6252c46185037`.
+The isolated `exhausted-context-red-v1/verification.json` receipt has SHA-256
+`8ad8e315ce09c08cbadf2acc8b32bec746a02a2f9a42c66018dbf016e2f50fbc`.
+Its selected test reaches the intended `exhausted original context must defer
+replacement` assertion only after observing the actual 32 consumed replies,
+unchanged expiry, absent receipt, retired backend and irreversible N1/D2. The
+same shared path with 31 refusals and a healthy final reply passes separately.
+`/root/job_count_cause_review` independently checked the raw failure, healthy
+entry and exact source/tool bookends; this is feature RED, not a new claim that
+the previous bounded terminal contract was itself incorrect.
+
+The receiver and new `association/ledger/retirement.rs` now contain the proposed
+consuming transfer/history implementation; the latter is registered as its own
+critical/security analysis owner. Current campaign admission remains false and
+the historical bindings have not been promoted to the new source. A cross-owner
+source review identified an invalid-state helper branch that could observe
+cancellation twice; moving its invariant check before projection/cancellation
+removed that branch. The reviewer verified the correction on recovery source
+`5c1bff6bcbee660b5e691be8651757e5b216d234783e8c019fd0fdbf243f52f9`.
+The following checkpoint supersedes the pending development execution in that
+preparation record; the historical identities remain unchanged.
+
+**Development GREEN and qualification freeze.** Candidate
+`5572ad763f4ffd681f88714650413f78861b2ba41a75d7379887f06846f04ae8`
+passes the six-lane `exhausted-context-green-v3/verification.json` receipt,
+SHA-256 `a7356dfdf799a153c25a4e955ab1505396f5380ae5d6ef237f94170904e1277a`.
+Actual discovery is 348 unique Engine cases; all 170 current KE cases execute
+successfully, including 33 recovery and 14 retirement tests. Format, isolation,
+GNU Clippy and MSVC-target Clippy pass. This does not execute all 348 cases,
+optimized tests, doctests, metrics or native Windows. The first development run
+passed the behavioral cases but exposed ordinary style/length lints; the second
+reached MSVC and caught two missing exhaustive terminal-enum arms. Small helper
+extractions retained the same guards/publication/error order; the Windows
+projection now preserves a context cause while retaining the prior complete
+failure first. No lint or other gate was waived. Independent reviews checked
+the final source/raw roster, all 590 product and 13 development-helper inputs,
+six raw lanes and terminal source/tool/vendor bookends.
+
+The distinct successor uses three public packets from the existing AES witness's
+maintained primitive and an independent literal layout. A separate one-test
+integration binary preserves the original generator's strict zero-filtered-test
+contract; both use one private builder. The admitted witness changed exactly
+three test/builder files; runtime library, manifest, lock, roles/features and
+licence stayed unchanged. Its exact tree pin and code-owned policy anchor were
+rebound after independent typed-diff/source review. The initial source/pin
+refusals occurred before compilation. Narrow receipt
+`successor-fixtures-v7/verification.json`, SHA-256
+`adc5c17ce2eb35fe0b815c8d3577d331af8a996f83873fc7281be47139ffe33b`,
+reconciles the earlier successful tree/generator raw output under unchanged
+frozen identities with fresh isolation and actual legacy generation/bookends.
+The earlier v4 grammar refusal remains incomplete, not a second passing run.
+All 33 legacy payloads reproduce exactly; successor packets have extents
+140/140/124 bytes and live literals match their raw outputs. These are not
+native entropy, TLS/exporter or independent cryptographic-proof results.
+
+The new shared-path cases include rejected old-context and valid-old-key packets
+followed by fresh success in the same pending request: three consumed frames,
+420 spent bytes, unchanged expiry and one entropy/send attempt. Other cases
+cover fresh/known cookie pools, repeated UID, real second-context exhaustion,
+history retained through failed KE, cancellation, typed failure precedence,
+N/R/D/source/global/window limits and terminal success. Direct retirement tests
+also challenge exact 32-entry/UID bounds, all three real expiry refusals, history
+use after the old Control leaves scope, and a genuine prior receipt followed by
+final marked exhaustion. Component cases supply no native completion evidence.
+
+`context-qualification-freeze-v1.json` binds the same 590-file product, 42 exact
+qualification inputs and current 348/170 roster. Strict execution-reader counts
+and synthetic controls now require that complete roster. The portable helper's
+later docstring correction changes metadata bytes only; the current baseline
+will capture it separately from the earlier development receipt. All 277 selected
+Python controls pass (33 source-admission, 148 portable, 96 wrapper), recorded in
+`context-helper-controls-v1.json`, SHA-256
+`e52712f95f0e8a2121943bdc5fa783c72eb5f4a040802c52a90b09a886f4293d`.
+These are helper controls, not Rust execution or mutation kill credit.
+
+All eleven GNU owners are registered, with the same 90% line and 95% critical-file
+mutation gates, worker/time/resource limits and native exclusions policy.
+Mutation admission stays false pending fresh enumeration and independent review.
+The eight old ledger equivalences and ten old inventories are not adopted into
+this candidate; their exact historical records remain in the earlier checkpoint,
+dossier and external freeze. Existing ordinary/graph references and preparation
+context retain their explicitly historical scope; no current result is borrowed.
+The configured full baseline now passes on this same candidate. Receipt
+`context-baseline-v1/verification.json`, SHA-256
+`350983f6da65c7a1d1a4dcde2209060b018677fdd51683280b3bb79eac17ce57`,
+records exact 348 ordinary and 348 optimized executions with no ignored/filtered
+cases, all 69 doctests (56 compile-only, 13 runnable), format and both-target
+check/Clippy. Independent raw review verifies all seven lanes, all 602 captured
+source/helper/policy inputs, references and tool bookends. Doctest names and
+their seven defining source files match the historical qualified list exactly.
+This closes the current baseline lane, not metrics, native work, S2.2 or P1.
+
+Fresh catalogue `context-enumeration-v1/verification.json`, SHA-256
+`e4db813acfe92f0ab7ada9533ade42f74311cc44795fb0047593e62244428324`,
+contains 573 distinct variants: core 82, association 29, process 1, handoff 9,
+request 6, fault 27, ledger 156, retirement 75, response 45, datagram 37 and
+recovery 106. Independent review joins every descriptor/diff/header, all eleven
+canonical inventory hashes and captured source/tool/reference bookends. This is
+catalogue-data approval only. Total 573 exceeds the unchanged 512 campaign cap;
+use complete selected-owner cohorts with ten workers, without omission or a
+larger cap. Process still generates only an unqualified whole-function Default
+replacement; production constructors and test-only Garde/limit bodies retain
+generation gaps. No absence of variants earns a kill or assurance credit.
+
+**Storage-accounting precision and bounded tooling follow-up.** All fourteen
+recorded baseline samples pass, but the final report is written after the last
+sample. Its 84-KiB margin does not establish room for the later 368-KiB receipt.
+Preserve the baseline execution results and sampled observations; do not claim
+an observed continuous quota or an established earlier peak. After authorized
+closed-target deletion, `context-closing-storage-v1.json` independently measures
+the complete published baseline at 22,786,048 allocated bytes and catalogue at
+37,609,472 bytes, both below 768 MiB. That separate, timed record is outside the
+measured trees and proves only their cleaned current final state. The permanent
+in-wrapper final-publication reservation/check remains a named tooling follow-up;
+it must preserve failed samples rather than erase them after cleanup. For each
+remaining campaign, retain raw samples, retire only closed disposable targets,
+then check the fully published final tree separately. No threshold is relaxed.
+
+All eleven current GNU line gates now pass: core 323/327, association 78/83,
+process 26/26, handoff 52/55, request 50/51, fault 199/199, ledger 658/676,
+retirement 162/164, response 108/109, datagram 235/240 and recovery 512/536.
+These are line counts; the export supplies no branch-coverage evidence.
+
+The complete reviewed catalogue was admitted only for selected-owner cohorts;
+E0 baseline/coverage/catalogue and E1 mutation differ only in the profile's
+inventory/admission data. The first retirement cohort completes all 75 variants:
+52 caught, eight compiler-unviable, fifteen surviving, no timeouts or exclusions.
+Raw receipt `context-mutation-retirement-v1/verification.json` has SHA-256
+`92e0f9481b27fd38f49d378a2fb116d32fe54db242e78766119825534dfe063a`.
+Independent audit verifies every descriptor/diff/outcome join and the complete
+417-case baseline and survivor rosters (348 ordinary plus 69 doctests). Forty-six
+catches are behavioral panics; six are genuine healthy-boundary Result refusals,
+not setup failures. Eight unviable outcomes have actual compiler/lint diagnostics.
+The gate correctly fails at 52/67, 77.611940%; no score adjustment is adopted.
+
+Independent semantic review separates six missing discriminating controls from
+nine source-bound equivalence candidates. Missing controls use genuine Published
+foreign Controls (equal expiry where needed), independently checked foreign
+configurations/providers, a legal Preview-mode ledger, and a genuine attached
+successor exhausted again. Existing unpublished or multiply-invalid neighbors
+can mask weakened ownership checks. The current production checks remain correct;
+survival alone establishes no product defect. The other predicates are redundant
+under checked length relations, irreversible reservation counts or original-owner
+intent construction. No equivalence exclusion has been granted.
+
+**Bounded revision — implemented and independently reviewed; fresh qualification
+pending.** The six discriminating regression controls use existing checked
+objects and signed fixtures and have been demonstrated against the actual retained
+variants and healthy original guards. The revision expresses the same guarantees
+through their actual invariant owner under the following reviewed contract:
+
+- The history constructor can enforce the equivalent minimal relation
+  `1 <= cookie_count <= uid_count <= 32`, plus its unchanged byte bound.
+- A Published replacement is unused when its irreversible reservation allowance
+  remains 32; every active request, receipt, receive charge, UID, sent cookie or
+  recovery marker requires a prior reservation. Keep independent preview and
+  predecessor guards; remove duplicate downstream pristine checks only after
+  reviewing every state writer and the no-refund property.
+- Move recovery-intent creation/retirement to the actual association owner, so
+  private helpers obtain expiry from its immutable original Control instead of
+  accepting a bare caller-supplied Instant. Independent review rejected an
+  unrestricted `recover(reason)`: a valid fresh owner could otherwise mint an
+  arbitrary early intent, invalidating both proposed invariant arguments.
+  Instead, use a nonlocking no-argument checkout helper that refuses active
+  custody and derives the existing checkout priority from actual state:
+  exhausted attempts, then exhausted receive work, then no available cookie.
+  Call it once inside the existing Published guard, after Busy refusal and before
+  charging checkout. Independent review found a real ordering counterexample:
+  a last available attempt can be charged before discovering an empty pool;
+  deriving afterward would incorrectly change Cookies to Attempts. Inspect fresh
+  cookie membership without filtering the live pool early, and preserve existing
+  charge/filter/error order.
+  Logical receive retirement separately clears only exhausted active custody
+  and derives ReceiveWork directly. Both preserve first-intent stickiness and
+  original expiry, accept no caller-selected reason/time, and perform no work
+  when their own exhaustion conditions are absent. Keep these helpers separate
+  to preserve current priority when attempts and frames are both exhausted.
+  Add genuine fresh/pending premature-call refusals, a dual-exhaustion checkout
+  neighbor and the last-charge empty-pool neighbor; use actual reservations,
+  returns, failed sends and replies, no field mutation.
+  A genuine final Cookies marker and
+  the existing no-active/no-receipt/zero-frame requirements force ReceiveWork;
+  retain the owned-intent requirement, actual identity/mode/predecessor checks,
+  chronology and fresh Published/cancellation admission.
+
+The corrected contract and implementation were independently reviewed after
+those two constructor/order counterexamples were resolved. Historical candidate
+`fa47b83064b149c282ae7f7ce43d7fb2b132d182cea7f434f2ef25db383dbf29`
+passes all six lanes in `context-owner-green-v3/verification.json`, SHA-256
+`a5fd57cd347f63252f83a3e3997a8086cfba217982da1d104ffb212aa6c6c643`:
+348 discovered cases, all 170 KE cases executed, isolation, format and GNU/MSVC
+Clippy. Owner-derived helpers and the minimal checked-history/pristine relations
+are implemented, including genuine premature-call and charge-priority controls.
+The earlier tests-only candidate `40dd4a14` demonstrates all six exact retained
+operator REDs with 14 healthy retirement tests before and after in
+`retirement-discriminators-v1/verification.json`, SHA-256
+`908a9cbac999857603c80735981d373a3570fb6ecf97a02922033c5229687346`.
+These controls grant no campaign kills or source-bug claim. The `5572ad76`
+baseline, coverage, 573-variant enumeration and failed 75-variant retirement
+cohort remain historical. That freeze bound 590 product files and 42 inputs
+with no catalogue/equivalents and mutation admission false.
+Its full-baseline receipt `context-owner-baseline-v1/verification.json`, SHA-256
+`15da1ed853e4e983a951f9c06dde5e9e565b1c56f537a59761694b77183b1bf2`,
+remains **incomplete**. All seven Rust commands pass with exact 348 debug,
+348 optimized and 69 doctest cases (56 compile-only, 13 runnable), but the final
+storage sample is 805,625,856 bytes against the unchanged 805,306,368-byte cap.
+Independent review confirms the actual resource failure and matching source,
+tool, vendor and reference bookends. Subsequent cleanup preserves that failure.
+
+The bounded runner repair retires only the completed `target/release` compilation
+cache after validated release execution and its successful post-command storage
+check, before the later debug-profile doctests and Windows Clippy. Preserve raw
+results and refuse linked/special/noncanonical targets; no failed command or
+storage sample may trigger cleanup that changes its disposition. Keep all caps
+and commands unchanged. The then-extracted helper also admitted independently
+wrong serial/phase inputs, so its single ordinary caller could not justify
+inheriting the historical stable-slot equivalence. The following checkpoints
+record that interface's controls and repair. No current coverage or mutation
+pass follows from the historical baseline.
+
+**Publisher controls and storage repair — development checkpoint.** Candidate
+`bc80d755a7bd18e7638043aec72b04bac7651ca89764fc58865d1aeee0ccdcc2`
+passes all six development lanes and 170 KE cases in
+`context-owner-green-v5/verification.json`, SHA-256
+`159a70f127a79b6bff6606c8f7dd46dda31f0b52705e6b779e9da1a47afb7a74`.
+Genuine staged-response controls independently refuse a wrong serial on a
+Pending request and a matching serial on an unresolved Invoked send. They check
+status, cookie population and last-receipt serial; they do not compare every
+opaque byte. The healthy neighbor uses the ordinary charged receiver.
+The completed-release-cache repair has an intended behavioral Python RED and
+98 passing controls, including unsafe-path and failed-command/validation/cap
+neighbors; independent review accepts its bounded deletion and ordering.
+
+Review at that checkpoint identified the extracted publisher's separate private
+interface limitation: its staged value carried neither same-owner nor receive-
+charge provenance. The sole ordinary receiver caller supplied those correctly;
+this did not demonstrate an external exploit. The accepted repair keeps publication
+inside that original charged owner and extracts only inert parsing/staging;
+retain all existing fresh guards and cleanup. No uncharged direct positive test,
+historical stable-slot exclusion or broader issuer guarantee follows from the
+new negative controls. Mutation admission remained closed during the bounded
+interface review. The coordinator and independent reviewer accepted
+the minimal repair: inline the unchanged fresh publication closure into
+`receive_reply`; extract only an inert `stage_current_reply` using the owner's
+actual keys and checked UID lookup. The receiver retains size/endpoint error
+order, irreversible raw-work charge, final Cookies marker, both exhaustion
+cleanup paths and all serial/phase/time/pool/receipt guards. No separate helper
+may publish a staged value, mutate state or issue a receipt. Capture the old
+API's uncharged-publication behavioral RED first. Its later removal is interface
+elimination evidence, not the same behavioral test passing; verify the new
+actual receiver's negative and charged healthy paths separately. No new token
+framework, dependency, runtime or default follows. Closed compilation caches were deleted only
+after terminal jobs; raw failures, source snapshots and receipts remain intact.
+
+**Uncharged private-publication RED.** The retained old-API source now reproduces
+that defect in `publisher-charge-red-v1/verification.json`, SHA-256
+`eb0f2022eeb70899242e1f1a60a05d5e561a26dfbec3d38caf6a315005746027`,
+candidate `c4ec84d35eb7bc147c7b3f9dc1ef72fdd16ee100dbf01e0bba4b310f4228a5d2`.
+An actual Pending owner with a correctly authenticated staged response, matching
+serial and valid times can call the extracted publisher without entering receive
+admission. It returns a receipt while all 32 frames remain unspent; the intended
+`publisher-uncharged-receipt` assertion fails (test exit 101). A separate ordinary
+receiver healthy control passes with real frame/byte charging. This establishes
+a private-boundary contract defect, not a demonstrated public/native exploit.
+The source/tool/vendor bookends and raw RED remain retained. The following
+checkpoint records the implemented repair and separate receiver controls.
+
+**Charged receiver repair — historical development GREEN, 12 November 2026.** Candidate
+`557cb7d247b3a1f17ed50f91b15651dd8b1bf273237b3dc51bdcd7aecc0983d4`
+passes six development lanes in `publisher-charge-green-v1/verification.json`,
+SHA-256 `5c0f20ae39ebf25392c7f332735d94a8d578f24ab7fef94c552beffa5cbbf736`:
+all 170 KE cases execute, 348 cases are discovered, and isolation, format and
+GNU/MSVC Clippy pass. Publication now stays inline in `receive_reply` after its
+irreversible receive charge; `stage_current_reply` only stages inert data.
+Actual receiver controls cover refusal before receive charging after an Unknown
+send, charged stale-UID rejection that remains Pending, foreign-S2C rejection
+beside healthy current-key admission, direct staging's 4,097-byte/issued-UID-prefix
+bounds and an actual 4,096-byte receive. The separate removed-API probe produces
+exactly two E0599 diagnostics at the old call sites, then restores the source.
+This proves API elimination; the old uncharged-publication behavioral test is
+not claimed to pass unchanged. No external exploit or campaign kill follows.
+
+The reviewed completed-release-cache repair retains its behavioral Python RED
+and 98 passing controls. `publisher-binding-v1.json`, SHA-256
+`2c21d9c1e699e84b7b18f02b39f9fdd91272e754929b47decbe05ba6f90cee79`,
+bound that 590-product-file candidate and 42 inputs with an empty catalogue, zero
+equivalents and mutation admission false. The configured `publisher-baseline-v1`
+full baseline passes, receipt SHA-256
+`856d40ad1f51a1086ce37349b8334ff8019f19f433d33295c691381fc7022086`:
+348 ordinary, 348 optimized and 69 doctest cases (56 compile-only, 13 runnable),
+all seven Rust commands and both targets. Independent raw review confirms exact
+rosters, source/tool/vendor/reference bookends and cache-retirement ordering.
+All sixteen storage samples pass. Only the completed release cache is removed
+(214,843,392 allocated bytes); the final sample is 591,212,544 bytes. A separate
+post-publication closing walk observes 591,593,472 bytes below the unchanged
+805,306,368-byte cap; neither observation establishes a continuous quota.
+The fresh `publisher-enumeration-v1` receipt, SHA-256
+`e900001b19a06bd5799387a9b25ec08500124bb307b6f5d38c61ca2937b23f7a`,
+lists 561 variants across all eleven owners. That `557cb7d2` source later passed
+all eleven GNU line gates and the retirement cohort's 53 variants (45 caught,
+eight unviable, no missed cases). Its ledger cohort accounts for 166 variants
+(112 caught, 45 unviable, nine missed); the unadjusted gate remains failed.
+Those complete selected-owner results retain their source scope and the unchanged
+512-variant campaign cap. Earlier `fa47b830`'s cap failure,
+`bc80d755`'s development results and `5572ad76`/`b8741e48` metrics retain only
+their exact historical scopes.
+
+**Archive producer repair — retained source freeze, 12 November 2026.** Archive-repair Rust
+candidate `a91ce282dcf8a6c0d23ed8463771f45193945cb4da7dc86d31f1e542f560ec3a`
+passes six development lanes and all 170 KE cases, with 348 discovered cases,
+format and GNU/MSVC Clippy in `archive-factory-green-v2/verification.json`,
+SHA-256 `e167ff4762ae435c583c2e88891739265057a8f5cb38a90f50bea3b5835c5ba9`.
+The old raw-factory behavioral RED, `archive-factory-red-v1/verification.json`,
+SHA-256 `6966622dc52662ff0e43f45f4d39310f5d2613df6c8b2009773b69dbf217b27b`,
+uses actual predecessor exhaustion, retirement, projection and cancellation,
+then substitutes different valid raw history through the old checked factory.
+It permits the original issued UID to prepare again, while the genuine-history
+healthy neighbor blocks it. This demonstrates a private producer-contract defect;
+the negative branch invokes no sender and establishes no public/native exploit.
+
+The raw dimension checker now returns only `Result<(), Failure>`; consuming actual
+retirement and its checked projection alone produce `PastRequests`. The separate
+removed-API probe records exactly four E0599 diagnostics at old raw-factory call
+sites and restores the source. This is interface-elimination evidence, not the
+same old behavioral test passing. Independent review verifies the final source
+and these exact scopes. Its complete-index `a91ce282` baseline subsequently
+passed 348 ordinary, 348 optimized and 69 doctests, and all eleven GNU line gates
+passed. Its complete batch `final-index-mutation-batch-v1.json` (SHA256
+`0caf804643a8865b518e07c2cd0da367ad78f590699c7e1add4c888e310dd757`)
+accounts for 561 = 342 caught + 173 unviable + 46 missed, zero timeouts/exclusions,
+with five raw file gates passing and six open. These remain exact historical
+whole-candidate results; the following test continuation has separate receipts.
+
+#### Materialized cutoff-control GNU checkpoint — 12 November 2026
+
+Final Rust product candidate:
+`0aa75da81aa5d31c6d7362a8bd81c407dd0eb19bb673182966416970f3fe1b09`.
+The full intended index was materialized with actual Git history and all 2,073
+file bytes/modes checked. The final formatted source snapshot is `staged-final-v3`;
+its execution policy was `f70163b825c78f8412694ba4b1ad0414e9b03c4f574be2d8008c38f1ac627225`
+after the reviewed catalogue's data-only admission. No dependency, shipping Rust
+body, public visibility or production default changed in the cutoff continuation.
+A `cfg(test)` forwarding seam invokes the original mandatory constructor; checked
+Control/Limits challenge cutoff below actual expiry and above the outer window,
+with exact inclusive healthy neighbors and zero-charge/inert-plan checks.
+
+Current receipts under the existing `recovery-source-v1` evidence root:
+
+| Receipt | Actual result and SHA256 |
+| --- | --- |
+| `cutoff-index-baseline-v2/verification.json` | All seven commands pass: 348 ordinary, 348 optimized, 69 doctests (56 compile-only, 13 runnable), both-target checks. `f2676688a31a61e6333f233fdad14ddf77df15253ba77e4547db785fe369dd0d`. |
+| `cutoff-index-coverage-v1/verification.json` | All eleven GNU file-line gates exceed 90%; recovery 522/545. Actual 348 tests; zero branch evidence. `70a85759d73ffbd6660774b99adeb310598fd715e247c032e7d5456b3c770608`. |
+| `cutoff-index-enumeration-v1/verification.json` | All 561 descriptors/diffs reviewed. Ten inventories unchanged; recovery has 33 exact matches, one context-only diff and 72 position shifts, no added/deleted faults. `3f839db9add24fa5bf8d0b0dc2cf444f6239bce4d8e490b389460f95acf17f7d`. |
+| `cutoff-discriminators-v1/verification.json` | Exact 33 controls healthy before/after; both retained cutoff variants reach the intended first invalid-cutoff assertion with exit 101. `0cad9403de1aef6d0184a1c1f1f9de73aa40245ccc727be21781f6b3d475187f`. |
+| `cutoff-index-mutation-ke_recovery-v1/verification.json` | All 106 = 74 caught + 27 unviable + five missed, no timeout/exclusion; raw 93.670886%, gate false. `ed630b8ccab442c6218bedf7c8ad8a4f61077eb501df73f1622cfdb53bd00caf`. |
+| `cutoff-index-mutation-ke_ledger-v1/verification.json` | All 166 = 112 caught + 45 unviable + nine missed, no timeout/exclusion; raw 92.561983%, native exit 2, gate false. `8f330486bda91585d10651ee6c44c43f7d5c02c8d9ec976f73b8317458df29fe`. |
+
+The initial `cutoff-index-baseline-v1` stops only at the formatter's tuple-layout
+check before compilation; it remains incomplete. V2 is the formatted execution.
+Both isolated mutant REDs fail the first cutoff-below-expiry case; neither reaches
+the second iteration after panic. The healthy original executes both invalid
+cases and both inclusive neighbors. This establishes missing regression evidence,
+not a defect in the unchanged original guard. The full recovery cohort independently
+catches both exact variants; its other classifications are unchanged.
+
+Independent raw reviews reconcile all descriptor/diff/phase joins, complete actual
+417-case mutation baselines/survivors, 602 captured inputs, tool/vendor/reference
+bookends and storage samples. Baseline/coverage raw receipts retain the earlier
+closed-campaign policy metadata. Baseline's successful release cache is retired
+only after post-command storage and complete roster checks; final closing storage
+is 591,609,856 bytes below the unchanged 805,306,368 cap. Coverage's closing walk
+is 379,621,376 bytes. These are sampled observations, not continuous quotas.
+Closed compilation targets were then deleted in cleanup v16/v17; current raw
+source, logs, coverage JSON and receipts remain intact, without compression.
+
+**Exact ledger disposition.** The coordinator and independent source reviewer
+reaffirm the nine unchanged caller-domain arguments; the separate raw reviewer
+verifies all current missed joins. The [current dossier](engine-ke-association-equivalences.md)
+and `cutoff-ledger-e9-adoption-v2.json` bind current source/candidate, all nine
+complete descriptors and the adopted metadata. Existing bounded accounting gives
+adjusted denominator 112 and 112/112 (100%), with **zero added kills**. Native exit
+2, 112 caught, nine survivors, raw denominator 121 and raw 92.56% remain retained.
+No raw receipt is rewritten and no mutation campaign reruns under the adopted
+metadata. Final metadata changes only dossier status/proof pin and exact policy
+bindings/dispositions; shipping product inputs and accounting functions are unchanged.
+Affected Python/policy checks and final complete-index custody are required before
+publication. The raw execution snapshot stays immutable.
+
+**Open scope and next action.** Recovery's four Native misses are Windows-only;
+the receiver guard remains unresolved, with no lawful distinguishing witness found
+in the inspected construction/retirement chain and no new exclusion. The retained
+entrypoint/fault/datagram results have 30 further native-inactive misses; the
+process owner has no viable generated fault and remains unscored. Constructor,
+Garde, private-builder and actual native-completion gaps remain independent.
+Only recovery and ledger reran after the cutoff test addition; no fresh whole-561,
+parent Engine/P1, Core-positive, native, branch or release pass is claimed.
+David has returned and authorized the signed checkpoint publication. Public
+execution stays one-shot/never-send by default. Preserve native resource stop,
+post-V1 formal deferral and separate fuzz/storage holds.
+
+The selected private same-invocation failure/work/backoff source is authored.
+After this signed source checkpoint, freeze the invocation-level worker stop
+latch and actual-completion custody contract under this existing task before
+its dependent implementation. Reuse Config/claim/provider and actual operation
+ownership; independent review precedes source changes. This preparation adds no
+service source, shared graph, production default, Core-positive issuer or hold lift.
+Finish remaining native and generation gates only when admitted.
+
+The earlier design comparison and pre-revision admission hold are historical;
+the current execution and adopted-metadata scopes are recorded above. Preserve
+mandatory guards, the 95% gate, raw failures, remaining qualification gaps and
+the next contract prerequisites. The worker stop latch and production
+sample/provider/clock/service owners remain separate prerequisites.
+
+#### Next bounded recovery-owner contract — reviewed preparation
+
+**Historical source card:** this private source is now authored. The current
+checkpoint above owns its results and remaining qualification; its next WSL
+preparation is the invocation-level worker stop/completion contract.
+
+The coordinator, `/root/recovery_contract_review` and
+`/root/native_source_independent` reviewed this next source contract under
+REQ-8/BND-2 and CHECK-6/8/9/10/11/15/21/25/27. Complete EP4's selected source
+checkpoint accounting before dependent implementation. Native/product gates
+remain open; this record authorizes no repeated native/public operation or
+Core-positive receiving claim. It refines the existing receiving-boundary child,
+not a new plan or a shipped retry policy.
+
+**Actual owner.** Extend `run`'s composition boundary with immutable admitted
+`Config`, one `ProcessClaim`, one `ProviderScope`, invocation-owned route backoff
+and aggregate accounting. Each admitted transaction receives a fresh Control;
+association retirement precedes provider retirement. Never retry `run`, reset
+process admission, reopen committed control or shut down CNG per transaction.
+Public execution stays one-shot. Private repeated Script controls must reach
+the shared producer/receiver path rather than a disconnected retry helper.
+
+**Original cutoff.** Freeze the absolute monotonic invocation cutoff once.
+Experimental Control construction clamps handshake and total deadlines to it
+without extending existing stage/context maxima. Strict-before checks at
+admission, I/O waits, publication and final commit retain that original cutoff.
+Checking admission alone permits overruns. Expiry closes admission but supplies
+no physical-completion fact.
+
+| Actual producer outcome | Selected bounded disposition |
+| --- | --- |
+| `establish` primary native Connect/Handshake/Request/Response with TimedOut, ConnectionRefused, ConnectionReset or ConnectionAborted | Candidate later KE reprobe only through this exact receiver and every scheduling guard. Preserve typed-primary precedence. |
+| Nonempty `Failed.cleanup` or `admission_cleanup` | Terminal for this child; retain primary and secondary facts separately. |
+| Typed TLS/setup/profile/exporter refusal, unclassified cause, other I/O or structural/negotiation refusal | Unavailable; no generic retry, trust inference or speculative correction. |
+| Local allocation, entropy, runtime, control or admission failure | Terminal local failure; no server-trust allegation. |
+| UDP setup/send/readiness/receive/shutdown failure or Control deadline | No automatic KE route. Separate stage-specific review is required. |
+| Rejected protected reply, including authenticated zero-cookie reply | Existing Pending, original deadline and decreased receive allowance continue; no immediate KE or refund. |
+| Genuine association `RecoveryIntent` | Inert coalesced scheduling input retaining original not-before; consumption/copying creates no permit. |
+| KE or preview success | No backoff reset. |
+| Consumed genuine `CommittedProtected` of the currently active transaction | Reset invocation-owned route backoff deterministically; never counters, cutoff or other earliest-operation constraints. |
+| Cancellation, cutoff or aggregate exhaustion | Terminal; no replacement context. |
+| RATE/DENY/RSTR/NTSN/control input | No newly enabled route; protocol-specific admission/disposition remains a prerequisite. |
+
+**Checked experimental parameters.** Supply explicit finite invocation window,
+scheduling-attempt/refusal and diagnostic-work ceilings, KE minimum/maximum
+delay, checked growth and bounded jitter. Select no shipped defaults. Maximum
+means total delay including jitter; minimum is strictly positive. Commit one
+bounded draw with the failure-transition update so notifications cannot redraw.
+Growth caps at maximum; unrepresentable arithmetic refuses. Admission honors
+the maximum applicable route/source/global/original-intent boundary. Waiting
+parks; coalesced events neither replay missed ticks nor replenish budgets.
+
+**Accounting and custody.** Irreversible scheduling/refusal counters are separate
+from physical occupancy permits. This child introduces no service `WorkPermit`,
+blocking-job channel or completion reservation. Existing backend/runtime
+retirement remains mandatory; Drop proves no graceful/native completion. Later
+service admission must prevent pre-submit permit leaks explicitly, without
+dropping a charged permit as rollback or completing unsubmitted work.
+
+**Observable exit.** Actual shared Script-path sequences must show no early or
+excess submission, finite refusal exhaustion, eligible healthy reprobe, exact
+cutoff/jitter/overflow behavior, preserved zero-cookie budgets and cleanup facts.
+Old, foreign, stale, dropped and preview outcomes cannot reset route state.
+Production defaults, KoD recovery, restart/reboot continuity, persistence,
+provider/trust/native qualification and Core-positive issuers remain separate
+held prerequisites. No material owner decision blocks this bounded preparation.
+
 #### Rust refinements at the receiver freeze — 9 November 2026
 
 The [additional Rust research disposition](../.agents/plans/2026-10-30-skill-quality.md#additional-rust-opportunities--9-november-2026)

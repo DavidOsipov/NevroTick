@@ -324,8 +324,10 @@ ENGINE_KE_SUBJECTS = (
     ("ke_request", "crates/nevrotick-engine/src/nts_ke_experiment/request.rs"),
     ("ke_fault", "crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs"),
     ("ke_ledger", "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs"),
+    ("ke_retirement", "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/retirement.rs"),
     ("ke_response", "crates/nevrotick-engine/src/nts_ke_experiment/response.rs"),
     ("ke_datagram", "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs"),
+    ("ke_recovery", "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs"),
 )
 ENGINE_KE_CRITICAL = (
     "crates/nevrotick-engine/src/lib.rs",
@@ -339,29 +341,35 @@ ENGINE_KE_CRITICAL = (
 # caller arguments. Any source/candidate/proof drift requires a new review.
 ENGINE_KE_EQUIVALENCE_PROOF = "tasks/engine-ke-association-equivalences.md"
 ENGINE_KE_EQUIVALENCE_REQUIREMENT = "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27"
-ENGINE_KE_EQUIVALENCE_REVIEWERS = "/root; /root/ep1_graph_readiness; /root/ep1_source_review; /root/deletion_reference_audit"
+ENGINE_KE_EQUIVALENCE_REVIEWERS = '/root; /root/native_source_independent'
 ENGINE_KE_EQUIVALENCE_IDS = frozenset({
-    "KE-RETURN-POOL-BYTES-OR", "KE-RETURN-POOL-CAPACITY-OR",
-    "KE-SEND-ARCHIVE-BYTES-OR", "KE-SEND-ARCHIVE-CAPACITY-OR", "KE-SEND-ARCHIVE-VALUE-OR",
-    "KE-SEND-ARCHIVE-BYTES-EQUALITY", "KE-SEND-ARCHIVE-BYTES-INCLUSIVE",
-    "KE-RECEIVE-STABLE-SLOT-OR",
+    'KE-RETURN-POOL-CAPACITY-OR',
+    'KE-RETURN-POOL-BYTES-OR',
+    'KE-SEND-PREDECESSOR-VALUE-OR',
+    'KE-SEND-ARCHIVE-VALUE-OR',
+    'KE-SEND-ARCHIVE-CAPACITY-OR',
+    'KE-SEND-ARCHIVE-BYTES-OR',
+    'KE-SEND-ARCHIVE-BYTES-EQUALITY',
+    'KE-SEND-ARCHIVE-BYTES-INCLUSIVE',
+    'KE-RECEIVE-STABLE-SLOT-OR',
 })
-ENGINE_KE_EQUIVALENCE_CANDIDATE = 'c5a663d4ac9d680f41001c7fb07175ee373c5165eaa11087b569cffe189b1ff8'
-ENGINE_KE_EQUIVALENCE_PROOF_SHA256 = '1ad2d42fc36afbeaf1ad0ab085bb065ba4f593d5cb94d194fe3f76e737b23d9d'
+ENGINE_KE_EQUIVALENCE_CANDIDATE = '0aa75da81aa5d31c6d7362a8bd81c407dd0eb19bb673182966416970f3fe1b09'
+ENGINE_KE_EQUIVALENCE_PROOF_SHA256 = 'c6620f19c2668ea8ad71e27c1c15470269be715e2ddbb3b411541a3f512779ce'
 ENGINE_KE_EQUIVALENCE_REVIEWS = {
-    'KE-RETURN-POOL-BYTES-OR': ('832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83', 'a87a555a0b7320813b941ba57d58075a93ab321a88c369969d5465380569f6f5', 'After the unchanged ticket/currentness/phase checks, one exact cookie is removed from a previously checked pool of at most eight. No method changes that available pool before this explicit return. Thus available count is at most seven and available-plus-reserved bytes remain at most 131,072. Removal preserves the original Vec capacity, which exceeds its current length. All three rejection terms are false; both operator forms return the same cookie without copying or renewing an allowance. Earlier rejected arguments and dropped values are unchanged.'),
-    'KE-RETURN-POOL-CAPACITY-OR': ('832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83', '24c66ab6eee2fad0aecd1302e40c65dc238c3e67998a3c45ddce6cc4ddcd66f5', "The same checked return domain makes count, bytes and capacity rejection terms false. In particular no accepted return can have `capacity <= available.len()`: the removed cookie's original slot remains allocated. At exact maximum bytes the original strict byte comparison remains false. Reordering pure false reads changes neither disposition, returned allocation, retirement nor budget."),
-    'KE-SEND-ARCHIVE-BYTES-OR': ('832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83', '32a040453ca0049cf9103d4105d6f363f41ee1411c8a931f39688e916f066732', 'At most 32 original checkouts exist. The current prepared checkout has not yet been archived, so archive length is at most 31; initial capacity is at least 32 and never shrinks. Checkout filters every value already in this archive and exclusive mutable ownership permits no intervening archive publication. The actual formatter bounds a sendable cookie to 3968 bytes: 4096 packet bytes minus the 128-byte minimum header, UID, cookie-header and algorithm-15 authenticator overhead. Including the current cookie, at most 32 bodies total at most 126,976 bytes, strictly below 131,072. Therefore all four rejection terms are false. Both forms archive once before the same adapter invocation; every adapter outcome retains its original no-reuse and completion custody.'),
-    'KE-SEND-ARCHIVE-CAPACITY-OR': ('832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83', '977e1c46a5e0da419cb93e0be69a984779995e32ffd3c80b795d850cdc9e3983', 'The preceding send-domain argument applies independently to the changed connector. Archive capacity is at least 32 while pre-push length is at most 31. Count, byte, capacity and used-value checks are all false. The reserved value moves once, the request becomes Invoked before exposure, and failed/short/unknown/panicking callbacks cannot restore cookie permission in either variant.'),
-    'KE-SEND-ARCHIVE-VALUE-OR': ('832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83', '2914d98c7d5e21de13aef309017273e41863e2696a0f95d2bae05be7309646dc', '`reserve` removes known used values before moving the selected exact cookie. No other invocation can append an archive value while that request owns the single slot. Consequently the final used-value predicate is false, alongside the count/byte/capacity predicates. The change may skip a pure bounded comparison; it changes no checked value, error, callback, archive entry or lifecycle fact.'),
-    'KE-SEND-ARCHIVE-BYTES-EQUALITY': ('832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83', '98757b5c7862a715cc935369fe81dacef876f5fd324d4cf6d822703a4385be55', "Every encoded cookie is at most 3968 bytes and at most 32 can reach this archive. The checked sum is at most 126,976, so both `sum > 131072` and `sum == 131072` are false throughout this caller's domain, with no integer overflow. This does not weaken a raw/helper aggregate-capacity contract at its independent boundary."),
-    'KE-SEND-ARCHIVE-BYTES-INCLUSIVE': ('832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83', '8fb414d9ef6a6150f633581e22b821abff96b49a7401e94c5863e7c53c3c2191', 'The same strict upper bound, 126,976, excludes equality and excess. Both comparisons are false for every admitted prepared invocation, including the 32nd checkout. A changed packet size, minimum encoding extent or attempt limit invalidates this argument even if current tests still pass.'),
-    'KE-RECEIVE-STABLE-SLOT-OR': ('832166ef6fcea61756a874984a9a24f98eb232c9096484fd24ae89e0bfbe5a83', '0a3777dfd406bd58e49d6bd5eb095a7cf7243915799150c82c0fd15ddd1254a6', "The initial guarded charge requires Pending and saves that slot's serial. Subsequent synchronous authentication/staging only immutably borrows the owner; no await, external owner-mutating callback or active-slot replacement occurs. Staging failure returns before the final closure. On success, the final original Control guard rejects cancellation/expiry before entering that closure. Therefore the active serial and Pending phase equal their captured values when the changed expression executes. Both mismatch predicates are false and both variants commit the same cookies/receipt atomically once. The current adapter's waits and native calls occur outside this synchronous receiving transaction. This argument supplies no native completion, trust or future asynchronous-staging qualification."),
+    'KE-RETURN-POOL-CAPACITY-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', '565ae40e381f980a35548caa0ce690dcc1f2b8658cfa0e47672bb5b2fd0c7dfe', 'The complete admitted return domain includes genuine Reserved, Preparing and Prepared tickets, failed preparation, exact pool-byte equality, cancellation and expiry; it does not assume successful encoding. After the unchanged guards, reservation has removed one exact pool entry and no admitted writer can shrink or replace that pool before return. Its remaining length is at most seven and its capacity still exceeds that length; its reserved-plus-available byte sum remains within 131072. The changed connector combines only false predicates. Both forms preserve the same returned allocation, any retired UID, spent attempts, original deadline and error paths.'),
+    'KE-RETURN-POOL-BYTES-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', 'ed4cf1652fa16495dbfdd843f34d528630bddd5fd9288461ec597581f0c6087a', 'After the unchanged ticket, Published-control and pre-invocation phase checks, the exact reserved cookie was removed from a checked pool of at most eight entries. No admitted operation changes that pool while the slot remains reserved. Available count is therefore at most seven, available-plus-reserved payload remains at most 131072 bytes, and removal preserves an allocated slot beyond the current length. All three rejection predicates are false, including strict byte excess at exact equality. Both operator forms move back the same cookie without copying, exposing it, refunding work or renewing its original expiry. Earlier refusal paths are unchanged.'),
+    'KE-SEND-PREDECESSOR-VALUE-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', '6ded4b8df9e6af0867252161051f49d0e4856528022e7cfbf9049a8dce5bd3d8', 'The stored predecessor set is filtered before reservation selects the exact cookie. It is immutable thereafter; install_previous requires the untouched reservation allowance and cannot replace it once any ticket has been issued. Consequently the selected Prepared cookie is not a member of the stored predecessor, whether that set is empty, arbitrary or complete. Local count, capacity, encoded-byte and local-membership predicates are also false. Replacing the final connector with AND therefore changes no error, archive move, callback, no-reuse or lifecycle outcome. This argument does not certify completeness or provenance of the predecessor set; actual consuming retirement and checked projection enforce that separate producer contract.'),
+    'KE-SEND-ARCHIVE-VALUE-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', 'faecc1877ce8bfd6a3ada4a9fa96ab3f7d6407ce1c54f6e5d49b30bd7eaecf9f', 'Reservation filters every value in the current local used archive before moving its selected cookie into the single occupied slot. No other invocation can append a local archive entry while that ticket owns the slot, and pre-send return consumes the ticket without refunding its checkout. Thus the local membership predicate is false at the unchanged Prepared/currentness guard. Count, capacity, encoded-byte and predecessor predicates are also false in that domain. Changing this connector only changes pure bounded reads; both forms archive the same cookie before callback exposure and preserve all errors, receipt absence, budgets and completion custody.'),
+    'KE-SEND-ARCHIVE-CAPACITY-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', '835047e112b1b1bb8fb21647a053968639703703f3aa7a8f247fcf6f427ac40e', 'On the whole admitted Prepared-ticket domain, including the last checkout, local archive capacity is at least 32 and pre-push length is at most 31. Return and failure never refund a reservation or shrink this archive. The encoded-byte ceiling makes excess false; reservation and immutable predecessor installation make both membership predicates false. The changed connector therefore joins false conditions only. Neither form changes the moved cookie, Invoked transition, callback arguments, unknown-completion custody or subsequent original-control checks. This is a local-context argument: predecessor history remains a separate bounded owner, not extra entries in the local Vec.'),
+    'KE-SEND-ARCHIVE-BYTES-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', 'c6792fd2f33e35cf60db7fc48415f709eded660721391e6c91926de366a2d91d', 'Only a checked same-owner Prepared packet reaches the archive predicate. The current checkout is one of at most 32 irreversible local reservations and is not archived yet, so existing local length is at most 31 and capacity is at least 32. Every sendable cookie fits the 4096-byte algorithm-15 packet after at least 128 bytes of header, UID, cookie header and authenticator overhead, hence each is at most 3968 bytes and the post-push local total is at most 126976, strictly below 131072. Reservation excludes both local and stored-predecessor members. All five local/predecessor rejection predicates are false. Both variants archive before the same callback and preserve every completion, failure, cancellation and no-reuse disposition.'),
+    'KE-SEND-ARCHIVE-BYTES-EQUALITY': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', '8d5545f1e57acfc22966622c010df9dc0718ea65b243425c02a8538dbe755f8f', 'The unchanged checked packet formatter admits at most 3968 cookie bytes per actual prepared send and at most 32 such cookies enter one local archive. Its checked post-push sum is at most 126976, so both sum > 131072 and sum == 131072 are false without overflow. Earlier ticket, phase, expiry and preparation refusals remain unchanged. The mutation supplies no permission to narrow the raw history-bounds checker or return-pool domain: those independently admit exact 131072-byte data and retain their own negative and healthy controls.'),
+    'KE-SEND-ARCHIVE-BYTES-INCLUSIVE': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', '5bc3655bf490aeb9efa2180785d299ca5774c427233b389e236c1a495e061398', 'For every admitted Prepared invocation, including the 32nd local reservation, the packet/attempt bounds give a post-push local archive maximum of 126976 bytes. Both sum > 131072 and sum >= 131072 are therefore false. The same cookie and packet reach the same callback after one archive move; no error, budget, expiry, cancellation or completion disposition differs. The bound concerns only this formatter-produced local archive, not arbitrary bounded data, total predecessor-plus-current memory, TLS traffic, native allocations or a wider future profile.'),
+    'KE-RECEIVE-STABLE-SLOT-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', 'a25a4a9e6b3396c7336c9a8358aaf0836d189daf96e497637967efc1ea453f2a', 'The complete receive_reply input domain is guarded at the actual charged receiver. Its initial Published guard requires Pending and captures that active serial, UID, wire token, allowance and send observation before charging. Successful stage_current_reply and stage_replacement only immutably borrow the owner, use its own keys and checked issued-UID prefix, and expose no effectful publisher, await or owner-mutating callback. Staging errors may retire work but exit before the final comparison. The final fresh Published guard rejects stop or expiry before entering the inline publication closure. Whenever the changed expression executes, the actual serial and Pending phase still match the captured values, so both mismatch predicates are false. Both variants atomically publish the same cookies/receipt once; physical timing and native completion are not established.'),
 }
 
 
 def engine_ke_equivalences_valid(policy: dict) -> bool:
-    """Allow no E, or all eight exact independently reviewed caller identities.
+    """Allow no E, or all nine exact independently reviewed caller identities.
 
     Full current product/source/proof admission remains mandatory in
     admit_mutation_equivalences. No checked-caller argument narrows another
@@ -372,7 +380,7 @@ def engine_ke_equivalences_valid(policy: dict) -> bool:
     entries = policy["mutation_equivalences"]
     if not entries:
         return True
-    if (len(entries) != 8 or set(ENGINE_KE_EQUIVALENCE_REVIEWS) != ENGINE_KE_EQUIVALENCE_IDS
+    if (len(entries) != 9 or set(ENGINE_KE_EQUIVALENCE_REVIEWS) != ENGINE_KE_EQUIVALENCE_IDS
             or re.fullmatch(r"[a-f0-9]{64}", ENGINE_KE_EQUIVALENCE_CANDIDATE) is None
             or re.fullmatch(r"[a-f0-9]{64}", ENGINE_KE_EQUIVALENCE_PROOF_SHA256) is None
             or type(policy.get("binding")) is not dict
@@ -410,7 +418,7 @@ def engine_ke_equivalences_valid(policy: dict) -> bool:
 
 
 def engine_ke_features(scope: Scope) -> tuple[str, ...]:
-    """Grant the one feature only to its exact package, policy and eight owners."""
+    """Grant the feature only to its exact package, policy and closed owner set."""
     if scope.policy != ENGINE_KE_POLICY and scope.subjects != ENGINE_KE_SUBJECTS:
         return ()
     if (type(scope) is not Scope or scope.package != "nevrotick-engine"
@@ -714,6 +722,8 @@ def mutation_counts(scope: Scope, report: dict, expected: dict[str, dict], expec
     Malformed data, timeouts, failed baselines and native-code mismatches are
     immediately incomplete. A deferred result always reports its failing gate;
     orchestration must collect remaining files then reject the aggregate.
+    A complete nonempty all-unviable cohort is unscored only in explicit
+    deferred mode; it never satisfies the mutation gate.
     """
     if not isinstance(report, dict) or not isinstance(expected, dict) or not isinstance(equivalences, (list, tuple)):
         raise Incomplete("Mutation report, inventory or exact equivalence list has an invalid shape.")
@@ -774,15 +784,15 @@ def mutation_counts(scope: Scope, report: dict, expected: dict[str, dict], expec
             raise Incomplete("Equivalence is duplicated, stale, changed or not an actual missed mutant.")
         excluded.append(entry); excluded_names.add(name)
     viable = counts["CaughtMutant"] + counts["MissedMutant"]
-    if not viable:
+    if not viable and defer_gate is not True:
         raise Incomplete("Mutation qualification has no viable denominator or unresolved timeouts.")
     adjusted_denominator = viable - len(excluded)
-    if not adjusted_denominator:
+    if viable and not adjusted_denominator:
         raise Incomplete("Adjusted mutation denominator is empty.")
-    percent = 100 * counts["CaughtMutant"] / viable
-    adjusted = 100 * counts["CaughtMutant"] / adjusted_denominator
+    percent = 100 * counts["CaughtMutant"] / viable if viable else None
+    adjusted = 100 * counts["CaughtMutant"] / adjusted_denominator if adjusted_denominator else None
     unresolved = sorted(set(missed) - excluded_names)
-    passed = adjusted >= 95 and not unresolved
+    passed = adjusted is not None and adjusted >= 95 and not unresolved
     if not passed and not defer_gate:
         raise Incomplete("Mutation has unresolved survivors or an adjusted kill score below 95 percent.")
     return {"file": filename, "generated": len(expected), "viable": viable,

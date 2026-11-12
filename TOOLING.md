@@ -1591,6 +1591,94 @@ gates remain open for native-inactive or unviable-generation limits. Preserve
 all native/full-critical-scope obligations and original incomplete raw receipts.
 The following EP2 counts and signed historical review retain their earlier scope.
 
+**Typed TLS failure continuation:** the [existing Engine task](tasks/engine-transport-pilot.md#typed-tls-failure-projection--implementation-in-progress)
+records its exact historical 288-test/110-KE baseline, 69 doctests and nine passing
+GNU line gates. Fresh discovery contains 368 production variants after excluding
+only test-helper generation through equivalent test-module cfg attributes.
+The changed Core/fault campaigns account for all 105 variants at ten workers;
+their 23 Windows-only survivors keep both 95% file gates open, with zero
+exclusion credit. Current Windows classifier tests have not executed: native
+preflight stopped below the 2 GiB host-RAM floor. Earlier native receipts retain
+their earlier source scope. No retry, Core eligibility or provider adoption follows.
+
+**EP4 receiving-owner continuation, 12 November 2026:** the
+[same task](tasks/engine-transport-pilot.md#ep4-receiving-owner-interface-freeze--source-preparation-only)
+records preceding candidate `bdc34dd4fd64fd4f084065098eb82f279d27145ea5afe1f18ebcebb0f161b591`:
+296 ordinary/296 optimized tests (118 KE), 69 doctests, both-target static checks
+and all nine selected GNU line gates pass. Fresh discovery contains 378
+production variants; exact inventory and eight conditional E records have been
+independently reviewed and rebound. Current ledger mutation passes: 95 caught,
+42 compiler-unviable and eight zero-kill-credit reviewed equivalents across all
+145 variants, with no timeout or unresolved survivor. Datagram's 36 variants
+account as 12 caught/16 unviable/eight native-inactive survivors; the entrypoint's
+80 account as 37 caught/38 unviable/five native-inactive survivors. Their 95%
+file gates and broader native/critical scope remain open. The first ledger
+campaign exposed a genuine private-helper
+test gap; its expanded regression has exact isolated-mutant RED and unmodified
+GREEN. No ninth equivalence was added. A direct nested-runtime wrapper control
+remains the next bounded source follow-up. The new completion/owner guard and
+retirement controls confer no
+Core eligibility, repeated-work permission or native Windows qualification.
+
+The completed guard-control checkpoint is
+`4ee5d703f5f94f1905945ab3f105bb2dfd0d15fa10202f17a965b20980ed6ffa`.
+Only the datagram test file changes: five new controls retain all prior cases.
+Development discovery finds 301 ordinary/123 KE tests; all 29 datagram tests and
+both-target Clippy pass. The final helper-bound baseline passes 301 ordinary,
+301 optimized and 69 doctests with both-target static checks. The complete
+selected campaign accounts for all 378 variants: 207 caught, 132 unviable,
+39 survivors and no timeout. Eight survivors are exact ledger equivalents;
+31 are native-inactive paths. Five file gates pass; entrypoint/fault/datagram
+remain below 95% and process is unscored with no viable generated fault.
+Overall qualification remains false. Use the existing separate baseline and enumeration, then combined
+`--lane all --subject all` coverage/mutation after exact inventory review;
+`all` does not include the compiler/Clippy/optimized baseline. Preserve budgets,
+thresholds and the open native/critical scope.
+The reviewed collector retains a complete all-compiler-unviable file as an
+unscored failed row only under explicit deferred mode, collects later owners,
+then rejects the aggregate. Null scores grant no percentage or qualification.
+KE binds the shared regression source in its exact 38-input helper/test set;
+148 shared and 96 wrapper controls pass. Other invalid evidence remains an
+immediate stop.
+Both independent raw reviews validate the final source/tool/reference bookends
+and all descriptor/failure/roster joins. The task owns exact counts and current
+generation/native gaps; this completion of selected accounting lifts no hold.
+
+The connected recovery candidate `b8741e48` advances beyond that checkpoint:
+586 product inputs, forty closed source/helper pins and 323 ordinary Engine
+tests, including 145 KE cases. Separate full baseline passes 323 ordinary,
+323 optimized and 69 doctests with both-target checks. All ten selected GNU
+owners pass the unchanged 90% file-line gate; the fresh catalogue has 461
+variants. Review the complete catalogue before admitting mutation. Use existing
+single `--subject` cohorts when needed to retain the 512 aggregate and
+1200-second campaign caps, ten workers and unchanged timeouts/thresholds.
+The same eight ledger E entries now have fresh descriptor/caller/proof bindings;
+only matching current missed outcomes may be excluded, with no kill credit.
+The final helper-bound baseline captures 599 inputs; earlier E0 coverage and
+non-ledger outcomes retain their original metadata scope and require explicit
+reconciliation. Public execution stays one-shot, and native/product gates remain
+open. Complete current selected accounting is 461 variants: 263 caught,
+156 unviable and 42 missed, with no timeout. Eight exact ledger E receive no
+kill credit; 34 native-inactive misses and the process generation gap retain
+open gates. The existing Engine task owns the actual qualification results
+and metadata-scope reconciliation; this is no whole-Engine qualification.
+
+**Current cutoff-control source checkpoint, 12 November 2026:** candidate
+`0aa75da8` passes its separate 348 ordinary/348 optimized/69-doctest baseline and
+all eleven GNU 90% file-line gates (recovery 522/545). The complete 561 typed
+variants and diffs are reviewed; the test-only checked-control seam generates no
+variant. Existing constructor/Garde/process/native generation gaps remain open.
+Fresh recovery 106 = 74 caught + 27 unviable + five missed remains failed. Fresh
+ledger 166 = 112 caught + 45 unviable + nine missed has nine exact independently
+reviewed equivalents: raw 92.56% and native exit 2 remain recorded; existing
+accounting gives adjusted 112/112 with zero added kills. This is a data-only
+post-execution disposition, not a rerun or changed raw result. Other owner outcomes
+retain their original source scopes. Use exact single-subject cohorts, ten
+workers, the 512-mutant/90-second build/60-second test/1200-second cohort limits
+and unchanged 95% gate; all 561 still exceed one cohort's cap. The Engine task owns
+raw receipt/adopted-metadata identities, remaining critical/native gates and the
+next invocation-level stop/completion contract freeze. No parent pass follows.
+
 **EP1/EP2 selected source analysis, 11 November 2026:** the same
 [Engine verifier](scripts/verify-engine-analysis.py) has the exact
 `--profile ke_association` [role](policy/engine-ke-association-analysis.json).

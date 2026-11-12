@@ -984,11 +984,213 @@ fn raw_byte_allowance_has_an_exact_healthy_neighbor() -> Result<(), Failure> {
     })
 }
 
-/// An impossible arrival cannot mutate cookies/last success after real AEAD work.
+/// Unknown send completion leaves custody occupied and admits no receive work.
 /// # Errors
-/// Preserve the original healthy pending and accepted neighboring response.
+/// Preserve checked reservation, preparation and genuine sender refusal.
 /// # Panics
-/// Fail if original-expiry arrival publishes, renews a deadline or refunds work.
+/// Fail if a valid tagged packet releases unknown custody or spends receive credit.
+fn receiver_unresolved_invocation_refuses_without_charge() -> Result<(), Failure> {
+    with_owner(cookies(), |owner, _| {
+        let ticket = owner.reserve(packet_input()?)?;
+        owner.prepare(&ticket, |output| {
+            entropy(output);
+            Ok(())
+        })?;
+        assert_eq!(
+            owner.invoke_sender(ticket, |_, _| SendOutcome::Unknown),
+            Err(refused(LedgerError::Unknown))
+        );
+        let before = owner.status();
+        let population = owner.cookie_population()?;
+        assert_eq!(before.phase, RequestPhase::Invoked);
+        assert_eq!(
+            owner
+                .receive_reply(fixtures::HEALTHY, owner.material.udp, Instant::now())
+                .err(),
+            Some(refused(LedgerError::Phase))
+        );
+        assert_eq!(owner.status(), before);
+        assert_eq!(owner.cookie_population()?, population);
+        assert!(owner.last_receipt().is_none());
+        Ok(())
+    })
+}
+
+/// A real prior receipt cannot complete the current request with its stale UID.
+/// # Errors
+/// Preserve genuine request, independent tagged response and healthy admission.
+/// # Panics
+/// Fail if rejection refunds work, replaces history or prevents the valid neighbor.
+fn receiver_stale_uid_keeps_charged_pending() -> Result<(), Failure> {
+    with_owner(cookies(), |owner, _| {
+        pending(owner)?;
+        let first = owner.receive_reply(fixtures::HEALTHY, owner.material.udp, Instant::now())?;
+        let ticket = owner.reserve(packet_input()?)?;
+        owner.prepare(&ticket, |output| {
+            entropy(output);
+            output[0] = 1; // Literal independent WRONG_UID fixture's current UID.
+            Ok(())
+        })?;
+        owner.invoke_sender(ticket, |packet, _| SendOutcome::Completed(packet.len()))?;
+        let before = owner.status();
+        let population = owner.cookie_population()?;
+        assert_eq!(
+            owner
+                .receive_reply(fixtures::HEALTHY, owner.material.udp, Instant::now())
+                .err(),
+            Some(refused(LedgerError::Reply(ReplyError::UniqueIdentifier)))
+        );
+        assert_eq!(owner.status().phase, RequestPhase::Pending);
+        assert_eq!(owner.status().frames, before.frames - 1);
+        assert_eq!(owner.status().bytes, before.bytes - fixtures::HEALTHY.len());
+        assert_eq!(owner.cookie_population()?, population);
+        assert_eq!(
+            owner.last_receipt().map(Receipt::serial),
+            Some(first.serial())
+        );
+        let current =
+            owner.receive_reply(fixtures::WRONG_UID, owner.material.udp, Instant::now())?;
+        assert_eq!(current.serial(), 2);
+        assert_eq!(current.cookie_counts(), (1, 0));
+        assert_eq!(
+            owner.last_receipt().map(Receipt::serial),
+            Some(current.serial())
+        );
+        assert_eq!(owner.status().frames, before.frames - 2);
+        assert_eq!(
+            owner.status().bytes,
+            before.bytes - fixtures::HEALTHY.len() - fixtures::WRONG_UID.len()
+        );
+        Ok(())
+    })
+}
+
+/// The declared current key rejects the valid-old-key companion before publication.
+/// Fixed independent fixture material grants no TLS/exporter or entropy authority.
+/// # Errors
+/// Preserve actual checked construction, request preparation and healthy admission.
+/// # Panics
+/// Fail if foreign-key rejection publishes or renews its remaining receive allowance.
+fn receiver_foreign_key_reply_refuses_before_current_key_healthy() -> Result<(), Failure> {
+    with_owner(cookies(), |original, _| {
+        let config = original.material.config;
+        let provider = original.material.provider;
+        let control = Control::new(Instant::now())?;
+        let key = [
+            0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd,
+            0xce, 0xcf, 0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xdb,
+            0xdc, 0xdd, 0xde, 0xdf,
+        ];
+        let uid = [
+            0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d,
+            0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b,
+            0x3c, 0x3d, 0x3e, 0x3f,
+        ];
+        let candidate = AssociationCandidate::new(
+            config,
+            &control,
+            provider,
+            SocketAddr::new(config.peer.ip(), 123),
+            StrictProfile::component(),
+            DirectionalKeys::new(Zeroizing::new(C2S), Zeroizing::new(key)),
+            cookies(),
+        );
+        let mut owner = AssociationOwner::receive(config, &control, provider, candidate)?;
+        let RequestInput::Packet { local_t1, .. } = packet_input()? else {
+            return Err(Failure::Control);
+        };
+        let wire = NonZeroU64::new(0x8899_aabb_ccdd_eeff).ok_or(Failure::Control)?;
+        let ticket = owner.reserve(RequestInput::Packet { wire, local_t1 })?;
+        owner.prepare(&ticket, |output| {
+            output[..32].copy_from_slice(&uid);
+            output[32..].fill(0x77);
+            Ok(())
+        })?;
+        owner.invoke_sender(ticket, |packet, _| SendOutcome::Completed(packet.len()))?;
+        let before = owner.status();
+        let population = owner.cookie_population()?;
+        assert!(matches!(
+            owner.receive_reply(
+                fixtures::SUCCESSOR_OLD_S2C,
+                owner.material.udp,
+                Instant::now()
+            ),
+            Err(Failure::Ledger(LedgerError::Reply(ReplyError::Open(_)))),
+        ));
+        assert_eq!(owner.status().phase, RequestPhase::Pending);
+        assert_eq!(owner.status().frames, before.frames - 1);
+        assert_eq!(
+            owner.status().bytes,
+            before.bytes - fixtures::SUCCESSOR_OLD_S2C.len()
+        );
+        assert_eq!(owner.cookie_population()?, population);
+        assert!(owner.last_receipt().is_none());
+        let receipt = owner.receive_reply(
+            fixtures::SUCCESSOR_HEALTHY,
+            owner.material.udp,
+            Instant::now(),
+        )?;
+        assert_eq!(receipt.serial(), 1);
+        assert_eq!(receipt.cookie_counts(), (1, 1));
+        assert_eq!(owner.status().frames, before.frames - 2);
+        assert_eq!(
+            owner.status().bytes,
+            before.bytes - fixtures::SUCCESSOR_OLD_S2C.len() - fixtures::SUCCESSOR_HEALTHY.len()
+        );
+        assert_eq!(owner.status().phase, RequestPhase::Idle);
+        Ok(())
+    })
+}
+
+/// Inert staging rejects missing issued coordinates and over-bound raw data.
+/// # Errors
+/// Preserve actual checked setup and exact-limit healthy receive failures.
+/// # Panics
+/// Fail if a refused helper call changes custody or the exact limit cannot commit.
+fn inert_staging_limits_preserve_actual_owner() -> Result<(), Failure> {
+    with_owner(cookies(), |owner, _| {
+        let wire = NonZeroU64::new(WIRE).ok_or(Failure::Control)?;
+        let before = owner.status();
+        assert_eq!(
+            owner
+                .stage_current_reply(fixtures::HEALTHY, 0, wire, 1)
+                .err(),
+            Some(refused(LedgerError::Capacity)),
+        );
+        assert_eq!(owner.status(), before);
+        assert!(owner.last_receipt().is_none());
+        pending(owner)?;
+        let before = owner.status();
+        let population = owner.cookie_population()?;
+        let oversized = [0_u8; super::PACKET_BYTES + 1];
+        for (raw, index) in [(fixtures::HEALTHY, 1), (&oversized[..], 0)] {
+            assert_eq!(
+                owner.stage_current_reply(raw, index, wire, 1).err(),
+                Some(refused(LedgerError::Capacity)),
+            );
+            assert_eq!(owner.status(), before);
+            assert_eq!(owner.cookie_population()?, population);
+            assert!(owner.last_receipt().is_none());
+        }
+        assert_eq!(fixtures::MAX_PACKET_BYTES.len(), super::PACKET_BYTES);
+        let receipt = owner.receive_reply(
+            fixtures::MAX_PACKET_BYTES,
+            owner.material.udp,
+            Instant::now(),
+        )?;
+        assert_eq!(receipt.serial(), 1);
+        assert_eq!(owner.status().frames, before.frames - 1);
+        assert_eq!(owner.status().bytes, before.bytes - super::PACKET_BYTES);
+        assert_eq!(owner.status().phase, RequestPhase::Idle);
+        Ok(())
+    })
+}
+
+/// Preserve original chronology and the actual receiver's charged custody boundaries.
+/// # Errors
+/// Preserve checked fixtures, inert staging and actual healthy reply failures.
+/// # Panics
+/// Fail if refusal publishes, renews a deadline, refunds work or loses unknown custody.
 #[test]
 fn future_arrival_preserves_pending_and_charged_work() -> Result<(), Failure> {
     with_owner(cookies(), |owner, control| {
@@ -1009,7 +1211,11 @@ fn future_arrival_preserves_pending_and_charged_work() -> Result<(), Failure> {
             owner.receive_reply(fixtures::HEALTHY, owner.material.udp, Instant::now())?;
         Ok(())
     })?;
-    inclusive_receive_time_controls()
+    inclusive_receive_time_controls()?;
+    receiver_unresolved_invocation_refuses_without_charge()?;
+    receiver_stale_uid_keeps_charged_pending()?;
+    receiver_foreign_key_reply_refuses_before_current_key_healthy()?;
+    inert_staging_limits_preserve_actual_owner()
 }
 
 /// Entropy failure spends preparation but permits only an explicit unused return.

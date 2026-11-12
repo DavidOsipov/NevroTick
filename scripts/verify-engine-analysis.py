@@ -12,6 +12,7 @@ from collections import Counter
 import importlib.util
 import json
 import math
+import os
 from pathlib import Path
 import re
 import shutil
@@ -5288,6 +5289,44 @@ def address_storage_checkpoint(session, policy: dict, report: dict, label: str, 
         raise Incomplete("Address-round four-GiB available reserve reached.")
 
 
+def retire_engine_ke_release_target(session, policy: dict, report: dict) -> None:
+    """Retire only completed, validated release artifacts before debug-only lanes.
+
+    The successful release command and its passed post-lane storage sample
+    are prerequisites. Private canonical parents and bounded tree admission
+    precede deletion; source, raw results and every other target stay untouched.
+    """
+    lanes, samples = report.get("lanes", []), report.get("storage_samples", [])
+    if (not lanes or lanes[-1].get("lane") != "ke-release"
+            or lanes[-1].get("exit_code") != 0 or lanes[-1].get("failure") is not None
+            or sum(row.get("lane") == "ke-release" for row in lanes) != 1
+            or not report.get("release_execution") or not samples
+            or samples[-1].get("lane") != "ke-release" or samples[-1].get("phase") != "after"
+            or samples[-1]["allocated_bytes"] >= policy["owned_output_maximum_allocated_bytes"]
+            or samples[-1]["available_bytes"] < policy["stop_free_bytes"]):
+        raise Incomplete("Release retirement requires completed validation and a passed post-lane storage sample.")
+    output, work = session.output, session.work
+    target, release = work / "target", work / "target/release"
+    if work != output / "work" or not getattr(shutil.rmtree, "avoids_symlink_attacks", False):
+        raise Incomplete("Release retirement requires its exact owned work tree and safe directory removal.")
+    try:
+        for path in (output, work, target, release):
+            observed = path.lstat()
+            if (not stat.S_ISDIR(observed.st_mode) or observed.st_uid != os.geteuid()
+                    or path.resolve(strict=True) != path or observed.st_mode & 0o022
+                    or (path in (output, work) and observed.st_mode & 0o077)):
+                raise Incomplete("Release retirement parents must be canonical, private and owned directories.")
+        address_storage_checkpoint(session, policy, report, "ke-release-target-retirement", "before")
+        row = {"path": "work/target/release", "completed_lane": "ke-release",
+               "before": address_storage_usage(release), "removed": False}
+        report["release_target_retirement"] = row
+        shutil.rmtree(release)
+        row["removed"] = True
+        address_storage_checkpoint(session, policy, report, "ke-release-target-retirement", "after")
+    except OSError as error:
+        raise Incomplete("Completed release target retirement failed.") from error
+
+
 def admit_address_ordinary(binding: dict) -> dict:
     """Require an actual final receipt and unchanged executed recipes, never placeholders."""
     evidence = binding["ordinary_evidence"]
@@ -5552,13 +5591,16 @@ ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/handoff/tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/request_tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/tests.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/retirement/tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/response/tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/response/fixtures.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/datagram/tests.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/recovery/tests.rs",
 )
 ENGINE_KE_BOUND_INPUTS = tuple(dict.fromkeys((
     WRAPPER, TESTS, *COMMON.ENGINE_KE_CRITICAL, *ENGINE_KE_TEST_SOURCES,
-    "scripts/portable-analysis.py", "scripts/analysis-runtime.py", "scripts/check-analysis.py",
+    "scripts/portable-analysis.py", "scripts/tests/test_portable_analysis.py",
+    "scripts/analysis-runtime.py", "scripts/check-analysis.py",
     "scripts/prepare-product.py", "policy/analysis-tools.json", "policy/verification-manifest.toml",
     "policy/tool-manifest.json", "policy/ui-m0-dependencies.json", ".cargo/mutants.toml",
     "Cargo.toml", "Cargo.lock", "crates/nevrotick-engine/Cargo.toml",
@@ -5745,11 +5787,11 @@ def validate_engine_ke_policy(policy: dict, *, campaign: bool = False) -> dict:
             or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None for value in pins.values())):
         raise Incomplete("Engine KE source/helper inputs differ from the exact fixed set.")
     names = binding["test_inventory"]
-    if (type(names) is not list or len(names) != 285
+    if (type(names) is not list or len(names) != 348
             or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
             or names != sorted(set(names))
-            or sum(name.startswith("nts_ke_experiment::") for name in names) != 107):
-        raise Incomplete("Engine KE requires all 285 actual Engine tests including its 107 KE cases.")
+            or sum(name.startswith("nts_ke_experiment::") for name in names) != 170):
+        raise Incomplete("Engine KE requires all 348 actual Engine tests including its 170 KE cases.")
     for key in ("ordinary_evidence", "root_graph_evidence"):
         evidence = binding[key]
         if (type(evidence) is not dict or set(evidence) != {"path", "sha256"}
@@ -5772,7 +5814,7 @@ def validate_engine_ke_execution(text: str, binding: dict, *, include_doctests: 
             or any(re.fullmatch(r"[^\r\n]+[.]rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile(?: fail)?)?", name) is None
                    for name in extra)):
         raise Incomplete("Engine KE did not execute every current actual library/integration case.")
-    result = {"tests_executed": len(records), "ke_tests_executed": 107,
+    result = {"tests_executed": len(records), "ke_tests_executed": 170,
               "test_names": records, "inventory_sha256": COMMON.canonical_sha256(sorted(records))}
     if include_doctests:
         result["additional_doctests"] = sorted(extra)
@@ -5832,12 +5874,12 @@ def execute_engine_ke_profile(args, report: dict) -> None:
         selected.lane = "mutation"
     report.update(profile="ke_association", subjects=subjects, qualification_passed=False,
                   full_critical_files=list(COMMON.ENGINE_KE_CRITICAL),
-                  scope="Nine selected GNU KE owners; four remaining owners and Windows arms stay open",
+                  scope="Eleven registered GNU KE owners; actual selected subjects recorded; four remaining owners and Windows arms stay open",
                   source_context_sha256=binding["source_context_sha256"],
                   source_context_scope="Historical Tool preparation reference; current Root identity is candidate_sha256/source_sha256",
                   candidate_sha256=binding["candidate_sha256"],
                   ordinary_reference=binding["ordinary_evidence"],
-                  ordinary_reference_scope="Historical predecessor under a standalone Tool lock; aggregate receipt incomplete. Later source/test deltas require separate reconciliation; no Root graph or metric credit transferred.",
+                  ordinary_reference_scope="Historical predecessor only; its actual source, lock and result scope remain in the referenced receipt. Later source/test deltas require separate reconciliation; no current Root graph or metric credit transferred.",
                   pending_metric_owners=[name for name in COMMON.ENGINE_KE_CRITICAL if name not in ENGINE_KE_HOST_SUBJECTS.values()],
                   pending_windows="StrictProfile::capture, transport, provider shutdown and Windows-only control/error arms",
                   generation_gap_policy="Reconcile every constructor, generic helper, Garde expansion and atomic guard against actual descriptors; no manual-control kill credit.")
@@ -5884,6 +5926,7 @@ def execute_engine_ke_profile(args, report: dict) -> None:
                 "--features", "ke-association-prototype", "--release", "--frozen", "--jobs", "6", "--lib", "--tests",
                 "--", "--test-threads=1"], policy["baseline_wall_seconds"])
             report["release_execution"] = validate_engine_ke_execution(raw, binding)
+            retire_engine_ke_release_target(session, policy, report)
             raw = run("ke-doctests", ["cargo", "test", "--package", "nevrotick-engine",
                 "--features", "ke-association-prototype", "--frozen", "--jobs", "6", "--doc",
                 "--", "--test-threads=1"], policy["baseline_wall_seconds"])

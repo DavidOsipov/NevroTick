@@ -1090,12 +1090,70 @@ observations, including all 106 selected KE cases on the actual 260-test Windows
 library roster. Handle-bound process identities, bounded console helpers and
 actual cleanup replace the earlier incorrect lifetime-count assumption. Real
 TLS/CNG/UDP, production issuers/Core admission and native mutation gates remain open.
-The [recovery receiving-boundary reconciliation](../../tasks/engine-transport-pilot.md#recovery-receiving-boundary-reconciliation--11-november-2026)
-records the next source child: retain typed TLS/setup causes at their actual
-projection before implementing the complete bounded worker. Neither retrying
-the one-shot entrypoint nor wiring receipt scalars into Core supplies that owner.
-Production suppliers/graph/native qualification
-remain separate prerequisites.
+The [typed-failure child](../../tasks/engine-transport-pilot.md#typed-tls-failure-projection--implementation-in-progress)
+now retains closed TLS/setup causes at the actual I/O projection, with its own
+scoped ordinary/coverage evidence and open native-only mutation gates. The
+[EP4 receiving-owner checkpoint](../../tasks/engine-transport-pilot.md#ep4-receiving-owner-interface-freeze--source-preparation-only)
+connects the actual one-shot decision owner to a retired opaque completion and
+checks the actual association and charged-attempt ordinal before final commit.
+Its current baseline passes 296 ordinary/296 optimized tests, 69 doctests and
+both-target static checks; fresh discovery lists 378 variants. The guard-control
+continuation now passes 301 ordinary/301 optimized tests, 69 doctests and all
+nine selected line gates. Its complete 378-variant accounting has independent
+raw review: five file gates pass; entrypoint/fault/datagram native-inactive
+survivors and the process owner's absent viable generation retain four open
+gates. Source accounting is complete within that GNU fixture scope, with no
+whole-Engine or P1 pass. The next connected recovery-owner contract is now frozen
+and implemented in candidate `b8741e48`: one immutable Config/provider scope,
+original cutoff, irreversible work/observation caps and a terminal first
+establishment success. Public execution remains one-shot. Its full baseline
+passes 323 ordinary, 323 optimized and 69 doctests, with both-target checks;
+all ten selected GNU line gates pass, including recovery at 407/421 lines.
+The complete reviewed inventory contains 461 variants. Recovery accounts for
+all eighty variants (55 caught, 21 unviable, four Windows-only survivors); its
+93.2203% gate remains open. Composition accounts for all 82 variants with four
+Windows-only survivors. All ten bounded selected-owner cohorts now account for
+461 variants: 263 caught, 156 unviable and 42 missed, with no timeout. Five file
+gates pass; 34 native-inactive misses and the process generator remain open.
+Eight ledger equivalents now have fresh descriptor/source/dossier bindings;
+only matching current missed outcomes can receive their zero-kill exclusion.
+Native Windows execution is paused
+after the RAM preflight refusal;
+no dependent native or Core-positive claim follows.
+
+The [cancellation prerequisite](../../tasks/engine-transport-pilot.md#cancellation-prerequisite--12-november-2026)
+has genuine behavioral RED and 52 focused GREEN cases on `48d7c039`; full new
+baseline/metrics are not yet claimed. Continue with the independently reviewed
+[exhausted-context source child](../../tasks/engine-transport-pilot.md#exhausted-context-continuation--source-contract-freeze-12-november-2026):
+one bounded replacement before any protected success, shorter checked private
+context lifetime inside the original outer cutoff, and retained predecessor
+cookie/UID history. Current Rust candidate `0aa75da8` passes its separate full
+baseline: 348 ordinary, 348 optimized and 69 doctests, format and both-target
+static checks. All eleven GNU 90% file-line gates pass; recovery is 522/545.
+The complete 561-variant catalogue is independently reviewed. Fresh bounded
+recovery (106) and ledger (166) cohorts account for 186 caught, 72 unviable and
+14 missed variants, with no timeouts. Recovery retains five unresolved misses
+and its failed gate. The ledger's nine exact reviewed equivalents add zero kills:
+raw 112/121 (92.56%), native exit 2 and nine survivors remain recorded separately
+from adjusted 112/112 (100%). Other selected owners retain their earlier
+source-bound outcomes; no fresh whole-561 or parent qualification is claimed.
+Publication remains inside charged receive admission, and only consuming actual
+retirement/projection produces predecessor history. Two genuine cutoff controls
+catch the retained operator variants; all 33 recovery controls pass before/after.
+The source task retains actual receipts, interface-elimination controls and the
+historical candidates without transferring their whole-candidate results.
+Preserve the 512-variant/1200-second cohort cap, ten workers and unchanged 90/95
+thresholds. Native Windows execution remains paused.
+
+The selected private same-invocation failure table, aggregate work/window and
+checked scheduling/backoff owner are authored; they do not qualify a public
+repeated-work client. After the signed source checkpoint, complete remaining
+native and generation gates only when admitted. Next WSL-only preparation freezes
+the invocation-level worker stop latch and actual-completion custody contract in
+[the existing Engine task](../../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026),
+with independent review before dependent implementation. Reuse current
+Config/claim/provider and actual operation ownership; add no service source,
+shared graph change, production retry/default or Core-positive issuer.
 This engineering contract needs no blanket OD-04
 permission; unresolved production defaults, real mapping issuers, adaptive
 horizon, step authority and complete S1.4/P1 retain their own gates.

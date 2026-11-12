@@ -15,9 +15,10 @@ use zeroize::Zeroizing;
 
 use super::profile::StrictProfile;
 use super::transport_fault::{self, TransportFault};
+use super::transport_fault::{SetupStage, TlsIoStage};
 use super::{AssociationCandidate, AssociationOwner, ProviderScope, request::DirectionalKeys};
 use super::{
-    Config, Control, Failed, Failure, IoPhase, SCRATCH_LIMIT, Summary, encode_offer, read_response,
+    Config, Control, Failed, Failure, IoPhase, SCRATCH_LIMIT, encode_offer, read_response,
 };
 
 /// One numeric socket whose every operation shares the original job deadlines.
@@ -240,14 +241,14 @@ fn connection(config: &Config) -> Result<ClientConnection, Failure> {
             CipherSuite::TLS13_CHACHA20_POLY1305_SHA256,
         ])
     {
-        return Err(Failure::TlsSetup);
+        return Err(Failure::TlsSetup(SetupStage::ProviderSuites));
     }
     let provider = Arc::new(provider);
     let verifier = rustls_platform_verifier::Verifier::new(Arc::clone(&provider))
-        .map_err(|_| Failure::TlsSetup)?;
+        .map_err(|_| Failure::TlsSetup(SetupStage::Verifier))?;
     let mut tls = ClientConfig::builder_with_provider(provider)
         .with_protocol_versions(&[&rustls::version::TLS13])
-        .map_err(|_| Failure::TlsSetup)?
+        .map_err(|_| Failure::TlsSetup(SetupStage::ProtocolVersions))?
         .dangerous()
         .with_custom_certificate_verifier(Arc::new(verifier))
         .with_no_client_auth();
@@ -261,7 +262,7 @@ fn connection(config: &Config) -> Result<ClientConnection, Failure> {
     tls.resumption = rustls::client::Resumption::disabled();
     tls.enable_early_data = false;
     let mut connection = ClientConnection::new(Arc::new(tls), config.server_name.clone())
-        .map_err(|_| Failure::TlsSetup)?;
+        .map_err(|_| Failure::TlsSetup(SetupStage::ClientConnection))?;
     // This caps Rustls outgoing application buffering, not all TLS allocations.
     connection.set_buffer_limit(Some(SCRATCH_LIMIT));
     Ok(connection)
@@ -281,7 +282,7 @@ fn reject_buffered(connection: &mut ClientConnection) -> Result<(), Failure> {
             NtsKeFrameError::TrailingData,
         ))),
         Err(error) if error.kind() == io::ErrorKind::WouldBlock => Ok(()),
-        Err(error) => Err(Failure::Response(error.kind())),
+        Err(error) => Err(transport_fault::project_io(TlsIoStage::Response, &error)),
     }
 }
 
@@ -300,7 +301,7 @@ fn prepare<'a>(
     let handshake = stream
         .conn
         .complete_io(&mut stream.sock)
-        .map_err(|error| Failure::Handshake(error.kind()));
+        .map_err(|error| transport_fault::project_io(TlsIoStage::Handshake, &error));
     stream.sock.resolve(handshake, Failure::Handshake)?;
     stream.sock.current(Failure::Handshake)?;
     let profile = StrictProfile::capture(&stream.conn)?;
@@ -310,7 +311,7 @@ fn prepare<'a>(
     let request = stream
         .write_all(offer.request_bytes())
         .and_then(|()| stream.flush())
-        .map_err(|error| Failure::Request(error.kind()));
+        .map_err(|error| transport_fault::project_io(TlsIoStage::Request, &error));
     stream.sock.resolve(request, Failure::Request)?;
     let response = read_response(stream, config, &offer);
     let reply = stream.sock.resolve(response, Failure::Response)?;
@@ -367,7 +368,7 @@ fn close(stream: &mut StreamOwned<ClientConnection, DeadlineStream<'_>>) -> Resu
         let written = stream
             .conn
             .write_tls(&mut stream.sock)
-            .map_err(|error| Failure::Shutdown(error.kind()));
+            .map_err(|error| transport_fault::project_io(TlsIoStage::Shutdown, &error));
         if stream.sock.resolve(written, Failure::Shutdown)? == 0 {
             return Err(Failure::Shutdown(io::ErrorKind::WriteZero));
         }
@@ -376,7 +377,7 @@ fn close(stream: &mut StreamOwned<ClientConnection, DeadlineStream<'_>>) -> Resu
         .sock
         .flush()
         .and_then(|()| stream.conn.writer().flush())
-        .map_err(|error| Failure::Shutdown(error.kind()));
+        .map_err(|error| transport_fault::project_io(TlsIoStage::Shutdown, &error));
     stream.sock.resolve(flushed, Failure::Shutdown)?;
     stream.sock.current(Failure::Shutdown)?;
     reject_buffered(&mut stream.conn)
@@ -386,13 +387,14 @@ fn close(stream: &mut StreamOwned<ClientConnection, DeadlineStream<'_>>) -> Resu
 ///
 /// # Errors
 /// Refuse numeric connect/peer, TLS/KE preparation, local close or final candidate
-/// commit failure. Retain an independently observed close refusal alongside a
-/// primary preparation failure; no TLS or secret owner escapes either outcome.
-fn exchange_owned<'a>(
+/// publication failure. Preserve an independently observed close refusal beside
+/// a primary preparation failure. TLS is retired before the checked owner leaves.
+pub(super) fn establish<'a>(
     config: &'a Config,
     control: &'a Control,
     provider: &'a ProviderScope<'a>,
-) -> Result<Summary, Failed> {
+) -> Result<AssociationOwner<'a>, Failed> {
+    control.remaining(IoPhase::Handshake)?;
     let timeout = control.remaining(IoPhase::Handshake)?;
     let socket = TcpStream::connect_timeout(&config.peer, timeout)
         .map_err(|error| Failure::Connect(error.kind()))?;
@@ -421,50 +423,6 @@ fn exchange_owned<'a>(
             admission_cleanup: None,
         }),
         (Err(primary), Ok(())) | (Ok(_), Err(primary)) => Err(primary.into()),
-        (Ok(candidate), Ok(())) => {
-            let mut association = candidate.publish(provider).map_err(Failed::from)?;
-            let population = association.cookie_population().map_err(Failed::from)?;
-            let mut summary = match config.mode {
-                super::ExchangeMode::Preview => {
-                    let request = association
-                        .prepare_preview(|output| {
-                            use rustls::crypto::SecureRandom;
-                            rustls_cng_crypto::SecureRandom
-                                .fill(output)
-                                .map_err(|_| Failure::Entropy)
-                        })
-                        .map_err(Failed::from)?;
-                    request.finish().map_err(Failed::from)?
-                }
-                super::ExchangeMode::ProtectedDatagram => {
-                    super::datagram::exchange(&mut association, control, |output| {
-                        use rustls::crypto::SecureRandom;
-                        rustls_cng_crypto::SecureRandom
-                            .fill(output)
-                            .map_err(|_| Failure::Entropy)
-                    })
-                    .map_err(Failed::from)?
-                }
-            };
-            // Keep the existing KE-batch counts after the one-cookie reservation.
-            summary.cookies = population.0;
-            summary.cookie_bytes = population.1;
-            drop(association);
-            Ok(summary)
-        }
+        (Ok(candidate), Ok(())) => candidate.publish(provider).map_err(Failed::from),
     }
-}
-
-/// Run exactly one real KE job and return only counts after secret/native drops.
-///
-/// # Errors
-/// Refuse setup, strict trust/profile, bounded KE, exporter, cleanup, deadline or
-/// cancellation failure. No error contains peer, identity, cookie or key bytes.
-pub(super) fn exchange<'a>(
-    config: &'a Config,
-    control: &'a Control,
-    provider: &'a ProviderScope<'a>,
-) -> Result<Summary, Failed> {
-    control.remaining(IoPhase::Handshake)?;
-    exchange_owned(config, control, provider)
 }

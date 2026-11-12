@@ -9,6 +9,21 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+The current [Core/Engine continuation](../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026)
+reaches a bounded WSL source checkpoint on `0aa75da8`: 348 ordinary,
+348 optimized and 69 doctest cases, both-target static checks and all eleven GNU
+line-coverage gates pass. The reviewed catalogue contains 561 variants. Fresh
+recovery accounting is 74 caught, 27 unviable and five missed; its gate remains
+open. Fresh ledger accounting is 112 caught, 45 unviable and nine missed; nine
+independently justified exact equivalents yield adjusted 112/112 without adding
+kills. Its raw 92.56% score and native exit 2 remain retained. Other owner outcomes
+keep their earlier exact source scopes; these two cohorts are not a fresh
+561-variant campaign. The private archive/publication repairs and direct cutoff
+controls have causal evidence. Public execution stays one-shot and never-send by
+default. Native, process-generation, receiver-guard, other critical-owner and
+broader Core/P1/release gates remain open. Next WSL preparation freezes the existing
+invocation-level worker stop and actual-completion contract before implementation.
+
 For the single editable product metadata source and build-time pipeline, start
 with [metadata/](../metadata/README.md). Its [five-stage contract](plans/windows-package-metadata.md#13-metadata-pipeline-implementation--7-november-2026)
 keeps generated source separate from actual component, native and release evidence.
@@ -45,7 +60,7 @@ authenticated client, native clock synchronization or release readiness.
 
 | Question | Source of truth |
 | --- | --- |
-| Where is protected NTS datagram integration now? | [EP3 WSL source exit](../tasks/engine-transport-pilot.md#ep3-wsl-source-exit--11-november-2026): genuine KE-owned association reaches an explicit one-shot protected operation with full header/capture custody. Default remains never-send preview. The [Windows scripted-component exit](../tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit) adds 106 native KE cases and bounded process-custody controls. Real TLS/CNG/UDP, four selected mutation-file gates, production issuers/Core history and release remain open. |
+| Where is protected NTS datagram integration now? | [EP3 WSL source exit](../tasks/engine-transport-pilot.md#ep3-wsl-source-exit--11-november-2026): genuine KE-owned association reaches an explicit one-shot protected operation with full header/capture custody. Default remains never-send preview. The [Windows scripted-component exit](../tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit) adds 106 native KE cases on its recorded source. The [typed-failure continuation](../tasks/engine-transport-pilot.md#typed-tls-failure-projection--implementation-in-progress) passes 288 ordinary/optimized cases, 69 doctests and nine GNU line gates; native-only mutation survivors and the host-RAM execution stop remain open. Real TLS/CNG/UDP, full critical-file mutation, production issuers/Core history and release remain unqualified. |
 | What needs checking before Rust/Cargo 1.100 adoption? | [11 November candidate-release review](supporting-reviews/rust-1.100-upgrade-review.md) covers language, library, lint, Cargo, Windows and companion-tool changes; the [existing build checkpoint](../tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026) owns exact-version admission and affected tests. Rust 1.99.1 remains selected; source research establishes no candidate/native pass. |
 | What code exists now, and which results apply to it? | [Current implementation summary](windows-time-architecture.md#1-current-state-capsule), backed by the workspace manifests, lockfile, source and linked candidate-specific task evidence. Dated baseline and review records below remain historical. |
 | Which OS integration assumptions have been challenged against CVEs and platform documentation? | [8 November OS-integration research](supporting-reviews/windows-os-integration-risk-research.md) maps actual/proposed APIs, primary CVE analogues, version/feature exclusions and paired checks. [W11 §4.37](../tasks/windows11-integration.md#437-os-integration-vulnerability-research--8-november-2026) routes the work; R-05 and ST-W03 retain the two explicit refinements. The [9 November integration map](supporting-reviews/windows-os-integration-risk-research.md#8-skill-and-document-integration--9-november-2026) locates canonical rules, skill entry points, shared QA and intentionally unchanged coverage. This is bounded research, not a new confirmed vulnerability, full audit or native pass. |

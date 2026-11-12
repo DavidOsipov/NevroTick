@@ -3,10 +3,11 @@
 //! Run as an integration test of the existing AES witness, using its current
 //! aes_siv dependency. Output is public literal fixtures, never TLS evidence.
 
-use aes_siv::{KeyInit, siv::Aes128Siv};
+#[path = "common/ep2_response_builder.rs"]
+mod builder;
 
-/// Bounded fixture construction failures, never cryptographic material.
-type FixtureResult<T = ()> = Result<T, &'static str>;
+use builder::{FixtureResult, emit, field, packet_with_key_nonce};
+
 /// Public response key; differs from the public C2S key in both halves.
 const S2C: [u8; 32] = [
     0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
@@ -32,17 +33,6 @@ const COOKIE: [u8; 12] = [
     0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab,
 ];
 
-/// Build literal aligned fields independently of the product wire owner.
-/// # Errors
-/// Refuse an unrepresentable fixture length rather than truncate its prefix.
-fn field(kind: u16, body: &[u8]) -> FixtureResult<Vec<u8>> {
-    let length = u16::try_from(body.len() + 4).map_err(|_| "fixture-field-length")?;
-    let mut bytes = kind.to_be_bytes().to_vec();
-    bytes.extend_from_slice(&length.to_be_bytes());
-    bytes.extend_from_slice(body);
-    Ok(bytes)
-}
-
 /// Build a valid-tag packet independently of all product framing/sealing APIs.
 /// # Errors
 /// Preserve fixed-key encryption or bounded fixture length failures.
@@ -65,48 +55,7 @@ fn packet_with_nonce(
     suffix: &[u8],
     nonce: &[u8],
 ) -> FixtureResult<Vec<u8>> {
-    let mut aad = header.to_vec();
-    aad.extend_from_slice(prefix);
-    let mut body = plaintext.to_vec();
-    let mut cipher = Aes128Siv::new_from_slice(&S2C).map_err(|_| "fixture-key")?;
-    let tag = cipher
-        .encrypt_inout_detached([aad.as_slice(), nonce], (&mut body[..]).into())
-        .map_err(|_| "fixture-encryption")?;
-    let ciphertext_length = u16::try_from(16 + body.len()).map_err(|_| "fixture-ciphertext")?;
-    let padded_length = (usize::from(ciphertext_length) + 3) & !3;
-    let padded_nonce = (nonce.len() + 3) & !3;
-    let nonce_length = u16::try_from(nonce.len()).map_err(|_| "fixture-nonce")?;
-    let authenticator_length =
-        u16::try_from(8 + padded_nonce + padded_length).map_err(|_| "fixture-authenticator")?;
-    let mut output = aad;
-    output.extend_from_slice(&[4, 4]);
-    output.extend_from_slice(&authenticator_length.to_be_bytes());
-    output.extend_from_slice(&nonce_length.to_be_bytes());
-    output.extend_from_slice(&ciphertext_length.to_be_bytes());
-    output.extend_from_slice(nonce);
-    output.resize(output.len() + padded_nonce - nonce.len(), 0);
-    output.extend_from_slice(tag.as_slice());
-    output.extend_from_slice(&body);
-    output.resize(
-        output.len() + padded_length - usize::from(ciphertext_length),
-        0,
-    );
-    output.extend_from_slice(suffix);
-    Ok(output)
-}
-
-/// Emit public literal Rust source only after actual maintained encryption.
-fn emit(name: &str, bytes: &[u8]) {
-    println!("/// Public independently generated valid-tag fixture: {name}.");
-    println!("pub(in crate::nts_ke_experiment) const {name}: &[u8] = &[");
-    for chunk in bytes.chunks(16) {
-        print!("    ");
-        for byte in chunk {
-            print!("0x{byte:02x}, ");
-        }
-        println!();
-    }
-    println!("];\n");
+    packet_with_key_nonce(header, prefix, plaintext, suffix, nonce, &S2C)
 }
 
 /// Produce the complete bounded semantic-control fixture inventory.
