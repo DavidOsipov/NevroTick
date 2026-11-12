@@ -11658,8 +11658,9 @@ compression, system clock/service action or release action occurred.
 
 ## Post-V1 multithreading — MT-0, 7 November 2026
 
-**Status:** deferred until actual V1 release; first post-V1 TODO before Khronos
-under [OD-16](../docs/nevrotick-owner-decisions.md#20-od-16--multithreading-first-after-v1).
+**Status:** deferred until actual V1 release and MATH-C01's experiment
+evaluation/disposition; before Khronos under the current
+[OD-16 §20.1 amendment](../docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026).
 [NV-MT-001](../docs/plans/post-v1-multithreading.md) owns the bounded plan,
 MT-W01–MT-W06, acceptance matrix and MT-C01 exit; this existing task retains the
 implementation/evidence record. No new runtime, worker count, provider, benchmark

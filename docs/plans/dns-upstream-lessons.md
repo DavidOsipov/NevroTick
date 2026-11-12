@@ -23,7 +23,7 @@ Read the [system-wide Windows DNS and adaptive-cache design](system-dns-cache-de
 | Full query/context keys, coalescing, cancellation and generation barriers | Preserved. Add concrete cross-packet, shared-job and old-connection completion scenarios. |
 | TTL/signature validity independent of popularity | Preserved and clarified. Separate chain-material reuse from an already validated answer's lifetime; separate active-operation custody from fresh-cache eligibility. Reject upward TTL clamping as a borrowed default. |
 | Protected demand aggregates, privacy generations and bounded persistence | Preserved. Extend explicit handling to queued diagnostic/statistical events and export consumers. |
-| Current Windows P0–P7 work, UI-M0 deferrals and first KHR-0 follow-up | Preserved. These DNS recommendations do not add blockers to current fixtures or reorder delivery. |
+| Current Windows P0–P7 work, UI-M0 deferrals and [current roadmap order](../../ROADMAP.md#1-direction-and-authority) | Preserved. These DNS recommendations do not add blockers to current fixtures or reorder delivery. |
 | Source review versus execution evidence | Preserved. No product repair, installation, DNS enrollment, crypto execution, benchmark or Windows qualification is established here. |
 
 The main additions are precise failure mechanisms and candidate implementation contracts. The existing plan already contains general resource limits, cache correctness, coalescing and privacy requirements; those are not newly discovered omissions. Proposed numerical settings and algorithms still require evidence. Use the existing owner-decision procedure for a material unresolved choice before its dependent implementation, without repeating approval for accepted product scope.

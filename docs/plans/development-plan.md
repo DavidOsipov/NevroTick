@@ -2782,9 +2782,12 @@ triggers; source research does not activate deferred work.
 
 The [product roadmap](../../ROADMAP.md#1-direction-and-authority) owns later
 platform and DNS scope. Complete this Windows P0–P7 plan and actually release V1;
-then [OD-16](../nevrotick-owner-decisions.md#20-od-16--multithreading-first-after-v1)
-places [MT-0](../../ROADMAP.md#mt-0--post-v1-multithreading-and-concurrent-acquisition)
-first. [NV-MT-001](post-v1-multithreading.md) and the existing engine task own its
+then [OD-16 §20.1](../nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026)
+places [MATH-0](../../ROADMAP.md#math-0--post-v1-mathematical-estimation-experiments)
+first. Existing Core/Engine tasks retain its experiment evidence; MATH-C01 records
+evaluation/disposition without requiring production adoption. Then
+[MT-0](../../ROADMAP.md#mt-0--post-v1-multithreading-and-concurrent-acquisition)
+follows. [NV-MT-001](post-v1-multithreading.md) and the existing engine task own its
 bounded multithreading/acquisition work and MT-C01. Existing V1 correctness,
 blocking-work isolation and lifecycle gates remain in P0–P7; current holds remain.
 After MT-C01, continue with

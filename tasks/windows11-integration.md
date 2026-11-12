@@ -6214,8 +6214,9 @@ Record exact source/diff, artifacts/manifests, client/generator/schema, OS/CPU,
 source/identity/scope, commands, independent observed outcomes, raw redacted
 evidence, unexecuted rows and next action here. Keep documentation review in
 the linked plan. This entry executes no Windows/package/signing/credential/Store
-or Community operation and lifts none of the current holds. Post-V1 work still
-starts with MT-0, then Khronos.
+or Community operation and lifts none of the current holds. Under
+[OD-16 §20.1](../docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026),
+post-V1 work starts with MATH-0 evaluation/disposition, then MT-0 and Khronos.
 
 ### 4.37 OS-integration vulnerability research — 8 November 2026
 

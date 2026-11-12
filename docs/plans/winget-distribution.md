@@ -1,6 +1,6 @@
 # WinGet distribution: pre-V1 capability and release plan
 
-**Document:** NV-WGT-001, revision 1.0  
+**Document:** NV-WGT-001, revision 1.1<br>
 **Owner instruction / research date:** David Osipov, 7 November 2026  
 **Roadmap stage:** WGT-0, within the existing pre-V1 P6/P7 delivery work  
 **Status:** researched and planned; distribution implementation, native qualification and public availability remain open  
@@ -13,8 +13,9 @@
 places WinGet distribution capability **before the first software release**.
 Implement and qualify its preparation, package integration and release operation
 within P6/P7. The [roadmap](../../ROADMAP.md#wgt-0--winget-distribution-capability-before-v1)
-then retains **V1 release → MT-0 multithreading → Khronos/Ananke → GeoIP → Android**.
-WinGet does not become a new Core prerequisite or move post-V1 multithreading.
+then follows **V1 release → MATH-0 evaluation/disposition → MT-0 multithreading → Khronos/Ananke → GeoIP → Android**
+under [OD-16 §20.1](../nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026).
+WinGet does not become a new Core prerequisite or alter this post-V1 order.
 
 The existing [OD-05](../nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
 selects one complete hardened MSIX containing UI, engine, broker and lifecycle
@@ -390,6 +391,10 @@ completed researchers and judge use inherited context. They are distinct agents,
 not a blind-review claim. Research includes primary source inspection only;
 no Windows execution, installer creation, trust-store change, signing, credential
 creation, Store action or Community PR occurred.
+
+The dated review below records revision 1.0 and its original scheduling. The
+13 November amendment linked in §1 controls the current order; this receipt is
+unchanged.
 
 **Completed integrated review, 7 November 2026:** the distinct judge
 `/root/winget_judge` returned **READY to record this research/plan and pre-V1

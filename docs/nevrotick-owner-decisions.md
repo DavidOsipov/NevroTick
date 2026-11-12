@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.23<br>
+**Document:** NV-DEC-001, revision 1.24<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
@@ -9,9 +9,9 @@
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
 **Status:** Records owner instructions, engineering recommendations and unresolved research separately. This is documentation, not implementation or release qualification.
 
-**7 November scheduling decision:** [OD-16](#20-od-16--multithreading-first-after-v1) makes multithreading the first TODO after actual V1 release and before Khronos/Ananke.
+**Current post-V1 scheduling:** the [13 November amendment to OD-16](#201-mathematics-experiments-first--13-november-2026) places mathematical estimation experiments first after actual V1 release, followed by multithreading, Khronos/Ananke, GeoIP and Android. It supersedes only MT-0's first position from the 7 November decision.
 
-**Later 7 November distribution decision:** [OD-17](#21-od-17--winget-capability-before-v1) requires WinGet capability before V1, preserving OD-05's complete Store-MSIX target and OD-16's post-V1 order.
+**Later 7 November distribution decision:** [OD-17](#21-od-17--winget-capability-before-v1) requires WinGet capability before V1, preserving OD-05's complete Store-MSIX target; the current post-V1 order is governed by amended OD-16.
 
 **8 November signing decision:** [OD-05 §7.7](#77-sign-every-supported-shipped-artifact--8-november-2026)
 requires signatures on the installer/package and every shipped file with a
@@ -61,7 +61,7 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | OD-14 | Limit initial intended OS scope to Windows 11 26H2 and a corresponding Windows Server; delegate the other parameters | **Accepted scope direction, 5 November 2026; researched counterpart and engineering fixtures recorded in §18** | Windows Server 2025 Desktop Experience is the selected current counterpart; exact OS/CPU/protection profiles, suitable available environments, complete MSIX delivery and native results remain open. This is not first-stable support approval |
 
 | OD-15 | Make the UI easy to translate through separate string catalogs; prefer binary delivery such as CBOR | **Accepted localization requirement and binary-format preference, 5 November 2026** | Readable authoring → validated CBOR resource design; typed Rust/Slint/tray/notification bridge, codec/formatter and package profile, actual catalog/runtime/native evidence. English remains the adopted locale; independently imported user language packs remain a separate scope choice |
-| OD-16 | Create a multithreading plan under docs and make it the first TODO immediately after V1 release, before Khronos | **Accepted scheduling direction, 7 November 2026** | MT-0/MT-C01 qualification against the released baseline; exact runtime, worker counts and performance remain unselected. Existing V1 correctness and native lifecycle duties are not deferred |
+| OD-16 | Run mathematical estimation experiments first after actual V1 release, then the existing multithreading plan before Khronos | **7 November scheduling direction amended by explicit owner instruction, 13 November 2026** | MATH-0/MATH-C01 comparison and disposition precede MT-0/MT-C01; no production estimator or performance gain is selected. Existing V1 correctness and native lifecycle duties are not deferred |
 | OD-17 | Add WinGet distribution capability before V1, after comprehensive verification of the supplied AI proposal, and record the plan/roadmap | **Accepted capability and scheduling requirement, 7 November 2026** | WGT-0 within P6/P7: real source/identity, metadata/release preparation and native qualification; WGT-C01 readiness remains distinct from WGT-C02 external catalog availability. Preserve Store-first complete MSIX; no automatic MSI selection, publication or update guarantee |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
@@ -734,8 +734,8 @@ material dependent choices when evidence makes them concrete.
 
 **Delivery:** the [roadmap DNS workstream](../ROADMAP.md#5-planned-dns-over-quic-and-certificate-pinning)
 links this plan. The current Windows time-client execution plan, UI-M0 limits,
-existing privilege boundaries retain their authority. The post-V1 order is now
-MT-0 then KHR-0 under [OD-16](#20-od-16--multithreading-first-after-v1). No DNS implementation, host configuration change, benchmark, native
+existing privilege boundaries retain their authority. The post-V1 order starts with
+MATH-0, then MT-0 and KHR-0 under [amended OD-16](#201-mathematics-experiments-first--13-november-2026). No DNS implementation, host configuration change, benchmark, native
 Windows result or new release qualification is established by this amendment.
 
 ## 13. OD-09 — leap policy and silent servers
@@ -1264,9 +1264,11 @@ no extra locale or native result, and never supplies critical-text approval.
 under docs and place this work first in ROADMAP.md immediately after release of
 the first software version (V1), before Khronos.
 
-**Accepted order:** actual V1 release → MT-0 / MT-C01 → KHR-0 / KHR-C01 →
-GEO-0 / GEO-C01 → Android. This supersedes older descriptions of Khronos as the
-first Windows follow-up. OD-12's relative Khronos → GeoIP → Android order and the
+**Original accepted order, 7 November (amended below):** actual V1 release →
+MT-0 / MT-C01 → KHR-0 / KHR-C01 → GEO-0 / GEO-C01 → Android. This superseded
+older descriptions of Khronos as the first Windows follow-up. The
+[13 November amendment](#201-mathematics-experiments-first--13-november-2026)
+now inserts MATH-0 / MATH-C01 before MT-0. OD-12's relative Khronos → GeoIP → Android order and the
 separate later RGT-0 → CHR-0 direction remain.
 
 [NV-MT-001](plans/post-v1-multithreading.md) records the phased plan, resource/
@@ -1283,16 +1285,51 @@ Current V1 correctness, blocking-native-work isolation, permit/cookie custody,
 policy checks, responsive control and release gates remain required. MT-0 adds no
 pre-V1 enhancement prerequisite and lifts no Windows/fuzz/storage/UI hold.
 OD-10 still defers formal work until after V1; that eligibility does not put the
-whole formal backlog ahead of the explicitly first MT-0 job. This decision
+whole formal backlog ahead of the explicitly scheduled post-V1 sequence. This decision
 establishes no measured improvement or implementation/native qualification.
+
+### 20.1 Mathematics experiments first — 13 November 2026
+
+**Direct owner instruction, 13 November 2026 (Asia/Tbilisi):** put the reviewed
+scientific papers and mathematical improvement experiments in ROADMAP.md as the
+first TODO experiment after V1 is released.
+
+**Current accepted order:** actual V1 release → MATH-0 / MATH-C01 →
+MT-0 / MT-C01 → KHR-0 / KHR-C01 → GEO-0 / GEO-C01 → Android. This supersedes
+MT-0's first position while preserving the relative order of the existing
+follow-ups, OD-12, the pre-V1 WinGet requirement and the separate later
+RGT-0 → CHR-0 sequence. Publishing source changes alone is not V1 release.
+
+[MATH-0](../ROADMAP.md#math-0--post-v1-mathematical-estimation-experiments)
+records the bounded comparison, primary references and MATH-C01 exit. Evaluate
+lower-envelope frequency estimation, compensated/QR arithmetic, asymmetry and
+uncertainty controls, Kalman/noise/holdover models and conditional native
+clock/temperature extensions against equivalent inputs and independent truth.
+The existing Core task owns the comparison evidence; native and GEO-0 extensions
+retain their stated prerequisites and owners.
+
+This is an experiment-priority decision. No paper's algorithm, numerical bound,
+provider, dependency or production performance claim is selected by recording it.
+An evidence-backed comparison and candidate dispositions admit MT-0; production
+adoption is not required. Preserve current numerical/clock-authority contracts,
+source provenance and the released baseline for later comparisons. Any proposed
+adoption must define its bounded implementation and complete the applicable
+qualification before affecting product decisions.
+
+Current V1 implementation, correctness, acceptance and release work retain their
+order and gates. This adds no V1 blocker, starts no experiment before release and
+lifts no existing execution hold. OD-10's post-V1 eligibility and bounded
+product-purpose rules remain; the complete proof backlog is not inserted ahead
+of MATH-0.
 
 ## 21. OD-17 — WinGet capability before V1
 
 **Owner instruction, 7 November 2026:** David requested WinGet distribution
 capability before the first software release, and comprehensive verification of
 the supplied AI proposal before creating the document and adjusting the roadmap.
-This places the capability in existing P6/P7 work; it does not move MT-0 from its
-first post-V1 position before Khronos.
+This places the capability in existing P6/P7 work. The later
+[13 November amendment](#201-mathematics-experiments-first--13-november-2026)
+places MATH-0 before MT-0; WinGet remains a pre-V1 capability requirement.
 
 The [WinGet plan](plans/winget-distribution.md) records the researched engineering
 approach, primary sources, metadata/installer/automation contracts and native

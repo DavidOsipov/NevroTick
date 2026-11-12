@@ -1,12 +1,12 @@
 # NevroTick roadmap
 
-**Updated:** 7 November 2026
+**Updated:** 13 November 2026 (Asia/Tbilisi)
 
 **Pre-V1 distribution requirement:** [WGT-0, WinGet capability](#wgt-0--winget-distribution-capability-before-v1), prepared and qualified within P6/P7 before V1; actual public catalog availability is tracked separately.
 
-**First post-V1 TODO:** [MT-0, multithreading and concurrent NTS acquisition](#mt-0--post-v1-multithreading-and-concurrent-acquisition), immediately after V1 is released and before Khronos/Ananke
+**First post-V1 TODO:** [MATH-0, mathematical estimation experiments](#math-0--post-v1-mathematical-estimation-experiments), immediately after V1 is actually released and before MT-0, under [OD-16 §20.1](docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026).
 
-**Post-V1 order:** MT-0 → [Khronos/Ananke](#khr-0--evaluate-independent-time-cross-checking) → [GEO-0, geography-assisted source ordering](#geo-0--evaluate-geography-assisted-source-ordering) → Android
+**Post-V1 order:** MATH-0 → [MT-0, multithreading](#mt-0--post-v1-multithreading-and-concurrent-acquisition) → [Khronos/Ananke](#khr-0--evaluate-independent-time-cross-checking) → [GEO-0, geography-assisted source ordering](#geo-0--evaluate-geography-assisted-source-ordering) → Android
 
 **Later owner-selected sequence:** [Roughtime bootstrap for a badly wrong clock](#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock) → [independent replacement of Chrony-derived implementations](#chr-0--independently-replace-chrony-derived-implementations); future public licence undecided
 
@@ -18,8 +18,10 @@
 Finish the current Windows development and acceptance plan, including
 [WGT-0 WinGet capability](#wgt-0--winget-distribution-capability-before-v1) under
 [OD-17](docs/nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1),
-and actually release V1 first. Under [OD-16](docs/nevrotick-owner-decisions.md#20-od-16--multithreading-first-after-v1),
-the first post-V1 job is [MT-0](#mt-0--post-v1-multithreading-and-concurrent-acquisition),
+and actually release V1 first. Under [OD-16 §20.1](docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026),
+the first post-V1 job is [MATH-0](#math-0--post-v1-mathematical-estimation-experiments).
+After its comparison and disposition, continue with
+[MT-0](#mt-0--post-v1-multithreading-and-concurrent-acquisition),
 then the [Khronos/Ananke evaluation](#khr-0--evaluate-independent-time-cross-checking),
 then the [GEO-0 experiment and disposition](#geo-0--evaluate-geography-assisted-source-ordering)
 requested on 5 November 2026. Then pursue the Android application
@@ -40,7 +42,8 @@ applying time to its own clock.
 | WinGet distribution before V1 | [WGT-0](#wgt-0--winget-distribution-capability-before-v1), [NV-WGT-001](docs/plans/winget-distribution.md) and [W11-W10](tasks/windows11-integration.md#433-winget-distribution-before-v1--7-november-2026): implement and qualify the source-specific delivery capability within P6/P7. Preserve the selected Store MSIX and qualify `msstore` first; Community YAML requires an authorized trusted public installer. WGT-C01 readiness and WGT-C02 actual catalog availability are separate; no publication or native result is claimed. |
 | Windows 11 native integration | [Microsoft source review](docs/plans/windows11-integration.md), [Learn MCP follow-up](docs/plans/windows11-integration-follow-up.md), [existing-phase workstream](docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent assignments](tasks/windows11-integration.md): timestamp/power/lifecycle refinements, DNS and service-network candidates, resource use, diagnostics and deferred UI integration. The follow-up adds concrete callback, COM, MSI permission, ETW and partial-replacement cases. Research is recorded; implementation/native evidence and conditional choices remain open at their existing phases. Current priorities and execution holds remain; this is no new predecessor to KHR-0. |
 | Protected optional Windows storage | [Architecture §12.1.2](docs/windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [storage plan](docs/plans/windows-protected-storage.md), completed [first](docs/plans/windows-protected-storage-upstream-lessons.md) and [second](docs/plans/windows-protected-storage-upstream-lessons-2.md) source reviews, and [agent task](tasks/windows-protected-storage.md): VBS/TPM/fresh-state fallback, truthful UI, bounded storage/adapter contracts and distinguishing checks. S2.3/P3/P5/P6 work; design freeze/native qualification remain open, experiments paused, current priority and Khronos ordering unchanged. |
-| Post-V1 multithreading | [MT-0](#mt-0--post-v1-multithreading-and-concurrent-acquisition) and [NV-MT-001](docs/plans/post-v1-multithreading.md): first TODO immediately after actual V1 release, before Khronos. Qualify independent acquisition, bounded native workers and any justified scheduler/capacity change; existing V1 correctness duties remain. |
+| Mathematical estimation experiments | [MATH-0](#math-0--post-v1-mathematical-estimation-experiments): first TODO after actual V1 release, before MT-0. Compare paper-informed candidates against the released estimator and pinned Chrony processing with independent truth; MATH-C01 records evidence and disposition, not automatic production adoption. |
+| Post-V1 multithreading | [MT-0](#mt-0--post-v1-multithreading-and-concurrent-acquisition) and [NV-MT-001](docs/plans/post-v1-multithreading.md): after MATH-C01 and before Khronos. Qualify independent acquisition, bounded native workers and any justified scheduler/capacity change; existing V1 correctness duties remain. |
 | Khronos/Ananke reserve | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): after V1 release and MT-C01, before GEO-0/Android; evaluate the owner-selected conditional initial-date reserve and coordinated-false-agreement risks. |
 | Geography-assisted acquisition | [GEO-0](#geo-0--evaluate-geography-assisted-source-ordering): bounded comparison after KHR-C01; the [existing catalogue task](tasks/server-catalogue-and-statistics.md#deferred-geoip-experiment--after-khronos) owns GEO-C01. Evaluation and disposition precede Android; GeoIP adoption is optional. |
 | Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01 and GEO-C01. Future work with device-specific feasibility gates. |
@@ -73,7 +76,7 @@ public availability remain open.
 
 **Placement:** existing P6/P7 packaging and release work, before actual V1 release.
 Current Core continuation and native execution holds retain their scope. After
-V1, MT-0 remains first, before Khronos/Ananke.
+V1, MATH-0 runs first, then MT-0 and Khronos/Ananke.
 
 **Plan / owner:** [WinGet distribution plan](docs/plans/winget-distribution.md)
 and existing [W11-W10/W11-W05](tasks/windows11-integration.md#433-winget-distribution-before-v1--7-november-2026),
@@ -99,13 +102,142 @@ separate pre-V1 readiness from external public availability. Missing required
 local/native evidence remains open; no merge-time guarantee, automatic customer
 upgrade promise, extra service updater or weakened installer protection is added.
 
+### MATH-0 — post-V1 mathematical estimation experiments
+
+**Status:** first TODO experiment after actual V1 release, selected by David on
+13 November 2026 (Asia/Tbilisi), under
+[OD-16 §20.1](docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026).
+Research supports comparison candidates; no algorithm, dependency, production
+constant, accuracy improvement or experiment result is adopted or qualified.
+
+**Order:** actual V1 release → MATH-0 / MATH-C01 → MT-0 / MT-C01 →
+KHR-0 / KHR-C01 → GEO-0 / GEO-C01 → Android. A source push, successful build,
+release tag or completed planning alone does not establish actual V1 release.
+This experiment adds no pre-V1 requirement and does not activate work now.
+
+**Owner / evidence:** numerical/Core implementer with independent numerical and
+protocol QA; use this roadmap entry as the experiment plan and the
+[existing Core task](tasks/s1.3-source-selection-readiness.md) for the bounded
+comparison record. Reuse the [regression task](tasks/s1.2-regression-readiness.md),
+[engine task](tasks/engine-transport-pilot.md) and their existing acceptance owners
+for affected fit, timestamp and applied-correction behavior. MATH-W/C identifiers
+are local experiment labels, not replacements for canonical CHECK requirements.
+Do not create a competing product engine or a second roadmap/evidence chain.
+
+#### Experiment sequence and finite exits
+
+- [ ] **MATH-W01 — freeze a fair comparison.** Identify the actual released
+  NevroTick source/artifact, estimator path, configuration and applicable current
+  contracts. Record the exact Chrony reference; the research pin is 4.9,
+  `8df4f1263e206585e6c4e61352d042c2dd12916a`. Preserve its relevant delay weighting,
+  asymmetry correction and window adaptation; a win over unweighted regression
+  alone does not establish a win over Chrony. Replay the same frozen observation
+  trace for estimator comparisons, with documented unit/sign conversions.
+  Closed-loop comparisons share an independent plant/network scenario and seeds;
+  observations can differ causally as control changes the clock. Keep polling/
+  startup policies equivalent and independent clock/delay truth explicit.
+  Separate arithmetic, estimator and closed-loop comparisons. Before
+  execution, freeze cases, seeds, sample counts, resource/time budget, metrics,
+  success/refutation criteria and stop conditions. Start offline without public
+  server traffic or Windows clock writes.
+- [ ] **MATH-W02 — bounded lower-envelope frequency estimation.** Evaluate the
+  Moon/Skelly/Towsley linear-programming approach [M1], informed by Bletsas's
+  traffic-dependent comparison [M2]. Use appropriate directional timestamp
+  differences and an explicit rate basis; midpoint-offset noise is not one-sided.
+  Test bursty queues, stable and changing delay floors, frequency ramps and
+  erroneous low observations. State the approximately constant-frequency and
+  stable-floor assumptions. A fitted intercept does not identify absolute path
+  asymmetry or trustworthy UTC offset by itself.
+- [ ] **MATH-W03 — independent numerical comparison.** Compare the released
+  fitter with compensated accumulation [M3] and weighted Householder QR [M4],
+  using an independent exact/high-precision reference for the same mathematical
+  weighted objective. Preserve actual input admission, exact anchors, scales,
+  weights and the admitted window bound; include cancellation, near-degeneracy,
+  disparate weights and admitted subnormal inputs. The reviewed Core already
+  conditions its fit and carries separate enclosures: compare against that code,
+  not a presumed unconditioned normal-equation implementation. Its divisors are
+  recomputed when window membership changes; a fixed-weight remove/add update
+  would change the estimator. Check coefficient error, enclosure containment and
+  width, refusals and cost separately. Better point arithmetic does not by itself
+  tighten an enclosure. Reconcile underflow assumptions before importing a proof.
+- [ ] **MATH-W04 — asymmetry and uncertainty controls.** Use [M7–M9] to construct
+  identical-observation scenarios with different true offsets/directional delays,
+  constant asymmetry, correlated paths and route changes. Include correctly
+  authenticated exchanges with asymmetric delivery delay; authentication does
+  not eliminate timing uncertainty. Keep numerical rounding enclosures,
+  statistical covariance and physical UTC uncertainty distinct. Include server,
+  capture and rate-mapping uncertainty in any claimed physical bound. Record
+  coverage/containment under declared assumptions together with interval width;
+  a narrower interval that excludes admissible truth is not an improvement.
+- [ ] **MATH-W05 — Kalman, clock-noise and holdover comparison.** Evaluate an
+  explicitly specified phase/frequency model against the same baseline and
+  lower-envelope candidate [M2, M5, M6]. State process/measurement noise and
+  mismatch handling; cover Gaussian noise, bursty traffic, irregular or missing
+  observations, route changes, suspend/discontinuity and holdover. Use appropriate
+  Allan/time-deviation analysis with explicit sampling assumptions. Account for
+  achieved corrections so control effects are not misclassified as oscillator
+  drift. A small covariance does not prove small physical error; declared growth
+  parameters are not measured machine calibration.
+- [ ] **MATH-W06 — conditional native/model extensions.** Assess Graham-style
+  temperature/frequency prediction [M10], requiring a relevant sensor,
+  independent timing reference, per-machine calibration, power-state coverage
+  and safe behavior outside the calibrated range. Record a bounded later
+  qualification task or an evidenced deferral if those inputs are unavailable;
+  do not invent temperature coefficients. Use iHorology [M9] for synthetic bound
+  sensitivity now; actual geography/landmark acquisition retains GEO-0's position
+  after KHR-C01 and requires validated location/path assumptions. Specialized
+  WLAN-beacon results [M11] are context, not an admitted Windows/NTS algorithm.
+- [ ] **MATH-W07 — independent review and disposition.** Retain exact candidates,
+  reference/source versions, reproducible recipes, independent expectations,
+  actual outcomes, model limitations and resource costs. Report offset/frequency
+  error, tail error, convergence/reacquisition, holdover, refusal behavior and
+  appropriate uncertainty coverage/containment. Do not replace these with a
+  favorable mean or an unsupported percentage improvement over Chrony. Keep
+  machine/model-dependent results scoped to their tested conditions.
+
+**Exit MATH-C01:** record the bounded comparison and an evidence-backed
+`ADOPT_LIMITED`, `DEFER` or `REJECT` disposition for each candidate, with reasons
+and a return trigger for deferred work. A declared budget/evidence limit can
+justify deferral; an unexecuted or blocked check is never reported as a pass.
+This evaluation/disposition admits MT-W01; adoption of a new estimator is not
+required. Any adoption recommendation names its bounded implementation,
+contract/enclosure changes, provenance/licence obligations and remaining
+qualification under the existing owners before it can affect product decisions.
+A paper, an experimental fit or a roadmap checkbox grants no clock authority.
+
+The first experiments are lower-envelope estimation, numerical comparison and
+uncertainty controls; noise-model and conditional native work follow within the
+same bounded evaluation. Preserve the actual released baseline for later MT-0
+comparisons and identify any intervening adopted changes separately. Existing
+V1 correctness and release gates, applicable execution holds, source trust and
+quorum rules remain. Formal eligibility after V1 does not put the entire proof
+backlog ahead of this experiment; selected proof work retains OD-10's product
+purpose and finite budget.
+
+#### Primary reading and applicability
+
+| ID | Paper / primary source | Use and evidence limit |
+| --- | --- | --- |
+| M1 | Moon, Skelly and Towsley, *Estimation and Removal of Clock Skew from Network Delay Measurements*, INFOCOM 1999; [DOI](https://doi.org/10.1109/INFCOM.1999.749287), [underlying 1998 author report](https://web.cs.umass.edu/publication/docs/1998/UM-CS-1998-043.pdf). | Lower-envelope/linear-programming frequency candidate; not a modern Chrony comparison or a solution to unknown fixed asymmetry. |
+| M2 | Bletsas, *Evaluation of Kalman Filtering for Network Time Keeping*, IEEE TUFFC, 2005; [DOI](https://doi.org/10.1109/TUFFC.2005.1516016), [author paper](https://users.isc.tuc.gr/~abletsas/files/TUFFC05.pdf). | Kalman versus linear programming under different traffic assumptions; no universally superior estimator or Chrony 4.9 result. |
+| M3 | Higham, *The Accuracy of Floating Point Summation*, SIAM J. Scientific Computing, 1993; [DOI](https://doi.org/10.1137/0914050), [author paper](https://nhigham.com/wp-content/uploads/2023/10/high93s.pdf). | Compensated summation and error analysis; no uniformly most accurate method, and the analysis assumes no underflow. |
+| M4 | Golub, *Numerical Methods for Solving Linear Least Squares Problems*, Numerische Mathematik, 1965; [publisher record / DOI](https://doi.org/10.1007/BF01436075). | Householder QR comparator. The initial review verified the abstract/metadata only; obtain the needed algorithm details before implementation. QR output alone is not independent truth. |
+| M5 | Levine, *Synchronizing Computer Clocks Using Kalman Filters*, 2011; [NIST record](https://www.nist.gov/publications/synchronizing-computer-clocks-using-kalman-filters), [paper](https://tf.nist.gov/general/pdf/2544.pdf). | Clock-noise-informed filtering in a telephone ACTS setting; transfer to Internet NTS needs separate evidence. |
+| M6 | Levine, *The Statistics of Computer Clocks and the Design of Synchronization Algorithms*, Journal of Research of NIST, 2020; [paper / DOI](https://doi.org/10.6028/jres.125.008). | Noise timescales, Allan/time deviation, window/polling and holdover models; measured stability is distinct from accuracy. |
+| M7 | Freris, Graham and Kumar, *Fundamental Limits on Synchronizing Clocks Over Networks*, IEEE TAC, 2011; [DOI](https://doi.org/10.1109/TAC.2010.2089210), [published paper](https://cs.nyu.edu/~apanda/classes/sp25/papers/time-sync-limits.pdf). | Identifiability and indistinguishable offset/delay scenarios under explicit model assumptions; validation reference, not a faster estimator. |
+| M8 | Narula and Humphreys, *Requirements for Secure Clock Synchronization*, IEEE JSTSP, 2018; [DOI](https://doi.org/10.1109/JSTSP.2018.2835772), [author paper](https://rnl.ae.utexas.edu/images/stories/files/papers/narula2018secureSynchronization.pdf). | Authenticated-delay controls; published security conditions do not automatically hold for Internet NTS. |
+| M9 | Veitch, Mani, Cao and Barford, *iHorology: Lowering the Barrier to Microsecond-Level Internet Time*, IEEE/ACM ToN, 2022; [DOI](https://doi.org/10.1109/TNET.2022.3174189), [2020 preprint](https://arxiv.org/pdf/2011.06713). | Asymmetry constraints from additional geography/landmark information. Detailed initial review used the preprint; learned/modelled bounds need validation and may exclude truth. No Chrony benchmark. |
+| M10 | Najafi and Wei, *Graham: Synchronizing Clocks by Leveraging Local Clock Properties*, USENIX NSDI, 2022; [publication and paper](https://www.usenix.org/conference/nsdi22/presentation/najafi). | Learned local clock/temperature behavior; Chrony already has temperature compensation. Headline drift-bound gains are not the same multiplier in UTC accuracy over Chrony. |
+| M11 | Joo, Lee, Kim and Kim, *Efficient One-Way Time Synchronization for VANET with MLE-Based Multi-Stage Update*, CMC, 2025; [full paper / DOI](https://www.techscience.com/cmc/v84n2/62935/html). | Specialized WLAN-beacon inter-client comparison; different timing information and metric prevent direct transfer to the Internet NTS client. |
+
 ### MT-0 — post-V1 multithreading and concurrent acquisition
 
-**Status:** planned; first post-V1 TODO by David's instruction of 7 November
-2026, recorded in [OD-16](docs/nevrotick-owner-decisions.md#20-od-16--multithreading-first-after-v1).
+**Status:** planned under David's 7 November instruction; the
+[13 November amendment](docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026)
+places MATH-0 first and this stage immediately after MATH-C01, before Khronos.
 Implementation, measurements and native qualification remain open.
 
-**Order:** actual V1 release → MT-C01 → KHR-C01 → GEO-C01 → AND-0.
+**Order:** actual V1 release → MATH-C01 → MT-C01 → KHR-C01 → GEO-C01 → AND-0.
 Finishing a build or P0–P7 paperwork alone does not activate MT-0.
 
 **Plan and evidence:** [NV-MT-001](docs/plans/post-v1-multithreading.md) owns the
@@ -114,7 +246,8 @@ bounded work packages, contracts, comparison and MT-C01 exit. Reuse the
 for implementation/evidence; engine, platform, protocol and performance owners
 work with an independent reviewer.
 
-- [ ] **First post-V1 job:** run MT-W01 against the actual released source/artifact;
+- [ ] **After MATH-C01:** run MT-W01 against the actual released source/artifact
+  and account separately for any subsequently adopted mathematical change;
   identify existing concurrency, blocking boundaries, limits and a concrete useful
   progress/responsiveness question.
 - [ ] Freeze and implement the smallest justified concurrency change through
@@ -135,7 +268,7 @@ This schedules an enhancement after V1. Existing V1 blocking-work isolation,
 native custody, current-authority and lifecycle requirements remain mandatory.
 The current Windows/fuzz/storage/UI holds and pre-release development order
 remain. OD-10's post-V1 formal eligibility does not place the whole proof backlog
-ahead of MT-0.
+ahead of the scheduled MATH-0 → MT-0 sequence.
 
 ### KHR-0 — evaluate independent time cross-checking
 
@@ -230,7 +363,7 @@ delivered client.
 [OD-12](docs/nevrotick-owner-decisions.md#16-od-12--geoip-experiment-after-khronos).
 No GeoIP database, dependency, provider or production selection rule is adopted.
 
-**Order:** V1 released → MT-C01 → KHR-C01 → GEO-C01 → AND-0. A documented
+**Order:** V1 released → MATH-C01 → MT-C01 → KHR-C01 → GEO-C01 → AND-0. A documented
 `ADOPT_LIMITED`, `DEFER` or `REJECT` disposition closes this experiment; GeoIP
 deployment is not an Android prerequisite. RGT-0 → CHR-0 remains separate.
 
@@ -309,7 +442,7 @@ on 3 November 2026. No Roughtime implementation, provider selection or Windows
 qualification is established. This stage is distinct from KHR-0.
 
 **Order:** RGT-0 → CHR-0. This later sequence preserves the current
-V1 released → MT-0 → KHR-0 → GEO-0 → Android prerequisites. Its scheduling against later Android
+V1 released → MATH-0 → MT-0 → KHR-0 → GEO-0 → Android prerequisites. Its scheduling against later Android
 and DNS work remains open; it creates no new active Windows prerequisite.
 
 **Owners:** protocol implementer, NTS/trust-policy owner, independent security
@@ -465,7 +598,7 @@ verifier, UI and independent security/QA review at their dependent boundaries.
 Reuse the current engine task; do not start a parallel proxy project or database.
 Schedule the stage when a real supported use case and maintenance capacity justify
 it, after Windows delivery. Its place among other future work remains undecided;
-the V1 released → MT → KHR → GEO → Android and RGT → CHR ordering remains intact.
+the V1 released → MATH → MT → KHR → GEO → Android and RGT → CHR ordering remains intact.
 
 **First future profile:** the canonical
 [limited SOCKS5 profile](docs/windows-time-architecture.md#limited-socks5-profile--deferred)
@@ -580,7 +713,7 @@ label; it must not be entered automatically on NTS failure.
 
 ## 4. Ordered Android stages
 
-Begin these stages only after V1 release, MT-C01, KHR-C01, any adopted cross-check implementation and
+Begin these stages only after V1 release, MATH-C01, MT-C01, KHR-C01, any adopted cross-check implementation and
 the GEO-C01 experiment disposition have been completed. GeoIP implementation is
 separately scoped if selected; it is not an Android prerequisite. This ordering
 leaves the current Windows plan intact.
@@ -825,7 +958,7 @@ dependencies, demand aggregates, hot/warm/cold/frozen classes, optional seasonal
 heatmap, bounded proactive refresh, encrypted statistics, privacy controls,
 resource accounting, comparison experiment and DNS-C01–DNS-C18 acceptance cases.
 Its engineering parameters are proposals pending qualification. This future
-workstream does not reorder the current Windows plan or the post-V1 MT-0 → KHR-0 follow-ups.
+workstream does not reorder the current Windows plan or the post-V1 MATH-0 → MT-0 → KHR-0 follow-ups.
 
 The [source-attributed DNS upstream lessons](docs/plans/dns-upstream-lessons.md)
 record mechanisms from Unbound, AdGuard Home/dnsproxy, Pi-hole FTL and
@@ -1006,8 +1139,9 @@ UDP tunnel; this design uses local UDP and the companion's own remote transport.
 
 Current implementation follows the Windows development plan, including WGT-0
 capability at P6/P7 before actual V1 release. WGT-C02 separately records externally
-observed catalog availability. Its first post-V1 TODO is **MT-0**, then **KHR-0**, then **GEO-0**;
-MT-C01, KHR-C01 and GEO-C01 precede Android work.
+observed catalog availability. Its first post-V1 TODO is **MATH-0**, followed by
+**MT-0**, **KHR-0** and **GEO-0**. MATH-C01, MT-C01, KHR-C01 and GEO-C01 precede
+Android work.
 The first Android stage is then **AND-0**, starting with device identification and
 read-only capability discovery. Dates for later stages are intentionally not promised before those
 results.

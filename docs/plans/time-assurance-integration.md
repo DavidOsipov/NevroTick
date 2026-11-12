@@ -1,6 +1,6 @@
 # Roughtime, NTS and Khronos/Ananke coordination
 
-**Document:** NV-TA-001, revision 1.3<br>
+**Document:** NV-TA-001, revision 1.4<br>
 **Evidence reviewed:** 3 November 2026, Asia/Tbilisi<br>
 **Project baseline:** [9c6b5ef39b134c844a850deb9126823d668babe7](https://github.com/DavidOsipov/NevroTick/tree/9c6b5ef39b134c844a850deb9126823d668babe7)<br>
 **Status:** owner-selected future bootstrap priority and retained research; no new runtime mechanism, provider preset, dependency or correction authority is qualified.<br>
@@ -37,14 +37,16 @@ date. The rule is evaluated against all admitted true-date/era hypotheses, not
 the local clock. This amendment qualifies no new source, native mapping or
 clock-write envelope; earlier research/review receipts retain their own scope.
 
-**Scheduling amendment, 7 November 2026:** [OD-16](../nevrotick-owner-decisions.md#20-od-16--multithreading-first-after-v1)
-places [MT-0](post-v1-multithreading.md) first after actual V1 release, before
-Khronos. This changes delivery order only; the dated protocol research and review
+**Current scheduling amendment, 13 November 2026:** [OD-16 §20.1](../nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026)
+places [MATH-0](../../ROADMAP.md#math-0--post-v1-mathematical-estimation-experiments)
+first after actual V1 release, followed by [MT-0](post-v1-multithreading.md) and
+then Khronos. MATH-C01 requires experiment evaluation/disposition, not production
+adoption. This changes delivery order only; the dated protocol research and review
 receipts retain their original scope.
 
 Keep the two roadmap sequences distinct:
 
-- **V1 released → MT-C01 → KHR-C01 disposition → GEO-C01 disposition → Android.**
+- **V1 released → MATH-C01 disposition → MT-C01 → KHR-C01 disposition → GEO-C01 disposition → Android.**
   [KHR-0](../../ROADMAP.md#khr-0--evaluate-independent-time-cross-checking) and the later
   [GEO-0 experiment](../../ROADMAP.md#geo-0--evaluate-geography-assisted-source-ordering)
   retain `ADOPT_LIMITED`, `DEFER` or `REJECT` outcomes. The existing catalogue task
