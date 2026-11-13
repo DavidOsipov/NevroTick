@@ -1339,3 +1339,61 @@ publication must preserve the nine reviewed guidance bytes and verify the remote
 commit's ten-file scope; the publication commit supplies the durable final identity.
 SKQ-R100-1 through SKQ-R100-3 are complete for instruction/package scope. No Rust
 compilation, native execution, future refactor or release qualification occurred.
+
+## Rust API selection and compact skills — 14 November 2026
+
+David approved an explicit strongest-applicable-contract rule and requested
+caveman-compress for the affected skills. Base: `d2c2909a0fe43eeed70c54c1e845779246a6d948`,
+tree `457e5a7cd3cf717b733808d50d660a1701206ff6`; all 2,084 snapshot blobs matched
+their Git object hashes before edits. Keep the rule in
+[Implement Rust](../skills/implementation/implement-rust/SKILL.md), routed from
+[Rust contracts](../skills/implementation/implement-rust-contracts/SKILL.md) and
+[contract enforcement](../skills/implementation/implement-rust-contracts/references/contract-enforcement.md).
+Compress those three files and the existing
+[Rust 1.100 reference](../skills/implementation/implement-rust/references/rust-1.100-contracts.md).
+
+| Acceptance | Required result | Owner / evidence |
+| --- | --- | --- |
+| SKQ-API-1 | Stable/admitted API, method and representation enforce strongest applicable guarantees; preserve legitimate inputs, failure behavior and ownership. Justify necessary weaker forms and identify remaining enforcement; avoid invented restrictions. | Coordinator; approved rule and routing review. |
+| SKQ-API-2 | Shorter prose preserves every rule, condition, exception and protected syntax; names, headings, examples, links and metadata remain intact. | Two scoped editors; frozen uncompressed inputs, caveman validator and independent semantic judge. |
+| SKQ-API-3 | Final skill pack and changed-file scope pass; publish without overwriting concurrent work. | Coordinator; package/link/whitespace checks and verified remote tree. |
+
+The approved rule/routing additions were frozen before compression: four files,
+55,896 bytes and 6,530 whitespace-delimited words. Verified originals stay outside
+the skill tree. Compression measurements compare against that updated baseline,
+not against the earlier files lacking the new policy. Product Rust, Cargo policy,
+dependencies, checker implementations, imported inventories and execution holds
+remain outside this instruction-only slice. Validation results follow below.
+
+### Compression and validation results
+
+Final four-file guidance: **54,580 bytes / 6,220 words**, reductions of 1,316 bytes
+(2.35%) and 310 words (4.75%) against the updated uncompressed baseline. Compared
+with the published files before the new rule, net reduction is 282 bytes and
+184 words. These are bytes/whitespace-delimited words, not model-token counts or
+measured agent-performance improvements.
+
+The sorted path-to-SHA-256 map (compact JSON) has SHA-256
+`ded46fa4927bd3791bfbd5af20990f7ed6c3cbebee6aeb4699ee4114f4b8d4f6`;
+this evidence record is excluded. All four final caveman validations pass with
+zero errors/warnings, preserving metadata, headings, code spans/blocks, numeric
+tokens, links and table structure. The contract editor restored one path-like
+prose token's capitalization and potentially ambiguous shortening within two
+targeted repair passes. The other pair passed on first validation.
+
+The unchanged package checker passes **66 skills**, including metadata, UI
+prompts, local links and inventories. The no-index whitespace check emits no
+diagnostics; exit 1 denotes differing trees. All **45 local links/anchors** in
+this plan resolve, including explicit HTML anchors. The complete candidate has
+exactly the four guidance files plus this existing record changed, no added or
+deleted paths; the frozen guidance remains unchanged.
+
+A fresh independent judge read every approved input, complete candidate and diff:
+**READY**, no lost requirements, new operational ambiguities or corrective edits.
+It independently compared protected syntax and structure and confirmed the same
+frozen digest map. This is semantic-preservation review, not an upstream API
+revalidation, agent-performance experiment or product test. SKQ-API-1 and
+SKQ-API-2 are complete. The publisher must verify this five-file remote tree and
+advance the unchanged base without force for SKQ-API-3; the publication commit
+supplies final identity. No Rust compilation, native execution, formal job or
+product-compliance claim follows from these instruction checks.

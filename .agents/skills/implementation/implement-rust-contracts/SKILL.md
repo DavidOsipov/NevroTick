@@ -9,43 +9,46 @@ Read [the implementation contract](../CONTRACT.md) and
 [contract enforcement](references/contract-enforcement.md). Canonical architecture
 sections 5–6 and 18.5 select strict Serde DTOs, mandatory shared garde validation
 inside private fallible construction, and separate current effect guards.
-The selected garde 0.23.0 defaults-off/derive baseline has
+Selected garde 0.23.0 defaults-off/derive baseline has
 [exact-graph admission evidence](../../../../tasks/s0.1-source-readiness.md#refreshed-graph-and-current-evidence).
-Validate each current candidate against the code-owned policy; changed graphs,
-features or target scopes require their own admission. Version selection alone
-does not qualify a candidate.
+Validate each current candidate against code-owned policy; changed graphs,
+features or target scopes require separate admission. Version selection alone
+qualifies no candidate.
 Preserve review/planning/tests-only modes.
+
+For API, method and representation selection, apply
+[Rust's strongest-applicable-contract rule](../implement-rust/SKILL.md).
 
 Trace actual raw bytes → decoding → construction → contextual guard → effect →
 acknowledgement. Identify owners and all constructor/mutation bypasses. Cover
 every affected function/module contract: preconditions, postconditions, failure,
-resources and permitted effects/lifecycle. Name the enforcing type/constructor,
+resources and permitted effects/lifecycle. Name enforcing type/constructor,
 checked operation or live guard and its consumer; plain typed calls need no
 invented serialization boundary.
 
-When a synchronous internal API must bind objects to one evaluation, consider
+When synchronous internal APIs must bind objects to one evaluation, consider
 [generative evaluation brands](references/generative-evaluation-brands.md).
-Use them only when a narrow trial improves the contract; ordinary borrow lifetimes
+Use only when a narrow trial improves the contract; ordinary borrow lifetimes
 prove no evaluation identity, and brands replace no current-authority guard.
 
-When choosing an invariant-bearing type, use
+Choose invariant-bearing types using
 [Parse, don't validate](references/contract-enforcement.md#parse-dont-validate-preserve-established-invariants)
-to work backward from the consumer's required facts. Preserve the checked result
-without treating structural validity as authentication or current permission.
+to work backward from consumer-required facts. Preserve checked results;
+structural validity is neither authentication nor current permission.
 For identity, normalization or comparison changes, also define
 [domain equivalence and trait contracts](references/contract-enforcement.md#domain-equivalence-and-trait-contracts).
 Two valid representations can still denote the same domain value.
 
-When using Rust 1.100 APIs to express these guarantees, apply
+For Rust 1.100 APIs expressing these guarantees, apply
 [explicit feature contracts](../implement-rust/references/rust-1.100-contracts.md).
 Preserve admitted entry and completion in named guards, real typed refusals,
 mandatory delimiters, fallible allocation and identity-bearing shared ownership.
-State which mistake the change prevents and which valid behavior must remain.
+State the mistake prevented and valid behavior that must remain.
 
 For uncertain constructor, transformation or guard bypasses across functions,
 use [CodeQL data-flow analysis](../../testing/references/codeql-data-flow.md) to
 investigate raw-input sources and protected sinks. Model checked-result use
-separately from original DTO use; a successful constructor does not establish
+separately from original DTO use; successful construction does not establish
 current authorization after asynchronous work. Confirm paths in real callers.
 
 Define changed guarantees: representation/version, exact unit/sign/range,
@@ -61,13 +64,13 @@ Implement at the real owner:
    expensive allocation. Decode one complete supported representation into inert
    wire records; no network/file/service/clock effects inside decoders.
 2. Construct private domain values through checked `TryFrom` or named constructors
-   that always invoke the shared garde/domain rules. Every entry path, including
+   that always invoke shared garde/domain rules. Every entry path, including
    in-process callers, builders, mutation, migration and FFI conversion, must use
-   that enforcing path. Consumers use its checked result, never the original DTO.
-   Disable `allow_unvalidated`; justify each `skip` by its actual invariant owner
-   and independent review. Each derived field needs a real rule, `dive` or that
+   that path. Consumers use its checked result, never the original DTO.
+   Disable `allow_unvalidated`; justify each `skip` by actual invariant owner
+   and independent review. Each derived field needs a real rule, `dive` or
    justified `skip`; rename/diagnostic metadata alone is not validation coverage.
-   Keep one maintained rule implementation. A borrowed
+   Maintain one rule implementation. A borrowed
    validation result cannot outlive a mutation or changed validation context.
 3. Receiving service uses OS-established identity, current policy,
    revision/generation, replay/freshness/ownership and cumulative limits. Serialize
@@ -77,8 +80,8 @@ Implement at the real owner:
    or publishing them. Use `Result` for rejected input and preserve prior valid
    state; release-disabled assertions cannot enforce required rejection.
    Apply checked Windows conversions and reconcile actual acknowledgements.
-   Invalid input has no protected effect; ambiguous outcomes do not justify an
-   automatic repeated operation.
+   Invalid input has no protected effect; ambiguous outcomes do not justify
+   automatic repetition.
 
 For history, cookie, pending-request or configuration replacement, use the
 [failure-atomic state-update example](references/contract-enforcement.md#prepare-and-commit-owned-state)
@@ -107,7 +110,7 @@ and qualify each product harness independently of tool controls.
 For product mathematics, apply [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
 Formal proof work, including pending admission/metadata repairs, resumes after
 V1; missing or invalidated proofs are no V1 blocker. Retain historical exact-scope
-evidence and track affected obligations in the existing post-V1 backlog. Continue
+evidence and track affected obligations in existing post-V1 backlog. Continue
 runtime/garde/private invariants, checked arithmetic and independent contract
 checks. Use the [proof workflow](../../testing/references/formal-verification.md)
 on post-V1 resumption.
