@@ -5951,11 +5951,28 @@ ENGINE_KE_HISTORY_CAUSES = {
     "second-consume-completion": ("E0382", ("completion", "moved")),
     "raw-history": ("E0451", ("ProtectedHistory", "summary", "receipt", "population",
         "send_before", "send_after", "read_return", "local", "remote", "identity", "run_context", "private")),
+    "raw-receiving": ("E0451", ("joined", "private")),
+    "mutate-receiving": ("E0616", ("joined", "private")),
+    "clone-receiving": ("E0277", ("Clone",)),
+    "second-consume-receiving": ("E0382", ("receiving", "moved")),
+    "read-received-history": ("E0616", ("history", "private")),
+    "read-received-measurement": ("E0616", ("measurement", "private")),
+    "mutate-received-profile": ("E0616", ("profile", "private")),
+    "clone-received-numerics": ("E0277", ("Clone",)),
 }
+
+ENGINE_KE_HISTORY_CASES = (
+    "legal", "copy-completion", "clone-completion", "copy-history", "clone-history",
+    "second-consume-completion", "raw-history",
+    "legal-receiving", "raw-receiving", "mutate-receiving", "clone-receiving",
+    "second-consume-receiving",
+    "legal-received", "read-received-history", "read-received-measurement",
+    "mutate-received-profile", "clone-received-numerics",
+)
 
 
 def engine_ke_history_contract_examples(original: bytes) -> list[dict]:
-    """Append fourteen fixed consumers of actual private owners, never execute them."""
+    """Append thirty-four fixed actual-owner compiler consumers; never execute them."""
     if (type(original) is not bytes or not original or len(original) > 256 * 1024
             or not original.endswith(b"\n") or b"protected_history_contract_probe" in original):
         raise Incomplete("History compiler contracts require the unchanged bounded private owner.")
@@ -6001,6 +6018,79 @@ def engine_ke_history_contract_examples(original: bytes) -> list[dict]:
                 diagnostic = {"code": code, "tokens": list(tokens),
                     "line": len(original_text.splitlines()) + probe.splitlines().index(causal_line) + 1}
             examples.append({"target": target, "case": case, "owner": "InvocationCompletion/ProtectedHistory",
+                "appended_source": probe, "source": original + probe.encode(), "diagnostic": diagnostic})
+
+        # Legal receiving reaches the actual collected take and both consuming APIs.
+        # No raw JoinedOutcome flags or invented protected history mint its token.
+        receiving_bodies = {
+            "legal-receiving": (
+                "const _: fn(&job::WorkerSlot, Option<crate::ExperimentalProfile>)\n"
+                "    -> Result<datagram::ReceivedCompletion, RunFailed> = |slot, profile| {\n"
+                "    slot.collect().map_err(RunFailed::Collection)?;\n"
+                "    let receiving = slot.take_for_receiving().map_err(RunFailed::Collection)?;\n"
+                "    datagram::receive_joined(receiving, profile)\n};\n"
+                f"#[cfg(all(test, {cfg}))]\n"
+                "const _: fn(job::ReceivingOutcome) -> Result<job::Operation, job::JoinedOutcome>\n"
+                "    = |receiving| receiving.into_normal();\n", None),
+            "raw-receiving": (
+                "const _: fn(job::JoinedOutcome) -> job::ReceivingOutcome = |joined| {\n"
+                "    let receiving = job::ReceivingOutcome { joined };\n"
+                "    receiving\n};\n",
+                "    let receiving = job::ReceivingOutcome { joined };"),
+            "mutate-receiving": (
+                "const _: fn(&mut job::ReceivingOutcome) = |receiving| {\n"
+                "    receiving.joined.retired = true;\n};\n",
+                "    receiving.joined.retired = true;"),
+            "clone-receiving": (
+                "const _: fn(job::ReceivingOutcome) -> job::ReceivingOutcome = |receiving| {\n"
+                "    fn require_clone<T: Clone>(_: &T) {}\n"
+                "    require_clone(&receiving);\n    receiving\n};\n",
+                "    require_clone(&receiving);"),
+            "second-consume-receiving": (
+                "const _: fn(job::ReceivingOutcome) = |receiving| {\n"
+                "    let first = receiving.into_normal();\n"
+                "    let second = receiving.into_normal();\n    drop((first, second));\n};\n",
+                "    let second = receiving.into_normal();"),
+        }
+        received_bodies = {
+            "legal-received": ("    let _ = (received.history().summary(), received.profile(), received.measurement());\n", None),
+            "read-received-history": ("    let _ = &received.history;\n", "    let _ = &received.history;"),
+            "read-received-measurement": ("    let _ = &received.measurement;\n", "    let _ = &received.measurement;"),
+            "mutate-received-profile": ("    received.profile = None;\n", "    received.profile = None;"),
+            "clone-received-numerics": (
+                "    fn require_clone<T: Clone>(_: &T) {}\n    require_clone(&received);\n",
+                "    require_clone(&received);"),
+        }
+        for case, (body, causal_line) in receiving_bodies.items():
+            probe = ("\n/// protected_history_contract_probe: actual collected receiving custody.\n"
+                f"#[cfg(all(test, {cfg}))]\n" + body)
+            diagnostic = None
+            if causal_line is not None:
+                code, tokens = ENGINE_KE_HISTORY_CAUSES[case]
+                diagnostic = {"code": code, "tokens": list(tokens),
+                    "line": len(original_text.splitlines()) + probe.splitlines().index(causal_line) + 1}
+            examples.append({"target": target, "case": case, "owner": "job::ReceivingOutcome",
+                "appended_source": probe, "source": original + probe.encode(), "diagnostic": diagnostic})
+        for case, (body, causal_line) in received_bodies.items():
+            prefix = ("\n/// protected_history_contract_probe: inferred actual received carrier.\n"
+                f"#[cfg(all(test, {cfg}))]\n")
+            if case == "mutate-received-profile":
+                probe = (prefix + "const _: fn(&mut datagram::ReceivedCompletion) = |completion| {\n"
+                    "    if let datagram::ReceivedCompletion::Protected(received) = completion {\n"
+                    + body + "    }\n};\n")
+            else:
+                probe = (prefix
+                    + "const _: fn(datagram::ReceivedCompletion) -> datagram::ReceivedCompletion = |completion| {\n"
+                    "    match completion {\n"
+                    "        datagram::ReceivedCompletion::Preview(summary) => datagram::ReceivedCompletion::Preview(summary),\n"
+                    "        datagram::ReceivedCompletion::Protected(received) => {\n"
+                    + body + "            datagram::ReceivedCompletion::Protected(received)\n        }\n    }\n};\n")
+            diagnostic = None
+            if causal_line is not None:
+                code, tokens = ENGINE_KE_HISTORY_CAUSES[case]
+                diagnostic = {"code": code, "tokens": list(tokens),
+                    "line": len(original_text.splitlines()) + probe.splitlines().index(causal_line) + 1}
+            examples.append({"target": target, "case": case, "owner": "ReceivedCompletion::Protected carrier",
                 "appended_source": probe, "source": original + probe.encode(), "diagnostic": diagnostic})
     return examples
 
@@ -6122,7 +6212,7 @@ def engine_ke_provider_contracts(session, policy: dict, report: dict, run) -> No
 
 
 def engine_ke_history_contracts(session, policy: dict, report: dict, run) -> None:
-    """Run only the fourteen fixed actual completion/history metadata controls."""
+    """Run the fixed history, collected-token and conditional-carrier metadata controls."""
     _engine_ke_owned_contracts(session, policy, report, run, "history")
 
 
@@ -6142,8 +6232,8 @@ def _engine_ke_owned_contracts(session, policy: dict, report: dict, run, owner: 
     elif owner == "history":
         filename, examples_for, validate = (ENGINE_KE_HOST_SUBJECTS["ke_core"],
             engine_ke_history_contract_examples, validate_engine_ke_history_cause)
-        report_key, requirement, cases = "protected_history_contracts", "KE-HIST-03/07", ("legal", *ENGINE_KE_HISTORY_CAUSES)
-        scope = "Actual private completion/history owners; two healthy and twelve ownership/privacy metadata refusals; no Windows execution."
+        report_key, requirement, cases = "protected_history_contracts", "KE-HIST-03/05/07", ENGINE_KE_HISTORY_CASES
+        scope = "Actual private history, collected receiving custody and conditional carrier; six healthy and twenty-eight ownership/privacy metadata refusals; no Windows execution."
         owner_field = "owner"
     else:
         raise Incomplete("Engine KE compiler controls require a fixed provider or history owner.")

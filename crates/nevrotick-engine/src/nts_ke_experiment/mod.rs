@@ -812,7 +812,7 @@ enum InvocationCompletion {
     Protected(Box<datagram::ProtectedHistory>),
 }
 
-#[cfg(any(windows, test))]
+#[cfg(test)]
 impl InvocationCompletion {
     /// Borrow only the existing bounded CLI counts without exposing or copying history.
     fn summary(&self) -> &Summary {
@@ -890,8 +890,8 @@ fn drive_invocation_with<'scope, P: recovery::Producer>(
 /// # Errors
 /// Preserve caller-context, submission, collection and joined operation dispositions.
 #[cfg(windows)]
-fn run(config: Config) -> Result<InvocationCompletion, RunFailed> {
-    run_synchronously_with(config, &PROCESS_WORKER, |slot, prepared| {
+fn run(config: Config) -> Result<datagram::ReceivedCompletion, RunFailed> {
+    run_synchronously_with(config, &PROCESS_WORKER, None, |slot, prepared| {
         slot.try_submit(prepared)
     })
 }
@@ -901,6 +901,8 @@ fn run(config: Config) -> Result<InvocationCompletion, RunFailed> {
 /// Entered Tokio callers refuse before Control preparation or adapter invocation.
 /// Explicit collection can wait indefinitely; a collection refusal leaves completion
 /// unconfirmed and retains the actual handle in permanent custody.
+/// The exact optional model follows only normal joined protected history; the actual
+/// Windows caller supplies no declaration and receives numerical unavailability.
 /// # Errors
 /// Keep pre-submit caller refusal distinct from submission, unconfirmed collection,
 /// normally retired operation failure and actual joined abnormal termination.
@@ -908,11 +910,12 @@ fn run(config: Config) -> Result<InvocationCompletion, RunFailed> {
 fn run_synchronously_with(
     config: Config,
     slot: &'static job::WorkerSlot,
+    profile: Option<crate::ExperimentalProfile>,
     submit: impl FnOnce(
         &'static job::WorkerSlot,
         job::PreparedInvocation,
     ) -> Result<(), job::SubmitError>,
-) -> Result<InvocationCompletion, RunFailed> {
+) -> Result<datagram::ReceivedCompletion, RunFailed> {
     if tokio::runtime::Handle::try_current().is_ok() {
         return Err(RunFailed::CallerContext);
     }
@@ -920,15 +923,8 @@ fn run_synchronously_with(
         job::PreparedInvocation::prepare(config).map_err(RunFailed::Preparation)?;
     submit(slot, prepared).map_err(RunFailed::Submission)?;
     slot.collect().map_err(RunFailed::Collection)?;
-    let joined = slot.take_result().map_err(RunFailed::Collection)?;
-    match joined {
-        job::JoinedOutcome {
-            operation: Some(operation),
-            termination: job::Termination::Returned,
-            retired: true,
-        } => operation.map_err(RunFailed::Operation),
-        abnormal => Err(RunFailed::Abnormal(abnormal)),
-    }
+    let joined = slot.take_for_receiving().map_err(RunFailed::Collection)?;
+    datagram::receive_joined(joined, profile)
 }
 
 /// Closed outer failure projection keeps submission, operation and joined termination distinct.

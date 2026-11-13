@@ -1823,3 +1823,8 @@ The coordinator may append this raw completed report to the existing catalogue t
 ````
 
 </details>
+
+### Integrated local catalogue regression follow-through — 13 November 2026
+
+After integrating `be90618` with the receiver source checkpoint, all 38 catalogue
+methods pass under `python3 -I -X dev -Werror -B -m unittest discover -s tools/server-catalogue -p test_build_catalogue.py -v`. This includes the three added authority/independence/time-behavior forgeries. Raw log `recovery-source-v1/integrated-catalogue-v1.log`, SHA-256 `471e27d949d365e7b6cabefa7733f91472d4fca06d77e50e59a0b31055fc9c63`, retains the exact current result. This supplies no catalogue trust, production issuer, native or release qualification.

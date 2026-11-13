@@ -2932,7 +2932,34 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
             "send_after", "read_return", "local", "remote", "identity", "run_context", "private"],
             "fields summary, receipt, population, send_before, send_after, read_return, local, remote, identity, run_context of struct ProtectedHistory are private",
             "let duplicate = datagram::ProtectedHistory {"),
+        "raw-receiving": ("E0451", ["joined", "private"],
+            "field `joined` of struct `ReceivingOutcome` is private",
+            "let receiving = job::ReceivingOutcome { joined };"),
+        "mutate-receiving": ("E0616", ["joined", "private"],
+            "field `joined` of struct `ReceivingOutcome` is private",
+            "receiving.joined.retired = true;"),
+        "clone-receiving": ("E0277", ["Clone"],
+            "the trait bound `ReceivingOutcome: Clone` is not satisfied", "require_clone(&receiving);"),
+        "second-consume-receiving": ("E0382", ["receiving", "moved"],
+            "use of moved value: `receiving`", "let second = receiving.into_normal();"),
+        "read-received-history": ("E0616", ["history", "private"],
+            "field `history` of struct `ReceivedProtectedNumerics` is private", "let _ = &received.history;"),
+        "read-received-measurement": ("E0616", ["measurement", "private"],
+            "field `measurement` of struct `ReceivedProtectedNumerics` is private", "let _ = &received.measurement;"),
+        "mutate-received-profile": ("E0616", ["profile", "private"],
+            "field `profile` of struct `ReceivedProtectedNumerics` is private", "received.profile = None;"),
+        "clone-received-numerics": ("E0277", ["Clone"],
+            "the trait bound `ReceivedProtectedNumerics: Clone` is not satisfied", "require_clone(&received);"),
     }
+    LEGAL_CASES = ("legal", "legal-receiving", "legal-received")
+    ORDERED_CASES = (
+        "legal", "copy-completion", "clone-completion", "copy-history", "clone-history",
+        "second-consume-completion", "raw-history",
+        "legal-receiving", "raw-receiving", "mutate-receiving", "clone-receiving",
+        "second-consume-receiving",
+        "legal-received", "read-received-history", "read-received-measurement",
+        "mutate-received-profile", "clone-received-numerics",
+    )
     session_fixture = EngineKeProviderCompilerContractTests.session_fixture
 
     def cargo_result(self, case, *, line=42):
@@ -2960,24 +2987,39 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
         code, tokens, _message, _needle = self.CASES[case]
         return {"code": code, "tokens": list(tokens), "line": line}
 
-    def test_fourteen_examples_borrow_and_move_actual_owners_with_exact_spans(self):
+    def test_examples_preserve_old_owners_and_reach_new_private_receiving_rules(self):
         original = b"// actual unchanged owner\n// source prefix\n"
         examples = MODULE.engine_ke_history_contract_examples(original)
         self.assertEqual([(row["target"], row["case"]) for row in examples],
-            [(target, case) for target in ("gnu", "msvc") for case in ("legal", *self.CASES)])
+            [(target, case) for target in ("gnu", "msvc") for case in self.ORDERED_CASES])
+        self.assertEqual(len(examples), 34)
         for row in examples:
             source, probe = row["source"].decode(), row["appended_source"]
             self.assertEqual(row["source"], original + probe.encode())
             self.assertIn("#[cfg(all(test, " + ("not(windows)" if row["target"] == "gnu" else "windows") + "))]", probe)
-            self.assertIn("const _: fn(InvocationCompletion, datagram::ProtectedHistory)", probe)
-            for method in ("summary", "receipt", "population", "captures", "endpoints", "identity", "run_context"):
-                self.assertIn("history." + method + "()", probe)
+            old_owner = row["case"] in self.ORDERED_CASES[:7]
+            if old_owner:
+                self.assertIn("const _: fn(InvocationCompletion, datagram::ProtectedHistory)", probe)
+                for method in ("summary", "receipt", "population", "captures", "endpoints", "identity", "run_context"):
+                    self.assertIn("history." + method + "()", probe)
             for forbidden in ("struct ProtectedHistory", "enum InvocationCompletion", "mod reached", "ProviderScope",
                               "PROCESS_ADMISSION", "zeroed", "#[allow", "#[test]"):
                 self.assertNotIn(forbidden, probe)
-            if row["case"] == "legal":
+            if row["case"] in self.LEGAL_CASES:
                 self.assertIsNone(row["diagnostic"])
-                self.assertIn("(completion, history)", probe)
+                if row["case"] == "legal":
+                    self.assertIn("(completion, history)", probe)
+                elif row["case"] == "legal-receiving":
+                    for statement in ("slot.collect().map_err(RunFailed::Collection)?;",
+                            "slot.take_for_receiving().map_err(RunFailed::Collection)?;",
+                            "datagram::receive_joined(receiving, profile)",
+                            "receiving.into_normal()"):
+                        self.assertIn(statement, probe)
+                    self.assertNotIn("JoinedOutcome {", probe)
+                else:
+                    for method in ("history", "profile", "measurement"):
+                        self.assertIn("received." + method + "()", probe)
+                    self.assertIn("datagram::ReceivedCompletion::Protected(received)", probe)
                 continue
             expected = self.specimen(row["case"], line=row["diagnostic"]["line"])
             self.assertEqual(row["diagnostic"], expected)
@@ -2996,6 +3038,18 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
                 self.assertIn("Arc::clone(history.run_context())", actual_line)
                 self.assertNotIn("std::sync::Arc", actual_line,
                     "the actual parent already imports Arc; unrelated lint failures cannot qualify privacy")
+            if row["case"] == "second-consume-receiving":
+                self.assertIn("let first = receiving.into_normal();", probe)
+                self.assertIn("drop((first, second));", probe)
+            if row["case"].startswith(("read-received-", "mutate-received-", "clone-received-")):
+                self.assertIn("datagram::ReceivedCompletion::Protected(received)", probe)
+                self.assertNotIn("datagram::ReceivedProtectedNumerics", probe,
+                    "the carrier type is inferred through its real variant, not an inaccessible alias")
+            if row["case"] == "mutate-receiving":
+                self.assertIn("fn(&mut job::ReceivingOutcome)", probe)
+            if row["case"] == "mutate-received-profile":
+                self.assertIn("fn(&mut datagram::ReceivedCompletion)", probe)
+            self.assertNotIn("|mut ", probe, "privacy refusal must not add an unrelated unused-mut lint")
         for invalid in (b"", b"no newline", b"\xff\n", b"x" * (256 * 1024) + b"\n",
                         original + b"// protected_history_contract_probe\n", original.decode()):
             with self.subTest(invalid=repr(invalid)[:60]), self.assertRaises(MODULE.Incomplete):
@@ -3014,6 +3068,44 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
         with self.assertRaises(MODULE.Incomplete):
             MODULE.validate_engine_ke_history_cause(self.cargo_result("second-consume-completion"),
                 {"code": "E0382", "tokens": ["claim", "moved"], "line": 42}, self.MANIFEST)
+
+    def test_new_privacy_causes_require_the_field_not_an_incidental_display_type(self):
+        for case in ("raw-receiving", "mutate-receiving", "read-received-history",
+                     "read-received-measurement", "mutate-received-profile"):
+            healthy = self.cargo_result(case)
+            records = [json.loads(line) for line in healthy["output"].splitlines() if line.startswith("{")]
+            message = records[0]["message"]
+            message["message"] = message["message"].replace("ReceivingOutcome", "display::OpaqueJoin") \
+                .replace("ReceivedProtectedNumerics", "display::OpaqueCalculation")
+            def result(rows):
+                return {**healthy, "output": "\n".join(json.dumps(row) for row in rows) +
+                    "\nerror: could not compile `nevrotick-engine` (lib test) due to 1 previous error\n"}
+            with self.subTest(case=case):
+                MODULE.validate_engine_ke_history_cause(result(records), self.specimen(case), self.MANIFEST)
+                for missing in (self.CASES[case][1][0], "private"):
+                    wrong = copy.deepcopy(records)
+                    wrong[0]["message"]["message"] = wrong[0]["message"]["message"].replace(missing, "unrelated")
+                    with self.subTest(missing=missing), self.assertRaises(MODULE.Incomplete):
+                        MODULE.validate_engine_ke_history_cause(result(wrong), self.specimen(case), self.MANIFEST)
+
+    def test_every_new_negative_has_its_real_owner_healthy_companion(self):
+        examples = MODULE.engine_ke_history_contract_examples(b"// actual unchanged owner\n")
+        companion = {
+            "raw-receiving": "legal-receiving", "mutate-receiving": "legal-receiving",
+            "clone-receiving": "legal-receiving", "second-consume-receiving": "legal-receiving",
+            "read-received-history": "legal-received", "read-received-measurement": "legal-received",
+            "mutate-received-profile": "legal-received", "clone-received-numerics": "legal-received",
+        }
+        for target in ("gnu", "msvc"):
+            selected = [row for row in examples if row["target"] == target]
+            for case, healthy_case in companion.items():
+                with self.subTest(target=target, case=case):
+                    negative = next(row for row in selected if row["case"] == case)
+                    healthy = next(row for row in selected if row["case"] == healthy_case)
+                    self.assertEqual(negative["owner"], healthy["owner"])
+                    self.assertIsNone(healthy["diagnostic"])
+                    self.assertIsNotNone(negative["diagnostic"])
+                    self.assertLess(selected.index(healthy), selected.index(negative))
 
     def test_wrong_cause_attribution_extra_errors_and_split_private_spans_refuse(self):
         for case in self.CASES:
@@ -3052,7 +3144,7 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
             source = (private / self.FILENAME).read_text()
             target, case = label.removeprefix("ke-history-contract-").split("-", 1)
             calls.append((target, case, command, timeout, options, source))
-            if case == "legal":
+            if case in self.LEGAL_CASES:
                 self.assertNotIn("negative", options)
                 result = {"exit_code": 0, "failure": None, "output": '{"reason":"build-finished","success":true}\n'}
             else:
@@ -3066,7 +3158,7 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
             return result["output"]
         return run
 
-    def test_fourteen_metadata_commands_share_deadline_and_restore_the_single_delta(self):
+    def test_metadata_commands_share_deadline_and_restore_each_single_delta(self):
         session, report, policy = self.session_fixture()
         calls = []
         with patch.object(MODULE.COMMON, "require_current_candidate"), \
@@ -3074,7 +3166,7 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
             MODULE.engine_ke_history_contracts(session, policy, report, self.fake_run(session, report, calls))
             session.check()
         self.assertEqual([(row[0], row[1]) for row in calls],
-            [(target, case) for target in ("gnu", "msvc") for case in ("legal", *self.CASES)])
+            [(target, case) for target in ("gnu", "msvc") for case in self.ORDERED_CASES])
         self.assertEqual(len({row.args[0] for row in remaining.call_args_list}), 1)
         for target, _case, command, timeout, _options, _source in calls:
             self.assertEqual(command[:4], ["cargo", "check", "--package", "nevrotick-engine"])
@@ -3092,7 +3184,7 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
         self.assertEqual(MODULE.PRODUCT.inventory(session.work / "history-contract-source"), session.source_inventory)
         self.assertEqual(MODULE.PRODUCT.inventory(session.source), session.source_inventory)
         self.assertEqual(MODULE.PRODUCT.inventory(session.root), session.identity)
-        self.assertEqual(len(report["protected_history_contracts"]["probes"]), 14)
+        self.assertEqual(len(report["protected_history_contracts"]["probes"]), 34)
         self.assertNotIn("protected_history_contracts_passed", report)
         self.assertNotIn("provider_claim_contracts", report)
 

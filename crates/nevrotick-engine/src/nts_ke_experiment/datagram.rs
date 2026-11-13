@@ -54,8 +54,14 @@ mod reached {
     use crate::nts_ke_experiment::association::ledger::{
         Receipt, RequestInput, RequestPhase, SendOutcome,
     };
-    use crate::nts_ke_experiment::{Control, Failure, IoPhase, Summary};
-    use crate::{RunClockContext, SoftwareClock};
+    use crate::nts_ke_experiment::job::ReceivingOutcome;
+    use crate::nts_ke_experiment::{
+        Control, Failure, InvocationCompletion, IoPhase, RunFailed, Summary,
+    };
+    use crate::{
+        ExperimentalMeasurement, ExperimentalProfile, MeasurementRefusal, RunClockContext,
+        SoftwareClock,
+    };
 
     /// One counter covers readiness waits and nonblocking receive attempts.
     const ATTEMPTS: usize = 64;
@@ -321,7 +327,7 @@ mod reached {
         not(test),
         expect(
             dead_code,
-            reason = "the complete immutable protected history awaits the separately qualified numerical/Core receiver"
+            reason = "the remaining immutable historical identities await the production Core receiver"
         )
     )]
     pub(in super::super) struct ProtectedHistory {
@@ -346,6 +352,107 @@ mod reached {
         identity: Arc<()>,
         /// Original invocation chart, shared across any actual replacement context.
         run_context: Arc<RunClockContext>,
+    }
+
+    /// One normally joined result; numerical refusal is retained data, never a retry.
+    #[expect(
+        clippy::large_enum_variant,
+        reason = "One consume-once result keeps fixed-size numerics inline without adding an allocation after completed work."
+    )]
+    pub(in super::super) enum ReceivedCompletion {
+        /// The actual never-send operation supplied no protected history to adapt.
+        Preview(Summary),
+        /// Original owning history coupled to its exact optional model and result.
+        Protected(ReceivedProtectedNumerics),
+    }
+
+    impl ReceivedCompletion {
+        /// Preserve the existing CLI projection without publishing numerical authority.
+        pub(in super::super) const fn summary(&self) -> &Summary {
+            match self {
+                Self::Preview(summary) => summary,
+                Self::Protected(received) => received.history.summary(),
+            }
+        }
+    }
+
+    /// Immutable historical calculation, constructible only at the normal-join guard.
+    /// This retains no native owner and supplies no current freshness or eligibility.
+    pub(in super::super) struct ReceivedProtectedNumerics {
+        /// Same complete history moved from the actual retired worker result.
+        history: Box<ProtectedHistory>,
+        /// Exact checked declaration; no missing declaration is inferred or replaced.
+        #[cfg_attr(
+            not(test),
+            expect(
+                dead_code,
+                reason = "the private first caller retains its absent model declaration"
+            )
+        )]
+        profile: Option<ExperimentalProfile>,
+        /// Success or complete refusal at original publication, without discarding history.
+        #[cfg_attr(
+            not(test),
+            expect(
+                dead_code,
+                reason = "the private result awaits a qualified production numerical consumer"
+            )
+        )]
+        measurement: Result<ExperimentalMeasurement, MeasurementRefusal>,
+    }
+
+    #[cfg(test)]
+    impl ReceivedProtectedNumerics {
+        /// Borrow unchanged genuine history; never split off or rebind its provenance.
+        pub(in super::super) const fn history(&self) -> &ProtectedHistory {
+            &self.history
+        }
+
+        /// Borrow only the original optional checked declaration.
+        pub(in super::super) const fn profile(&self) -> Option<&ExperimentalProfile> {
+            self.profile.as_ref()
+        }
+
+        /// Borrow the complete conditional result, with its original historical age.
+        pub(in super::super) const fn measurement(
+            &self,
+        ) -> &Result<ExperimentalMeasurement, MeasurementRefusal> {
+            &self.measurement
+        }
+    }
+
+    /// Project only an actually collected result through the mandatory retirement guard.
+    /// The facade supplies its one take after actual join. No bare-history constructor
+    /// can promote abnormal retained facts. Numerical work is finite and has no effect
+    /// on acquisition, spent budgets, cookies, history or the original operation result.
+    /// # Errors
+    /// Preserve normal operation failure or the complete abnormal joined outcome.
+    pub(in super::super) fn receive_joined(
+        joined: ReceivingOutcome,
+        profile: Option<ExperimentalProfile>,
+    ) -> Result<ReceivedCompletion, RunFailed> {
+        match joined
+            .into_normal()
+            .map_err(RunFailed::Abnormal)?
+            .map_err(RunFailed::Operation)?
+        {
+            InvocationCompletion::Preview(summary) => Ok(ReceivedCompletion::Preview(summary)),
+            InvocationCompletion::Protected(history) => {
+                let measurement = crate::measurement::measure(
+                    profile,
+                    history.send_before,
+                    history.send_after,
+                    history.read_return,
+                    history.receipt.accepted_at(),
+                    history.receipt.fields().header(),
+                );
+                Ok(ReceivedCompletion::Protected(ReceivedProtectedNumerics {
+                    history,
+                    profile,
+                    measurement,
+                }))
+            }
+        }
     }
 
     impl ProtectedHistory {
@@ -680,7 +787,9 @@ mod reached {
 pub(super) use reached::exchange;
 
 #[cfg(any(windows, test))]
-pub(super) use reached::{CommittedProtected, ProtectedCompletion, ProtectedHistory};
+pub(super) use reached::{
+    CommittedProtected, ProtectedCompletion, ProtectedHistory, ReceivedCompletion, receive_joined,
+};
 
 #[cfg(test)]
 #[path = "datagram/tests.rs"]

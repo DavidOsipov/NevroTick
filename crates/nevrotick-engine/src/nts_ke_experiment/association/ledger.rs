@@ -209,25 +209,11 @@ impl Receipt {
     }
 
     /// Preserve authenticated inert fields without time eligibility.
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "EP3 historical full-header and numerical consumer remains held; opaque completion retains the actual receipt"
-        )
-    )]
     pub(in super::super) const fn fields(self) -> ReplyFields {
         self.fields
     }
 
     /// Return the original publication observation, never a renewed deadline.
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "EP2 production receipt consumer remains held; component tests inspect historical metadata"
-        )
-    )]
     pub(in super::super) const fn accepted_at(self) -> Instant {
         self.accepted_at
     }

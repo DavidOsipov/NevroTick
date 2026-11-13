@@ -1242,8 +1242,8 @@ second. Expected integer numerators are literal; neither test derives its oracle
 from the production calculator. The tests use existing helpers and introduce no
 product logic, new protocol, physical-timestamp claim or clock effect.
 
-**Execution status:** source prepared and independently reviewable; Rust checks
-remain incomplete in this edit environment. The configured
+**Original preparation environment:** source prepared and independently reviewable;
+Rust checks remained incomplete in that edit environment. The configured
 python3 -B scripts/check-environment.py preflight exits 1 with
 "rustup is missing; this checker installs nothing" and DEV-01 INCOMPLETE.
 No format/compiler/Clippy, ordinary/optimized Rust test or native pass is claimed.
@@ -1255,6 +1255,14 @@ records selected/executed counts and valid/failure results, and retains all
 applicable phase/release gates. [W11-W01](windows11-integration.md#w11-w01-preserve-packet-timestamp-provenance)
 owns producer-order and any selected native timestamp-adapter qualification;
 these two consumer tests cannot close that broader acquisition path.
+
+**Integrated WSL follow-through, 13 November.** The later local integration below
+runs both named regressions successfully in the exact 409-test Engine roster,
+with format and GNU/MSVC-target Clippy passing on admitted Rust 1.99.1.
+This closes their bounded source/compiler/ordinary-consumer check, while
+optimized, coverage/mutation, producer-order and native acquisition gates remain.
+The new tests do not establish physical timestamp placement or close the
+receiving-adapter send-after forwarding sensitivity case.
 
 ### First controlled measurement source checkpoint — 6 November 2026
 
@@ -13502,6 +13510,160 @@ positive receiving still needs Engine source/configuration/path/trust/associatio
 issuers; W11-W01/platform/broker mapping and calibrated uncertainty; S1.4 date/
 scale/calendar evidence; Engine/S1.2 quality/freshness suppliers and the actual
 Core history transaction. Their existing holds remain.
+
+##### Conditional numerical receiver — source development, 13 November 2026
+
+The preceding complete staged checkpoint was signed and pushed as `5dd75df`;
+its exact historical qualification remains separate. The reviewed child above
+is now implemented in the main checkout, with no Cargo graph or public CLI
+change. The actual caller supplies `None`. Private `ReceivedCompletion` retains
+preview or owning `ReceivedProtectedNumerics`; the latter couples the original
+history, exact optional checked profile and complete numerical Result. Refusal
+keeps history and grants no retry, budget/cookie refund, eligibility or freshness.
+
+An independent constructor review found that matching caller-editable raw
+`JoinedOutcome` flags would not seal this new boundary. The repaired path is
+actual collect → `WorkerSlot::take_for_receiving` → private `ReceivingOutcome`
+→ consuming normal-retirement guard → receiving adaptation. Only the job owner
+can mint the token from an actual consume-once joined take. Abnormal facts remain
+owning diagnostics and cannot be rewrapped. No bare-history constructor exists.
+Original captures, authenticated header and packet `accepted_at` feed existing
+`measurement::measure`; join time is never substituted.
+
+Six new actual Script → worker → facade tests exercise absent/explicit models,
+independent integer/rational quantities, exact incompatible scope, all three
+authentic-zero combinations, actual join withholding/original age, and preview/
+original failure/retirement-panic bypass. A separate synthetic numerical control
+covers processing at receive upper endpoint −1/0/+1 ns and refusal precedence.
+It is not genuine-producer evidence. Independent review reconciles all seven
+executed additions against the 407-test GNU roster and actual raw outputs.
+
+Development attempts are retained under the existing external `recovery-source-v1`
+chain. V1 stopped before Cargo on JSON serialization of tool paths (22.528 s).
+V2 executed all 407 tests, then GNU Clippy rejected a large enum and redundant
+closure. V3 executed all 407 tests and passed GNU Clippy, then Windows-target
+Clippy rejected three obsolete dead-code expectations on now-used getters.
+Those three annotations are removed without changing getter bodies. The enum
+keeps its fixed-size one-result data inline with a reviewed narrow expectation,
+avoiding another allocation after completed work; no global lint changes.
+**V4 terminal result:** candidate
+`3cbfcfbff5686048d9a155aab90f9bf22c3b4ea2eef2dde62ac0d08a86e0349e`
+contains 594 product inputs. Format, the exact 407 ordinary tests (228 KE),
+GNU Clippy and Windows-target Clippy pass. Source/helper, vendor and exact stable
+payload bookends match. This is cross-target static evidence, not Windows execution.
+The workload receipt is
+`protected-numerics-development-v4/verification.json`, SHA-256
+`f4646e337e2fb2f0b71ff1fa25e7e8e32e6cca4640faffc20c317dd3457094f3`;
+the authoritative terminal resource receipt is `resource-verification.json`,
+SHA-256 `3ee47aab8d67b475ced085568ade1ca0a548ef00b4c2bbc64e748f99ba95b245`.
+The workload records body-only success; aggregate pass follows actual cleanup.
+V4 consumes 80.591 s; all four attempts consume 256.307 s of the shared ten-minute
+execution budget. At unchanged 3-GiB RAM/512-MiB swap/512-task caps, 164 observer
+samples include 162 positive workload samples. Peak cgroup memory is
+1,173,848,064 bytes, swap zero, maximum 65 tasks and one Cargo process; minimum
+host MemAvailable is 5,298,212,864 bytes. Command-boundary allocated output samples
+reach 594,243,584 bytes, not a continuous storage peak. The final pre-teardown
+group contains only its gated child; unit, cgroup, observer and sampled PID/start
+identities retire. No OOM, PID-limit, observer or cleanup error occurs.
+Resource/setup failures remain incomplete, including earlier attempts.
+
+**Source closeout before the owner-requested Rust 1.100 upgrade.** The complete
+staged source was materialized with real shared Git history and verified exact
+bytes/modes for all 2,077 entries. Its unchanged 594 product inputs retain
+`3cbfcfbf`; the helper delta adds an independently reviewed 34-command compiler
+matrix on GNU/MSVC. All six legal consumers compile; all 28 invalid consumers
+fail with the intended code, Cargo attribution and primary source line.
+The original fourteen controls remain byte-for-byte unchanged. New cases cover
+receiving-token construction, mutation, Clone and second consumption, plus
+carrier field privacy, profile mutation and Clone. The real checked paths remain
+the legal neighbors; no synthetic receipt supplies behavioral or mutation credit.
+
+All 69 GNU doctests pass, including 56 compilation-only cases. The complete
+407-test ordinary result is reused only after exact application/compiler/graph,
+tool/vendor and retained raw-log identity checks. Current format and GNU/MSVC
+Clippy evidence retains the same runtime-source identity. The final compiler
+source island is restored exactly after each controlled delta and at closeout.
+Actual closeout receipts under `recovery-source-v1/protected-numerics-closeout-v1`:
+`verification.json` SHA-256
+`d43764e092296601ca80e3220128c0a62ca38934e88164e9fdccacb5b86e43f9`,
+and authoritative terminal `resource-verification.json` SHA-256
+`3ae549e33af7b4dbc0ca8db8be5e3a1f5293031db77c08c1e384f6d1868e4bd3`.
+The bounded run takes 165.721 s. Peak cgroup memory is 1,586,655,232 bytes,
+swap zero and maximum 30 tasks; minimum host MemAvailable is 7,401,852,928 bytes.
+No OOM, PID-limit, observer or cleanup failure occurs. Unit/cgroup/owned process
+custody retires. Full final staged Python and secret checks are recorded in
+`protected-numerics-final-staged-verification-v1.json`; this source checkpoint
+asserts no native or parent qualification.
+
+The helper's 125 focused Python tests also pass. Finalization preserves all
+compiler/manifests/lockfiles/policies for the next toolchain owner. The preceding
+cleanup deleted 66,449,408 allocated bytes of terminal duplicate source/work
+copies; 4,173 bytes of plain source deltas retain verified exact restoration.
+No compression was used and raw command results remain retained.
+
+**Remaining qualification and next action.** Start from this signed source
+checkpoint through the [existing Rust 1.100 admission owner](build-optimization.md#rust-1100-candidate-admission--11-november-2026).
+Re-admit the real new compiler cohort and bind the complete source/helper/test
+roster and inventories before any dependent qualification. Compiler controls
+and doctests must be rerun when that compiler changes. Reconcile actual generated
+faults and add a discriminating alternative where live healthy captures cannot
+expose a send-after substitution. Preserve the unchanged numerical owner's
+synthetic controls. Freeze/rebind the complete source, helper/test roster and inventory
+before the remaining configured baseline/optimized/90% coverage/95% mutation gates.
+The old E9 and all 607 outcomes remain tied to `964a9573`; the getter annotation
+changes invalidate its exact source binding. No old metric credit transfers.
+Production-positive suppliers/Core transaction, native, fuzz, storage, UI,
+package and release gates retain their existing owners and holds. This is
+ordinary integration of existing mathematics, not post-V1 MATH-0 execution.
+
+##### Integrated LIT-0 and receiver checkpoint — 13 November 2026
+
+Before publication, remote main advanced from `5dd75df` to `be90618`. The signed
+local receiver checkpoint `1ca4822` remains recoverable through its local
+`codex/receiving-checkpoint-1ca4822` ref. A signed rebase preserves both complete
+documentation bodies, the two incoming measurement-consumer tests and the
+existing upper-endpoint test. The incoming tests required only two assertion
+line wraps from the pinned formatter; no expected value or behavior changed.
+OD-18/LIT-0 adds required pre-V1 consumer qualification under existing owners;
+it selects no algorithm/toolchain and lifts no formal/native/fuzz/storage/UI hold.
+
+The integrated candidate is
+`df49329933baf89618a42e3729675caa59c3a7824411de7e700e882796b93dae`,
+with 594 product inputs and 17 separately captured helper inputs. All 409 ordinary
+Engine tests pass, including 228 KE cases and both imported numerical regressions.
+Format, GNU/MSVC-target Clippy, all 34 ownership/privacy compiler controls and
+69 doctests (56 compilation-only) pass freshly on this integrated candidate.
+No earlier ordinary result transfers. Private-source restoration and actual
+source/helper/vendor/stable-payload bookends match; raw outputs and the exact
+rosters have independent review.
+
+Under `recovery-source-v1/protected-numerics-integrated-v2`, workload
+`verification.json` has SHA-256
+`3cd1483c3cbc10227d7ea4afc8644d222611c2acbb093d57507a627d1a6c0c11`;
+authoritative terminal `resource-verification.json` has SHA-256
+`ade3bb548a101a3bebf6855a35f32b12b83f41a66e0b9425eb0b85a9c069fedb`.
+The 215.554-s run follows the retained 35.756-s format-stop attempt. At the same
+3-GiB RAM/512-MiB swap/512-task caps, peak cgroup memory is 1,207,017,472 bytes,
+swap zero, maximum 39 tasks and one Cargo process. All 433 samples/431 positive
+samples reconcile; minimum host MemAvailable is 5,391,085,568 bytes.
+Command-boundary output samples reach 623,525,888 allocated bytes, not a continuous
+storage peak. No OOM/PID-limit/observer/cleanup error occurs. Unit/cgroup and all
+owned PID/start identities retire before closeout.
+
+The incoming catalogue-forgery cases also run in the unchanged 38-method suite
+under isolated/dev-mode Python with warnings denied. The raw
+`integrated-catalogue-v1.log` has SHA-256
+`471e27d949d365e7b6cabefa7733f91472d4fca06d77e50e59a0b31055fc9c63`.
+Final exact staged Python/security and custody results are recorded in
+`protected-numerics-integrated-final-staged-verification-v1.json`.
+
+The owner-requested Rust 1.100 handoff uses this integrated source checkpoint.
+Compiler pins, manifests, lockfiles and build/verification policies retain the admitted 1.99.1 baseline;
+the next owner must re-admit the real compiler and refresh complete source/helper/
+roster/inventory bindings before qualification. The older 400/222 role and
+607/E9 outcomes remain historical and fail closed here. Optimized execution,
+adapter capture-forwarding discrimination, per-owner 90% coverage/95% mutation,
+native/product/release gates and post-V1 formal deferral remain explicit.
 
 ##### Next receiving prerequisite — persistent acquisition-session contract
 

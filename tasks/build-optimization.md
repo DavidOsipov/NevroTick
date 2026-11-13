@@ -471,6 +471,32 @@ existing execution holds. CHECK-19/20/26 and the existing affected product/nativ
 owners retain this work; no parallel upgrade campaign or new prerequisite for
 unrelated current implementation is created.
 
+**13 November handoff — receiver source checkpoint before the requested upgrade.**
+The owner requested finishing the current work before another agent upgrades and
+tests Rust 1.100. The [conditional numerical receiver](engine-transport-pilot.md#conditional-numerical-receiver--source-development-13-november-2026)
+is implemented on the retained 1.99.1 baseline, with 594 product inputs,
+409 ordinary tests (228 KE), format and GNU/MSVC-target Clippy passing in its
+exact recorded scope. Its actual caller supplies `None`; the checked explicit
+model remains a component control. No production eligibility, Core transaction,
+clock effect or native execution is added. The final source closeout retains
+its actual compiler-contract/Python/staged results in that same task.
+
+Start the upgrade from the signed receiver checkpoint in local/remote `main`,
+after confirming its clean Git state. Keep the existing owner/hold boundaries.
+The older KE analysis role still describes `964a9573` (593 inputs, 400 tests /
+222 KE) and its old helper/source hashes. It is closed and intentionally cannot
+admit this changed receiver; the 607 outcomes/E9 remain historical. Before using
+the role, re-admit and bind the complete new compiler/source/helper/roster and
+reconcile generation. Include the fixed roster checks in
+`validate_engine_ke_execution` and `_admit_engine_ke_debug_retirement`, the new
+privacy compiler matrix and diagnostic fixtures, role/dossier bindings and
+relevant analysis-tool identities. Do not substitute a count edit or stale
+receipt for actual discovery, execution, custody and independent review.
+Optimized tests, current doctests/compiler controls as applicable, 90% file-line
+coverage, 95% per-owner mutation and generation gaps remain required; record
+what the final source closeout actually completed before selecting reruns.
+No old metric result transfers across the compiler/source change.
+
 At the next admitted toolchain checkpoint:
 
 1. Reconcile the final 1.100 release/tag against the review, including omitted or

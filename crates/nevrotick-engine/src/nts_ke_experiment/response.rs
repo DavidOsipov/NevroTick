@@ -62,13 +62,6 @@ pub(super) struct ReplyFields {
 
 impl ReplyFields {
     /// Retain every authenticated header bit without physical/era/eligibility authority.
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "EP3 historical full-header and numerical consumer remains held; opaque completion retains the actual header"
-        )
-    )]
     pub(super) const fn header(&self) -> RawHeader {
         self.header
     }

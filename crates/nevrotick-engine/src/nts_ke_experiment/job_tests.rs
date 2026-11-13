@@ -1225,7 +1225,7 @@ fn synchronous_facade_collection_contention_retains_unconfirmed_actual_job() -> 
     hooks.before_retire = Some(hold);
     let mut custody_guard = None;
     let mut setup = Ok(());
-    let facade = run_synchronously_with(config, slot, |actual_slot, prepared| {
+    let facade = run_synchronously_with(config, slot, None, |actual_slot, prepared| {
         actual_slot.submit_with(
             prepared,
             &ADMISSION,

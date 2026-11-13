@@ -26,11 +26,16 @@ establish current native/backend qualification; this correction grants no new
 execution authority.
 
 Prepared on 28 October 2026 for the initial NevroTick development stage.
-The repository pin is Rust **1.99.1**, the current stable release checked against
+The admitted repository baseline remains Rust **1.99.1**, checked against
 its official distribution manifest. WSL Rustup is **1.29.3**, independently
 matched to its official archive/checksum after David's 6 November update;
 the separately pinned Windows manager remains1.29.2. The same compiler and
 components are installed in WSL and for the native Windows user.
+
+The existing [Rust 1.100 candidate admission](tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026)
+owns the next toolchain change and affected receiver qualification. Follow its
+exact tool/source admission and separate MSRV decision; no upgrade or support
+change is recorded here. Native execution retains its existing holds.
 
 The initial setup used temporary, dependency-free fixtures outside the checkout.
 On 29 October, the separate UI-M0 implementation added a minimal real Cargo
@@ -2459,12 +2464,19 @@ retains its separately recorded unchanged-source evidence; its older admission
 remains closed against the later Core/helper tree.
 
 The association/request preparation route at this checkpoint is historical.
-Current Core/Engine work follows the
-[13 November source checkpoint](tasks/engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026):
-close exact staged invocation-stop/actual-join/protected-history source, then
-implement the reviewed private conditional-numerics card with the first actual
-caller supplying `None`. Public execution remains one-shot and never-send
-by default; the source/host exit does not close native or product gates.
+The [13 November source checkpoint](tasks/engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026)
+was signed and pushed as `5dd75df`. Current Core/Engine work follows the implemented
+[conditional numerical receiver](tasks/engine-transport-pilot.md#conditional-numerical-receiver--source-development-13-november-2026),
+whose actual caller supplies `None`. Its `df493299` Rust 1.99.1 development
+checkpoint passes 409 ordinary tests, format and GNU/MSVC Clippy; complete
+qualification remains open; 34 ownership/privacy compiler controls and 69 doctests pass. Next freeze/rebind
+the changed source, helper/test roster and inventory with the
+[Rust 1.100 admission owner](tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026)
+before affected baseline/optimized/doctest/90% coverage/95% mutation qualification.
+Keep the role closed: old bindings fail closed until fresh source/tool admission,
+and the 607/E9 results remain historical `964a9573` evidence. Public execution
+stays one-shot and never-send by default; no source/host exit closes native or
+product gates.
 David accepted both cookie-policy A choices under NV-DEC-001: fresh wire cookies
 with explicit never-invoked return, and zero-cookie rejection preserving healthy
 Pending state. Their bounded EP2/EP3 source transitions exist; do not reopen the

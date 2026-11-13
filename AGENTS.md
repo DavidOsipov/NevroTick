@@ -269,10 +269,15 @@ loopback observer and a default-off NTS association/protected-datagram source
 path. The NTS probe remains one-shot and never-send by default. The
 [13 November source checkpoint](tasks/engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026)
 records invocation stop, actual join and sealed historical-result custody, with
-complete portable mutation accounting and scoped GNU gates. Native/generation
-gates remain open. Close that exact staged source checkpoint, then implement the
-reviewed private protected-completion-to-conditional-numerics card with its first
-actual facade caller supplying `None`. Source, cross-build and scripted Windows receipts do
+complete portable mutation accounting and scoped GNU gates on its historical
+candidate; that checkpoint was signed and pushed as `5dd75df`. The private
+[conditional numerical receiver](tasks/engine-transport-pilot.md#conditional-numerical-receiver--source-development-13-november-2026)
+is now implemented on Rust 1.99.1, with its actual facade caller supplying `None`.
+The 34 ownership/privacy compiler controls and 69 doctests pass. Next freeze/rebind
+and qualify the changed source with the [Rust 1.100 admission owner](tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026).
+Keep campaigns closed until fresh source/tool admission; the old 607/E9 results
+remain tied to `964a9573`. Native/generation gates remain open.
+Source, cross-build and scripted Windows receipts do
 not establish integrated acquisition, Core eligibility, native TLS/CNG/UDP
 qualification, services or clock effects.
 [windows-platform](crates/windows-platform/Cargo.toml) owns portable service

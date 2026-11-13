@@ -1317,9 +1317,16 @@ finish under unchanged configured limits, without OOM/PID-limit/observer failure
 with independent cleanup review and disposable build-tree deletion. Exact peaks,
 command-boundary storage samples and the first process cohort's missing live
 capacity observation remain explicit; no Native or release gate closes.
-Next close the exact staged source checkpoint, then implement the reviewed
-protected-completion-to-conditional-numerics card with its actual first caller
-supplying None. Production-positive suppliers and the Core receiving transaction
+The exact source checkpoint is signed/pushed as `5dd75df`. Its reviewed
+private conditional-numerics child is implemented on candidate `df493299`: all
+409 ordinary tests, 69 doctests, 34 GNU/MSVC ownership/privacy compiler controls,
+format and GNU/MSVC Clippy pass, with exact input custody and terminal resource
+cleanup. The actual caller supplies `None`. The owner requested source closeout
+before another agent upgrades Rust 1.100. Use the existing build admission owner
+to freeze/rebind the new compiler/source/helper/test candidate, retain the open
+capture-forwarding discrimination case, and complete optimized/90% coverage/
+95% mutation qualification. Earlier 607/E9 results remain historical; no metric
+transfer or native qualification follows. Production-positive suppliers and the Core receiving transaction
 retain their existing owners/holds; no eligibility, vote or clock authority is
 invented. No earlier outcome transfers. The latest cleanup removes 1.12 GB of terminal
 scratch, duplicate sources and superseded failed-run evidence without compression;

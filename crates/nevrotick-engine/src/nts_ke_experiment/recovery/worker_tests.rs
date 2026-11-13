@@ -5,6 +5,10 @@ use std::cell::RefCell;
 use std::sync::OnceLock;
 use std::sync::atomic::AtomicUsize;
 
+/// Actual joined protected-history adaptation, with independent numerical expectations.
+#[path = "numerics_tests.rs"]
+mod numerics_tests;
+
 use super::{
     Arc, AtomicBool, Config, Control, Duration, ExchangeCase, ExchangeMode, Failed, Failure,
     Instant, Ordering, ProcessAdmission, ProviderScope, Receiver, ScriptProducer, StopDisposition,
@@ -916,7 +920,7 @@ fn synchronous_facade_refuses_entered_context_before_submission_then_same_slot_s
     let submitted = Arc::clone(&submissions);
     let produced = Arc::clone(&producers);
     let refused = runtime()?.block_on(async {
-        run_synchronously_with(config, &SLOT, move |slot, prepared| {
+        run_synchronously_with(config, &SLOT, None, move |slot, prepared| {
             submit_facade_script(slot, prepared, &ADMISSION, &submitted, produced)
         })
     });
@@ -952,7 +956,7 @@ fn synchronous_facade_refuses_entered_context_before_submission_then_same_slot_s
     let completed_config = Arc::downgrade(&config.lifetime);
     let submitted = Arc::clone(&submissions);
     let produced = Arc::clone(&producers);
-    let completed = run_synchronously_with(config, &SLOT, move |slot, prepared| {
+    let completed = run_synchronously_with(config, &SLOT, None, move |slot, prepared| {
         submit_facade_script(slot, prepared, &ADMISSION, &submitted, produced)
     });
     let after_completion = SLOT.observer().poll_until(Instant::now() + WAIT);
@@ -1229,16 +1233,19 @@ fn facade_permanent_submission_refusal_preserves_cause_after_healthy_join() -> R
     let producers = Arc::new(AtomicUsize::new(0));
     let config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
     let produced = Arc::clone(&producers);
-    let completed = run_synchronously_with(config, &SLOT, |slot, prepared| {
+    let completed = run_synchronously_with(config, &SLOT, None, |slot, prepared| {
         submit_facade_script(slot, prepared, &ADMISSION, &submissions, produced)
     })
     .map_err(|_| Failure::Control)?;
-    assert!(matches!(completed, InvocationCompletion::Preview(_)));
+    assert!(matches!(
+        completed,
+        crate::nts_ke_experiment::datagram::ReceivedCompletion::Preview(_)
+    ));
     drop(completed);
     let config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
     let unsubmitted = Arc::downgrade(&config.lifetime);
     let produced = Arc::clone(&producers);
-    let refused = run_synchronously_with(config, &SLOT, |slot, prepared| {
+    let refused = run_synchronously_with(config, &SLOT, None, |slot, prepared| {
         submit_facade_script(slot, prepared, &ADMISSION, &submissions, produced)
     });
     let Err(RunFailed::Submission(cause)) = refused else {
@@ -1276,7 +1283,7 @@ fn facade_actual_operation_failure_preserves_all_original_causes() -> Result<(),
     };
     let config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
     let lifetime = Arc::downgrade(&config.lifetime);
-    let result = run_synchronously_with(config, &SLOT, |slot, prepared| {
+    let result = run_synchronously_with(config, &SLOT, None, |slot, prepared| {
         slot.submit_with(
             prepared,
             &ADMISSION,
@@ -1324,7 +1331,7 @@ fn facade_actual_retirement_panic_retains_owning_protected_history() -> Result<(
         .into_iter(),
     )?;
     let lifetime = Arc::downgrade(&config.lifetime);
-    let result = run_synchronously_with(config, &SLOT, |slot, prepared| {
+    let result = run_synchronously_with(config, &SLOT, None, |slot, prepared| {
         let mut hooks = Hooks::none();
         hooks.before_retire = Some(Box::new(|| {
             std::panic::resume_unwind(Box::new(Payload { drops: &DROPS }))

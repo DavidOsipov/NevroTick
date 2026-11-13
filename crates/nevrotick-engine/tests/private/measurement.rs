@@ -254,7 +254,10 @@ fn processing_age_does_not_retime_captured_exchange() -> Result<(), MeasurementR
         assert_eq!(result.arithmetic().round_trip().numerator(), 805_306_368);
         assert_eq!(result.nominal_phase().numerator(), -268_435_456_000_000_000);
         assert_eq!(result.nominal_phase().denominator(), 8_589_934_592);
-        assert_eq!(result.nominal_round_trip().numerator(), 805_306_368_000_000_000);
+        assert_eq!(
+            result.nominal_round_trip().numerator(),
+            805_306_368_000_000_000
+        );
         assert_eq!(result.nominal_round_trip().denominator(), 4_294_967_296);
         assert_eq!(result.local_fractional_remainders(), [0, 0]);
         assert_eq!(result.observed_residual_ns(), 0);
@@ -302,7 +305,10 @@ fn send_completion_capture_does_not_replace_send_start() -> Result<(), Measureme
         assert_eq!(result.arithmetic().offset().numerator(), -268_435_456);
         assert_eq!(result.arithmetic().round_trip().numerator(), 805_306_368);
         assert_eq!(result.nominal_phase().numerator(), -268_435_456_000_000_000);
-        assert_eq!(result.nominal_round_trip().numerator(), 805_306_368_000_000_000);
+        assert_eq!(
+            result.nominal_round_trip().numerator(),
+            805_306_368_000_000_000
+        );
         assert_eq!(result.local_fractional_remainders(), [0, 0]);
         assert_eq!(result.observed_residual_ns(), 0);
         assert_eq!(result.declared_limit_ns(), 0);
@@ -990,6 +996,49 @@ fn reversed_brackets_and_processing_are_not_ages() -> Result<(), MeasurementRefu
         Err(MeasurementRefusal::CaptureOrder)
     );
     assert!(measure(profile, first, first, later, later.mono_after, raw).is_ok());
+    Ok(())
+}
+
+/// Packet publication must follow the receive bracket's upper endpoint.
+/// These synthetic brackets test numerical admission, not genuine packet production.
+/// # Errors
+/// Preserve checked fixture/profile/header construction failures.
+/// # Panics
+/// Reject a premature age, changed refusal precedence or either legal neighbor.
+#[test]
+fn publication_age_starts_at_receive_bracket_upper_endpoint() -> Result<(), MeasurementRefusal> {
+    let start = Instant::now();
+    let first = capture(start, 0, BASE, 0)?;
+    let mut read = capture(start, 100, BASE, 100)?;
+    read.mono_after = start
+        .checked_add(Duration::from_nanos(200))
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    let premature = start
+        .checked_add(Duration::from_nanos(199))
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    let profile = Some(ExperimentalProfile::new(BASE, BASE, 0)?);
+    let raw = header(BASE_BITS, BASE_BITS, 3)?;
+    assert_eq!(
+        measure(profile, first, first, read, premature, raw),
+        Err(MeasurementRefusal::CaptureOrder),
+        "KE-HIST-05-publication-before-upper-endpoint"
+    );
+    for nanos in [0, 1] {
+        let processing = read
+            .mono_after
+            .checked_add(Duration::from_nanos(nanos))
+            .ok_or(MeasurementRefusal::Arithmetic)?;
+        let measured = measure(profile, first, first, read, processing, raw)?;
+        assert_eq!(measured.acquisition_age(), Duration::from_nanos(nanos));
+    }
+    assert_eq!(
+        measure(None, first, first, read, premature, raw),
+        Err(MeasurementRefusal::Unavailable)
+    );
+    assert_eq!(
+        measure(profile, first, first, read, premature, header(0, 0, 3)?),
+        Err(MeasurementRefusal::Protocol)
+    );
     Ok(())
 }
 

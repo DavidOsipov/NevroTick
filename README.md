@@ -80,9 +80,18 @@ admission. Its existing probe remains one-shot: the default constructs a
 never-sent preview, while explicit `--protected-datagram` selects one bounded
 UDP operation. The [13 November Engine checkpoint](tasks/engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026)
 records bounded recovery, whole-invocation worker custody and genuine historical
-results through actual join. All 607 mutation variants have scoped accounting;
+results through actual join in signed checkpoint `5dd75df`. All 607 mutation
+variants on historical candidate `964a9573` have scoped accounting;
 37 Windows-only gaps and native/generation gates remain. Recurring native
 operation is not enabled by the probe.
+
+The private [conditional numerical receiver](tasks/engine-transport-pilot.md#conditional-numerical-receiver--source-development-13-november-2026)
+is now implemented; its actual caller supplies `None`, retaining numerical
+unavailability and the original history. All 34 ownership/privacy compiler
+controls and 69 doctests pass. Next rebind/qualify the changed source with the existing
+[Rust 1.100 admission owner](tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026).
+Rust 1.99.1 remains the admitted baseline. Campaigns stay closed until fresh
+source/tool admission; old mutation results supply no current metric credit.
 
 Experimental results remain ineligible for clock control. The complete native
 KE/TLS/CNG/UDP journey, production NTP/NTS acquisition and Core admission,

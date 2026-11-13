@@ -150,6 +150,29 @@ pub(super) struct JoinedOutcome {
     pub(super) retired: bool,
 }
 
+/// Consume-once receiving custody minted only by the actual slot's joined take.
+/// Raw diagnostic facts cannot construct or mutate this receiving token.
+pub(super) struct ReceivingOutcome {
+    /// Unmodified result moved directly from the slot's final custody phase.
+    joined: JoinedOutcome,
+}
+
+impl ReceivingOutcome {
+    /// Consume actual collected custody only after all normal-retirement facts agree.
+    /// # Errors
+    /// Preserve the complete abnormal outcome, including any original history.
+    pub(super) fn into_normal(self) -> Result<Operation, JoinedOutcome> {
+        match self.joined {
+            JoinedOutcome {
+                operation: Some(operation),
+                termination: Termination::Returned,
+                retired: true,
+            } => Ok(operation),
+            abnormal => Err(abnormal),
+        }
+    }
+}
+
 /// Secret-free observation; a finished hint alone conveys no joined result.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg_attr(
@@ -479,6 +502,13 @@ impl WorkerSlot {
                 Err(CollectError::NotReady)
             }
         }
+    }
+
+    /// Transfer the actual once-taken result into sealed receiving custody.
+    /// # Errors
+    /// Preserve every premature/duplicate take and actual custody refusal.
+    pub(super) fn take_for_receiving(&self) -> Result<ReceivingOutcome, CollectError> {
+        self.take_result().map(|joined| ReceivingOutcome { joined })
     }
 
     /// Observe only the count of sealed payloads, without borrowing or formatting one.
