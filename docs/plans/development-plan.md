@@ -425,6 +425,31 @@ law, provider/runtime, platform or tuning constant is selected.
 These cases refine existing exits; a written scenario closes no CHECK or
 implementation gate. Preserve all execution holds and post-V1 formal deferral.
 
+### 4.6 Apply the chrony/NTPsec non-core literature
+
+**13 November 2026:** [OD-18](../nevrotick-owner-decisions.md#22-od-18--literature-derived-qualification-before-v1)
+and [LIT-0](../../ROADMAP.md#lit-0--literature-derived-qualification-before-v1)
+put inexpensive additional tests/cases before the actual V1 release. The
+[detailed research handoff](../supporting-reviews/chrony-ntpsec-noncore-research.md)
+records evidence limits, concrete cases and longer-work prerequisites. Preserve
+the current §7 queue and existing requirement owners; this adds bounded checks
+at their dependent checkpoints, not a second acquisition or policy plan.
+
+| Existing owner | Before-V1 work and observable boundary |
+| --- | --- |
+| [W11-W01/S2.1](../../tasks/windows11-integration.md#w11-w01-preserve-packet-timestamp-provenance); CHECK-6/11/21/27 and affected CHECK-7/25 | Test actual measurement invariance under processing delay and coherent send-completion variation. The engine task records source versus executed evidence. Required acquisition provenance remains a V1 obligation. |
+| [Publisher R collector](../../tasks/server-catalogue-and-statistics.md); DATA-01/24 | Extend actual snapshot import/diff rejection cases for forged independence, time-quality and approval claims. A matching input digest cannot create publisher approval or client authority. |
+| [TA-C01/04/06/07/08/10/13/14](../../tasks/time-assurance-integration.md#4-independent-acceptance-cases) | Prepare/refine independent inputs, healthy neighbors and forbidden effects now. Exercise any actual shared V1 consumers before their phase/release exit; absent future RGT/KHR consumers retain explicit later execution prerequisites. |
+| Existing P4 correction/recovery and S0.1/S2.2 polling/NTS owners; CHECK-6/8/9/10/12/15/17/21/27 | Reuse adequate current cases; retain restart-authority, actual next-send/backoff, cookie lifecycle and aggregate-budget regressions before relevant V1 acceptance. A one-shot helper does not qualify an absent continuous caller or privileged effect. |
+
+Case preparation for a future mechanism does not require implementing it before
+V1. Do not create a mock TPKI protocol to manufacture a pass. New TCA
+infrastructure, NTxMon/live assignment and optional timestamp optimizations remain
+conditional work under the roadmap's longer-work table and named owners.
+Post-V1 MATH-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android and the separate
+RGT-0 → CHR-0 direction retain their existing order. Formal/native/fuzz/storage/UI
+holds and ordinary coverage/mutation/release obligations retain their scope.
+
 ## 5. Required skill reading and use by phase
 
 The repository's skills supply implementation and verification methods. Reading

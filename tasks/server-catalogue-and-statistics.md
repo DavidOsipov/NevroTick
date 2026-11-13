@@ -1656,6 +1656,78 @@ Local frozen inputs, merge/custody records, edit hashes and review results are
 retained under `/tmp/nevrotick-remote-review-k4ykd04d/`. The final evidence appendix
 does not change the reviewed routing or turn planned/native gates into passes.
 
+### 8.7 Literature-derived authority regressions — 13 November 2026
+
+Under [OD-18](../docs/nevrotick-owner-decisions.md#22-od-18--literature-derived-qualification-before-v1)
+and [LIT-0](../ROADMAP.md#lit-0--literature-derived-qualification-before-v1),
+the existing `DiffTests.test_forged_snapshot_cannot_bypass_revalidation` now also
+rejects root `authority = "approved-release"`, record meaning
+`independence = "independent"` and `time_behavior = "qualified"`.
+Each forged snapshot has a matching caller-supplied digest, so the actual
+imported-snapshot/diff consumer must revalidate its meaning. Expected status is
+2, with no result/output and a bounded refusal diagnostic. The unchanged-snapshot
+healthy control still returns 0. These are three new variants within the
+existing method; the suite remains 38 named test methods.
+
+**Source basis:** main `5dd75dfa0445ae56171d551d8d44bac09d6e8ccb`, complete tree
+`874b1e4c002f0efbd4118dfcf50c3b146daa7356`, plus the three test lines above.
+The collector, fixture bytes, product limits and acceptance assertions are
+unchanged. This exercises R candidate validation, not production C approval,
+runtime source independence, certificate freshness or a TPKI implementation.
+The [research review](../docs/supporting-reviews/chrony-ntpsec-noncore-research.md#5-pre-v1-cases-under-existing-owners)
+maps the remaining identity/retirement and publisher cases to their existing
+owners.
+
+**Actual final execution:** Python 3.12.14, interpreter and isolation flags from
+§8.2; one worker, zero automatic retries, 30 seconds wall time, 10 seconds CPU,
+512 MiB address space and 2 MiB combined captured stdout/stderr. The supervised
+child loaded the exact test file and ran all discovered methods once:
+**38 discovered / 38 executed, 0 failures, 0 errors, 0 skipped; child and
+supervisor exit 0**. Supervisor wall time was 8.752 seconds; captured output was
+5,751 bytes. No timeout or output overflow occurred; input identities were
+unchanged across execution. The child reached socket/process audit-hook refusals
+before entering the suite; those controls do not establish OS isolation.
+
+The command was `python3.12 -I -B -S -X dev -W error catalogue_supervisor.py
+<owned-worktree> final`; its child used the same interpreter/flags with
+`catalogue_child.py <owned-worktree>/tools/server-catalogue/test_build_catalogue.py
+<owned-evidence>/final_child_result.json all`. Paths here identify their roles;
+the execution receipt retains the resolved absolute paths and all 38 test IDs.
+The supervisor/child are bounded scratch execution aids, not new repository
+verifiers or a replacement for the configured Core/Rust route.
+
+| Executed input or receipt | SHA-256 |
+| --- | --- |
+| `tools/server-catalogue/build_catalogue.py` | `4ae7c388c5dacb4b0d246939240e2b6e90302982433636e48cda3871dee13300` |
+| `tools/server-catalogue/test_build_catalogue.py` | `9626fbad1a8c4a4d8cccb1e69b18e9275beb9109755ce408fe6463d2be4b8e7f` |
+| `tools/server-catalogue/README.md` | `4035a55333d03b910a6820a66ce7a5db03278829a381f6385c41f3a809af8ada` |
+| `fixtures/README.md` | `4e78e99e5e979743b0d58dd0bca87d79cee3417aa4e37d69d5e10d5506cc07e6` |
+| `fixtures/ntp.md` | `10606f69c0b2bd3b5ffbde2b34a10aba72b911ad92ddb791c4c7e4f4345d562e` |
+| `fixtures/nts.md` | `e876ff5ec1e1ee4dbf04ad3876eb05b0d05e472289ac74ce2776217f2357bc33` |
+| `fixtures/roughtime.json` | `8e75ee285669ab5ead6a0a89bb67d62063377249ac1c1f3583149198a3ff2988` |
+| `catalogue_child.py` | `9f4fbcb30e793765d6d4c6c2f2966c9a81c50e5c858798cd0507ee6a62af48aa` |
+| `catalogue_supervisor.py` | `30e21191f2d6d11a3edeb217e4fe5f6bb37d958999ab730268bc15c481d26fe3` |
+| `final_tests.log` | `150f7cc73505b3dc198d48f2bca68932d4b7cfd36555e3bbfb470c9cfc982ab3` |
+| `final_child_result.json` | `667038c3da4ae9677a8004e23d337e0abc4708151f3c74e969b23a53d2804128` |
+| `final_result.json` | `154ed7c2164f0c9579460bc686f972aa43d1be16ff67b4522d316fb6c2201191` |
+
+**Preserved first failure:** the first scratch supervisor incorrectly applied
+the 2 MiB captured-output allowance as `RLIMIT_FSIZE`, also limiting generated
+regular files. It executed all 38 methods; the unchanged aggregate-record case
+failed while the new forgery cases passed. A bounded diagnostic on untouched
+main source/test bytes reproduced `refused: output-publication`: its valid
+2,497,688-byte catalogue exceeded that unintended 2,097,152-byte file cap.
+The failed logs/receipts were retained. Removing that extra file restriction and
+enforcing the intended combined-output pipe cap produced the single corrected
+full-suite pass above. This was a runner setup failure, not product RED evidence;
+no product/test limit or assertion was weakened.
+
+The coordinator inspected the receipts and checked input hashes against the
+candidate; this is not another test execution. Scoped whitespace review passed.
+The existing §8.5 next work, production C, native and release qualification remain
+open. Rust execution has its separate incomplete receipt in the
+[engine task](engine-transport-pilot.md#literature-regression-source-preparation--13-november-2026).
+
 ## 9. Open-question register and DNSSEC continuity proposal — 6 November 2026
 
 **Owner request:** collect the remaining catalogue questions in a separate document under `docs`, and record the idea of remembering expected DNSSEC protection for supplied time-source domains. The [new register](../docs/server-catalogue-open-questions.md) indexes existing OPEN-CAT-01/02/03 decisions and adds a bounded proposal under the current DNS/time-assurance owners. It does not repeat the completed §7 design review or reopen Roughtime-first bootstrap.

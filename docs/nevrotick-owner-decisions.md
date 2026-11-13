@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.24<br>
+**Document:** NV-DEC-001, revision 1.25<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
@@ -10,6 +10,8 @@
 **Status:** Records owner instructions, engineering recommendations and unresolved research separately. This is documentation, not implementation or release qualification.
 
 **Current post-V1 scheduling:** the [13 November amendment to OD-16](#201-mathematics-experiments-first--13-november-2026) places mathematical estimation experiments first after actual V1 release, followed by multithreading, Khronos/Ananke, GeoIP and Android. It supersedes only MT-0's first position from the 7 November decision.
+
+**Later 13 November qualification direction:** [OD-18](#22-od-18--literature-derived-qualification-before-v1) places small literature-derived tests/cases before V1 and records longer implementations in the roadmap and detailed documentation. Existing phase owners and the post-V1 order remain authoritative.
 
 **Later 7 November distribution decision:** [OD-17](#21-od-17--winget-capability-before-v1) requires WinGet capability before V1, preserving OD-05's complete Store-MSIX target; the current post-V1 order is governed by amended OD-16.
 
@@ -59,10 +61,10 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | OD-12 | Put the geography-assisted time-source selection experiment in the roadmap after Khronos | **Accepted future experiment placement, 5 November 2026** | GEO-0/GEO-C01 compare optional geographic ordering with ordinary acquisition/history reuse. Evaluation/disposition precedes Android; adoption, data/provider choice and any production implementation remain separate decisions supported by evidence |
 | OD-13 | Use Slint as the default UI toolkit and complete Win32 replacement; license original GUI code GPL-3.0-only while preserving GPL-2.0-only Core/engine | **Accepted toolkit direction, 5 November; GUI composition clarified 6 November 2026** | Qualify the exact Slint/backend/feature/licence graph, generated-code safety boundary and migrated Windows UI; preserve UI-M0 limits, D1–D3 re-entry, resource and complete-package gates |
 | OD-14 | Limit initial intended OS scope to Windows 11 26H2 and a corresponding Windows Server; delegate the other parameters | **Accepted scope direction, 5 November 2026; researched counterpart and engineering fixtures recorded in §18** | Windows Server 2025 Desktop Experience is the selected current counterpart; exact OS/CPU/protection profiles, suitable available environments, complete MSIX delivery and native results remain open. This is not first-stable support approval |
-
 | OD-15 | Make the UI easy to translate through separate string catalogs; prefer binary delivery such as CBOR | **Accepted localization requirement and binary-format preference, 5 November 2026** | Readable authoring → validated CBOR resource design; typed Rust/Slint/tray/notification bridge, codec/formatter and package profile, actual catalog/runtime/native evidence. English remains the adopted locale; independently imported user language packs remain a separate scope choice |
 | OD-16 | Run mathematical estimation experiments first after actual V1 release, then the existing multithreading plan before Khronos | **7 November scheduling direction amended by explicit owner instruction, 13 November 2026** | MATH-0/MATH-C01 comparison and disposition precede MT-0/MT-C01; no production estimator or performance gain is selected. Existing V1 correctness and native lifecycle duties are not deferred |
 | OD-17 | Add WinGet distribution capability before V1, after comprehensive verification of the supplied AI proposal, and record the plan/roadmap | **Accepted capability and scheduling requirement, 7 November 2026** | WGT-0 within P6/P7: real source/identity, metadata/release preparation and native qualification; WGT-C01 readiness remains distinct from WGT-C02 external catalog availability. Preserve Store-first complete MSIX; no automatic MSI selection, publication or update guarantee |
+| OD-18 | Add small literature-derived tests/cases before V1; document longer implementation in ROADMAP.md and detailed docs | **Accepted qualification and planning direction, 13 November 2026** | Actual-consumer tests and reached V1 cases need candidate-specific results; absent future runtime cases remain prepared, not executed. LIT-0/NV-NCR-001 map longer work to existing owners without adopting TPKI, NTxMon or new estimator constants |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -1356,3 +1358,43 @@ open; concrete external blockers use the existing owner-decision process.
 David retains actual account, credential, signing, submission, visibility and
 release actions under OD-05. This research/documentation instruction creates
 no external PR or release and lifts no current Core/native/fuzz/storage/UI hold.
+
+## 22. OD-18 — literature-derived qualification before V1
+
+**Direct owner instruction, 13 November 2026 (Asia/Tbilisi):** commit the reviewed
+follow-through to main. Add further small tests/cases before V1; for work that
+takes substantial implementation time, update ROADMAP.md and create detailed
+documentation under docs.
+
+**Accepted scheduling:** implement bounded missing tests against existing
+production consumers now, with independent expected results and healthy/refused
+controls. Prepare the remaining applicable cases before V1 and execute reached
+V1 behavior before its existing phase/release exit. Existing correctness,
+security, native, package and release requirements are not deferred merely
+because their implementation is substantial.
+
+Some reviewed cases concern future Roughtime/Khronos or an unselected TPKI
+protocol. Specify their concrete input, expected result and consumer/stage early;
+execute them when the actual mechanism reaches its selected implementation.
+Preparation or a shared-component test does not qualify an absent runtime, and
+agents must not build a dummy mechanism solely to report passing cases.
+
+[LIT-0](../ROADMAP.md#lit-0--literature-derived-qualification-before-v1) and
+[NV-NCR-001](supporting-reviews/chrony-ntpsec-noncore-research.md) record priorities,
+primary evidence, independent cases, prerequisites, success/refutation criteria
+and longer-work dispositions. Existing engine, W11-W01, catalogue, P4 recovery
+and TA task owners retain implementation and candidate-specific evidence.
+Reuse adequate existing cases rather than creating a parallel acceptance suite.
+
+This instruction adopts qualification work and detailed planning. It does not
+select a time-certificate authority, NTxMon service, live catalogue updater,
+provider/dependency, timestamp correction, polling constant or new estimator.
+Conditional mechanisms require the specified evidence and a concrete later
+adoption decision. Paper percentages and server serving counts establish no
+NevroTick performance or security result.
+
+Preserve actual V1 → MATH-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android and the
+separate RGT-0 → CHR-0 direction. Ordinary regression tests do not run MATH-0
+early or complete its exit. OD-10's post-V1 formal deferral and existing
+native/fuzz/storage/UI execution holds retain their scopes; source preparation
+and separately admitted portable tests continue within current authorization.

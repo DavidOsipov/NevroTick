@@ -210,6 +210,107 @@ fn exact_dyadic_results_ignore_the_wire_token() -> Result<(), MeasurementRefusal
     Ok(())
 }
 
+/// Later processing ages the captured exchange without retiming its events.
+/// T1=0, T2=1/16, T3=1/8 and T4=1/4 second independently give
+/// -1/32-second phase and 3/16-second RTT, regardless of post-receive work.
+///
+/// # Errors
+/// Propagates fixture/profile construction or an unexpected measurement refusal.
+///
+/// # Panics
+/// Panics if processing delay changes capture arithmetic or fails to increase age.
+#[test]
+fn processing_age_does_not_retime_captured_exchange() -> Result<(), MeasurementRefusal> {
+    let start = Instant::now();
+    let before = capture(start, 0, BASE, 0)?;
+    let after = capture(start, 31_250_000, BASE, 31_250_000)?;
+    let read = capture(start, 250_000_000, BASE, 250_000_000)?;
+    let profile = Some(product_ok(
+        ExperimentalProfile::new(BASE, BASE + 1, 0),
+        "valid experimental profile was refused",
+    )?);
+    let raw = header(BASE_BITS + (1 << 28), BASE_BITS + (1 << 29), 1)?;
+    for age_ns in [0, 250_000_000, 3_000_000_000] {
+        let age = Duration::from_nanos(age_ns);
+        let processing = read
+            .mono_after
+            .checked_add(age)
+            .ok_or(MeasurementRefusal::Arithmetic)?;
+        let result = product_ok(
+            measure(profile, before, after, read, processing, raw),
+            "delayed processing refused a valid captured exchange",
+        )?;
+        let [t1, t2, t3, t4] = result.coordinates();
+        assert_eq!(
+            [t1.ticks(), t2.ticks(), t3.ticks(), t4.ticks()],
+            [
+                17_179_869_184_000_000_000,
+                17_179_869_184_268_435_456,
+                17_179_869_184_536_870_912,
+                17_179_869_185_073_741_824,
+            ],
+        );
+        assert_eq!(result.arithmetic().offset().numerator(), -268_435_456);
+        assert_eq!(result.arithmetic().round_trip().numerator(), 805_306_368);
+        assert_eq!(result.nominal_phase().numerator(), -268_435_456_000_000_000);
+        assert_eq!(result.nominal_phase().denominator(), 8_589_934_592);
+        assert_eq!(result.nominal_round_trip().numerator(), 805_306_368_000_000_000);
+        assert_eq!(result.nominal_round_trip().denominator(), 4_294_967_296);
+        assert_eq!(result.local_fractional_remainders(), [0, 0]);
+        assert_eq!(result.observed_residual_ns(), 0);
+        assert_eq!(result.declared_limit_ns(), 0);
+        assert_eq!(result.acquisition_age(), age);
+        assert_eq!(
+            result.software_window().earliest().ticks(),
+            17_179_869_184_000_000_000,
+        );
+        assert_eq!(
+            result.software_window().latest().ticks(),
+            17_179_869_185_073_741_824,
+        );
+    }
+    Ok(())
+}
+
+/// Send completion checks coherence without replacing the selected nominal T1.
+/// These software captures make no claim about physical packet transmission.
+///
+/// # Errors
+/// Propagates fixture/profile construction or an unexpected measurement refusal.
+///
+/// # Panics
+/// Panics if a coherent send-completion change alters the literal phase or RTT.
+#[test]
+fn send_completion_capture_does_not_replace_send_start() -> Result<(), MeasurementRefusal> {
+    let start = Instant::now();
+    let before = capture(start, 0, BASE, 0)?;
+    let read = capture(start, 250_000_000, BASE, 250_000_000)?;
+    let profile = Some(product_ok(
+        ExperimentalProfile::new(BASE, BASE + 1, 0),
+        "valid experimental profile was refused",
+    )?);
+    let raw = header(BASE_BITS + (1 << 28), BASE_BITS + (1 << 29), 1)?;
+    for after_ns in [0, 7_812_500, 31_250_000, 125_000_000] {
+        let after = capture(start, after_ns, BASE, after_ns)?;
+        let result = product_ok(
+            measure(profile, before, after, read, read.mono_after, raw),
+            "coherent send completion refused a valid captured exchange",
+        )?;
+        let [t1, _, _, t4] = result.coordinates();
+        assert_eq!(t1.ticks(), 17_179_869_184_000_000_000);
+        assert_eq!(t4.ticks(), 17_179_869_185_073_741_824);
+        assert_eq!(result.arithmetic().offset().numerator(), -268_435_456);
+        assert_eq!(result.arithmetic().round_trip().numerator(), 805_306_368);
+        assert_eq!(result.nominal_phase().numerator(), -268_435_456_000_000_000);
+        assert_eq!(result.nominal_round_trip().numerator(), 805_306_368_000_000_000);
+        assert_eq!(result.local_fractional_remainders(), [0, 0]);
+        assert_eq!(result.observed_residual_ns(), 0);
+        assert_eq!(result.declared_limit_ns(), 0);
+        assert_eq!(result.acquisition_age(), Duration::ZERO);
+    }
+    Ok(())
+}
+
 /// Equal peer shifts reverse phase without altering the independent RTT.
 ///
 /// # Errors

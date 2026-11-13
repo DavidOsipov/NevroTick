@@ -1220,6 +1220,42 @@ Full S2.1 and native qualification remain open. OD-10 §14.1 supersedes old
 proof-first routing; earlier settled-rate/pure-leap receipts retain their scopes.
 This work supplies no production eligibility or native qualification.
 
+### Literature regression source preparation — 13 November 2026
+
+[OD-18](../docs/nevrotick-owner-decisions.md#22-od-18--literature-derived-qualification-before-v1)
+and [LIT-0](../ROADMAP.md#lit-0--literature-derived-qualification-before-v1)
+require inexpensive actual-consumer regressions before V1. On source baseline
+5dd75dfa0445ae56171d551d8d44bac09d6e8ccb, two cases are added to
+[the private measurement suite](../crates/nevrotick-engine/tests/private/measurement.rs):
+
+- processing_age_does_not_retime_captured_exchange calls the actual measurement
+  consumer with identical T1/T2/T3/T4 and 0, 0.25 and 3 seconds of later
+  processing. Captured coordinates, software window, phase, RTT and residuals
+  stay fixed; only acquisition age increases.
+- send_completion_capture_does_not_replace_send_start varies the coherent
+  send-after capture across 0, 1/128, 1/32 and 1/8 second. Nominal T1, phase and
+  RTT remain fixed; completion is not a replacement transmit timestamp.
+
+The independent dyadic exchange has T1=0, T2=1/16, T3=1/8 and T4=1/4 second
+relative to the fixed fixture base: phase is -1/32 second and raw RTT is 3/16
+second. Expected integer numerators are literal; neither test derives its oracle
+from the production calculator. The tests use existing helpers and introduce no
+product logic, new protocol, physical-timestamp claim or clock effect.
+
+**Execution status:** source prepared and independently reviewable; Rust checks
+remain incomplete in this edit environment. The configured
+python3 -B scripts/check-environment.py preflight exits 1 with
+"rustup is missing; this checker installs nothing" and DEV-01 INCOMPLETE.
+No format/compiler/Clippy, ordinary/optimized Rust test or native pass is claimed.
+Existing historical receipts retain their original candidates.
+
+**Next action before V1:** the existing acquisition owner runs the affected
+format/compiler/Clippy and measurement regressions through the admitted verifier,
+records selected/executed counts and valid/failure results, and retains all
+applicable phase/release gates. [W11-W01](windows11-integration.md#w11-w01-preserve-packet-timestamp-provenance)
+owns producer-order and any selected native timestamp-adapter qualification;
+these two consumer tests cannot close that broader acquisition path.
+
 ### First controlled measurement source checkpoint — 6 November 2026
 
 This section records the implemented `a43916a` source. The later

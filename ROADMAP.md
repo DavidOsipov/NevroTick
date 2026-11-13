@@ -4,6 +4,8 @@
 
 **Pre-V1 distribution requirement:** [WGT-0, WinGet capability](#wgt-0--winget-distribution-capability-before-v1), prepared and qualified within P6/P7 before V1; actual public catalog availability is tracked separately.
 
+**Pre-V1 literature qualification:** [LIT-0](#lit-0--literature-derived-qualification-before-v1) adds small actual-consumer tests and prepares the reviewed cases before V1 under [OD-18](docs/nevrotick-owner-decisions.md#22-od-18--literature-derived-qualification-before-v1). Substantial implementation follows its existing phase and detailed evidence gates.
+
 **First post-V1 TODO:** [MATH-0, mathematical estimation experiments](#math-0--post-v1-mathematical-estimation-experiments), immediately after V1 is actually released and before MT-0, under [OD-16 §20.1](docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026).
 
 **Post-V1 order:** MATH-0 → [MT-0, multithreading](#mt-0--post-v1-multithreading-and-concurrent-acquisition) → [Khronos/Ananke](#khr-0--evaluate-independent-time-cross-checking) → [GEO-0, geography-assisted source ordering](#geo-0--evaluate-geography-assisted-source-ordering) → Android
@@ -18,7 +20,8 @@
 Finish the current Windows development and acceptance plan, including
 [WGT-0 WinGet capability](#wgt-0--winget-distribution-capability-before-v1) under
 [OD-17](docs/nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1),
-and actually release V1 first. Under [OD-16 §20.1](docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026),
+and [LIT-0's applicable qualification](#lit-0--literature-derived-qualification-before-v1),
+then actually release V1. Under [OD-16 §20.1](docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026),
 the first post-V1 job is [MATH-0](#math-0--post-v1-mathematical-estimation-experiments).
 After its comparison and disposition, continue with
 [MT-0](#mt-0--post-v1-multithreading-and-concurrent-acquisition),
@@ -36,6 +39,7 @@ applying time to its own clock.
 
 | Workstream | Planning owner and status |
 | --- | --- |
+| Literature-derived qualification | [LIT-0](#lit-0--literature-derived-qualification-before-v1) and [NV-NCR-001](docs/supporting-reviews/chrony-ntpsec-noncore-research.md): implement small missing tests against existing consumers and prepare concrete cases before V1. Existing engine, W11, catalogue, broker and TA owners retain evidence; absent future protocols receive no simulated pass. Longer work remains explicitly staged or conditional. |
 | Slint UI default | [OD-13](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) selects Slint with Winit/software and Fluent-style widgets. The checked-in fixture now selects Slint; [S0.5](tasks/s0.5-ui-comparison.md) and the [current GUI handoff](tasks/slint-gui-handoff.md) own its source, graph/licence controls and candidate-specific evidence. The old Win32 reference is historical. Generated-code safety retains its exact graph/source scope; native Windows, production backend, process/package hardening and release qualification remain open. UI-M0 D1–D3 deferrals and the current development-plan order remain. |
 | Windows NTP/NTS client | [Development execution plan](docs/plans/development-plan.md): current work, P0–P7, prerequisites and acceptance. [OD-14's matrix](tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) targets Windows 11 26H2 x64 and Server 2025 x64 Desktop Experience; qualification remains open. This roadmap neither duplicates nor reorders that plan. |
 | Complete hardened MSIX and Microsoft Store | [Owner-selected plan](docs/plans/windows-msix-store.md), [architecture §19.4](docs/windows-time-architecture.md#194-future-complete-msix-gate) and [current W11-W10 assignment](tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026): prepare one complete MSIX with explicit integrity enforcement, protected executable content, Store-compatible CIG and verified per-process protections. David will try Store submission with services and reconsider delivery if refused. Preparation needs no speculative preapproval; supported least-privilege provisioning, W32Time/recovery lifetime and actual Store-artifact qualification still gate release. Retain MSI as an alternative for a later decision. The [release policy](docs/release-policy.md) adds proposed support terms and operational withdrawal/recovery work at the same release gates; support approval and rehearsals remain open. Current Core priority, post-V1 order and execution holds remain. |
@@ -101,6 +105,46 @@ The [plan's completion rules](docs/plans/winget-distribution.md#10-completion-ma
 separate pre-V1 readiness from external public availability. Missing required
 local/native evidence remains open; no merge-time guarantee, automatic customer
 upgrade promise, extra service updater or weakened installer protection is added.
+
+### LIT-0 — literature-derived qualification before V1
+
+**Owner direction, 13 November 2026:** [OD-18](docs/nevrotick-owner-decisions.md#22-od-18--literature-derived-qualification-before-v1)
+places small additional tests/cases before V1 and requires roadmap/detail for
+longer implementation. The [non-core research and qualification review](docs/supporting-reviews/chrony-ntpsec-noncore-research.md)
+owns the evidence synthesis, case mapping and reconsideration gates.
+
+**Execution owners:** existing engine S0.1/S2.1/S2.2, W11-W01, catalogue DATA/R/C,
+P4 broker/recovery and TA assignments. Reuse their canonical CHECK/case IDs,
+configured checks and candidate records; no separate runtime or evidence chain.
+
+- [ ] Add missing, bounded regression tests at actual existing consumers, with
+  independent expected results, refusal behavior and healthy neighbors. Retain
+  the current timestamp/correlation separation and reject forged catalogue
+  authority. Record the exact executed cases and remaining gaps in their tasks.
+- [ ] Before V1, refine the existing capture, restart, polling, NTS lifecycle,
+  source-identity/withdrawal and TA cases using the
+  [case matrix](docs/supporting-reviews/chrony-ntpsec-noncore-research.md#5-pre-v1-cases-under-existing-owners).
+  Execute reached V1 cases before their existing phase/release exit.
+- [ ] For absent future TA/RGT/TPKI consumers, retain precise inputs, independent
+  expectations and the future owner/stage. Case preparation is the pre-V1
+  deliverable; it does not implement or qualify that future runtime.
+- [ ] Reconcile selected cases, actual results, existing coverage and longer
+  work with independent review before the affected release checkpoint.
+
+**Longer work and placement:**
+
+| Work | Detailed gate and existing placement |
+| --- | --- |
+| Timestamp adapter and end-to-end timing comparison | [§6.1](docs/supporting-reviews/chrony-ntpsec-noncore-research.md#61-timestamp-adapters-and-measured-acquisition-benefit), W11-W01/S2.1/P2. Required V1 provenance stays in the V1 path; optional OS/hardware timing needs mapping, lifecycle and matched independent evidence. |
+| Continuous NTS/polling and catalogue admission | [§§6.2–6.3](docs/supporting-reviews/chrony-ntpsec-noncore-research.md#62-continuous-nts-polling-and-resource-qualification), existing P2 and DATA/R/C/release owners. Substantial implementation does not defer an existing V1 correctness requirement. NTxMon/live assignment remains conditional, with no runtime updater selected. |
+| TPKI issuer/certificate protocol | [§6.4](docs/supporting-reviews/chrony-ntpsec-noncore-research.md#64-conditional-tpki-protocol-evaluation), deferred research. Reopen with a complete artifact/specification, usable trust infrastructure and a matched benefit question; no mandatory post-V1 predecessor or protocol adoption. |
+| New estimator/model experiments | [§6.5](docs/supporting-reviews/chrony-ntpsec-noncore-research.md#65-mathematical-experiments), unchanged MATH-0 after actual V1 release. Ordinary correctness regressions do not complete MATH-C01. |
+
+**Exit discipline:** relevant existing task/phase records distinguish prepared,
+executed, blocked and deferred cases. No document, model-only result or another
+candidate's receipt passes an absent mechanism or native/release gate. Preserve
+V1 → MATH-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android, RGT-0 → CHR-0, existing
+execution holds and formal deferral. This work grants no new clock authority.
 
 ### MATH-0 — post-V1 mathematical estimation experiments
 

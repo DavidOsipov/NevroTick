@@ -109,7 +109,7 @@ Continue **one W11-W01 timestamp-provenance card** from the
 when the relevant acquisition owner is assigned. Its engine handoff preserves
 real acquisition facts and separates experimental measurement from later Core
 admission; the finite mapping profile and selected SDK/backend questions remain.
-This source/documentation action does not replace development §7's proof-first
+This source/documentation action does not replace development §7's ordinary
 queue or the engine's separately held native qualification.
 Reuse the completed research; do not restart a general Windows API survey.
 
@@ -203,6 +203,31 @@ cancellation losing to success, close with pending work and numeric handle reuse
 **Mapping:** CHECK-6/11/21/27 for packet admission and adapter behavior;
 CHECK-7/25 only for affected downstream numerical and construction invariants
 at their existing phase scopes.
+
+**Literature refinement — 13 November 2026:** [OD-18](../docs/nevrotick-owner-decisions.md#22-od-18--literature-derived-qualification-before-v1)
+places inexpensive actual-consumer regressions before V1. The
+[non-core research handoff](../docs/supporting-reviews/chrony-ntpsec-noncore-research.md)
+maps Langer's latency experiments to this owner. Identical captured T1/T2/T3/T4
+with later processing must preserve phase/RTT and increase only observation age;
+coherent send-completion capture changes must not replace nominal T1. The
+[engine task](engine-transport-pilot.md#literature-regression-source-preparation--13-november-2026)
+owns the exact new tests and their execution status.
+
+The inspected protected path seals before local send capture and captures receive
+before authentication. A full crypto-duration subtraction would therefore
+introduce a correction for time outside those captures. Preserve the separate
+wire-correlation token and authenticated bytes. The two numerical tests exercise
+the existing measurement consumer, not the complete protected-acquisition path.
+Its producer-order and native-adapter evidence retain their own qualification.
+
+Later selected adapter trials must pair application/OS captures under the same
+estimator and independently observed timing truth, including matched and mixed
+endpoint hardware. Include valid, delayed and missing-metadata controls. Report
+capture fidelity, uncertainty and total synchronization error separately:
+Langer's mixed-hardware result worsened after compensation. The paper selects no
+universal correction, Windows busy-poll/power setting or measured product gain.
+Required S2.1/P2 provenance stays on the V1 path; optional adapter adoption still
+requires its existing contract and native evidence.
 
 ### W11-W02 Reconcile sleep, timers and clock presentation
 

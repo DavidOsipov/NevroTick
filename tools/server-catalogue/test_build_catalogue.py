@@ -396,7 +396,10 @@ class DiffTests(Case):
         _, value, old = self.one_rough()
         forged_values = []
         for location, key, supplied in (("root", "admitted", True), ("root", "record_count", True),
+                                        ("root", "authority", "approved-release"),
                                         ("meaning", "use_permission", "approved"),
+                                        ("meaning", "independence", "independent"),
+                                        ("meaning", "time_behavior", "qualified"),
                                         ("meaning", "key", {"algorithm": "ed25519", "hex": "ff" * 32}),
                                         ("source", "active", True)):
             forged = copy.deepcopy(value)
