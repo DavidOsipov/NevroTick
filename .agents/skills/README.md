@@ -18,6 +18,7 @@ product acceptance IDs and native qualification gates do not apply to that work.
 | Task | Start with |
 | --- | --- |
 | Implement Rust ownership, errors, concurrency or Windows adapters | [implement-rust](implementation/implement-rust/SKILL.md) |
+| Adopt Rust 1.100 APIs or diagnostics while preserving explicit contracts | [Feature contracts](implementation/implement-rust/references/rust-1.100-contracts.md) under `implement-rust`; [lint enforcement](testing/references/rust-1.100-lints.md) under `qa-static-checks` |
 | Implement typed errors, safe diagnostic projection, retry or cleanup failure handling | [Error-handling procedure](implementation/implement-rust/references/error-handling.md) under `implement-rust`; [privacy/logging](security/security-privacy-logging/SKILL.md) for output sinks |
 | Optimize a measured CPU, allocation, latency, wakeup, startup or size cost | [optimize-rust-performance](implementation/optimize-rust-performance/SKILL.md); [resource QA](testing/qa-performance-resources/SKILL.md) for measurement/acceptance |
 | Implement or review x64 baseline admission and runtime CPU-feature dispatch | [implement-cpu-dispatch](implementation/implement-cpu-dispatch/SKILL.md); pair with [performance optimization](implementation/optimize-rust-performance/SKILL.md) for measured adoption |

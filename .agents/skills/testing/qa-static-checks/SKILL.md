@@ -18,6 +18,11 @@ Use [configured tool execution](../references/configured-tooling.md) to choose t
 
 Development-policy changes: distinguish the adopted configuration and observed controls in [TOOLING.md](../../../../TOOLING.md) from proposed/application qualification in the [development-hardening guide](../../../../docs/windows-time-development-hardening.md). Run affected strict-policy fixtures/admission tests; configuration alone proves no executed gate. Reading installs no tools, mandates no every-analyzer-per-change campaign.
 
+For Rust/Cargo 1.100 lint adoption or diagnostic fixes, read
+[the released-lint guidance](../references/rust-1.100-lints.md). Distinguish Cargo
+manifest lints from rustc/Clippy rules, preserve stronger repository checks and
+feature carriers, and qualify only the changed enforcement with valid neighbors.
+
 For pure-library effect boundaries, use
 [role-specific API restrictions](../references/role-api-restrictions.md).
 Verify effective configuration and lint levels, intended rejection diagnostics

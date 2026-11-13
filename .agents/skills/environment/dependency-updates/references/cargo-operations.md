@@ -175,6 +175,11 @@ exact-version qualification; neither changes workspace frozen-build semantics,
 permits automatic dependency deletion, or supplies tool admission. No upgrade,
 new Cargo policy, graph change or execution hold is lifted by this research.
 
+For the shipped 1.100 manifest-lint namespace, inheritance checks or dependency
+diagnostics, use [Cargo and lint enforcement](../../../testing/references/rust-1.100-lints.md).
+Retain legitimate feature activation and the exact member-adoption checks;
+instructional recommendations do not mean a Cargo deny policy is already configured.
+
 ## Qualify the final graph
 
 Use real repository CI/TOOLING commands from the shared configured-tool workflow

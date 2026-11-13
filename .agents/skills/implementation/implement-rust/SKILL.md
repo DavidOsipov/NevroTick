@@ -18,6 +18,10 @@ touched contract; preserve explicit rejection, rounding, guard lifetimes and
 resource limits. Stable availability is not a reason for mechanical rewrites,
 new unsafe code, a dependency/toolchain change or a claimed performance gain.
 Keep the detailed release survey in the linked source register, not every task.
+For Rust 1.100 cleanup, never types, trimming/construction, smart-pointer or
+allocator choices, apply [explicit feature contracts](references/rust-1.100-contracts.md).
+Name the prevented mistake and distinguish type enforcement, automatic cleanup,
+lint rejection and clearer syntax; retain stronger existing domain guarantees.
 
 Read the shared [implementation contract](../CONTRACT.md). For every changed
 function/module, identify preconditions, postconditions, failure and effect/state

@@ -5,6 +5,28 @@ conditional reference, not whole file. Repository architecture outranks external
 examples. Documentation adaptation performed no Cargo graph, Rust build, parser
 experiment or Windows UI execution.
 
+## Rust 1.100 contract guidance — 13 November 2026
+
+The [1.100 feature contracts](implement-rust/references/rust-1.100-contracts.md)
+and [lint procedure](../testing/references/rust-1.100-lints.md) apply the owner's
+request to make agent-written changes explicit and prevent concrete mistakes.
+Source review used NevroTick `8251880a7223e5aa591a317c51196c13316fb7f6`, Rust
+`0ef1bc386059596dada8fb65b50425aab2ea637a` and shipped Cargo
+`3acc79c0c841844675bc53a605922dbfc441e750`. The
+[release announcement](https://blog.rust-lang.org/2026/11/12/Rust-1.100.0/),
+[complete pinned release notes](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/RELEASES.md)
+and method/lint implementations linked beside the rules establish availability
+and semantics. Rolling docs, source version annotations and successful compilation
+alone do not establish the shipped inventory or application behavior.
+
+Preserve named domain guards, real failure/identity contracts and stronger member
+lint adoption. Prefer local cleanup guards and precise finite/optional operations
+where the touched contract benefits; treat unsafe APIs and custom allocation as
+conditional tools. Cargo deny entries remain a proposed coordinated policy change,
+not configuration added by these instructions. This update changes only skills
+and their existing evidence record; it claims no Rust/native execution or measured
+AI defect reduction. See the [skill-quality record](../../plans/2026-10-30-skill-quality.md#rust-1100-feature-contract-skills--13-november-2026).
+
 ## Modern Rust release review — 9 November 2026
 
 The [modern stable Rust reference](implement-rust/references/modern-rust.md)

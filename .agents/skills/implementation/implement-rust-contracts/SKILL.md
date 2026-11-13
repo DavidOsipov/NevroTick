@@ -36,6 +36,12 @@ For identity, normalization or comparison changes, also define
 [domain equivalence and trait contracts](references/contract-enforcement.md#domain-equivalence-and-trait-contracts).
 Two valid representations can still denote the same domain value.
 
+When using Rust 1.100 APIs to express these guarantees, apply
+[explicit feature contracts](../implement-rust/references/rust-1.100-contracts.md).
+Preserve admitted entry and completion in named guards, real typed refusals,
+mandatory delimiters, fallible allocation and identity-bearing shared ownership.
+State which mistake the change prevents and which valid behavior must remain.
+
 For uncertain constructor, transformation or guard bypasses across functions,
 use [CodeQL data-flow analysis](../../testing/references/codeql-data-flow.md) to
 investigate raw-input sources and protected sinks. Model checked-result use

@@ -1273,3 +1273,69 @@ rechecks the final tree, links and whitespace, and verifies remote `main` after
 the already-authorized commit. The publication commit supplies the durable final
 identity. Native progress, stop, resources and service behavior remain unqualified;
 all existing execution holds and post-V1 formal deferral are preserved.
+
+## Rust 1.100 feature contract skills — 13 November 2026
+
+David requested updating the skills to make agents use the reviewed Rust 1.100
+features correctly, with explicit contracts and prevention of coding mistakes.
+This slice changes instruction/routing/source records only. The current NevroTick
+base is `8251880a7223e5aa591a317c51196c13316fb7f6`, tree
+`af5b394579ac582d3a315c6faa8e885039de6e1e`; all 2,082 snapshot blobs matched their
+Git object hashes before edits. Rust source is
+`0ef1bc386059596dada8fb65b50425aab2ea637a`, Cargo source
+`3acc79c0c841844675bc53a605922dbfc441e750`. The 9 November survey remains historical.
+
+| Acceptance | Required result | Owner / environment |
+| --- | --- | --- |
+| SKQ-R100-1 | Discoverable feature rules preserve acquisition/release order, typed failure, mandatory parsing, fallible allocation and shared identity; correct the allocator stability boundary. | Implementation editor; source and pinned API review. |
+| SKQ-R100-2 | QA rules distinguish Cargo/rustc/Clippy, preserve exact inheritance and feature carriers, and require intended diagnostics with valid neighbors; proposed denies are not claimed as current policy. | QA editor; source review. |
+| SKQ-R100-3 | Integrated pack/link/whitespace checks and bounded fresh-context instruction-use review, with actual outcomes and limits recorded. | Coordinator / independent reviewers; Python standard library and read-only review. |
+
+The shared [feature reference](../skills/implementation/implement-rust/references/rust-1.100-contracts.md)
+is routed from Rust implementation/contracts and the skill index. The
+[lint reference](../skills/testing/references/rust-1.100-lints.md) is routed from
+static QA and Cargo operations. Preserve existing task ownership and native,
+fuzz, storage, UI and post-V1 formal holds. No product source, dependency graph,
+toolchain, Cargo policy or checker implementation is changed by this slice.
+
+### Completed instruction and package checks
+
+The nine guidance/routing/source files were frozen with SHA-256
+`e5463294601a726d9342171513914864e3f7a2ad64e491c361839347eb862a71`
+over their sorted path-to-SHA-256 map (compact JSON); this evidence record is
+excluded to avoid a self-referential digest. The instruction-use exercise input
+has SHA-256 `fabc166e66e5efabda9c76e421702c2164be387c3490b6d0cccc99955fc7cae4`.
+
+- The inspected standard-library-only package checker ran as
+  `env -i PATH=/usr/bin:/bin LANG=C.UTF-8 python3 -I -B .agents/skills/scripts/check_skills.py`:
+  **PASS, 66 skills**, metadata, UI prompts, local links and inventories.
+- A separate check of all ten changed Markdown files resolved **280 local
+  links/anchors**, including explicit HTML anchors; no errors. The no-index Git
+  whitespace check emitted no diagnostics (exit 1 denotes differing trees).
+  Checker implementation, inventories and metadata schemas were unchanged.
+- A fresh independent reviewer inspected the complete diff, current call sites
+  and immutable upstream APIs/lints: **READY**, no required corrections. That
+  reviewer saw no instruction-use exercise or grader inputs and executed no code.
+- One separate fresh-context agent used the three updated Rust/contracts/static-QA
+  skills on six groups of proposed changes. It received requirements and raw
+  fragments without the coordinator's expected dispositions or earlier reviews.
+  Its source-review answers matched the preselected semantic controls below.
+
+| Exercise group | Observed disposition |
+| --- | --- |
+| Reentrant publication | Rejected guard-before-acquisition and publication-before-release; preserved publication after ordinary work errors and identified the separate concurrent-caller assumption. |
+| Parsing | Retained mandatory-prefix rejection; accepted optional single-suffix removal with raw checks. |
+| Construction | Accepted bounded fixed-slot `from_fn`; retained typed allocation refusal for receive storage. |
+| Shared provenance | Retained `Arc::clone` for the required same-allocation check; rejected mapped equal-looking replacement. |
+| End states | Preserved successful Stop and fallible shutdown; treated `Infallible` to `!` as spelling only. |
+| Manifest/diagnostics | Rejected Cargo `all`, inheritance opt-outs, dev-dependency coverage overclaim and disabled feature activation; retained coordinated named-rule adoption and existing Clippy selection. |
+
+These are instruction-use regression examples derived from the reviewed failure
+classes, not unseen holdouts or an old/new comparison. One successful source-review
+exercise proves only those dispositions; no statistical improvement is claimed.
+Raw task/report material is transient outside the maintained pack; this record
+retains the source identities, actual scope, outcomes and limitations. Final
+publication must preserve the nine reviewed guidance bytes and verify the remote
+commit's ten-file scope; the publication commit supplies the durable final identity.
+SKQ-R100-1 through SKQ-R100-3 are complete for instruction/package scope. No Rust
+compilation, native execution, future refactor or release qualification occurred.

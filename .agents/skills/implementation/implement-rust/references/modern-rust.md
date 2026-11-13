@@ -13,6 +13,11 @@ stabilization, not a new NevroTick minimum. Earlier prerequisites such as raw
 references, `#[expect]`, `LazyLock`, `split_at_checked` and non-trait `use<...>`
 capture remain useful but are not discoveries from this window.
 
+The **13 November 2026** follow-up covers the admitted **Rust 1.100.0** baseline.
+Use [1.100 feature contracts](rust-1.100-contracts.md) for cleanup guards, never
+types, precise helpers, allocation/identity and the linked Cargo-lint guidance.
+The earlier release survey below retains its historical scope.
+
 ## Contents
 
 - [Check the actual baseline](#check-the-actual-baseline)
@@ -30,8 +35,9 @@ capture remain useful but are not discoveries from this window.
 Read [rust-toolchain.toml](../../../../../rust-toolchain.toml), the
 [workspace and member manifests](../../../../../Cargo.toml),
 [target configuration](../../../../../.cargo/config.toml) and the affected lane.
-At review time the workspace already selected **1.99.1**, **edition 2024**,
-**resolver 3** and Windows **`x86_64-pc-windows-msvc` / `x86-64-v3`**. Verify actual
+At the 13 November follow-up (`8251880a7223e5aa591a317c51196c13316fb7f6`),
+the workspace selected **1.100.0**, **edition 2024**, **resolver 3** and Windows
+**`x86_64-pc-windows-msvc` / `x86-64-v3`**; the 9 November review used 1.99.1. Verify actual
 member inheritance and separate tool workspaces; do not infer their settings from
 the root. Re-read these authorities after any update.
 
@@ -244,9 +250,12 @@ Use each release's API list in the
 [source register](../../SOURCES.md#modern-rust-release-review--9-november-2026)
 and the selected method's documentation. For a measurement task, route to
 [performance optimization](../../optimize-rust-performance/SKILL.md). Portable
-SIMD, experimental float types, allocator interfaces, async destruction and other
-unstable facilities require exact API/status checking; a stable neighboring API
-does not admit them or a nightly toolchain.
+SIMD, experimental float types, remaining allocator extensions, async destruction
+and other unstable facilities require exact API/status checking; a stable
+neighboring API does not admit them or a nightly toolchain. Rust 1.100 stabilizes
+the allocator foundation for `Vec`/`Box`; consult the
+[exact stable/unstable boundary](rust-1.100-contracts.md#keep-unsafe-and-windows-apis-within-their-owners)
+before selecting a method.
 
 ## Qualify compiler and build changes
 
