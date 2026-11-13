@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.25<br>
+**Document:** NV-DEC-001, revision 1.26<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
@@ -12,6 +12,11 @@
 **Current post-V1 scheduling:** the [13 November amendment to OD-16](#201-mathematics-experiments-first--13-november-2026) places mathematical estimation experiments first after actual V1 release, followed by multithreading, Khronos/Ananke, GeoIP and Android. It supersedes only MT-0's first position from the 7 November decision.
 
 **Later 13 November qualification direction:** [OD-18](#22-od-18--literature-derived-qualification-before-v1) places small literature-derived tests/cases before V1 and records longer implementations in the roadmap and detailed documentation. Existing phase owners and the post-V1 order remain authoritative.
+
+**13 November dependency decision:** [OD-19](#23-od-19--14-day-registry-dependency-cooldown)
+sets a 14-day minimum publication age for routine new registry-version selection,
+including transitives. The existing build/dependency owners retain implementation
+and fixture evidence; urgent exceptions use OD-04 individually.
 
 **Later 7 November distribution decision:** [OD-17](#21-od-17--winget-capability-before-v1) requires WinGet capability before V1, preserving OD-05's complete Store-MSIX target; the current post-V1 order is governed by amended OD-16.
 
@@ -65,6 +70,7 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | OD-16 | Run mathematical estimation experiments first after actual V1 release, then the existing multithreading plan before Khronos | **7 November scheduling direction amended by explicit owner instruction, 13 November 2026** | MATH-0/MATH-C01 comparison and disposition precede MT-0/MT-C01; no production estimator or performance gain is selected. Existing V1 correctness and native lifecycle duties are not deferred |
 | OD-17 | Add WinGet distribution capability before V1, after comprehensive verification of the supplied AI proposal, and record the plan/roadmap | **Accepted capability and scheduling requirement, 7 November 2026** | WGT-0 within P6/P7: real source/identity, metadata/release preparation and native qualification; WGT-C01 readiness remains distinct from WGT-C02 external catalog availability. Preserve Store-first complete MSIX; no automatic MSI selection, publication or update guarantee |
 | OD-18 | Add small literature-derived tests/cases before V1; document longer implementation in ROADMAP.md and detailed docs | **Accepted qualification and planning direction, 13 November 2026** | Actual-consumer tests and reached V1 cases need candidate-specific results; absent future runtime cases remain prepared, not executed. LIT-0/NV-NCR-001 map longer work to existing owners without adopting TPKI, NTxMon or new estimator constants |
+| OD-19 | Apply a 14-day minimum publication age to routine selection of new registry versions, including changed/new transitives | **Accepted and implemented in the bounded tooling scope, 13 November 2026; isolated fixtures qualified under R4-B-02** | Product/native qualification remains separate; future updates need exact changed-graph/source approval and any concrete individual exception. Aging does not establish package safety |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -1398,3 +1404,50 @@ separate RGT-0 → CHR-0 direction. Ordinary regression tests do not run MATH-0
 early or complete its exit. OD-10's post-V1 formal deferral and existing
 native/fuzz/storage/UI execution holds retain their scopes; source preparation
 and separately admitted portable tests continue within current authorization.
+
+## 23. OD-19 — 14-day registry dependency cooldown
+
+**Accepted 13 November 2026, Asia/Tbilisi.** David's supplied implementation
+handoff records his instruction, **“14 days it is.”** Fourteen days supersedes
+an earlier assistant proposal of 30 days; it requires no further duration choice.
+The existing R4-B-02 / CHECK-19, CHECK-20 and CHECK-26 owners implement and qualify
+it in [the build task](../tasks/build-optimization.md#accepted-14-day-dependency-cooldown--13-november-2026).
+
+Routine acquisition/resolution uses admitted Cargo 1.100 or a separately admitted
+later cohort, `registry.global-min-publish-age = "14 days"` and
+`resolver.incompatible-publish-age = "deny"`. Apply the rule before approving
+new registry versions, including direct, transitive, host/build and proc-macro
+closure changes. Keep ordinary verification frozen. Preserve the exact existing
+accepted graph; this decision alone selects no dependency update or new provider.
+An imported/manual/bot lock needs reproduction from the accepted baseline and
+review of its whole delta before lock/policy/vendor admission.
+
+The threat is a defective or malicious new release of an already-used legitimate
+dependency. The Rust Security Response Team's 20 August 2026 arrayref campaign
+report gives three short exposure intervals from one campaign. It supports the
+conditional usefulness of delaying some rapidly removed releases; it supplies no
+Rust-wide detection rate, optimum or measured justification for fourteen days.
+RFC 3923's fourteen-day value is an example. David chooses this tradeoff, which
+can delay fixes and does not prove aged code safe. The existing intended-upstream,
+checksum, patch, licence, advisory and build-time review remains required.
+
+Cargo exempts already-locked versions and permits missing publication times;
+git/path/vendor sources and `cargo install` have no equivalent guarantee.
+A changed registry version with unverified publication time remains unadmitted
+unless covered by a concrete exception. The existing accepted baseline is not
+reclassified. Ancestor/home/config/environment/command overrides must not
+silently weaken ordinary acquisition.
+
+A verified urgent fix or blocking compatibility issue follows OD-04 with exact
+package/version, primary evidence, urgency, age, targets/features and the entire
+proposed direct/transitive delta. Only that owned acquisition child may receive
+`CARGO_RESOLVER_INCOMPATIBLE_PUBLISH_AGE=allow`; retain its exact-graph exception
+record and verify subsequent normal invocations use 14/deny. Never persist an
+allow, shorter registry override or package exclusion. Removing the variable
+cannot retrospectively reject the now-locked versions. No exception is granted
+by this general policy.
+
+The [Cargo operations reference](../.agents/skills/environment/dependency-updates/references/cargo-operations.md)
+owns the detailed procedure. Configuration, changed-graph integration, isolated
+fixture results and product/native qualification are separate evidence layers.
+This decision lifts no native/resource, fuzz, storage, UI or post-V1 proof hold.

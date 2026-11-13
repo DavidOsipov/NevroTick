@@ -154,6 +154,7 @@ def acquire(vendor: Path, policy: dict) -> None:
     if vendor.exists() or vendor.is_symlink() or vendor.is_relative_to(ROOT):
         raise ValueError("Vendor destination must be new and outside the checkout")
     packages = acquisition_records(policy)
+    admission = VERIFY.require_root_cooldown_admission(ROOT, policy)
     vendor.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=".ui-m0-acquire-", dir=vendor.parent))
     try:
@@ -182,6 +183,8 @@ def acquire(vendor: Path, policy: dict) -> None:
             print(f"Verified {name} {version}", flush=True)
         # Reserve a new destination at publication time. rename(directory) alone
         # could replace an empty directory created concurrently by another owner.
+        if VERIFY.require_root_cooldown_admission(ROOT, policy) != admission:
+            raise ValueError("Graph/cooldown configuration changed during archive acquisition")
         vendor.mkdir()
         for package in temporary.iterdir():
             package.rename(vendor / package.name)

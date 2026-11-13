@@ -127,31 +127,53 @@ def artifact_path(output, profile):
     return expected
 
 
+def library_build_command(profile):
+    """Build one admitted Windows library with the original twelve build jobs."""
+    if profile not in PROFILE_DIRECTORY:
+        raise Incomplete("Unadmitted observer build profile.")
+    return ["cargo", "--config", f'target.{TARGET}.linker="/work/linker"', "build",
+            "--package", "time-domain", "--lib", "--frozen", "--jobs", "12",
+            "--target", TARGET, "--profile", "dev" if profile == "debug" else profile,
+            "--message-format=json"]
+
+
 def emitted_dependency_artifacts(output, profile, source, vendor, policy):
     """Attribute the complete actual Cargo host/target library and proc-macro set."""
     directory = PROFILE_DIRECTORY[profile]
     locked = tomllib.loads((source / "Cargo.lock").read_text())["package"]
-    packages = {item["name"]: item for item in locked}
+    registry = "registry+https://github.com/rust-lang/crates.io-index"
+    packages = {(item["name"], item["version"], item.get("source")): item for item in locked}
     if len(packages) != len(locked):
-        raise Incomplete("Ambiguous locked package names need separate artifact admission.")
-    required, pending = set(), ["time-domain"]
+        raise Incomplete("Duplicate exact locked package identity.")
+    def resolve(reference):
+        match = (re.fullmatch(r"([A-Za-z0-9_-]+)(?: ([^\s()]+))?(?: \(([^()]+)\))?", reference)
+                 if type(reference) is str else None)
+        if match is None:
+            raise Incomplete("Malformed reached locked dependency reference.")
+        candidates = [key for key in packages if key[0] == match[1]
+                      and (match[2] is None or key[1] == match[2])
+                      and (match[3] is None or key[2] == match[3])]
+        if len(candidates) != 1:
+            raise Incomplete("Reached locked dependency identity is absent or ambiguous.")
+        return candidates[0]
+    root = resolve("time-domain")
+    if root[2] is not None:
+        raise Incomplete("The allocation owner is not a local locked package.")
+    required, pending = set(), [root]
     while pending:
-        name = pending.pop()
-        if name in required:
+        key = pending.pop()
+        if key in required:
             continue
-        if name not in packages:
-            raise Incomplete("Emitted dependency owner is absent from the locked graph.")
-        required.add(name)
-        pending.extend(value.split()[0] for value in packages[name].get("dependencies", []))
-    external = {item["name"]: item for item in policy["packages"]}
-    if any(name != "time-domain" and (name not in external or external[name]["version"] != packages[name]["version"])
-           for name in required):
+        required.add(key)
+        pending.extend(resolve(value) for value in packages[key].get("dependencies", []))
+    external = {(item["name"], item["version"]): item for item in policy["packages"]}
+    if any(key != root and (key[2] != registry or key[:2] not in external) for key in required):
         raise Incomplete("Artifact closure differs from admitted external package identities.")
     manifests = {}
-    for name in required:
-        version = packages[name]["version"]
-        manifest = source / "crates/time-domain/Cargo.toml" if name == "time-domain" else vendor / f"{name}-{version}/Cargo.toml"
-        manifests[name] = tomllib.loads(manifest.read_text())
+    for key in required:
+        name, version, _origin = key
+        manifest = source / "crates/time-domain/Cargo.toml" if key == root else vendor / f"{name}-{version}/Cargo.toml"
+        manifests[key] = tomllib.loads(manifest.read_text())
     result, units, seen_packages = {}, set(), set()
     for line in output.splitlines():
         if not line.startswith("{"):
@@ -160,16 +182,17 @@ def emitted_dependency_artifacts(output, profile, source, vendor, policy):
         if item.get("reason") != "compiler-artifact":
             continue
         package_id = item.get("package_id")
-        owners = [name for name in required if package_id == (
-            "path+file:///work/fixture/crates/time-domain#" + packages[name]["version"] if name == "time-domain"
-            else f"registry+https://github.com/rust-lang/crates.io-index#{name}@{packages[name]['version']}")]
+        owners = [key for key in required if package_id == (
+            "path+file:///work/fixture/crates/time-domain#" + key[1] if key == root
+            else registry + "#" + key[0] + "@" + key[1])]
         if len(owners) != 1:
             raise Incomplete("Cargo emitted an unknown or ambiguous dependency package identity.")
-        name = owners[0]
-        prefix = "/work/fixture/crates/time-domain" if name == "time-domain" else f"/vendor/{name}-{packages[name]['version']}"
+        key = owners[0]
+        name, version, _origin = key
+        prefix = "/work/fixture/crates/time-domain" if key == root else f"/vendor/{name}-{version}"
         if item.get("manifest_path") != prefix + "/Cargo.toml":
             raise Incomplete("Cargo dependency manifest attribution differs from its admitted owner.")
-        manifest = manifests[name]
+        manifest = manifests[key]
         target, observed_profile = item.get("target", {}), item.get("profile", {})
         kind, crate_types = target.get("kind"), target.get("crate_types")
         files = item.get("filenames")
@@ -180,12 +203,12 @@ def emitted_dependency_artifacts(output, profile, source, vendor, policy):
             raise Incomplete("Emitted dependency profile differs from checked observer construction.")
         if kind == ["custom-build"]:
             build_path = manifest.get("package", {}).get("build", "build.rs")
-            if (name == "time-domain" or external[name].get("build_script") is not True
+            if (key == root or external[key[:2]].get("build_script") is not True
                     or not isinstance(build_path, str) or target.get("name") != "build-script-build"
                     or crate_types != ["bin"] or target.get("src_path") != prefix + "/" + build_path
                     or observed_profile.get("opt_level") != "0" or len(files) != 1
                     or not re.fullmatch(r"/work/target/" + re.escape(directory + "/build/" + name)
-                                        + r"-[a-f0-9]{16}/build-script-build", files[0])):
+                                        + r"(?:-[a-f0-9]{16}/build-script-build|/[a-f0-9]{16}/out/build_script_build(?:-[a-f0-9]{16})?)", files[0])):
                 raise Incomplete("Unexpected build-script artifact in observer dependency output.")
             # These admitted executables already ran under Cargo; they are not
             # Rust library-search inputs and are retained in the raw Cargo row.
@@ -197,8 +220,8 @@ def emitted_dependency_artifacts(output, profile, source, vendor, policy):
         if (type(macro) is not bool or kind != [expected_kind] or crate_types != [expected_kind]
                 or target.get("name") != crate or target.get("src_path") != prefix + "/" + library.get("path", "src/lib.rs")):
             raise Incomplete("Emitted library/proc-macro kind differs from its admitted source manifest.")
-        host_root = f"/work/target/{directory}/deps/"
-        target_root = f"/work/target/{TARGET}/{directory}/deps/"
+        host_root = f"/work/target/{directory}/"
+        target_root = f"/work/target/{TARGET}/{directory}/"
         role = "host" if all(path.startswith(host_root) for path in files) else "target"
         expected_root = host_root if role == "host" else target_root
         if macro and role != "host" or (name == "time-domain" and role != "target"):
@@ -209,14 +232,16 @@ def emitted_dependency_artifacts(output, profile, source, vendor, policy):
         suffixes = {".so"} if macro else {".rlib", ".rmeta"}
         if {Path(path).suffix for path in files} != suffixes or len(files) != len(suffixes):
             raise Incomplete("Incomplete emitted library or host proc-macro artifact set.")
-        unit = (name, role, expected_kind)
+        unit = (key, role, expected_kind)
         if unit in units:
             raise Incomplete("Duplicate emitted dependency compilation unit.")
-        units.add(unit); seen_packages.add(name)
+        units.add(unit); seen_packages.add(key)
         for path in files:
             local_rlib = f"/work/target/{TARGET}/{directory}/libtime_domain.rlib"
             if not (name == "time-domain" and path == local_rlib):
-                if not re.fullmatch(re.escape(expected_root + "lib" + crate) + r"-[a-f0-9]{16}\.(?:rlib|rmeta|so)", path):
+                if not re.fullmatch(re.escape(expected_root) + r"(?:deps/|build/" + re.escape(name)
+                                    + r"/[a-f0-9]{16}/out/)lib" + re.escape(crate)
+                                    + r"-[a-f0-9]{16}\.(?:rlib|rmeta|so)", path):
                     raise Incomplete("Emitted dependency filename escapes its exact host/target crate root.")
             if path in result:
                 raise Incomplete("Duplicate emitted dependency path.")
@@ -498,11 +523,7 @@ def build(args, report):
     rust_policy = json.loads((ROOT / "policy/tool-manifest.json").read_text())
     ENV.require_admitted_compiler(rust_policy["rust"]["channel"], compiler_info, rust_policy)
     run("observer-format", ["rustfmt", "--edition", "2024", "--check", "/work/fixture/" + OBSERVER])
-    cargo_profile = "dev" if args.profile == "debug" else args.profile
-    cargo = ["cargo", "--config", f'target.{TARGET}.linker="/work/linker"', "build",
-             "--package", "time-domain", "--lib", "--frozen", "--jobs", "12", "--target", TARGET,
-             "--profile", cargo_profile, "--message-format=json"]
-    cargo_output = run("library-build", cargo)
+    cargo_output = run("library-build", library_build_command(args.profile))
     actual = artifact_path(cargo_output, args.profile)
     attributed = emitted_dependency_artifacts(cargo_output, args.profile, source, vendor, policy)
     actual_host = work / actual.removeprefix("/work/")

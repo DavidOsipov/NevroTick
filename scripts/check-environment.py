@@ -17,6 +17,7 @@ import selectors
 import shutil
 import signal
 import socket
+import stat
 import subprocess
 import sys
 import tempfile
@@ -45,6 +46,7 @@ FORBIDDEN_ENV = {
     "RUSTUP_DIST_SERVER", "RUSTUP_UPDATE_ROOT",
     "RUSTFMT", "CLIPPY_ARGS", "CLIPPY_CONF_DIR", "LD_PRELOAD", "LD_LIBRARY_PATH", "LD_AUDIT",
     "CARGO_INCREMENTAL", "LLVM_COV", "LLVM_PROFDATA",
+    "CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE", "CARGO_RESOLVER_INCOMPATIBLE_PUBLISH_AGE",
 }
 FORBIDDEN_PREFIXES = (
     "CARGO_TARGET_", "CARGO_PROFILE_", "CARGO_BUILD_", "CARGO_ALIAS_", "CC_", "CXX_",
@@ -52,6 +54,7 @@ FORBIDDEN_PREFIXES = (
 )
 MAX_OUTPUT = 2 * 1024 * 1024
 MAX_REQUESTED_OUTPUT = 8 * 1024 * 1024
+MAX_CARGO_CONFIGURATION_BYTES = 64 * 1024
 
 
 class Incomplete(RuntimeError):
@@ -75,7 +78,9 @@ def external_receipt(path: Path, root: Path) -> Path:
 
 def overridden_names(environment: dict[str, str]) -> list[str]:
     """Only return variable names; ambient values can contain credentials."""
-    return sorted(name for name in environment if name in FORBIDDEN_ENV or name.startswith(FORBIDDEN_PREFIXES))
+    return sorted(name for name in environment
+                  if (name in FORBIDDEN_ENV or name.startswith(FORBIDDEN_PREFIXES)
+                      or re.fullmatch(r"CARGO_REGISTRIES_.+_MIN_PUBLISH_AGE", name)))
 
 
 def run(command: list[str], *, cwd: Path, timeout: float = 30, environment=None, stdin=None,
@@ -168,10 +173,80 @@ def require_admitted_binary(path: Path, expected: str, label: str) -> str:
 
 
 def require_cargo_configuration(parsed: dict) -> None:
-    """Admit the complete CPU budget and Windows flag vector without execution."""
+    """Admit exact CPU, registry-age and Windows settings without execution."""
     if parsed != {"build": {"jobs": CPU_JOBS}, "env": {"RUST_TEST_THREADS": str(CPU_JOBS)},
+                  "registry": {"global-min-publish-age": "14 days"},
+                  "resolver": {"incompatible-publish-age": "deny"},
                   "target": {WINDOWS_TARGET: {"rustflags": MSVC_FLAGS}}}:
-        raise Incomplete("Cargo configuration differs from the admitted CPU budget and Windows flags.")
+        raise Incomplete("Cargo configuration differs from the admitted CPU budget, 14-day cooldown and Windows flags.")
+
+
+def require_cargo_context(root: Path, environment: dict[str, str] | None = None) -> dict[str, str]:
+    """Bind exact Cargo policy/cwd without executing tools or imposing an identity.
+
+    A caller supplies the intended environment, or inherits the current one only
+    when None. The validated regular-file bytes own the digest. Recompare this
+    small binding after the owned operation; a later change invalidates admission.
+    Ancestor/home/legacy settings are rejected, never read for their contents.
+    """
+    environment = dict(os.environ) if environment is None else environment
+    names = overridden_names(environment)
+    if names:
+        raise Incomplete("Unreviewed build overrides are set (names only): " + ", ".join(names))
+    root = Path(root).resolve(strict=True)
+    if not root.is_dir():
+        raise Incomplete("Cargo context requires a canonical checkout directory.")
+    config = root / ".cargo/config.toml"
+    if not config.is_file():
+        raise Incomplete("Missing repository target-specific Cargo configuration.")
+    if config.resolve(strict=True) != config:
+        raise Incomplete("Cargo configuration must be canonical, not redirected.")
+    def stamp(info):
+        return (info.st_dev, info.st_ino, info.st_mode, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+    try:
+        before = config.lstat()
+        if not stat.S_ISREG(before.st_mode) or before.st_size > MAX_CARGO_CONFIGURATION_BYTES:
+            raise Incomplete("Cargo configuration exceeds its regular-file byte bound.")
+        descriptor = os.open(config, os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW)
+        try:
+            if stamp(os.fstat(descriptor)) != stamp(before):
+                raise Incomplete("Cargo configuration changed during admission.")
+            data = os.read(descriptor, MAX_CARGO_CONFIGURATION_BYTES + 1)
+            if (len(data) != before.st_size or stamp(os.fstat(descriptor)) != stamp(before)
+                    or stamp(config.lstat()) != stamp(before)):
+                raise Incomplete("Cargo configuration changed during admission.")
+        finally:
+            os.close(descriptor)
+        parsed = tomllib.loads(data.decode("utf-8"))
+    except (OSError, ValueError, UnicodeError) as error:
+        raise Incomplete("Cargo configuration is unreadable or invalid UTF-8 TOML.") from error
+    require_cargo_configuration(parsed)
+    if "CARGO_HOME" in environment:
+        raw_home = environment["CARGO_HOME"]
+        if type(raw_home) is not str:
+            raise Incomplete("CARGO_HOME must be an absolute canonical directory path.")
+        cargo_home = Path(raw_home)
+    else:
+        # Resolve defaults from the intended child environment, never a HOME
+        # value discarded by a caller that deliberately supplies a cleared map.
+        if "HOME" in environment:
+            cargo_home = Path(environment["HOME"]) / ".cargo"
+        else:
+            import pwd
+            cargo_home = Path(pwd.getpwuid(os.getuid()).pw_dir) / ".cargo"
+        raw_home = str(cargo_home)
+    if (not cargo_home.is_absolute() or str(cargo_home) != raw_home
+            or cargo_home.resolve(strict=False) != cargo_home
+            or cargo_home.exists() and not cargo_home.is_dir()):
+        raise Incomplete("CARGO_HOME must be an absolute canonical directory path.")
+    candidates = [directory / ".cargo" / name for directory in [*root.parents, cargo_home.parent]
+                  for name in ("config", "config.toml")]
+    candidates += [root / ".cargo/config", cargo_home / "config", cargo_home / "config.toml"]
+    ambient = sorted({str(path) for path in candidates
+                      if path.is_file() and path.resolve() != config})
+    if ambient:
+        raise Incomplete("Unreviewed ancestor/home/legacy Cargo configuration: " + json.dumps(ambient))
+    return {"cwd": str(root), "config_sha256": hashlib.sha256(data).hexdigest()}
 
 
 def inspect(root: Path) -> dict:
@@ -179,9 +254,8 @@ def inspect(root: Path) -> dict:
         raise Incomplete("This checker owns the Linux/WSL lane; use setup-windows.ps1 for native Windows.")
     if os.geteuid() == 0:
         raise Incomplete("Run development checks as an ordinary user, not root.")
-    names = overridden_names(dict(os.environ))
-    if names:
-        raise Incomplete("Unreviewed build overrides are set (names only): " + ", ".join(names))
+    context = require_cargo_context(root)
+    root = Path(context["cwd"])
     toolchain_file = root / "rust-toolchain.toml"
     if not toolchain_file.is_file():
         raise Incomplete("Missing repository rust-toolchain.toml; no floating toolchain is admitted.")
@@ -196,31 +270,12 @@ def inspect(root: Path) -> dict:
     if WINDOWS_TARGET not in toolchain.get("targets", []):
         raise Incomplete("The toolchain file omits the x64 Windows MSVC standard library.")
 
-    config = root / ".cargo/config.toml"
-    if not config.is_file():
-        raise Incomplete("Missing repository target-specific Cargo configuration.")
-    require_cargo_configuration(tomllib.loads(config.read_text()))
     policy_file = root / "policy/tool-manifest.json"
     if not policy_file.is_file():
         raise Incomplete("Missing reviewed policy/tool-manifest.json.")
     policy = json.loads(policy_file.read_text())
     if channel != policy["rust"]["channel"]:
         raise Incomplete("Toolchain file and reviewed tool manifest disagree.")
-    ambient = []
-    cargo_home = Path(os.environ.get("CARGO_HOME", Path.home() / ".cargo")).expanduser()
-    for directory in [*root.parents, cargo_home.parent]:
-        for name in ("config", "config.toml"):
-            path = directory / ".cargo" / name
-            if path.is_file() and path.resolve() != config.resolve():
-                ambient.append({"path": str(path), "sha256": digest(path)})
-    for path in (root / ".cargo/config", cargo_home / "config", cargo_home / "config.toml"):
-        if path.is_file() and path.resolve() != config.resolve():
-            item = {"path": str(path), "sha256": digest(path)}
-            if item not in ambient:
-                ambient.append(item)
-    if ambient:
-        raise Incomplete("Unreviewed ancestor/home/legacy Cargo configuration: " + json.dumps(ambient))
-
     rustup = shutil.which("rustup")
     if not rustup:
         raise Incomplete("rustup is missing; this checker installs nothing.")
@@ -270,12 +325,14 @@ def inspect(root: Path) -> dict:
                              "version": require_ok(run([str(path), "--version"], cwd=root)).splitlines()[0]}
         else:
             helpers[name] = {"status": "missing"}
+    if require_cargo_context(root) != context:
+        raise Incomplete("Cargo context changed during environment admission.")
     return {"toolchain": channel, "effective_selection": active, "tools": identities,
             "host_helpers": helpers,
             "rustup": manager_version,
             "components": components.splitlines(), "targets": target_list.splitlines(),
             "configuration_sha256": {"rust-toolchain.toml": digest(toolchain_file),
-                                      ".cargo/config.toml": digest(config),
+                                      ".cargo/config.toml": context["config_sha256"],
                                       "policy/tool-manifest.json": digest(policy_file)},
             "product_manifest_present": (root / "Cargo.toml").is_file()}
 

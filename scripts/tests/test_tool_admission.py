@@ -7,6 +7,7 @@ controls, not instrumented MC/DC coverage measurements.
 """
 import importlib.util
 import hashlib
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -24,6 +25,23 @@ class CompilerAdmissionTests(unittest.TestCase):
 
     def test_healthy_compiler_identity_is_admitted(self):
         ENV.require_admitted_compiler("1.99.1", self.IDENTITY, self.POLICY)
+
+    def test_current_distribution_identity_and_previous_release_rejection(self):
+        """The released candidate is distinct from the synthetic legacy controls."""
+        policy = json.loads((Path(__file__).resolve().parents[2]
+                             / "policy/tool-manifest.json").read_text())
+        identity = ("release: 1.100.0\n"
+                    "commit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\n"
+                    "LLVM version: 23.1.5\n")
+        ENV.require_admitted_compiler("1.100.0", identity, policy)
+        for wrong in (identity.replace("release: 1.100.0", "release: 1.99.1"),
+                      identity.replace("0ef1bc386059596dada8fb65b50425aab2ea637a",
+                                       "58cf8f9c35b355199727627d07ae34a4e2846d67"),
+                      identity.replace("23.1.5", "23.1.1")):
+            with self.subTest(identity=wrong), self.assertRaises(ENV.Incomplete):
+                ENV.require_admitted_compiler("1.100.0", wrong, policy)
+        with self.assertRaisesRegex(ENV.Incomplete, "manifest disagree"):
+            ENV.require_admitted_compiler("1.99.1", identity, policy)
 
     def test_another_installed_pin_does_not_change_admission(self):
         with self.assertRaisesRegex(ENV.Incomplete, "manifest disagree"):

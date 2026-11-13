@@ -63,6 +63,8 @@ class EngineKeProfileControls(unittest.TestCase):
         for (schema, patches, lane), digest in expected.items():
             rows = VERIFY.commands(lane, schema_version=schema, patched_packages=patches)
             with self.subTest(schema=schema, patches=patches, lane=lane):
+                # Restored pre-upgrade worker settings match these exact
+                # historical command bytes; no normalization is admitted.
                 actual = hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode()).hexdigest()
                 self.assertEqual(actual, digest)
                 self.assertEqual(rows, VERIFY.commands(lane, schema_version=schema,
@@ -120,10 +122,13 @@ class EngineKeProfileControls(unittest.TestCase):
                 with self.subTest(lane=lane, label=label):
                     job_flag = "--build-jobs" if "--build-jobs" in command else "--jobs"
                     self.assertEqual(command[command.index(job_flag) + 1], "6")
-                    self.assertEqual(ordinary[label][ordinary[label].index(job_flag) + 1], "12")
+                    # The pre-upgrade default rows use twelve; only the
+                    # selected KE workspace/Engine rows explicitly use six.
+                    default_jobs = "12"
+                    self.assertEqual(ordinary[label][ordinary[label].index(job_flag) + 1], default_jobs)
                     self.assertIn("--frozen", command)
                     original = command.copy()
-                    original[original.index(job_flag) + 1] = "12"
+                    original[original.index(job_flag) + 1] = default_jobs
                     index = original.index("--features")
                     del original[index:index + 2]
                     self.assertEqual(original, ordinary[label])
@@ -272,6 +277,9 @@ def prototype_trees(policy, target):
 
 class EngineKeAdmissionControls(unittest.TestCase):
     def setUp(self):
+        age = patch.object(PROFILE.COOLDOWN, "validate_policy_admission", return_value=None)
+        age.start()
+        self.addCleanup(age.stop)
         self.policy = prototype_policy()
         self.pin = patch.object(PROFILE, "REVIEWED_POLICY_SHA256", PROFILE.canonical_policy_sha256(self.policy))
         self.pin.start()
@@ -361,7 +369,8 @@ class EngineKeSourceControls(unittest.TestCase):
     def test_prototype_deny_view_preserves_default_and_adds_exact_selected_grants(self):
         import tomllib
         policy = prototype_policy()
-        with patch.object(PROFILE, "REVIEWED_POLICY_SHA256", PROFILE.canonical_policy_sha256(policy)):
+        with patch.object(PROFILE, "REVIEWED_POLICY_SHA256", PROFILE.canonical_policy_sha256(policy)), \
+                patch.object(PROFILE.COOLDOWN, "validate_policy_admission", return_value=None):
             base = (FIXTURE.ROOT / "deny.toml").read_text()
             default = tomllib.loads(VERIFY.product_deny(base, policy, FIXTURE.WINDOWS))
             prototype = tomllib.loads(VERIFY.product_deny(base, policy, FIXTURE.WINDOWS, profile="engine-ke-association"))

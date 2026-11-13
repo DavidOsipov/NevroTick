@@ -64,7 +64,7 @@
   },
   "common_nightly": "common/rustup/toolchains/nightly-2026-10-28-x86_64-unknown-linux-gnu",
   "common_nightly_pin": "nightly-2026-10-28",
-  "shipping_toolchain": "1.99.1",
+  "shipping_toolchain": "1.100.0",
   "profiles": {
     "miri_flags": [
       "-Zmiri-strict-provenance",
@@ -125,8 +125,8 @@
     },
     {
       "name": "stable",
-      "path": "evidence/stable-complete-payload-inventory.json",
-      "sha256": "8b7bd1c19a976090ce4c8e8246a4ca1d7dfef26d76e04ae3bc9672101694190e",
+      "path": "evidence/stable-1.100.0-complete-payload-inventory.json",
+      "sha256": "ee3099ad012b8b779bb7b3e4d6c5b2bc735009e535d2add2c51127af010c0d90",
       "root": "stable",
       "scopes": [
         "bin",

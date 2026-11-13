@@ -8,6 +8,14 @@ jobs = 12
 [env]
 RUST_TEST_THREADS = "12"
 
+# Accepted routine registry-version selection policy (13 November 2026).
+# Locked versions and non-registry sources retain their separate admission.
+[registry]
+global-min-publish-age = "14 days"
+
+[resolver]
+incompatible-publish-age = "deny"
+
 # Keep portable-core checks on the host; select the native target explicitly.
 # This complete vector targets the pinned Rust bundled-LLD/xwin lane. Native
 # link.exe substitution needs admission; never silently drop strict CET flags.

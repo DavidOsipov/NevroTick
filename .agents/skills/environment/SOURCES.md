@@ -47,14 +47,17 @@ execution permission.
 
 ### Publish-age watchlist — 9 November 2026
 
-The [Cargo reference](dependency-updates/references/cargo-operations.md#future-publish-age-watchlist--9-november-2026)
-retains a future evaluation trigger; it selects no delay, toolchain update or
-configuration. Registry-age policy cannot replace source/dependency admission.
+**13 November selected-policy update:** the
+[Cargo operations reference](dependency-updates/references/cargo-operations.md#registry-dependency-cooldown--13-november-2026)
+now applies [OD-19's fourteen-day decision](../../../docs/nevrotick-owner-decisions.md#23-od-19--14-day-registry-dependency-cooldown).
+The preceding watchlist/prerelease status is historical. Exact selection,
+changed-graph admission and isolated evidence remain with R4-B-02.
 
-| Primary source inspected | Applied finding |
+| Primary source | Applied finding |
 | --- | --- |
-| [Beta Cargo configuration](https://doc.rust-lang.org/beta/cargo/reference/config.html#registryglobal-min-publish-age) and [stable configuration](https://doc.rust-lang.org/cargo/reference/config.html) | Beta documents the settings as respected from 1.100+; stable 1.99.1 lacks them. Lockfile exemptions, overrides and absent registry publication-time support limit coverage; recheck released behavior before any later adoption. |
-| [RFC 3923](https://rust-lang.github.io/rfcs/3923-cargo-min-publish-age.html) | Motivation and proposal history; the shipped configuration/resolver contract must control a future experiment. No delay or security-benefit measurement is established here. |
+| [Shipped Cargo configuration](https://github.com/rust-lang/cargo/blob/3acc79c0c841844675bc53a605922dbfc441e750/doc/book/src/reference/config.md) and [resolver controls](https://github.com/rust-lang/cargo/blob/3acc79c0c841844675bc53a605922dbfc441e750/tests/testsuite/min_publish_age.rs) | Cargo 1.100 supports global/per-registry publication age and deny/allow. Locked-version exemptions, absent timestamps and configuration precedence limit coverage. Vendor/path/git sources confer no equivalent guarantee; shipped cargo install is excluded. |
+| [RFC 3923](https://rust-lang.github.io/rfcs/3923-cargo-min-publish-age.html) | Fourteen days is an example, not a measured security cutoff. Proposal history does not control shipped install applicability. |
+| [Rust Security Response Team's arrayref incident report](https://blog.rust-lang.org/2026/08/20/supply-chain-attack-on-arrayref/) | Republished legitimate dependencies introduced a payload-downloading build dependency. The 86/90/107-minute exposures are three observations from one campaign. They support conditional exclusion of those fresh versions, not an ecosystem detection rate or optimal delay. |
 
 ### Cargo intermediate-layout watch — 9 November 2026
 

@@ -88,7 +88,7 @@ POINTER = Path.home() / ".local/share/nevrotick/ui-m0.json"
 SOURCE_FILES = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rustfmt.toml", "clippy.toml",
                 "deny.toml", ".cargo/config.toml", ".config/nextest.toml")
 CHECKER_FILES = ("scripts/verify.py", "scripts/check-environment.py", "scripts/check-strict.py",
-                 "scripts/slint_dependency_profile.py", "scripts/slint_linux_sdk.py",
+                 "scripts/slint_dependency_profile.py", "scripts/dependency_cooldown.py", "scripts/slint_linux_sdk.py",
                  "scripts/advisory_snapshot.py", "tools/crypto-aes-siv-witness/fuzz/input_custody.py",
                  "scripts/tests/test_verify_vendor_admission.py", "scripts/tests/test_engine_ke_dependency_profile.py")
 UI_TEXT_CHECKER_FILES = ("scripts/check-ui-text.py", "scripts/check_ui_text_coverage.py",
@@ -445,6 +445,25 @@ def validate_patched_lock(packages: list[dict], patches: list[dict]) -> None:
         raise ENV.Incomplete("A local path patch acquired a checksum, origin or unreviewed dependency edge.")
 
 
+def require_root_cooldown_admission(root: Path, policy: dict) -> dict:
+    """Require the reviewed current graph before acquisition or execution.
+
+    Archive-only legacy controls isolate this boundary explicitly. They do not
+    supply age approval for a product or imported registry graph.
+    """
+    try:
+        configuration = ENV.require_cargo_context(root)
+        if policy.get("schema_version") != 3:
+            raise ENV.Incomplete("Current product acquisition requires its schema-3 cooldown admission.")
+        if read_dependency_policy(root / "policy/ui-m0-dependencies.json") != policy:
+            raise ENV.Incomplete("Dependency policy changed before graph admission.")
+        validate_dependency_policy(policy)
+        decision = SLINT.COOLDOWN.validate_root_admission(root, policy)
+        return {"configuration": configuration, "decision_sha256": SLINT.COOLDOWN.canonical(decision)}
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        raise ENV.Incomplete("Registry graph cooldown admission failed: " + str(error)) from error
+
+
 def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     """Admit reviewed members, explicit engine effects and the exact locked graph."""
     try:
@@ -631,6 +650,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                  for name in ("Cargo.toml", *(member + "/Cargo.toml" for member in PACKAGES.values()))}
     if policy.get("manifests_sha256") != manifests:
         raise ENV.Incomplete("Product manifest/features differ from the reviewed dependency admission.")
+    require_root_cooldown_admission(root, policy)
     admitted = validated_dependency_records(policy, include_metadata=True)
     expected = {(p["name"], p["version"], p["checksum"]) for p in admitted}
     if not expected or len(expected) != len(admitted):
@@ -1411,11 +1431,59 @@ def summarize_test_counts(records: list[dict], *, patched_packages: tuple[str, .
             "optimized_tests_executed": sum(counts[package]["optimized-tests"] for package in OPTIMIZED_DISCRIMINATORS)}
 
 
+def command_resources(lane: str, label: str, command: list[str], *, profile: str = "default") -> dict:
+    """Select one finite build budget from the exact configured command owner.
+
+    The larger compilation ceilings belong only to the two Windows release
+    artifact rows. UI alone allows8GiB virtual AS and600 seconds wall time.
+    These change no product runtime budget or compiler setting.
+    There is no caller-provided number, environment override or CLI budget.
+    """
+    if (type(lane) is not str or lane not in {"portable", "windows", "dependencies"}
+            or type(profile) is not str or profile not in {"default", SLINT.EP1_PROFILE}
+            or type(label) is not str or not label
+            or type(command) is not list or not command
+            or any(type(argument) is not str for argument in command)):
+        raise ENV.Incomplete("Unadmitted product command resource context.")
+    release_labels = {"windows-link", "windows-engine-link"}
+    if label in release_labels or "--release" in command:
+        if lane != "windows" or label not in release_labels:
+            raise ENV.Incomplete("Windows release resources require their exact lane and row.")
+        expected = dict(commands("windows", schema_version=3, profile=profile))[label]
+        if command != expected:
+            raise ENV.Incomplete("Windows release resource command differs from its fixed owner.")
+        if label == "windows-link":
+            return {"name": "product-windows-ui-release", "cpu_seconds": 300, "wall_seconds": 600,
+                    "address_space_bytes": 8589934592}
+        return {"name": "product-windows-release", "cpu_seconds": 300, "wall_seconds": 300}
+    return {"name": "bootstrap", "cpu_seconds": 90, "wall_seconds": 300}
+
+
 def sandbox(toolchain: Path, work: Path, source: Path, vendor: Path,
             command: list[str], extension: Path | None, libraries: Path | None = None,
-            extension_name: str = "cargo-nextest", linux_sdk: Path | None = None) -> list[str]:
+            extension_name: str = "cargo-nextest", linux_sdk: Path | None = None, *,
+            lane: str | None = None, label: str | None = None, profile: str = "default") -> list[str]:
     """Mount only reviewed inputs and owned output; keep the source snapshot read-only."""
+    resources = None
+    if lane is not None or label is not None:
+        resources = command_resources(lane, label, command, profile=profile)
+    elif profile != "default":
+        raise ENV.Incomplete("A dependency profile requires an explicit product resource context.")
     invocation = ENV.sandbox_command(toolchain, work, command)
+    if resources is not None and resources["name"] in {"product-windows-release", "product-windows-ui-release"}:
+        # The bootstrap owner remains unchanged. Admit its complete current
+        # wrapper before adapting CPU and, for the exact UI release row, AS.
+        try:
+            separator = invocation.index("--")
+        except ValueError as error:
+            raise ENV.Incomplete("Windows release compilation lacks the admitted bootstrap wrapper.") from error
+        expected = ["/usr/bin/prlimit", "--as=4294967296", "--cpu=90", "--nproc=128",
+                    "--nofile=256", "--fsize=268435456", "--", *command]
+        if invocation[separator + 1:] != expected:
+            raise ENV.Incomplete("Windows release compilation has a changed bootstrap resource wrapper.")
+        invocation[separator + 3] = "--cpu=300"
+        if resources["name"] == "product-windows-ui-release":
+            invocation[separator + 2] = "--as=8589934592"
     index = invocation.index("--")
     extra = ["--ro-bind", str(source), "/work/fixture", "--ro-bind", str(vendor), "/vendor",
              "--dir", "/tools", "--setenv", "PATH", "/tools:/toolchain/bin:/usr/bin:/bin"]
@@ -1625,13 +1693,15 @@ def execute(root: Path, args, report: dict) -> None:
             clear_test_report(label, work)
             output_budget = ({"max_output": SLINT.MAX_METADATA_BYTES}
                              if policy["schema_version"] == 3 and label.startswith("dependency-metadata-") else {})
+            resources = command_resources(args.lane, label, command, profile=profile)
             result = ENV.run(sandbox(toolchain, work, source, vendor, command, extension, libraries,
-                                    "cargo-deny" if args.lane == "dependencies" else "cargo-nextest", sdk_directory),
-                             cwd=root, timeout=300,
+                                    "cargo-deny" if args.lane == "dependencies" else "cargo-nextest", sdk_directory,
+                                    lane=args.lane, label=label, profile=profile),
+                             cwd=root, timeout=resources["wall_seconds"],
                              environment={"PATH": "/usr/bin:/bin", "NEVROTICK_SYNTHETIC_CREDENTIAL": "synthetic-control"},
                              **output_budget)
             record = {"lane": label, "command": command, "exit_code": result["exit_code"],
-                      "failure": result["failure"], "output": result["output"]}
+                      "failure": result["failure"], "output": result["output"], "resource_profile": resources}
             report["lanes"].append(record)
             output = ENV.require_ok(result)
             if label in {"ui-text-controls", "ui-text-codegen-controls", "ui-text-native-controls", "ui-native-input-controls"}:

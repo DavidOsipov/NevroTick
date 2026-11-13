@@ -111,7 +111,7 @@ obligations in the existing tasks; all nonformal lanes retain their own gates.
 | Parser/conversion input resilience — cargo-fuzz | `--tool fuzz --fixtures`, then a bounded production target with accepted seeds, independent invariants and a sanitizer/target control. The admitted build profile explicitly selects `--target x86_64-unknown-linux-gnu`; the musl prebuilt cargo-fuzz otherwise defaults to musl. |
 | Instrumented synchronization model — Loom | `--tool loom --fixtures`, then a small model whose actual synchronization uses Loom primitives; record branch/permutation/preemption bounds. Loom is a library payload, not a cargo-installed executable. |
 | Small bounded property proof — Kani | `--tool kani --fixtures`, then a real harness with reachable healthy controls, explicit assumptions/unwind bounds and full proof-result accounting. |
-| Static concurrency defect screening — Lockbud | `--tool lockbud --fixtures`, then admit compatible source/feature rows on its older experimental analysis compiler. Shipping Rust 1.99.1 is unchanged; no automatic compiler downgrade follows. |
+| Static concurrency defect screening — Lockbud | `--tool lockbud --fixtures`, then admit compatible source/feature rows on its older experimental analysis compiler. This does not change the selected shipping compiler; no automatic compiler downgrade follows. |
 | Dependency review obligations — cargo-vet | `--tool vet --fixtures`, then a real audited graph with `--locked --frozen --no-all-features --no-minimize-exemptions --no-registry-suggestions`. Missing audits block; do not invent reviews/imports/exemptions. |
 
 For additional sanitizer selection and detector controls, read

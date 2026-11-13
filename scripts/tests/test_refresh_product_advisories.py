@@ -26,6 +26,8 @@ class MetadataAcquisitionControls(unittest.TestCase):
         self.base = Path(temporary.name)
         self.root = self.base / "checkout"
         (self.root / "policy").mkdir(parents=True)
+        (self.root / ".cargo").mkdir()
+        (self.root / ".cargo/config.toml").write_bytes((ROOT / ".cargo/config.toml").read_bytes())
         (self.root / "Cargo.lock").write_text("synthetic admitted lock bytes\n")
         self.toolchain = self.base / "toolchain"
         (self.toolchain / "bin").mkdir(parents=True)
@@ -79,6 +81,10 @@ class MetadataAcquisitionControls(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(run.call_count, 2)
         record = json.loads(self.receipt.read_text())
+        self.assertEqual(record["cargo_configuration"], {
+            "cwd": str(self.root.resolve()),
+            "config_sha256": hashlib.sha256((self.root / ".cargo/config.toml").read_bytes()).hexdigest(),
+        })
         self.assertEqual(record["lockfile_sha256"], hashlib.sha256((self.root / "Cargo.lock").read_bytes()).hexdigest())
         self.assertEqual(record["tool_sha256"], hashlib.sha256(self.deny.read_bytes()).hexdigest())
         self.assertEqual(record["files"], REFRESH.inventory(self.home))
@@ -93,6 +99,36 @@ class MetadataAcquisitionControls(unittest.TestCase):
         self.assertEqual(record["output"], "synthetic database observation")
         self.assertEqual(record["cargo_sha256"], hashlib.sha256((self.toolchain / "bin/cargo").read_bytes()).hexdigest())
         self.assertEqual(self.receipt.stat().st_mode & 0o777, 0o600)
+
+    def test_age_override_fails_before_tools_or_network_and_redacts_value(self):
+        value = "synthetic-secret-age-value"
+        with patch.dict(os.environ, {"CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE": value}):
+            status, run, output = self.invoke()
+        self.assertEqual(status, 1)
+        run.assert_not_called()
+        self.assertIn("CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE", output)
+        self.assertNotIn(value, output)
+        self.assertFalse(self.receipt.exists())
+
+    def test_ancestor_registry_override_cannot_change_metadata_refresh_policy(self):
+        ancestor = self.base / ".cargo"
+        ancestor.mkdir()
+        (ancestor / "config.toml").write_text('[registries.crates-io]\nmin-publish-age="0"\n')
+        status, run, _ = self.invoke()
+        self.assertEqual(status, 1)
+        run.assert_not_called()
+
+    def test_config_drift_during_metadata_acquisition_prevents_export(self):
+        def changed(command, **kwargs):
+            result = self.acquisition(command, **kwargs)
+            path = self.root / ".cargo/config.toml"
+            path.write_text(path.read_text().replace('"14 days"', '"0"'))
+            return result
+        status, run, _ = self.invoke(effect=changed)
+        self.assertEqual(status, 1)
+        self.assertEqual(run.call_count, 1)
+        self.assertFalse(self.home.exists())
+        self.assertFalse(self.receipt.exists())
 
     def test_separate_metadata_commands_refresh_index_without_fetching_sources(self):
         status, run, _ = self.invoke()

@@ -14,7 +14,7 @@ https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-
 [CmdletBinding()]
 param(
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string]$RustVersion = '1.99.1',
+    [string]$RustVersion = '1.100.0',
     [ValidatePattern('^\d+\.\d+\.\d+$')]
     [string]$RustupVersion = '1.29.2',
     [ValidatePattern('^[a-fA-F0-9]{64}$')]

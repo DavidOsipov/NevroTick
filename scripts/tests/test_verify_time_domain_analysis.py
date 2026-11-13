@@ -72,6 +72,30 @@ def canonical_lock_package(packages, package):
     return {key: value for key, value in package.items() if key != "dependencies"}, sorted(edges)
 
 
+def contract_artifact_messages(session, libraries):
+    """Declare synthetic exact local units, independent of collector discovery."""
+    session.source = session.work / "source"
+    session.source.mkdir(exist_ok=True)
+    session.vendor = session.work / "vendor"; session.vendor.mkdir(exist_ok=True)
+    lock = "version=4\n"; records = []
+    for name, artifact in libraries.items():
+        manifest = session.source / "crates" / name / "Cargo.toml"
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        manifest.write_text('[package]\nname="' + name + '"\nversion="0.0.0"\n')
+        lock += '[[package]]\nname="' + name + '"\nversion="0.0.0"\n'
+        virtual = "/work/source/crates/" + name
+        metadata_root = session.work / "target/debug/deps"; metadata_root.mkdir(parents=True, exist_ok=True)
+        meta = metadata_root / ("lib" + name.replace("-", "_") + "-" + "1" * 16 + ".rmeta")
+        meta.write_bytes(b"independent metadata fixture")
+        records.append({"reason": "compiler-artifact", "manifest_path": virtual + "/Cargo.toml",
+            "package_id": "path+file://" + virtual + "#0.0.0",
+            "target": {"name": name.replace("-", "_"), "kind": ["lib"], "crate_types": ["lib"], "src_path": virtual + "/src/lib.rs"},
+            "profile": {"test": False, "opt_level": "0", "debug_assertions": True, "overflow_checks": True},
+            "filenames": ["/work/" + str(item.relative_to(session.work)) for item in (artifact, meta)]})
+    (session.source / "Cargo.lock").write_text(lock)
+    return "\n".join(map(json.dumps, records))
+
+
 class DomainRegistryIdentityTests(unittest.TestCase):
     """Unrelated GUI versions cannot change the admitted pure projection."""
 
@@ -267,6 +291,15 @@ class DomainAnalysisTests(unittest.TestCase):
                                   MODULE.PRODUCT.SLINT.canonical_policy_sha256(product_policy))
             anchor.start()
             self.addCleanup(anchor.stop)
+            # The deliberately replaced archive/checksum records do not carry
+            # a product graph-age decision. Mock only that higher owner for this
+            # exact inert object; retain all grant/source/archive checks below.
+            def inert_age_boundary(policy):
+                if policy is not product_policy:
+                    raise AssertionError("Unrelated policy reached inert source-parity age seam")
+            age = patch.object(MODULE.PRODUCT.SLINT.COOLDOWN, "validate_policy_admission",
+                               side_effect=inert_age_boundary)
+            age.start(); self.addCleanup(age.stop)
         return root, session, selected, original
 
     def test_source_parity_keeps_unrelated_runtime_and_original_control_independent(self):
@@ -468,12 +501,13 @@ class DomainAnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp); deps = work / "target/debug/deps"; deps.mkdir(parents=True)
             original = work / "target/debug/libtime_domain.rlib"; original.write_text("actual library")
-            (deps / "libgarde.rlib").write_text("actual dependency")
+            dependency = deps / ("libgarde-" + "1" * 16 + ".rlib"); dependency.write_text("actual dependency")
             (deps / "unrelated.d").write_text("not a compiler dependency")
             protected = []
             session = SimpleNamespace(work=work, protect=lambda path: protected.append(path))
-            copied = MODULE.copy_contract_dependencies(session, "/work/target/debug/libtime_domain.rlib")
-            self.assertEqual(set(item.name for item in copied.iterdir()), {"libtime_domain.rlib", "libgarde.rlib"})
+            messages = contract_artifact_messages(session, {"time-domain": original, "garde": dependency})
+            copied = MODULE.copy_contract_dependencies(session, "/work/target/debug/libtime_domain.rlib", cargo_output=messages)
+            self.assertEqual(set(item.name for item in copied.iterdir()), {"libtime_domain.rlib", dependency.name, "libtime_domain-" + "1" * 16 + ".rmeta", "libgarde-" + "1" * 16 + ".rmeta"})
             self.assertNotEqual(original.stat().st_ino, (copied / "libtime_domain.rlib").stat().st_ino)
             self.assertEqual((copied / "libtime_domain.rlib").stat().st_mode & 0o777, 0o400)
             self.assertEqual(protected, [copied])
@@ -685,10 +719,13 @@ class DomainLeapAnalysisTests(unittest.TestCase):
             with self.assertRaisesRegex(MODULE.Incomplete,"profile differs from the current policy"):
                 MODULE.execute(args,{})
             session.assert_not_called()
-        for lane in ("contracts","coverage","mutation"):
+        for lane in ("coverage","mutation"):
             self.assertEqual(MODULE.COMMON.admission_profile(
                 SimpleNamespace(lane=lane,tool_admission_profile="stable-core"),
                 MODULE.SCOPE,policy),"stable-core")
+        with self.assertRaisesRegex(MODULE.Incomplete, "exact nine-owner"):
+            MODULE.COMMON.admission_profile(SimpleNamespace(lane="contracts",tool_admission_profile="stable-core"),
+                                           MODULE.SCOPE,policy)
 
     def test_selected_lane_reports_leap_unfuzzed_and_preserves_finish(self):
         root,_=self.policy_fixture()
@@ -751,6 +788,117 @@ class DomainLeapAnalysisTests(unittest.TestCase):
                 with self.assertRaisesRegex(MODULE.Incomplete,"Legal external consumer"):
                     MODULE.contracts(session,{"contracts_wall_seconds":300,"jobs":6},report)
             self.assertNotIn("contracts",report)
+
+
+class DomainExternalContractAdmissionTests(unittest.TestCase):
+    """Fresh ordinary contracts cannot inherit the held historical fuzz owner."""
+
+    class SessionReached(Exception):
+        """Stop the healthy dispatch before tools or any candidate execution."""
+
+    def setUp(self):
+        self.identity = MODULE.PRODUCT.admit_product(ROOT)[1]
+
+    def fixture(self):
+        root, parent = policy_fixture(self)
+        admitted = patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, self.identity))
+        admitted.start(); self.addCleanup(admitted.stop)
+        return root, parent
+
+    def test_contract_dispatch_uses_separate_current_role_before_session(self):
+        args = SimpleNamespace(lane="contracts", subject="all", tool_admission_profile="stable-core")
+        with (patch.object(MODULE, "read_policy", side_effect=MODULE.Incomplete("held historical fuzz owner reached")) as legacy,
+              patch.object(MODULE.COMMON, "Session", side_effect=self.SessionReached) as session,
+              self.assertRaises(self.SessionReached)):
+            MODULE.execute(args, {})
+        legacy.assert_not_called(); session.assert_called_once()
+
+    def test_current_role_does_not_refresh_or_depend_on_held_fuzz_inputs(self):
+        root, parent = self.fixture()
+        healthy = MODULE.read_contract_policy(root)
+        parent["coverage_guided_fuzzing"]["inputs_sha256"]["policy/ntp-wire-analysis.json"] = "0" * 64
+        path = root / MODULE.POLICY; path.write_text(json.dumps(parent)); original = path.read_bytes()
+        self.assertEqual(MODULE.read_contract_policy(root), healthy)
+        with self.assertRaisesRegex(MODULE.Incomplete, "Fuzz source"):
+            MODULE.read_policy(root)
+        self.assertEqual(path.read_bytes(), original)
+        self.assertEqual(healthy["source_file_count"], 595)
+        self.assertEqual(healthy["candidate_sha256"], hashlib.sha256(
+            json.dumps(self.identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest())
+        self.assertEqual(healthy["critical_files"], list(MODULE.SUBJECTS.values()))
+
+    def test_role_rejects_changed_missing_extra_and_aliased_fields(self):
+        root, parent = self.fixture(); path = root / MODULE.POLICY
+        healthy = MODULE.read_contract_policy(root)
+        for key, value in healthy.items():
+            wrong = True if type(value) is not bool else None
+            deltas = [{**healthy, key: wrong}, {k: v for k, v in healthy.items() if k != key}]
+            if key == "candidate_sha256":deltas.append({**healthy, key: "0" * 64})
+            if key == "source_file_count":deltas.extend({**healthy, key: n} for n in (166, 594, 596))
+            for delta in deltas:
+                changed = json.loads(json.dumps(parent)); changed["external_contracts"] = delta
+                path.write_text(json.dumps(changed))
+                with self.subTest(field=key), self.assertRaises(MODULE.Incomplete):MODULE.read_contract_policy(root)
+        changed = json.loads(json.dumps(parent)); changed["external_contracts"]["runtime_execution"] = True
+        path.write_text(json.dumps(changed))
+        with self.assertRaises(MODULE.Incomplete):MODULE.read_contract_policy(root)
+        path.write_text(json.dumps(parent)); self.assertEqual(MODULE.read_contract_policy(root), healthy)
+
+    def test_same_count_changed_product_refuses_before_session(self):
+        root, _ = self.fixture(); identity = dict(self.identity)
+        identity[next(iter(identity))] = "0" * 64
+        args = SimpleNamespace(lane="contracts", subject="all", tool_admission_profile="stable-core")
+        with (patch.object(MODULE, "ROOT", root), patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)),
+              patch.object(MODULE.COMMON, "Session") as session,
+              self.assertRaisesRegex(MODULE.Incomplete, "complete contract candidate")):
+            MODULE.execute(args, {})
+        session.assert_not_called()
+
+    def test_exact_role_cannot_borrow_other_lanes_profiles_or_subjects(self):
+        root, _ = self.fixture(); policy = MODULE.read_contract_policy(root)
+        for lane in ("coverage", "mutation", "fuzz", "enumerate", "all", None):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.COMMON.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile="stable-core"), MODULE.SCOPE, policy)
+        for subject, profile in (("coordinate", "stable-core"), ("leap", "stable-core"), ("all", "full")):
+            args = SimpleNamespace(lane="contracts", subject=subject, tool_admission_profile=profile)
+            with (self.subTest(subject=subject, profile=profile), patch.object(MODULE, "ROOT", root),
+                  patch.object(MODULE.COMMON, "Session") as session, self.assertRaises(MODULE.Incomplete)):
+                MODULE.execute(args, {})
+            session.assert_not_called()
+
+    def test_bounded_raw_policy_precedes_decode_and_product_admission(self):
+        root, _ = self.fixture(); path = root / MODULE.POLICY
+        path.write_bytes(b" " * (524288 + 1))
+        with (patch.object(MODULE.COMMON.ANALYSIS, "decode") as decoder,
+              patch.object(MODULE.PRODUCT, "admit_product") as admitted, self.assertRaises(MODULE.Incomplete)):
+            MODULE.read_contract_policy(root)
+        decoder.assert_not_called(); admitted.assert_not_called()
+
+    def test_duplicate_policy_fields_are_rejected_before_product_admission(self):
+        root, _ = self.fixture(); path = root / MODULE.POLICY
+        text = path.read_text(); path.write_text(text[:-1] + ', "external_contracts": {} }')
+        with patch.object(MODULE.PRODUCT, "admit_product") as admitted, self.assertRaisesRegex(MODULE.Incomplete, "Duplicate JSON"):
+            MODULE.read_contract_policy(root)
+        admitted.assert_not_called()
+
+    def test_contract_success_and_failure_depend_on_final_source_custody(self):
+        root, _ = self.fixture()
+        args = SimpleNamespace(lane="contracts", subject="all", tool_admission_profile="stable-core")
+        for failed in (False, True):
+            report = {}; finish = unittest.mock.Mock()
+            if failed:finish.side_effect = MODULE.Incomplete("final custody failure")
+            session = SimpleNamespace(source=root, product_identity=self.identity, finish=finish)
+            with (self.subTest(failed=failed), patch.object(MODULE, "ROOT", root),
+                  patch.object(MODULE.COMMON, "Session", return_value=session), patch.object(MODULE, "contracts") as contracts,
+                  patch.object(MODULE, "read_policy", side_effect=AssertionError("held fuzz path"))):
+                if failed:
+                    with self.assertRaisesRegex(MODULE.Incomplete, "final custody failure"):MODULE.execute(args, report)
+                else:MODULE.execute(args, report)
+            self.assertIs(report["contracts_qualification_passed"], not failed)
+            self.assertFalse(report["qualification_passed"])
+            self.assertFalse(report["historical_campaign_bindings_reused"])
+            self.assertEqual(report["fuzz"]["status"], "not-performed")
+            finish.assert_called_once(); contracts.assert_called_once()
 
 
 if __name__ == "__main__":

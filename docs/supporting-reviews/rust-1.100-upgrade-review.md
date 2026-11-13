@@ -119,3 +119,47 @@ update or native program. It establishes no current NevroTick breakage, speedup,
 security fix or release readiness. At adoption, preserve the 1.99.1 baseline and
 compare candidate behavior; revalidate final release changes and explicitly close
 or retain the unresolved companion-tool and native evidence.
+
+## Final-release implementation follow-up — 13 November 2026
+
+The owner now requests the upgrade. The implementation starts from clean commit
+`a25696b8bf67a53ebbcf40c4c0ba43c613159ff1`, after the receiver source closeout,
+under the existing R4-B-02 / CHECK-19, CHECK-20 and CHECK-26 owners. The preceding
+11 November review and its unexecuted candidate rows remain historical.
+
+The supplied final-release review identifies Rust source
+`0ef1bc386059596dada8fb65b50425aab2ea637a` and its Cargo submodule
+`3acc79c0c841844675bc53a605922dbfc441e750`. Acquisition independently retrieved
+the official 12 November distribution manifest and checked its published SHA-256
+`3051e859570f64a8c5acb9d09e87425db52c7d97287c67e8f6d57d7d34ef9258`.
+Executable/component admission and actual compatibility results belong to the
+[existing build task](../../tasks/build-optimization.md#rust-1100-implementation--13-november-2026).
+Neither source identities nor the review's synthetic controls supply a build pass.
+
+The bounded migration preserves the lockfile, dependency features, patches,
+v3 floor, overflow checking, unwinding, symbols and mitigation configuration.
+It aligns the declared minimum with the sole qualified shipping compiler,
+1.100.0; ongoing minimum-version qualification on 1.99.1 is not selected.
+The preserved 1.99.1 installation and clean starting commit provide rollback.
+
+The six reached artifact boundaries are allocation-probe custom-build/library
+selection; Core build-script output admission; Core, time-domain and Engine
+ordinary contract-dependency collection; and the Windows Engine libtest selector.
+Cargo messages must retain package, target, profile, host/target-role, containment,
+inventory and byte custody. A new layout is not permission to accept arbitrary
+paths or transfer old Engine role metrics to the changed receiver.
+
+The final-review corrections constrain implementation: keep the intentional
+`i-slint-core` feature carrier unless actual selected-row evidence requires a
+change; no exchange-copy hash collision or new product vulnerability was shown.
+Do not speculatively edit the numerical `NonZero` use or lifecycle boolean branch.
+The released Clippy inventory adds `option_zip_none` and `needless_nonzero_get`
+within the existing lint scope, subject to actual execution. Cargo warnings have
+their own enforcement surface; Rust's `-D warnings` supplies no Cargo-lint policy.
+Explicit Cargo lints, allocator/DropGuard/trim refactors and sample PGO remain
+separate optional work. The later [OD-19 decision](../nevrotick-owner-decisions.md#23-od-19--14-day-registry-dependency-cooldown)
+selects fourteen days for registry version uptake; its complete configuration,
+changed-graph admission and isolated fixtures now belong to the existing build
+task. The earlier no-delay research status is historical. Toast callback-payload disposal remains
+with the existing R4-G-02 owner. No native, fuzz, storage, UI or post-V1 proof
+hold changes. Actual receipts and remaining qualification stay in the build task.

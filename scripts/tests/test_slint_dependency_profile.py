@@ -64,6 +64,7 @@ def fixture_policy():
     rows[HOST]["features"]["slint@1.18.1"] = {"target": [HOST_FEATURES.copy()]}
     rows[HOST]["package_scopes"]["nevrotick-ui"]["features"]["slint@1.18.1"] = {"target": [HOST_FEATURES.copy()]}
     return {"schema_version": 3, "scope": "Inert independently specified schema-3 control; never compiled",
+            "cooldown_admission": PROFILE.COOLDOWN.baseline_admission(),
             "lockfile_sha256": "c" * 64,
             "manifests_sha256": {name: "d" * 64 for name in
                 ("Cargo.toml", *("crates/" + member + "/Cargo.toml" for member in MEMBERS))},
@@ -255,6 +256,12 @@ def fixture_metadata(policy, target=HOST):
 class SlintProfileControls(unittest.TestCase):
     def setUp(self):
         self.policy = fixture_policy()
+        # This intentionally fictional graph tests source/feature structure,
+        # not registry-age authority. Actual age boundaries have independent
+        # accepted-root and changed-graph controls in test_dependency_graph_admission.
+        age = patch.object(PROFILE.COOLDOWN, "validate_policy_admission", return_value=None)
+        age.start()
+        self.addCleanup(age.stop)
         self.pin = patch.object(PROFILE, "REVIEWED_POLICY_SHA256", PROFILE.canonical_policy_sha256(self.policy))
         self.pin.start()
         self.addCleanup(self.pin.stop)
@@ -890,7 +897,7 @@ class SlintProfileControls(unittest.TestCase):
                         patch.object(VERIFY, "admit_product", return_value=(self.policy, source)), \
                         patch.object(VERIFY, "admit_vendor", return_value={}), \
                         patch.object(VERIFY, "admit_tools", return_value={}), \
-                        patch.object(VERIFY, "sandbox", side_effect=lambda _t, _w, _s, _v, command, *_args: command), \
+                        patch.object(VERIFY, "sandbox", side_effect=lambda _t, _w, _s, _v, command, *_args, **_context: command), \
                         patch.object(VERIFY, "boundary_control"), \
                         patch.object(VERIFY, "text_contract_commands", return_value=[]), \
                         patch.object(VERIFY, "native_input_control_commands", return_value=[]), \

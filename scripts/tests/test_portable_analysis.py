@@ -56,6 +56,85 @@ def complete_report(value):
     return value
 
 
+class CargoContractArtifactTests(unittest.TestCase):
+    """Synthetic layout controls; actual compiler messages are separate evidence."""
+
+    def fixture(self, root, *, layout="new"):
+        work = root / "work"; source = work / "source"; vendor = root / "vendor"
+        (source / "crates/time-domain").mkdir(parents=True); vendor.mkdir()
+        (source / "Cargo.lock").write_text('version=4\n[[package]]\nname="time-domain"\nversion="0.0.0"\n'
+            '[[package]]\nname="other-local-owner"\nversion="0.0.0"\n'
+            '[[package]]\nname="garde"\nversion="0.23.0"\nsource="registry+https://github.com/rust-lang/crates.io-index"\n')
+        (source / "crates/time-domain/Cargo.toml").write_text('[package]\nname="time-domain"\nversion="0.0.0"\n')
+        (vendor / "garde-0.23.0").mkdir()
+        (vendor / "garde-0.23.0/Cargo.toml").write_text('[package]\nname="garde"\nversion="0.23.0"\n')
+        records = []
+        for package, manifest, identifier in (
+            ("time-domain", "/work/source/crates/time-domain/Cargo.toml", "path+file:///work/source/crates/time-domain#0.0.0"),
+            ("garde", str(vendor / "garde-0.23.0/Cargo.toml"), "registry+https://github.com/rust-lang/crates.io-index#garde@0.23.0")):
+            folder = "/work/target/debug/deps" if layout == "old" else "/work/target/debug/build/" + package + "/" + "1" * 16 + "/out"
+            files = [folder + "/lib" + package.replace("-", "_") + "-" + "2" * 16 + suffix for suffix in (".rlib", ".rmeta")]
+            records.append({"reason": "compiler-artifact", "package_id": identifier, "manifest_path": manifest,
+                "target": {"name": package.replace("-", "_"), "kind": ["lib"], "crate_types": ["lib"],
+                           "src_path": str(Path(manifest).parent / "src/lib.rs")},
+                "profile": {"test": False, "opt_level": "0", "overflow_checks": True, "debug_assertions": True},
+                "filenames": files})
+            for filename in files:
+                local = work / filename.removeprefix("/work/"); local.parent.mkdir(parents=True, exist_ok=True)
+                local.write_bytes(b"synthetic " + filename.encode())
+        session = SimpleNamespace(work=work, source=source, vendor=vendor, protect=lambda path: None)
+        return session, records
+
+    def test_new_and_legacy_layout_copy_only_attributed_complete_units(self):
+        for layout in ("old", "new"):
+            with self.subTest(layout=layout), tempfile.TemporaryDirectory() as temporary:
+                session, records = self.fixture(Path(temporary), layout=layout)
+                emitted = records[0]["filenames"][0]
+                rogue = session.work / "target/debug/deps/libunattributed.rlib"
+                rogue.parent.mkdir(parents=True, exist_ok=True); rogue.write_bytes(b"not attributed")
+                island = MODULE.copy_cargo_contract_dependencies(session, "\n".join(map(json.dumps, records)),
+                    {"libtime_domain.rlib": emitted})
+                self.assertNotIn(rogue.name, {item.name for item in island.iterdir()})
+                copied = island / "libtime_domain.rlib"
+                original = session.work / emitted.removeprefix("/work/")
+                self.assertEqual(copied.read_bytes(), original.read_bytes())
+                self.assertNotEqual(copied.stat().st_ino, original.stat().st_ino)
+                self.assertEqual(copied.stat().st_nlink, 1)
+                self.assertEqual(copied.stat().st_mode & 0o777, 0o400)
+
+    def test_wrong_identity_role_profile_inventory_and_paths_are_rejected(self):
+        for fault in ("package", "manifest", "local_absolute", "kind", "target", "profile", "test", "missing", "duplicate", "escape", "symlink", "wrong_unit"):
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as temporary:
+                session, records = self.fixture(Path(temporary))
+                emitted = records[0]["filenames"][0]
+                row = records[1]
+                if fault == "package": row["package_id"] += "-wrong"
+                if fault == "manifest": row["manifest_path"] = "/unowned/Cargo.toml"
+                if fault == "local_absolute": records[0]["manifest_path"] = "/work/source//tmp/other/Cargo.toml"
+                if fault == "kind": row["target"]["kind"] = ["proc-macro"]
+                if fault == "target": row["filenames"] = [value.replace("/debug/", "/x86_64-pc-windows-msvc/debug/") for value in row["filenames"]]
+                if fault == "profile": row["profile"]["opt_level"] = "3"
+                if fault == "test": row["profile"]["test"] = True
+                if fault == "missing": row["filenames"].pop()
+                if fault == "duplicate": records.append(copy.deepcopy(row))
+                if fault == "escape": row["filenames"][0] = "/work/target/debug/../outside.rlib"
+                if fault == "wrong_unit": row["filenames"] = [value.replace("/garde/", "/time-domain/") for value in row["filenames"]]
+                if fault == "symlink":
+                    local = session.work / row["filenames"][0].removeprefix("/work/")
+                    local.unlink(); local.symlink_to(session.work / emitted.removeprefix("/work/"))
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.copy_cargo_contract_dependencies(session, "\n".join(map(json.dumps, records)), {"libtime_domain.rlib": emitted})
+
+    def test_explicit_library_alias_cannot_substitute_another_crate_or_metadata(self):
+        for fault in ("wrong_crate", "metadata"):
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as temporary:
+                session, records = self.fixture(Path(temporary))
+                substituted = records[1]["filenames"][0] if fault == "wrong_crate" else records[0]["filenames"][1]
+                with self.assertRaisesRegex(MODULE.Incomplete, "Required external-contract library"):
+                    MODULE.copy_cargo_contract_dependencies(session, "\n".join(map(json.dumps, records)),
+                                                           {"libtime_domain.rlib": substituted})
+
+
 class AnalyzerOutputTests(unittest.TestCase):
     """Reach actual lane consumers with literal healthy analyzer-shaped output."""
 
@@ -3553,14 +3632,16 @@ class DomainLeapAdmissionTests(unittest.TestCase):
 
     def test_exact_domain_leap_role_uses_existing_stable_custody(self):
         scope, policy = self.fixture()
-        for lane in ("contracts", "coverage", "mutation"):
+        for lane in ("coverage", "mutation"):
             with self.subTest(lane=lane):
                 args = SimpleNamespace(lane=lane, tool_admission_profile="stable-core")
                 self.assertEqual(MODULE.admission_profile(args, scope, policy), "stable-core")
+        with self.assertRaisesRegex(MODULE.Incomplete, "exact nine-owner"):
+            MODULE.admission_profile(SimpleNamespace(lane="contracts", tool_admission_profile="stable-core"), scope, policy)
 
     def test_each_domain_role_field_is_required_with_exact_types(self):
         scope, policy = self.fixture()
-        args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core")
+        args = SimpleNamespace(lane="coverage", tool_admission_profile="stable-core")
         for key, value in policy.items():
             alternatives = [None, True] if type(value) is not bool else [None, 1]
             if type(value) is int:
@@ -3579,7 +3660,7 @@ class DomainLeapAdmissionTests(unittest.TestCase):
 
     def test_domain_role_rejects_altered_scope_and_unsupported_lanes(self):
         scope, policy = self.fixture()
-        args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core")
+        args = SimpleNamespace(lane="coverage", tool_admission_profile="stable-core")
         for changed in (
                 MODULE.Scope("time-core", self.SUBJECTS, scope.policy),
                 MODULE.Scope(scope.package, self.SUBJECTS, "policy/foreign.json"),
@@ -3608,7 +3689,7 @@ class DomainLeapAdmissionTests(unittest.TestCase):
             parent = Path(temporary).resolve()
             root = parent / "checkout"
             root.mkdir()
-            args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core",
+            args = SimpleNamespace(lane="coverage", tool_admission_profile="stable-core",
                                    output_dir=parent / "output")
             for count in (165, 166, 167):
                 identity = {f"source/{index}.rs": "a" * 64 for index in range(count)}
@@ -3676,7 +3757,7 @@ class EngineContractAdmissionTests(unittest.TestCase):
                              "policy/engine-analysis.json")
         policy = {
             "schema_version": 1, "admission_status": "admitted-engine-external-contracts-only",
-            "package": "nevrotick-engine", "source_file_count": 168,
+            "package": "nevrotick-engine", **MODULE.CONTRACT_PRODUCT_BINDING,
             "critical_files": ["crates/nevrotick-engine/src/lib.rs"],
             "tool_admission_profile": "stable-core", "contracts_wall_seconds": 300,
             "jobs": 6, "test_threads": 1, "mutation_equivalences": [], "mutation_error_values": {},
@@ -3733,9 +3814,15 @@ class EngineContractAdmissionTests(unittest.TestCase):
             root = parent / "checkout"
             root.mkdir()
             args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core", output_dir=parent / "output")
-            for count in (167, 168, 169):
-                identity = {f"source/{index}.rs": "a" * 64 for index in range(count)}
-                expected = "healthy engine reached proofs" if count == 168 else "product input count"
+            healthy = MODULE.PRODUCT.admit_product(ROOT)[1]
+            self.assertEqual(len(healthy), 595)
+            for count in (594, 595, 596):
+                identity = dict(healthy)
+                if count == 594:
+                    identity.pop(next(iter(identity)))
+                elif count == 596:
+                    identity["unexpected.rs"] = "a" * 64
+                expected = "healthy engine reached proofs" if count == 595 else "complete contract candidate"
                 with (self.subTest(count=count),
                       patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)),
                       patch.object(MODULE, "admit_mutation_equivalences",
@@ -3743,8 +3830,70 @@ class EngineContractAdmissionTests(unittest.TestCase):
                       patch.object(MODULE.ANALYSIS, "admit") as tools,
                       self.assertRaisesRegex(MODULE.Incomplete, expected)):
                     MODULE.Session(root, args, {}, scope, policy, ())
-                self.assertEqual(proofs.call_count, int(count == 168))
+                self.assertEqual(proofs.call_count, int(count == 595))
                 tools.assert_not_called()
+                self.assertFalse(args.output_dir.exists())
+
+    def test_same_count_replaced_product_cannot_reach_contract_tools(self):
+        scope, policy = self.fixture()
+        identity = {f"forged/{index}.rs": "a" * 64 for index in range(policy["source_file_count"])}
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary).resolve(); root = parent / "checkout"; root.mkdir()
+            args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core", output_dir=parent / "output")
+            with (patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)),
+                  patch.object(MODULE, "admit_mutation_equivalences",
+                               side_effect=MODULE.Incomplete("wrong candidate reached later admission")) as later,
+                  patch.object(MODULE.ANALYSIS, "admit") as tools,
+                  self.assertRaisesRegex(MODULE.Incomplete, "complete contract candidate")):
+                MODULE.Session(root, args, {}, scope, policy, ())
+            later.assert_not_called(); tools.assert_not_called()
+            self.assertFalse(args.output_dir.exists())
+
+
+class DomainContractAdmissionTests(unittest.TestCase):
+    """Current ordinary domain contracts cannot alias a historical campaign role."""
+
+    def fixture(self):
+        scope = MODULE.Scope("time-domain", DomainLeapAdmissionTests.SUBJECTS, "policy/time-domain-analysis.json")
+        policy = json.loads((ROOT / scope.policy).read_text())["external_contracts"]
+        return scope, policy
+
+    def test_exact_contract_role_and_scope_rejections(self):
+        scope, policy = self.fixture()
+        args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core")
+        self.assertEqual(MODULE.admission_profile(args, scope, policy), "stable-core")
+        for changed in (
+                MODULE.Scope("time-core", scope.subjects, scope.policy),
+                MODULE.Scope(scope.package, scope.subjects, "policy/other.json"),
+                MODULE.Scope(scope.package, tuple(reversed(scope.subjects)), scope.policy),
+                MODULE.Scope(scope.package, scope.subjects[:-1], scope.policy),
+                MODULE.Scope(scope.package, list(scope.subjects), scope.policy)):
+            with self.subTest(scope=changed), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, changed, policy)
+        for lane in ("coverage", "mutation", "enumerate", "fuzz", "all", None):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile="stable-core"), scope, policy)
+        for key in policy:
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {k: v for k, v in policy.items() if k != key})
+        with self.assertRaises(MODULE.Incomplete):MODULE.admission_profile(args, scope, {**policy, "fuzz": True})
+
+    def test_complete_current_snapshot_is_checked_before_tools_or_output(self):
+        scope, policy = self.fixture(); healthy = MODULE.PRODUCT.admit_product(ROOT)[1]
+        variants = [dict(healthy) for _ in range(4)]
+        variants[1][next(iter(healthy))] = "0" * 64
+        variants[2].pop(next(iter(healthy)))
+        variants[3]["extra.rs"] = "0" * 64
+        for index, identity in enumerate(variants):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as temporary:
+                parent = Path(temporary).resolve(); root = parent / "checkout"; root.mkdir()
+                args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core", output_dir=parent / "output")
+                with (patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)),
+                      patch.object(MODULE, "admit_mutation_equivalences", side_effect=MODULE.Incomplete("healthy reached later admission")) as later,
+                      patch.object(MODULE.ANALYSIS, "admit") as tools,
+                      self.assertRaisesRegex(MODULE.Incomplete, "healthy reached later admission" if index == 0 else "complete contract candidate")):
+                    MODULE.Session(root, args, {}, scope, policy, ())
+                self.assertEqual(later.call_count, int(index == 0)); tools.assert_not_called()
                 self.assertFalse(args.output_dir.exists())
 
 

@@ -46,6 +46,12 @@ behavior, TLS provider/trust/licensing, NTS packet AEAD and Win32/service bounda
 Preserve held/optional candidates. Neither replace selected validation model nor
 admit TUF from research without concrete design decision.
 
+Apply [OD-19's accepted 14-day registry cooldown](../../../../docs/nevrotick-owner-decisions.md#23-od-19--14-day-registry-dependency-cooldown)
+before graph approval, including new transitives and imported locks. Follow the
+[guarded update and whole-delta exception procedure](references/cargo-operations.md#registry-dependency-cooldown--13-november-2026);
+an accepted locked baseline, metadata refresh or archive checksum supplies no new
+publication-age evidence. Do not ask the owner to choose the settled duration again.
+
 The owner's revised DEC-18 selects garde 0.23.0 for shared pure DTO/settings
 validation inside mandatory private construction. Admit it with defaults disabled
 and only `derive` initially; inspect the resolved graph and feature unification

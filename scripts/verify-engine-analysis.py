@@ -44,7 +44,7 @@ CONTRACT_SCOPE = COMMON.Scope(
 FIXED_CONTRACT_POLICY = {
     "schema_version": 1,
     "admission_status": "admitted-engine-external-contracts-only",
-    "package": "nevrotick-engine", "source_file_count": 168,
+    "package": "nevrotick-engine", **COMMON.CONTRACT_PRODUCT_BINDING,
     "critical_files": ["crates/nevrotick-engine/src/lib.rs"],
     "tool_admission_profile": "stable-core",
     "contracts_wall_seconds": 300, "jobs": 6, "test_threads": 1,
@@ -446,12 +446,14 @@ def read_contract_policy(root: Path) -> dict:
     if set(parent) != set(FIXED_POLICY) | extras:
         raise Incomplete("Engine historical/contract policy fields are missing or unknown.")
     policy = validate_contract_policy(parent["external_contracts"])
-    manifest = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
+    manifest = tomllib.loads(COMMON.ANALYSIS.read_once(
+        root / "policy/verification-manifest.toml", maximum=524288).decode())
     filename = policy["critical_files"][0]
     if (manifest.get("critical_files", []).count(filename) != 1
             or sum(module.get("package") == CONTRACT_SCOPE.package and filename in module.get("files", [])
                    for module in manifest.get("security_modules", [])) != 1):
         raise Incomplete("Engine constructor owner lacks its exact critical/security registration.")
+    COMMON.require_contract_candidate(PRODUCT.admit_product(root)[1], policy)
     return policy
 
 
@@ -528,31 +530,10 @@ def contract_examples() -> dict:
     return examples
 
 
-def copy_contract_dependencies(session, artifact: str) -> Path:
-    """Freeze actual Cargo-emitted libraries as independent immutable copies."""
-    source = session.work / artifact.removeprefix("/work/")
-    if (source.resolve(strict=True) != source or not source.is_file()
-            or not source.is_relative_to(session.work / "target")):
-        raise Incomplete("Actual engine contract library escaped its emitted target.")
-    destination = session.work / "contract-deps"
-    destination.mkdir(mode=0o700)
-    for item in sorted((session.work / "target/debug/deps").iterdir()):
-        if item.suffix not in {".rlib", ".rmeta", ".so"}:
-            continue
-        digest = PRODUCT.sha256(item)
-        target = destination / item.name
-        shutil.copyfile(item, target)
-        target.chmod(0o400)
-        if PRODUCT.sha256(target) != digest:
-            raise Incomplete("Engine contract dependency changed while copied.")
-    library = destination / "libnevrotick_engine.rlib"
-    digest = PRODUCT.sha256(source)
-    shutil.copyfile(source, library)
-    library.chmod(0o400)
-    if PRODUCT.sha256(library) != digest:
-        raise Incomplete("The copied engine library differs from its actual Cargo artifact.")
-    session.protect(destination)
-    return destination
+def copy_contract_dependencies(session, artifact: str, *, cargo_output: str) -> Path:
+    """Seal only complete libraries attributed to the actual Cargo build."""
+    return COMMON.copy_cargo_contract_dependencies(
+        session, cargo_output, {"libnevrotick_engine.rlib": artifact})
 
 
 def contracts(session, policy: dict, report: dict, *, examples=None, effect_scope=None,
@@ -566,7 +547,7 @@ def contracts(session, policy: dict, report: dict, *, examples=None, effect_scop
         COMMON.remaining_timeout(deadline, 120))
     artifact = COMMON.library_artifact(output, "nevrotick-engine",
                                        "/work/source/crates/nevrotick-engine/Cargo.toml")
-    dependencies = copy_contract_dependencies(session, artifact)
+    dependencies = copy_contract_dependencies(session, artifact, cargo_output=output)
     consumers = session.work / "contract-inputs"
     consumers.mkdir(mode=0o700)
     (session.work / "contracts").mkdir(mode=0o700)

@@ -1057,16 +1057,33 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
-**Current executable product task — 12 November 2026:** prepare and freeze the
-invocation-level worker stop latch and actual-completion custody contract in the
-[existing Engine task](../../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026),
-with independent review before dependent implementation. Reuse the actual
-Config/claim/provider and operation owners. This is WSL-only preparation under
-David's temporary Core/Engine-only focus; it adds no service source, shared graph
-change, production retry/default or Core-positive issuer. Native Windows work
-remains paused after resource preflight, and the healthy native KE exit remains
-separate and pending. Public execution stays one-shot and never-send by default.
-All existing native/fuzz/storage/UI holds and the post-V1 formal deferral remain.
+**Current executable product task — 13 November 2026:** continue the implemented
+[conditional numerical receiver's qualification](../../tasks/engine-transport-pilot.md#integrated-lit-0-and-receiver-checkpoint--13-november-2026)
+after the bounded Rust 1.100 checkpoint and later worker-restoration note below.
+Ordinary/optimized, compiler controls and doctests retain their recorded
+toolchain/source/worker scopes; the restored-concurrency matrix is not rerun.
+Before any remaining
+coverage/mutation/generation campaign, re-admit the complete changed source,
+helper/test roster, inventory and dossier under its existing owner; old 607/E9
+metrics do not transfer. Retain capture-forwarding discrimination and required
+per-owner gates. The actual facade caller still supplies `None`; this creates
+no Core-positive issuer. The existing persistent acquisition-session contract
+remains the next receiving prerequisite, with review before dependent source.
+Continue David's Core/Engine-only focus. Public execution stays one-shot and
+never-send by default; native/fuzz/storage/UI holds and post-V1 formal deferral
+remain, including the separate healthy native KE exit.
+
+**Retained build checkpoint and owner-requested publication — 13 November 2026:**
+the [bounded-worker checkpoint](../../tasks/build-optimization.md#rust-1100-qualification-continuation--13-november-2026)
+records passing dependency, portable and Windows cross-build/export rows with
+their exact source/worker scopes and independent receipt/resource/custody review.
+David subsequently requests [restoring the previous worker limits, committing
+and pushing](../../tasks/build-optimization.md#owner-requested-worker-restoration-and-publication--13-november-2026).
+Current construction/policy checks accompany publication; the full
+restored-concurrency Rust matrix is not rerun. Retain the earlier outcomes and
+first failures without promoting them to execution of the restored candidate.
+Native Windows, metric and release gates, product priority and execution holds
+remain unchanged.
 
 The checkpoints below explain completed prerequisites and remaining gates. Their
 results apply to their recorded candidates; older next-step instructions do not
@@ -1328,11 +1345,16 @@ The exact source checkpoint is signed/pushed as `5dd75df`. Its reviewed
 private conditional-numerics child is implemented on candidate `df493299`: all
 409 ordinary tests, 69 doctests, 34 GNU/MSVC ownership/privacy compiler controls,
 format and GNU/MSVC Clippy pass, with exact input custody and terminal resource
-cleanup. The actual caller supplies `None`. The owner requested source closeout
-before another agent upgrades Rust 1.100. Use the existing build admission owner
-to freeze/rebind the new compiler/source/helper/test candidate, retain the open
-capture-forwarding discrimination case, and complete optimized/90% coverage/
-95% mutation qualification. Earlier 607/E9 results remain historical; no metric
+cleanup. The actual caller supplies `None`. The subsequent
+[13 November Rust upgrade](../../tasks/build-optimization.md#rust-1100-implementation--13-november-2026)
+selects and admits 1.100.0, preserving product Rust/lock/hardening bytes. Its
+bounded Engine output has 409 ordinary and 409 optimized passes, 69 doctests and
+34 compiler controls; the aggregate remains incomplete at its unchanged scratch
+cap. Full portable UI, release/resource and native gates remain open. Use that
+existing build owner to finish bounded compatibility/resource admission, then
+complete source/helper/roster/role rebinding, retain the capture-forwarding
+discriminator and complete 90% coverage/95% per-owner mutation qualification.
+Earlier 607/E9 results remain historical; no metric
 transfer or native qualification follows. Production-positive suppliers and the Core receiving transaction
 retain their existing owners/holds; no eligibility, vote or clock authority is
 invented. No earlier outcome transfers. The latest cleanup removes 1.12 GB of terminal

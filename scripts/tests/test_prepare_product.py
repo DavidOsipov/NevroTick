@@ -186,6 +186,11 @@ class PublicationControls(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.vendor = self.root / "vendor"
+        # These archive/copy controls isolate already-admitted inputs. The real
+        # age boundary has separate entry-point controls below.
+        age = patch.object(PREPARE.VERIFY, "require_root_cooldown_admission", return_value={"fixture": True})
+        age.start()
+        self.addCleanup(age.stop)
 
     def test_verified_new_vendor_contains_only_reviewed_files(self):
         data = self.bundle()
@@ -235,6 +240,9 @@ class AcquisitionIdentityControls(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.vendor = self.root / "vendor"
+        age = patch.object(PREPARE.VERIFY, "require_root_cooldown_admission", return_value={"fixture": True})
+        age.start()
+        self.addCleanup(age.stop)
 
     def test_large_source_inventory_is_finite_and_prechecked(self):
         template, _, _ = admission_archive("bounded-control", "1.0.0")
@@ -307,7 +315,7 @@ class AcquisitionIdentityControls(unittest.TestCase):
 
 
 class CompletePolicyAcquisitionControls(unittest.TestCase):
-    """Reach the real CLI main with a schema2 policy and mocked archive transport."""
+    """Legacy source/archive CLI controls; graph-age admission is isolated here."""
 
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix="product-policy-acquisition-control-")
@@ -316,6 +324,9 @@ class CompletePolicyAcquisitionControls(unittest.TestCase):
         self.checkout = self.directory / "checkout"
         (self.checkout / "policy").mkdir(parents=True)
         self.vendor = self.directory / "vendor"
+        age = patch.object(PREPARE.VERIFY, "require_root_cooldown_admission", return_value={"fixture": True})
+        age.start()
+        self.addCleanup(age.stop)
         self.policy = json.loads((ROOT / "scripts/tests/fixtures/ui-m0-schema2.json").read_text())
         self.assertEqual(self.policy["schema_version"], 2)
         # Inert shape pin for the adopted seventh member, not workspace admission.
@@ -394,6 +405,71 @@ class CompletePolicyAcquisitionControls(unittest.TestCase):
         self.assertIn("missing or unexpected packages", output)
         network.assert_not_called()
         self.assertFalse(self.vendor.exists())
+
+
+class CooldownPublicationControls(unittest.TestCase):
+    """Exercise the actual graph boundary, without granting fixture age approval."""
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="cooldown-publication-")
+        self.addCleanup(temporary.cleanup)
+        self.directory = Path(temporary.name)
+        self.vendor = self.directory / "vendor"
+        self.policy = PREPARE.VERIFY.read_dependency_policy(ROOT / "policy/ui-m0-dependencies.json")
+
+    def checkout(self):
+        root = self.directory / "checkout"
+        names = {*self.policy["manifests_sha256"], "Cargo.lock", ".cargo/config.toml",
+                 "policy/tool-manifest.json", "policy/ui-m0-dependencies.json"}
+        for name in names:
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((ROOT / name).read_bytes())
+        return root
+
+    def test_direct_archive_call_cannot_bypass_missing_age_decision(self):
+        policy = copy.deepcopy(self.policy)
+        policy.pop("cooldown_admission")
+        with patch.object(PREPARE.urllib.request, "urlopen") as network:
+            with self.assertRaises(PREPARE.VERIFY.ENV.Incomplete):
+                PREPARE.acquire(self.vendor, policy)
+            network.assert_not_called()
+        self.assertFalse(self.vendor.exists())
+
+    def test_accepted_baseline_reaches_transport_without_retroactive_age_claim(self):
+        with patch.object(PREPARE.urllib.request, "urlopen", side_effect=OSError("inert transport sentinel")) as network:
+            with self.assertRaisesRegex(OSError, "inert transport sentinel"):
+                PREPARE.acquire(self.vendor, self.policy)
+            network.assert_called_once()
+        self.assertEqual(self.policy["cooldown_admission"]["status"], "accepted-baseline")
+        self.assertFalse(self.vendor.exists())
+        self.assertFalse(list(self.directory.glob(".ui-m0-acquire-*")))
+
+    def test_manually_changed_lock_cannot_publish_as_accepted_baseline(self):
+        root = self.checkout()
+        path = root / "Cargo.lock"
+        path.write_bytes(path.read_bytes() + b"\n# imported candidate, not the approved lock\n")
+        with patch.object(PREPARE, "ROOT", root), patch.object(PREPARE.urllib.request, "urlopen") as network:
+            with self.assertRaises(PREPARE.VERIFY.ENV.Incomplete):
+                PREPARE.acquire(self.vendor, self.policy)
+            network.assert_not_called()
+        self.assertFalse(self.vendor.exists())
+
+    def test_configuration_drift_after_download_cannot_publish_vendor(self):
+        root = self.checkout()
+        package, data, _files = admission_archive("bounded-control", "1.0.0")
+        def response(*_args, **_kwargs):
+            path = root / ".cargo/config.toml"
+            path.write_text(path.read_text().replace('"14 days"', '"0"'))
+            return io.BytesIO(data)
+        with (patch.object(PREPARE, "ROOT", root),
+              patch.object(PREPARE, "acquisition_records", return_value=[package]),
+              patch.object(PREPARE.urllib.request, "urlopen", side_effect=response) as network):
+            with self.assertRaises(PREPARE.VERIFY.ENV.Incomplete):
+                PREPARE.acquire(self.vendor, self.policy)
+            network.assert_called_once()
+        self.assertFalse(self.vendor.exists())
+        self.assertFalse(list(self.directory.glob(".ui-m0-acquire-*")))
 
 
 if __name__ == "__main__":

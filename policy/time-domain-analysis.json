@@ -405,5 +405,29 @@
     "leap_bundled": [
       "{ let _ = (CONTINUOUS_FROM, DATA_REVISION, FINITE_FUTURE_BEFORE, HISTORY_COMPLETE_BEFORE, LEAP_RECORDS, PROVENANCE_SHA256, RAW_SHA256, LeapContinuousFrom::new, LeapDataIdentity::new, LeapFutureExpiry::new, LeapHistoryBefore::new); LeapError::InvalidRecords }"
     ]
+  },
+  "external_contracts": {
+    "schema_version": 1,
+    "admission_status": "admitted-domain-external-contracts-only",
+    "package": "time-domain",
+    "source_file_count": 595,
+    "candidate_sha256": "8a70ac66f3b5f9275750f357cbf02ec79f23c0a5dd4a2732a65f679496beb5d1",
+    "critical_files": [
+      "crates/time-domain/src/coordinate.rs",
+      "crates/time-domain/src/era.rs",
+      "crates/time-domain/src/exchange.rs",
+      "crates/time-domain/src/clock.rs",
+      "crates/time-domain/src/rounding.rs",
+      "crates/time-domain/src/leap.rs",
+      "crates/time-domain/src/leap/validation.rs",
+      "crates/time-domain/src/leap/interpretation.rs",
+      "crates/time-domain/src/leap/bundled.rs"
+    ],
+    "tool_admission_profile": "stable-core",
+    "contracts_wall_seconds": 300,
+    "jobs": 6,
+    "test_threads": 1,
+    "mutation_equivalences": [],
+    "mutation_error_values": {}
   }
 }

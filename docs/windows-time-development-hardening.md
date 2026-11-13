@@ -183,6 +183,14 @@ The selected initial declaration is `garde = { version = "=0.23.0", default-feat
 
 ## 4. Pinning and admitting the toolchain
 
+**13 November current selection:** Rust **1.100.0** is now the selected WSL
+build compiler and workspace minimum, with LLVM/LLD **23.1.5**. The
+[existing upgrade task](../tasks/build-optimization.md#rust-1100-implementation--13-november-2026)
+records exact admission, executed compatibility checks and remaining resource,
+SDK and native gates. The initial 1.99.1 candidate and source-bound surveys below
+retain their historical scopes. Actual native Windows installation remains
+1.99.1; a source or cross-target result supplies no native qualification.
+
 ### 4.1 Initial stable candidate
 
 Start qualification with **Rust 1.99.1**. The official 15 October 2026 release fixes an x86_64 FFI `bool` return miscompilation, directly relevant to native boundary work. This is a researched candidate, not evidence that our future dependency graph and Windows application already build correctly under it. [C01]
@@ -366,9 +374,9 @@ For optimization tasks, use [the performance optimization skill](../.agents/skil
 The following required target settings are selected in
 [`.cargo/config.toml`](../.cargo/config.toml) and its exact admission controls.
 Use the [selected LLVM+xwin route](../TOOLING.md#windows-development-route):
-pinned Rust 1.99.1, bundled LLD 23.1.1 and admitted Microsoft CRT/SDK inputs,
-retaining the MSVC ABI. The new CET switches are supported by that exact LLD
-source; an arbitrary native `link.exe` is not an interchangeable admitted lane.
+pinned Rust 1.100.0, bundled LLD 23.1.5 and admitted Microsoft CRT/SDK inputs,
+retaining the MSVC ABI. The adopted CET switches require that exact admitted
+linker; an arbitrary native `link.exe` is not an interchangeable admitted lane.
 Record and verify the actual linker identity. Historical std-only PE/native
 fixtures do not qualify this vector, current application binaries or runtime
 enforcement. [C41]
@@ -628,6 +636,11 @@ BOLT's documented inputs are X86-64/AArch64 ELF binaries; this target produces P
 ThinLTO remains an **unqualified optimization candidate**. Before a Windows release claim, compare `lto="off"` and `"thin"` through relevant native correctness and useful-work cases on the actual compiler/linker/graph; include cross-crate static/string use and reached Windows/CRT import paths, with isolated imported-data controls where that mechanism is being qualified. No Rust DLL in one artifact, successful linking, Linux tests or a different linker alone proves Windows runtime correctness. Turning LTO off does not repair incorrect FFI import declarations, and fat LTO is no presumed workaround. Retain CHECK-19/20/21 and existing native gates without treating this source investigation as a pass. [C36]
 
 ### 6.6 LLVM settings for this workload
+
+The source survey below remains bound to the historical 1.99.1/23.1.1 cohort.
+The 13 November migration retains its selected profile and restrictions; exact
+1.100.0/23.1.5 compatibility and resource outcomes belong to the existing build
+task. No performance result or native qualification transfers from that survey.
 
 For the pinned **Rust 1.99.1 / LLVM 23.1.1** Windows x64 toolchain, section 6.5's checked O3/ThinLTO/one-codegen-unit configuration is an **unmeasured optimization candidate**, not a Windows correctness qualification or proof of fastest code. Keep additional `llvm-args` and custom pass lists empty. The pinned compiler enables loop and SLP vectorization at O3 and builds LLVM's normal optimization/LTO pipelines, including their inlining, unrolling and target-cost decisions. This permits legal optimizations; it does not promise every loop will vectorize or every call will inline. [C30]
 

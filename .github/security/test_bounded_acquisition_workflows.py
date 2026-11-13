@@ -54,7 +54,7 @@ class WorkflowAcquisitionControls(unittest.TestCase):
                 "assert 'RUSTUP_TOOLCHAIN' not in os.environ, 'manager selection reached direct runner'\n"
                 "assert os.environ['RUSTFLAGS']=='rejection-control-remains-visible'\n"
                 "assert '--toolchain-dir' in sys.argv\n"
-                "assert sys.argv[sys.argv.index('--toolchain-dir')+1]=='/pinned-rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu'\n"
+                "assert sys.argv[sys.argv.index('--toolchain-dir')+1]=='/pinned-rustup/toolchains/1.100.0-x86_64-unknown-linux-gnu'\n"
             )
             probe.chmod(0o700)
             environment = {"PATH": str(root) + ":/usr/bin:/bin", "RUSTUP_TOOLCHAIN": "1.99.1",

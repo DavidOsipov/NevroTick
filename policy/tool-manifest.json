@@ -3,26 +3,26 @@
   "reviewed_on": "2026-10-29",
   "scope": "DEV-01 environment bootstrap and DEV-02 isolated strict-policy controls; no application graph, release or native lab qualification",
   "rust": {
-    "channel": "1.99.1",
+    "channel": "1.100.0",
     "edition_candidate": "2024",
-    "msrv": "1.99.1",
-    "manifest_url": "https://static.rust-lang.org/dist/channel-rust-1.99.1.toml",
-    "manifest_sha256": "fb152be80975c194aa5fc684b2aec3a6e14e2b855efe2faa4e5f8ae6e590f463",
-    "compiler_commit": "58cf8f9c35b355199727627d07ae34a4e2846d67",
-    "llvm_version": "23.1.1",
+    "msrv": "1.100.0",
+    "manifest_url": "https://static.rust-lang.org/dist/channel-rust-1.100.0.toml",
+    "manifest_sha256": "3051e859570f64a8c5acb9d09e87425db52c7d97287c67e8f6d57d7d34ef9258",
+    "compiler_commit": "0ef1bc386059596dada8fb65b50425aab2ea637a",
+    "llvm_version": "23.1.5",
     "rustup_version": "1.29.3",
     "host": "x86_64-unknown-linux-gnu",
     "native_target": "x86_64-pc-windows-msvc",
     "license": "MIT OR Apache-2.0",
     "linux_binary_sha256": {
-      "rustc": "b53b780f77f952062f8ca8a3b70aef2390b1e45ad91939be94afdc9543026853",
-      "cargo": "a670e02cfa39ac2e53f77a2d911ca1fc9e2c479b0603ec956625be1daf24e3af",
-      "rustfmt": "68cb47a2a38daa8ff2ec6d623a2374b0a165d77ec74f1f654216665018c04598",
-      "clippy-driver": "89b6cc8d0d988b00a3f65bc90c76fedbaedb6bcb442b34563aefe3621f26544b",
-      "cargo-clippy": "4255f7671a17fba900ffd84a20f1dd0c986d52a2404496d3b7518f5044de5663",
-      "cargo-fmt": "6b42f43e4523abba428eb42b3a106727843428b096ef7ed8a9497bddcc50448a",
-      "rustdoc": "832e53ca262db3d3fcaca659dc6e71f0f5a924a48adc580ee4278acac75f3e80",
-      "rust-analyzer": "e800226d398f8f8f501319b887bf04da8e14da877a2df382dc1bf6e4748b9839"
+      "rustc": "5073422953727c9427a76b7fce03aa9404da46315e5a1e4965389512a41e8db0",
+      "cargo": "84d55d77232a921da96bcf2e1f78532ef5c5221803aae4448d9e220d48ebd808",
+      "rustfmt": "6e2d5b048877b33b14d5da5670381516b7ec3ee22572b8aff933d090fe6cb664",
+      "clippy-driver": "b20543523b921c8c57b14fb80e04209a6d9e7290c935e0bb5d50f622c45b9160",
+      "cargo-clippy": "5352349174538b94cb92878248e88a57be25c2e770c03d7175670a80eec7ee91",
+      "cargo-fmt": "bb9f7bd771972fb994f303bb576094bb98ac7c46a31849d1d5e88a463ed2c266",
+      "rustdoc": "e4caf2a2cb59463219d5f0db3d6bfd1dc48416d1278764d48f291b4d43cca410",
+      "rust-analyzer": "c47529e20870ce4f3c972d97e429e5ce9afb4849e2e0de3b1dc9587b7a80988a"
     },
     "rustup_linux_sha256": "b1c8cb14e30889e7e2999e6b69e62d9e9b9ffc0f4df8180564d306d9680e6c55",
     "rustup_linux_archive_url": "https://static.rust-lang.org/rustup/archive/1.29.3/x86_64-unknown-linux-gnu/rustup-init"
@@ -165,9 +165,9 @@
     },
     "linker": {
       "source": "Bundled rust-lld from pinned Rust toolchain",
-      "version": "23.1.1",
-      "qualification": "Isolated std-only Rust and Cargo MSVC cross-link + PE inspection + unelevated Windows execution passed; no product/runtime mitigation qualification",
-      "binary_sha256": "9b6f51f983a8184f5d47d224e336cdb35171ad5b138981bc62a22e6d65e7b214"
+      "version": "23.1.5",
+      "qualification": "Exact Rust1.100.0 bundled linker identity admitted; current cross-link and native runtime qualification pending. The dated bootstrap receipt below is historical and does not qualify this linker.",
+      "binary_sha256": "9fe419ad20d121580a5289b36b4c32a1d4ce13cf6c5d113d71d890a1a43cdeba"
     },
     "choice": "User selected LLVM + xwin in WSL; do not install Visual Studio workloads",
     "scope": "Development cross-build lane; Windows target/ABI unchanged; native product and release acceptance remain separate",

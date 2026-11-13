@@ -4891,8 +4891,8 @@ def cargo_json_records(output, *, test_phase=False, private_target=False):
                              r'/work/tmp/cargo-mutants-source-[A-Za-z0-9]{6}\.tmp/target')
             if (not isinstance(out_dir, str) or len(out_dir.encode('utf-8')) > 4096
                     or not re.fullmatch(
-                        target_prefix + r'/debug/build/'
-                        + re.escape(packages[package]) + r'-[a-f0-9]{16}/out', out_dir)):
+                        target_prefix + r'/debug/build/' + re.escape(packages[package])
+                        + r'(?:-[a-f0-9]{16}/out|/[a-f0-9]{16}/out)', out_dir)):
                 raise Incomplete('Cargo build-script output directory is outside the observed layout.')
         elif (not isinstance(item['package_id'], str) or not isinstance(item['manifest_path'], str)
               or not Path(item['manifest_path']).is_absolute() or not isinstance(item['target'], dict)):
@@ -6417,47 +6417,10 @@ def fuzz_metadata(metadata, selected):
 
 
 
-def copy_contract_dependencies(session, artifact, domain_artifact):
-    """Copy real owned artifacts into independent read-only hash-sealed inodes.
-
-    Cargo may hardlink its own target root/deps outputs. Do not reject that source
-    layout: require canonical owned paths, source hashes before/after, and copies
-    with nlink1 and distinct device/inode identities. No writable alias is sealed.
-    """
-    destination = session.work / "contract-deps"
-    destination.mkdir(mode=0o700)
-    libraries = {'libtime_core.rlib': artifact, 'libtime_domain.rlib': domain_artifact}
-    sources = {}
-    for name, emitted in libraries.items():
-        source = session.work / emitted.removeprefix('/work/')
-        actual = source.resolve(strict=True)
-        if (actual != source or not actual.is_file()
-                or not source.is_relative_to(session.work / 'target')):
-            raise Incomplete("Actual emitted core/domain library has redirected or escaped.")
-        sources[name] = source
-    dependencies = session.work / "target/debug/deps"
-    for item in sorted(dependencies.iterdir()):
-        if item.suffix not in {".rlib", ".rmeta", ".so"}:
-            continue
-        if item.resolve(strict=True) != item:
-            raise Incomplete("Contract dependency is redirected.")
-        digest = PRODUCT.sha256(item)
-        target = destination / item.name
-        shutil.copyfile(item, target); target.chmod(0o400)
-        if (PRODUCT.sha256(target) != digest or PRODUCT.sha256(item) != digest or target.stat().st_nlink != 1
-                or (target.stat().st_dev,target.stat().st_ino)==(item.stat().st_dev,item.stat().st_ino)):
-            raise Incomplete("Contract dependency changed while its immutable copy was prepared.")
-    for name, source in sources.items():
-        library = destination / name
-        digest = PRODUCT.sha256(source)
-        shutil.copyfile(source, library); library.chmod(0o400)
-        if (PRODUCT.sha256(library) != digest or PRODUCT.sha256(source) != digest
-                or library.stat().st_nlink != 1
-                or (library.stat().st_dev,library.stat().st_ino)==(source.stat().st_dev,source.stat().st_ino)):
-            raise Incomplete("The copied core/domain library differs from Cargo's actual artifact.")
-    session.protect(destination)
-    return destination
-
+def copy_contract_dependencies(session, artifact, domain_artifact, *, cargo_output):
+    """Seal complete Cargo-attributed libraries without writable aliases."""
+    return COMMON.copy_cargo_contract_dependencies(
+        session, cargo_output, {"libtime_core.rlib": artifact, "libtime_domain.rlib": domain_artifact})
 
 
 def contracts(session, policy, report):
@@ -6507,7 +6470,7 @@ def contracts(session, policy, report):
                  "--frozen", "--jobs", str(policy["jobs"]), "--lib", "--message-format=json"], COMMON.remaining_timeout(deadline, 120))
     artifact = COMMON.library_artifact(output, "time-core", "/work/source/crates/time-core/Cargo.toml")
     domain_artifact = COMMON.library_artifact(output, "time-domain", "/work/source/crates/time-domain/Cargo.toml")
-    dependency_copy = copy_contract_dependencies(session, artifact, domain_artifact)
+    dependency_copy = copy_contract_dependencies(session, artifact, domain_artifact, cargo_output=output)
     consumers = session.work / "contract-inputs"; consumers.mkdir(mode=0o700)
     (session.work / "contracts").mkdir(mode=0o700)
     examples = contract_examples()
@@ -8932,7 +8895,7 @@ def _external_contract_registry(session, policy, report, examples, markers, lega
         "--message-format=json"], COMMON.remaining_timeout(deadline, 120))
     artifact = COMMON.library_artifact(output, "time-core", "/work/source/crates/time-core/Cargo.toml")
     domain_artifact = COMMON.library_artifact(output, "time-domain", "/work/source/crates/time-domain/Cargo.toml")
-    dependencies = copy_contract_dependencies(session, artifact, domain_artifact)
+    dependencies = copy_contract_dependencies(session, artifact, domain_artifact, cargo_output=output)
     consumers = session.work / "contract-inputs"
     consumers.mkdir(mode=0o700)
     binaries = session.work / "contracts"

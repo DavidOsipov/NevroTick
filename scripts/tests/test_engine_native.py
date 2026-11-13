@@ -74,6 +74,37 @@ def observation(authored=2, helpers=1):
     }
 
 
+class EngineArtifactAdmission(unittest.TestCase):
+    """Synthetic old/new Cargo layouts preserve exact Windows libtest custody."""
+
+    def test_old_and_new_selector_require_exact_owner_profile_and_canonical_file(self):
+        for folder in ("deps", "build/nevrotick-engine/" + "a" * 16 + "/out"):
+            with self.subTest(folder=folder), tempfile.TemporaryDirectory() as temporary:
+                work = Path(temporary)
+                name = "/work/target/x86_64-pc-windows-msvc/debug/" + folder + "/nevrotick_engine-" + "b" * 16 + ".exe"
+                local = work / name.removeprefix("/work/"); local.parent.mkdir(parents=True); local.write_bytes(b"synthetic executable")
+                record = {"reason": "compiler-artifact", "package_id": "path+file:///work/fixture/crates/nevrotick-engine#0.0.0",
+                    "manifest_path": "/work/fixture/crates/nevrotick-engine/Cargo.toml",
+                    "target": {"name": "nevrotick_engine", "kind": ["lib"], "crate_types": ["lib"]},
+                    "profile": {"test": True, "opt_level": "0", "debug_assertions": True, "overflow_checks": True},
+                    "executable": name, "filenames": [name]}
+                self.assertEqual(NATIVE.engine_artifact(json.dumps(record), work), local)
+                for fault in ("package", "manifest", "profile", "inventory", "extra_executable", "host", "duplicate", "symlink"):
+                    bad = json.loads(json.dumps(record))
+                    if fault == "package": bad["package_id"] += "wrong"
+                    if fault == "manifest": bad["manifest_path"] = "/outside/Cargo.toml"
+                    if fault == "profile": bad["profile"]["overflow_checks"] = False
+                    if fault == "inventory": bad["filenames"] = []
+                    if fault == "extra_executable": bad["filenames"].append(name.replace("nevrotick_engine", "unattributed"))
+                    if fault == "host": bad["executable"] = name.replace("/x86_64-pc-windows-msvc", "")
+                    if fault == "symlink":
+                        moved = local.with_name("other.exe"); local.rename(moved); local.symlink_to(moved)
+                    text = json.dumps(bad)
+                    if fault == "duplicate": text += "\n" + text
+                    with self.subTest(fault=fault), self.assertRaises(NATIVE.Incomplete):
+                        NATIVE.engine_artifact(text, work)
+
+
 class ConsoleAdmission(unittest.TestCase):
     """False completion cannot replace custody, identity, token or actual cleanup."""
 

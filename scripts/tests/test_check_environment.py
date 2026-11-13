@@ -10,6 +10,7 @@ import signal
 import sys
 import tempfile
 import time
+import tomllib
 import unittest
 from unittest.mock import patch
 
@@ -21,7 +22,80 @@ ENV = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ENV)
 
 
+# Independent accepted policy: product constants do not supply this oracle.
+EXPECTED_CARGO_CONFIGURATION = '''[build]
+jobs=12
+[env]
+RUST_TEST_THREADS="12"
+[registry]
+global-min-publish-age="14 days"
+[resolver]
+incompatible-publish-age="deny"
+[target.x86_64-pc-windows-msvc]
+rustflags=["-C","target-cpu=x86-64-v3","-C","control-flow-guard=yes",
+"-C","jump-tables=no","-C","link-arg=/GUARD:CF","-C","link-arg=/DYNAMICBASE",
+"-C","link-arg=/HIGHENTROPYVA","-C","link-arg=/NXCOMPAT","-C","link-arg=/FIXED:NO",
+"-C","link-arg=/LARGEADDRESSAWARE","-C","link-arg=/CETCOMPAT",
+"-C","link-arg=/CETCOMPATSTRICT","-C","link-arg=/DEPENDENTLOADFLAG:0xA00",
+"-C","link-arg=/WX"]
+'''
+
+
 class GuardTests(unittest.TestCase):
+    def test_exact_fourteen_day_deny_configuration_is_accepted(self):
+        ENV.require_cargo_configuration(tomllib.loads(EXPECTED_CARGO_CONFIGURATION))
+
+    def test_cooldown_configuration_missing_weakened_or_extended_is_rejected(self):
+        healthy = tomllib.loads(EXPECTED_CARGO_CONFIGURATION)
+        variants = []
+        for table in ("registry", "resolver"):
+            changed = json.loads(json.dumps(healthy))
+            del changed[table]
+            variants.append(("missing " + table, changed))
+        for age in ("0", "0 days", "13 days", "30 days", 14):
+            changed = json.loads(json.dumps(healthy))
+            changed["registry"]["global-min-publish-age"] = age
+            variants.append(("age " + str(age), changed))
+        for action in ("allow", "warn", True):
+            changed = json.loads(json.dumps(healthy))
+            changed["resolver"]["incompatible-publish-age"] = action
+            variants.append(("resolver " + str(action), changed))
+        changed = json.loads(json.dumps(healthy))
+        changed["registries"] = {"crates-io": {"min-publish-age": "0 days"}}
+        variants.append(("per-registry weakening", changed))
+        changed = json.loads(json.dumps(healthy))
+        changed["registries"] = {"private": {"min-publish-age": "14 days"}}
+        variants.append(("additional same-age registry", changed))
+        for name, candidate in variants:
+            with self.subTest(case=name), patch.object(ENV.subprocess, "Popen") as launch:
+                with self.assertRaisesRegex(ENV.Incomplete, "differs from the admitted"):
+                    ENV.require_cargo_configuration(candidate)
+                launch.assert_not_called()
+
+    def test_age_overrides_are_rejected_before_execution_without_values(self):
+        names = ("CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE",
+                 "CARGO_REGISTRIES_CRATES_IO_MIN_PUBLISH_AGE",
+                 "CARGO_REGISTRIES_PRIVATE_ARCHIVE_MIN_PUBLISH_AGE",
+                 "CARGO_RESOLVER_INCOMPATIBLE_PUBLISH_AGE")
+        for name in names:
+            for value in ("", "14 days", "deny", "synthetic-private-value"):
+                with (self.subTest(name=name, value=value),
+                      patch.dict(os.environ, {name: value}, clear=True),
+                      patch.object(ENV.subprocess, "Popen") as launch):
+                    with self.assertRaisesRegex(ENV.Incomplete, name) as failure:
+                        ENV.inspect(Path(tempfile.gettempdir()))
+                    self.assertNotIn("synthetic-private-value", str(failure.exception))
+                    launch.assert_not_called()
+        values = {name: "synthetic-private-value" for name in names}
+        self.assertEqual(ENV.overridden_names(values), sorted(names))
+
+    def test_unrelated_registry_credentials_and_similar_names_remain_allowed(self):
+        names = ("CARGO_REGISTRY_TOKEN", "CARGO_REGISTRIES_PRIVATE_TOKEN",
+                 "CARGO_REGISTRIES_PRIVATE_INDEX", "CARGO_REGISTRIES_PRIVATE_CREDENTIAL_PROVIDER",
+                 "CARGO_REGISTRIES_PRIVATE_MIN_PUBLISH_AGE_EXTRA",
+                 "CARGO_REGISTRIES_MIN_PUBLISH_AGE")
+        self.assertEqual(ENV.overridden_names(dict.fromkeys(names, "synthetic-secret")), [])
+
     def test_analysis_overrides_cannot_weaken_selected_tool_policy(self):
         for name in ("NEXTEST_RETRIES", "CARGO_MUTANTS_CAP_LINTS", "CARGO_LLVM_COV_IGNORE_RUN_FAIL",
                      "LLVM_COV", "LLVM_PROFDATA", "CARGO_INCREMENTAL"):
@@ -71,7 +145,7 @@ class GuardTests(unittest.TestCase):
             )
             (root / ".cargo").mkdir()
             (root / ".cargo/config.toml").write_text(
-                '[target.x86_64-pc-windows-msvc]\nrustflags=["--cap-lints=allow"]\n'
+                EXPECTED_CARGO_CONFIGURATION.replace('"target-cpu=x86-64-v3"', '"--cap-lints=allow"')
             )
             with patch.dict(os.environ, {}, clear=True):
                 with self.assertRaisesRegex(ENV.Incomplete, "differs from the admitted"):
@@ -85,14 +159,7 @@ class GuardTests(unittest.TestCase):
     def test_cpu_floor_and_mitigations_are_admitted_together(self):
         # This expected policy is independent of ENV.MSVC_FLAGS. A valid vector
         # must reach the next deliberate gate; invalid vectors must stop earlier.
-        flags = ["-C", "target-cpu=x86-64-v3", "-C", "control-flow-guard=yes",
-                 "-C", "jump-tables=no",
-                 "-C", "link-arg=/GUARD:CF", "-C", "link-arg=/DYNAMICBASE",
-                 "-C", "link-arg=/HIGHENTROPYVA", "-C", "link-arg=/NXCOMPAT",
-                 "-C", "link-arg=/FIXED:NO", "-C", "link-arg=/LARGEADDRESSAWARE",
-                 "-C", "link-arg=/CETCOMPAT", "-C", "link-arg=/CETCOMPATSTRICT",
-                 "-C", "link-arg=/DEPENDENTLOADFLAG:0xA00",
-                 "-C", "link-arg=/WX"]
+        flags = tomllib.loads(EXPECTED_CARGO_CONFIGURATION)["target"]["x86_64-pc-windows-msvc"]["rustflags"]
         refused = "differs from the admitted"
         variants = [("healthy v3 profile", flags, "Missing reviewed policy/tool-manifest.json")]
         variants += [(cpu, [value.replace("target-cpu=x86-64-v3", "target-cpu=" + cpu)
@@ -134,12 +201,125 @@ class GuardTests(unittest.TestCase):
             for name, candidate, diagnostic in variants:
                 (root / ".cargo/config.toml").write_text(
                     '[build]\njobs=12\n[env]\nRUST_TEST_THREADS="12"\n'
+                    '[registry]\nglobal-min-publish-age="14 days"\n'
+                    '[resolver]\nincompatible-publish-age="deny"\n'
                     '[target.x86_64-pc-windows-msvc]\nrustflags=' + json.dumps(candidate) + '\n')
                 with (self.subTest(case=name), patch.dict(os.environ, {}, clear=True),
                       patch.object(ENV.subprocess, "Popen") as launch):
                     with self.assertRaisesRegex(ENV.Incomplete, diagnostic):
                         ENV.inspect(root)
                     launch.assert_not_called()
+
+
+class CargoContextTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="cargo-context-control-")
+        self.addCleanup(self.temporary.cleanup)
+        self.base = Path(self.temporary.name)
+        self.root = self.base / "checkout"
+        self.config = self.root / ".cargo/config.toml"
+        self.config.parent.mkdir(parents=True)
+        self.config.write_text(EXPECTED_CARGO_CONFIGURATION)
+        self.home = self.base / "controlled-cargo-home"
+        self.home.mkdir()
+        self.environment = {"CARGO_HOME": str(self.home)}
+
+    def test_structural_context_returns_validated_bytes_and_canonical_cwd_without_tools(self):
+        expected = {"cwd": str(self.root), "config_sha256": ENV.hashlib.sha256(self.config.read_bytes()).hexdigest()}
+        with (patch.object(ENV.subprocess, "Popen") as launch,
+              patch.object(ENV.shutil, "which") as find,
+              patch.object(ENV.os, "geteuid", return_value=0)):
+            self.assertEqual(ENV.require_cargo_context(self.root / ".", self.environment), expected)
+            launch.assert_not_called()
+            find.assert_not_called()
+
+    def test_explicit_cleared_environment_is_distinct_from_ambient_environment(self):
+        with patch.dict(os.environ, {"CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE": "private-value"}, clear=True):
+            self.assertEqual(ENV.require_cargo_context(self.root, {})["cwd"], str(self.root))
+            with self.assertRaisesRegex(ENV.Incomplete, "CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE") as error:
+                ENV.require_cargo_context(self.root)
+            self.assertNotIn("private-value", str(error.exception))
+
+    def test_ancestor_home_and_legacy_configuration_cannot_shadow_selected_policy(self):
+        paths = (self.base / ".cargo/config", self.base / ".cargo/config.toml",
+                 self.root / ".cargo/config", self.home / "config", self.home / "config.toml")
+        for path in paths:
+            with self.subTest(path=path):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('token="synthetic-private-value"\n')
+                try:
+                    with patch.object(ENV.subprocess, "Popen") as launch:
+                        with self.assertRaisesRegex(ENV.Incomplete, "ancestor/home/legacy") as error:
+                            ENV.require_cargo_context(self.root, self.environment)
+                        self.assertNotIn("synthetic-private-value", str(error.exception))
+                        launch.assert_not_called()
+                finally:
+                    path.unlink()
+        self.assertEqual(ENV.require_cargo_context(self.root, self.environment)["cwd"], str(self.root))
+
+    def test_bookends_detect_changed_valid_config_and_reject_weakened_policy(self):
+        before = ENV.require_cargo_context(self.root, self.environment)
+        self.config.write_text(EXPECTED_CARGO_CONFIGURATION + "\n# deliberate input change\n")
+        after = ENV.require_cargo_context(self.root, self.environment)
+        self.assertEqual(before["cwd"], after["cwd"])
+        self.assertNotEqual(before["config_sha256"], after["config_sha256"])
+        self.config.write_text(EXPECTED_CARGO_CONFIGURATION.replace('"14 days"', '"0 days"'))
+        with self.assertRaisesRegex(ENV.Incomplete, "differs from the admitted"):
+            ENV.require_cargo_context(self.root, self.environment)
+
+    def test_supplied_cargo_home_must_be_absolute_canonical_without_tilde_expansion(self):
+        alias = self.base / "redirected-parent"
+        alias.symlink_to(self.home, target_is_directory=True)
+        for home in ("", "relative", "~/.cargo", str(alias / "new-home"),
+                     str(self.home) + "/.", str(self.home) + "/", str(self.home / ".." / "new-home")):
+            with self.subTest(home=home), patch.object(ENV.subprocess, "Popen") as launch:
+                with self.assertRaisesRegex(ENV.Incomplete, "CARGO_HOME.*absolute canonical") as error:
+                    ENV.require_cargo_context(self.root, {"CARGO_HOME": home})
+                if home:
+                    self.assertNotIn(home, str(error.exception))
+                launch.assert_not_called()
+        not_created = self.base / "not-created-home"
+        self.assertFalse(not_created.exists())
+        self.assertEqual(ENV.require_cargo_context(self.root, {"CARGO_HOME": str(not_created)})["cwd"], str(self.root))
+
+    def test_intended_home_and_account_fallback_are_checked_instead_of_ambient_home(self):
+        intended_home = self.base / "intended-home"
+        hidden = intended_home / ".cargo/config.toml"
+        hidden.parent.mkdir(parents=True)
+        hidden.write_text('token="synthetic-private-value"\n')
+        with self.assertRaisesRegex(ENV.Incomplete, "ancestor/home/legacy"):
+            ENV.require_cargo_context(self.root, {"HOME": str(intended_home)})
+        with (patch.dict(os.environ, {"HOME": str(self.home)}, clear=True),
+              patch("pwd.getpwuid", return_value=type("Account", (), {"pw_dir": str(intended_home)})())):
+            with self.assertRaisesRegex(ENV.Incomplete, "ancestor/home/legacy"):
+                ENV.require_cargo_context(self.root, {})
+
+    def test_redirected_or_oversized_config_is_refused_before_tools(self):
+        original = self.config.read_bytes()
+        target = self.base / "other-config.toml"
+        target.write_bytes(original)
+        self.config.unlink()
+        self.config.symlink_to(target)
+        with self.assertRaisesRegex(ENV.Incomplete, "canonical|redirected"):
+            ENV.require_cargo_context(self.root, self.environment)
+        self.config.unlink()
+        self.config.write_bytes(original + b"#" * (64 * 1024))
+        with self.assertRaisesRegex(ENV.Incomplete, "bound"):
+            ENV.require_cargo_context(self.root, self.environment)
+
+    def test_config_change_during_read_is_not_reported_as_admitted(self):
+        read = ENV.os.read
+        changed = False
+        def changing_read(descriptor, size):
+            nonlocal changed
+            raw = read(descriptor, size)
+            if not changed:
+                changed = True
+                self.config.write_text(EXPECTED_CARGO_CONFIGURATION.replace('"14 days"', '"0 days"'))
+            return raw
+        with patch.object(ENV.os, "read", side_effect=changing_read):
+            with self.assertRaisesRegex(ENV.Incomplete, "changed during"):
+                ENV.require_cargo_context(self.root, self.environment)
 
 
 class ProcessTests(unittest.TestCase):

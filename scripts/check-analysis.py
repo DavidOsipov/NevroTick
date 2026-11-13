@@ -154,7 +154,7 @@ def internal(root, value, *, link=False):
 def validate_policy(policy):
     if (not isinstance(policy, dict) or not isinstance(policy.get("tools"), dict)
             or policy.get("schema_version") != 1 or policy.get("platform") != PLATFORM
-            or policy.get("shipping_toolchain") != "1.99.1" or policy.get("codeql") != "deferred"
+            or policy.get("shipping_toolchain") != "1.100.0" or policy.get("codeql") != "deferred"
             or policy.get("fuzz_target") != PLATFORM
             or policy.get("common_nightly_pin") != NIGHTLY
             or policy.get("common_nightly") != f"common/rustup/toolchains/{NIGHTLY}-{PLATFORM}"
@@ -189,9 +189,9 @@ def load_installation(record, root):
     if base.is_relative_to(root) or root.is_relative_to(base):
         raise Incomplete("Installed payload must be separate from the checkout.")
     stable = Path(item.get("stable_toolchain", ""))
-    expected_stable = Path.home() / f".rustup/toolchains/1.99.1-{PLATFORM}"
+    expected_stable = Path.home() / f".rustup/toolchains/1.100.0-{PLATFORM}"
     if (stable != expected_stable or stable != stable.resolve(strict=True) or not stable.is_dir()):
-        raise Incomplete("Missing canonical private-pointer stable1.99.1 toolchain identity.")
+        raise Incomplete("Missing canonical private-pointer stable1.100.0 toolchain identity.")
     return base, stable
 
 
@@ -504,7 +504,7 @@ def _admit(root, installation_record, *, profile):
         if name != "loom" and not os.access(path, os.X_OK):
             raise Incomplete(f"Nonexecutable tool entrypoint: {name}.")
     stable_policy = decode(read_once(root / "policy/tool-manifest.json"))["rust"]
-    if stable_policy["channel"] != "1.99.1":
+    if stable_policy["channel"] != "1.100.0":
         raise Incomplete("Shipping compiler policy changed.")
     for name, checksum in stable_policy["linux_binary_sha256"].items():
         if digest(internal(stable, "bin/" + relative(name))) != checksum:

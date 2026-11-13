@@ -3,7 +3,7 @@
   "scope": "Merged Slint 1.18.1 fixture GUI and controlled-loopback experimental engine measurement cohort; Windows Winit/software/accessibility and Linux public custom-platform tests. Exact local spin_on, accesskit_windows and accesskit_consumer source derivatives remain separately pinned. Adds only the main engine normal local time-domain dependency; all other registry identities, primary grants, archive-file exceptions and non-engine scopes retain their reviewed boundaries. No production sample eligibility, clock authority, Windows/native execution or distribution clearance is established by this policy. Existing pinned Garde0.23.0 derive/defaults-off is now also a direct engine validation edge; registry packages, features, patches and grants remain fixed. Execution qualification is separate. Owner-requested 6 November refresh changes seven transitive patch releases; engine Tokio macros now use the separately reviewed Syn3 host closure while Garde retains Syn2. Existing feature/backend, grant, patch and native holds remain. The local consumer substitution retains its upstream MIT/Apache grants and adds original GPL3 regression tests; no feature or target-role expansion follows. The 7 November shared windows-platform owner adds only a local Garde-backed portable service lifecycle; existing registry packages, external target/host features, patches, grants and all native holds remain unchanged. The 9 November subclass lifetime repair adds only the existing windows dependency owner-thread feature, process-owned callback registration and a std-only inert facade control; it grants no Linux AccessKit backend, native execution or broader accessibility qualification. EP1 adds an explicit default-off Engine KE-association prototype; source/graph admission does not establish native TLS/provider or production acquisition qualification.",
   "lockfile_sha256": "2ccabde33a800b745c42b4fe96dc4a6c300b1961ac87e149d313cae41fde5f2e",
   "manifests_sha256": {
-    "Cargo.toml": "cd0c94443cb9d2c5337a769ee13d53ee88833e7249e0392e14bd65a160f5b047",
+    "Cargo.toml": "570bf74e4682b8931172fe066c999cfbca470d2026c5455d629c942d9adfd1eb",
     "crates/nevrotick-ui/Cargo.toml": "3548bb4a5793a54c2da94e71aa95eb4336849702b93a455f70262a4bde2819b2",
     "crates/ntp-wire/Cargo.toml": "dc75f8a638a956217d3ecfa666a840b2ecef99c0a06dac7443ab5cf775032579",
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
@@ -32736,5 +32736,16 @@
       "files_sha256": "f766170eff8008d5ec1b837791311ff42942bdb7b814d33b8f2a589510cf249c",
       "manifest_sha256": "c1040b304ed3f2066ba7f0d2fd1c2492b292c2085cd0cbf13b59807a86ae2f5a"
     }
+  },
+  "cooldown_admission": {
+    "schema_version": 1,
+    "policy": {
+      "minimum_age": "14 days",
+      "incompatible_publish_age": "deny"
+    },
+    "status": "accepted-baseline",
+    "baseline_lockfile_sha256": "2ccabde33a800b745c42b4fe96dc4a6c300b1961ac87e149d313cae41fde5f2e",
+    "baseline_registry_sha256": "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15e68b7",
+    "resolution": null
   }
 }

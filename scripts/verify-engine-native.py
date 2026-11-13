@@ -11,6 +11,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import re
 import shutil
 import sys
 import time
@@ -115,14 +116,24 @@ def engine_artifact(output, work):
                 and item.get("target", {}).get("kind") == ["lib"]
                 and item.get("profile", {}).get("test") is True
                 and item.get("executable") is not None):
-            require(item.get("package_id") == "path+file:///work/fixture/crates/nevrotick-engine#0.0.0",
+            require(item.get("package_id") == "path+file:///work/fixture/crates/nevrotick-engine#0.0.0"
+                    and item.get("manifest_path") == "/work/fixture/crates/nevrotick-engine/Cargo.toml"
+                    and item.get("target", {}).get("crate_types") == ["lib"]
+                    and item.get("profile", {}).get("opt_level") == "0"
+                    and item.get("profile", {}).get("debug_assertions") is True
+                    and item.get("profile", {}).get("overflow_checks") is True,
                     "Engine libtest artifact belongs to an unexpected source package.")
             value = item["executable"]
-            require(type(value) is str and value.startswith(f"/work/target/{TARGET}/debug/deps/")
-                    and value.endswith(".exe") and ".." not in Path(value).parts,
+            require(type(value) is str and re.fullmatch(
+                    re.escape(f"/work/target/{TARGET}/debug/")
+                    + r"(?:deps/|build/nevrotick-engine/[a-f0-9]{16}/out/)"
+                    + r"nevrotick_engine(?:-[a-f0-9]{16})?\.exe", value)
+                    and type(item.get("filenames")) is list
+                    and all(type(path) is str for path in item["filenames"])
+                    and [path for path in item["filenames"] if path.endswith(".exe")] == [value],
                     "Unexpected Engine libtest output path.")
             found.append(work / value.removeprefix("/work/"))
-    require(len(found) == 1 and found[0].is_file() and not found[0].is_symlink(),
+    require(len(found) == 1 and found[0].is_file() and found[0].resolve(strict=True) == found[0],
             "Expected one actual emitted Engine libtest executable.")
     return found[0]
 

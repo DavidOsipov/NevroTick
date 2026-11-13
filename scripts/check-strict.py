@@ -216,12 +216,12 @@ def future_policy_controls() -> tuple[str, tuple[tuple[str, str, str], ...]]:
     healthy = '''
 /// Transfer the future to its next owner rather than silently discard it.
 #[must_use]
-pub fn forward_future<F: std::future::Future>(future: F) -> F {
+pub fn forward_future<F: Future>(future: F) -> F {
     future
 }
 
 /// Deliberately cancel an unpolled future whose cleanup contract permits Drop.
-pub fn cancel_unpolled_future<F: std::future::Future>(future: F) {
+pub fn cancel_unpolled_future<F: Future>(future: F) {
     drop(future);
 }
 '''
@@ -484,6 +484,22 @@ def fixture_command(metadata: dict, work: Path, command: list[str], extensions: 
     return args[:offset] + extra + args[offset:]
 
 
+def fixture_workspace_policy(snapshot: dict, adapter: str) -> str:
+    """Scope the admitted test-debug budget to an existing synthetic adapter.
+
+    Both fixed fixture graphs omit Slint. Preserve the validated policy's lint
+    and profile values while naming their actual adapter for its package-only
+    debug budget. This does not modify or relax the product policy.
+    """
+    if adapter not in {"nevrotick-policy-control", "adapter-control"}:
+        raise ENV.Incomplete("Unknown synthetic fixture adapter.")
+    fragment = snapshot["policy/rust-workspace.toml"].decode("utf-8")
+    header = "[profile.test.package.nevrotick-ui]"
+    if fragment.count(header) != 1:
+        raise ENV.Incomplete("Expected exactly one admitted UI test-debug profile.")
+    return fragment.replace(header, f"[profile.test.package.{adapter}]", 1)
+
+
 PURE_API_HEALTHY = '''//! A pure-role explicit-input policy control.
 /// Advance only the supplied coordinate without ambient state or effects.
 #[must_use]
@@ -571,7 +587,7 @@ def qualify_pure_api_fixtures(root: Path, metadata: dict, evidence: dict,
         members = [*roles, "adapter-control"]
         (fixture / "Cargo.toml").write_text(
             '[workspace]\nmembers = ' + json.dumps([f"crates/{name}" for name in members])
-            + '\nresolver = "3"\n' + snapshot["policy/rust-workspace.toml"].decode("utf-8"))
+            + '\nresolver = "3"\n' + fixture_workspace_policy(snapshot, "adapter-control"))
         lock = "version = 4\n"
         for name in members:
             member = fixture / "crates" / name
@@ -650,7 +666,7 @@ def qualify_fixtures(root: Path, metadata: dict, extensions: dict, evidence: dic
             'edition = "2024"\nlicense = "GPL-2.0-only"\npublish = false\n'
             '[lints]\nworkspace = true\n[workspace]\nresolver = "3"\n'
         )
-        (fixture / "Cargo.toml").write_text(manifest + snapshot["policy/rust-workspace.toml"].decode("utf-8"))
+        (fixture / "Cargo.toml").write_text(manifest + fixture_workspace_policy(snapshot, "nevrotick-policy-control"))
         (fixture / "Cargo.lock").write_text(
             'version = 4\n\n[[package]]\nname = "nevrotick-policy-control"\nversion = "0.0.0"\n'
         )

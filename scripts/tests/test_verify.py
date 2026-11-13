@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import resource
 import shutil
 import tempfile
 import tomllib
@@ -72,6 +73,150 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+class CompileResourceControls(unittest.TestCase):
+    """Fixed command authority plus cheap kernel readback; no Cargo execution."""
+
+    @staticmethod
+    def release_command(package, prototype=False):
+        binary = "nevrotick-ui" if package == "nevrotick-ui" else "nevrotick-observe"
+        command = ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
+            "--config", 'source.reviewed.directory="/vendor"', "--config",
+            'target.x86_64-pc-windows-msvc.linker="/work/linker"', "build", "--release",
+            "--package", package, "--frozen", "--jobs",
+            "6" if prototype and package == "nevrotick-engine" else "12", "--target",
+            "x86_64-pc-windows-msvc", "--bin", binary]
+        if prototype and package == "nevrotick-engine":
+            command += ["--features", "nevrotick-engine/ke-association-prototype"]
+        return command
+
+    def assembled(self, command, **context):
+        with patch.object(VERIFY.ENV.shutil, "which", side_effect=lambda name: "/usr/bin/" + name):
+            return VERIFY.sandbox(Path("/toolchain"), Path("/work"), Path("/source"), Path("/vendor"),
+                                  command, None, **context)
+
+    def test_only_exact_ui_windows_release_gets_eight_gib_address_space(self):
+        for profile in ("default", "engine-ke-association"):
+            for label, package, limit in (("windows-link", "nevrotick-ui", "--as=8589934592"),
+                                           ("windows-engine-link", "nevrotick-engine", "--as=4294967296")):
+                with self.subTest(profile=profile, label=label):
+                    command = self.release_command(package, profile != "default")
+                    invocation = self.assembled(command, lane="windows", label=label, profile=profile)
+                    self.assertIn(limit, invocation)
+                    self.assertEqual(sum(arg.startswith("--as=") for arg in invocation), 1)
+                    self.assertIn("--cpu=300", invocation)
+                    self.assertEqual(VERIFY.command_resources("windows", label, command, profile=profile)["wall_seconds"],
+                                     600 if package == "nevrotick-ui" else 300)
+        legacy = self.assembled(self.release_command("nevrotick-ui"))
+        self.assertIn("--as=4294967296", legacy)
+        self.assertNotIn("--as=8589934592", legacy)
+
+    def test_exact_default_and_prototype_release_rows_select_only_300_cpu_seconds(self):
+        for profile in ("default", "engine-ke-association"):
+            for label, package in (("windows-link", "nevrotick-ui"),
+                                   ("windows-engine-link", "nevrotick-engine")):
+                with self.subTest(profile=profile, label=label):
+                    command = self.release_command(package, profile != "default")
+                    expected = {"name": "product-windows-release", "cpu_seconds": 300, "wall_seconds": 300}
+                    if package == "nevrotick-ui":
+                        expected.update(name="product-windows-ui-release", wall_seconds=600,
+                                        address_space_bytes=8589934592)
+                    self.assertEqual(VERIFY.command_resources("windows", label, command, profile=profile), expected)
+                    invocation = self.assembled(command, lane="windows", label=label, profile=profile)
+                    self.assertIn("--cpu=300", invocation)
+                    self.assertNotIn("--cpu=90", invocation)
+                    address_space = "--as=8589934592" if package == "nevrotick-ui" else "--as=4294967296"
+                    for guard in (address_space, "--nproc=128", "--nofile=256", "--fsize=268435456",
+                                  "--unshare-all", "--cap-drop", "--clearenv", "--ro-bind"):
+                        self.assertIn(guard, invocation)
+                    self.assertEqual(invocation[-len(command):], command)
+
+    def test_ordinary_optimized_and_external_consumers_keep_the_bootstrap_ceiling(self):
+        for lane in ("portable", "windows", "dependencies"):
+            for profile in ("default", "engine-ke-association"):
+                for label, command in VERIFY.commands(lane, schema_version=3, profile=profile):
+                    if label in {"windows-link", "windows-engine-link"}:
+                        continue
+                    with self.subTest(lane=lane, profile=profile, label=label):
+                        self.assertEqual(VERIFY.command_resources(lane, label, command, profile=profile),
+                            {"name": "bootstrap", "cpu_seconds": 90, "wall_seconds": 300})
+        # A legacy analysis caller receives no new authority merely because its
+        # command has --release. Only the actual product dispatcher selects it.
+        invocation = self.assembled(self.release_command("nevrotick-ui"))
+        self.assertIn("--cpu=90", invocation)
+        self.assertNotIn("--cpu=300", invocation)
+
+    def test_wrong_lane_label_profile_or_command_cannot_request_the_larger_ceiling(self):
+        command = self.release_command("nevrotick-ui")
+        variants = [("portable", "windows-link", command, "default"),
+                    ("windows", "compiler", command, "default"),
+                    ("native", "windows-link", command, "default"),
+                    ("windows", "windows-link", command, "unlimited"),
+                    ("windows", "windows-link", command, 300),
+                    ("windows", "windows-link", command, False)]
+        for token, value in (("--target", "x86_64-unknown-linux-gnu"), ("--jobs", "6"),
+                             ("--package", "ntp-wire"), ("--bin", "unreviewed-image")):
+            changed = list(command); changed[changed.index(token) + 1] = value
+            variants.append(("windows", "windows-link", changed, "default"))
+        variants += [("windows", "windows-link", [x for x in command if x != "--frozen"], "default"),
+                     ("windows", "windows-link", [x for x in command if x != "--release"], "default"),
+                     ("windows", "windows-link", command + ["--config", 'resolver.incompatible-publish-age="allow"'], "default"),
+                     ("windows", "windows-link", command + ["--features", "unreviewed"], "default"),
+                     ("windows", "windows-engine-link", self.release_command("nevrotick-engine", True), "default"),
+                     ("windows", "windows-engine-link", self.release_command("nevrotick-engine"), "engine-ke-association")]
+        with patch.object(VERIFY.ENV, "run") as run:
+            for lane, label, changed, profile in variants:
+                with self.subTest(lane=lane, label=label, command=changed, profile=profile):
+                    with self.assertRaises(VERIFY.ENV.Incomplete):
+                        self.assembled(changed, lane=lane, label=label, profile=profile)
+            run.assert_not_called()
+
+    def test_release_adaptation_refuses_changed_or_missing_bootstrap_guard(self):
+        command = self.release_command("nevrotick-ui")
+        frame = ["bwrap", "--", "/usr/bin/prlimit", "--as=4294967296", "--cpu=90", "--nproc=128",
+                 "--nofile=256", "--fsize=268435456", "--", *command]
+        variants = [frame[:4] + ["--cpu=unlimited"] + frame[5:],
+                    [x for x in frame if x != "--cpu=90"],
+                    ["unrecognized-no-wrapper"],
+                    ["--as=8589934592" if x == "--as=4294967296" else x for x in frame]]
+        for invocation in variants:
+            with self.subTest(invocation=invocation), patch.object(VERIFY.ENV, "sandbox_command", return_value=invocation):
+                with self.assertRaises(VERIFY.ENV.Incomplete):
+                    VERIFY.sandbox(Path("/toolchain"), Path("/work"), Path("/source"), Path("/vendor"),
+                        command, None, lane="windows", label="windows-link")
+
+    def test_kernel_receives_exact_limits_without_running_cargo_or_package_code(self):
+        before = resource.getrlimit(resource.RLIMIT_CPU)
+        before_as = resource.getrlimit(resource.RLIMIT_AS)
+        probe = ["/usr/bin/python3", "-I", "-c",
+            "import json,resource; print(json.dumps({name:resource.getrlimit(getattr(resource,name)) "
+            "for name in ('RLIMIT_CPU','RLIMIT_AS','RLIMIT_NPROC','RLIMIT_NOFILE','RLIMIT_FSIZE')}))"]
+        with tempfile.TemporaryDirectory(prefix="nevrotick-compile-limits-") as folder:
+            root = Path(folder)
+            for name in ("toolchain", "source", "vendor", "work/fixture", "work/cargo-home"):
+                (root / name).mkdir(parents=True)
+            for cpu, label, package, address_space in (
+                    (90, None, None, 4294967296),
+                    (300, "windows-link", "nevrotick-ui", 8589934592),
+                    (300, "windows-engine-link", "nevrotick-engine", 4294967296)):
+                command = probe if label is None else self.release_command(package)
+                context = {} if label is None else {"lane": "windows", "label": label}
+                invocation = VERIFY.sandbox(root / "toolchain", root / "work", root / "source", root / "vendor",
+                    command, None, **context)
+                self.assertEqual(invocation[-len(command):], command)
+                # Mechanism-only control: after exact product command admission,
+                # replace its program with stdlib Python while retaining every
+                # namespace/prlimit argument. This is no product-build evidence.
+                invocation[-len(command):] = probe
+                result = VERIFY.ENV.run(invocation, cwd=ROOT, timeout=5, max_output=8192)
+                observed = json.loads(VERIFY.ENV.require_ok(result))
+                self.assertEqual(observed, {"RLIMIT_CPU": [cpu, cpu], "RLIMIT_AS": [address_space, address_space],
+                    "RLIMIT_NPROC": [128, 128], "RLIMIT_NOFILE": [256, 256],
+                    "RLIMIT_FSIZE": [268435456, 268435456]})
+        self.assertFalse(root.exists())
+        self.assertEqual(resource.getrlimit(resource.RLIMIT_CPU), before)
+        self.assertEqual(resource.getrlimit(resource.RLIMIT_AS), before_as)
+
+
 class TextContractControls(unittest.TestCase):
     def test_actual_coverage_result_requires_complete_nonempty_both_direction_success(self):
         healthy = {"status": "passed", "active_ids": 497, "used_ids": 497, "errors": []}
@@ -131,6 +276,15 @@ class TextContractControls(unittest.TestCase):
 
 class ProductAdmissionTests(unittest.TestCase):
     def setUp(self):
+        # Inert legacy source/feature fixtures supply no registry-age approval.
+        # The actual cooldown constructor is tested separately; this spy also
+        # proves every product entry reaches that mandatory boundary.
+        age = patch.object(VERIFY, "require_root_cooldown_admission", return_value={"fixture": True})
+        self.age_admission = age.start()
+        self.addCleanup(age.stop)
+        policy_age = patch.object(VERIFY.SLINT.COOLDOWN, "validate_policy_admission")
+        policy_age.start()
+        self.addCleanup(policy_age.stop)
         temporary = tempfile.TemporaryDirectory(prefix="product-admission-control-")
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
@@ -213,18 +367,27 @@ class ProductAdmissionTests(unittest.TestCase):
         self.assertEqual(policy["release"]["debug"], "limited")
         self.assertNotIn("dev", policy)
 
-    def test_build_rows_keep_twelve_jobs_except_bounded_test_linking(self):
-        for lane in ("portable", "windows"):
-            for label, command in VERIFY.commands(lane):
-                if label == "format":
-                    continue
-                with self.subTest(lane=lane, row=label):
-                    flag = "--build-jobs" if "nextest" in command else "--jobs"
-                    expected = ("6" if lane == "portable" and label in (
-                        "product-tests:nevrotick-ui", "product-tests:time-core", "optimized-tests:time-core",
-                        "product-tests:ntp-wire", "product-tests:time-domain",
-                        "optimized-tests:time-domain") else "12")
-                    self.assertEqual(command[command.index(flag) + 1], expected)
+    def test_every_product_entry_requires_graph_age_admission_before_execution(self):
+        self.age_admission.side_effect = VERIFY.ENV.Incomplete("registry age decision unadmitted")
+        with patch.object(VERIFY.ENV, "run") as execute:
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "registry age decision unadmitted"):
+                VERIFY.admit_product(self.root)
+            execute.assert_not_called()
+        self.age_admission.assert_called_once_with(self.root, self.policy)
+
+    def test_restored_build_workers_match_original_per_owner_counts(self):
+        bounded = {"product-tests:nevrotick-ui", "product-tests:time-core", "optimized-tests:time-core",
+                   "product-tests:ntp-wire", "product-tests:time-domain", "optimized-tests:time-domain"}
+        for schema in (2, 3):
+            for lane in ("portable", "windows"):
+                for label, command in VERIFY.commands(lane, schema_version=schema):
+                    if "--jobs" not in command and "--build-jobs" not in command:
+                        continue
+                    with self.subTest(schema=schema, lane=lane, row=label):
+                        flag = "--build-jobs" if "nextest" in command else "--jobs"
+                        expected = "6" if label in bounded else "12"
+                        self.assertEqual(command[command.index(flag) + 1], expected)
+                        self.assertIn("--frozen", command)
 
     def test_prior_single_member_graph_no_longer_hides_missing_protocol_member(self):
         path = self.root / "Cargo.toml"
@@ -269,6 +432,12 @@ class ProductAdmissionTests(unittest.TestCase):
             ("missing DLL search policy", '    "-C", "link-arg=/DEPENDENTLOADFLAG:0xA00",\n', ""),
             ("trailing CFG override", '    "-C", "link-arg=/WX",\n',
              '    "-C", "link-arg=/WX",\n    "-C", "control-flow-guard=no",\n'),
+            ("zero cooldown", 'global-min-publish-age = "14 days"', 'global-min-publish-age = "0 days"'),
+            ("shorter cooldown", 'global-min-publish-age = "14 days"', 'global-min-publish-age = "13 days"'),
+            ("unselected thirty-day cooldown", 'global-min-publish-age = "14 days"', 'global-min-publish-age = "30 days"'),
+            ("missing cooldown", '[registry]\nglobal-min-publish-age = "14 days"\n', ""),
+            ("age resolver allowance", 'incompatible-publish-age = "deny"', 'incompatible-publish-age = "allow"'),
+            ("missing age denial", '[resolver]\nincompatible-publish-age = "deny"\n', ""),
         )
         for name, before, after in changes:
             self.assertEqual(healthy.count(before), 1, "Counterexample must change one configuration input")
@@ -277,6 +446,12 @@ class ProductAdmissionTests(unittest.TestCase):
                 with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "differs from the admitted"):
                     VERIFY.admit_product(self.root)
                 launch.assert_not_called()
+        path.write_text(healthy)
+        path.write_text(healthy + '\n[registries.crates-io]\nmin-publish-age="0 days"\n')
+        with patch.object(VERIFY.ENV.subprocess, "Popen") as launch:
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "differs from the admitted"):
+                VERIFY.admit_product(self.root)
+            launch.assert_not_called()
         path.write_text(healthy)
 
     def test_first_party_license_roles_are_exact_even_with_refreshed_pins(self):
@@ -364,6 +539,7 @@ class ProductAdmissionTests(unittest.TestCase):
         build = ui.parent / "build.rs"
         build.write_text('// Inert admission control; never compiled.\nfn main() {}\n')
         self.policy["schema_version"] = 3
+        self.policy["cooldown_admission"] = VERIFY.SLINT.COOLDOWN.baseline_admission()
         self.policy["first_party_build_scripts"] = {"crates/nevrotick-ui/build.rs": VERIFY.sha256(build)}
         macro_names = {"garde_derive", "rustversion", "tokio-macros"}
         for record in self.policy["packages"]:
@@ -1490,7 +1666,8 @@ class ExecutionAccountingTests(unittest.TestCase):
         payload = b"\x7fELFdeclared-unit-build-fixture-never-executed"
         built = []
 
-        def simulated_build(_toolchain, work, _source, _vendor, command, *_args):
+        def simulated_build(_toolchain, work, _source, _vendor, command, *_args, **_context):
+            self.assertEqual(_context, {"lane": "portable", "label": "host-engine-build", "profile": "default"})
             binary = work / "target/debug/nevrotick-observe"
             binary.parent.mkdir(parents=True)
             binary.write_bytes(payload)
@@ -1508,6 +1685,8 @@ class ExecutionAccountingTests(unittest.TestCase):
                 patch.object(VERIFY.ENV, "run", return_value={"exit_code": 0, "failure": None, "output": ""}), \
                 patch.object(VERIFY, "summarize_test_counts", return_value={}):
             VERIFY.execute(project, args, report)
+        self.assertEqual(report["lanes"][-1]["resource_profile"],
+                         {"name": "bootstrap", "cpu_seconds": 90, "wall_seconds": 300})
         self.assertFalse(built[0].exists())
         self.assertTrue((output / "nevrotick-observe").is_file())
         self.assertEqual((output / "nevrotick-observe").read_bytes(), payload)
@@ -1545,6 +1724,58 @@ class ExecutionAccountingTests(unittest.TestCase):
                 command = rows["product-tests:" + package]
                 self.assertEqual(command[command.index("--package") + 1], package)
                 self.assertIn("--doc", rows["doctests:" + package])
+
+    def test_restored_engine_tests_keep_default_twelve_and_ke_six_jobs(self):
+        cargo = ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
+                 "--config", 'source.reviewed.directory="/vendor"']
+        for schema, profile in ((2, "default"), (3, "default"), (3, "engine-ke-association")):
+            rows = dict(VERIFY.commands("portable", schema_version=schema, profile=profile))
+            for kind in ("product-tests", "optimized-tests"):
+                expected = [*cargo, "nextest", "run", "--package", "nevrotick-engine"]
+                if kind == "optimized-tests":
+                    expected += ["--cargo-profile", "release"]
+                expected += ["--frozen", "--build-jobs", "12" if profile == "default" else "6", "--lib", "--tests",
+                             "--user-config-file", "none", "--no-tests=fail"]
+                if profile != "default":
+                    expected += ["--features", "nevrotick-engine/ke-association-prototype"]
+                with self.subTest(schema=schema, profile=profile, kind=kind):
+                    self.assertEqual(rows[kind + ":nevrotick-engine"], expected)
+            docs = [*cargo, "test", "--package", "nevrotick-engine", "--frozen", "--jobs",
+                    "12" if profile == "default" else "6", "--doc"]
+            if profile != "default":
+                docs += ["--features", "nevrotick-engine/ke-association-prototype"]
+            self.assertEqual(rows["doctests:nevrotick-engine"], docs)
+
+    def test_restored_primary_ui_tests_use_original_six_build_jobs(self):
+        """Restore the user-selected pre-upgrade UI build budget without rerunning LLD."""
+        expected = ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
+                    "--config", 'source.reviewed.directory="/vendor"', "nextest", "run", "--package", "nevrotick-ui", "--frozen",
+                    "--build-jobs", "6", "--lib", "--tests", "--user-config-file", "none",
+                    "--no-tests=fail"]
+        for schema, profile in ((2, "default"), (3, "default"), (3, "engine-ke-association")):
+            with self.subTest(schema=schema, profile=profile):
+                rows = dict(VERIFY.commands("portable", schema_version=schema, profile=profile))
+                self.assertEqual(rows["product-tests:nevrotick-ui"], expected)
+
+    def test_ui_build_budget_preserves_other_packages_and_doctest_commands(self):
+        for profile in ("default", "engine-ke-association"):
+            rows = dict(VERIFY.commands("portable", schema_version=3, profile=profile))
+            for package, jobs in (("ntp-wire", "6"), ("time-domain", "6"),
+                                  ("time-core", "6"), ("ntp-exchange", "12"),
+                                  ("windows-platform", "12"),
+                                  ("nevrotick-engine", "6" if profile != "default" else "12")):
+                expected = ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
+                    "--config", 'source.reviewed.directory="/vendor"', "nextest", "run", "--package", package, "--frozen",
+                            "--build-jobs", jobs, "--lib", "--tests", "--user-config-file", "none",
+                            "--no-tests=fail"]
+                if package == "nevrotick-engine" and profile != "default":
+                    expected += ["--features", "nevrotick-engine/ke-association-prototype"]
+                with self.subTest(profile=profile, package=package):
+                    self.assertEqual(rows["product-tests:" + package], expected)
+            self.assertEqual(rows["doctests:nevrotick-ui"],
+                             ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
+                              "--config", 'source.reviewed.directory="/vendor"', "test", "--package", "nevrotick-ui", "--frozen",
+                              "--jobs", "12", "--doc"])
 
     def test_empty_skipped_failed_and_missing_product_reports_are_incomplete(self):
         for content in ("<testsuites/>",
@@ -1875,6 +2106,13 @@ class WindowsLibraryAdmissionTests(unittest.TestCase):
         self.assertEqual(len(files), 4)
         self.assertTrue((self.work / "linker").is_file())
 
+    def test_substituted_bundled_linker_fails_before_wrapper_export(self):
+        linker = self.toolchain / "lib/rustlib" / self.policy["rust"]["host"] / "bin/rust-lld"
+        linker.write_text("substituted linker; never executed")
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "rust-lld executable digest"):
+            VERIFY.windows_libraries(self.root, self.toolchain, self.config, self.work, self.receipt)
+        self.assertFalse((self.work / "linker").exists())
+
     def test_unpinned_windows_inputs_fail_before_linker_creation(self):
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "complete library inventory"):
             VERIFY.windows_libraries(self.root, self.toolchain, self.config, self.work, None)
@@ -2091,7 +2329,7 @@ class NativeInputExecutionControls(unittest.TestCase):
                 patch.object(VERIFY, "text_contract_commands", return_value=[]), \
                 patch.object(VERIFY, "boundary_control"), \
                 patch.object(VERIFY, "summarize_test_counts", return_value={}), \
-                patch.object(VERIFY, "sandbox", side_effect=lambda *_args: _args[4]), \
+                patch.object(VERIFY, "sandbox", side_effect=lambda *_args, **_context: _args[4]), \
                 patch.object(VERIFY.ENV, "run", side_effect=runner):
             if accepted:
                 VERIFY.execute(self.project, self.args, report)

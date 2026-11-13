@@ -35,6 +35,29 @@ ADAPTIVE_FIXTURES = importlib.util.module_from_spec(ADAPTIVE_FIXTURES_SPEC)
 ADAPTIVE_FIXTURES_SPEC.loader.exec_module(ADAPTIVE_FIXTURES)
 
 
+def contract_artifact_messages(session, libraries):
+    """Declare synthetic exact local units, independent of collector discovery."""
+    session.source = session.work / "source"
+    session.source.mkdir(exist_ok=True)
+    session.vendor = session.work / "vendor"; session.vendor.mkdir(exist_ok=True)
+    lock = "version=4\n"; records = []
+    for name, artifact in libraries.items():
+        manifest = session.source / "crates" / name / "Cargo.toml"
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        manifest.write_text('[package]\nname="' + name + '"\nversion="0.0.0"\n')
+        lock += '[[package]]\nname="' + name + '"\nversion="0.0.0"\n'
+        virtual = "/work/source/crates/" + name
+        meta = artifact.parent / ("lib" + name.replace("-", "_") + "-" + "1" * 16 + ".rmeta")
+        meta.write_bytes(b"independent metadata fixture")
+        records.append({"reason": "compiler-artifact", "manifest_path": virtual + "/Cargo.toml",
+            "package_id": "path+file://" + virtual + "#0.0.0",
+            "target": {"name": name.replace("-", "_"), "kind": ["lib"], "crate_types": ["lib"], "src_path": virtual + "/src/lib.rs"},
+            "profile": {"test": False, "opt_level": "0", "debug_assertions": True, "overflow_checks": True},
+            "filenames": ["/work/" + str(item.relative_to(session.work)) for item in (artifact, meta)]})
+    (session.source / "Cargo.lock").write_text(lock)
+    return "\n".join(map(json.dumps, records))
+
+
 class ExactRegistryProjectionTests(unittest.TestCase):
     """Lock parsing controls use inert registry blocks and never execute Cargo."""
 
@@ -5833,6 +5856,16 @@ class CoreAnalysisTests(HistoricalS14cTestCase):
 
     def test_observed_build_script_transport_is_bounded_and_never_an_error_or_counter(self):
         record = self.build_script_record()
+        new_layout = copy.deepcopy(record)
+        new_layout['out_dir'] = new_layout['out_dir'].replace('rustversion-d2854a6eb6777e68/out',
+                                                             'rustversion/d2854a6eb6777e68/out')
+        parsed_new, raw_new = MODULE.cargo_json_records(json.dumps(new_layout) + '\n')
+        self.assertEqual(parsed_new, [new_layout]); self.assertEqual(raw_new, '')
+        for path in (new_layout['out_dir'].replace('/out', '/run/out'),
+                     new_layout['out_dir'].replace('/rustversion/', '/quote/'),
+                     new_layout['out_dir'].replace('/out', '/../out')):
+            with self.subTest(new_layout_path=path), self.assertRaises(MODULE.Incomplete):
+                MODULE.cargo_json_records(json.dumps(dict(new_layout, out_dir=path)) + '\n')
         payload = 'before\r\n' + json.dumps(record) + '\r\nafter\r\n'
         parsed, raw = MODULE.cargo_json_records(payload)
         self.assertEqual(parsed, [record])
@@ -6380,13 +6413,14 @@ class CoreAnalysisTests(HistoricalS14cTestCase):
     def test_core_and_domain_artifacts_are_copied_and_sealed_without_aliases(self):
         with tempfile.TemporaryDirectory() as temp:
             work=Path(temp); deps=work/'target/debug/deps'; deps.mkdir(parents=True)
-            core=deps/'libtime_core-hash.rlib'; domain=deps/'libtime_domain-hash.rlib'
+            core=deps/('libtime_core-'+'1'*16+'.rlib'); domain=deps/('libtime_domain-'+'1'*16+'.rlib')
             core.write_bytes(b'explicit inert core artifact'); domain.write_bytes(b'explicit inert domain artifact')
             (deps/'cargo-owned-domain-alias.rlib').hardlink_to(domain)
             class Session:
                 def protect(self,path): self.sealed=MODULE.PRODUCT.inventory(path)
             session=Session(); session.work=work
-            result=MODULE.copy_contract_dependencies(session,'/work/target/debug/deps/'+core.name,'/work/target/debug/deps/'+domain.name)
+            messages=contract_artifact_messages(session,{'time-core':core,'time-domain':domain})
+            result=MODULE.copy_contract_dependencies(session,'/work/target/debug/deps/'+core.name,'/work/target/debug/deps/'+domain.name,cargo_output=messages)
             self.assertEqual((result/'libtime_core.rlib').read_bytes(),core.read_bytes())
             self.assertEqual((result/'libtime_domain.rlib').read_bytes(),domain.read_bytes())
             self.assertEqual(session.sealed,MODULE.PRODUCT.inventory(result))
@@ -6397,15 +6431,16 @@ class CoreAnalysisTests(HistoricalS14cTestCase):
         for mode in ['symlink','escaped']:
             with tempfile.TemporaryDirectory() as temp:
                 work=Path(temp); deps=work/'target/debug/deps'; deps.mkdir(parents=True)
-                core=deps/'core.rlib'; core.write_bytes(b'inert core')
+                core=deps/('libtime_core-'+'1'*16+'.rlib'); core.write_bytes(b'inert core')
                 actual=deps/'actual.rlib'; actual.write_bytes(b'inert domain')
-                domain=deps/'domain.rlib'
+                domain=deps/('libtime_domain-'+'1'*16+'.rlib')
                 if mode=='symlink': domain.symlink_to(actual)
                 else: domain=work/'outside.rlib'; domain.write_bytes(b'escaped fixture')
                 session=type('Session',(),{'work':work,'protect':lambda self,path:None})()
                 relative='/work/'+str(domain.relative_to(work))
+                messages=contract_artifact_messages(session,{'time-core':core,'time-domain':domain})
                 with self.subTest(mode=mode), self.assertRaises(MODULE.Incomplete):
-                    MODULE.copy_contract_dependencies(session,'/work/target/debug/deps/core.rlib',relative)
+                    MODULE.copy_contract_dependencies(session,'/work/target/debug/deps/'+core.name,relative,cargo_output=messages)
 
     def test_actual_contract_orchestrator_passes_both_explicit_externs(self):
         class Captured(Exception): pass

@@ -359,6 +359,49 @@ class PolicyAdmissionTests(unittest.TestCase):
         self.assert_refused("configuration keys or values: clippy")
 
 
+class FixtureProfileConstructionTests(unittest.TestCase):
+    """Observe the generated graph at its execution boundary, without Cargo."""
+
+    class Observed(Exception):
+        """Stop after inspecting the actual generated fixture manifest."""
+
+    def observe(self, work):
+        fixture = work / "fixture"
+        parsed = tomllib.loads((fixture / "Cargo.toml").read_text())
+        packages = ({parsed["package"]["name"]} if "package" in parsed else {
+            tomllib.loads((fixture / member / "Cargo.toml").read_text())["package"]["name"]
+            for member in parsed["workspace"]["members"]
+        })
+        overrides = parsed["profile"]["test"]["package"]
+        self.assertTrue(set(overrides).issubset(packages),
+                        "Every profile override must identify a package in the fixture graph")
+        self.assertEqual(list(overrides.values()), [{"debug": 0}])
+        original = tomllib.loads((ROOT / "policy/rust-workspace.toml").read_text())
+        self.assertEqual(parsed["profile"]["release"], original["profile"]["release"])
+        self.assertEqual(parsed["profile"]["verify-release"], original["profile"]["verify-release"])
+        self.assertEqual(parsed["workspace"]["lints"], original["workspace"]["lints"])
+        raise self.Observed()
+
+    def inputs(self):
+        return {name: (ROOT / name).read_bytes()
+                for name in (*STRICT.CONFIG_FILES, ".cargo/config.toml")}
+
+    def test_single_package_fixture_profiles_apply_to_its_actual_graph(self):
+        def boundary(metadata, work, command, extensions):
+            self.observe(work)
+        with patch.object(STRICT, "fixture_command", side_effect=boundary):
+            with self.assertRaises(self.Observed):
+                STRICT.qualify_fixtures(ROOT, {}, {}, {}, self.inputs())
+
+    def test_pure_role_fixture_profiles_apply_to_its_actual_graph(self):
+        def boundary(toolchain, work, command):
+            self.observe(work)
+        metadata = {"tools": {"rustc": {"path": "/admitted/toolchain/bin/rustc"}}}
+        with patch.object(STRICT.ENV, "sandbox_command", side_effect=boundary):
+            with self.assertRaises(self.Observed):
+                STRICT.qualify_pure_api_fixtures(ROOT, metadata, {}, self.inputs())
+
+
 class CloneFixtureConstructionTests(unittest.TestCase):
     """Check fixture construction only; actual lint behavior requires Clippy."""
 

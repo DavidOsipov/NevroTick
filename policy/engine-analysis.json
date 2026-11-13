@@ -163,7 +163,7 @@
     "schema_version": 1,
     "admission_status": "admitted-engine-external-contracts-only",
     "package": "nevrotick-engine",
-    "source_file_count": 168,
+    "source_file_count": 595,
     "critical_files": [
       "crates/nevrotick-engine/src/lib.rs"
     ],
@@ -172,6 +172,7 @@
     "jobs": 6,
     "test_threads": 1,
     "mutation_equivalences": [],
-    "mutation_error_values": {}
+    "mutation_error_values": {},
+    "candidate_sha256": "8a70ac66f3b5f9275750f357cbf02ec79f23c0a5dd4a2732a65f679496beb5d1"
   }
 }

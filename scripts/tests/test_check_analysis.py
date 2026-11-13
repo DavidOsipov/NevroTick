@@ -30,7 +30,7 @@ class AdmissionControls(unittest.TestCase):
         (self.base / "common/bin").mkdir(parents=True)
         (self.base / "evidence").mkdir()
         self.home = self.scratch / "home"
-        self.stable = self.home / f".rustup/toolchains/1.99.1-{CHECK.PLATFORM}"
+        self.stable = self.home / f".rustup/toolchains/1.100.0-{CHECK.PLATFORM}"
         self.stable.mkdir(parents=True)
         self.pointer = self.scratch / "installation.json"
         self.pointer.write_text(json.dumps({"schema_version": 1, "root": str(self.base),
@@ -892,6 +892,7 @@ class AdmissionControls(unittest.TestCase):
 
     def test_tool_set_shipping_pin_codeql_and_private_compilers_cannot_drift(self):
         mutations = [lambda p: p.update(shipping_toolchain="nightly"),
+                     lambda p: p.update(shipping_toolchain="1.99.1"),
                      lambda p: p.update(codeql="enabled"), lambda p: p["tools"].pop("loom"),
                      lambda p: p["tools"].update(extra={}),
                      lambda p: p["tools"]["lockbud"].update(toolchain="stable"),
@@ -994,6 +995,18 @@ class AdmissionControls(unittest.TestCase):
         alias.hardlink_to(self.pointer)
         with patch.object(Path, "home", return_value=self.home), self.assertRaises(CHECK.Incomplete):
             CHECK.load_installation(self.pointer, self.checkout)
+
+    def test_previous_installed_compiler_cannot_satisfy_current_pointer(self):
+        previous = self.home / f".rustup/toolchains/1.99.1-{CHECK.PLATFORM}"
+        previous.mkdir()
+        with patch.object(Path, "home", return_value=self.home):
+            self.assertEqual(CHECK.load_installation(self.pointer, self.checkout),
+                             (self.base, self.stable))
+            candidate = json.loads(self.pointer.read_text())
+            candidate["stable_toolchain"] = str(previous)
+            self.pointer.write_text(json.dumps(candidate))
+            with self.assertRaisesRegex(CHECK.Incomplete, "canonical private-pointer"):
+                CHECK.load_installation(self.pointer, self.checkout)
 
     def test_complete_inventory_healthy_control_and_drift(self):
         specification, _, _ = self.inventory()

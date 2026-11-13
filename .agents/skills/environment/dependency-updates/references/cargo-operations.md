@@ -80,30 +80,73 @@ and [Cargo configuration](https://doc.rust-lang.org/cargo/reference/config.html)
 Do not change global cache/configuration, publish packages or adopt a new graph
 merely because a stable Cargo version supports it.
 
-### Future publish-age watchlist — 9 November 2026
+<a id="future-publish-age-watchlist--9-november-2026"></a>
 
-The [beta Cargo reference](https://doc.rust-lang.org/beta/cargo/reference/config.html#registryglobal-min-publish-age)
-documents `registry.global-min-publish-age`, per-registry `min-publish-age` and
-`resolver.incompatible-publish-age` as respected from **1.100+**. They are unavailable
-in the pinned **1.99.1**; retain this as a future watchlist, not current configuration
-or a reason to upgrade. Select no delay from a documentation example.
+### Registry dependency cooldown — 13 November 2026
 
-At a separately admitted later-toolchain/update-policy evaluation, recheck released
-documentation and actual registry publication-time support. Use a disposable
-resolution fixture for eligible older versions, too-new-only refusal, lockfile
-exemptions, reviewed overrides and missing registry timestamps. This tests resolver
-policy, not compromised-package detection; infer no coverage for path/git sources,
-existing locked versions or `cargo install`. A delay can postpone a verified
-security fix. Preserve exact pins, lockfiles and source/graph admission; change no
-product/global configuration during that comparison. See [sources](../../SOURCES.md#publish-age-watchlist--9-november-2026).
+[OD-19](../../../../../docs/nevrotick-owner-decisions.md#23-od-19--14-day-registry-dependency-cooldown)
+selects **14 days**, with explicit `resolver.incompatible-publish-age = "deny"`,
+using the admitted Cargo 1.100 cohort. The former no-delay watchlist is historical.
+This is the owner's balance between early-release exposure and delayed fixes;
+it is not a measured safe age or a compromised-package detector.
+
+Before approving a changed registry graph, reproduce the intended precise update
+or manifest/feature/target/patch resolution from the accepted baseline in an owned
+candidate through the guarded acquisition owner. Compare the entire parsed lock,
+including edges and newly selected direct/transitive, host/build and proc-macro
+identities. An imported/manual/bot lock is a proposal, not fresh age approval.
+Initial or independently owned workspace resolution needs its own manifest,
+lock/config and selected target/features; root settings are not assumed to apply
+from an unrelated working directory. Never delete an accepted lock to force uptake.
+
+Review publication-time evidence and the recorded UTC resolution/cutoff for every
+new registry version before vendoring exact archives or executing package code.
+Missing timestamps leave changed-version age unverified and unadmitted unless an
+exact concrete exception applies. Existing intended-upstream, checksum, licence,
+patch, feature, advisory and build-time reviews remain. The unchanged accepted
+baseline is retained without inventing retrospective age evidence.
+
+Use OD-04 for a verified urgent fix or blocking compatibility issue, identifying
+exact package/version, primary evidence, urgency, age, targets/features and the
+**whole proposed delta**. Only its one owned precise-update child may receive
+`CARGO_RESOLVER_INCOMPATIBLE_PUBLISH_AGE=allow`; it disables age filtering for the
+whole invocation. Keep the exception attached to the exact resulting graph and
+verify subsequent fresh normal selection still uses 14/deny. Never persist allow,
+a shorter per-registry setting, package exemption or shell/CI override. The general
+policy grants no particular urgent exception.
+
+Cargo retains locked versions and permits missing `pubtime`; git/path and ordinary
+directory/vendor sources have no equivalent age filter. Shipped Cargo 1.100 also
+excludes `cargo install`; RFC 3923's earlier applicability text does not override
+released behavior. Keep admitted archive/rustup tool acquisition. Ordinary checks
+stay frozen; `prepare-product.py` acquires already-approved bytes, while
+`refresh-product-advisories.py` refreshes only metadata under a byte-identical lock.
+Neither operation retroactively proves age. Preserve source/config/environment
+admission and reject unauthorized `--config` or inherited age overrides.
+
+The guarded metadata-only entrypoint is `scripts/dependency_cooldown.py`, using
+an external private candidate, explicit accepted baseline lock, admitted toolchain,
+dedicated bounded quota and new output directory. Fixed operations are `precise`,
+`workspace` and independently owned `initial`; `--proposed-lock` compares an import
+against the reproduced complete lock. It publishes only a generated lock/decision.
+See [TOOLING's exact invocation](../../../../../TOOLING.md#registry-dependency-cooldown--selected-13-november-2026).
+Source/policy acceptance and the small code-owned current-baseline checkpoint are
+reviewed together; a proposed or standalone result cannot approve itself.
+
+The existing [build record](../../../../../tasks/build-optimization.md#accepted-14-day-dependency-cooldown--13-november-2026)
+owns actual guarded commands, fixtures, exception controls and remaining limits.
+The isolated sparse fixture uses explicit 15/13-day UTC neighbors without changing
+the host clock, public-registry traffic or package execution. Source/TOML checks
+and isolated fixtures are separate from product/native qualification. See
+[sources](../../SOURCES.md#publish-age-watchlist--9-november-2026).
 
 ### Future intermediate-layout compatibility — 9 November 2026
 
 At the next admitted toolchain upgrade, recheck Cargo's intermediate artifact
 layout against the actual verifier consumers. The [beta 1.100 changelog](https://doc.rust-lang.org/beta/cargo/CHANGELOG.html#cargo-1100-2026-11-12)
 announces a layout change for the scheduled **12 November 2026** release;
-the current Rust **1.99.1** pin is unchanged. Recheck released behavior before
-adoption. This is distinct from relocating intermediates with `build.build-dir`.
+that 9 November baseline selected Rust **1.99.1**. The current 1.100 implementation
+and actual collector results are recorded in the existing build task. This is distinct from relocating intermediates with `build.build-dir`.
 
 Use emitted Cargo JSON for discovery while preserving package/target/profile,
 host-versus-target role, allowed-root, complete inventory and byte-custody checks.
@@ -125,7 +168,8 @@ and [existing build checkpoint](../../../../../tasks/build-optimization.md#rust-
 Keep this reference's publish-age/layout controls; do not duplicate their tests.
 Rolling beta/nightly docs and channel names can already refer to 1.101: record
 actual compiler/Cargo/component identities and recheck final release metadata
-before attributing a check or feature to 1.100. Current product pin stays 1.99.1.
+before attributing a check or feature to 1.100. The research-time pin was 1.99.1;
+the current admitted 1.100 cohort and scoped results belong to the build task.
 The candidate's Cargo-lint and cargo-install lockfile behavior need their own
 exact-version qualification; neither changes workspace frozen-build semantics,
 permits automatic dependency deletion, or supplies tool admission. No upgrade,

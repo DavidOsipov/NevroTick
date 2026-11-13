@@ -164,6 +164,30 @@ def literal_inventories():
     return result
 
 
+def contract_artifact_messages(session, libraries):
+    """Declare synthetic exact local units, independent of collector discovery."""
+    session.source = session.work / "source"
+    session.source.mkdir(exist_ok=True)
+    session.vendor = session.work / "vendor"; session.vendor.mkdir(exist_ok=True)
+    lock = "version=4\n"; records = []
+    for name, artifact in libraries.items():
+        manifest = session.source / "crates" / name / "Cargo.toml"
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        manifest.write_text('[package]\nname="' + name + '"\nversion="0.0.0"\n')
+        lock += '[[package]]\nname="' + name + '"\nversion="0.0.0"\n'
+        virtual = "/work/source/crates/" + name
+        metadata_root = session.work / "target/debug/deps"; metadata_root.mkdir(parents=True, exist_ok=True)
+        meta = metadata_root / ("lib" + name.replace("-", "_") + "-" + "1" * 16 + ".rmeta")
+        meta.write_bytes(b"independent metadata fixture")
+        records.append({"reason": "compiler-artifact", "manifest_path": virtual + "/Cargo.toml",
+            "package_id": "path+file://" + virtual + "#0.0.0",
+            "target": {"name": name.replace("-", "_"), "kind": ["lib"], "crate_types": ["lib"], "src_path": virtual + "/src/lib.rs"},
+            "profile": {"test": False, "opt_level": "0", "debug_assertions": True, "overflow_checks": True},
+            "filenames": ["/work/" + str(item.relative_to(session.work)) for item in (artifact, meta)]})
+    (session.source / "Cargo.lock").write_text(lock)
+    return "\n".join(map(json.dumps, records))
+
+
 class EngineAnalysisTests(unittest.TestCase):
     """Healthy neighbors discriminate scope, candidate, listing and baseline gates."""
 
@@ -1073,6 +1097,13 @@ test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 class EngineExternalContractTests(unittest.TestCase):
     """Current inert external contracts never inherit the historical campaigns."""
 
+    def setUp(self):
+        # Only lower Product admission is assumed for these inert policy roots;
+        # the actual complete current map is independently admitted once here.
+        self.current_identity = MODULE.PRODUCT.admit_product(ROOT)[1]
+        admitted = patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, self.current_identity))
+        admitted.start(); self.addCleanup(admitted.stop)
+
     def fixture(self, root):
         for name in (MODULE.POLICY,"policy/verification-manifest.toml"):
             target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
@@ -1102,7 +1133,7 @@ class EngineExternalContractTests(unittest.TestCase):
             for name in MODULE.BOUND_INPUTS:
                 target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
                 shutil.copyfile(ROOT/name,target)
-            identity={"owned-fixture-input.rs":"a"*64}
+            identity=self.current_identity
             parent["candidate_sha256"]=independent_digest(identity)
             parent["mutation_inventories"]={}
             parent["mutation_equivalences"]=[]
@@ -1123,7 +1154,8 @@ class EngineExternalContractTests(unittest.TestCase):
                 path.write_text(json.dumps(parent))
                 self.assertEqual(MODULE.read_policy(root),parent)
                 self.assertEqual(MODULE.read_contract_policy(root),policy)
-        self.assertEqual(policy["source_file_count"],168)
+        self.assertEqual(policy["source_file_count"],595)
+        self.assertEqual(policy["candidate_sha256"],independent_digest(self.current_identity))
         self.assertEqual(policy["critical_files"],["crates/nevrotick-engine/src/lib.rs"])
         self.assertEqual(policy["jobs"],6)
         self.assertEqual(policy["test_threads"],1)
@@ -1141,7 +1173,7 @@ class EngineExternalContractTests(unittest.TestCase):
             healthy=MODULE.read_contract_policy(root)
             for key,value in (("schema_version",2),("admission_status","passed"),
                               ("source_file_count",True),("source_file_count",167),
-                              ("source_file_count",169),("jobs",12),("test_threads",12),
+                              ("source_file_count",169),("candidate_sha256","0"*64),("jobs",12),("test_threads",12),
                               ("tool_admission_profile","full"),("critical_files",list(MODULE.SUBJECTS.values())),
                               ("mutation_equivalences",[{}]),("mutation_error_values",{"library":["panic!()"]}),
                               ("contracts_wall_seconds",0),("unexpected",1)):
@@ -1195,16 +1227,18 @@ class EngineExternalContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             work=Path(temporary);deps=work/"target/debug/deps";deps.mkdir(parents=True)
             artifact=work/"target/debug/libnevrotick_engine.rlib";artifact.write_bytes(b"actual emitted library")
-            (deps/"libtokio.rlib").write_bytes(b"actual dependency")
+            dependency=deps/("libtokio-"+"1"*16+".rlib"); dependency.write_bytes(b"actual dependency")
             calls=[]
             def run(label,command,timeout,**kwargs):
                 calls.append((label,command,kwargs.get("specimen")))
                 if label=="contract-library":
                     self.assertEqual(command[command.index("--jobs")+1],"6")
+                    return messages
                 if label=="external-legal-execution":
                     return cases["legal"]["success_marker"]
                 return ""
             session=SimpleNamespace(work=work,stable=work/"stable",run=run,protect=lambda _:None)
+            messages=contract_artifact_messages(session,{"nevrotick-engine":artifact,"tokio":dependency})
             report={}
             with patch.object(MODULE.COMMON,"library_artifact",
                               return_value="/work/target/debug/libnevrotick_engine.rlib"):
@@ -1221,8 +1255,9 @@ class EngineExternalContractTests(unittest.TestCase):
             work=Path(temporary);(work/"target/debug/deps").mkdir(parents=True)
             (work/"target/debug/libnevrotick_engine.rlib").write_bytes(b"emitted library")
             def missing_marker(label,command,timeout,**kwargs):
-                return "not the expected actual consumer marker" if label=="external-legal-execution" else ""
+                return "not the expected actual consumer marker" if label=="external-legal-execution" else messages if label=="contract-library" else ""
             session=SimpleNamespace(work=work,stable=work/"stable",run=missing_marker,protect=lambda _:None)
+            messages=contract_artifact_messages(session,{"nevrotick-engine":work/"target/debug/libnevrotick_engine.rlib"})
             report={}
             with patch.object(MODULE.COMMON,"library_artifact",
                               return_value="/work/target/debug/libnevrotick_engine.rlib"):
@@ -1901,6 +1936,7 @@ fn actual_series_quality_retains_signed_intervals_source_and_original_age() {
             report={}
             with patch.object(MODULE.time,"monotonic",side_effect=lambda:now[0]), \
                  patch.object(MODULE.COMMON,"remaining_timeout",side_effect=remaining), \
+                 patch.object(MODULE,"copy_contract_dependencies",side_effect=lambda *args, **kwargs: shutil.copytree(deps, work/"contract-deps")), \
                  patch.object(MODULE.COMMON,"library_artifact",return_value="/work/target/debug/libnevrotick_engine.rlib"):
                 MODULE.contracts(session,self.policy(),report,examples=examples,deadline=deadline)
                 with self.assertRaisesRegex(MODULE.Incomplete,"shared contract deadline"):

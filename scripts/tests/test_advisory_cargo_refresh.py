@@ -33,15 +33,15 @@ def load(name, path):
     return module
 
 
-def crate(version):
+def crate(version, *, name=NAME):
     """Return a tiny inert Cargo-format archive, solely for this controlled peer."""
     stream = io.BytesIO()
     with tarfile.open(fileobj=stream, mode="w:gz") as archive:
-        files = {"Cargo.toml": f'[package]\nname = "{NAME}"\nversion = "{version}"\nedition = "2024"\nbuild = false\n',
+        files = {"Cargo.toml": f'[package]\nname = "{name}"\nversion = "{version}"\nedition = "2024"\nbuild = false\n',
                  "src/lib.rs": "pub fn inert_fixture() {}\n"}
-        for name, text in files.items():
+        for filename, text in files.items():
             payload = text.encode()
-            entry = tarfile.TarInfo(f"{NAME}-{version}/{name}")
+            entry = tarfile.TarInfo(f"{name}-{version}/{filename}")
             entry.size = len(payload)
             archive.addfile(entry, io.BytesIO(payload))
     return stream.getvalue()

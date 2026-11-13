@@ -123,6 +123,16 @@ def emitted_fixture(root):
 
 
 class AllocationAdmissionTests(unittest.TestCase):
+    def test_library_build_keeps_frozen_target_profile_and_original_twelve_jobs(self):
+        for profile, cargo_profile in (("debug", "dev"), ("release", "release"), ("verify-release", "verify-release")):
+            with self.subTest(profile=profile):
+                self.assertEqual(MODULE.library_build_command(profile), ["cargo", "--config",
+                    'target.x86_64-pc-windows-msvc.linker="/work/linker"', "build", "--package", "time-domain",
+                    "--lib", "--frozen", "--jobs", "12", "--target", "x86_64-pc-windows-msvc",
+                    "--profile", cargo_profile, "--message-format=json"])
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.library_build_command("ambient")
+
     def test_direct_rustc_explicitly_preserves_release_checks_and_debug_state(self):
         for profile, assertions in (("release", "no"), ("verify-release", "yes")):
             with self.subTest(profile=profile):
@@ -363,6 +373,55 @@ class AllocationAdmissionTests(unittest.TestCase):
                 if change == 'duplicate': records.append(copy.deepcopy(records[2]))
                 with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
                     MODULE.emitted_dependency_artifacts('\n'.join(map(json.dumps, records)), 'release', source, vendor, policy)
+
+    def test_new_layout_attribution_keeps_host_target_and_build_script_owners(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source, vendor, policy, records = emitted_fixture(Path(temporary))
+            for row in records:
+                package = "time-domain" if row["manifest_path"].startswith("/work/") else row["manifest_path"].split("/")[2].rsplit("-", 1)[0]
+                row["filenames"] = [value.replace("/deps/", "/build/" + package + "/" + "a" * 16 + "/out/") for value in row["filenames"]]
+            script = copy.deepcopy(records[-1])
+            script["target"] = {"name": "build-script-build", "kind": ["custom-build"], "crate_types": ["bin"],
+                                "src_path": "/vendor/rustversion-1.0.23/build.rs"}
+            script["filenames"] = ["/work/target/release/build/rustversion/" + "b" * 16 + "/out/build_script_build"]
+            policy["packages"][-1]["build_script"] = True
+            records.append(script)
+            self.assertEqual(len(MODULE.emitted_dependency_artifacts("\n".join(map(json.dumps, records)), "release", source, vendor, policy)), 6)
+            for change in ("target_root", "wrong_package_unit", "script_escape"):
+                bad = copy.deepcopy(records)
+                if change == "target_root": bad[2]["filenames"][0] = bad[2]["filenames"][0].replace("/target/release/", "/target/x86_64-pc-windows-msvc/release/")
+                if change == "wrong_package_unit": bad[2]["filenames"][0] = bad[2]["filenames"][0].replace("/garde_derive/", "/garde/")
+                if change == "script_escape": bad[-1]["filenames"][0] = bad[-1]["filenames"][0].replace("/out/", "/../out/")
+                with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                    MODULE.emitted_dependency_artifacts("\n".join(map(json.dumps, bad)), "release", source, vendor, policy)
+
+    def test_reached_lock_references_resolve_exact_versions_and_sources(self):
+        registry = "registry+https://github.com/rust-lang/crates.io-index"
+        for reference, extra in (("garde 0.23.0", '[[package]]\nname="garde"\nversion="9.0.0"\nsource="' + registry + '"\n'),
+                                 ("garde 0.23.0 (" + registry + ")", '[[package]]\nname="garde"\nversion="0.23.0"\nsource="registry+https://unselected.example/index"\n')):
+            with self.subTest(reference=reference), tempfile.TemporaryDirectory() as temporary:
+                source, vendor, policy, records = emitted_fixture(Path(temporary))
+                lock = source / "Cargo.lock"
+                text = lock.read_text().replace('dependencies=["garde"]', 'dependencies=' + json.dumps([reference]), 1)
+                lock.write_text(text + extra + '[[package]]\nname="unreached"\nversion="1.0.0"\n'
+                                '[[package]]\nname="unreached"\nversion="2.0.0"\n')
+                self.assertEqual(len(MODULE.emitted_dependency_artifacts("\n".join(map(json.dumps, records)), "release", source, vendor, policy)), 6)
+
+    def test_missing_ambiguous_or_unadmitted_reached_lock_references_fail(self):
+        registry = "registry+https://github.com/rust-lang/crates.io-index"
+        for fault in ("ambiguous_version", "ambiguous_source", "missing", "wrong_source", "malformed", "duplicate_identity"):
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as temporary:
+                source, vendor, policy, records = emitted_fixture(Path(temporary))
+                lock = source / "Cargo.lock"; text = lock.read_text()
+                if fault == "ambiguous_version": text += '[[package]]\nname="garde"\nversion="9.0.0"\nsource="' + registry + '"\n'
+                if fault == "ambiguous_source": text += '[[package]]\nname="garde"\nversion="0.23.0"\nsource="registry+https://unselected.example/index"\n'
+                if fault == "missing": text = text.replace('dependencies=["garde"]', 'dependencies=["garde 99.0.0"]', 1)
+                if fault == "wrong_source": text = text.replace('dependencies=["garde"]', 'dependencies=["garde 0.23.0 (registry+https://unselected.example/index)"]', 1)
+                if fault == "malformed": text = text.replace('dependencies=["garde"]', 'dependencies=["garde)"]', 1)
+                if fault == "duplicate_identity": text += '[[package]]\nname="garde"\nversion="0.23.0"\nsource="' + registry + '"\n'
+                lock.write_text(text)
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.emitted_dependency_artifacts("\n".join(map(json.dumps, records)), "release", source, vendor, policy)
 
 
 if __name__ == "__main__":

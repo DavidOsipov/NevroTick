@@ -39,6 +39,8 @@ SUBJECTS = {**LEGACY_SUBJECTS, **LEAP_SUBJECTS}
 GENERATED_DATA = "crates/time-domain/src/leap/generated.rs"
 POLICY = "policy/time-domain-analysis.json"
 SCOPE = COMMON.Scope("time-domain", tuple(SUBJECTS.items()), POLICY)
+FIXED_CONTRACT_POLICY = COMMON.domain_contract_facts()
+CONTRACT_INPUTS = ("scripts/verify-time-domain-analysis.py", "scripts/tests/test_verify_time_domain_analysis.py")
 REGISTRY = "registry+https://github.com/rust-lang/crates.io-index"
 
 
@@ -298,11 +300,12 @@ def read_policy(root):
                 "maximum_mutants": 512, "coverage_wall_seconds": 300, "mutation_wall_seconds": 1200,
                 "mutation_build_seconds": 90, "mutation_test_seconds": 60, "contracts_wall_seconds": 300,
                 "jobs": 6, "test_threads": RUNTIME.MAX_JOBS}
-    if (type(policy) is not dict or set(policy) != {*required, "coverage_guided_fuzzing"}
+    if (type(policy) is not dict or set(policy) != {*required, "coverage_guided_fuzzing", "external_contracts"}
             or SCOPE.subjects != COMMON.DOMAIN_LEAP_SUBJECTS
             or any(type(policy.get(key)) is not type(value) or policy.get(key) != value
                    for key, value in required.items())):
         raise Incomplete("Unreviewed time-domain analysis scope, threshold or budget.")
+    COMMON.require_domain_contract_role(SCOPE, policy["external_contracts"])
     COMMON.admit_mutation_equivalences(root, SCOPE, policy)
     inventory = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
     for filename in SUBJECTS.values():
@@ -338,6 +341,39 @@ def read_policy(root):
         raise Incomplete("The standalone graph's actual local owners differ.")
     if not selected.get("gnu_reachable_features") or not selected.get("gnu_dependency_edges"):
         raise Incomplete("Resolved source/feature admission has not been supplied.")
+    return policy
+
+
+def read_contract_policy(root: Path) -> dict:
+    """Read the separate ordinary role without refreshing held fuzz metadata."""
+    path = root / POLICY
+    if path != path.resolve(strict=True):
+        raise Incomplete("Domain contract policy cannot use a linked path.")
+    try:
+        parent = COMMON.ANALYSIS.decode(COMMON.ANALYSIS.read_once(path, maximum=524288))
+    except RecursionError as error:
+        raise Incomplete("Domain contract policy exceeds the JSON nesting bound.") from error
+    fields = {"schema_version", "package", "critical_files", "source_file_count", "tool_admission_profile",
+              "mutation_jobs", "mutation_process_limit", "mutation_message_format", "mutation_equivalences",
+              "mutation_error_values", "coverage_minimum_line_percent", "mutation_minimum_viable_killed_percent",
+              "maximum_mutants", "coverage_wall_seconds", "mutation_wall_seconds", "mutation_build_seconds",
+              "mutation_test_seconds", "contracts_wall_seconds", "jobs", "test_threads", "coverage_guided_fuzzing",
+              "external_contracts"}
+    if type(parent) is not dict or set(parent) != fields:
+        raise Incomplete("Domain historical/contract policy fields are missing or unknown.")
+    policy = parent["external_contracts"]
+    COMMON.require_domain_contract_role(SCOPE, policy)
+    manifest = tomllib.loads(COMMON.ANALYSIS.read_once(
+        root / "policy/verification-manifest.toml", maximum=524288).decode())
+    for filename in SUBJECTS.values():
+        if (manifest.get("critical_files", []).count(filename) != 1
+                or sum(module.get("package") == "time-domain" and filename in module.get("files", [])
+                       for module in manifest.get("security_modules", [])) != 1):
+            raise Incomplete("Domain contract owner lacks its exact critical/security registration.")
+    if (GENERATED_DATA in manifest.get("critical_files", [])
+            or any(GENERATED_DATA in module.get("files", []) for module in manifest.get("security_modules", []))):
+        raise Incomplete("Constant-only generated leap data has no executable denominator.")
+    COMMON.require_contract_candidate(PRODUCT.admit_product(root)[1], policy)
     return policy
 
 
@@ -478,30 +514,10 @@ def leap_contract_examples():
     return examples
 
 
-def copy_contract_dependencies(session, artifact):
-    """Copy actual emitted dependency artifacts with no hardlink or mutable alias."""
-    destination = session.work / "contract-deps"
-    destination.mkdir(mode=0o700)
-    source = session.work / artifact.removeprefix("/work/")
-    actual = source.resolve(strict=True)
-    if actual != source or not actual.is_file() or not source.is_relative_to(session.work / "target"):
-        raise Incomplete("Actual emitted contract library has redirected or escaped.")
-    dependencies = session.work / "target/debug/deps"
-    for item in sorted(dependencies.iterdir()):
-        if item.suffix not in {".rlib", ".rmeta", ".so"}:
-            continue
-        digest = PRODUCT.sha256(item)
-        target = destination / item.name
-        shutil.copyfile(item, target); target.chmod(0o400)
-        if PRODUCT.sha256(target) != digest:
-            raise Incomplete("Contract dependency changed while its immutable copy was prepared.")
-    library = destination / "libtime_domain.rlib"
-    digest = PRODUCT.sha256(source)
-    shutil.copyfile(source, library); library.chmod(0o400)
-    if PRODUCT.sha256(library) != digest:
-        raise Incomplete("The copied contract library differs from Cargo's actual artifact.")
-    session.protect(destination)
-    return destination
+def copy_contract_dependencies(session, artifact, *, cargo_output):
+    """Seal only complete libraries attributed to the actual Cargo build."""
+    return COMMON.copy_cargo_contract_dependencies(
+        session, cargo_output, {"libtime_domain.rlib": artifact})
 
 
 def contracts(session, policy, report):
@@ -511,7 +527,7 @@ def contracts(session, policy, report):
     output = run("contract-library", [str(session.stable / "bin/cargo"), "build", "--package", "time-domain",
                  "--frozen", "--jobs", str(policy["jobs"]), "--lib", "--message-format=json"], COMMON.remaining_timeout(deadline, 120))
     artifact = COMMON.library_artifact(output, "time-domain", "/work/source/crates/time-domain/Cargo.toml")
-    dependency_copy = copy_contract_dependencies(session, artifact)
+    dependency_copy = copy_contract_dependencies(session, artifact, cargo_output=output)
     consumers = session.work / "contract-inputs"; consumers.mkdir(mode=0o700)
     (session.work / "contracts").mkdir(mode=0o700)
     examples = contract_examples()
@@ -990,10 +1006,34 @@ def main_rational_seconds(args):
     return 0 if report["status"] in {"enumerated", "passed"} else 1
 
 
+def execute_contracts(args, report):
+    """Run only actual ordinary compiler contracts with fresh full-source custody."""
+    if args.subject != "all":
+        raise Incomplete("Domain external contracts require their complete nine-owner subject selection.")
+    if getattr(args, "tool_admission_profile", "full") != "stable-core":
+        raise Incomplete("Analysis admission profile differs from the current policy.")
+    policy = read_contract_policy(ROOT)
+    COMMON.admission_profile(args, SCOPE, policy)
+    report.update(subjects=SCOPE.select("all"), qualification_passed=False,
+                  contracts_qualification_passed=False, historical_campaign_bindings_reused=False,
+                  fuzz={"status": "not-performed", "subjects": dict(LEGACY_SUBJECTS), "not_fuzzed": dict(LEAP_SUBJECTS)})
+    session = COMMON.Session(ROOT, args, report, SCOPE, policy, CONTRACT_INPUTS)
+    try:
+        if read_contract_policy(session.source) != policy:
+            raise Incomplete("Captured domain contract policy differs from its admitted current role.")
+        report["candidate_sha256"] = COMMON.canonical_sha256(session.product_identity)
+        contracts(session, policy, report)
+    finally:
+        session.finish()
+    report["contracts_qualification_passed"] = True
+
+
 def execute(args, report):
     """Run only the reviewed admitted fixed scope and preserve partial observations."""
     if args.subject == RATIONAL_SECONDS_SUBJECT:
         return execute_rational_seconds(args, report)
+    if args.lane == "contracts":
+        return execute_contracts(args, report)
     if args.lane == "enumerate":
         raise Incomplete("Enumeration is admitted only for the exact rational-seconds role.")
     policy = read_policy(ROOT)

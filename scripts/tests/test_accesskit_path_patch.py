@@ -54,6 +54,9 @@ def accesskit_tree(output):
 class AccessKitPathPatchControls(unittest.TestCase):
     def setUp(self):
         self.policy = two_patch_policy()
+        age = patch.object(PROFILE.COOLDOWN, "validate_policy_admission", return_value=None)
+        age.start()
+        self.addCleanup(age.stop)
         pin = patch.object(PROFILE, "REVIEWED_POLICY_SHA256", PROFILE.canonical_policy_sha256(self.policy))
         pin.start()
         self.addCleanup(pin.stop)

@@ -91,6 +91,12 @@ DOMAIN_LEAP_ERROR_VALUE = (
 )
 DOMAIN_LEAP_ERROR_SUBJECTS = ("leap_bundled",)
 ENGINE_CONTRACT_SUBJECTS = (("library", "crates/nevrotick-engine/src/lib.rs"),)
+# Ordinary compiler contracts have their own reviewed current product snapshot.
+# Historical coverage/mutation/fuzz candidates and their closed gates stay fixed.
+CONTRACT_PRODUCT_BINDING = {
+    "source_file_count": 595,
+    "candidate_sha256": "8a70ac66f3b5f9275750f357cbf02ec79f23c0a5dd4a2732a65f679496beb5d1",
+}
 SERVICE_LIFECYCLE_SUBJECTS = (("lifecycle", "crates/windows-platform/src/service.rs"),)
 SERVICE_SCM_SUBJECTS = (*SERVICE_LIFECYCLE_SUBJECTS, ("scm", "crates/windows-platform/src/scm.rs"))
 SERVICE_PRIVILEGE_SUBJECTS = (*SERVICE_SCM_SUBJECTS,
@@ -1221,6 +1227,148 @@ def library_artifact(output: str, package: str, manifest: str) -> str:
     return found[0]
 
 
+def copy_cargo_contract_dependencies(session, output: str, libraries: dict[str, str]) -> Path:
+    """Seal only attributed debug host-build libraries, on either Cargo layout.
+
+    The invocation is a frozen ordinary host `cargo build --lib`, without a
+    target override. The sealed lock/manifests own package and target identity;
+    Cargo messages own the emitted paths. Complete rlib/rmeta units and proc
+    macros are required. This is not a reconstruction of optional-feature
+    resolution: an external consumer must still reach its intended contract.
+    """
+    registry = "registry+https://github.com/rust-lang/crates.io-index"
+    locked = tomllib.loads((session.source / "Cargo.lock").read_text())["package"]
+    copied, units, emitted = {}, set(), {}
+    def unique_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise Incomplete("Duplicate Cargo artifact JSON key.")
+            result[key] = value
+        return result
+    def invalid_constant(_value):
+        raise Incomplete("Nonfinite Cargo artifact JSON value.")
+    def manifest_document(path, root):
+        try:
+            if (path.resolve(strict=True) != path or not path.is_file()
+                    or not path.is_relative_to(root)):
+                raise Incomplete("Cargo artifact manifest is redirected or outside its admitted root.")
+            return tomllib.loads(path.read_text())
+        except (OSError, ValueError, UnicodeError) as error:
+            raise Incomplete("Cargo artifact manifest is unavailable or invalid.") from error
+    for line in output.splitlines():
+        if not line.startswith("{"):
+            continue
+        if len(line.encode()) > 1024 * 1024:
+            raise Incomplete("Cargo artifact record exceeds its byte budget.")
+        try:
+            item = json.loads(line, object_pairs_hook=unique_pairs, parse_constant=invalid_constant)
+        except (ValueError, RecursionError) as error:
+            raise Incomplete("Malformed Cargo artifact JSON.") from error
+        if type(item) is not dict:
+            raise Incomplete("Cargo artifact record is not an object.")
+        if item.get("reason") != "compiler-artifact":
+            continue
+        manifest, identifier = item.get("manifest_path"), item.get("package_id")
+        if (type(manifest) is not str or type(identifier) is not str
+                or str(Path(manifest)) != manifest or not Path(manifest).is_absolute()
+                or ".." in Path(manifest).parts or Path(manifest).name != "Cargo.toml"):
+            raise Incomplete("Cargo artifact lacks a package/manifest identity.")
+        if manifest.startswith("/work/source/") and ".." not in Path(manifest).parts:
+            local_manifest = session.source / manifest.removeprefix("/work/source/")
+            declared = manifest_document(local_manifest, session.source)
+            owners = [row for row in locked if "source" not in row
+                      and row["name"] == declared.get("package", {}).get("name")
+                      and identifier == "path+file://" + str(Path(manifest).parent) + "#" + row["version"]]
+        else:
+            owners = [row for row in locked if row.get("source") == registry
+                      and identifier == registry + "#" + row["name"] + "@" + row["version"]
+                      and manifest == str(session.vendor / (row["name"] + "-" + row["version"]) / "Cargo.toml")]
+            local_manifest = Path(manifest)
+        if len(owners) != 1:
+            raise Incomplete("Cargo artifact package/manifest is outside the frozen lock.")
+        owner = owners[0]
+        declared = manifest_document(local_manifest, session.source if manifest.startswith("/work/source/") else session.vendor)
+        if (declared.get("package", {}).get("name") != owner["name"]
+                or declared.get("package", {}).get("version") != owner["version"]):
+            raise Incomplete("Cargo artifact manifest differs from its locked package.")
+        target, profile, files = item.get("target", {}), item.get("profile", {}), item.get("filenames")
+        if (type(target) is not dict or type(profile) is not dict or type(files) is not list
+                or not files or any(type(path) is not str for path in files)
+                or type(target.get("name")) is not str
+                or len(set(files)) != len(files)
+                or profile.get("test") is not False or profile.get("opt_level") != "0"
+                or profile.get("debug_assertions") is not True or profile.get("overflow_checks") is not True):
+            raise Incomplete("Cargo artifact has the wrong debug build profile or file inventory.")
+        kind = target.get("kind")
+        unit = (identifier, target.get("name"), str(kind))
+        if unit in units:
+            raise Incomplete("Duplicate Cargo artifact compilation unit.")
+        units.add(unit)
+        package = re.escape(owner["name"])
+        new_root = r"/work/target/debug/build/" + package + r"/[a-f0-9]{16}/out/"
+        if kind == ["custom-build"]:
+            build_path = declared["package"].get("build", "build.rs")
+            if (type(build_path) is not str or target.get("name") != "build-script-build"
+                    or target.get("crate_types") != ["bin"]
+                    or target.get("src_path") != str(Path(manifest).parent / build_path)
+                    or len(files) != 1
+                    or not re.fullmatch(r"(?:/work/target/debug/build/" + package
+                        + r"-[a-f0-9]{16}/build-script-build|" + new_root
+                        + r"build_script_build(?:-[a-f0-9]{16})?)", files[0])):
+                raise Incomplete("Cargo build-script artifact has the wrong owner/layout.")
+            continue
+        library = declared.get("lib", {})
+        macro = library.get("proc-macro", False)
+        expected_kind = "proc-macro" if macro else "lib"
+        crate = library.get("name", owner["name"].replace("-", "_"))
+        if (type(macro) is not bool or kind != [expected_kind] or target.get("crate_types") != [expected_kind]
+                or target.get("name") != crate
+                or target.get("src_path") != str(Path(manifest).parent / library.get("path", "src/lib.rs"))):
+            raise Incomplete("Cargo library artifact differs from its declared target.")
+        suffixes = {".so"} if macro else {".rlib", ".rmeta"}
+        if len(files) != len(suffixes) or {Path(path).suffix for path in files} != suffixes:
+            raise Incomplete("Cargo library/proc-macro artifact inventory is incomplete.")
+        for path in files:
+            # Root rlib exports coexist with intermediate metadata; no recursive
+            # directory walk or un-attributed search input is admitted.
+            intermediate = r"(?:/work/target/debug/deps/|" + new_root + r")lib" + re.escape(crate) + r"-[a-f0-9]{16}\.(?:rlib|rmeta|so)"
+            exported = "/work/target/debug/lib" + crate + ".rlib"
+            if not re.fullmatch(intermediate, path) and not (not macro and path == exported):
+                raise Incomplete("Cargo library artifact has the wrong package/host root.")
+            if path in emitted or Path(path).name in copied:
+                raise Incomplete("Cargo artifact path or copied basename is ambiguous.")
+            emitted[path] = crate; copied[Path(path).name] = path
+    if (not libraries or any(type(name) is not str or not re.fullmatch(r"lib[A-Za-z0-9_]+\.rlib", name)
+            or type(emitted_path) is not str or emitted_path not in emitted
+            or Path(emitted_path).suffix != ".rlib" or name != "lib" + emitted[emitted_path] + ".rlib"
+            for name, emitted_path in libraries.items())):
+        raise Incomplete("Required external-contract library is absent from Cargo attribution.")
+    for name, emitted_path in libraries.items():
+        if name in copied and copied[name] != emitted_path:
+            raise Incomplete("External-contract library alias collides with another artifact.")
+        copied[name] = emitted_path
+    destination = session.work / "contract-deps"
+    destination.mkdir(mode=0o700)
+    try:
+        for name, path in sorted(copied.items()):
+            source = session.work / path.removeprefix("/work/")
+            if (source.resolve(strict=True) != source or not source.is_file()
+                    or not source.is_relative_to(session.work / "target")):
+                raise Incomplete("Cargo contract dependency is redirected or escaped.")
+            digest = PRODUCT.sha256(source)
+            target = destination / name
+            shutil.copyfile(source, target); target.chmod(0o400)
+            if (PRODUCT.sha256(source) != digest or PRODUCT.sha256(target) != digest
+                    or target.stat().st_nlink != 1
+                    or (target.stat().st_dev, target.stat().st_ino) == (source.stat().st_dev, source.stat().st_ino)):
+                raise Incomplete("Contract dependency changed or aliases its immutable copy.")
+    except OSError as error:
+        raise Incomplete("Cargo contract dependency inventory is unavailable.") from error
+    session.protect(destination)
+    return destination
+
+
 def compiler_cause(result: dict, specimen: dict, source_path: str) -> None:
     """Validate every rustc record and require every error's intended cause.
 
@@ -1509,7 +1657,7 @@ def require_engine_contract_role(scope: Scope, policy: dict) -> None:
     """Admit current inert constructor probes, without historical engine gates."""
     facts = {
         "schema_version": 1, "admission_status": "admitted-engine-external-contracts-only",
-        "package": "nevrotick-engine", "source_file_count": 168,
+        "package": "nevrotick-engine", **CONTRACT_PRODUCT_BINDING,
         "critical_files": ["crates/nevrotick-engine/src/lib.rs"],
         "tool_admission_profile": "stable-core", "contracts_wall_seconds": 300,
         "jobs": 6, "test_threads": 1, "mutation_equivalences": [], "mutation_error_values": {},
@@ -1521,6 +1669,38 @@ def require_engine_contract_role(scope: Scope, policy: dict) -> None:
             or any(type(policy.get(key)) is not type(value) or policy[key] != value
                    for key, value in facts.items())):
         raise Incomplete("Engine external contracts require their exact inert library-only role.")
+
+
+def domain_contract_facts() -> dict:
+    """Return only the exact ordinary nine-owner compiler role, with no campaigns."""
+    return {
+        "schema_version": 1, "admission_status": "admitted-domain-external-contracts-only",
+        "package": "time-domain", **CONTRACT_PRODUCT_BINDING,
+        "critical_files": list(dict(DOMAIN_LEAP_SUBJECTS).values()),
+        "tool_admission_profile": "stable-core", "contracts_wall_seconds": 300,
+        "jobs": 6, "test_threads": 1, "mutation_equivalences": [], "mutation_error_values": {},
+    }
+
+
+def require_domain_contract_role(scope: Scope, policy: dict) -> None:
+    """Reject scope aliases or fields that could borrow legacy fuzz/metric authority."""
+    facts = domain_contract_facts()
+    if (type(scope) is not Scope or type(scope.package) is not str or scope.package != "time-domain"
+            or type(scope.policy) is not str or scope.policy != "policy/time-domain-analysis.json"
+            or type(scope.subjects) is not tuple or scope.subjects != DOMAIN_LEAP_SUBJECTS
+            or type(policy) is not dict or set(policy) != set(facts)
+            or any(type(policy.get(k)) is not type(v) or policy[k] != v for k, v in facts.items())):
+        raise Incomplete("Domain external contracts require their exact inert nine-owner role.")
+
+
+def require_contract_candidate(identity: dict, policy: dict) -> None:
+    """Bind every actual Product input byte and path; a matching count is insufficient."""
+    if (type(identity) is not dict or len(identity) != policy["source_file_count"]
+            or any(type(n) is not str or not n or len(n) > 4096 or Path(n).is_absolute()
+                   or ".." in Path(n).parts or type(h) is not str or re.fullmatch(r"[a-f0-9]{64}", h) is None
+                   for n, h in identity.items())
+            or canonical_sha256(identity) != policy["candidate_sha256"]):
+        raise Incomplete("The complete contract candidate path/byte digest differs from its reviewed snapshot.")
 
 
 def frequency_prior_equivalences_valid(policy):
@@ -1865,11 +2045,16 @@ def admission_profile(args, scope, policy):
             raise Incomplete("The engine external-contract role admits only stable constructor contracts.")
         require_engine_contract_role(scope, policy)
         return profile
+    if policy.get("admission_status") == "admitted-domain-external-contracts-only":
+        if profile != "stable-core" or args.lane != "contracts":
+            raise Incomplete("The domain external-contract role admits only stable constructor contracts.")
+        require_domain_contract_role(scope, policy)
+        return profile
     if (scope.subjects == DOMAIN_LEAP_SUBJECTS
             or (scope.policy == "policy/time-domain-analysis.json"
                 and (profile == "stable-core" or policy.get("schema_version") == 4))):
-        if profile != "stable-core" or args.lane not in {"contracts", "coverage", "mutation"}:
-            raise Incomplete("Leap-domain analysis requires its exact nine-owner stable contracts/coverage/mutation role.")
+        if profile != "stable-core" or args.lane not in {"coverage", "mutation"}:
+            raise Incomplete("Leap-domain analysis requires its exact nine-owner stable coverage/mutation role.")
         require_domain_leap_role(scope, policy)
         return profile
     if (scope.policy == "tasks/settled-rate-inventory-admission.json"
@@ -2155,7 +2340,11 @@ class Session:
         self.admission_profile = admission_profile(args, scope, policy)
         _require_private_output(self.root, args.output_dir)
         self.dependency_policy, self.product_identity = PRODUCT.admit_product(self.root)
-        if (scope.subjects in (DOMAIN_LEAP_SUBJECTS, ENGINE_CONTRACT_SUBJECTS)
+        external_contracts = policy.get("admission_status") in {
+            "admitted-engine-external-contracts-only", "admitted-domain-external-contracts-only"}
+        if external_contracts:
+            require_contract_candidate(self.product_identity, policy)
+        elif (scope.subjects in (DOMAIN_LEAP_SUBJECTS, ENGINE_CONTRACT_SUBJECTS)
                 and len(self.product_identity) != policy["source_file_count"]):
             raise Incomplete("Contract-role product input count differs from its admitted role.")
         self.identity = dict(self.product_identity)
@@ -2204,6 +2393,9 @@ class Session:
         self.protected_islands = {}
         report.update(source_sha256=self.identity, analysis_policy_sha256=self.admitted["policy_sha256"],
                       tools_sha256=self.protected_tools[self.tools], lanes=[], work=str(self.work))
+        if external_contracts:
+            report.update(product_candidate_sha256=canonical_sha256(self.product_identity),
+                          product_source_file_count=len(self.product_identity))
         report["tool_admission_profile"] = self.admission_profile
         report["analysis_admission"] = {
             "profile": self.admission_profile,

@@ -13665,6 +13665,22 @@ roster/inventory bindings before qualification. The older 400/222 role and
 adapter capture-forwarding discrimination, per-owner 90% coverage/95% mutation,
 native/product/release gates and post-V1 formal deferral remain explicit.
 
+**Rust 1.100 follow-up — 13 November 2026:** the
+[existing build qualification owner](build-optimization.md#rust-1100-qualification-continuation--13-november-2026)
+records the admitted compiler and actual ordinary/optimized, 34 compiler
+control and 69-doctest evidence, plus both full host and Windows cross-build
+profiles at its retained bounded-worker checkpoint. Its recorded map has 595
+inputs; scoped unchanged-state bridges preserve original receipt identities.
+David then requests [restoring the previous worker limits and publishing](build-optimization.md#owner-requested-worker-restoration-and-publication--13-november-2026).
+The full restored-concurrency Rust matrix is not rerun; current publication
+checks cover construction/policy/source admission, with the restored candidate
+identified in that addendum. This closes neither the remaining
+coverage/mutation/generation gates nor production/native qualification. Rebind
+their complete source/helper/roster/inventory/dossier before any campaign; the
+old 607/E9 metrics remain historical. Earlier build qualification retains its
+exact candidate and worker scope; this note creates no additional execution
+authorization.
+
 ##### Next receiving prerequisite — persistent acquisition-session contract
 
 The post-Q1 source review found no ready production receiving/history adapter:

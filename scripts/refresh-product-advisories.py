@@ -46,6 +46,7 @@ def main() -> int:
     created_home = created_receipt = None
     accepted = False
     try:
+        configuration = ENV.require_cargo_context(ROOT)
         policy = json.loads((ROOT / "policy/tool-manifest.json").read_text())
         deny = (args.deny or Path(shutil.which("cargo-deny") or "/missing-cargo-deny")).resolve(strict=True)
         deny_policy = next(item for item in policy["tools"] if item["name"] == "cargo-deny")
@@ -89,6 +90,8 @@ def main() -> int:
             environment = {"PATH": f"{toolchain / 'bin'}:/usr/bin:/bin", "CARGO_HOME": str(transient),
                            "RUSTC": str(toolchain / "bin/rustc"), "LANG": "C.UTF-8", "TMPDIR": str(temporary)}
             for stage, command in planned:
+                if ENV.require_cargo_context(ROOT) != configuration:
+                    raise ValueError("Cargo configuration changed before metadata acquisition")
                 if ENV.digest(ROOT / "Cargo.lock") != lock:
                     raise ValueError("Lockfile changed before metadata acquisition stage")
                 started = time.time()
@@ -96,9 +99,13 @@ def main() -> int:
                 commands.append({**result, "stage": stage, "started_unix": started,
                                  "finished_unix": time.time()})
                 ENV.require_ok(result)
+                if ENV.require_cargo_context(ROOT) != configuration:
+                    raise ValueError("Cargo configuration changed during metadata acquisition")
                 if ENV.digest(ROOT / "Cargo.lock") != lock:
                     raise ValueError("Lockfile changed during metadata acquisition")
                 files = inventory(transient)
+                if {"config", "config.toml"} & set(files):
+                    raise ValueError("Metadata acquisition produced an unreviewed Cargo home configuration")
                 if any(path.startswith(("registry/src/", "registry/cache/")) for path in files):
                     raise ValueError("Metadata acquisition produced a crate source or archive payload")
                 if not any(path.startswith("registry/index/") for path in files):
@@ -107,7 +114,11 @@ def main() -> int:
                     raise ValueError("Acquisition omitted the RustSec database")
             home.mkdir(parents=True, mode=0o700)
             created_home = home.lstat()
+            if ENV.require_cargo_context(ROOT) != configuration:
+                raise ValueError("Cargo configuration changed before metadata export")
             SNAPSHOT.export(transient, home, files)
+            if ENV.require_cargo_context(ROOT) != configuration:
+                raise ValueError("Cargo configuration changed during metadata export")
         output.parent.mkdir(parents=True, exist_ok=True)
         record = {"schema_version": 1, "acquired_unix": commands[0]["started_unix"],
                   "completed_unix": commands[-1]["finished_unix"], "commands": commands,
@@ -116,8 +127,9 @@ def main() -> int:
                   "exit_code": result["exit_code"], "output": result["output"],
                   "tool_sha256": ENV.digest(deny),
                   "cargo_sha256": ENV.digest(toolchain / "bin/cargo"),
+                  "cargo_configuration": configuration,
                   "acquisition_filesystem": capacity,
-                  "scope": "Public metadata acquisition only; no application/advisory check executed"}
+                  "scope": "Public metadata acquisition only; no graph selection, cooldown attestation or application/advisory check"}
         payload = json.dumps(record, indent=2).encode("utf-8")
         if len(payload) > SNAPSHOT.MAX_RECEIPT_BYTES:
             raise ValueError("Metadata receipt exceeds its byte bound")

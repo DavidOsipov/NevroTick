@@ -50,12 +50,19 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import importlib.util
 import json
+from pathlib import Path
 import re
+
+_COOLDOWN_SPEC = importlib.util.spec_from_file_location(
+    "slint_dependency_cooldown", Path(__file__).with_name("dependency_cooldown.py"))
+COOLDOWN = importlib.util.module_from_spec(_COOLDOWN_SPEC)
+_COOLDOWN_SPEC.loader.exec_module(COOLDOWN)
 
 # Exact private build/test cohort. Source, role and primary-grant evidence is
 # recorded in S0.5; supplemental conveyance obligations remain explicitly open.
-REVIEWED_POLICY_SHA256: str | None = "cf5700dac5f9fddbd69ccdf5ab021f5743709b6a9e8755570ae0e13686a3a437"
+REVIEWED_POLICY_SHA256: str | None = "a2a4d3b89d3efae6e221e9985886152a6d726cd3d63b929ab42deb37246f13fb"
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 TARGETS = (HOST_TARGET, WINDOWS_TARGET)
@@ -353,7 +360,7 @@ def validate_path_patch(patch: dict) -> None:
 
 def validate_policy_shape(policy: dict) -> None:
     """Check closed bounded schema and role consistency; this grants no admission."""
-    required = {"schema_version", "scope", "lockfile_sha256", "manifests_sha256", "packages",
+    required = {"schema_version", "scope", "lockfile_sha256", "manifests_sha256", "packages", "cooldown_admission",
                 "metadata_only_packages", "rows", "first_party_build_scripts"}
     optional = {"patched_packages", "archive_file_bypasses", EP1_FIELD}
     if (type(policy) is not dict or not required <= set(policy) or set(policy) - required - optional
@@ -361,6 +368,10 @@ def validate_policy_shape(policy: dict) -> None:
             or policy["schema_version"] != 3 or type(policy["scope"]) is not str
             or not 0 < len(policy["scope"]) <= 8192 or not _hash(policy["lockfile_sha256"])):
         raise Incomplete("Unadmitted schema-3 dependency policy fields.")
+    try:
+        COOLDOWN.validate_admission_shape(policy.get("cooldown_admission"))
+    except (COOLDOWN.Incomplete, KeyError, TypeError) as error:
+        raise Incomplete("Incomplete cooldown graph admission: " + str(error)) from error
     manifests = policy["manifests_sha256"]
     expected = {"Cargo.toml", *("crates/" + name + "/Cargo.toml" for name in MEMBERS)}
     if (type(manifests) is not dict or set(manifests) != expected
@@ -551,6 +562,10 @@ def validate_policy(policy: dict) -> None:
     if (not _hash(REVIEWED_POLICY_SHA256)
             or canonical_policy_sha256(policy) != REVIEWED_POLICY_SHA256):
         raise Incomplete("Schema-3 Slint dependency policy lacks its reviewed code-owned pin.")
+    try:
+        COOLDOWN.validate_policy_admission(policy)
+    except (COOLDOWN.Incomplete, KeyError, TypeError) as error:
+        raise Incomplete("Incomplete cooldown graph admission: " + str(error)) from error
 
 
 def _decode_metadata(output: str) -> dict:

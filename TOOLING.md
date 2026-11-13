@@ -26,16 +26,20 @@ establish current native/backend qualification; this correction grants no new
 execution authority.
 
 Prepared on 28 October 2026 for the initial NevroTick development stage.
-The admitted repository baseline remains Rust **1.99.1**, checked against
-its official distribution manifest. WSL Rustup is **1.29.3**, independently
+The selected repository compiler is Rust **1.100.0**, installed and admitted in
+WSL on 13 November against its official distribution manifest and complete
+component inventory. Product compatibility results and remaining gates belong to
+the [build task](tasks/build-optimization.md#rust-1100-implementation--13-november-2026).
+Rust **1.99.1** remains installed for rollback and is still the recorded native
+Windows installation; no Windows-host upgrade or native pass follows.
+WSL Rustup is **1.29.3**, independently
 matched to its official archive/checksum after David's 6 November update;
-the separately pinned Windows manager remains1.29.2. The same compiler and
-components are installed in WSL and for the native Windows user.
+the separately pinned Windows manager remains1.29.2.
 
 The existing [Rust 1.100 candidate admission](tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026)
-owns the next toolchain change and affected receiver qualification. Follow its
-exact tool/source admission and separate MSRV decision; no upgrade or support
-change is recorded here. Native execution retains its existing holds.
+owns this toolchain change and affected receiver qualification. Follow its
+exact tool/source admission and separate MSRV decision. Native execution retains
+its existing holds.
 
 The initial setup used temporary, dependency-free fixtures outside the checkout.
 On 29 October, the separate UI-M0 implementation added a minimal real Cargo
@@ -68,12 +72,13 @@ Clippy, rustfmt, rust-analyzer, rust-src, LLVM tools, and the
 `x86_64-pc-windows-msvc` standard library. It governs this checkout without
 changing other projects' default compiler. UI-M0 declares edition 2024 and
 `rust-version = "1.99"`; David raised the workspace declaration to1.99.1 on
-6 November, matching the pinned compiler. This does not establish compatibility
+6 November. The 13 November migration deliberately raises it to **1.100.0**,
+matching the sole selected build/CI admission cohort. This does not establish compatibility
 with a lower compiler or a separately tested production support commitment.
 
 | Tool | Installed stable version | Initial scope |
 | --- | --- | --- |
-| Rust / Cargo | 1.99.1 | Host compilation and Windows MSVC target |
+| Rust / Cargo | 1.100.0 (WSL); native Windows remains 1.99.1 | Host compilation and Windows MSVC cross-target |
 | rustup | WSL1.29.3; Windows1.29.2 | Separately pinned toolchain managers |
 | cargo-nextest | 0.9.150 | Optional test runner; doctests remain separate |
 | cargo-deny | 0.20.2 | Frozen UI-M0 dependency rows and separate bootstrap controls |
@@ -133,8 +138,9 @@ David requested **12 parallel workers** on 30 October 2026. The repository
 [Cargo configuration](.cargo/config.toml) sets twelve build jobs and twelve
 libtest threads; [nextest](.config/nextest.toml) separately admits twelve test
 workers. Twelve is the general budget, with explicitly admitted lower per-lane
-limits: [the product verifier](scripts/verify.py) uses six Cargo build jobs for
-selected portable test builds, and analysis policies separately bound build,
+limits: [the product verifier](scripts/verify.py) uses six build jobs for portable
+UI, wire, domain and Core tests. Default Engine builds use twelve; the explicit
+KE Engine override retains six. Analysis policies separately bound build,
 coverage and mutation concurrency. Test execution is distinct from test-binary
 compilation. Independent inventory hashing uses twelve workers. actionlint and
 Gitleaks receive `GOMAXPROCS=12`, which budgets
@@ -963,7 +969,8 @@ The selected route is **LLVM + xwin in WSL**, retaining the documented MSVC ABI.
 Visual Studio workloads remain absent. The original cross-build preparation did
 not install a system SDK; the separate diagnostic components described below
 were installed on 29 October 2026 without changing the build route.
-The linker is Rust's bundled rust-lld, matching LLVM **23.1.1**. Microsoft CRT/SDK
+The selected Rust 1.100.0 linker is bundled rust-lld, matching LLVM **23.1.5**.
+Earlier 23.1.1 bootstrap receipts retain their historical scope. Microsoft CRT/SDK
 library acquisition remains subject to Microsoft's terms independently of
 xwin's own licence. The compact route's exact inputs and checks are recorded in
 the tool manifest.
@@ -1118,7 +1125,8 @@ Use the admitted commands below rather than ambient `RUSTFLAGS` or a host-build
 fallback. A configured profile, cross-link or fixture pass establishes no native
 performance, complete mitigation, installation or release result.
 
-The admitted Rust 1.99.1 compiler embeds LLVM 23.1.1. Its optimized pass pipeline
+The selected Rust 1.100.0 compiler embeds LLVM 23.1.5 (the previous 1.99.1
+cohort used 23.1.1). Its optimized pass pipeline
 and rustc-managed MSVC linker defaults remain selected; no extra raw LLVM flags,
 forced inlining/unrolling/SIMD widths or relaxed floating-point assumptions are
 adopted. [Hardening section 6.6](docs/windows-time-development-hardening.md#66-llvm-settings-for-this-workload)
@@ -2164,13 +2172,24 @@ Windows TLS exchange or native cleanup. Those retain their separate task gates.
 Use an explicit matching `--vendor-dir`; a historical local pointer is not
 admission for this expanded lockfile. Current results belong to the existing task.
 
-Portable UI, wire, time-domain and Core test builds use six Cargo build jobs to
-bound concurrent LLVM test-binary links within the ordinary 128-task sandbox.
-Other build rows
-retain their configured concurrency; test execution and mutation-worker limits
-are separate. The [S1.3 task's S158 checkpoint](tasks/s1.3-source-selection-readiness.md#s158-integrated-authoring--portable-pass-qualification-next)
-retains the observed wire-link failures, command controls and successful bounded
-retry.
+Build worker settings match the pre-upgrade `a25696b8` baseline. Default
+workspace checks, host Engine builds and Windows release builds use twelve
+Cargo jobs. UI, wire, time-domain and Core tests keep their original six build
+jobs; default Engine tests use twelve. The explicit KE workspace/Engine profile
+keeps six jobs. Test execution uses twelve workers and mutation scheduling keeps
+ten workers. Windows allocation library builds use twelve jobs. Historical
+lower-worker Rust 1.100 passes retain their recorded
+scope; they do not qualify the restored higher-worker commands. The
+[build qualification task](tasks/build-optimization.md#qualification-retry--13-november-2026)
+retains the observed worker failures and actual execution receipts.
+
+The two exact Windows release-link commands use a finite 300 CPU seconds.
+The UI release row alone allows 8 GiB of virtual address space and 600 seconds
+of wall time. Engine release keeps 4 GiB and 300 seconds; other product commands
+keep 90 CPU seconds, 4 GiB and 300 seconds. The 128-task inner limit, isolation
+and complete hardening remain unchanged. Receipts record the selected profile
+and the UI address-space exception. These compiler budgets change no product
+runtime resource guarantee.
 
 Rows run with a read-only source snapshot, cleared environment, isolated network
 and owned output inside bubblewrap. The verifier admits pinned tools and source
@@ -2185,6 +2204,70 @@ It retains the actual `nevrotick-observe` image before temporary build disposal,
 with its exact hash/profile/target in `engine_artifact`; it verifies copied bytes
 and owner execution permission. A compiler/test pass alone supplies no CLI journey
 or native Windows observation.
+
+### Registry dependency cooldown — selected 13 November 2026
+
+[OD-19](docs/nevrotick-owner-decisions.md#23-od-19--14-day-registry-dependency-cooldown)
+requires routine registry selection to use **14 days / deny** on admitted Cargo
+1.100. `.cargo/config.toml` and the shared exact context guard reject weaker,
+additional, inherited or ancestral policy. CI explicitly removes its compiler
+manager's inherited `RUSTUP_TOOLCHAIN` before direct guarded entrypoints; other
+unreviewed overrides remain visible and rejected.
+
+The existing schema-3 policy's `cooldown_admission` binds the exact accepted
+pre-policy lock without claiming retrospective age. Any new/imported/manual/bot
+registry graph must pass baseline reproduction, full lock/edge comparison,
+publication-time checks for the entire direct/transitive delta and the usual
+source/feature/licence review before archive/vendor or frozen execution admission.
+`prepare-product.py` enforces that graph decision before fetching and publishing
+archives. `verify.py` enforces it before product execution. Neither locked builds
+nor vendor checksums establish fresh age eligibility.
+
+For an already-authorized update, leave this accepted checkout untouched and use
+an owned private candidate containing its real manifests/source, exact config and
+proposed changes, omitting Git/build outputs. Provision a separate private empty
+filesystem of at most 512 MiB/16,384 inodes, as for metadata acquisition. The
+structured metadata-only resolver accepts no free-form Cargo/configuration argv:
+
+```sh
+python3 -B scripts/dependency_cooldown.py \
+  --candidate-root "$NV_CANDIDATE" --baseline-lock "$NV_ACCEPTED_LOCK" \
+  --proposed-lock "$NV_IMPORTED_LOCK" \
+  --operation precise --package "$NV_PACKAGE" --version "$NV_VERSION" \
+  --toolchain-dir "$NV_TOOLCHAIN" --quota-root "$NV_QUOTA" \
+  --output-dir "$NV_NEW_RESOLUTION"
+```
+
+Omit `--proposed-lock` for an ordinary scoped update. A manifest/feature/target/patch
+change uses `--operation workspace`; a separately owned first resolution uses
+`--scope standalone --operation initial` with no existing/baseline lock. Standalone
+results cannot supply root-product approval. Git/custom-registry transitions need
+their existing separate source/age admission; they receive no silent exemption.
+The resolver exports a new generated lock and small resolution decision, never
+writes the accepted checkout/policy/vendor and executes no package code.
+Review the full delta and retained publication records. The accepted policy/code
+pin and its small code-owned baseline checkpoint are updated together after the
+existing graph review. This checkpoint carries graph/admission hashes and earlier
+exception references, not another package inventory or audit database.
+
+An urgent precise update additionally needs an individually accepted OD-04
+receipt via `--exception "$NV_DECISION"`. The initial exception map is empty;
+an arbitrary JSON claim of owner approval cannot grant it. An admitted exception
+covers the entire resulting delta and injects `allow` into that one child only.
+Fresh normal invocations remain 14/deny; unchanged previously approved locked
+versions retain their earlier decision. Missing publication evidence for a new
+registry version remains unadmitted absent such an exact exception.
+
+`refresh-product-advisories.py` still runs only locked metadata refresh and RustSec
+acquisition: identical lock, no crate source download, quota and source/context
+bookends. Its receipt binds the actual cwd/config and is **not** cooldown approval.
+Age protection does not cover git/path/vendor sources or `cargo install`, and
+Cargo itself permits missing `pubtime` and already-locked versions. The graph
+admission boundary records these limits. Use `test_dependency_cooldown.py` for
+real isolated sparse-registry selection/refusal/override controls and the existing
+focused graph/publication/refresh tests for their respective boundaries. Results,
+frontend execution limits and product/native gaps belong to the
+[existing build task](tasks/build-optimization.md#accepted-14-day-dependency-cooldown--13-november-2026).
 
 For first setup, select new external destinations and run acquisition separately:
 

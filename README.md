@@ -90,8 +90,11 @@ is now implemented; its actual caller supplies `None`, retaining numerical
 unavailability and the original history. All 34 ownership/privacy compiler
 controls and 69 doctests pass. Next rebind/qualify the changed source with the existing
 [Rust 1.100 admission owner](tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026).
-Rust 1.99.1 remains the admitted baseline. Campaigns stay closed until fresh
-source/tool admission; old mutation results supply no current metric credit.
+Rust 1.100.0 is now selected and admitted in WSL; the
+[upgrade task](tasks/build-optimization.md#rust-1100-implementation--13-november-2026)
+records actual compatibility results and remaining gates. Engine analysis campaigns
+stay closed until complete fresh source/roster/role admission; old mutation results
+supply no current metric credit.
 
 Experimental results remain ineligible for clock control. The complete native
 KE/TLS/CNG/UDP journey, production NTP/NTS acquisition and Core admission,
@@ -129,7 +132,7 @@ cd NevroTick
 ```
 
 Follow [TOOLING.md](TOOLING.md#starting-implementation) to configure the pinned
-Rust **1.99.1** toolchain, Python **3.11+**, dependencies and verification tools.
+Rust **1.100.0** toolchain, Python **3.11+**, dependencies and verification tools.
 Once the documented prerequisites and tool-admission checks are satisfied, run:
 
 ```sh
