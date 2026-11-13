@@ -1397,3 +1397,77 @@ SKQ-API-2 are complete. The publisher must verify this five-file remote tree and
 advance the unchanged base without force for SKQ-API-3; the publication commit
 supplies final identity. No Rust compilation, native execution, formal job or
 product-compliance claim follows from these instruction checks.
+
+## Contract and integration hardening guidance — 14 November 2026
+
+David requested applying the reviewed function/module hardening methods to the
+appropriate skills and preparing a standalone Markdown handoff for his
+implementation agent. Source baseline: `e72ad375d7c1d015c91c222ab9cf50dfe6470a29`,
+tree `0c3434e3a2988e58738258600800f9e2c0ee7b12`; all 2,084 snapshot blobs matched
+their Git object hashes before edits. This slice updates four existing guidance
+files and this evidence record. Product implementation remains delegated.
+
+| Guidance owner | Added enforcement emphasis |
+| --- | --- |
+| [Contract enforcement](../skills/implementation/implement-rust-contracts/references/contract-enforcement.md) | Preserve typed units through helpers and witnesses; bind admission and consumption to actual owners/values; retain historical facts without renewing authority; make semantic field additions force equality review; narrow worker kernels; represent combined termination/cleanup observations; refine phase-owned data only with a justified transition/custody map. |
+| [Implement Rust](../skills/implementation/implement-rust/SKILL.md) | Route cross-module handoffs and equality-sensitive structural changes to the maintained contract rules. |
+| [Contract QA](../skills/testing/qa-contract-tests/SKILL.md) | Challenge the intended production privacy scope, real producer/adapter/consumer composition, complete state oracles, wrong-but-well-typed inputs, and legitimate neighboring behavior. |
+| [Execution evidence](../skills/implementation/implement-rust/references/execution-evidence.md) | Prove the actual feature-selected implementation and consumer ran; retain default coverage; distinguish local runner support from hosted invocation; check the integrated final candidate. |
+
+These additions preserve stable/admitted API selection, required failure
+semantics, intentional extension points, spent resources, unknown-effect custody,
+and existing task ownership and execution holds. They do not prescribe blanket
+validation annotations, typestate conversion, trait bans or all-features testing.
+The handoff contains nine scoped work items with source evidence and acceptance
+checks; conditional UI/ledger work and native/formal holds remain explicit. It is
+a separate conversation deliverable, not another project qualification ledger.
+
+### Compact guidance and package checks
+
+The semantic additions were frozen before compression outside the loaded skill
+tree: **49,496 bytes / 5,859 whitespace-delimited words**. Final guidance is
+**48,747 bytes / 5,697 words**, removing 749 bytes and 162 words (2.77%). These
+measurements compare the expanded and compact updated instructions; they are not
+model-token counts or measurements of agent effectiveness.
+
+The final ordered file-record array, serialized as compact JSON with sorted object
+keys, has SHA-256
+`9d8ccb980f00c8feb3fa0ef5fca417ca31ed357df2572e5797d6a94b46c9ec12`.
+Records contain each guidance path, SHA-256, byte count and word count; this
+evidence record is excluded. All four final caveman validations pass with zero
+errors and warnings. Each editor used one targeted repair pass for path-like
+prose tokens; protected syntax and material meaning were preserved.
+
+The unchanged `check_skills.py` passes **66 skills**, covering metadata, UI
+prompts, local links and inventories. The current skill-creator `quick_validate.py`
+passes the three affected skill packages. A fresh independent judge compared all
+four final files with their expanded inputs and published baseline, checked the
+shared contracts and routing, and verified the frozen hashes: **READY**, with no
+material required correction. This was source/semantic review, not execution of
+product code.
+
+### Fresh instruction-use exercise and handoff review
+
+A separate fresh-context reviewer received only the updated skills and three raw
+synthetic review cases, without the coordinator's intended answers, earlier
+conversation or the independent judge's notes. Its source-review output correctly
+identified the following bounded controls:
+
+| Case | Observed disposition |
+| --- | --- |
+| New authority field omitted from manual equality | Required explicit field comparison and exhaustive patterns; rejected direct derived equality where it would lose required floating-point bit semantics; retained independent effect observations and a legal control. |
+| Broad worker helper and an external E0603 fixture | Distinguished outer-module privacy from production sibling access; required one private kernel, narrow test forwarding and a negative caller at the intended production scope. |
+| Optional implementation omitted by default CI | Required separate default and admitted feature rows, actual implementation/consumer selection and real hosted job execution; rejected zero-job startup failure as execution evidence and blanket all-features replacement. |
+
+The exercise involved no compilation or test execution. It checks those three
+instruction-use examples only; it is not an unseen holdout, old/new comparison,
+statistical evaluation or measured defect-reduction claim. An additional
+independent reviewer checked the complete handoff against current source and
+owners: **GO**, no material revision required.
+
+Final publication must preserve the four frozen guidance files, verify exactly
+these files plus this record in the remote diff, and advance the unchanged base
+without force. The resulting commit supplies the durable publication identity.
+Product Rust, manifests, lockfiles, CI configuration and checker implementations
+are unchanged. No Rust build, product test, native probe, formal job or release
+qualification was executed by this guidance task.

@@ -3,9 +3,9 @@
 Apply to every new or changed function and module, including private helpers,
 methods, callbacks and trait implementations. [Architecture section 6](../../../../../docs/windows-time-architecture.md#6-domain-types-and-state-authority)
 owns requirements.
-Owner adopted garde for shared structured-input/settings validation.
-Development requirement, not evidence of an installed or qualified application
-dependency graph. Do not scaffold a product workspace for this check.
+Owner adopted garde for shared structured-input/settings validation; development
+requirement, not evidence of an installed or qualified application dependency
+graph. Do not scaffold a product workspace for this check.
 
 ## Assume hostile input at admission
 
@@ -34,9 +34,9 @@ this rule does not require reparsing those values on every call.
 
 For each interface identify accepted values/units/provenance, preconditions,
 success postconditions, error behavior, allowed effects and resource/lifecycle
-obligations. Keep the contract beside its owner in Rust documentation; signatures
-and shared invariant documentation may carry simple helpers' details. Currently trusted
-callers do not exempt internal functions.
+obligations. Document beside the Rust owner; signatures and shared invariant
+documentation may carry simple helpers' details. Currently trusted callers do
+not exempt internal functions.
 
 Apply the [Rust API-selection rule](../../implement-rust/SKILL.md): choose the
 strongest applicable guarantees while preserving valid behavior; explain a
@@ -51,27 +51,29 @@ necessary weaker API form and where its missing guarantees remain enforced.
 | Changing permission, generation or budgets | Current trusted-owner guard serialized with the effect; recheck after awaits or other invalidation |
 | Errors, cancellation and effects | Explicit `Result`/state transitions, failure atomicity and actual native-operation completion/acknowledgement |
 
-Pass immutable validated types between internal functions: their enforced
-invariants satisfy unchanged preconditions without repeated parsing or validation.
-Every transformation must preserve or re-establish its promised result.
-Use distinct types for different units and authority meanings; bare primitives
-do not encode them. Mutable/external/contextual facts require rechecking when they
-can change. Infallible signatures require an invariant-based reason.
+Pass immutable validated types between internal functions: enforced invariants
+satisfy unchanged preconditions without repeated parsing or validation. Every transformation
+must preserve or re-establish its promised result. Distinct units and authority
+meanings need distinct types; bare primitives do not encode them. Retain existing
+unit/role types through helper parameters, local differences and stored witnesses;
+extract primitives only for calculations needing them. Unit types alone prove no
+common origin or generation; retain corresponding owner/context checks.
+Mutable/external/contextual facts need rechecking when they can change. Infallible signatures need
+an invariant-based reason.
 
-Required checks must run in production builds. `debug_assert!`, comments, a
-successful earlier check, a generic `Validated<T>` label or test-only assertions
-cannot enforce a runtime rejection contract. Handle invalid input and arithmetic
-failure explicitly; do not turn expected rejection into a panic, fallback default,
+Required checks must run in production builds. `debug_assert!`, comments,
+successful earlier checks, generic `Validated<T>` labels or test-only assertions
+cannot enforce runtime rejection. Handle invalid input and arithmetic failure
+explicitly; do not turn expected rejection into panic, fallback default,
 silent clamp or ignored `Result`. Test assertions still supply observations.
 
 ## Parse, don't validate: preserve established invariants
 
-When admission establishes a stable property later consumers require, return the
-smallest private domain value or immutable parsed view carrying it; require that
-representation at those consumers. Passing the original general-purpose value
-after a successful check loses type-level evidence. Keep existing shared garde/domain
-rules inside checked construction; this principle selects no new validation
-framework or blanket typestate conversion.
+When admission establishes a stable property needed downstream, return the smallest
+private domain value or immutable parsed view carrying it; require that representation
+at consumers. Passing the original general-purpose value after successful checking
+loses type-level evidence. Keep existing shared garde/domain rules inside checked
+construction; this selects no new validation framework or blanket typestate conversion.
 
 Design from the consumer's actual requirements:
 
@@ -84,7 +86,7 @@ Design from the consumer's actual requirements:
 3. Establish that fact before any consumer or protected effect relying on it.
    Refine only the relevant branch when outcomes require different facts;
    inert wire types may retain fields whose semantics are not yet admitted.
-4. Review transformations that weaken the guarantee. Filtering, removing, slicing,
+4. Review transformations weakening guarantees. Filtering, removing, slicing,
    merging or extracting a raw inner value can lose nonemptiness, bounds, units or
    identity. Preserve the property by construction, expose an honestly weaker
    result, or use checked construction before another consumer relies on it.
@@ -97,31 +99,38 @@ let window = EraWindow::new(earliest, latest)?;
 let coordinate = unfold_ntp(seconds, fraction, &window)?;
 ```
 
-`EraWindow` carries checked coordinate bounds and endpoint ordering, proving no
-trust in the supplied time anchor. `unfold_ntp` still returns `Result`: the window
-may admit zero or multiple era candidates; implementation also retains checked
-arithmetic. Preserve real failure cases when stronger input types eliminate only
-some of them.
+`EraWindow` carries checked coordinate bounds and endpoint ordering, not trust in
+the supplied time anchor. `unfold_ntp` still returns `Result`: the window may admit
+zero or multiple era candidates; checked arithmetic remains. Preserve real failure
+cases when stronger input types eliminate only some.
 
 Existing [datagram parser](../../../../../crates/ntp-wire/src/datagram.rs)
-provides a second representation: `RawDatagram` borrows immutable input after
+provides another representation: `RawDatagram` borrows immutable input after
 complete bounded extension-chain admission. Its iterator uses that invariant
-without allocating a copied packet. Framing grants no authentication, exchange
+without allocating a packet copy. Framing grants no authentication, exchange
 association or sample eligibility. Preserve these layer-specific meanings when
 changing raw or domain types.
 
 A pure predicate inside construction may return `bool` or `Result<(), E>`;
 an immediately consumed current-state guard can also return `Result<(), E>`.
-Require checked values where another consumer needs a stable fact, rather than
-banning helper signatures. For example,
+Require checked values where another consumer needs a stable fact; do not ban
+helper signatures. For example,
 [`RequestTiming`](../../../../../crates/ntp-exchange/src/context.rs) establishes
 interval shape; the
 [association owner](../../../../../crates/ntp-exchange/src/association.rs) must
 still check current deadline and generations when processing the response.
 
+When admission and consumption must concern the same owner and value, bind them in
+one owner-controlled operation or private consuming value carrying that relationship.
+A returned boolean, ordinary lifetime or matching numeric label alone cannot
+establish it. Obtain related context/metadata from the actual owner or validate
+their association; checking one control cannot bind unrelated later arguments.
+Keep historical committed facts distinct from current permission: detaching
+history must not reopen a completed transaction.
+
 Preserve input evidence during conversion. Collecting pairs into a `HashMap` can
-discard duplicate-key values; resulting unique keys do not prove duplicate-free
-original input. Reject duplicates before loss when required by
+discard duplicate-key values; unique results do not prove duplicate-free input.
+Reject duplicates before loss when required by
 [strict admission](strict-boundaries.md#decoding-without-representation-loss).
 
 Keep constructor/mutation/deserialization review and existing consumer checks
@@ -133,10 +142,10 @@ CPU, allocation or memory savings. An added type alone is no measured improvemen
 
 ## Domain equivalence and trait contracts
 
-Review invalid states and equivalent representations separately. "Tightness"
-is a modeling question, not a numerical quality target:
-accepting only valid states does not ensure one representation per domain value.
-Define equivalent values for the actual consumer before choosing comparison,
+Review invalid states and equivalent representations separately. "Tightness" is
+a modeling question, not a numerical quality target: valid states need not have
+one representation per domain value. Define equivalence for the actual consumer
+before choosing comparison,
 deduplication or collection keys. A lawful derived trait can still encode the
 wrong domain identity.
 
@@ -149,10 +158,10 @@ meaning. For an unordered pair, a private sorted representation may make derivat
 appropriate; an ordered interval must reject reversed bounds under its existing
 contract. Sorting is not a universal repair.
 
-When these traits are implemented, preserve their documented laws:
+For implemented traits, preserve documented laws:
 
 - Equal values must hash equally from the same hasher initial state. Unequal
-  values may share hashes; collisions are permitted.
+  values may share hashes; collisions permitted.
 - `Ord::cmp` returning `Ordering::Equal` must agree with equality;
   `partial_cmp(a, b)` must agree with `Some(cmp(a, b))`. Implement `Ord` only when
   the intended relation is a total order; retain partial or explicitly scoped
@@ -175,15 +184,20 @@ equality/hash/ordering relationships and collection behavior instead.
 
 ## Make structural changes require review
 
-When a new field or variant must trigger a semantic decision, make the compiler
-identify affected consumers. Apply to the relevant owner; enumerating every field
-in every pattern is not required.
+When a new field or variant needs a semantic decision, make the compiler identify
+affected consumers. Apply at the relevant owner; full enumeration in every pattern
+not required.
 
 - In manual equality, hashing, ordering or `Debug` implementations, use exhaustive
   named-field destructuring when every new field needs review. Name deliberately
   ignored fields with `field: _` and explain their exclusion; avoid `..` at that
   decision point. Keep trait laws aligned and sensitive fields redacted. Derive
-  only when all stored fields already express intended semantics.
+  only when all stored fields express intended semantics. Preserve required
+  bitwise floating distinctions and allocation identity; ordinary value equality
+  is no substitute. Equality-based whole-state rejection tests observe only
+  included fields. Make additions force decisions; retain independent behavioral/effect
+  observations. Fully redacted formatting needs no field enumeration unless new
+  fields require formatting decisions.
 - Initialize all fields explicitly where a new policy/invariant field needs an
   intentional value. Avoid `..Default::default()` there; reuse named defaults only
   with appropriate semantics. A valid `Default` remains useful when the complete
@@ -204,6 +218,20 @@ An immutable binding does not freeze interior-mutating data or changing context.
 Named option enums clarify call sites but do not exclude invalid combinations of
 independent options; use checked construction or variants carrying required data
 when the combinations themselves matter.
+
+Before replacing phase plus optional payloads with variant-owned state, map legal
+transitions, required data and failure custody. Remove a concrete maintenance
+hazard through narrow changes; impose no blanket typestate rewrite.
+Preserve irreversibly spent identifiers, archived cookies, charged work and
+unknown-effect custody across preparation failure, panic and cancellation.
+Dropping a value alone proves neither completion nor permission to refund.
+
+When callers must correlate operation, termination and cleanup queries, prefer
+one closed observation from the actual owner. Distinguish pending,
+confirmed cleanup with retained operation success/failure, and unconfirmed
+cleanup with its cause. Preserve latched terminal observations and allowed retry
+behavior, distinguishing pre-attempt refusal from actual/indeterminate attempts.
+Neither a boolean success test nor a terminal error alone proves cleanup.
 
 Select lints by actual behavior on the admitted compiler.
 `clippy::unneeded_field_pattern` recommends replacing named ignored fields with
@@ -305,6 +333,14 @@ callers outside that privacy scope, not construction within it.
 `#[non_exhaustive]` supplies no construction restriction inside the defining
 crate. Neither mechanism validates fields or blocks exposed mutation. A test-only
 construction escape stays outside production builds.
+
+Expose only production routes actual consumers need. Keep general injection,
+raw-result extraction and other invariant-sensitive helpers private when production
+callers share their module. Use one implementation kernel; give sibling tests
+forwarding adapters under `#[cfg(test)]` where needed. Child-module tests already
+have private access. Preserve intentional adapter extension points; do not seal
+them merely to reduce visibility. Test access must not widen production capabilities
+or duplicate custody/validation logic.
 
 `garde::Valid<T>` records that validation ran; it is not automatically a durable
 invariant or permission. Shared dereference can expose `T`'s interior-mutating

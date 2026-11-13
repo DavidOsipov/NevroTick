@@ -23,15 +23,14 @@ allocator choices: apply [explicit feature contracts](references/rust-1.100-cont
 Name the prevented mistake and distinguish type enforcement, automatic cleanup,
 lint rejection and clearer syntax; retain stronger existing domain guarantees.
 
-For new or materially changed Rust code, select stable, admitted API, method
-and representation enforcing strongest applicable domain guarantees. Preserve
-legitimate inputs, required failure behavior and ownership semantics. Prefer
-guarantees carried by types, ownership and checked operations over caller
-discipline; preserve stronger existing guarantees. If a necessary alternative
-carries fewer guarantees, state concrete reason and where each missing
-guarantee remains enforced. Use the simplest representation achieving this;
-added restrictions or abstractions must prevent a meaningful mistake. API names
-or newness alone establish no stronger contract.
+For new or materially changed Rust code, select stable, admitted APIs, methods and
+representations enforcing strongest applicable domain guarantees. Preserve legitimate
+inputs, required failure behavior and ownership semantics. Prefer types, ownership
+and checked operations over caller discipline; preserve stronger existing guarantees.
+Necessary weaker alternatives need a concrete reason and enforcement location for
+each missing guarantee. Use the simplest representation achieving this; added
+restrictions or abstractions must prevent meaningful mistakes. API names or newness
+alone establish no stronger contract.
 
 Read shared [implementation contract](../CONTRACT.md). For each changed
 function/module, identify preconditions, postconditions, failure and effect/state
@@ -40,6 +39,8 @@ validate new raw values and transformed results before exposure. Mandatory garde
 validation belongs in shared fallible construction path, so direct callers
 cannot forget a separate validation step. See
 [contract enforcement](../implement-rust-contracts/references/contract-enforcement.md).
+Cross-module handoffs: apply its typed-role, consuming-operation, production
+visibility and lifecycle-outcome rules; bind related facts to the actual owner.
 
 Locate producer, callers, mutation paths, effects and target/feature lane.
 Distinguish pure core, wire admission, engine, broker, Windows adapter and UI.
@@ -56,7 +57,7 @@ Ownership, async work, error/numerical boundaries, unsafe adapters,
 dependency/API choices or their tests: apply
 [Rust implementation anti-patterns](references/anti-patterns.md). Forbid
 detached-copy updates presented as owner updates and borrow-checker workarounds
-that obscure authority; preserve justified snapshots and bounded shared ownership.
+obscuring authority; preserve justified snapshots and bounded shared ownership.
 Lint controls complement, never replace, real-owner behavioral checks.
 Unresolved or newly proposed APIs, imports, features and dependencies: use
 [API evidence and diagnostic triage](references/api-evidence.md) before changing
@@ -74,10 +75,12 @@ Choose smallest model that makes meaningful mistakes hard to express:
 - Never erase operational failure into `None`, empty results or stale success.
   Redact secrets; retain structured context sufficient to diagnose rejection.
 
-When a new field or state needs a policy decision, require review of its addition
-through exhaustive field handling, explicit initialization and closed-enum
+When new fields or states need policy decisions, require review through exhaustive
+field handling, explicit initialization and closed-enum
 matches. Follow [structural change checks](../implement-rust-contracts/references/contract-enforcement.md#make-structural-changes-require-review)
 without banning legitimate defaults or required external wildcard handling.
+Include rejection tests' manual state equality; preserve required bitwise and
+allocation-identity semantics when choosing exhaustive patterns or derives.
 Prefer slice patterns, `first`, `split_first` or checked access over separate
 length checks then indexing; handle absence under actual contract.
 Confine initialization mutability to needed scope. Use named option enums
@@ -85,11 +88,11 @@ when boolean arguments obscure distinct choices; related invalid combinations
 still need a constrained representation or checked construction.
 
 Use established domain names for readable changed code; keep decisions, failures
-and effects traceable. Extract a helper when it names a coherent operation or
-isolates a meaningful rule. Keep related matching, loops
-and invariant-bearing updates together when extraction would obscure their
-relationship. Treat nesting and function length as review signals, not fixed
-limits; format and Clippy success do not establish comprehensibility.
+and effects traceable. Extract helpers naming coherent operations or isolating
+meaningful rules. Keep related matching, loops and invariant-bearing updates
+together when extraction would obscure relationships. Nesting and function length
+are review signals, not fixed limits; format and Clippy success do not establish
+comprehensibility.
 
 Floating-point estimation, exact-to-floating seams or numerical admission
 thresholds: use [numerical kernels](references/numerical-kernels.md). Separate
@@ -148,14 +151,14 @@ guarantees across internal calls; recheck facts invalidated by state/context cha
 
 Explicit performance task or measured cost/regression: use
 [performance optimization](../optimize-rust-performance/SKILL.md): attribute the
-bottleneck, compare bounded baseline/candidate runs and preserve correctness,
-security and resource limits. Ordinary Rust edits need no benchmark campaign.
+bottleneck, compare bounded baseline/candidate runs; preserve correctness, security
+and resource limits. Ordinary Rust edits need no benchmark campaign.
 
 Select executable checks from
 [configured-tool workflows](../../testing/references/configured-tooling.md).
 For real Rust source, run applicable format/compiler/Clippy lanes and focused
-regressions for the changed owner and callers; API/documentation changes also
-need their rustdoc/doctest lane. Admit actual target/features before execution;
+regressions for changed owners and callers; API/documentation changes also need their
+rustdoc/doctest lane. Admit actual target/features before execution;
 host checks cannot replace Windows adapter linking or native observations.
 Policy/runner changes use existing healthy/rejection controls, never a fabricated
 application workspace. Preserve target mitigation flags and narrow expectations.
@@ -178,13 +181,13 @@ Select Application Verifier/PageHeap for native misuse and separate lifecycle
 measurements for retention; retain the target's intended ordinary-user token
 and restore only owned image settings after the run.
 
-Locating uncertain cross-function input-to-effect or secret-to-output paths:
+Uncertain cross-function input-to-effect or secret-to-output paths:
 read [CodeQL data-flow analysis](../../testing/references/codeql-data-flow.md).
 Confirm query paths against current callers and guards; a missing result
 cannot establish an unreachable effect.
 
 Verify changed guarantee/actual callers with smallest appropriate behavioral
-check and selected configured checks.
+and selected configured checks.
 For bugs, show causal failure and healthy control before repair where practical.
 Use [QA contract](../../testing/CONTRACT.md) for test integrity. Compiler acceptance
 proves type obligations, not freshness, authorization, numerical truth or Win32
