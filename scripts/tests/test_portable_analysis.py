@@ -2814,6 +2814,33 @@ class EvidenceTests(unittest.TestCase):
             self.assertEqual(captured["environment"]["RUST_TEST_THREADS"], "1")
 
 
+    def test_history_success_preserves_raw_output_only_after_ordinary_success(self):
+        raw = '  {"reason":"build-finished","success":true}\n\n'
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            session = MODULE.Session.__new__(MODULE.Session)
+            session.root = session.output = base
+            session.work, session.source, session.config = base / "work", base / "source", base / "config"
+            session.base, session.stable, session.vendor, session.tools = (base / name for name in ("payload", "stable", "vendor", "tools"))
+            session.admission_profile = "stable-core"
+            session.payload_readonly = (session.base, session.stable)
+            session.protected_islands, session.protected_tools = {}, {}
+            session.admitted = {"policy": {"common_nightly": "night"}}
+            session.policy, session.report = {"jobs": 6}, {"lanes": []}
+            success = {"exit_code": 0, "failure": None, "output": raw, "command": ["synthetic-child"]}
+            with patch.object(session, "check"), patch.object(MODULE.RUNTIME, "run", return_value=success):
+                for label in ("ke-history-contract-gnu-legal", "ke-history-contract-msvc-legal"):
+                    self.assertEqual(session.run(label, ["cargo", "check"], 1), raw)
+                    self.assertEqual(session.report["lanes"][-1]["output"], raw)
+                self.assertEqual(session.run("ke-provider-contract-gnu-once", ["cargo", "check"], 1), raw.strip())
+            for exit_code, failure in ((1, None), (0, "synthetic timeout")):
+                result = {**success, "exit_code": exit_code, "failure": failure}
+                with patch.object(session, "check"), patch.object(MODULE.RUNTIME, "run", return_value=result):
+                    with self.subTest(exit_code=exit_code, failure=failure), self.assertRaises(MODULE.PRODUCT.ENV.Incomplete):
+                        session.run("ke-history-contract-gnu-legal", ["cargo", "check"], 1)
+                self.assertEqual(session.report["lanes"][-1], {"lane": "ke-history-contract-gnu-legal", **result})
+
+
 class ReferenceInputAdmissionTests(unittest.TestCase):
     """The new singleton is an explicit listing/campaign role, never an operator."""
 
@@ -3770,6 +3797,51 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
         empty["mutation_equivalences"] = []
         self.assertTrue(MODULE.engine_ke_equivalences_valid(empty))
         MODULE.require_engine_ke_role(self.scope, empty)
+
+    def test_owned_contract_lane_requires_a_fixed_subject_and_stable_role(self):
+        policy = {**self.policy, "mutation_equivalences": []}
+        for subject in ("ke_process", "ke_job"):
+            healthy = SimpleNamespace(lane="contracts", subject=subject, tool_admission_profile="stable-core")
+            self.assertEqual(MODULE.admission_profile(healthy, self.scope, policy), "stable-core")
+        for subject in (None, "all", "ke_core", "foreign", [], True):
+            args = SimpleNamespace(lane="contracts", subject=subject, tool_admission_profile="stable-core")
+            with self.subTest(subject=subject), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, self.scope, policy)
+        for profile in (None, "full", "foreign"):
+            args = SimpleNamespace(lane="contracts", subject="ke_process", tool_admission_profile=profile)
+            with self.subTest(profile=profile), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, self.scope, {**policy, "tool_admission_profile": profile})
+        for lane in ("baseline", "coverage", "mutation", "all"):
+            args = SimpleNamespace(lane=lane, subject="all", tool_admission_profile="stable-core")
+            with self.subTest(existing_lane=lane):
+                self.assertEqual(MODULE.admission_profile(args, self.scope, policy), "stable-core")
+
+    def test_six_worker_role_keeps_exact_admission_and_campaign_command(self):
+        policy = {**self.policy, "mutation_jobs": 6, "mutation_equivalences": [],
+                  "campaigns_admitted": True,
+                  "mutation_inventories": {name: {"count": 1, "sha256": "a" * 64}
+                                           for name, _path in MODULE.ENGINE_KE_SUBJECTS}}
+        args = SimpleNamespace(lane="mutation", subject="ke_core", tool_admission_profile="stable-core")
+        tools = Path("/owned/synthetic-tools")
+        command = [str(tools / "cargo-mutants"), "mutants", "--package", "nevrotick-engine",
+            "--file", "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs",
+            "--test-workspace", "false", "--cap-lints", "false", "--jobs", "6",
+            "--jobserver", "true", "--jobserver-tasks", "6", "--cargo-arg=--message-format=json",
+            "--features", "ke-association-prototype", "--baseline", "run", "--build-timeout", "90",
+            "--timeout", "60", "--output", "/work/mutation/ke_core"]
+        self.assertEqual(MODULE.admission_profile(args, self.scope, policy), "stable-core")
+        MODULE.mutation_campaign_command(self.scope, tools, "ke_core", command,
+            expected_jobs=6, expected_message_format="json", policy=policy)
+        for workers in (8, 10):
+            bad = {**policy, "mutation_jobs": workers}
+            with self.subTest(workers=workers), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, self.scope, bad)
+            substituted = command.copy()
+            for flag in ("--jobs", "--jobserver-tasks"):
+                substituted[substituted.index(flag) + 1] = str(workers)
+            with self.subTest(coherent_foreign_command=workers), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_campaign_command(self.scope, tools, "ke_core", substituted,
+                    expected_jobs=workers, expected_message_format="json", policy=bad)
 
     def test_exact_complete_review_catalog_still_requires_generic_live_custody(self):
         self.assertEqual(MODULE.ENGINE_KE_EQUIVALENCE_IDS, frozenset({

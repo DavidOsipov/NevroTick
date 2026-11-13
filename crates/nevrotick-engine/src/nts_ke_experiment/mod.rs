@@ -9,7 +9,7 @@
 use std::ffi::OsString;
 use std::io::{self, Read};
 use std::net::{IpAddr, SocketAddr};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
 use garde::Validate;
@@ -23,6 +23,8 @@ use zeroize::Zeroizing;
 
 mod association;
 mod datagram;
+#[cfg(any(windows, test))]
+mod job;
 mod process;
 mod profile;
 #[cfg(any(windows, test))]
@@ -32,12 +34,18 @@ mod recovery;
 use association::AssociationCandidate;
 #[cfg(any(windows, test))]
 use association::AssociationOwner;
-#[cfg(windows)]
-use process::{ProcessAdmission, ProviderScope};
+#[cfg(any(windows, test))]
+use process::ProcessAdmission;
+#[cfg(any(windows, test))]
+use process::ProviderScope;
 
 /// Process-wide one-shot admission; cached CNG providers cannot be reinitialized.
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 static PROCESS_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+
+/// Permanent custody of the one submitted laboratory worker and its sealed outcome.
+#[cfg(windows)]
+static PROCESS_WORKER: job::WorkerSlot = job::WorkerSlot::new();
 
 mod handoff;
 mod request;
@@ -141,6 +149,10 @@ struct Config {
     server_name: ServerName<'static>,
     /// Explicit one-shot selection; two-argument compatibility never sends UDP.
     mode: ExchangeMode,
+    /// Test-only destruction witness owned by this actual checked Config.
+    /// The private constructor creates it; no validation or authority is delegated.
+    #[cfg(test)]
+    lifetime: Arc<()>,
 }
 
 /// Closed experimental operation selection, never a production acquisition mode.
@@ -200,6 +212,8 @@ impl Config {
             identity,
             server_name,
             mode: ExchangeMode::Preview,
+            #[cfg(test)]
+            lifetime: Arc::new(()),
         })
     }
 }
@@ -267,6 +281,106 @@ enum CancelOutcome {
     AlreadyCommitted,
 }
 
+/// One invocation's irreversible admission latch, independent of local cleanup.
+struct StopScope {
+    /// Only the actual stop endpoint may change this value, from false to true.
+    stopped: Mutex<bool>,
+    /// A wake carries no cancellation or actual-completion acknowledgement.
+    wake: Arc<tokio::sync::Notify>,
+}
+
+impl StopScope {
+    /// Create one fresh scope before any context can receive its custody.
+    fn new() -> Self {
+        Self {
+            stopped: Mutex::new(false),
+            wake: Arc::new(tokio::sync::Notify::new()),
+        }
+    }
+
+    /// Retain this actual scope's gate without granting admission by a snapshot.
+    /// # Errors
+    /// Refuse a poisoned gate with the existing closed control cause.
+    fn lock(&self) -> Result<ScopeGuard<'_>, Failure> {
+        Ok(ScopeGuard {
+            scope: self,
+            stopped: self.stopped.lock().map_err(|_| Failure::Control)?,
+        })
+    }
+}
+
+/// Serialized access to one actual invocation's irreversible admission latch.
+struct ScopeGuard<'scope> {
+    /// Actual scope owning the mutex, retained for mandatory Control binding.
+    scope: &'scope StopScope,
+    /// The held gate prevents a concurrent stop from crossing an admitted effect.
+    stopped: MutexGuard<'scope, bool>,
+}
+
+impl ScopeGuard<'_> {
+    /// Inspect only the actual latch while this scope's gate remains held.
+    fn is_stopped(&self) -> bool {
+        *self.stopped
+    }
+
+    /// Check the actual latch while retaining the admission gate.
+    /// # Errors
+    /// Refuse an already stopped invocation without reopening it.
+    fn ensure_open(&self) -> Result<(), Failure> {
+        if self.is_stopped() {
+            Err(Failure::Cancelled)
+        } else {
+            Ok(())
+        }
+    }
+}
+
+/// A stop observation closes admission; it never acknowledges work completion.
+#[cfg(any(windows, test))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum StopDisposition {
+    /// This request irreversibly changed the invocation's admission latch.
+    Latched,
+    /// An earlier request already closed this same invocation's admission.
+    AlreadyLatched,
+}
+
+/// A bounded capability can only stop its actual original invocation scope.
+#[cfg(any(windows, test))]
+#[derive(Clone)]
+struct StopHandle {
+    /// Keep the same latch alive without retaining or replacing any Control.
+    scope: Arc<StopScope>,
+}
+
+#[cfg(any(windows, test))]
+impl StopHandle {
+    /// Latch stop once without claiming that any admitted operation returned.
+    /// # Errors
+    /// Refuse an unavailable scope lock with the existing closed control cause.
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "the selected stop endpoint currently has only component-controller callers"
+        )
+    )]
+    fn request_stop(&self) -> Result<StopDisposition, Failure> {
+        let mut stopped = self.scope.stopped.lock().map_err(|_| Failure::Control)?;
+        let disposition = if *stopped {
+            StopDisposition::AlreadyLatched
+        } else {
+            *stopped = true;
+            StopDisposition::Latched
+        };
+        drop(stopped);
+        if disposition == StopDisposition::Latched {
+            self.scope.wake.notify_waiters();
+        }
+        Ok(disposition)
+    }
+}
+
 /// One transaction's immutable time bounds and serialized publication authority.
 struct Control {
     /// Original monotonic origin; earlier supplied times cannot gain lifetime.
@@ -275,11 +389,81 @@ struct Control {
     handshake_deadline: Instant,
     /// Full-job deadline and candidate expiry, never reset by progress.
     expiry: Instant,
+    /// Every replacement shares this actual original invocation's stop latch.
+    stop_scope: Arc<StopScope>,
     /// Cancellation and commit serialize with the concrete nonblocking UDP send.
     /// General state effects remain non-I/O; no blocking operation or await is allowed.
     phase: Mutex<Phase>,
     /// Wake registered readiness waiters when cancellation closes admission.
-    cancelled: tokio::sync::Notify,
+    cancelled: Arc<tokio::sync::Notify>,
+}
+
+/// Actual scope and transaction guards retained in the sole permitted lock order.
+struct ControlGuard<'control, 'scope> {
+    /// This reference, not a copied phase, identifies the guarded transaction.
+    control: &'control Control,
+    /// Only this actual transaction's phase can be checked or changed here.
+    phase: MutexGuard<'control, Phase>,
+    /// Acquire this first and drop it after the local phase guard.
+    scope: ScopeGuard<'scope>,
+}
+
+impl ControlGuard<'_, '_> {
+    /// Check this actual owner's scope, phase and immutable deadline under both gates.
+    /// # Errors
+    /// Refuse stop, local cancellation/commit, pre-origin time or expired work.
+    fn remaining(&self, phase: IoPhase, now: Instant) -> Result<Duration, Failure> {
+        self.scope.ensure_open()?;
+        match *self.phase {
+            Phase::Cancelled => return Err(Failure::Cancelled),
+            Phase::Committed => return Err(Failure::Control),
+            Phase::Open | Phase::Published => {}
+        }
+        if now < self.control.origin {
+            return Err(Failure::Deadline);
+        }
+        let deadline = match phase {
+            IoPhase::Handshake => self.control.handshake_deadline,
+            IoPhase::Exchange => self.control.expiry,
+        };
+        deadline
+            .checked_duration_since(now)
+            .filter(|value| !value.is_zero())
+            .ok_or(Failure::Deadline)
+    }
+
+    /// Require current published authority from this same guarded transaction.
+    /// # Errors
+    /// Preserve stop/time/phase refusal before any effect is invoked.
+    fn published(&self, now: Instant) -> Result<(), Failure> {
+        self.remaining(IoPhase::Exchange, now)?;
+        if matches!(*self.phase, Phase::Published) {
+            Ok(())
+        } else {
+            Err(Failure::Control)
+        }
+    }
+
+    /// Publish KE once under the actual original scope and phase guards.
+    /// # Errors
+    /// Refuse closed or expired authority without changing the local phase.
+    fn publish_ke(&mut self, now: Instant) -> Result<(), Failure> {
+        self.remaining(IoPhase::Exchange, now)?;
+        if !matches!(*self.phase, Phase::Open) {
+            return Err(Failure::Control);
+        }
+        *self.phase = Phase::Published;
+        Ok(())
+    }
+
+    /// Preserve the one historical commit when it wins before invocation stop.
+    /// # Errors
+    /// Refuse unavailable published authority without changing its phase.
+    fn commit(&mut self, now: Instant) -> Result<(), Failure> {
+        self.published(now)?;
+        *self.phase = Phase::Committed;
+        Ok(())
+    }
 }
 
 impl Control {
@@ -289,12 +473,21 @@ impl Control {
     /// Refuses monotonic deadline arithmetic overflow; creates no usable control on
     /// failure.
     fn new(start: Instant) -> Result<Self, Failure> {
+        Self::new_in(start, Arc::new(StopScope::new()))
+    }
+
+    /// Bind one immutable scope while establishing the original finite deadlines.
+    /// # Errors
+    /// Refuse monotonic deadline arithmetic overflow without a usable Control.
+    fn new_in(start: Instant, stop_scope: Arc<StopScope>) -> Result<Self, Failure> {
+        let cancelled = Arc::clone(&stop_scope.wake);
         Ok(Self {
             origin: start,
             handshake_deadline: start.checked_add(HANDSHAKE_TIME).ok_or(Failure::Deadline)?,
             expiry: start.checked_add(EXCHANGE_TIME).ok_or(Failure::Deadline)?,
+            stop_scope,
             phase: Mutex::new(Phase::Open),
-            cancelled: tokio::sync::Notify::new(),
+            cancelled,
         })
     }
 
@@ -304,53 +497,84 @@ impl Control {
     /// # Errors
     /// Refuse deadline overflow and an empty or reversed window before effects.
     #[cfg(any(windows, test))]
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "standalone component controls retain their independent checked clamp constructor"
+        )
+    )]
     fn clamped(start: Instant, cutoff: Instant) -> Result<Self, Failure> {
+        Self::clamped_in(start, cutoff, Arc::new(StopScope::new()))
+    }
+
+    /// Bind a replacement to the same actual scope without renewing its deadline.
+    /// This constructor performs no admission and acquires no scope or phase lock.
+    /// # Errors
+    /// Refuse deadline overflow and an empty or reversed window before effects.
+    #[cfg(any(windows, test))]
+    fn clamped_in(
+        start: Instant,
+        cutoff: Instant,
+        stop_scope: Arc<StopScope>,
+    ) -> Result<Self, Failure> {
         if start >= cutoff {
             return Err(Failure::Deadline);
         }
-        let mut control = Self::new(start)?;
+        let mut control = Self::new_in(start, stop_scope)?;
         control.handshake_deadline = control.handshake_deadline.min(cutoff);
         control.expiry = control.expiry.min(cutoff);
         Ok(control)
     }
 
-    /// Observe actual fresh time while holding the current-publication guard.
-    ///
+    /// Retain both actual guards in scope-then-phase order.
     /// # Errors
-    /// Refuses a poisoned lock, cancelled/committed phase or expired deadline using fresh
-    /// time sampled under the lock.
-    fn remaining(&self, phase: IoPhase) -> Result<Duration, Failure> {
-        let state = self.phase.lock().map_err(|_| Failure::Control)?;
-        self.remaining_locked(*state, phase, Instant::now())
+    /// Refuse either unavailable lock without granting current authority.
+    fn guard(&self) -> Result<ControlGuard<'_, '_>, Failure> {
+        self.guard_in(self.stop_scope.lock()?)
     }
 
-    /// Hold actual published authority for the concrete nonblocking UDP syscall.
-    ///
-    /// The adapter retains this guard only for capture/check/try-send/capture.
-    /// It must never await, allocate, perform blocking I/O or call an arbitrary
-    /// collaborator while holding it. General state effects use `with_published`.
+    /// Consume an already-held same-scope gate without recursively locking it.
     /// # Errors
-    /// Refuse poisoned, unpublished, cancelled, committed or expired authority.
-    fn published_guard(&self) -> Result<std::sync::MutexGuard<'_, Phase>, Failure> {
-        let state = self.phase.lock().map_err(|_| Failure::Control)?;
-        self.remaining_locked(*state, IoPhase::Exchange, Instant::now())?;
-        if !matches!(*state, Phase::Published) {
+    /// Refuse a foreign scope or an unavailable actual transaction lock.
+    fn guard_in<'scope>(
+        &self,
+        scope: ScopeGuard<'scope>,
+    ) -> Result<ControlGuard<'_, 'scope>, Failure> {
+        if !std::ptr::eq(scope.scope, self.stop_scope.as_ref()) {
             return Err(Failure::Control);
         }
-        Ok(state)
+        let phase = self.phase.lock().map_err(|_| Failure::Control)?;
+        Ok(ControlGuard {
+            control: self,
+            scope,
+            phase,
+        })
+    }
+
+    /// Observe actual fresh time while holding both current-authority guards.
+    /// # Errors
+    /// Refuse stop, unavailable/closed local phase or an expired original deadline.
+    fn remaining(&self, phase: IoPhase) -> Result<Duration, Failure> {
+        self.guard()?.remaining(phase, Instant::now())
+    }
+
+    /// Retain actual scope and phase for the bounded concrete UDP send.
+    /// No allocation, arbitrary callback, blocking operation or await may occur.
+    /// # Errors
+    /// Refuse unavailable, stopped, unpublished or expired authority.
+    fn published_guard(&self) -> Result<ControlGuard<'_, '_>, Failure> {
+        let guard = self.guard()?;
+        guard.published(Instant::now())?;
+        Ok(guard)
     }
 
     /// Run a bounded, non-I/O state commit under fresh published authority.
-    ///
-    /// Stage allocations and fallible publication preparation first. Packet,
-    /// cookie and receipt publication must be failure-atomic. Explicit resource
-    /// charges, retirement and recovery may survive refusal; never refund them
-    /// or renew authority. Effects must not re-enter this control. This check
-    /// leaves the association Published; a request completion never renews or
-    /// commits the enclosing association's lifetime.
+    /// Stage allocations and fallible preparation first. Explicit work charges,
+    /// retirement and recovery may survive refusal; never refund them or renew
+    /// authority. The effect must not re-enter either held guard.
     /// # Errors
-    /// Refuse unavailable, unpublished, cancelled or expired authority before
-    /// the effect; preserve the effect's closed failure without changing phase.
+    /// Preserve currentness or the effect's closed refusal without changing phase.
     fn with_published<T>(
         &self,
         effect: impl FnOnce(Instant) -> Result<T, Failure>,
@@ -358,132 +582,66 @@ impl Control {
         self.with_published_observing(Instant::now, effect)
     }
 
-    /// Sample the trusted local clock after acquiring the actual phase guard.
+    /// Sample the trusted local clock after acquiring both actual owner guards.
     /// # Errors
-    /// Preserve the same publication/currentness guard and caller failure.
+    /// Preserve currentness refusal and the bounded non-reentrant effect's failure.
     fn with_published_observing<T>(
         &self,
         observe: impl FnOnce() -> Instant,
         effect: impl FnOnce(Instant) -> Result<T, Failure>,
     ) -> Result<T, Failure> {
-        let state = self.phase.lock().map_err(|_| Failure::Control)?;
+        let guard = self.guard()?;
         let now = observe();
-        self.remaining_locked(*state, IoPhase::Exchange, now)?;
-        if !matches!(*state, Phase::Published) {
-            return Err(Failure::Control);
-        }
-        effect(now)
+        guard.published(now)?;
+        let result = effect(now);
+        drop(guard);
+        result
     }
 
-    /// Testable time boundary with the same mandatory phase guard and rule.
+    /// Testable time observation under the same mandatory actual guards.
+    /// # Errors
+    /// Refuse stopped/closed authority, pre-origin time or an expired deadline.
     #[cfg(test)]
-    ///
-    /// # Errors
-    /// Refuses unavailable publication authority, pre-origin time and time at or after the
-    /// selected deadline.
     fn remaining_at(&self, phase: IoPhase, now: Instant) -> Result<Duration, Failure> {
-        let state = self.phase.lock().map_err(|_| Failure::Control)?;
-        self.remaining_locked(*state, phase, now)
+        self.guard()?.remaining(phase, now)
     }
 
-    /// Check the immutable deadline only within an already-held phase guard.
-    ///
+    /// Consume one genuine KE completion under both still-live actual guards.
     /// # Errors
-    /// Refuses closed authority, time before the origin and a zero or negative remaining
-    /// lifetime.
-    fn remaining_locked(
-        &self,
-        state: Phase,
-        phase: IoPhase,
-        now: Instant,
-    ) -> Result<Duration, Failure> {
-        match state {
-            Phase::Cancelled => return Err(Failure::Cancelled),
-            Phase::Committed => return Err(Failure::Control),
-            Phase::Open | Phase::Published => {}
-        }
-        if now < self.origin {
-            return Err(Failure::Deadline);
-        }
-        let deadline = match phase {
-            IoPhase::Handshake => self.handshake_deadline,
-            IoPhase::Exchange => self.expiry,
-        };
-        deadline
-            .checked_duration_since(now)
-            .filter(|value| !value.is_zero())
-            .ok_or(Failure::Deadline)
-    }
-
-    /// Consume one genuine KE completion under the still-live invocation guard.
-    /// # Errors
-    /// Refuse cancellation, expiry, duplicate publication or unavailable control.
+    /// Refuse stop, expiry, duplicate publication or unavailable control.
     fn publish_ke(&self) -> Result<(), Failure> {
         self.publish_ke_observing(Instant::now)
     }
 
-    /// Sample publication time only after acquiring the actual phase guard.
-    /// The sole normal caller supplies the trusted monotonic observation.
+    /// Sample publication time only within the held actual scope and phase.
     /// # Errors
-    /// Preserve lock/currentness/duplicate refusal without partial publication.
+    /// Preserve currentness/duplicate refusal without partial publication.
     fn publish_ke_observing(&self, observe: impl FnOnce() -> Instant) -> Result<(), Failure> {
-        let mut state = self.phase.lock().map_err(|_| Failure::Control)?;
-        self.publish_ke_locked(&mut state, observe())
+        let mut guard = self.guard()?;
+        guard.publish_ke(observe())
     }
 
-    /// Apply the same publication checkpoint to an explicitly observed instant.
+    /// Exercise the same publication rule at an independently selected test time.
     /// # Errors
-    /// Refuse a closed, foreign-stage or expired publication without changing it.
+    /// Refuse stopped, closed or expired authority without changing local phase.
     #[cfg(test)]
     fn publish_ke_at(&self, now: Instant) -> Result<(), Failure> {
-        let mut state = self.phase.lock().map_err(|_| Failure::Control)?;
-        self.publish_ke_locked(&mut state, now)
+        self.guard()?.publish_ke(now)
     }
 
-    /// Publish once using an observation sampled within the held owner guard.
+    /// Commit after a fresh time observation under both actual authority guards.
     /// # Errors
-    /// Refuse stale or non-open authority without mutating its existing phase.
-    fn publish_ke_locked(&self, state: &mut Phase, now: Instant) -> Result<(), Failure> {
-        self.remaining_locked(*state, IoPhase::Exchange, now)?;
-        if !matches!(*state, Phase::Open) {
-            return Err(Failure::Control);
-        }
-        *state = Phase::Published;
-        Ok(())
-    }
-
-    /// Commit after a fresh time observation under the cancellation lock.
-    ///
-    /// # Errors
-    /// Refuses poisoned, cancelled, already committed or expired state; no commit occurs on
-    /// refusal.
+    /// Refuse stopped, closed or expired authority without creating a commit.
     fn commit(&self) -> Result<(), Failure> {
-        let mut state = self.phase.lock().map_err(|_| Failure::Control)?;
-        self.commit_locked(&mut state, Instant::now())
+        self.guard()?.commit(Instant::now())
     }
 
-    /// Exercise the identical commit transition at an independent boundary time.
+    /// Exercise the same commit rule at an independent boundary time.
+    /// # Errors
+    /// Refuse stopped, closed or expired authority without changing local phase.
     #[cfg(test)]
-    ///
-    /// # Errors
-    /// Refuses closed authority or a time outside the strict original-origin lifetime,
-    /// without changing the phase.
     fn commit_at(&self, now: Instant) -> Result<(), Failure> {
-        let mut state = self.phase.lock().map_err(|_| Failure::Control)?;
-        self.commit_locked(&mut state, now)
-    }
-
-    /// Apply the one commit rule under the held lock and sampled time.
-    ///
-    /// # Errors
-    /// Refuses the same mandatory phase/time rule before mutating the held state.
-    fn commit_locked(&self, state: &mut Phase, now: Instant) -> Result<(), Failure> {
-        self.remaining_locked(*state, IoPhase::Exchange, now)?;
-        if !matches!(*state, Phase::Published) {
-            return Err(Failure::Control);
-        }
-        *state = Phase::Committed;
-        Ok(())
+        self.guard()?.commit(now)
     }
 
     /// Close new publication, explicitly distinguishing a stop after commit.
@@ -632,6 +790,7 @@ fn read_response(
 }
 
 /// Payload-free historical completion after all secret/native owners drop.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Summary {
     /// Actual bounded initial cookie count.
     cookies: usize,
@@ -641,6 +800,27 @@ struct Summary {
     packet_bytes: usize,
     /// A complete local datagram send returned; this asserts no peer delivery.
     transmitted: bool,
+}
+
+/// One actual terminal mode; protected provenance moves with its success.
+/// Neither variant grants numerical eligibility, source agreement or clock authority.
+#[cfg(any(windows, test))]
+enum InvocationCompletion {
+    /// Preparation completed without a protected send or authenticated observation.
+    Preview(Summary),
+    /// One genuine committed exchange, detached from all live native/secret owners.
+    Protected(Box<datagram::ProtectedHistory>),
+}
+
+#[cfg(any(windows, test))]
+impl InvocationCompletion {
+    /// Borrow only the existing bounded CLI counts without exposing or copying history.
+    fn summary(&self) -> &Summary {
+        match self {
+            Self::Preview(summary) => summary,
+            Self::Protected(history) => history.summary(),
+        }
+    }
 }
 
 /// Primary operation failure and a separately retained cancellation failure.
@@ -667,48 +847,169 @@ impl From<Failure> for Failed {
     }
 }
 
-/// Drive the sole Windows job and close admission after any primary failure.
-#[cfg(windows)]
-///
+/// Drive the actual one-shot invocation with its original Control and selected producer.
+/// All association/invocation custody retires before the outer provider/Config owner.
 /// # Errors
-/// Preserves the original setup/operation failure plus separate TLS and admission-cleanup
-/// failures; returns no success on rejection.
-fn run(config: Config) -> Result<Summary, Failed> {
-    let control = Control::new(Instant::now()).map_err(Failed::from)?;
-    let claim = PROCESS_ADMISSION.claim().map_err(Failed::from)?;
-    let provider = ProviderScope::new(&claim);
-    let result = {
-        let mut invocation =
-            recovery::Invocation::one_shot(&config, &provider, control).map_err(Failed::from)?;
-        match recovery::step_with(&mut invocation, &mut recovery::Native) {
-            Ok(recovery::Step::Complete(summary)) => Ok(summary),
-            Err(failure) => Err(failure),
-            Ok(recovery::Step::Closed(end)) => Err(match invocation.last_failure() {
-                Some(failure) => *failure,
-                None => Failed::from(match end {
-                    recovery::End::Window | recovery::End::Arithmetic => Failure::Deadline,
-                    recovery::End::Context(_, cause) => cause,
-                    recovery::End::Completed
-                    | recovery::End::Failure
-                    | recovery::End::Transactions
-                    | recovery::End::Contexts
-                    | recovery::End::Refusals
-                    | recovery::End::Observations
-                    | recovery::End::Jitter(_) => Failure::Control,
-                }),
+/// Preserve original operation and secondary cleanup facts without a retry or new Control.
+#[cfg(any(windows, test))]
+fn drive_invocation_with<'scope, P: recovery::Producer>(
+    config: &'scope Config,
+    provider: &'scope ProviderScope<'scope>,
+    control: Control,
+    producer: &mut P,
+) -> Result<InvocationCompletion, Failed> {
+    let mut invocation =
+        recovery::Invocation::one_shot(config, provider, control).map_err(Failed::from)?;
+    match recovery::step_with(&mut invocation, producer) {
+        Ok(recovery::Step::Complete(summary)) => Ok(summary),
+        Err(failure) => Err(failure),
+        Ok(recovery::Step::Closed(end)) => Err(match invocation.last_failure() {
+            Some(failure) => *failure,
+            None => Failed::from(match end {
+                recovery::End::Window | recovery::End::Arithmetic => Failure::Deadline,
+                recovery::End::Context(_, cause) => cause,
+                recovery::End::Stopped => Failure::Cancelled,
+                recovery::End::Control
+                | recovery::End::Completed
+                | recovery::End::Failure
+                | recovery::End::Transactions
+                | recovery::End::Contexts
+                | recovery::End::Refusals
+                | recovery::End::Observations
+                | recovery::End::Jitter(_) => Failure::Control,
             }),
-            Ok(recovery::Step::Deferred(_)) => Err(match invocation.last_failure() {
-                Some(failure) => *failure,
-                None => Failed::from(Failure::Control),
-            }),
+        }),
+        Ok(recovery::Step::Deferred(_)) => Err(match invocation.last_failure() {
+            Some(failure) => *failure,
+            None => Failed::from(Failure::Control),
+        }),
+    }
+}
+
+/// Delegate the actual Windows caller to the mandatory synchronous facade owner.
+/// # Errors
+/// Preserve caller-context, submission, collection and joined operation dispositions.
+#[cfg(windows)]
+fn run(config: Config) -> Result<InvocationCompletion, RunFailed> {
+    run_synchronously_with(config, &PROCESS_WORKER, |slot, prepared| {
+        slot.try_submit(prepared)
+    })
+}
+
+/// Own synchronous preparation, real submission, collection and result projection.
+/// The trusted adapter submits to this actual slot; no collector or result is injected.
+/// Entered Tokio callers refuse before Control preparation or adapter invocation.
+/// Explicit collection can wait indefinitely; a collection refusal leaves completion
+/// unconfirmed and retains the actual handle in permanent custody.
+/// # Errors
+/// Keep pre-submit caller refusal distinct from submission, unconfirmed collection,
+/// normally retired operation failure and actual joined abnormal termination.
+#[cfg(any(windows, test))]
+fn run_synchronously_with(
+    config: Config,
+    slot: &'static job::WorkerSlot,
+    submit: impl FnOnce(
+        &'static job::WorkerSlot,
+        job::PreparedInvocation,
+    ) -> Result<(), job::SubmitError>,
+) -> Result<InvocationCompletion, RunFailed> {
+    if tokio::runtime::Handle::try_current().is_ok() {
+        return Err(RunFailed::CallerContext);
+    }
+    let (prepared, _stop) =
+        job::PreparedInvocation::prepare(config).map_err(RunFailed::Preparation)?;
+    submit(slot, prepared).map_err(RunFailed::Submission)?;
+    slot.collect().map_err(RunFailed::Collection)?;
+    let joined = slot.take_result().map_err(RunFailed::Collection)?;
+    match joined {
+        job::JoinedOutcome {
+            operation: Some(operation),
+            termination: job::Termination::Returned,
+            retired: true,
+        } => operation.map_err(RunFailed::Operation),
+        abnormal => Err(RunFailed::Abnormal(abnormal)),
+    }
+}
+
+/// Closed outer failure projection keeps submission, operation and joined termination distinct.
+#[cfg(any(windows, test))]
+enum RunFailed {
+    /// Entered Tokio context refused before preparation or any actual submission.
+    CallerContext,
+    /// No submission occurred because original checked preparation failed.
+    #[cfg_attr(
+        all(test, not(windows)),
+        expect(
+            dead_code,
+            reason = "the Windows reporter consumes this original failure; real-time preparation overflow has no reached GNU fixture"
+        )
+    )]
+    Preparation(Failed),
+    /// No completed job is inferred from submission refusal.
+    Submission(job::SubmitError),
+    /// Completion/retirement is unconfirmed; permanent actual job custody remains.
+    Collection(job::CollectError),
+    /// Normally retired operation failure retains all original secondary facts.
+    Operation(Failed),
+    /// Actual joined abnormal termination retains any recorded historical facts.
+    Abnormal(job::JoinedOutcome),
+}
+
+/// Report only closed worker categories and already-permitted operation fields.
+/// The opaque unwind payload remains sealed in permanent custody.
+#[cfg(windows)]
+fn report_run_failure(failure: &RunFailed) -> std::process::ExitCode {
+    use std::io::Write;
+    use std::process::ExitCode;
+    let (stage, cause, retired) = match failure {
+        RunFailed::CallerContext => ("caller-context", "entered-runtime", false),
+        RunFailed::Preparation(operation) | RunFailed::Operation(operation) => {
+            return report_failure(operation, ExitCode::FAILURE);
         }
+        RunFailed::Submission(submission) => (
+            "worker-submission",
+            match submission {
+                job::SubmitError::Busy => "busy",
+                job::SubmitError::Used => "used",
+                job::SubmitError::Control => "control",
+                job::SubmitError::Spawn(kind) => io_label(*kind),
+            },
+            false,
+        ),
+        RunFailed::Collection(collection) => (
+            "worker-collection",
+            match collection {
+                job::CollectError::Busy => "busy",
+                job::CollectError::NotReady => "not-ready",
+                job::CollectError::SelfJoin => "self-join",
+                job::CollectError::EnteredRuntime => "entered-runtime",
+                job::CollectError::Control => "control",
+            },
+            false,
+        ),
+        RunFailed::Abnormal(joined) => (
+            "worker-termination",
+            match joined.termination {
+                job::Termination::Panicked => "panicked",
+                job::Termination::Contract(_) => "contract",
+                job::Termination::Returned => "unconfirmed-retirement",
+            },
+            joined.retired,
+        ),
     };
-    // The actual association/preview and TLS state are gone before this shutdown.
-    drop(provider);
-    // Consume this one-shot input before reporting; it cannot start a second job
-    // after the process-global CNG shutdown owner has finished.
-    drop(config);
-    result
+    let _diagnostic_result = writeln!(
+        io::stderr().lock(),
+        "stage={stage} cause={cause} retirement_confirmed={}",
+        u8::from(retired)
+    );
+    if let RunFailed::Abnormal(job::JoinedOutcome {
+        operation: Some(Err(operation)),
+        ..
+    }) = failure
+    {
+        return report_failure(operation, ExitCode::FAILURE);
+    }
+    ExitCode::FAILURE
 }
 
 /// The same one-shot owner captures initial counts before unsendable preview work.
@@ -741,8 +1042,11 @@ fn protected_once<'association, 'control>(
         &mut AssociationOwner<'association>,
     ) -> Result<datagram::ProtectedCompletion<'control>, Failure>,
 ) -> Result<Summary, Failure> {
-    protected_receiving(association, exchange, |committed| {
-        Ok(committed.into_summary())
+    protected_receiving(association, exchange, |committed, population| {
+        let mut summary = committed.into_summary();
+        summary.cookies = population.0;
+        summary.cookie_bytes = population.1;
+        Ok(summary)
     })
 }
 
@@ -751,20 +1055,17 @@ fn protected_once<'association, 'control>(
 /// # Errors
 /// Preserve producer, association, commit and receiver rejection without refunds.
 #[cfg(any(windows, test))]
-fn protected_receiving<'association, 'control>(
+fn protected_receiving<'association, 'control, T>(
     association: &mut AssociationOwner<'association>,
     exchange: impl FnOnce(
         &mut AssociationOwner<'association>,
     ) -> Result<datagram::ProtectedCompletion<'control>, Failure>,
-    receive: impl FnOnce(datagram::CommittedProtected<'control>) -> Result<Summary, Failure>,
-) -> Result<Summary, Failure> {
+    receive: impl FnOnce(datagram::CommittedProtected<'control>, (usize, usize)) -> Result<T, Failure>,
+) -> Result<T, Failure> {
     let population = association.cookie_population()?;
     let completion = exchange(association)?;
     let committed = completion.commit(association)?;
-    let mut summary = receive(committed)?;
-    summary.cookies = population.0;
-    summary.cookie_bytes = population.1;
-    Ok(summary)
+    receive(committed, population)
 }
 
 /// Project only closed, bounded failure labels; payload-bearing errors stay out.
@@ -839,8 +1140,9 @@ fn report_failure(failure: &Failed, code: std::process::ExitCode) -> std::proces
 
 /// Admit two bounded CLI arguments and an optional exact protected-datagram flag.
 ///
-/// Only safe historical counts survive the job. Output occurs after all TLS,
-/// secret and shutdown owners have returned; native cleanup remains unqualified.
+/// Successful counts and ordinary operation failures follow actual joined retirement.
+/// Post-submission collection refusals report unconfirmed completion while permanent
+/// custody retains the actual job; native cleanup remains separately unqualified.
 #[cfg(windows)]
 pub(super) fn entry(mut arguments: impl Iterator<Item = OsString>) -> std::process::ExitCode {
     use std::io::Write;
@@ -851,13 +1153,14 @@ pub(super) fn entry(mut arguments: impl Iterator<Item = OsString>) -> std::proce
         Err(primary) => return report_failure(&Failed::from(primary), ExitCode::from(2)),
     };
     match run(config) {
-        Ok(summary) => {
+        Ok(completion) => {
+            let summary = completion.summary();
             let mut output = io::stdout().lock();
             if writeln!(output, "scope=engine-ke-prototype completed=1 cookies={} cookie_bytes={} sealed_packet_bytes={} transmitted={} native_cleanup_qualified=0", summary.cookies, summary.cookie_bytes, summary.packet_bytes, u8::from(summary.transmitted)).is_err() || output.flush().is_err() {
                 return ExitCode::FAILURE;
             }
             ExitCode::SUCCESS
         }
-        Err(failure) => report_failure(&failure, ExitCode::FAILURE),
+        Err(failure) => report_run_failure(&failure),
     }
 }

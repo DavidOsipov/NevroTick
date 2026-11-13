@@ -6313,17 +6313,3915 @@ ownership; independent review precedes source changes. This preparation adds no
 service source, shared graph, production default, Core-positive issuer or hold lift.
 Finish remaining native and generation gates only when admitted.
 
+#### Invocation stop scope — bounded source contract, 12 November 2026
+
+**Stage and authority.** This is the next WSL source child under the current
+checkpoint, REQ-8/BND-2, AC-04 and CHECK-6/8/9/10/11/15/17/21/25/26/27;
+architecture §§17.1, 18.6.1 and 18.7.1 control. Baseline is signed `a0ad73a`.
+At that baseline the invocation has no invocation-wide stop endpoint. The
+selected child supplies a missing feature prerequisite, not a demonstrated
+violation of the earlier one-shot contract. Root coordinates policy/qualification. Writable product scope is
+`nts_ke_experiment/{mod.rs,recovery.rs,datagram.rs}` and existing tests only.
+No dependency, service, public retry/default, Core, provider/transport or native
+execution change is selected.
+
+**Actual owners and completion.** `run` retains Config, its permanent
+ProcessClaim and one ProviderScope around Invocation. `step_with` exclusively
+borrows Invocation through actual synchronous Producer return and association
+retirement. Establishment retires TLS before returning AssociationOwner;
+`exchange_with` retires Backend then Runtime on success and failure before it can
+return ProtectedCompletion. Step completion retires the association but can
+retain invocation history/provider. Whole-call completion is the actual `run`
+return after Invocation/provider/config retirement. Stop delivery,
+Control cancellation, Step::Complete and ProtectedCompletion acknowledge narrower
+facts; none is a whole-worker completion permit. No completed flag, drop-based
+acknowledgement, new pool, detached thread or service WorkPermit completion is
+introduced by this child.
+
+**Immutable scope and endpoint.** One private sticky stop scope is owned through
+Arc by the actual original Control, its Invocation and every subsequent Control.
+Invocation derives its scope from that original checked Control; step/Producer
+accept no caller-selected replacement scope. A private cloneable StopHandle
+exposes only fallible `request_stop`, returning Latched or AlreadyLatched.
+That receipt means invocation admission is permanently closed, including when
+sent after an earlier commit; it says nothing about current operation return.
+There is no reset/reopen, raw state export, serialization or permission-bearing
+completion constructor. Transaction-local `cancel` retains its separate phase
+and CancelOutcome and never changes the invocation latch. Only actual checked
+same-scope construction may bind a replacement Control.
+
+**Linearization and lock order.** Scope admission mutex precedes the actual
+Control phase mutex everywhere both are needed. Every applicable original or
+replacement remaining-time, KE publication, protected send/receive state effect
+and final commit guard checks actual scope, phase and fresh internal time under
+that order. The published-send RAII guard retains both guards for only the
+existing bounded capture/check/try-send/capture section. Helpers may not accept
+a foreign raw phase/guard as current authority. Poison/refusal fails closed with
+the existing bounded Control cause. No guard crosses Producer calls, blocking
+TCP/TLS/verifier work, entropy/jitter callbacks, await, runtime driving or
+provider shutdown; no callback re-enters a held scope/phase guard.
+
+**Admission versus physical start.** Under the same scope gate, step preserves
+already terminal outcomes, checks fresh time/plan and all current limits,
+constructs/binds the next Control, then atomically debits existing N/D or commits
+a bounded scheduling refusal. It releases the gate before entering Producer.
+The debit is admission, not proof of syscall start. Work admitted before stop
+may physically enter/return afterward and remains charged and owned through its
+actual return. Stop winning before admission permits no new producer/reservation
+or scheduling-refusal charge. Original cutoff, context limits, N4/R8/D16,
+possibly-sent cookie/UID history and no-refund rules remain unchanged.
+
+**Failure and retry.** Following actual failure or draw return, check sticky
+scope independently of transient error classification/local cancellation before
+any new scheduling transition. Stop suppresses new recovery/draw admission and
+records End::Stopped separately from the original operation primary and its TLS/
+admission-cleanup facts. Admission refusal preserves an already retained failure;
+a newly admitted operation retains its own actual primary/secondary facts.
+A draw admitted before stop can finish but cannot publish a new Deferred plan
+after stop; there is no redraw/refund. Late stop never rewrites an already
+terminal outcome. Stop before actual final Control commit rejects it; commit
+under both guards before stop preserves the genuine historical completion.
+Do not add a scope recheck after CommittedProtected that erases committed history.
+Owner observation and actual call/resource return remain separate from delivery.
+
+**Notification is not authority.** Select one shared wake for invocation/local
+cancellation, with registration/enabling before authoritative state checks.
+The existing unconditional wake→Cancelled branch must become a bounded fresh
+scope/phase check and re-wait while still live. Such a wake spends the existing
+Attempts allowance and preserves the original deadline; no extra budget is
+introduced. Notify alone proves neither cancellation nor completion. Repeated
+stop cannot reopen state or create an unbounded wake/retry loop.
+
+**Independent expected controls.** Use actual shared step/producer/retired
+completion paths, fixed healthy neighbors and bounded channels/barriers rather
+than timing sleeps or trusted-field writes:
+
+- KE-STOP-01: stop before first step, repeated stop/reentry; no producer, entropy,
+  backend, send, N/D/refusal charge or new deadline; bounded terminal result.
+- KE-STOP-02: genuine transient failure→Deferred, then stop before the next step;
+  retain primary/counters/cutoff and admit no new draw/producer. The unstopped
+  neighbor still retries after normal old-Control cleanup cancellation.
+- KE-STOP-03: genuine 32-frame authenticated-count exhaustion and consuming
+  retirement; stop before successor admission retains history/budgets and prevents
+  another KE/entropy/send. Ordinary local cleanup alone permits the successor.
+- KE-STOP-04: hold the actual Producer callback behind a bounded barrier; deliver
+  stop from only its real handle while the callback is outstanding. Observe no
+  actual return, then release it, retain its genuine failure/cleanup and forbid
+  retry. Keep Config/provider/Invocation on their owning thread; no asserted CNG
+  Send/Sync or native cancellation/completion evidence.
+- KE-STOP-05: actual registered readiness wait and scope stop wake it; a harmless
+  old-context/local wake with current authority live rechecks/re-waits within
+  Attempts. Cover wake registration order and finite exhaustion.
+- KE-STOP-06: stop before actual protected try-send/commit denies them without
+  cookie/work refund; healthy neighbor completes. Genuine retired completion
+  stopped before receiving commit refuses; actual commit before stop remains
+  consumable once as historical counts, with no fresh-sync claim.
+- KE-STOP-07: foreign scopes/Controls cannot substitute for the actual binding;
+  poisoned/unavailable gate refuses new effects, preserving prior facts.
+- KE-STOP-08: stop during an already admitted draw cannot create Deferred or
+  another draw; earlier terminal completion/failure stays unchanged.
+
+**Bounded execution and exit.** Source/oracle mapping by the coordinator,
+`/root/recovery_contract_review` (design contributor),
+`/root/native_source_independent` and `/root/job_count_cause_review` completed on
+`a0ad73a` in their inherited task contexts. These are role-separated source inputs,
+not fresh-context final approval or multiplied executions. A fresh-context
+read-only contract review must complete before implementation; preserve its
+paraphrase/findings/actual completion here. Root closes old mutation admission
+and exact exclusions before editing source. Missing-API compilation is no
+behavioral RED: introduce the endpoint, then retain a discriminating actual-path
+RED/healthy control before the causal enforcement and GREEN. Format the bounded
+slice before the qualification freeze. Use the existing isolated development
+recipe, actual discovered roster, format, GNU/MSVC check/Clippy and affected
+ordinary/optimized/doctest lanes; rebind current source/helper/count policy and
+complete required 90%/95% analysis at the stable checkpoint without lowering gates.
+One heavy job, jobs6/testthreads1/mutationworkers10 and existing storage/time caps
+remain. At a causal stop or unavailable native gate preserve incomplete results
+and next action; do not extend this child into a worker framework or verifier.
+Native connect/verifier preemption, stalled-call recovery, CNG/SCM cleanup, true
+submitted-job permits, service integration, production Core acquisition and
+parent/release qualification remain separate, held work. Formal resumes after V1;
+Windows, fuzz and storage holds are unchanged.
+
+**Fresh contract review completed.** `/root/stop_contract_fresh_review` was
+launched with `fork_turns: none`, read-only, with the actual request, named stage,
+`a0ad73a`, task SHA256 `c2bb6210538790fe74c71af898ce64667de671735ac3cfa2096513ef6e56d919`,
+canonical sections and actual source/tests; no parent discussion or private memory
+was supplied. It verified source/status/hash at close and returned **ready for
+this bounded WSL source implementation**, with no consequential contract blocker.
+Actual inspected inputs: startup/task/development authority; architecture
+§§17.1/18.6.1/18.7.1 and named IDs; planning/Rust-contract/lifecycle references;
+Control/run, admission/recovery, wait/send/retirement, transport/process and focused
+existing module/recovery/datagram tests. No build, test, native or mutation result
+was produced by that review. Its own attributed comprehension was:
+
+> The proposed change adds one private, irreversible stop scope shared by the original Control, its Invocation, and successor Controls. Stop closes further admission and guarded publication while preserving charged work, original deadlines, failure facts, and already committed history. Its receipt acknowledges closure of admission; actual operation and whole-call completion remain separate.
+>
+> The current system has transaction-local cancellation, a private bounded recovery experiment, genuine association retirement, and opaque datagram completion. Public execution remains one-shot and defaults to never-send preview. The invocation-wide stop endpoint is planned, not implemented. Native preemption, worker permits, stalled-call recovery, service integration, and production/Core admission remain separate held work.
+
+The review specifically confirmed admission-before-stop versus physical start,
+the required notification-state recheck, transient-primary preservation and
+historical commit ordering, actual resource-return owners and reuse of the
+existing testing seams. KE-STOP-04/05/08 still require new execution; none inherits
+historical credit. Next: close prior campaign/E adoption, introduce the real
+private endpoint for discriminating component RED/healthy controls, then enforce
+the scoped guards and run GREEN before the stable qualification checkpoint.
+
+**Stop-source implementation and development evidence.** The source writer
+`/root/recovery_contract_review` implemented only the three admitted product
+files; Root wrote module/recovery controls, and the fresh contract reviewer later
+wrote five datagram controls as a test contributor (not an independent review
+of its own tests). The separate inherited-context source reviewer inspected actual
+binding/guard/drop order, admission, callback boundaries, retry and wake code and
+found no concrete introduced blocker; that supplies source review, not execution.
+Routine refinements retain poisoned scope as End::Control and retain an actual
+End::Context(stage,cause) instead of erasing it with a later stop; primary/secondary
+Failed slots stay unchanged. No worker-completion flag or native permit is minted.
+
+The real endpoint was first introduced without enforcement. Actual component
+RED `invocation-stop-red-v1/verification.json`, SHA256
+`f41824e13e7478906e59b1d616265d8ac4c3f236e73ff965cddb5be670c633a3`,
+reaches the intended first-admission assertion after Latched/AlreadyLatched; its
+separate healthy Preview cleanup/retry/late-stop case passes. Independent raw
+review confirms one actual assertion failure and one actual healthy test, exact
+source/tool/vendor custody and no setup credit. This is incomplete-feature RED,
+not a defect in the earlier one-shot contract or protected/native completion.
+
+Current Rust source candidate:
+`54fed8928c0c90bffe0384c54854271236608e3b6b7383b1c1b2ab693c2f060e`.
+`invocation-stop-green-v4/verification.json`, SHA256
+`f0532c124fe3284008e865ff53acddc8479b50fa9eb83ad2c8807a907f0c66ce`,
+passes all six development lanes: isolation, format, actual discovery of 362
+ordinary Engine cases, all 184 KE cases executed, GNU and MSVC Clippy. Fourteen
+new cases include held real Producer/draw callbacks, original failure/budget
+retention, global-vs-local cancellation, genuine exhausted-context history,
+registered and harmless wakes, finite Attempts, guarded send, genuine retired
+pre/post-stop commit, foreign scope and actual poison. Callback observers record
+only actual step return; no Config/provider/CNG object is moved to the stopper.
+V1 remains incomplete before execution on test imports/qualifications; V2 retains
+184 passing cases then GNU Clippy style errors; V3 retains 184 passing cases and
+GNU Clippy pass then Windows field-doc/identical-arm errors. V4 is the corrected
+execution; no warnings or policies were weakened. Each earlier result is retained.
+The actual 362/184 roster and 42 helper pins were rebound with E[] and closed
+mutation admission. The count update's 98 wrapper controls and 148 common controls
+pass; metadata fixtures remain clearly synthetic, not application execution.
+
+**Measured baseline cache stop and bounded repair.** Full baseline V1's raw
+ordinary and optimized outputs each contain all 362 current tests, but the release
+post-sample reaches 805,654,528 bytes against 805,306,368. It remains **incomplete**,
+SHA256 `ad7a4eab7cf1dd9a5934d92fa5822956dce04e91c5e0cd24492b6a166c72c1e1`;
+posthoc raw release review uses the unchanged validator and grants no baseline pass.
+The cap check stops before release validation/retirement, doctests or final Windows
+Clippy. No later cleanup can turn that failed receipt into a pass.
+
+The selected harness repair retires only completed GNU `work/target/debug` after
+its exact validated baseline, successful Clippy and passed post-samples, before
+release. Windows cross-target metadata and every source/raw result remain; docs
+rebuild host debug later. Existing release retirement still follows validated
+release under the unchanged cap. One closed debug/release deletion core retains
+mandatory profile validation, private/canonical/owned parent and bounded full-tree
+admission, fd-safe removal, before/after measurements and fail-closed errors.
+Root's 103 wrapper controls now cover fixed profiles, safe-path attacks, exact
+roster/command/sample refusal, deletion failure and sentinel/order preservation.
+These are verification-harness controls, not a demonstrated product repair or
+proof that the new full baseline fits. Independent source review of wrapper
+`b99ff8cf5c366662b675d58c422a1606707f8633c4420b2f79c4cd7cbcf6a5c9`
+found no concrete safety/gate blocker: admission cannot be bypassed via the
+private deletion core, fixed owned paths exclude Windows metadata/source/raw data,
+and the old release guard is unchanged. Fresh complete baseline remains next,
+followed by current coverage/catalogue/mutation qualification.
+Fresh `invocation-stop-baseline-v2/verification.json`, SHA256
+`9931447e24ae6fa57ab444ae8e3b6e53b8d7875d6c5c2d2c30ced10448f8703e`,
+passes all seven commands: 362 ordinary, 362 optimized, 69 doctests, format,
+GNU Clippy and both Windows-target source checks. Measured peak 589,926,400 bytes
+stays below the unchanged cap. Actual debug retirement removes 512,393,216 bytes
+before release; release retirement removes 215,662,592 bytes before docs. These
+are completed cache artifacts, not raw evidence or native execution. Coverage,
+current catalogue and mutation/classification remain next; no predecessor result
+or exclusion is transferred to this source.
+
+Current `invocation-stop-coverage-v1/verification.json`, SHA256
+`bf0a07ae11c9488461abc137a9130190b65a536d045bd3a0838d073637bd6a3e`,
+executes all 362 cases and passes all eleven GNU 90% file-line gates. Changed
+owners are core 373/376, datagram 239/244 and recovery 589/625; branch counters
+remain absent and native Windows remains unexecuted. Fresh enumeration receipt
+`invocation-stop-enumeration-v1/verification.json`, SHA256
+`d57f57b8f6327f871488d951af9f528510f906aaf16281673f2bbf0278572c89`,
+lists 574 typed variants: core 88, datagram 37 and recovery 113 among them.
+This is enumeration, not 574 executed variants; 574 exceeds one 512-variant cohort.
+Independent current catalogue/generation and impact review precede closed-inventory
+single-subject campaigns. No historical exclusion or outcome is silently adopted.
+
+**Current catalogue admission and impact.** Fresh reviewer
+`/root/stop_inventory_fresh` independently checked all 238 changed-owner typed
+entries and original diff hunks against live and captured source, plus actual
+execution of all fourteen new controls in both baseline profiles. The separate
+source reviewer checked the remaining 336 entries, including raw diffs, against
+the earlier independently reviewed catalogue and unchanged source. No filter,
+empty inventory or manual-control kill is substituted. Constructor/Garde,
+Windows-only, atomic assignment, lock/drop identity and wake-loop generation gaps
+remain visible; current behavioral controls prove their named component facts,
+not generated mutation kills or native completion.
+
+The changed-owner generation map retains these explicit alternatives (source
+line references belong to `54fed892`, not future edits):
+
+| Behavior | Actual generation and independent alternative |
+| --- | --- |
+| Config/fresh scope construction (`mod.rs:182,280,461`) | Three `new` functions and Garde expansion have no variants. Actual configuration/deadline neighbors, first-admission and foreign-scope controls remain separate. |
+| Scope/wake/deadline binding (`mod.rs:468,500`, `recovery.rs:470,513`) | Whole-function replacements; no targeted Arc/wake/deadline-assignment faults. Actual foreign binding, sibling wakes, timing constructors and healthy successor are exercised. |
+| Sticky latch/current guards (`mod.rs:290–622`) | Boolean, pointer and timing faults exist; assignments and lock/drop order have no isolated generated fault. Repeated/poison/global-vs-local stop, both-lock syscall guard and actual commit controls provide named alternatives. |
+| Atomic admission (`recovery.rs:573`) | Whole-function replacement and context-ceiling comparison; no isolated debit faults. Stop before admission/backoff/successor retains counters/cutoff/history and admits no extra callback. |
+| Producer/draw return (`recovery.rs:889–1057`) | Whole-function/deadline/eligibility faults; no isolated gate-release or post-return check removal. Held real callbacks distinguish stop delivery from actual return and retain original failure/no redraw. |
+| Readiness (`datagram.rs:398–427`) | Whole-function `Ok(())` replacement; no registration-order or re-wait fault. Registered stop, healthy sibling wake and exact finite Attempts controls exercise those cases. |
+| Send/commit history | Whole-function/send/commit faults; no isolated lock-retention/phase-write faults. Actual pre-send stop and genuine retired pre/post-stop commit controls retain historical counts. |
+
+No `unsafe fn`, explicit mutation-skip or build-generated implementation occurs
+in these three files. Test-only Backoff/Limits constructors and Garde/fixture
+seams generate no variants. Syntactically listed Windows-only run/native producer,
+socket and error arms remain outside GNU behavioral execution; no native score
+or all-interleaving claim follows from the listed descriptors or controls.
+
+The exact eleven-owner catalogue is now bound with E[] and single-subject
+campaign admission. Run the three changed owners plus four transitive Control
+consumers: association, handoff, ledger and retirement (seven complete cohorts,
+495 variants). Shared Control semantics invalidate automatic outcome transfer
+for those consumers. Pure process/request/fault/response source/catalogue identity
+may retain their explicitly historical result scopes; no whole-candidate pass
+follows. Ledger E9 arguments require fresh source/context/raw-miss reconciliation
+before any current adoption. All 574 variants still exceed one cohort's cap.
+
+**Disk-reserve stop; heavy verification held.** The ten-worker core cohort
+`invocation-stop-core-mutation-v1/verification.json`, SHA256
+`6a5b3c46ccad7ac957b2d70ccee8603c4057a693fc680163ff6d249683f66c86`,
+remains incomplete. The coordinator observed free space below the 4-GiB reserve
+and verified supervisor PID/start identity, stdio and descendant/private process
+groups before terminating only that owned job. Native campaign exit is -15;
+no unrelated process was killed. Its interruption leaves ten temporary worker
+build trees; the post-command sample is 3,664,232,448 bytes and free space
+4,179,435,520 bytes. The wrapper's normal samples are command boundaries, not
+continuous temporary-peak enforcement. Upstream worker directories normally
+retire at worker return; the interrupted sample does not prove a successful
+command's post-cleanup cap failure. The reserve breach is real.
+
+Independent raw review verifies a complete 431-case baseline (362 ordinary and
+69 doctests), then 37 terminal variant outcomes: 16 actual test failures after
+successful compilation, and 21 compiler failures (11 missing Default and ten
+strict lint errors). None of those completed logs is a cancellation or disk
+failure. Ten applied variants lack a terminal result; 41 were not entered.
+The removed scope guard reaches four actual stop controls. These observations
+supply neither a complete cohort score nor additional inferred kills. Native
+outcomes retain end_time=null and SHA256
+`87e5ea0395e49927b8925ed4cc8a9812dfd59ade4943d18c053f92dbda42b92f`.
+
+Cleanup v20 removes only the ten verified closed temporary source/build trees,
+reclaiming 3,624,984,576 allocated bytes. Captured source, raw logs/diffs/outcomes
+and the unchanged incomplete receipt remain. Earlier cleanup v19 removes only
+closed failed-baseline V1 target artifacts; measured filesystem free-space delta
+is 783,224,832 bytes, distinct from its non-deduplicated block sum. New baseline
+Windows metadata remains available. No compression or retained evidence rewrite.
+
+The owner's existing 10→8→6 workload sequence permits a bounded eight-worker
+fallback for this KE role after the failed ten-worker workload. Only its exact
+worker count is changed; all other roles, complete inventories, 90/95 gates,
+command/test/build timeouts, resource floors and E[] remain. Current mutation
+admission is **closed**. Root's 103 wrapper and 148 common controls pass after
+the prepared change; foreign six/ten/boolean worker declarations refuse. This is
+harness readiness, not an executed eight-worker fit or mutation pass. Resume
+heavy WSL verification only after the owner's resource-resumption instruction;
+then use fresh complete single-subject outputs and their actual431-case baseline.
+Native resource execution remains separately held.
+
+**Owner-authorized WSL continuation and retention cleanup.** David has now
+instructed the coordinator to clean WSL, including old evidence, and carry on.
+That lifts the WSL resource wait after cleanup/headroom admission; Windows
+execution remains separately held. The reviewed eight-worker profile is selected;
+no further blanket resumption question is needed. Current campaign admission
+stays closed while the additional composition tests receive fresh discovery and
+source/helper/roster bindings.
+
+Cleanup v21 deletes only eight completed contract compilation directories
+(371,167,232 bytes). V22 deletes three closed old/superseded compilation targets
+(1,462,632,448 bytes), preserving the latest Windows metadata and raw coverage
+JSON. V23 also deletes 23 superseded Core result bundles and ten retired optional
+state-guidance experiment bundles (833,761,280 bytes), including their obsolete
+captured source and raw logs. HOME Git tracked-membership and nested-Git checks
+exclude user work; current Core final/causal receipts and current Engine inputs
+are preserved with exact hashes. No compression. Deleted historical raw bundles
+cannot be reused as current replay/qualification evidence; their retained final
+successors and causal controls retain their existing exact scopes.
+
+Two recovery composition tests and the protected-entropy test are now authored,
+independently source-reviewed and formatted; they are **not yet executed**:
+`invocation_stop_during_successor_establishment_keeps_history`,
+`invocation_stop_during_preview_entropy_keeps_charges`, and
+`invocation_stop_inside_protected_entropy_preserves_charges_without_send`.
+Original actual owners, bounded handshakes and unchanged healthy neighbors are
+retained. The recovery fixture cannot inspect its ledger after actual owner drop;
+its assertions deliberately stop at invocation charges, step-return and observed
+producer effects. Protected preparation directly observes charged attempt/UID,
+no packet/send and unchanged receive work on stop/reentry. Source review is no
+compiler/behavior/native pass. The earlier `54fed892` receipts stay bound to that
+previous freeze; these test-source additions need fresh qualification. Root's
+existing development recipe V5 is prepared with a fresh output, then actual
+discovery/baseline/coverage and affected complete cohorts follow after cleanup.
+
+**Current composed-stop GREEN and fresh baseline.** Rust candidate
+`261fa73dab164e7b83d1172bd648aa6dc55bc4346e7f4f0a7e583625a37fa8d0`
+now has actual discovery of 365 ordinary Engine cases, including 187 KE cases.
+`invocation-stop-green-v6/verification.json`, SHA256
+`9af874d341a14cceb3b17317af81fb0b3af26f4d4e9a9c0aecfc91b7dd010732`,
+passes isolation, format, discovery, all 187 KE cases, GNU and MSVC Clippy with
+source/vendor/tool bookends unchanged. Fresh-context reviewer
+`/root/stop_composition_review` independently checks all six raw lane hashes,
+365 unique discovery lines, 187 actual successful KE lines (each new control
+once), 590 product-source hashes and 13 extra-input hashes. The focused lane
+filters 154 other library cases and does not execute the 24 discovered integration
+cases. No full-baseline credit is borrowed from that development lane.
+
+V5 remains incomplete after its 187 actual passes, at one Clippy assert_is_empty
+diagnostic. V6 changes only that test's equivalent empty-Vec expectation.
+Cheap wrapper controls catch and correct the separate stale 362/184 debug-cache
+admission check before a full campaign; all 103 then pass with the genuine
+365/187 roster. No warning, threshold or guard is waived. Production bodies and
+the earlier 574-variant descriptor reference are unchanged; current outcomes
+still require their fresh execution.
+
+Fresh `invocation-stop-baseline-v3/verification.json`, SHA256
+`23883f1fd7144af98b529a1f8d891ccb334cf54565a660c75287285d5d2c1c80`,
+passes all seven commands: 365 ordinary, 365 optimized and 69 doctest cases,
+format, GNU Clippy and both Windows-target source checks. This is WSL execution
+and cross-target metadata, not native Windows. Current coverage/enumeration and
+seven affected complete mutation cohorts remain next; eight workers/E[] stay
+selected and campaign admission remains closed until those prerequisites finish.
+
+Cleanup v24 additionally retires 54 superseded TLS/EP4/recovery evidence bundles:
+2,131,427,328 file bytes plus 31,961,088 directory bytes, totaling 2,163,388,416
+allocated bytes. Its first preflight stops without deletion at a file-only versus
+whole-tree measurement mismatch; final accounting verifies the same exact file
+bytes and separately records directory blocks before deletion. V21–V24 together
+reclaim 4,830,949,376 bytes across 87 whole obsolete evidence bundles plus eleven
+compiled-artifact directories. Earlier retention statements about the specific
+retired historical bundles are superseded by David's deletion instruction;
+listed raw paths are unavailable for replay. Current invocation/cutoff evidence,
+Core final/causal receipts, exact policy inputs, tools/vendors and real Git trees
+remain protected. This is deletion, never compression or a rewritten pass.
+
+Cleanup v25 removes another 1,334,788,096 allocated bytes: the whole superseded
+failed `invocation-stop-green-v5`, the older `invocation-stop-baseline-v2`, and
+only the closed compiled `invocation-stop-green-v6/work/target`. Green V6's raw
+source/result and current baseline V3's Windows metadata remain. Exact filesystem
+free-space growth equals that allocation; available space after deletion is
+11,837,165,568 bytes. V21–V25 total 6,165,737,472 deleted bytes, without compression.
+The first preflight refuses before deletion because Cargo uses legitimate
+within-target hardlinks. Complete inode/link accounting then verifies that every
+regular-file link lies inside the same exact deletion subset; no external link,
+symlink, nested Git or HOME-tracked path is removed. Protected receipts, policy
+and repository HEAD/index/status/diff hashes remain unchanged. The concise
+`closed-evidence-cleanup-v25.json` has SHA256
+`4cda60230e0d4f1c8186b0bccad773667ad4ba1b34b236ae8ee343a80f2a4da7`.
+Historical raw from those two whole deleted bundles is unavailable for replay.
+
+Fresh `invocation-stop-coverage-v2/verification.json`, SHA256
+`b5d1c8e51c3462e85d13350c7e911e8e55970e52770f719969f7cf8cc6984ba5`,
+executes all 365 current cases and passes all eleven selected GNU 90% file-line
+gates. Exact counts remain core 373/376, association 78/83, process 26/26,
+handoff 52/55, request 50/51, fault 199/199, ledger 674/691, retirement 138/138,
+response 108/109, datagram 239/244 and recovery 589/625. Production bodies did
+not change with the three added controls. These line counters supply no branch,
+native, all-interleaving or parent qualification. Fresh current enumeration
+precedes eight-worker single-subject cohorts; all 574 reference descriptors
+still exceed one cohort's 512 cap.
+
+**Current catalogue and eight-worker core outcomes.** Enumeration V2 receipt
+`invocation-stop-enumeration-v2/verification.json`, SHA256
+`1addb486e607c58338e493beb054b5482a14516c4bd30541a25694c6638a90ca`,
+lists all 574 current variants on `261fa73d`. Every typed descriptor and rendered
+diff is byte-for-byte equal to the earlier independently reviewed catalogue;
+production bodies, tool/features/graph remain unchanged. That permits reuse of
+catalogue/generation review only, not old test outcomes. Exact single-subject
+eight-worker admission is reopened with E[] and the unchanged 512 cap; seven
+fresh cohorts (495 variants) remain selected. No whole 574 campaign is claimed.
+
+`invocation-stop-core-mutation-v2/verification.json`, SHA256
+`bb272d9dce25f5411f5a009f66511b7a49f467ae72c48884f54aaa8f903f947d`,
+completes all 88 variants but remains **incomplete at the 95% gate**: 38 caught,
+46 compiler-unviable,4 missed,0 timeouts/exclusions. Baseline actually executes 434
+cases (365 ordinary + 69 doctests). Raw viable score 38/42=90.476%; native exit 2 and
+failed gate remain. Resource execution completes normally: worker temporary
+directories are absent, final owned-output sample 44,634,112 bytes, disk reserve
+held. This is observed fit for this one cohort, not a continuous-quota claim or
+resource guarantee for all future cohorts.
+
+Independent raw review checks all 88 descriptors/diffs and outcome phases.
+Each of the 38 catches has successful compilation then an actual test failure 101: CLI
+flag 1/configuration 11, removed scope guard 1, time guards 4, publication phase 1,
+stop notification 1, clamp 1, actual scope identity 1, publication stub 1, commit stub 1,
+local cancel notification 1, endpoint 3, cookie 4, response 2 and typed I/O labels 5.
+All 46 unviable cases stop before tests: 18 missing Default, 1 wrong arity,
+3 missing Zeroizing::from_iter, 24 strict lint failures. None earns kill credit;
+no infrastructure/cancellation/disk/memory failure explains these outcomes.
+
+The four survivors are the syntactically listed Windows-only run/report_failure/
+entry bodies and entry's ||→&& output-failure guard. GNU omits those functions;
+each mutant passes all 434 GNU cases. These are unexecuted Windows gates, never
+equivalents or exclusions. The operator variant has meaningful write/flush
+failure counterexamples, so source inactivity supplies no equivalence proof.
+No defect in the original code is established. Raw outcomes SHA256
+`16734a586dbfc937e4ca72e1e8352c197562b4a3de3dc7e04652d31a11c0ef4a`.
+The prior interrupted cohort's 37 terminal rows agree, but add no transferred score.
+Datagram, recovery and four transitive Control consumers remain next.
+
+Datagram cohort `invocation-stop-datagram-mutation-v1/verification.json`, SHA256
+`f1dcad143676f609ce051a9ac20132b1799d59daad4d51b8bbe0d4da05862365`,
+completes 37 variants but remains **incomplete** at 12/20 = 60%: 12 caught,
+17 compiler-unviable, eight missed, zero timeouts/exclusions. Independent review
+joins all descriptors/diffs/source hunks and all 602 live/frozen input hashes.
+Baseline and each survivor execute the same 434 successful cases, including
+187 KE cases. Actual eight-worker commands, tool/admission bookends and final
+38,051,840-byte storage sample agree. Raw outcomes SHA256:
+`a9f5ed50132418a41e001a4ce27b62a5699cea8a6e383dea67beefaa726a3592`.
+
+All 12 catches build successfully then reach actual endpoint/capture-order,
+WouldBlock/oversize/error-kind, operation identity or pending-reply assertions.
+The 17 unviable cases are eight missing-Default and nine denied unused/dead-code
+compilation failures, not behavioral kills. All eight survivors remain Windows
+obligations: six Backend::bind variants and native exchange are cfg(windows);
+classify_read's raw_os_error()==Some(10040) comparison is behind cfg!(windows)
+and is not evaluated on GNU. The containing classifier's GNU execution does not
+cover this Windows operand. Existing platform-specific controls are not native
+execution. No survivor is called equivalent or excluded; no new reached-GNU
+assertion gap or original-code defect is established. Recovery and the four
+transitive Control-consumer cohorts remain next; all whole-file/native and
+parent gates stay open.
+
+Recovery `invocation-stop-recovery-mutation-v1/verification.json`, SHA256
+`566622b12276ffca86dc20189fddc586d9c10cd09590eb24fe93f8d30c49cbe9`,
+completes 113 variants but remains incomplete: 76 caught, 30 compiler-unviable,
+seven missed, zero timeouts/exclusions; raw 76/83=91.566%. Independent review
+confirms all 602 inputs/descriptors/diffs, 434-case baseline/survivor rosters,
+actual test/compile causes and normal resource retirement (50,528,256-byte final
+sample). The 76 catches are 60 explicit assertion failures plus 16 actual
+expected-success consumers rejecting with Limits/Deadline/Control. The 30
+unviable cases are 22 missing-Default and eight strict-lint failures. Raw outcomes
+SHA256 `ec4925197d5d58fb51e78aab2ce7c2892ff0d26d6910c992de7800efd556813b`.
+
+Four misses are omitted Windows Native establish/exchange/preview_entropy/jitter.
+The other three are real GNU helper sensitivity gaps: defer's final freshness,
+retry_boundary's own full-delay result, and exhausted's existing-history
+rejection. Source-derived witnesses distinguish the guards; a later caller's
+rejection does not prove the helper mutation equivalent. No original-code defect
+is established, no host miss receives E, and no semantic kill is claimed before
+an actual discriminating replay. The bounded follow-up below closes those test
+gaps after this frozen campaign finishes.
+
+Association and handoff current generated-inventory gates pass, with independent
+causal raw review:
+
+| Owner | Current receipt SHA256 | Actual result |
+| --- | --- | --- |
+| association | `e53e512e958712e9452bc26709210046bac5d6590ed79e9beaa18629bd83a212` | 29 generated = 27 caught + two missing-Default compiler failures; 27/27 viable, no survivors/timeouts/E. Actual identity/expiry/endpoint/population guards and healthy count/byte boundaries discriminate every catch. |
+| handoff | `016b671a71090a22d15cb7d8b7503a6f07da4c09f74935f86b317ef94d41340e` | Nine generated = seven caught + two missing-Default compiler failures; 7/7 viable, no survivors/timeouts/E. Count/aggregate guard faults fail actual invalid and exact-boundary controls. |
+
+All 34 combined catches build successfully then fail actual tests (101), not
+setup. Both cohorts execute the same 434-case baseline and retain exact source,
+tool/argument/admission identities. Outcomes hashes are respectively
+`04e518ced3283bd5bab7295ab67b87d2a9817d48a285ad58716b4ad0527b0be7` and
+`0b05649f5bb1b62f74b69f3611ebf23c9e2c72cb4d773744b87cb2586e0ea2f3`.
+These generated gates do not cover constructors, every currentness/commit guard,
+native TLS/provider work or the parent. Ledger and retirement remain next.
+
+**Seven-cohort closeout — historical candidate `261fa73d`.** Ledger and retirement
+also finish with independently classified raw outcomes. The ledger receipt is
+`invocation-stop-ledger-mutation-v1/verification.json`, SHA256
+`7eb0831ae2119228569e73e2d9f23a688bc01a20f50522ab7734b12d93883a81`:
+166 generated = 112 caught, 45 compiler-unviable and nine missed, with no timeout
+or exclusion. Raw 112/121 = 92.562% and exit 2 remain incomplete. All catches
+compile successfully before actual semantic test failures; four include
+mutation-induced arithmetic panics. Seventeen unviable cases include absent
+Default implementations and 28 have denied lints only. The nine raw descriptors
+and diffs match the earlier E9 domain argument. Independent current-source
+review finds the same pool/archive/slot invariants despite the added stop guard,
+but historical adoption is not current adoption: E[] remains until final source,
+proof/input pins and fresh outcome accounting are explicitly rebound. No kill
+credit is added by that conditional semantic review. Raw outcomes SHA256:
+`3c3259c66fc08a9bd8a33be18a3cd54864e3ea7dd372850839fccd64ae5cd0a2`.
+
+Retirement's `invocation-stop-retirement-mutation-v1/verification.json`, SHA256
+`1f2152e3ca8c823f6585cbc620997ccf1b978cd4457c8b9c6d257a4835e96510`,
+passes its generated gate: 53 = 45 caught + eight compiler-unviable; no miss,
+timeout or exclusion, 45/45 viable. Forty-one catches reach explicit semantic
+assertions and four reject otherwise valid exact-capacity neighbors; all compile
+first. The eight unviable cases are five denied-lint and three absent-Default
+failures. Its raw outcomes SHA256 is
+`a302018605cd9c59ea7319bd636f80430d5c8969152744dc7b75b4fc923bc0b4`.
+Both reviewers reconcile the complete 434-case baseline, descriptor/diff/source
+identities, exact tools and normal owned-output retirement. Reviews add no
+executions or constructor/native/whole-parent coverage.
+
+All seven selected cohorts therefore account for 495 variants: 317 caught,
+150 compiler-unviable and 28 missed, zero timeouts/E. This is accounting, not an
+aggregate pass: three owners pass and core/datagram/recovery/ledger remain
+incomplete. Sixteen misses need Windows execution, three need the following GNU
+helper controls, and nine await exact E9 adoption. All jobs have returned; campaign
+admission is deliberately closed in
+`invocation-stop-frozen-campaign-close-v1.json` before source changes. The reviewed
+follow-up below is now authorized for its two source files. Its original plan
+status is retained as the frozen review input; implementation and fresh execution
+must be recorded separately. No native or parent hold is lifted.
+
+**Follow-up contract review.** `/root/recovery_sensitivity_plan_review` completed
+an independent review of the following exact card, SHA256
+`623a4328a93c955bcaa7b7a32010efb7c7bf6f9b391009ff3880d545e32f1a5e`,
+reading current constructors/writers and genuine retirement boundaries. Requested
+native delegation mode was fork_turns:none; after initially inferring inheritance
+from generic guidance, the reviewer explicitly confirms no earlier authoring,
+reviewer discussion or verdict about the card was present. Generic registry
+lookup yielded no card history and is disclosed separately. Actual source/plan
+review completes ready with no concrete correction; no new execution occurred.
+Its attributed comprehension, preserved verbatim:
+
+> Comprehension: The card adds a private trusted observation point only at defer's final publication check, plus direct controls for retry_boundary and exhausted. Invocation owns immutable cutoff, charged counts, persistent base/route and prior history; ActiveReceiver borrows the actual admitted Control and receives genuinely consumed retirement facts. Production retains fresh actual admission, scope-guarded publication and released gates around Producer/draw callbacks.
+
+> Evidence/limits: Current source uses the three disjunctions exactly as described. retry_boundary can reject a full delay outside cutoff even with fresh current time; defer independently rechecks final publication; exhausted rejects existing history before consuming its retirement input. Today's step_with ordering excludes the mis-sequenced case, but the helper contract itself owns rejection, so caller reachability alone cannot establish equivalence. I am tracing constructors, retirement matching and finite due-boundary setup before the readiness verdict; this is read-only source/plan review, no new execution or native evidence.
+
+The final verdict validates the existing-history witness from actual admission:
+prospective contexts=2 is not yet committed, contexts=1/previous=Some remain
+legitimate, a distinct checked successor can genuinely retire before attachment,
+and the helper's guard owns rejection. No private counter/history is forged.
+Source work remains held until the current frozen cohorts finish and campaign
+admission closes; this is engineering review, not a native/parent approval.
+
+#### Recovery helper sensitivity — bounded follow-up contract
+
+**Status/mode:** plan-only while the current frozen seven-cohort campaign finishes.
+The original guards are correct; surviving mutant faults expose missing direct
+regression observations. REQ-8/BND-2, AC-04, CHECK-6/8/11/15/21/25/26/27 and the
+existing private-function contract requirements apply. Coordinator owns the
+candidate/policy; product writable scope after admission is only `recovery.rs`
+and `recovery/tests.rs`. No dependency, public mode/default, native/clock effect,
+service, unsafe or formal tool work is selected.
+
+**KE-STOP-MUT-01 — final defer time.** Preserve real retry computation and the
+existing scope lock. Add the smallest private `defer_observing` companion;
+production `defer` supplies `Instant::now`, evaluated at the same final point
+under the guard. The observer is trusted local clock code, bounded and
+nonreentrant, never payload-controlled or a public clock/authority input. Reuse
+the existing Control observing pattern. Test a genuine live retry boundary below
+the actual immutable cutoff, then a closing observation at cutoff. Original
+returns the retained failure and Closed(Window), without changing persistent
+base/route/charges; `||→&&` would publish expired Deferred. Include the live
+healthy observation. This is deterministic observation control, not a real-time
+latency or native scheduling claim. Actual future work still requires fresh
+`Invocation::admit`; no observer grants admission.
+
+**KE-STOP-MUT-02 — retry helper return.** Through actual admission and genuine
+failed-establishment/local-cancel flow, test the helper directly before outer
+`defer` can mask its result. Use checked 10-second window, Backoff minimum one
+second/maximum ten seconds/growth one/jitter nine seconds; draw zero is healthy.
+A nine-second draw is within the actual maximum-minus-base headroom, but its full
+delay reaches/passes the original cutoff while fresh time remains live. Assert
+that one real draw occurred and the intended headroom still existed; fixture
+setup refusal supplies no semantic kill. Expected helper result is Err(Window),
+not Ok with a boundary outside its own contract. No sleeping or counter reset.
+
+**KE-STOP-MUT-03 — reject existing history.** Drive real first exhaustion and
+consuming retirement through the existing shared step and public authenticated
+zero-cookie fixtures. At the finite due boundary perform real second admission;
+use its actual Control, config/provider and distinct public successor keys/UID.
+Establish, exhaust and retire that genuine successor before the ordinary caller's
+context-acceptance/history-attachment steps. Invoke the receiving helper with
+untouched contexts=1 and actual previous=Some. Its existing-history guard owns
+rejection of these genuine but deliberately mis-sequenced inputs; present caller
+ordering is not permission to discard that negative admission domain. Expected:
+original Cookies primary, Context(Retire,Control), preserved prior history and
+charged work, no draw/Deferred. Never assign raw counters/history or fabricate a
+RetiredContext. Preserve the ordinary first-retirement/replacement healthy path.
+This challenges a private receiving boundary, not current CLI reachability.
+
+**Probe/ownership boundary.** Any narrow cfg(test) probe stays inside recovery.rs,
+derives receivers only from actual admitted Ready controls/charges, and returns
+inert observations/results. Export no receiver/Control/retirement constructor or
+permission flag; call no Native producer. Scope/phase gates remain outside
+Producer/draw callbacks and inside final state publication. Add explicit contracts
+for new helpers. Retain useful original error/cleanup facts and all earlier
+stop/terminal-history guarantees.
+
+**Execution exit.** Finish/account the current frozen cohorts first, then close
+campaign admission before edits. Independently review this bounded card before
+source changes. Freeze formatted seam/tests; establish healthy controls and each
+exact `||→&&` RED at its named semantic assertion in isolated source, then restore
+and execute GREEN. Production bodies and descriptor locations change, so fresh
+recovery enumeration and exact old-to-new fault correspondence are mandatory;
+manual controls add no generated kills. Reconcile current-source baseline,
+coverage, complete mutation inventory/outcomes, helper/test pins and any E9
+adoption only where relevant identities justify it. Preserve unchanged 95%,
+eight-worker/time/resource limits and all native/generation/parent holds. No
+exclusion or whole-product proof is inferred from a missing witness.
+
+**KE-TOOL-ROLE-CALLER-BINDING — repaired helper contract.** Independent
+fallback review found that the direct shared command checker validated role
+policy but accepted a coherent caller-selected job count without comparing it
+to that policy. Root reproduced both six/ten-worker substitutions against valid
+policy8, plus the analogous human-format substitution against mandatory JSON:
+`invocation-stop-resource-binding-red-v1.log`, SHA256
+`d353f38eec1b0995986420bfebdbe2c3180e278cfa5ae402cb43aa7f3a4aa79c`,
+contains three intended Incomplete-not-raised subtest failures after the healthy
+8/JSON neighbor. This is helper admission evidence with synthetic command data;
+no native subprocess ran. Normal Session already derives both caller parameters
+from its actual policy, so no ordinary-run bypass or false mutation pass is shown.
+
+The smallest repair binds both actual jobs and diagnostic format to the validated
+KE role inside `mutation_campaign_command`. Other role behavior is unchanged.
+Focused GREEN passes its one test; the final complete 103 wrapper and 148 common
+controls also pass. Independent repair review accepts helper
+`26680278865884d3f29ff11f0221cb6a0eac8f7903153a4031b9e182ce25284c`
+and tests `a9e604ef2926f325ee08e594dccbee799ddb14a9b724f1790dfbad12807c5141`,
+with no remaining source blocker. Root reconciles final full controls and all
+42 helper/source pins in `invocation-stop-resource-fallback-v2.json`; the role
+policy SHA256 is `97d935b1ce670037b6dbdc014752b267d9d2dbfcb2495689911ac3197c1a8074`.
+E[] and resource/campaign holds remain. This fixes a demonstrated tooling
+contract defect; it neither repairs product Rust nor establishes eight-worker fit.
+
+**Remaining composition controls before whole-worker integration.** Stop the
+original handle while a genuine successor Producer is active, then release its
+healthy result; separately orchestrate stop in the actual preview/protected
+entropy callback. These combinations are not yet executed and are not claimed
+as current integration evidence. Independent source trace finds no contradiction:
+preparation guards drop before entropy/Producer/draw callbacks, and actual scope
+and phase guards renew before Ready publication, send and commit. Already-admitted
+UID/correlation retirement can precede that renewed guard and remains charged
+history, not publication authority. Keep these two controls in the next worker
+child's entry conditions; they are missing evidence, not demonstrated defects.
+
+One heavy job and the original gates/caps stay in force. Cleanup v18 deleted only
+closed owned compilation targets (1,974,542,336 allocated bytes), keeping source,
+raw logs and receipts without compression. Native, parent and release holds remain.
+
 The earlier design comparison and pre-revision admission hold are historical;
 the current execution and adopted-metadata scopes are recorded above. Preserve
 mandatory guards, the 95% gate, raw failures, remaining qualification gaps and
-the next contract prerequisites. The worker stop latch and production
-sample/provider/clock/service owners remain separate prerequisites.
+the next contract prerequisites. The current stop-source qualification, subsequent whole-invocation worker
+submission/return custody and production sample/provider/clock/service owners
+remain separate prerequisites.
+
+#### Recovery helper sensitivity — source and execution
+
+The reviewed follow-up is implemented in `recovery.rs` and its tests. A fresh
+read-only reviewer, `/root/recovery_seam_review` with fork_turns:none, reproduces
+the frozen card hash and traces each actual admission, failure/cancellation,
+distinct successor exchange and consuming retirement. Its comprehension: the
+Invocation retains the immutable cutoff, charged work, retry state and history;
+private probes return inert observations, while the production forwarding helper
+samples `Instant::now` at the original final guarded publication point. No
+concrete source blocker is found. The existing normal replacement-success and
+live observation/zero-draw neighbors remain. This review supplies no execution.
+
+Development V7 stops before test execution at an unused-mut compiler denial.
+V8 discovers 368 unique ordinary tests and executes all 190 KE cases, then stops
+at Clippy's assert_is_empty diagnostic. Root removes only that unnecessary
+binding mutability and uses an explicit empty-Vec expectation. No guard, expected
+value or lint policy is weakened. Final source hashes are recovery
+`6d12ac500c52ab5c5ce531cce27831acbb1de5b0038f8915898899107e50d41d`
+and recovery tests
+`068bef98ad3e84812d6df101d87aa6f7fc139182aa41587cc075631a5d869ed2`.
+
+`invocation-stop-green-v9/verification.json`, SHA256
+`d04edca3d703e79d415800726a75ce59183ae257de66acd6e4fd90e1f38e8611`,
+passes isolation, format, discovery, all 190 KE cases and both-target Clippy.
+Candidate is `008583ad2df7cfd7c642250a2c14ede4f4b08407f42c1f6580df6019c353f568`.
+Independent raw review checks all six lane hashes, all 590 product/13 extra
+inputs against live and frozen bytes, and all 42 current policy pins. The three
+new controls each execute once; 154 other library cases are filtered and 24
+integration cases are discovery-only here. No full 368-test pass is borrowed.
+All 103 wrapper controls pass after the actual roster is rebound; a preliminary
+control run's three stale aggregate-doctest expectations are corrected from
+366 to 369, preserving the original complete-roster requirement.
+
+Fresh full enumeration `recovery-helper-enumeration-v1/verification.json`, SHA256
+`0f637d17786f4d65ec77ce937f4653da88362b6c0698220e6a1e4c06256eb2d7`,
+lists 575 variants. Independent comparison verifies all ten unchanged owners'
+461 complete typed descriptors/diffs and production hashes. Recovery has 114:
+109 earlier faults retain their changed-line/operator signature after coordinate
+shifts, four earlier defer faults move into defer_observing, and the forwarding
+defer adds one body replacement. Test-only probes generate no variants. All
+current hunks and 602 captured inputs match; no historical outcome is transferred.
+The three former GNU misses map to final-observer 1094:56, history 1134:42 and
+retry-boundary 1210:49. Neither forwarding-body generation nor GREEN alone earns
+kill credit. Mutation admission stays closed/E[] while exact isolated fault
+replays and the current baseline/coverage are completed. Windows and parent
+qualification remain open.
+
+Fresh `recovery-helper-baseline-v1/verification.json`, SHA256
+`58b4d3dc6c4845b58201f534cbcc510acfa8f7e6dd4bc34e3206aa542f585021`,
+passes all seven lanes on `008583ad`: 368 ordinary, 368 optimized and 69 doctest
+cases, format and GNU/MSVC static checks. Actual native process exit is zero;
+GNU debug/release caches retire only after their complete admitted successes,
+and latest Windows metadata remains. The completed development failures stay
+incomplete; this current result supersedes their attempts, not their outcomes.
+Coverage, isolated three-fault controls and complete current recovery mutation
+accounting remain next. Native Windows remains unexecuted.
+
+Fresh coverage `recovery-helper-coverage-v1/verification.json`, SHA256
+`332b0eaf46e458596875c297224c5e1da4a917edda0907721d005ac48d7049a7`,
+passes all eleven selected GNU 90% file-line gates after executing the full
+368-case roster. Recovery is 671/730 executable lines (91.918%); its file now
+also contains the private test probes. Other ten counters match the earlier
+recorded values. This supplies line coverage, not branch or native evidence.
+The current exact three-fault replay recipe reuses the existing isolated cutoff
+workflow. Independent read-only preflight catches and corrects two template
+assumptions before any run: compare the enumeration's complete 602-input union
+against product plus exact role/helper inputs, and persist actual command
+results before a post-command storage refusal. It also requires exactly one
+entered failed case and a zero-passed/one-failed summary per RED. Reviewed recipe
+SHA256 is `ed14ee8ab3eb0af0e882bdd6a46fd4c1a8fc1cdf71caba689af398ab3cfd9ce5`.
+Source restoration, 46 healthy controls before/after, unchanged timeout/caps and
+full source/helper/vendor/tool bookends remain. No control earns generated kill
+credit before the separate complete cohort.
+
+The first replay attempt stops before its first sandboxed command because the shared
+storage writer requires JSON values while the development report still contains
+Path objects. V2 normalizes only that report projection; the actual tool identity
+and its bookends are unchanged. `recovery-helper-discriminators-v2/verification.json`,
+SHA256 `9fe26fb8bce55bed5a6c5ecc62b591ac01372d3f31af1a703fdd6d79e0272ca9`,
+then passes all seven lanes. Each fresh single-operator fault compiles, enters
+only its named test and fails at the exact KE-STOP-MUT-01/02/03 assertion with
+exit 101. All 46 genuine recovery controls pass before and after; source is
+restored byte-for-byte and complete source/helper/vendor/tool bookends agree.
+Final sampled output is 216,387,584 bytes; this is command-boundary storage
+sampling, not continuous peak enforcement. No generated mutation credit is added.
+
+After all those heavy jobs return, cleanup v26 deletes two superseded failed
+development bundles (V7/V8) and three closed compiled targets (V9, old baseline
+V3 and current coverage). It preserves current baseline metadata, all current
+source/raw results, coverage JSON and exact replay faults. Both allocated bytes
+and filesystem free-space growth are 1,978,327,040 bytes; available space is
+11,443,343,360 bytes. HEAD/index/status/diff and all protected hashes are unchanged.
+V7/V8 raw evidence is now unavailable; their incomplete outcome summaries remain
+historical. V21–V26 total 8,144,064,512 deleted bytes without compression. The
+concise `closed-evidence-cleanup-v26.json` has SHA256
+`b97d2f19de86167d5d227e978d7aaf7f53abdd5343d7ac9f9091e19a5cf3397b`.
+
+Cleanup v27 subsequently deletes obsolete whole-worker development V1–V4
+compiler/lint bundles and only the closed discriminator V2 target. Their failure
+summaries remain in the concise receipt; their raw replay data is intentionally
+retired. Current V5 source/results, all discriminator RED logs/diffs, coverage
+profiles and the latest full-baseline Windows metadata are preserved. Allocated
+deletion and actual filesystem growth both equal 775,852,032 bytes; available
+space becomes 10,916,102,144 bytes. HEAD/index/status/tracked diff and protected
+receipt hashes remain unchanged. V21–V27 total 8,919,916,544 deleted bytes,
+without compression. `closed-evidence-cleanup-v27.json` has SHA256
+`2f21263375add19d8677bd28a0e35f8308337ee9e81f5ed5efea46a56805ed03`.
+Fifty privileged process scopes are unreadable; no readable consumer references
+these exact targets and no process is stopped. Linux free space is not a measured
+Windows VHDX-size reduction.
+
+The current reviewed catalogue is explicitly rebound with E[] in
+`recovery-helper-campaign-admission-v1.json`, SHA256
+`4795532836915f8b5504192a36546464dc34f7ad56540da0bf10a9569de7fc5a`.
+Only the complete 114-variant recovery cohort is selected, with eight workers
+and every existing score, timeout and resource limit unchanged. Its outcomes
+and independent classification remain pending; 575 variants still exceed one
+cohort's cap. Earlier owners keep only their recorded source-bound results.
+
+**Current recovery accounting; qualification remains incomplete.**
+`recovery-helper-mutation-v1/verification.json`, SHA256
+`ff1039bc2e77de342ec8044cac0c31d8eb57cae4e21866ca044cdee15a581041`,
+finishes all 114 variants: 79 caught, 31 compiler-unviable, four missed, no
+timeouts/exclusions. The actual baseline is 437 cases (368 ordinary + 69 docs).
+Raw 79/83 = 95.1807% meets the numerical threshold, but the configured custom
+gate remains false because unresolved survivors remain. Native tool exit 2 and
+wrapper exit 1 are preserved. All four misses are the Windows-only Native
+establish/exchange/preview_entropy/jitter bodies; they are not equivalents.
+The three targeted GNU operator faults are now caught in the complete cohort.
+Raw outcomes SHA256:
+`c40bfc3382a8cd5eb9dcef5b5509f4dffc898968d1051951e43211d11b5e1f89`.
+Independent causal/custody classification is pending; no full source, native,
+parent or release pass follows from the numerical score.
+
+The process is terminal/reaped and campaign admission is closed again, retaining
+the complete current 575-inventory map and E[]. Close record
+`recovery-helper-campaign-close-v1.json`, SHA256
+`5ebcb35febc5a23a7519735eb454cb7107fbc21b51cc8ec28580cecad63e8a78`,
+separates that deliberate metadata transition from execution drift. Current
+policy SHA256 is `d89602083389f61e6fa61d8f9b9326d823bdebf83fcef8c830d689d8eea52b35`.
+Remaining Windows guards and the ledger's exact current E9 adoption remain
+open. Keep the conditional commit/push request pending while this checkpoint's
+required qualification is incomplete; no new Git mutation has occurred.
+
+Both reused-context raw reviews are now complete. The discriminator reviewer
+checks all seven lane hashes, 14 storage samples, 46/46 restored healthy rosters,
+three reconstructed single-fault hashes and all 605 captured product/helper
+files. The complete-cohort reviewer reconciles every descriptor/diff/hunk and
+all 79 successful-build/test-101 causes. Twenty-three compiler-only variants
+include E0277 and eight have denied lints only. The new forwarding-defer and
+observer body replacements both lack Step:Default and earn no behavioral credit.
+Each targeted OR is caught only at its intended KE-STOP-MUT assertion. All four
+survivors execute the same ordered 437-case roster as the baseline; they remain
+Windows Native obligations, not equivalents. All 602 campaign inputs match
+captured source; the sole live difference is deliberate admission closure.
+Worker scratch is gone; final sampled output is 50,716,672 bytes. Reviewers add
+no executions. KE-STOP-MUT-01–03's current GNU assertion gaps are closed; original
+guards were already correct. The complete custom gate and native/parent scope
+remain incomplete. No heavy job remains active at this handoff.
+
+#### Current ledger E9 continuation — 12 November 2026
+
+The preceding turn changes authoritative source/evidence and is progress, not a
+resource wait. No heavy job is live. The next unblocked WSL action rechecks the
+nine historical ledger equivalences against frozen `008583ad`, including the
+new genuine private Control/retirement probes. REQ-8/BND-2, AC-04 and
+CHECK-6/8/9/17/21/25/26/27 apply. Root owns policy/helper/dossier changes; the
+domain reviewer is read-only. This is ordinary mutation-domain review, with no
+formal compiler/solver or new tooling selection.
+
+Before adopting any exclusion, run the complete current 166-variant ledger
+cohort under the already reviewed 575 catalogue with E[]. Expected evidence is
+the actual 437-case baseline, complete per-variant outcomes and causal review;
+previous 261fa outcomes supply no current kill or score. Preserve every raw
+miss and require an independent all-domain argument plus exact current source,
+descriptor/diff/proof bindings before any data-only adjustment. No killed or
+compiler-unviable outcome can become equivalent. Eight workers, 512-variant cap,
+90/95 gates, timeouts, storage limits and all Windows/native holds remain.
+
+The current raw cohort is complete and reaped: 166 = 112 caught, 45
+compiler-unviable and nine missed, no timeouts/E; actual baseline 437 cases.
+`current-ledger-mutation-v1/verification.json` SHA256 is
+`1a69cc4d9ec83832c5bf9c208af6d091f96e416c334a58858d53dd6c036db90e`.
+Native exit 2, raw 112/121 = 92.562% and incomplete custom gate remain. Campaign
+admission is closed after return. Independent causal/identity classification
+and exact dossier/helper/policy rebinding are next; no exclusion is adopted by
+this raw observation.
+
+**Current exact E9 adoption.** Independent review verifies every current raw
+outcome and all nine complete descriptors/diffs against the unchanged ledger.
+The current stop scope and genuine probes widen no pool/archive/slot invariant;
+installed predecessor membership still proves no completeness or global-history
+claim. The final dossier has SHA256
+`b2a640bfa386445b41eb53f5af3162c760f0b629c968c4a320342e5f6a28e306`.
+The shared helper changes only its exact E9 candidate/proof constants, to
+`008583ad` and that dossier; full helper SHA256 is
+`fc300b03686c144808cee2b3729e7522d39b0390867fb23f652137b9c55cfec1`.
+All 42 current pins match. Current adopted policy SHA256 is
+`539bace64cc1dc70512ca394c76145ee4a7d0aa94be41b512ae179705759a23d`;
+campaign admission stays closed.
+
+Existing role validation, live source/proof admission and complete accounting
+APIs accept exactly the nine actual current missed variants. Raw 112/121,
+45 compiler failures, nine survivors, native exit 2 and the incomplete raw
+receipt are unchanged. Nine equivalents add zero kills; adjusted ledger
+denominator is 112 and its selected adjusted gate is 112/112. This is data-only
+adoption, not another execution or a whole-candidate pass. The proof input and
+changed helper/policy metadata are separately admitted; they do not relabel the
+executed 602-input E[] capture as unchanged proof-inclusive execution.
+
+All 148 common and 103 wrapper controls pass. Real-policy checks reject eight
+foreign/partial role variants, three stale/duplicate custody variants and two
+attempts to exclude caught/compiler-unviable outcomes. An initial negative
+expectation wrongly required the generic custody helper to reject eight genuine
+records; two independent source reviews identify the oracle-layer error. Role
+validation correctly rejects that subset, while mechanical accounting still
+fails its unresolved-survivor gate even at 99.115%. No helper repair is added.
+The existing typed result/API boundaries remain intact. Exact negative-control
+record SHA256 is `c9ef7947413d83c497b2b1cf8227b8b5287b6e3936f5eb08e7b5364f23ad8c33`.
+The V2 adoption record `current-ledger-e9-adoption-v2.json`, SHA256
+`c642383259b1f55db0e92d98dc8d4875bd0e2a9f1e2130f9e3162353eb2ed8cb`,
+joins these controls to the unchanged raw receipt and explicit metadata transition.
+Native, generation and other-owner gates remain
+open; no commit/push condition is thereby satisfied.
+
+#### Source-continuation routing reconciliation — 12 November 2026
+
+Fresh-context `/root/checkpoint_exit_review` independently reads architecture
+§§17.1/18.4/18.6.1/18.7.1, hardening §9.4, the existing signed-checkpoint route
+and current source/task chain. Its comprehension, preserved verbatim:
+
+> The current child adds one irreversible stop scope shared by the original Control, Invocation and successor Controls. Stop closes admission and guarded effects; it preserves charged work, deadlines, failures and committed history. The retained GNU evidence closes the three identified recovery assertion gaps. It does not establish Windows execution or completion of an outstanding whole call.
+
+The canonical every-survivor rule keeps the current stop checkpoint incomplete;
+95% alone cannot discharge Windows misses. The later coordinator-added ordering
+that required those native gates before even preparing the next source contract
+was broader than the canonical requirement and the earlier signed handoff.
+Reconcile that ordering here: bounded WSL whole-invocation contract preparation
+may continue alongside explicit native qualification debt. Freeze the finite
+contract and obtain fresh independent review before any dependent implementation.
+Do not call the stop checkpoint finished, waive any native/generation gate or
+create a new stage label merely to claim its exit. Existing Windows execution
+holds, E9 adoption prerequisites and conditional commit/push remain unchanged.
+This supersedes older qualification-before-worker-preparation wording in this
+task; it grants no service, graph, production-default or Core-positive scope.
+
+#### Whole-invocation worker preparation — actual owner map
+
+Read-only preparation by `/root/recovery_contract_review` traces the current
+entry to synchronous `run`; there is no production whole-invocation submission
+owner. Original Control/ProcessClaim/ProviderScope/Invocation custody currently
+begins inside `run`, and its return follows Invocation, provider and Config
+retirement. Per-exchange completion does not establish that whole return. This
+map is preparation, not a frozen next contract or an implementation admission.
+
+The next bounded card must preserve the original checked Control and expose its
+actual StopHandle before queuing/start; creating a replacement Control inside
+the worker would renew deadlines and lose pre-start stop. A direct
+Tokio spawn_blocking(run) is not compatible unchanged: the pinned blocking pool
+enters its runtime while the current datagram owner rejects an entered context.
+An architecture-permitted retained synchronous worker is the narrow alternative;
+async/Handle arrangements retain their separate driver/native-topology gates.
+
+Bind prepare → explicit submitted/not-submitted disposition → retained actual
+job → joined whole-call result. Reserve bounded result/capacity custody before
+submission and retain it across stop, timeout and abandoned observation. A
+dropped JoinHandle detaches; neither drop nor a future's cancellation supplies
+return or cleanup evidence. Existing service WorkPermit releases through actual
+completion and supplies no pre-submit rollback; do not call complete or drop a
+charged permit to simulate rollback. Permanent one-use process admission still
+permits only one real KE invocation; the architectural two-native-job ceiling
+does not authorize provider reinitialization.
+
+Before source changes, independently review the finite job/result limits,
+pre-submit failure ownership, primary/secondary failure and panic disposition,
+late-stop historical-commit behavior and actual retirement boundary. Share the
+real whole-call owner with portable Script controls. The observable exit holds
+that owner behind finite barriers, delivers stop and abandons observation,
+proves capacity remains occupied/no second submission, then releases the actual
+work and consumes its real joined result once after retirement. No service,
+shared graph, native execution or Core-positive source is adopted by this map.
+Keep the current stop checkpoint incomplete while its remaining gates are open;
+the routing reconciliation above admits only bounded contract preparation now.
+
+#### Whole-invocation worker — bounded source contract, 12 November 2026
+
+**Stage:** proposed source contract for fresh independent review; no worker source
+is implemented or admitted by this card. REQ-8/BND-2, AC-04, THR-26 and applicable
+CHECK-6/8/9/10/11/15/17/21/25/26/27 govern the actual job, not just cancellation
+acknowledgement. Predecessor qualification stays incomplete. Source base is
+`008583ad`; Root coordinates the existing task, graph and verification policies.
+
+**Selected topology and bounds (KE-JOB-01).** Use one private process-lifetime
+fixed WorkerSlot and one ordinary synchronous worker thread, compatible with
+the current synchronous TLS/private UDP-runtime arrangement. Its ordinary
+observers borrow the slot and never own its JoinHandle. There is no application
+backlog, replacement thread, scheduler pool or additional channel. Request a
+fixed 2-MiB thread stack through Builder; OS rounding, committed/resident memory,
+thread-local destruction and the combined native memory budget remain measured
+qualification obligations. This request is no RSS/whole-process bound. Permanent
+process admission remains independent and never resets. No service WorkPermit
+or fixture abort policy is adopted.
+
+**Prepare and startup (KE-JOB-02).** A private PreparedInvocation owns Config and
+the original checked Control; capture its origin once before submission and
+derive the real StopHandle from that same scope. Do not recreate Control or
+renew its original 20/60-second stage/total deadlines inside the worker. Expose
+no raw fields or caller-supplied clock authority. At actual startup, fresh
+scope/phase authority and the permanent claim serialize as one bounded admission
+before provider/Producer work. Release guards before native work. Pre-start stop
+or expiry enters no Producer; already admitted work remains charged/custodied.
+The actual worker constructs its provider and Invocation, sharing the current
+step-to-result mapping with portable Script controls.
+
+**Submission (KE-JOB-03).** The one-way slot states are Unused → Submitting →
+Running(actual handle) → Joining → Joined → Taken; an explicit NotSubmitted
+terminal branch starts no job and reports no completion. Neither Joined, Taken
+nor failure reopens submission. Reserve the handle/result location before the
+thread can run. The slot gate may cover the fixed Builder spawn/handle install
+to avoid an unowned-handle gap; it is distinct from the actual scope/phase gates.
+Observation uses nonblocking lock acquisition and reports Busy/unknown while
+that gate is held. Stop uses its independent actual scope, never this slot gate.
+No arbitrary callback, join or provider work runs under the slot gate. Spawn
+failure disposes the unsubmitted input and preserves its typed error kind; it
+neither creates a claim/provider nor pretends that dropping a charged permit is
+rollback. Keep submission and operation failures distinct.
+
+**Actual custody and collection (KE-JOB-04).** Observer destruction or its
+observation deadline changes no physical occupancy, drops no JoinHandle and
+asserts no completion. A stalled worker remains occupied/Blocked with no
+replacement. Observe may report only a joinability hint from is_finished; that
+hint is not actual joined return. Collection first refuses self-join and retains
+Joining custody while the designated synchronous collector joins outside all
+gates. Only actual join permits Joined and zero physical occupancy; permanent
+one-use admission stays spent. Take the final typed outcome once; duplicate or
+premature take refuses. Normal static slot lifetime avoids live-owner Drop,
+unbounded Drop joins and detached work. Component slots use the same actual
+owner with fresh per-case process latches, never resets or forged handles.
+
+**Return, failure and retirement (KE-JOB-05).** Factor one shared whole-call
+owner around PreparedInvocation, actual claim, selected provider scope and the
+existing driver. Portable execution constructs ScriptProducer inside that
+borrowed Config/provider scope; Native uses the existing provider constructor.
+Retire Invocation/associations before provider, then Config, before normal return.
+Preserve ordinary Failed.primary/cleanup/admission_cleanup verbatim. A committed
+operation followed by late stop remains historical success after normal
+retirement. Before fallible retirement, store the closed operation result in one
+private once-written typed fact cell; expose it only after actual join. A
+separate marker confirms only retirement actually crossed. Panic is abnormal,
+never fabricated Failed, success or cleanup acknowledgement; retain any earlier
+typed primary/secondary facts and label unconfirmed retirement separately.
+
+The normal result/fact records contain only the existing bounded Summary/Failed
+values and closed job outcomes, not packet/key/cookie buffers or arbitrary error
+strings. Rust's opaque unwind payload has no intrinsic byte bound. If join
+returns one, retain that one sealed payload in the permanent slot without
+formatting, exporting or running its destructor during ordinary handling; final
+typed-result consumption does not expose it. This avoids a second arbitrary
+panic during collection. It is count-bounded, not an RSS, zeroization or panic-
+diagnostic privacy qualification. Product panic/abort/host diagnostics and native
+cleanup remain existing execution/adoption gates; release panic-abort cannot be
+represented as an observed successful join.
+
+**Join latency and scope (KE-JOB-06).** Explicit join may wait for thread-local
+destructors even after is_finished. It is a synchronous completion-collector
+operation, never a promised bounded control-loop/SCM callback. Ordinary observe
+and stop do not join. Do not claim a finite Windows service-stop deadline,
+native thread termination latency or ready service adapter from this child.
+Its existing host owner must later qualify termination observation/recovery and
+coordinated process escalation. Select no TerminateThread, product abort-on-Drop
+rule, detached reaper or protection change here.
+
+**Writable slice and enforcement.** Reuse the private nts_ke_experiment owner;
+factor mod.rs's whole-call/entry result projection and add a private job owner
+plus its tests. Narrow Config/provider test-only lifetime witnesses may observe
+their actual destruction, with explicit field-invariant owners and independent
+review; no cloned mock owner or raw counters. Add no public mode, production
+retry/default, service/IPC source, Cargo dependency, clock/Core-positive issuer
+or unsafe code. Root owns mandatory critical/security inventory and verifier
+binding updates before execution. Every new helper and private constructor has
+input/output/failure/effect and lifecycle contracts at its actual owner.
+
+**Portable observations and finite exit.** Use actual shared driver/owners,
+capacity-one handshakes and two-second release/watchdog bounds. Expected controls:
+
+1. Prepare then hold actual startup; stop through the original handle and prove
+   no Producer entry or renewed timestamp after release. Pair healthy startup
+   and a genuine expired checked Control at the receiving startup boundary.
+2. Hold genuine establishment; stop and abandon/timeout observation while the
+   slot remains occupied and a second actual submit refuses. Release work,
+   verify actual joined failure/retirement and consume its outcome once.
+3. Hold after the actual operation but before outer retirement. No result is
+   collectible. Real backend/provider/Config lifetime witnesses expire in the
+   specified order before normal joined collection.
+4. Drive healthy protected Script packets through the actual driver, then pair
+   stop-before-commit refusal with stop-after-commit at the retirement barrier.
+   Preserve original counts, deadlines, charged work and historical facts.
+5. Inject a fixed trusted pre-spawn refusal at the real spawn adapter boundary;
+   enter no closure/claim/provider and emit no completion. Pair actual healthy
+   Builder spawning; fixture refusal is not an OS resource-exhaustion result.
+6. Panic before an operation result and after a recorded genuine failure.
+   Actual join reports abnormal termination, retains any original failure facts
+   and withholds retirement claims. An opaque fixed test payload is not
+   formatted/exported/dropped by ordinary collection; it supplies no general
+   panic-hook privacy or native panic-abort evidence.
+
+A missing API/compiler failure is no behavioral RED. Demonstrate discriminating
+REDs for renewed-Control, early-result/capacity release and lost-primary variants
+in isolated source where needed, retain healthy neighbors and restore GREEN.
+Develop focused checks first; format/freeze before final qualification. Reconcile
+actual discovery, compiler/Clippy targets, constructor/privacy controls, 90%
+critical-file coverage and complete 95% mutation inventories/outcomes, including
+every survivor and generation gap. Manual faults add no generated kills. Use
+existing isolated recipes, six build jobs/one test thread, eight mutation workers
+and unchanged time/storage caps. One heavy job; no native/formal/fuzz execution.
+
+#### Whole-invocation worker card review and implementation admission
+
+Fresh-context `/root/whole_worker_card_review` completes independent review of
+the preceding 9,135-byte card, SHA256
+`fa00194526001862193078986982e847ce06205f066301fbc5ebf3fcbe31efb3`.
+Its comprehension, preserved verbatim:
+
+> The card proposes a private one-shot whole-call worker, with Config and the original Control prepared before submission, one permanent process admission, one actual thread/handle owner, nonblocking observation and independent stop. It separates operation facts, retirement facts, join hints and actual joined completion; observer timeout cannot retire capacity, and abnormal exit cannot masquerade as cleanup or success. It permits only WSL source preparation and component observations while native/service, graph, formal and fuzz qualifications remain open.
+
+Verdict is READY for the bounded source implementation. The reviewer checks
+actual owners and pinned std join semantics, finding no blocking decision.
+Facts must be recorded before the retirement they survive; unknown facts after
+panic remain unknown. Running-to-Joining must retain the actual handle through
+refusal/poison paths. The sealed unwind payload is count-bounded only, and
+joined termination supplies no independent delegated/native cleanup or service
+pass. An initial hash mismatch is the reviewer's substring extraction error:
+three '#' characters matched inside the four-character headings, shifting both
+slice boundaries by one. Anchored extraction confirms the exact original freeze;
+no prose or source drift occurred.
+
+Root admits `/root/whole_worker_design` as sole Rust writer for mod.rs, narrow
+process.rs lifetime probes, a private job owner and its tests, and only necessary
+recovery test-fixture reuse. No recovery algorithm/datagram/Cargo/shared graph,
+policy/script, Git or native changes are delegated. Root owns critical/security
+registration and verification bindings before execution. The author performs
+source/static work only and stops writing at handoff; Root formats/freezes and
+runs the configured checks. The initial implementation now passes its development
+checks below; final qualification is still incomplete. Predecessor native debt
+and conditional publication stay unchanged.
+
+#### Whole-invocation worker implementation and sensitivity checkpoint
+
+The private ordinary-thread owner now retains the actual submitted Config,
+original Control/StopHandle, one permanent process claim, provider, join handle
+and typed result. The actual Native entry point and component Script share
+`drive_invocation_with`; observers own no handle or completion authority. Outer
+retirement and actual join remain distinct from saved operation facts. The
+registered `job.rs` owner is both critical and security-sensitive. No Cargo graph,
+dependency, service adapter or Core-positive issuer changes are introduced.
+
+Development V1 stops before tests at a higher-ranked constructor-function type
+mismatch; free-function adapters retain the original borrowed lifetime contract.
+V2–V4 stop at denied Clippy diagnostics. Narrow pending-surface dead-code
+expectations, documentation and the empty non-test Hooks representation repair
+those diagnostics without weakening the lint policy. Those obsolete bundles are
+retired by cleanup v27; their terminal failure summaries remain in its receipt.
+V5 passes isolation, format, GNU/MSVC Clippy, actual discovery of 377 ordinary
+tests and execution of all 199 KE tests. All 368 predecessor ordinary names remain;
+the nine added cases use actual shared owners and the real Script paths. Its
+candidate is `6c17144f8a49016447bb908011ef3a94576358f79cb6549a772135dd8a6bb885`
+(592 product files), and `whole-worker-development-v5/verification.json` has
+SHA256 `3c1c4bf3db1380ae4b0233fb3e62c9dc8215396e074d22bbfbbcec8538bf6bb0`.
+This is development evidence, not a complete ordinary/optimized/doc baseline or
+current coverage/mutation qualification. Windows-target checks execute no native
+Windows tests.
+
+Independent source review finds a test-fixture masking gap: a falsely successful
+submission can hit the callback watchdog before an actual installed-state
+assertion. The test-only repair checks the real Running state before/after entry
+and releases owned barriers nonblockingly on early exit. Four exact manual faults
+will challenge original startup deadline, result withholding, occupied capacity
+and recorded primary/secondary facts. Their named behavioral assertions, healthy
+neighbors, byte-for-byte restoration and compiler/setup outcomes are required;
+manual faults add no generated mutation kills.
+
+The same review identifies an untested distinction between logical worker return
+and actual thread join. A bounded additional WSL control is admitted after
+independent review of pinned Rust 1.99.1's real TLS/thread-exit chain: install a
+test-only thread-local sentinel from the actual Script worker, hold its destructor
+on a finite capacity-one handshake, and retain a separate scoped collector. Save
+actual phase/result observations and a destructor-finished witness at collector
+return; release the tail and join the collector before assertions on every path.
+The TLS destructor must never panic; timeout/disconnection is separately observed
+as fixture failure. A genuine join-skip manual variant must reach the named
+behavioral RED, otherwise this coverage remains open. No replacement completion
+hook, forged owner/fact, Windows termination or finite service-stop claim follows.
+
+The expanded selected role registers twelve GNU owners and 44 bound inputs;
+campaign admission is closed, inventory empty and E[]. The predecessor's nine
+ledger equivalents and raw outcomes retain only their exact `008583ad` scope.
+Fresh formatted source binding, actual rosters, complete baseline, coverage,
+enumeration/generation mapping and mutation accounting remain required for this
+child. Existing eight-worker, 90/95, time/storage bounds and all native, provider,
+trust, process-generation, Core-positive, service and release gates remain.
+
+**Current frozen controls.** Development V6 passes the same six lanes with actual
+378-case discovery and all 200 KE cases entered, including ten worker tests.
+Its `59fdf296` source follows only test changes; receipt SHA256 is
+`f5e5a3c92ee8125a975e84b94e3674b8d158904a83f3ae2f0eb7ffcb89590abf`.
+Independent review then finds that a TLS watchdog expiry could reach a behavioral
+marker before fixture health was checked. The test-only repair moves release,
+watchdog, delivery and collector-refusal checks ahead of every join discriminator,
+after actual collector join. Native/product source is unchanged. The first
+manual attempt stops at a denied unnecessary qualification in the injected join
+fault, after five intended assertions; it supplies neither a sixth behavioral RED
+nor final bookends. Its incomplete outcome remains historical.
+
+Current candidate is
+`cdb6da20a8113191fddb7aef93d04a84029730a1e7ea7af542d91e5cad9aecd6`,
+592 product files and 44 bound inputs. Role pins cover the actual sorted union of
+378 discovered ordinary names, including 200 KE and ten worker cases; discovery
+ordering across separate libtest binaries is not required to be globally sorted.
+All 103 wrapper and 148 shared-helper Python controls pass, independently of
+application metrics. Full current baseline and metrics are pending.
+
+`whole-worker-discriminators-v2/verification.json`, SHA256
+`f1fff3f8ab400b7252c47b6166419041af3844f793755784c9d0d1aa0f3a998a`,
+passes healthy ten-case bookends and six isolated faults: falsely successful
+submission without an installed handle; renewed original Control; early result;
+occupied capacity; erased recorded failure/secondaries; and skipped actual join.
+Each fault compiles, enters exactly its selected test and fails at its intended
+KE-JOB assertion, exit 101. The join fault reaches the receipt-while-held assertion
+after setup checks, while the actual worker TLS tail is blocked. No compiler,
+watchdog, setup error or unrelated assertion substitutes for behavioral RED.
+Byte-for-byte restoration and source/helper/vendor/tool bookends agree. Maximum
+command-boundary allocated sample is 536,023,040 bytes, below the unchanged cap;
+this is not continuous peak enforcement.
+
+The reused independent reviewer verifies all raw lane hashes, six assertions,
+both healthy rosters, 592 Root/restored-snapshot product hashes, extra inputs and
+44 role pins, finding zero mismatches. Verdict is ready within this bounded
+source/control scope. This is repeated review context, not a fresh-context source
+audit. `qualification_passed` remains false and manual faults add no generated
+kills. Fresh complete ordinary/optimized/doc baseline, twelve-owner coverage and
+enumeration/generation accounting now follow; native and parent gates stay open.
+
+**Full baseline and measured coverage gap.** Current `cdb6da20` passes all seven
+configured baseline lanes: format, Windows-target check, 378 actual ordinary
+tests, GNU Clippy, 378 optimized tests, 69 doctests and Windows-target Clippy.
+`whole-worker-baseline-v1/verification.json` has SHA256
+`092c51d4f47eb6e0fac43cb20563ea4d96a6ddc9bc8433a9817cc60a8eb4f956`.
+The closed GNU debug/release caches are retired between validated lanes under
+the existing cap. All 200 KE cases execute; this is no native Windows run.
+
+The complete twelve-owner coverage command enters the same ordinary roster but
+returns exit 1: `job.rs` covers 164/208 executable lines (78.846%), below the
+unchanged 90% gate. The other eleven owners pass; their individual results remain
+in the exact failed capture, not a twelve-owner pass. The coverage receipt is
+`whole-worker-coverage-v1/verification.json`, SHA256
+`fb4db66c59eac5dea8ad2e53fc4627638a9d20623f9368107e398a72e7f5e737`.
+Its JSON, instrumented output and raw profiles are preserved. Root pauses final
+enumeration/freezing while independent review selects supplemental actual
+custody-contention, poisoning, duplicate-fact and competing-collector controls.
+Tests must exercise the real private guards and APIs without forged phase/counter
+writes, poison healing, artificial completion or host resource exhaustion. Existing
+ten Script controls retain their integration scope; supplemental job-component
+controls will not claim additional protocol or native behavior. No threshold or
+required source scope is reduced.
+
+After that terminal coverage command, cleanup v28 deletes superseded whole-worker
+development V5/V6 and incomplete discriminator V1 bundles, plus only the old
+baseline and current discriminator compilation targets. The current full baseline,
+all failed-coverage output and V2 control source/diffs/raw receipts remain. Removed
+development/raw attempts now survive only as concise historical summaries; exact
+replay of those retired attempts is unavailable. Deletion and filesystem growth
+both equal 997,289,984 bytes; free space becomes 11,055,992,832 bytes.
+HEAD/index/status/tracked diff and protected hashes are unchanged. V21–V28 total
+9,917,206,528 deleted bytes, without compression. The v28 receipt SHA256 is
+`1901aa37ae09f8e30f10eb15257081d49b919d3769b6ca03c63f87fd7de66638`.
+No process is stopped; inaccessible process details remain a visibility limit.
+
+**Reviewed custody-test supplement.** Independent review admits five additional
+job-component cases in explicit `#[path = "job_tests.rs"] mod tests`: real held
+gate contention followed by normal submission and terminal duplicate refusals;
+actual unused-gate poisoning; write-once facts; a competing collector followed by
+normal-return custody poisoning; and actual post-record panic with poisoned
+custody. Each per-case static LazyLock calls the real constructor at runtime,
+rather than only evaluating it in a static initializer. Actual mutex guards may
+be held or unwound through as controlled faults; tests may not write raw phase
+or counters, heal poison, replace owners, extract payloads or assert completion
+from their teardown. After actual release/join, immutable inspection through a
+PoisonError verifies preserved facts/sealed custody without clearing poison.
+Checked Config/Control, permanent claim and component provider stay genuine;
+fixed typed callback failures are job-component inputs, not protocol evidence.
+Keep fixture health before behavioral assertions. Actual OS spawn refusal and
+the unreachable replacement fallback remain unforced gaps. Root admits the
+bounded source-only author, then owns formatting, actual discovery, fresh binding
+and execution. The plan predicts no coverage pass before measurement.
+
+The source supplement contains exactly those five cases. V7 enters all five but
+stops at MSVC Clippy: the component callback must explicitly consume its owned
+Control. Root drops that owner after its real currentness check, preserving the
+signature and lint policy. V8 then passes both-target static checks, all 205 KE
+cases and actual 383-name discovery. It retains only that pre-cleanup source
+scope; its receipt SHA256 is
+`e3b326e5d5a6dd990a8305c2acb494dcb5afffa13fe3787be953b8711e9a4bd7`.
+Independent source review finds that setup wait preceded scoped-collector
+creation in both threaded cases. Root moves collection before the wait, so early
+setup errors release the owned barrier before implicit collector join. The
+reviewer verifies the exact two-line-order delta and closes that finding.
+
+Current frozen source is
+`42b85fe34c2dc11596115b12c765ab7deae160a589d3da243dd48b87387ee77e`,
+593 product files and 45 bound inputs. `job.rs` differs from the previous
+production owner only by its test module declaration; its hash is
+`bc29cbc634629cb1f2dcfa96b73c3b9df3455e71b7411170fe050208b6585d9e`.
+New `job_tests.rs` is
+`55ea1afff57a8b64c798106cc0588af056c2896eb92b0c76d5e22e0667024e73`;
+the ten original Script controls remain unchanged. Current ordinary/KE rosters
+are bound to the actual V8 discovery (383/205) with only this cleanup-order delta;
+fresh complete execution, coverage and enumeration are still required. The
+existing twelve-owner role remains campaign-closed with empty inventory and E[].
+
+Full baseline V2 is **incomplete**, not a product pass: 358 library cases pass and
+the TLS-tail control fails before the 24 integration cases. Its setup assertion
+receives actual `Err(Busy)` from the collector while the observer competes for the
+same try-lock. Busy is a permitted refusal; a one-shot fixture collector wrongly
+assumed immediate acquisition. The exact failed receipt SHA256 is
+`be681bccdb158753c843537c1ccca3554dd3f0fe8f9a150a82289be2b7dfa31a`.
+Root adds test-private `collect_available` helpers that retry **only** Busy within
+the existing two-second fixture watchdog, preserving every other refusal. They
+resubmit no operation, reconstruct no Control and renew no product deadline.
+Actual join still supplies completion. Direct Busy-negative/runtime/self-join
+controls remain direct calls. The independent reviewer checks release/collector
+custody and setup ordering and finds this narrow repair READY for execution.
+
+The fresh candidate is
+`2394732478d73cc8f45851704e3e707703091d20dedba9ce19087c5913b6ee09`,
+with the same 593 product files, 45 pins and 383/205 ordinary/KE names. The job
+production owner is unchanged. New test hashes are
+`879c90381245c666d9c62418f9113543b3ef8c362c90a982d57f31a50be38f43`
+(custody) and
+`9a013e7cde6bb10806f69ea6b15289b620eefc6661e11e26a9bba991bff0010b`
+(original Script/control helpers). Current complete baseline, coverage and exact
+generation reconciliation remain pending; V2 failure is not erased by a retry.
+
+**Current ordinary and coverage exit.** Candidate `23947324` now passes all seven
+baseline lanes, including 383 actual ordinary cases, 383 optimized cases, 69
+doctests, format and GNU/MSVC static checks. All 205 KE cases execute. The
+`whole-worker-baseline-v3/verification.json` SHA256 is
+`b5d43112bcc1745f0ced7fe9be0ddecfedbe7827fdd2092d781c0d65e8d396d0`.
+The wrapper's complete 103 controls pass after its exact 383/205 roster and
+45-input update; shared-helper 148-case evidence retains its unchanged helper
+scope. No native Windows tests run.
+
+Fresh coverage executes all 383 cases and passes every selected 90% GNU file-line
+gate. The new job owner now covers 191/208 lines (91.827%); the denominator stays
+208, and new `job_tests.rs` is excluded from the production coverage selection.
+The remaining eleven owner counts are unchanged from the failed capture. The
+`whole-worker-coverage-v2/verification.json` SHA256 is
+`4b8cf4a3b413b7731e8208757b6e54ce0829ef27b46e61cc5f82d216771c8908`.
+The gain follows actual constructor/contention/poison/fact/join observations,
+not excluded production lines or a lowered threshold. Branch coverage reports
+zero instrumented branches; this supplies no branch-completeness claim. Actual
+OS spawn refusal, unreachable fallback and native/provider paths remain open.
+Fresh exact enumeration and generation mapping precede mutation admission;
+all per-file mutation, native and parent gates remain incomplete.
+
+Fresh enumeration is complete, not a mutation pass: 603 descriptors across the
+twelve owners, including 25 for the new job owner and 91 for Core. The other ten
+descriptor/diff maps (487 variants) exactly match the predecessor's enumeration;
+this comparison transfers no execution or qualification credit. The source-bound
+`whole-worker-enumeration-v1/verification.json` SHA256 is
+`2b077b9be36c713b203ba2b58cd62251910e3a0308efdf4a75566d3cd9a51d51`.
+All 603 exceed one cohort's unchanged 512 limit. Independently map actual generic
+body/guard descriptors as well as unrepresented interior sequencing, atomic and
+implicit-drop guarantees before admitting selected single-owner execution.
+
+The reused independent reviewer checks all raw baseline rosters (359 library +
+24 integration), 205 KE cases, 69 doctests (56 compilation-only), coverage file
+identities, unchanged denominator, 605 captured hashes, 45 role pins and exact
+tool pre/post admission. It confirms scoped baseline/GNU-line PASS, with native,
+mutation, four other metric owners and product qualification still open.
+
+Cleanup v29 retires superseded V7/V8 development bundles and only old V1/V2
+baseline/V1-coverage compilation targets. Old failed-coverage profiles/binaries
+are now unavailable; its source, JSON, console and receipt remain. Current V3
+baseline, V2 coverage and fresh enumeration are preserved whole, as are current
+discriminator results and pinned inputs. Allocated deletion and actual free-space
+growth both equal 1,878,302,720 bytes; free space becomes 10,971,291,648 bytes.
+V21–V29 total 11,795,509,248 deleted bytes, without compression. Receipt SHA256:
+`89c7d9dfe7d64a4c64e788a8f299a462793b33510377905632aecb124283e072`.
+Git HEAD/index/status/tracked diff are unchanged across deletion. Another process
+has staged only the unchanged equivalence dossier; Root preserves it and makes
+no Git mutation. No readable consumer references the retired paths; inaccessible
+system-process details remain a limitation and no process is stopped.
+
+**Current discriminator and selected mutation admission.** Fresh six-fault replay
+on `23947324` passes both ten-case healthy bookends, all intended isolated REDs
+and byte/tool/vendor restoration checks. Its receipt SHA256 is
+`f8677356fe0c20714a3061c17f136bb44e27e34feb73705ded490b3065d8a76e`.
+Manual controls add no generated kills. Reused independent generation review
+reads every job descriptor/diff, matches raw enumeration and all 25 single hunks
+to frozen source, and recomputes job inventory digest
+`3511c9ff2bd8e5887588dd73369179ca5037d8c0086129820c6408fc62ebb2d0`.
+It finds no catalogue defect and admits bounded execution, without predicting
+viability, kills or equivalence.
+
+| Receipt-order job descriptors | Actual boundary and control/gap |
+| --- | --- |
+| 1–4, stack arithmetic at 23:30/37 | Selected requested stack is 2,097,152 bytes. Real workers are exercised, but no independent requested-byte oracle exists yet; retain this gap. |
+| 5 and 9, native provider/try_submit | Windows-only descriptors remain included and unexecuted by GNU; no pre-exclusion/equivalence. |
+| 6–8, prepare/record/Hooks bodies | Original startup/stop and complete fact/duplicate/abnormal-retirement controls apply; actual compilation and causality still need classification. |
+| 10–11, submit body/admission negation | Actual installed-state, held/poisoned custody and occupied-slot controls; generic submission is partially generated. |
+| 12–16, observer/collector/self-join | Ten Script controls, actual TLS-tail join and five custody cases retain explicit contention/self/runtime/result expectations. |
+| 17–21, normal joined-return guard | Actual post-join poison challenges false normal completion; not every independent missing-fact/retirement state is established and no blanket equivalence follows. |
+| 22–24, result/poll body and deadline | Premature/duplicate result, live/expired observer and actual poisoned-custody controls apply. |
+| 25, run_prepared_with body | Generic whole-call body is generated; original-control identity, claim/record/retirement ordering and implicit drop still need the named manual/lifecycle evidence. |
+
+Facts/WorkerSlot constructors have no descriptors; runtime LazyLock controls
+exercise their actual construction. No individual descriptor covers atomic
+orderings, actual join removal, provider-before-Config destruction or implicit
+Drop. Actual OS spawn failure and defensive replacement fallback remain unforced.
+Core's three additional signatures are shared-driver replacement and two
+Windows-only normal-result/reporting changes; the old 88 outcomes are not adopted.
+
+Root binds the complete current catalogue with E[], then selects only the
+25-entry job cohort with eight workers and unchanged 512/1200/90/60-second,
+90/95 and storage bounds. The admission receipt SHA256 is
+`0dc72e727afbaeb2bef6b6259286321dc19f5437f1c87da63c9b05520ea98cc6`;
+its execution policy is
+`1c07dde8238e55aefdb93ab439d3868f9aeaef67cf10cbf0e58c8f1061ea6822`.
+This post-execution catalogue adoption changes only inventory/admission metadata;
+earlier baseline/coverage raw policy bytes are preserved and not rewritten. Only
+the selected cohort executes; its raw outcome/classification and all remaining
+critical/native/parent gates are pending.
+
+**Complete job-cohort accounting on `23947324`.** All 25 variants finish: eleven
+native-tool caught, eleven compiler-unviable and three missed, with no timeout or
+exclusion. Raw 11/14 = 78.571% fails the unchanged custom gate. Native exit 2,
+wrapper exit 1 and incomplete qualification are preserved in
+`whole-worker-job-mutation-v1/verification.json`, SHA256
+`6d86268cb690829df2952599368bb35318f25d16fb2d0c93dfdf543b8b1e7223`.
+Baseline and each survivor enter the same 452 all-passing names (383 ordinary +
+69 doctests); no ignored cases or zero-test success count toward the result.
+
+Reused independent review reconciles every executed descriptor/diff and actual
+diagnostic. Seven catches have direct assertions/refusals; four are causal
+runtime failures: three undersized stack requests (3,072/2/0 bytes) abort isolated
+test processes with stack overflow, and removed self-join protection reaches the
+actual OS self-join error. These are not assertion-backed kills. The other caught
+changes break unused-slot admission, external/self collection, poisoned-return
+classification or live/expired observation. Eleven unviable variants stop during
+build with actual E0277 Default or denied unused/dead-code diagnostics; no behavior
+or kill credit follows. No unrelated fixture failure is promoted to a kill.
+
+Two misses are unexecuted Windows provider/submission bodies. The third changes
+the selected stack request from 2,097,152 to 1,048,578 bytes (`2 + 1024 * 1024`)
+while all 452 tests still pass. This is a concrete requested-value oracle gap,
+not equivalence or a demonstrated defect in unchanged production code. All 605
+captured hashes/tool identities and restored source agree. Temporary/target
+directories are empty and final sampled allocation is 36,397,056 bytes. Root
+closes execution, retaining the reviewed catalogue and E[]; closed-policy SHA256
+is `d70954617a5a2d4933403d6c8ea7c80e92225c617c219baa74f3b6405d223446`.
+
+**Bounded oracle repair.** Independent review approves the smallest test-only
+change: after a genuine worker's join and terminal cleanup, compare actual
+`STACK_BYTES` to independent literal `2_097_152` at
+`KE-JOB-01-selected-requested-stack-bytes`. The frozen card supplies the expected
+request and the audited Builder uses that constant directly. This reproduces no
+implementation arithmetic and claims no OS grant, RSS or native bound. Root adds
+only that assertion; production job source is unchanged. New source candidate
+`2c14e66526679fb74180c6e9eedd25b8b5f34b7bd964b846463212b2aacbe757`
+keeps 593 files/45 pins and the same 383/205 test names. Catalogue admission is
+cleared/closed with E[] for fresh verification.
+
+The focused recipe replays the exact retained surviving single-operator diff,
+alongside the six earlier faults, with all fifteen actual worker/custody controls
+healthy before and after and exact restoration. V4 stops at a missing Python
+`os` import before its first sandbox command; it establishes no test or RED.
+V5 repairs that preparation error and adds a syntax/unresolved-name preflight.
+Current focused/full gates are pending; the old 11/14 result is not rewritten.
+
+V5 passes all fifteen healthy controls but then stops before fault injection:
+the catalogue is 3,936,184 bytes and the recipe selected the smaller native-
+receipt reader. V6 uses the existing bounded analyzer reader, raising no limit,
+and prechecks the exact descriptor/span/diff/source before heavy execution.
+It passes all seven intended named REDs and fifteen-case healthy bookends, with
+full restoration and source/helper/tool/vendor custody. The requested-stack case
+fails after actual worker join/cleanup with observed 1,048,578 versus required
+2,097,152 bytes. The V6 receipt SHA256 is
+`c5ea4f3c59610f012c3426a95a969e815f95154658c505544ab66680aa087312`.
+
+Provenance is explicitly **operator/span replay**, not byte-identical generated
+source: the replay omits only the generator's inline comment and trailing space.
+Stored diff SHA256 stays `fb5d9a94e00a75f8aa33b3594b2860c01ace82e88b2b7ee6c3719cdb3859a5aa`;
+actual replayed source hashes to
+`b41f83b750c54d4588df17b1279babd900eead83f67a71ccffcff4220606154b`.
+The immutable correspondence join, SHA256
+`bbc1f95e988553f4909d5906c3292f326f40a5ddb191347057d583928d10abf8`,
+retains the literal diff-applied source hash and proves that single-comment
+normalization yields the recorded actual source. No generated-kill credit follows.
+Independent review verifies all seven causes, both fifteen-case rosters, 593
+product hashes, 54 extra inputs, 45 role pins and tool/vendor bookends.
+
+Current `2c14e665` then passes all seven full baseline lanes, 383 ordinary,
+383 optimized and 69 doctest cases. Its V4 baseline receipt SHA256 is
+`d7abc9f38d4bfbeb1bd0ad6af94fa077ebfd2254226ea873f292355b4a042c9e`.
+Fresh V3 coverage executes all 383 cases and passes all twelve GNU file-line
+gates; job remains 191/208 (91.827%). Receipt SHA256:
+`b26894b6c64001d79092afa0011088485eb1735d4d3f3257793d2a265219d80d`.
+The new oracle adds no production coverage lines. Fresh enumeration and selected
+job-cohort execution must still establish current mutation outcomes. Native,
+other critical-file and parent gates remain open.
+
+**Current oracle/candidate mutation exit.** Fresh enumeration V2 binds
+`2c14e665`, lists the same 603 variants and matches every earlier descriptor/diff
+map exactly. Receipt SHA256:
+`590d59c2993c21f63c3ad10b05eb4558c140d6ade3778a11c0e793ce7f8babc9`.
+Root admits only the repeated 25-job cohort with eight workers, E[] and unchanged
+limits; admission SHA256 is
+`1165f19e1751378302eb4d97c1550574e672e1daed9cd092059ced946237f00c`.
+Independent raw review separately confirms the current full baseline, coverage,
+new oracle, all 605 captured hashes/45 pins and exact tool identities.
+
+The repeated cohort completes **12 caught + 11 compiler-unviable + two missed**,
+no timeout/exclusion. Native-tool raw 12/14 = 85.714% remains below 95%; exit 2,
+wrapper exit 1 and failed custom gate remain unchanged. The current receipt is
+`whole-worker-job-mutation-v2/verification.json`, SHA256
+`faf569ea36ec77a309dae412aef6ac39f84b416cd3127f4ef2452c7f2210c0bc`.
+The sole outcome change is the exact stack operator: it now builds and fails one
+actual test at the new requested-byte assertion (1,048,578 vs 2,097,152), without
+crashing. Eight catches are assertion-backed; four retain the earlier causal
+runtime-failure limits. All 11 unviable primary compiler causes remain; the new
+constant reference removes one ancillary unused-constant diagnostic from the
+empty-submit mutant, while its other compile failures remain. No earlier outcome
+is merely copied into the new score.
+
+Both remaining misses are the unexecuted Windows provider/submission bodies.
+Each survivor and baseline enter 452 all-passing names, with no ignored cases.
+Reused independent review matches all 25 descriptors/diffs, actual new assertion,
+remaining causes, source restoration, tool identities and 605 inputs/45 pins.
+Temporary and target directories are empty; final command-boundary output is
+36,380,672 bytes. Root closes execution while retaining all twelve current
+catalogues and E[]; closed-policy SHA256 is
+`87350f06c38da4f6adefa0818302ceb38a149cdef9e0312da553c08f35894a0f`.
+This repairs a demonstrated test-oracle gap, not a production arithmetic defect
+or an accepted native exception. The job gate and parent checkpoint stay held.
+
+Cleanup v30 removes 1,006,063,616 allocated bytes from old V3 baseline/V2 coverage
+targets, the current control's closed target only, and obsolete manual V2–V5
+bundles. Current baseline V4, coverage V3, enumeration V2, both job cohorts and V6
+source/raw/diffs/receipt remain. Old exact compilation/profile replay and removed
+manual attempts are intentionally retired. With qualification writing concurrently,
+filesystem free space grows 975,933,440 bytes during deletion; the net delta is
+not the attributed deletion total. V21–V30 delete 12,801,572,864 allocated bytes,
+without compression. Cleanup receipt SHA256:
+`6605dfae8d3f4dbe7a6d7513dbabec219dceda2be81d670a6a2575df861a8850`.
+Git custody and protected hashes match; existing external staging is preserved,
+no process is stopped and unreadable system-process scopes remain disclosed.
+
+**Next bounded WSL action.** Keep this source freeze and its unresolved native
+job/generation gates. Independently reconcile the current 91-entry Core owner,
+then explicitly admit that single cohort under existing eight-worker/budget
+controls before execution; the other ten owners follow their existing per-file
+chain. Preserve the exact source scopes of all predecessor outcomes/E9 records.
+Native/provider/trust, service, production issuers/Core-positive and release
+evidence remain open. The owner's conditional checkpoint commit/push instruction
+is not satisfied by these partial host exits; Root has made no staging, commit
+or push. Formal/fuzz/storage/Windows execution holds remain unchanged.
+
+#### Synchronous facade caller contract — 12 November 2026
+
+**KE-FACADE-01; source finding and bounded correction.** Before admitting the
+91-entry Core cohort, reused independent semantic review traces the public
+`experimental_nts_ke_probe` into Windows `entry`/`run`: `run` submits the actual
+worker, then `collect` rejects an already entered Tokio context. Thus this caller
+can receive `Collection(EnteredRuntime)` while admitted native work continues.
+Static custody survives and no `completed=1` is printed. The normal probe main
+is synchronous; no Windows failure was executed. This is a reachable API caller-
+context/control gap, not demonstrated lost custody or false success. Entry's
+unconditional cleanup-before-all-output comment is also too strong: distinct
+collection failures already report unconfirmed retirement. Core catalogue review
+finds all 91 descriptors/diffs valid, but Root holds its campaign before editing
+this newly identified path. Source predecessor remains `2c14e665`.
+
+REQ-8/BND-2, KE-JOB-02/04/05, AC-04, THR-26 and CHECK-6/8/9/10/11/15/17/21/25/26/27
+own this source-only correction. Preserve the accepted one ordinary worker,
+current-thread runtime prototype, fixed capacity and actual-join contracts.
+
+**Selected contract and owner.** Factor the synchronous facade's existing
+prepare/submit/collect/result projection into one private portable owner used
+by the actual Windows `run` and component controls. It receives the actual
+checked Config, permanent WorkerSlot and one trusted submission adapter; that
+adapter must call the actual Native `try_submit` or component `submit_with`.
+It receives no substitute collector, result or retirement facts. Before Control
+preparation, adapter invocation, slot reservation, permanent process admission or
+provider work, it rejects an entered Tokio context with a distinct closed caller-
+context disposition. The actual Native bridge must delegate to this mandatory
+owner. Keep lower-level asynchronous-controller preparation/submission behavior
+unchanged: only this synchronous facade rejects the context, while collection
+retains its independent guard. No new runtime, dependency, service or public API.
+
+Success/ordinary operation failure still requires actual joined return,
+confirmed retirement and a genuinely recorded operation. A post-submission
+collection refusal is separately **completion unconfirmed**, retains permanent
+custody and cannot print successful counts or acknowledge stop/completion.
+It does not promise cancellation or permit capacity reuse. Do not strengthen
+this into an unproved cleanup-on-every-error guarantee or alter nonblocking
+collection into a spin loop. Clarify the facade and public/entry comments; route
+the new refusal through fixed redacted labels with failure exit status. Existing
+primary/secondary/abnormal facts remain unchanged.
+
+**Discriminating controls.** Exercise this actual portable facade inside an
+entered current-thread Tokio runtime with genuine checked Config, original
+process admission, actual slot and real component submission path. Require the
+distinct pre-submit refusal, unused slot, zero submission/producer activity and
+retired unsubmitted Config; after leaving the context, a healthy operation using
+the same slot/admission must still join and preserve its real facts. Challenge
+the guard with the original submit-before-context-check sequence in isolated
+source; retain the named behavioral RED and valid neighbor. All unexpected work
+must be drained outside the runtime before assertions or fixture teardown.
+
+Separately hold actual custody across the facade's collection attempt after a
+genuine submitted worker is held at retirement. Require the precise unconfirmed
+collection refusal, no summary, retained occupied capacity and live actual owner
+witnesses. Release owned gates and collect the actual job before assertions;
+check original facts and cleanup. This checks the documented error disposition,
+not a service-stop or Windows cleanup result. Setup errors/watchdogs remain
+distinct from behavioral RED; preserve actual handle custody on every test exit.
+
+**KE-CORE-GEN-01; companion structured-input controls.** The current Core review
+finds raw `%scope` cases reject before the maintained Garde rule, while its IPv6
+scope/flow `matches!` branches lack individual mutations. Add a bounded direct
+`ConfigCandidate::validate`/rule control for genuine structured loopback IPv6
+inputs: scope=0/flow=0 accepted, nonzero scope and/or flow rejected, with otherwise
+identical identity/port. Construct no unchecked Config and change no rule or
+accepted input. This is missing regression evidence, not a demonstrated current
+admission defect.
+
+**Execution and exit.** Obtain fresh independent review of this card before the
+source writer starts. Writable scope is narrow facade/public docs and existing
+component/contract tests; Root retains graph, role/manifest bindings and runs.
+No Cargo graph change, new tool, formal/fuzz/native job, host setting or Git
+mutation. Bound preparation to this correction and named controls, one Rust
+writer and one heavy job. Establish focused healthy/guard-removal RED/restored
+GREEN, format before final freeze, then rebind actual discovery and complete
+affected ordinary/optimized/doc/static, coverage and generation/mutation gates.
+Existing 90/95 thresholds, eight workers and time/storage bounds remain. Earlier
+results retain exact source scopes; no repeated review or plan is a passed gate.
+
+#### Facade caller review and source admission
+
+Fresh-context `/root/facade_contract_review` completes source-only review of the
+preceding 5,477-byte card, SHA256
+`9cf3c20d9beaaeec0fc60123b3e973aba6c5652a8c76f672fbb8d07593b9e90b`.
+Its comprehension is retained verbatim:
+
+> The proposed change moves the synchronous facade’s Tokio-context check ahead of preparation and submission, through one portable owner used by Windows `run` and component tests. It preserves the lower-level submission API and independent collection guard. The companion controls directly challenge IPv6 scope/flow validation without changing accepted inputs.
+>
+> Currently, Windows `run` prepares and submits the worker before `collect` rejects an entered Tokio context. The permanent slot retains the actual handle, so this path can return an error while work continues; it does not print successful completion. This is established source reachability, not an observed Windows failure.
+
+Verdict is READY for the bounded correction, without material card changes.
+The reviewer verifies the exact card, current policy candidate and all 45 bound
+hashes, and inspects actual source/architecture. It performs no complete product
+admission or execution. Root admits `/root/whole_worker_design` as sole Rust writer
+for the facade/public documentation and existing tests only. Root retains
+formatting, bindings, graph/policy ownership and all commands. Core's old 91-entry
+campaign remains closed while this source changes. Earlier host results keep
+their exact scope; all native, formal, fuzz, storage and publication conditions
+remain unchanged.
+
+#### Facade source checks and old-evidence retirement — 12 November 2026
+
+Current product candidate is
+`d88de086ff1568554e601f3e18d4f5e5730a4b883c468be04990767fabeb0fbf`
+(593 files). The synchronous facade rejects entered Tokio context before
+preparation/submission, and preserves collection refusal as completion/retirement
+unconfirmed. Native `run` delegates to that same owner. Structured IPv6 controls
+reach the actual Garde rule with zero/zero, scope-only, flow-only and combined
+metadata; the accepted domain is unchanged.
+
+The independent card reviewer completes source-only review and finds no concrete
+defect in the authored correction. Root subsequently fixes two denied Clippy
+diagnostics in test code: a guard name similar to `hold`, and an unnecessarily
+owning counter parameter. No lint suppression or production-contract change is
+introduced. `job.rs` remains unchanged. Development V1's two facade tests and
+IPv6 case pass before its Windows-Clippy refusal; that attempt is incomplete.
+
+`facade-development-v2/verification.json`, SHA256
+`fc5d351cbb10977ff90de372d686812998dcb3b6cfb124fb425dcc3ae7c1acf7`,
+passes format, all 208 KE cases, actual 386-case ordinary discovery, and GNU/MSVC
+Clippy. Discovery includes exactly the three added controls, six custody cases
+and eleven worker cases. These are host/component and static results, not
+execution of all 386 ordinary cases or native Windows qualification.
+
+`facade-discriminators-v2/verification.json`, SHA256
+`d2361db076205c1c001bb64214188288bb71474afa41762f2ecaabb84fa00443`,
+rejects three isolated faults at their named behavioral assertions: moving the
+caller guard after real submission, projecting real collection contention as
+an ordinary operation failure, and replacing IPv6 scope/flow OR with AND. The
+actual jobs are released/collected before assertions. All three healthy controls
+pass before and after; captured source is restored byte-for-byte. These manual
+sensitivity controls add zero generated mutation kills. The first discriminator
+attempt stops before any command on a Path-valued report serialization error;
+V2 fixes that capture only. Its largest command-boundary storage sample is
+591,646,720 bytes, not a continuously measured peak.
+
+The role is rebound to actual 386/208 discovery and all 45 current input hashes;
+its old catalogue is cleared, E[] retained, and execution remains closed.
+All 103 Engine-verifier Python tests pass after the count/binding update.
+The configured `facade-baseline-v1/verification.json`, SHA256
+`48cc74ff83a4053005deeb608ad48db821b470fe11adb621ac03cb98920f9799`,
+passes all seven lanes: format, Windows-target check, 386 ordinary tests, GNU
+Clippy, 386 optimized tests, 69 doctests (56 compile-only), and Windows-target
+Clippy. Each ordinary/optimized run includes all 208 KE cases. The largest
+command-boundary storage sample is 594,128,896 bytes; actual validated GNU
+debug/release caches are retired by the configured runner. This baseline leaves
+both parent qualification flags false and runs no native Windows tests.
+`facade-coverage-v1/verification.json`, SHA256
+`fddcc46b4a9a73b6f5d78a7e98278d02756faaec4395c9794ff5b04eb40acc9a`,
+executes all 386 ordinary/208 KE cases and passes all twelve GNU 90% executable-
+line gates. The KE control owner covers 408/421 lines (96.91%); `job.rs` remains
+191/208 (91.83%). Other production-file numerators and denominators match the
+predecessor. Branch and native evidence remain separate.
+
+Fresh `facade-enumeration-v1/verification.json`, SHA256
+`3d27359715f30efd3364c003f7a1a86869a01884d4fa9066f73c6deb5fb46283`,
+lists 604 variants across twelve owners. Retained-context independent reviewer
+`/root/stop_inventory_fresh` reconciles all 92 unique KE-control descriptors,
+their raw/lane outputs and every diff hunk against frozen/live source. Their
+digest is `3302b962a258a8c4621a81986e2c959327e3b6ebd7a3ed142d8c9f0b5a49042f`.
+The first 71 descriptors/diffs are unchanged; the shared-driver descriptor has
+unchanged metadata/body with changed rendered context. The portable facade adds
+a body replacement and receives the moved normal-result-arm deletion. Five
+Windows-only descriptors remain included. All eleven other owner maps match.
+No outcome, viability or equivalence credit transfers from prior candidates.
+
+The three manual controls remain separate: no generated variant independently
+challenges caller-context ordering, collection-error projection or the structured
+IPv6 rule. Constructor/macro wiring, lock/drop order, fallback projections,
+allocation/stop-scope poison and native lifecycle gaps remain explicit. Not every
+facade preparation/submission/operation/abnormal disposition has a direct facade
+control; lower-level cases do not silently close those seams.
+
+Root rebinds all twelve catalogues while closed, then admits only the complete
+92-entry GNU `ke_core` cohort with E[], eight workers and unchanged 512-entry,
+1200/90/60-second bounds. Admission is
+`facade-ke-core-admission-v1.json`, SHA256
+`739d6de1da62f8cef2d1137d5ac3ae3a8eb667c0831b44ad52675bf100ae91f4`.
+Its execution policy is `9bd9ed5051631845539c6517df8718861c50033b98796b3f9daba70e285c78c6`;
+the closed catalogue-bearing policy is
+`8193e3f7e1c3802207703d2ac4ef448363640c3fe87f7046bfb6587c853c7531`.
+The cohort is terminal. `facade-ke-core-mutation-v1/verification.json`, SHA256
+`1feb571d9f5a4a8e8f839416b4cd8da53f4ef883dbe23b24ea20af3cfe2cc445`,
+records all 92 variants: 38 caught, 49 compiler-unviable, five missed and zero
+timeouts. Its baseline enters 455 cases (386 ordinary plus 69 doctests).
+Raw 38/43 = 88.372% remains below 95%; cargo-mutants exits 2, the wrapper exits 1
+and the custom gate stays false. Root closes execution back to `8193e3f7…`.
+
+Independent full causal review accounts for every exact descriptor/diff and
+phase/log: 32 catches reach assertions and six reject valid positive controls
+through direct test error returns. The groups are twelve configuration, twelve
+Control/stop, three endpoint, four cookie, two response and five label cases.
+All 38 compile successfully before Test exit 101; no unrelated fixture, resource,
+crash or timeout cause is credited. All 49 unviable variants stop at Build 101
+without tests: 24 type/API refusals (20 Default, one arity, three `from_iter`)
+and 25 denied-lint-only refusals. In particular, the portable facade body fails
+`Summary: Default`, and its normal-result arm deletion makes `Operation`
+unconstructed under denied `dead_code`. Neither supplies behavioral kill credit.
+
+The five misses all enter the unchanged 455-case GNU roster and affect cfg-Windows
+`run`, both failure reporters, `entry` and its output-error OR. Separate narrow
+review confirms meaningful entry/reporting/sink obligations remain unqualified;
+they are not equivalent or excluded. The `run` replacement also requires absent
+`Summary: Default` on Windows, so GNU survival establishes neither actual Windows
+viability nor a native behavioral counterexample. Exact Windows compilation and
+execution remain open. The raw outcomes hash is
+`ef5c4d4a2d3b571d11a8f3e66d76532bd3d0e61d2e9f95539e747de06e9fdcb5`.
+Full review and the narrow review use retained agent context; their agreement
+does not add executions or multiply evidence. Source/tool/pin custody matches
+except the recorded post-terminal campaign closure. Final output allocates
+45,371,392 bytes and both temporary/target directories are empty.
+
+**Product routing:** `ke_core` names `nts_ke_experiment/mod.rs`, not the
+`time-core` crate. Source tracing confirms that actual protected completion
+enters `ActiveReceiver::accept`, then `CommittedProtected::into_summary` drops
+the complete header/captures/socket identity and returns counts. Engine has no
+`time-core` dependency; fixture histories and caller labels issue no production
+eligibility. After current portable accounting, prepare the existing genuine-
+completion-to-observation/history receiver contract under REQ-8/10/11/14/15,
+CHECK-7/8/10/11/14/25 and AC-19. Reuse the receiver-first, observation-to-Core and
+finite-supplier sections below. Positive branches stay held on their actual
+configuration/path/trust, association, clock/mapping, date/scale and uncertainty
+suppliers. This records `/root/core_engine_next_owner`'s fresh-context read-only
+reconciliation; it lifts no native gate or current source-scope restriction.
+All native, formal, fuzz, storage, parent and publication conditions remain.
+
+**Owner-authorized deletion, no compression.** Cleanup V31 deletes 74 superseded
+recovery/invocation/index output bundles, three old CodeQL database/cache paths,
+and the obsolete proposed vendor. V32 deletes only the superseded worker
+baseline/coverage compilation and profile targets. Their concise receipts are
+`closed-evidence-cleanup-v31.json` (SHA256
+`9a796f6526e677a756f72a605c307463205d45f9c494eadef90d76d266920962`)
+and `closed-evidence-cleanup-v32.json` (SHA256
+`1db52848c78e76e89296070f36fc53909c3aab41a29647d927ce383f765ad55d`).
+The exact 80 deletion boundaries are recorded there. Together they unlink
+3,804,889,088 unique allocated bytes; measured filesystem recovery is
+3,804,712,960 bytes, reaching 13,910,220,800 bytes available at that checkpoint.
+V21–V32 retire 16,606,461,952 allocated bytes in total.
+
+The gross inventory overstates recovery because 631,918,592 bytes remain shared
+through external hard links. Only obsolete names are removed. Fresh admission
+confirms unchanged current product bytes and the current vendor digest
+`262a2a80f7dc65db165d0c2ab9b6ee2cd3d94ca0915d7aeda3e59c5fce1954e9`.
+Protected current receipts and Git HEAD/index/staged/unstaged/untracked custody
+match before/after. Actual dirty CodeQL and staged-final worktrees are preserved;
+no shared process or Windows setting changes. Process visibility remains limited
+for other users (49 denied descriptor inventories), not a universal absence claim.
+
+Historical citations below describe their original evidence scope. The exact
+V31 paths now have no retained raw replay; old offline Core reruns using the
+deleted proposed vendor require re-preparation. Current source, pinned tools,
+root vendor, required ordinary/graph references and current worker/facade raw
+results remain. Old binary/profile targets cannot be replayed. Neither deletion
+nor retained historical summaries establish a current qualification pass.
+At subsequent stable checkpoints, retire superseded raw/source snapshots and
+closed unused targets under this standing cleanup authorization. Retain current
+consumer-required evidence and at most the dependency cache selected for the
+next bounded run; create no compressed archives or duplicate replay trees.
+
+#### Provider scope linearity and native origin — bounded correction
+
+**Source/authority.** Current candidate `d88de086` and HEAD `a0ad73ab` retain
+the exact preceding ordinary/static/coverage results. The 92-entry KE-control
+cohort and the 25-entry job cohort are terminal, independently classified and
+below their 95% gates; execution is closed with E[]. The latter receipt is
+`facade-ke-job-mutation-v1/verification.json`, SHA256
+`3ce199cd8d592d542514e020e022c39f2d1009504318d29286a99a9cb6397450`:
+12 caught, 11 compiler-unviable, two Windows-only misses, no timeouts, baseline
+455. Eight catches reach assertions; three undersized-stack variants cause
+causal worker stack-overflow/SIGABRT and one disabled self-join guard reaches
+OS error 35/returned Control. Five type and six lint-only refusals enter no
+tests. Final output is 36,405,248 bytes with empty temporary/target trees.
+Neither cohort demonstrates a defect in its unmutated candidate.
+
+Separate source-contract review finds a required constructor-boundary repair
+under architecture §6.3.1/§17.1, REQ-8/BND-2, KE-JOB-02/04/05,
+AC-04/THR-26 and CHECK-6/8/9/10/11/15/17/21/25/26/27. The actual Native route
+claims `PROCESS_ADMISSION` once and constructs one scope. No current production
+double-construction path or native failure is demonstrated. However,
+`ProviderScope::new(&ProcessClaim)` accepts a reusable genuine claim and claims
+from independent latches, without checking the actual authoritative latch.
+Each Native scope owns a shutdown handle whose destructor closes global cached
+providers. Thus the private constructor's declared sole-owner guarantee relies
+on its current caller's convention. The component provenance fixture already
+constructs two inert scopes from one claim; it performs no native shutdown.
+
+**Selected guarantee.** Enforce one actual outer Native provider/shutdown owner
+from the permanent authoritative admission. Retain original Control/startup
+ordering, association-before-provider retirement, facts-before-destructors,
+Config retirement, actual join/result custody and sealed panic payloads. This
+enforces an existing contract; it changes no crypto choice, trust/default,
+dependency, native API or product capability.
+
+**Bounded source shape.** Consume the uncloneable `ProcessClaim` into each
+provider scope instead of borrowing it. Actual Native construction must also
+reject claims whose immutable origin differs from the real `PROCESS_ADMISSION`,
+before constructing a shutdown handle or invoking its effect factory. The
+authoritative origin is fixed by production ownership, never supplied as an
+"expected latch" by a caller or test. Consume-only, origin-only and temporary
+mutable-borrow-only solutions are insufficient. Use the smallest private shared
+admission owner that the actual Native constructor must traverse and portable
+tests can reach without creating a native handle. A checked immutable Native
+claim is acceptable if only the authoritative issuer can mint it; no raw labels
+or test-only path may mint Native authority.
+
+Update the whole-job provider adapter to consume the claim and propagate a
+fallible factory refusal. A foreign-origin refusal is a local Control failure,
+not a remote trust/transport allegation. Record the original typed failure,
+perform no producer work or shutdown, retire actual Config/control custody and
+only then mark ordinary retirement. Keep admission spent after any real claim;
+constructor failure or dropping a claim never resets it. Preserve independent
+secondary facts and existing actual-completion/panic handling.
+
+Component scopes remain inert and consume their genuine component claims.
+Reconcile the same-claim foreign-provider fixture using independent checked
+component claims while retaining its valid/foreign-owner discrimination. Record
+the intentionally narrowed constructor domain; do not forge fields or preserve
+an invalid state merely to kill a mutant. No production association/ledger,
+cookie, protocol, recovery-policy or numerical algorithm changes are selected.
+
+**Independent controls and observable exit.**
+
+- **KE-PROV-01:** two valid foreign-latch claims must refuse at the actual shared
+  Native admission owner before its effect factory is invoked. A genuine claim
+  from the fixed authoritative latch must admit exactly once. After scope drop,
+  that authoritative admission still refuses another claim. Exercise the real
+  global latch in an isolated test process with a finite watchdog; never consume
+  or reset it in the parent test process. The supplied effect observer is inert;
+  these controls establish no actual CNG initialization/shutdown result.
+- **KE-PROV-02:** actual constructors must reject reuse of the consumed claim for
+  both simultaneous scopes and reconstruction after drop. Keep legal once-use
+  compiler neighbors. Use the real package/private source context, unchanged
+  compiler/lints and bounded diagnostic checks for the intended moved-value
+  rule. Metadata-only MSVC checks may challenge the actual Native constructor;
+  GNU checks challenge the actual component constructor. No linked or executed
+  Windows specimen is permitted. No shadow owner types or forged claim fields.
+- **KE-PROV-03:** a real whole-job component reaches the shared foreign-origin
+  refusal, invokes neither producer nor effect factory, preserves the local
+  primary fact, retains capacity until actual collection, and reports retirement
+  only after its actual Config is dropped. Normal operation, stop, panic,
+  provider/config retirement and foreign-association neighbors must remain green.
+
+**Execution/ownership.** Obtain fresh-context independent review of this exact
+card before one Rust writer starts. First add the shared owner/controls with
+current semantics and retain focused behavioral RED plus the current accepted
+duplicate-construction compiler witness and healthy neighbors. This is a
+source-bound constructor-contract witness, not a native failure reproduction.
+Then enforce consumption and fixed origin and demonstrate GREEN/intended
+compiler refusal, preserving causal diagnostics and restoring every isolated
+probe. Adapt probe calling syntax transparently when the private API changes;
+unchanged behavioral expectations must govern both stages.
+
+Rust writable scope is `process.rs`, `job.rs`, the actual admission cfg in
+`mod.rs`, and their existing job/worker/process/association/ledger/retirement/
+datagram/recovery test callers. Root owns existing verification-entry-point
+support, compiler specimens, role/pin updates, all commands and evidence/docs.
+Reuse configured isolation/tool/source custody; add only the narrow compiler
+controls required for this guarantee, not a new execution framework. Format the
+complete slice before final freeze, discover actual tests, rebind the candidate
+and complete affected baseline/static/doc, coverage, generation and mutation
+gates. Preserve per-file 90/95 thresholds, eight workers, time/storage bounds and
+all unresolved native/generation gates. Bound this repair to RED/GREEN and at
+most one causal fixture correction before reassessment. One heavy job, no Git
+mutation, graph change, tool install, formal/fuzz/native job or host setting.
+This card lifts no parent, Windows, storage, UI, release or publication hold.
+
+#### Provider scope review and RED admission
+
+Fresh-context `/root/provider_scope_plan_review` completes source-only review of
+the preceding 7,272-byte card, SHA256
+`6e78b9ea331e44e5c35ebb2e04be62e2db5a0f62462d01503338b3f673a77dc9`.
+Its comprehension is retained verbatim:
+
+> The proposal makes provider ownership linear: each scope consumes its genuine `ProcessClaim`, and Native construction must traverse a shared private guard tied to the fixed `PROCESS_ADMISSION`. Provider-factory refusal becomes an explicit local `Control` failure while preserving fact recording, Config retirement, permanent admission and actual join custody.
+>
+> The current production route claims the global admission once and constructs one Native scope. The private constructors nevertheless borrow reusable claims, and the component provenance test constructs two inert scopes from one claim. This establishes a constructor-contract gap; it does not demonstrate a production double construction or native failure.
+
+Verdict is READY without material card changes. The reviewer verifies card,
+HEAD/source identity, actual fixed route, constructors, factory signatures and
+provenance fixture, and checks architecture §6.3.1/17.1. It performs no builds,
+tests, native observations or Git mutation. Its bounded delegated retirement
+inspection supplies source assessment only, not additional execution evidence.
+
+Root admits current-constructor compiler witnesses and the initial shared-owner/
+control stage under current semantics. One Rust writer may start only after
+Root finishes the immutable predecessor witness capture, then must stop with
+focused RED ready. Consumption/origin enforcement follows Root's actual RED
+observation. Root retains command, helper, policy, evidence and Git ownership;
+all campaigns remain closed and every original hold remains.
+
+#### Provider scope correction — executed RED and source GREEN
+
+`provider-constructor-witness-v1/verification.json`, SHA256
+`0110d9808121444eb916ceb6f6a403a17fdb4288c684d57e150a850a72386e33`,
+captures six compiler observations on predecessor `d88de086`: legal once-use,
+two overlapping scopes and reconstruction after drop all compile for the actual
+GNU component and MSVC Native constructors. The private callers are appended to
+the real package source; no shadow owner or forged field is used. These are
+metadata-only witnesses to missing consumption, not native executions.
+
+The single Rust writer `/root/provider_scope_repair` first introduces the shared
+owner and fallible factory path while retaining permissive borrowed-claim
+semantics. Root formats the slice and captures
+`provider-scope-red-v1/verification.json`, SHA256
+`7401ff73395f4fc68150b27c2ef1bcddcb6e9f1d3793844fe88115d9e38f08de`,
+on candidate `06ddaa01`. Actual foreign-origin construction invokes two effect
+factories instead of zero at `KE-PROV-01-foreign-before-effect-factory`;
+the real whole-job consumer invokes one instead of zero at
+`KE-PROV-03-refusal-before-effect-factory`. Both fail at their named assertions
+after unexpected scopes are dropped and actual work is released/collected.
+The authoritative once-use neighbor passes before and after. Source format and
+Windows-target metadata checks pass. Each parent enters exactly one case.
+
+Before this capture, Root corrects one fixture-framing issue: inherited child
+libtest stdout would duplicate the parent roster. The fixed child suppresses
+stdout, retains uncaptured causal stderr, and returns reserved completion code
+86 only after its actual body/cleanup assertions complete. Ordinary zero-test
+exit 0 refuses. The ten-second watchdog owns kill/wait; the parent never touches
+the global latch. This is test-only process isolation, not a product child runner.
+
+After observed RED, the writer consumes claims into all scopes, checks actual
+fixed-origin pointer identity before invoking the Native effect factory, and
+adapts genuine component/provenance callers. Root completes observed denied-lint
+fixes without weakening policy: meaningful admission-field naming, explicit safe
+pointer conversion, missing error contracts and two narrowly justified test-only
+fallible-adapter expectations. Root also checks foreign claims while the real
+authoritative scope is live and after it drops, so equal spent bits cannot stand
+in for origin identity.
+
+Current product candidate is
+`1b22ba32a327cbc9ec6cb1009fb4cf2ad9eb83b083e16190e933bef269dcbec5`
+(593 files). `provider-scope-green-v2/verification.json`, SHA256
+`99db5982f551c32983e3e0ae0189596ffa7607bf39cce908d5848ac2203eccc7`,
+passes all 211 KE cases, actual 389-case discovery, format and GNU/MSVC Clippy.
+The earlier Green V1 has passing targeted behavior but seven denied Clippy
+diagnostics; it is incomplete. No full 389-case ordinary/optimized or final
+coverage/mutation pass is inferred from this development result.
+
+`provider-constructor-contracts-v2/verification.json`, SHA256
+`dde6bbe4d5e69b9a031bb6a46024db672980d3a2fe3ef4fca15a887b01f09c02`,
+preserves both legal once-use metadata neighbors and rejects all four overlap/
+after-drop callers at intended E0382, `claim`/`moved`, and the exact second-use
+primary span in actual `process.rs`. Calling syntax deliberately follows the
+private API's change from borrowed to consumed claim. GNU once/overlap reuse
+their exact retained V1 observations after source/tool/vendor/helper/argv/caller
+identity checks; the remaining four commands execute afresh. V1's adapter stopped
+on Cargo's explanation note lacking raw-rustc's abort summary. Reassessment keeps
+the shared causal matcher unchanged: validate the exact terminal, noncausal
+explain note in the Cargo adapter, then omit that note, never fabricate a summary
+or accept an unrelated compiler failure. Full raw diagnostics remain retained.
+
+The origin discriminator `provider-origin-discriminator-v1/verification.json`,
+SHA256 `c3b7b11a605ecaba185e5a2202f764ec51a8588a40d46f1ab9d5ba9f2f1d5c91`,
+replaces pointer identity with used-bit equality in an isolated snapshot. The
+actual healthy-authority test rejects it at
+`KE-PROV-01-origin-is-identity-after-native-claim`; all three origin/worker
+controls pass after exact restoration. This supplies zero generated kills.
+
+Fresh-context `/root/provider_scope_source_review` completes the entire ten-file
+Rust delta/caller and lifetime/factory/panic/retirement review, verifies all 593
+source entries and nine Green lane hashes, and finds no material reachable
+defect or remaining constructor-domain bypass. Its independent retirement
+crosscheck adds no executions. Two explicit sensitivity limits remain: no direct
+refusal-arm retirement-panic control, and the current observers would not detect
+moving the marker immediately before Config destruction after the barrier.
+Source ordering is correct; these are unexecuted cross-products, not demonstrated
+defects or automatically required fixture expansion. Native CNG shutdown and
+other original Windows/parent/generation gates remain open.
+
+**Next action:** adopt the narrow compiler regression lane in the existing Engine
+verifier, then bind the actual 389/211 roster and current source/helper identities
+and finish affected full baseline, coverage and fresh generation/mutation gates.
+Root delegates only the existing verifier/common-admission/Python-test files to
+`/root/provider_contract_lane_design`; Rust writes have returned and remain frozen.
+No new framework, policy schema or dependency is selected. The old `d88de086`
+role binding deliberately fails closed during this source/entry-point work:
+campaigns disabled, E[] and stale catalogues cleared. Full prior scores transfer
+no new-candidate qualification. Preserve the complete product goal, separate later
+Core receiving contract, standing cleanup authorization and every original hold.
+
+#### Provider compiler regression adoption — 13 November 2026
+
+The delegated writer returns the four authorized Python files without executing
+checks. Root freezes their actual bytes and runs the full affected suites:
+115 Engine-verifier and 149 shared-tooling tests pass. Admission guards, intended
+Cargo attribution/diagnostics, malformed/infrastructure/foreign/extra-error
+refusal, one shared deadline, six metadata commands, copy drift and successful/
+failed-probe restoration are covered. The existing shared rustc causal matcher
+is unchanged; the exact KE contracts lane is admitted only for stable-core and
+subject `ke_process`, without policy schema or dependency changes.
+
+Root rebinds actual `1b22ba32` (593 files), all 45 current inputs and 389/211
+discovery, with campaigns closed, E[] and empty catalogues. The role SHA256 is
+`7efa39ad49f61855d4f86f86fcd45ce16692573b0b684672562a92aa7fbdd835`.
+The exact configured command is the existing Engine verifier with
+`--profile ke_association --lane contracts --subject ke_process
+--tool-admission-profile stable-core`, admitted Root vendor and fresh Linux
+output `provider-contract-lane-v1`.
+
+`provider-contract-lane-v1/verification.json`, SHA256
+`2719b53d8a0143e71821cab1b08165445573da692540ed7457570d556c3bb3c9`,
+passes all six actual metadata controls: both legal constructors compile and
+all four overlap/after-drop callers stop at intended E0382, the second `claim`
+use and its exact primary line. The immutable Session source and single private
+copy are checked/restored; all 605 captured inputs retain custody. No Native
+code runs. Largest command-boundary allocation sample is 346,955,776 bytes,
+not a continuous peak. `provider_claim_contracts_passed` alone is true;
+`contracts_qualification_passed`, selected-host qualification and whole
+qualification remain false. No other proof, coverage or mutation pass follows.
+
+Independent fresh-context review `/root/provider_contract_lane_review` completes
+with READY and no material admission/restoration defect. It verifies all 45 pins,
+the closed role, actual private callers, single baseline-derived source delta,
+immutable original source, restoration and scoped pass only after final custody.
+Its delegated Cargo-cause inspection adds no executions. The review uses source
+and read-only Git status/diff, with no Git mutation or access to the live job.
+The configured full `provider-baseline-v1` lane passes on the same
+source/helper/role identity. Its receipt SHA256 is
+`4b4ddc42926cc6ca59145b8ebf32a12278a7db9238598d2eff7cadd5a3a6b25a`:
+389 ordinary and 389 optimized tests, all 211 KE cases in each roster, 69
+doctests (56 compile-only), format, MSVC all-target check and GNU/MSVC Clippy.
+The largest command-boundary allocation sample is 594,305,024 bytes, not a
+continuous peak. Windows-target checks perform no native execution.
+External staging changed while the helper writer completed: Root preserves the
+newly staged bytes and remaining unstaged test edits, without staging, committing
+or restoring the index. HEAD remains `a0ad73ab`; no source drift was observed.
+
+#### Evidence deletion and worker coverage continuation — 13 November 2026
+
+David repeats deletion of old evidence; no compression is authorized or used.
+Cleanup V33 removes the obsolete `d88de086` baseline/coverage targets. V34
+removes 21 superseded whole-worker/facade raw bundles and three completed
+provider compiler targets. V35 removes 74 older Engine bundles, 82 older
+Core/format bundles and the obsolete 533-package vendor. The exact boundaries,
+protected inputs and Git custody comparisons are in these concise receipts:
+
+- `closed-evidence-cleanup-v33.json`, SHA256
+  `854ac2a01ed0db7c7a46cbe000b8451cff595c95950bf966aa5698c416fa1543`;
+- `closed-evidence-cleanup-v34.json`, SHA256
+  `4e9f48232769617284d6e584829adf1d8fcac383192bc4626f3741cbaf26ec70`;
+- `closed-evidence-cleanup-v35.json`, SHA256
+  `6fddeefc8a460d82caf6f6f4439d6e2dbc9f3d4eed9b98f60226adde977a3897`.
+
+They retire 5,981,802,496 unique allocated bytes; actual filesystem recovery is
+5,981,786,112 bytes. Available space reaches 17,639,772,160 bytes at the final
+checkpoint. V21–V35 retire 22,588,264,448 allocated bytes cumulatively; that
+historical total is not current evidence size. The remaining NevroTick evidence/
+tool area measures 3,357,921,280 allocated bytes after this cleanup.
+HEAD/index/staged/unstaged/untracked custody matches at each deletion boundary.
+Current provider sources/results, the 585-package vendor, installed tools,
+registered worktrees and dirty independent clones remain. The current role's
+EP4 ordinary receipt and the address-round policy's old inputs are explicitly
+preserved. No readable process references the selected paths; 185 descriptor/
+link accesses were denied, so this is not a universal process-visibility claim.
+No shared service, Windows setting or host VHDX change occurs.
+
+This supersedes earlier retention statements for the deleted whole-worker,
+facade, EP2/EP3 and Core-frequency/base-feedback raw bundles. Their task summaries
+remain historical; their original raw source/console/coverage/mutation replay is
+unavailable. Replaying those obsolete scopes requires re-preparation. Current
+consumer-required inputs and current provider RED/GREEN/compiler/coverage
+records remain; obsolete compilation artifacts do not.
+
+The current `provider-coverage-v1` receipt (SHA256
+`84ec4676df16bc6aa42d10cafad54bbabd5e9ec6bbcf1ec368784cf8a8c2f94d`)
+is **incomplete**, despite all 389 tests passing: `job.rs` covers 192/215 lines
+(89.30%), below the unchanged 90% file gate. The other eleven selected files
+exceed 90%. Independent read-only triage verifies the new provider-refusal branch
+executes; missing child profiles, a test failure and resource exhaustion do not
+explain this result. Coverage JSON SHA256:
+`37097262da59dc705d7b6cefd50bfb0939a18122a88683514c41b4f56cd11f6e`.
+
+The bounded next case belongs to KE-JOB-04/05 and CHECK-8/11/25: pre-record one
+synthetic internal fact, then submit the actual checked invocation/component
+worker and collect its real join. Independently require the original full fact,
+`Termination::Contract(Control)` from duplicate-record propagation, no false
+retirement marker, actual Config/provider release and permanently spent
+admission. Existing normal-return controls supply the healthy neighbor. This is
+tests-only internal-contract evidence, not a demonstrated public product defect.
+Root delegates only `job_tests.rs`; no product, graph, policy threshold, native
+or formal changes follow. Freeze/rebind the resulting candidate before affected
+checks. Prior candidate passes do not qualify new test bytes.
+
+The tests-only case is now authored as
+`job_actual_duplicate_record_preserves_joined_contract`; independent fresh-context
+review returns READY. Its actual producer observation distinguishes the attempted
+Entropy failure from the seeded Cancelled failure, including both secondary
+causes. Assertions follow actual join. This static sensitivity assessment adds
+no execution or finite native-join evidence. `job.rs` is unchanged at SHA256
+`75d9321598b241d63337dac9f3b4a1ca04a09c02da473adc39eb540a500f2946`;
+`job_tests.rs` is
+`897a4df8d0c06b7848980b0eeeff3a2d37a447db2211095e159253403640be2e`.
+
+Root freezes candidate `82c189a6eb6ffa40bcccb7cb61f74dd5362f5c867caed5603163f83c67089ea8`
+(593 files), the expected 390/212 roster and all 45 inputs, with campaigns closed,
+empty inventories and E[]. Role SHA256:
+`c7f62144208aa8b017a130fce59fcf02b8dd9e64778a3ab1e7ab51812f741b2c`.
+The affected 115 Python controls pass after correcting an overbroad count edit
+which changed two historical doctest line labels. Seven earlier Python errors
+and the prematurely started/interrupted baseline supply no qualification.
+Only its four owned descendants and exact supervisor were stopped; the partial
+attempt is recorded in `provider-record-baseline-v1/coordinator-stop.json`, SHA256
+`15a6efdba4eca9f69a1131890ddfae701b54c43a25442423fee1418d8f03da55`.
+The corrected configured `provider-record-baseline-v2` passes all seven lanes.
+Its receipt SHA256 is
+`29d1d1a8eb2c8c1977838482ba2362da289a04320ef41b40479f3c5f0166aeb1`:
+390 ordinary and 390 optimized tests, including all 212 KE cases each, 69
+doctests (56 compile-only), format, MSVC all-target check and GNU/MSVC Clippy.
+The actual roster matches the rebound inventory; the new case executes in both
+ordinary and optimized modes. Largest command-boundary allocation sample is
+594,239,488 bytes, not a continuous peak. Independent follow-up verifies that
+only the three intended KE count owners change, historical verifier bytes and
+all provider-contract helpers remain unchanged, and all 45 pins match the
+closed role. Its read-only comparison adds no executions. Fresh
+`provider-record-coverage-v1` is running; generation/mutation and original
+native/parent gates remain open.
+
+Fresh `provider-record-coverage-v1` remains incomplete: all 390 tests pass,
+but `job.rs` reaches only 193/215 lines (89.77%); the other eleven gates pass.
+Receipt SHA256 `981b35ccf3177c5bd3a56bf2a105de30b8bc5e74efcfaad8868bc081adbcdb16`,
+coverage JSON `1fe0eecf15f888f8a5be572770163cc42b546c4c942b268b61e5306268593067`.
+The next selected path is ordinary provider refusal with `Hooks::none()`, rather
+than the existing observation hook. It must preserve the exact local Control
+failure with neither secondary cause, complete real input retirement, prevent
+factory/producer effects and retain permanent process/slot admission closure.
+
+That actual-worker case is now authored as
+`job_native_foreign_origin_retires_without_hooks`. Fresh independent review
+requests an explicit `Failed` literal instead of reusing the production
+conversion; Root applies it and review returns READY. Both the original and
+unexpectedly accepted repeat are actually joined before assertions. The factory
+remains inert even if origin checking is faulty; no global admission or CNG
+operation occurs. The reviewer adds no execution or native qualification.
+Final test SHA256:
+`fdd1b9e62759051fcff7c3e151e46850c9b509f56caa1b482ee47c698cca4872`.
+Product `job.rs`, executable-line denominator and the 90/95 gates are unchanged.
+
+Root freezes `8ea89e2d909e6012acdeaeeb596c4aa558dc9fb7db00fb1642b8401cda934570`,
+593 files, expected 391/213 roster and 45 pins. The closed role SHA256 is
+`d9c4548395f533d2abfe73d088a409d0c00c726c6d6c3adc7da9085c9f8e6257`;
+the three current count owners are updated within their AST function boundaries,
+and all 115 affected Python tests pass. The actual configured
+`provider-default-coverage-v1` finishes **incomplete**: all 391 actual tests,
+including 213 KE cases, pass and match inventory SHA256
+`f56382ce9bfa4d805990638c92ddc9899b4cc3cc9154822a90fb21117501ee7f`.
+The new default-path case executes, but `job.rs` remains 193/215 lines (89.77%);
+the other eleven file gates pass. This adds ordinary refusal evidence without
+closing the line gate. Receipt SHA256:
+`1154b405d9e72d51e78327b6ee39763bdccc6a55811ba7393e91d183e527fc4c`;
+coverage JSON:
+`890971287ba73f5b2afe37eaf6d5f5b9876770717187c4b92cf77d91bc128384`.
+The new full baseline, fresh enumeration/mutation and native qualification
+remain pending; earlier 390-case results retain only their exact source scope.
+Do not repeat expensive unchanged coverage or freeze another full qualification
+until the next coherent test slice is ready. Assess a genuine bounded Builder
+refusal control for the unexecuted spawn-error disposition; do not fabricate a
+phase or completion merely to raise coverage. Any new seam needs its reviewed
+contract and admitted source before execution. All gates and holds remain.
+
+The read-only next-control assessment proposes a GNU/Linux x64 test-only fault
+selector reaching the actual Builder request; existing `Hooks.spawn_refusal`
+returns before Builder and supplies no spawn-error evidence. Preserve the actual
+production 2,097,152-byte request and its independent literal check. An aligned
+`1usize << 63` is a candidate invalid test request, not an admitted production
+size or observed error kind. Avoid `usize::MAX`: the pinned Unix implementation's
+EINVAL fallback rounds upward and is overflow-sensitive there. Validate the
+candidate and real typed refusal within the existing finite isolated runner
+before freezing expectations; do not assume `InvalidInput`.
+Require no factory/producer entry, original Config release, unused process
+admission, retained one-shot slot refusal and no completion/retirement claim;
+collect any unexpectedly accepted inert worker before failing. Keep the healthy
+2 MiB actual worker beside it. This needs independent contract review and a
+narrow `cfg(test)` source seam; neither is implemented or admitted here. It
+qualifies an invalid test request, not real production resource exhaustion.
+Re-measure the resulting denominator and fresh inventory; predict no gate pass.
+
+#### Actual Builder refusal — bounded test contract
+
+**Identity and scope:** HEAD `a0ad73ab`, product `8ea89e2d`, 593 files and the
+closed 391/213 role `d9c45483` above. The preceding turn delivered two actual-
+worker regression cases, new refusal/coverage evidence and authorized cleanup;
+it made progress, but closed no parent gate. Current `job.rs` is `75d93215`.
+Root owns the existing task, recipe, role/helper rebinding and execution. A
+delegated writer may edit only `job.rs` and `job_tests.rs` after independent
+review; preserve external staging, all ordinary product contracts and holds.
+
+**Requirement:** KE-JOB-01/03/05, REQ-8/BND-2 and CHECK-8/11/25 require real
+submission failure to preserve its typed cause, dispose original owned inputs,
+leave process admission unused and expose no joined operation or retirement.
+Existing `Hooks.spawn_refusal` is a pre-Builder control, not this observation.
+No product defect is asserted; the untested real Builder error disposition is
+the selected missing evidence. No phase fabrication or coverage exception.
+
+**A — one capability control, before dependent source:** reuse the admitted
+Rust 1.99.1/Linux GNU x64 isolated runner and its finite 8 GiB address-space
+limit. Compile one tiny fixed standard-library fixture. In one controlled child,
+actually spawn/join an inert 2,097,152-byte worker, request aligned `1usize << 63`,
+then spawn/join the healthy worker again. Record the real `io::ErrorKind`; do not
+assume `InvalidInput`. Any unexpectedly accepted fault worker must be joined
+before the assertion fails. No global resource-limit change, unsafe code,
+dependency, network or Windows operation. One healthy/fault/healthy attempt;
+compiler plus execution share 60 seconds. This establishes only the selected
+invalid test request under that bounded profile, not production exhaustion.
+If it does not refuse ordinarily, retain incomplete evidence and reassess;
+do not increase pressure or substitute a different request without new evidence.
+
+**B — conditional actual-owner case:** only after A passes, preserve the shared
+`thread::Builder::new().stack_size(STACK_BYTES)` request and existing independent
+literal assertion. A closed Copy selector, `Selected` or `InvalidAligned`, exists
+only under `cfg(all(test, target_os = "linux", target_env = "gnu", target_arch =
+"x86_64"))`. `Hooks::none()` selects `Selected`. Before moving the whole Hooks
+into the real closure, shadow the Builder only in that test configuration;
+`InvalidAligned` changes only its actual stack request. No raw caller size,
+early synthetic return or changed normal production request. Preserve original
+callback/drop custody; the selector adds no product or Windows API.
+
+One isolated actual-worker test must reach Builder and retain the exact observed
+typed spawn refusal. Independently require zero factory/producer entries, original
+Config destruction, unused process admission, terminal `NotSubmitted`, rejected
+slot reuse, `collect`/`take_result` refusal, absent operation facts and a false
+retirement marker. A genuine postcondition claim may establish unused admission;
+it must not be described as worker execution. Join any unexpectedly accepted
+inert job before assertions. The ordinary selected 2 MiB shared-worker test is
+the healthy neighbor. A separately isolated causal fault must break the actual
+post-Builder error disposition and fail at its named contract assertion; restore
+source exactly and rerun healthy controls. This adds zero generated kill credit.
+
+**Bounded exit:** source review, focused healthy/fault controls and format before
+one coherent candidate freeze; then configured full baseline, twelve-file
+coverage and fresh enumeration. Re-measure executable lines and descriptors;
+predict no gate pass. Preserve 90/95 thresholds, eight mutation workers and all
+current time/storage limits. One heavy job at a time, no solver/fuzz/native work,
+new verifier framework, policy-schema change or dependency. Source preparation
+and focus controls share one 30-minute slice including setup/retries; retain
+partial results and stop expanding this control at that boundary. Required later
+mutation/native/product exits remain open. Public execution stays one-shot and
+never-send by default; Core-positive receiving and real production authorities
+remain at their separate owners. No commit or parent completion follows from A.
+
+End of the bounded Builder-refusal contract.
+
+**Independent plan review:** `/root/builder_refusal_plan_review`, fresh context
+with no inherited discussion or memory retrieval, completes READY for A; B stays
+conditional on A passing. It reads the frozen 4,429-byte card, SHA256
+`e1ab8298df0f399618769e265e65fb1d98341fc30d0eaa739b8bf2ae38a77743`,
+actual worker/tests, selected Rust implementation and all 45 current pins.
+Its comprehension paragraphs are retained verbatim:
+
+> Stage A proposes one bounded Linux capability observation: join a healthy 2 MiB thread, attempt the fixed aligned oversized request, then join another healthy thread. Stage B conditionally uses that demonstrated request through the actual worker’s Builder call, checking submission-failure custody without changing normal production behavior.
+
+> The current worker already owns prepared Config/Control, one-way slot state, the real JoinHandle and separate operation/retirement facts. Its synthetic refusal hook returns before Builder. Actual Builder-error observation is missing; native Windows, production exhaustion and parent qualification remain separate, open work.
+
+The review finds no material issue for the named stage and supplies no execution
+or parent qualification. Root selects the existing `analysis-runtime.py` ordinary
+8 GiB per-process profile explicitly; the older product sandbox helper's default
+is 4 GiB and is not used by this capability recipe. No global limits change.
+
+#### Actual Builder refusal — executed capability and sensitivity
+
+Stage A passes in `builder-refusal-capability-v1/verification.json`, SHA256
+`0648885900d72f0c05eced60797fcc5a8175e62cd2ae3d5d3827f60e74194459`.
+The actual 2 MiB workers join before/after the invalid request; the latter
+returns `WouldBlock`, enters no worker body and drops its captured marker before
+return. Compiler plus execution and custody checks take 7.635 seconds. This is
+one bounded Linux observation, not real production exhaustion or Windows evidence.
+
+The delegated writer returns only `job.rs`/`job_tests.rs`, formatted by the pinned
+rustfmt. Root clarifies the preexisting Hooks comment: callbacks execute outside
+gates, while pure submission-fault selection remains inside custody. Frozen
+candidate `a729516e603d355835a22a67deca66074a9b8570bf39bb71d2ed36d15d8fe43d`
+has 593 files, the expected 392/214 GNU roster and 45 matching pins. Closed role:
+`607bea01ca1e6663446ec2242bb922eb8f89bdd7c8ceb458ec9ac2bce7cbdbba`.
+Final worker/test hashes are respectively
+`91f78e856f3e1803acdbce0a40aca3ca1ce030a2232566f4a958cf3e1d15ffc9`
+and `db6fe4f51e5979b4920b0a4845e7102273b3d32bff8f1c8ac35f96801bbb9fd4`.
+Only three current count owners and their synthetic fixtures change; the 178
+ordinary non-KE fixture count and historical identities remain unchanged.
+All 115 affected Python controls pass. No staging/Git mutation occurs.
+
+Fresh `/root/builder_refusal_source_review` completes READY for focused execution,
+inspecting actual worker/test/runner/capability source and hashes. Its delegated
+pin/count comparison adds no executions. It confirms the shared 2 MiB normal
+request, GNU-only closed selector, original closure custody, real typed refusal
+and cleanup before assertions, including unexpectedly accepted repeats. The
+review reports no relevant builder-refusal memory-registry entry. Source review
+alone supplies no behavioral, native or parent pass.
+
+The first focused attempt executes zero commands: JSON progress serialization
+rejects a Path in tool metadata. Its incomplete receipt is
+`builder-refusal-focused-v1/verification.json`, SHA256
+`b9c5c0017b578fe601f694050f70fc12719ddd18d14e3cd3098f5a4dea67d0bf`.
+Root normalizes only the report's tool metadata to JSON strings, preserving the
+actual tool-payload comparison, and uses a fresh v2 output. Product bytes and
+gates are unchanged. This setup failure contributes no behavioral evidence.
+
+`builder-refusal-focused-v2/verification.json`, SHA256
+`7f734cc04158a3e96b1704f460aac48e47f877ab9056553a02a143b76da10231`,
+passes source format, the actual healthy worker before/after and actual Builder
+refusal before/after one isolated source fault. Reopening the post-Builder slot
+as `Unused` compiles and fails Test 101 at
+`KE-JOB-03-real-builder-refusal-terminal-phase`, after actual cleanup. Restoration
+is exact and all Root source/helper/vendor/tool bookends match. The diff SHA256
+is `c92adbf657d442b9e7c411c53623d49b6e4838abc36da3d519ecac7c3ded5ea4`;
+this manual control adds zero generated kills. The six focused commands and
+custody checking take 51.341 seconds, with largest command-boundary allocation
+221,626,368 bytes, not a continuous peak. This closes the bounded source/focus
+stage; do not expand the control. The configured `builder-refusal-baseline-v1`
+passes all seven lanes: 392 ordinary/392 optimized cases, all 214 KE cases in
+each roster, 69 doctests (56 compile-only), format, MSVC all-target check and
+GNU/MSVC Clippy. Receipt SHA256:
+`0367c9397784d596ce773dfc14ce0ed83b985fcfafbae60abd74bc7fc73d7ec3`.
+Its largest command-boundary allocation is 594,739,200 bytes, not a continuous
+peak. Windows checks perform no native execution.
+
+Fresh `builder-refusal-coverage-v1` is incomplete despite all 392 tests passing:
+the actual Builder error arm executes, but `job.rs` is 196/219 lines (89.50%).
+The other eleven selected file gates pass. Receipt SHA256
+`98359bc5132a6a2f4ec7d9b0bdf78e22e0d0d95e80d57659488233032881b392`;
+coverage JSON
+`54a92e492a38458935388e5a75935be49ea587fd092137d6cad2ba2ace9448a7`.
+The changed denominator is measured, not inherited or predicted. This result
+does not reopen the completed Builder-control slice or weaken the file gate.
+The next bounded question concerns the collector's duplicated state decision:
+an existing borrowed check under one custody guard already admits only Running,
+then the owned replacement repeats that assumption and retains an impossible
+fallback. Independently assess one exhaustive owned disposition match while
+preserving the existing borrowed self-join check and its std call before handle
+extraction. No edit is admitted solely to improve a percentage; remaining real
+gaps and all native/generation/mutation/product/parent gates remain open.
+
+**Collector transfer cleanup — bounded continuation.** Independent fresh-context
+`/root/collector_state_review` completes the semantic assessment and verifies the
+implemented small diff. It retains `thread::current()` only for borrowed Running,
+before handle extraction; the selected std source can panic after TLS destruction,
+so moving this call after extraction would introduce a handle-drop risk. That
+alternative is rejected without implementation or an executed product-failure
+claim. The accepted change uses one exhaustive owned disposition match after
+the unchanged self-join guard: Running transfers; Submitting/Joining restore and
+return Busy; Unused/Joined/Taken/NotSubmitted restore and return NotReady. The
+same held mutex hides the temporary Joining value. Restoring it drops no handle
+or sealed payload; future phase variants require an explicit compiler-checked
+disposition. Runtime/lock refusals, actual join and all post-join fact, poison,
+panic-custody and publication handling remain unchanged.
+
+Root changes only `job.rs` and rebinds its existing role. This is a behavior-
+preserving ownership cleanup, not a demonstrated product-defect repair or an
+exclusion from coverage. No new seam, test, dependency or policy threshold.
+Candidate `9836e95f77eaf61fa15dc13c29b7a5219e88c9c69a19fa7467f5da2281c40d43`
+retains 593 files, 392/214 tests and 45 pins. Worker SHA256:
+`4f1ea394f111f8c3f21feb1b09ada856da4be8cdc4d060663c68f18f191b8730`;
+closed role SHA256:
+`3c6112d6f11a39c9fcc037dcd7aaafd0aeaba828b9ac546dd7949c865a490eb7`.
+The unchanged Python helpers retain their existing 115-test pass. Review returns
+READY for existing actual self-join, closed-custody, concurrent collector,
+poison/panic preservation and TLS-tail controls. Focus will run the actual healthy
+and self-join cases, one isolated wrong refusal-kind fault, exact restoration and
+all 214 KE cases through the same admitted 8 GiB profile with one shared five-
+minute execution budget. Reuse only the closed proven GNU dependency cache;
+tool/vendor/graph identities must match and only worker/role inputs may differ.
+Retain the original receipt and record the transfer; do not duplicate its cache.
+After this coherent source/focus slice, measure full baseline/coverage and fresh
+generation. If the file gate stays below 90%, retain that result without extending
+this cleanup merely for percentage. Every original hold remains.
+
+`collector-transfer-focused-v1/verification.json`, SHA256
+`cb8233c6f0b7789c16bc52f079162db1daf97e6c10b9aa0f5f2db443dbb1f49f`,
+passes format, the actual healthy collector, actual self-join refusal before/
+after restoration and all 214 entered KE cases. The isolated wrong self-join
+kind compiles and fails Test 101 on the actual `Busy` versus `SelfJoin` assertion
+after external collection; source is restored exactly. Diff SHA256:
+`e357a309fb314aa56adc25651b72c9f03a99a87cfcf348a7e6d9940c6698dfd4`.
+It adds zero generated kills. The six commands and custody checks take 81.000
+seconds. The closed dependency cache is moved, not duplicated, only after exact
+tool/vendor and all non-worker/non-role input identities match.
+
+`collector-transfer-coverage-v1/verification.json`, SHA256
+`4f20ccfbc2e8a0ca93c2012ce70008b5b2602b51972800544e5733c1a8ae34fb`,
+passes all twelve GNU 90% file-line gates. All 392 actual tests, including all
+214 KE cases, pass with inventory SHA256
+`212d79e08be53f6a775a1766afc5a72872a7315381cde84fec7738120e66ebc7`.
+The worker measures 201/221 lines (90.95%); the denominator is new, not borrowed
+from earlier receipts. Coverage JSON SHA256:
+`25cc5405324de0427f1bdd5305f02ff48b79886c716d6616370a447bcbadef51`.
+Largest command-boundary allocation is 387,620,864 bytes, not a continuous peak.
+The source ownership cleanup adds no exclusion, test-file dilution or threshold
+exception. Branch, macro/generation and native evidence remain separate. Scoped
+`selected_lane_passed` alone is true; selected-host metrics/qualification and
+whole qualification remain false. The configured full
+`collector-transfer-baseline-v1` passes all seven lanes: format, MSVC all-target
+check, 392 ordinary/392 optimized cases with all 214 KE cases each, 69 doctests
+(56 compile-only), GNU Clippy and MSVC Clippy. Receipt SHA256
+`0926bf73beab8826a1eaf6c47e2c5fb29f9edb6017b9b91e7a7465b9bc66cba9`;
+largest command-boundary allocation is 594,743,296 bytes, not a continuous peak.
+No native Windows execution follows from those static target checks.
+
+Fresh `collector-transfer-enumeration-v1/verification.json`, SHA256
+`c87141fb54626ba7456126551258e21daa9c6f1ef62a5e8f24b69c33ee150514`,
+discovers 604 descriptors across all twelve registered GNU owners. The complete
+`ke_process` inventory has three entries, SHA256
+`ee2260e37180be4c4e22d7511f2377502ab24c318c531a1a57b26dd8a6d8c929`;
+the current job inventory has 23, SHA256
+`a7860c37a7755d096a324b60e6860443e0b9ea2cd40180bcb453efb743e99e57`.
+These are fresh identities, not predecessor outcomes. Execution stays closed,
+E[] and all catalogues remain empty until independent preadmission review.
+Root selects only the complete three-entry process-admission cohort next, with
+unchanged eight workers, 1200/90/60 second budgets, 512 cap, 5/4 GiB disk floors
+and 768 MiB command-boundary output limit. Review must reconcile constructors,
+generic implementations and atomic arguments with the actual inventory and its
+independent alternatives. The self-join macro and generated test-only stack
+selector fault also require explicit job-cohort reconciliation before its later
+admission. Neither missing generation nor a control is a generated kill. All
+native/mutation/product/parent gates stay open; no commit or release follows.
+
+Fresh `/root/process_campaign_review` completes READY for **only** the entire
+three-entry GNU `ke_process` cohort. It independently reads the exact baseline,
+coverage and enumeration receipts, verifies all 605 captured inputs and 45 pins,
+and reconciles actual descriptors with source/callers. The two default-return
+variants appear unbuildable, but neither receives a predicted outcome or kill.
+It explicitly retains ungenerated `ProcessAdmission::new`, compare-exchange
+arguments/orderings, the generic ProviderScope constructors/witness and the full
+generic factory/provenance/consumption/destruction contract. Historical origin
+RED/GREEN and six compiler controls match current process source bytes only
+within their exact recorded scopes; no new whole-candidate/native pass transfers.
+
+Root mechanically binds all twelve descriptor identities, as required by the
+existing validator, and temporarily opens execution for the single reviewed
+`--lane mutation --subject ke_process` command. That map authorizes neither the
+other eleven cohorts nor `--subject all`. E[] remains and all original gates,
+budgets and native holds remain unchanged. The job cohort remains unadmitted:
+its test-only stack shift, self-join macro, constructors/generics and Windows
+paths require independent alternative/generation accounting. Actual CNG caches,
+shutdown and native completion/resources remain open regardless of this score.
+
+**Executed process cohort and independent classification.** The exact selected
+campaign finishes in `collector-process-mutation-v1/verification.json`, SHA256
+`63fd6963a94e9f18a37d2f845633e619df86cc35e92edb7cbc18e381aba81e44`.
+Fresh `/root/process_campaign_review` independently inspects all three complete
+diffs, commands, logs and outcomes and accepts C1/U2, no survivors, timeouts or
+exclusions. Both enumerations match the reviewed process inventory exactly.
+
+- `claim`, line 29: Build 101, no Test. Mutation-site E0277 rejects missing
+  `ProcessClaim: Default`; the same log also denies unused Ordering. Log SHA256
+  `1f2e4d4fc337c9410db35c152e5c795666631d1048d7977081a389f72eb3820b`,
+  causal lines 148–157. This is unviable, not a behavioral kill.
+- `native_scope_with`, line 50: Build 101, no Test. E0277 rejects missing
+  `ProviderScope: Default`. Log SHA256
+  `c62c4aca660bc7cabe377883158a2f009d885bcf002e7eead86491e6c835cef7`,
+  causal lines 216–224. This is unviable, not a behavioral kill.
+- Origin negation deletion: Build succeeds, then actual forbidden factory
+  counts fail KE-PROV-03 (1 versus 0) and KE-PROV-01 (2 versus 0). The library
+  summary records 364 passed/4 failed; Cargo stops there, so no full mutated
+  461-case execution is claimed. Log SHA256
+  `357111ee760eaba7ff0fea749bfbfe5b4f2a5a721168fe70ecdc3cfb59b8bfbf`,
+  build line 213, assertions 527–540/722 onward and summary 740. This one fault
+  is caught by requirement-specific assertions rather than exit status alone.
+
+Healthy baseline is 461 unique records: 392 ordinary (214 KE) and 69 doctests,
+56 compile-only. Its log SHA256 is
+`56ff3f37ea6dbdd0f37981b5462dd6efef69340abe759f13cab948947e017a81`.
+Raw outcomes SHA256:
+`f5d7707ef886b670e9c8227b582702e50400151367911f3d0dda52c8d9aa9c56`.
+The generated-file score is 1/1 viable = 100%, with both compiler refusals
+receiving zero kill credit. This narrowly completes that generated gate, not
+the ungenerated constructors/atomic/generic/native obligations or the other
+eleven cohorts. Independent classification is retained here without rewriting
+the raw verifier's pending-review text into an execution result.
+
+Root closes admission after terminal execution: open role
+`6641218bd104d30087c6ef1a5f88beb392987bb28bbab6c5fb39d64e2014ecc3`
+becomes closed
+`8143f7e5f810764a74ade74b62409e08f2e18f3669350a125b5f7510f1c82c66`.
+All twelve exact catalogue identities remain, E[]. The sole current difference
+from the 605 captured open-role inputs is that declared terminal closure;
+all 45 current pins match. Tool-copy digest and stable-payload bookends agree.
+Owned target/tmp are empty and output has no symlinks; largest command-boundary
+allocation is 32,923,648 bytes, not a continuous peak. Broader qualification
+flags remain false and every original hold remains.
+
+**Bounded checkpoint cache retirement.** Root deletes only three terminal
+targets: the superseded Builder baseline/coverage and completed collector MSVC
+metadata target. `checkpoint-unused-targets-cleanup-v1.json`, SHA256
+`71f930fb369e14f1e9ff6aa8825041fb5fe25bc47d1944e054d4ec9273ba43f1`,
+records 1,084,334,080 allocated bytes and equal filesystem recovery, reaching
+17,055,514,624 bytes available. Current coverage profiles/binaries, the one
+proven warm GNU cache and all source/raw-console/JSON/receipts remain; no
+compression or shared process change occurs. Git custody matches; 191 process
+link/descriptor accesses were denied. Source, tool, vendor and worktree custody
+is preserved. Current artifacts are not silently accumulated as old replay trees.
+
+Cleanup V36 deletes four terminal compiler/profile targets, retaining all their
+source, console, coverage JSON, final receipts and the coordinator-stop record.
+Receipt `closed-evidence-cleanup-v36.json`, SHA256
+`dd70e394754171022f04a726292b8c689d0a472dedc1d3bed26272e4784d1384`,
+records 1,626,529,792 allocated bytes and equal filesystem recovery, unchanged
+Git custody and 191 denied process-link/descriptor accesses. Available space is
+17,959,096,320 bytes before the next coverage run. V33–V36 recover 7,608,315,904
+filesystem bytes; V21–V36 retire 24,214,794,240 allocated bytes cumulatively.
+This total is historical deletion, not current retained evidence size. No
+compression, shared process termination, source deletion or Windows change occurs.
+
+After that last coverage run terminates, Root also deletes only
+`provider-default-coverage-v1/work/target`: 356,823,040 allocated bytes and equal
+filesystem recovery. Its exact source, console, receipt and coverage JSON retain
+their hashes above; Git custody matches and 191 process-link/descriptor accesses
+are denied. This bounded deletion is recorded here and in the tool observation,
+without another report tree. The cleanup cycle now recovers 7,965,138,944
+filesystem bytes; available space is 17,923,592,192 bytes. The remaining complete
+NevroTick evidence/tool area measures 3,107,635,200 allocated bytes. Cumulative
+V21–V36 plus this final target deletion retire 24,571,617,280 allocated bytes;
+neither that cumulative number nor future build estimates describe current use.
+
+**Current job-cohort admission — 13 November 2026.** Fresh-context independent
+`/root/job_campaign_reconciliation` completes READY only for the full 23-entry
+GNU job inventory on `9836e95f`, hash `a7860c37…e99e57`. It independently
+recomputes all 593 product hashes, verifies all 45 pins and exact baseline,
+coverage, enumeration and focused-control receipts. The only captured-input
+difference is the recorded role catalogue/closure adoption. It maps every
+requirement-bearing constructor/helper/guard to actual descriptors and existing
+direct/isolated controls, retaining ungenerated generic construction, phase/
+atomic/payload ordering, self-join comparison and Windows-only obligations.
+
+The line-343 shift changes only the GNU test-only invalid stack request.
+Retain its actual raw outcome; a caught result measures fixture sensitivity,
+not a production stack defect or native-stack pass. Do not exclude it, add a
+product kill, or credit the manual self-join control as generated. The current
+real self-join/external collection and wrong-kind causal control are sufficient
+alternatives to admit this bounded measurement; they close no complete generic
+or native contract. All other cohorts stay unadmitted.
+
+Root temporarily opens the same fully bound role only for the exact
+`--profile ke_association --lane mutation --subject ke_job` command, fresh output
+`collector-job-mutation-v1`, eight workers and unchanged 1200/90/60-second,
+512-variant, 5/4-GiB disk-floor and 768-MiB command-boundary output limits.
+Source, helpers, graph, E[] and thresholds are frozen. Inspect every outcome
+independently after terminal execution, then close admission. Baseline/line
+passes and the earlier process score establish no predicted job outcome.
+
+**Current job-cohort terminal accounting — 13 November 2026.** The complete
+23-entry run terminates incomplete, exit 2: 10 caught, 11 unviable, 2 missed,
+zero timeouts and E[]. The unchanged generated-file gate measures 10/12 viable
+= 83.3333%, below 95%; no exclusion or denominator adjustment is adopted.
+Fresh-context `/root/job_campaign_reconciliation` independently checks every
+descriptor, diff, compiler/test phase and causal log against inventory
+`a7860c37…e99e57`. Its classification is:
+
+| Actual descriptors in `job.rs` | Outcome and causal evidence |
+| --- | --- |
+| `23:37 * → +`, `23:30 * → /`, `23:37 * → /` | Three actual-worker stack overflows/SIGABRT after requesting 3072, zero and two bytes respectively; not compiler/setup failures. |
+| `23:30 * → +` | KE-JOB-01 rejects requested stack 1048578 instead of 2097152. |
+| `329:12 delete !` | Actual admission returns `Err(Used)` instead of the expected spawn disposition. |
+| `343:71 << → >>` | Test-only invalid-stack fixture catch: unexpected accepted work is actually collected before `Ok(())` versus `Err(Spawn(WouldBlock))` fails. Zero additional product credit. |
+| `427:47 && → \|\|`, `427:58 && → \|\|`, `427:61 delete !` | Actual healthy/post-join poison cases distinguish `Returned` from `Contract(Control)` under KE-JOB-05. |
+| `494:27 >= → <` | Actual observations incorrectly return `TimedOut` for current NotSubmitted/Running/Joining states. |
+| Defaults at `50:9`, `258:9`, `377:9`, `447:9`, `494:9` | Five E0277 type/API refusals; Build 101, no Test. |
+| `96:9`, `324:9`, `385:9`, both `427:27` constants, `530:5` | Six denied unused/dead-code lint refusals; Build 101, no Test. |
+| `31:5 native_provider` and `293:9 WorkerSlot::try_submit` replacements | Two unresolved misses in Windows-only bodies inactive under GNU. GNU success establishes neither Windows mutation viability nor equivalence. |
+
+Thus C10 comprises six product requirement assertions, three actual-worker
+resource failures and one fixture-sensitive catch. Unviable entries receive
+zero behavioral kill credit. Crash logs do not provide a complete mutated test
+roster or native stack measurement. The healthy baseline and each miss contain
+461 unique records: 392 ordinary (214 KE) plus 69 doctests, 56 compile-only.
+
+Raw evidence remains under `collector-job-mutation-v1`: receipt SHA256
+`536f4668adff9b49c2a9758170ec3f955fddec9dceced5f6dbcac749fd5bcbcb`,
+outcomes `6e36106500bb18c43ac15ed537b83012d33b3771c0baa83b96a2b49fb983cdf1`,
+mutant listing `74a8d4882a11ca9fe1be79306fdc34030cc511225646e21da41d3f1eb935f1fc`
+and baseline log
+`89a42a49850ce5a393f8317d34cd7e44468ff80ebbac5a3a77a201f68bf83cfc`.
+Per-descriptor logs use `work/mutation/ke_job/mutants.out/log/` and the exact
+line/column filenames; `_001` distinguishes the second line-23 operation and
+line-427 constant. All 605 captured inputs match their frozen snapshot. The
+sole current difference is the declared terminal role closure from `6641218b…`
+to `8143f7e5…`; 45 pins and all twelve catalogues remain exact. Target/tmp are
+empty; largest command-boundary allocation is 36,114,432 bytes, not a continuous
+peak. Missing self-join comparison descriptors, generic/atomic/retirement-order
+sensitivity, native provider/shutdown, ten other cohorts and parent exits remain
+open. This review completes accounting, not the job gate or checkpoint.
+
+**Owner-requested old-evidence retirement — 13 November 2026.** The measured
+external NevroTick evidence/tool area starts at 3,952,267,264 allocated bytes;
+the repository target adds 997,933,056. These are current measurements, not the
+earlier cumulative 20+ GB deletion totals. Root is sole mutation owner; two
+read-only reviewers classify obsolete evidence and build/cache boundaries.
+
+Root deletes the entire superseded `provider-coverage-v1`,
+`provider-record-coverage-v1`, `provider-default-coverage-v1`,
+`builder-refusal-coverage-v1`, `provider-record-baseline-v1` and
+`builder-refusal-focused-v1` bundles, including expendable copied tools. The
+first five frozen sources exactly match their recorded 605-file maps; the
+failed focused-v1's 613-file source equals successful v2. Current baseline and
+coverage supersede their metrics; the interrupted/zero-command attempts retain
+their historical disposition above, without raw replay. Historical causal
+provider/compiler/Builder controls still used by current reasoning remain.
+
+Also deleted: the terminal `collector-transfer-coverage-v1/work/target` only;
+six unused registry/advisory/archive-cache children under
+`phase-plan-20261108-v1/nts-ke-graph-v1`; 44 exact old formal `jobs/` snapshot/
+trace directories; and the unused repository target. No formal execution occurs.
+Containing formal roots, authored scripts/patches, diagnostic kit, installed
+tools and worktrees remain. Current coverage JSON/source/receipt hashes remain
+exact; rebuilding is required to reproduce removed profiles/binaries. Current
+ordinary/enumeration/process/job evidence, vendor, warm GNU qualification cache,
+service artifacts and address-round policy inputs stay intact.
+
+The small existing-chain receipt `checkpoint-obsolete-evidence-cleanup-v2.json`
+(4880 bytes), SHA256
+`58c2a2ca3e67edd679b0c21d34dcdea51a854feacf30827c20984073e0c3891c`,
+lists every exact boundary. Removed allocated bytes total 1,650,307,072,
+including 652,374,016 outside the repository. Actual available-space change is
+568,381,440 bytes, reaching 17,593,491,456 at the receipt sample; allocation
+totals are not net recovery. During cleanup, Serena's Rust analyzer recreates
+875,827,200 bytes in the repo target. New Flycheck output records a Cargo check
+(`build-finished` with `success: false`), and analyzer PID 3079571 has the repository cwd and
+Serena parent 3079380. This background check is not qualification evidence.
+Root retains that active cache rather than repeating deletion/rebuild cycles;
+no shared MCP/IDE/service process is terminated or reconfigured.
+
+Remaining external evidence/tools measure 3,299,893,248 bytes immediately before
+the small receipt. HEAD, index, staged diff, untracked custody and worktree
+registry match the cleanup baseline; only this task and three current guide/
+tooling summaries receive deliberate documentation updates in this checkpoint. The 605
+current captured source inputs still differ only by recorded terminal role
+closure. Canonical path, UID/device, no-follow inventory and unchanged-entry
+checks precede deletion. Pre-deletion readable process scopes reveal no target users; 242,
+292 and 297 inaccessible link/map observations limit those snapshots. Nothing
+is compressed. Retire obsolete outputs at terminal checkpoints; keep the one
+current qualification chain rather than accumulating predecessor replay trees.
+
+#### Protected historical result through actual join — bounded contract
+
+**Requirement and predecessor.** Under REQ-8/10/11/14/15,
+CHECK-7/8/10/11/14/25 and AC-19, preserve the genuine protected observation for
+the existing receiver-first/Core-admission child. Current `9836e95f` has complete
+portable process/job accounting above; the job gate and ten other mutation
+cohorts remain open. This card is source preparation, not a predecessor pass,
+production sample issuer, Core history insertion or native execution. Keep the
+current source frozen through independent review; no campaign may race source
+changes. Complete one coherent ownership slice before freezing its successor.
+
+**Observed gap.** `datagram::exchange` returns an opaque retired completion;
+`commit` validates the actual association/Control/ordinal before the final
+Control decision. `ActiveReceiver::accept` then consumes `CommittedProtected`
+through `into_summary`, dropping the authenticated full header, three software
+brackets, endpoints, socket identity and original packet-admission time. The
+actual invocation/worker/join chain carries only Copy counts. This is an
+unfinished integration capability, not a demonstrated arithmetic or protocol
+defect. Adding getters while the returned owner still discards those facts
+would leave the gap unchanged.
+
+**Selected ownership.** Add private, non-Clone/non-Copy `InvocationCompletion`
+with `Preview(Summary)` and `Protected(Box<ProtectedHistory>)` variants. One
+bounded box owns the full protected history; this avoids expanding every
+worker/error stack value by the complete capture payload. `ProtectedHistory`
+contains the existing count `Summary`, genuine `Receipt`, three software
+brackets, endpoints, socket identity and original invocation chart. No
+serialization, raw constructor, general Debug/Eq, new Cargo
+edge or new public API is added. CLI borrows only `completion.summary()` and
+keeps its existing count-only output and initial KE cookie-population meaning.
+Preview owns no protected facts. A copied `Receipt`, endpoint, count, local
+timestamp or old observation cannot create this owning success.
+
+**Origin and detachment.** `Invocation::from_control` constructs one
+`Arc<RunClockContext>` from the checked original Control origin before the first
+establishment/exchange. Replacement contexts retain that same historical chart;
+it grants no production source/mapping identity. The genuine consuming receiver
+first checks the actual Control pointer. Only then does a private consuming
+conversion detach immutable history; it is infallible after that check and
+precedes receiver state closure. The owning Receipt retains the complete
+authenticated `RawHeader`, request serial and original packet-admission time;
+exact three `SoftwareClock` brackets, actual endpoints/socket `Arc` identity
+and the historical invocation chart accompany it. No borrowed
+Control, association, cookie/key, NTS UID extension, packet buffer, provider,
+runtime or native handle escapes. Header correlation bits remain private and
+unformatted. Actual T1 is `send_before.utc`, never the randomized wire origin.
+
+Keep this private history distinct from `TransportFacts`: the plain pilot's
+constructor rejects zero T2/T3, while `response::stage_reply` authenticates and
+retains header bits without that numerical check. The original reuse proposal
+(card SHA256 `ea42bac4…fa7262e`) is rejected for weakening the existing type's
+nonzero invariant or silently adding a new NTS rejection. The independent
+reviewer confirms the unchanged header path through ReplyFields, ledger Receipt
+and datagram completion. Retain zero bits as inert authenticated history, with
+no numerical/profile/measurement API at this stage. No nominal result, host-date
+window, physical error envelope, authentication-to-accuracy inference or fixture
+divisor is invented. Original `Receipt::accepted_at` precedes backend retirement
+and final Control commit; final commit time is not currently recorded. Preserve
+original capture age when later consumed; detachment/join must not refresh it.
+
+**Count adapter.** Keep one actual `protected_receiving` commit boundary.
+Generalize its private receiver result, passing the already checked initial
+population alongside genuine `CommittedProtected` to its consuming callback.
+The production callback returns `ProtectedHistory`; the existing test-only
+`protected_once` callback returns its historical Summary. Their count
+construction uses the same genuine operation and captured initial population;
+neither callback issues a new authenticated fact or changes commit guards.
+This small generic adapter is an explicit generation gap to reconcile against
+both actual callers, not new generated kill credit. `Step::Complete`,
+`drive_invocation_with`, `job::Operation`, the facade and Windows `run` carry
+`InvocationCompletion` through the actual return chain.
+
+**Write once, move once.** Replace only the worker payload cell with
+`OnceLock<Mutex<Option<Operation>>>`. `record` sets the outer latch once with
+`Some(operation)`; duplicate recording never overwrites or reopens it, including
+after collection. No ordinary worker locks the inner cell. Only the designated
+collector, after actual `JoinHandle::join`, takes its Option and moves it into
+`Phase::Joined`. Missing or poisoned facts force abnormal/contract termination,
+never normal Returned. Recover a poisoned inner guard solely to retain its
+payload; do not clear poison. Keep outer slot poison, actual retirement marker,
+sealed unwind payload and original operation failure independently meaningful.
+Recorded history survives later provider/Config-retirement panic without
+asserting ordinary cleanup. No lock spans join, provider teardown or a callback.
+
+`JoinedOutcome` and `RunFailed` lose Copy/Clone. `take_result` moves the joined
+value under the existing gate, restores every refused phase and leaves Taken
+permanently. The facade matches the complete owned outcome, retaining the
+whole abnormal result without a partial move. Observer timeout, stop, dropped
+observer and `is_finished` remain incapable of exposing facts or releasing
+actual job custody. Fixed/redacted failure output never formats history.
+
+**Acceptance and admitted files.** KE-HIST-01: genuine Script success retains
+the same header/captures/serial/socket and original chart/time through actual
+worker join. KE-HIST-02: preview has counts and no protected payload.
+KE-HIST-03: pre-join, duplicate take and record-after-take refuse permanently.
+KE-HIST-04: recorded owning facts survive actual later worker/retirement panic,
+with abnormal termination and unchanged cleanup truth. KE-HIST-05: inner/outer
+poison cannot produce Returned; recoverable payload remains retained.
+KE-HIST-06: unchanged initial-population output, final stop/expiry guards,
+zero-cookie rejection budgets and cleanup order. KE-HIST-07: a valid-tag reply
+with zero T2 and/or T3 traverses the actual Script/driver/worker and retains
+those exact bits, beside the nonzero neighbor, without a new measurement or
+sample capability. Retain healthy neighbors and
+actual-worker ownership assertions, plus legal/compile-fail controls challenging
+copy/clone, raw construction and double consumption. No synthetic producer or
+disconnected result channel may stand in for the actual Script/driver/worker.
+
+After independent review, the source slice is limited to `lib.rs` chart
+documentation; existing `nts_ke_experiment/{datagram,recovery,mod,job}.rs` and
+their existing tests. Receipt storage activates no production numerical getter;
+keep existing receipt/ReplyFields access expectations unless a genuine use
+changes. Only narrowly justified retention expectations may cover historical
+payload fields awaiting the separately qualified consumer; no fake read, drop
+implementation or general lint allowance may hide that pending integration.
+Manifests, locks, shared service/
+UI/schema and numerical/Core algorithms remain coordinator-protected. Focused
+ownership tests and fault/healthy controls precede formatting and successor
+freeze. Run the configured ordinary/optimized/doctest and GNU/MSVC static lanes,
+then current 90% per-file coverage and fresh independently reviewed 95% mutation
+gates; unresolved Windows/generic/model requirements stay explicit. Do not reuse
+`9836e95f` whole-candidate metrics after source changes, weaken thresholds or
+call this source child completion of P1. All existing execution holds remain.
+
+End of the bounded protected-history contract.
+
+**Independent review and source admission.** Fresh-context
+`/root/protected_history_contract_review` completes REVISE for the original
+7488-byte card's TransportFacts mismatch (HIST-R1), then READY for the revised
+8490-byte card, SHA256
+`3c5520da4ac1179f59095988910afa445cce303d857465dfdda0e9c8f6dd6d20`.
+Its revised comprehension is retained verbatim:
+
+> The revised card preserves genuine protected history as an owned receipt,
+> original software captures, endpoints, socket identity and invocation chart.
+> A move-only completion carries that history through the actual driver,
+> worker, join and facade. It adds no numerical/profile API or Core eligibility;
+> CLI output remains count-only.
+>
+> Currently, the protected receiver authenticates and retains raw header bits,
+> including potentially zero T2/T3, before reducing completion to copied counts.
+> The revised design preserves those broader historical facts without weakening
+> `TransportFacts`’ narrower invariant. Existing mutation/native/Core
+> qualification remains incomplete and does not transfer to the successor.
+
+Concrete privacy placement: define `ProtectedHistory` inside
+`datagram::reached`, with fields private to that module and only the genuine
+`CommittedProtected` consuming conversion as its constructor. The parent
+receiver can name/own the type and borrow its Summary without constructing it
+from a copied Receipt. Compiler specimens outside that defining module use the
+actual types and legal API: Copy/Clone E0277, second-consumption E0382 and
+raw-field E0451, beside compiling legal neighbors. The sealed package/Session
+machinery is reusable; process-only specimens and claim-specific diagnostics
+are not. Root owns any narrowly required compiler-runner extension.
+
+Root admits only the named source slice. `/root/job_campaign_reconciliation`
+owns `job.rs` and `job_tests.rs`; Root owns the other named files and genuine
+Script/driver/worker controls. No concurrent campaign runs. Current source
+metrics become historical as bytes change; execution remains closed and all
+successor gates remain required. The separately completed 92-descriptor
+`ke_core` preadmission on `9836e95f` is not executed immediately before its
+planned source change: re-enumerate/review the successor instead of paying for
+a knowingly obsolete campaign. This preserves the 95% requirement and does not
+close the predecessor's incomplete stop/worker checkpoint.
+
+**Reviewed fixture/retirement refinement.** The same fresh reviewer admits
+exactly two additional test-only paths: the existing
+`tools/crypto-aes-siv-witness/tests/ep2_response_fixtures.rs` generator and
+`response/fixtures.rs`. Add three independent healthy-header copies with zero
+T2, T3 or both; use the unchanged common builder/admitted AES-SIV, preserve all
+33 prior fixture bytes, and import only the three new literal arrays. Select
+these through the existing static Script packet variant; add no public crypto
+API, runtime codec, dependency or leaked buffer. The current configured fixture
+lane fixes 33 names and refuses retained catalogues; it cannot be used unchanged.
+A narrowly reviewed Session-bound generator selection must precede execution;
+do not clear/relabel old catalogue evidence merely to satisfy that lane.
+
+Historical socket `Arc` survival now deliberately differs from actual backend
+retirement. Give the existing test-only Script one separate drop-lifetime token;
+observe its Weak witness at the real producer. Retain the original socket token
+in protected history and check both facts together, rather than weakening the
+old retirement assertion or dropping history to force a zero count. This is
+component resource evidence, not Windows/native retirement qualification.
+
+**Authored source and first executed fixture result.** Root and the named worker
+complete the ownership source slice; no qualification is inferred from authorship.
+The first generator attempt stops before Session construction or Cargo because
+the first-party fixture source digest changed. Rebinding that reviewed source
+then exposes the separate code-owned policy pin, also before execution. Fresh
+independent review verifies all 43 fixture filenames, unchanged manifest and
+only the three-case generator source delta: aggregate `4d3fc76c…e50ad` becomes
+`f766170eff8008d5ec1b837791311ff42942bdb7b814d33b8f2a589510cf249c`.
+The dependency policy's sole semantic delta is that aggregate; its reviewed
+canonical pin becomes
+`cf5700dac5f9fddbd69ccdf5ab021f5743709b6a9e8755570ae0e13686a3a437`.
+No manifest, dependency, feature, licence or permission changes.
+
+The separately reviewed 7187-byte generator recipe (`28b7e6a5…1cc35b5`)
+then passes its two actual Session commands in 39.88 seconds, preserving closed
+admission and all predecessor catalogues. Receipt
+`protected-history-fixtures-v1/verification.json` SHA256
+`46d170ba27f7f64567e22e1c1031a3deb0e2dfedc6518939332ee3979f8f1a85`
+binds intermediate source `70dffd14…aead4f`. All 33 prior arrays match; exactly
+36 base rows are generated. New 140-byte packet hashes are `3a522e50…f7e1e30`
+(zero T2), `c3cf68f6…6247f4` (zero T3) and `ce334584…bd75f` (both).
+Root imports only those three arrays after terminal custody checks. This proves
+fixture generation, not Engine acceptance or historical-result retention.
+
+The coherent source is formatted and frozen for
+`run-protected-history-focus-v1.py` (`628614a3…ebeaf4d`), using the existing
+Session/tool/vendor/source safeguards. One closed warm dependency cache moves
+rather than being duplicated; unchanged tools/vendor/graph and reviewed source
+deltas are checked before reuse. The selected development commands are format,
+actual discovery, all KE neighbors and GNU Clippy. The expected additions are
+two job ownership/poison cases, one actual replacement-chart case and two actual
+worker history/retirement cases. Actual results remain pending; no 397/219
+execution, compiler-control, successor metric, native or parent pass is claimed.
+
+**Actual filtered-cohort result and remaining checks.** The successor now has
+400 actual discovered ordinary cases, including 222 KE cases. All 222 selected
+KE cases pass: the original 214 and eight additions. This is a filtered library
+execution, with 154 other library cases explicitly filtered and 24 integration
+cases outside that command. No ignored or failed case is hidden. Source,
+privacy and lifecycle review finds no concrete material defect; that review
+does not substitute for execution or the remaining gates.
+
+`protected-history-focus-v3/verification.json`, SHA256
+`f6cb13b16966d2b71ad8e3a997beadaffa91ba0bec1867f567ad608d79770a67`,
+remains **incomplete**: format and actual discovery/filtered execution exit zero,
+then the external recipe incorrectly applies the unfiltered address-round
+parser and stops before GNU Clippy. Fresh independent reconciliation checks all
+605 Root/sealed inputs, complete 400-name discovery, all 222 entered names and
+the exact `222 passed; 0 failed; 0 ignored; ... 154 filtered out` summary. Tool/
+vendor closeout is unchanged. This accepts the actual selected behavior without
+rewriting the raw receipt, inventing full-focus success or repeating its tests.
+
+The two earlier focus attempts enter zero tests: V1 stops on two now-redundant
+Receipt qualifications and a test's private Invocation-field access; V2 stops
+on four GNU-only unread RunFailed payload warnings after removing derived
+Debug/Eq. A test-only immutable chart borrow preserves the privacy boundary.
+Three additional actual-facade tests read reachable submission, complete
+operation-failure and abnormal-owning-history outcomes instead of adding dummy
+reads or redacted formatting merely for lints. Only Preparation retains a
+non-Windows-unit-build expectation: its real-time overflow branch is unobserved
+there, while the Windows reporter still consumes the original typed failure.
+Independent review accepts this narrow expectation; no failure field or runtime
+guard is removed. The old failed attempts and their exact source remain.
+
+Continue only the outstanding GNU Clippy stage through the bounded
+`run-protected-history-clippy-v1.py` recipe (`8aed216d…802be78`). It binds all
+605 bytes to the executed cohort, explicitly accounts for 154 filtered cases,
+moves the single closed cache and preserves standard Session/resource guards.
+Full 400-case/optimized/doctest and MSVC checks, compiler controls, current
+coverage/mutation and native/final qualification remain open. No predecessor
+metric or filtered pass closes them.
+
+**Protected-history source/host checkpoint — 13 November 2026.** Current
+593-file product candidate is
+`964a9573143e5668a63d264bb44906fa103d5b4c3ddf1fc82cecea33012c5468`.
+The configured full baseline now passes every lane: format, MSVC metadata,
+400 ordinary, GNU Clippy, 400 optimized, 69 doctests (56 compile-only) and MSVC
+Clippy. Both ordinary modes enter all 222 KE cases without ignoring/filtering
+their roster. Receipt `protected-history-baseline-v2/verification.json` SHA256
+`71bdc94122df2f9e3d741a67bec8b24c54b24e4e932308e425dc203bbe782c0b`
+has only its selected-lane flag true; broader/native qualification stays false.
+The 269 selected Python controls also pass: 115 Engine-analysis, 33 dependency-
+profile and 121 product-runner controls. Their synthetic outputs provide no
+Rust/native application credit.
+
+The intermediate standalone Clippy run remains incomplete (receipt
+`b56b9de3…1013461f`): seven doc/borrow/helper-length findings are repaired
+without suppressing them. The first full baseline stops at MSVC metadata
+before any tests (receipt `169b112a…379f390`): two redundant qualifications and
+discarded post-admission count fields surface there. Rather than remove the
+existing checked population call or add dummy reads, the independently reviewed
+amendment retains that original pair in private history, distinct from initial
+KE Summary counts and without cookie-availability/reuse authority. The fifth
+actual-worker subcase uses the existing `TWO_COOKIES` fixture to require history
+`(2, 24)` while CLI Summary remains `(1, 12)`. It adds no test function, crypto
+provider, fixture generator or dependency. Current V2 executes this subcase.
+
+Current coverage also passes all twelve selected GNU per-file 90% gates,
+executing all 400 cases (222 KE). Receipt
+`protected-history-coverage-v1/verification.json` SHA256
+`c3309e8b13987cba89e3c929655e01d876b2b6261c109fba8e0de3a83bab5c51`:
+worker 211/231 (91.34%), KE control 413/426 (96.95%), datagram 294/299
+(98.33%) and recovery 682/741 (92.04%). Other eight file gates also pass.
+Coverage JSON SHA256 is
+`9e4a8a40d7dbf542c71f32fd5cad17ea913572a123300f9948da3076c81ce676`.
+Zero branch-instrumentation counts establish no branch coverage. Four remaining
+critical owners and Windows-only paths retain their separate open gates.
+
+Fresh complete discovery lists **607** descriptors. Receipt
+`protected-history-enumeration-v1/verification.json` SHA256
+`fbb6739f6db52620b29b2d8cf5137f1d7048c41a7e37c579d742caea52799a60`.
+Fresh-context review matches every raw/structured record, diff preimage/span/
+replacement and all twelve hashes. Four bindings changed: KE control 92
+(`c498337c…ec4bc2`), datagram 38 (`c246399f…4857d`), recovery 114
+(`a83af754…e9244`) and job 25 (`768b4b61…108b56`). Other eight hashes match
+their predecessors; **no prior outcome transfers**. There is no current mutation
+score. Generic/constructor/Arc arguments, individual history-field transfers,
+atomic/order and Windows-provider/submission/reporting/shutdown gaps remain.
+
+Post-terminal role adoption is explicit: baseline role `264243fd…4efb5`
+changes only its ordinary reference to the actual V2 receipt, becoming
+`bc962ee9…2733b7`; after reviewed catalogue binding it becomes
+`bfaf93ce195dfe8d0a43e8713c98a022031e59c18736f7b379ad2595645d9a79`.
+All 45 helper/source pins remain exact, E[], campaigns closed. These metadata
+deltas supply no execution admission or unsupported whole-candidate credit.
+
+**Compiler-control preparation (historical).** Implement, execute and independently reconcile the
+fourteen named ownership/privacy compiler controls before further mutation
+admission. Existing `contracts` supports only `ke_process`; no `ke_job` lane is
+silently enabled. The concrete proposal is
+`protected-history-contracts-proposal.md`, SHA256
+`bdc4dfeacc818cbc5e8f6ac66229e0f07054c0e5fe45152504dcc4dd92ed96ab`.
+It preserves provider checks, actual private types, sealed source/custody,
+legal neighbors, intended E0277/E0382/E0451 causes and strict primary spans.
+The approximately 200-line draft boundary exposed the need for real rejection/
+restoration tests; the worker stopped at the proposal rather than supplying a
+partial enabling patch or weaker matcher. Bound this necessary regression work
+to those guarantees; introduce no general verifier project. Discriminating
+field/chart/count controls supplement ungenerated behavior without becoming
+generated kills. Then admit each actual current mutation cohort separately,
+retaining eight workers, original budgets and 95% thresholds. Native, complete
+worker/service, Core, package/release and unrelated execution holds remain.
+
+**Compiler-control implementation admission — 13 November 2026.** Fresh
+independent review finds the proposal READY against the actual private types
+and all six stated source identities. The coordinator admits its four Python
+files only: Engine verifier/shared admission and their two existing test files.
+Keep product Rust frozen. The observable exit is two legal metadata controls
+and twelve intended E0277/E0382/E0451 refusals, GNU then MSVC, within one shared
+300-second compiler budget, exact restoration and final reference bookends.
+Focused Python rejection/custody tests precede the configured real lane.
+Preserve all six provider controls and their exact diagnostic rule. The earlier
+200-line estimate does not justify omitting necessary tests; scope stays these
+fixed fourteen controls, with no general verifier or formal work. No compiler,
+mutation or native pass follows from this admission.
+
+**Compiler-control execution — 13 November 2026.** The four-file tooling slice
+passes 122 Engine-analysis and 150 shared-tooling Python tests. Its first real
+run stops after seven GNU commands: six accepted controls, then a raw-constructor
+probe with two `unused_qualifications` errors beside the intended E0451. Receipt
+`protected-history-contracts-v1/verification.json` SHA256
+`013e19203061a0210f2c1f875f7952b8e11cf51543d99031e2161dd91661a34b`
+remains incomplete. A focused generator assertion fails before the causal
+repair; removing the two unnecessary `std::sync` qualifications then restores
+all 272 Python controls. No matcher, provider or product Rust change is made.
+
+Fresh `protected-history-contracts-v2/verification.json` SHA256
+`7b70201e5e0e05765852bcce848cf3adf2390dfcc3b73e69f709caf121ee6df6`
+passes all fourteen actual metadata controls: GNU/MSVC each have one legal
+consumer and six intended E0277/E0382/E0451 refusals. The two raw-constructor
+cases identify all ten private fields on one physical line. Fresh
+`protected-history-provider-regression-v1/verification.json` SHA256
+`d2fda797f5444bd30210b9f2f43571021cd3c106907e314c5d29dc051059b4f1`
+passes the unchanged six provider controls, two legal and four E0382 refusals.
+Independent review reconciles every actual command, diagnostic, primary span,
+terminal note/summary and restored 605-file tree against Root. Only the selected
+history/provider flag is true in its respective final receipt; broader flags
+remain false. Earlier progress snapshots intentionally precede those flags.
+
+The first mechanical four-helper rebind changes role `bfaf93ce…d9a79` to
+`290ebe44…db7a`; the two-pin probe repair yields current role
+`c14d2fd346886b182326fdd187a9ec6c45ad1a25a12d3f21ce1e0f5cccdb3f97`.
+All 45 pins match, twelve catalogues stay closed and E[] remains unchanged.
+Compared with baseline, 600 captured inputs are unchanged; only four reviewed
+helpers and role metadata differ. The 593-file product candidate remains
+`964a9573`; its earlier Rust results retain their exact source scope. No
+mutation, native Windows or broader qualification follows. The three separately
+reviewed source-copy sensitivity controls complete below; independently admit
+current mutation cohorts with the original budgets and thresholds next.
+
+**Next mutation admission — process owner only.** Independent resource review
+finds no comparable eight-active-worker memory trace under the current 12-GB WSL
+cap. Keep the changed 92-entry KE-control cohort unadmitted pending that evidence.
+Admit only the current three-entry `ke_process` cohort first, with its existing
+`ee2260e3…8c929` catalogue, eight configured workers (at most three mutant jobs),
+1200/90/60-second limits, 512 cap, 5/4-GiB disk floors, 768-MiB boundary sample
+limit and E[]. Immediate preflight finds 4,528,992,256 bytes available RAM,
+7,645,515,776 bytes free swap and 17,806,962,688 bytes disk available. This is no
+eight-way capacity pass. Root owns the fresh configured run and resource
+observations; classify every actual outcome before any score, then close
+execution again. Other cohorts and all broader gates remain open.
+
+**Current process cohort classified — 13 November 2026.** Fresh receipt
+`protected-history-process-mutation-v1/verification.json` SHA256
+`037b1b067187687496c79c34135d0f1a54c8c1d02761143e76c136c19f573431`
+is independently reconciled against all three descriptors/diffs/logs. Default
+claim `29:9` is build-only unviable (`ProcessClaim: Default` E0277, plus the
+newly unused `Ordering` import); default scope `50:5` is build-only unviable
+(`ProviderScope: Default` E0277). Deleting `!` at `50:8` builds and is caught by
+the actual foreign-origin/factory-count assertions and rejected valid
+authoritative neighbor. No survivors, timeouts, exclusions or resource/setup
+failures are misclassified. The **generated GNU process gate passes 1/1 viable**;
+two unviable cases receive no behavioral kill credit. Eleven other cohorts,
+constructors/generics/atomics and Windows/native obligations remain open.
+
+The actual baseline enters all 400 ordinary tests, including 222 KE cases, and
+69 doctests (56 compile-only). All 605 Root/sealed inputs and 45 pins match at
+review. Execution uses role
+`845e262ea29e608afbdccb1ea40f9095693e34794ea536d11fb3c4ead322eb1c`,
+which differs from `c14d2fd3…db3f97` only by the execution flag. After terminal
+confirmation and review, Root closes that flag, restoring exact role `c14d2fd3`;
+catalogues, thresholds and E[] do not change. Broader flags stay false.
+
+Only three mutants exist despite eight configured workers. Root's available-
+memory snapshots are observations, not peak RSS evidence. The delegated
+observer identifies the owned PID/start identity but attaches too late and
+collects **zero live samples**; its bounded record establishes no capacity
+claim. Current work retains no eight-active-worker qualification. Next prepare
+and independently review resource observation/owned interruption before a
+larger cohort starts, using the existing runner and cleanup guarantees. Keep
+the 92-entry control cohort held until that bounded admission is justified;
+preserve the configured worker policy, timeouts and 95% thresholds. The owner's
+10→8→6 resource fallback remains available if actual resource evidence justifies
+an independently reviewed operational rebind; it is no threshold exception.
+
+**Resource envelope continuation — 13 November 2026, preparation.** Previous
+goal turn makes progress through actual compiler/sensitivity/process results;
+no heavy process remains live. Read-only local inspection establishes systemd
+255.4, a reachable running UID-1000 manager, delegated memory/pids controllers
+and writable user-service limit files. The caller's `/non-systemd` migration
+files are root-owned, so prepare a new transient user service rather than
+assuming scope migration. No privileged controller/global setting is changed.
+
+One bounded external recipe under the existing evidence root will have three
+fixed cases: healthy control, owned-stop control, and the current 92-entry
+`ke_core` trial. Controls use 64 MiB RAM, zero swap and sixteen tasks. The
+proposed trial ceiling is two GiB RAM, 512 MiB swap and 512 tasks, with at least
+three GiB available before release and a one-GiB global stop floor. These are
+engineering safeguards for this host trial, not product resource budgets or an
+eight-worker fit claim. The smaller ceiling preserves the proposed one-GiB
+headroom while current availability is below the earlier four-GiB release
+proposal. Independent review and effective readback remain required.
+
+Arm an outside observer before creating the unique service. Hold its child
+behind a private nonce gate until PID/start identity, unit InvocationID,
+cgroup membership, actual memory/swap/task limits and an initial sample match.
+Healthy completion needs positive workload samples. The stop control must
+terminate an actual child and detached grandchild through the same owned-unit
+cleanup path, with no leftover recorded PID. Retain counters before final
+acknowledgement/unit removal. Observation loss, changed ownership, OOM/limit
+pressure, resource stop or failed cleanup is incomplete and adds no mutation
+kill credit. The ordinary runner, eight workers, original time/storage limits,
+full catalogue, 95% threshold and all execution holds remain unchanged. Two
+controls and independent concrete-wrapper review precede any larger trial.
+
+**Resource controls executed — 13 November 2026.** The external one-shot
+wrapper receives a fresh-context review by `/root/resource_envelope_review`
+(`fork_turns=none`, source-only before execution). Its first revision has a
+pre-release ordering race: an in-flight global-only sample can advance the
+counter after cgroup configuration. Root requires the actual cgroup snapshot
+before release and rejects unfinished normal children before forced teardown.
+The first healthy execution completes but correctly remains incomplete after
+its cleanup guard rejects systemd's empty post-exit cgroup field (receipt
+`8be37f97…72605`). Root independently verifies the same InvocationID, zero
+recorded live PIDs and empty/absent cgroup, then removes only that retained unit;
+the separate recovery record is `e8f5fea5…ecb69`. Original failure is retained.
+
+The reviewed terminal-empty-group correction requires MainPID zero, no recorded
+live PIDs, an absent/empty expected cgroup and unchanged unit ownership. Fresh
+v2 outputs preserve the failed v1. Final external recipe SHA256 is
+`46e7dcece78f47ab1c5d521b3805b34cea8492d50ccb242c159fd8a257cc6bf7`.
+Healthy v2 receipt is
+`4c0b6669e43ebfc221207757ab52a0d7102fe4f207b3b62693356d3147bf5540`;
+stop v2 is `68cabc815f767f8c196c7ca794c6eacfac4b3ccaa18852a7dc0141ff608a239e`.
+Independent review matches both six-sample streams (three workload samples
+each), effective 64-MiB/zero-swap/16-task limits, OOM grouping, nonce/identity/
+membership and the pre-release cgroup observation. Healthy completes normally;
+the watchdog sends verified pidfd SIGINT, obtains actual exit -2 and leaves the
+detached grandchild for verified whole-unit cleanup. All five recorded PIDs,
+both cgroups and units are gone. These controls prove no eight-worker fit.
+
+**One guarded 92-entry trial admitted.** After those actual controls and fresh
+review, Root admits only `ke_core` with its bound `c498337c…ec4bc2` catalogue.
+The fixed user-service wrapper enforces the two-GiB/512-MiB/512-task host
+envelope, prearmed observer, three-GiB release floor and one-GiB stop floor.
+All original eight-worker/time/storage/95% requirements and E[] remain. Keep
+all other execution holds. Resource events or failed cleanup make the trial
+incomplete and supply no mutation kill credit; outcome and capacity assessment
+remain pending actual execution and separate review.
+
+**Three nongenerated sensitivity controls — 13 November 2026.** The external
+recipe is independently reviewed before execution, with two concrete repairs:
+select an actual protected one-cookie neighbor rather than a preview-only
+facade, and use the existing integer remaining-time helper. Final recipe SHA256
+is `a9d88f99a6925408ef9940d21345daf103d6ef439376a2fa0a5dcd43b5757f9a`.
+Actual receipt `protected-history-sensitivity-v1/verification.json` SHA256
+`06b0aff571399221f619da426fbfbb5e5ce4ba535be03058fa5bb1b8736130e7`
+passes thirteen selected GNU Cargo commands in 77.493 seconds: ten healthy
+tests and three compiled, intended assertion failures, with no command failure.
+Replacing socket identity fails `KE-HIST-01-socket-identity` after actual worker
+join. Replacing the chart with a new Arc of the same origin fails the existing
+replacement test's independently captured pre-step pointer comparison. Clamping
+historical post-admission counts to initial counts fails with `(1,12)` versus
+`(2,24)` in the fifth joined-history subcase. Preview neighbors, the actual
+protected one-cookie neighbor and restored healthy tests all pass.
+
+Independent review matches every command, panic source/expression, fault diff,
+all 605 Root/immutable/private files, role, 45 pins, tool/vendor custody and the
+unchanged closed 607-descriptor catalogue/E[]. The shared limit is 600 seconds;
+actual per-command CPU/address-space/process limits are 300 seconds, eight GiB
+and 128, with six build jobs. Maximum sampled output allocation is 244,822,016
+bytes, not a continuous peak. These controls add **zero generated kills**.
+The worker chart witness still derives from returned history; this supplies
+component pre-step chart sensitivity and sealed ownership evidence, not a new
+independent worker-chart oracle or native/whole-product qualification.
+
+**Keep compilation output bounded.** After all jobs are terminal, Root deletes
+the now unused baseline-V2, failed-contract-V1, passed-contract-V2 and provider-
+regression `work/target` directories. Deletion totals 1,063,936,000 allocated
+bytes; measured filesystem recovery is 1,063,927,808 bytes. Current source/raw
+results remain intact, along with one selected sensitivity warm cache of
+199,880,704 bytes. The external NevroTick area measures 3,007,053,824 bytes and
+WSL has 17,816,666,112 available at that sample. Git custody and all ten selected
+retained-result/policy hashes match before/after. No selected target appears in
+135 readable process scopes/2,133 descriptor links; 53 inaccessible observations
+limit that check. No compression, shared-process termination or Windows changes.
+
+**Terminal output retirement.** Root deletes only four unused targets:
+`protected-history-fixtures-v1/work/target` (36,495,360 bytes),
+`protected-history-baseline-v1/work/target` (203,563,008),
+`protected-history-clippy-v1/work/target` (367,861,760), and the independently
+reviewed `protected-history-coverage-v1/work/target` (358,469,632). Together
+966,389,760 allocated bytes and equal filesystem recovery; the latter sample
+reaches 17,174,581,248 available bytes. Remaining external NevroTick evidence/
+tools measure 3,693,121,536 bytes. Retain current source, raw logs/receipts,
+coverage JSON and the one current V2 metadata/dependency cache (363,458,560
+bytes), plus existing installed tools/vendors and protected worktrees. Root's
+Git custody matches before/after; 292 and 297 inaccessible process observations
+limit the two checks. Coverage JSON hash remains exact. Removed profiles and
+compiled targets require rebuilding; nothing is compressed and no shared
+process or Windows state is changed.
+
+**Further old-evidence cleanup — 13 November 2026.** David again requests
+deletion, not compression. Two read-only inventories identify 46 exact obsolete
+source/tool children, including an old downloaded `rustup-init` installer. Root
+deletes them after checking canonical paths, ownership, device/inode and complete
+file metadata maps, then deletes the remainder of thirteen superseded baseline,
+focus, Clippy and collector campaign report bundles. Combined deletion is
+706,592,768 allocated bytes; filesystem recovery measured around the two deletion
+steps is 706,584,576 bytes. Other concurrent writes mean the overall available-
+space increase differs from that sum. WSL available space reaches 17,853,489,152
+bytes; the whole external NevroTick area now occupies 2,986,528,768 bytes, including
+installed tools/vendors and protected working copies, rather than 20 GB of
+evidence. Those older receipt/raw-output paths documented above are now absent;
+their task summaries retain historical context, without replay or reuse credit.
+Historical recipes require fresh preparation. Selected causal-control records
+remain, along with all four current protected-history
+bundles, the ownership-control proposal, current warm cache and address-round
+policy inputs. Dirty clones and registered worktrees remain intact. Root's
+HEAD/index/status/staged/unstaged custody and all five selected current evidence
+hashes match before/after. No selected output appears in 97 readable Linux
+process scopes or 1,646 descriptor links; 52 inaccessible observations limit
+that check. No process, service, Windows state or installed tool is changed.
+The next Core/Engine action and all open gates above remain unchanged.
+
+**Guarded KE-control trials and six-worker fallback — 13 November 2026.**
+The first guarded execution runs zero lanes because the user manager's PATH
+omits `cargo-mutants`. The corrected fixed service PATH includes the admitted
+Cargo bin directory; fresh healthy and owned-stop controls precede each trial.
+Eight-worker trials under two- and three-GiB RAM ceilings stop when the
+`memory.events.max` counter increases. Neither observes an OOM or OOM kill.
+The first retains a successful baseline only; the second additionally records
+one build-only `Config: Default` E0277 refusal. Neither completes a cohort or
+supplies a mutation score. Their envelope receipt hashes were `ce213bf8…73a`
+and `cc048f32…54e`; their raw bundles are retired below.
+
+The owner's existing 10→8→6 fallback authorizes the independently reviewed
+KE-only six-worker operational rebind. Two new admission controls fail before
+the repair and pass afterward; all 274 affected Python tests pass. They accept
+six and reject eight/ten, Boolean/float worker values and coherent foreign
+command substitutions before Session creation. Only the KE worker authority,
+policy and affected tests change; the series eight-worker policy, inner Cargo
+one, ordinary build six, all time/storage limits, 90/95 thresholds, 607 bound
+descriptors, E[] and 593-file product candidate `964a9573` remain unchanged.
+Three helper/test pins are mechanically rebound after independent review.
+Execution is now closed at role
+`fc0951605a904c706804da65ad1fd3d1790d2d7baf71ab3f68979409662adc32`.
+
+The six-worker controls and actual trial use external recipe
+`c9027f879c46ae82ae329cd1911c4f7da38813fd37150a7e6b4927b9a4d903ca`.
+Healthy v5 receipt is `66962408…d6`; stop v5 is `ff199f7b…7653`.
+Independent review confirms each control's six samples, three workload samples
+and actual child/grandchild cleanup. The actual trial retains the same
+three-GiB RAM, 512-MiB swap, 512-task envelope, four-GiB release floor and
+one-GiB global stop floor. It also stops on max-counter activity, with OOM/kill
+counters zero. Minimum observed global availability is 6,928,875,520 bytes.
+Receipt `ke-core-resource-envelope-cohort-v5/verification.json`, SHA256
+`af66251d31438a53a648be84ad877d82ef196dc154aa32ccd0244033749ba9c2`,
+remains incomplete: 148 samples, successful baseline and the same one unviable
+descriptor, no completed cohort or score. Independent review confirms all 203
+recorded PIDs and the expected cgroup are absent, and the owned unit is gone.
+These stops establish imposed-limit activity, not intrinsic worker-count
+infeasibility. Before another trial, review the distinction between reclaim
+activity and OOM in the observer; do not increase the caps or repeat an
+unchanged failed recipe. No heavy job remains live. Native and other holds stay.
+
+**Reclaim/OOM distinction — bounded repair contract, 13 November 2026.**
+Independent review against the [Linux cgroup-v2 contract](https://docs.kernel.org/6.18/admin-guide/cgroup-v2.html#memory)
+confirms that `memory.events.max` counts attempted boundary crossings; successful
+direct reclaim can avoid OOM. The previous observer enforces a stricter no-limit-
+contact rule, rather than distinguishing reclaim from OOM. Do not infer cache
+causation or worker infeasibility from the retained traces, which lack a memory
+breakdown. This is a host-harness correction under CHECK-21, not a product gate.
+
+Root owns only the existing external wrapper. Remove `max` from fatal memory
+counters while retaining it and selected `memory.stat` observations. Keep OOM,
+OOM-kill/group-kill, PID-limit, observation/ownership and cleanup failures fatal;
+all hardware/time/storage/source/catalogue/quality bounds remain unchanged.
+Before the cohort, require current-recipe healthy, owned-stop, reclaim and OOM
+controls. Reclaim uses a fresh disk-backed file of at most 128 MiB and a reusable
+buffer of at most one MiB, synchronization and independent complete byte/length
+verification. It must finish with increased max/direct-reclaim counters and zero
+OOM counters. The OOM control separately gates at most 128 MiB of touched retained
+anonymous allocation after leaf identity, nonexemption and positive samples are
+checked, under the existing 64-MiB/zero-swap/16-task/30-second control envelope.
+It requires actual kernel or same-InvocationID unit OOM attribution, outside
+observer survival and all recorded workload PIDs gone before forced cleanup.
+Expected control success never changes its incomplete workload status or grants
+mutation credit. Generic owner loss, SIGKILL and timeout are not OOM evidence.
+One execution per new control precedes causal triage; independent concrete-source
+and actual-result review precede any cohort. No cap increase or native action.
+
+**Reclaim/OOM repair and controls executed — 13 November 2026.** The actual
+max-only counter regression is RED under the previous observer. The repair keeps
+max activity informational and records selected anonymous/file/reclaim counters.
+Independent source review requires narrow failure kinds, fresh continuing global
+observation after OOM status polling, bounded orphan/group settling and correct
+classification of PID-exit/deleted-group races. Cap/PID/read/ownership failures
+cannot be masked by later OOM attribution. Focused counter/verdict/race controls
+cover those distinctions; one uses an actual owned, subsequently reaped zombie
+with synthetic removed-group membership. This is no native-Windows evidence.
+Final external recipe SHA256:
+`50ba0d6a48592e77a7d1a2a3a9dc54b0bf7692c5f653726bd95afd6568771aea`.
+
+All four actual v6 controls pass, with independent raw-result reconciliation.
+Healthy receipt is `c6d24ade…1efc8`; owned-stop is `e1f437bd…b955c`.
+Reclaim receipt `15556361…b549` records complete 128-MiB known-byte verification,
+max 0→186, direct reclaim 0→46,800 and zero OOM counters. Independent digest
+`a626d17da2e502f5b4b8e3ebd23f0bf9daef6255688d8e0bb482b3ae3794a682`
+matches; the disposable file is deleted. OOM receipt `7f525bd8…f720a` retains
+same-InvocationID `oom-kill`/SIGKILL before forced cleanup, only permitted owner
+loss and continuing global observations. Its workload remains incomplete,
+qualification false and mutation credit zero. All nine recorded PIDs and four
+cgroups are absent. Root retires only the verified dead OOM unit's failed
+metadata; receipt `346c9e24…13fb7` preserves its original failure evidence.
+
+Independent review admits one fresh six-worker 92-descriptor `ke_core` trial,
+using v6 envelope and `protected-history-ke-core-mutation-v5`. Retain the exact
+three-GiB/512-MiB/512-task envelope, four-GiB release and one-GiB stop floors,
+1200/90/60-second campaign/build/test limits, one inner Cargo job, 5/4-GiB disk
+floors, 768-MiB command-boundary output sampling, 95%, inventory and E[]. Normal
+tool completion drops its six temporary worker trees before the after-command
+sample; interruption/cleanup failure may retain them. The earlier 942-MB debris
+was not a continuously measured peak, and no cap increase or tmp exclusion is
+justified. Controls establish no six-worker fit or completed product gate.
+Root opens only the execution Boolean for this trial, then closes it after
+terminal confirmation and independent accounting. All other holds remain.
+
+**Current six-worker KE-control cohort — complete accounting, 13 November 2026.**
+Configured `protected-history-ke-core-mutation-v5/verification.json`, SHA256
+`d69ae6195e6c39639846399df5ab39668df0d333bf37dc1cc55ecff1131a89ba`,
+finishes all 92 exact descriptors on product candidate `964a9573`: 38 caught,
+49 build-only unviable, five survived, zero timeouts/exclusions. Baseline executes
+400 ordinary tests and 69 doctests. Two complementary reviewers independently
+reconcile every actual descriptor/diff/log: positions 1–46 yield 23 caught and
+23 unviable; positions 47–92 yield 15 caught, 26 unviable and five misses.
+Positive rejections and actual boundary assertions are distinguished from
+downstream fixture failures; compiler/lint refusals receive no kill credit.
+The five misses are the Windows-only `run`, `report_run_failure`,
+`report_failure` and two `entry` variants (inventory 74/76/90–92). Each passes
+all 469 GNU cases; this proves neither Windows viability nor equivalence.
+Raw **38/43 viable = 88.372093%** stays below 95%, with native exit 2 and
+`gate_passed=false`. The configured receipt correctly remains incomplete.
+Ten other current cohorts and all generation/native/parent obligations stay open;
+the separately completed three-entry process cohort retains its exact scope.
+
+The distinct host-envelope receipt `ke-core-resource-envelope-cohort-v6/verification.json`,
+SHA256 `8099d1428ff96d07f4645eb03d55296b936891569ecde6b24ffacb7d9a0e4ebc`,
+passes in 442.89 seconds: 881 samples/878 workload samples, maximum sampling gap
+0.518 seconds, six observed Cargo processes, peak RAM 3,221,225,472 bytes,
+swap 434,364,416 bytes and 109 tasks. Minimum observed host available RAM is
+1,792,749,568 bytes, above the one-GiB stop floor. All 17,963 max events are
+informational; OOM/PID-limit/observation counters show no failure. Independent
+review confirms all 761 recorded PIDs and the cgroup absent, unit inactive/
+not-found, empty scratch and final command-boundary output 45,502,464 bytes.
+This is one completed six-worker workload under its exact host conditions,
+not general capacity, product performance or native qualification.
+
+The transient execution role is `4a9c2a1f…4604`; after confirmed terminal exit,
+Root restores exact closed role `fc095160…adc32`. All 45 pins, catalogue/E[],
+thresholds and Git index remain unchanged. The earlier interrupted trials
+receive no retroactive score. Continue separately reviewed current cohorts and
+the existing genuine-history receiving contract preparation; do not promote
+historical authenticated facts to Core eligibility or fresh synchronization.
+
+**Next association cohort admitted — 13 November 2026.** Continue in canonical
+subject order with only `ke_association`: 29 exact descriptors, catalogue
+`5373772443a3a6880cb25cea5d704ef94dc229f74240523694d7c7b9c97c7e83`,
+unchanged source `40cce53e…f4dc53`. The fixed recipe
+`run-ke-association-resource-envelope-v1.py`, SHA256
+`905e1cda10e4660eb56d6ef135e687e20db6738ae830f5df36d1cf8d01e00212`,
+is independently verified as a mechanical subject/catalogue/path/output retarget
+of the completed core recipe; every guard mechanism and limit is unchanged.
+Fresh healthy/stop/reclaim/OOM controls pass and their raw results/cleanup are
+independently reconciled. Reclaim exercises max 0→1239, direct reclaim +87,734
+and the same independently verified 128-MiB digest; its file is deleted. The
+expected owned OOM keeps workload incomplete, only permitted owner loss, zero
+qualification/kill credit and verified dead-unit metadata retirement.
+
+Admit one fresh `protected-history-ke-association-mutation-v1` under its matching
+association envelope; Root rechecks resource/source custody, opens only the
+existing execution Boolean and closes it after terminal accounting. Inherit no
+outcomes, equivalents or threshold exceptions. Generation mapping retains 18
+`receive`, ten `cookie_population` and one whole-body `prepare_preview` variant.
+Constructor/field-transfer, checked-sum/callee and individual preview ordering/
+latch behaviors remain generation gaps. In particular, current controls do not
+directly establish cancellation/expiry precedence when already spent, or unchanged
+`preview_spent` after an early currentness refusal; deeper guards can mask an
+omitted initial check. Preserve the source's explicit ordering: currentness
+refusal (`Cancelled`/`Deadline` as applicable) precedes `PreviewSpent`; early
+refusal leaves the prior latch and entropy-call count unchanged. Future controls
+must reach already-spent state through actual preview success/abandonment or
+failure, then cancel/expire that same owner, alongside an unspent neighbor.
+Retain a direct latch observation so deeper ledger refusal cannot mask an
+omitted initial guard. Preserve these source-bound alternatives as open work
+regardless of the generated percentage. Native/parent/other execution holds stay.
+
+**Association cohort completed — 13 November 2026.** Fresh configured receipt
+`protected-history-ke-association-mutation-v1/verification.json`, SHA256
+`0eb8caa63e3c2772ff7d9670a517b2026f75d838cfc8bef0c695f416f0d8785c`,
+passes its generated GNU gate: all 29 descriptors finish, 27 behaviorally caught,
+two compiler-unviable, zero survivors/timeouts/exclusions, 27/27 viable (100%).
+Baseline executes 400 ordinary tests and 69 doctests. Independent review matches
+every descriptor/diff/log. The whole-body `receive` and `prepare_preview` defaults
+fail E0277 (`AssociationOwner`/`PreparedRequest: Default` absent), earning no kill
+credit. All 27 catches reach required identity/expiry/endpoint/population behavior
+or reject a valid neighboring boundary; the last two exact-131072-byte cases
+reject valid input with `Cookies`. Earlier outcome counts transfer no credit.
+
+The separate envelope receipt `ke-association-resource-envelope-cohort-v1/verification.json`,
+SHA256 `0c27efc840e0552448b1ae3b78234dc2ec3f7977cc9d89a87dde71d6698cbb7f`,
+passes in 268.85 seconds with 535 samples/531 workload samples, maximum gap
+0.511 seconds, peak RAM 3 GiB, swap 172,814,336 bytes and 119 tasks. Minimum
+host available RAM is 2,577,399,808 bytes; 7,493 max events are informational,
+with no OOM/PID-limit/observation failure. Independent review confirms all 473
+recorded PIDs and the cgroup absent, unit inactive/not-found, empty target/scratch
+and final output 38,322,176 bytes. Root closes execution at exact role
+`fc095160…adc32`; recipe and all 45 pins remain unchanged.
+
+Nine other current cohorts remain. The constructor/field-transfer, closure,
+publication-callee and preview-order/latch gaps above remain open despite the
+generated gate. Native, production suppliers, complete receiving/Core history,
+parent P1/P2 and release qualification remain separate. Continue the frozen
+current catalogue and reviewed receiving preparation without changing algorithms,
+defaults or thresholds merely to improve an incomplete score.
+
+**Handoff/request continuation — 13 November 2026.** With the main source
+candidate and 45 pins unchanged, independently reviewed fixed retargets preserve
+the same six-worker guard mechanisms and every time/storage/quality limit.
+Handoff recipe `58fb257f…5137b` binds exactly nine descriptors, catalogue
+`b516429e…cf533`; request recipe `195b91be…16221` binds six, catalogue
+`873305ce…21cb5`. Fresh healthy/stop/reclaim/OOM controls pass for each recipe,
+with independent raw-result review, attributed incomplete OOM workloads and
+verified owned-unit cleanup. Initial host RAM was below the four-GiB campaign
+floor; no heavy job started until measured headroom recovered. No shared IDE,
+MCP/database process or Windows state was changed to obtain headroom.
+
+| Current configured receipt | Exact generated accounting | SHA256 |
+| --- | --- | --- |
+| `protected-history-ke-handoff-mutation-v1/verification.json` | 9 = 7 behavioral catches + 2 compiler-unviable; no survivors/timeouts/exclusions; GNU generated gate 7/7 viable (100%). | `458b1ca7d1af2f910b561e614e72596c80896af45cb6d56dc46f08be9e9fb3e0` |
+| `protected-history-ke-request-mutation-v1/verification.json` | 6 = 3 behavioral catches + 3 compiler-unviable; no survivors/timeouts/exclusions; GNU generated gate 3/3 viable (100%). | `6651a26ba62b1aa7315fb188b50fdfc72cdbbdacf837cc0be3e138ea1e741c48` |
+
+Each actual baseline executes 400 ordinary tests and 69 doctests. Independent
+review matches every descriptor/diff/log. Handoff's defaults fail E0277 for
+`Summary`/`PreparedRequest`; its seven catches reach population bounds or valid
+neighbors, including the exact 131072-byte aggregate. Request's body replacements
+fail E0277 for `NtsClientRequest` or unconstrained `R: Default`; its three catches
+reject valid zero/seven-placeholder preparations, including an actual ledger
+path selecting seven. No incidental downstream fixture failure or compiler
+refusal earns behavioral credit; the latter runs provide no separate above-seven
+rejection evidence.
+
+Independent resource/cleanup review separately reconciles:
+
+| Host envelope receipt | Actual bounded observation | SHA256 |
+| --- | --- | --- |
+| `ke-handoff-resource-envelope-cohort-v1/verification.json` | 191.27 s; 381 samples/378 workload; max gap 0.519 s; peak 3 GiB RAM, 442564608 bytes swap, 123 tasks; minimum host available 1878065152 bytes; all 371 recorded PIDs gone. | `f7f01ddd993790cc2a354e5832776bcadd33329fe1527f1630d6bf34b23dc156` |
+| `ke-request-resource-envelope-cohort-v1/verification.json` | 140.47 s; 280 samples/277 workload; max gap 0.518 s; peak 2807140352 bytes RAM, 9854976 bytes swap, 118 tasks; minimum host available 3122266112 bytes; all 319 recorded PIDs gone. | `bc3d5c96c5b0ff2ec1d37aaa7c05aaea2a908794006b64b50bbc90d65d3baa9b` |
+
+Both have zero OOM/PID-limit/observation failure, absent cgroups/units and empty
+target/scratch. Final command-boundary outputs are 34353152 and 33796096 bytes.
+Root closes execution to exact `fc095160…adc32` after each terminal result;
+all 45 pins and the Git index remain unchanged. Currentness/callback/sealer
+ordering, first-cookie/key selection, field transfers, closure/callee behavior,
+generic plaintext-consumer lifetime and wiping/drop alternatives remain visible.
+Generated percentages supply no closure for these gaps or native/product gates.
+
+To reduce repeated setup review, prepare the eight remaining fixed selectors as
+mechanical copies of reviewed recipe `50ba0d6a…1aea`, without a new general
+command interface. Independent review verifies all 474 descriptor preimages,
+source/catalogue hashes, 45 pins and fresh paths. Preparation manifest
+`remaining-fixed-cohorts-preparation-v1.json` has SHA256
+`2f90c7ad22a207c44714edfde8bdc584d072669c5d15b7dae65c9775dd625c6f`.
+This admits fresh small controls only; each subject still needs actual-control
+review and a separate one-cohort disposition. Request is now complete, leaving
+seven unrun current cohorts/468 descriptors. All parent and execution holds stay.
+
+**Fault-projection cohort — complete GNU accounting, 13 November 2026.**
+Current `protected-history-ke-fault-mutation-v1/verification.json`, SHA256
+`e4716c1314957bda4c2663ff83cb85dcb80f24743f00b3cfa0ee338ec7cb647b`,
+finishes all 27 descriptors: two behavioral catches, seven compiler-unviable,
+18 GNU-inactive misses, zero timeouts/exclusions. Raw 2/20 viable = 10% leaves
+the 95% gate incomplete with native exit 2. Independent review matches every
+actual descriptor/diff/log and the 400-ordinary/69-doctest baseline. Two label
+mutations fail the literal `handshake` stage assertion. Four tuple-label defaults
+fail denied dead-code lint; the response/generic defaults fail E0277. Among
+19 Windows-only descriptors, 18 pass all GNU tests without reaching their bodies;
+one `&& → ||` let-chain mutation fails Rust parsing even under disabled Windows
+cfg. That syntax refusal earns no behavioral/native credit. No equivalent is
+adopted and none of these misses demonstrates an executed Windows behavior.
+
+Separate envelope `ke-fault-resource-envelope-cohort-v1/verification.json`,
+SHA256 `0e02a0d310c1f4e89069d94b69391fb13c083871b6a17cabf73aa1e157c12914`,
+passes in 285.91 seconds: 569 samples/566 workload, maximum gap 0.515 seconds,
+peak 3 GiB RAM, 135245824 bytes swap, 150 tasks and minimum host availability
+3128422400 bytes. The 4530 max events are informational, with zero OOM/PID-limit/
+observation failures. Independent review confirms all 684 recorded PIDs and
+cgroup absent, unit inactive/not-found, empty target/scratch and final output
+37384192 bytes. Execution returns to exact closed role `fc095160…adc32`; recipe
+`ca00defc…b5d6f`, 45 pins and index stay unchanged. Six current cohorts/441
+descriptors remain unrun. TLS-priority macros, downcast/resolve closures,
+field/privacy and native alternatives remain explicit alongside the failed gate.
+
+**Next ledger preparation.** Fixed recipe `70792c7a…7f583` selects only
+`ke_ledger` and its 166-entry `e4e4192a…b5198` catalogue on unchanged source
+`8c689ee8…1c36`. Independent mapping covers 34 functions: checkout/provenance/
+replay 32 descriptors; preparation/UID retirement 28; explicit pre-send return/
+preview 10; may-have-sent custody 15; receive/authentication/publication 46;
+recovery/status/receipt projections 35. Required current behavior includes
+31 valid-tag zero-cookie rejections followed by healthy frame 32, all-32
+exhaustion, original deadline/remaining work, no refund or stale-context return
+and nonreuse after possible send. Constructor/call ordering, pre-callback archive,
+publication/field transfers, allocation and checked-add paths, receipt replacement,
+wiping and actual native completion retain their separate alternatives. Some
+closure predicates are generated; do not generalize closure invisibility.
+Four fresh small controls pass; their actual-result review and release-time
+headroom precede any one-cohort admission. All thresholds, bounds and E[] stay.
+
+**Terminal ledger checkpoint — 13 November 2026.** The single admitted
+`ke_ledger` trial completes all 166 descriptors: **112 caught, 45 build-only
+unviable and nine missed**, zero timeouts/exclusions. Actual receipt
+`protected-history-ke-ledger-mutation-v1/verification.json`, SHA256
+`c676332cb87a890e6c1d7aa2a999bb9b0f177f62a987bb78c5bf0eb03160a395`,
+retains native exit 2 and the incomplete unchanged gate: 112/121 viable,
+92.561983%. Both independent halves reconcile their actual diffs/diagnostics.
+The nine misses weaken return/send resource or duplicate refusals and the
+receive serial/phase guard. Ordinary checked-path invariants support conditional
+domain arguments, but current tests do not independently challenge the broader
+malformed-Self refusal claims at these consumers. All nine stay unresolved;
+no historical equivalence transfers and E[] remains unchanged.
+
+Separate envelope `ke-ledger-resource-envelope-cohort-v1/verification.json`,
+SHA256 `e055133a96c9e91fa91dd22615f8bd1f5d93e79360649c70541faa72388254a9`,
+passes in 808.75 seconds: 1608 observations/1605 leaf-positive samples,
+187756544-byte swap peak, 111 tasks, six observed Cargo processes and minimum
+host availability 3242221568 bytes. The effective RAM cap stays 3221225472
+bytes; the kernel peak is 3221233664 bytes. There are zero OOM/PID-limit or
+observation errors. Independent review verifies all 1307 recorded PID/start
+identities and the cgroup absent, unit not-found, empty scratch and final owned
+output 60186624 bytes. The baseline passes 400 ordinary tests and 69 doctests.
+Session **87286 is terminal and closed**; do not poll or restart it.
+
+Requirements remain REQ-8/BND-2, CHECK-6/21/25 and S2.2-COOKIE-01/02.
+Candidate `964a9573`, source `8c689ee8…1c36`, catalogue `e4e4192a…b5198`,
+recipe `70792c7a…7f583` and all 45 pins remain unchanged. Root restores exact
+CLOSED `fc095160…adc32` after terminal confirmation. Seven current cohorts now
+account for 332/607 descriptors; five cohorts/275 descriptors remain unrun.
+Resource cleanup supplies no mutation, native or parent-product pass.
+
+While the role was CLOSED and no heavy job ran, execute the other five subjects'
+small controls sequentially. Independent full review and a separate five-OOM
+review reconcile all twenty controls: 131 retained samples/70 positive, expected
+reclaim/digest/payload deletion and attributed OOM with incomplete workload,
+qualification false and zero credit. All recorded identities/cgroups are absent;
+all twenty units are not-found after exact owned metadata retirement. Index
+`remaining-controls-result-index-v1.json`, SHA256
+`aa22f6d95fe8b0e1b534d5b05bde35dc503191fcf843cc1590f4cfb9e0637833`,
+binds every recipe/receipt/sidecar. Independent source/generation review maps
+retirement, response, datagram, recovery and job, including their unresolved
+generation/native alternatives. This validates controls and source preparation
+only: each still needs its own one-cohort disposition and fresh runtime release checks.
+No batch workload permission or inherited outcome follows. Preserve staging,
+shared services and all native/formal/fuzz/storage/UI holds.
+
+**Terminal retirement checkpoint — 13 November 2026.** On unchanged candidate
+`964a9573`, source `a92ad8f0…91ca9ce6`, catalogue `4f175b1d…857ef602` and
+recipe `7cab6807…211fa`, all **53 descriptors reconcile as 45 caught and eight
+compiler-unviable, zero survivors/timeouts/exclusions**. Receipt
+`protected-history-ke-retirement-mutation-v1/verification.json`, SHA256
+`3a0ce89060dfd8a49ba57fdeba0f10cebe5c0b1ca7716ef1d9526ee2295c89dd`,
+passes the generated GNU gate 45/45 viable; all 400 ordinary and 69 doctest
+baseline cases enter. Independent actual-outcome review identifies six catches
+as raw-bounds helper evidence only; 39 also discriminate genuine retirement,
+projection, installation or subsequent request handlers. The eight unviables
+receive no kill credit. Checked-add, archive/field transfer, publication/order,
+marker extraction, callee chronology, wiping and actual native retirement retain
+their separate generation alternatives.
+
+Envelope `ke-retirement-resource-envelope-cohort-v1/verification.json`, SHA256
+`c54cea8f17b3a06d757fea1aebc569f60564a28893c0d25209c302b048cc79eb`,
+passes in 401.818 seconds: 799 observations/796 workload, 3-GiB RAM peak,
+192479232-byte swap peak, 131 tasks, six observed Cargo processes, minimum
+host availability 3261911040 bytes and zero OOM/PID-limit/observer failures.
+Independent review verifies all 644 recorded identities plus parent dead,
+cgroup absent, unit not-found and target/tmp empty. Final command-boundary
+output is 41926656 bytes/851 entries, not a storage-peak measurement. Release
+preflight `retirement-cohort-release-preflight-v1.json` has SHA256
+`da461df1100598d557457ebd7fa1917bde70ecc0d6d5fd0ba3186b2171013556`.
+All 605 captured inputs and 45 pins reconcile, allowing solely captured OPEN
+versus restored CLOSED policy. Session **79699 is terminal and closed**; do not
+poll or restart it. Root restores exact `fc095160…adc32`; E[] and all bounds
+stay. Eight current cohorts account for 385/607 descriptors; four/222 remain
+unrun. This adds no native or parent-product qualification.
+
+**Terminal response checkpoint — 13 November 2026.** On the unchanged
+candidate, source `72376fd2…c550`, catalogue `56003223…35dfb` and recipe
+`41235c35…27ee5`, all **45 descriptors reconcile as 24 caught, 21 compiler-
+unviable and zero survivors/timeouts/exclusions**. Actual receipt
+`protected-history-ke-response-mutation-v1/verification.json`, SHA256
+`d75aac2f295dfaff75148063df4a893eb78afbce65683e0a6e394aa3582e6a68`,
+passes the generated GNU gate 24/24 viable; its baseline enters all 400 ordinary
+and 69 doctest cases. Independent actual-outcome review separates compiler
+refusals from genuine header/UID/placement/allowance/zero-cookie/field-count
+failures. One catch is runtime subtraction underflow on healthy authenticated
+input; no compiler failure receives behavioral kill credit. Nonce sensitivity,
+fixed limits, key-opening/generic callbacks, checked-add/allocation, full transfer,
+authentication/copy ordering and wiping retain their separate alternatives.
+
+Envelope `ke-response-resource-envelope-cohort-v1/verification.json`, SHA256
+`8fd3c35dea06614e89cd4f769dd5bd4da50e671c04c75d5cfca60f14d5466e56`,
+passes in 253.836 seconds with 505 observations/502 workload. RAM peak is
+3221229568 bytes against unchanged effective cap 3221225472; swap peak is
+135606272 bytes, tasks 119, observed Cargo six and minimum host availability
+5905227776 bytes. Actual OOM/PID-limit/observer failures are zero. Independent
+review confirms all 495 recorded identities plus parent dead, cgroup absent,
+unit not-found and target/tmp empty. Final command-boundary allocation is
+39391232 bytes/835 entries, not a storage-peak measurement. All 605 inputs,
+45 pins and tool/vendor finish bookends reconcile. Release preflight
+`response-cohort-release-preflight-v1.json` has SHA256
+`b25dd5758402d97a3b2f54c6775e7911187561459eb63cb8701415c743723bd8`.
+Session **48470 is terminal and closed**; do not poll or restart it. Root
+restores exact CLOSED `fc095160…adc32`; E[] and all other limits stay unchanged.
+Nine current cohorts account for 430/607 descriptors; three/177 remain unrun.
+The source-domain reviewers support the nine ledger arguments, but raw misses
+and E[] remain unchanged pending separate post-campaign accounting adoption.
+This supplies no native or parent-product qualification.
+
+**Terminal datagram checkpoint — 13 November 2026.** Candidate, 45 pins,
+source `2de1c1a6…0148`, recipe `ff0af7a3…903fca` and catalogue
+`c246399f…4857d` reconcile. All **38 descriptors classify as 12 caught, 18
+compiler-unviable and eight missed**, zero timeouts/exclusions. Receipt
+`protected-history-ke-datagram-mutation-v1/verification.json`, SHA256
+`cba0e35950863f26e4a99c3873e0495e87e7b7904e4d5b43dd69402413293fef`,
+correctly stays incomplete: 12/20 viable, raw 60%, exit 2. The eight misses
+are seven whole-function Windows-only descriptors and one Windows-only
+comparison in shared `classify_read`; they are neither Native passes nor
+equivalent exclusions. Independent actual-outcome review traces seven catches
+to helper classifier/equality assertions and five to actual Script sender/
+operation paths, including continued Pending after recoverable receive refusal.
+All 400 ordinary and 69 doctest baseline cases enter. Native readiness/syscall,
+macro waits, checked counters, retirement ordering/final guards and complete
+historical transfer retain separate alternatives.
+
+Envelope `ke-datagram-resource-envelope-cohort-v1/verification.json`, SHA256
+`7c18304e0b17ef0507c935c12ab9077b31faa650bb8942d62e3d232c59d816ef`,
+passes in 268.413 seconds: 534 observations/531 workload, 3-GiB RAM peak,
+135671808-byte swap peak, 145 tasks, six observed Cargo processes, minimum
+host availability 5860741120 bytes and zero OOM/PID-limit/observer failures.
+Independent review verifies all 595 recorded identities plus parent dead,
+cgroup absent, exact unit not-found and target/tmp empty. Final command-boundary
+output is 38326272 bytes/821 entries, not a storage-peak measurement. All 605
+captured inputs, 45 pins, recipe and tool/vendor finish bookends reconcile.
+Release preflight `datagram-cohort-release-preflight-v1.json` has SHA256
+`9710c5d4c7b7c52a2b6e75b263487418987ba16ab66f6c3949555d9253d23221`.
+Session **93395 is terminal and closed**; do not poll or restart it. Exact
+CLOSED `fc095160…adc32` is restored. Ten cohorts account for 468/607
+descriptors; two/139 remain unrun. E[] and every quality/resource limit stay.
+This supplies no native or parent-product qualification.
+
+**Terminal recovery checkpoint — 13 November 2026.** On unchanged source
+`73a902e0…c8a7b68`, recipe `a63d493a…2c349` and catalogue `a83af754…ae9244`,
+all **114 descriptors reconcile as 79 caught, 31 compiler-unviable and four
+missed**, zero timeouts/exclusions. Receipt
+`protected-history-ke-recovery-mutation-v1/verification.json`, SHA256
+`5ae5698656ef5f5abc4d369aa4b775bebde040a71d1abde075b46cd4cf33345f`,
+retains **raw 79/83 = 95.1807229%, exit 2 and an incomplete custom gate**.
+The four misses are precisely the wholly Windows-only Native producer methods;
+they add no native credit or exclusions. Independent complementary reviews
+reconcile ordered positions 1–57 as 43 caught/14 unviable and 58–114 as
+36 caught/17 unviable/four missed. Baseline enters 400 ordinary and 69 doctests.
+Numeric/constructor/inert planning catches retain their narrower scope; some
+actual step assertions are not reached before earlier planner failures. Actual
+guard, predecessor, cleanup and cutoff controls keep their own meaning; accessor
+masking does not establish stored-failure erasure. Checked arithmetic, Garde,
+scope/order, custody and historical-field construction retain generation gaps.
+
+Envelope `ke-recovery-resource-envelope-cohort-v1/verification.json`, SHA256
+`76466d0217b319f856a483885b5a5ac05fc4e1cea1fe483873c450aad5299dd7`,
+passes in 638.821 seconds: 1269 observations/1266 workload; RAM peak
+3221229568 bytes against unchanged 3221225472-byte cap; swap peak494505984
+bytes; 127 tasks and six observed Cargo processes. Host availability reaches
+1903857664 bytes, above the unchanged 1-GiB run-stop floor. Actual OOM/PID-limit/
+observer failures remain zero. Independent review verifies all 979 recorded
+identities plus parent dead, unit not-found, cgroup absent and target/tmp empty.
+All 605 inputs, 45 pins and finish bookends reconcile. Final command-boundary
+allocation is 51216384 bytes/973 entries, not a storage-peak measurement.
+Release preflight `recovery-cohort-release-preflight-v1.json` has SHA256
+`9da03e204d4a5b95c42b39148a75c7929434167a4bde539561947c9c2f4832f3`.
+Session **3935 is terminal and closed**; do not poll or restart it. Root restores
+exact CLOSED `fc095160…adc32`; E[] and every bound stay. Eleven cohorts now
+account for 582/607 descriptors; only the 25-descriptor worker cohort remains
+unrun. No native or parent-product qualification follows.
+
+**Staging custody and terminal worker checkpoint — 13 November 2026.** Another
+process stages the existing work during qualification, including transient OPEN
+policy `4a9c2a1f…4604`. The first worker preflight rejects the changed index
+before opening a role or creating any output. HEAD and all 45 source pins stay
+unchanged. Root changes only its own staged execution Boolean back to CLOSED;
+every other staged mode/blob entry remains exact. Receipt
+`qualification-staging-custody-refresh-v1.json`, SHA256
+`7e2e8ec7e71f04a0ce1ac9b72a785fece36e7eedc331928640530013876a1312`,
+records the refreshed index `bebb5520…13f9d` and staged diff `29b5daf8…40627`.
+David subsequently confirms that he staged the files; preserve his staging.
+
+Fresh `job-cohort-release-preflight-v1.json`, SHA256
+`0480cefc6f34e165f83c27ca24c541b83ab20b08cada5cb8dba258771d615974`,
+admits only the fixed 25-descriptor `ke_job` cohort, recipe `d2fb73d1…dbcec`,
+catalogue `768b4b61…08b56`, unchanged candidate/45 pins/E[]. Actual release
+RAM is 4810690560 bytes and disk17921507328 bytes; all existing floors/caps and
+six workers stay. Parent **84653 is terminal and closed**; do not poll or restart
+it. Receipt `protected-history-ke-job-mutation-v1/verification.json`, SHA256
+`9b3fcf10937fd797bbc9b3fd68399ee4c4b58584f62007ccde8d6f0f1e4fe77f`,
+classifies all **25 as 12 caught, 11 compiler-unviable and two missed**, zero
+timeouts/exclusions. Independent review verifies every actual diff and cause.
+Three raw catches abort actual worker tests on stack overflow; one checks the
+selected requested-stack value. The test-only invalid-stack selector catch is
+fixture sensitivity, adding no extra product guarantee. Poison, actual joining,
+first submission and consumed-result observation keep their actual scopes.
+The two survivors are wholly Windows-only methods; raw 12/14 (85.71%) and the
+custom gate remain incomplete. Constructor/order, handle/history movement and
+guard-generation alternatives remain open. Baseline enters all 400 ordinary
+and 69 doctest cases.
+
+Envelope `ke-job-resource-envelope-cohort-v1/verification.json`, SHA256
+`c22a0285dfc84ef1e28218e23c7e34d07ef5c297cc3a1e62e7dedafe9651de72`,
+passes in 216.578 seconds: 431 observations/428 workload, 3-GiB RAM peak,
+173875200-byte swap peak, 116 tasks, six observed Cargo processes and minimum
+host availability 2900230144 bytes. Actual OOM/PID-limit/observer failures are
+zero. Root verifies live kernel limits and exact leaf/supervisor versus outside
+parent custody. Independent terminal review confirms all 440 recorded identities
+plus parent dead, cgroup absent, unit not-found and target/tmp empty. All 605
+inputs, 45 pins and finish bookends reconcile before metadata adoption. Final
+command-boundary output is 36438016 bytes/795 entries, not a storage peak.
+Root restores exact worktree/staged CLOSED `fc095160…adc32` before adoption.
+
+##### Complete current inventory and data-only adoption — 13 November 2026
+
+All
+607 descriptors on product candidate `964a9573` now have independently reviewed
+actual outcomes. No current cohort remains unrun. Raw totals are **362 caught,
+199 compiler-unviable and 46 missed**, zero timeouts/exclusions. These are
+generation accounting, not a product-completion percentage or pooled score.
+
+| Owner | Generated | Raw caught | Unviable | Raw missed | Adopted E | Selected gate |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| process | 3 | 1 | 2 | 0 | 0 | GNU 1/1 viable |
+| control | 92 | 38 | 49 | 5 | 0 | Incomplete; 88.37%, Windows |
+| association | 29 | 27 | 2 | 0 | 0 | GNU 27/27 |
+| handoff | 9 | 7 | 2 | 0 | 0 | GNU 7/7 |
+| request | 6 | 3 | 3 | 0 | 0 | GNU 3/3 |
+| fault projection | 27 | 2 | 7 | 18 | 0 | Incomplete; 10%, Windows |
+| ledger | 166 | 112 | 45 | 9 | 9 | Adjusted GNU 112/112; raw remains incomplete |
+| retirement | 53 | 45 | 8 | 0 | 0 | GNU 45/45 |
+| response | 45 | 24 | 21 | 0 | 0 | GNU 24/24 |
+| datagram | 38 | 12 | 18 | 8 | 0 | Incomplete; 60%, Windows |
+| recovery | 114 | 79 | 31 | 4 | 0 | Incomplete custom gate; raw 95.18%, Windows |
+| worker | 25 | 12 | 11 | 2 | 0 | Incomplete; 85.71%, Windows |
+
+The process cohort retains its original eight-configured/at-most-three-actual
+execution scope and no live capacity observation. Later six-worker cohorts do
+not retroactively supply that observation. Compiler refusals, raw bounds/planner
+assertions, fatal stack tests and fixture-only catches keep the limits recorded
+above; none supplies additional actual-handler, native or product credit.
+
+Two source-domain reviewers and Root reconcile the nine ledger cases on the
+enforced private checked-owner domain. The existing dossier now names current
+candidate `964a9573` and explicitly marks `008583ad` historical. It establishes
+no arbitrary corrupted-Self robustness. Only three registry metadata assignments
+change in `scripts/portable-analysis.py`; no accounting/admission function or
+threshold changes. The policy adds exactly E9 and refreshes that helper pin.
+Product Rust/Cargo/fixture bytes and the 593-input product map stay unchanged.
+
+Actual `protected-history-ledger-e9-adoption-v2.json`, SHA256
+`3df45d7e965d4cde0d312a72946d2e0e3e3a1feec3e5f3893c046756d699f015`,
+composes the real role, product, proof, inventory and accounting APIs. Raw ledger
+receipt `c676332c…0a395` and outcomes `d9fadcea…e6775` remain immutable:
+112/121, nine misses, exit 2. Adjustment adds nine exclusions and **zero kills**,
+yielding 112/112 and no unresolved ledger survivor. Source/dossier/helper/policy
+custody is explicit: raw execution captured 605 inputs without this dossier;
+adoption adds it and changes declared metadata, not the execution's old capture.
+The first caller namespace error stops before policy/record writes. Independent
+review then catches a stale top-level dossier label; corrected v2 repeats all
+actual controls without rerunning Rust or changing the underlying arguments.
+
+`protected-history-ledger-e9-controls-v2.json`, SHA256
+`2a39671d4796aae110c43b6aad43a38f24f90bd1553e010eb35cac9430a99072`,
+retains eight exact-role, three actual-custody and three accounting negative
+controls. Genuine E8 passes generic custody, while exact-role admission rejects
+it and unresolved accounting still fails above 95%. Caught/unviable cases and
+wrong native exit cannot be excluded. The final independently reviewed bindings
+are dossier `f67b973c…cd695`, helper `0aac7561…bac7d` and CLOSED policy
+`794c70ba…e420`; all 45 current pins match. Old fixed recipe roles deliberately
+remain historical and cannot silently execute under this new metadata.
+
+Seven selected generated GNU gates pass, including adjusted ledger. The other
+**37 actual misses remain Windows-only across five owners**, without equivalent
+exclusions or native credit. Four other metric owners and the declared
+constructor/generic/macro/unsafe/order/field-transfer alternatives stay open.
+This completes current portable accounting, not Native, P1, package or release
+qualification. Preserve native/formal/fuzz/storage/UI holds. Next close the
+exact staged source checkpoint, then implement the already reviewed protected-
+completion-to-conditional-numerics card with its actual first caller supplying
+None and its declared-model controls; no Core eligibility or issuer is invented.
+
+**Old evidence retirement — 13 November 2026, latest cycle.** Root deletes
+942,399,488 allocated bytes of terminal mutation scratch and 66,994,176 bytes
+of three exact duplicate private contract-source copies. Independent review
+checks all six disposable mutant trees: each has the retained 605-file source
+set, and its sole changed file reconstructs exactly from a retained fault diff.
+Canonical current source, actual logs/diffs/outcomes and v5 resource evidence
+remain. The first small cleanup receipt is
+`cleanup-retirement-20261113-v1.json`, SHA256
+`e916fc68a37685f00fe7fc274f6ad236f1f85033f1cb3d498b4710b8cfa88f9c`.
+
+Root also retires fourteen obsolete failed-run/control bundles, another
+113,782,784 allocated bytes: failed compiler-contract v1, mutation v1–v3,
+healthy v1–v4, stop v2–v4 and cohort-envelope v2–v4. Their historical summaries
+above remain, but raw replay is no longer available; no completed qualification
+or score transfers from them. Current compiler/provider passes, current
+mutation v4 source/raw, all v5 envelopes, vendors/tools and one warm cache remain.
+Second receipt `cleanup-old-evidence-20261113-v1.json` has SHA256
+`2f70a9af61e8b609f3970dc4cace8216130f9f3f3be0e3fe710eb97fe49e5186`.
+Across both deletions, 1,123,176,448 allocated bytes are removed and measured
+filesystem recovery is 1,123,172,352 bytes. External NevroTick data measures
+2,983,772,160 bytes; WSL available space reaches 17,764,466,688 bytes.
+Git custody and the retained-file hashes match around each deletion. No target
+appears in 100 readable process scopes; two inaccessible scopes limit that check.
+Dirty repositories, including the separate 1.05-GB website analytics checkout,
+remain intact. No compression, shared-process termination or Windows change.
+Retire disposable build trees after terminal review instead of retaining one
+per trial; keep only current-required raw evidence and a selected warm cache.
+
+After the two complete cohort reviews, retire the interrupted mutation-v4 bundle
+and its superseded healthy/stop/cohort v5 envelopes. Its 605-file source matches
+retained current source byte-for-byte, and the full current cohort contains its
+former partial outcomes. Another 33,869,824 allocated bytes and equal measured
+filesystem recovery are recorded in `cleanup-superseded-trial-20261113-v1.json`,
+SHA256 `21ef00bf70a93e57a3d2ee910763573cb3c2d4702f984c2c486fa3e7b0cd0aa4`.
+Current receipts and Git custody remain exact; 160 readable process scopes show
+no selected reference, with two inaccessible scopes. External NevroTick data now
+measures 3,035,828,224 bytes and WSL available space 17,663,283,200 bytes.
+Both completed campaigns removed their worker targets/scratch normally. No
+compression, unrelated-process termination or Windows action occurs.
+
+**Additional old-evidence deletion — 13 November 2026.** At David's renewed
+request, delete the unused terminal sensitivity build target, nineteen exact
+obsolete control/artifact/profiling targets, four obsolete generated staged
+worktrees and a 605-file byte/mode-identical sensitivity source duplicate.
+The five deletion steps measure **622706688 bytes** of filesystem recovery;
+the full-cycle filesystem comparison is about 618 MB after source custody and
+concurrent host writes. No compression or raw-evidence archive is created.
+
+V4's 28 staged blobs are reachable from retained refs. V1–V3 have unique
+authored changes: preserve only three plain source patches (1872050 bytes) and
+their base/index manifest in `retired-staged-source-custody-v1`, SHA256
+`f5af28e279f9ba5575e575927612709ff8ab5f20247183eb842255586919e7c0`.
+Independent identity review and private-index forward restoration match all
+2073 mode/blob entries per snapshot before exact Git worktree retirement.
+This preserves source custody, not qualification or a historical replay pass.
+The five small cleanup receipts are:
+
+| Receipt | SHA256 |
+| --- | --- |
+| `cleanup-obsolete-sensitivity-target-20261113-v1.json` | `f4d5a824f0b6f9f757e4fa0b97e0f39175b9a8b12a8703e33d316a56ddb8f3ec` |
+| `cleanup-obsolete-raw-evidence-20261113-v2.json` | `a897bd1421d99cf6913d4ba89ea7e33ef1a8c89afedd66edc9a89c10c0c40091` |
+| `cleanup-obsolete-worktree-v4-20261113-v1.json` | `456bc0f7c6dbffa63e8a227222b064d520208c74a1dd3ea36faffe0f4f8cfb27` |
+| `cleanup-obsolete-worktrees-v1-v3-20261113-v1.json` | `49982cc287a1db3f9de610354ed5e1bf5298cae5ec9db3c30bc308cc0264ab37` |
+| `cleanup-duplicate-sensitivity-source-20261113-v1.json` | `d7e4b4f81aec3f4645e2b481ce616005f0b762e0b45bf1593119181ab1a6c439` |
+
+The external NevroTick store now measures about **2.59 GB**, including installed
+tools/vendors, current-required raw evidence and protected working copies;
+WSL has about **18.12 GB available**. Current source, all 45 pins, closed role,
+coverage JSON, mutation outcomes/diffs and unresolved ledger evidence stay exact.
+Main HEAD/index/status/staged/unstaged bytes match before documentation updates;
+only the four selected worktree registrations change. No target appears in
+readable process references; 52 inaccessible process scopes limit that check.
+Shared IDE/MCP/database processes, other working copies and Windows are untouched.
+The former warm build cache is now deleted. Keep disposable targets retired
+after terminal review; retained historical summaries confer no replacement credit.
 
 #### Next bounded recovery-owner contract — reviewed preparation
 
 **Historical source card:** this private source is now authored. The current
-checkpoint above owns its results and remaining qualification; its next WSL
-preparation is the invocation-level worker stop/completion contract.
+checkpoint above owns its results and remaining qualification. The later
+invocation-level stop source is authored above. The current routing reconciliation
+separates its incomplete qualification from permitted whole-invocation worker
+contract preparation; independent review still precedes dependent source changes.
 
 The coordinator, `/root/recovery_contract_review` and
 `/root/native_source_independent` reviewed this next source contract under
@@ -9498,6 +13396,76 @@ coverage profiles, raw exports/logs/outcomes/diffs, source probes and receipts
 remain. `q1-quality-final-20261108-v1/terminal-target-cleanup-v1.json` records the
 exact paths and unchanged main Git/432 execution-input custody. Alongside the
 earlier 802,193,408-byte pass, this recovered 1,434,587,136 bytes without compression.
+
+##### Protected completion to conditional numerics — bounded receiving contract
+
+**Reviewed source preparation, 13 November 2026.** Root and two complementary
+read-only reviewers trace the actual producer, receipt, sealed history, actual
+join and numerical/Core consumers. Under REQ-8/BND-1, CHECK-7/8/25 and
+KE-HIST-01/03/04/05/06/07, prepare one private historical numerical adapter.
+This card implements no Rust or Cargo edge and closes none of the remaining
+mutation cohorts, current Windows-only misses or generation/native gates.
+
+**Input and enforcing owner.** Proposed `ReceivedProtectedNumerics` lives inside
+`datagram::reached`, retaining consumed `Box<ProtectedHistory>`, exact
+`Option<ExperimentalProfile>` and complete
+`Result<ExperimentalMeasurement, MeasurementRefusal>`. Keep fields and the single
+construction path sealed, without Clone/Copy/general Debug/Eq, rebinding setters
+or detached-parts factory. Accept no separately paired header, captures, row or
+identity labels. Box ownership alone proves no normal outer retirement: abnormal
+joined outcomes can retain history. The actual facade must first match existing
+`Some(Ok(...))`, `Termination::Returned`, `retired: true`, then dispatch only
+`InvocationCompletion::Protected(history)`. Preview, operation failure and
+abnormal-retirement branches preserve existing outcomes and bypass adaptation.
+Borrowed accessors preserve the carrier association.
+
+**Calculation and refusal.** Invoke existing `measurement::measure` with the
+three original captures, `receipt.fields().header()` and original
+`receipt.accepted_at()`. T1 remains `send_before.utc`; randomized wire origin
+supplies no local clock reading. Retain the exact explicit declaration. Missing
+profile first yields `Unavailable`; otherwise ordinary-header admission precedes
+capture ordering, conversions, consistency, date scope, era and arithmetic.
+Authenticated zero T2/T3 bits remain in history: `None` yields `Unavailable`,
+while an explicit profile reaches existing `Protocol` refusal. Retain the entire
+numerical Result as data, including `CaptureOrder` if processing precedes the
+receive bracket's upper endpoint; ledger admission checks only its lower endpoint.
+Numerical refusal neither fails the completed operation nor discards history,
+retries acquisition, renews a deadline or restores spent work/cookie credit.
+Existing CLI counts continue to derive from retained history.
+
+**Age and publication.** The calculated age is exactly
+`accepted_at − read_return.mono_after`: historical age at the original packet-
+publication observation, before subsequent cookie moves, final Control commit
+and join. Do not resample time, call `with_acquisition_age`, substitute join time
+or use this value as current freshness. Complete receipt/header/captures,
+post-admission population, endpoint/socket identity and original chart remain
+unchanged. The later production receiver stages bounded work and rechecks actual
+current identities/revisions, validity, cancellation and original age under its
+exclusive transaction before atomic history/fit/revision commit, with no
+intervening await/callback/unlock. Never reopen retired Control for currentness.
+
+**Source-only exit.** The first admitted caller must supply `None`; explicit checked
+`Some` in declared-model controls supports conditional arithmetic. Add no public
+profile flag, Core rows/divisors/estimator effects, eligibility, vote or clock
+authority. Through actual Script → worker → join require:
+
+| Case | Independent expected observation |
+| --- | --- |
+| Normal protected reply, no declaration | `Unavailable`; original history, captures, identities and summary retained. |
+| Normal nonzero reply, fixed checked declaration | Existing numerical success, independently calculated coordinates and original historical age. |
+| Same genuine reply, incompatible checked date scope | Existing scope refusal demonstrates use of the exact declaration. |
+| Authentic zero T2/T3 | Original bits survive; missing/explicit declaration produce the distinct refusals above. |
+| Existing retirement hold, then release | No carrier before actual join; saved receipt/capture age stays unchanged afterward. |
+| Later retirement panic, operation failure or preview | No adaptation; typed failures and retained abnormal facts keep their existing meaning. |
+
+Reuse adequate unchanged numerical-owner controls for other refusal families;
+fabricated history supplies no genuine-producer evidence. Freeze actual caller,
+privacy and control cases before implementation, then qualify its affected
+candidate through configured entrypoints and ordinary 90/95 gates. Production-
+positive receiving still needs Engine source/configuration/path/trust/association
+issuers; W11-W01/platform/broker mapping and calibrated uncertainty; S1.4 date/
+scale/calendar evidence; Engine/S1.2 quality/freshness suppliers and the actual
+Core history transaction. Their existing holds remain.
 
 ##### Next receiving prerequisite — persistent acquisition-session contract
 

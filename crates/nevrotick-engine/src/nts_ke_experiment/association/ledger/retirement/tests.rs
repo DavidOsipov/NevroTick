@@ -81,7 +81,7 @@ fn with_provider(
     let config = config()?;
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     exercise(&config, &provider)
 }
 
@@ -591,7 +591,7 @@ fn assert_projection_binding_refusals(
         let other_config = self::config()?;
         let other_admission = ProcessAdmission::new();
         let other_claim = other_admission.claim()?;
-        let other_provider = ProviderScope::component(&other_claim);
+        let other_provider = ProviderScope::component(other_claim);
         let mut original = owner(
             config,
             &control,
@@ -631,7 +631,7 @@ fn assert_install_provider_argument_binding(
 ) -> Result<(), Failure> {
     let other_admission = ProcessAdmission::new();
     let other_claim = other_admission.claim()?;
-    let other_provider = ProviderScope::component(&other_claim);
+    let other_provider = ProviderScope::component(other_claim);
     let first_control = Control::new(Instant::now())?;
     let past = history(config, &first_control, &other_provider, vec![0x11; 12])?;
     let control = Control::new(Instant::now())?;
@@ -987,7 +987,7 @@ fn retirement_refuses_drained_foreign_and_cancelled_sources() -> Result<(), Fail
             let other_config = self::config()?;
             let other_admission = ProcessAdmission::new();
             let other_claim = other_admission.claim()?;
-            let other_provider = ProviderScope::component(&other_claim);
+            let other_provider = ProviderScope::component(other_claim);
             let mut original = owner(
                 config,
                 &control,
@@ -1301,7 +1301,7 @@ fn attachment_refuses_second_history_foreign_provider_and_foreign_control() -> R
             let other_control = Control::new(Instant::now())?;
             let other_admission = ProcessAdmission::new();
             let other_claim = other_admission.claim()?;
-            let other_provider = ProviderScope::component(&other_claim);
+            let other_provider = ProviderScope::component(other_claim);
             let selected_provider = if case == 1 { &other_provider } else { provider };
             let mut replacement = owner(
                 config,

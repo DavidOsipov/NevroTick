@@ -69,6 +69,12 @@ fn generate_ep2_response_fixtures() -> FixtureResult {
     header[24..32].copy_from_slice(&ORIGIN.to_be_bytes());
     header[32..40].copy_from_slice(&RECEIVE.to_be_bytes());
     header[40..48].copy_from_slice(&TRANSMIT.to_be_bytes());
+    let mut zero_receive = header;
+    zero_receive[32..40].fill(0);
+    let mut zero_transmit = header;
+    zero_transmit[40..48].fill(0);
+    let mut zero_timestamps = header;
+    zero_timestamps[32..48].fill(0);
     let uid = field(0x0104, &UID)?;
     let cookie = field(0x0204, &COOKIE)?;
     let unknown_outer = field(0x1234, &[0x55; 12])?;
@@ -76,6 +82,12 @@ fn generate_ep2_response_fixtures() -> FixtureResult {
     let suffix = field(0x0204, &[0x99; 24])?;
     let mut cases = vec![
         ("HEALTHY", packet(&header, &uid, &cookie, &[])?),
+        ("ZERO_RECEIVE", packet(&zero_receive, &uid, &cookie, &[])?),
+        ("ZERO_TRANSMIT", packet(&zero_transmit, &uid, &cookie, &[])?),
+        (
+            "ZERO_TIMESTAMPS",
+            packet(&zero_timestamps, &uid, &cookie, &[])?,
+        ),
         (
             "NONCE_ZERO",
             packet_with_nonce(&header, &uid, &cookie, &[], &[])?,

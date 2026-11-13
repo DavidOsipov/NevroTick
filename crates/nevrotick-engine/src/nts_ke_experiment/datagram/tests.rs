@@ -26,7 +26,8 @@ use crate::nts_ke_experiment::profile::StrictProfile;
 use crate::nts_ke_experiment::request::DirectionalKeys;
 use crate::nts_ke_experiment::response::{ReplyError, fixtures};
 use crate::nts_ke_experiment::{
-    CancelOutcome, Config, Control, Failure, preview_once, protected_once,
+    CancelOutcome, Config, Control, Failure, IoPhase, StopDisposition, StopHandle, preview_once,
+    protected_once,
 };
 
 /// Public independent request/UID bytes, not randomness or exporter evidence.
@@ -50,6 +51,8 @@ pub(super) enum ScriptReady {
     Cancel,
     /// Park until the independently driven control wake/deadline.
     Pending,
+    /// A same-scope sibling closes only its own phase after this wait registered.
+    SiblingCancelPending(Arc<Control>),
     /// Readiness itself failed, without consuming any datagram.
     Failed(io::ErrorKind),
 }
@@ -62,6 +65,7 @@ enum ScriptSend {
     Failed(io::ErrorKind),
     Unknown,
     CancelBeforeGuard,
+    ScopeStopBeforeGuard,
     CancelAfterFull,
 }
 
@@ -75,6 +79,8 @@ enum ScriptRead {
 
 /// Bounded scripted facts. This type is available only in unit-test builds.
 pub(super) struct Script {
+    /// Actual component backend lifetime, separate from retained socket identity.
+    lifetime: Arc<()>,
     ready: VecDeque<ScriptReady>,
     reads: VecDeque<ScriptRead>,
     send: ScriptSend,
@@ -88,6 +94,7 @@ impl Script {
     /// Create a finite public case before entering the guarded operation.
     fn new(send: ScriptSend, reads: Vec<ScriptRead>) -> Self {
         Self {
+            lifetime: Arc::new(()),
             ready: VecDeque::new(),
             reads: reads.into(),
             send,
@@ -101,9 +108,17 @@ impl Script {
     /// Latch the exact archive-to-syscall race outside the cancellation mutex.
     /// # Errors
     /// Preserve the actual cancellation failure rather than pretending to send.
+    /// # Panics
+    /// Fail if the selected first invocation stop had already been delivered.
     pub(super) fn before_guard(&mut self, control: &Control) -> Result<(), Failure> {
         if matches!(self.send, ScriptSend::CancelBeforeGuard) {
             control.cancel()?;
+        }
+        if matches!(self.send, ScriptSend::ScopeStopBeforeGuard) {
+            let stop = StopHandle {
+                scope: Arc::clone(&control.stop_scope),
+            };
+            assert_eq!(stop.request_stop()?, StopDisposition::Latched);
         }
         Ok(())
     }
@@ -123,6 +138,10 @@ impl Script {
                 Ok(())
             }
             ScriptReady::Pending => std::future::pending().await,
+            ScriptReady::SiblingCancelPending(sibling) => {
+                sibling.cancel()?;
+                std::future::pending().await
+            }
             ScriptReady::Failed(kind) => Err(Failure::Datagram(DatagramError::Readiness(kind))),
         }
     }
@@ -136,7 +155,7 @@ impl Script {
         destination.copy_from_slice(packet);
         self.packet_bytes = packet.len();
         match self.send {
-            ScriptSend::Full | ScriptSend::CancelBeforeGuard => {
+            ScriptSend::Full | ScriptSend::CancelBeforeGuard | ScriptSend::ScopeStopBeforeGuard => {
                 (SendOutcome::Completed(packet.len()), false)
             }
             ScriptSend::Short => (
@@ -216,7 +235,7 @@ fn with_owner_start(
     let control = Control::new(start)?;
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     let remote = SocketAddr::new(config.peer.ip(), 123);
     let candidate = AssociationCandidate::new(
         &config,
@@ -398,7 +417,7 @@ fn wrapper_nested_runtime_refusal_precedes_backend_and_entropy() -> Result<(), F
         assert_eq!(owner.status(), before);
         assert!(owner.last_receipt().is_none());
         assert_eq!(control.expiry, expiry);
-        control.remaining(crate::nts_ke_experiment::IoPhase::Exchange)?;
+        control.remaining(IoPhase::Exchange)?;
         Ok(())
     })
 }
@@ -441,8 +460,8 @@ fn wrapper_context_refusals_precede_backend_and_entropy() -> Result<(), Failure>
                 (control.expiry, foreign_control.expiry),
                 (expiry, foreign_expiry)
             );
-            control.remaining(crate::nts_ke_experiment::IoPhase::Exchange)?;
-            foreign_control.remaining(crate::nts_ke_experiment::IoPhase::Exchange)?;
+            control.remaining(IoPhase::Exchange)?;
+            foreign_control.remaining(IoPhase::Exchange)?;
             Ok(())
         })
     })?;
@@ -548,7 +567,7 @@ fn stale_completion_cannot_commit_over_newer_reservation() -> Result<(), Failure
         assert_eq!(reserved.phase, RequestPhase::Reserved);
         assert_eq!(reserved.attempts, 30);
         assert_eq!(owner.last_receipt().map(Receipt::serial), Some(serial));
-        control.remaining(crate::nts_ke_experiment::IoPhase::Exchange)?;
+        control.remaining(IoPhase::Exchange)?;
         assert!(
             matches!(
                 completion.commit(owner),
@@ -588,7 +607,7 @@ fn stale_completion_cannot_commit_after_newer_reservation_return() -> Result<(),
         assert_eq!(returned.phase, RequestPhase::Idle);
         assert_eq!(returned.attempts, 30);
         assert_eq!(owner.last_receipt().map(Receipt::serial), Some(serial));
-        control.remaining(crate::nts_ke_experiment::IoPhase::Exchange)?;
+        control.remaining(IoPhase::Exchange)?;
         assert!(
             matches!(
                 completion.commit(owner),
@@ -755,6 +774,132 @@ fn cancellation_after_archive_before_syscall_blocks_actual_submission() -> Resul
     })
 }
 
+/// Stop inside real preparation entropy cannot publish a packet or refund work.
+/// # Errors
+/// Preserve checked owner/runtime setup and the healthy response's actual refusal.
+/// # Panics
+/// Fail if a callback holds either gate, stop permits an effect or work is renewed.
+#[test]
+fn invocation_stop_inside_protected_entropy_preserves_charges_without_send() -> Result<(), Failure>
+{
+    use std::cell::Cell;
+
+    for stop_in_entropy in [false, true] {
+        with_owner(S2C, |owner, control, remote| {
+            let stop = StopHandle {
+                scope: Arc::clone(&control.stop_scope),
+            };
+            let expiry = control.expiry;
+            let original = owner.status();
+            let entropy_calls = Cell::new(0);
+            let mut backend = backend(
+                remote,
+                Script::new(
+                    ScriptSend::Full,
+                    vec![ScriptRead::Packet(fixtures::HEALTHY, remote)],
+                ),
+            );
+            let driver = runtime()?;
+            let result = driver.block_on(operation(
+                owner,
+                control,
+                |output| {
+                    entropy_calls.set(entropy_calls.get() + 1);
+                    // Nonblocking observations make a wrongly retained guard fail
+                    // before a synchronous stop request could wait on that guard.
+                    assert!(control.stop_scope.stopped.try_lock().is_ok());
+                    assert!(control.phase.try_lock().is_ok());
+                    entropy(output)?;
+                    if stop_in_entropy {
+                        assert_eq!(stop.request_stop()?, StopDisposition::Latched);
+                    }
+                    Ok(())
+                },
+                &mut backend,
+            ));
+            assert_eq!(entropy_calls.get(), 1);
+            assert_eq!(control.expiry, expiry);
+            assert_eq!(owner.status().attempts, original.attempts - 1);
+            assert_eq!(owner.status().uids, 1);
+            if stop_in_entropy {
+                assert!(matches!(result, Err(Failure::Cancelled)));
+                let stopped = owner.status();
+                assert_eq!(stopped.phase, RequestPhase::Preparing);
+                assert_eq!((stopped.available, stopped.used), (0, 0));
+                assert_eq!(
+                    (stopped.frames, stopped.bytes),
+                    (original.frames, original.bytes)
+                );
+                assert!(owner.last_receipt().is_none());
+                assert_eq!(stop.request_stop()?, StopDisposition::AlreadyLatched);
+                let repeated = driver.block_on(operation(
+                    owner,
+                    control,
+                    |output| {
+                        entropy_calls.set(entropy_calls.get() + 1);
+                        entropy(output)
+                    },
+                    &mut backend,
+                ));
+                assert!(matches!(repeated, Err(Failure::Cancelled)));
+                assert_eq!(entropy_calls.get(), 1);
+                assert_eq!(owner.status(), stopped);
+                assert_eq!(script(&backend)?.send_calls, 0);
+                assert_eq!(script(&backend)?.receive_calls, 0);
+            } else {
+                let completion = result?;
+                assert_eq!(completion.receipt.serial(), 1);
+                assert_eq!(script(&backend)?.send_calls, 1);
+                assert_eq!(script(&backend)?.receive_calls, 1);
+                assert_eq!(owner.status().used, 1);
+            }
+            Ok(())
+        })?;
+    }
+    Ok(())
+}
+
+/// KE-STOP-06: invocation stop wins after archive and before the actual send guard.
+/// # Errors
+/// Preserve checked setup and the healthy neighboring packet's real refusal.
+/// # Panics
+/// Fail if stop permits a send or refunds the archived cookie/request charge.
+#[test]
+fn invocation_stop_before_syscall_preserves_archive_and_blocks_send() -> Result<(), Failure> {
+    for stop_first in [false, true] {
+        with_owner(S2C, |owner, control, remote| {
+            let mut backend = backend(
+                remote,
+                Script::new(
+                    if stop_first {
+                        ScriptSend::ScopeStopBeforeGuard
+                    } else {
+                        ScriptSend::Full
+                    },
+                    vec![ScriptRead::Packet(fixtures::HEALTHY, remote)],
+                ),
+            );
+            let result = runtime()?.block_on(operation(owner, control, entropy, &mut backend));
+            if stop_first {
+                assert!(matches!(result, Err(Failure::Cancelled)));
+                assert_eq!(script(&backend)?.send_calls, 0);
+                assert_eq!(script(&backend)?.receive_calls, 0);
+                assert_eq!(owner.status().phase, RequestPhase::Invoked);
+                assert!(owner.last_receipt().is_none());
+            } else {
+                let completion = result?;
+                assert_eq!(completion.receipt.serial(), 1);
+                assert_eq!(script(&backend)?.send_calls, 1);
+                assert_eq!(script(&backend)?.receive_calls, 1);
+            }
+            assert_eq!(owner.status().attempts, 31);
+            assert_eq!(owner.status().used, 1);
+            Ok(())
+        })?;
+    }
+    Ok(())
+}
+
 /// Consumed unknown extents cannot be parsed or charged as fabricated prefixes.
 /// # Errors
 /// Preserve only unexpected setup failure.
@@ -881,6 +1026,138 @@ fn cancellation_wakes_registered_pending_readiness() -> Result<(), Failure> {
         });
         assert!(matches!(result, Err(Failure::Cancelled)));
         assert_eq!(script(&backend)?.send_calls, 0);
+        Ok(())
+    })
+}
+
+/// KE-STOP-05: the real invocation handle wakes an already parked operation.
+/// # Errors
+/// Preserve component setup, scope-stop or bounded watchdog refusal.
+/// # Panics
+/// Fail if registration is bypassed, stop is lost, or the parked operation sends.
+#[test]
+fn invocation_stop_wakes_registered_pending_readiness() -> Result<(), Failure> {
+    use std::future::Future;
+    use std::task::Poll;
+
+    with_owner(S2C, |owner, control, remote| {
+        let stop = StopHandle {
+            scope: Arc::clone(&control.stop_scope),
+        };
+        let expiry = control.expiry;
+        let mut selected = Script::new(ScriptSend::Full, Vec::new());
+        selected.ready.push_back(ScriptReady::Pending);
+        let mut backend = backend(remote, selected);
+        let result = runtime()?.block_on(async {
+            let pending = operation(owner, control, entropy, &mut backend);
+            tokio::pin!(pending);
+            std::future::poll_fn(|context| {
+                assert!(pending.as_mut().poll(context).is_pending());
+                Poll::Ready(())
+            })
+            .await;
+            let stopping = async { stop.request_stop() };
+            let (result, stopped) = tokio::time::timeout(Duration::from_secs(2), async {
+                tokio::join!(pending, stopping)
+            })
+            .await
+            .map_err(|_| Failure::Control)?;
+            assert_eq!(stopped?, StopDisposition::Latched);
+            result
+        });
+        assert!(matches!(result, Err(Failure::Cancelled)));
+        assert_eq!(stop.request_stop()?, StopDisposition::AlreadyLatched);
+        assert_eq!(control.expiry, expiry);
+        assert_eq!(script(&backend)?.send_calls, 0);
+        assert_eq!(script(&backend)?.receive_calls, 0);
+        assert_eq!(owner.status().phase, RequestPhase::Prepared);
+        assert_eq!(owner.status().attempts, 31);
+        assert!(owner.last_receipt().is_none());
+        Ok(())
+    })
+}
+
+/// KE-STOP-05: a sibling's local cancellation is only a wake for a live owner.
+/// # Errors
+/// Preserve checked same-scope construction, actual packet or watchdog refusal.
+/// # Panics
+/// Fail if a harmless wake cancels current authority or prevents the healthy receipt.
+#[test]
+fn sibling_local_cancel_rewaits_and_preserves_healthy_receipt() -> Result<(), Failure> {
+    with_owner(S2C, |owner, control, remote| {
+        let sibling = Arc::new(Control::clamped_in(
+            control.origin,
+            control.expiry,
+            Arc::clone(&control.stop_scope),
+        )?);
+        let mut selected = Script::new(
+            ScriptSend::Full,
+            vec![ScriptRead::Packet(fixtures::HEALTHY, remote)],
+        );
+        selected
+            .ready
+            .push_back(ScriptReady::SiblingCancelPending(Arc::clone(&sibling)));
+        let mut backend = backend(remote, selected);
+        let completion = runtime()?.block_on(async {
+            tokio::time::timeout(
+                Duration::from_secs(2),
+                operation(owner, control, entropy, &mut backend),
+            )
+            .await
+            .map_err(|_| Failure::Control)?
+        })?;
+        control.remaining(IoPhase::Exchange)?;
+        assert_eq!(sibling.cancel()?, CancelOutcome::AlreadyCancelled);
+        assert_eq!(completion.receipt.serial(), 1);
+        assert_eq!(owner.last_receipt().map(Receipt::serial), Some(1));
+        assert_eq!(script(&backend)?.send_calls, 1);
+        assert_eq!(script(&backend)?.receive_calls, 1);
+        assert!(script(&backend)?.ready.is_empty());
+        assert_eq!(owner.status().frames, 31);
+        assert_eq!(owner.status().used, 1);
+        Ok(())
+    })
+}
+
+/// KE-STOP-05: finite harmless wakes spend the unchanged readiness allowance.
+/// # Errors
+/// Preserve same-scope setup or the two-second watchdog refusal.
+/// # Panics
+/// Fail if wakes become cancellation, refill Attempts, submit bytes or loop forever.
+#[test]
+fn sibling_local_wakes_exhaust_existing_attempts_without_cancelling() -> Result<(), Failure> {
+    with_owner(S2C, |owner, control, remote| {
+        let sibling = Arc::new(Control::clamped_in(
+            control.origin,
+            control.expiry,
+            Arc::clone(&control.stop_scope),
+        )?);
+        let mut selected = Script::new(ScriptSend::Full, Vec::new());
+        selected.ready = (0..64)
+            .map(|_| ScriptReady::SiblingCancelPending(Arc::clone(&sibling)))
+            .collect();
+        let mut backend = backend(remote, selected);
+        let result = runtime()?.block_on(async {
+            tokio::time::timeout(
+                Duration::from_secs(2),
+                operation(owner, control, entropy, &mut backend),
+            )
+            .await
+            .map_err(|_| Failure::Control)?
+        });
+        assert!(matches!(
+            result,
+            Err(Failure::Datagram(DatagramError::Attempts))
+        ));
+        control.remaining(IoPhase::Exchange)?;
+        assert_eq!(sibling.cancel()?, CancelOutcome::AlreadyCancelled);
+        assert!(script(&backend)?.ready.is_empty());
+        assert_eq!(script(&backend)?.send_calls, 0);
+        assert_eq!(script(&backend)?.receive_calls, 0);
+        assert_eq!(owner.status().phase, RequestPhase::Prepared);
+        assert_eq!(owner.status().attempts, 31);
+        assert_eq!((owner.status().frames, owner.status().bytes), (32, 131_072));
+        assert!(owner.last_receipt().is_none());
         Ok(())
     })
 }
@@ -1040,6 +1317,55 @@ fn outer_commit_distinguishes_stop_before_and_after_historical_completion() -> R
     Ok(())
 }
 
+/// KE-STOP-06: scope stop cannot forge or erase a genuinely retired completion.
+/// # Errors
+/// Preserve checked setup, genuine protected exchange and actual stop refusal.
+/// # Panics
+/// Fail if stop-before-commit succeeds or a prior commit loses historical counts.
+#[test]
+fn invocation_stop_orders_retired_commit_without_rewriting_history() -> Result<(), Failure> {
+    for stop_first in [true, false] {
+        with_owner(S2C, |owner, control, remote| {
+            let completion = exchange_with(owner, control, entropy, |admitted| {
+                Ok(backend(
+                    admitted,
+                    Script::new(
+                        ScriptSend::Full,
+                        vec![ScriptRead::Packet(fixtures::HEALTHY, remote)],
+                    ),
+                ))
+            })?;
+            let stop = StopHandle {
+                scope: Arc::clone(&control.stop_scope),
+            };
+            let before = owner.status();
+            let receipt = owner.last_receipt().map(Receipt::serial);
+            assert_eq!(receipt, Some(1));
+            if stop_first {
+                assert_eq!(stop.request_stop()?, StopDisposition::Latched);
+                assert!(matches!(
+                    protected_once(owner, |_| Ok(completion)),
+                    Err(Failure::Cancelled)
+                ));
+            } else {
+                let committed = completion.commit(owner)?;
+                assert_eq!(stop.request_stop()?, StopDisposition::Latched);
+                assert_eq!(control.cancel()?, CancelOutcome::AlreadyCommitted);
+                committed.check_control(control)?;
+                let summary = committed.into_summary();
+                assert!(summary.transmitted);
+                assert_eq!(summary.cookies, 1);
+                assert_eq!(summary.cookie_bytes, 12);
+            }
+            assert_eq!(stop.request_stop()?, StopDisposition::AlreadyLatched);
+            assert_eq!(owner.status(), before);
+            assert_eq!(owner.last_receipt().map(Receipt::serial), receipt);
+            Ok(())
+        })?;
+    }
+    Ok(())
+}
+
 /// A genuinely retired completion loses authority at its unchanged original expiry.
 /// # Errors
 /// Preserve checked construction, genuine packet completion or bounded-wait refusal.
@@ -1162,7 +1488,7 @@ fn foreign_completion_with_equal_endpoint_and_serial_cannot_commit() -> Result<(
                 );
                 assert_eq!(idle.status(), before);
                 assert!(idle.last_receipt().is_none());
-                idle_control.remaining(crate::nts_ke_experiment::IoPhase::Exchange)?;
+                idle_control.remaining(IoPhase::Exchange)?;
                 assert_eq!(idle_control.cancel()?, CancelOutcome::Cancelled);
                 Ok(())
             })?;
@@ -1175,8 +1501,8 @@ fn foreign_completion_with_equal_endpoint_and_serial_cannot_commit() -> Result<(
             assert_eq!(other.status(), other_before);
             assert_eq!(original.last_receipt().map(Receipt::serial), Some(serial));
             assert_eq!(other.last_receipt().map(Receipt::serial), Some(serial));
-            original_control.remaining(crate::nts_ke_experiment::IoPhase::Exchange)?;
-            other_control.remaining(crate::nts_ke_experiment::IoPhase::Exchange)?;
+            original_control.remaining(IoPhase::Exchange)?;
+            other_control.remaining(IoPhase::Exchange)?;
             // A genuine completion still commits at its own receiving owner.
             assert!(other_completion.commit(other)?.into_summary().transmitted);
             assert_eq!(other_control.cancel()?, CancelOutcome::AlreadyCommitted);
@@ -1208,7 +1534,7 @@ fn dropped_retired_completion_preserves_history_without_commit() -> Result<(), F
         drop(completion);
         assert_eq!(owner.status(), before);
         assert_eq!(owner.last_receipt().map(Receipt::serial), Some(serial));
-        control.remaining(crate::nts_ke_experiment::IoPhase::Exchange)?;
+        control.remaining(IoPhase::Exchange)?;
         assert_eq!(control.cancel()?, CancelOutcome::Cancelled);
         Ok(())
     })
@@ -1297,7 +1623,7 @@ fn one_shot_preview_refusals_preserve_currentness_and_spent_work() -> Result<(),
         assert_eq!(owner.status(), spent);
         assert!(owner.last_receipt().is_none());
         assert_eq!(control.expiry, expiry);
-        control.remaining(crate::nts_ke_experiment::IoPhase::Exchange)?;
+        control.remaining(IoPhase::Exchange)?;
         assert_eq!(control.cancel()?, CancelOutcome::Cancelled);
         Ok(())
     })

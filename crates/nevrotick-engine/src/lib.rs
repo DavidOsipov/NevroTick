@@ -22,8 +22,12 @@ mod nts_ke_experiment;
 
 /// Run the explicitly selected, controlled-loopback KE association prototype.
 ///
-/// The existing probe is the live caller. Only historical public counts leave
-/// the private owner after secret/provider cleanup. The default seals a never-send
+/// The existing probe is the live caller. On Windows this synchronous facade
+/// refuses an entered Tokio context before preparing or submitting its worker.
+/// Successful historical counts follow actual joined secret/provider retirement;
+/// a post-submission collection refusal reports unconfirmed completion and retains
+/// permanent job custody. This supplies no bounded service-stop or native-cleanup claim.
+/// The default seals a never-send
 /// preview; `--protected-datagram` explicitly selects one bounded UDP operation.
 /// Neither mode changes a clock or grants production sample/freshness authority.
 /// Unsupported hosts refuse without invoking a substitute TLS provider.
@@ -533,7 +537,7 @@ impl SoftwareClock {
 /// Historical origin shared by requests in one actual private execution.
 /// Retention carries no socket/runtime, clock mapping, generation or authority.
 struct RunClockContext {
-    /// Actual `execute` start, captured before runtime construction and native I/O.
+    /// Actual run start or original checked Control origin, before acquisition I/O.
     origin: Instant,
 }
 

@@ -5289,42 +5289,98 @@ def address_storage_checkpoint(session, policy: dict, report: dict, label: str, 
         raise Incomplete("Address-round four-GiB available reserve reached.")
 
 
-def retire_engine_ke_release_target(session, policy: dict, report: dict) -> None:
-    """Retire only completed, validated release artifacts before debug-only lanes.
+def _admit_engine_ke_debug_retirement(policy: dict, report: dict) -> None:
+    """Require complete debug execution and Clippy custody before removing their cache."""
+    binding = policy.get("binding")
+    execution = report.get("baseline_execution")
+    names = binding.get("test_inventory") if type(binding) is dict else None
+    records = execution.get("test_names") if type(execution) is dict else None
+    if (type(names) is not list or len(names) != 400
+            or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
+            or names != sorted(set(names))
+            or sum(name.startswith("nts_ke_experiment::") for name in names) != 222
+            or type(records) is not list or len(records) != 400
+            or any(type(name) is not str for name in records)
+            or sorted(records) != names
+            or type(execution.get("tests_executed")) is not int
+            or execution["tests_executed"] != 400
+            or type(execution.get("ke_tests_executed")) is not int
+            or execution["ke_tests_executed"] != 222
+            or execution.get("inventory_sha256") != COMMON.canonical_sha256(names)):
+        raise Incomplete("Debug retirement requires the exact validated 400-test/222-KE baseline roster and digest.")
+    lanes, samples = report.get("lanes"), report.get("storage_samples")
+    if (type(lanes) is not list or len(lanes) < 2
+            or any(type(row) is not dict for row in lanes)
+            or [row.get("lane") for row in lanes[-2:]] != ["ke-baseline", "ke-clippy"]
+            or any(sum(row.get("lane") == label for row in lanes) != 1
+                   for label in ("ke-baseline", "ke-clippy"))
+            or any(type(row.get("exit_code")) is not int or row["exit_code"] != 0
+                   or "failure" not in row or row["failure"] is not None for row in lanes[-2:])
+            or type(samples) is not list or not samples
+            or any(type(row) is not dict for row in samples)):
+        raise Incomplete("Debug retirement requires unique ordered successful baseline and Clippy commands.")
+    completed = [row for row in samples if row.get("phase") == "after"
+                 and row.get("lane") in ("ke-baseline", "ke-clippy")]
+    if ([row.get("lane") for row in completed] != ["ke-baseline", "ke-clippy"]
+            or samples[-1] != completed[-1]
+            or any(type(row.get("allocated_bytes")) is not int or row["allocated_bytes"] < 0
+                   or row["allocated_bytes"] >= policy["owned_output_maximum_allocated_bytes"]
+                   or type(row.get("available_bytes")) is not int
+                   or row["available_bytes"] < policy["stop_free_bytes"] for row in completed)):
+        raise Incomplete("Debug retirement requires passed baseline and final Clippy post-lane storage samples.")
 
-    The successful release command and its passed post-lane storage sample
-    are prerequisites. Private canonical parents and bounded tree admission
-    precede deletion; source, raw results and every other target stay untouched.
-    """
-    lanes, samples = report.get("lanes", []), report.get("storage_samples", [])
-    if (not lanes or lanes[-1].get("lane") != "ke-release"
-            or lanes[-1].get("exit_code") != 0 or lanes[-1].get("failure") is not None
-            or sum(row.get("lane") == "ke-release" for row in lanes) != 1
-            or not report.get("release_execution") or not samples
-            or samples[-1].get("lane") != "ke-release" or samples[-1].get("phase") != "after"
-            or samples[-1]["allocated_bytes"] >= policy["owned_output_maximum_allocated_bytes"]
-            or samples[-1]["available_bytes"] < policy["stop_free_bytes"]):
-        raise Incomplete("Release retirement requires completed validation and a passed post-lane storage sample.")
+
+def retire_engine_ke_debug_target(session, policy: dict, report: dict) -> None:
+    """Retire completed GNU debug artifacts before release; retain cross-target metadata."""
+    _retire_engine_ke_target(session, policy, report, "debug")
+
+
+def retire_engine_ke_release_target(session, policy: dict, report: dict) -> None:
+    """Retire only completed validated release artifacts before debug-only lanes."""
+    _retire_engine_ke_target(session, policy, report, "release")
+
+
+def _retire_engine_ke_target(session, policy: dict, report: dict, profile: str) -> None:
+    """Admit and remove only one of two fixed completed caches, never an arbitrary path."""
+    roles = {
+        "debug": ("ke-clippy", "debug_target_retirement", "ke-debug-target-retirement", "Debug"),
+        "release": ("ke-release", "release_target_retirement", "ke-release-target-retirement", "Release"),
+    }
+    if type(profile) is not str or profile not in roles:
+        raise Incomplete("Engine KE target retirement accepts only its fixed debug or release profile.")
+    completed_lane, record_key, sample_label, title = roles[profile]
+    if profile == "debug":
+        _admit_engine_ke_debug_retirement(policy, report)
+    else:
+        lanes, samples = report.get("lanes", []), report.get("storage_samples", [])
+        if (not lanes or lanes[-1].get("lane") != "ke-release"
+                or lanes[-1].get("exit_code") != 0 or lanes[-1].get("failure") is not None
+                or sum(row.get("lane") == "ke-release" for row in lanes) != 1
+                or not report.get("release_execution") or not samples
+                or samples[-1].get("lane") != "ke-release" or samples[-1].get("phase") != "after"
+                or samples[-1]["allocated_bytes"] >= policy["owned_output_maximum_allocated_bytes"]
+                or samples[-1]["available_bytes"] < policy["stop_free_bytes"]):
+            raise Incomplete("Release retirement requires completed validation and a passed post-lane storage sample.")
     output, work = session.output, session.work
-    target, release = work / "target", work / "target/release"
+    target, cache = work / "target", work / "target" / profile
     if work != output / "work" or not getattr(shutil.rmtree, "avoids_symlink_attacks", False):
-        raise Incomplete("Release retirement requires its exact owned work tree and safe directory removal.")
+        raise Incomplete(f"{title} retirement requires its exact owned work tree and safe directory removal.")
     try:
-        for path in (output, work, target, release):
+        for path in (output, work, target, cache):
             observed = path.lstat()
             if (not stat.S_ISDIR(observed.st_mode) or observed.st_uid != os.geteuid()
                     or path.resolve(strict=True) != path or observed.st_mode & 0o022
                     or (path in (output, work) and observed.st_mode & 0o077)):
-                raise Incomplete("Release retirement parents must be canonical, private and owned directories.")
-        address_storage_checkpoint(session, policy, report, "ke-release-target-retirement", "before")
-        row = {"path": "work/target/release", "completed_lane": "ke-release",
-               "before": address_storage_usage(release), "removed": False}
-        report["release_target_retirement"] = row
-        shutil.rmtree(release)
+                raise Incomplete(f"{title} retirement parents must be canonical, private and owned directories.")
+        address_storage_checkpoint(session, policy, report, sample_label, "before")
+        row = {"path": "work/target/" + profile, "completed_lane": completed_lane,
+               "before": address_storage_usage(cache), "removed": False}
+        report[record_key] = row
+        shutil.rmtree(cache)
         row["removed"] = True
-        address_storage_checkpoint(session, policy, report, "ke-release-target-retirement", "after")
+        address_storage_checkpoint(session, policy, report, sample_label, "after")
     except OSError as error:
-        raise Incomplete("Completed release target retirement failed.") from error
+        raise Incomplete(f"Completed {profile} target retirement failed.") from error
 
 
 def admit_address_ordinary(binding: dict) -> dict:
@@ -5596,6 +5652,8 @@ ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/response/fixtures.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/datagram/tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/recovery/tests.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/recovery/worker_tests.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/job_tests.rs",
 )
 ENGINE_KE_BOUND_INPUTS = tuple(dict.fromkeys((
     WRAPPER, TESTS, *COMMON.ENGINE_KE_CRITICAL, *ENGINE_KE_TEST_SOURCES,
@@ -5610,7 +5668,7 @@ ENGINE_KE_FIXTURE_SOURCE = "tools/crypto-aes-siv-witness/tests/ep2_response_fixt
 ENGINE_KE_FIXTURE_MANIFEST = "tools/crypto-aes-siv-witness/Cargo.toml"
 ENGINE_KE_FIXTURE_LOCK = "tools/crypto-aes-siv-witness/Cargo.lock"
 ENGINE_KE_FIXTURE_NAMES = frozenset((
-    "HEALTHY ZERO_COOKIES EMPTY_COOKIE TWO_COOKIES EIGHT_COOKIES NINE_COOKIES "
+    "HEALTHY ZERO_RECEIVE ZERO_TRANSMIT ZERO_TIMESTAMPS ZERO_COOKIES EMPTY_COOKIE TWO_COOKIES EIGHT_COOKIES NINE_COOKIES "
     "MISSING_UID SHORT_UID DUPLICATE_UID CLEAR_COOKIE CLEAR_PLACEHOLDER INNER_UID INNER_AUTH "
     "INNER_PLACEHOLDER UNKNOWN_FIELDS_AND_SUFFIX SUFFIX_DUPLICATE_UID_AUTH MALFORMED_INNER "
     "MAX_INNER_FIELDS TOO_MANY_INNER MAX_OUTER_FIELDS TOO_MANY_OUTER MAX_PACKET_BYTES "
@@ -5673,7 +5731,7 @@ def validate_engine_ke_fixture_output(text: str) -> tuple[str, dict]:
             raise Incomplete("Public fixture aggregate payload exceeds its finite bound.")
         fixtures[declaration[1]] = {"bytes": len(payload), "sha256": hashlib.sha256(payload).hexdigest()}
     if set(fixtures) != ENGINE_KE_FIXTURE_NAMES:
-        raise Incomplete("Public fixtures omit part of the fixed thirty-three-case inventory.")
+        raise Incomplete("Public fixtures omit part of the fixed thirty-six-case inventory.")
     return source, {"generated": True, "tests_executed": 1, "payload_bytes": total, "fixtures": fixtures}
 
 
@@ -5787,11 +5845,11 @@ def validate_engine_ke_policy(policy: dict, *, campaign: bool = False) -> dict:
             or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None for value in pins.values())):
         raise Incomplete("Engine KE source/helper inputs differ from the exact fixed set.")
     names = binding["test_inventory"]
-    if (type(names) is not list or len(names) != 348
+    if (type(names) is not list or len(names) != 400
             or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
             or names != sorted(set(names))
-            or sum(name.startswith("nts_ke_experiment::") for name in names) != 170):
-        raise Incomplete("Engine KE requires all 348 actual Engine tests including its 170 KE cases.")
+            or sum(name.startswith("nts_ke_experiment::") for name in names) != 222):
+        raise Incomplete("Engine KE requires all 400 actual Engine tests including its 222 KE cases.")
     for key in ("ordinary_evidence", "root_graph_evidence"):
         evidence = binding[key]
         if (type(evidence) is not dict or set(evidence) != {"path", "sha256"}
@@ -5814,7 +5872,7 @@ def validate_engine_ke_execution(text: str, binding: dict, *, include_doctests: 
             or any(re.fullmatch(r"[^\r\n]+[.]rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile(?: fail)?)?", name) is None
                    for name in extra)):
         raise Incomplete("Engine KE did not execute every current actual library/integration case.")
-    result = {"tests_executed": len(records), "ke_tests_executed": 170,
+    result = {"tests_executed": len(records), "ke_tests_executed": 222,
               "test_names": records, "inventory_sha256": COMMON.canonical_sha256(sorted(records))}
     if include_doctests:
         result["additional_doctests"] = sorted(extra)
@@ -5843,9 +5901,325 @@ def admit_engine_ke_evidence(binding: dict) -> dict:
             raise Incomplete("Engine KE prior evidence bytes changed.")
     return result
 
+
+def engine_ke_provider_contract_examples(original: bytes) -> list[dict]:
+    """Append six real private-constructor callers; compile them without execution.
+
+    The unchanged UTF-8 owner is bounded and newline-terminated. Each specimen
+    changes only its appended caller; genuine admissions mint every claim.
+    """
+    if (type(original) is not bytes or not original or len(original) > 256 * 1024
+            or not original.endswith(b"\n") or b"mod provider_claim_contract_probe" in original):
+        raise Incomplete("Provider compiler contracts require the unchanged bounded private owner.")
+    try:
+        original_text = original.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise Incomplete("Provider compiler owner is not bounded UTF-8 source.") from error
+    examples = []
+    for target, constructor, cfg in (("gnu", "component", "not(windows)"), ("msvc", "new", "windows")):
+        admission = ("let admission = super::ProcessAdmission::new();\n        let claim = admission.claim()?;"
+                     if target == "gnu" else "let claim = super::super::PROCESS_ADMISSION.claim()?;")
+        for case in ("once", "overlap", "after-drop"):
+            second = f"        let second = ProviderScope::{constructor}(claim);"
+            calls = f"        let first = ProviderScope::{constructor}(claim);\n"
+            if case == "once":
+                calls += "        drop(first);\n"
+            elif case == "overlap":
+                calls += second + "\n        drop((first, second));\n"
+            else:
+                calls += "        drop(first);\n" + second + "\n        drop(second);\n"
+            probe = ("\n/// Actual private constructors; compile-only claim consumption control.\n"
+                f"#[cfg(all(test, {cfg}))]\nmod provider_claim_contract_probe {{\n"
+                "    use super::{Failure, ProviderScope};\n"
+                "    /// Use genuine claims without executing the provider or its destructor.\n"
+                "    /// # Errors\n    /// Preserve actual initial claim refusal.\n"
+                "    #[test]\n    fn actual_owned_claim_contract_probe() -> Result<(), Failure> {\n"
+                f"        {admission}\n{calls}        Ok(())\n    }}\n}}\n")
+            diagnostic = None if case == "once" else {
+                "code": "E0382", "tokens": ["claim", "moved"],
+                "line": len(original_text.splitlines()) + probe.splitlines().index(second) + 1}
+            examples.append({"target": target, "case": case, "constructor": "ProviderScope::" + constructor,
+                "appended_source": probe, "source": original + probe.encode(), "diagnostic": diagnostic})
+    return examples
+
+
+ENGINE_KE_HISTORY_CAUSES = {
+    "copy-completion": ("E0277", ("InvocationCompletion", "Copy")),
+    "clone-completion": ("E0277", ("InvocationCompletion", "Clone")),
+    "copy-history": ("E0277", ("ProtectedHistory", "Copy")),
+    "clone-history": ("E0277", ("ProtectedHistory", "Clone")),
+    "second-consume-completion": ("E0382", ("completion", "moved")),
+    "raw-history": ("E0451", ("ProtectedHistory", "summary", "receipt", "population",
+        "send_before", "send_after", "read_return", "local", "remote", "identity", "run_context", "private")),
+}
+
+
+def engine_ke_history_contract_examples(original: bytes) -> list[dict]:
+    """Append fourteen fixed consumers of actual private owners, never execute them."""
+    if (type(original) is not bytes or not original or len(original) > 256 * 1024
+            or not original.endswith(b"\n") or b"protected_history_contract_probe" in original):
+        raise Incomplete("History compiler contracts require the unchanged bounded private owner.")
+    try:
+        original_text = original.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise Incomplete("History compiler owner is not bounded UTF-8 source.") from error
+    bodies = {
+        "legal": ("", None),
+        "copy-completion": ("    fn require_copy<T: Copy>() {}\n    require_copy::<InvocationCompletion>();\n",
+            "    require_copy::<InvocationCompletion>();"),
+        "clone-completion": ("    let duplicate = <InvocationCompletion as Clone>::clone(&completion);\n    drop(duplicate);\n",
+            "    let duplicate = <InvocationCompletion as Clone>::clone(&completion);"),
+        "copy-history": ("    fn require_copy<T: Copy>() {}\n    require_copy::<datagram::ProtectedHistory>();\n",
+            "    require_copy::<datagram::ProtectedHistory>();"),
+        "clone-history": ("    let duplicate = <datagram::ProtectedHistory as Clone>::clone(&history);\n    drop(duplicate);\n",
+            "    let duplicate = <datagram::ProtectedHistory as Clone>::clone(&history);"),
+        "second-consume-completion": ("    let first = completion;\n    let second = completion;\n    drop(second);\n",
+            "    let second = completion;"),
+    }
+    # All ten private fields stay on one physical line: every E0451 primary span
+    # must identify this same independent expected line in the unchanged matcher.
+    raw = ("    let duplicate = datagram::ProtectedHistory { summary: *history.summary(), receipt: history.receipt(), "
+        "population: history.population(), send_before, send_after, read_return, local, remote, "
+        "identity: Arc::clone(history.identity()), run_context: Arc::clone(history.run_context()) };")
+    bodies["raw-history"] = ("    let [send_before, send_after, read_return] = history.captures();\n"
+        "    let (local, remote) = history.endpoints();\n" + raw + "\n    drop(duplicate);\n", raw)
+    examples = []
+    for target, cfg in (("gnu", "not(windows)"), ("msvc", "windows")):
+        for case, (body, causal_line) in bodies.items():
+            returned = "first" if case == "second-consume-completion" else "completion"
+            probe = ("\n/// protected_history_contract_probe: compile-only actual owning consumers.\n"
+                f"#[cfg(all(test, {cfg}))]\n"
+                "const _: fn(InvocationCompletion, datagram::ProtectedHistory)\n"
+                "    -> (InvocationCompletion, datagram::ProtectedHistory) = |completion, history| {\n"
+                "    {\n        let _ = (completion.summary(), history.summary(), history.receipt(),\n"
+                "            history.population(), history.captures(), history.endpoints(),\n"
+                "            history.identity(), history.run_context());\n    }\n"
+                + body + f"    ({returned}, history)\n}};\n")
+            diagnostic = None
+            if causal_line is not None:
+                code, tokens = ENGINE_KE_HISTORY_CAUSES[case]
+                diagnostic = {"code": code, "tokens": list(tokens),
+                    "line": len(original_text.splitlines()) + probe.splitlines().index(causal_line) + 1}
+            examples.append({"target": target, "case": case, "owner": "InvocationCompletion/ProtectedHistory",
+                "appended_source": probe, "source": original + probe.encode(), "diagnostic": diagnostic})
+    return examples
+
+
+def validate_engine_ke_provider_cause(result: dict, specimen: dict, manifest: str) -> None:
+    """Preserve the fixed provider-only E0382 cause and actual process source."""
+    if (type(specimen) is not dict or set(specimen) != {"code", "tokens", "line"}
+            or specimen["code"] != "E0382" or specimen["tokens"] != ["claim", "moved"]):
+        raise Incomplete("Provider ownership probe requires its exact moved-claim diagnostic.")
+    _validate_engine_ke_compiler_cause(result, specimen, manifest, ENGINE_KE_HOST_SUBJECTS["ke_process"])
+
+
+def validate_engine_ke_history_cause(result: dict, specimen: dict, manifest: str) -> None:
+    """Admit only the closed history type/trait/privacy causes in the actual parent owner."""
+    if (type(specimen) is not dict or set(specimen) != {"code", "tokens", "line"}
+            or not any(specimen["code"] == code and specimen["tokens"] == list(tokens)
+                       for code, tokens in ENGINE_KE_HISTORY_CAUSES.values())):
+        raise Incomplete("History ownership probe leaves its fixed diagnostic matrix.")
+    _validate_engine_ke_compiler_cause(result, specimen, manifest, ENGINE_KE_HOST_SUBJECTS["ke_core"])
+
+
+def _validate_engine_ke_compiler_cause(result: dict, specimen: dict, manifest: str, filename: str) -> None:
+    """Check actual Cargo attribution before the unchanged rustc causal matcher.
+
+    Cargo's pinned JSON emits an exact terminal explanation note without rustc's
+    plain abort summary. Validate and omit only that noncausal tail; never invent
+    an abort record or discard another diagnostic. Raw command output is retained.
+    """
+    if (type(result) is not dict or type(result.get("exit_code")) is not int
+            or result["exit_code"] != 101 or result.get("failure") is not None
+            or "failure" not in result or type(result.get("output")) is not str
+            or not 0 < len(result["output"].encode()) <= 4 * 1024 * 1024
+            or type(specimen) is not dict or set(specimen) != {"code", "tokens", "line"}
+            or type(specimen["code"]) is not str or re.fullmatch(r"E[0-9]{4}", specimen["code"]) is None
+            or type(specimen["tokens"]) is not list or not specimen["tokens"]
+            or any(type(token) is not str or not token for token in specimen["tokens"])
+            or filename not in (ENGINE_KE_HOST_SUBJECTS["ke_process"], ENGINE_KE_HOST_SUBJECTS["ke_core"])
+            or type(specimen["line"]) is not int or specimen["line"] < 1
+            or type(manifest) is not str or not manifest.startswith("/work/")
+            or ".." in Path(manifest).parts or not manifest.endswith("/crates/nevrotick-engine/Cargo.toml")):
+        raise Incomplete("Provider ownership probe lacks its bounded ordinary Cargo compiler refusal.")
+    records = result["output"].splitlines()
+    if len(records) > 4096:
+        raise Incomplete("Provider Cargo diagnostic records exceed their bound.")
+    package = "path+file://" + str(Path(manifest).parent) + "#0.0.0"
+    diagnostics, summaries = [], []
+    explained = finished = False
+    for line in records:
+        if not line.strip():
+            continue
+        if not line.startswith("{"):
+            summary = re.fullmatch(r"error: could not compile `nevrotick-engine` \(lib(?: test)?\) due to ([1-9][0-9]*) previous errors?", line)
+            if summary:
+                summaries.append(int(summary[1]))
+            elif line != "warning: build failed, waiting for other jobs to finish...":
+                raise Incomplete("Provider Cargo output contains unexpected non-JSON text.")
+            continue
+        try:
+            item = COMMON.ANALYSIS.decode(line)
+        except (Incomplete, RecursionError) as error:
+            raise Incomplete("Provider Cargo output contains malformed or excessive JSON.") from error
+        if type(item) is not dict or finished:
+            raise Incomplete("Provider Cargo record is malformed or follows build completion.")
+        reason = item.get("reason")
+        if reason == "compiler-message":
+            target = item.get("target")
+            message = item.get("message")
+            if (set(item) != {"reason", "package_id", "manifest_path", "target", "message"}
+                    or item["package_id"] != package or item["manifest_path"] != manifest
+                    or type(target) is not dict or target.get("name") != "nevrotick_engine"
+                    or target.get("kind") != ["lib"] or target.get("crate_types") != ["lib"]
+                    or target.get("src_path") != str(Path(manifest).parent / "src/lib.rs")
+                    or type(message) is not dict or explained):
+                raise Incomplete("Provider compiler diagnostic leaves the actual private Engine library.")
+            if message.get("level") == "failure-note":
+                expected = f"For more information about this error, try `rustc --explain {specimen['code']}`."
+                if (not diagnostics or set(message) != {"$message_type", "message", "code", "level", "spans", "children", "rendered"}
+                        or message["$message_type"] != "diagnostic" or message["message"] != expected
+                        or message["code"] is not None or message["spans"] != [] or message["children"] != []
+                        or message["rendered"] not in (None, expected + "\n")):
+                    raise Incomplete("Provider Cargo explanation is not its exact terminal noncausal note.")
+                explained = True
+            else:
+                diagnostics.append(message)
+        elif reason == "compiler-artifact":
+            if (set(item) != {"reason", "package_id", "manifest_path", "target", "profile", "features", "filenames", "executable", "fresh"}
+                    or any(type(item[key]) is not str or not item[key] for key in ("package_id", "manifest_path"))
+                    or type(item["target"]) is not dict or type(item["profile"]) is not dict
+                    or type(item["fresh"]) is not bool
+                    or (item["executable"] is not None and type(item["executable"]) is not str)
+                    or any(type(item[key]) is not list or len(item[key]) > 4096
+                           or any(type(value) is not str for value in item[key]) for key in ("features", "filenames"))):
+                raise Incomplete("Provider Cargo artifact envelope is malformed.")
+        elif reason == "build-script-executed":
+            if (set(item) != {"reason", "package_id", "linked_libs", "linked_paths", "cfgs", "env", "out_dir"}
+                    or any(type(item[key]) is not str or not item[key] for key in ("package_id", "out_dir"))
+                    or any(type(item[key]) is not list or len(item[key]) > 4096
+                           or any(type(value) is not str for value in item[key]) for key in ("linked_libs", "linked_paths", "cfgs"))
+                    or type(item["env"]) is not list or len(item["env"]) > 4096
+                    or any(type(pair) is not list or len(pair) != 2
+                           or any(type(value) is not str for value in pair) for pair in item["env"])):
+                raise Incomplete("Provider Cargo build-script envelope is malformed.")
+        elif reason == "build-finished":
+            if set(item) != {"reason", "success"} or item["success"] is not False:
+                raise Incomplete("Provider Cargo completion contradicts its compiler refusal.")
+            finished = True
+        else:
+            raise Incomplete("Provider Cargo output contains an unknown record.")
+    errors = sum(item.get("level") == "error" and item.get("code") is not None for item in diagnostics)
+    if errors != 1 or not explained or not finished or len(summaries) != 1 or summaries[0] != errors:
+        raise Incomplete("Provider Cargo refusal lacks its exact terminal explanation/completion accounting.")
+    normalized = {**result, "output": "\n".join(json.dumps(item, sort_keys=True) for item in diagnostics)}
+    COMMON.compiler_cause(normalized, specimen, filename)
+
+
+def engine_ke_provider_contracts(session, policy: dict, report: dict, run) -> None:
+    """Retain exactly the six existing actual provider-claim metadata controls."""
+    _engine_ke_owned_contracts(session, policy, report, run, "provider")
+
+
+def engine_ke_history_contracts(session, policy: dict, report: dict, run) -> None:
+    """Run only the fourteen fixed actual completion/history metadata controls."""
+    _engine_ke_owned_contracts(session, policy, report, run, "history")
+
+
+def _engine_ke_owned_contracts(session, policy: dict, report: dict, run, owner: str) -> None:
+    """Seal one private package copy per command with exactly one appended probe.
+
+    The Session source and original checkout remain immutable. Expected island
+    identities derive from the admitted base plus the single known byte delta;
+    source restoration is mandatory even when compilation or custody fails.
+    """
+    if owner == "provider":
+        filename, examples_for, validate = (ENGINE_KE_HOST_SUBJECTS["ke_process"],
+            engine_ke_provider_contract_examples, validate_engine_ke_provider_cause)
+        report_key, requirement, cases = "provider_claim_contracts", "KE-PROV-02", ("once", "overlap", "after-drop")
+        scope = "Actual private component/Native constructors; two healthy and four moved-value metadata checks; no Windows execution."
+        owner_field = "constructor"
+    elif owner == "history":
+        filename, examples_for, validate = (ENGINE_KE_HOST_SUBJECTS["ke_core"],
+            engine_ke_history_contract_examples, validate_engine_ke_history_cause)
+        report_key, requirement, cases = "protected_history_contracts", "KE-HIST-03/07", ("legal", *ENGINE_KE_HISTORY_CAUSES)
+        scope = "Actual private completion/history owners; two healthy and twelve ownership/privacy metadata refusals; no Windows execution."
+        owner_field = "owner"
+    else:
+        raise Incomplete("Engine KE compiler controls require a fixed provider or history owner.")
+    deadline = time.monotonic() + policy["baseline_wall_seconds"]
+    private = session.work / (owner + "-contract-source")
+    session.check()
+    baseline = dict(session.source_inventory)
+    original = COMMON.read_analysis_bytes(session.source / filename, maximum=256 * 1024)
+    if hashlib.sha256(original).hexdigest() != baseline[filename]:
+        raise Incomplete("Provider compiler owner differs from its immutable Session identity.")
+    examples = examples_for(original)
+    if [(row["target"], row["case"]) for row in examples] != [(target, case) for target in ("gnu", "msvc") for case in cases]:
+        raise Incomplete("Engine KE compiler controls differ from their complete fixed roster.")
+    shutil.copytree(session.source, private)
+    if PRODUCT.inventory(private) != baseline:
+        raise Incomplete("Provider compiler package copy differs from the immutable Session source.")
+    session.protected_islands[private] = dict(baseline)
+    production = private / filename
+    manifest = "/work/" + (private / "crates/nevrotick-engine/Cargo.toml").relative_to(session.work).as_posix()
+    report[report_key] = {"requirement": requirement, "probes": [], "scope": scope}
+    try:
+        for example in examples:
+            session.check()
+            if PRODUCT.inventory(private) != baseline or session.protected_islands.get(private) != baseline:
+                raise Incomplete("Provider compiler copy drifted before its next controlled delta.")
+            data = example["source"]
+            expected = {**baseline, filename: hashlib.sha256(data).hexdigest()}
+            production.write_bytes(data)
+            session.protected_islands[private] = dict(expected)
+            try:
+                command = ["cargo", "check", "--package", "nevrotick-engine", "--features", "ke-association-prototype",
+                    "--all-targets", "--frozen", "--jobs", "6", "--message-format=json", "--quiet"]
+                if example["target"] == "msvc":
+                    command += ["--target", "x86_64-pc-windows-msvc"]
+                label = "ke-" + owner + "-contract-" + example["target"] + "-" + example["case"]
+                negative = example["diagnostic"] is not None
+                raw = run(label, command, COMMON.remaining_timeout(deadline, policy["baseline_wall_seconds"]),
+                    cwd=private, **({"negative": json.dumps(example["diagnostic"]["code"])} if negative else {}))
+                if negative or owner == "history":
+                    lanes = report.get("lanes")
+                    if type(lanes) is not list or not lanes or type(lanes[-1]) is not dict:
+                        raise Incomplete("Provider compiler refusal lacks its retained Session result.")
+                    row = lanes[-1]
+                    argv = row.get("command")
+                    if (row.get("lane") != label or type(raw) is not str or row.get("output") != raw
+                            or type(argv) is not list or len(argv) <= len(command)
+                            or argv[-len(command) - 1] != "--" or argv[-len(command):] != command):
+                        raise Incomplete("Provider diagnostic differs from its retained actual Session command.")
+                    if (not negative and (type(row.get("exit_code")) is not int or row["exit_code"] != 0
+                            or "failure" not in row or row["failure"] is not None)):
+                        raise Incomplete("History legal consumer lacks its retained successful ordinary command.")
+                if negative:
+                    validate(row, example["diagnostic"], manifest)
+                session.check()
+                if PRODUCT.inventory(private) != expected or session.protected_islands.get(private) != expected:
+                    raise Incomplete("Provider compiler copy changed outside its admitted single-source delta.")
+                report[report_key]["probes"].append({
+                    key: example[key] for key in ("target", "case", owner_field, "appended_source", "diagnostic")})
+                report[report_key]["probes"][-1].update(
+                    source_sha256=expected[filename], appended_sha256=hashlib.sha256(example["appended_source"].encode()).hexdigest())
+            finally:
+                production.write_bytes(original)
+                session.protected_islands[private] = dict(baseline)
+                if PRODUCT.inventory(private) != baseline:
+                    raise Incomplete("Provider compiler package was not restored exactly after its probe.")
+    finally:
+        production.write_bytes(original)
+        session.protected_islands[private] = dict(baseline)
+        session.check()
+
+
 def execute_engine_ke_profile(args, report: dict) -> None:
     """Run only the admitted Root-lock feature, with explicit initial campaign hold."""
-    if args.tool_admission_profile != "stable-core" or args.lane not in {"baseline", "enumerate", "coverage", "mutation", "all"}:
+    if (getattr(args, "profile", None) != "ke_association" or args.tool_admission_profile != "stable-core"
+            or args.lane not in {"contracts", "baseline", "enumerate", "coverage", "mutation", "all"}
+            or (args.lane == "contracts" and args.subject not in ("ke_process", "ke_job"))):
         raise Incomplete("Engine KE requires the selected stable host analysis lane.")
     policy = read_json(ROOT / ENGINE_KE_POLICY)
     binding = validate_engine_ke_policy(policy, campaign=args.lane in {"mutation", "all"})
@@ -5874,7 +6248,7 @@ def execute_engine_ke_profile(args, report: dict) -> None:
         selected.lane = "mutation"
     report.update(profile="ke_association", subjects=subjects, qualification_passed=False,
                   full_critical_files=list(COMMON.ENGINE_KE_CRITICAL),
-                  scope="Eleven registered GNU KE owners; actual selected subjects recorded; four remaining owners and Windows arms stay open",
+                  scope="Twelve registered GNU KE owners; actual selected subjects recorded; four remaining owners and Windows arms stay open",
                   source_context_sha256=binding["source_context_sha256"],
                   source_context_scope="Historical Tool preparation reference; current Root identity is candidate_sha256/source_sha256",
                   candidate_sha256=binding["candidate_sha256"],
@@ -5883,6 +6257,9 @@ def execute_engine_ke_profile(args, report: dict) -> None:
                   pending_metric_owners=[name for name in COMMON.ENGINE_KE_CRITICAL if name not in ENGINE_KE_HOST_SUBJECTS.values()],
                   pending_windows="StrictProfile::capture, transport, provider shutdown and Windows-only control/error arms",
                   generation_gap_policy="Reconcile every constructor, generic helper, Garde expansion and atomic guard against actual descriptors; no manual-control kill credit.")
+    if args.lane == "contracts":
+        report.update(contracts_qualification_passed=False, provider_claim_contracts_passed=False,
+                      protected_history_contracts_passed=False)
     session = COMMON.Session(ROOT, selected, report, ENGINE_KE_SCOPE, policy, ENGINE_KE_BOUND_INPUTS)
     try:
         if (COMMON.canonical_sha256(session.product_identity) != binding["candidate_sha256"]
@@ -5907,6 +6284,16 @@ def execute_engine_ke_profile(args, report: dict) -> None:
                 return result
             finally:
                 address_storage_checkpoint(session, policy, report, label, "after")
+        if args.lane == "contracts":
+            report["contracts_qualification_passed"] = False
+            if args.subject == "ke_process":
+                report["scope"] = "KE-PROV-02 actual private GNU/MSVC provider constructors; metadata-only claim consumption"
+                report["provider_claim_contracts_passed"] = False
+                engine_ke_provider_contracts(session, policy, report, run)
+            else:
+                report["scope"] = "KE-HIST-03/07 actual private GNU/MSVC completion/history ownership; metadata-only privacy controls"
+                report["protected_history_contracts_passed"] = False
+                engine_ke_history_contracts(session, policy, report, run)
         if args.lane == "baseline":
             run("ke-format", ["cargo", "fmt", "--all", "--", "--check"], policy["baseline_wall_seconds"])
             # Admit held Windows source before repeating host execution/optimization.
@@ -5922,6 +6309,7 @@ def execute_engine_ke_profile(args, report: dict) -> None:
             run("ke-clippy", ["cargo", "clippy", "--package", "nevrotick-engine",
                 "--features", "ke-association-prototype", "--all-targets", "--frozen", "--jobs", "6",
                 "--", "-D", "warnings"], policy["baseline_wall_seconds"])
+            retire_engine_ke_debug_target(session, policy, report)
             raw = run("ke-release", ["cargo", "test", "--package", "nevrotick-engine",
                 "--features", "ke-association-prototype", "--release", "--frozen", "--jobs", "6", "--lib", "--tests",
                 "--", "--test-threads=1"], policy["baseline_wall_seconds"])
@@ -5969,6 +6357,8 @@ def execute_engine_ke_profile(args, report: dict) -> None:
     report["selected_lane_passed"] = args.lane != "enumerate"
     report["selected_host_metrics_passed"] = args.lane == "all" and subjects == ENGINE_KE_HOST_SUBJECTS
     report["selected_host_qualification_passed"] = False
+    if args.lane == "contracts":
+        report["provider_claim_contracts_passed" if args.subject == "ke_process" else "protected_history_contracts_passed"] = True
     report["independent_mutation_classification"] = "Required for every caught, unviable or missed descriptor; pending separate review."
     # A selected GNU pass never closes the remaining owners, Windows or native custody.
     report["qualification_passed"] = False

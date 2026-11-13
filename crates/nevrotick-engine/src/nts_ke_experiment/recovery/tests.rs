@@ -4,6 +4,8 @@
 use std::collections::VecDeque;
 use std::io;
 use std::net::SocketAddr;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{Receiver, SyncSender, sync_channel};
 use std::sync::{Arc, Weak};
 use std::time::{Duration, Instant};
 
@@ -14,12 +16,756 @@ use super::{
     LedgerError, ProcessAdmission, ProviderScope, RequestInput, S2C, Script, ScriptRead,
     ScriptSend, StrictProfile, backend, entropy, exchange_with, fixtures, runtime,
 };
-use crate::nts_ke_experiment::association::ledger::{RequestPhase, Status};
+use crate::nts_ke_experiment::association::ledger::{Receipt, RequestPhase, Status};
 use crate::nts_ke_experiment::datagram::ProtectedCompletion;
 use crate::nts_ke_experiment::recovery::{
     Backoff, ContextStage, End, Invocation, Limits, Plan, Producer, Snapshot, Step, step_with,
 };
-use crate::nts_ke_experiment::{EXCHANGE_TIME, ExchangeMode, Failed, HANDSHAKE_TIME};
+use crate::nts_ke_experiment::{
+    EXCHANGE_TIME, ExchangeMode, Failed, HANDSHAKE_TIME, InvocationCompletion,
+};
+use crate::nts_ke_experiment::{StopDisposition, StopHandle};
+
+#[path = "worker_tests.rs"]
+mod worker_tests;
+
+/// Check the genuine protected mode and its unchanged initial-population projection.
+/// # Panics
+/// Refuse a count-only/preview substitute or changed successful cookie counts.
+fn assert_protected_counts(completion: &InvocationCompletion) {
+    assert!(matches!(completion, InvocationCompletion::Protected(_)));
+    let summary = completion.summary();
+    assert!(summary.transmitted);
+    assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
+}
+
+/// Invocation stop closes the actual first admission without spending work.
+/// # Errors
+/// Preserve checked fixture construction and actual stop delivery failures.
+/// # Panics
+/// Fail if a latched invocation still enters the genuine producer or renews state.
+#[test]
+fn invocation_stop_before_first_admission_preserves_unspent_state() -> Result<(), Failure> {
+    with_fixture(
+        ExchangeMode::Preview,
+        None,
+        vec![Ok(())],
+        ExchangeCase::Healthy,
+        |invocation, _provider, producer| {
+            let original = invocation.snapshot();
+            let stop = invocation.stop_handle();
+            assert_eq!(stop.request_stop()?, StopDisposition::Latched);
+            assert_eq!(stop.request_stop()?, StopDisposition::AlreadyLatched);
+            assert!(
+                matches!(
+                    step_with(invocation, producer),
+                    Ok(Step::Closed(End::Stopped))
+                ),
+                "invocation-stop-before-admission"
+            );
+            let closed = invocation.snapshot();
+            assert_eq!(closed.end, Some(End::Stopped));
+            assert_eq!(
+                (closed.origin, closed.cutoff),
+                (original.origin, original.cutoff)
+            );
+            assert_eq!(closed.not_before, original.not_before);
+            assert_eq!(
+                (closed.transactions, closed.refusals, closed.observations),
+                (0, 0, 0)
+            );
+            assert_eq!(
+                (closed.contexts, closed.has_previous, closed.base),
+                (0, false, None)
+            );
+            assert!(invocation.last_failure().is_none());
+            for _ in 0..3 {
+                assert!(matches!(
+                    step_with(invocation, producer),
+                    Ok(Step::Closed(End::Stopped))
+                ));
+                assert_eq!(invocation.snapshot(), closed);
+            }
+            assert_eq!(
+                (
+                    producer.establish_calls,
+                    producer.preview_calls,
+                    producer.exchange_calls
+                ),
+                (0, 0, 0)
+            );
+            assert!(producer.controls.is_empty());
+            assert_eq!(producer.draw_bounds, [Duration::ZERO; 0]);
+            assert_eq!(producer.entropy_calls, 0);
+            Ok(())
+        },
+    )
+}
+
+/// A latched invocation cannot turn a transient failure into another admission.
+/// # Errors
+/// Preserve the genuine primary, checked backoff and stop-delivery failures.
+/// # Panics
+/// Fail if stop admits a scheduling refusal, another producer or jitter draw.
+#[test]
+fn invocation_stop_during_backoff_preserves_primary_and_charges() -> Result<(), Failure> {
+    let cause = Failure::Connect(io::ErrorKind::TimedOut);
+    with_fixture(
+        ExchangeMode::Preview,
+        Some(experiment(4, 8, 16)?),
+        vec![Err(failed(cause)), Ok(())],
+        ExchangeCase::Healthy,
+        |invocation, _provider, producer| {
+            let boundary = deferred(&step_with(invocation, producer))?;
+            let original = invocation.snapshot();
+            assert_eq!(producer.draw_bounds.len(), 1);
+            let stop = invocation.stop_handle();
+            assert_eq!(stop.request_stop()?, StopDisposition::Latched);
+            assert!(
+                matches!(
+                    step_with(invocation, producer),
+                    Ok(Step::Closed(End::Stopped))
+                ),
+                "invocation-stop-backoff"
+            );
+            let closed = invocation.snapshot();
+            assert_eq!(closed.end, Some(End::Stopped));
+            assert_eq!(
+                (closed.origin, closed.cutoff, closed.not_before),
+                (original.origin, original.cutoff, original.not_before)
+            );
+            assert_eq!(
+                (closed.transactions, closed.refusals, closed.observations),
+                (
+                    original.transactions,
+                    original.refusals,
+                    original.observations
+                )
+            );
+            assert_eq!(
+                (closed.base, closed.contexts, closed.has_previous),
+                (original.base, original.contexts, original.has_previous)
+            );
+            assert_failure(
+                invocation.last_failure().ok_or(Failure::Control)?,
+                cause,
+                None,
+                None,
+            );
+            park_until(boundary)?;
+            assert!(matches!(
+                step_with(invocation, producer),
+                Ok(Step::Closed(End::Stopped))
+            ));
+            assert_eq!(invocation.snapshot(), closed);
+            assert_eq!((producer.establish_calls, producer.preview_calls), (1, 0));
+            assert_eq!(producer.draw_bounds.len(), 1);
+            Ok(())
+        },
+    )
+}
+
+/// Stop remains latched after actual exhausted-context retirement and local cancel.
+/// # Errors
+/// Preserve actual authenticated-count refusal, checked retirement and stop failure.
+/// # Panics
+/// Fail if a successor consumes KE/entropy/send work or replaces retained history.
+#[test]
+fn invocation_stop_after_exhaustion_keeps_history_without_successor() -> Result<(), Failure> {
+    with_fixture(
+        ExchangeMode::ProtectedDatagram,
+        Some(replacement_limits()?),
+        vec![Ok(()), Ok(())],
+        ExchangeCase::ZeroCookies,
+        |invocation, _provider, producer| {
+            producer.successor = Some(SuccessorCase::Healthy);
+            let (boundary, original) = exhaust_first_context(invocation, producer)?;
+            let primary = *invocation.last_failure().ok_or(Failure::Control)?;
+            let entropy = producer.entropy_calls;
+            let draws = producer.draw_bounds.len();
+            assert!(original.has_previous);
+            assert_eq!(
+                invocation.stop_handle().request_stop()?,
+                StopDisposition::Latched
+            );
+            assert!(matches!(
+                step_with(invocation, producer),
+                Ok(Step::Closed(End::Stopped))
+            ));
+            let closed = invocation.snapshot();
+            assert_eq!(closed.end, Some(End::Stopped));
+            assert_eq!(
+                (closed.origin, closed.cutoff, closed.not_before),
+                (original.origin, original.cutoff, original.not_before)
+            );
+            assert_eq!(
+                (
+                    closed.transactions,
+                    closed.refusals,
+                    closed.observations,
+                    closed.contexts,
+                    closed.has_previous
+                ),
+                (
+                    original.transactions,
+                    original.refusals,
+                    original.observations,
+                    original.contexts,
+                    true
+                )
+            );
+            assert_eq!(invocation.last_failure(), Some(&primary));
+            park_until(boundary)?;
+            assert!(matches!(
+                step_with(invocation, producer),
+                Ok(Step::Closed(End::Stopped))
+            ));
+            assert_eq!(invocation.snapshot(), closed);
+            assert_eq!((producer.establish_calls, producer.exchange_calls), (1, 1));
+            assert_eq!(
+                (producer.entropy_calls, producer.draw_bounds.len()),
+                (entropy, draws)
+            );
+            assert_eq!(
+                producer
+                    .backend_lifetime
+                    .as_ref()
+                    .ok_or(Failure::Control)?
+                    .strong_count(),
+                0
+            );
+            Ok(())
+        },
+    )
+}
+
+/// Deliver stop only while the actual shared step is held at its declared callback.
+/// This observer records step return, not provider or native-job completion.
+/// # Errors
+/// Preserve bounded controller-channel, join and actual failed-step observations.
+/// # Panics
+/// Fail if delivery waits behind a callback guard or falsely acknowledges return.
+fn stop_during_held_step(
+    invocation: &mut Invocation<'_>,
+    producer: &mut ScriptProducer<'_>,
+    stop: StopHandle,
+    entered: Receiver<()>,
+    release: SyncSender<()>,
+) -> Result<Failed, Failure> {
+    let step_returned = Arc::new(AtomicBool::new(false));
+    std::thread::scope(|threads| -> Result<Failed, Failure> {
+        let observed_return = Arc::clone(&step_returned);
+        let controller = threads.spawn(move || -> Result<_, Failure> {
+            entered
+                .recv_timeout(Duration::from_secs(2))
+                .map_err(|_| Failure::Control)?;
+            let delivered = stop.request_stop()?;
+            let returned_before_release = observed_return.load(Ordering::Acquire);
+            let released = release.send(()).is_ok();
+            Ok((delivered, returned_before_release, released))
+        });
+        let result = step_with(invocation, producer);
+        step_returned.store(true, Ordering::Release);
+        let (delivered, returned_before_release, released) =
+            controller.join().map_err(|_| Failure::Control)??;
+        assert_eq!(delivered, StopDisposition::Latched);
+        assert!(
+            !returned_before_release && released,
+            "callback-stop-delivery-is-not-step-return"
+        );
+        failed_step(&result)
+    })
+}
+
+/// Inspect a stopped successor using only actual retained invocation/operation facts.
+/// # Errors
+/// Refuse missing actual control, exchange or backend-lifetime observations.
+/// # Panics
+/// Fail if the new refused publication refunds work or loses its predecessor history.
+fn assert_stopped_successor(
+    invocation: &mut Invocation<'_>,
+    producer: &mut ScriptProducer<'_>,
+    retired: Snapshot,
+    exhausted: Status,
+    (entropy, draws): (usize, usize),
+    failure: Failed,
+) -> Result<(), Failure> {
+    // The newly admitted producer's actual publication refusal replaces
+    // its predecessor primary; predecessor history itself stays owned.
+    assert_failure(&failure, Failure::Cancelled, None, None);
+    assert_eq!(invocation.last_failure(), Some(&failure));
+    let closed = invocation.snapshot();
+    assert_eq!(closed.end, Some(End::Stopped));
+    assert_eq!(
+        (closed.origin, closed.cutoff, closed.not_before, closed.base),
+        (
+            retired.origin,
+            retired.cutoff,
+            retired.not_before,
+            retired.base
+        )
+    );
+    assert_eq!(closed.intent_not_before, retired.intent_not_before);
+    assert_eq!(
+        (
+            closed.transactions,
+            closed.refusals,
+            closed.observations,
+            closed.contexts
+        ),
+        (2, 0, 4, 1)
+    );
+    assert!(closed.has_previous);
+    assert_eq!(
+        (
+            producer.establish_calls,
+            producer.exchange_calls,
+            producer.preview_calls
+        ),
+        (2, 1, 0)
+    );
+    assert_eq!(producer.established_contexts, 1);
+    assert_eq!(producer.establishment.len(), 1);
+    assert_eq!(
+        (producer.entropy_calls, producer.draw_bounds.len()),
+        (entropy, draws)
+    );
+    assert_eq!(producer.controls.len(), 2);
+    let successor = producer.controls.get(1).ok_or(Failure::Control)?;
+    assert!(successor.origin >= retired.not_before && successor.expiry <= closed.cutoff);
+    assert_eq!(
+        producer
+            .last_exchange
+            .as_ref()
+            .ok_or(Failure::Control)?
+            .after,
+        exhausted
+    );
+    assert_eq!(
+        producer
+            .backend_lifetime
+            .as_ref()
+            .ok_or(Failure::Control)?
+            .strong_count(),
+        0
+    );
+    assert!(matches!(
+        step_with(invocation, producer),
+        Ok(Step::Closed(End::Stopped))
+    ));
+    assert_eq!(invocation.snapshot(), closed);
+    assert_eq!((producer.establish_calls, producer.exchange_calls), (2, 1));
+    assert_eq!(
+        (producer.entropy_calls, producer.draw_bounds.len()),
+        (entropy, draws)
+    );
+    Ok(())
+}
+
+/// The original handle still governs a healthy successor after genuine retirement.
+/// # Errors
+/// Preserve checked exhaustion, bounded parking/controller and actual failure facts.
+/// # Panics
+/// Fail if successor publication or another send/retry bypasses the original stop.
+#[test]
+fn invocation_stop_during_successor_establishment_keeps_history() -> Result<(), Failure> {
+    with_fixture(
+        ExchangeMode::ProtectedDatagram,
+        Some(replacement_limits()?),
+        vec![Ok(()), Ok(()), Ok(())],
+        ExchangeCase::ZeroCookies,
+        |invocation, _provider, producer| {
+            let original_stop = invocation.stop_handle();
+            producer.successor = Some(SuccessorCase::Healthy);
+            let (boundary, retired) = exhaust_first_context(invocation, producer)?;
+            let previous_failure = *invocation.last_failure().ok_or(Failure::Control)?;
+            assert_failure(
+                &previous_failure,
+                Failure::Ledger(LedgerError::Reply(super::ReplyError::Cookies)),
+                None,
+                None,
+            );
+            let exhausted = producer
+                .last_exchange
+                .as_ref()
+                .ok_or(Failure::Control)?
+                .after;
+            assert_eq!(retired.not_before, boundary);
+            let entropy = producer.entropy_calls;
+            let draws = producer.draw_bounds.len();
+            park_until(boundary)?;
+            let (entered_tx, entered_rx) = sync_channel(1);
+            let (release_tx, release_rx) = sync_channel(1);
+            producer.establish_gate = Some((entered_tx, release_rx));
+            let failure =
+                stop_during_held_step(invocation, producer, original_stop, entered_rx, release_tx)?;
+            assert_stopped_successor(
+                invocation,
+                producer,
+                retired,
+                exhausted,
+                (entropy, draws),
+                failure,
+            )
+        },
+    )
+}
+
+/// Stop delivered during actual preview entropy cannot publish a completed preview.
+/// Post-drop inspection is limited to invocation charges and output/effect counters.
+/// # Errors
+/// Preserve checked setup, bounded callback control and actual mode failure facts.
+/// # Panics
+/// Fail if callback locks block stop, preparation charges refund or preview sends.
+#[test]
+fn invocation_stop_during_preview_entropy_keeps_charges() -> Result<(), Failure> {
+    with_fixture(
+        ExchangeMode::Preview,
+        None,
+        vec![Ok(()), Ok(())],
+        ExchangeCase::Healthy,
+        |invocation, _provider, producer| {
+            let original = invocation.snapshot();
+            let stop = invocation.stop_handle();
+            let (entered_tx, entered_rx) = sync_channel(1);
+            let (release_tx, release_rx) = sync_channel(1);
+            producer.preview_gate = Some((entered_tx, release_rx));
+            let failure =
+                stop_during_held_step(invocation, producer, stop, entered_rx, release_tx)?;
+            assert_failure(&failure, Failure::Cancelled, None, None);
+            assert_eq!(invocation.last_failure(), Some(&failure));
+            let closed = invocation.snapshot();
+            assert_eq!(closed.end, Some(End::Stopped));
+            assert_eq!(
+                (closed.origin, closed.cutoff, closed.not_before, closed.base),
+                (original.origin, original.cutoff, original.not_before, None)
+            );
+            assert_eq!(
+                (
+                    closed.transactions,
+                    closed.refusals,
+                    closed.observations,
+                    closed.contexts
+                ),
+                (1, 0, 2, 1)
+            );
+            assert!(!closed.has_previous);
+            assert_eq!(
+                (
+                    producer.establish_calls,
+                    producer.preview_calls,
+                    producer.exchange_calls
+                ),
+                (1, 1, 0)
+            );
+            assert_eq!(producer.established_contexts, 1);
+            assert_eq!(producer.entropy_calls, 0);
+            assert!(producer.preview_gate.is_none());
+            assert!(producer.last_exchange.is_none());
+            assert!(producer.backend_lifetime.is_none());
+            assert_eq!(producer.draw_bounds, Vec::<Duration>::new());
+            assert!(matches!(
+                step_with(invocation, producer),
+                Ok(Step::Closed(End::Stopped))
+            ));
+            assert_eq!(invocation.snapshot(), closed);
+            assert_eq!(
+                (
+                    producer.establish_calls,
+                    producer.preview_calls,
+                    producer.exchange_calls
+                ),
+                (1, 1, 0)
+            );
+            assert_eq!(producer.establishment.len(), 1);
+            Ok(())
+        },
+    )
+}
+
+/// Delivery cannot acknowledge return of a callback still held by its real caller.
+/// # Errors
+/// Preserve checked setup, bounded controller channels and original producer failure.
+/// # Panics
+/// Fail if stop waits behind the held callback, replaces its primary or permits retry.
+#[test]
+fn invocation_stop_during_held_producer_preserves_actual_return_boundary() -> Result<(), Failure> {
+    let cause = Failure::Connect(io::ErrorKind::TimedOut);
+    with_fixture(
+        ExchangeMode::Preview,
+        Some(experiment(4, 8, 16)?),
+        vec![Err(failed(cause)), Ok(())],
+        ExchangeCase::Healthy,
+        |invocation, _provider, producer| {
+            let (entered_tx, entered_rx) = sync_channel(1);
+            let (release_tx, release_rx) = sync_channel(1);
+            producer.establish_gate = Some((entered_tx, release_rx));
+            let stop = invocation.stop_handle();
+            // This observes only step_with return, never provider/native completion.
+            let step_returned = Arc::new(AtomicBool::new(false));
+            std::thread::scope(|threads| -> Result<(), Failure> {
+                let observed_return = Arc::clone(&step_returned);
+                let controller = threads.spawn(move || -> Result<_, Failure> {
+                    entered_rx
+                        .recv_timeout(Duration::from_secs(2))
+                        .map_err(|_| Failure::Control)?;
+                    let delivered = stop.request_stop()?;
+                    let returned_before_release = observed_return.load(Ordering::Acquire);
+                    // Always release before checking; the callback watchdog also bounds a bad lock path.
+                    let released = release_tx.send(()).is_ok();
+                    Ok((delivered, returned_before_release, released))
+                });
+                let result = step_with(invocation, producer);
+                step_returned.store(true, Ordering::Release);
+                let (delivered, returned_before_release, released) =
+                    controller.join().map_err(|_| Failure::Control)??;
+                assert_eq!(delivered, StopDisposition::Latched);
+                assert!(
+                    !returned_before_release && released,
+                    "stop-delivery-is-not-producer-return"
+                );
+                let failure = failed_step(&result)?;
+                assert_failure(&failure, cause, None, None);
+                let closed = invocation.snapshot();
+                assert_eq!(closed.end, Some(End::Stopped));
+                assert_eq!(
+                    (closed.transactions, closed.refusals, closed.observations),
+                    (1, 0, 2)
+                );
+                assert!(matches!(
+                    step_with(invocation, producer),
+                    Ok(Step::Closed(End::Stopped))
+                ));
+                assert_eq!(invocation.snapshot(), closed);
+                assert_eq!((producer.establish_calls, producer.preview_calls), (1, 0));
+                assert_eq!(producer.draw_bounds, [Duration::ZERO; 0]);
+                Ok(())
+            })
+        },
+    )
+}
+
+/// A draw already admitted before stop may return but cannot schedule new work.
+/// # Errors
+/// Preserve checked setup, bounded channels and the original transient cause.
+/// # Panics
+/// Fail if scope is locked across the draw, a new plan appears or another draw runs.
+#[test]
+fn invocation_stop_during_admitted_draw_cannot_publish_deferred() -> Result<(), Failure> {
+    let cause = Failure::Connect(io::ErrorKind::TimedOut);
+    with_fixture(
+        ExchangeMode::Preview,
+        Some(experiment(4, 8, 16)?),
+        vec![Err(failed(cause)), Ok(())],
+        ExchangeCase::Healthy,
+        |invocation, _provider, producer| {
+            let original = invocation.snapshot();
+            let (entered_tx, entered_rx) = sync_channel(1);
+            let (release_tx, release_rx) = sync_channel(1);
+            producer.draw_gate = Some((entered_tx, release_rx));
+            let stop = invocation.stop_handle();
+            let step_returned = Arc::new(AtomicBool::new(false));
+            std::thread::scope(|threads| -> Result<(), Failure> {
+                let observed_return = Arc::clone(&step_returned);
+                let controller = threads.spawn(move || -> Result<_, Failure> {
+                    entered_rx
+                        .recv_timeout(Duration::from_secs(2))
+                        .map_err(|_| Failure::Control)?;
+                    let delivered = stop.request_stop()?;
+                    let returned_before_release = observed_return.load(Ordering::Acquire);
+                    let released = release_tx.send(()).is_ok();
+                    Ok((delivered, returned_before_release, released))
+                });
+                let result = step_with(invocation, producer);
+                step_returned.store(true, Ordering::Release);
+                let (delivered, returned_before_release, released) =
+                    controller.join().map_err(|_| Failure::Control)??;
+                assert_eq!(delivered, StopDisposition::Latched);
+                assert!(
+                    !returned_before_release && released,
+                    "stop-delivery-is-not-draw-return"
+                );
+                assert_failure(&failed_step(&result)?, cause, None, None);
+                let closed = invocation.snapshot();
+                assert_eq!(closed.end, Some(End::Stopped));
+                assert_eq!(
+                    (closed.transactions, closed.refusals, closed.observations),
+                    (1, 0, 2)
+                );
+                assert_eq!(
+                    (closed.origin, closed.cutoff, closed.not_before, closed.base),
+                    (original.origin, original.cutoff, original.not_before, None)
+                );
+                assert!(matches!(
+                    step_with(invocation, producer),
+                    Ok(Step::Closed(End::Stopped))
+                ));
+                assert_eq!(invocation.snapshot(), closed);
+                assert_eq!(producer.establish_calls, 1);
+                assert_eq!(producer.draw_bounds.len(), 1);
+                Ok(())
+            })
+        },
+    )
+}
+
+/// Scope lock poison never becomes stop, a new effect or a replacement primary.
+/// # Errors
+/// Preserve checked construction and the valid preceding transient neighbor.
+/// # Panics
+/// Catch the intentional scope unwind; fail if failure/counters/authority reset.
+#[test]
+fn poisoned_invocation_scope_preserves_prior_failure_and_unspent_state() -> Result<(), Failure> {
+    let cause = Failure::Connect(io::ErrorKind::TimedOut);
+    for prior in [false, true] {
+        with_fixture(
+            ExchangeMode::Preview,
+            Some(experiment(4, 8, 16)?),
+            vec![Err(failed(cause)), Ok(())],
+            ExchangeCase::Healthy,
+            |invocation, _provider, producer| {
+                if prior {
+                    deferred(&step_with(invocation, producer))?;
+                }
+                let original = invocation.snapshot();
+                let stop = invocation.stop_handle();
+                let caught = std::panic::catch_unwind(|| -> Result<(), Failure> {
+                    let _held = stop.scope.stopped.lock().map_err(|_| Failure::Control)?;
+                    std::panic::resume_unwind(Box::new(()))
+                });
+                assert!(caught.is_err());
+                assert_eq!(stop.request_stop(), Err(Failure::Control));
+                let result = step_with(invocation, producer);
+                assert_failure(
+                    &failed_step(&result)?,
+                    if prior { cause } else { Failure::Control },
+                    None,
+                    None,
+                );
+                let closed = invocation.snapshot();
+                assert_eq!(closed.end, Some(End::Control));
+                assert_eq!(
+                    (closed.origin, closed.cutoff, closed.not_before),
+                    (original.origin, original.cutoff, original.not_before)
+                );
+                assert_eq!(
+                    (
+                        closed.transactions,
+                        closed.refusals,
+                        closed.observations,
+                        closed.base,
+                        closed.contexts
+                    ),
+                    (
+                        original.transactions,
+                        original.refusals,
+                        original.observations,
+                        original.base,
+                        original.contexts
+                    )
+                );
+                assert!(matches!(
+                    step_with(invocation, producer),
+                    Ok(Step::Closed(End::Control))
+                ));
+                assert_eq!(invocation.snapshot(), closed);
+                assert_eq!(producer.establish_calls, usize::from(prior));
+                assert_eq!(producer.draw_bounds.len(), usize::from(prior));
+                assert!(stop.scope.stopped.is_poisoned());
+                Ok(())
+            },
+        )?;
+    }
+    Ok(())
+}
+
+/// Transaction-local cleanup remains compatible with healthy bounded recovery.
+/// # Errors
+/// Preserve checked construction, genuine failure and eventual healthy result.
+/// # Panics
+/// Fail if local cancellation latches invocation stop or late stop rewrites history.
+#[test]
+fn local_cleanup_allows_successor_and_late_stop_preserves_completion() -> Result<(), Failure> {
+    with_fixture(
+        ExchangeMode::Preview,
+        Some(experiment(4, 8, 16)?),
+        vec![
+            Err(failed(Failure::Connect(io::ErrorKind::TimedOut))),
+            Ok(()),
+        ],
+        ExchangeCase::Healthy,
+        |invocation, _provider, producer| {
+            let boundary = deferred(&step_with(invocation, producer))?;
+            park_until(boundary)?;
+            assert!(
+                matches!(step_with(invocation, producer), Ok(Step::Complete(completion)) if !completion.summary().transmitted)
+            );
+            assert_eq!((producer.establish_calls, producer.preview_calls), (2, 1));
+            let completed = invocation.snapshot();
+            assert_eq!(completed.end, Some(End::Completed));
+            let stop = invocation.stop_handle();
+            assert_eq!(stop.request_stop()?, StopDisposition::Latched);
+            assert_eq!(stop.request_stop()?, StopDisposition::AlreadyLatched);
+            assert!(matches!(
+                step_with(invocation, producer),
+                Ok(Step::Closed(End::Completed))
+            ));
+            assert_eq!(invocation.snapshot(), completed);
+            assert_eq!((producer.establish_calls, producer.preview_calls), (2, 1));
+            Ok(())
+        },
+    )
+}
+
+/// Late delivery cannot replace a terminal failure or its retained original cause.
+/// # Errors
+/// Preserve checked construction and the actual nonrecoverable producer failure.
+/// # Panics
+/// Fail if a later stop rewrites history or permits new effects or accounting.
+#[test]
+fn late_invocation_stop_preserves_terminal_failure() -> Result<(), Failure> {
+    let cause = Failure::Endpoint;
+    with_fixture(
+        ExchangeMode::Preview,
+        Some(experiment(4, 8, 16)?),
+        vec![Err(failed(cause)), Ok(())],
+        ExchangeCase::Healthy,
+        |invocation, _provider, producer| {
+            assert_failure(
+                &failed_step(&step_with(invocation, producer))?,
+                cause,
+                None,
+                None,
+            );
+            let terminal = invocation.snapshot();
+            assert_eq!(terminal.end, Some(End::Failure));
+            assert_eq!(
+                invocation.stop_handle().request_stop()?,
+                StopDisposition::Latched
+            );
+            assert!(matches!(
+                step_with(invocation, producer),
+                Ok(Step::Closed(End::Failure))
+            ));
+            assert_eq!(invocation.snapshot(), terminal);
+            assert_failure(
+                invocation.last_failure().ok_or(Failure::Control)?,
+                cause,
+                None,
+                None,
+            );
+            assert_eq!(
+                (
+                    producer.establish_calls,
+                    producer.preview_calls,
+                    producer.draw_bounds.len()
+                ),
+                (1, 0, 0)
+            );
+            Ok(())
+        },
+    )
+}
 
 /// Metadata observed inside the actual producer call, never a retained Control identity.
 #[derive(Clone, Copy, Debug)]
@@ -33,6 +779,10 @@ struct ControlTimes {
 #[derive(Clone, Copy, Debug)]
 enum ExchangeCase {
     Healthy,
+    MultipleCookies,
+    ZeroReceive,
+    ZeroTransmit,
+    ZeroTimestamps,
     ReceiveReset,
     ZeroCookies,
     LastAllowanceHealthy,
@@ -83,6 +833,21 @@ struct ExchangeObservation {
     has_receipt: bool,
 }
 
+/// Copy only observations borrowed from a genuine retired protected completion.
+/// This witness creates no completion, commit, owner or numerical authority.
+struct ProtectedWitness {
+    /// Exact authenticated receipt before the final current receiving guard.
+    receipt: Receipt,
+    /// Original checked pool population after the authenticated packet was admitted.
+    population: (usize, usize),
+    /// Original before-send, after-send and receive-return software brackets.
+    captures: [crate::SoftwareClock; 3],
+    /// Exact local and remote endpoints from the original backend.
+    endpoints: (SocketAddr, SocketAddr),
+    /// Observe historical socket identity without prolonging its lifetime.
+    identity: Weak<()>,
+}
+
 /// Replace external KE/entropy facts only; admission and the receiving owner stay real.
 struct ScriptProducer<'fixture> {
     config: &'fixture Config,
@@ -93,19 +858,71 @@ struct ScriptProducer<'fixture> {
     exchange_calls: usize,
     preview_calls: usize,
     preview_failure: Option<Failure>,
+    /// Hold only the actual preview entropy callback, with a finite release watchdog.
+    preview_gate: Option<(SyncSender<()>, Receiver<()>)>,
     controls: Vec<ControlTimes>,
     establish_delay: Duration,
+    /// One bounded test handshake holds the real Producer callback, not native work.
+    establish_gate: Option<(SyncSender<()>, Receiver<()>)>,
+    /// One fixed component panic payload reaches the actual Producer callback.
+    establish_panic: Option<Box<dyn std::any::Any + Send>>,
     /// Publish genuine transaction cancellation before the selected failure returns.
     cancel_establish_failure: bool,
     draws: VecDeque<Result<Duration, Failure>>,
+    /// Hold only an already admitted test draw; its receipt proves no job return.
+    draw_gate: Option<(SyncSender<()>, Receiver<()>)>,
     draw_bounds: Vec<Duration>,
     draw_delay: Duration,
+    /// Actual Script resource lifetime, distinct from retained historical socket identity.
     backend_lifetime: Option<Weak<()>>,
     last_exchange: Option<ExchangeObservation>,
+    /// Last genuine retired exchange, observed before its final commit may refuse.
+    last_protected: Option<ProtectedWitness>,
     /// Select declared successor material by successful context, not KE call count.
     successor: Option<SuccessorCase>,
     established_contexts: usize,
     entropy_calls: usize,
+    /// Hold the actual protected entropy callback through a finite release handshake.
+    protected_gate: Option<(SyncSender<()>, Receiver<()>)>,
+}
+
+impl<'fixture> ScriptProducer<'fixture> {
+    /// Construct the existing fixed Script against the actual borrowed whole-call owners.
+    /// All optional gates/faults are absent until a bounded component control selects one.
+    fn new(
+        config: &'fixture Config,
+        provider: &'fixture ProviderScope<'fixture>,
+        establishment: Vec<Result<(), Failed>>,
+        exchange_case: ExchangeCase,
+    ) -> Self {
+        Self {
+            config,
+            provider,
+            establishment: establishment.into(),
+            exchange_case,
+            establish_calls: 0,
+            exchange_calls: 0,
+            preview_calls: 0,
+            preview_failure: None,
+            preview_gate: None,
+            controls: Vec::new(),
+            establish_delay: Duration::ZERO,
+            establish_gate: None,
+            establish_panic: None,
+            cancel_establish_failure: false,
+            draws: VecDeque::new(),
+            draw_gate: None,
+            draw_bounds: Vec::new(),
+            draw_delay: Duration::ZERO,
+            backend_lifetime: None,
+            last_exchange: None,
+            last_protected: None,
+            successor: None,
+            established_contexts: 0,
+            entropy_calls: 0,
+            protected_gate: None,
+        }
+    }
 }
 
 /// Select bounded, public packet facts for one already selected component case.
@@ -132,6 +949,10 @@ fn script_reads(
         };
     }
     match selected {
+        ExchangeCase::ZeroReceive => vec![ScriptRead::Packet(fixtures::ZERO_RECEIVE, remote)],
+        ExchangeCase::ZeroTransmit => vec![ScriptRead::Packet(fixtures::ZERO_TRANSMIT, remote)],
+        ExchangeCase::ZeroTimestamps => vec![ScriptRead::Packet(fixtures::ZERO_TIMESTAMPS, remote)],
+        ExchangeCase::MultipleCookies => vec![ScriptRead::Packet(fixtures::TWO_COOKIES, remote)],
         ExchangeCase::ReceiveReset => {
             vec![ScriptRead::Failed(io::ErrorKind::ConnectionReset)]
         }
@@ -182,6 +1003,15 @@ impl Producer for ScriptProducer<'_> {
         });
         if !self.establish_delay.is_zero() {
             std::thread::sleep(self.establish_delay);
+        }
+        if let Some((entered, release)) = self.establish_gate.take() {
+            entered.send(()).map_err(|_| failed(Failure::Control))?;
+            release
+                .recv_timeout(Duration::from_secs(2))
+                .map_err(|_| failed(Failure::Control))?;
+        }
+        if let Some(payload) = self.establish_panic.take() {
+            std::panic::resume_unwind(payload);
         }
         let establishment = self
             .establishment
@@ -248,11 +1078,18 @@ impl Producer for ScriptProducer<'_> {
         let expiry_before = control.expiry;
         let mut lifetime = None;
         let mut entropy_calls = 0;
+        let protected_gate = self.protected_gate.take();
         let result = exchange_with(
             association,
             control,
             |output| {
                 entropy_calls += 1;
+                if let Some((entered, release)) = protected_gate {
+                    entered.send(()).map_err(|_| Failure::Control)?;
+                    release
+                        .recv_timeout(Duration::from_secs(2))
+                        .map_err(|_| Failure::Control)?;
+                }
                 if matches!(selected, ExchangeCase::EntropyFailure) && successor.is_none() {
                     return Err(Failure::Entropy);
                 }
@@ -276,9 +1113,9 @@ impl Producer for ScriptProducer<'_> {
                 } else {
                     ScriptSend::Full
                 };
-                let backend = backend(remote, Script::new(send, reads));
-                lifetime = Some(Arc::downgrade(&backend.identity));
-                Ok(backend)
+                let script = Script::new(send, reads);
+                lifetime = Some(Arc::downgrade(&script.lifetime));
+                Ok(backend(remote, script))
             },
         );
         self.entropy_calls += entropy_calls;
@@ -297,6 +1134,17 @@ impl Producer for ScriptProducer<'_> {
             );
         }
         let completion = result?;
+        let history = completion.history();
+        if matches!(selected, ExchangeCase::MultipleCookies) {
+            assert_eq!((history.cookies, history.cookie_bytes), (2, 24));
+        }
+        self.last_protected = Some(ProtectedWitness {
+            receipt: history.receipt,
+            population: (history.cookies, history.cookie_bytes),
+            captures: [history.send_before, history.send_after, history.read_return],
+            endpoints: (history.local, history.remote),
+            identity: Arc::downgrade(&history.identity),
+        });
         if matches!(selected, ExchangeCase::StaleReturned)
             || matches!(successor, Some(SuccessorCase::StaleReturned))
         {
@@ -308,6 +1156,12 @@ impl Producer for ScriptProducer<'_> {
 
     fn preview_entropy(&mut self, output: &mut [u8; 48]) -> Result<(), Failure> {
         self.preview_calls += 1;
+        if let Some((entered, release)) = self.preview_gate.take() {
+            entered.send(()).map_err(|_| Failure::Control)?;
+            release
+                .recv_timeout(Duration::from_secs(2))
+                .map_err(|_| Failure::Control)?;
+        }
         if let Some(failure) = self.preview_failure {
             return Err(failure);
         }
@@ -318,6 +1172,12 @@ impl Producer for ScriptProducer<'_> {
 
     fn jitter(&mut self, upper: Duration) -> Result<Duration, Failure> {
         self.draw_bounds.push(upper);
+        if let Some((entered, release)) = self.draw_gate.take() {
+            entered.send(()).map_err(|_| Failure::Control)?;
+            release
+                .recv_timeout(Duration::from_secs(2))
+                .map_err(|_| Failure::Control)?;
+        }
         if !self.draw_delay.is_zero() {
             std::thread::sleep(self.draw_delay);
         }
@@ -382,7 +1242,7 @@ fn with_fixture(
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
     {
-        let provider = ProviderScope::component(&claim);
+        let provider = ProviderScope::component(claim);
         let mut invocation = match limits {
             Some(limits) => Invocation::experimental(&config, &provider, limits)?,
             None => Invocation::one_shot(
@@ -391,27 +1251,7 @@ fn with_fixture(
                 original_control.ok_or(Failure::Control)?,
             )?,
         };
-        let mut producer = ScriptProducer {
-            config: &config,
-            provider: &provider,
-            establishment: establishment.into(),
-            exchange_case,
-            establish_calls: 0,
-            exchange_calls: 0,
-            preview_calls: 0,
-            preview_failure: None,
-            controls: Vec::new(),
-            establish_delay: Duration::ZERO,
-            cancel_establish_failure: false,
-            draws: VecDeque::new(),
-            draw_bounds: Vec::new(),
-            draw_delay: Duration::ZERO,
-            backend_lifetime: None,
-            last_exchange: None,
-            successor: None,
-            established_contexts: 0,
-            entropy_calls: 0,
-        };
+        let mut producer = ScriptProducer::new(&config, &provider, establishment, exchange_case);
         exercise(&mut invocation, &provider, &mut producer)?;
     }
     assert!(matches!(admission.claim(), Err(Failure::ProcessUsed)));
@@ -466,6 +1306,242 @@ fn assert_failure(
     assert_eq!(failure.primary, primary);
     assert_eq!(failure.cleanup, cleanup);
     assert_eq!(failure.admission_cleanup, admission);
+}
+
+/// Inspect genuine failed-establishment charges without attributing a mode outcome.
+/// # Errors
+/// Refuse absent original failure facts rather than replacing the expected cause.
+/// # Panics
+/// Fail if a direct probe refunds work, invokes a mode or changes original owners.
+fn assert_failed_establishment_probe(
+    invocation: &Invocation<'_>,
+    producer: &ScriptProducer<'_>,
+    original: Snapshot,
+    cause: Failure,
+) -> Result<(), Failure> {
+    let after = invocation.snapshot();
+    assert_eq!(
+        (after.origin, after.cutoff),
+        (original.origin, original.cutoff)
+    );
+    assert_eq!(
+        (after.transactions, after.refusals, after.observations),
+        (1, 0, 2)
+    );
+    assert_eq!((after.contexts, after.has_previous), (0, false));
+    assert_failure(
+        invocation.last_failure().ok_or(Failure::Control)?,
+        cause,
+        None,
+        None,
+    );
+    assert_eq!(
+        (
+            producer.establish_calls,
+            producer.preview_calls,
+            producer.exchange_calls
+        ),
+        (1, 0, 0)
+    );
+    assert_eq!(producer.entropy_calls, 0);
+    Ok(())
+}
+
+/// The final guarded observation refuses expiry even with a live retry boundary.
+/// # Errors
+/// Preserve checked fixture setup and genuine failed-establishment admission.
+/// # Panics
+/// Fail if the expired observation publishes Deferred or refunds charged work.
+#[test]
+fn defer_final_time_refuses_cutoff_with_live_boundary_neighbor() -> Result<(), Failure> {
+    let base = Duration::from_secs(1);
+    let backoff = Backoff::new(base, base, 1, Duration::ZERO)?;
+    let limits = Limits::new(Duration::from_secs(10), 4, 8, 16, backoff)?;
+    let cause = Failure::Connect(io::ErrorKind::TimedOut);
+    for expired in [false, true] {
+        with_fixture(
+            ExchangeMode::Preview,
+            Some(limits),
+            vec![Err(failed(cause))],
+            ExchangeCase::Healthy,
+            |invocation, _provider, producer| {
+                let original = invocation.snapshot();
+                let mut observations = 0;
+                let result = invocation
+                    .probe_defer_observing(producer, || {
+                        observations += 1;
+                        if expired {
+                            original.cutoff
+                        } else {
+                            Instant::now()
+                        }
+                    })
+                    .map_err(|failure| failure.primary)?;
+                assert_eq!(
+                    observations, 1,
+                    "defer fixture did not reach final observation"
+                );
+                assert!(
+                    Instant::now() < original.cutoff,
+                    "defer fixture lost real headroom"
+                );
+                let after = invocation.snapshot();
+                if expired {
+                    assert!(result.is_err(), "KE-STOP-MUT-01-final-defer-cutoff");
+                    assert_failure(&failed_step(&result)?, cause, None, None);
+                    assert_eq!(after.end, Some(End::Window));
+                    assert_eq!((after.base, after.not_before), (None, original.not_before));
+                } else {
+                    let boundary = deferred(&result)?;
+                    assert!(boundary < original.cutoff);
+                    assert_eq!(
+                        (after.base, after.not_before, after.end),
+                        (Some(base), boundary, None)
+                    );
+                }
+                assert_failed_establishment_probe(invocation, producer, original, cause)?;
+                assert_eq!(producer.draw_bounds, Vec::<Duration>::new());
+                Ok(())
+            },
+        )?;
+    }
+    Ok(())
+}
+
+/// The retry helper itself rejects a full delay crossing the original cutoff.
+/// # Errors
+/// Preserve checked delay limits and genuine failure/cancellation setup.
+/// # Panics
+/// Fail if outer defer masking is needed to reject the admitted maximum draw.
+#[test]
+fn retry_boundary_refuses_full_delay_before_current_cutoff() -> Result<(), Failure> {
+    let base = Duration::from_secs(1);
+    let upper = Duration::from_secs(9);
+    let backoff = Backoff::new(base, Duration::from_secs(10), 1, upper)?;
+    let limits = Limits::new(Duration::from_secs(10), 4, 8, 16, backoff)?;
+    let cause = Failure::Connect(io::ErrorKind::TimedOut);
+    for draw in [Duration::ZERO, upper] {
+        with_fixture(
+            ExchangeMode::Preview,
+            Some(limits),
+            vec![Err(failed(cause))],
+            ExchangeCase::Healthy,
+            |invocation, _provider, producer| {
+                let original = invocation.snapshot();
+                producer.draws.push_back(Ok(draw));
+                let result = invocation
+                    .probe_retry_boundary(producer)
+                    .map_err(|failure| failure.primary)?;
+                assert_eq!(
+                    producer.draw_bounds,
+                    [upper],
+                    "retry fixture did not reach its one draw"
+                );
+                assert!(producer.draws.is_empty());
+                assert!(
+                    Instant::now() < original.cutoff,
+                    "retry fixture lost real headroom"
+                );
+                if draw.is_zero() {
+                    let (observed_base, boundary) = result.map_err(|_| Failure::Control)?;
+                    assert_eq!(observed_base, base);
+                    assert!(boundary < original.cutoff);
+                } else {
+                    assert_eq!(result, Err(End::Window), "KE-STOP-MUT-02-full-delay-cutoff");
+                }
+                let after = invocation.snapshot();
+                assert_eq!(
+                    (after.base, after.not_before, after.end),
+                    (None, original.not_before, Some(End::Failure))
+                );
+                assert_failed_establishment_probe(invocation, producer, original, cause)?;
+                Ok(())
+            },
+        )?;
+    }
+    Ok(())
+}
+
+/// A real successor retirement cannot replace history before its required install.
+/// This deliberately misorders checked private inputs; normal step ordering differs.
+/// # Errors
+/// Preserve real first exhaustion, due-boundary parking and successor retirement.
+/// # Panics
+/// Fail if existing history admits a second Deferred result or a new draw.
+#[test]
+fn exhausted_refuses_actual_previous_history_before_successor_install() -> Result<(), Failure> {
+    let cause = Failure::Ledger(LedgerError::Reply(super::ReplyError::Cookies));
+    with_fixture(
+        ExchangeMode::ProtectedDatagram,
+        Some(replacement_limits()?),
+        vec![Ok(()), Ok(())],
+        ExchangeCase::ZeroCookies,
+        |invocation, _provider, producer| {
+            producer.successor = Some(SuccessorCase::ZeroCookies);
+            let (boundary, first) = exhaust_first_context(invocation, producer)?;
+            assert_eq!((first.contexts, first.has_previous), (1, true));
+            let draws = producer.draw_bounds.clone();
+            park_until(boundary)?;
+            let result = invocation
+                .probe_retired_successor(producer)
+                .map_err(|failure| failure.primary)?;
+            assert!(result.is_err(), "KE-STOP-MUT-03-existing-history");
+            assert_failure(&failed_step(&result)?, cause, None, None);
+            let after = invocation.snapshot();
+            assert_eq!(
+                after.end,
+                Some(End::Context(ContextStage::Retire, Failure::Control))
+            );
+            assert_eq!((after.contexts, after.has_previous), (1, true));
+            assert_eq!(
+                (after.transactions, after.refusals, after.observations),
+                (2, 0, 4)
+            );
+            assert_eq!(
+                (after.origin, after.cutoff, after.not_before),
+                (first.origin, first.cutoff, first.not_before)
+            );
+            assert_eq!(
+                (after.base, after.intent_not_before),
+                (first.base, first.intent_not_before)
+            );
+            assert_eq!(producer.draw_bounds, draws);
+            assert_eq!(
+                (
+                    producer.establish_calls,
+                    producer.established_contexts,
+                    producer.exchange_calls
+                ),
+                (2, 2, 2)
+            );
+            assert_eq!((producer.preview_calls, producer.entropy_calls), (0, 2));
+            let observed = producer.last_exchange.as_ref().ok_or(Failure::Control)?;
+            assert_eq!(
+                (
+                    observed.after.frames,
+                    observed.after.phase,
+                    observed.has_receipt
+                ),
+                (0, RequestPhase::Idle, false)
+            );
+            assert_eq!(observed.expiry_before, observed.expiry_after);
+            assert_eq!(
+                producer
+                    .backend_lifetime
+                    .as_ref()
+                    .ok_or(Failure::Control)?
+                    .strong_count(),
+                0
+            );
+            assert_failure(
+                invocation.last_failure().ok_or(Failure::Control)?,
+                cause,
+                None,
+                None,
+            );
+            Ok(())
+        },
+    )
 }
 
 /// Experimental constructors enforce the hard envelope before an invocation exists.
@@ -723,11 +1799,12 @@ fn cancelled_establishment_failure_cannot_admit_recovery() -> Result<(), Failure
                     let boundary = deferred(&result)?;
                     assert_eq!(producer.draw_bounds, [Duration::from_millis(20)]);
                     park_until(boundary)?;
-                    let Step::Complete(summary) =
+                    let Step::Complete(completion) =
                         step_with(invocation, producer).map_err(|failure| failure.primary)?
                     else {
                         return Err(Failure::Control);
                     };
+                    let summary = completion.summary();
                     assert!(!summary.transmitted);
                     assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
                     let completed = invocation.snapshot();
@@ -1099,11 +2176,12 @@ fn insufficient_observation_pair_closes_without_partial_new_charges() -> Result<
                 None,
             );
             park_until(boundary)?;
-            let Step::Complete(summary) =
+            let Step::Complete(completion) =
                 step_with(invocation, producer).map_err(|failure| failure.primary)?
             else {
                 return Err(Failure::Control);
             };
+            let summary = completion.summary();
             assert!(!summary.transmitted);
             assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
             let completed = invocation.snapshot();
@@ -1158,9 +2236,10 @@ fn current_protected_success_resets_only_terminal_route_backoff() -> Result<(), 
             assert_eq!(failed_state.base, Some(Duration::from_millis(40)));
             park_until(boundary)?;
             let result = step_with(invocation, producer).map_err(|failure| failure.primary)?;
-            let Step::Complete(summary) = result else {
+            let Step::Complete(completion) = result else {
                 return Err(Failure::Control);
             };
+            let summary = completion.summary();
             assert!(summary.transmitted);
             assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
             let completed = invocation.snapshot();
@@ -1229,9 +2308,11 @@ fn preview_result_is_terminal_without_protected_backoff_reset() -> Result<(), Fa
                     assert_failure(&failed_step(&result)?, Failure::Entropy, None, None);
                     End::Failure
                 } else {
-                    let Step::Complete(summary) = result.map_err(|failure| failure.primary)? else {
+                    let Step::Complete(completion) = result.map_err(|failure| failure.primary)?
+                    else {
                         return Err(Failure::Control);
                     };
+                    let summary = completion.summary();
                     assert!(!summary.transmitted);
                     assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
                     End::Completed
@@ -1701,7 +2782,7 @@ fn timing_constructors_preserve_future_guards_and_original_stale_refusal() -> Re
     let config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     assert_original_control_cutoff_bounds(&config, &provider)?;
     // A legitimately shorter original Control remains accepted without renewal.
     let short_origin = Instant::now();
@@ -1765,7 +2846,7 @@ fn genuine_committed_fact_control_guard_refuses_foreign_checked_owner() -> Resul
         })?;
         let committed = completion.commit(owner)?;
         let original = owner.status();
-        let receipt = owner.last_receipt().map(super::Receipt::serial);
+        let receipt = owner.last_receipt().map(Receipt::serial);
         // Its own Control is already Committed: this guard must not require Published.
         committed.check_control(control)?;
         super::with_owner(S2C, |foreign, foreign_control, _foreign_remote| {
@@ -1778,7 +2859,7 @@ fn genuine_committed_fact_control_guard_refuses_foreign_checked_owner() -> Resul
             assert!(foreign.last_receipt().is_none());
             foreign_control.remaining(crate::nts_ke_experiment::IoPhase::Exchange)?;
             assert_eq!(owner.status(), original);
-            assert_eq!(owner.last_receipt().map(super::Receipt::serial), receipt);
+            assert_eq!(owner.last_receipt().map(Receipt::serial), receipt);
             committed.check_control(control)?;
             let summary = committed.into_summary();
             assert!(summary.transmitted);
@@ -1926,11 +3007,10 @@ fn last_allowance_healthy_reply_stays_in_original_context() -> Result<(), Failur
                 "exhaustion fixture lost setup headroom before its first step"
             );
             let result = step_with(invocation, producer).map_err(|failure| failure.primary)?;
-            let Step::Complete(summary) = result else {
+            let Step::Complete(completion) = result else {
                 return Err(Failure::Control);
             };
-            assert!(summary.transmitted);
-            assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
+            assert_protected_counts(&completion);
             let observed = producer.last_exchange.as_ref().ok_or(Failure::Control)?;
             assert_eq!(
                 (
@@ -2262,11 +3342,12 @@ fn exhausted_context_replacement_commits_once_at_the_exact_observation_limit() -
             producer.successor = Some(SuccessorCase::Healthy);
             let (boundary, retired) = exhaust_first_context(invocation, producer)?;
             park_until(boundary)?;
-            let Step::Complete(summary) =
+            let Step::Complete(completion) =
                 step_with(invocation, producer).map_err(|failure| failure.primary)?
             else {
                 return Err(Failure::Control);
             };
+            let summary = completion.summary();
             assert!(summary.transmitted);
             let complete = invocation.snapshot();
             assert_eq!(
@@ -2319,6 +3400,97 @@ fn exhausted_context_replacement_commits_once_at_the_exact_observation_limit() -
             Ok(())
         },
     )
+}
+
+/// A genuine replacement history keeps the original invocation chart after owners retire.
+/// # Errors
+/// Preserve real exhaustion, finite parking, protected admission and witness failures.
+/// # Panics
+/// Fail if detachment rebases time, replaces receipt/captures/endpoints, or loses identity.
+#[test]
+fn replacement_protected_history_retains_original_chart_and_actual_observations()
+-> Result<(), Failure> {
+    let limits = experiment(4, 8, 4)?.with_context_lifetime(Duration::from_secs(1))?;
+    let mut retained = None;
+    with_fixture(
+        ExchangeMode::ProtectedDatagram,
+        Some(limits),
+        vec![Ok(()), Ok(())],
+        ExchangeCase::ZeroCookies,
+        |invocation, _provider, producer| {
+            let original = invocation.snapshot();
+            let original_chart = Arc::downgrade(invocation.run_context());
+            producer.successor = Some(SuccessorCase::Healthy);
+            let (boundary, exhausted) = exhaust_first_context(invocation, producer)?;
+            park_until(boundary)?;
+            let Step::Complete(InvocationCompletion::Protected(history)) =
+                step_with(invocation, producer).map_err(|failure| failure.primary)?
+            else {
+                return Err(Failure::Control);
+            };
+            let witness = producer.last_protected.take().ok_or(Failure::Control)?;
+            assert_eq!(producer.controls.len(), 2);
+            assert!(producer.controls[1].origin > original.origin);
+            assert_eq!(history.run_context().origin, original.origin);
+            assert!(Weak::ptr_eq(
+                &original_chart,
+                &Arc::downgrade(history.run_context())
+            ));
+            let complete = invocation.snapshot();
+            assert_eq!(
+                (complete.origin, complete.cutoff),
+                (original.origin, exhausted.cutoff)
+            );
+            assert_eq!((complete.contexts, complete.end), (2, Some(End::Completed)));
+            assert!(matches!(
+                step_with(invocation, producer),
+                Ok(Step::Closed(End::Completed))
+            ));
+            assert_eq!(invocation.snapshot(), complete);
+            retained = Some((history, witness, original_chart, original.origin));
+            Ok(())
+        },
+    )?;
+    let (history, witness, original_chart, original_origin) = retained.ok_or(Failure::Control)?;
+    assert!(history.summary().transmitted);
+    assert_eq!(
+        (history.summary().cookies, history.summary().cookie_bytes),
+        (1, 12)
+    );
+    let receipt = history.receipt();
+    assert_eq!(receipt.fields().header(), witness.receipt.fields().header());
+    assert_eq!(receipt.serial(), witness.receipt.serial());
+    assert_eq!(receipt.local_t1(), witness.receipt.local_t1());
+    assert_eq!(receipt.accepted_at(), witness.receipt.accepted_at());
+    assert_eq!(receipt.cookie_counts(), witness.receipt.cookie_counts());
+    assert_eq!(
+        history.captures().map(|capture| (
+            capture.monotonic(),
+            capture.utc(),
+            capture.monotonic_after()
+        )),
+        witness.captures.map(|capture| (
+            capture.monotonic(),
+            capture.utc(),
+            capture.monotonic_after()
+        ))
+    );
+    assert_eq!(history.endpoints(), witness.endpoints);
+    assert!(Weak::ptr_eq(
+        &witness.identity,
+        &Arc::downgrade(history.identity())
+    ));
+    assert_eq!(witness.identity.strong_count(), 1);
+    assert_eq!(history.run_context().origin, original_origin);
+    assert_eq!(original_chart.strong_count(), 1);
+    assert!(Weak::ptr_eq(
+        &original_chart,
+        &Arc::downgrade(history.run_context())
+    ));
+    drop(history);
+    assert_eq!(witness.identity.strong_count(), 0);
+    assert_eq!(original_chart.strong_count(), 0);
+    Ok(())
 }
 
 /// Earlier rejects need not be authenticated; the final count error owns the marker.
@@ -2470,10 +3642,11 @@ fn assert_successor_outcome(
 ) -> Result<End, Failure> {
     let end = match selected {
         SuccessorCase::MixedCookie | SuccessorCase::OldPacketsThenHealthy => {
-            let Step::Complete(summary) = result.as_ref().map_err(|failure| failure.primary)?
+            let Step::Complete(completion) = result.as_ref().map_err(|failure| failure.primary)?
             else {
                 return Err(Failure::Control);
             };
+            let summary = completion.summary();
             assert!(summary.transmitted);
             assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
             assert_eq!(observed.before.available, 1);

@@ -78,10 +78,11 @@ The Engine's default-off NTS prototype now owns the strict Windows KE path,
 private associations, protected-request custody and authenticated-response
 admission. Its existing probe remains one-shot: the default constructs a
 never-sent preview, while explicit `--protected-datagram` selects one bounded
-UDP operation. The [12 November Engine checkpoint](tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026)
-records bounded recovery and receipt/history custody source, scoped component
-evidence and the remaining gates; recurring native operation is not enabled by
-the probe.
+UDP operation. The [13 November Engine checkpoint](tasks/engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026)
+records bounded recovery, whole-invocation worker custody and genuine historical
+results through actual join. All 607 mutation variants have scoped accounting;
+37 Windows-only gaps and native/generation gates remain. Recurring native
+operation is not enabled by the probe.
 
 Experimental results remain ineligible for clock control. The complete native
 KE/TLS/CNG/UDP journey, production NTP/NTS acquisition and Core admission,

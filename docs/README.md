@@ -9,20 +9,72 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
-The current [Core/Engine continuation](../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026)
-reaches a bounded WSL source checkpoint on `0aa75da8`: 348 ordinary,
-348 optimized and 69 doctest cases, both-target static checks and all eleven GNU
-line-coverage gates pass. The reviewed catalogue contains 561 variants. Fresh
-recovery accounting is 74 caught, 27 unviable and five missed; its gate remains
-open. Fresh ledger accounting is 112 caught, 45 unviable and nine missed; nine
-independently justified exact equivalents yield adjusted 112/112 without adding
-kills. Its raw 92.56% score and native exit 2 remain retained. Other owner outcomes
-keep their earlier exact source scopes; these two cohorts are not a fresh
-561-variant campaign. The private archive/publication repairs and direct cutoff
-controls have causal evidence. Public execution stays one-shot and never-send by
-default. Native, process-generation, receiver-guard, other critical-owner and
-broader Core/P1/release gates remain open. Next WSL preparation freezes the existing
-invocation-level worker stop and actual-completion contract before implementation.
+The current [Core/Engine continuation](../tasks/engine-transport-pilot.md#protected-historical-result-through-actual-join--bounded-contract)
+preserves a genuine protected reply through the actual invocation, worker join
+and consume-once result. A sealed private history retains the original receipt,
+full header, clock brackets, endpoints/socket identity and invocation chart.
+Its historical post-admission pool counts stay distinct from initial KE counts
+in the unchanged CLI. Preview carries no protected history; poison and later
+panic cannot turn retained facts into a normal-retirement claim.
+
+Candidate `964a9573` passes 400 ordinary and 400 optimized tests, including all
+222 KE cases each, 69 doctests (56 compile-only), format and GNU/MSVC static
+checks. All twelve selected GNU 90% file-line gates pass; `job.rs` measures
+211/231 lines (91.34%). Branch evidence and native Windows execution remain
+separate. The valid-tag zero-T2/T3 cases retain exact bits without weakening the
+plain pilot's nonzero timestamp invariant or issuing a numerical sample.
+
+All 607 mutation descriptors across twelve exact catalogues now have independent
+actual-outcome review: raw 362 caught, 199 compiler-unviable and 46 missed, zero
+timeouts/exclusions. The existing data-only APIs separately adopt exactly nine
+source-reviewed ledger equivalents. Its raw 112/121 and exit 2 remain immutable;
+adjusted 112/112 adds zero kills. Seven selected generated GNU gates pass. The
+other 37 misses are Windows-only across five owners; their custom gates stay
+incomplete, including recovery despite its raw 95.18%. There is no pooled score,
+native pass or product-completion percentage. The existing task retains the
+per-owner table, exact receipts and generation alternatives.
+
+Fourteen ownership/privacy compiler controls pass on GNU/MSVC, alongside six
+provider regression controls. All 274 affected Python tests pass on the final
+metadata; fourteen real-artifact negative controls preserve exact-role,
+source/proof custody and accounting rejection. The dossier explicitly separates
+checked-owner invariants from arbitrary forged states and current identity from
+historical candidates. Only registry/dossier/policy metadata changes during the
+adoption; product Rust/Cargo/fixture bytes and candidate `964a9573` stay unchanged.
+Execution is closed with exact E9; all thresholds and Native holds remain.
+
+The fixed resource controls distinguish reclaim from OOM. Observed six-worker
+cohorts finish under unchanged configured 3-GiB/512-MiB/512-task limits, with zero
+OOM/PID-limit/observer failures and independently verified cleanup. Exact peaks,
+command-boundary storage samples and the first process cohort's missing live
+capacity observation retain their separate limits. Disposable build trees are
+deleted. Three source-copy sensitivity faults are detected beside ten healthy
+checks and add zero generated kills. Chart sensitivity uses the component's
+pre-step oracle; the worker's self-derived chart witness remains an explicit
+limit. Constructor, generic, field-transfer, atomic/order, wiping and Windows-
+only gaps remain in the existing task; no broader qualification is claimed.
+
+Production Core-positive acquisition still needs its real configuration/path/
+trust, association, clock/mapping, date/scale and uncertainty suppliers. No
+history insertion, estimator vote, fresh-synchronization or clock authority is
+introduced. Public execution remains one-shot and never-send by default.
+Provider/trust, complete worker/service, Core, package and release exits remain
+open; formal, native, fuzz, storage and UI holds retain their existing owners.
+
+WSL cleanup deletes obsolete evidence and unused compiler targets without
+compression. The latest cycle removes 1.12 GB of terminal mutation scratch,
+duplicate source copies and fourteen superseded failed-run/control bundles.
+After the new cohort reviews, another 33.87 MB of superseded failed-trial data
+is retired. The renewed cleanup deletes obsolete controls/proof scratch, four
+generated snapshot worktrees, the unused warm build cache and an exact duplicate
+source: about 0.62 GB more recovered. Unique authored snapshot changes survive
+in 1.87 MB of plain source patches with verified exact restoration. External
+NevroTick data now measures 2.59 GB, including installed tools/vendors and
+protected working copies; WSL has 18.12 GB available at that sample.
+Current-required source/results and coverage JSON remain.
+Retired raw evidence cannot be replayed; its historical summary grants
+no reuse credit. Exact custody and measured recovery stay in the existing task.
+Historical cumulative deletion totals are not current retained size.
 
 For the single editable product metadata source and build-time pipeline, start
 with [metadata/](../metadata/README.md). Its [five-stage contract](plans/windows-package-metadata.md#13-metadata-pipeline-implementation--7-november-2026)
@@ -61,7 +113,7 @@ authenticated client, native clock synchronization or release readiness.
 
 | Question | Source of truth |
 | --- | --- |
-| Where is protected NTS datagram integration now? | The [12 November source checkpoint](../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026) records EP2–EP4 association, protected-datagram and receipt/history custody plus bounded same-invocation recovery. The accepted [cookie-return](nevrotick-owner-decisions.md#61-s22-cookie-reissuance) and [zero-cookie](nevrotick-owner-decisions.md#62-s22-zero-replacement-cookies) policies have bounded source transitions. Public execution remains one-shot and never-send by default. The earlier [Windows scripted-component exit](../tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit) records 106 scripted KE component tests on Windows, on its earlier source candidate only. Real TLS/CNG/UDP, remaining critical-owner gates, production issuers/Core history and release remain unqualified; the native resource stop remains. Next freeze the invocation-level worker stop and actual-completion contract. |
+| Where is protected NTS datagram integration now? | The [12 November source checkpoint](../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026) records EP2–EP4 association, protected-datagram and receipt/history custody plus bounded same-invocation recovery. The accepted [cookie-return](nevrotick-owner-decisions.md#61-s22-cookie-reissuance) and [zero-cookie](nevrotick-owner-decisions.md#62-s22-zero-replacement-cookies) policies have bounded source transitions. Public execution remains one-shot and never-send by default. The earlier [Windows scripted-component exit](../tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit) records 106 scripted KE component tests on Windows, on its earlier source candidate only. Real TLS/CNG/UDP, remaining critical-owner gates, production issuers/Core history and release remain unqualified; the native resource stop remains. The [13 November checkpoint](../tasks/engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026) records actual worker join and sealed historical-result custody; all 607 variants have scoped accounting. Close that staged checkpoint, then implement the reviewed private conditional-numerics card with its first actual caller supplying `None`. |
 | What needs checking before Rust/Cargo 1.100 adoption? | [11 November candidate-release review](supporting-reviews/rust-1.100-upgrade-review.md) covers language, library, lint, Cargo, Windows and companion-tool changes; the [existing build checkpoint](../tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026) owns exact-version admission and affected tests. Rust 1.99.1 remains selected; source research establishes no candidate/native pass. |
 | What code exists now, and which results apply to it? | [Current implementation summary](windows-time-architecture.md#1-current-state-capsule), backed by the workspace manifests, lockfile, source and linked candidate-specific task evidence. Dated baseline and review records below remain historical. |
 | Which OS integration assumptions have been challenged against CVEs and platform documentation? | [8 November OS-integration research](supporting-reviews/windows-os-integration-risk-research.md) maps actual/proposed APIs, primary CVE analogues, version/feature exclusions and paired checks. [W11 §4.37](../tasks/windows11-integration.md#437-os-integration-vulnerability-research--8-november-2026) routes the work; R-05 and ST-W03 retain the two explicit refinements. The [9 November integration map](supporting-reviews/windows-os-integration-risk-research.md#8-skill-and-document-integration--9-november-2026) locates canonical rules, skill entry points, shared QA and intentionally unchanged coverage. This is bounded research, not a new confirmed vulnerability, full audit or native pass. |

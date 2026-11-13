@@ -48,7 +48,7 @@ fn with_owner(
     let control = Control::new(Instant::now())?;
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     let candidate = AssociationCandidate::new(
         &config,
         &control,

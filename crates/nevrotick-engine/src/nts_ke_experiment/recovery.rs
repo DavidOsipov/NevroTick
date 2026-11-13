@@ -6,6 +6,7 @@
 //! bound transaction observations, not TLS traffic, native work or rendered bytes.
 
 use std::io;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 #[cfg(test)]
@@ -17,7 +18,8 @@ use super::association::ledger::retirement::{PastRequests, RetiredContext};
 use super::datagram::{CommittedProtected, ProtectedCompletion};
 use super::process::ProviderScope;
 use super::{
-    CancelOutcome, Config, Control, EXCHANGE_TIME, ExchangeMode, Failed, Failure, Summary,
+    CancelOutcome, Config, Control, EXCHANGE_TIME, ExchangeMode, Failed, Failure,
+    InvocationCompletion, StopHandle, StopScope,
 };
 
 /// Fixed private experiment ceilings; none are shipped retry defaults.
@@ -37,6 +39,10 @@ const CONTEXTS: u8 = 2;
 pub(super) enum End {
     /// One established association finished its sole selected mode.
     Completed,
+    /// Invocation stop forbids new work without acknowledging actual completion.
+    Stopped,
+    /// The invocation scope gate is unavailable; no stopped state is inferred.
+    Control,
     /// An operation or cleanup failed without an admitted recovery route.
     Failure,
     /// The immutable observation window cannot admit useful work.
@@ -88,11 +94,32 @@ pub(super) enum Step {
         )
     )]
     Deferred(Instant),
-    /// Historical terminal-mode counts, never fresh-synchronization authority.
-    Complete(Summary),
+    /// Owned terminal-mode result, never fresh-synchronization authority.
+    Complete(InvocationCompletion),
     /// A closed invocation creates no additional observation or producer call.
     Closed(End),
 }
+
+/// One actual atomic admission, or its bounded no-producer disposition.
+enum Admission {
+    /// Counters and original control custody were committed under the scope gate.
+    Ready {
+        /// Original or replacement Control with the same invocation scope and deadlines.
+        control: Control,
+        /// Prospective ordinal, advanced only after establishment actually succeeds.
+        contexts: u8,
+    },
+    /// No new producer entry is authorized by this closed or deferred outcome.
+    Finished(Step),
+}
+
+/// Inert direct scheduling observation after genuine component setup.
+#[cfg(test)]
+pub(super) type StepProbeResult = Result<Step, Failed>;
+
+/// Inert calculated boundary; it grants no admission or state publication.
+#[cfg(test)]
+pub(super) type BoundaryProbeResult = Result<(Duration, Instant), End>;
 
 /// Immutable checked experimental delay parameters, all expressed in durations.
 #[derive(Clone, Copy)]
@@ -305,7 +332,12 @@ fn context_rule(values: &(Duration, Duration), (): &()) -> garde::Result {
 /// Construct one original context deadline without extending the immutable cutoff.
 /// # Errors
 /// Refuse duration arithmetic or an already closed original window before work.
-fn context_control(limits: &Limits, origin: Instant, cutoff: Instant) -> Result<Control, Failure> {
+fn context_control(
+    limits: &Limits,
+    origin: Instant,
+    cutoff: Instant,
+    stop_scope: Arc<StopScope>,
+) -> Result<Control, Failure> {
     let expiry = match limits.context_lifetime {
         Some(lifetime) => origin
             .checked_add(lifetime)
@@ -313,7 +345,7 @@ fn context_control(limits: &Limits, origin: Instant, cutoff: Instant) -> Result<
             .min(cutoff),
         None => cutoff,
     };
-    Control::clamped(origin, expiry)
+    Control::clamped_in(origin, expiry, stop_scope)
 }
 
 /// Garde is invoked inside the only raw experimental limit constructor.
@@ -355,8 +387,12 @@ pub(super) struct Invocation<'scope> {
     config: &'scope Config,
     /// The same actual provider/claim lifetime cannot be replaced between steps.
     provider: &'scope ProviderScope<'scope>,
+    /// The original Control's immutable scope also binds every later context.
+    stop_scope: Arc<StopScope>,
     /// Original checked Control's origin, never a caller-supplied scheduling time.
     origin: Instant,
+    /// Same historical chart for every actual context, created before acquisition.
+    run_context: Arc<crate::RunClockContext>,
     /// Immutable total window shared by all private experimental attempts.
     cutoff: Instant,
     /// Retain the original first Control instead of rebasing it at the first step.
@@ -390,6 +426,12 @@ pub(super) struct Invocation<'scope> {
 }
 
 impl<'scope> Invocation<'scope> {
+    /// Borrow the original pre-acquisition chart for actual component identity checks.
+    #[cfg(test)]
+    pub(super) const fn run_context(&self) -> &Arc<crate::RunClockContext> {
+        &self.run_context
+    }
+
     /// Receive the original checked public Control created before process admission.
     /// # Errors
     /// Refuse stale/closed original authority; no new process claim is created.
@@ -434,7 +476,7 @@ impl<'scope> Invocation<'scope> {
     ) -> Result<Self, Failure> {
         let origin = Instant::now();
         let cutoff = origin.checked_add(limits.window).ok_or(Failure::Deadline)?;
-        let control = context_control(&limits, origin, cutoff)?;
+        let control = context_control(&limits, origin, cutoff, Arc::new(StopScope::new()))?;
         Self::from_control(config, provider, limits, control, cutoff)
     }
 
@@ -456,7 +498,9 @@ impl<'scope> Invocation<'scope> {
         Ok(Self {
             config,
             provider,
+            stop_scope: Arc::clone(&control.stop_scope),
             origin,
+            run_context: Arc::new(crate::RunClockContext { origin }),
             cutoff,
             first_control: Some(control),
             limits,
@@ -475,6 +519,20 @@ impl<'scope> Invocation<'scope> {
         })
     }
 
+    /// Derive only a stop capability from this invocation's actual original scope.
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "the selected stop endpoint currently has only component-controller callers"
+        )
+    )]
+    pub(super) fn stop_handle(&self) -> StopHandle {
+        StopHandle {
+            scope: Arc::clone(&self.stop_scope),
+        }
+    }
+
     /// Exercise the original checked cutoff boundary with genuine fixture owners.
     /// # Errors
     /// Preserve every mandatory original-control and outer-window refusal.
@@ -487,6 +545,144 @@ impl<'scope> Invocation<'scope> {
         cutoff: Instant,
     ) -> Result<Self, Failure> {
         Self::from_control(config, provider, limits, control, cutoff)
+    }
+
+    /// Retain an actual charged Ready control inside this module's component probe.
+    /// No control, receiver or prospective context ordinal escapes this boundary.
+    /// # Errors
+    /// Preserve admission failure; a deferred/closed step cannot supply authority.
+    #[cfg(test)]
+    fn probe_control(&mut self) -> Result<Control, Failed> {
+        match self.admit()? {
+            Admission::Ready { control, .. } => Ok(control),
+            Admission::Finished(_) => Err(Failed::from(Failure::Control)),
+        }
+    }
+
+    /// Observe genuine transient establishment failure and its actual local cancel.
+    /// Keep the charged control private; neither setup nor cancellation schedules.
+    /// # Errors
+    /// Refuse nonrecoverable or unexpectedly successful setup without inventing facts.
+    #[cfg(test)]
+    fn probe_failed_control<P: Producer>(
+        &mut self,
+        producer: &mut P,
+    ) -> Result<(Control, Failed, Backoff), Failed> {
+        let policy = self.limits.backoff.ok_or(Failed::from(Failure::Control))?;
+        let control = self.probe_control()?;
+        let failure = match producer.establish(self.config, &control, self.provider) {
+            Err(failure) => failure,
+            Ok(association) => {
+                drop(association);
+                let mut receiver = ActiveReceiver {
+                    invocation: self,
+                    control: &control,
+                };
+                return Err(receiver.mode_failed(Failure::Control));
+            }
+        };
+        let failure = {
+            let receiver = ActiveReceiver {
+                invocation: self,
+                control: &control,
+            };
+            let (failure, cancellation) = receiver.close_admission(failure);
+            receiver.invocation.last_failure = Some(failure);
+            if receiver.invocation.close_after_scope(End::Failure) != End::Failure
+                || failure.cleanup.is_some()
+                || failure.admission_cleanup.is_some()
+                || cancellation != Some(CancelOutcome::Cancelled)
+                || !eligible(failure.primary)
+            {
+                return Err(failure);
+            }
+            failure
+        };
+        Ok((control, failure, policy))
+    }
+
+    /// Probe final scheduling publication after actual failed establishment/cancel.
+    /// The trusted bounded nonreentrant observer may close, never admit, later work.
+    /// # Errors
+    /// The outer failure means setup did not reach the direct helper observation.
+    #[cfg(test)]
+    pub(super) fn probe_defer_observing<P: Producer>(
+        &mut self,
+        producer: &mut P,
+        observe: impl FnOnce() -> Instant,
+    ) -> Result<StepProbeResult, Failed> {
+        let (control, failure, policy) = self.probe_failed_control(producer)?;
+        let mut receiver = ActiveReceiver {
+            invocation: self,
+            control: &control,
+        };
+        Ok(receiver.defer_observing(policy, failure, producer, observe))
+    }
+
+    /// Inspect the direct retry result before any final defer check can mask it.
+    /// Genuine failure/cancel setup spends work but returns no effect capability.
+    /// # Errors
+    /// The outer failure means actual setup never reached the boundary helper.
+    #[cfg(test)]
+    pub(super) fn probe_retry_boundary<P: Producer>(
+        &mut self,
+        producer: &mut P,
+    ) -> Result<BoundaryProbeResult, Failed> {
+        let (control, _failure, policy) = self.probe_failed_control(producer)?;
+        let receiver = ActiveReceiver {
+            invocation: self,
+            control: &control,
+        };
+        Ok(receiver.retry_boundary(policy, producer))
+    }
+
+    /// Present a genuinely retired successor before ordinary history attachment.
+    /// Only real admission and producer/ledger owners create the negative input;
+    /// preserve the first context ordinal and history rather than fabricating them.
+    /// # Errors
+    /// The outer failure identifies setup that did not reach the receiving helper.
+    #[cfg(test)]
+    pub(super) fn probe_retired_successor<P: Producer>(
+        &mut self,
+        producer: &mut P,
+    ) -> Result<StepProbeResult, Failed> {
+        let control = self.probe_control()?;
+        let config = self.config;
+        let provider = self.provider;
+        let mut association = producer.establish(config, &control, provider)?;
+        let primary = match producer.exchange(&mut association, &control) {
+            Err(failure) => failure,
+            Ok(completion) => {
+                drop(completion);
+                drop(association);
+                let mut receiver = ActiveReceiver {
+                    invocation: self,
+                    control: &control,
+                };
+                return Err(receiver.mode_failed(Failure::Control));
+            }
+        };
+        if !matches!(
+            primary,
+            Failure::Ledger(super::association::ledger::LedgerError::Reply(
+                super::response::ReplyError::Cookies
+            ))
+        ) {
+            drop(association);
+            let mut receiver = ActiveReceiver {
+                invocation: self,
+                control: &control,
+            };
+            return Err(receiver.mode_failed(primary));
+        }
+        let retired = association
+            .retire_for_recovery(config, &control, provider)
+            .map_err(Failed::from)?;
+        let mut receiver = ActiveReceiver {
+            invocation: self,
+            control: &control,
+        };
+        Ok(receiver.exhausted(retired, primary, producer))
     }
 
     /// Return the unchanged original cause without granting another operation.
@@ -506,6 +702,90 @@ impl<'scope> Invocation<'scope> {
             self.last_failure = Some(failed);
             failed
         }
+    }
+
+    /// Close a returned failure under the actual scope without replacing its facts.
+    fn close_after_scope(&mut self, fallback: End) -> End {
+        let scope = Arc::clone(&self.stop_scope);
+        if let Ok(guard) = scope.lock() {
+            let end = if guard.is_stopped() {
+                End::Stopped
+            } else {
+                fallback
+            };
+            self.plan = Plan::Closed(end);
+            end
+        } else {
+            self.plan = Plan::Closed(End::Control);
+            End::Control
+        }
+    }
+
+    /// Admit one actual step atomically under the original invocation scope.
+    /// Release all gates before any producer, entropy or native operation starts.
+    /// # Errors
+    /// Preserve prior failure facts on unavailable scope or original-control refusal.
+    fn admit(&mut self) -> Result<Admission, Failed> {
+        if let Plan::Closed(end) = self.plan {
+            return Ok(Admission::Finished(Step::Closed(end)));
+        }
+        let scope = Arc::clone(&self.stop_scope);
+        let scope_guard = match scope.lock() {
+            Ok(guard) => guard,
+            Err(failure) => return Err(self.admission_failed(failure, End::Control)),
+        };
+        if scope_guard.is_stopped() {
+            self.plan = Plan::Closed(End::Stopped);
+            return Ok(Admission::Finished(Step::Closed(End::Stopped)));
+        }
+        match self.plan_at_inner(Instant::now()) {
+            Plan::Closed(end) => {
+                self.plan = Plan::Closed(end);
+                return Ok(Admission::Finished(Step::Closed(end)));
+            }
+            Plan::Deferred(boundary) => return Ok(Admission::Finished(self.refuse(boundary))),
+            Plan::Due => {}
+        }
+        let (transactions, observations) = match self.reservation() {
+            Ok(reservation) => reservation,
+            Err(end) => {
+                self.plan = Plan::Closed(end);
+                return Ok(Admission::Finished(Step::Closed(end)));
+            }
+        };
+        let Some(contexts) = self
+            .contexts
+            .checked_add(1)
+            .filter(|next| *next <= CONTEXTS)
+        else {
+            self.plan = Plan::Closed(End::Contexts);
+            return Ok(Admission::Finished(Step::Closed(End::Contexts)));
+        };
+        let control = match self.first_control.take() {
+            Some(control) => control,
+            None => match context_control(
+                &self.limits,
+                Instant::now(),
+                self.cutoff,
+                Arc::clone(&self.stop_scope),
+            ) {
+                Ok(control) => control,
+                Err(failure) => return Err(self.admission_failed(failure, End::Arithmetic)),
+            },
+        };
+        let guard = match control.guard_in(scope_guard) {
+            Ok(guard) => guard,
+            Err(failure) => return Err(self.admission_failed(failure, End::Control)),
+        };
+        if let Err(failure) = guard.remaining(super::IoPhase::Handshake, Instant::now()) {
+            return Err(self.admission_failed(failure, End::Window));
+        }
+        self.transactions = transactions;
+        self.observations = observations;
+        // A producer unwind cannot leave an uncharged or newly admissible owner.
+        self.plan = Plan::Closed(End::Failure);
+        drop(guard);
+        Ok(Admission::Ready { control, contexts })
     }
 
     /// Combine obligations without treating a copied intent as an admission permit.
@@ -545,7 +825,19 @@ impl<'scope> Invocation<'scope> {
     /// Exercise the same planning comparisons without creating any capability.
     #[cfg(test)]
     pub(super) fn plan_at(&self, now: Instant) -> Plan {
-        self.plan_at_inner(now)
+        if let Plan::Closed(end) = self.plan {
+            return Plan::Closed(end);
+        }
+        match self.stop_scope.lock() {
+            Ok(scope) => {
+                if scope.is_stopped() {
+                    Plan::Closed(End::Stopped)
+                } else {
+                    self.plan_at_inner(now)
+                }
+            }
+            Err(_) => Plan::Closed(End::Control),
+        }
     }
 
     /// Tighten a fixture's real owner state; there is no operation-granting inverse.
@@ -705,15 +997,21 @@ struct ActiveReceiver<'owner, 'control, 'scope> {
 }
 
 impl ActiveReceiver<'_, '_, '_> {
-    /// Consume a current genuine fact and terminate before exposing counts.
+    /// Detach a current genuine fact before closing this actual receiving owner.
     /// # Errors
     /// Reject a foreign actual Control without resetting route state.
-    fn accept(&mut self, committed: CommittedProtected<'_>) -> Result<Summary, Failure> {
+    fn accept(
+        &mut self,
+        committed: CommittedProtected<'_>,
+        population: (usize, usize),
+    ) -> Result<InvocationCompletion, Failure> {
         committed.check_control(self.control)?;
+        let history = committed.into_history(Arc::clone(&self.invocation.run_context), population);
+        let completion = InvocationCompletion::Protected(Box::new(history));
         self.invocation.base = None;
         self.invocation.route_not_before = self.invocation.origin;
         self.invocation.plan = Plan::Closed(End::Completed);
-        Ok(committed.into_summary())
+        Ok(completion)
     }
 
     /// Consume only a genuine association's constraint; it cannot enable KE here.
@@ -756,6 +1054,9 @@ impl ActiveReceiver<'_, '_, '_> {
     ) -> Result<Step, Failed> {
         let (failure, cancellation) = self.close_admission(failure);
         self.invocation.last_failure = Some(failure);
+        if self.invocation.close_after_scope(End::Failure) != End::Failure {
+            return Err(failure);
+        }
         let Some(policy) = self.invocation.limits.backoff else {
             return Err(failure);
         };
@@ -778,13 +1079,37 @@ impl ActiveReceiver<'_, '_, '_> {
         failure: Failed,
         producer: &mut P,
     ) -> Result<Step, Failed> {
-        if self.invocation.transactions >= self.invocation.limits.transactions {
-            self.invocation.plan = Plan::Closed(End::Transactions);
+        self.defer_observing(policy, failure, producer, Instant::now)
+    }
+
+    /// Publish scheduling only after the final fresh observation under the scope.
+    /// The trusted local observer is bounded and nonreentrant while the gate is held;
+    /// it cannot replace actual admission or authorize a subsequent producer call.
+    /// # Errors
+    /// Preserve the original failure on scope, boundary, count or draw refusal.
+    fn defer_observing<P: Producer>(
+        &mut self,
+        policy: Backoff,
+        failure: Failed,
+        producer: &mut P,
+        observe: impl FnOnce() -> Instant,
+    ) -> Result<Step, Failed> {
+        let decision = self.retry_boundary(policy, producer);
+        let scope = Arc::clone(&self.invocation.stop_scope);
+        let Ok(guard) = scope.lock() else {
+            self.invocation.plan = Plan::Closed(End::Control);
+            return Err(failure);
+        };
+        if guard.is_stopped() {
+            self.invocation.plan = Plan::Closed(End::Stopped);
             return Err(failure);
         }
-        let now = Instant::now();
-        match self.retry_boundary(policy, now, producer) {
+        match decision {
             Ok((base, not_before)) => {
+                if observe() >= self.invocation.cutoff || not_before >= self.invocation.cutoff {
+                    self.invocation.plan = Plan::Closed(End::Window);
+                    return Err(failure);
+                }
                 self.invocation.base = Some(base);
                 self.invocation.route_not_before = not_before;
                 self.invocation.plan = Plan::Deferred(not_before);
@@ -805,6 +1130,8 @@ impl ActiveReceiver<'_, '_, '_> {
             .unwrap_or_else(|| Failed::from(cause));
         let failure = self.close_admission(failure).0;
         self.invocation.last_failure = Some(failure);
+        // This actual context-stage refusal is already terminal history. A later
+        // sticky stop still closes admission but must not erase the observed cause.
         self.invocation.plan = Plan::Closed(End::Context(stage, cause));
         failure
     }
@@ -834,9 +1161,11 @@ impl ActiveReceiver<'_, '_, '_> {
         let (failure, cancellation) = self.close_admission(Failed::from(primary));
         self.invocation.last_failure = Some(failure);
         if cancellation != Some(CancelOutcome::Cancelled) {
+            self.invocation.close_after_scope(End::Failure);
             return Err(failure);
         }
         let Some(policy) = self.invocation.limits.backoff else {
+            self.invocation.close_after_scope(End::Failure);
             return Err(failure);
         };
         self.invocation.previous = Some(previous);
@@ -849,9 +1178,20 @@ impl ActiveReceiver<'_, '_, '_> {
     fn retry_boundary<P: Producer>(
         &self,
         policy: Backoff,
-        now: Instant,
         producer: &mut P,
     ) -> Result<(Duration, Instant), End> {
+        let scope = self
+            .invocation
+            .stop_scope
+            .lock()
+            .map_err(|_| End::Control)?;
+        if scope.is_stopped() {
+            return Err(End::Stopped);
+        }
+        if self.invocation.transactions >= self.invocation.limits.transactions {
+            return Err(End::Transactions);
+        }
+        let now = Instant::now();
         if self
             .invocation
             .observations
@@ -869,6 +1209,9 @@ impl ActiveReceiver<'_, '_, '_> {
             return Err(End::Window);
         }
         let upper = policy.draw_upper(base).map_err(|_| End::Arithmetic)?;
+        // This admits the one draw, not its physical start or completion. Keep
+        // neither gate across the actual source callback, including a late return.
+        drop(scope);
         let draw = if upper.is_zero() {
             Duration::ZERO
         } else {
@@ -889,7 +1232,7 @@ impl ActiveReceiver<'_, '_, '_> {
     fn mode_failed(&mut self, failure: Failure) -> Failed {
         let failure = self.close_admission(Failed::from(failure)).0;
         self.invocation.last_failure = Some(failure);
-        self.invocation.plan = Plan::Closed(End::Failure);
+        self.invocation.close_after_scope(End::Failure);
         failure
     }
 }
@@ -921,45 +1264,10 @@ pub(super) fn step_with<P: Producer>(
     invocation: &mut Invocation<'_>,
     producer: &mut P,
 ) -> Result<Step, Failed> {
-    match invocation.plan_at_inner(Instant::now()) {
-        Plan::Closed(end) => {
-            invocation.plan = Plan::Closed(end);
-            return Ok(Step::Closed(end));
-        }
-        Plan::Deferred(not_before) => return Ok(invocation.refuse(not_before)),
-        Plan::Due => {}
-    }
-    let (transactions, observations) = match invocation.reservation() {
-        Ok(reservation) => reservation,
-        Err(end) => {
-            invocation.plan = Plan::Closed(end);
-            return Ok(Step::Closed(end));
-        }
+    let (control, contexts) = match invocation.admit()? {
+        Admission::Ready { control, contexts } => (control, contexts),
+        Admission::Finished(result) => return Ok(result),
     };
-    let Some(contexts) = invocation
-        .contexts
-        .checked_add(1)
-        .filter(|next| *next <= CONTEXTS)
-    else {
-        invocation.plan = Plan::Closed(End::Contexts);
-        return Ok(Step::Closed(End::Contexts));
-    };
-    let control = match invocation.first_control.take() {
-        Some(control) => control,
-        None => match context_control(&invocation.limits, Instant::now(), invocation.cutoff) {
-            Ok(control) => control,
-            Err(failure) => {
-                return Err(invocation.admission_failed(failure, End::Arithmetic));
-            }
-        },
-    };
-    if let Err(failure) = control.remaining(super::IoPhase::Handshake) {
-        return Err(invocation.admission_failed(failure, End::Window));
-    }
-    invocation.transactions = transactions;
-    invocation.observations = observations;
-    // Fail closed even if the private synchronous producer unwinds unexpectedly.
-    invocation.plan = Plan::Closed(End::Failure);
     let config = invocation.config;
     let provider = invocation.provider;
     let mut receiver = ActiveReceiver {
@@ -980,11 +1288,12 @@ pub(super) fn step_with<P: Producer>(
     let result = match config.mode {
         ExchangeMode::Preview => {
             super::preview_once(&mut association, |output| producer.preview_entropy(output))
+                .map(InvocationCompletion::Preview)
         }
         ExchangeMode::ProtectedDatagram => super::protected_receiving(
             &mut association,
             |owner| producer.exchange(owner, &control),
-            |committed| receiver.accept(committed),
+            |committed, population| receiver.accept(committed, population),
         ),
     };
     match result {

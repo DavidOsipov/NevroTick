@@ -124,7 +124,7 @@ fn genuine_owner_boundary_moves_cookies_and_consumes_completion_once() -> Result
     let control = Control::new(Instant::now())?;
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     let population = cookies();
     let vector_address = population.as_ptr();
     let body_address = population[0].as_ptr();
@@ -148,6 +148,8 @@ fn genuine_owner_boundary_moves_cookies_and_consumes_completion_once() -> Result
 }
 
 /// Equal labels cannot replace actual configuration/control/provider provenance.
+/// Provider scopes now consume their claims, so distinct owners use independent checked
+/// component admissions; reconstructing a second scope from one claim is outside the API.
 /// # Errors
 /// Propagate component setup refusal.
 /// # Panics
@@ -160,8 +162,10 @@ fn foreign_completion_refuses_without_partial_publication() -> Result<(), Failur
     let foreign_control = Control::new(control.origin)?;
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
-    let foreign_provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
+    let foreign_admission = ProcessAdmission::new();
+    let foreign_claim = foreign_admission.claim()?;
+    let foreign_provider = ProviderScope::component(foreign_claim);
     for alternative in 0..3 {
         let candidate = component(&original, &control, &provider, cookies());
         let receiving_config = if alternative == 0 { &other } else { &original };
@@ -209,7 +213,7 @@ fn post_ke_cancellation_refuses_before_entropy() -> Result<(), Failure> {
     let control = Control::new(Instant::now())?;
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     let candidate = component(&config, &control, &provider, cookies());
     let mut association = AssociationOwner::receive(&config, &control, &provider, candidate)?;
     let original_expiry = association.material.expiry;
@@ -238,7 +242,7 @@ fn published_association_reaches_actual_sealer_and_finishes_once() -> Result<(),
     let control = Control::new(Instant::now())?;
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     let candidate = component(&config, &control, &provider, cookies());
     let mut association = AssociationOwner::receive(&config, &control, &provider, candidate)?;
     let preview = association.prepare_preview(|bytes| {
@@ -271,7 +275,7 @@ fn rejected_population_preserves_atomic_publication() -> Result<(), Failure> {
     let origin = Instant::now();
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     for (population, neighbor, expected) in [
         (Vec::new(), cookies(), (1, 12)),
         (
@@ -320,7 +324,7 @@ fn receiving_boundary_accepts_aggregate_and_endpoint_neighbors() -> Result<(), F
     let origin = Instant::now();
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     let config = config()?;
     for (tail, total) in [(65_529, 131_071), (65_530, 131_072)] {
         let control = Control::new(origin)?;
@@ -363,7 +367,7 @@ fn rejected_endpoint_preserves_atomic_publication() -> Result<(), Failure> {
     let origin = Instant::now();
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     for peer in ["127.0.0.1:4460", "[::1]:4460"] {
         let config = Config::new(peer.into(), "Time.Example".into())?;
         let ipv4 = std::net::SocketAddr::from(([127, 0, 0, 2], 123));
@@ -407,7 +411,7 @@ fn rejected_expiry_binding_preserves_atomic_publication() -> Result<(), Failure>
     let config = config()?;
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     for later in [false, true] {
         let control = Control::new(origin)?;
         let original_expiry = control.expiry;
@@ -451,7 +455,7 @@ fn preview_refusal_does_not_reset_work_credit() -> Result<(), Failure> {
     let origin = Instant::now();
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     for entropy_failure in [false, true] {
         let control = Control::new(origin)?;
         let original_expiry = control.expiry;
@@ -507,7 +511,7 @@ fn abandoned_successful_preview_does_not_reset_owner_credit() -> Result<(), Fail
     let original_expiry = control.expiry;
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     let candidate = component(&config, &control, &provider, cookies());
     let mut association = AssociationOwner::receive(&config, &control, &provider, candidate)?;
     let first_calls = Cell::new(0);
@@ -551,7 +555,7 @@ fn association_expiry_after_ke_prevents_preview() -> Result<(), Failure> {
         .ok_or(Failure::Deadline)?;
     let admission = ProcessAdmission::new();
     let claim = admission.claim()?;
-    let provider = ProviderScope::component(&claim);
+    let provider = ProviderScope::component(claim);
     let candidate = component(&config, &control, &provider, cookies());
     let mut association = AssociationOwner::receive(&config, &control, &provider, candidate)?;
     std::thread::sleep(

@@ -1149,7 +1149,7 @@ checkpoint alone supplies no full baseline/metrics. The subsequent independently
 reviewed [exhausted-context source child](../../tasks/engine-transport-pilot.md#exhausted-context-continuation--source-contract-freeze-12-november-2026):
 one bounded replacement before any protected success, shorter checked private
 context lifetime inside the original outer cutoff, and retained predecessor
-cookie/UID history. Current Rust candidate `0aa75da8` passes its separate full
+cookie/UID history. Published predecessor `a0ad73a` (Rust `0aa75da8`) passes its separate full
 baseline: 348 ordinary, 348 optimized and 69 doctests, format and both-target
 static checks. All eleven GNU 90% file-line gates pass; recovery is 522/545.
 The complete 561-variant catalogue is independently reviewed. Fresh bounded
@@ -1169,13 +1169,148 @@ thresholds. Native Windows execution remains paused.
 
 The selected private same-invocation failure table, aggregate work/window and
 checked scheduling/backoff owner are authored; they do not qualify a public
-repeated-work client. After the signed source checkpoint, complete remaining
-native and generation gates only when admitted. Next WSL-only preparation freezes
-the invocation-level worker stop latch and actual-completion custody contract in
-[the existing Engine task](../../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026),
-with independent review before dependent implementation. Reuse current
-Config/claim/provider and actual operation ownership; add no service source,
-shared graph change, production retry/default or Core-positive issuer.
+repeated-work client. The private invocation stop boundary retains predecessor Rust
+`008583ad`: its fresh WSL baseline passes 368 ordinary, 368 optimized and 69
+doctests, format and both-target static checks. All 190 KE cases execute,
+including original-handle/successor and entropy callback controls plus three
+direct recovery-helper cases. Current coverage passes all eleven GNU 90% line
+gates; enumeration lists 575 variants. Exact fault replays and the complete
+114-variant recovery cohort catch all three former GNU gaps, with 79 caught,
+31 compiler-unviable and four Windows-only misses. Raw 95.18% leaves its custom
+gate incomplete. Independent classification is complete. Fresh ledger accounting
+retains raw 112/121/native exit 2 and separately adopts exactly nine reviewed
+equivalents for adjusted 112/112, adding zero kills. Finish remaining native
+guards before accepting this source checkpoint. The seven
+prior `261fa73d` cohorts finish accounting for 495 variants with 28 misses;
+three owners pass and the original failed outcomes retain their historical
+scopes. The selected eight-worker fallback follows the
+interrupted ten-worker attempt; only exact predecessor E9 adoption permits its adjustment,
+with no inherited exclusions. David authorized WSL cleanup, old-evidence retirement and continued work;
+16.61 GB of obsolete artifacts/bundles are deleted without compression. Windows stays
+held, with no repeated blanket WSL resumption approval required.
+Stop acknowledgement closes
+admission; actual whole-call
+completion remains `run` return after Invocation/provider/config retirement.
+The separately reviewed bounded WSL whole-invocation worker is now implemented in
+[the existing Engine task](../../tasks/engine-transport-pilot.md#whole-invocation-worker-implementation-and-sensitivity-checkpoint).
+It retains the actual original Control/StopHandle, Config, permanent claim,
+provider, capacity, actual join and one typed result. Predecessor `2c14e665` passes
+383 ordinary/383 optimized/69 doctest cases, GNU/MSVC static checks and all twelve
+GNU 90% line gates. The new job owner covers 191/208 lines (91.83%) after actual
+constructor, contention, poison, write-once and retained-collector tests; no
+production lines are excluded and its denominator stays 208. Earlier failed
+coverage and fixture captures remain historical. Reconcile the fresh
+603-descriptor enumeration against every guard and generation gap, then execute
+only independently reviewed single-owner cohorts. The repeated 25-job cohort
+finishes 12 caught, 11 unviable and two Windows-only misses: raw 85.71% remains
+failed, with E[] and execution closed. Independent review validates that catalogue but identifies a caller-context
+contract gap in the synchronous facade. The bounded
+[facade correction](../../tasks/engine-transport-pilot.md#synchronous-facade-caller-contract--12-november-2026)
+is authored on `d88de086`: 386 ordinary/386 optimized/69 doctest cases, GNU/MSVC
+static checks and three named sensitivity controls pass; all 208 KE cases execute.
+All twelve GNU 90% line gates pass and fresh discovery lists 604 variants. The
+rebound role retains E[]. The complete 92-entry NTS-KE control-file cohort records
+38 caught, 49 unviable, five Windows-only misses and no timeouts. Independent
+causal classification is complete; raw 88.37% leaves its gate open. Execution is
+closed; review each next single-owner cohort before admission. `ke_core` is that KE module, not the `time-core`
+crate. The existing genuine-completion-to-observation/history receiver now has a
+[reviewed conditional numerical child](../../tasks/engine-transport-pilot.md#protected-completion-to-conditional-numerics--bounded-receiving-contract)
+for source preparation after current portable accounting. It preserves normal
+actual-join custody and original packet-observation age; numerical refusal keeps
+history. Production-positive branches remain held on actual supplier/native
+prerequisites, with current mutation/generation gates open. No native or parent qualification follows
+from these host results. Keep the expanded role (45 bound inputs) closed between
+explicitly admitted cohorts; predecessor
+ledger dispositions transfer no current-candidate credit. Add no service source,
+shared graph change, production retry/default or Core-positive issuer. This child
+does not finish the incomplete stop checkpoint or lift native/generation gates;
+those run only when separately admitted. The task records the canonical-versus-
+coordinator sequencing reconciliation and exact receipts.
+The subsequent 25-entry job cohort is also fully classified: 12 caught,
+11 unviable and two Windows-only misses, raw 85.71%, with execution closed.
+Before further campaigns, complete the existing
+[provider-constructor card](../../tasks/engine-transport-pilot.md#provider-scope-linearity-and-native-origin--bounded-correction).
+Its current `1b22ba32` correction has observed behavioral RED/GREEN, 211 KE passes,
+GNU/MSVC static passes and four intended ownership compiler rejections beside
+legal neighbors. Fresh source review finds no remaining constructor bypass.
+The narrow compiler regression entry point now passes its actual six-control
+lane and 264 Python controls. Current source/helpers and actual 389/211 discovery
+are rebound with execution closed. Its full baseline passes 389 ordinary,
+389 optimized and 69 doctest cases plus GNU/MSVC static checks. Coverage
+correctly refuses `job.rs` at 192/215 lines (89.30%) despite all 389 tests
+passing; the other eleven file gates pass. The existing task's tests-only
+actual-worker duplicate-record case is authored on `82c189a6`; its full baseline
+passes 390 ordinary/390 optimized/69 doctest cases and GNU/MSVC static checks,
+including all 212 KE cases. The next default-refusal case on `8ea89e2d` passes
+within all 391 coverage tests (213 KE), but `job.rs` stays 193/215 (89.77%).
+The existing task's bounded actual Builder-refusal stage is now authored on
+`a729516e`: its real invalid request refuses with observed `WouldBlock`, and
+actual-owner GREEN, healthy neighbors and the isolated reopened-slot fault pass
+with exact restoration. This adds no generated kills or production-exhaustion
+claim. Its full baseline passes in that exact source scope; initial coverage is
+196/219 (89.50%). The bounded ownership cleanup on `9836e95f` preserves borrowed
+self-join checking before handle extraction, then exhaustively transfers or
+restores every owned phase. Current full baseline passes 392 ordinary/392
+optimized/69 doctest cases and GNU/MSVC static checks. All twelve GNU file-line
+gates pass; the worker is 201/221 (90.95%). Fresh discovery lists 604 descriptors.
+The independently classified complete process cohort records one caught origin
+fault, two unviable defaults and no survivors/timeouts/exclusions. Its generated
+1/1 viable gate closes no missing constructor/atomic/generic/native obligations.
+The complete job cohort is also independently classified: 10 caught, 11
+unviable, two unresolved Windows-only misses, zero timeouts and E[]. Its 10/12
+viable score (83.33%) remains below 95%; one fixture-sensitive catch adds no
+product credit. Execution is closed and the exact catalogues remain bound.
+Ten other cohorts and macro/generic/native generation gaps remain open. The
+genuine protected-result ownership contract has since received fresh independent
+review and its bounded source slice is authored. The successor retains a distinct
+receipt-owned history through actual join, with no numerical/profile/Core issuer.
+The coherent successor `964a9573` now passes 400 ordinary/400 optimized/69
+doctest cases and GNU/MSVC static checks. Its twelve selected GNU 90% file-line
+gates pass (worker 211/231); current discovery lists 607 descriptors. Independent
+review now reconciles all 607 actual descriptors across twelve owners: raw
+362 caught, 199 compiler-unviable and 46 missed, zero timeouts/exclusions. The
+existing data-only APIs separately adopt exactly nine current ledger equivalents
+on enforced checked-owner domains. Raw ledger 112/121, nine misses and exit 2
+remain immutable; adjusted 112/112 adds zero kills. Seven selected generated GNU
+gates pass. The remaining 37 misses are Windows-only across five owners; their
+custom gates remain incomplete, including recovery despite raw 95.18%. The
+existing task's per-owner table and exact current receipts control this scope;
+no aggregate percentage establishes product completion or a native pass.
+
+Fourteen ownership/privacy compiler controls and six provider regression controls
+pass under independently reviewed source/custody. All 274 affected Python tests
+pass on the final metadata; fourteen real-artifact negative controls challenge
+exact role, custody and accounting, including partial E8 above 95%. The current
+dossier/helper/policy bindings change only declared metadata; product source
+candidate `964a9573` remains unchanged. Execution is closed with exact E9.
+Three field/chart/count sensitivity faults are detected beside ten healthy
+checks, adding zero generated kills; the worker's self-derived chart witness
+keeps its stated limit. Constructor/generic/macro/unsafe, order/custody/transfer,
+wiping and other generation alternatives stay open at their existing owners.
+The resource controls distinguish reclaim from OOM. Observed six-worker cohorts
+finish under unchanged configured limits, without OOM/PID-limit/observer failures,
+with independent cleanup review and disposable build-tree deletion. Exact peaks,
+command-boundary storage samples and the first process cohort's missing live
+capacity observation remain explicit; no Native or release gate closes.
+Next close the exact staged source checkpoint, then implement the reviewed
+protected-completion-to-conditional-numerics card with its actual first caller
+supplying None. Production-positive suppliers and the Core receiving transaction
+retain their existing owners/holds; no eligibility, vote or clock authority is
+invented. No earlier outcome transfers. The latest cleanup removes 1.12 GB of terminal
+scratch, duplicate sources and superseded failed-run evidence without compression;
+another 33.87 MB is retired after the new cohort reviews. A renewed cleanup
+recovers about 0.62 GB more by deleting obsolete controls/proof scratch, four
+generated snapshot worktrees, the unused warm cache and a duplicate source.
+Unique staged source is preserved in 1.87 MB of plain patches, independently
+matched and restored to exact mode/blob manifests before snapshot retirement.
+External NevroTick data measures 2.59 GB and WSL available space 18.12 GB at the
+latest sample. Current-required raw evidence, tools/vendors and other working
+copies remain intact. The existing task retains exact receipts and replay limits.
+Add no synthetic
+completion, native credit or threshold exception. All parent gates remain.
+The enforced boundary consumes claims and checks authoritative Native origin;
+current production's prior single construction was not a demonstrated runtime failure.
+Retain all native/parent gates and the separate later receiving-boundary owner.
 This engineering contract needs no blanket OD-04
 permission; unresolved production defaults, real mapping issuers, adaptive
 horizon, step authority and complete S1.4/P1 retain their own gates.

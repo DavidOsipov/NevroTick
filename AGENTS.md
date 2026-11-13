@@ -267,11 +267,12 @@ controller, clock authority or P1.
 [bounded transport pilot](tasks/engine-transport-pilot.md): the unauthenticated
 loopback observer and a default-off NTS association/protected-datagram source
 path. The NTS probe remains one-shot and never-send by default. The
-[12 November source checkpoint](tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026)
-records bounded same-invocation recovery and scoped GNU qualification; critical
-owner and native gates remain open. The current Core/Engine action is to freeze
-the invocation-level worker stop and actual-completion contract before its
-dependent implementation. Source, cross-build and scripted Windows receipts do
+[13 November source checkpoint](tasks/engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026)
+records invocation stop, actual join and sealed historical-result custody, with
+complete portable mutation accounting and scoped GNU gates. Native/generation
+gates remain open. Close that exact staged source checkpoint, then implement the
+reviewed private protected-completion-to-conditional-numerics card with its first
+actual facade caller supplying `None`. Source, cross-build and scripted Windows receipts do
 not establish integrated acquisition, Core eligibility, native TLS/CNG/UDP
 qualification, services or clock effects.
 [windows-platform](crates/windows-platform/Cargo.toml) owns portable service

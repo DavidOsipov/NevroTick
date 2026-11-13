@@ -29,43 +29,75 @@ impl ProcessAdmission {
         self.used
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
             .map_err(|_| Failure::ProcessUsed)?;
-        Ok(ProcessClaim { _admission: self })
+        Ok(ProcessClaim { admission: self })
     }
 }
 
-/// Uncloneable evidence of the real process admission, with no reset-on-drop.
+/// Uncloneable evidence of one permanent admission, consumed into its provider scope.
 pub(super) struct ProcessClaim<'a> {
     /// Original latch remains borrowed throughout the invocation scope.
-    _admission: &'a ProcessAdmission,
+    admission: &'a ProcessAdmission,
+}
+
+/// Consume only the fixed authoritative claim before invoking the Native effect factory.
+/// Independent checked admissions never authorize global provider effects.
+/// # Errors
+/// Refuse foreign origins locally without invoking the factory or resetting admission.
+pub(super) fn native_scope_with<'a>(
+    claim: ProcessClaim<'a>,
+    factory: impl FnOnce(ProcessClaim<'a>) -> ProviderScope<'a>,
+) -> Result<ProviderScope<'a>, Failure> {
+    if !std::ptr::eq(
+        std::ptr::from_ref(claim.admission),
+        std::ptr::from_ref(&super::PROCESS_ADMISSION),
+    ) {
+        return Err(Failure::Control);
+    }
+    Ok(factory(claim))
 }
 
 /// Actual provider shutdown owner, borrowed by every dependent association.
 pub(super) struct ProviderScope<'a> {
-    /// Keep process admission alive until all dependent custody has retired.
-    _claim: &'a ProcessClaim<'a>,
+    /// Own the sole claim until all dependent custody has retired.
+    _claim: ProcessClaim<'a>,
     /// This is the one actual global shutdown, never a per-request lease.
     #[cfg(windows)]
     _shutdown: Option<rustls_cng_crypto::ShutdownHandle>,
+    /// Test-only destruction witness; this actual scope alone owns its strong reference.
+    /// Both real constructors establish it; it conveys no provider or validation fact.
+    #[cfg(test)]
+    lifetime: std::sync::Arc<()>,
 }
 
 impl<'a> ProviderScope<'a> {
-    /// Establish the sole actual provider scope after process admission.
+    /// Consume the sole authoritative claim into the actual global provider owner.
+    /// # Errors
+    /// Propagate local admission refusal before constructing the shutdown handle.
     #[cfg(windows)]
-    pub(super) fn new(claim: &'a ProcessClaim<'a>) -> Self {
-        Self {
+    pub(super) fn new(claim: ProcessClaim<'a>) -> Result<Self, Failure> {
+        native_scope_with(claim, |claim| Self {
             _claim: claim,
             _shutdown: Some(rustls_cng_crypto::ShutdownHandle {}),
-        }
+            #[cfg(test)]
+            lifetime: std::sync::Arc::new(()),
+        })
     }
 
-    /// Component-only lifetime owner; performs no Windows/provider operation.
+    /// Consume one genuine component claim; perform no Windows/provider operation.
     #[cfg(test)]
-    pub(super) fn component(claim: &'a ProcessClaim<'a>) -> Self {
+    pub(super) fn component(claim: ProcessClaim<'a>) -> Self {
         Self {
             _claim: claim,
             #[cfg(windows)]
             _shutdown: None,
+            lifetime: std::sync::Arc::new(()),
         }
+    }
+
+    /// Observe this actual scope's ordinary destruction without retaining it.
+    #[cfg(test)]
+    pub(super) fn retirement_witness(&self) -> std::sync::Weak<()> {
+        std::sync::Arc::downgrade(&self.lifetime)
     }
 }
 
@@ -83,7 +115,7 @@ mod tests {
         let admission = ProcessAdmission::new();
         {
             let claim = admission.claim()?;
-            let _provider = ProviderScope::component(&claim);
+            let _provider = ProviderScope::component(claim);
             assert!(matches!(admission.claim(), Err(Failure::ProcessUsed)));
         }
         assert!(matches!(admission.claim(), Err(Failure::ProcessUsed)));

@@ -1943,19 +1943,20 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         "ke_response": "crates/nevrotick-engine/src/nts_ke_experiment/response.rs",
         "ke_datagram": "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs",
         "ke_recovery": "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs",
+        "ke_job": "crates/nevrotick-engine/src/nts_ke_experiment/job.rs",
     }
 
     class SessionReached(Exception):
         """A healthy admission reached Session; stop before any execution."""
 
     def policy_fixture(self):
-        """Independently specified limits and clearly synthetic 348/170 identities."""
+        """Independently specified limits and clearly synthetic 400/222 identities."""
         critical = ["crates/nevrotick-engine/src/lib.rs", *self.HOST.values(),
             "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
             "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
             "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"]
         names = sorted([f"ordinary_fixture_{index:03}" for index in range(178)] +
-                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(170)])
+                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(222)])
         return {
             "schema_version": 1, "package": "nevrotick-engine",
             "admission_status": "admitted-engine-ke-source-analysis",
@@ -1968,7 +1969,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             "enumeration_wall_seconds": 240, "mutation_wall_seconds": 1200,
             "mutation_build_seconds": 90, "mutation_test_seconds": 60,
             "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
-            "mutation_jobs": 10, "mutation_process_limit": 512, "mutation_message_format": "json",
+            "mutation_jobs": 6, "mutation_process_limit": 512, "mutation_message_format": "json",
             "minimum_free_bytes": 5 * 1024**3, "stop_free_bytes": 4 * 1024**3,
             "owned_output_maximum_allocated_bytes": 768 * 1024**2,
             "owned_output_maximum_entries": 32768, "mutation_equivalences": [],
@@ -2030,7 +2031,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         for field, value in (("features", []), ("features", ["foreign"]),
             ("features", ["ke-association-prototype", "foreign"]), ("test_workspace", True),
             ("coverage_minimum_line_percent", 89), ("mutation_minimum_viable_killed_percent", 94),
-            ("jobs", 12), ("critical_files", self.policy["critical_files"][:-1])):
+            ("jobs", 12), ("mutation_jobs", 8), ("mutation_jobs", 10),
+            ("mutation_jobs", True), ("critical_files", self.policy["critical_files"][:-1])):
             bad = copy.deepcopy(self.policy); bad[field] = value
             with self.subTest(field=field, value=value), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_engine_ke_policy(bad)
@@ -2064,6 +2066,98 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
     def test_five_gib_startup_boundary_refuses_below_and_accepts_exact(self):
         self.invoke(free=5 * 1024**3 - 1)
         self.invoke(accepted=True, free=5 * 1024**3)
+
+    def test_six_worker_fallback_refuses_eight_before_session(self):
+        self.args.lane = "mutation"
+        self.args.subject = "ke_core"
+        self.policy["campaigns_admitted"] = True
+        self.policy["mutation_inventories"] = {name: {"count": 1, "sha256": "a" * 64} for name in self.HOST}
+        self.policy["mutation_jobs"] = 6
+        self.invoke(accepted=True)
+        for workers in (8, 10, True, 6.0):
+            self.policy["mutation_jobs"] = workers
+            with self.subTest(workers=workers):
+                self.invoke()
+        self.policy["mutation_jobs"] = 6
+        self.invoke(accepted=True)
+
+    def test_owned_contract_lane_requires_exact_profile_subject_and_stable_role_before_session(self):
+        self.args.lane = "contracts"
+        for subject in ("all", "ke_core", [], True):
+            self.args.subject = subject
+            with self.subTest(subject=subject): self.invoke()
+        self.args.subject = "ke_process"
+        self.args.tool_admission_profile = "full"
+        self.invoke()
+        self.args.tool_admission_profile = "stable-core"
+        self.args.profile = "legacy"
+        self.invoke()
+        self.args.profile = "ke_association"
+        self.invoke(accepted=True)
+        self.args.subject = "ke_job"
+        self.invoke(accepted=True)
+
+    def test_provider_contract_lane_finishes_custody_without_claiming_broader_qualification(self):
+        self.args.lane = "contracts"
+        self.args.subject = "ke_process"
+        (self.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(self.policy))
+        support = self
+        finished = []
+        report = {}
+        class Session:
+            def __init__(self, root, *_arguments):
+                self.source, self.product_identity = root, support.identity
+            def finish(self):
+                support.assertFalse(report["provider_claim_contracts_passed"])
+                finished.append(True)
+        with patch.object(MODULE, "ROOT", self.root), \
+                patch.object(MODULE.PRODUCT, "admit_product", return_value=({"engine_ke_association": {"rows": {}}}, self.identity)), \
+                patch.object(MODULE.COMMON, "Session", Session), \
+                patch.object(MODULE, "engine_ke_provider_contracts") as contracts:
+            MODULE.execute_engine_ke_profile(self.args, report)
+        contracts.assert_called_once()
+        self.assertEqual(finished, [True])
+        self.assertTrue(report["provider_claim_contracts_passed"])
+        self.assertTrue(report["selected_lane_passed"])
+        for key in ("qualification_passed", "contracts_qualification_passed",
+                    "selected_host_metrics_passed", "selected_host_qualification_passed"):
+            self.assertFalse(report[key], key)
+
+    def test_history_contract_lane_publishes_only_after_finish_and_reference_bookends(self):
+        self.args.lane, self.args.subject = "contracts", "ke_job"
+        (self.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(self.policy))
+        support = self
+        for failure in (None, "finish", "reference"):
+            report, finished = {}, []
+            class Session:
+                def __init__(self, root, *_arguments):
+                    support.assertFalse(report["provider_claim_contracts_passed"])
+                    support.assertFalse(report["protected_history_contracts_passed"])
+                    self.source, self.product_identity = root, support.identity
+                def finish(self):
+                    support.assertFalse(report["protected_history_contracts_passed"])
+                    finished.append(True)
+                    if failure == "finish":
+                        raise MODULE.Incomplete("synthetic final custody refusal")
+            evidence = [{}, {"changed": True}] if failure == "reference" else [{}, {}]
+            with self.subTest(failure=failure), patch.object(MODULE, "ROOT", self.root), \
+                    patch.object(MODULE.PRODUCT, "admit_product", return_value=({"engine_ke_association": {"rows": {}}}, self.identity)), \
+                    patch.object(MODULE.COMMON, "Session", Session), \
+                    patch.object(MODULE, "admit_engine_ke_evidence", side_effect=evidence), \
+                    patch.object(MODULE, "engine_ke_provider_contracts") as provider, \
+                    patch.object(MODULE, "engine_ke_history_contracts") as history:
+                if failure is None:
+                    MODULE.execute_engine_ke_profile(self.args, report)
+                else:
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.execute_engine_ke_profile(self.args, report)
+            history.assert_called_once()
+            provider.assert_not_called()
+            self.assertEqual(finished, [True])
+            self.assertEqual(report["protected_history_contracts_passed"], failure is None)
+            self.assertFalse(report["provider_claim_contracts_passed"])
+            for key in ("qualification_passed", "contracts_qualification_passed", "selected_host_qualification_passed"):
+                self.assertFalse(report.get(key, False), key)
 
     def test_premature_campaign_and_empty_review_refuse_before_session(self):
         for lane in ("mutation", "all"):
@@ -2111,37 +2205,51 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         tools = Path("/owned/synthetic-tools")
         command = [str(tools / "cargo-mutants"), "mutants", "--package", "nevrotick-engine",
             "--file", self.HOST["ke_association"], "--test-workspace", "false", "--cap-lints", "false",
-            "--jobs", "10", "--jobserver", "true", "--jobserver-tasks", "10",
+            "--jobs", "6", "--jobserver", "true", "--jobserver-tasks", "6",
             "--cargo-arg=--message-format=json", "--features", "ke-association-prototype",
             "--baseline", "run", "--build-timeout", "90", "--timeout", "60", "--output", "/work/mutation/ke_association"]
         with self.assertRaises(MODULE.Incomplete):
             MODULE.COMMON.mutation_campaign_command(MODULE.ENGINE_KE_SCOPE, tools, "ke_association", command,
-                expected_jobs=10, expected_message_format="json", policy=self.policy)
+                expected_jobs=6, expected_message_format="json", policy=self.policy)
         self.policy["campaigns_admitted"] = True
         self.policy["mutation_inventories"] = {name: {"count": 1, "sha256": "a" * 64} for name in self.HOST}
         MODULE.COMMON.mutation_campaign_command(MODULE.ENGINE_KE_SCOPE, tools, "ke_association", command,
-            expected_jobs=10, expected_message_format="json", policy=self.policy)
+            expected_jobs=6, expected_message_format="json", policy=self.policy)
+        # A coherent caller/command pair must still obey the actual role policy.
+        for foreign_jobs in (8, 10):
+            substituted = command.copy()
+            for flag in ("--jobs", "--jobserver-tasks"):
+                substituted[substituted.index(flag) + 1] = str(foreign_jobs)
+            with self.subTest(foreign_jobs=foreign_jobs), self.assertRaises(MODULE.Incomplete):
+                MODULE.COMMON.mutation_campaign_command(
+                    MODULE.ENGINE_KE_SCOPE, tools, "ke_association", substituted,
+                    expected_jobs=foreign_jobs, expected_message_format="json", policy=self.policy)
+        human = command.copy(); human.remove("--cargo-arg=--message-format=json")
+        with self.subTest(foreign_message_format="human"), self.assertRaises(MODULE.Incomplete):
+            MODULE.COMMON.mutation_campaign_command(
+                MODULE.ENGINE_KE_SCOPE, tools, "ke_association", human,
+                expected_jobs=6, expected_message_format="human", policy=self.policy)
         bad = command.copy(); bad[bad.index("--test-workspace") + 1] = "true"
         with self.assertRaises(MODULE.Incomplete):
             MODULE.COMMON.mutation_campaign_command(MODULE.ENGINE_KE_SCOPE, tools, "ke_association", bad,
-                expected_jobs=10, expected_message_format="json", policy=self.policy)
+                expected_jobs=6, expected_message_format="json", policy=self.policy)
 
     def execution(self, names):
         """Build synthetic complete entered libtest output, never product evidence."""
         return (f"running {len(names)} tests\n" + "".join(f"test {name} ... ok\n" for name in names) +
                 f"test result: ok. {len(names)} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n")
 
-    def test_entered_blocks_require_all_348_cases_and_170_ke_neighbors(self):
+    def test_entered_blocks_require_all_400_cases_and_222_ke_neighbors(self):
         binding = self.policy["binding"]; names = binding["test_inventory"]
         healthy = self.execution(names)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 348)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 170)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 400)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 222)
         missing = [name for name in names if name != "nts_ke_experiment::fixture_case_00"]
         old = [name for name in names if not name.startswith("nts_ke_experiment::")]
         variants = [self.execution([]), self.execution(old), self.execution(missing),
             self.execution([*names, names[0]]), healthy.replace(" ... ok", " ... FAILED", 1),
-            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 348", "running 347"),
-            healthy.replace("test result: ok. 348 passed", "test result: ok. 347 passed"),
+            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 400", "running 399"),
+            healthy.replace("test result: ok. 400 passed", "test result: ok. 399 passed"),
             "\n".join(line for line in healthy.splitlines() if not line.startswith("running "))]
         for text in variants:
             with self.subTest(sample=text[-120:]), self.assertRaises(MODULE.Incomplete):
@@ -2161,8 +2269,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             with self.subTest(doctest=doc):
                 result = MODULE.validate_engine_ke_execution(text, binding, include_doctests=True)
                 self.assertEqual(result["additional_doctests"], [doc])
-                self.assertEqual(result["tests_executed"], 349)
-                self.assertEqual(result["ke_tests_executed"], 170)
+                self.assertEqual(result["tests_executed"], 401)
+                self.assertEqual(result["ke_tests_executed"], 222)
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.validate_engine_ke_execution(text, binding)
         invalid = [self.execution(names[1:]) + self.execution([doc_forms[0]]),
@@ -2227,7 +2335,10 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                 (self.work / "target").mkdir(mode=0o700)
                 self.release = self.work / "target/release"
                 self.release.mkdir(mode=0o700)
-                self.keep = [self.work / "target/debug/keep", self.work / "target/unrelated/keep",
+                self.debug = self.work / "target/debug"
+                self.debug.mkdir(mode=0o700)
+                (self.debug / "completed-test-cache").write_text("completed synthetic debug artifact\n")
+                self.keep = [self.work / "target/x86_64-pc-windows-msvc/debug/keep", self.work / "target/unrelated/keep",
                              self.output / "raw.log", self.source / "source-sentinel"]
                 for path in self.keep:
                     path.parent.mkdir(parents=True, exist_ok=True)
@@ -2238,9 +2349,15 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                 calls.append((label, argv, timeout))
                 self.report["lanes"].append({"lane": label, "exit_code": 0, "failure": None})
                 if label == "ke-release":
+                    outer.assertFalse(self.debug.exists(), "validated debug target must retire before release")
+                    outer.assertTrue(self.report["debug_target_retirement"]["removed"])
+                    for path in self.keep:
+                        outer.assertEqual(path.read_text(), "retained synthetic sentinel\n")
                     (self.release / "completed-artifact").write_bytes(b"x" * 65536)
                 if label == "ke-doctests":
                     outer.assertFalse(self.release.exists(), "completed release target must retire before doctests")
+                    self.debug.mkdir(mode=0o700)
+                    (self.debug / "rebuilt-for-docs").write_text("fresh synthetic debug metadata\n")
                     for path in self.keep:
                         outer.assertEqual(path.read_text(), "retained synthetic sentinel\n")
                 if label in {"ke-baseline", "ke-release"}:
@@ -2264,8 +2381,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             self.assertIn("--all-targets", argv)
             self.assertNotIn("build", argv)
             self.assertNotIn("run", argv)
-        self.assertEqual(report["baseline_execution"]["tests_executed"], 348)
-        self.assertEqual(report["release_execution"]["ke_tests_executed"], 170)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 400)
+        self.assertEqual(report["release_execution"]["ke_tests_executed"], 222)
         self.assertEqual(report["doctest_execution"]["compilation_only"],
                          ["src/lib.rs - Example::no_run (line 1) - compile"])
         retired = report["release_target_retirement"]
@@ -2275,6 +2392,133 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.assertEqual([row["phase"] for row in report["storage_samples"]
                           if row["lane"] == "ke-release-target-retirement"], ["before", "after"])
         self.assertFalse(report["qualification_passed"])
+        self.assertEqual((report["debug_target_retirement"]["path"],
+                          report["debug_target_retirement"]["completed_lane"],
+                          report["debug_target_retirement"]["removed"]),
+                         ("work/target/debug", "ke-clippy", True))
+
+    def debug_retirement_fixture(self):
+        """Real owned cache/sentinels; explicitly synthetic successful child records."""
+        temporary = tempfile.TemporaryDirectory(prefix="debug-retirement-", dir=self.base)
+        self.addCleanup(temporary.cleanup)
+        output = Path(temporary.name)
+        work = output / "work"; work.mkdir(mode=0o700)
+        target = work / "target"; target.mkdir(mode=0o700)
+        debug = target / "debug"; debug.mkdir(mode=0o700)
+        (debug / "completed").write_bytes(b"d" * 65536)
+        kept = [target / "x86_64-pc-windows-msvc/debug/metadata", target / "release/not-debug",
+                output / "source/input.rs", output / "tools/admitted", output / "raw.log"]
+        for path in kept:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"unchanged synthetic sentinel")
+        session = SimpleNamespace(output=output, work=work)
+        report = {"lanes": [{"lane": name, "exit_code": 0, "failure": None}
+                            for name in ("ke-baseline", "ke-clippy")],
+                  "baseline_execution": MODULE.validate_engine_ke_execution(
+                      self.execution(self.policy["binding"]["test_inventory"]), self.policy["binding"])}
+        MODULE.address_storage_checkpoint(session, self.policy, report, "ke-baseline", "after")
+        MODULE.address_storage_checkpoint(session, self.policy, report, "ke-clippy", "after")
+        return session, report, debug, kept
+
+    def test_debug_retirement_has_closed_profiles_and_preserves_all_other_outputs(self):
+        session, report, debug, kept = self.debug_retirement_fixture()
+        for profile in ("other", "../source", "debug/..", None, True):
+            with self.subTest(profile=profile), self.assertRaises(MODULE.Incomplete):
+                MODULE._retire_engine_ke_target(session, self.policy, report, profile)
+            self.assertTrue(debug.is_dir())
+        MODULE.retire_engine_ke_debug_target(session, self.policy, report)
+        self.assertFalse(debug.exists())
+        for path in kept:
+            self.assertEqual(path.read_bytes(), b"unchanged synthetic sentinel")
+        retired = report["debug_target_retirement"]
+        self.assertEqual((retired["path"], retired["completed_lane"], retired["removed"]),
+                         ("work/target/debug", "ke-clippy", True))
+        self.assertGreaterEqual(retired["before"]["allocated_bytes"], 65536)
+        self.assertEqual([row["phase"] for row in report["storage_samples"]
+                          if row["lane"] == "ke-debug-target-retirement"], ["before", "after"])
+
+    def test_debug_retirement_requires_complete_ordered_successful_roster_and_storage(self):
+        cases = ("missing-baseline", "duplicate-baseline", "order", "failed-baseline", "failed-clippy",
+                 "bool-exit", "child-failure", "missing-execution", "partial-roster", "count", "ke-count",
+                 "digest", "missing-sample", "stale-sample", "cap", "baseline-cap", "reserve")
+        for case in cases:
+            with self.subTest(case=case):
+                session, report, debug, kept = self.debug_retirement_fixture()
+                if case == "missing-baseline": report["lanes"].pop(0)
+                elif case == "duplicate-baseline": report["lanes"].insert(0, report["lanes"][0].copy())
+                elif case == "order": report["lanes"].reverse()
+                elif case == "failed-baseline": report["lanes"][0]["exit_code"] = 1
+                elif case == "failed-clippy": report["lanes"][-1]["exit_code"] = 1
+                elif case == "bool-exit": report["lanes"][0]["exit_code"] = False
+                elif case == "child-failure": report["lanes"][-1]["failure"] = "synthetic child failure"
+                elif case == "missing-execution": report.pop("baseline_execution")
+                elif case == "partial-roster": report["baseline_execution"]["test_names"].pop()
+                elif case == "count": report["baseline_execution"]["tests_executed"] -= 1
+                elif case == "ke-count": report["baseline_execution"]["ke_tests_executed"] -= 1
+                elif case == "digest": report["baseline_execution"]["inventory_sha256"] = "f" * 64
+                elif case == "missing-sample": report["storage_samples"].pop(0)
+                elif case == "stale-sample": report["storage_samples"].append({"lane": "other", "phase": "after"})
+                elif case == "cap": report["storage_samples"][-1]["allocated_bytes"] = self.policy["owned_output_maximum_allocated_bytes"]
+                elif case == "baseline-cap": report["storage_samples"][0]["allocated_bytes"] = self.policy["owned_output_maximum_allocated_bytes"]
+                else: report["storage_samples"][-1]["available_bytes"] = self.policy["stop_free_bytes"] - 1
+                with patch.object(MODULE.shutil, "rmtree") as removal:
+                    removal.avoids_symlink_attacks = True
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.retire_engine_ke_debug_target(session, self.policy, report)
+                    removal.assert_not_called()
+                self.assertTrue(debug.is_dir())
+                self.assertNotIn("debug_target_retirement", report)
+                for path in kept:
+                    self.assertEqual(path.read_bytes(), b"unchanged synthetic sentinel")
+
+    def test_debug_deletion_core_cannot_bypass_admission(self):
+        session, report, debug, _kept = self.debug_retirement_fixture()
+        report.pop("baseline_execution")
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE._retire_engine_ke_target(session, self.policy, report, "debug")
+        self.assertTrue(debug.is_dir())
+
+    def test_debug_retirement_refuses_unsafe_paths_ownership_and_missing_safe_removal(self):
+        for case in ("debug-link", "child-link", "fifo", "target-link", "noncanonical", "public", "unowned", "unsafe-removal"):
+            with self.subTest(case=case):
+                session, report, debug, kept = self.debug_retirement_fixture()
+                outside = self.base / ("debug-external-" + case); outside.mkdir(mode=0o700)
+                sentinel = outside / "keep"; sentinel.write_bytes(b"outside ownership")
+                if case == "debug-link":
+                    shutil.rmtree(debug); debug.symlink_to(outside, target_is_directory=True)
+                elif case == "child-link": (debug / "linked").symlink_to(outside, target_is_directory=True)
+                elif case == "fifo": os.mkfifo(debug / "pipe", mode=0o600)
+                elif case == "target-link":
+                    debug.parent.rename(session.work / "saved-target")
+                    (session.work / "target").symlink_to(outside, target_is_directory=True)
+                elif case == "noncanonical":
+                    (session.output / "alias").mkdir(mode=0o700)
+                    session.work = session.output / "alias/../work"
+                elif case == "public": session.work.chmod(0o755)
+                if case == "unowned":
+                    with patch.object(MODULE.os, "geteuid", return_value=os.geteuid() + 1), self.assertRaises(MODULE.Incomplete):
+                        MODULE.retire_engine_ke_debug_target(session, self.policy, report)
+                elif case == "unsafe-removal":
+                    with patch.object(MODULE.shutil.rmtree, "avoids_symlink_attacks", False), self.assertRaises(MODULE.Incomplete):
+                        MODULE.retire_engine_ke_debug_target(session, self.policy, report)
+                else:
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.retire_engine_ke_debug_target(session, self.policy, report)
+                self.assertEqual(sentinel.read_bytes(), b"outside ownership")
+                self.assertEqual((session.output / "raw.log").read_bytes(), b"unchanged synthetic sentinel")
+                self.assertNotIn("debug_target_retirement", report)
+
+    def test_debug_deletion_failure_keeps_raw_data_and_fails_closed(self):
+        session, report, debug, kept = self.debug_retirement_fixture()
+        with patch.object(MODULE.shutil, "rmtree", side_effect=OSError("synthetic removal failure")) as removal:
+            removal.avoids_symlink_attacks = True
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.retire_engine_ke_debug_target(session, self.policy, report)
+            removal.assert_called_once_with(debug)
+        self.assertFalse(report["debug_target_retirement"]["removed"])
+        self.assertTrue(debug.is_dir())
+        for path in kept:
+            self.assertEqual(path.read_bytes(), b"unchanged synthetic sentinel")
 
     def release_retirement_fixture(self):
         """Real private files plus explicitly synthetic completed-child observations."""
@@ -2288,7 +2532,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         (output / "raw.log").write_text("retained raw child output")
         session = SimpleNamespace(output=output, work=work)
         report = {"lanes": [{"lane": "ke-release", "exit_code": 0, "failure": None}],
-                  "release_execution": {"tests_executed": 348, "ke_tests_executed": 170}}
+                  "release_execution": {"tests_executed": 400, "ke_tests_executed": 222}}
         MODULE.address_storage_checkpoint(session, self.policy, report, "ke-release", "after")
         return session, report, release
 
@@ -2335,6 +2579,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                         self.output = outer.args.output_dir; self.output.mkdir(mode=0o700)
                         self.work = self.output / "work"; self.work.mkdir(mode=0o700)
                         (self.work / "target").mkdir(mode=0o700)
+                        (self.work / "target/debug").mkdir(mode=0o700)
+                        (self.work / "target/debug/complete").write_text("validated synthetic debug cache")
                         artifact.parent.mkdir(mode=0o700)
                         self.report = report; report["lanes"] = []
                     def run(self, label, argv, timeout):
@@ -2371,10 +2617,547 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                     self.assertEqual((report["storage_samples"][-1]["lane"], report["storage_samples"][-1]["phase"],
                                       report["storage_samples"][-1]["allocated_bytes"]), ("ke-release", "after", 805306368))
 
+class EngineKeProviderCompilerContractTests(unittest.TestCase):
+    """Synthetic Cargo and custody controls; never execute a compiler or product."""
+
+    FILENAME = "crates/nevrotick-engine/src/nts_ke_experiment/process.rs"
+    MANIFEST = "/work/provider-contract-source/crates/nevrotick-engine/Cargo.toml"
+    EXPLANATION = "For more information about this error, try `rustc --explain E0382`."
+    SPECIMEN = {"code": "E0382", "tokens": ["claim", "moved"], "line": 42}
+
+    def diagnostic(self, *, line=42):
+        """Literal rustc moved-value record with an independently selected span."""
+        return {"$message_type": "diagnostic", "message": "use of moved value: `claim`",
+            "code": {"code": "E0382", "explanation": None}, "level": "error", "children": [], "rendered": None,
+            "spans": [{"file_name": self.FILENAME, "byte_start": 20, "byte_end": 25,
+                "line_start": line, "line_end": line, "column_start": 1, "column_end": 6,
+                "is_primary": True, "text": [{"text": "claim", "highlight_start": 1, "highlight_end": 6}],
+                "label": "value used here after move", "suggested_replacement": None,
+                "suggestion_applicability": None, "expansion": None}]}
+
+    def envelope(self, diagnostic):
+        return {"reason": "compiler-message",
+            "package_id": "path+file:///work/provider-contract-source/crates/nevrotick-engine#0.0.0",
+            "manifest_path": self.MANIFEST,
+            "target": {"name": "nevrotick_engine", "kind": ["lib"], "crate_types": ["lib"],
+                "src_path": "/work/provider-contract-source/crates/nevrotick-engine/src/lib.rs",
+                "edition": "2024", "doc": True, "doctest": True, "test": True}, "message": diagnostic}
+
+    def records(self, *, line=42, rendered=None):
+        note = {"$message_type": "diagnostic", "message": self.EXPLANATION, "code": None,
+            "level": "failure-note", "spans": [], "children": [], "rendered": rendered}
+        return [self.envelope(self.diagnostic(line=line)), self.envelope(note),
+                {"reason": "build-finished", "success": False}]
+
+    def result(self, records=None, *, errors=1):
+        text = "\n".join(json.dumps(item) for item in (self.records() if records is None else records))
+        return {"exit_code": 101, "failure": None, "output": text +
+            f"\nerror: could not compile `nevrotick-engine` (lib test) due to {errors} previous error" +
+            ("s" if errors != 1 else "") + "\n"}
+
+    def test_examples_use_only_actual_consuming_constructors_and_genuine_claims(self):
+        original = b"// unchanged private owner\n// second unchanged line\n"
+        examples = MODULE.engine_ke_provider_contract_examples(original)
+        self.assertEqual([(row["target"], row["case"]) for row in examples],
+            [(target, case) for target in ("gnu", "msvc") for case in ("once", "overlap", "after-drop")])
+        for row in examples:
+            source = row["source"].decode()
+            constructor = "component" if row["target"] == "gnu" else "new"
+            self.assertEqual(row["constructor"], "ProviderScope::" + constructor)
+            self.assertEqual(row["source"], original + row["appended_source"].encode())
+            self.assertIn("#[cfg(all(test, " + ("not(windows)" if row["target"] == "gnu" else "windows") + "))]", source)
+            self.assertIn("admission.claim()?" if row["target"] == "gnu" else "PROCESS_ADMISSION.claim()?", source)
+            self.assertNotIn("struct ProcessClaim", source)
+            self.assertNotIn("ProcessClaim {", source)
+            self.assertNotIn("#[allow", source)
+            self.assertIn(f"let first = ProviderScope::{constructor}(claim);", source)
+            if row["case"] == "once":
+                self.assertIsNone(row["diagnostic"])
+                self.assertNotIn("let second", source)
+            else:
+                self.assertEqual(row["diagnostic"]["code"], "E0382")
+                self.assertEqual(source.splitlines()[row["diagnostic"]["line"] - 1],
+                    f"        let second = ProviderScope::{constructor}(claim);")
+                self.assertEqual(source.index("drop(first);") < source.index("let second")
+                    if row["case"] == "after-drop" else "drop((first, second));" in source, True)
+        for invalid in (b"", b"missing final newline", b"\xff\n", b"x" * (256 * 1024) + b"\n",
+                        original + b"mod provider_claim_contract_probe {}\n", original.decode()):
+            with self.subTest(invalid=repr(invalid)[:60]), self.assertRaises(MODULE.Incomplete):
+                MODULE.engine_ke_provider_contract_examples(invalid)
+
+    def test_exact_cargo_tail_is_checked_and_only_the_actual_error_reaches_common(self):
+        for rendered in (None, self.EXPLANATION + "\n"):
+            result = self.result(self.records(rendered=rendered))
+            raw = copy.deepcopy(result)
+            with patch.object(MODULE.COMMON, "compiler_cause", wraps=MODULE.COMMON.compiler_cause) as matcher:
+                MODULE.validate_engine_ke_provider_cause(result, self.SPECIMEN, self.MANIFEST)
+            normalized, specimen, filename = matcher.call_args.args
+            self.assertEqual(normalized["exit_code"], 101)
+            self.assertEqual([json.loads(line)["level"] for line in normalized["output"].splitlines()], ["error"])
+            self.assertNotIn("aborting due", normalized["output"])
+            self.assertEqual(specimen, self.SPECIMEN)
+            self.assertEqual(filename, self.FILENAME)
+            self.assertEqual(result, raw, "normalization must preserve the retained raw Cargo result")
+
+    def test_foreign_attribution_wrong_semantics_and_infrastructure_cannot_supply_a_cause(self):
+        changes = [lambda rows: rows[0].update(package_id="registry+https://example#nevrotick-engine@0.0.0"),
+            lambda rows: rows[0].update(manifest_path="/work/foreign/Cargo.toml"),
+            lambda rows: rows[0]["target"].update(name="foreign"),
+            lambda rows: rows[0]["target"].update(kind=["test"]),
+            lambda rows: rows[0]["target"].update(src_path="/work/foreign/lib.rs"),
+            lambda rows: rows[0]["message"]["code"].update(code="E0308"),
+            lambda rows: rows[0]["message"]["spans"][0].update(line_start=43, line_end=43),
+            lambda rows: rows[0]["message"]["spans"][0].update(file_name="foreign.rs"),
+            lambda rows: rows[0]["message"].update(message="unrelated mismatched types", children=[]),
+            lambda rows: rows[0]["message"].update(message="use of moved claim: failed to spawn compiler"),
+            lambda rows: rows[0].update(unexpected="unqualified envelope field")]
+        for change in changes:
+            rows = self.records()
+            change(rows)
+            if "unrelated" in rows[0]["message"]["message"]:
+                rows[0]["message"]["spans"][0]["label"] = None
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_provider_cause(self.result(rows), self.SPECIMEN, self.MANIFEST)
+        rows = self.records()
+        rows.insert(1, self.envelope(self.diagnostic()))
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.validate_engine_ke_provider_cause(self.result(rows, errors=2), self.SPECIMEN, self.MANIFEST)
+
+    def test_terminal_note_cannot_hide_extra_diagnostics_or_supply_the_cause(self):
+        changes = [lambda rows: rows[1]["message"].update(message="foreign explanation"),
+            lambda rows: rows[1]["message"].update(rendered="hidden rendered contamination"),
+            lambda rows: rows[1]["message"].update(children=[{}]),
+            lambda rows: rows[1]["message"].update(spans=[{}]),
+            lambda rows: rows[1]["message"].update(code={"code": "E0382", "explanation": None}),
+            lambda rows: rows[1]["message"].update(extra=True),
+            lambda rows: rows.insert(2, copy.deepcopy(rows[0])),
+            lambda rows: rows.insert(2, copy.deepcopy(rows[1])),
+            lambda rows: rows.pop(1), lambda rows: rows.pop(0),
+            lambda rows: rows.reverse()]
+        for change in changes:
+            rows = self.records()
+            change(rows)
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_provider_cause(self.result(rows), self.SPECIMEN, self.MANIFEST)
+
+    def test_malformed_stdout_unknown_records_and_noncompiler_outcomes_fail_closed(self):
+        healthy = self.result()
+        bad_outputs = [healthy["output"] + "unexpected stdout\n", healthy["output"] + "{}\n",
+            healthy["output"].replace('"reason": "compiler-message"', '"reason": "compiler-message", "reason": "compiler-message"', 1),
+            healthy["output"].replace('"rendered": null', '"rendered": NaN', 1),
+            '{"reason":' + "[" * 1100 + "0" + "]" * 1100 + "}",
+            "x" * (4 * 1024 * 1024 + 1)]
+        for records in ([{"reason": "foreign-record"}, *self.records()], self.records()[:-1],
+                        [*self.records()[:-1], {"reason": "build-finished", "success": True}],
+                        [*self.records(), {"reason": "build-finished", "success": False}],
+                        [{"reason": "compiler-artifact"}, *self.records()],
+                        [{"reason": "build-script-executed"}, *self.records()]):
+            bad_outputs.append(self.result(records)["output"])
+        bad = [{**healthy, "output": output} for output in bad_outputs]
+        bad += [{**healthy, "exit_code": code} for code in (0, 1, -9, True, None)]
+        bad += [{**healthy, "failure": "wall timeout"}, {**healthy, "output": b"not text"},
+                {key: value for key, value in healthy.items() if key != "failure"}]
+        for result in bad:
+            with self.subTest(sample=str(result)[:80]), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_provider_cause(result, self.SPECIMEN, self.MANIFEST)
+        MODULE.validate_engine_ke_provider_cause(healthy, self.SPECIMEN, self.MANIFEST)
+
+    def session_fixture(self):
+        """Use real Session.check over inert files; substitute only candidate admission."""
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        base = Path(temporary.name)
+        root = base / "checkout"
+        original = root / self.FILENAME
+        original.parent.mkdir(parents=True)
+        original.write_bytes(b"// synthetic unchanged private source; never compiled\n")
+        (root / "crates/nevrotick-engine/Cargo.toml").write_text("# inert manifest; never compiled\n")
+        work = base / "work"
+        work.mkdir(mode=0o700)
+        source = work / "source"
+        shutil.copytree(root, source)
+        session = MODULE.COMMON.Session.__new__(MODULE.COMMON.Session)
+        session.root, session.work, session.source = root, work, source
+        session.identity = MODULE.PRODUCT.inventory(root)
+        session.product_identity = dict(session.identity)
+        session.source_inventory = MODULE.PRODUCT.inventory(source)
+        session.protected_tools, session.protected_islands = {}, {}
+        session.config = work / "cargo-config.toml"
+        session.config.write_text("# immutable inert configuration\n")
+        session.config_sha256 = MODULE.PRODUCT.sha256(session.config)
+        session.protect = lambda _path: self.fail("controlled deltas must never bless a fresh current inventory")
+        return session, {"lanes": []}, {"baseline_wall_seconds": 300}
+
+    def fake_run(self, session, report, calls):
+        """Supply literal synthetic child results after checking the sealed islands."""
+        def run(label, command, timeout, **options):
+            session.check()
+            private = session.work / "provider-contract-source"
+            self.assertEqual(options["cwd"], private)
+            self.assertIn(private, session.protected_islands)
+            source = (private / self.FILENAME).read_text()
+            calls.append((label, command, timeout, options, source))
+            negative = options.get("negative")
+            if negative:
+                self.assertEqual(negative, '"E0382"')
+                second = next(index + 1 for index, line in enumerate(source.splitlines()) if "let second =" in line)
+                result = self.result(self.records(line=second))
+            else:
+                result = {"exit_code": 0, "failure": None,
+                    "output": '{"reason":"build-finished","success":true}\n'}
+            # Session retains the actual namespace/prlimit argv, including its final '--'.
+            result.update(lane=label, command=["synthetic-bwrap", "--", "synthetic-prlimit", "--", *command])
+            report["lanes"].append(result)
+            session.check()
+            return result["output"] if negative else result["output"].strip()
+        return run
+
+    def test_six_metadata_commands_share_one_deadline_copy_and_exact_restoration(self):
+        session, report, policy = self.session_fixture()
+        original = (session.source / self.FILENAME).read_bytes()
+        calls = []
+        with patch.object(MODULE.COMMON, "require_current_candidate"), \
+                patch.object(MODULE.COMMON, "remaining_timeout", wraps=MODULE.COMMON.remaining_timeout) as remaining:
+            MODULE.engine_ke_provider_contracts(session, policy, report, self.fake_run(session, report, calls))
+            session.check()
+        self.assertEqual(len(calls), 6)
+        self.assertEqual(len({row.args[0] for row in remaining.call_args_list}), 1)
+        for index, (label, command, timeout, options, source) in enumerate(calls):
+            self.assertEqual(command[:4], ["cargo", "check", "--package", "nevrotick-engine"])
+            for token in ("--all-targets", "--frozen", "--message-format=json", "--quiet"):
+                self.assertIn(token, command)
+            self.assertEqual(command[command.index("--jobs") + 1], "6")
+            self.assertEqual(command[command.index("--features") + 1], "ke-association-prototype")
+            self.assertEqual(options.get("negative") is None, index in (0, 3))
+            self.assertGreater(timeout, 0)
+            self.assertLessEqual(timeout, 300)
+            self.assertNotIn("run", command)
+            self.assertNotIn("test", command)
+            if index >= 3:
+                self.assertEqual(command[command.index("--target") + 1], "x86_64-pc-windows-msvc")
+            else:
+                self.assertNotIn("--target", command)
+        private = session.work / "provider-contract-source"
+        self.assertEqual(MODULE.PRODUCT.inventory(private), session.source_inventory)
+        self.assertEqual((session.source / self.FILENAME).read_bytes(), original)
+        self.assertEqual((session.root / self.FILENAME).read_bytes(), original)
+        self.assertEqual(len(report["provider_claim_contracts"]["probes"]), 6)
+        self.assertNotIn("qualification_passed", report)
+        self.assertNotIn("contracts_qualification_passed", report)
+
+    def test_compiler_failure_and_retained_command_mismatch_restore_the_only_changed_source(self):
+        for failure in ("compiler", "lane", "command", "output"):
+            session, report, policy = self.session_fixture()
+            calls = []
+            ordinary = self.fake_run(session, report, calls)
+            def run(label, command, timeout, **options):
+                if failure == "compiler":
+                    raise MODULE.Incomplete("synthetic compiler/infrastructure refusal")
+                result = ordinary(label, command, timeout, **options)
+                if options.get("negative"):
+                    key = "output" if failure == "output" else failure
+                    report["lanes"][-1][key] = "foreign retained result"
+                return result
+            with self.subTest(failure=failure), patch.object(MODULE.COMMON, "require_current_candidate"):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.engine_ke_provider_contracts(session, policy, report, run)
+                session.check()
+            private = session.work / "provider-contract-source"
+            self.assertEqual(MODULE.PRODUCT.inventory(private), session.source_inventory)
+            self.assertNotIn("provider_claim_contracts_passed", report)
+
+    def test_expired_deadline_restores_the_probe_before_any_child_can_run(self):
+        session, report, policy = self.session_fixture()
+        with patch.object(MODULE.COMMON, "require_current_candidate"), \
+                patch.object(MODULE.COMMON, "remaining_timeout", side_effect=MODULE.Incomplete("shared deadline exhausted")), \
+                patch.object(session, "run", create=True) as run:
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.engine_ke_provider_contracts(session, policy, report, run)
+            run.assert_not_called()
+            session.check()
+        self.assertEqual(MODULE.PRODUCT.inventory(session.work / "provider-contract-source"), session.source_inventory)
+
+    def test_unexpected_initial_copy_bytes_refuse_before_the_first_command(self):
+        session, report, policy = self.session_fixture()
+        actual_copy = MODULE.shutil.copytree
+        def changed_copy(source, destination, *arguments, **options):
+            result = actual_copy(source, destination, *arguments, **options)
+            if Path(destination) == session.work / "provider-contract-source":
+                (Path(destination) / "unexpected-input").write_text("unexplained initial copy drift\n")
+            return result
+        with patch.object(MODULE.COMMON, "require_current_candidate"), \
+                patch.object(MODULE.shutil, "copytree", side_effect=changed_copy), \
+                patch.object(session, "run", create=True) as run:
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.engine_ke_provider_contracts(session, policy, report, run)
+            run.assert_not_called()
+            session.check()
+        self.assertEqual(session.protected_islands, {})
+
+    def test_unexpected_copy_drift_cannot_be_blessed_by_rebinding_the_island(self):
+        session, report, policy = self.session_fixture()
+        calls = []
+        ordinary = self.fake_run(session, report, calls)
+        def run(label, command, timeout, **options):
+            result = ordinary(label, command, timeout, **options)
+            private = session.work / "provider-contract-source"
+            (private / "unexpected-input").write_text("unexplained copy drift\n")
+            session.protected_islands[private] = MODULE.PRODUCT.inventory(private)
+            return result
+        with patch.object(MODULE.COMMON, "require_current_candidate"), self.assertRaises(MODULE.Incomplete):
+            MODULE.engine_ke_provider_contracts(session, policy, report, run)
+        private = session.work / "provider-contract-source"
+        self.assertEqual((private / self.FILENAME).read_bytes(), (session.source / self.FILENAME).read_bytes())
+        self.assertTrue((private / "unexpected-input").is_file(), "unexplained evidence must remain visible")
+        self.assertEqual(report["provider_claim_contracts"]["probes"], [])
+
+
+class EngineKeHistoryCompilerContractTests(unittest.TestCase):
+    """Independent literal compiler envelopes and real custody checks; no Cargo execution."""
+
+    FILENAME = "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs"
+    MANIFEST = "/work/history-contract-source/crates/nevrotick-engine/Cargo.toml"
+    CASES = {
+        "copy-completion": ("E0277", ["InvocationCompletion", "Copy"],
+            "the trait bound `InvocationCompletion: Copy` is not satisfied", "require_copy::<InvocationCompletion>();"),
+        "clone-completion": ("E0277", ["InvocationCompletion", "Clone"],
+            "the trait bound `InvocationCompletion: Clone` is not satisfied", "let duplicate = <InvocationCompletion as Clone>"),
+        "copy-history": ("E0277", ["ProtectedHistory", "Copy"],
+            "the trait bound `ProtectedHistory: Copy` is not satisfied", "require_copy::<datagram::ProtectedHistory>();"),
+        "clone-history": ("E0277", ["ProtectedHistory", "Clone"],
+            "the trait bound `ProtectedHistory: Clone` is not satisfied", "let duplicate = <datagram::ProtectedHistory as Clone>"),
+        "second-consume-completion": ("E0382", ["completion", "moved"],
+            "use of moved value: `completion`", "let second = completion;"),
+        "raw-history": ("E0451", ["ProtectedHistory", "summary", "receipt", "population", "send_before",
+            "send_after", "read_return", "local", "remote", "identity", "run_context", "private"],
+            "fields summary, receipt, population, send_before, send_after, read_return, local, remote, identity, run_context of struct ProtectedHistory are private",
+            "let duplicate = datagram::ProtectedHistory {"),
+    }
+    session_fixture = EngineKeProviderCompilerContractTests.session_fixture
+
+    def cargo_result(self, case, *, line=42):
+        """Use independently declared semantic text, actual library attribution and exact tails."""
+        code, _tokens, message, _needle = self.CASES[case]
+        diagnostic = EngineKeProviderCompilerContractTests.diagnostic(self, line=line)
+        diagnostic.update(message=message, code={"code": code, "explanation": None})
+        diagnostic["spans"][0].update(label="actual ownership refusal", text=[{
+            "text": "actual consumer", "highlight_start": 1, "highlight_end": 7}])
+        parent = str(Path(self.MANIFEST).parent)
+        def envelope(value):
+            return {"reason": "compiler-message", "package_id": "path+file://" + parent + "#0.0.0",
+                "manifest_path": self.MANIFEST,
+                "target": {"name": "nevrotick_engine", "kind": ["lib"], "crate_types": ["lib"],
+                    "src_path": parent + "/src/lib.rs", "edition": "2024", "doc": True, "doctest": True, "test": True},
+                "message": value}
+        note = {"$message_type": "diagnostic", "message": f"For more information about this error, try `rustc --explain {code}`.",
+            "code": None, "level": "failure-note", "spans": [], "children": [], "rendered": None}
+        records = [envelope(diagnostic), envelope(note), {"reason": "build-finished", "success": False}]
+        return {"exit_code": 101, "failure": None, "output": "\n".join(json.dumps(row) for row in records) +
+            "\nerror: could not compile `nevrotick-engine` (lib test) due to 1 previous error\n"}
+
+    def specimen(self, case, *, line=42):
+        """The test's fixed matrix is independent of the production generator."""
+        code, tokens, _message, _needle = self.CASES[case]
+        return {"code": code, "tokens": list(tokens), "line": line}
+
+    def test_fourteen_examples_borrow_and_move_actual_owners_with_exact_spans(self):
+        original = b"// actual unchanged owner\n// source prefix\n"
+        examples = MODULE.engine_ke_history_contract_examples(original)
+        self.assertEqual([(row["target"], row["case"]) for row in examples],
+            [(target, case) for target in ("gnu", "msvc") for case in ("legal", *self.CASES)])
+        for row in examples:
+            source, probe = row["source"].decode(), row["appended_source"]
+            self.assertEqual(row["source"], original + probe.encode())
+            self.assertIn("#[cfg(all(test, " + ("not(windows)" if row["target"] == "gnu" else "windows") + "))]", probe)
+            self.assertIn("const _: fn(InvocationCompletion, datagram::ProtectedHistory)", probe)
+            for method in ("summary", "receipt", "population", "captures", "endpoints", "identity", "run_context"):
+                self.assertIn("history." + method + "()", probe)
+            for forbidden in ("struct ProtectedHistory", "enum InvocationCompletion", "mod reached", "ProviderScope",
+                              "PROCESS_ADMISSION", "zeroed", "#[allow", "#[test]"):
+                self.assertNotIn(forbidden, probe)
+            if row["case"] == "legal":
+                self.assertIsNone(row["diagnostic"])
+                self.assertIn("(completion, history)", probe)
+                continue
+            expected = self.specimen(row["case"], line=row["diagnostic"]["line"])
+            self.assertEqual(row["diagnostic"], expected)
+            actual_line = source.splitlines()[expected["line"] - 1]
+            self.assertIn(self.CASES[row["case"]][3], actual_line)
+            self.assertGreater(expected["line"], len(original.splitlines()))
+            if row["case"] == "second-consume-completion":
+                self.assertIn("let first = completion;", probe)
+                self.assertIn("(first, history)", probe)
+                self.assertNotIn("(completion, history)\n", probe)
+            if row["case"] == "raw-history":
+                for field in ("summary:", "receipt:", "population:", "send_before", "send_after", "read_return",
+                              "local", "remote", "identity:", "run_context:"):
+                    self.assertIn(field, actual_line)
+                self.assertNotIn("..", actual_line)
+                self.assertIn("Arc::clone(history.run_context())", actual_line)
+                self.assertNotIn("std::sync::Arc", actual_line,
+                    "the actual parent already imports Arc; unrelated lint failures cannot qualify privacy")
+        for invalid in (b"", b"no newline", b"\xff\n", b"x" * (256 * 1024) + b"\n",
+                        original + b"// protected_history_contract_probe\n", original.decode()):
+            with self.subTest(invalid=repr(invalid)[:60]), self.assertRaises(MODULE.Incomplete):
+                MODULE.engine_ke_history_contract_examples(invalid)
+
+    def test_each_closed_cause_reaches_unchanged_matcher_without_broadening_provider(self):
+        for case in self.CASES:
+            result, specimen = self.cargo_result(case), self.specimen(case)
+            retained = copy.deepcopy(result)
+            with self.subTest(case=case), patch.object(MODULE.COMMON, "compiler_cause", wraps=MODULE.COMMON.compiler_cause) as matcher:
+                MODULE.validate_engine_ke_history_cause(result, specimen, self.MANIFEST)
+            self.assertEqual(matcher.call_args.args[1:], (specimen, self.FILENAME))
+            self.assertEqual(result, retained)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_provider_cause(result, specimen, self.MANIFEST)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.validate_engine_ke_history_cause(self.cargo_result("second-consume-completion"),
+                {"code": "E0382", "tokens": ["claim", "moved"], "line": 42}, self.MANIFEST)
+
+    def test_wrong_cause_attribution_extra_errors_and_split_private_spans_refuse(self):
+        for case in self.CASES:
+            healthy = self.cargo_result(case)
+            records = [json.loads(line) for line in healthy["output"].splitlines() if line.startswith("{")]
+            changes = [lambda rows: rows[0].update(manifest_path="/work/foreign/Cargo.toml"),
+                lambda rows: rows[0]["message"].update(message="unrelated type or trait refusal"),
+                lambda rows: rows[0]["message"]["code"].update(code="E0603"),
+                lambda rows: rows[0]["message"]["spans"][0].update(file_name="foreign.rs"),
+                lambda rows: rows[0]["message"]["spans"][0].update(line_start=43, line_end=43),
+                lambda rows: rows[0]["message"]["spans"].append({**rows[0]["message"]["spans"][0], "line_start": 43, "line_end": 43}),
+                lambda rows: rows.insert(1, copy.deepcopy(rows[0])),
+                lambda rows: rows[1]["message"].update(message="unrelated explanation"),
+                lambda rows: rows[1]["message"].update(children=[{}]),
+                lambda rows: rows[-1].update(success=True),
+                lambda rows: rows[0]["message"].update(message=rows[0]["message"]["message"] + "; failed to spawn compiler")]
+            for change in changes:
+                changed = copy.deepcopy(records)
+                change(changed)
+                result = {**healthy, "output": "\n".join(json.dumps(row) for row in changed) +
+                    "\nerror: could not compile `nevrotick-engine` (lib test) due to 1 previous error\n"}
+                with self.subTest(case=case, change=change), self.assertRaises(MODULE.Incomplete):
+                    MODULE.validate_engine_ke_history_cause(result, self.specimen(case), self.MANIFEST)
+        for specimen in ({"code": "E0603", "tokens": ["private"], "line": 42},
+                         {"code": "E0277", "tokens": ["ProtectedHistory", "Default"], "line": 42},
+                         {"code": "E0277", "tokens": ["InvocationCompletion", "Copy"], "line": True}):
+            with self.subTest(specimen=specimen), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_history_cause(self.cargo_result("copy-completion"), specimen, self.MANIFEST)
+
+    def fake_run(self, session, report, calls):
+        """Return synthetic literal outcomes while real Session.check protects both sources."""
+        def run(label, command, timeout, **options):
+            session.check()
+            private = session.work / "history-contract-source"
+            self.assertEqual(options["cwd"], private)
+            source = (private / self.FILENAME).read_text()
+            target, case = label.removeprefix("ke-history-contract-").split("-", 1)
+            calls.append((target, case, command, timeout, options, source))
+            if case == "legal":
+                self.assertNotIn("negative", options)
+                result = {"exit_code": 0, "failure": None, "output": '{"reason":"build-finished","success":true}\n'}
+            else:
+                code, _tokens, _message, needle = self.CASES[case]
+                self.assertEqual(options["negative"], json.dumps(code))
+                line = next(index + 1 for index, value in enumerate(source.splitlines()) if needle in value)
+                result = self.cargo_result(case, line=line)
+            result.update(lane=label, command=["synthetic-bwrap", "--", "synthetic-prlimit", "--", *command])
+            report["lanes"].append(result)
+            session.check()
+            return result["output"]
+        return run
+
+    def test_fourteen_metadata_commands_share_deadline_and_restore_the_single_delta(self):
+        session, report, policy = self.session_fixture()
+        calls = []
+        with patch.object(MODULE.COMMON, "require_current_candidate"), \
+                patch.object(MODULE.COMMON, "remaining_timeout", wraps=MODULE.COMMON.remaining_timeout) as remaining:
+            MODULE.engine_ke_history_contracts(session, policy, report, self.fake_run(session, report, calls))
+            session.check()
+        self.assertEqual([(row[0], row[1]) for row in calls],
+            [(target, case) for target in ("gnu", "msvc") for case in ("legal", *self.CASES)])
+        self.assertEqual(len({row.args[0] for row in remaining.call_args_list}), 1)
+        for target, _case, command, timeout, _options, _source in calls:
+            self.assertEqual(command[:4], ["cargo", "check", "--package", "nevrotick-engine"])
+            for token in ("--all-targets", "--frozen", "--message-format=json", "--quiet"):
+                self.assertIn(token, command)
+            self.assertEqual(command[command.index("--jobs") + 1], "6")
+            self.assertEqual(command[command.index("--features") + 1], "ke-association-prototype")
+            self.assertGreater(timeout, 0)
+            self.assertLessEqual(timeout, 300)
+            self.assertNotIn("test", command)
+            if target == "msvc":
+                self.assertEqual(command[command.index("--target") + 1], "x86_64-pc-windows-msvc")
+            else:
+                self.assertNotIn("--target", command)
+        self.assertEqual(MODULE.PRODUCT.inventory(session.work / "history-contract-source"), session.source_inventory)
+        self.assertEqual(MODULE.PRODUCT.inventory(session.source), session.source_inventory)
+        self.assertEqual(MODULE.PRODUCT.inventory(session.root), session.identity)
+        self.assertEqual(len(report["protected_history_contracts"]["probes"]), 14)
+        self.assertNotIn("protected_history_contracts_passed", report)
+        self.assertNotIn("provider_claim_contracts", report)
+
+    def test_compiler_retained_result_and_deadline_failures_restore_history_source(self):
+        for failure in ("compiler", "lane", "command", "output", "deadline", "healthy-lane", "healthy-command",
+                        "healthy-output", "healthy-exit", "healthy-failure", "healthy-missing-failure"):
+            session, report, policy = self.session_fixture()
+            calls = []
+            ordinary = self.fake_run(session, report, calls)
+            def run(label, command, timeout, **options):
+                if failure == "compiler":
+                    raise MODULE.Incomplete("synthetic child failure")
+                raw = ordinary(label, command, timeout, **options)
+                if options.get("negative"):
+                    report["lanes"][-1][failure] = "foreign retained result"
+                elif failure.startswith("healthy-"):
+                    key = failure.removeprefix("healthy-")
+                    row = report["lanes"][-1]
+                    if key == "exit":
+                        row["exit_code"] = 1
+                    elif key == "missing-failure":
+                        row.pop("failure")
+                    else:
+                        row[key] = "foreign retained healthy result"
+                return raw
+            timeout = MODULE.Incomplete("shared deadline exhausted") if failure == "deadline" else None
+            with self.subTest(failure=failure), patch.object(MODULE.COMMON, "require_current_candidate"), \
+                    patch.object(MODULE.COMMON, "remaining_timeout", side_effect=timeout,
+                        wraps=None if timeout else MODULE.COMMON.remaining_timeout):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.engine_ke_history_contracts(session, policy, report, run)
+                session.check()
+            self.assertEqual(MODULE.PRODUCT.inventory(session.work / "history-contract-source"), session.source_inventory)
+            self.assertNotIn("protected_history_contracts_passed", report)
+
+    def test_history_copy_drift_and_incomplete_roster_refuse_without_blessing(self):
+        session, report, policy = self.session_fixture()
+        calls = []
+        ordinary = self.fake_run(session, report, calls)
+        def drift(label, command, timeout, **options):
+            raw = ordinary(label, command, timeout, **options)
+            private = session.work / "history-contract-source"
+            (private / "unexpected-input").write_text("unexplained drift\n")
+            session.protected_islands[private] = MODULE.PRODUCT.inventory(private)
+            return raw
+        with patch.object(MODULE.COMMON, "require_current_candidate"), self.assertRaises(MODULE.Incomplete):
+            MODULE.engine_ke_history_contracts(session, policy, report, drift)
+        private = session.work / "history-contract-source"
+        self.assertEqual((private / self.FILENAME).read_bytes(), (session.source / self.FILENAME).read_bytes())
+        self.assertTrue((private / "unexpected-input").is_file())
+        self.assertEqual(report["protected_history_contracts"]["probes"], [])
+        session, report, policy = self.session_fixture()
+        examples = MODULE.engine_ke_history_contract_examples((session.source / self.FILENAME).read_bytes())[:-1]
+        with patch.object(MODULE.COMMON, "require_current_candidate"), \
+                patch.object(MODULE, "engine_ke_history_contract_examples", return_value=examples), \
+                patch.object(session, "run", create=True) as run, self.assertRaises(MODULE.Incomplete):
+            MODULE.engine_ke_history_contracts(session, policy, report, run)
+        run.assert_not_called()
+        self.assertFalse((session.work / "history-contract-source").exists())
+
+
 class EngineKeFixtureLaneTests(unittest.TestCase):
     """One public generator, never synthetic Engine qualification evidence."""
 
-    NAMES = ("HEALTHY ZERO_COOKIES EMPTY_COOKIE TWO_COOKIES EIGHT_COOKIES NINE_COOKIES "
+    NAMES = ("HEALTHY ZERO_RECEIVE ZERO_TRANSMIT ZERO_TIMESTAMPS ZERO_COOKIES EMPTY_COOKIE TWO_COOKIES EIGHT_COOKIES NINE_COOKIES "
         "MISSING_UID SHORT_UID DUPLICATE_UID CLEAR_COOKIE CLEAR_PLACEHOLDER INNER_UID INNER_AUTH "
         "INNER_PLACEHOLDER UNKNOWN_FIELDS_AND_SUFFIX SUFFIX_DUPLICATE_UID_AUTH MALFORMED_INNER "
         "MAX_INNER_FIELDS TOO_MANY_INNER MAX_OUTER_FIELDS TOO_MANY_OUTER MAX_PACKET_BYTES "
@@ -2399,7 +3182,7 @@ class EngineKeFixtureLaneTests(unittest.TestCase):
         self.assertEqual(set(facts["fixtures"]), set(self.NAMES))
         self.assertTrue(facts["generated"])
         self.assertEqual(facts["tests_executed"], 1)
-        self.assertEqual(facts["payload_bytes"], 66)
+        self.assertEqual(facts["payload_bytes"], 72)
         self.assertTrue(source.startswith("// SPDX-License-Identifier:"))
         self.assertNotIn("successes:", source)
         self.assertNotIn("FIXTURES_GENERATED", source)

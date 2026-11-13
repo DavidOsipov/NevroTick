@@ -1663,7 +1663,7 @@ kill credit; 34 native-inactive misses and the process generation gap retain
 open gates. The existing Engine task owns the actual qualification results
 and metadata-scope reconciliation; this is no whole-Engine qualification.
 
-**Current cutoff-control source checkpoint, 12 November 2026:** candidate
+**Published cutoff-control source checkpoint, 12 November 2026:** candidate
 `0aa75da8` passes its separate 348 ordinary/348 optimized/69-doctest baseline and
 all eleven GNU 90% file-line gates (recovery 522/545). The complete 561 typed
 variants and diffs are reviewed; the test-only checked-control seam generates no
@@ -1677,9 +1677,156 @@ retain their original source scopes. Use exact single-subject cohorts, ten
 workers, the 512-mutant/90-second build/60-second test/1200-second cohort limits
 and unchanged 95% gate; all 561 still exceed one cohort's cap. The Engine task owns
 raw receipt/adopted-metadata identities, remaining critical/native gates and the
-next invocation-level stop/completion contract freeze. No parent pass follows.
+subsequent invocation-level stop/completion source child. No parent pass follows.
 
-**EP1/EP2 selected source analysis, 11 November 2026:** the same
+**Predecessor invocation-stop source, 12 November 2026:** Rust `008583ad` passes
+its fresh seven-command WSL baseline: 368 ordinary, 368 optimized and 69 doctests,
+format and GNU/MSVC static checks. Development executes all 190 KE cases,
+including actual successor/preparation stop and direct recovery-helper controls.
+The verifier retires only
+validated closed GNU debug before release and release before docs under the
+unchanged cap; Windows metadata and raw results remain. Fresh coverage passes
+all eleven GNU 90% file-line gates. Enumeration lists 575 variants, including
+114 for the changed recovery owner. Exact fault replays and complete recovery
+accounting catch all three former GNU gaps: 79 caught, 31 compiler-unviable and
+four Windows-only misses. Independent causal classification is complete;
+raw 95.18% leaves the custom gate and native qualification incomplete. The earlier seven
+`261fa73d` cohorts account for 495 variants with 28 misses;
+their exact generated results and eleven-file coverage retain historical scope.
+Fresh current ledger accounting retains raw 112/121/native exit 2 and separately
+adopts the exact nine reviewed equivalents for adjusted 112/112, with zero added
+kills and explicit proof/helper/policy custody. Eight workers and unchanged
+90/95 gates remain selected, with only that exact predecessor E9 disposition; campaign
+admission is closed after the completed cohort. The earlier
+ten-worker interrupted attempt remains incomplete. David authorized WSL cleanup
+and continuation: 16.61 GB of closed caches and obsolete evidence are deleted,
+with current inputs protected. Windows/native, whole-worker and parent
+qualification remain separate. Existing Engine task owns exact receipts/scopes.
+
+**Current whole-invocation worker, 12 November 2026:** the private ordinary-thread
+owner retains actual join custody. Predecessor `2c14e665` passes format, GNU/MSVC
+Clippy and 383 ordinary/383 optimized/69 doctest cases, including all 205 KE
+cases. All twelve GNU 90% file-line gates pass; job.rs covers 191/208 lines
+(91.83%) after real constructor/contention/poison/fact tests, with unchanged
+production denominator. The Engine task owns the prior failed captures and
+fixture repairs. The expanded role registers twelve GNU owners, sixteen total
+critical files and 45 source/helper pins. Fresh enumeration lists 603 variants,
+including 25 job variants. The repeated job cohort accounts for 12 caught,
+11 compiler-unviable and two Windows-only misses: raw 85.71% remains failed.
+Independent review selected the bounded caller-context facade correction before
+Core execution. Current `d88de086` passes 386 ordinary/386 optimized/69 doctest
+cases and GNU/MSVC static checks; all 208 KE cases execute. Three isolated faults
+reach their named assertions and healthy controls pass before/after. The role is rebound to its
+593 files and 45 pins with E[]. All twelve GNU 90% line gates pass; the fresh
+604-variant inventory is rebound. Independent review admits only the complete
+92-entry `ke_core` cohort (the NTS-KE control module, not `time-core` integration).
+It records 38 caught, 49 unviable, five Windows-only misses and no timeouts;
+independent causal accounting is complete. Raw 88.37% leaves the gate open and
+execution is closed. Review before further single-owner admission.
+The current job cohort separately records 12 caught, 11 unviable and two
+Windows-only misses. Before more campaigns, the existing task's bounded provider
+constructor card now records observed RED/GREEN on `1b22ba32`, all 211 KE cases,
+GNU/MSVC static passes and four intended E0382 ownership rejections with legal
+neighbors. Fresh source review finds no remaining constructor bypass. Its
+configured compiler lane and full baseline pass in that exact scope. Coverage
+refuses `job.rs` at 89.30%; the existing task adds a tests-only actual-worker
+duplicate-record case on `82c189a6`, with its full baseline passing. Current
+`8ea89e2d` adds the default-refusal case: 391 actual coverage tests (213 KE)
+pass, but `job.rs` remains 193/215 (89.77%). Current `a729516e` adds the
+GNU-only actual Builder-refusal selector and case after its bounded capability
+observation. Focused healthy/refusal/causal-fault controls pass with exact
+restoration; all 115 affected Python controls pass. Its expected 392/214 roster
+and current source/helpers are rebound with campaigns closed. The subsequent
+collector ownership cleanup on `9836e95f` passes full 392 ordinary/392 optimized/
+69 doctest baseline and GNU/MSVC static checks. All twelve GNU 90% file-line
+gates pass, with worker 201/221 (90.95%); fresh discovery lists 604 descriptors.
+The complete three-entry process cohort has independently reviewed outcomes:
+one caught, two unviable, no survivors/timeouts/exclusions. The complete job
+cohort records 10 caught, 11 unviable, two unresolved Windows-only misses and no
+timeouts/exclusions: 10/12 viable (83.33%), below 95%. Its one fixture-sensitive
+catch adds no product credit. Campaigns are closed, E[] and all twelve catalogue
+identities retained. Their mechanical binding admits no other cohort; ten
+cohorts, macro/generic/native and broader gates remain open.
+The subsequent owning protected-history slice on `964a9573` passes the current
+400 ordinary/400 optimized/69 doctest baseline, GNU/MSVC static checks and all
+twelve GNU 90% file-line gates (worker 211/231). Current 607-descriptor discovery
+is independently reviewed and mechanically bound with execution closed and E[].
+The 14 history ownership/privacy compiler controls now pass under the exact
+`--profile ke_association --lane contracts --subject ke_job
+--tool-admission-profile stable-core` selection. The six existing `ke_process`
+controls also pass in the current regression run. The independently reviewed
+KE-only operational fallback now requires six mutation workers; all 274 affected
+Python tests pass. Series worker policy, inner Cargo one, ordinary build six,
+all time/storage/quality limits and catalogue identities remain unchanged.
+Both selections preserve strict intended diagnostics and source custody.
+Retain constructor/generic/field-transfer/ordering and Windows gaps; no current
+whole-set mutation or broader/native gate is passed. The first current process
+cohort separately classifies one caught fault and two build-only unviable cases,
+passing its generated GNU 1/1 viable gate. The fresh six-worker 92-entry KE-control
+cohort is fully classified: 38 caught, 49 unviable, five Windows-only GNU misses,
+zero timeouts/exclusions. Raw 88.37% leaves its 95% gate incomplete. The next
+29-entry association cohort passes its generated GNU gate with 27 caught,
+two compiler-unviable and no misses/timeouts/exclusions, 27/27 viable. Its
+constructor/preview-order/latch and other generation gaps remain open. The next
+handoff/request cohorts pass their generated GNU gates at 7/7 and 3/3 viable,
+with two/three unviable and no survivors/timeouts/exclusions. Ordering, field/key
+transfer, closure/generic and wiping alternatives remain open. The 27-entry fault
+cohort is fully classified: two caught, seven unviable, 18 Windows-only GNU
+misses, zero timeouts/exclusions; raw 10% remains below 95%. Six cohorts and
+native/parent gates remain; no predecessor outcomes transfer.
+The corrected host observer treats max-counter reclaim activity as informational,
+keeping OOM, PID-limit, ownership/observation loss and cleanup failures fatal.
+Four current controls pass; one full trial completes in 442.89 seconds under
+the unchanged three-GiB/512-MiB/512-task envelope, with confirmed cleanup.
+This resource result supplies no mutation/native pass. Execution is closed at
+role `fc095160…adc32`; all time/storage limits, thresholds and E[] stay unchanged.
+No native job is adopted by this source card; broader gates remain open.
+
+**Provider claim compiler contracts, 13 November 2026:** the same verifier now
+adopts the exact `--profile ke_association --lane contracts --subject ke_process
+--tool-admission-profile stable-core` selection. Supply the admitted Root
+`--vendor-dir` and a fresh external Linux `--output-dir`. Only the fixed
+`ke_process` and `ke_job` contract subjects and stable role are admitted; others
+refuse before Session creation. This lane keeps original
+source immutable and seals one private package copy per specimen; it restores
+that copy exactly before final custody checks. One shared 300-second budget
+covers six metadata commands: GNU component/MSVC Native constructors, each with
+legal once-use and E0382 overlap/after-drop rejection. No Windows executable is
+linked or run. The Cargo adapter checks exact package/target/primary-span causes
+through the unchanged rustc matcher, validating only the known noncausal explain
+tail separately.
+
+The configured lane passes all six controls on `1b22ba32`, with 115 Engine and
+149 shared-tooling Python controls passing. Its scoped
+`provider_claim_contracts_passed` is true; all broader qualification flags remain
+false. The existing task owns exact receipt, source identity and the subsequent
+full baseline/coverage/mutation continuation. Source-only move rejection does
+not establish actual Native origin, CNG shutdown or service completion; the
+separate behavioral and native owners retain those obligations.
+The later protected-history checkpoint adds the separate fourteen-command
+`ke_job` lane: legal GNU/MSVC moves/borrows and intended Copy, Clone,
+double-consumption and private-field refusals on the actual completion/history
+types. Current receipts pass all fourteen history and all six provider controls;
+only each lane's selected scoped flag becomes true after restoration and final
+bookends. The failed first raw-construction probe is retained as incomplete:
+two unnecessary `Arc` qualifications accompanied E0451. Correcting the probe
+to use the existing import preserves the strict matcher. No product Rust change
+or native execution follows. The three separate behavioral sensitivity controls
+also pass in thirteen selected commands (ten healthy, three intended assertion
+failures), adding zero generated kills. Their independent chart oracle is at
+the replacement component; retain the worker-witness limitation. Exact receipts
+and scope belong to the existing task.
+Complete affected mutation gates on these bytes; inherit no predecessor
+E9 disposition or native/parent pass. The latest cleanup retires old raw replay
+bundles/vendor caches and superseded compilation/profile targets; current inputs,
+results and actual Git worktrees remain protected in the existing task record.
+Reuse source-bound current baseline/coverage/catalogue evidence while its
+relevant identities remain unchanged; after source changes use the commands
+below with fresh external output. Review complete generation before admitting
+a bounded single-owner mutation cohort. Eight mutation workers and all existing 90/95,
+time and storage limits remain. Windows-target checks execute no native tests.
+
+**Historical EP1/EP2 initial source analysis, 11 November 2026:** the same
 [Engine verifier](scripts/verify-engine-analysis.py) has the exact
 `--profile ke_association` [role](policy/engine-ke-association-analysis.json).
 Select `--lane baseline`, `coverage` or `enumerate`, `--subject all`,
@@ -2313,9 +2460,10 @@ remains closed against the later Core/helper tree.
 
 The association/request preparation route at this checkpoint is historical.
 Current Core/Engine work follows the
-[12 November source checkpoint](tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026):
-freeze the invocation-level worker stop and actual-completion contract before
-its dependent implementation. Public execution remains one-shot and never-send
+[13 November source checkpoint](tasks/engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026):
+close exact staged invocation-stop/actual-join/protected-history source, then
+implement the reviewed private conditional-numerics card with the first actual
+caller supplying `None`. Public execution remains one-shot and never-send
 by default; the source/host exit does not close native or product gates.
 David accepted both cookie-policy A choices under NV-DEC-001: fresh wire cookies
 with explicit never-invoked return, and zero-cookie rejection preserving healthy

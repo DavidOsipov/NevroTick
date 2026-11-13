@@ -50,12 +50,12 @@ mod reached {
     use zeroize::Zeroizing;
 
     use super::DatagramError;
-    use crate::SoftwareClock;
     use crate::nts_ke_experiment::association::AssociationOwner;
     use crate::nts_ke_experiment::association::ledger::{
         Receipt, RequestInput, RequestPhase, SendOutcome,
     };
     use crate::nts_ke_experiment::{Control, Failure, IoPhase, Summary};
+    use crate::{RunClockContext, SoftwareClock};
 
     /// One counter covers readiness waits and nonblocking receive attempts.
     const ATTEMPTS: usize = 64;
@@ -202,7 +202,7 @@ mod reached {
             }
             let guard = control.published_guard()?;
             let before = SoftwareClock::capture();
-            control.remaining_locked(*guard, IoPhase::Exchange, before.monotonic_after())?;
+            guard.remaining(IoPhase::Exchange, before.monotonic_after())?;
             let (outcome, cancel_after) = match &mut self.io {
                 #[cfg(windows)]
                 Io::Native(socket) => (
@@ -311,8 +311,84 @@ mod reached {
     /// One committed protected exchange, not live permission or Core eligibility.
     /// No Clone/Copy or public raw constructor can duplicate this fact.
     pub(in super::super) struct CommittedProtected<'control> {
-        /// Actual history survives until its one terminal count projection.
+        /// Actual history survives until its one consuming receiver projection.
         operation: OperationCompletion<'control>,
+    }
+
+    /// Owned historical protected exchange; only consuming genuine commit creates it.
+    /// Unlike the plain pilot's `TransportFacts`, peer timestamp bits may be zero.
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "the complete immutable protected history awaits the separately qualified numerical/Core receiver"
+        )
+    )]
+    pub(in super::super) struct ProtectedHistory {
+        /// Existing bounded initial-KE population and actual send counts.
+        summary: Summary,
+        /// Genuine original authenticated header, ordinal and packet-admission time.
+        receipt: Receipt,
+        /// Checked historical pool entries/bytes, including duplicate entries.
+        /// Distinct from initial KE counts; grants no availability or reuse authority.
+        population: (usize, usize),
+        /// Actual bracket immediately before the successful local send.
+        send_before: SoftwareClock,
+        /// Actual bracket immediately after that same local send.
+        send_after: SoftwareClock,
+        /// Original selected receive-return bracket, never refreshed at detachment.
+        read_return: SoftwareClock,
+        /// Actual socket's original bound endpoint.
+        local: SocketAddr,
+        /// Actual checked peer endpoint, without independent-source authority.
+        remote: SocketAddr,
+        /// Historical socket lifetime identity; this retains no handle.
+        identity: Arc<()>,
+        /// Original invocation chart, shared across any actual replacement context.
+        run_context: Arc<RunClockContext>,
+    }
+
+    impl ProtectedHistory {
+        /// Borrow only the unchanged CLI count projection of this owning history.
+        pub(in super::super) const fn summary(&self) -> &Summary {
+            &self.summary
+        }
+
+        /// Inspect original authenticated bits/time for actual-owner component controls.
+        #[cfg(test)]
+        pub(in super::super) const fn receipt(&self) -> Receipt {
+            self.receipt
+        }
+
+        /// Inspect only the original checked post-admission pool population.
+        #[cfg(test)]
+        pub(in super::super) const fn population(&self) -> (usize, usize) {
+            self.population
+        }
+
+        /// Copy only the three original brackets; create no new acquisition fact.
+        #[cfg(test)]
+        pub(in super::super) const fn captures(&self) -> [SoftwareClock; 3] {
+            [self.send_before, self.send_after, self.read_return]
+        }
+
+        /// Inspect actual historical endpoints without reissuing socket custody.
+        #[cfg(test)]
+        pub(in super::super) const fn endpoints(&self) -> (SocketAddr, SocketAddr) {
+            (self.local, self.remote)
+        }
+
+        /// Borrow original socket identity without retaining a live resource.
+        #[cfg(test)]
+        pub(in super::super) const fn identity(&self) -> &Arc<()> {
+            &self.identity
+        }
+
+        /// Borrow the invocation's actual pre-acquisition chart for identity controls.
+        #[cfg(test)]
+        pub(in super::super) const fn run_context(&self) -> &Arc<RunClockContext> {
+            &self.run_context
+        }
     }
 
     impl<'control> ProtectedCompletion<'control> {
@@ -356,6 +432,7 @@ mod reached {
 
         /// Consume the historical fact once; return only existing bounded counts.
         /// No Published check follows commit, and later stop cannot rewrite history.
+        #[cfg(test)]
         pub(in super::super) fn into_summary(self) -> Summary {
             let OperationCompletion {
                 control,
@@ -390,9 +467,51 @@ mod reached {
             ));
             summary
         }
+
+        /// Detach only immutable history from this genuinely consumed final commit.
+        /// The actual receiver supplies its original chart and already checked initial
+        /// population after binding this fact to its current Control. No live owner,
+        /// secret payload, numerical measurement or renewed timestamp is returned.
+        pub(in super::super) fn into_history(
+            self,
+            run_context: Arc<RunClockContext>,
+            population: (usize, usize),
+        ) -> ProtectedHistory {
+            let OperationCompletion {
+                control: _,
+                receipt,
+                send_before,
+                send_after,
+                read_return,
+                local,
+                remote,
+                identity,
+                packet_bytes,
+                cookies,
+                cookie_bytes,
+            } = self.operation;
+            ProtectedHistory {
+                summary: Summary {
+                    cookies: population.0,
+                    cookie_bytes: population.1,
+                    packet_bytes,
+                    transmitted: true,
+                },
+                receipt,
+                population: (cookies, cookie_bytes),
+                send_before,
+                send_after,
+                read_return,
+                local,
+                remote,
+                identity,
+                run_context,
+            }
+        }
     }
 
-    /// Register cancellation before reading its authoritative latched state.
+    /// Register the shared wake before reading actual scope and local state.
+    /// A harmless wake re-waits within the same nonrenewable attempt allowance.
     /// # Errors
     /// Preserve cancellation/expiry/readiness failure with the original deadline.
     async fn wait(
@@ -401,19 +520,26 @@ mod reached {
         interest: Interest,
         attempts: &mut Attempts,
     ) -> Result<(), Failure> {
-        attempts.spend()?;
-        let cancelled = control.cancelled.notified();
-        tokio::pin!(cancelled);
-        cancelled.as_mut().enable();
-        drop(control.published_guard()?);
-        tokio::select! {
-            biased;
-            () = &mut cancelled => return Err(Failure::Cancelled),
-            () = tokio::time::sleep_until(tokio::time::Instant::from_std(control.expiry)) => return Err(Failure::Deadline),
-            ready = backend.ready(interest, control) => ready?,
+        loop {
+            attempts.spend()?;
+            let cancelled = control.cancelled.notified();
+            tokio::pin!(cancelled);
+            cancelled.as_mut().enable();
+            drop(control.published_guard()?);
+            let ready = tokio::select! {
+                biased;
+                () = &mut cancelled => false,
+                () = tokio::time::sleep_until(tokio::time::Instant::from_std(control.expiry)) => return Err(Failure::Deadline),
+                ready = backend.ready(interest, control) => {
+                    ready?;
+                    true
+                },
+            };
+            drop(control.published_guard()?);
+            if ready {
+                return Ok(());
+            }
         }
-        drop(control.published_guard()?);
-        Ok(())
     }
 
     /// Drive the same bounded packet owner with either concrete backend.
@@ -554,7 +680,7 @@ mod reached {
 pub(super) use reached::exchange;
 
 #[cfg(any(windows, test))]
-pub(super) use reached::{CommittedProtected, ProtectedCompletion};
+pub(super) use reached::{CommittedProtected, ProtectedCompletion, ProtectedHistory};
 
 #[cfg(test)]
 #[path = "datagram/tests.rs"]

@@ -328,6 +328,7 @@ ENGINE_KE_SUBJECTS = (
     ("ke_response", "crates/nevrotick-engine/src/nts_ke_experiment/response.rs"),
     ("ke_datagram", "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs"),
     ("ke_recovery", "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs"),
+    ("ke_job", "crates/nevrotick-engine/src/nts_ke_experiment/job.rs"),
 )
 ENGINE_KE_CRITICAL = (
     "crates/nevrotick-engine/src/lib.rs",
@@ -341,7 +342,7 @@ ENGINE_KE_CRITICAL = (
 # caller arguments. Any source/candidate/proof drift requires a new review.
 ENGINE_KE_EQUIVALENCE_PROOF = "tasks/engine-ke-association-equivalences.md"
 ENGINE_KE_EQUIVALENCE_REQUIREMENT = "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27"
-ENGINE_KE_EQUIVALENCE_REVIEWERS = '/root; /root/native_source_independent'
+ENGINE_KE_EQUIVALENCE_REVIEWERS = '/root; /root/ledger_boundary_domain; /root/resource_envelope_review'
 ENGINE_KE_EQUIVALENCE_IDS = frozenset({
     'KE-RETURN-POOL-CAPACITY-OR',
     'KE-RETURN-POOL-BYTES-OR',
@@ -353,8 +354,8 @@ ENGINE_KE_EQUIVALENCE_IDS = frozenset({
     'KE-SEND-ARCHIVE-BYTES-INCLUSIVE',
     'KE-RECEIVE-STABLE-SLOT-OR',
 })
-ENGINE_KE_EQUIVALENCE_CANDIDATE = '0aa75da81aa5d31c6d7362a8bd81c407dd0eb19bb673182966416970f3fe1b09'
-ENGINE_KE_EQUIVALENCE_PROOF_SHA256 = 'c6620f19c2668ea8ad71e27c1c15470269be715e2ddbb3b411541a3f512779ce'
+ENGINE_KE_EQUIVALENCE_CANDIDATE = '964a9573143e5668a63d264bb44906fa103d5b4c3ddf1fc82cecea33012c5468'
+ENGINE_KE_EQUIVALENCE_PROOF_SHA256 = 'f67b973c6ed616a8206c0f0a80f7737d4b459aa1106eb09b9b00f729441cd695'
 ENGINE_KE_EQUIVALENCE_REVIEWS = {
     'KE-RETURN-POOL-CAPACITY-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', '565ae40e381f980a35548caa0ce690dcc1f2b8658cfa0e47672bb5b2fd0c7dfe', 'The complete admitted return domain includes genuine Reserved, Preparing and Prepared tickets, failed preparation, exact pool-byte equality, cancellation and expiry; it does not assume successful encoding. After the unchanged guards, reservation has removed one exact pool entry and no admitted writer can shrink or replace that pool before return. Its remaining length is at most seven and its capacity still exceeds that length; its reserved-plus-available byte sum remains within 131072. The changed connector combines only false predicates. Both forms preserve the same returned allocation, any retired UID, spent attempts, original deadline and error paths.'),
     'KE-RETURN-POOL-BYTES-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', 'ed4cf1652fa16495dbfdd843f34d528630bddd5fd9288461ec597581f0c6087a', 'After the unchanged ticket, Published-control and pre-invocation phase checks, the exact reserved cookie was removed from a checked pool of at most eight entries. No admitted operation changes that pool while the slot remains reserved. Available count is therefore at most seven, available-plus-reserved payload remains at most 131072 bytes, and removal preserves an allocated slot beyond the current length. All three rejection predicates are false, including strict byte excess at exact equality. Both operator forms move back the same cookie without copying, exposing it, refunding work or renewing its original expiry. Earlier refusal paths are unchanged.'),
@@ -441,7 +442,7 @@ def engine_ke_role_facts() -> dict:
         "enumeration_wall_seconds": 240, "mutation_wall_seconds": 1200,
         "mutation_build_seconds": 90, "mutation_test_seconds": 60,
         "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
-        "mutation_jobs": 10, "mutation_process_limit": 512, "mutation_message_format": "json",
+        "mutation_jobs": 6, "mutation_process_limit": 512, "mutation_message_format": "json",
         "minimum_free_bytes": 5 * 1024**3, "stop_free_bytes": 4 * 1024**3,
         "owned_output_maximum_allocated_bytes": 768 * 1024**2,
         "owned_output_maximum_entries": 32768, "mutation_equivalences": [],
@@ -1064,6 +1065,8 @@ def mutation_campaign_command(scope: Scope, tools: Path, subject: str, command: 
         if policy is None:
             raise Incomplete("Engine KE campaign requires its reviewed role policy.")
         require_engine_ke_role(scope, policy)
+        if jobs != mutation_jobs(policy) or message_format != mutation_message_format(policy):
+            raise Incomplete("Engine KE caller parameters differ from the actual role policy.")
         if not policy["campaigns_admitted"] or not policy["mutation_inventories"]:
             raise Incomplete("Engine KE campaign admission remains closed at the effect boundary.")
     expected.extend(per_subject_mutation_error_args(scope, filename, {} if policy is None else policy))
@@ -1810,8 +1813,9 @@ def admission_profile(args, scope, policy):
         raise Incomplete("Analysis admission profile differs from the current policy.")
     if engine_ke_features(scope):
         require_engine_ke_role(scope, policy)
-        if profile != "stable-core" or args.lane not in {"baseline", "coverage", "mutation", "all"}:
-            raise Incomplete("Engine KE admits only its stable baseline/coverage/listing/campaign owner.")
+        if (profile != "stable-core" or args.lane not in {"contracts", "baseline", "coverage", "mutation", "all"}
+                or (args.lane == "contracts" and getattr(args, "subject", None) not in ("ke_process", "ke_job"))):
+            raise Incomplete("Engine KE admits only its stable analysis owners and fixed process/job compiler contracts.")
         return profile
     if (scope.policy == "policy/baseline-feedback-analysis.json"
             or scope.subjects == BASELINE_FEEDBACK_SUBJECTS):
@@ -2295,12 +2299,12 @@ class Session:
             if result["failure"] or result["exit_code"] == 0 or negative not in result["output"]:
                 raise Incomplete("Seeded control did not reach its intended actual failure.")
             return result["output"]
-        if (label.startswith("mutation-enumeration:")
+        if (label.startswith("mutation-enumeration:") or label.startswith("ke-history-contract-")
                 or label in ("external-legal-execution", "external-adaptive-legal-execution",
                              "external-chart-legal-execution",
                              "external-chart-combination-legal-execution")):
             # Strict counter/receipt records need the child's actual delimiters.
-            # Admission still requires a successful native result before exposure.
+            # Admission still requires a successful child result before exposure.
             PRODUCT.ENV.require_ok(result)
             return result["output"]
         return PRODUCT.ENV.require_ok(result)

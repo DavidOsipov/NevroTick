@@ -2,14 +2,15 @@
 //! Independent plaintext and publication controls; none simulates TLS success.
 
 use super::{
-    CancelOutcome, Config, ConfigCandidate, Control, Failure, IoPhase, Phase, Reply, copy_cookies,
-    encode_offer, endpoint, read_response,
+    CancelOutcome, Config, ConfigCandidate, Control, Failure, IoPhase, Phase, Reply,
+    StopDisposition, StopHandle, copy_cookies, encode_offer, endpoint, read_response,
 };
 use garde::Validate;
 use ntp_wire::{NtsKeAccumulatorError, NtsKeFrameError, NtsKeNegotiationError};
 use rustls_pki_types::ServerName;
 use std::ffi::OsString;
 use std::io::{self, Read};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 /// Literal critical protocol-zero record, independent of the encoder.
@@ -519,6 +520,29 @@ fn configuration_admission_and_typed_identity() -> Result<(), Failure> {
     Ok(())
 }
 
+/// Structured IPv6 loopback admission rejects scope and flow independently of raw spelling.
+/// No Config is constructed outside its checked constructor.
+/// # Panics
+/// Fail if either nonzero metadata field bypasses the maintained Garde rule.
+#[test]
+fn structured_ipv6_scope_and_flow_have_independent_rejection_controls() {
+    use std::net::{Ipv6Addr, SocketAddr, SocketAddrV6};
+
+    for (flow, scope, accepted) in [(0, 0, true), (0, 1, false), (1, 0, false), (1, 1, false)] {
+        let candidate = ConfigCandidate {
+            values: (
+                SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::LOCALHOST, 4460, flow, scope)),
+                "Time.Example",
+            ),
+        };
+        assert_eq!(
+            candidate.validate().is_ok(),
+            accepted,
+            "KE-CORE-GEN-01-structured-ipv6-scope-flow flow={flow} scope={scope}"
+        );
+    }
+}
+
 /// Raw peer-byte neighbors remain valid socket addresses independently of the cap.
 ///
 /// # Errors
@@ -971,9 +995,13 @@ fn syscall_guard_preserves_original_phase_and_expiry() -> Result<(), Failure> {
     control.publish_ke()?;
     {
         let guard = control.published_guard()?;
-        assert!(matches!(*guard, Phase::Published));
+        guard.remaining(IoPhase::Exchange, Instant::now())?;
         assert!(matches!(
             control.phase.try_lock(),
+            Err(std::sync::TryLockError::WouldBlock)
+        ));
+        assert!(matches!(
+            control.stop_scope.stopped.try_lock(),
             Err(std::sync::TryLockError::WouldBlock)
         ));
     }
@@ -987,6 +1015,37 @@ fn syscall_guard_preserves_original_phase_and_expiry() -> Result<(), Failure> {
     committed.publish_ke()?;
     committed.commit()?;
     assert!(matches!(committed.published_guard(), Err(Failure::Control)));
+    Ok(())
+}
+
+/// A valid foreign scope guard cannot grant currentness to another Control.
+/// # Errors
+/// Preserve checked controls, real stop delivery and the healthy same-owner guard.
+/// # Panics
+/// Fail if foreign scope authority substitutes for the actual guarded transaction.
+#[test]
+fn invocation_scope_guard_refuses_foreign_binding_and_stop_stays_local() -> Result<(), Failure> {
+    let actual = Control::new(Instant::now())?;
+    let foreign = Control::new(Instant::now())?;
+    actual.publish_ke()?;
+    assert!(matches!(
+        actual.guard_in(foreign.stop_scope.lock()?),
+        Err(Failure::Control)
+    ));
+    let foreign_stop = StopHandle {
+        scope: Arc::clone(&foreign.stop_scope),
+    };
+    assert_eq!(foreign_stop.request_stop()?, StopDisposition::Latched);
+    drop(actual.published_guard()?);
+    let actual_stop = StopHandle {
+        scope: Arc::clone(&actual.stop_scope),
+    };
+    assert_eq!(actual_stop.request_stop()?, StopDisposition::Latched);
+    assert_eq!(actual_stop.request_stop()?, StopDisposition::AlreadyLatched);
+    assert_eq!(actual.remaining(IoPhase::Exchange), Err(Failure::Cancelled));
+    assert_eq!(actual.publish_ke(), Err(Failure::Cancelled));
+    assert_eq!(actual.commit(), Err(Failure::Cancelled));
+    assert!(matches!(actual.published_guard(), Err(Failure::Cancelled)));
     Ok(())
 }
 

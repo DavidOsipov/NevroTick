@@ -1,9 +1,16 @@
 # Engine KE checked-caller mutation equivalences
 
-**Current adopted identity:** candidate `0aa75da81aa5d31c6d7362a8bd81c407dd0eb19bb673182966416970f3fe1b09`, ledger
-`8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36`. The current nine-case review
-at the end records the current exact admission and supersedes earlier descriptor bindings.
-Earlier scopes below remain historical and grant no current credit.
+**Current reviewed identity:** candidate
+`964a9573143e5668a63d264bb44906fa103d5b4c3ddf1fc82cecea33012c5468`;
+see the [13 November protected-history reconciliation](#protected-history-candidate-reconciliation--13-november-2026)
+for current raw outcomes, enforced domains and exact admission.
+
+**Historical invocation-stop identity, 12 November 2026:** candidate `008583ad2df7cfd7c642250a2c14ede4f4b08407f42c1f6580df6019c353f568`, ledger
+`8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36`.
+The historical invocation-stop reconciliation below records its own outcomes
+and exact admission. Only the current role's exact admitted nine-entry set can
+adjust accounting. The `0aa75da8` adoption and earlier scopes remain historical
+and grant no current credit.
 
 The existing [EP3 task](engine-transport-pilot.md#ep3--private-protected-datagram-source-integration--11-november-2026)
 owns this ordinary source-domain review under REQ-8/BND-2, AC-04 and
@@ -286,7 +293,7 @@ credit, native qualification or formal proof result. Fresh matching missed
 outcomes and exact code/policy/dossier bindings remain mandatory before any
 adjusted score is accepted.
 
-## Current nine-case review — adopted 12 November 2026
+## Historical nine-case adoption — 12 November 2026
 
 **Status:** source-domain arguments independently reviewed by `/root; /root/native_source_independent`; metadata prepared by `/root/recovery_contract_review`, an original ledger contributor. This source-domain review supplies no independent product-implementation qualification. The exact data-only exclusions are adopted under the fresh outcome accounting below.
 
@@ -363,3 +370,151 @@ New constructors/state writers/refunds/resets, multiple outstanding slots, owner
 The 3968/126976 send bounds do not narrow the pure history-bounds checker or return-pool contract: exact 131072-byte raw data remains admitted there, and return-byte equality/inclusive mutants are not covered. finish_preparation/stage_ready and other raw/helper domains retain their meaningful negative controls. No completion-ordinal, process generation, native-inactive or unrelated case is approved.
 
 Only these exact nine registry identities may be proposed together; a subset, duplicate, extra/unregistered tenth, altered rationale/source/descriptor/proof/reviewer/candidate or stale live input must refuse. Each final adjusted disposition still needs its actual final MissedMutant and complete raw outcome accounting. A caught or unviable case cannot be relabelled equivalent. Equivalents retain zero kill credit and the unchanged 95-percent critical-file threshold; no product-wide qualification or release claim follows.
+
+## Invocation-stop reconciliation — 12 November 2026
+
+Candidate `008583ad2df7cfd7c642250a2c14ede4f4b08407f42c1f6580df6019c353f568`
+retains the exact ledger above and retirement source
+`a92ad8f0a7c56a27fd8c32694c8ba6f557f8dfc177bb1fd7fc1d381a91ca9ce6`.
+Coordinator `/root` and `/root/native_source_independent` reconcile all nine
+arguments against the actual stop scope, scheduling observer and new genuine
+private probes. The reviewer reuses its earlier context and performs no new
+execution; this is not a fresh-context or formal proof claim.
+
+The stop scope adds common refusal and serialization before effects and at the
+final guarded publication. It adds no cookie/archive/attempt/slot writer,
+refund, shrinking operation or independently callable publisher. The trusted
+defer observer changes route/time scheduling only. New probes derive Controls
+through actual admission, construct genuine associations and use actual
+exchange/consuming retirement. Their deliberately mis-sequenced successor may
+leave predecessor history in Invocation while no history is installed in the
+new association. The predecessor-membership equivalence concerns only the set
+actually installed in that owner; it never certifies that set's completeness or
+global no-reuse provenance. Consuming retirement and checked installation retain
+that separate obligation.
+
+The independent challenge includes wrong/consumed tickets, every legal pre-send
+failure, exact 131072-byte pools, 32 prepared sends, installed and uninstalled
+history, stop between charge/stage/final guard and arbitrary raw replies. All
+nine arguments and their exact descriptor/diff identities remain valid within
+their own methods' checked domains. No counterexample is found; merely missing
+generation, current caller ordering or Windows inactivity supplies no argument.
+Every invalidation condition above remains in force.
+
+The complete fresh 166-variant ledger cohort executes with E[] and the unchanged
+eight-worker/95-percent profile. Its current receipt
+`current-ledger-mutation-v1/verification.json` has SHA256
+`1a69cc4d9ec83832c5bf9c208af6d091f96e416c334a58858d53dd6c036db90e`;
+raw outcomes SHA256 is
+`ea9c845dc3f139bea136682b4bb73a5ae49c643c258d1db500da9fbee1253395`.
+Independent causal/custody review verifies 112 caught, 45 compiler-unviable and
+nine actual matching MissedMutant cases, with no timeout/E and the same ordered
+437-case baseline/survivor roster (368 ordinary + 69 doctests). All 602 captured
+inputs, complete descriptors/diffs, actual eight-worker arguments and tool
+bookends reconcile. The sole later live difference is deliberate campaign
+admission closure. Raw 112/121 = 92.56198%, native exit 2 and the original
+incomplete receipt remain unchanged.
+
+Data-only adoption requires exact current candidate/source/proof/reviewer
+admission and negative controls. It adds this proof input to the captured
+universe rather than relabelling the executed E[] capture unchanged. The nine
+matching equivalents add zero kills: accepted adjustment changes the viable
+denominator from 121 to 112, giving 112/112, not a fresh execution or changed raw
+result. The existing Engine task records actual adoption and metadata custody.
+Neither older candidate supplies current kills, exclusions or a whole-candidate
+score. Native, raw-helper, generation and parent gates remain separate and open.
+
+## Protected-history candidate reconciliation — 13 November 2026
+
+Current product candidate is
+`964a9573143e5668a63d264bb44906fa103d5b4c3ddf1fc82cecea33012c5468`
+(593 product inputs). Ledger source remains exactly
+`8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36`;
+retirement remains
+`a92ad8f0a7c56a27fd8c32694c8ba6f557f8dfc177bb1fd7fc1d381a91ca9ce6`.
+The actual current `protected-history-ke-ledger-mutation-v1/verification.json`
+receipt has SHA256
+`c676332cb87a890e6c1d7aa2a999bb9b0f177f62a987bb78c5bf0eb03160a395`:
+166 generated, 112 caught, 45 compiler-unviable, nine missed, zero timeouts/E,
+raw 112/121 (92.561983%), exit 2 and an incomplete gate. Each of the nine
+actual current descriptors/diffs matches its named record above. Every survivor
+enters the current 469-case GNU roster (400 ordinary plus 69 doctests).
+The unchanged raw outcomes SHA256 is
+`d9fadcea5b6464b29523e74e7332a70535f1633698a9e80152ff262db73e6775`.
+Historical executions transfer no current outcome or exclusion.
+
+**Actual reviewers:** `/root; /root/ledger_boundary_domain; /root/resource_envelope_review`.
+The boundary reviewer starts with fresh context; the other reviewer resumes its
+current raw-outcome context and independently challenges the new domain argument.
+Both inspect current constructors, all relevant state writers and the actual
+survivor predicates. Their source reviews execute no compiler/solver/proof jobs;
+the separately recorded ordinary mutation campaign supplies the raw outcomes.
+The coordinator reconciles source and actual effects. Reviewer agreement adds
+neither executions nor statistical confidence.
+
+**Admitted Self domain.** `AssociationOwner::receive` is the sole production
+publication constructor; `LedgerState::new` establishes archive capacity at
+least 32. Private fields, checked construction and every production transition
+preserve their invariants. No unchecked alternate owner constructor, mutable
+inner escape, refund/reset, pool/archive shrink or late predecessor writer is
+present. This is the methods' enforced checked-owner domain, not a precondition
+inferred only from today's happy callers. Foreign/stale tickets, invalid phases,
+hostile packet bytes and current Control refusal remain actual rejected inputs.
+
+The earlier phrase "structurally inconsistent returns" does not admit arbitrary
+forged private representations. Eight return/send mutations have memory-valid
+but invariant-forged witnesses: oversized pools/archives, shrunken capacity,
+post-reservation duplicate injection or an oversized Prepared packet. These
+require bypassing every current production constructor/transition. The present
+arguments establish no arbitrary corrupted-Self robustness. The prior review's
+broader-domain objection is withdrawn on this specific enforced-domain basis;
+no raw helper's accepted primitive domain is narrowed.
+
+- `KE-RETURN-POOL-BYTES-OR` and `KE-RETURN-POOL-CAPACITY-OR`: reservation removes
+  one exact cookie without shrinking capacity. Until the pre-send return, no
+  admitted transition replenishes/replaces that pool. Available count is at most
+  seven, restored bytes at most 131072 (including equality), and capacity exceeds
+  remaining length. Both mutated connectives join false predicates independently
+  of the guard under review. Failed preparation and unrepresentable cookies
+  remain admitted return cases; successful encoding is not assumed.
+- The four `KE-SEND-*-OR` records: the Prepared request has charged a unique,
+  nonrefundable local attempt; pre-push archive length is at most 31 and capacity
+  remains at least 32. Reservation independently filters local and installed
+  predecessor membership. No intervening slot/archive/predecessor writer exists.
+  All five predicates are false without using the changed guard to establish
+  its own precondition.
+- `KE-SEND-ARCHIVE-BYTES-EQUALITY` and `KE-SEND-ARCHIVE-BYTES-INCLUSIVE`: only a
+  successful complete packet of at most 4096 bytes reaches the sender. Its cookie
+  body is strictly smaller than 4096; the unchanged 128-byte minimum overhead
+  gives the stronger bound 3968. At most 32 archived bodies total at most 126976,
+  strictly below 131072. Equality and inclusive excess cannot distinguish these
+  executions. Return pools and the raw history-bounds helper still admit exact
+  131072-byte data and keep their independent controls.
+- `KE-RECEIVE-STABLE-SLOT-OR`: this method itself first requires Pending and
+  captures its exact serial. Successful staging immutably borrows the owner,
+  with no callback, await or active-slot writer. Staging failures exit before
+  comparison; final Control refusal exits before the publication closure. Both
+  mismatches are false whenever the changed expression executes, even for an
+  arbitrary initial serial that reaches that point.
+
+All changed short-circuit reads are pure bounded comparisons or membership
+scans. Return moves the same cookie without allocation/refund/deadline renewal.
+Sender archival still precedes the same callback, preserving failed/short/
+unknown/panicking outcomes and custody. Receive preserves its original charging,
+error cleanup and atomic cookie/receipt publication. No identical execution
+duration, actual native completion, history eligibility or fresh synchronization
+is claimed. New construction/state writers, refund/reset/shrink, mutable
+predecessor, larger packet/attempt bounds or reentrant/asynchronous staging
+invalidate the corresponding argument.
+
+**Accounting boundary.** Only these exact nine current actual MissedMutant
+records are justified. After all frozen campaigns terminate with admission
+closed, the existing data-only APIs may adopt the current candidate, dossier
+hash and actual reviewers. Keep the raw receipt/outcomes/logs/diffs immutable:
+112 kills remain 112; adjusted denominator is 112 rather than 121, with nine
+zero-kill exclusions and no unresolved ledger survivor. The raw 605-input
+execution did not capture this dossier. Adoption adds its separate custody and
+changes helper/policy metadata; it cannot label that execution capture unchanged.
+Exact-nine role checks and actual-custody/accounting negative controls remain
+mandatory. Windows-only misses, nongenerated alternatives and every native,
+Core/Engine parent, package and release gate retain their existing scope.
