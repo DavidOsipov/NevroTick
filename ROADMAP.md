@@ -213,6 +213,10 @@ Do not create a competing product engine or a second roadmap/evidence chain.
   capture and rate-mapping uncertainty in any claimed physical bound. Record
   coverage/containment under declared assumptions together with interval width;
   a narrower interval that excludes admissible truth is not an improvement.
+  The [Tychron full-text assessment](docs/supporting-reviews/tychron-fulltext-assessment.md)
+  supplies concrete controls for [M12]: its published asymmetry metric equals
+  twice the absolute raw NTP offset. Test identical observations with different
+  physical offset/delay truths and an independently bounded-offset control.
 - [ ] **MATH-W05 — Kalman, clock-noise and holdover comparison.** Evaluate an
   explicitly specified phase/frequency model against the same baseline and
   lower-envelope candidate [M2, M5, M6]. State process/measurement noise and
@@ -222,6 +226,11 @@ Do not create a competing product engine or a second roadmap/evidence chain.
   achieved corrections so control effects are not misclassified as oscillator
   drift. A small covariance does not prove small physical error; declared growth
   parameters are not measured machine calibration.
+  Treat Tychron [M12] as a conditional comparison variant: separate fixed-noise
+  filtering, its adaptive-noise rule and peer reselection. Resolve gain-trigger,
+  model-parameter, polling and reference-measurement gaps before reproduction;
+  retain the full-text assessment's favorable and adverse controls. Preparing
+  these cases before V1 under LIT-0 does not execute this post-V1 experiment.
 - [ ] **MATH-W06 — conditional native/model extensions.** Assess Graham-style
   temperature/frequency prediction [M10], requiring a relevant sensor,
   independent timing reference, per-machine calibration, power-state coverage
@@ -273,6 +282,7 @@ purpose and finite budget.
 | M9 | Veitch, Mani, Cao and Barford, *iHorology: Lowering the Barrier to Microsecond-Level Internet Time*, IEEE/ACM ToN, 2022; [DOI](https://doi.org/10.1109/TNET.2022.3174189), [2020 preprint](https://arxiv.org/pdf/2011.06713). | Asymmetry constraints from additional geography/landmark information. Detailed initial review used the preprint; learned/modelled bounds need validation and may exclude truth. No Chrony benchmark. |
 | M10 | Najafi and Wei, *Graham: Synchronizing Clocks by Leveraging Local Clock Properties*, USENIX NSDI, 2022; [publication and paper](https://www.usenix.org/conference/nsdi22/presentation/najafi). | Learned local clock/temperature behavior; Chrony already has temperature compensation. Headline drift-bound gains are not the same multiplier in UTC accuracy over Chrony. |
 | M11 | Joo, Lee, Kim and Kim, *Efficient One-Way Time Synchronization for VANET with MLE-Based Multi-Stage Update*, CMC, 2025; [full paper / DOI](https://www.techscience.com/cmc/v84n2/62935/html). | Specialized WLAN-beacon inter-client comparison; different timing information and metric prevent direct transfer to the Internet NTS client. |
+| M12 | Liu, Zhu, Ma and Huang, *Improving NTP Time Synchronization Accuracy for NTS Enhancement*, MobiQuitous 2025 proceedings, 2026; [DOI](https://doi.org/10.1007/978-3-032-22500-9_18), [full-text assessment](docs/supporting-reviews/tychron-fulltext-assessment.md). | Tychron compares with Chrony 4.5/NTPsec 1.2.3. Per-peer adaptive Kalman filtering/reselection is an experiment candidate; the asymmetry metric conflates raw offset and path bias. Reported cumulative errors, population counts and plot/prose inconsistencies require qualified interpretation and reproducible controls. No production gain or algorithm adoption is established. |
 
 ### MT-0 — post-V1 multithreading and concurrent acquisition
 

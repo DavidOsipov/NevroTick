@@ -1,10 +1,16 @@
 # Chrony and NTPsec: non-core research and qualification
 
-**Document:** NV-NCR-001, revision 1.0
+**Document:** NV-NCR-001, revision 1.1
 
 **Date:** 13 November 2026, Asia/Tbilisi
 
 **Research/source baseline:** NevroTick 5dd75dfa0445ae56171d551d8d44bac09d6e8ccb
+
+**Tychron full-text amendment:** reviewed on 13 November 2026 against
+NevroTick a25696b8bf67a53ebbcf40c4c0ba43c613159ff1. The
+[dedicated assessment](tychron-fulltext-assessment.md) replaces the earlier
+abstract-only status for that chapter; other historical evidence retains its
+original scope.
 
 **Authority:** [OD-18](../nevrotick-owner-decisions.md#22-od-18--literature-derived-qualification-before-v1),
 [LIT-0](../../ROADMAP.md#lit-0--literature-derived-qualification-before-v1)
@@ -43,7 +49,7 @@ establishes which intervention would produce the largest benefit.
 | [SIDN client report, 2025][L3] | chrony 4.5/NTPsec 1.2.2 among eight clients; cold/hot start, false time, KoD, unavailability and era cases | Technical report with version inconsistencies; use discriminating scenarios, not a universal client ranking. |
 | [AmpFuzz, 2022][L4] | chrony 4.0/NTPsec 1.2.0 server/control surfaces; behavioral amplification fuzzing | Low direct priority for a client-only product; reflection and amplification differ. |
 | [EtherTime, 2025][L5] | chrony and PTP on embedded Linux under contention/faults | Workload design evidence, not a portable Windows tuning recipe or new estimator. |
-| [Tychron chapter, 2026][L6] | Abstract claims Chrony/NTPsec comparison and combined discovery/scoring/fusion/reselection | Full methods not inspected. No component gain, reproduction or adoption is established. |
+| [Tychron chapter, 2026][L6] | Full text compares Chrony 4.5/NTPsec 1.2.3; combines discovery/scoring, standard NTP stages, per-peer adaptive Kalman filtering and reselection | [Full-text assessment](tychron-fulltext-assessment.md): the asymmetry metric is twice the absolute raw offset; model/detector details, benchmark denominators and figure/prose discrepancies limit transfer. A conditional experiment candidate, with no reproduced component gain or adoption. |
 | [On Borrowed Time, 2026][L7] | Aliases, shared administration/upstreams, server lifetime and residual requests after removal | Operational independence taxonomy is not proof of independent adversarial control. |
 | [IMC ecosystem study, 2025][L8] and [later IETF presentation][S1] | Upstream/source risks; later NTxMon hostname/identity and assignment proposals | Original full paper not inspected. Presentation, simulation and prototype/service claims remain separately attributed. |
 | [Shark/Watchdog, 2023][L9] | Pool-monitor reference, anomaly and aggregation weaknesses | Historical system; current [monitoring v4][S2] must be considered before claiming the same weakness persists. |
@@ -53,8 +59,8 @@ establishes which intervention would produce the largest benefit.
 | [NTS covert channels, 2022][L13] | Fedora/chrony testbed and controlled/compromised endpoints | Proposed TLS-intercepting warden is not selected for NevroTick. |
 | [TPKI, 2025][L14] | Two-page student-workshop paper; authors report chrony 4.2 client/server prototype | Conditional model and incomplete protocol; no NTPsec evaluation or verified public artifact. See section 4. |
 
-The full Langer and TPKI papers were inspected, including the relevant figures
-and tables. Full-text access does not resolve undisclosed methods. The IMC article
+The full Langer, TPKI and Tychron papers were inspected, including the relevant
+figures and tables. Full-text access does not resolve undisclosed methods. The IMC article
 and the distinct TPKI paper must not be merged into one evidence record.
 
 ## 3. Langer: qualify acquisition without importing a correction
@@ -238,8 +244,11 @@ specific missing evidence. Native/product adoption remains separately qualified.
 New estimator, noise/temperature model and uncertainty comparisons remain
 [MATH-0](../../ROADMAP.md#math-0--post-v1-mathematical-estimation-experiments)
 after actual V1 release. Existing-correctness regressions and early case
-specifications neither run nor complete MATH-C01. Tychron remains a reproduction
-lead until full methods and fair component comparisons are available.
+specifications neither run nor complete MATH-C01. The
+[Tychron full-text assessment](tychron-fulltext-assessment.md) now supplies
+concrete MATH-W04/W05 cases and a fair-comparison plan. Its implementation,
+parameter choices and matched experimental traces still require verification;
+published equations and aggregate results do not qualify an adopted estimator.
 
 ## 7. Evidence and next-agent record
 

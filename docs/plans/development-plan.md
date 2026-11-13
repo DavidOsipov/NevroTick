@@ -450,6 +450,13 @@ Post-V1 MATH-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android and the separate
 RGT-0 → CHR-0 direction retain their existing order. Formal/native/fuzz/storage/UI
 holds and ordinary coverage/mutation/release obligations retain their scope.
 
+The [13 November Tychron full-text assessment](../supporting-reviews/tychron-fulltext-assessment.md)
+adds specific offset/asymmetry, adaptive-filter and fair-comparison cases to
+existing MATH-W04/W05 and the [S1.3 handoff](../../tasks/s1.3-source-selection-readiness.md#tychron-full-text-research-handoff--13-november-2026).
+Prepare the cases under LIT-0; run the estimator comparison after actual V1.
+Its source-scoring observations remain advisory inputs under DATA/R/C owners,
+without importing the paper's pool, constants or authentication description.
+
 ## 5. Required skill reading and use by phase
 
 The repository's skills supply implementation and verification methods. Reading
