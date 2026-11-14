@@ -1,6 +1,6 @@
 # Post-V1 certificate distrust and revocation
 
-**Document:** NV-TRUST-001, revision 1.1
+**Document:** NV-TRUST-001, revision 1.2
 
 **Roadmap workstream:** TRUST-0
 
@@ -170,6 +170,41 @@ current required policy, with defined invalidation on changes. The source-specif
 snapshot store is mandatory security state if the selected mode depends on it;
 it must not inherit an optional-cache fallback merely because the bytes are public.
 
+### 5.1 Application and stored-state compatibility
+
+At TRUST-W02, apply the existing
+[data-contract transition procedure](../../.agents/skills/implementation/evolve-data-contracts/references/transitions.md)
+before introducing new persisted or independently consumed representations.
+Feed encoding compatibility is separate from NevroTick application compatibility.
+Inventory the writer, version decoder, mandatory checked constructor, publication
+point and readers of snapshots, anti-rollback state, trust receipts, IPC/status
+events and any persisted association/model references.
+
+Declare each required old/new writer–reader–stored-generation combination
+supported, deliberately unsupported or unverified. Cover UI, engine, broker and
+the existing maintenance owner, including old processes surviving a package
+transition; one complete MSIX does not prove simultaneous process replacement.
+Choose the bounded supported update/downgrade order and explicit negotiation or
+rejection behavior before new writes. Unknown required policy semantics cannot
+default to acceptance, reset security history or become a green UI status.
+Where no old data or independently surviving reader exists, record that boundary
+instead of inventing a migration requirement.
+
+Migration must validate original version/provenance and use the same checked
+construction and current authorization as fresh state. Stage and publish under
+the protected owner; distinguish rejection before publication from replacement
+whose acknowledgement was lost. Reconcile disk and service state before retry.
+Compatible code rollback cannot restore consumed authority, erase a known
+prohibition, lower anti-rollback history or turn unknown age into fresh evidence.
+State offline disk/VM rollback assumptions explicitly; protected files alone do
+not establish a monotonic hardware history. No new rollback mechanism is selected.
+
+TRUST-W05 must exercise supported mixed versions, incompatible refusal,
+interrupted migration/restart and safe rollback using independent old/new raw
+fixtures through the actual readers and consumers. Pair rejected combinations
+with supported healthy neighbors. Record separate retirement of old writers,
+readers, stored formats and migration paths before claiming compatibility.
+
 ## 6. Authenticated update and lifecycle design
 
 OneCRL/CRLite transport is a security-data distribution path, distinct from the
@@ -274,10 +309,10 @@ complete TRUST-C01 while both feeds remain in the selected scope.
 | Stage | Owner and bounded work | Observable exit |
 | --- | --- | --- |
 | TRUST-W01 — freeze the released baseline | Coordinator with security/platform: record released source/artifacts, actual verifier/association path, service identity, OS matrix, feeds, current primary sources and all decisions below | One reconciled scope and finite budget; no inherited prototype or historical native pass |
-| TRUST-W02 — source and policy admission | Crypto/security/dependency owners: admit exact OneCRL/CRLite formats and graph, trust anchors/log keys, typed decisions, rejection-only policy and root-constraint investigation | Reviewed contracts and independent fixtures; unresolved choices recorded before dependent implementation |
+| TRUST-W02 — source and policy admission | Crypto/security/dependency owners with Core/IPC/broker and maintenance owners: admit formats/graph, trust anchors/log keys, typed decisions and root scope; freeze §5.1 compatibility and §9.5's effective trust context across processes | Reviewed contracts, independent fixtures and supported/unsupported combinations; unresolved choices recorded before dependent implementation |
 | TRUST-W03 — bounded updater and storage | Engine/platform/security: implement authenticated snapshots, anti-rollback, unchanged refresh semantics, atomic installation, lifecycle and resource limits | Actual update-entry tests show healthy installation and hostile/recovery refusal without partial policy |
-| TRUST-W04 — selected-path and association integration | Crypto/engine: check overlays against actual validated paths and bind sealed receipts through real KE/exporters/publication/send invalidation | Actual consumers reject applicable distrust/stale authority, preserve healthy NTS and never downgrade |
-| TRUST-W05 — Windows and installed qualification | Existing Windows/crypto/package owners: controlled native chains, service caches, egress, wrong time, crash/restart, final protections and resource measurements | Candidate-specific two-family and installed-lifecycle evidence with independent observations and cleanup |
+| TRUST-W04 — selected-path and downstream integration | Crypto/engine with existing Core/IPC/broker owners: bind real accepted paths and KE/exporters to association/send, sample/model eligibility and proposal/final-effect authority; UI owner consumes truthful status | Actual consumers reject stale authority through final issue and reconcile actual outcomes; unaffected-source and failed-replacement neighbors remain usable under their own policy |
+| TRUST-W05 — Windows and installed qualification | Existing Windows/crypto/Core/broker/package/UI owners: native chains, service caches/egress, wrong time, cross-process ordering, mixed-version migration/rollback, crash/restart, final protections, relevant native presentation and resource measurements | Candidate-specific two-family and installed-lifecycle evidence through final effects/settlement, independent observations and cleanup; no host fixture substitutes for a required native consumer |
 | TRUST-W06 — independent review and disposition | Coordinator and independent reviewer: reconcile scope, security coverage, resource results, root-constraint findings and remaining limits | TRUST-C01: qualified chosen-scope integration or explicit owner defer/replan; no automatic expansion into another research campaign |
 
 Do source-only parsing and state tests before native integration. Windows runs
@@ -303,6 +338,7 @@ the actual production entry/consumer and exact source/environment identity.
 | Signed update admission | Wrong signer/collection, altered metadata, invalid chain, bad signature, mismatched hash/size and malformed bounded payload cannot replace valid state |
 | Unchanged versus stale | Legitimate authenticated unchanged response retains its proper status; replay, frozen responses and mtime changes cannot renew unavailable evidence |
 | Rollback and recovery | Older signed revision, crashes between writes, missing anti-rollback state, corruption, publisher reset and signer rotation follow explicit policy without partial install |
+| Application compatibility | Supported old/new writers, readers, stored generations and live processes preserve meaning; incompatible/unknown required state refuses affected authority, interrupted migration reconciles, and code rollback cannot reset security history |
 | Native cache/identity | Cold, warm, expired and still-valid old evidence under the actual service identity; disabled CTL updates, stale mirror and blocked delegated egress are observable |
 | Root constraints | Match exact roots/keys, pre/post-cutoff leaf dates, usage and alternate chains; private/enterprise exceptions cannot silently create public trust or evade explicit distrust |
 | Wrong time and lifecycle | Forward/backward UTC error, uncertain startup, suspend/restart and clock rollback cannot fabricate feed or authentication freshness |
@@ -345,8 +381,10 @@ Apply these precedence rules at the decision owner:
    mode from §3, missing supplementary coverage may coexist with independently
    successful native checks only under its approved status policy. A profile
    requiring that evidence withholds dependent authority. Neither mode nor an
-   outage grace period is selected by this matrix; unknown native revocation
-   remains subject to the existing strict native policy.
+   outage grace period is selected by this matrix. Unknown native revocation
+   remains governed by the revocation/offline policy approved under OPEN-8; this
+   matrix neither selects nor weakens that policy. The current strict cache-only
+   verifier is laboratory-specific, not an already selected shipping profile.
 5. **Supersession is explicit and authority-specific.** A newer admitted
    correction or removal can supersede its authority's old record. Missing data,
    expired-filter omission, an invalid update or a UI dismissal cannot. Another
@@ -362,7 +400,7 @@ instead of introducing a second diagnostics or IPC schema.
 | --- | --- |
 | Identity and ordering | Event code/schema version, decision owner, process/boot instance, monotonic sequence and operation/incident identity; duplicate delivery is idempotent |
 | Evidence and authority | Mechanism, native policy context or publisher/collection/channel/format, admitted revision and signer policy, exact outcome, optional authenticated reason and evidence reference |
-| Target and applicability | Purpose, configured source, actual path/element role, exact match or constraint, affected receipt/association identity; no company-name matching |
+| Target and applicability | Purpose, configured source, actual path/element role, exact match or constraint, candidate-versus-published-association context and affected receipt identity; no company-name matching |
 | Independent times | Policy effective predicate; optional revocation/invalidity/publication times; local detection, refresh observation and coverage horizon; UTC quality/uncertainty and monotonic epoch. Missing values stay unknown |
 | Current authority | Configuration, trust-policy, association, clock and relevant source/model generations, plus the dependencies actually checked |
 | Transition and impact | Candidate refused, association preserved/retired, revalidation pending, dependent results invalidated, and aggregate state after recomputation; bounded affected count/list |
@@ -381,16 +419,23 @@ do not strengthen a generic blocklist match into a claim of compromise. Revocati
 reasons and invalidity/revocation dates can differ [S24]. The aggregate headline
 and notifications follow §9.6, rather than each row becoming a popup.
 
+**Source-usage wording comes from current published eligibility, not the event
+code alone.** If only a replacement candidate fails while an older association
+remains qualified, identify the failed refresh and the usable existing
+association under LIFE-02. Say "This source is not used" only after no usable
+association remains for that source under current policy. Bind the visible and
+spoken reason, usage qualifier and aggregate state to one coherent snapshot.
+
 **Retire affected authority** below means the complete procedure in §9.5,
 including outstanding results and dependent model/proposal eligibility. It does
 not mean immediately freeing resources still owned by native work.
 
 | Event | Establishing mechanism and scope | Mechanism response | Proposed source message |
 | --- | --- | --- | --- |
-| **CERT-01 — leaf revoked** | Valid native revocation evidence or applicable authenticated CRLite `Revoked`, bound to the actual leaf/issuer. An applicable OneCRL leaf listing supplies its stated distrust semantics | Refuse matching new authentication; retire associations whose own receipt is affected. Recover through an acceptable certificate/path and complete fresh admission | "Server certificate revoked. This source is not used." Use "rejected by certificate policy" if that is all the evidence establishes |
-| **CERT-02 — intermediate revoked or distrusted** | Native path result or exact OneCRL match on an accepted intermediate. CRLite does not provide general intermediate revocation | Locate all locally dependent paths, including different servers; retire prohibited authority. An unaffected alternate path requires fresh complete validation | "An issuing certificate was revoked. This source is not used." For a policy listing, say "An issuing certificate is rejected by the security policy" |
+| **CERT-01 — leaf revoked** | Valid native revocation evidence or applicable authenticated CRLite `Revoked`, bound to the actual leaf/issuer. An applicable OneCRL leaf listing supplies its stated distrust semantics | Refuse matching new authentication; retire associations whose own receipt is affected. Recover through an acceptable certificate/path and complete fresh admission | "The presented server certificate was revoked." Use "rejected by certificate policy" if that is all the evidence establishes; append the actual usage or failed-refresh qualifier from the rule above |
+| **CERT-02 — intermediate revoked or distrusted** | Native path result or exact OneCRL match on an accepted intermediate. CRLite does not provide general intermediate revocation | Locate all locally dependent paths, including different servers; retire prohibited authority. An unaffected alternate path requires fresh complete validation | "An issuing certificate was revoked." For a policy listing, say "An issuing certificate is rejected by the security policy"; append current usage or failed-refresh context |
 | **CERT-03 — certificate/key prohibition** | Exact issuer/serial or subject AND SPKI-hash match under §3; separately admitted key-wide policy keeps its own scope. The match can concern a leaf, intermediate or root | Enforce exactly that scope. A different serial/cross-sign does not bypass an applicable subject/key rule; a certificate-only rule does not silently become a global key/company ban | "A certificate in this server's chain is blocked by security policy." Identify its role and rule in Details |
-| **CERT-04 — root explicitly distrusted** | Effective Windows explicit distrust, an applicable OneCRL root match, or the future admitted supplementary root rule | Retire affected authority; no CRLite-good override. Alternate paths must still satisfy every applicable certificate/key prohibition | "This certificate authority is no longer trusted. This source is not used" |
+| **CERT-04 — root explicitly distrusted** | Effective Windows explicit distrust, an applicable OneCRL root match, or the future admitted supplementary root rule | Retire affected authority; no CRLite-good override. Alternate paths must still satisfy every applicable certificate/key prohibition | "This certificate authority is no longer trusted." Append actual source usage or failed-refresh context; an unaffected older receipt is evaluated separately |
 | **CERT-05 — removed or unavailable trust anchor** | Effective trust configuration no longer supplies an acceptable path. Root removal differs from explicit certificate/key prohibition [S25] | Rebuild/revalidate the path. Refuse when no accepted anchor exists; an actually valid unaffected alternate path may recover. Do not import roots to repair availability | "The certificate chain does not lead to a trusted authority" |
 | **CERT-06 — issuance cutoff or usage restriction** | Native or future admitted policy identifies exact root/key, usage, date field, comparison and exceptions; apply the rule, not today's date alone | Reject only the prohibited scope and retire matching authority. Qualify pre/post-boundary leaves and cross-signs; older certificates are not automatically rejected by a new-issuance cutoff | "This certificate is not allowed by the certificate authority policy." Details explain the actual predicate |
 | **CERT-07 — certificate date fails during new KE** | Native date validation under the approved ordinary or isolated bootstrap basis; retain the failing element when known | Refuse that candidate. Use only the existing qualified date-recovery branch if eligible; preserve unrelated trust/name/revocation failures. Evaluate any older association separately under LIFE-02 | "Certificate validity could not be established for the checked date." Say "expired" or "not yet valid" only with the necessary time/element evidence |
@@ -447,6 +492,26 @@ association/request owners, Core admission and broker; the updater receives no
 clock privilege. Discovery latency and maximum reaction delay need explicit
 bounds at activation. A revision counter does not discover a publisher or
 Windows trust change instantaneously.
+
+**Effective trust context across processes — freeze at TRUST-W02.** Reuse the
+existing [message contract](../windows-time-architecture.md#52-message-contract)
+and [receiving-owner rules](../windows-time-architecture.md#64-boundary-ownership-and-failures).
+Name the canonical trust-context writer, the engine/association/Core dependencies
+and the broker's own accepted context, including process incarnation, source,
+association/model scope and supported schema. Bind an acknowledgement to the
+exact applied transition. An engine-local revision, queued IPC write or matching
+numeric label alone cannot prove that the broker has withdrawn old authority.
+
+Define when a transition is locally admitted, pending at another consumer and
+effective at that consumer; specify its serialized relationship to final effect
+issue. Withhold affected authority while required current context is unresolved,
+and keep bounded delivery/detection delay observable. Cover delayed, missing,
+duplicate and reordered notifications or acknowledgements, reconnect and one
+process restarting. Re-establish current context before accepting dependent
+proposals after such a gap; do not reuse a prior process's acknowledgement.
+Preserve unaffected-source operation when its dependencies are established.
+The broker validates current authorization at its own boundary; it gains neither
+feed-fetch authority nor a requirement to duplicate the cryptographic verifier.
 
 1. **Admit, publish and gate.** Atomically expose a complete accepted snapshot
    with its enforcement context. Serialize the applicable policy transition
@@ -591,8 +656,8 @@ family; do not test only a duplicate policy model or formatter.
 | --- | --- |
 | **EV-01 — scope** | One revoked serial leaves a valid neighbor eligible; a matching subject/key rule still blocks another serial/cross-sign. A genuinely unaffected alternate path recovers only after full validation |
 | **EV-02 — root policy** | Explicit distrust versus absent anchor; before/after the exact issuance cutoff; applicable versus out-of-scope usage/private policy. No company-name ban or silent root import |
-| **EV-03 — expiry and replacement** | Original certificate expiry alone and a failed unrelated replacement preserve an independently valid association; required lifetime expiry and a matching distrust event retire it even while valid UDP continues |
-| **EV-04 — every race boundary** | Inject distrust after TLS verification/before publication, after packet preparation/before issue, after issue/before reply or cookie admission, after numerical selection/before broker acceptance, and after proposal acceptance/before final clock-effect issue. Old authority never reaches the next effect; in-flight custody remains correct |
+| **EV-03 — expiry and replacement** | Original certificate expiry alone and a failed unrelated replacement preserve an independently valid association and truthful visible/spoken source usage; required lifetime expiry and a matching distrust event retire it even while valid UDP continues and display actual exclusion |
+| **EV-04 — every race boundary** | Inject distrust after TLS verification/before publication, after packet preparation/before issue, after issue/before reply or cookie admission, after numerical selection/before broker acceptance, and after proposal acceptance/before final clock-effect issue. Include delayed/missing/duplicate/reordered IPC or acknowledgements and a one-process restart beside an unaffected-source control. Old authority never reaches the next effect; in-flight custody and actual outcome settlement remain correct |
 | **EV-05 — update/currentness** | Valid changed/unchanged data versus invalid/partial/rollback/replayed data; usable retained snapshot versus expired required evidence. Exercise both proposed modes only as separately named fixtures, not as an implemented policy choice |
 | **EV-06 — history and aggregate impact** | One exclusion with sufficient remaining qualified evidence retains Tracking; insufficient evidence with a valid prior model permits only the applicable holdover behavior; an affected unqualified prior cannot become trusted holdover. Floors/budgets remain under their owners |
 | **EV-07 — honest recovery** | Authenticated correction/hold release versus expired-record omission; another authority's denial still wins. Fresh TLS with insufficient time agreement remains acquisition, and retired keys/cookies/requests/samples are never resurrected |
@@ -616,8 +681,9 @@ dependent post-V1 stage; this planning record invents no accepted constants.
   and all-reasons channel continuity.
 - Freeze §9's event predicates, dependency-revalidation/reaction bounds and
   treatment of affected historical models through the existing trust/Core/broker
-  owners. UI owners retain incident persistence/actionability and exact-content
-  approval; the example messages are not adopted catalog entries.
+  owners, including §9.5's cross-process effective-context contract and §5.1's
+  compatibility/migration matrix. UI owners retain incident persistence/actionability
+  and exact-content approval; the example messages are not adopted catalog entries.
 - Numerical maximum bytes/records/filters, RAM/disk/staging, CPU and blocking
   time, concurrency, retries and bandwidth. Measure representative data first.
 - **Effort budget: TBD.** The activated execution card must set finite total
@@ -649,10 +715,13 @@ their disposition. Planning, source review or inconclusive tests do not count as
 an implemented feed. A blocked/incomplete attempt cannot silently advance the
 queue; deliberate deferral/reordering requires the owner, not an automatic retry.
 
-The closeout records the actual chain-to-association consumer path, source and
-dependency identities, independent healthy/hostile results, native/service and
-installed scope, measured cost, decision/freshness limits and operational update
-recovery. Include the supplementary-root investigation's disposition and make
+The closeout records the actual accepted-chain → association → sample/model →
+proposal → broker final issue → outcome/settlement path, source and dependency
+identities, independent healthy/hostile results, native/service and installed
+scope, measured cost, decision/freshness limits and operational update recovery.
+Include cross-process effective-context/acknowledgement evidence, application and
+stored-state compatibility/rollback disposition, and truthful UI consumer results.
+Include the supplementary-root investigation's disposition and make
 remaining Firefox-policy differences explicit. Keep optional leaf substitution
 separate. No whole-product security, browser parity or release approval follows
 from a local feed check.
@@ -678,6 +747,15 @@ boundary, after proposal acceptance; that correction was independently rechecked
 All three assigned scopes were approved. These are documentation reviews;
 the 27 event rows and nine additional acceptance groups remain proposed post-V1
 contracts with no implementation or native-test result.
+
+**Revision 1.2 skills and practice audit, 14 November 2026:** the
+[supporting audit record](../supporting-reviews/certificate-distrust-plan-audit.md)
+retains the fresh architecture, security, UI/UX and contract/QA reviews, their
+stable findings and the integrated correction check. The revision reconciles
+downstream owner/acknowledgement obligations, application/state compatibility,
+source-status wording and the laboratory-versus-shipping policy distinction.
+The record is review evidence for this plan, not a second implementation plan or
+closure of TRUST-C01. Activation, ordering and existing execution holds remain.
 
 ## 12. Primary sources and inspected revisions
 

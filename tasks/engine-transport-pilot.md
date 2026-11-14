@@ -16006,6 +16006,19 @@ Reuse current ownership/generation/native-work contracts. An arbitrary caller
 boolean, supplied certificate bag or transport metadata cannot certify that the
 supplemental policy was checked against Windows' accepted path.
 
+**Downstream handoff, plan revision 1.2:** this task coordinates the existing
+Core/IPC/broker owners for dependent sample/model eligibility, proposal
+acceptance, final clock-effect issue and actual outcome/settlement. TRUST-W02
+must freeze the [effective trust context and acknowledgement contract](../docs/plans/post-v1-certificate-distrust.md#95-ordered-enforcement-earlier-samples-and-clock-effects)
+across processes; a queued notification or local revision is not broker
+enforcement. W04/W05 must cover delayed/missing/duplicate/reordered delivery,
+reconnect and one-process restart with an unaffected-source control. Apply the
+plan's [version/state transition matrix](../docs/plans/post-v1-certificate-distrust.md#51-application-and-stored-state-compatibility)
+to supported mixed processes and migration/rollback before new writes. The UI
+owner verifies that failed replacement authentication and actual source exclusion
+have different visible/spoken status. Reuse these owners and evidence records;
+the deferred assignment creates no production path or present execution permission.
+
 Record actual candidate-specific source/native cases here, referenced from the
 crypto coordinator. No source/runtime, live feed, Windows or dependency work is
 performed by this planning update. Current V1 S2.1/S2.2/S2.3 requirements and
