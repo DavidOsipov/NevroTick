@@ -2500,6 +2500,16 @@ justify a performance claim or silently removing the required workstream.
 
 ### 8.2 Contract-review workstream and interface gates
 
+The owner-selected [H10–H16 follow-up](../../tasks/engine-transport-pilot.md#explicit-contract-prevention-follow-up--14-november-2026)
+adds targeted outcome/trait/compiler controls, two indirect-clock restrictions
+and accepted-baseline review to the existing implementation methods; see
+[hardening §3.4.1](../windows-time-development-hardening.md#341-explicit-contracts-against-mistaken-assumptions--14-november-2026).
+Reconcile its applicable rows at the next relevant owner edit. Conditional
+suppression automation, retry-observation and regression-leaf changes do not
+displace §7's current Core/Engine child or reopen completed H01–H09 source work.
+The documentation update executes no product check and changes no native,
+hosted-policy, publication or release authorization.
+
 The [30 October critical assessment](../supporting-reviews/architecture-contract-review.md)
 and [canonical acceptance refinements](../windows-time-architecture.md#2021-contract-review-acceptance-refinements)
 extend this existing plan. They do not restart P0–P7, qualify the product or block

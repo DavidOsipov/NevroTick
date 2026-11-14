@@ -1471,3 +1471,102 @@ without force. The resulting commit supplies the durable publication identity.
 Product Rust, manifests, lockfiles, CI configuration and checker implementations
 are unchanged. No Rust build, product test, native probe, formal job or release
 qualification was executed by this guidance task.
+
+## Explicit-contract instruction continuation — 14 November 2026
+
+David accepted the targeted follow-up methods and requested updating the skills
+and appropriate documentation. The repository advanced before this edit to
+`9cbdc249e8cf43aa5399386a8a491d183f3d650d`, tree
+`032b544277c45d828d49ded06f889dda1b5ec3f9`. All 2,109 snapshot blobs matched their
+Git object hashes before editing. Three files above the contents endpoint's
+inline limit were fetched through their actual blob objects and verified; an
+empty contents response was not accepted as source. The connector snapshot has
+no local Git index, so this record makes no local staged-tree claim.
+
+This authorized documentation slice modifies five existing guidance files,
+the development-hardening policy, development-plan routing, the existing Engine
+handoff and this record: nine existing Markdown files, with no new repository
+paths or product/configuration changes. The separate implementation handoff keeps
+its [existing identity](https://chatgpt.com/library?file_id=libfile_3efc95be08ac8191a4e8400df7321194&account_id=personal)
+and is updated for current H01–H09 status plus scoped H10–H16.
+
+| Guidance owner | Refinement |
+| --- | --- |
+| [Rust entry](../skills/implementation/implement-rust/SKILL.md) and [contract enforcement](../skills/implementation/implement-rust-contracts/references/contract-enforcement.md) | Important outcome types across wrappers; deliberately absent capabilities at the actual owner; fresh sequential observations; conditional narrow admission leaves. |
+| [Contract testing](../skills/testing/qa-contract-tests/SKILL.md) | Intended diagnostic plus legal consumer; separate trait controls without incidental masking; meaningful observations across transitions. |
+| [Independent review](../skills/testing/qa-independent-review/SKILL.md) | Accepted-baseline comparison of verification meaning and review of new/widened lint suppressions, preserving legitimate rebinding and scoped generated-code exceptions. |
+| [Role API restrictions](../skills/testing/references/role-api-restrictions.md) | The two elapsed methods as indirect current-clock observations; independent supplied-timestamp refusals, explicit-input and permitted-adapter neighbors. |
+
+The [canonical follow-up](../../tasks/engine-transport-pilot.md#explicit-contract-prevention-follow-up--14-november-2026)
+keeps H10–H13 targeted to existing owners. Suppression review applies now;
+automated admission, the retry seam and FitPoint leaf move remain conditional at
+their next owner edits. No current caller defect, implemented elapsed ban or new
+product test is claimed. Current task records supersede the old handoff's blanket
+native stop: bounded Core/Engine main-Windows tests are authorized, with all
+stated system-effect exclusions and unrelated holds retained. H08's Actions
+trust proposal remains pending; H09 source routing is implemented, hosted
+acceptance open. This slice changes no product stage-only instruction.
+
+### Compression, independent review and checks
+
+Full expanded intended files were frozen outside the auto-loaded tree before
+in-place caveman compression. Final totals are **62,684 → 61,222 bytes** and
+**7,437 → 7,154 words**: 283 fewer words (about 3.8%), not a tokenizer measurement
+or reduction relative to the smaller pre-update policy. All five final validator
+pairs pass with zero errors and warnings. Frontmatter, protected code, identifiers,
+links, headings and structural invariants are retained.
+
+The first implementation compression check produced prose-path classification
+warnings, repaired locally. An independent full semantic review then required
+two scope repairs: preserve the prohibition on changing real transition semantics,
+and retain the judgment that a descendant-construction risk must warrant a
+stronger leaf boundary. Both were repaired within the bounded compression process,
+revalidated against the unchanged expanded inputs and independently rechecked.
+Final semantic disposition: **READY**, no remaining required repairs.
+
+Final guidance SHA-256 identities:
+
+| File, relative to `.agents/skills/` | SHA-256 |
+| --- | --- |
+| `implementation/implement-rust-contracts/references/contract-enforcement.md` | `4b3430b40375be96713df1beca49ea2ccab86e84048b4150e5ba49264eef9830` |
+| `implementation/implement-rust/SKILL.md` | `1eaf52ff7e8f9d6638cecb1fcba0731412724b8ea33240af081c1c3d60bf2016` |
+| `testing/qa-contract-tests/SKILL.md` | `710d08dc4cb7315070e831829d213e768dbcf2a638fcd5dbe9a9ae82193ae02e` |
+| `testing/qa-independent-review/SKILL.md` | `3939b5aa598cc2b5b210288bf289b0600e887078b2fd2f5d76dc4193f221e0dd` |
+| `testing/references/role-api-restrictions.md` | `6efa179d31b4358f8c0232b837328f84c8be33f683202702b3e529395b0e4be0` |
+
+The package checker passes **66 skills**, including metadata, UI prompts, local
+links and inventories. Skill-creator validation passes all four changed entrypoint
+packages. An earlier author-side package check overlapped a canonical-document
+write and reported a missing unchanged §9.11 anchor; the settled integrated check
+passes without changing that anchor or checker. No checker implementation or
+inventory contract changed, so no new checker regression campaign was required.
+All 778 local links/anchors across the three changed canonical documents and
+this existing record resolve. No root `docs/SHA256SUMS.txt` is present; existing
+archived design-bundle manifests cover none of these changed documents.
+
+A fresh-context instruction-use reviewer received four raw synthetic cases and
+the skills, without the coordinator's expected diagnoses or other review notes.
+It correctly distinguished the discarded wrapper outcome, masked combined/outer
+trait fixtures, an elapsed fixture masked by forbidden `now`, and acceptance
+weakening disguised as hash rebinding. It retained legitimate copied observations,
+current correct types, explicit-input/adapter behavior and a genuine hash-only
+neighbor. This was source review, not executed compiler evidence. The exercise
+used the initial compact candidate; the subsequent two scope-wording repairs
+were independently reviewed and did not change those case mechanisms. These
+four practice cases are not an unseen holdout, old/new comparison, statistical
+evaluation or measured reduction in agent defects.
+
+A separate source-based document judge reviewed the full revised handoff and
+canonical additions: **READY**, no required repairs. Its optional conditional-
+seam wording was made uniform locally. Current-source and owner reconciliation
+retains scoped historical product identities, pending H08/H09 hosted acceptance,
+conditional work and current native boundaries. Final delivery replaces the
+handoff's publication placeholder with the verified commit and pins its new
+guidance links to that same commit.
+
+Before publication, verify the exact nine-file remote diff, unchanged product,
+configurations and historical receipts, current branch head and final guidance
+hashes; advance the expected parent without force. The resulting commit supplies
+the publication identity. No Rust compilation, product test, native execution,
+formal job, CI settings write or release qualification was performed by this
+instruction/documentation task.

@@ -34,9 +34,13 @@ API/tool candidates are not admitted by this documentation.
 
 The [Microsoft Learn MCP follow-up](plans/windows11-integration-follow-up.md)
 adds API-specific lifetime, publication, permission and evidence cases to those
-same owners. Its source findings are not executed native results. The current
-Windows execution stop, separate fuzz no-retry hold and storage pause remain
-governed by the [development plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+same owners. Its source findings are not executed native results. Current
+execution scope follows the
+[development plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+Its 14 November amendment permits bounded Core/Engine tests on David's main
+Windows instance; it does not authorize host clock, service, registry, security/
+trust changes, elevation or unrelated native work. The separate fuzz no-retry
+hold, storage pause, UI restrictions and post-V1 formal deferral remain.
 
 ## 1. Purpose and recommended baseline
 
@@ -180,6 +184,36 @@ For each changed contract, identify its enforcement point and independent observ
 Reviewers must reject a path that bypasses required validation, consumes the unchecked original instead of the checked result, silently drops a postcondition, or treats a stale authorization marker as current permission. Missing applicable evidence remains incomplete; agents cannot clear it by removing rules, weakening a constructor, broadening a skip or shrinking the selected test scope. Retain the actual small change scope: a trivial total helper need not acquire a new report or validator when its type and implementation already establish the complete contract.
 
 The selected initial declaration is `garde = { version = "=0.23.0", default-features = false, features = ["derive"] }`; section 18.5 of the architecture owns dependency admission. The current [workspace](../Cargo.toml) and [lockfile](../Cargo.lock) exist; garde is declared by the UI, time-domain and time-core manifests. The [implementation summary](windows-time-architecture.md#1-current-state-capsule) routes their bounded evidence to the existing tasks. Those results do not establish every planned constructor/consumer contract, enforced product CI or completed product qualification. UI-M0's D1/D2/D3 deferrals remain in force; validate its actual fixture-only paths without introducing deferred production integrations.
+
+#### 3.4.1 Explicit contracts against mistaken assumptions — 14 November 2026
+
+David requests these refinements to the existing agent methods. Apply them to
+the affected guarantee and existing owner; the instruction update implements no
+product API, deny-list entry or compiler control. The
+[H10–H16 continuation](../tasks/engine-transport-pilot.md#explicit-contract-prevention-follow-up--14-november-2026)
+records current examples, scope and completion criteria. Retain completed
+H01–H09 work and its separate outstanding qualification.
+
+| Guarantee | Required method and limit |
+| --- | --- |
+| Important outcomes remain visible through wrappers | Prefer type-level `#[must_use]` with a useful reason for an outcome whose omission matters across return paths. Exercise an ignored result through an actual wrapper and a legitimate consumer. This diagnostic does not require correct branching or prove cleanup/linear consumption; retain the receiving state/effect checks and appropriate `Copy`/`Clone`. |
+| Deliberately absent capabilities stay absent | Where absence expresses a real contract, add separate compiler-negative bounds for each selected trait on the actual guarantee-owning type. Inspect incidental fields and fixture payloads that could mask loss of the intended restriction. Keep legal behavior controls; do not ban traits generally or introduce an analyzer merely to count public APIs. |
+| Pure roles receive explicit observations | Review actual effects, including indirect clock reads. Add the proposed exact `std::time::Instant::elapsed` and `std::time::SystemTime::elapsed` restrictions through the existing pure-role policy owner. Negative cases receive timestamps as parameters, so an existing `now` restriction cannot cause a false pass. Preserve legal checked arithmetic on two explicit observations and the permitted effectful adapter. A finite deny-list is not a transitive effect proof. |
+| Admission privacy covers the intended callers | Rust private items are accessible within their declaring module and descendants. If a concrete constructor-bypass risk warrants a move at the next substantive edit, let a narrow leaf own checked type construction and private representation. Probe the former parent/sibling production scope and legal constructor/getter use; an external privacy failure does not establish that inner boundary. |
+| Deadline tests distinguish successive observations | At the next relevant recovery edit, assess a private bounded seam for distinct before/after-callback observations. If adopted, keep a fresh production clock read at every required decision. Exercise before/equal/after cutoff while earlier predicates remain valid; retain real-path controls and irreversible accounting. A cached instant, caller-supplied trusted time or sleeping test alone cannot establish this guarantee. |
+
+The Rust Reference documents [type/function diagnostics](https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-must_use-attribute)
+and [module privacy](https://doc.rust-lang.org/reference/visibility-and-privacy.html).
+Both [Instant elapsed](https://doc.rust-lang.org/std/time/struct.Instant.html#method.elapsed)
+and [SystemTime elapsed](https://doc.rust-lang.org/std/time/struct.SystemTime.html#method.elapsed)
+observe the current clock. [Tokio's paused time](https://docs.rs/tokio/1.54.1/tokio/time/fn.pause.html)
+does not replace `std::time::Instant`. These source semantics explain the chosen
+controls; they establish no current defect or executed product result.
+
+Suppression review follows §5.3; acceptance-baseline review follows §9.2.
+Automated suppression admission, the retry seam and leaf-module changes remain
+bounded follow-ups at their owner edits. Do not turn them into a repository-wide
+rewrite, new dependency requirement or prerequisite for unrelated work.
 
 ## 4. Pinning and admitting the toolchain
 
@@ -330,6 +364,18 @@ Prefer narrowly scoped `#[expect(..., reason = "...")]` where supported, with de
 Require public boundary documentation: accepted representations, error cases, units/ranges, ownership, side effects, authorization and cancellation. Rustdoc runs as its own checked lane; passing Clippy alone does not validate documentation. Generated platform declarations may need a scoped documentation exception; hand-written privileged APIs do not inherit that exception.
 
 All exceptions need the exact rule/path, reason, independent evidence, owner, approver and a review/expiry trigger. Do not grant a permanent waiver to an entire crate because one FFI call or test fixture is legitimate.
+
+Review every newly added or widened suppression against the accepted baseline,
+including inner attributes, `cfg_attr`, group expectations and movement to a
+broader module. In [Clippy 1.100](https://clippy.rust-lang.org/rust-1.100.0/index.html#allow_attributes),
+`allow_attributes` excludes inner `#![allow]`; a reason alone does not authorize
+an exception. A [group expectation](https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-expect-attribute)
+can be fulfilled by one member and does not bind an exact operation. Preserve
+the generated Slint module's named scoped expectations and legitimate conditional
+attributes. Any later automated admission must interpret actual attribute scope,
+multiline and conditional forms without mistaking comments/strings for policy;
+regex-only discovery is not complete enforcement. Require a bounded design
+before adding a parser or framework.
 
 ## 6. Build profiles and Windows mitigations
 
@@ -859,6 +905,19 @@ admissible first-delivery delay, demonstrate the independently expected bias and
 uncertainty; rejection of every delayed sample is no proof of useful operation.
 
 Compare selected/supporting/rejected identities, reason codes, uncertainty, polling and full correction accounting. Agreement with a translated upstream algorithm can reproduce a shared bug. Require an independently valid input that produces the intended effect and invalid/stale/unauthorized inputs that produce no forbidden effect. Round trips, mocks and a harness that repairs the output cannot establish production behavior.
+
+When verification changes, independent review compares the candidate's acceptance
+meaning with an identified accepted baseline: expected values/tolerances,
+selected tests/features/targets/required jobs, critical files and denominators,
+thresholds, mutation exclusions/equivalents, failure/incomplete classification,
+and checker/workflow logic. Record a compact old/new comparison, authoritative
+reason and retained counterexample plus healthy control in the existing task.
+Legitimate corrections and source-hash rebinding are allowed; distinguish them
+from changed acceptance rather than blindly running an old source-bound checker
+against new bytes. A candidate-owned checker does not independently authorize
+its own weakening. A mechanically independent policy check must obtain its
+comparison policy from the trusted baseline. This adds no automatic server-side
+review requirement, second registry or new approval round for ordinary work.
 
 ### 9.3 Coverage: at least 90% for every security module
 

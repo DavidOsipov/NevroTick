@@ -41,6 +41,14 @@ cannot forget a separate validation step. See
 [contract enforcement](../implement-rust-contracts/references/contract-enforcement.md).
 Cross-module handoffs: apply its typed-role, consuming-operation, production
 visibility and lifecycle-outcome rules; bind related facts to the actual owner.
+At the next substantive owner edit, apply type-level `#[must_use]` to important
+outcomes forwarded through wrappers; independently check intentionally absent
+traits. Preserve justified `Copy`/`Clone`. Use narrow admission leaves only where
+concrete descendant-construction bypass risk warrants them; no blanket trait ban or module
+migration. Freshness and deadline transitions need fresh owner-clock reads and bounded
+deterministic sequence tests: no caller-supplied trusted `now` or frozen production
+entry instant. These preventive checks establish no existing bug, new workstream
+or execution authority; retain current task permissions, holds and evidence scope.
 
 Locate producer, callers, mutation paths, effects and target/feature lane.
 Distinguish pure core, wire admission, engine, broker, Windows adapter and UI.

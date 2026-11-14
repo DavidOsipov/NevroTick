@@ -16480,6 +16480,50 @@ source-only pass is not a green workspace or service-evidence classification.
 H08 owner decision and H09 exact-candidate hosted results remain pending.
 No commit/push, native execution or metric/release acceptance follows.
 
+### Explicit contract prevention follow-up — 14 November 2026
+
+David requests updating the skills and appropriate documentation with the
+additional strictness methods. This is a documentation/instruction slice based
+on published `9cbdc249e8cf43aa5399386a8a491d183f3d650d`; it executes no product
+build, compiler contract, native probe or formal job. Current source review found
+preventive opportunities, not a confirmed caller failure. The preceding H01–H09
+source and qualification dispositions remain intact. In particular, H08 awaits
+the [§6.4 Actions trust decision](../docs/nevrotick-owner-decisions.md#64-hosted-actions-trust-policy--14-november-2026),
+and implemented H09 source routing is not a hosted pass.
+
+Reuse the existing S1.2/S1.3, Engine, GUI and build task owners. H10–H16 are local
+handoff labels, not new architecture requirement IDs. The
+[hardening policy](../docs/windows-time-development-hardening.md#341-explicit-contracts-against-mistaken-assumptions--14-november-2026)
+owns the methods; the existing standalone
+[implementation handoff](https://chatgpt.com/library?file_id=libfile_3efc95be08ac8191a4e8400df7321194&account_id=personal)
+carries detailed source locations and controls. Record each applicable row's
+disposition in its existing task before dependent implementation.
+
+| Handoff | Owner, scope and observable exit |
+| --- | --- |
+| H10 — Outcome diagnostics | At the next authorized notification edit, GUI owner adds a type-level `#[must_use]` reason to `CloseOutcome`, preserving correct callers and justified `Copy`/`Clone`. The ignored result through an actual stop wrapper fails for the intended diagnostic; legitimate handling passes. Correct handling and cleanup still need their existing behavioral evidence. This is separate from completed H06's tray representation. |
+| H11 — Absent trait contracts | S1.2 exact-rational owner protects `RoundedRationalSeconds` with separate negative `PartialEq<Self>`, `PartialOrd<Self>` and `Hash` bounds, retaining valid unreduced representations. GUI owner separately protects actual private `Apartment` against `Send` and `Sync` with legal same-thread controls under the relevant configuration. Isolate the guarantee owner; incidental receiver/native fields or non-sendable fixture payloads must not mask a lost marker. No COM execution or blanket trait ban follows. |
+| H12 — Indirect clock reads | Build/strict-policy owner adds exactly `std::time::Instant::elapsed` and `std::time::SystemTime::elapsed` to `PURE_METHOD_PATHS` in `scripts/check-strict.py` and the matching `time-domain`, `ntp-exchange`, `time-core` Clippy configurations. Supplied-timestamp negative cases must fail for each new path; checked explicit-pair arithmetic and the permitted adapter remain legal. Preserve exact policy admission and existing aliases/function-reference controls. No elapsed call was found in those pure crates at this source review. |
+| H13 — Accepted-baseline comparison | Independent reviewer uses an identified accepted baseline for changed oracles/tolerances, test/feature/target/job selection, critical files/denominators/thresholds, mutation exceptions and failure classification, including checker/workflow changes. Keep a compact old/new reason and counterexample/healthy-control record. Separate legitimate identity rebinding from acceptance changes; candidate-owned checks supply no independent authorization. Use this method on the next relevant review; change no server rules or approval workflow. |
+| H14 — Suppression scope | Review added/widened inner/conditional/group/module suppressions now under the existing exception policy. Automation remains conditional on a bounded source-aware design at the next checker edit. Preserve named generated Slint and legitimate `cfg_attr` expectations; regex-only detection cannot prove complete admission. No new parser framework is required by this handoff. |
+| H15 — Sequential deadline observations | At the next substantive recovery edit, Engine owner considers a private bounded observation seam around `retry_boundary`'s two clock reads. Keep fresh real production observations before and after the jitter callback. Discriminate post-callback before/equal/after cutoff with earlier predicates valid; preserve at-most-one draw, original KE failure, spent counters and no invalid deferred publication, plus valid neighbors and real-path controls. This does not diagnose current test flakiness or authorize a frozen/public trusted clock. |
+| H16 — Checked leaf ownership | At the next substantive regression edit, S1.2 owner assesses moving `FitPoint` and admission to a private leaf while preserving its public re-export, validation and numerical behavior. Require former parent/sibling production-scope construction/mutation refusal and legal checked constructor/getter controls. Private parent fields are currently accessible to descendants; no invalid construction was found. Defer if the scoped move adds more complexity than the concrete misuse it prevents. |
+
+The selected first additions are H10–H13 at their named boundaries. H14's
+review method applies now; its automation and H15/H16 remain conditional.
+This does not require a broad refactor, extra dependency, general API-diff tool,
+new campaign or reopening H07. Preserve current 90%/95% owners and fresh-source
+admission, existing default/EP1 separation, truthful cleanup/history and current
+effect guards. Use minimal discriminating negative and healthy controls, then
+the affected configured checks on one integrated candidate.
+
+Follow the current bounded main-Windows test authorization in
+[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+Host clock/service/registry/security/trust changes and elevation remain outside
+that authorization; other fuzz/storage/UI/provider holds and post-V1 formal
+deferral remain. This handoff changes no product task's stage-only publication
+instruction. Report proposed, implemented, executed and qualified separately.
+
 ### Current main-host scripted Engine tests — 14 November 2026
 
 David explicitly reauthorizes tests on his main Windows instance. Root resumes

@@ -61,6 +61,16 @@ common origin or generation; retain corresponding owner/context checks.
 Mutable/external/contextual facts need rechecking when they can change. Infallible signatures need
 an invariant-based reason.
 
+For freshness or deadlines, read the trusted clock afresh at each contract-required
+transition, including after time-advancing work and immediately before the relevant
+publication or effect. Production adapters own reads: no caller-supplied trusted
+`now` or frozen entry instant across a multistage operation. Pure calculations and
+fixtures may receive explicit observations under existing contracts; inputs alone
+grant no production clock authority. Test through the same transition implementation
+using a private or test-only bounded deterministic clock sequence. Fail clearly on
+exhaustion; preserve units and order. Pair timely entry then later expiry with an
+entirely timely control. Do not widen production injection or change real transition semantics.
+
 Required checks must run in production builds. `debug_assert!`, comments,
 successful earlier checks, generic `Validated<T>` labels or test-only assertions
 cannot enforce runtime rejection. Handle invalid input and arithmetic failure
@@ -182,6 +192,25 @@ inputs and distinct controls at affected consumers. Standard-library hash output
 is no stable serialization format or fixed test oracle; verify relevant
 equality/hash/ordering relationships and collection behavior instead.
 
+Preserve deliberate trait absence where the actual owner requires it, including
+numerical equality, ordering and hashing on
+[`RoundedRationalSeconds`](../../../../../crates/time-domain/src/rational_seconds.rs).
+For each claimed absence among `PartialEq`, `Eq`, `PartialOrd`, `Ord`, `Hash`,
+`Send` and `Sync`, retain a separate independent compiler-negative control and
+legal use on admitted compiler, target and features. A combined bound can hide
+an added capability behind another trait's refusal. Use external consumers for
+public API claims and admitted in-crate scope naming private guarantee owners;
+unrelated privacy/import errors prove none of these guarantees.
+
+For thread affinity, test the actual guard, such as private
+[`Apartment`](../../../../../crates/nevrotick-ui/src/native_notifications_windows.rs)
+with its `PhantomData<Rc<()>>` marker; containing-port refusal alone is insufficient.
+Challenge `Send` and `Sync` independently. Incidental non-thread-safe fields or
+test payloads must not mask a lost marker; use otherwise capable generic payloads
+where applicable and inspect the intended diagnostic cause. Another field's
+restriction does not protect the guard. Apply at the next substantive owner edit;
+no blanket trait ban. Preserve justified `Copy`/`Clone` and adapter extension points.
+
 ## Make structural changes require review
 
 When a new field or variant needs a semantic decision, make the compiler identify
@@ -236,8 +265,21 @@ Neither a boolean success test nor a terminal error alone proves cleanup.
 Select lints by actual behavior on the admitted compiler.
 `clippy::unneeded_field_pattern` recommends replacing named ignored fields with
 `..`, defeating the exhaustive-field technique above. Do not enable it to enforce
-that guarantee. `#[must_use]` can detect accidentally discarded results but does
-not establish correct consumption, application or lifetime.
+that guarantee.
+
+Mark important outcome enums or structs returned across wrappers with type-level
+`#[must_use]` and a meaningful handling message. A function annotation alone does
+not protect an ignored plain outcome returned by an unannotated wrapper. Cleanup
+results such as
+[`CloseOutcome`](../../../../../crates/nevrotick-ui/src/native_notifications_windows.rs)
+need that obligation across return boundaries. At the next substantive owner edit,
+pair an ignored-expression compiler-negative consumer at the actual wrapper with
+legal outcome handling. Admit effective `unused_must_use` error level; require its
+intended diagnostic. Deliberate discard such as `let _ = outcome;` suppresses it
+and is no negative control. This diagnostic imposes no linear or exactly-once
+consumption and proves neither correct handling or application nor lifetime or
+cleanup completion. Preserve appropriate `Copy`/`Clone`; retain state and effect observations
+for actual outcome behavior.
 Use [static checks](../../../testing/qa-static-checks/SKILL.md) for claimed compiler
 guarantees and existing runtime/proof owners for semantic correctness.
 
@@ -328,11 +370,22 @@ range does not prove correct units, finite floating values or related fields.
 No public fields, tuple fields, mutable-inner getters, `DerefMut`, unchecked
 `From`, permissive `Default`, unrestricted domain `Deserialize`, or alternate
 factory may construct/publish invalid domain state. Audit defining-module code,
-descendant modules and re-exports too: private fields or seals restrict
-callers outside that privacy scope, not construction within it.
-`#[non_exhaustive]` supplies no construction restriction inside the defining
-crate. Neither mechanism validates fields or blocks exposed mutation. A test-only
-construction escape stays outside production builds.
+descendants and re-exports: descendants can access a parent's private fields for
+direct construction or mutation. Private fields or seals constrain callers outside that scope;
+`#[non_exhaustive]` supplies no construction restriction inside the defining crate.
+Neither mechanism validates fields or blocks exposed mutation. Test-only
+construction escapes stay outside production builds.
+
+Where a concrete descendant-construction bypass risk warrants stronger privacy,
+place the invariant-bearing type and admission implementation in a narrow leaf.
+Siblings use checked
+constructors and invariant-preserving read-only getters; raw fields stay private
+to the leaf. Review visibility, re-exports and mutation paths; preserve supported
+adapters. Apply conditionally at the next substantive owner edit: no blanket
+module migration or new crates merely for privacy. Parent privacy alone establishes
+no current bug. Pair sibling-scope forbidden construction/mutation with legal
+checked use; privileged child tests inside the leaf cannot alone prove sibling
+exclusion.
 
 Expose only production routes actual consumers need. Keep general injection,
 raw-result extraction and other invariant-sensitive helpers private when production
@@ -394,3 +447,10 @@ and [error reports](https://github.com/jprochazk/garde/blob/v0.23.0/garde/src/er
 These explain field coverage, explicit execution, wrapper limits, floating range
 behavior and allocations; qualify the exact resolved implementation with real
 controls before making application claims.
+
+Rust primary references: [outcome diagnostics](https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-must_use-attribute),
+[privacy scopes](https://doc.rust-lang.org/reference/visibility-and-privacy.html),
+[thread transfer](https://doc.rust-lang.org/std/marker/trait.Send.html) and
+[shared references](https://doc.rust-lang.org/std/marker/trait.Sync.html).
+These describe language mechanisms; qualify actual owner and build scope with the
+controls above. They prove no runtime or native correctness.
