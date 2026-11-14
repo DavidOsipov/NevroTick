@@ -6240,8 +6240,11 @@ source/identity/scope, commands, independent observed outcomes, raw redacted
 evidence, unexecuted rows and next action here. Keep documentation review in
 the linked plan. This entry executes no Windows/package/signing/credential/Store
 or Community operation and lifts none of the current holds. Under
-[OD-16 §20.1](../docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026),
-post-V1 work starts with MATH-0 evaluation/disposition, then MT-0 and Khronos.
+[OD-16 §20.1](../docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026)
+and the 14 November [OD-20 amendment](../docs/nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1),
+post-V1 work starts with MATH-0 evaluation/disposition, then TRUST-0/TRUST-C01,
+MT-0 and Khronos. The original dated assignment and review receipts retain their
+evidence scope.
 
 ### 4.37 OS-integration vulnerability research — 8 November 2026
 

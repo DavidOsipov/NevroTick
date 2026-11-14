@@ -15989,18 +15989,41 @@ does not stage, commit or push. Windows/S134, AES fuzz, optional storage, UI D1�
 and the post-V1 formal deferral remain unchanged. No Windows command, solver,
 compression, system clock/service action or release action occurred.
 
+## Post-V1 certificate distrust — TRUST-0, 14 November 2026
+
+**Status:** DEFERRED until actual V1 release and MATH-C01; second in the queue,
+before MT-0, under [OD-20](../docs/nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1).
+[NV-TRUST-001](../docs/plans/post-v1-certificate-distrust.md) owns the detailed
+OneCRL/CRLite plan; the [crypto task](s0.1-crypto-feasibility.md#post-v1-certificate-distrust--trust-0-14-november-2026)
+coordinates TRUST-C01 and this existing engine task owns reached consumers.
+
+At that future stage, bind the authenticated immutable policy snapshot to the
+verifier's actual accepted-chain result, then preserve its identity through
+sealed association construction, publication and protected-datagram use. Qualify
+updates racing verification/publication/send, bounded invalidation and genuine
+recovery; cookie renewal or resumed TLS cannot relabel old authentication as new.
+Reuse current ownership/generation/native-work contracts. An arbitrary caller
+boolean, supplied certificate bag or transport metadata cannot certify that the
+supplemental policy was checked against Windows' accepted path.
+
+Record actual candidate-specific source/native cases here, referenced from the
+crypto coordinator. No source/runtime, live feed, Windows or dependency work is
+performed by this planning update. Current V1 S2.1/S2.2/S2.3 requirements and
+holds remain; this enhancement creates no V1 blocker and no trust downgrade.
+
 ## Post-V1 multithreading — MT-0, 7 November 2026
 
-**Status:** deferred until actual V1 release and MATH-C01's experiment
-evaluation/disposition; before Khronos under the current
-[OD-16 §20.1 amendment](../docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026).
+**Status:** deferred until actual V1 release, MATH-C01's experiment
+evaluation/disposition and TRUST-C01; before Khronos under the current
+[OD-20 amendment](../docs/nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1).
 [NV-MT-001](../docs/plans/post-v1-multithreading.md) owns the bounded plan,
 MT-W01–MT-W06, acceptance matrix and MT-C01 exit; this existing task retains the
 implementation/evidence record. No new runtime, worker count, provider, benchmark
 or native result is selected or executed.
 
 **Next at activation:** start MT-W01 by re-inspecting the actual V1
-source/artifact, current graph, holds and acquisition/consumer path. Freeze one
+source/artifact, intervening TRUST-C01 changes, current graph, holds and
+acquisition/consumer path. Freeze one
 useful progress/responsiveness question and its finite comparison before changing
 capacity or scheduler. Record the selected candidate and real outcomes here.
 

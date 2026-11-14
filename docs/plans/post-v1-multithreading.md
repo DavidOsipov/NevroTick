@@ -1,23 +1,27 @@
 # Post-V1 multithreading and concurrent NTS acquisition
 
-**Document:** NV-MT-001, revision 1.1<br>
+**Document:** NV-MT-001, revision 1.2<br>
 **Owner instruction:** David Osipov, 7 November 2026  
 **Roadmap stage / exit:** MT-0 / MT-C01  
 **Status:** planned; implementation, experiments and qualification have not run  
-**Activation:** after actual V1 release and MATH-C01's experiment evaluation/disposition; before Khronos/Ananke under the 13 November scheduling amendment<br>
+**Activation:** after actual V1 release, MATH-C01's experiment evaluation/disposition and TRUST-C01; before Khronos/Ananke under the 14 November scheduling amendment<br>
 **Planning baseline:** [e5d9a0112e198ab41a50ee0b0057e06eab68ab84](https://github.com/DavidOsipov/NevroTick/commit/e5d9a0112e198ab41a50ee0b0057e06eab68ab84)  
 **Implementation/evidence owner:** existing [engine transport task](../../tasks/engine-transport-pilot.md#post-v1-multithreading--mt-0-7-november-2026), with platform/protocol/performance owners and an independent reviewer
 
 ## 1. Decision, scope and authority
 
 [OD-16 §20.1](../nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026)
-amends the original 7 November instruction and records the current order:
+preserves mathematics first after V1. The 14 November
+[OD-20](../nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1)
+inserts supplementary certificate distrust before multithreading:
 
-**V1 released → MATH-0 / MATH-C01 → MT-0 / MT-C01 → KHR-0 / KHR-C01 → GEO-0 / GEO-C01 → Android.**
+**V1 released → MATH-0 / MATH-C01 → TRUST-0 / TRUST-C01 → MT-0 / MT-C01 → KHR-0 / KHR-C01 → GEO-0 / GEO-C01 → Android.**
 
 [MATH-0](../../ROADMAP.md#math-0--post-v1-mathematical-estimation-experiments)
 evaluates the researched mathematical approaches first; its disposition does not
-require production adoption. This amendment changes future scheduling only.
+require production adoption. [TRUST-0](post-v1-certificate-distrust.md) then owns
+OneCRL and CRLite integration and its exit. These amendments change future
+scheduling only.
 
 The [roadmap](../../ROADMAP.md#mt-0--post-v1-multithreading-and-concurrent-acquisition)
 owns this order. Completing P0–P7 planning, compiling a candidate or creating a
@@ -38,7 +42,7 @@ are not deferred by MT-0. The current [development continuation](development-pla
 retains its order before release.
 
 Current Windows, fuzz, storage and UI execution holds remain until their actual
-owners resolve them. Actual V1 release and MATH-C01 are scheduling prerequisites,
+owners resolve them. Actual V1 release, MATH-C01 and TRUST-C01 are scheduling prerequisites,
 not an automatic waiver of an unresolved hold or dependency/native gate. OD-10's
 formal work remains post-V1; eligibility after release does not put the whole proof
 backlog ahead of the current roadmap order. Apply its product-guarantee and
@@ -48,8 +52,8 @@ finite-budget rules to any relevant resumed proof work.
 
 | Surface | Disposition |
 | --- | --- |
-| Earlier first-Khronos and first-MT scheduling | Superseded by David's 13 November amendment: MATH-0 evaluation/disposition is first after actual V1 release, then MT-0. |
-| MT-0 → Khronos → GeoIP → Android | Relative order retained after MATH-C01. RGT-0 → CHR-0 retains its separate later scope. |
+| Earlier first-Khronos and first-MT scheduling, then immediate MATH-0 → MT-0 scheduling | Superseded by the 13 and 14 November decisions: MATH-0 evaluation/disposition is first after actual V1 release, then TRUST-0, then MT-0. |
+| MT-0 → Khronos → GeoIP → Android | Relative order retained after MATH-C01 and TRUST-C01. RGT-0 → CHR-0 retains its separate later scope. |
 | Current-thread engine experiment | Retained as the inspected reference, not permanently selected for the post-V1 product or claimed superior. |
 | Source admission, independence and clock authority | Unchanged. Concurrency cannot lower a source minimum, add votes or grant workers broker privileges. |
 | Worker count, provider and runtime choice | Open. Neither four workers nor multithread Tokio is adopted by this plan. |
@@ -225,7 +229,7 @@ not an assertion that staffing or execution permission exists.
 
 | ID / owner | Work | Exit and dependencies |
 | --- | --- | --- |
-| MT-W01 — coordinator/engine | After actual V1 release and MATH-C01's evaluation/disposition, inspect released source/artifact, current HEAD/dirty changes, graph, existing evidence, holds and concrete bottleneck. Map actual calls and consumers. | One bounded next-slice contract and baseline record in the existing engine task. No new runtime/provider selected. |
+| MT-W01 — coordinator/engine | After actual V1 release, MATH-C01's evaluation/disposition and TRUST-C01, inspect released source/artifact, current HEAD/dirty changes, graph, existing evidence, holds and concrete bottleneck. Map actual calls and consumers, including the TRUST-0 changes. | One bounded next-slice contract and baseline record in the existing engine task. No new runtime/provider selected. |
 | MT-W02 — engine/platform/protocol | Freeze the work/result ownership, independent limits, policy-issue ordering, cancellation/stop semantics, actual blocking boundary, metrics and finite experiment budget. | Reviewed contract with independent healthy/fault expectations; unresolved native/provider decisions explicitly block only their dependent work. |
 | MT-W03 — engine implementer | Extend the real released acquisition path with the smallest justified scheduling/isolation change. Preserve private candidate construction and serialized acceptance. | Focused meaningful RED→GREEN where repairing behavior, valid neighbors, bounded source/result state and unchanged time/trust authority. A model alone is not native integration. |
 | MT-W04 — platform/QA | Qualify selected Windows adapters and full source-to-consumer behavior under the applicable native admission. | Scoped CHECK-6/8/9/11/17/25/26/27 evidence, real completion/cleanup and actual control/UDP progress. Missing native evidence remains incomplete. |
@@ -235,10 +239,11 @@ not an assertion that staffing or execution permission exists.
 ### First post-V1 executable stage: MT-W01
 
 **Current placement:** this retained heading names the first stage within MT-0.
-Under the 13 November amendment, MATH-0 is first overall; MT-W01 starts after
-actual V1 release and MATH-C01's experiment evaluation/disposition.
+Under the 14 November amendment, MATH-0 is first overall and TRUST-0 second;
+MT-W01 starts after actual V1 release, MATH-C01's experiment evaluation/disposition
+and TRUST-C01.
 
-**Inputs:** actual V1 release/source/artifact identity and MATH-C01 record; current architecture,
+**Inputs:** actual V1 release/source/artifact identity, MATH-C01 and TRUST-C01 records; current architecture,
 development/task records and this plan; current feature graph; existing relevant
 evidence and environment/hold status.
 
@@ -257,7 +262,7 @@ finite next experiment, valid/fault controls, predeclared metrics/thresholds,
 resource/cleanup limits and admission blockers. No new tool, provider, privileged
 operation, public-server probing or runtime change is needed for this stage.
 
-**Readiness:** deferred until actual V1 release and MATH-C01's evaluation/disposition.
+**Readiness:** deferred until actual V1 release, MATH-C01's evaluation/disposition and TRUST-C01.
 Documentation can be maintained now. Afterwards MT-W01 can proceed read-only; later execution still follows its
 own prerequisites. Do not use an unavailable benchmark environment as a reason
 to claim a design winner.
@@ -326,7 +331,7 @@ feature graph must pass its existing admission.
 
 ## 8. Exit MT-C01 and onward scheduling
 
-MT-0 follows MATH-C01's evaluation/disposition after actual V1 release; Khronos
+MT-0 follows TRUST-C01, after actual V1 release and MATH-C01's evaluation/disposition; Khronos
 does not begin merely because this plan exists or an experiment was attempted.
 
 Close MT-C01 with one of these evidence-backed dispositions in the existing
@@ -367,7 +372,7 @@ native test or release was performed. The document's plan review concerns
 scheduling and contract completeness only.
 
 **Next agent:** continue the current V1 development plan until the actual release,
-then complete MATH-C01's evaluation/disposition. At MT-0 activation, start MT-W01,
+then complete MATH-C01's evaluation/disposition and TRUST-C01. At MT-0 activation, start MT-W01,
 re-read the released implementation, freeze the smallest useful comparison,
 preserve the contracts above, and report separate implemented,
 host-tested, native-qualified and still-open results. Do not turn research
@@ -376,7 +381,7 @@ preferences into production constants.
 ### Documentation review record
 
 The dated review below records revision 1.0 and its original scheduling. The
-13 November amendment in §1 controls the current order; this receipt is unchanged.
+14 November amendment in §1 controls the current order; this receipt is unchanged.
 
 **Review completed, 7 November 2026:** post_v1_plan_review returned **READY to
 record the deferred plan and scheduling amendment**, with no material finding.

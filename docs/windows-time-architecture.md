@@ -3933,6 +3933,26 @@ confirmed non-revocation. A qualified adapter is required only when the selected
 policy needs information/control the interface lacks. This selects neither a
 custom verifier nor universal soft-fail/strict-online policy.
 
+**Supplementary distrust deferred after V1 — 14 November 2026:**
+[OD-20](nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1)
+places OneCRL/CRLite integration in post-V1 TRUST-0, second after MATH-C01 and
+before MT-0. [NV-TRUST-001](plans/post-v1-certificate-distrust.md) owns the proposed
+authenticated-data, actual accepted-chain, coverage/currentness and
+association-invalidation contract. Separate root removals and distrust-after
+constraints require their own scoped policy; the two feeds do not establish
+complete Firefox trust-policy parity. Strict error handling does not establish
+the freshness or completeness of Windows distrust data.
+
+This supplemental feature adds no V1 implementation or release requirement and
+does not weaken the existing OPEN-8/R-05 profile, native, retrieval, bootstrap or
+association-lifetime gates above. The initial future integration may add
+rejection decisions; it may not silently override native rejection. Any later
+use of CRLite to replace only missing native leaf-revocation evidence requires
+separate qualification and the existing policy-decision process. A bundled
+snapshot proves only snapshot-scoped capability; timely emergency response
+requires separately qualified update/currentness and reaction behavior. No
+feed/provider/updater or production result is adopted by this amendment.
+
 #### 18.7.3 NTS packet AEAD, entropy and parser reuse
 
 NTS algorithm 15 is `AES-SIV-CMAC-256`. The candidate `aes-siv` 0.8.0 uses `Aes128Siv` with a **32-byte total key**, comprising two AES-128 keys. `Aes256Siv` uses a different total key length, and AES-GCM-SIV is a different algorithm. Qualify the low-level SIV associated-data/nonce mapping and permitted nonce lengths against RFC 8915 and independent vectors. For NTPv4, test the exporter label `EXPORTER-network-time-security`, the five-byte protocol/AEAD/direction context, and distinct 32-byte C2S/S2C keys. TLS cipher suites and NTS packet AEAD are separate choices. [S20, S82]

@@ -290,6 +290,26 @@ This refines OPEN-8/CRYPTO-04 and CHECK-8/9/26/27; it selects neither blanket
 offline operation nor softer revocation policy. If the chosen wrapper cannot
 express the required policy, its existing admission gap remains open.
 
+### Supplementary certificate distrust after V1
+
+**14 November owner deferral:** [OD-20](nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1)
+places [TRUST-0 / NV-TRUST-001](plans/post-v1-certificate-distrust.md) second after
+actual V1 release and MATH-C01, before multithreading. Both OneCRL and CRLite are
+planned; root removal/distrust-after policy is a separately identified gap.
+Current V1 OPEN-8/CRYPTO-04 and CHECK-8/9/15/26/27 duties remain at their existing
+gates. Do not pull supplemental-feed implementation or its native campaigns
+forward into V1, or treat the deferral as permission to weaken those duties.
+
+At future TRUST-W01, the [existing crypto coordinator](../tasks/s0.1-crypto-feasibility.md#post-v1-certificate-distrust--trust-0-14-november-2026)
+must recheck the released verifier and upstream formats/authorities, distinguish
+strict failure behavior from data freshness, freeze signed-data and wrong-clock
+currentness rules, and identify the actual accepted-chain and association/send
+consumers. Preserve fresh-data, unchanged-data, stale, uncovered, unenrolled and
+revoked distinctions; define rollback/freeze detection and maximum reaction
+delay without importing browser defaults. TRUST-C01 needs actual qualified
+evidence or an explicit retained-gap disposition, not a written plan or an
+assumption that Windows or Mozilla always updates first.
+
 ### Association and full-authentication lifetime
 
 Track separately the latest accepted time observation, cookie receipt, C2S/S2C key establishment, original full certificate-authenticated handshake and applicable trust-policy revision. Packet/cookie renewal and resumed TLS cannot silently renew full-authentication age. Specify bounded association/key lifetimes and jittered full reauthentication, including when resumption is forbidden, age measurement across restart/suspend/wrong UTC, and refusal or explicit recovery when age is unknown. Define source/algorithm removal, known-compromise and detected trust-store/policy invalidation, the detection owner and maximum reaction delay. Detection is not instantaneous merely because the policy has a revision.

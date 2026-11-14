@@ -455,7 +455,7 @@ Case preparation for a future mechanism does not require implementing it before
 V1. Do not create a mock TPKI protocol to manufacture a pass. New TCA
 infrastructure, NTxMon/live assignment and optional timestamp optimizations remain
 conditional work under the roadmap's longer-work table and named owners.
-Post-V1 MATH-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android and the separate
+Post-V1 MATH-C01 → TRUST-C01 → MT-C01 → KHR-C01 → GEO-C01 → Android and the separate
 RGT-0 → CHR-0 direction retain their existing order. Formal/native/fuzz/storage/UI
 holds and ordinary coverage/mutation/release obligations retain their scope.
 
@@ -3082,7 +3082,17 @@ platform and DNS scope. Complete this Windows P0–P7 plan and actually release 
 then [OD-16 §20.1](../nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026)
 places [MATH-0](../../ROADMAP.md#math-0--post-v1-mathematical-estimation-experiments)
 first. Existing Core/Engine tasks retain its experiment evidence; MATH-C01 records
-evaluation/disposition without requiring production adoption. Then
+evaluation/disposition without requiring production adoption.
+[OD-20, 14 November](../nevrotick-owner-decisions.md#24-od-20--supplementary-certificate-distrust-after-v1)
+places [TRUST-0](../../ROADMAP.md#trust-0--post-v1-certificate-distrust-and-revocation)
+second, after MATH-C01. [NV-TRUST-001](post-v1-certificate-distrust.md) and the
+[existing crypto task](../../tasks/s0.1-crypto-feasibility.md#post-v1-certificate-distrust--trust-0-14-november-2026)
+own the finite OneCRL/CRLite integration, update/coverage/root-policy contract
+and TRUST-C01 evidence/disposition; the engine task retains association consumers.
+No feed implementation or native campaign starts before actual V1 release and
+MATH-C01, and no new V1 feed-integration gate is added. Existing OPEN-8/R-05
+certificate, revocation, bootstrap and lifecycle requirements remain in P0–P7.
+After TRUST-C01,
 [MT-0](../../ROADMAP.md#mt-0--post-v1-multithreading-and-concurrent-acquisition)
 follows. [NV-MT-001](post-v1-multithreading.md) and the existing engine task own its
 bounded multithreading/acquisition work and MT-C01. Existing V1 correctness,
