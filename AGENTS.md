@@ -272,11 +272,21 @@ records invocation stop, actual join and sealed historical-result custody, with
 complete portable mutation accounting and scoped GNU gates on its historical
 candidate; that checkpoint was signed and pushed as `5dd75df`. The private
 [conditional numerical receiver](tasks/engine-transport-pilot.md#conditional-numerical-receiver--source-development-13-november-2026)
-is now implemented on Rust 1.99.1, with its actual facade caller supplying `None`.
-The 34 ownership/privacy compiler controls and 69 doctests pass. Next freeze/rebind
-and qualify the changed source with the [Rust 1.100 admission owner](tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026).
-Keep campaigns closed until fresh source/tool admission; the old 607/E9 results
-remain tied to `964a9573`. Native/generation gates remain open.
+is implemented on the admitted Rust 1.100.0 compiler, with its actual facade caller
+supplying `None`. The [receiver continuation](tasks/engine-transport-pilot.md#receiver-qualification-continuation--13-november-2026)
+records candidate `82a19ffa`: 410 ordinary/410 optimized tests (229 KE each),
+34 ownership/privacy compiler controls, 69 doctests, format and GNU/MSVC Clippy
+pass. These results retain their historical candidate. The [truthful numerical
+CLI source child](tasks/engine-transport-pilot.md#numerical-cli-projection--development-checks-complete-14-november-2026)
+now passes development checks on product `05b1a35c`: 415 ordinary/415 optimized
+cases, 69 doctests, GNU/MSVC Clippy, Windows-target compilation and 43 actual
+compiler controls (8 legal/35 intended refusals). Its sealed joined projection
+keeps original facts and prototype/no-freshness output; the facade still supplies
+`None`. Before future KE metric campaigns, rebind the complete current source/
+helpers, test roster and reviewed inventories for 90% coverage/95% mutation
+qualification. Keep campaigns closed until that admission;
+old 607/E9 results remain tied to
+`964a9573`. Production suppliers, native/generation gates and existing holds remain.
 Source, cross-build and scripted Windows receipts do
 not establish integrated acquisition, Core eligibility, native TLS/CNG/UDP
 qualification, services or clock effects.

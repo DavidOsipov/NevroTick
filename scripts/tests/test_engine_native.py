@@ -7,6 +7,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -58,6 +59,7 @@ def observation(authored=2, helpers=1):
         "runtime_files_sha256": {"fixed-runtime": HASH, CONSOLE: HASH}, "system_console_path": CONSOLE,
         "execution": {
             "pid": 12, "exit_code": 0, "failure": None, "cleanup_failure": None,
+            "process_limit": 4,
             "output_overflow": False, "cleanup_complete": True, "streams_released": True,
             "process_handle_released": True, "gate_sent": True, "stdin_encoding": "utf-8",
             "stdin_preamble_hex": "EF-BB-BF", "active_processes_before_cleanup": 0,
@@ -72,6 +74,131 @@ def observation(authored=2, helpers=1):
             "stderr": "launcher-child-pid=13\n" if authored == 2 else "launcher-stage=gate;os-error=none\n",
         },
     }
+
+
+def nested_observation(mode="job-native-foreign", helpers=3):
+    """Three fixed authored images; kernel-shaped facts, not native evidence."""
+    value = observation(helpers=helpers)
+    result = value["execution"]
+    child_name = "engine-tests.exe" if not mode.startswith("control-") else "gate-control.exe"
+    for item in result["job_events"]:
+        if item["pid"] == 13 and item["kind"] == 6: item["basename"] = child_name
+    index = 2 + helpers
+    result["job_events"].insert(index, dict(member(20, "child", child_name), kind=6))
+    result["job_events"].insert(-1, pid_event(7, 20))
+    result["total_processes"] += 1
+    result["process_limit"] = 6
+    return value
+
+
+class NativeNestedProcessAdmission(unittest.TestCase):
+    def test_exact_nested_graph_has_a_healthy_old_flat_neighbor(self):
+        NATIVE.validate_console(observation(), REQUEST, HASH, HASH)
+        request = dict(REQUEST, mode="job-native-foreign")
+        NATIVE.validate_console(nested_observation(), request, HASH, HASH, expected_processes=3)
+
+    def test_only_six_fixed_new_modes_can_use_the_nested_budget(self):
+        modes = ("job-native-foreign", "provider-native-once", "provider-native-foreign",
+                 "control-nested-healthy", "control-nested-fail", "control-nested-wait")
+        self.assertEqual(set(NATIVE.NESTED_TEST_MODES.values()), set(NATIVE.HELD_KE_TESTS))
+        for mode in modes:
+            for helpers in range(4):
+                with self.subTest(mode=mode, helpers=helpers):
+                    NATIVE.validate_console(nested_observation(mode, helpers), dict(REQUEST, mode=mode),
+                                            HASH, HASH, expected_processes=3)
+        for mode in ("cpu", "list", "ke", "control-healthy", "control-fail", "control-wait"):
+            self.assertEqual(NATIVE.mode_profile(mode)[:2], (4, 2))
+            with self.subTest(mode=mode), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_console(nested_observation(), dict(REQUEST, mode=mode), HASH, HASH, expected_processes=3)
+        for mode in ("job-native-arbitrary", "--exact", "control-nested-child", True, None, ["ke"]):
+            with self.subTest(mode=mode), self.assertRaises(NATIVE.Incomplete): NATIVE.mode_profile(mode)
+
+    def test_missing_extra_or_foreign_nested_identity_never_passes(self):
+        request = dict(REQUEST, mode="job-native-foreign")
+        for fault in ("missing", "extra", "duplicate", "unreadable", "foreign", "console-lookalike", "marker-alias", "wrong-cap"):
+            value = nested_observation(helpers=0)
+            events = value["execution"]["job_events"]
+            nested = next(item for item in events if item["kind"] == 6 and item["pid"] == 20)
+            if fault == "missing": events.remove(nested)
+            elif fault == "extra":
+                events.insert(3, dict(member(21, "child", "engine-tests.exe"), kind=6))
+                events.insert(-1, pid_event(7, 21)); value["execution"]["total_processes"] += 1
+            elif fault == "duplicate": events.insert(3, dict(nested))
+            elif fault == "unreadable": nested["read_failure_type"] = "Win32Exception"
+            elif fault == "foreign": nested["image_role"] = "unknown"
+            elif fault == "console-lookalike": nested.update(image_role="system-console", basename="conhost.exe", system_console=False)
+            elif fault == "marker-alias": value["execution"]["stderr"] = "launcher-child-pid=12\n"
+            else: value["execution"]["process_limit"] = 4
+            with self.subTest(fault=fault), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_console(value, request, HASH, HASH, expected_processes=3)
+        value = nested_observation(helpers=4)
+        with self.assertRaises(NATIVE.Incomplete):
+            NATIVE.validate_console(value, request, HASH, HASH, expected_processes=3)
+
+    def test_nested_gate_has_no_authored_child_and_request_cannot_supply_a_cap(self):
+        for gate in ("bad", "missing"):
+            value = observation(authored=1)
+            value["status"] = "incomplete"
+            value["execution"].update(exit_code=126, gate_sent=False, process_limit=6)
+            request = dict(REQUEST, gate=gate, mode="job-native-foreign")
+            NATIVE.validate_console(value, request, HASH, HASH, expected_exit=126, expected_processes=1)
+            for pid in (13, 20):
+                bad = json.loads(json.dumps(value))
+                bad["execution"]["members_before_gate"][-1] = member(pid, "child", "engine-tests.exe")
+                with self.subTest(gate=gate, pid=pid), self.assertRaises(NATIVE.Incomplete):
+                    NATIVE.validate_console(bad, request, HASH, HASH, expected_exit=126, expected_processes=1)
+        for field, raw in (("active_limit", 100), ("authored", 2), ("arguments", ["--exact", "arbitrary"]), ("child_path", "C:\\other.exe")):
+            with self.subTest(field=field), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_console(nested_observation(), dict(REQUEST, mode="job-native-foreign", **{field: raw}),
+                                        HASH, HASH, expected_processes=3)
+
+    def test_nested_failure_and_timeout_preserve_completion_cleanup_distinction(self):
+        failed = nested_observation("control-nested-fail")
+        failed["status"] = "incomplete"
+        failed["execution"]["exit_code"] = 7
+        NATIVE.validate_console(failed, dict(REQUEST, mode="control-nested-fail"), HASH, HASH,
+                                expected_exit=7, expected_processes=3)
+        waiting = nested_observation("control-nested-wait")
+        waiting["status"] = "incomplete"
+        waiting["execution"].update(exit_code=1, active_processes_before_cleanup=6,
+            failure="TimeoutException: Owned child deadline exceeded.")
+        request = dict(REQUEST, mode="control-nested-wait")
+        NATIVE.validate_console(waiting, request, HASH, HASH, expected_exit=1, expected_processes=3, timeout_control=True)
+        for field, bad in (("active_processes_after_cleanup", 1), ("streams_released", False),
+                           ("event_reader_joined", False), ("event_job_handle_retained", True),
+                           ("event_port_closed", False), ("event_read_failure_type", "Win32Exception")):
+            value = json.loads(json.dumps(waiting)); value["execution"][field] = bad
+            with self.subTest(field=field), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_console(value, request, HASH, HASH, expected_exit=1, expected_processes=3, timeout_control=True)
+
+    def test_nested_notifications_keep_the_existing_bound_and_historical_exit_join(self):
+        request = dict(REQUEST, mode="job-native-foreign")
+        for fault in ("sixteen-events", "unknown-exit", "nested-before-gate", "reader-race"):
+            value = nested_observation()
+            events = value["execution"]["job_events"]
+            if fault == "sixteen-events":
+                events.extend(pid_event(4, 0) for _ in range(16 - len(events)))
+            elif fault == "unknown-exit":
+                next(item for item in events if item["kind"] == 7)["pid"] = 99
+            elif fault == "nested-before-gate":
+                value["execution"]["members_before_gate"][-1] = member(20, "child", "engine-tests.exe")
+            else:
+                value["execution"]["event_read_failure_type"] = "Win32Exception"
+            with self.subTest(fault=fault), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_console(value, request, HASH, HASH, expected_processes=3)
+
+    def test_exact_nested_test_requires_one_success_and_the_full_filtered_roster(self):
+        names = sorted([*NATIVE.HELD_KE_TESTS, *(f"synthetic_neighbor_{index}" for index in range(389))])
+        roster = {"tests": names, "held_ke_tests": list(NATIVE.HELD_KE_TESTS)}
+        for mode, name in NATIVE.NESTED_TEST_MODES.items():
+            output = f"running 1 test\ntest {name} ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 391 filtered out; finished in 0.01s\n"
+            result = NATIVE.validate_nested_execution(output, roster, mode)
+            self.assertEqual((result["test"], result["tests_executed"], result["filtered_tests"]), (name, 1, 391))
+            for bad in (output.replace("391 filtered", "390 filtered"), output.replace("1 passed", "0 passed"),
+                        output.replace("0 ignored", "1 ignored"), output.replace("... ok", "... FAILED"),
+                        output.replace(name, "unrelated_test")):
+                with self.subTest(mode=mode, bad=bad), self.assertRaises(NATIVE.Incomplete):
+                    NATIVE.validate_nested_execution(bad, roster, mode)
 
 
 class EngineArtifactAdmission(unittest.TestCase):
@@ -103,6 +230,128 @@ class EngineArtifactAdmission(unittest.TestCase):
                     if fault == "duplicate": text += "\n" + text
                     with self.subTest(fault=fault), self.assertRaises(NATIVE.Incomplete):
                         NATIVE.engine_artifact(text, work)
+
+
+class TestRosterAdmission(unittest.TestCase):
+    """Independent source-bound identities are never inferred from native discovery."""
+
+    def roster(self):
+        selected = ["nts_ke_experiment::first", "nts_ke_experiment::second"]
+        ke = sorted([*NATIVE.HELD_KE_TESTS, *selected])
+        return {"schema_version": 1, "package": "nevrotick-engine", "target": NATIVE.TARGET,
+                "features": ["ke-association-prototype"], "candidate_sha256": HASH,
+                "extra_inputs_sha256": {name: HASH for name in NATIVE.EXTRAS},
+                "tests": ["common::neighbor", *ke], "ke_tests": ke,
+                "selected_ke_tests": selected, "held_ke_tests": list(NATIVE.HELD_KE_TESTS)}
+
+    def admit(self, value):
+        return NATIVE.validate_test_roster(value, HASH, self.roster()["extra_inputs_sha256"])
+
+    def test_exact_source_target_feature_and_complete_selected_subset(self):
+        value = self.roster()
+        self.assertIs(self.admit(value), value)
+        faults = {
+            "schema_version": True, "package": "time-core", "target": "x86_64-unknown-linux-gnu",
+            "features": [], "candidate_sha256": "b" * 64, "extra_inputs_sha256": {},
+            "tests": [], "ke_tests": ["nts_ke_experiment::first"],
+            "selected_ke_tests": ["nts_ke_experiment::first"], "held_ke_tests": [],
+        }
+        for field, wrong in faults.items():
+            with self.subTest(field=field), self.assertRaises(NATIVE.Incomplete):
+                self.admit(dict(value, **{field: wrong}))
+        for names in (["common::only"], ["nts_ke_experiment::same"] * 2,
+                      ["nts_ke_experiment::z", "nts_ke_experiment::a"],
+                      ["nts_ke_experiment::bad\nname"], ["nts_ke_experiment::" + "x" * 4096],
+                      [True], ["nts_ke_experiment::same"] * 4097):
+            with self.subTest(names=str(names)[:90]), self.assertRaises(NATIVE.Incomplete):
+                self.admit(dict(value, tests=names))
+        with self.assertRaises(NATIVE.Incomplete):
+            self.admit(dict(value, unknown="cannot redefine the scope"))
+
+    def test_bounded_manifest_read_preserves_bytes_and_refuses_link_or_rebinding(self):
+        value = self.roster()
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "roster.json"
+            raw = (json.dumps(value, indent=2) + "\n").encode()
+            path.write_bytes(raw)
+            self.assertEqual(NATIVE.read_test_roster(path, HASH, value["extra_inputs_sha256"]), (value, raw))
+            linked = path.with_name("linked.json"); linked.symlink_to(path)
+            with self.assertRaises(NATIVE.PE.Incomplete):
+                NATIVE.read_test_roster(linked, HASH, value["extra_inputs_sha256"])
+            parent_link = path.parent / "linked-parent"; parent_link.symlink_to(path.parent, target_is_directory=True)
+            with self.assertRaises(NATIVE.PE.Incomplete):
+                NATIVE.read_test_roster(parent_link / path.name, HASH, value["extra_inputs_sha256"])
+            for bad in (b"{" + b" " * NATIVE.MAX_TEST_ROSTER_BYTES,
+                        b'{"schema_version":1,"schema_version":1}', b'\xff'):
+                path.write_bytes(bad)
+                with self.subTest(raw=bad[:50]), self.assertRaises((NATIVE.Incomplete, NATIVE.PE.Incomplete, ValueError)):
+                    NATIVE.read_test_roster(path, HASH, value["extra_inputs_sha256"])
+
+    def test_listing_requires_exact_full_source_bound_identities(self):
+        value = self.roster()
+        names_only = "\n".join(name + ": test" for name in value["tests"]) + "\n"
+        self.assertEqual(NATIVE.validate_test_listing(names_only, value), value["tests"])
+        output = names_only + "\n6 tests, 0 benchmarks\n"
+        self.assertEqual(NATIVE.validate_test_listing(output, value), value["tests"])
+        for bad in (output.replace("common::neighbor", "common::same_count_substitute"),
+                    output.replace("nts_ke_experiment::second", "nts_ke_experiment::first"),
+                    output.replace("6 tests", "5 tests"), output + "unattributed output\n",
+                    output + "6 tests, 0 benchmarks\n", output.replace("0 benchmarks", "1 benchmark")):
+            with self.subTest(output=bad[:100]), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_test_listing(bad, value)
+
+    def test_selected_results_require_exact_successes_and_filtered_count(self):
+        value = self.roster()
+        output = "running 2 tests\n" + "\n".join("test " + name + " ... ok" for name in value["selected_ke_tests"])
+        output += "\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.01s\n"
+        NATIVE.validate_ke_execution(output, value)
+        NATIVE.validate_ke_execution(output.replace("\n", "\r\n"), value)
+        for bad in (output.replace("::second", "::first"), output.replace("::second", "::unexpected"),
+                    output.replace("4 filtered", "3 filtered"), output.replace("0 ignored", "1 ignored"),
+                    output.replace("second ... ok", "second ... ignored"),
+                    output + "test common::unexpected ... ok\n", output + output,
+                    output.replace("2 passed", "0 passed")):
+            with self.subTest(output=bad[:100]), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_ke_execution(bad, value)
+
+    def test_missing_stale_or_changed_manifest_refuses_before_windows_staging(self):
+        inputs = {"actual-source": HASH}
+        candidate = NATIVE.ALLOCATION.canonical_digest(inputs)
+        extras = self.roster()["extra_inputs_sha256"]
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            manifest = dict(self.roster(), candidate_sha256=candidate)
+            roster_path = directory / NATIVE.TEST_ROSTER_NAME
+            raw = json.dumps(manifest).encode(); roster_path.write_bytes(raw)
+            build = {"status": "passed", "lane": "build", "product_source_sha256": inputs,
+                     "candidate_sha256": candidate,
+                     "extra_inputs_sha256": extras,
+                     "test_roster": {"path": str(roster_path), "sha256": "b" * 64}}
+            args = type("Arguments", (), {"build_receipt": directory / "verification.json",
+                                         "native_dir": directory / "never-created"})()
+            for fault in ("missing", "changed", "stale"):
+                bad = json.loads(json.dumps(build))
+                if fault == "missing": del bad["test_roster"]
+                if fault == "stale":
+                    roster_path.write_text(json.dumps(dict(manifest, candidate_sha256=HASH)))
+                with self.subTest(fault=fault), patch.object(NATIVE, "read_record", return_value=bad), \
+                     patch.object(NATIVE.PRODUCT, "admit_product", return_value=({}, inputs)), \
+                     patch.object(NATIVE.PRODUCT, "sha256", return_value=HASH), \
+                     patch.object(NATIVE, "native_directory") as staging:
+                    with self.assertRaises(NATIVE.Incomplete):
+                        NATIVE.native(args, {})
+                    staging.assert_not_called()
+
+    def test_fixed_launcher_selection_matches_exact_required_nested_child_holds(self):
+        source = (ROOT / NATIVE.LAUNCHER).read_text()
+        before, after = "            Self::Ke => (", "            Self::ControlHealthy =>"
+        self.assertEqual(source.count(before), 1)
+        body = source.split(before, 1)[1].split(after, 1)[0]
+        expected = ["engine-tests.exe", "nts_ke_experiment::", "--test-threads=1"]
+        for name in NATIVE.HELD_KE_TESTS:
+            expected += ["--skip", name]
+        self.assertEqual(re.findall(r'"([^"\n]*)"', body), expected)
+        self.assertEqual(len(NATIVE.HELD_KE_TESTS), 3)
 
 
 class ConsoleAdmission(unittest.TestCase):

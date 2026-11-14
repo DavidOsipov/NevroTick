@@ -12,9 +12,9 @@ use std::time::{Duration, Instant};
 #[cfg(test)]
 use garde::Validate;
 
-use super::association::AssociationOwner;
 use super::association::ledger::RecoveryIntent;
 use super::association::ledger::retirement::{PastRequests, RetiredContext};
+use super::association::{AssociationOwner, CheckedPopulation};
 use super::datagram::{CommittedProtected, ProtectedCompletion};
 use super::process::ProviderScope;
 use super::{
@@ -996,22 +996,77 @@ struct ActiveReceiver<'owner, 'control, 'scope> {
     control: &'control Control,
 }
 
-impl ActiveReceiver<'_, '_, '_> {
+/// Exclusive receiving loan with checked counts from its actual association.
+/// There is no raw constructor, detached-parts factory or independent context input.
+#[must_use]
+pub(super) struct BoundProtectedReceiver<'loan, 'owner, 'control, 'scope> {
+    /// Retain the same actual receiver until projection succeeds or is refused.
+    receiver: &'loan mut ActiveReceiver<'owner, 'control, 'scope>,
+    /// Checked immediately before the producer, after predecessor filtering.
+    population: CheckedPopulation,
+}
+
+impl BoundProtectedReceiver<'_, '_, '_, '_> {
+    /// Bind completed facts without reopening their committed decision.
+    /// # Errors
+    /// Refuse a different actual Control before exposing any context or counts.
+    pub(super) fn historical_context(
+        &self,
+        committed_control: &Control,
+    ) -> Result<(Arc<crate::RunClockContext>, CheckedPopulation), Failure> {
+        if !std::ptr::eq(committed_control, self.receiver.control) {
+            return Err(Failure::Control);
+        }
+        Ok((
+            Arc::clone(&self.receiver.invocation.run_context),
+            self.population,
+        ))
+    }
+
     /// Detach a current genuine fact before closing this actual receiving owner.
     /// # Errors
     /// Reject a foreign actual Control without resetting route state.
-    fn accept(
-        &mut self,
-        committed: CommittedProtected<'_>,
-        population: (usize, usize),
-    ) -> Result<InvocationCompletion, Failure> {
-        committed.check_control(self.control)?;
-        let history = committed.into_history(Arc::clone(&self.invocation.run_context), population);
+    fn accept(self, committed: CommittedProtected<'_>) -> Result<InvocationCompletion, Failure> {
+        let history = committed.into_history(&self)?;
         let completion = InvocationCompletion::Protected(Box::new(history));
-        self.invocation.base = None;
-        self.invocation.route_not_before = self.invocation.origin;
-        self.invocation.plan = Plan::Closed(End::Completed);
+        self.receiver.invocation.base = None;
+        self.receiver.invocation.route_not_before = self.receiver.invocation.origin;
+        self.receiver.invocation.plan = Plan::Closed(End::Completed);
         Ok(completion)
+    }
+}
+
+impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
+    /// Bind only checked facts from this receiving Control's actual association.
+    /// The snapshot outlives later pool mutation but retains no association borrow.
+    /// # Errors
+    /// Refuse foreign Control or inconsistent counts without closing route state.
+    fn bind_association<'loan>(
+        &'loan mut self,
+        association: &AssociationOwner<'_>,
+    ) -> Result<BoundProtectedReceiver<'loan, 'owner, 'control, 'scope>, Failure> {
+        let population = association.receiving_population(self.control)?;
+        Ok(BoundProtectedReceiver {
+            receiver: self,
+            population,
+        })
+    }
+
+    /// Capture the actual pre-operation population and consume its one result.
+    /// The private binding stays inside this owner from capture through projection.
+    /// # Errors
+    /// Preserve checked population, producer, association, commit or receiver refusal.
+    fn receive_protected<'association, 'completion>(
+        &mut self,
+        association: &mut AssociationOwner<'association>,
+        exchange: impl FnOnce(
+            &mut AssociationOwner<'association>,
+        ) -> Result<ProtectedCompletion<'completion>, Failure>,
+    ) -> Result<InvocationCompletion, Failure> {
+        let receiving = self.bind_association(association)?;
+        super::protected_receiving(association, exchange, |committed| {
+            receiving.accept(committed)
+        })
     }
 
     /// Consume only a genuine association's constraint; it cannot enable KE here.
@@ -1290,11 +1345,9 @@ pub(super) fn step_with<P: Producer>(
             super::preview_once(&mut association, |output| producer.preview_entropy(output))
                 .map(InvocationCompletion::Preview)
         }
-        ExchangeMode::ProtectedDatagram => super::protected_receiving(
-            &mut association,
-            |owner| producer.exchange(owner, &control),
-            |committed, population| receiver.accept(committed, population),
-        ),
+        ExchangeMode::ProtectedDatagram => {
+            receiver.receive_protected(&mut association, |owner| producer.exchange(owner, &control))
+        }
     };
     match result {
         Ok(summary) => {
@@ -1368,3 +1421,7 @@ impl Producer for Native {
         Err(Failure::Control)
     }
 }
+
+#[cfg(test)]
+#[path = "recovery/receiving_tests.rs"]
+mod receiving_tests;

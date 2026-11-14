@@ -79,6 +79,10 @@ fn assert_publication<'a>(
     let body_addresses: Vec<_> = candidate.cookies.iter().map(|body| body.as_ptr()).collect();
     let association = AssociationOwner::receive(config, control, provider, candidate)?;
     assert_eq!(association.cookie_population()?, expected);
+    assert_eq!(
+        association.receiving_population(control)?.counts(),
+        expected
+    );
     assert_eq!(association.material.cookies.as_ptr(), vector_address);
     assert_eq!(association.material.cookies.len(), expected.0);
     for (body, address) in association.material.cookies.iter().zip(body_addresses) {
@@ -144,6 +148,38 @@ fn genuine_owner_boundary_moves_cookies_and_consumes_completion_once() -> Result
         Err(Failure::Control)
     ));
     assert_eq!(association.material.cookies[0].as_slice(), &[0xa5; 12]);
+    Ok(())
+}
+
+/// The receiving snapshot preserves the admitted zero-payload cookie domain.
+/// # Errors
+/// Preserve checked component admission and actual association publication.
+/// # Panics
+/// Fail if storing immutable counts invents a nonzero aggregate-payload requirement.
+#[test]
+fn receiving_population_preserves_empty_payload_without_currentness_authority()
+-> Result<(), Failure> {
+    let config = config()?;
+    let control = Control::new(Instant::now())?;
+    let admission = ProcessAdmission::new();
+    let claim = admission.claim()?;
+    let provider = ProviderScope::component(claim);
+    let candidate = component(
+        &config,
+        &control,
+        &provider,
+        vec![Zeroizing::new(Vec::new())],
+    );
+    let owner = AssociationOwner::receive(&config, &control, &provider, candidate)?;
+    assert_eq!(owner.receiving_population(&control)?.counts(), (1, 0));
+    assert_eq!(owner.cookie_population()?, (1, 0));
+    let foreign = Control::new(Instant::now())?;
+    assert!(matches!(
+        owner.receiving_population(&foreign),
+        Err(Failure::Control)
+    ));
+    assert_eq!(control.cancel()?, CancelOutcome::Cancelled);
+    assert_eq!(owner.receiving_population(&control)?.counts(), (1, 0));
     Ok(())
 }
 

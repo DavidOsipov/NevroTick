@@ -394,6 +394,66 @@ use time_domain::{MonotonicNs, UtcCoordinateQ32, exchange_arithmetic};
 /// Harness errors remain distinguishable from actual domain rejections.
 type TestResult<T = ()> = Result<T, Box<dyn Error>>;
 
+/// Checked parameter bits and an actual event distinguish independently seeded owners.
+/// Four combination and one principal parameter constructions, four empty-batch
+/// seeds and one reachability event need no histories, projections or advances.
+/// # Errors
+/// Preserve genuine constructor, seed, event and source-observation failures.
+/// # Panics
+/// Detect conflated signed zeros, omitted inner state or an unobserved committed event.
+#[test]
+fn lifecycle_equality_keeps_checked_bits_and_actual_reachability() -> TestResult {
+    let parameters = FixtureCombinationParameters::new(2.0, 0.0)?;
+    let equal_parameters = FixtureCombinationParameters::new(2.0, 0.0)?;
+    let signed_parameters = FixtureCombinationParameters::new(2.0, -0.0)?;
+    let other_parameters = FixtureCombinationParameters::new(4.0, 0.0)?;
+    assert_eq!(parameters, equal_parameters);
+    assert_ne!(parameters, signed_parameters);
+    assert_ne!(parameters, other_parameters);
+    assert_eq!(
+        signed_parameters
+            .max_clock_error_seconds_per_second()
+            .to_bits(),
+        (-0.0_f64).to_bits()
+    );
+    let registered = guard_tag(101)?;
+    let roster = [registered];
+    let batch =
+        FixtureProjectedBatch::new(guard_tag(11)?, guard_tag(12)?, MonotonicNs::new(0), &[])?;
+    let minimum = FixtureMinimum::new(1)?;
+    let principal_parameters = FixturePrincipalParameters::new(0.25, 0.0)?;
+    let seed = |parameters| {
+        FixtureCombinationState::seed(
+            &roster,
+            principal_parameters,
+            parameters,
+            minimum,
+            &batch,
+            &[],
+        )
+    };
+    let ordinary = seed(parameters)?;
+    let mut equal = seed(equal_parameters)?;
+    let signed = seed(signed_parameters)?;
+    let other = seed(other_parameters)?;
+    assert_eq!(ordinary, equal);
+    assert_ne!(ordinary, signed);
+    assert_ne!(ordinary, other);
+    equal.record_reachability(FixtureReachabilityUpdate::new(registered, 1, true)?)?;
+    assert_ne!(ordinary, equal);
+    let original_source = ordinary
+        .source_state(registered)
+        .ok_or_else(|| io::Error::other("missing unchanged checked source"))?;
+    let changed_source = equal
+        .source_state(registered)
+        .ok_or_else(|| io::Error::other("missing reached checked source"))?;
+    assert_eq!(original_source.reachability_updates(), 0);
+    assert_eq!(original_source.last_reachability_ordinal(), 0);
+    assert_eq!(changed_source.reachability_updates(), 1);
+    assert_eq!(changed_source.last_reachability_ordinal(), 1);
+    Ok(())
+}
+
 /// Precharge a separately bounded direct probe before calling its real receiver.
 /// # Errors
 /// Reject counter overflow or exhaustion before any product entry.

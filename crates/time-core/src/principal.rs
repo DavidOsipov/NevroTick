@@ -313,8 +313,16 @@ impl fmt::Debug for FixturePrincipalParameters {
 impl PartialEq for FixturePrincipalParameters {
     /// Compare all admitted parameter bits without conflating the two signed zeros.
     fn eq(&self, other: &Self) -> bool {
-        self.reselect_distance_seconds.to_bits() == other.reselect_distance_seconds.to_bits()
-            && self.stratum_weight_seconds.to_bits() == other.stratum_weight_seconds.to_bits()
+        let Self {
+            reselect_distance_seconds,
+            stratum_weight_seconds,
+        } = self;
+        let Self {
+            reselect_distance_seconds: other_reselect_distance_seconds,
+            stratum_weight_seconds: other_stratum_weight_seconds,
+        } = other;
+        reselect_distance_seconds.to_bits() == other_reselect_distance_seconds.to_bits()
+            && stratum_weight_seconds.to_bits() == other_stratum_weight_seconds.to_bits()
     }
 }
 
@@ -450,12 +458,28 @@ impl fmt::Debug for FixturePrincipalSourceState {
 impl PartialEq for FixturePrincipalSourceState {
     /// Compare every retained field, using exact bits for floating-point state.
     fn eq(&self, other: &Self) -> bool {
-        self.source_id == other.source_id
-            && self.score.to_bits() == other.score.to_bits()
-            && self.latest_observed_at == other.latest_observed_at
-            && self.pending == other.pending
-            && self.distance_seconds.map(f64::to_bits) == other.distance_seconds.map(f64::to_bits)
-            && self.stratum == other.stratum
+        let Self {
+            source_id,
+            score,
+            latest_observed_at,
+            pending,
+            distance_seconds,
+            stratum,
+        } = self;
+        let Self {
+            source_id: other_source_id,
+            score: other_score,
+            latest_observed_at: other_latest_observed_at,
+            pending: other_pending,
+            distance_seconds: other_distance_seconds,
+            stratum: other_stratum,
+        } = other;
+        source_id == other_source_id
+            && score.to_bits() == other_score.to_bits()
+            && latest_observed_at == other_latest_observed_at
+            && pending == other_pending
+            && distance_seconds.map(f64::to_bits) == other_distance_seconds.map(f64::to_bits)
+            && stratum == other_stratum
     }
 }
 
@@ -533,14 +557,34 @@ impl fmt::Debug for FixturePrincipalState {
 impl PartialEq for FixturePrincipalState {
     /// Compare complete retained state, preserving signed-zero differences.
     fn eq(&self, other: &Self) -> bool {
-        self.frame == other.frame
-            && self.mapping_generation == other.mapping_generation
-            && self.parameters == other.parameters
-            && self.minimum.get() == other.minimum.get()
-            && self.sources == other.sources
-            && self.roster_len == other.roster_len
-            && self.principal == other.principal
-            && self.evaluated_at == other.evaluated_at
+        let Self {
+            frame,
+            mapping_generation,
+            parameters,
+            minimum,
+            sources,
+            roster_len,
+            principal,
+            evaluated_at,
+        } = self;
+        let Self {
+            frame: other_frame,
+            mapping_generation: other_mapping_generation,
+            parameters: other_parameters,
+            minimum: other_minimum,
+            sources: other_sources,
+            roster_len: other_roster_len,
+            principal: other_principal,
+            evaluated_at: other_evaluated_at,
+        } = other;
+        frame == other_frame
+            && mapping_generation == other_mapping_generation
+            && parameters == other_parameters
+            && minimum.get() == other_minimum.get()
+            && sources == other_sources
+            && roster_len == other_roster_len
+            && principal == other_principal
+            && evaluated_at == other_evaluated_at
     }
 }
 

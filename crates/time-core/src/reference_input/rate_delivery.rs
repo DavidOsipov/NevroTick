@@ -19,13 +19,16 @@ pub use frequency_prior::{
 };
 
 pub use phase_plan::{
-    FixtureBaselineCompletion, FixtureBaselineError, FixtureBaselineFeedback,
-    FixtureBaselineProposal, FixtureBaselineRetirement, FixtureBaselineSettlement,
-    FixtureControllerClockMap, FixtureControllerClockMapInput, FixturePhaseBaseline,
-    FixturePhaseBlocked, FixturePhaseConstructionRejected, FixturePhaseError, FixturePhaseNow,
-    FixturePhasePlanOwner, FixturePhaseProfile, FixturePhaseProposal, FixturePhaseProvenance,
+    FixtureAdaptiveHorizonError, FixtureAdaptiveHorizonProfile, FixtureBaselineCompletion,
+    FixtureBaselineError, FixtureBaselineFeedback, FixtureBaselineProposal,
+    FixtureBaselineRetirement, FixtureBaselineSettlement, FixtureControllerClockMap,
+    FixtureControllerClockMapInput, FixturePhaseBaseline, FixturePhaseBlocked,
+    FixturePhaseConstructionRejected, FixturePhaseError, FixturePhaseNow, FixturePhasePlanOwner,
+    FixturePhaseProfile, FixturePhaseProposal, FixturePhaseProvenance,
     FixturePhaseReferenceAdmission, FixturePhaseResidualPermission, FixturePhaseRetirement,
-    FixturePhaseRetirementReason, FixturePhaseSettlement,
+    FixturePhaseRetirementReason, FixturePhaseSettlement, FixtureStepCompletion,
+    FixtureStepDirections, FixtureStepError, FixtureStepFeedback, FixtureStepLimits,
+    FixtureStepProposal, FixtureStepRetirement, FixtureStepSettlement,
 };
 
 use std::{fmt, num::NonZeroU64};
@@ -764,6 +767,24 @@ impl FixtureReferenceInputState<'_> {
 }
 
 impl FixtureReferenceInputState<'_> {
+    /// Consume one matched rate-plus-step frame chain before numerical extension.
+    ///
+    /// Both operation kinds share the existing checked two-link chain admission:
+    /// it commits the final target even when the intermediate rate computation
+    /// fails. The owning step consumer subsequently composes the known constant
+    /// displacement without a second readiness admission or ordinal consumption.
+    /// # Errors
+    /// Refuse a malformed chain or current rate-event relationship unchanged.
+    fn receive_step_settlement(
+        &mut self,
+        cursor: &mut FixtureRateSettlementCursor,
+        predecessor: &FixtureAffineChart,
+        interval: FixtureSettledRateInterval,
+        final_frames: FixtureChartFrames,
+    ) -> Result<FixtureRateSettlementCompletion, FixtureRateDeliveryError> {
+        self.receive_baseline_settlement(cursor, predecessor, interval, final_frames)
+    }
+
     /// Admit a matched base receipt through the existing cursor exactly once.
     /// The following affine coordinate change shares that consumed operation;
     /// numerical failure cannot restore its ordinal or intermediate target.

@@ -308,7 +308,9 @@
       "destination": "crates/time-core/src/reference_input/rate_delivery/frequency_prior.rs and crates/time-core/src/regression/chart/roundoff/frequency_prior.rs with existing owning phase/rate hooks",
       "provenance": "crates/time-core/PROVENANCE.md",
       "task_record": "tasks/s1.3-source-selection-readiness.md#s14-frequency-prior-and-conditional-holdover-contract",
-      "selected_source_files": ["reference.c"],
+      "selected_source_files": [
+        "reference.c"
+      ],
       "selected_symbols_or_context": "get_clock_estimates840-873; actual REF_SetReference caller930-986; conditional growth730-755; immutable reference.c SHA256e9a9cb678413366c51d42e5e3dd13f8a4104a3006a538987f66bc3a2a4da803f",
       "historical_source_review_preserved": true,
       "license": "GPL-2.0-only",
@@ -327,7 +329,11 @@
       "destination": "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs",
       "provenance": "crates/time-core/PROVENANCE.md",
       "task_record": "tasks/s1.3-source-selection-readiness.md#s14-finite-phase-plan-lifecycle-contract",
-      "selected_source_files": ["reference.c", "local.c", "sys_generic.c"],
+      "selected_source_files": [
+        "reference.c",
+        "local.c",
+        "sys_generic.c"
+      ],
       "historical_source_review_preserved": true,
       "license": "GPL-2.0-only",
       "copying_sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
@@ -918,7 +924,7 @@
         "Old zero-prefix API and numerical operation ordering preserved; returned indices refer to combined original input."
       ],
       "contract_file": "tasks/s1.2-regression-readiness.md",
-      "contract_section": "S146 retained-prefix selector contract \u2014 2 November 2026",
+      "contract_section": "S146 retained-prefix selector contract — 2 November 2026",
       "contract_section_sha256": "b5df3d0528533daa5e20515d0f4823ea0cc39a2ed3c13eafc8f7c0cb981bc9b9",
       "facts_sha256": "cf76352c6c57f4a0ffa2864277e2f93c28f11c9a34833040712aca1fe9b3bea6",
       "provenance": "crates/time-core/PROVENANCE.md",
@@ -969,7 +975,7 @@
         "Explicit immutable configured_minimum3..64 and observable effective_minimum; current and auxiliary row views remain distinct."
       ],
       "contract_file": "tasks/s1.2-regression-readiness.md",
-      "contract_section": "S147 staged adaptive-history caller contract \u2014 2 November 2026",
+      "contract_section": "S147 staged adaptive-history caller contract — 2 November 2026",
       "contract_section_sha256": "4d8d0f6e528748e49391af99951e0d510ab884ba502419b336dfac9afc009b56",
       "facts_sha256": "cf76352c6c57f4a0ffa2864277e2f93c28f11c9a34833040712aca1fe9b3bea6",
       "provenance": "crates/time-core/PROVENANCE.md",
@@ -1011,7 +1017,7 @@
         "Algebraic coefficient diagnostics only; no calibrated confidence/skew/physical uncertainty, eligibility or clock authority."
       ],
       "contract_file": "tasks/s1.2-regression-readiness.md",
-      "contract_section": "S151 same-fit standard errors \u2014 frozen authoring contract",
+      "contract_section": "S151 same-fit standard errors — frozen authoring contract",
       "contract_section_sha256": "319842addf97cfe5baa4afae84c0cccad94490ff844f90180bce8bb19dc52ebd",
       "frozen_contract_copy": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s151-standard-errors-frozen-contract-v1.md",
       "facts_file": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s151-standard-errors-independent-facts-v1.json",
@@ -1114,7 +1120,7 @@
         "Conditional synthetic mathematics only, no confidence/eligibility/clock/native claim."
       ],
       "contract_file": "tasks/s1.3-source-selection-readiness.md",
-      "contract_section": "S152 same-owner fitted tracking journey \u2014 frozen authoring contract",
+      "contract_section": "S152 same-owner fitted tracking journey — frozen authoring contract",
       "contract_section_sha256": "bb98b2a0a14025aa4c275febe1281b1b3781107385dfc2788e0cce2536dc1e31",
       "frozen_contract_copy": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s152-tracking-frozen-contract-v3.md",
       "facts_file": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s152-tracking-independent-facts-v2.json",
@@ -1758,7 +1764,7 @@
           "95% per-file mutation with complete inventory",
           "New Garde invocation/result-use sensitivity"
         ],
-        "routing_audit": "Existing storage task6.6 and Windows task4.10 already fulfill ST-W01\u201307/W11-W01\u201310/follow-up/MSIX dispositions; no task edits or optional cards needed",
+        "routing_audit": "Existing storage task6.6 and Windows task4.10 already fulfill ST-W01–07/W11-W01–10/follow-up/MSIX dispositions; no task edits or optional cards needed",
         "holds": "Windows execution, separate S142/AES fuzz no-retry and storage experiments remain held; source-only cards unexecuted; complete MSI/OD-05/current Core priority preserved",
         "new_owner_critical_qualification_claim": false,
         "native_windows_product_or_release_claim": false,
@@ -1913,7 +1919,7 @@
       "license": "GPL-2.0-only",
       "provenance": "crates/time-core/PROVENANCE.md",
       "contract_file": "tasks/s1.2-regression-readiness.md",
-      "contract_section": "Source-quality window divisors \u2014 6 November 2026",
+      "contract_section": "Source-quality window divisors — 6 November 2026",
       "independent_review": "/root/quality_weight_plan_review; ready for this numerical child only; no production bridge acceptance",
       "scope": "1..64 strictly positive finite input distances and precision, including subnormals; original-order borrowed numeric snapshot; checked source-order finite arithmetic; no fixture weight ceiling or reciprocal-normal gate",
       "deliberate_deviations": [
@@ -1929,6 +1935,108 @@
       ],
       "rust_qualification": "pending; compiling feature stub RED and final GREEN/coverage/mutation required",
       "formal_work": "post-V1 under S1.2/CHECK-7/25; no proof preparation or verifier work",
+      "release_or_product_claim": false
+    },
+    {
+      "slice": "S1.4 adaptive phase-correction horizon",
+      "review_date": "2026-11-13",
+      "status": "source implemented; focused ordinary/optimized/contract/static checks pass; complete changed-source qualification remains open",
+      "destinations": [
+        "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs",
+        "crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs"
+      ],
+      "selected_sources": [
+        {
+          "file": "reference.c",
+          "sha256": "e9a9cb678413366c51d42e5e3dd13f8a4104a3006a538987f66bc3a2a4da803f",
+          "selected_lines": "891-906;942-987",
+          "scope": "correction-area policy and its accepted-reference update interval"
+        },
+        {
+          "file": "sys_generic.c",
+          "sha256": "1556c00f4b646634879d311ea406681f661dd67e03367d6a73ff116ff01e048f",
+          "selected_lines": "205-223",
+          "scope": "inverse-debt correction duration and bounded transient request"
+        },
+        {
+          "file": "local.c",
+          "sha256": "af16a2e6f46716f5bd4e405bdeebaecacbf15ca62476e153323e3836e2c7d3ac",
+          "selected_lines": "732-764",
+          "scope": "unchanged requested-versus-achieved feedback context, no native driver port"
+        }
+      ],
+      "license": "GPL-2.0-only",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "contract_file": "tasks/s1.3-source-selection-readiness.md",
+      "contract_section": "Adaptive phase correction — implementation contract, 13 November 2026",
+      "independent_review": "/root/next_product_core; /root/next_product_engine; units, time constant, permission, custody and exact quantization; demonstrated lower-clamp repair",
+      "raw_source_directory": "/home/david_osipov/.local/share/nevrotick/core-controller-law-20261113-v1/upstream",
+      "deliberate_deviations": [
+        "Explicit active-awake accepted-obligation intervals; independent monotonic expiry.",
+        "Explicit checked numerical profiles; no shipped policy defaults.",
+        "Original deadlines limit requested operation duration without shortening the correction-rate denominator.",
+        "Finite normal-or-zero arithmetic with explicit refusal; no silent nonzero underflow or NaN fallback.",
+        "Exact upward binary64-to-integer duration conversion and fixed-decision rate-bound semantics.",
+        "Timer-stop-delay heuristics, fast slew, step policy and native actuation remain separate."
+      ],
+      "notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003",
+        "Copyright (C) Miroslav Lichvar  2009-2018, 2020, 2022",
+        "Copyright (C) Andy Fiddaman  2024",
+        "Copyright (C) Miroslav Lichvar  2014-2015"
+      ],
+      "code_imported": false,
+      "selected_equations_adapted": true,
+      "rust_qualification": "Rust 1.100.0; 22 selected private cases, 83 ordinary/83 optimized integration cases, 106 doctests, formatting and Core all-target Clippy; no upgrade or mutation campaign rerun",
+      "formal_work": "post-V1; no proof/compiler/solver activity",
+      "release_or_product_claim": false,
+      "layout_checkpoint": "14 November 2026: coherent complete adaptive policy/numerical owner extracted after the combined parent enumerated 606 variants above 512; parent retains lifecycle/accepted-reference authority. Fresh complete six-owner qualification required; all caps unchanged."
+    },
+    {
+      "slice": "S1.4 matched finite step operation",
+      "review_date": "2026-11-13",
+      "status": "source implemented and independently reviewed; focused ordinary/optimized/contract/static checks pass; full changed-source qualification remains open",
+      "destinations": [
+        "crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs",
+        "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs",
+        "crates/time-core/src/reference_input/rate_delivery.rs",
+        "crates/time-core/src/regression/chart/roundoff/phase_plan.rs"
+      ],
+      "selected_sources": [
+        {
+          "file": "reference.c",
+          "sha256": "e9a9cb678413366c51d42e5e3dd13f8a4104a3006a538987f66bc3a2a4da803f",
+          "selected_lines": "975-995",
+          "scope": "reference correction and step call order, without automatic step-policy adoption"
+        },
+        {
+          "file": "local.c",
+          "sha256": "af16a2e6f46716f5bd4e405bdeebaecacbf15ca62476e153323e3836e2c7d3ac",
+          "selected_lines": "671-698",
+          "scope": "matched achieved-step notification after driver result; no native driver import"
+        }
+      ],
+      "license": "GPL-2.0-only",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "contract_file": "tasks/s1.3-source-selection-readiness.md",
+      "contract_section": "Matched finite step operation — contract preparation, 13 November 2026",
+      "independent_review": "/root/next_product_core; /root/next_product_engine; shared ordinal, actual delivery, chart composition and elapsed-counter custody",
+      "deliberate_deviations": [
+        "Explicit checked per-operation fixture limits; no automatic threshold, count or fallback policy.",
+        "Actual rate delivery and actual step remain independent of the request; Unknown is not NoEffect.",
+        "One ordinal and final mathematical target commit before later arithmetic/policy refusal.",
+        "Known recovery transfers context only; fresh source evidence and a new absolute map remain required.",
+        "No native actuation, durable authority, production admission or qualification follows."
+      ],
+      "notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003",
+        "Copyright (C) Miroslav Lichvar  2009-2018, 2020, 2022",
+        "Copyright (C) Andy Fiddaman  2024"
+      ],
+      "code_imported": false,
+      "selected_equations_adapted": true,
+      "rust_qualification": "Rust 1.100.0; 118 selected ordinary cases, 93 optimized public cases, 112 doctests, formatting and Core all-target Clippy; no upgrade or mutation campaign rerun",
+      "formal_work": "post-V1; no proof/compiler/solver activity",
       "release_or_product_claim": false
     }
   ],
@@ -2002,13 +2110,23 @@
       "destination": "crates/time-core/src/conditioned_fit.rs",
       "provenance": "crates/time-core/PROVENANCE.md",
       "task_record": "tasks/engine-transport-pilot.md#n2a-concrete-contract--conditioned-suffix-and-enclosed-affine-fit",
-      "selected_source_files": ["regress.c"],
+      "selected_source_files": [
+        "regress.c"
+      ],
       "selected_source_sha256": {
         "regress.c": "bcd30c41f1a5c6c528adf199b6ef5215f62cc4c9078a82152a86ea90e46453f7"
       },
       "selected_statements": [
-        {"function": "RGR_WeightedRegression", "lines": "69-93", "retained": "inverse-divisor affine coefficient and weighted SSE equations"},
-        {"function": "RGR_FindBestRegression", "lines": "252-269", "retained": "coefficient context only"}
+        {
+          "function": "RGR_WeightedRegression",
+          "lines": "69-93",
+          "retained": "inverse-divisor affine coefficient and weighted SSE equations"
+        },
+        {
+          "function": "RGR_FindBestRegression",
+          "lines": "252-269",
+          "retained": "coefficient context only"
+        }
       ],
       "historical_source_review_preserved": true,
       "license": "GPL-2.0-only",
@@ -2075,7 +2193,10 @@
         "contracts_receipt_sha256": "f496a2508431959baa8f3ecb303e170c80288058303e6bedcc488df44c13cd2d",
         "coverage_receipt": "q1-quality-coverage-v1/verification.json",
         "coverage_receipt_sha256": "7a7539c3513c8c48b96d62b51ad052d3e80245098b477b5a54f80f100c3e3c8c",
-        "coverage_lines": {"covered": 366, "executable": 382},
+        "coverage_lines": {
+          "covered": 366,
+          "executable": 382
+        },
         "scope": "Retained exact v6 ordinary, host contract and coverage evidence; no automatic transfer to the strengthened v7 candidate or full Q1 exit"
       },
       "historical_ordinary_checkpoint": {
@@ -2098,8 +2219,18 @@
         "util.c": "c0e80e237ceb9705fb42407ab9dd4dffbb29c711e48ccca30f925d716d0cd9dd"
       },
       "selected_statements": [
-        {"file": "ntp_core.c", "function": "process_response", "lines": "2061,2161-2199,2221-2225", "retained": "basic-client precision, absolute raw delay, frequency half-width, dispersion/root equations and selected computed-value comparisons"},
-        {"file": "util.c", "function": "UTI_Ntp32ToDouble; UTI_Log2ToDouble", "lines": "651-654,908-920", "retained": "unsigned 16.16 roots and precision exponent clamp"}
+        {
+          "file": "ntp_core.c",
+          "function": "process_response",
+          "lines": "2061,2161-2199,2221-2225",
+          "retained": "basic-client precision, absolute raw delay, frequency half-width, dispersion/root equations and selected computed-value comparisons"
+        },
+        {
+          "file": "util.c",
+          "function": "UTI_Ntp32ToDouble; UTI_Log2ToDouble",
+          "lines": "651-654,908-920",
+          "retained": "unsigned 16.16 roots and precision exponent clamp"
+        }
       ],
       "license": "GPL-2.0-only",
       "copyright_notices": [

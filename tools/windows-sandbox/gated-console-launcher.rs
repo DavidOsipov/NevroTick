@@ -156,6 +156,18 @@ enum Mode {
     ControlFail,
     /// Keep the synthetic child alive until the supervisor's deadline cleanup.
     ControlWait,
+    /// Run the exact process-global foreign-job claim test in isolation.
+    JobNativeForeign,
+    /// Run the exact authoritative provider claim test in isolation.
+    ProviderNativeOnce,
+    /// Run the exact provider foreign-origin test in isolation.
+    ProviderNativeForeign,
+    /// Observe one finite successful same-image synthetic descendant.
+    ControlNestedHealthy,
+    /// Preserve failure seven from one same-image synthetic descendant.
+    ControlNestedFail,
+    /// Leave both synthetic descendants live for owned timeout cleanup.
+    ControlNestedWait,
 }
 
 impl Mode {
@@ -172,6 +184,16 @@ impl Mode {
             Some(value) if value == OsStr::new("control-healthy") => Self::ControlHealthy,
             Some(value) if value == OsStr::new("control-fail") => Self::ControlFail,
             Some(value) if value == OsStr::new("control-wait") => Self::ControlWait,
+            Some(value) if value == OsStr::new("job-native-foreign") => Self::JobNativeForeign,
+            Some(value) if value == OsStr::new("provider-native-once") => Self::ProviderNativeOnce,
+            Some(value) if value == OsStr::new("provider-native-foreign") => {
+                Self::ProviderNativeForeign
+            }
+            Some(value) if value == OsStr::new("control-nested-healthy") => {
+                Self::ControlNestedHealthy
+            }
+            Some(value) if value == OsStr::new("control-nested-fail") => Self::ControlNestedFail,
+            Some(value) if value == OsStr::new("control-nested-wait") => Self::ControlNestedWait,
             _ => return Err(io::Error::other("Unadmitted launcher mode.")),
         };
         if arguments.next().is_some() {
@@ -186,13 +208,54 @@ impl Mode {
         match self {
             Self::Cpu => ("cpu-v3-probe.exe", &[]),
             Self::List => ("engine-tests.exe", &["--list", "--format", "terse"]),
+            // These required nested-child controls await their separate custody
+            // qualification; the flat supervisor keeps its existing process cap.
             Self::Ke => (
                 "engine-tests.exe",
-                &["nts_ke_experiment::", "--test-threads=1"],
+                &[
+                    "nts_ke_experiment::",
+                    "--test-threads=1",
+                    "--skip",
+                    "nts_ke_experiment::job::tests::job_native_foreign_origin_records_control_before_actual_retirement",
+                    "--skip",
+                    "nts_ke_experiment::job::tests::provider_native_authoritative_once_preserves_permanent_admission",
+                    "--skip",
+                    "nts_ke_experiment::job::tests::provider_native_foreign_origins_refuse_before_effect_factory",
+                ],
             ),
             Self::ControlHealthy => ("gate-control.exe", &["healthy"]),
             Self::ControlFail => ("gate-control.exe", &["fail"]),
             Self::ControlWait => ("gate-control.exe", &["wait"]),
+            Self::JobNativeForeign => (
+                "engine-tests.exe",
+                &[
+                    "--exact",
+                    "nts_ke_experiment::job::tests::job_native_foreign_origin_records_control_before_actual_retirement",
+                    "--nocapture",
+                    "--test-threads=1",
+                ],
+            ),
+            Self::ProviderNativeOnce => (
+                "engine-tests.exe",
+                &[
+                    "--exact",
+                    "nts_ke_experiment::job::tests::provider_native_authoritative_once_preserves_permanent_admission",
+                    "--nocapture",
+                    "--test-threads=1",
+                ],
+            ),
+            Self::ProviderNativeForeign => (
+                "engine-tests.exe",
+                &[
+                    "--exact",
+                    "nts_ke_experiment::job::tests::provider_native_foreign_origins_refuse_before_effect_factory",
+                    "--nocapture",
+                    "--test-threads=1",
+                ],
+            ),
+            Self::ControlNestedHealthy => ("gate-control.exe", &["nested-healthy"]),
+            Self::ControlNestedFail => ("gate-control.exe", &["nested-fail"]),
+            Self::ControlNestedWait => ("gate-control.exe", &["nested-wait"]),
         }
     }
 }

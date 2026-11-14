@@ -47,6 +47,59 @@ use super::{SameBatchSelection, complete_decision, select_same_batch};
 
 /// Preserve actual producer/receiver failures separately from harness failures.
 type TestResult<T = ()> = Result<T, Box<dyn Error>>;
+
+/// Independent checked values preserve exact parameter bits and whole-state equality.
+/// Four parameter constructions and four real empty-batch seeds need no histories,
+/// projections or advances; source differences come from separately checked rosters.
+/// # Errors
+/// Preserve checked parameter, batch, minimum, seed and source-observation failures.
+/// # Panics
+/// Detect conflated signed zeros, unequal independent copies or ignored source labels.
+#[test]
+fn principal_equality_keeps_checked_bits_and_independently_seeded_sources() -> TestResult {
+    let parameters = FixturePrincipalParameters::new(0.25, 0.0)?;
+    let equal_parameters = FixturePrincipalParameters::new(0.25, 0.0)?;
+    let signed_parameters = FixturePrincipalParameters::new(0.25, -0.0)?;
+    let other_parameters = FixturePrincipalParameters::new(0.5, 0.0)?;
+    assert_eq!(parameters, equal_parameters);
+    assert_ne!(parameters, signed_parameters);
+    assert_ne!(parameters, other_parameters);
+    assert_eq!(
+        signed_parameters.stratum_weight_seconds().to_bits(),
+        (-0.0_f64).to_bits()
+    );
+
+    let registered = tag(101)?;
+    let other_registered = tag(102)?;
+    let roster = [registered];
+    let batch = FixtureProjectedBatch::new(tag(11)?, tag(12)?, MonotonicNs::new(0), &[])?;
+    let minimum = FixtureMinimum::new(1)?;
+    let ordinary = FixturePrincipalState::seed(&roster, parameters, minimum, &batch, &[])?;
+    let equal = FixturePrincipalState::seed(&roster, equal_parameters, minimum, &batch, &[])?;
+    let signed = FixturePrincipalState::seed(&roster, signed_parameters, minimum, &batch, &[])?;
+    let other = FixturePrincipalState::seed(&[other_registered], parameters, minimum, &batch, &[])?;
+    assert_eq!(ordinary, equal);
+    assert_ne!(ordinary, signed);
+    assert_ne!(ordinary, other);
+    let source = ordinary
+        .source_state(registered)
+        .ok_or_else(|| io::Error::other("missing checked original source"))?;
+    let equal_source = equal
+        .source_state(registered)
+        .ok_or_else(|| io::Error::other("missing independently seeded source"))?;
+    let other_source = other
+        .source_state(other_registered)
+        .ok_or_else(|| io::Error::other("missing checked distinct source"))?;
+    assert_eq!(source, equal_source);
+    assert_ne!(source, other_source);
+    assert_eq!(source.source_id(), registered);
+    assert_eq!(other_source.source_id(), other_registered);
+    assert_eq!(source.distance_seconds().map(f64::to_bits), None);
+    assert_eq!(source.latest_observed_at(), None);
+    assert!(!source.pending());
+    Ok(())
+}
+
 /// The unchanged principal public-attempt marker field order.
 type Recipe = [u64; 20];
 /// Complete finite public-attempt reservation; source-only direct calls are above.

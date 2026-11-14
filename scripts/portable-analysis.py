@@ -95,7 +95,7 @@ ENGINE_CONTRACT_SUBJECTS = (("library", "crates/nevrotick-engine/src/lib.rs"),)
 # Historical coverage/mutation/fuzz candidates and their closed gates stay fixed.
 CONTRACT_PRODUCT_BINDING = {
     "source_file_count": 595,
-    "candidate_sha256": "8a70ac66f3b5f9275750f357cbf02ec79f23c0a5dd4a2732a65f679496beb5d1",
+    "candidate_sha256": "82a19ffa0810d9fb9da8575c825ba9a0dd0bc3ac107d5584e9df6881db283db7",
 }
 SERVICE_LIFECYCLE_SUBJECTS = (("lifecycle", "crates/windows-platform/src/service.rs"),)
 SERVICE_SCM_SUBJECTS = (*SERVICE_LIFECYCLE_SUBJECTS, ("scm", "crates/windows-platform/src/scm.rs"))
@@ -115,6 +115,18 @@ BASELINE_FEEDBACK_SUBJECTS = (
     ("phase_plan", "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs"),
     ("rate_delivery", "crates/time-core/src/reference_input/rate_delivery.rs"),
     ("chart", "crates/time-core/src/regression/chart.rs"),
+)
+
+# Complete changed critical files for the adaptive/explicit-step checkpoint.
+# Earlier role tuples and their historical bindings remain separate.
+PHASE_STEP_SUBJECTS = (
+    ("phase_plan", "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs"),
+    ("phase_numeric", "crates/time-core/src/regression/chart/roundoff/phase_plan.rs"),
+    ("step", "crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs"),
+    ("rate_delivery", "crates/time-core/src/reference_input/rate_delivery.rs"),
+    ("reference_input", "crates/time-core/src/reference_input.rs"),
+    ("adaptive_horizon", "crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs"),
+    ("frequency_numeric", "crates/time-core/src/regression/chart/roundoff/frequency_prior.rs"),
 )
 
 
@@ -572,6 +584,12 @@ def canonical_sha256(value: dict) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
+def _phase_step_scope(scope: Scope) -> bool:
+    """Recognize only the complete code-owned phase/Step role, never a lookalike."""
+    return (type(scope) is Scope and scope.package == "time-core"
+            and scope.policy == "policy/phase-step-analysis.json" and scope.subjects == PHASE_STEP_SUBJECTS)
+
+
 def admit_reviewed_mutation_inventories(scope: Scope, policy: dict, inventories: dict) -> dict | None:
     """Check an optional complete scope map against every selected actual inventory.
 
@@ -580,6 +598,9 @@ def admit_reviewed_mutation_inventories(scope: Scope, policy: dict, inventories:
     """
     if "mutation_inventories" not in policy:
         return None
+    phase_step = _phase_step_scope(scope)
+    if phase_step and not phase_step_equivalences_valid(policy):
+        raise Incomplete("Phase-step inventory has an unreviewed equivalence catalog.")
     reviewed = policy["mutation_inventories"]
     maximum = policy.get("maximum_mutants")
     scope_names = set(scope.select("all"))
@@ -605,6 +626,17 @@ def admit_reviewed_mutation_inventories(scope: Scope, policy: dict, inventories:
         actual = {"count": len(normalized), "sha256": canonical_sha256(normalized)}
         if actual != reviewed[name]:
             raise Incomplete("Observed mutation inventory differs from its reviewed count or hash.")
+        if phase_step:
+            if any(item.get("file") != scope.select("all")[name] for item in inventory.values()):
+                raise Incomplete("Phase-step inventory contains a foreign owner file.")
+            for entry in policy["mutation_equivalences"]:
+                if entry["mutant"]["file"] != scope.select("all")[name]:
+                    continue
+                item = inventory.get(entry["mutant"]["name"])
+                facts = PHASE_STEP_EQUIVALENCE_REVIEWS[entry["id"]]
+                if (type(item) is not dict or type(item.get("diff")) is not str
+                        or hashlib.sha256(item["diff"].encode()).hexdigest() != facts["diff_sha256"]):
+                    raise Incomplete("Phase-step equivalence differs from its exact rendered inventory diff.")
         admitted[name] = actual
     return admitted
 
@@ -631,8 +663,16 @@ def admit_mutation_equivalences(root: Path, scope: Scope, policy: dict) -> list[
         raise Incomplete("Invalid or oversized exact mutation-equivalence inventory.")
     if not entries:
         return []
+    phase_step = _phase_step_scope(scope)
+    if phase_step and not phase_step_equivalences_valid(policy):
+        raise Incomplete("Phase-step equivalences differ from the closed current-source reviews.")
     root = root.resolve(strict=True)
-    candidate = canonical_sha256(PRODUCT.admit_product(root)[1])
+    product_identity = PRODUCT.admit_product(root)[1]
+    candidate = canonical_sha256(product_identity)
+    if phase_step and any(product_identity.get(name) != digest
+            for facts in PHASE_STEP_EQUIVALENCE_REVIEWS.values()
+            for name, digest in {**facts["dependencies"], **facts.get("product_dependencies", {})}.items()):
+        raise Incomplete("Phase-step equivalence dependency differs from its current product bytes.")
     ids, faults = set(), set()
     for entry in entries:
         required = {"id", "candidate_sha256", "source_sha256", "mutant", "requirement", "rationale", "proof"}
@@ -685,7 +725,13 @@ def admit_mutation_equivalences(root: Path, scope: Scope, policy: dict) -> list[
                 or relative.as_posix() != proof["path"] or relative.suffix != ".md"):
             raise Incomplete("Equivalence proof must be a canonical maintained task artifact.")
         artifact = root / relative
-        if (artifact.resolve(strict=True) != artifact or artifact.stat().st_size > 65536
+        if phase_step and proof["path"] == PHASE_STEP_EQUIVALENCE_PROOF:
+            data = read_analysis_bytes(artifact, maximum=2 * 1024 * 1024)
+            if (hashlib.sha256(data).hexdigest() != proof["sha256"]
+                    or len(re.findall(r"^#### " + re.escape(identifier) + r"(?:\s|$)",
+                                      data.decode("utf-8"), re.MULTILINE)) != 1):
+                raise Incomplete("Phase-step review bytes or unique exact section differ.")
+        elif (artifact.resolve(strict=True) != artifact or artifact.stat().st_size > 65536
                 or PRODUCT.sha256(artifact) != proof["sha256"]
                 or not re.search(r"^## " + re.escape(identifier) + r"(?:\s|$)", artifact.read_text(), re.MULTILINE)):
             raise Incomplete("Equivalence proof bytes or exact section differ from review.")
@@ -818,6 +864,25 @@ def mutation_jobs(policy: dict) -> int:
     if type(value) is not int or not 1 <= value <= RUNTIME.MAX_JOBS:
         raise Incomplete("Mutation jobs must be an integer between 1 and 12.")
     return value
+
+
+def mutation_jobserver_tasks(scope: Scope, policy: dict, *, workers: int) -> int:
+    """Keep legacy tokens unchanged; this exact GNU role adds no shared tokens.
+
+    Cargo supplies each child its own implicit slot. The admitted Unix
+    cargo-mutants/jobserver implementation accepts an empty token pipe; zero
+    additional shared tokens preserves one inner Cargo slot per outer worker.
+    This is not a Windows jobserver profile or an observed concurrency result.
+    """
+    mutation_jobs({"mutation_jobs": workers})
+    if scope.policy == "policy/phase-step-analysis.json" or scope.subjects == PHASE_STEP_SUBJECTS:
+        require_phase_step_role(scope, policy)
+        if workers != mutation_jobs(policy):
+            raise Incomplete("Phase-step caller workers differ from its exact admitted profile.")
+        return policy["mutation_jobserver_tasks"]
+    if "mutation_jobserver_tasks" in policy:
+        raise Incomplete("Only the exact GNU phase-step role admits an extra-token override.")
+    return workers
 
 
 def mutation_process_limit(policy: dict) -> int:
@@ -1060,9 +1125,16 @@ def mutation_campaign_command(scope: Scope, tools: Path, subject: str, command: 
     jobs = mutation_jobs({"mutation_jobs": expected_jobs})
     message_format = mutation_message_format({"mutation_message_format": expected_message_format})
     filename = scope.select(subject)[subject]
+    if scope.policy == "policy/phase-step-analysis.json" or scope.subjects == PHASE_STEP_SUBJECTS:
+        if policy is None:
+            raise Incomplete("Phase-step campaign requires its exact current role policy.")
+        require_phase_step_role(scope, policy)
+        if not policy["campaigns_admitted"]:
+            raise Incomplete("Phase-step mutation admission is closed until contracts and complete inventories are reviewed.")
+    tokens = mutation_jobserver_tasks(scope, {} if policy is None else policy, workers=jobs)
     expected = [str(tools / "cargo-mutants"), "mutants", "--package", scope.package, "--file", filename,
                 "--test-workspace", "false", "--cap-lints", "false", "--jobs", str(jobs),
-                "--jobserver", "true", "--jobserver-tasks", str(jobs)]
+                "--jobserver", "true", "--jobserver-tasks", str(tokens)]
     if message_format == "json":
         expected.append("--cargo-arg=--message-format=json")
     for feature in engine_ke_features(scope):
@@ -1537,6 +1609,7 @@ def enumerate_mutation_inventories(scope, subjects, policy, tools, run, report, 
             or not finite_deadline):
         raise Incomplete("Mutation listing requires explicit finite allowances and a finite deadline.")
     workers = mutation_jobs(policy)
+    tokens = mutation_jobserver_tasks(scope, policy, workers=workers)
     mutation_process_limit(policy)
     message_format = mutation_message_format(policy)
     inventories, commands = {}, {}
@@ -1547,7 +1620,7 @@ def enumerate_mutation_inventories(scope, subjects, policy, tools, run, report, 
         # Bound independent mutant copies and the GNU jobserver separately.
         common = [str(tools / "cargo-mutants"), "mutants", "--package", scope.package, "--file", filename,
                   "--test-workspace", "false", "--cap-lints", "false", "--jobs", str(workers),
-                  "--jobserver", "true", "--jobserver-tasks", str(workers)]
+                  "--jobserver", "true", "--jobserver-tasks", str(tokens)]
         if message_format == "json":
             common.append("--cargo-arg=--message-format=json")
         for feature in engine_ke_features(scope):
@@ -1984,6 +2057,348 @@ def require_baseline_feedback_role(scope, policy):
         raise Incomplete("Baseline-feedback requires its exact five-owner stable role and current closed equivalences.")
 
 
+PHASE_STEP_EQUIVALENCE_PROOF = 'tasks/s1.3-source-selection-readiness.md'
+PHASE_STEP_EQUIVALENCE_REQUIREMENT = 'REQ-8/10/11/14/15; CHECK-7/8/10/11/14/25; AC-19'
+PHASE_STEP_EQUIVALENCE_REVIEWERS = '/root; /root/next_product_core'
+PHASE_STEP_EQUIVALENCE_REVIEWS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'source_sha256': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
+                                        'descriptor_sha256': 'd7e777452cd768d189f2e1895111408e9d23b95540dd179d9b1a57ea423c9552',
+                                        'diff_sha256': '781048460708376801627f75368594b99f2bfe8add27ac0eac57f423a695fd14',
+                                        'rationale': 'Normality excludes signed zeros, subnormals, '
+                                                     'infinities and every NaN before comparison. For every '
+                                                     'remaining positive or negative normal, >0 and >=0 '
+                                                     'agree; guards, order, validation, errors and effects '
+                                                     'are unchanged. This ordinary current-source review '
+                                                     'grants zero additional kills.',
+                                        'dependencies': {}},
+ 'PHASE-STEP-DURATION-MIN-EQUALITY': {'source_sha256': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
+                                      'descriptor_sha256': '4c0ac0f3862d4fa7ab1bd34ebdb381a1763f6c9e64c63e554e3c84686ea47c1e',
+                                      'diff_sha256': '52144c072c55f196d21e61fc474f0648f9aff0f67299eeb5a80e8f411c183b7e',
+                                      'rationale': 'Only equal nanosecond counts choose different branches. '
+                                                   'ActiveAwakeDurationNs is Copy with one private u64 '
+                                                   'field, so either branch returns the identical value; '
+                                                   'requested duration, deadline, state and effects agree. '
+                                                   'The separate rate denominator is unchanged. Zero '
+                                                   'additional kills.',
+                                      'dependencies': {'crates/time-domain/src/clock.rs': 'beca67da84fc7a4717dd6f35325ec1308d4a7e5b6c2ad30dfc65392f94bbde51'}},
+ 'PHASE-STEP-CLOCK-ORDER-RECHECK': {'source_sha256': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
+                                    'descriptor_sha256': 'a1ad9f41b00eb2e23257158b34509f2ff5d327adf4a0d2f258d5090627b4d364',
+                                    'diff_sha256': 'b37c235f1fcda25050f71731d6a0010f14568f65fa873cd72645ffa4a005542b',
+                                    'rationale': 'Context disagreement and both-backwards clocks still '
+                                                 'reject immediately. One backwards clock instead rejects '
+                                                 'through checked duration_since with the same Map error '
+                                                 'before numerical work or witness mutation. '
+                                                 'Neither-backwards paths agree; no allocation, panic, Drop '
+                                                 'or state effect changes. Existing worst-case work remains '
+                                                 'bounded; no timing equality or additional kill is claimed.',
+                                    'dependencies': {'crates/time-domain/src/clock.rs': 'beca67da84fc7a4717dd6f35325ec1308d4a7e5b6c2ad30dfc65392f94bbde51'},
+                                    'product_dependencies': {'crates/time-domain/src/lib.rs': 'd1314aa80fc705d410e747de555d79d0a8a63d16b2ff5877e1012ce60ef039ab'}},
+ 'PHASE-STEP-ANCHOR-ABS-SIGN': {'source_sha256': 'c8af09a8f7eb5e1f05cc9aaeb92b3533a05a688c8dac2e2338007160e821fbf9',
+                                'descriptor_sha256': '634b2295f78ea61d46e336309fd366e8c04bd3bf2e2ecf0f16a5683798ab153e',
+                                'diff_sha256': 'f9da51f1b88bf9967da7d8564972a0791053760d75382a80b56477d11a26d8c5',
+                                'rationale': "Only the coefficient-bound operand's unary sign changes. The "
+                                             'pinned parent takes right.abs() before every bound operation, '
+                                             'producing identical operands, signed-zero behavior, errors and '
+                                             'outputs. Actual phase subtraction and earlier admissions are '
+                                             'unchanged. Zero additional kills.',
+                                'dependencies': {'crates/time-core/src/regression/chart/roundoff.rs': '38405a55e5a85a34a04bd751cc51ef08be5363f21681691e6a955a4b6983128e'}},
+ 'PHASE-STEP-INTERVAL-ZERO-PRODUCT': {'source_sha256': 'c8af09a8f7eb5e1f05cc9aaeb92b3533a05a688c8dac2e2338007160e821fbf9',
+                                      'descriptor_sha256': '6106e65c018c06850ad7b2e57d45ccb4caab74f15a792e8d0020e57b2bd5120a',
+                                      'diff_sha256': '90f0a559dc37f069799729ce3c413645631dd0dcf5590fa498dd6912489cf270',
+                                      'rationale': 'Both-whole-zero and neither paths agree. With exactly '
+                                                   'one whole-zero interval, all four pairs hit the '
+                                                   'unchanged inner zero shortcut and return literal '
+                                                   'positive zeros; reduction returns canonical zero without '
+                                                   'multiplication or outward error. Signed-zero, subnormal '
+                                                   'and finite extremes, state, errors and the four-pair '
+                                                   'maximum agree. No timing equality or additional kill is '
+                                                   'claimed.',
+                                      'dependencies': {}},
+ 'PHASE-STEP-ISSUED-POSITIVE-DIRECTION': {'source_sha256': '0de5d97e268bc2833749b1ea0194014b250d51822e2febf00e33a5b8c04df811',
+                                          'descriptor_sha256': '381cb2e3f952d6af6b2d5788024488b712ce157b45fe1413ffceed501d2aedd3',
+                                          'diff_sha256': '981f6c193de8aabdd32e05724148d7bf344c36f9c25adbb0ec6e69c536b8a9d9',
+                                          'rationale': 'Private StepIssued is constructed only after '
+                                                       'mandatory checked request admission requires '
+                                                       'abs(D)>E>=0. Checked PhaseDebt and scalar admission '
+                                                       'exclude NaN, infinity and subnormal points and '
+                                                       'negative error; hence issued D is neither signed '
+                                                       'zero. Replacing the requested-debt sign comparison '
+                                                       'with its nonstrict form agrees for both admitted '
+                                                       'signs. The immutable request, actual-step/debt side '
+                                                       'conditions, branch order, errors and historical '
+                                                       'effects are unchanged. Invalid raw StepIssued '
+                                                       'fabrication is outside this admitted helper '
+                                                       'boundary. This ordinary current-source review grants '
+                                                       'zero additional kills.',
+                                          'dependencies': {'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
+                                                           'crates/time-core/src/regression/chart/roundoff/phase_plan.rs': 'e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6',
+                                                           'crates/time-core/src/regression.rs': '282e21edbf6d3fffe6d53254de3339eba0a0dd3a711503e009cca411fe0bbeb7'}},
+ 'PHASE-STEP-ISSUED-NEGATIVE-DIRECTION': {'source_sha256': '0de5d97e268bc2833749b1ea0194014b250d51822e2febf00e33a5b8c04df811',
+                                          'descriptor_sha256': '1ce225d51195ebad9a84648575faeed02f92d66a92be4d97b1c4fa5f81fa6e9a',
+                                          'diff_sha256': '195dddc709b2edf1ef0cae6309d71aa88b749d2acca0d2d0577f223ef28dddaa',
+                                          'rationale': 'Private StepIssued is constructed only after '
+                                                       'mandatory checked request admission requires '
+                                                       'abs(D)>E>=0. Checked PhaseDebt and scalar admission '
+                                                       'exclude NaN, infinity and subnormal points and '
+                                                       'negative error; hence issued D is neither signed '
+                                                       'zero. Replacing the requested-debt sign comparison '
+                                                       'with its nonstrict form agrees for both admitted '
+                                                       'signs. The immutable request, actual-step/debt side '
+                                                       'conditions, branch order, errors and historical '
+                                                       'effects are unchanged. Invalid raw StepIssued '
+                                                       'fabrication is outside this admitted helper '
+                                                       'boundary. This ordinary current-source review grants '
+                                                       'zero additional kills.',
+                                          'dependencies': {'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
+                                                           'crates/time-core/src/regression/chart/roundoff/phase_plan.rs': 'e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6',
+                                                           'crates/time-core/src/regression.rs': '282e21edbf6d3fffe6d53254de3339eba0a0dd3a711503e009cca411fe0bbeb7'}},
+ 'PHASE-STEP-ISSUED-POSITIVE-OVERSHOOT': {'source_sha256': '0de5d97e268bc2833749b1ea0194014b250d51822e2febf00e33a5b8c04df811',
+                                          'descriptor_sha256': '76b9be08010417558ce0c2f5db28b6288ab3d4703fae9b5de300f94f99e87c63',
+                                          'diff_sha256': '6b8a0aa54e5ff15b3e5c28c9ea592c8ca22da060f673ed9147160cad40dd1cf3',
+                                          'rationale': 'Private StepIssued is constructed only after '
+                                                       'mandatory checked request admission requires '
+                                                       'abs(D)>E>=0. Checked PhaseDebt and scalar admission '
+                                                       'exclude NaN, infinity and subnormal points and '
+                                                       'negative error; hence issued D is neither signed '
+                                                       'zero. Replacing the requested-debt sign comparison '
+                                                       'with its nonstrict form agrees for both admitted '
+                                                       'signs. The immutable request, actual-step/debt side '
+                                                       'conditions, branch order, errors and historical '
+                                                       'effects are unchanged. Invalid raw StepIssued '
+                                                       'fabrication is outside this admitted helper '
+                                                       'boundary. This ordinary current-source review grants '
+                                                       'zero additional kills.',
+                                          'dependencies': {'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
+                                                           'crates/time-core/src/regression/chart/roundoff/phase_plan.rs': 'e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6',
+                                                           'crates/time-core/src/regression.rs': '282e21edbf6d3fffe6d53254de3339eba0a0dd3a711503e009cca411fe0bbeb7'}},
+ 'PHASE-STEP-ISSUED-NEGATIVE-OVERSHOOT': {'source_sha256': '0de5d97e268bc2833749b1ea0194014b250d51822e2febf00e33a5b8c04df811',
+                                          'descriptor_sha256': 'c8d9a9a515a060778d8ad8539fbd8f0aabfa2dd1764398032ec8178f3baad108',
+                                          'diff_sha256': '9ef0f6d808b34342b167bf5aa80bb77897e3ccb644413c23c8b9c3f896520fbb',
+                                          'rationale': 'Private StepIssued is constructed only after '
+                                                       'mandatory checked request admission requires '
+                                                       'abs(D)>E>=0. Checked PhaseDebt and scalar admission '
+                                                       'exclude NaN, infinity and subnormal points and '
+                                                       'negative error; hence issued D is neither signed '
+                                                       'zero. Replacing the requested-debt sign comparison '
+                                                       'with its nonstrict form agrees for both admitted '
+                                                       'signs. The immutable request, actual-step/debt side '
+                                                       'conditions, branch order, errors and historical '
+                                                       'effects are unchanged. Invalid raw StepIssued '
+                                                       'fabrication is outside this admitted helper '
+                                                       'boundary. This ordinary current-source review grants '
+                                                       'zero additional kills.',
+                                          'dependencies': {'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs': '7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a',
+                                                           'crates/time-core/src/regression/chart/roundoff/phase_plan.rs': 'e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6',
+                                                           'crates/time-core/src/regression.rs': '282e21edbf6d3fffe6d53254de3339eba0a0dd3a711503e009cca411fe0bbeb7'}},
+ 'PHASE-STEP-ADAPTIVE-NORMAL-POSITIVE': {'source_sha256': 'e530725ed2b122af12e11f3a01ade69f11fa92547c4a091fc5f86a7cb6544ba0',
+                                         'descriptor_sha256': 'f10ebc3cf37f017059af6bd88559bcfe238f3a1dffeaa91ace78213a906b7e76',
+                                         'diff_sha256': '58b683c17c812e023c29f8aedeca1471874da3ded39381d05f22f3b93209dd1b',
+                                         'rationale': 'The unchanged is_normal check excludes both signed '
+                                                      'zeros, subnormals, infinities and NaNs before the '
+                                                      'ratio comparison. Every remaining positive normal '
+                                                      'satisfies both >0 and >=0, and every negative normal '
+                                                      'satisfies neither. All other raw profile admission, '
+                                                      'validation, errors and effects agree over the full '
+                                                      'private domain. Zero additional kills.',
+                                         'dependencies': {}},
+ 'PHASE-STEP-ADAPTIVE-DISJOINT-MANTISSA': {'source_sha256': 'e530725ed2b122af12e11f3a01ade69f11fa92547c4a091fc5f86a7cb6544ba0',
+                                           'descriptor_sha256': '2132c58e9497679f4d3fca0cfdbc9b38f3cdd5435b64e5025115dd147d79e02d',
+                                           'diff_sha256': 'a243b91fcb97db38fa229832698b71c7095bf764427cee69f0524c3653c99d91',
+                                           'rationale': 'The fraction mask retains only bits 0 through 51, '
+                                                        'so its result and implicit significand bit 52 are '
+                                                        'disjoint for every 64-bit input pattern. OR and XOR '
+                                                        'produce identical integers before the same checked '
+                                                        'product, shifts, ceiling and admissions. No caller '
+                                                        'restriction, timing equality or additional kill is '
+                                                        'claimed.',
+                                           'dependencies': {}},
+ 'PHASE-STEP-ADAPTIVE-UNREACHABLE-CEILING': {'source_sha256': 'e530725ed2b122af12e11f3a01ade69f11fa92547c4a091fc5f86a7cb6544ba0',
+                                             'descriptor_sha256': '9321330df6f6e0408784bdcac473b384032d38308936c2897c27e64a853752ab',
+                                             'diff_sha256': '733f67c20d871bec3449887a9db532f96cb2242e1cccbc8fe44326b68c111a9a',
+                                             'rationale': 'The comparison differs only at exact ceiling '
+                                                          '2^53. Positive representable seconds would lie in '
+                                                          '((2^53-1)/1e9,2^53/1e9]. Consecutive binary64 '
+                                                          'values 0x41612e0be826d694 and 0x41612e0be826d695 '
+                                                          'straddle that entire interval: scaled exact '
+                                                          'values are 2^53-341223/262144 and '
+                                                          '2^53+588233/1048576. No finite normal input '
+                                                          'reaches equality; earlier invalid-input and '
+                                                          'checked-u128 refusals and every other '
+                                                          'result/effect agree. No upper-clamp assumption or '
+                                                          'additional kill is claimed.',
+                                             'dependencies': {}},
+ 'PHASE-STEP-SETTLED-BOUND-ABS-SIGN': {'source_sha256': 'e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6',
+                                       'descriptor_sha256': 'dcbe2a04a93d1883bb238ce9ff85b08ca820f535d52ded4a7d734e9b63c54d9d',
+                                       'diff_sha256': 'f3ba647075214ad6579b37160923da0fe4f53c2bb7120a19026ca05a796278a4',
+                                       'rationale': 'Only the bound-helper right operand loses its unary '
+                                                    'sign. Actual point subtraction and prior admission are '
+                                                    'unchanged. The pinned parent coefficient_addition_error '
+                                                    'immediately uses right.abs(), so both signs yield '
+                                                    'identical bound operands, signed-zero behavior, failure '
+                                                    'order and output bits over the admitted helper domain. '
+                                                    'This ordinary source review grants zero additional '
+                                                    'kills.',
+                                       'dependencies': {'crates/time-core/src/regression/chart/roundoff.rs': '38405a55e5a85a34a04bd751cc51ef08be5363f21681691e6a955a4b6983128e'}},
+ 'PHASE-STEP-STEPPED-BOUND-ABS-SIGN': {'source_sha256': 'e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6',
+                                       'descriptor_sha256': '696b292a1d280d254103b4f9c333f9d0a5223987b69cbb43c89e7ec462a2d756',
+                                       'diff_sha256': 'a43517c43a9be58f4937888c9487688811246995cd4e7d52399421a34890abe4',
+                                       'rationale': 'Only the bound-helper right operand loses its unary '
+                                                    'sign. Actual point subtraction and prior admission are '
+                                                    'unchanged. The pinned parent coefficient_addition_error '
+                                                    'immediately uses right.abs(), so both signs yield '
+                                                    'identical bound operands, signed-zero behavior, failure '
+                                                    'order and output bits over the admitted helper domain. '
+                                                    'This ordinary source review grants zero additional '
+                                                    'kills.',
+                                       'dependencies': {'crates/time-core/src/regression/chart/roundoff.rs': '38405a55e5a85a34a04bd751cc51ef08be5363f21681691e6a955a4b6983128e'}},
+ 'PHASE-STEP-POSITIVE-CLAMP-EQUALITY': {'source_sha256': 'e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6',
+                                        'descriptor_sha256': 'f5cefac55b3ec17ef6c0a1cefe71089e621e4cdc35ee31fe74c00182d4761a10',
+                                        'diff_sha256': '2bfa17c890d525074bec1bd96a9957bbb15b643b982eb07a0b866796031119da',
+                                        'rationale': 'Only equality with the finite strictly positive '
+                                                     'transient cap selects a different branch. The admitted '
+                                                     'quotient then has the identical nonzero positive-cap '
+                                                     'or negative-cap bits, so selecting the bound or the '
+                                                     'quotient returns the same point. Signed-zero ties are '
+                                                     'excluded by positive normal cap admission; later '
+                                                     'aggregate and error calculations, branch order and '
+                                                     'effects agree. Zero additional kills.',
+                                        'dependencies': {}},
+ 'PHASE-STEP-NEGATIVE-CLAMP-EQUALITY': {'source_sha256': 'e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6',
+                                        'descriptor_sha256': 'deb23ed259f4e8c67b4f0905770c5cd78e19dddeaf00c4bb3cab82b7bf9bdc2f',
+                                        'diff_sha256': '1a2e3b9b58028a80f1db6150a8b75104c6b467fdc704a1f6c5cb262315b53183',
+                                        'rationale': 'Only equality with the finite strictly positive '
+                                                     'transient cap selects a different branch. The admitted '
+                                                     'quotient then has the identical nonzero positive-cap '
+                                                     'or negative-cap bits, so selecting the bound or the '
+                                                     'quotient returns the same point. Signed-zero ties are '
+                                                     'excluded by positive normal cap admission; later '
+                                                     'aggregate and error calculations, branch order and '
+                                                     'effects agree. Zero additional kills.',
+                                        'dependencies': {}}}
+
+
+PHASE_STEP_EQUIVALENCE_IDS = frozenset(PHASE_STEP_EQUIVALENCE_REVIEWS)
+
+
+def phase_step_equivalences_valid(policy):
+    """Admit no exclusions, or the complete closed current-source review catalog.
+
+    Candidate and proof bytes are re-admitted by admit_mutation_equivalences.
+    No historical candidate, old receipt or policy-controlled review is adopted.
+    """
+    if type(policy) is not dict or type(policy.get("mutation_equivalences")) is not list:
+        return False
+    entries = policy["mutation_equivalences"]
+    if not entries:
+        return True
+    if (len(entries) != len(PHASE_STEP_EQUIVALENCE_IDS)
+            or set(PHASE_STEP_EQUIVALENCE_REVIEWS) != PHASE_STEP_EQUIVALENCE_IDS):
+        return False
+    candidate, pins = policy.get("candidate_sha256"), policy.get("inputs_sha256")
+    if (type(candidate) is not str or re.fullmatch(r"[a-f0-9]{64}", candidate) is None
+            or type(pins) is not dict):
+        return False
+    fields = {"id", "candidate_sha256", "source_sha256", "mutant", "requirement", "rationale", "proof"}
+    seen = set()
+    for entry in entries:
+        if type(entry) is not dict or set(entry) != fields:
+            return False
+        identifier = entry["id"]
+        if (type(identifier) is not str or identifier not in PHASE_STEP_EQUIVALENCE_REVIEWS
+                or identifier in seen):
+            return False
+        facts = PHASE_STEP_EQUIVALENCE_REVIEWS[identifier]
+        if (entry["candidate_sha256"] != candidate or entry["source_sha256"] != facts["source_sha256"]
+                or type(entry["mutant"]) is not dict
+                or canonical_sha256(entry["mutant"]) != facts["descriptor_sha256"]
+                or pins.get(entry["mutant"].get("file")) != facts["source_sha256"]
+                or entry["requirement"] != PHASE_STEP_EQUIVALENCE_REQUIREMENT
+                or entry["rationale"] != facts["rationale"]
+                or any(pins.get(name) != digest for name, digest in facts["dependencies"].items())):
+            return False
+        proof = entry["proof"]
+        if (type(proof) is not dict or set(proof) != {"path", "sha256", "section", "reviewer", "verdict"}
+                or proof["path"] != PHASE_STEP_EQUIVALENCE_PROOF or proof["section"] != identifier
+                or proof["reviewer"] != PHASE_STEP_EQUIVALENCE_REVIEWERS
+                or proof["verdict"] != "independently-justified-equivalent"
+                or type(proof["sha256"]) is not str or re.fullmatch(r"[a-f0-9]{64}", proof["sha256"]) is None
+                or pins.get(PHASE_STEP_EQUIVALENCE_PROOF) != proof["sha256"]):
+            return False
+        seen.add(identifier)
+    return seen == PHASE_STEP_EQUIVALENCE_IDS
+
+
+def phase_step_role_facts():
+    """Admit the exact external contracts; grant no inherited score or mutation authority."""
+    return {
+        **frequency_prior_role_facts(),
+        "critical_files": list(dict(PHASE_STEP_SUBJECTS).values()),
+        "external_consumer_limits": {"legal_executions": 3, "negative_compilations": 32},
+        "contracts_admitted": True,
+        "validation_mechanisms_admitted": True,
+        "validation_mechanism_limits": {
+            "mechanisms": 7, "specimens_per_mechanism": 3, "test_executions": 21},
+        "mutation_jobserver_tasks": 0,
+        "campaigns_admitted": False,
+    }
+
+
+def require_phase_step_role(scope, policy):
+    """Admit seven complete files, unchanged limits and only closed current reviews."""
+    facts = phase_step_role_facts()
+    extra = {"source_file_count", "candidate_sha256", "inputs_sha256", "mutation_inventories",
+             "mutation_equivalences", "test_inventories", "scope"}
+    if (type(scope) is not Scope or scope.package != "time-core"
+            or scope.policy != "policy/phase-step-analysis.json"
+            or scope.subjects != PHASE_STEP_SUBJECTS or type(policy) is not dict
+            or set(policy) != set(facts) | extra
+            or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                   for key, value in facts.items() if key not in {"campaigns_admitted", "mutation_jobs"})
+            or type(policy.get("campaigns_admitted")) is not bool
+            or type(policy.get("mutation_jobs")) is not int or policy["mutation_jobs"] not in {10, 8, 6}
+            or any(type(value) is not int for value in policy["external_consumer_limits"].values())
+            or not phase_step_equivalences_valid(policy)):
+        raise Incomplete("Phase-step requires its exact seven-file stable role and unchanged gates.")
+    if policy["campaigns_admitted"]:
+        _phase_step_campaign_metadata(policy)
+
+
+def _phase_step_campaign_metadata(policy):
+    """Require complete bound inputs, rosters and whole-file inventories, never a flag alone.
+
+    The verifier additionally re-admits the exact current product and protected
+    source/helper set before a Session or direct union; this effect-boundary
+    check cannot substitute a policy-controlled name for that admission.
+    """
+    owners = dict(PHASE_STEP_SUBJECTS)
+    pins, rows = policy.get("inputs_sha256"), policy.get("mutation_inventories")
+    rosters = policy.get("test_inventories")
+    if (type(policy.get("source_file_count")) is not int
+            or not 0 < policy["source_file_count"] <= 4096
+            or type(policy.get("candidate_sha256")) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", policy["candidate_sha256"]) is None
+            or type(pins) is not dict or not set(owners.values()) <= set(pins)
+            or any(type(name) is not str or not name or type(digest) is not str
+                   or re.fullmatch(r"[a-f0-9]{64}", digest) is None for name, digest in pins.items())
+            or type(rows) is not dict or set(rows) != set(owners)
+            or any(type(row) is not dict or set(row) != {"count", "sha256"}
+                   or type(row["count"]) is not int or not 0 < row["count"] <= 512
+                   or type(row["sha256"]) is not str
+                   or re.fullmatch(r"[a-f0-9]{64}", row["sha256"]) is None for row in rows.values())
+            or sum(row["count"] for row in rows.values()) > 2048
+            or type(rosters) is not dict or set(rosters) != {"baseline", "coverage"}):
+        raise Incomplete("Phase-step campaign requires complete current source, rosters and seven reviewed inventories.")
+    for names in rosters.values():
+        if (type(names) is not list or not 0 < len(names) <= 4096
+                or any(type(name) is not str or not 0 < len(name) <= 512
+                       or "\n" in name or "\r" in name for name in names)
+                or names != sorted(set(names))):
+            raise Incomplete("Phase-step campaign requires bounded frozen nonempty test rosters.")
+    baseline, coverage = rosters["baseline"], rosters["coverage"]
+    if (coverage != [name for name in baseline if " (line " not in name]
+            or not any(" (line " in name for name in baseline)):
+        raise Incomplete("Phase-step campaign requires the complete ordinary roster and source-classified doctests.")
+
+
 def admission_profile(args, scope, policy):
     """Require an exact stable role before narrowing analysis-tool custody."""
     profile = getattr(args, "tool_admission_profile", "full")
@@ -1991,6 +2406,12 @@ def admission_profile(args, scope, policy):
         raise Incomplete("Unknown analysis admission profile.")
     if policy.get("tool_admission_profile", "full") != profile:
         raise Incomplete("Analysis admission profile differs from the current policy.")
+    if (scope.policy == "policy/phase-step-analysis.json"
+            or scope.subjects == PHASE_STEP_SUBJECTS):
+        require_phase_step_role(scope, policy)
+        if profile != "stable-core" or args.lane not in {"contracts", "coverage", "mutation"}:
+            raise Incomplete("Phase-step admits only its fixed stable compiler/coverage/listing stages.")
+        return profile
     if engine_ke_features(scope):
         require_engine_ke_role(scope, policy)
         if (profile != "stable-core" or args.lane not in {"contracts", "baseline", "coverage", "mutation", "all"}

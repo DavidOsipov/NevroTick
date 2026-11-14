@@ -55,6 +55,7 @@ mod reached {
         Receipt, RequestInput, RequestPhase, SendOutcome,
     };
     use crate::nts_ke_experiment::job::ReceivingOutcome;
+    use crate::nts_ke_experiment::recovery::BoundProtectedReceiver;
     use crate::nts_ke_experiment::{
         Control, Failure, InvocationCompletion, IoPhase, RunFailed, Summary,
     };
@@ -224,6 +225,18 @@ mod reached {
             let after = SoftwareClock::capture();
             drop(guard);
             self.send = Some((before, after, packet.len()));
+            // The closed fixture may inject a synthetic wall step only after the
+            // actual return and guard release. Keep completed-send custody even
+            // if its checked fixture transformation fails; never touch host clocks.
+            #[cfg(test)]
+            match &self.io {
+                #[cfg(windows)]
+                Io::Native(_) => {}
+                Io::Script(script) => {
+                    let after = script.observe_send_after(after)?;
+                    self.send = Some((before, after, packet.len()));
+                }
+            }
             if cancel_after {
                 control.cancel()?;
             }
@@ -331,7 +344,7 @@ mod reached {
         )
     )]
     pub(in super::super) struct ProtectedHistory {
-        /// Existing bounded initial-KE population and actual send counts.
+        /// Checked pre-operation population and actual send counts.
         summary: Summary,
         /// Genuine original authenticated header, ordinal and packet-admission time.
         receipt: Receipt,
@@ -355,11 +368,18 @@ mod reached {
     }
 
     /// One normally joined result; numerical refusal is retained data, never a retry.
+    /// Its private representation prevents promoting caller-supplied summaries.
+    pub(in super::super) struct ReceivedCompletion {
+        /// Exactly one original state admitted by the normal-join guard.
+        inner: ReceivedState,
+    }
+
+    /// Private mode-specific state issued only after the normal-join guard.
     #[expect(
         clippy::large_enum_variant,
         reason = "One consume-once result keeps fixed-size numerics inline without adding an allocation after completed work."
     )]
-    pub(in super::super) enum ReceivedCompletion {
+    enum ReceivedState {
         /// The actual never-send operation supplied no protected history to adapt.
         Preview(Summary),
         /// Original owning history coupled to its exact optional model and result.
@@ -369,9 +389,59 @@ mod reached {
     impl ReceivedCompletion {
         /// Preserve the existing CLI projection without publishing numerical authority.
         pub(in super::super) const fn summary(&self) -> &Summary {
-            match self {
-                Self::Preview(summary) => summary,
-                Self::Protected(received) => received.history.summary(),
+            match &self.inner {
+                ReceivedState::Preview(summary) => summary,
+                ReceivedState::Protected(received) => received.history.summary(),
+            }
+        }
+
+        /// Borrow the same joined owner without detaching or recomputing facts.
+        pub(in super::super) const fn projection(&self) -> CompletionProjection<'_> {
+            CompletionProjection { completion: self }
+        }
+
+        /// Borrow only genuine protected history for actual-owner component controls.
+        #[cfg(test)]
+        pub(in super::super) const fn protected(&self) -> Option<&ReceivedProtectedNumerics> {
+            match &self.inner {
+                ReceivedState::Preview(_) => None,
+                ReceivedState::Protected(received) => Some(received),
+            }
+        }
+    }
+
+    /// Opaque diagnostic view borrowing one normally joined immutable completion.
+    /// Codes describe historical experimental arithmetic, never freshness or eligibility.
+    pub(in super::super) struct CompletionProjection<'a> {
+        /// The sole original owner; callers cannot substitute its constituent facts.
+        completion: &'a ReceivedCompletion,
+    }
+
+    impl CompletionProjection<'_> {
+        /// Borrow the original mode-specific counts without changing their meaning.
+        pub(in super::super) const fn summary(&self) -> &Summary {
+            self.completion.summary()
+        }
+
+        /// Select only the finite state of the retained original numerical result.
+        pub(in super::super) const fn numerical(&self) -> &'static str {
+            match &self.completion.inner {
+                ReceivedState::Preview(_) => "not_attempted",
+                ReceivedState::Protected(received) => match &received.measurement {
+                    Ok(_) => "nominal_software",
+                    Err(_) => "unavailable",
+                },
+            }
+        }
+
+        /// Return only an existing allowlisted refusal code, without error formatting.
+        pub(in super::super) const fn numerical_reason(&self) -> &'static str {
+            match &self.completion.inner {
+                ReceivedState::Preview(_) => "none",
+                ReceivedState::Protected(received) => match &received.measurement {
+                    Ok(_) => "none",
+                    Err(reason) => reason.as_str(),
+                },
             }
         }
     }
@@ -391,13 +461,6 @@ mod reached {
         )]
         profile: Option<ExperimentalProfile>,
         /// Success or complete refusal at original publication, without discarding history.
-        #[cfg_attr(
-            not(test),
-            expect(
-                dead_code,
-                reason = "the private result awaits a qualified production numerical consumer"
-            )
-        )]
         measurement: Result<ExperimentalMeasurement, MeasurementRefusal>,
     }
 
@@ -436,7 +499,9 @@ mod reached {
             .map_err(RunFailed::Abnormal)?
             .map_err(RunFailed::Operation)?
         {
-            InvocationCompletion::Preview(summary) => Ok(ReceivedCompletion::Preview(summary)),
+            InvocationCompletion::Preview(summary) => Ok(ReceivedCompletion {
+                inner: ReceivedState::Preview(summary),
+            }),
             InvocationCompletion::Protected(history) => {
                 let measurement = crate::measurement::measure(
                     profile,
@@ -446,11 +511,13 @@ mod reached {
                     history.receipt.accepted_at(),
                     history.receipt.fields().header(),
                 );
-                Ok(ReceivedCompletion::Protected(ReceivedProtectedNumerics {
-                    history,
-                    profile,
-                    measurement,
-                }))
+                Ok(ReceivedCompletion {
+                    inner: ReceivedState::Protected(ReceivedProtectedNumerics {
+                        history,
+                        profile,
+                        measurement,
+                    }),
+                })
             }
         }
     }
@@ -526,19 +593,9 @@ mod reached {
     }
 
     impl CommittedProtected<'_> {
-        /// Bind this historical fact to the receiving transaction without reopening it.
-        /// # Errors
-        /// Refuse another actual Control; no Published check follows commit.
-        pub(in super::super) fn check_control(&self, control: &Control) -> Result<(), Failure> {
-            if std::ptr::eq(self.operation.control, control) {
-                Ok(())
-            } else {
-                Err(Failure::Control)
-            }
-        }
-
-        /// Consume the historical fact once; return only existing bounded counts.
-        /// No Published check follows commit, and later stop cannot rewrite history.
+        /// Consume the historical fact once into its checked post-admission counts.
+        /// This test-only projection attaches no invocation chart. No Published
+        /// check follows commit, and later stop cannot rewrite history.
         #[cfg(test)]
         pub(in super::super) fn into_summary(self) -> Summary {
             let OperationCompletion {
@@ -576,14 +633,17 @@ mod reached {
         }
 
         /// Detach only immutable history from this genuinely consumed final commit.
-        /// The actual receiver supplies its original chart and already checked initial
-        /// population after binding this fact to its current Control. No live owner,
-        /// secret payload, numerical measurement or renewed timestamp is returned.
+        /// The consuming operation binds the actual receiving Control, obtains only
+        /// that invocation's chart and the bound checked pre-operation population.
+        /// No live owner, secret payload, numerical measurement or renewed timestamp
+        /// is returned. Later cancellation never reopens the completed decision.
+        /// # Errors
+        /// Refuse a foreign receiving owner without creating or rebinding history.
         pub(in super::super) fn into_history(
             self,
-            run_context: Arc<RunClockContext>,
-            population: (usize, usize),
-        ) -> ProtectedHistory {
+            receiving: &BoundProtectedReceiver<'_, '_, '_, '_>,
+        ) -> Result<ProtectedHistory, Failure> {
+            let (run_context, population) = receiving.historical_context(self.operation.control)?;
             let OperationCompletion {
                 control: _,
                 receipt,
@@ -597,10 +657,11 @@ mod reached {
                 cookies,
                 cookie_bytes,
             } = self.operation;
-            ProtectedHistory {
+            let (initial_cookies, initial_cookie_bytes) = population.counts();
+            Ok(ProtectedHistory {
                 summary: Summary {
-                    cookies: population.0,
-                    cookie_bytes: population.1,
+                    cookies: initial_cookies,
+                    cookie_bytes: initial_cookie_bytes,
                     packet_bytes,
                     transmitted: true,
                 },
@@ -613,7 +674,7 @@ mod reached {
                 remote,
                 identity,
                 run_context,
-            }
+            })
         }
     }
 
@@ -788,9 +849,10 @@ pub(super) use reached::exchange;
 
 #[cfg(any(windows, test))]
 pub(super) use reached::{
-    CommittedProtected, ProtectedCompletion, ProtectedHistory, ReceivedCompletion, receive_joined,
+    CommittedProtected, CompletionProjection, ProtectedCompletion, ProtectedHistory,
+    ReceivedCompletion, receive_joined,
 };
 
 #[cfg(test)]
 #[path = "datagram/tests.rs"]
-mod tests;
+pub(super) mod tests;

@@ -792,7 +792,7 @@ fn read_response(
 /// Payload-free historical completion after all secret/native owners drop.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Summary {
-    /// Actual bounded initial cookie count.
+    /// Checked pool entries immediately before the selected operation.
     cookies: usize,
     /// Actual aggregate opaque cookie payload bytes.
     cookie_bytes: usize,
@@ -933,13 +933,6 @@ enum RunFailed {
     /// Entered Tokio context refused before preparation or any actual submission.
     CallerContext,
     /// No submission occurred because original checked preparation failed.
-    #[cfg_attr(
-        all(test, not(windows)),
-        expect(
-            dead_code,
-            reason = "the Windows reporter consumes this original failure; real-time preparation overflow has no reached GNU fixture"
-        )
-    )]
     Preparation(Failed),
     /// No completed job is inferred from submission refusal.
     Submission(job::SubmitError),
@@ -951,61 +944,11 @@ enum RunFailed {
     Abnormal(job::JoinedOutcome),
 }
 
-/// Report only closed worker categories and already-permitted operation fields.
-/// The opaque unwind payload remains sealed in permanent custody.
+/// Report bounded closed worker categories without replacing original failure facts.
 #[cfg(windows)]
 fn report_run_failure(failure: &RunFailed) -> std::process::ExitCode {
-    use std::io::Write;
-    use std::process::ExitCode;
-    let (stage, cause, retired) = match failure {
-        RunFailed::CallerContext => ("caller-context", "entered-runtime", false),
-        RunFailed::Preparation(operation) | RunFailed::Operation(operation) => {
-            return report_failure(operation, ExitCode::FAILURE);
-        }
-        RunFailed::Submission(submission) => (
-            "worker-submission",
-            match submission {
-                job::SubmitError::Busy => "busy",
-                job::SubmitError::Used => "used",
-                job::SubmitError::Control => "control",
-                job::SubmitError::Spawn(kind) => io_label(*kind),
-            },
-            false,
-        ),
-        RunFailed::Collection(collection) => (
-            "worker-collection",
-            match collection {
-                job::CollectError::Busy => "busy",
-                job::CollectError::NotReady => "not-ready",
-                job::CollectError::SelfJoin => "self-join",
-                job::CollectError::EnteredRuntime => "entered-runtime",
-                job::CollectError::Control => "control",
-            },
-            false,
-        ),
-        RunFailed::Abnormal(joined) => (
-            "worker-termination",
-            match joined.termination {
-                job::Termination::Panicked => "panicked",
-                job::Termination::Contract(_) => "contract",
-                job::Termination::Returned => "unconfirmed-retirement",
-            },
-            joined.retired,
-        ),
-    };
-    let _diagnostic_result = writeln!(
-        io::stderr().lock(),
-        "stage={stage} cause={cause} retirement_confirmed={}",
-        u8::from(retired)
-    );
-    if let RunFailed::Abnormal(job::JoinedOutcome {
-        operation: Some(Err(operation)),
-        ..
-    }) = failure
-    {
-        return report_failure(operation, ExitCode::FAILURE);
-    }
-    ExitCode::FAILURE
+    let _diagnostic_result = output::write_run_failure(failure, &mut io::stderr().lock());
+    std::process::ExitCode::FAILURE
 }
 
 /// The same one-shot owner captures initial counts before unsendable preview work.
@@ -1038,7 +981,8 @@ fn protected_once<'association, 'control>(
         &mut AssociationOwner<'association>,
     ) -> Result<datagram::ProtectedCompletion<'control>, Failure>,
 ) -> Result<Summary, Failure> {
-    protected_receiving(association, exchange, |committed, population| {
+    let population = association.cookie_population()?;
+    protected_receiving(association, exchange, |committed| {
         let mut summary = committed.into_summary();
         summary.cookies = population.0;
         summary.cookie_bytes = population.1;
@@ -1056,12 +1000,11 @@ fn protected_receiving<'association, 'control, T>(
     exchange: impl FnOnce(
         &mut AssociationOwner<'association>,
     ) -> Result<datagram::ProtectedCompletion<'control>, Failure>,
-    receive: impl FnOnce(datagram::CommittedProtected<'control>, (usize, usize)) -> Result<T, Failure>,
+    receive: impl FnOnce(datagram::CommittedProtected<'control>) -> Result<T, Failure>,
 ) -> Result<T, Failure> {
-    let population = association.cookie_population()?;
     let completion = exchange(association)?;
     let committed = completion.commit(association)?;
-    receive(committed, population)
+    receive(committed)
 }
 
 /// Project only closed, bounded failure labels; payload-bearing errors stay out.
@@ -1120,18 +1063,189 @@ fn io_label(kind: io::ErrorKind) -> &'static str {
 /// Attempt the bounded failure report while preserving its original exit class.
 #[cfg(windows)]
 fn report_failure(failure: &Failed, code: std::process::ExitCode) -> std::process::ExitCode {
-    use std::io::Write;
-    let (stage, cause) = failure_labels(failure.primary);
-    let (cleanup_stage, cleanup_cause) = failure.cleanup.map_or(("none", "none"), failure_labels);
-    let (admission_stage, admission_cause) = failure
-        .admission_cleanup
-        .map_or(("none", "none"), failure_labels);
-    // Diagnostic failure cannot replace the primary operation failure/exit class.
-    let _diagnostic_result = writeln!(
-        io::stderr().lock(),
-        "stage={stage} cause={cause} cleanup_stage={cleanup_stage} cleanup_cause={cleanup_cause} admission_stage={admission_stage} admission_cause={admission_cause}"
-    );
+    let _diagnostic_result = output::write_failure(failure, &mut io::stderr().lock());
     code
+}
+
+/// Typed, bounded prototype diagnostics after actual operation retirement.
+/// No diagnostic value supplies freshness, eligibility or a cleanup acknowledgement.
+#[cfg(any(windows, test))]
+mod output {
+    use std::io::{self, Cursor, Write};
+
+    use super::{Failed, RunFailed, datagram, failure_labels, io_label, job};
+
+    /// Maximum encoded bytes per complete record, including its terminal LF.
+    const RECORD_BYTES: usize = 384;
+
+    /// Stack-only record minted from the actual joined projection or typed failure.
+    struct Record {
+        /// Fixed storage for the complete encoded row, including its terminal LF.
+        bytes: [u8; RECORD_BYTES],
+        /// Checked initialized prefix that belongs to this one record.
+        used: usize,
+    }
+
+    impl Record {
+        /// Encode only immutable counts and closed codes from the same joined owner.
+        /// # Errors
+        /// Reject an unrepresentable or oversized record before any sink output.
+        fn completion(projection: &datagram::CompletionProjection<'_>) -> io::Result<Self> {
+            let summary = projection.summary();
+            let mut bytes = [0; RECORD_BYTES];
+            let used = {
+                let mut record = Cursor::new(bytes.as_mut_slice());
+                writeln!(
+                    record,
+                    "scope=engine-ke-prototype eligible=0 fresh_sync=0 completed=1 cookies={} cookie_bytes={} sealed_packet_bytes={} transmitted={} native_cleanup_qualified=0 numerical={} numerical_reason={}",
+                    summary.cookies,
+                    summary.cookie_bytes,
+                    summary.packet_bytes,
+                    u8::from(summary.transmitted),
+                    projection.numerical(),
+                    projection.numerical_reason()
+                )?;
+                usize::try_from(record.position())
+                    .map_err(|_| io::Error::other("bounded CLI record length is unrepresentable"))?
+            };
+            Ok(Self { bytes, used })
+        }
+
+        /// Encode permitted operation and secondary failure labels, never their payloads.
+        /// # Errors
+        /// Reject an unrepresentable or oversized record without emitting partial data.
+        fn failure(failure: &Failed) -> io::Result<Self> {
+            let (stage, cause) = failure_labels(failure.primary);
+            let (cleanup_stage, cleanup_cause) =
+                failure.cleanup.map_or(("none", "none"), failure_labels);
+            let (admission_stage, admission_cause) = failure
+                .admission_cleanup
+                .map_or(("none", "none"), failure_labels);
+            let mut bytes = [0; RECORD_BYTES];
+            let used = {
+                let mut record = Cursor::new(bytes.as_mut_slice());
+                writeln!(
+                    record,
+                    "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage={stage} cause={cause} cleanup_stage={cleanup_stage} cleanup_cause={cleanup_cause} admission_stage={admission_stage} admission_cause={admission_cause}"
+                )?;
+                usize::try_from(record.position())
+                    .map_err(|_| io::Error::other("bounded CLI record length is unrepresentable"))?
+            };
+            Ok(Self { bytes, used })
+        }
+
+        /// Encode only the actual worker category and its recorded retirement observation.
+        /// # Errors
+        /// Reject an unrepresentable or oversized record before any sink output.
+        fn worker(failure: &RunFailed) -> io::Result<Self> {
+            let (stage, cause, retired) = match failure {
+                RunFailed::CallerContext => ("caller-context", "entered-runtime", false),
+                RunFailed::Preparation(operation) | RunFailed::Operation(operation) => {
+                    return Self::failure(operation);
+                }
+                RunFailed::Submission(submission) => (
+                    "worker-submission",
+                    match submission {
+                        job::SubmitError::Busy => "busy",
+                        job::SubmitError::Used => "used",
+                        job::SubmitError::Control => "control",
+                        job::SubmitError::Spawn(kind) => io_label(*kind),
+                    },
+                    false,
+                ),
+                RunFailed::Collection(collection) => (
+                    "worker-collection",
+                    match collection {
+                        job::CollectError::Busy => "busy",
+                        job::CollectError::NotReady => "not-ready",
+                        job::CollectError::SelfJoin => "self-join",
+                        job::CollectError::EnteredRuntime => "entered-runtime",
+                        job::CollectError::Control => "control",
+                    },
+                    false,
+                ),
+                RunFailed::Abnormal(joined) => (
+                    "worker-termination",
+                    match joined.termination {
+                        job::Termination::Panicked => "panicked",
+                        job::Termination::Contract(_) => "contract",
+                        job::Termination::Returned => "unconfirmed-retirement",
+                    },
+                    joined.retired,
+                ),
+            };
+            let mut bytes = [0; RECORD_BYTES];
+            let used = {
+                let mut record = Cursor::new(bytes.as_mut_slice());
+                writeln!(
+                    record,
+                    "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage={stage} cause={cause} retirement_confirmed={}",
+                    u8::from(retired)
+                )?;
+                usize::try_from(record.position())
+                    .map_err(|_| io::Error::other("bounded CLI record length is unrepresentable"))?
+            };
+            Ok(Self { bytes, used })
+        }
+
+        /// Write this one record with at most one call per encoded byte, then flush once.
+        /// Each short write must make progress; errors, including Interrupted, are final.
+        /// # Errors
+        /// Preserve sink errors; reject zero progress or an impossible reported extent.
+        fn write_to(&self, output: &mut impl Write) -> io::Result<()> {
+            let mut remaining = self
+                .bytes
+                .get(..self.used)
+                .ok_or_else(|| io::Error::other("bounded CLI record extent is invalid"))?;
+            while !remaining.is_empty() {
+                let written = output.write(remaining)?;
+                if written == 0 {
+                    return Err(io::Error::from(io::ErrorKind::WriteZero));
+                }
+                remaining = remaining
+                    .get(written..)
+                    .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidData))?;
+            }
+            output.flush()
+        }
+    }
+
+    /// Emit one actual joined completion without reconstructing or refreshing its facts.
+    /// # Errors
+    /// Refuse encoding/write/flush failure; never retry acquisition or emit another record.
+    pub(super) fn write_completion(
+        completion: &datagram::CompletionProjection<'_>,
+        output: &mut impl Write,
+    ) -> io::Result<()> {
+        Record::completion(completion)?.write_to(output)
+    }
+
+    /// Best-effort typed diagnostics retain the caller's original failure and exit class.
+    /// # Errors
+    /// Preserve encoding/write/flush failure without formatting the sink error itself.
+    pub(super) fn write_failure(failure: &Failed, output: &mut impl Write) -> io::Result<()> {
+        Record::failure(failure)?.write_to(output)
+    }
+
+    /// Preserve normal and abnormal failure facts, with no completion-success record.
+    /// An abnormal operation's retained primary row follows its worker row only if that
+    /// row was fully written; an I/O error never initiates fallback/recursive reporting.
+    /// # Errors
+    /// Preserve the first encoding/write/flush failure while retaining the input unchanged.
+    pub(super) fn write_run_failure(
+        failure: &RunFailed,
+        output: &mut impl Write,
+    ) -> io::Result<()> {
+        Record::worker(failure)?.write_to(output)?;
+        if let RunFailed::Abnormal(job::JoinedOutcome {
+            operation: Some(Err(operation)),
+            ..
+        }) = failure
+        {
+            write_failure(operation, output)?;
+        }
+        Ok(())
+    }
 }
 
 /// Admit two bounded CLI arguments and an optional exact protected-datagram flag.
@@ -1141,7 +1255,6 @@ fn report_failure(failure: &Failed, code: std::process::ExitCode) -> std::proces
 /// custody retains the actual job; native cleanup remains separately unqualified.
 #[cfg(windows)]
 pub(super) fn entry(mut arguments: impl Iterator<Item = OsString>) -> std::process::ExitCode {
-    use std::io::Write;
     use std::process::ExitCode;
     let _program = arguments.next();
     let config = match Config::from_arguments(arguments) {
@@ -1150,9 +1263,8 @@ pub(super) fn entry(mut arguments: impl Iterator<Item = OsString>) -> std::proce
     };
     match run(config) {
         Ok(completion) => {
-            let summary = completion.summary();
             let mut output = io::stdout().lock();
-            if writeln!(output, "scope=engine-ke-prototype completed=1 cookies={} cookie_bytes={} sealed_packet_bytes={} transmitted={} native_cleanup_qualified=0", summary.cookies, summary.cookie_bytes, summary.packet_bytes, u8::from(summary.transmitted)).is_err() || output.flush().is_err() {
+            if output::write_completion(&completion.projection(), &mut output).is_err() {
                 return ExitCode::FAILURE;
             }
             ExitCode::SUCCESS

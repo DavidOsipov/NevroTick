@@ -15,23 +15,49 @@ owns their reuse, integration prerequisites and remaining qualification. Reuse
 these owners when service work resumes; qualified product adoption, final account/
 provisioning admission and native Windows lifecycle evidence remain open.
 
-**Current Core/Engine continuation — 13 November 2026:**
+**Current Core/Engine continuation — 14 November 2026:**
 [plan §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-routes the [current source checkpoint](engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026).
+records the [V6 final qualification](s1.3-source-selection-readiness.md#v6-final-qualification--seven-selected-owners):
+603-input product `7701e3b3`, private policy `5e127c28`, passes 720 baseline
+cases, seven line gates, 3 legal/32 negative compiler controls, 21 validation
+specimens and all seven 95% mutation gates. Its 1,243 variants are 819 caught,
+408 compiler-unviable and 16 exact equivalents, with zero owner timeouts.
+The first union timeout stays incomplete; the reviewed completion passes with
+no old-receipt adoption or added kills. The original ledger totals
+9505.109/10,800 seconds. Main stays closed; whole-Core/P1 and release remain open.
+
+**Next after staging:** implement the accepted
+[truthful numerical CLI projection](engine-transport-pilot.md#truthful-numerical-cli-projection--contract-preparation-14-november-2026).
+Freeze affected source, checks and a finite budget first; use the actual joined
+receiver and delivered-output controls. This names the next child, not a pass.
+V5's incomplete receipt and earlier candidate results remain historical.
+
+The [H01–H09 handoff](engine-transport-pilot.md#additional-contract-and-integration-handoff--14-november-2026)
+retains separate H02 metric owners, deferred H07 and pending H08/H09 hosted
+acceptance. The [main-host Engine child](engine-transport-pilot.md#nested-worker-native-custody-child--14-november-2026)
+records 17 build steps, 14 supervisor observations and 235 scripted KE cases
+on historical 603-input `1cbddfb3`. Engine/native-critical bytes are unchanged;
+later Core test/helper changes prevent calling this a whole-product V5 or V6 native
+pass. Real TLS/CNG/UDP, production-positive Core suppliers and broader native/
+release gates remain open.
+
+**Preceding Engine source checkpoint:**
 EP2–EP4 association/protected-datagram and receipt/history custody plus bounded
 same-invocation recovery are authored; the accepted cookie policies have bounded
 source transitions. Invocation stop, actual worker join and protected historical
 result custody are authored; signed checkpoint `5dd75df` retains all 607 variants
 within historical candidate `964a9573`. The private
 [conditional numerical receiver](engine-transport-pilot.md#conditional-numerical-receiver--source-development-13-november-2026)
-is now implemented, with its actual caller supplying `None`. Its `df493299`
-Rust 1.99.1 development checkpoint passes 409 ordinary tests, format and GNU/MSVC
-Clippy. The 34 ownership/privacy compiler controls and 69 doctests pass. Next rebind and qualify the changed
-source with the [Rust 1.100 admission owner](build-optimization.md#rust-1100-candidate-admission--11-november-2026).
-Keep campaigns closed until fresh source/tool admission; old 607/E9 metrics do not
-transfer. Public execution
+is implemented, with its actual caller supplying `None`. The [Rust 1.100 receiver
+continuation](engine-transport-pilot.md#receiver-qualification-continuation--13-november-2026)
+on candidate `82a19ffa` passes 410 ordinary/410 optimized tests (229 KE each),
+34 ownership/privacy compiler controls, 69 doctests, format and GNU/MSVC Clippy.
+Synthetic forwarding faults are detected with no generated-mutation or native
+credit. Future KE metric campaigns require complete fresh source/helper, test-roster
+and reviewed-inventory admission before 90% coverage/95% mutation qualification.
+Keep campaigns closed until fresh admission; old 607/E9 metrics do not transfer. Public execution
 remains one-shot and never-send by default. Remaining critical/native gates,
-the native resource stop, separate fuzz/storage/UI holds and post-V1 formal
+separate fuzz/storage/UI holds and post-V1 formal
 deferral remain; no parent phase or release exit follows.
 
 **Earlier scoped checkpoints:** the
@@ -166,9 +192,9 @@ retain their existing prerequisites and re-entry gates.
 | P1 S1.1c–e | [Time domain](s1.1-time-domain.md), [exchange](s1.1-exchange-association.md), [deterministic harness](s1.1-deterministic-harness.md); domain/protocol/QA | Existing checked numerical and fixture-association children. [RequestTiming proof](s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026) passed five full-domain/defect/restored jobs and158 selected Python checks, with34 inputs/nine executed Python sources bound. Constructor arithmetic only; lifecycle/native/P1 gates remain open. |
 | P1 S1.2 | [Regression/history](s1.2-regression-readiness.md); numerical Core | Existing task; retain selected-owner receipts, remaining scope and independent trajectory/critical-file gates. |
 | P1 S1.3 | [Selection/principal/combination](s1.3-source-selection-readiness.md); numerical Core | [Actual source-counter invariant](s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026) passed five full raw2^80/three-defect/restored jobs,145 properties and291 Python checks;32 inputs/nine executed Python sources bound. Earlier ordinal/append-depth/rational evidence remains preserved. [Complete constructor source preparation](s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026) now has six genuine Garde-backed Cargo projects,14 authenticated vendor packages,51 source checks and independent review; zero compiler/proof commands, execution unready. Source-specific admission/target/allocator/drop/unwinding/constructor proof, transactional lifecycle, prefix/depth/topology/whole-selection, held fraction models/bridge/import/addition, Garde admission, `EndpointParts`, complete enclosure and Core/P1 remain open. All holds and the full P0–P7 objective remain. |
-| P1 S1.4 | [Core completion parent](development-backlog.md#p1-core-completion), [leap entry table](s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint); Core/domain | The complete abstract discipline/holdover parent remains open; its finite-plan and conditional-frequency children have selected GNU exits. The separate pure-leap owner has completed its recorded final host qualification; preserve current receipts and continue with the observation-to-Core contract under plan §7. Formal obligations are post-V1. Later protocol/native scopes remain open. |
+| P1 S1.4 | [Core completion parent](development-backlog.md#p1-core-completion), [adaptive phase-correction child](s1.3-source-selection-readiness.md#adaptive-phase-correction--implementation-contract-13-november-2026), [leap entry table](s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint); Core/domain | Current product work implements the adaptive horizon inside the existing `FixturePhasePlanOwner` under plan §7. The complete abstract discipline/holdover parent remains open; its finite-plan and conditional-frequency children retain selected GNU exits. The separate pure-leap owner retains its recorded host qualification. Adaptive-child qualification remains open. Formal obligations are post-V1; production/default/native scopes remain open. |
 | P1 S1.5 | [Core completion / verifier maintenance](development-backlog.md#p1-core-completion); tooling/dependency/QA | Cross-cutting verification and eventual phase closure; existing actual gates remain mandatory. Deferred maintenance is not a new implementation prerequisite. |
-| P2 S2.1–S2.4 | [Acquisition parent](development-backlog.md#p2-acquisition), [observation-to-Core contract](engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission); engine/protocol/security | Earlier bridge, numerical, session, formatter and laboratory handoff children retain their scoped exits. The [12 November source checkpoint](engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026) owns EP2–EP4 association/protected-datagram, receipt/history custody and bounded same-invocation recovery. Signed [13 November checkpoint](engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026) `5dd75df` records actual worker join, sealed history and historical 607/E9 accounting. The [conditional numerical receiver](engine-transport-pilot.md#conditional-numerical-receiver--source-development-13-november-2026) is implemented; its actual caller supplies `None`. The 34 ownership/privacy compiler controls and 69 doctests pass. Next rebind/qualify under the [Rust 1.100 admission owner](build-optimization.md#rust-1100-candidate-admission--11-november-2026), keeping campaigns closed until fresh source/tool admission. Public execution stays one-shot/never-send by default; production issuers/history, real TLS/CNG/UDP, remaining critical-owner and native gates remain open. Reuse existing owners without inheriting production qualification or lifting holds. |
+| P2 S2.1–S2.4 | [Acquisition parent](development-backlog.md#p2-acquisition), [observation-to-Core contract](engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission); engine/protocol/security | Earlier bridge, numerical, session, formatter and laboratory handoff children retain their scoped exits. The [12 November source checkpoint](engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026) owns EP2–EP4 association/protected-datagram, receipt/history custody and bounded same-invocation recovery. Signed [13 November checkpoint](engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026) `5dd75df` records actual worker join, sealed history and historical 607/E9 accounting. The [Rust 1.100 receiver continuation](engine-transport-pilot.md#receiver-qualification-continuation--13-november-2026) passes 410 ordinary/410 optimized tests, 34 ownership/privacy controls and 69 doctests; synthetic forwarding faults receive no generated-mutation credit. Its actual caller supplies `None`. Future KE metric campaigns require complete fresh source/helper, roster and reviewed-inventory admission before 90% coverage/95% mutation qualification; campaigns stay closed until admission. Public execution stays one-shot/never-send by default; production issuers/history, real TLS/CNG/UDP, remaining critical-owner and native gates remain open. Reuse existing owners without inheriting production qualification or lifting holds. |
 | P3 S3.1–S3.4 | [Service-boundary parent](development-backlog.md#p3-service-boundary), [source handoff](windows11-integration.md#4358-service-source-handoff-and-integration-prerequisites--8-november-2026); platform/IPC/security/Core | S3.1 integration preparation reuses the implemented service foundation; product/native adoption remains gated. Authenticated handlers → mandatory state → simulated-backend integration retain their prerequisites. W11/ST-W assignments apply; optional storage retains its separate pause. |
 | P4 S4.1–S4.5 | [Clock parent](development-backlog.md#p4-clock-integration); clock/platform/security/QA | Deferred measured backend/accounting → finite policy → power generations → ownership/recovery → soak; relevant P0/P3 evidence and bounded native admission precede effects. |
 | P5 S5.1–S5.4 | [Production-UI parent](development-backlog.md#p5-production-ui); UI/accessibility/platform | Deferred Slint status → settings/helper → diagnostics/tray → accessibility/resources, consuming the admitted adapter and its exact feature graph. Restore D2 before live status/commands and D1/D3 at their preview/qualification triggers. |

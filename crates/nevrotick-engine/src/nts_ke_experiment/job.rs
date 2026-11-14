@@ -336,7 +336,7 @@ impl WorkerSlot {
     /// The selected provider and operation execute only on the one ordinary worker.
     /// # Errors
     /// Refuse contention, reuse, poisoned custody or spawn without a queued alternative.
-    pub(super) fn submit_with<F>(
+    fn submit_with<F>(
         &'static self,
         prepared: PreparedInvocation,
         admission: &'static ProcessAdmission,
@@ -389,6 +389,25 @@ impl WorkerSlot {
                 Err(failure)
             }
         }
+    }
+
+    /// Forward sibling component controls through the one private submission kernel.
+    /// Production callers cannot select a provider, operation or lifecycle hooks.
+    /// # Errors
+    /// Preserve every actual kernel refusal without changing custody or work.
+    #[cfg(test)]
+    pub(super) fn submit_fixture<F>(
+        &'static self,
+        prepared: PreparedInvocation,
+        admission: &'static ProcessAdmission,
+        make_provider: for<'a> fn(ProcessClaim<'a>) -> Result<ProviderScope<'a>, Failure>,
+        execute: F,
+        hooks: Hooks,
+    ) -> Result<(), SubmitError>
+    where
+        F: for<'a> FnOnce(&'a Config, &'a ProviderScope<'a>, Control) -> Operation + Send + 'static,
+    {
+        self.submit_with(prepared, admission, make_provider, execute, hooks)
     }
 
     /// Borrow ordinary observation without transferring any thread/result custody.
@@ -484,7 +503,7 @@ impl WorkerSlot {
     /// Consume final typed facts once after actual join, retaining any sealed payload.
     /// # Errors
     /// Refuse a premature/duplicate take, contention or unavailable custody.
-    pub(super) fn take_result(&self) -> Result<JoinedOutcome, CollectError> {
+    fn take_result(&self) -> Result<JoinedOutcome, CollectError> {
         let mut custody = match self.custody.try_lock() {
             Ok(custody) => custody,
             Err(TryLockError::WouldBlock) => return Err(CollectError::Busy),
@@ -502,6 +521,15 @@ impl WorkerSlot {
                 Err(CollectError::NotReady)
             }
         }
+    }
+
+    /// Forward sibling diagnostic controls through the one private joined-result take.
+    /// Production receiving must obtain the sealed token from `take_for_receiving`.
+    /// # Errors
+    /// Preserve each actual premature/duplicate take and custody refusal.
+    #[cfg(test)]
+    pub(super) fn take_fixture_result(&self) -> Result<JoinedOutcome, CollectError> {
+        self.take_result()
     }
 
     /// Transfer the actual once-taken result into sealed receiving custody.

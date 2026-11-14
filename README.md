@@ -85,16 +85,24 @@ variants on historical candidate `964a9573` have scoped accounting;
 37 Windows-only gaps and native/generation gates remain. Recurring native
 operation is not enabled by the probe.
 
-The private [conditional numerical receiver](tasks/engine-transport-pilot.md#conditional-numerical-receiver--source-development-13-november-2026)
-is now implemented; its actual caller supplies `None`, retaining numerical
-unavailability and the original history. All 34 ownership/privacy compiler
-controls and 69 doctests pass. Next rebind/qualify the changed source with the existing
-[Rust 1.100 admission owner](tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026).
-Rust 1.100.0 is now selected and admitted in WSL; the
+Current Core/Engine product work follows the existing
+[adaptive phase-correction contract](tasks/s1.3-source-selection-readiness.md#adaptive-phase-correction--implementation-contract-13-november-2026)
+inside `FixturePhasePlanOwner`, preserving actual issue/settlement custody and
+explicit numerical profiles. Production defaults, native issuers and full Core
+qualification remain open.
+
+The preceding private [conditional numerical receiver](tasks/engine-transport-pilot.md#conditional-numerical-receiver--source-development-13-november-2026)
+is implemented; its actual caller supplies `None`, retaining numerical
+unavailability and the original history. Its [Rust 1.100 receiver continuation](tasks/engine-transport-pilot.md#receiver-qualification-continuation--13-november-2026)
+on candidate `82a19ffa` passes 410 ordinary/410 optimized tests, 34 ownership/privacy
+compiler controls, 69 doctests, format and GNU/MSVC Clippy. Synthetic forwarding
+faults are detected without generated-mutation or native qualification credit.
+Rust 1.100.0 is selected and admitted in WSL; the
 [upgrade task](tasks/build-optimization.md#rust-1100-implementation--13-november-2026)
 records actual compatibility results and remaining gates. Engine analysis campaigns
-stay closed until complete fresh source/roster/role admission; old mutation results
-supply no current metric credit.
+stay closed until complete fresh source/helper/roster and reviewed inventory
+admission, followed by required 90% coverage/95% mutation qualification. Old
+607/E9 results on `964a9573` supply no current metric credit.
 
 Experimental results remain ineligible for clock control. The complete native
 KE/TLS/CNG/UDP journey, production NTP/NTS acquisition and Core admission,

@@ -9,16 +9,68 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**Current Core/Engine checkpoint:** the
+[V6 final qualification](../tasks/s1.3-source-selection-readiness.md#v6-final-qualification--seven-selected-owners)
+completes its seven selected GNU fixture owners. Follow
+[development §7](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+for the next product child after staging.
+Adaptive correction and matched finite steps share `FixturePhasePlanOwner`'s
+actual reference, issue, settlement and take-once recovery paths, with explicit
+numerical profiles and no production clock authority.
+
+Product `7701e3b3` (603 inputs), executed private policy `5e127c28`, passes all
+720 baseline cases (608 ordinary/112 doctests), seven 90% line gates,
+3 legal/32 negative compiler controls, 21 validation specimens and all seven
+95% per-file mutation gates. Its 1,243 variants reconcile as 819 caught,
+408 compiler-unviable and 16 exact reviewed equivalents, with zero owner
+timeouts or unresolved survivors; equivalents add no kills. The first union's
+90-second timeout remains incomplete. The reviewed data-only completion passes
+in 156.470 seconds; the original ledger totals 9505.109/10,800 seconds without
+reset or earlier-receipt adoption. Main stays closed; branch coverage,
+whole-Core/P1, native, hosted and release exits remain separate.
+
+**Current Engine source child:** the [truthful numerical CLI result](../tasks/engine-transport-pilot.md#numerical-cli-projection--development-checks-complete-14-november-2026)
+passes development checks on product `05b1a35c`: 415 ordinary/415 optimized
+cases, 69 doctests, GNU/MSVC Clippy, Windows-target compilation and 43 actual
+compiler controls (8 legal/35 intended refusals). Joined-only typed output
+preserves original facts and explicitly denies eligibility/freshness claims;
+the actual caller still supplies `None`. Fresh Engine source/helper/roster
+admission and per-file 90% coverage/95% mutation qualification are NEXT.
+No native, hosted, Core-positive or release pass follows from this child.
+V5's incomplete receipt and earlier results retain their original scopes.
+
+The owner's [additional H01–H09 handoff](../tasks/engine-transport-pilot.md#additional-contract-and-integration-handoff--14-november-2026)
+continues from that source. H01/H04/H05 are already addressed; H02 semantic
+equality guards, H03 worker visibility, H06 combined tray termination and H09
+explicit EP1 CI routing now pass their integrated focused source checks and
+actual compiler controls on preceding candidate `1cbddfb3`. H02's principal/
+combination metric owners remain separate from phase/Step qualification. H07
+remains conditionally deferred. H08's pending owner decision in NV-DEC-001 §6.4
+and H09's actual hosted acceptance remain open.
+
+The [14 November main-host Engine continuation](../tasks/engine-transport-pilot.md#nested-worker-native-custody-child--14-november-2026)
+records all 17 build/inspection steps, 14 supervisor observations and all 235
+scripted KE cases on historical 603-input product `1cbddfb3`: 232 flat cases plus three
+separately executed exact nested-worker tests. Actual discovery matches all 392
+library identities, and every observation confirms completed cleanup. At the Core V6 checkpoint, Engine and native-critical bytes were unchanged;
+the new CLI child changes Engine receiving/output source. These historical
+native results retain their earlier bytes and do not qualify that delta; this is no whole-product V5 or V6 native pass.
+Full native KE, real TLS/CNG/UDP, services and release remain open. These results
+lift no unrelated hold and supply no production-positive acquisition issuer.
+
 The [private conditional numerical receiver](../tasks/engine-transport-pilot.md#conditional-numerical-receiver--source-development-13-november-2026)
-is implemented on candidate `df493299`: 409 ordinary tests, format and GNU/MSVC
+has a [Rust 1.100 continuation](../tasks/engine-transport-pilot.md#receiver-qualification-continuation--13-november-2026)
+on candidate `82a19ffa`: 410 ordinary and 410 optimized tests, format and GNU/MSVC
 Clippy pass with unchanged input bookends and verified resource cleanup. Its
 actual caller supplies `None`, preserving numerical unavailability and original
-history. The 34 GNU/MSVC ownership/privacy compiler controls and 69 doctests also pass.
-Complete toolchain/source qualification rebinding, optimized tests and 90% coverage/
-95% mutation gates remain open. The earlier
-checkpoint and 607/E9 results below retain their historical candidate scopes.
+history. All 34 GNU/MSVC ownership/privacy compiler controls and 69 doctests pass.
+Synthetic capture-forwarding controls detect both whole-capture and UTC-only
+substitution, with no generated-mutation or native credit. Future KE metric
+campaigns require fresh source/helper/inventory admission and per-owner
+90% coverage/95% mutation gates.
+Earlier checkpoints and the 607/E9 results below retain their historical scopes.
 
-The current [Core/Engine continuation](../tasks/engine-transport-pilot.md#protected-historical-result-through-actual-join--bounded-contract)
+The preceding [Engine receiving continuation](../tasks/engine-transport-pilot.md#protected-historical-result-through-actual-join--bounded-contract)
 preserves a genuine protected reply through the actual invocation, worker join
 and consume-once result. A sealed private history retains the original receipt,
 full header, clock brackets, endpoints/socket identity and invocation chart.
@@ -122,7 +174,7 @@ authenticated client, native clock synchronization or release readiness.
 
 | Question | Source of truth |
 | --- | --- |
-| Where is protected NTS datagram integration now? | The [12 November source checkpoint](../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026) records EP2–EP4 association, protected-datagram and receipt/history custody plus bounded same-invocation recovery. The accepted [cookie-return](nevrotick-owner-decisions.md#61-s22-cookie-reissuance) and [zero-cookie](nevrotick-owner-decisions.md#62-s22-zero-replacement-cookies) policies have bounded source transitions. Public execution remains one-shot and never-send by default. The earlier [Windows scripted-component exit](../tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit) records 106 scripted KE component tests on Windows, on its earlier source candidate only. Real TLS/CNG/UDP, remaining critical-owner gates, production issuers/Core history and release remain unqualified; the native resource stop remains. The [13 November checkpoint](../tasks/engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026) records actual worker join and sealed historical-result custody; all 607 variants have scoped accounting. That checkpoint is published as `5dd75df`; the private conditional numerical receiver is implemented on `df493299`, with the actual caller supplying `None`. Its source closeout adds 34 ownership/privacy compiler controls and 69 doctests. Use the [Rust 1.100 admission owner](../tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026) for fresh tool/source/roster binding and the remaining qualification. |
+| Where is protected NTS datagram integration now? | The [12 November source checkpoint](../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026) records EP2–EP4 association, protected-datagram and receipt/history custody plus bounded same-invocation recovery. The accepted [cookie-return](nevrotick-owner-decisions.md#61-s22-cookie-reissuance) and [zero-cookie](nevrotick-owner-decisions.md#62-s22-zero-replacement-cookies) policies have bounded source transitions. Public execution remains one-shot and never-send by default. The earlier [Windows scripted-component exit](../tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit) records 106 scripted KE component tests on Windows, on its earlier source candidate only. Real TLS/CNG/UDP, remaining critical-owner gates, production issuers/Core history and release remain unqualified. The [13 November checkpoint](../tasks/engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026) records actual worker join and sealed historical-result custody; all 607 variants have scoped accounting. That checkpoint is published as `5dd75df`; the preceding [Rust 1.100 receiver continuation](../tasks/engine-transport-pilot.md#receiver-qualification-continuation--13-november-2026) on `82a19ffa` passes 410 ordinary/410 optimized tests, 34 ownership/privacy controls and 69 doctests, with the actual caller supplying `None`. The selected [V6 Core exit](../tasks/s1.3-source-selection-readiness.md#v6-final-qualification--seven-selected-owners) is complete; next implement the accepted [truthful CLI projection](../tasks/engine-transport-pilot.md#truthful-numerical-cli-projection--contract-preparation-14-november-2026) after staging. The historical main-host scripted scope above changes no full native/provider gate. Future KE metric campaigns retain fresh source/helper/roster/inventory admission and their required gates. |
 | What is the Rust/Cargo 1.100 migration status? | Rust 1.100.0 and the accepted 14-day dependency cooldown retain their [bounded-worker qualification checkpoint](../tasks/build-optimization.md#rust-1100-qualification-continuation--13-november-2026). David then requests [restoring the previous worker limits and publishing](../tasks/build-optimization.md#owner-requested-worker-restoration-and-publication--13-november-2026); the full restored-concurrency Rust matrix is not rerun. Current construction/policy checks and earlier executed rows keep their distinct candidate scopes. The [review](supporting-reviews/rust-1.100-upgrade-review.md#final-release-implementation-follow-up--13-november-2026) explains the upgrade. Native Windows, coverage/mutation/generation and release qualification retain their owners; old Engine metrics do not transfer. |
 | What code exists now, and which results apply to it? | [Current implementation summary](windows-time-architecture.md#1-current-state-capsule), backed by the workspace manifests, lockfile, source and linked candidate-specific task evidence. Dated baseline and review records below remain historical. |
 | Which OS integration assumptions have been challenged against CVEs and platform documentation? | [8 November OS-integration research](supporting-reviews/windows-os-integration-risk-research.md) maps actual/proposed APIs, primary CVE analogues, version/feature exclusions and paired checks. [W11 §4.37](../tasks/windows11-integration.md#437-os-integration-vulnerability-research--8-november-2026) routes the work; R-05 and ST-W03 retain the two explicit refinements. The [9 November integration map](supporting-reviews/windows-os-integration-risk-research.md#8-skill-and-document-integration--9-november-2026) locates canonical rules, skill entry points, shared QA and intentionally unchanged coverage. This is bounded research, not a new confirmed vulnerability, full audit or native pass. |

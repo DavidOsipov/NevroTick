@@ -61,6 +61,23 @@ impl<'a> AssociationCandidate<'a> {
     }
 }
 
+/// Checked population of one actual association at a receiving boundary.
+/// Only that association can mint this opaque immutable snapshot.
+#[derive(Clone, Copy)]
+pub(super) struct CheckedPopulation {
+    /// Checked entry count, including each admitted empty opaque cookie.
+    cookies: usize,
+    /// Checked aggregate payload without retaining another secret copy.
+    cookie_bytes: usize,
+}
+
+impl CheckedPopulation {
+    /// Project the captured checked counts without granting pool availability.
+    pub(super) const fn counts(self) -> (usize, usize) {
+        (self.cookies, self.cookie_bytes)
+    }
+}
+
 /// One published Engine association and its one never-send preview allowance.
 pub(super) struct AssociationOwner<'a> {
     /// Complete immutable custody from the genuine consuming transfer.
@@ -107,6 +124,24 @@ impl<'a> AssociationOwner<'a> {
             material: candidate,
             preview_spent: false,
             ledger,
+        })
+    }
+
+    /// Capture this same actual association's checked pre-operation population.
+    /// Identity alone is checked here; ordinary operation guards retain currentness.
+    /// # Errors
+    /// Refuse foreign Control or inconsistent counts without altering the pool.
+    pub(super) fn receiving_population(
+        &self,
+        control: &Control,
+    ) -> Result<CheckedPopulation, Failure> {
+        if !std::ptr::eq(control, self.material.control) {
+            return Err(Failure::Control);
+        }
+        let (cookies, cookie_bytes) = self.cookie_population()?;
+        Ok(CheckedPopulation {
+            cookies,
+            cookie_bytes,
         })
     }
 

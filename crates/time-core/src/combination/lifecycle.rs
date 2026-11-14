@@ -339,9 +339,17 @@ impl fmt::Debug for FixtureCombinationParameters {
 impl PartialEq for FixtureCombinationParameters {
     /// Preserve every admitted bit, including the maximum-error zero sign.
     fn eq(&self, other: &Self) -> bool {
-        self.combine_limit.to_bits() == other.combine_limit.to_bits()
-            && self.max_clock_error_seconds_per_second.to_bits()
-                == other.max_clock_error_seconds_per_second.to_bits()
+        let Self {
+            combine_limit,
+            max_clock_error_seconds_per_second,
+        } = self;
+        let Self {
+            combine_limit: other_combine_limit,
+            max_clock_error_seconds_per_second: other_max_clock_error_seconds_per_second,
+        } = other;
+        combine_limit.to_bits() == other_combine_limit.to_bits()
+            && max_clock_error_seconds_per_second.to_bits()
+                == other_max_clock_error_seconds_per_second.to_bits()
     }
 }
 
@@ -653,6 +661,7 @@ struct Inner {
 }
 
 /// One fixed-roster fixture owner; cloning observation/emission credit is not public.
+#[derive(PartialEq)]
 pub struct FixtureCombinationState {
     /// Sole mutable complete state, replaced only after successful preparation.
     inner: Inner,
@@ -662,13 +671,6 @@ impl fmt::Debug for FixtureCombinationState {
     /// Redact original principal metadata and all stored fixture counters.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("FixtureCombinationState { .. }")
-    }
-}
-
-impl PartialEq for FixtureCombinationState {
-    /// Compare complete committed state, including all parameter/score bits.
-    fn eq(&self, other: &Self) -> bool {
-        self.inner == other.inner
     }
 }
 

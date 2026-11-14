@@ -277,21 +277,7 @@ impl WindowsToastPort {
     /// Re-observe the native setting; unknown values/errors cannot become Allowed.
     #[must_use]
     pub fn windows_setting(&self) -> Observation<WindowsNotificationSetting> {
-        match self.notifier.Setting() {
-            Ok(NotificationSetting::Enabled) => {
-                Observation::Current(WindowsNotificationSetting::Allowed)
-            }
-            Ok(
-                NotificationSetting::DisabledForApplication | NotificationSetting::DisabledForUser,
-            ) => Observation::Current(WindowsNotificationSetting::BlockedForUser),
-            Ok(NotificationSetting::DisabledByGroupPolicy) => {
-                Observation::Current(WindowsNotificationSetting::BlockedByPolicy)
-            }
-            Ok(NotificationSetting::DisabledByManifest) => {
-                Observation::Current(WindowsNotificationSetting::Unsupported)
-            }
-            Ok(_) | Err(_) => Observation::Unknown,
-        }
+        observe_windows_setting(&self.notifier)
     }
 
     /// Submit one explicit test under the caller's live UI transition guard.
@@ -310,12 +296,12 @@ impl WindowsToastPort {
         if self.availability() != AdapterAvailability::Ready {
             return RequestOutcome::Blocked(NotificationBlock::NativeAdapterUnavailable);
         }
-        match self.session.admit(prepared, preferences, observer) {
-            Ok(false) => return RequestOutcome::Coalesced,
+        let attempt = match self.session.admit(prepared, preferences, observer) {
+            Ok(None) => return RequestOutcome::Coalesced,
             Err(block) => return RequestOutcome::Blocked(block),
-            Ok(true) => {}
-        }
-        match self.windows_setting() {
+            Ok(Some(attempt)) => attempt,
+        };
+        match observe_windows_setting(&self.notifier) {
             Observation::Current(WindowsNotificationSetting::Allowed) => {}
             Observation::Current(
                 WindowsNotificationSetting::BlockedForUser
@@ -329,11 +315,15 @@ impl WindowsToastPort {
                 return RequestOutcome::Blocked(NotificationBlock::WindowsUnavailable);
             }
         }
-        if !self.close_active() {
+        if !close_retained_toast(
+            &mut self.active,
+            &self.notifier,
+            &mut self.cleanup_uncertain,
+        ) {
             return RequestOutcome::NotSubmitted(NativeFailure::CleanupPending);
         }
-        let token = ActivationToken::new(self.session.nonce, prepared.notice());
-        let Ok(document) = document(prepared, token) else {
+        let token = attempt.activation_token();
+        let Ok(document) = document(attempt.prepared(), token) else {
             return RequestOutcome::NotSubmitted(NativeFailure::Preparation);
         };
         let Ok(toast) = ToastNotification::CreateToastNotification(&document) else {
@@ -358,17 +348,23 @@ impl WindowsToastPort {
         .is_err()
         {
             self.active = Some(active);
-            self.close_active();
+            close_retained_toast(
+                &mut self.active,
+                &self.notifier,
+                &mut self.cleanup_uncertain,
+            );
             return RequestOutcome::NotSubmitted(NativeFailure::Preparation);
         }
         // The ID is consumed for every actual Show call, even an uncertain Err.
         active.shown_or_uncertain = true;
-        let submission = if self.notifier.Show(&active.toast).is_ok() {
-            Submission::AcceptedByOs
-        } else {
-            Submission::Indeterminate
-        };
-        self.session.attempted(prepared.notice(), submission);
+        let notifier = &self.notifier;
+        let submission = attempt.attempt_show(|| {
+            if notifier.Show(&active.toast).is_ok() {
+                Submission::AcceptedByOs
+            } else {
+                Submission::Indeterminate
+            }
+        });
         self.active = Some(active);
         RequestOutcome::Attempted(submission)
     }
@@ -423,16 +419,50 @@ impl WindowsToastPort {
 
     /// Keep uncertain obligations; replacement never grows a list of old objects.
     fn close_active(&mut self) -> bool {
-        if let Some(active) = &mut self.active
-            && !active.close(&self.notifier)
-        {
-            self.cleanup_uncertain = true;
-            return false;
-        }
-        self.active = None;
-        self.cleanup_uncertain = false;
-        true
+        close_retained_toast(
+            &mut self.active,
+            &self.notifier,
+            &mut self.cleanup_uncertain,
+        )
     }
+}
+
+/// Re-observe only the notifier; unknown settings/errors never become Allowed.
+/// The session stays exclusively borrowed by native preparation without registration effects.
+fn observe_windows_setting(notifier: &ToastNotifier) -> Observation<WindowsNotificationSetting> {
+    match notifier.Setting() {
+        Ok(NotificationSetting::Enabled) => {
+            Observation::Current(WindowsNotificationSetting::Allowed)
+        }
+        Ok(NotificationSetting::DisabledForApplication | NotificationSetting::DisabledForUser) => {
+            Observation::Current(WindowsNotificationSetting::BlockedForUser)
+        }
+        Ok(NotificationSetting::DisabledByGroupPolicy) => {
+            Observation::Current(WindowsNotificationSetting::BlockedByPolicy)
+        }
+        Ok(NotificationSetting::DisabledByManifest) => {
+            Observation::Current(WindowsNotificationSetting::Unsupported)
+        }
+        Ok(_) | Err(_) => Observation::Unknown,
+    }
+}
+
+/// Try matching hide/handler cleanup without releasing the exact session borrow.
+/// Failed cleanup retains its owned object and marks uncertainty; success clears both.
+fn close_retained_toast(
+    retained: &mut Option<ActiveToast>,
+    notifier: &ToastNotifier,
+    cleanup_uncertain: &mut bool,
+) -> bool {
+    if let Some(active) = retained.as_mut()
+        && !active.close(notifier)
+    {
+        *cleanup_uncertain = true;
+        return false;
+    }
+    *retained = None;
+    *cleanup_uncertain = false;
+    true
 }
 
 impl Drop for WindowsToastPort {

@@ -28,7 +28,9 @@ use super::{
 use crate::{
     localization::{Snapshot, UiText},
     native_notifications_windows::{CloseOutcome, IdentityMode},
-    native_tray::{NativeTray, PreparedTray, TrayBridge, TrayError, TrayPixels, UiWake},
+    native_tray::{
+        NativeTray, PreparedTray, TrayBridge, TrayError, TrayFinish, TrayPixels, UiWake,
+    },
     notifications_ui::{ObserverPresence, native_delivery::ActivationResolution},
     shell::{AdapterAvailability, Observation},
     status_ui::{StatusCheckIntent, StatusKind, StatusPresentationPort, StatusView},
@@ -465,10 +467,16 @@ fn poll_stop(window: &AppWindow, state: &RefCell<BindingState>) -> Option<StopPr
     let mut failed = stopping.notifications_failed;
     let tray_cleaned = if let Some(tray) = native.tray.as_mut() {
         match tray.port.try_finish() {
-            Ok(false) => false,
-            Ok(true) => true,
-            Err(_) if tray.port.cleanup_confirmed() => true,
-            Err(_) => {
+            TrayFinish::Pending => false,
+            // This barrier consumes cleanup acknowledgement only; the observation
+            // retains the joined operation result independently of its success.
+            TrayFinish::CleanupConfirmed {
+                operation: _operation,
+            } => true,
+            TrayFinish::CleanupUnconfirmed {
+                operation: _operation,
+                cause: _cause,
+            } => {
                 failed = true;
                 false
             }

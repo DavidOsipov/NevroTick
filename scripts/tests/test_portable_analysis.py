@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 import copy
+import difflib
 import importlib.util
 import hashlib
 import json
@@ -3808,31 +3809,35 @@ class EngineContractAdmissionTests(unittest.TestCase):
                                          scope, {**policy, "tool_admission_profile": profile})
 
     def test_engine_session_checks_actual_product_count_before_tools(self):
-        scope, policy = self.fixture()
-        with tempfile.TemporaryDirectory() as temporary:
-            parent = Path(temporary).resolve()
-            root = parent / "checkout"
-            root.mkdir()
-            args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core", output_dir=parent / "output")
-            healthy = MODULE.PRODUCT.admit_product(ROOT)[1]
-            self.assertEqual(len(healthy), 595)
-            for count in (594, 595, 596):
-                identity = dict(healthy)
-                if count == 594:
-                    identity.pop(next(iter(identity)))
-                elif count == 596:
-                    identity["unexpected.rs"] = "a" * 64
-                expected = "healthy engine reached proofs" if count == 595 else "complete contract candidate"
-                with (self.subTest(count=count),
-                      patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)),
-                      patch.object(MODULE, "admit_mutation_equivalences",
-                                   side_effect=MODULE.Incomplete("healthy engine reached proofs")) as proofs,
-                      patch.object(MODULE.ANALYSIS, "admit") as tools,
-                      self.assertRaisesRegex(MODULE.Incomplete, expected)):
-                    MODULE.Session(root, args, {}, scope, policy, ())
-                self.assertEqual(proofs.call_count, int(count == 595))
-                tools.assert_not_called()
-                self.assertFalse(args.output_dir.exists())
+        # Synthetic reader mechanics: current checkout bytes are deliberately not
+        # the historical admitted contract candidate. Keep its count/digest guard.
+        count = MODULE.CONTRACT_PRODUCT_BINDING["source_file_count"]
+        healthy = {f"synthetic/{index}.rs": "a" * 64 for index in range(count)}
+        binding = {"source_file_count": count, "candidate_sha256": MODULE.canonical_sha256(healthy)}
+        with patch.object(MODULE, "CONTRACT_PRODUCT_BINDING", binding):
+            scope, policy = self.fixture()
+            with tempfile.TemporaryDirectory() as temporary:
+                parent = Path(temporary).resolve()
+                root = parent / "checkout"
+                root.mkdir()
+                args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core", output_dir=parent / "output")
+                for changed_count in (count - 1, count, count + 1):
+                    identity = dict(healthy)
+                    if changed_count < count:
+                        identity.pop(next(iter(identity)))
+                    elif changed_count > count:
+                        identity["unexpected.rs"] = "a" * 64
+                    expected = "healthy engine reached proofs" if changed_count == count else "complete contract candidate"
+                    with (self.subTest(count=changed_count),
+                          patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)),
+                          patch.object(MODULE, "admit_mutation_equivalences",
+                                       side_effect=MODULE.Incomplete("healthy engine reached proofs")) as proofs,
+                          patch.object(MODULE.ANALYSIS, "admit") as tools,
+                          self.assertRaisesRegex(MODULE.Incomplete, expected)):
+                        MODULE.Session(root, args, {}, scope, policy, ())
+                    self.assertEqual(proofs.call_count, int(changed_count == count))
+                    tools.assert_not_called()
+                    self.assertFalse(args.output_dir.exists())
 
     def test_same_count_replaced_product_cannot_reach_contract_tools(self):
         scope, policy = self.fixture()
@@ -3879,22 +3884,566 @@ class DomainContractAdmissionTests(unittest.TestCase):
         with self.assertRaises(MODULE.Incomplete):MODULE.admission_profile(args, scope, {**policy, "fuzz": True})
 
     def test_complete_current_snapshot_is_checked_before_tools_or_output(self):
-        scope, policy = self.fixture(); healthy = MODULE.PRODUCT.admit_product(ROOT)[1]
-        variants = [dict(healthy) for _ in range(4)]
-        variants[1][next(iter(healthy))] = "0" * 64
-        variants[2].pop(next(iter(healthy)))
-        variants[3]["extra.rs"] = "0" * 64
-        for index, identity in enumerate(variants):
-            with self.subTest(index=index), tempfile.TemporaryDirectory() as temporary:
-                parent = Path(temporary).resolve(); root = parent / "checkout"; root.mkdir()
-                args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core", output_dir=parent / "output")
-                with (patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)),
-                      patch.object(MODULE, "admit_mutation_equivalences", side_effect=MODULE.Incomplete("healthy reached later admission")) as later,
-                      patch.object(MODULE.ANALYSIS, "admit") as tools,
-                      self.assertRaisesRegex(MODULE.Incomplete, "healthy reached later admission" if index == 0 else "complete contract candidate")):
-                    MODULE.Session(root, args, {}, scope, policy, ())
-                self.assertEqual(later.call_count, int(index == 0)); tools.assert_not_called()
-                self.assertFalse(args.output_dir.exists())
+        # Test the boundary with a declared synthetic snapshot; do not silently
+        # call changed live source the old contract policy's healthy candidate.
+        count = MODULE.CONTRACT_PRODUCT_BINDING["source_file_count"]
+        healthy = {f"synthetic/{index}.rs": "a" * 64 for index in range(count)}
+        binding = {"source_file_count": count, "candidate_sha256": MODULE.canonical_sha256(healthy)}
+        scope, _ = self.fixture()
+        with patch.object(MODULE, "CONTRACT_PRODUCT_BINDING", binding):
+            policy = MODULE.domain_contract_facts()
+            variants = [dict(healthy) for _ in range(4)]
+            variants[1][next(iter(healthy))] = "0" * 64
+            variants[2].pop(next(iter(healthy)))
+            variants[3]["extra.rs"] = "0" * 64
+            for index, identity in enumerate(variants):
+                with self.subTest(index=index), tempfile.TemporaryDirectory() as temporary:
+                    parent = Path(temporary).resolve(); root = parent / "checkout"; root.mkdir()
+                    args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core", output_dir=parent / "output")
+                    with (patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)),
+                          patch.object(MODULE, "admit_mutation_equivalences", side_effect=MODULE.Incomplete("healthy reached later admission")) as later,
+                          patch.object(MODULE.ANALYSIS, "admit") as tools,
+                          self.assertRaisesRegex(MODULE.Incomplete, "healthy reached later admission" if index == 0 else "complete contract candidate")):
+                        MODULE.Session(root, args, {}, scope, policy, ())
+                    self.assertEqual(later.call_count, int(index == 0)); tools.assert_not_called()
+                    self.assertFalse(args.output_dir.exists())
+
+
+# Literal reviewed fault DTOs; no retained execution or historical qualification is reused.
+_PHASE_STEP_REVIEWED_MUTANTS = {'PHASE-STEP-PROFILE-NORMAL-POSITIVE': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs:228:42: '
+                                                'replace > with >= in profile_valid',
+                                        'package': 'time-core',
+                                        'file': 'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs',
+                                        'function': {'function_name': 'profile_valid',
+                                                     'return_type': '-> bool',
+                                                     'span': {'start': {'line': 221, 'column': 1},
+                                                              'end': {'line': 230, 'column': 2}}},
+                                        'span': {'start': {'line': 228, 'column': 42},
+                                                 'end': {'line': 228, 'column': 43}},
+                                        'replacement': '>=',
+                                        'genre': 'BinaryOperator'},
+ 'PHASE-STEP-DURATION-MIN-EQUALITY': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs:1378:49: '
+                                              "replace < with <= in FixturePhasePlanOwner<'producer, "
+                                              "'chart>::issue",
+                                      'package': 'time-core',
+                                      'file': 'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs',
+                                      'function': {'function_name': "FixturePhasePlanOwner<'producer, "
+                                                                    "'chart>::issue",
+                                                   'return_type': "-> Result<FixturePhaseProposal<'_>, "
+                                                                  'FixturePhaseError>',
+                                                   'span': {'start': {'line': 1335, 'column': 5},
+                                                            'end': {'line': 1409, 'column': 6}}},
+                                      'span': {'start': {'line': 1378, 'column': 49},
+                                               'end': {'line': 1378, 'column': 50}},
+                                      'replacement': '<=',
+                                      'genre': 'BinaryOperator'},
+ 'PHASE-STEP-CLOCK-ORDER-RECHECK': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs:2220:13: '
+                                            'replace || with && in ControllerClockRelation::observe',
+                                    'package': 'time-core',
+                                    'file': 'crates/time-core/src/reference_input/rate_delivery/phase_plan.rs',
+                                    'function': {'function_name': 'ControllerClockRelation::observe',
+                                                 'return_type': '-> Result<Self, FixtureBaselineError>',
+                                                 'span': {'start': {'line': 2209, 'column': 5},
+                                                          'end': {'line': 2245, 'column': 6}}},
+                                    'span': {'start': {'line': 2220, 'column': 13},
+                                             'end': {'line': 2220, 'column': 15}},
+                                    'replacement': '&&',
+                                    'genre': 'BinaryOperator'},
+ 'PHASE-STEP-ANCHOR-ABS-SIGN': {'name': 'crates/time-core/src/regression/chart/roundoff/frequency_prior.rs:980:64: '
+                                        'delete - in FrequencyAnchor::rebase',
+                                'package': 'time-core',
+                                'file': 'crates/time-core/src/regression/chart/roundoff/frequency_prior.rs',
+                                'function': {'function_name': 'FrequencyAnchor::rebase',
+                                             'return_type': '-> Result<Self, FixtureFrequencyNumericError>',
+                                             'span': {'start': {'line': 960, 'column': 5},
+                                                      'end': {'line': 987, 'column': 6}}},
+                                'span': {'start': {'line': 980, 'column': 64},
+                                         'end': {'line': 980, 'column': 65}},
+                                'replacement': '',
+                                'genre': 'UnaryOperator'},
+ 'PHASE-STEP-INTERVAL-ZERO-PRODUCT': {'name': 'crates/time-core/src/regression/chart/roundoff/frequency_prior.rs:1551:27: '
+                                              'replace || with && in Interval::multiply',
+                                      'package': 'time-core',
+                                      'file': 'crates/time-core/src/regression/chart/roundoff/frequency_prior.rs',
+                                      'function': {'function_name': 'Interval::multiply',
+                                                   'return_type': '-> Result<Self, '
+                                                                  'FixtureFrequencyNumericError>',
+                                                   'span': {'start': {'line': 1543, 'column': 5},
+                                                            'end': {'line': 1576, 'column': 6}}},
+                                      'span': {'start': {'line': 1551, 'column': 27},
+                                               'end': {'line': 1551, 'column': 29}},
+                                      'replacement': '&&',
+                                      'genre': 'BinaryOperator'},
+ 'PHASE-STEP-ISSUED-POSITIVE-DIRECTION': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs:708:38: '
+                                                  'replace > with >= in operation_refusal',
+                                          'package': 'time-core',
+                                          'file': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs',
+                                          'function': {'function_name': 'operation_refusal',
+                                                       'return_type': '-> Option<FixtureStepError>',
+                                                       'span': {'start': {'line': 687, 'column': 1},
+                                                                'end': {'line': 733, 'column': 2}}},
+                                          'span': {'start': {'line': 708, 'column': 38},
+                                                   'end': {'line': 708, 'column': 39}},
+                                          'replacement': '>=',
+                                          'genre': 'BinaryOperator'},
+ 'PHASE-STEP-ISSUED-NEGATIVE-DIRECTION': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs:709:38: '
+                                                  'replace < with <= in operation_refusal',
+                                          'package': 'time-core',
+                                          'file': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs',
+                                          'function': {'function_name': 'operation_refusal',
+                                                       'return_type': '-> Option<FixtureStepError>',
+                                                       'span': {'start': {'line': 687, 'column': 1},
+                                                                'end': {'line': 733, 'column': 2}}},
+                                          'span': {'start': {'line': 709, 'column': 38},
+                                                   'end': {'line': 709, 'column': 39}},
+                                          'replacement': '<=',
+                                          'genre': 'BinaryOperator'},
+ 'PHASE-STEP-ISSUED-POSITIVE-OVERSHOOT': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs:714:38: '
+                                                  'replace > with >= in operation_refusal',
+                                          'package': 'time-core',
+                                          'file': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs',
+                                          'function': {'function_name': 'operation_refusal',
+                                                       'return_type': '-> Option<FixtureStepError>',
+                                                       'span': {'start': {'line': 687, 'column': 1},
+                                                                'end': {'line': 733, 'column': 2}}},
+                                          'span': {'start': {'line': 714, 'column': 38},
+                                                   'end': {'line': 714, 'column': 39}},
+                                          'replacement': '>=',
+                                          'genre': 'BinaryOperator'},
+ 'PHASE-STEP-ISSUED-NEGATIVE-OVERSHOOT': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs:715:42: '
+                                                  'replace < with <= in operation_refusal',
+                                          'package': 'time-core',
+                                          'file': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs',
+                                          'function': {'function_name': 'operation_refusal',
+                                                       'return_type': '-> Option<FixtureStepError>',
+                                                       'span': {'start': {'line': 687, 'column': 1},
+                                                                'end': {'line': 733, 'column': 2}}},
+                                          'span': {'start': {'line': 715, 'column': 42},
+                                                   'end': {'line': 715, 'column': 43}},
+                                          'replacement': '<=',
+                                          'genre': 'BinaryOperator'},
+ 'PHASE-STEP-ADAPTIVE-NORMAL-POSITIVE': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs:95:40: '
+                                                 'replace > with >= in adaptive_profile_valid',
+                                         'package': 'time-core',
+                                         'file': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs',
+                                         'function': {'function_name': 'adaptive_profile_valid',
+                                                      'return_type': '-> bool',
+                                                      'span': {'start': {'line': 92, 'column': 1},
+                                                               'end': {'line': 101, 'column': 2}}},
+                                         'span': {'start': {'line': 95, 'column': 40},
+                                                  'end': {'line': 95, 'column': 41}},
+                                         'replacement': '>=',
+                                         'genre': 'BinaryOperator'},
+ 'PHASE-STEP-ADAPTIVE-DISJOINT-MANTISSA': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs:263:49: '
+                                                   'replace | with ^ in adaptive_ceil_nanoseconds',
+                                           'package': 'time-core',
+                                           'file': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs',
+                                           'function': {'function_name': 'adaptive_ceil_nanoseconds',
+                                                        'return_type': '-> Result<u64, FixturePhaseError>',
+                                                        'span': {'start': {'line': 251, 'column': 1},
+                                                                 'end': {'line': 289, 'column': 2}}},
+                                           'span': {'start': {'line': 263, 'column': 49},
+                                                    'end': {'line': 263, 'column': 50}},
+                                           'replacement': '^',
+                                           'genre': 'BinaryOperator'},
+ 'PHASE-STEP-ADAPTIVE-UNREACHABLE-CEILING': {'name': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs:285:32: '
+                                                     'replace > with >= in adaptive_ceil_nanoseconds',
+                                             'package': 'time-core',
+                                             'file': 'crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs',
+                                             'function': {'function_name': 'adaptive_ceil_nanoseconds',
+                                                          'return_type': '-> Result<u64, FixturePhaseError>',
+                                                          'span': {'start': {'line': 251, 'column': 1},
+                                                                   'end': {'line': 289, 'column': 2}}},
+                                             'span': {'start': {'line': 285, 'column': 32},
+                                                      'end': {'line': 285, 'column': 33}},
+                                             'replacement': '>=',
+                                             'genre': 'BinaryOperator'},
+ 'PHASE-STEP-SETTLED-BOUND-ABS-SIGN': {'name': 'crates/time-core/src/regression/chart/roundoff/phase_plan.rs:446:13: '
+                                               'delete - in PhaseDebt::settled',
+                                       'package': 'time-core',
+                                       'file': 'crates/time-core/src/regression/chart/roundoff/phase_plan.rs',
+                                       'function': {'function_name': 'PhaseDebt::settled',
+                                                    'return_type': '-> Result<Self, '
+                                                                   'FixturePhaseNumericError>',
+                                                    'span': {'start': {'line': 390, 'column': 5},
+                                                             'end': {'line': 458, 'column': 6}}},
+                                       'span': {'start': {'line': 446, 'column': 13},
+                                                'end': {'line': 446, 'column': 14}},
+                                       'replacement': '',
+                                       'genre': 'UnaryOperator'},
+ 'PHASE-STEP-STEPPED-BOUND-ABS-SIGN': {'name': 'crates/time-core/src/regression/chart/roundoff/phase_plan.rs:483:13: '
+                                               'delete - in PhaseDebt::stepped',
+                                       'package': 'time-core',
+                                       'file': 'crates/time-core/src/regression/chart/roundoff/phase_plan.rs',
+                                       'function': {'function_name': 'PhaseDebt::stepped',
+                                                    'return_type': '-> Result<Self, '
+                                                                   'FixturePhaseNumericError>',
+                                                    'span': {'start': {'line': 460, 'column': 5},
+                                                             'end': {'line': 488, 'column': 6}}},
+                                       'span': {'start': {'line': 483, 'column': 13},
+                                                'end': {'line': 483, 'column': 14}},
+                                       'replacement': '',
+                                       'genre': 'UnaryOperator'},
+ 'PHASE-STEP-POSITIVE-CLAMP-EQUALITY': {'name': 'crates/time-core/src/regression/chart/roundoff/phase_plan.rs:538:37: '
+                                                'replace > with >= in PhaseDebt::proposal',
+                                        'package': 'time-core',
+                                        'file': 'crates/time-core/src/regression/chart/roundoff/phase_plan.rs',
+                                        'function': {'function_name': 'PhaseDebt::proposal',
+                                                     'return_type': '-> Result<PhaseRates, '
+                                                                    'FixturePhaseNumericError>',
+                                                     'span': {'start': {'line': 490, 'column': 5},
+                                                              'end': {'line': 572, 'column': 6}}},
+                                        'span': {'start': {'line': 538, 'column': 37},
+                                                 'end': {'line': 538, 'column': 38}},
+                                        'replacement': '>=',
+                                        'genre': 'BinaryOperator'},
+ 'PHASE-STEP-NEGATIVE-CLAMP-EQUALITY': {'name': 'crates/time-core/src/regression/chart/roundoff/phase_plan.rs:540:28: '
+                                                'replace < with <= in PhaseDebt::proposal',
+                                        'package': 'time-core',
+                                        'file': 'crates/time-core/src/regression/chart/roundoff/phase_plan.rs',
+                                        'function': {'function_name': 'PhaseDebt::proposal',
+                                                     'return_type': '-> Result<PhaseRates, '
+                                                                    'FixturePhaseNumericError>',
+                                                     'span': {'start': {'line': 490, 'column': 5},
+                                                              'end': {'line': 572, 'column': 6}}},
+                                        'span': {'start': {'line': 540, 'column': 28},
+                                                 'end': {'line': 540, 'column': 29}},
+                                        'replacement': '<=',
+                                        'genre': 'BinaryOperator'}}
+
+
+
+class PhaseStepEquivalenceAdmissionTests(unittest.TestCase):
+    """Fresh-candidate review custody; no Rust executions or historical receipts."""
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.scope = MODULE.Scope("time-core", MODULE.PHASE_STEP_SUBJECTS, "policy/phase-step-analysis.json")
+        self.assertEqual(set(_PHASE_STEP_REVIEWED_MUTANTS), MODULE.PHASE_STEP_EQUIVALENCE_IDS)
+        names = {mutant["file"] for mutant in _PHASE_STEP_REVIEWED_MUTANTS.values()}
+        for facts in MODULE.PHASE_STEP_EQUIVALENCE_REVIEWS.values():
+            names.update(facts["dependencies"])
+            names.update(facts.get("product_dependencies", {}))
+        self.product_names = set(names)
+        for name in names:
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes((ROOT / name).read_bytes())
+        self.proof_path = self.root / MODULE.PHASE_STEP_EQUIVALENCE_PROOF
+        self.proof_path.parent.mkdir(parents=True, exist_ok=True)
+        proof = "\n".join(f"#### {identifier}\nIndependently reviewed ordinary source argument.\n"
+                           for identifier in sorted(_PHASE_STEP_REVIEWED_MUTANTS))
+        self.proof_path.write_text(proof + "bounded maintained task content\n" * 2400)
+        identity = self.current_product()
+        candidate = MODULE.canonical_sha256(identity)
+        proof_sha = MODULE.PRODUCT.sha256(self.proof_path)
+        self.policy = {**MODULE.phase_step_role_facts(), "source_file_count": len(identity),
+            "candidate_sha256": candidate, "inputs_sha256": {
+                **identity, MODULE.PHASE_STEP_EQUIVALENCE_PROOF: proof_sha},
+            "mutation_inventories": {}, "test_inventories": {}, "scope": "Synthetic fresh review custody",
+            "mutation_equivalences": []}
+        for identifier, mutant in _PHASE_STEP_REVIEWED_MUTANTS.items():
+            facts = MODULE.PHASE_STEP_EQUIVALENCE_REVIEWS[identifier]
+            self.assertEqual(MODULE.canonical_sha256(mutant), facts["descriptor_sha256"])
+            self.assertEqual(identity[mutant["file"]], facts["source_sha256"])
+            self.policy["mutation_equivalences"].append({
+                "id": identifier, "candidate_sha256": candidate, "source_sha256": facts["source_sha256"],
+                "mutant": copy.deepcopy(mutant), "requirement": MODULE.PHASE_STEP_EQUIVALENCE_REQUIREMENT,
+                "rationale": facts["rationale"], "proof": {
+                    "path": MODULE.PHASE_STEP_EQUIVALENCE_PROOF, "sha256": proof_sha,
+                    "section": identifier, "reviewer": MODULE.PHASE_STEP_EQUIVALENCE_REVIEWERS,
+                    "verdict": "independently-justified-equivalent"}})
+
+    def current_product(self):
+        return {name: MODULE.PRODUCT.sha256(self.root / name) for name in self.product_names}
+
+    def bind_candidate(self, policy):
+        candidate = MODULE.canonical_sha256(self.current_product())
+        policy["candidate_sha256"] = candidate
+        for entry in policy["mutation_equivalences"]:
+            entry["candidate_sha256"] = candidate
+
+    def bind_proof(self, policy):
+        digest = MODULE.PRODUCT.sha256(self.proof_path)
+        policy["inputs_sha256"][MODULE.PHASE_STEP_EQUIVALENCE_PROOF] = digest
+        for entry in policy["mutation_equivalences"]:
+            entry["proof"]["sha256"] = digest
+
+    def admit(self, policy=None, scope=None):
+        with patch.object(MODULE.PRODUCT, "admit_product", side_effect=lambda _root: ({}, self.current_product())):
+            return MODULE.admit_mutation_equivalences(self.root, scope or self.scope, policy or self.policy)
+
+    def test_empty_and_complete_catalog_bind_the_actual_current_candidate(self):
+        self.assertGreater(self.proof_path.stat().st_size, 65536)
+        self.assertTrue(MODULE.phase_step_equivalences_valid(self.policy))
+        MODULE.require_phase_step_role(self.scope, self.policy)
+        self.assertEqual(self.admit(), self.policy["mutation_equivalences"])
+        empty = {**self.policy, "mutation_equivalences": []}
+        self.assertTrue(MODULE.phase_step_equivalences_valid(empty))
+        MODULE.require_phase_step_role(self.scope, empty)
+        self.assertEqual(self.admit(empty), [])
+        # An independently changed test input requires a new candidate identity,
+        # while the exact reviewed runtime sources/dependencies remain unchanged.
+        path = self.root / "crates/time-core/tests/current_review_neighbor.rs"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("// Current synthetic test input, not an old execution.\n")
+        self.product_names.add(path.relative_to(self.root).as_posix())
+        changed = copy.deepcopy(self.policy)
+        self.bind_candidate(changed)
+        self.assertNotEqual(changed["candidate_sha256"], self.policy["candidate_sha256"])
+        self.assertTrue(MODULE.phase_step_equivalences_valid(changed))
+        self.assertEqual(self.admit(changed), changed["mutation_equivalences"])
+        with self.assertRaises(MODULE.Incomplete):
+            self.admit(self.policy)
+
+    def test_partial_foreign_and_policy_invented_reviews_refuse(self):
+        edits = [
+            lambda p: p["mutation_equivalences"].pop(),
+            lambda p: p["mutation_equivalences"].append(copy.deepcopy(p["mutation_equivalences"][0])),
+            lambda p: p["mutation_equivalences"].__setitem__(1, copy.deepcopy(p["mutation_equivalences"][0])),
+            lambda p: p["mutation_equivalences"][0].update(id="PHASE-STEP-UNREVIEWED"),
+            lambda p: p.update(candidate_sha256=True),
+            lambda p: p["mutation_equivalences"][0].update(candidate_sha256="a" * 64),
+            lambda p: p["mutation_equivalences"][0].update(source_sha256="a" * 64),
+            lambda p: p["mutation_equivalences"][0]["mutant"].update(replacement="unreviewed"),
+            lambda p: p["mutation_equivalences"][0].update(rationale="Self-approved equivalence"),
+            lambda p: p["mutation_equivalences"][0].update(requirement="foreign requirement"),
+            lambda p: p["mutation_equivalences"][0]["proof"].update(reviewer="unreviewed"),
+            lambda p: p["mutation_equivalences"][0]["proof"].update(verdict="accepted"),
+            lambda p: p["mutation_equivalences"][0]["proof"].update(section="PHASE-STEP-UNREVIEWED"),
+            lambda p: p["mutation_equivalences"][0]["proof"].update(sha256="a" * 64),
+            lambda p: p["mutation_equivalences"][0]["proof"].update(path="tasks/foreign.md"),
+            lambda p: p["mutation_equivalences"][0].update(skip_function=True),
+        ]
+        for edit in edits:
+            policy = copy.deepcopy(self.policy)
+            edit(policy)
+            with self.subTest(edit=edit):
+                self.assertFalse(MODULE.phase_step_equivalences_valid(policy))
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.require_phase_step_role(self.scope, policy)
+                with self.assertRaises(MODULE.Incomplete):
+                    self.admit(policy)
+        for value in (None, [], True):
+            self.assertFalse(MODULE.phase_step_equivalences_valid(value))
+
+    def test_requested_sign_reviews_bind_the_actual_requested_operand(self):
+        """Independent source coordinates distinguish requested D from actual S/next zero."""
+        filename = "crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs"
+        source = (self.root / filename).read_text()
+        self.assertEqual(hashlib.sha256(source.encode()).hexdigest(),
+                         "0de5d97e268bc2833749b1ea0194014b250d51822e2febf00e33a5b8c04df811")
+        rows = (
+            ("PHASE-STEP-ISSUED-POSITIVE-DIRECTION", 708, 38, ">", ">=",
+             "381cb2e3f952d6af6b2d5788024488b712ce157b45fe1413ffceed501d2aedd3",
+             "981f6c193de8aabdd32e05724148d7bf344c36f9c25adbb0ec6e69c536b8a9d9"),
+            ("PHASE-STEP-ISSUED-NEGATIVE-DIRECTION", 709, 38, "<", "<=",
+             "1ce225d51195ebad9a84648575faeed02f92d66a92be4d97b1c4fa5f81fa6e9a",
+             "195dddc709b2edf1ef0cae6309d71aa88b749d2acca0d2d0577f223ef28dddaa"),
+            ("PHASE-STEP-ISSUED-POSITIVE-OVERSHOOT", 714, 38, ">", ">=",
+             "76b9be08010417558ce0c2f5db28b6288ab3d4703fae9b5de300f94f99e87c63",
+             "6b8a0aa54e5ff15b3e5c28c9ea592c8ca22da060f673ed9147160cad40dd1cf3"),
+            ("PHASE-STEP-ISSUED-NEGATIVE-OVERSHOOT", 715, 42, "<", "<=",
+             "c8d9a9a515a060778d8ad8539fbd8f0aabfa2dd1764398032ec8178f3baad108",
+             "9ef0f6d808b34342b167bf5aa80bb77897e3ccb644413c23c8b9c3f896520fbb"),
+        )
+
+        def descriptor(line, column, original, replacement):
+            return {"file": filename, "package": "time-core", "genre": "BinaryOperator",
+                "name": f"{filename}:{line}:{column}: replace {original} with {replacement} in operation_refusal",
+                "replacement": replacement,
+                "span": {"start": {"line": line, "column": column},
+                         "end": {"line": line, "column": column + 1}},
+                "function": {"function_name": "operation_refusal", "return_type": "-> Option<FixtureStepError>",
+                    "span": {"start": {"line": 687, "column": 1}, "end": {"line": 733, "column": 2}}}}
+
+        for identifier, line, column, original, replacement, descriptor_sha, diff_sha in rows:
+            with self.subTest(review=identifier):
+                expected = descriptor(line, column, original, replacement)
+                prefix = source.splitlines()[line - 1][:column - 1].rstrip()
+                self.assertTrue(prefix.endswith("issued.requested.point()"))
+                self.assertEqual(source.splitlines()[line - 1][column - 1], original)
+                self.assertEqual(MODULE.canonical_sha256(expected), descriptor_sha)
+                self.assertEqual(_PHASE_STEP_REVIEWED_MUTANTS[identifier], expected)
+                facts = MODULE.PHASE_STEP_EQUIVALENCE_REVIEWS[identifier]
+                self.assertEqual(facts["descriptor_sha256"], descriptor_sha)
+                self.assertEqual(facts["diff_sha256"], diff_sha)
+                self.assertEqual(hashlib.sha256(self.rendered_diff(expected).encode()).hexdigest(), diff_sha)
+        wrong = (
+            ("PHASE-STEP-ISSUED-NEGATIVE-DIRECTION", 709, 64, ">", ">=", "receipt.achieved"),
+            ("PHASE-STEP-ISSUED-POSITIVE-OVERSHOOT", 714, 60, "<", "<=", "next.point()"),
+            ("PHASE-STEP-ISSUED-NEGATIVE-OVERSHOOT", 715, 64, ">", ">=", "next.point()"),
+        )
+        for identifier, line, column, original, replacement, operand in wrong:
+            with self.subTest(unreviewed_zero_capable_operand=operand, line=line):
+                self.assertTrue(source.splitlines()[line - 1][:column - 1].rstrip().endswith(operand))
+                policy = copy.deepcopy(self.policy)
+                entry = next(entry for entry in policy["mutation_equivalences"] if entry["id"] == identifier)
+                entry["mutant"] = descriptor(line, column, original, replacement)
+                self.assertFalse(MODULE.phase_step_equivalences_valid(policy))
+                with self.assertRaises(MODULE.Incomplete):
+                    self.admit(policy)
+
+    def test_reviewed_dependencies_must_match_pins_and_actual_product_bytes(self):
+        dependencies = set()
+        for facts in MODULE.PHASE_STEP_EQUIVALENCE_REVIEWS.values():
+            dependencies.update(facts["dependencies"])
+            dependencies.update(facts.get("product_dependencies", {}))
+        for name in sorted(dependencies):
+            policy = copy.deepcopy(self.policy)
+            if any(name in facts["dependencies"] for facts in MODULE.PHASE_STEP_EQUIVALENCE_REVIEWS.values()):
+                policy["inputs_sha256"][name] = "a" * 64
+                self.assertFalse(MODULE.phase_step_equivalences_valid(policy))
+            path = self.root / name
+            original = path.read_bytes()
+            path.write_bytes(original + b"// changed current dependency\n")
+            coherent_candidate = copy.deepcopy(self.policy)
+            self.bind_candidate(coherent_candidate)
+            self.assertTrue(MODULE.phase_step_equivalences_valid(coherent_candidate))
+            with self.subTest(dependency=name), self.assertRaises(MODULE.Incomplete):
+                self.admit(coherent_candidate)
+            path.write_bytes(original)
+
+    def test_large_proof_exception_is_exact_role_path_level_and_bound(self):
+        original = self.proof_path.read_bytes()
+        for variant in ("body", "missing", "wrong_level", "duplicate", "oversized", "symlink"):
+            policy = copy.deepcopy(self.policy)
+            changed = original
+            first = policy["mutation_equivalences"][0]["id"].encode()
+            if variant == "body":
+                changed += b"changed without re-admission\n"
+            elif variant == "missing":
+                changed = original.replace(b"#### " + first, b"#### FOREIGN-" + first, 1)
+            elif variant == "wrong_level":
+                changed = original.replace(b"#### " + first, b"## " + first, 1)
+            elif variant == "duplicate":
+                changed += b"\n#### " + first + b"\nDuplicate identity.\n"
+            elif variant == "oversized":
+                changed += b"x" * (2 * 1024 * 1024 + 1 - len(changed))
+            if variant == "symlink":
+                target = self.root / "tasks/linked-review.md"
+                target.write_bytes(original)
+                self.proof_path.unlink()
+                self.proof_path.symlink_to(target)
+            else:
+                self.proof_path.write_bytes(changed)
+                if variant != "body":
+                    self.bind_proof(policy)
+            with self.subTest(variant=variant), self.assertRaises(MODULE.Incomplete):
+                self.admit(policy)
+            if self.proof_path.is_symlink():
+                self.proof_path.unlink()
+            self.proof_path.write_bytes(original)
+        exact = original + b"x" * (2 * 1024 * 1024 - len(original))
+        self.proof_path.write_bytes(exact)
+        policy = copy.deepcopy(self.policy)
+        self.bind_proof(policy)
+        self.assertEqual(self.admit(policy), policy["mutation_equivalences"])
+        foreign = MODULE.Scope("time-core", MODULE.PHASE_STEP_SUBJECTS, "policy/foreign-analysis.json")
+        with self.assertRaises(MODULE.Incomplete):
+            self.admit(policy, foreign)
+
+    def rendered_diff(self, mutant):
+        source = (self.root / mutant["file"]).read_text()
+        lines = source.splitlines(keepends=True)
+        first, last = mutant["span"]["start"], mutant["span"]["end"]
+        start = sum(map(len, lines[:first["line"] - 1])) + first["column"] - 1
+        end = sum(map(len, lines[:last["line"] - 1])) + last["column"] - 1
+        changed = source[:start] + mutant["replacement"] + " /* ~ changed by cargo-mutants ~ */" + source[end:]
+        return "".join(difflib.unified_diff(source.splitlines(keepends=True), changed.splitlines(keepends=True),
+            fromfile=mutant["file"], tofile=mutant["name"].split(": ", 1)[1], n=8))
+
+    def inventory_fixture(self, policy):
+        inventories = {}
+        for entry in policy["mutation_equivalences"]:
+            mutant = entry["mutant"]
+            owner = next(name for name, filename in MODULE.PHASE_STEP_SUBJECTS if filename == mutant["file"])
+            inventories.setdefault(owner, {})[mutant["name"]] = {
+                **copy.deepcopy(mutant), "diff": self.rendered_diff(mutant)}
+        policy["mutation_inventories"] = {
+            name: {"count": 1, "sha256": "a" * 64} for name, _filename in MODULE.PHASE_STEP_SUBJECTS}
+        for owner, rows in inventories.items():
+            policy["mutation_inventories"][owner] = {"count": len(rows),
+                "sha256": MODULE.canonical_sha256({
+                    name: {key: value for key, value in row.items() if key != "diff"} for name, row in rows.items()})}
+        return inventories
+
+    def test_each_selected_owner_requires_only_its_own_exact_rendered_equivalences(self):
+        policy = copy.deepcopy(self.policy)
+        inventories = self.inventory_fixture(policy)
+        for owner, rows in inventories.items():
+            expected = {owner: policy["mutation_inventories"][owner]}
+            with self.subTest(owner=owner):
+                self.assertEqual(MODULE.admit_reviewed_mutation_inventories(
+                    self.scope, policy, {owner: rows}), expected)
+            for variant in ("changed_diff", "missing_diff", "missing_equivalent", "foreign_owner"):
+                broken = copy.deepcopy(rows)
+                key = next(iter(broken))
+                if variant == "changed_diff":
+                    broken[key]["diff"] += "\n"
+                elif variant == "missing_diff":
+                    del broken[key]["diff"]
+                elif variant == "missing_equivalent":
+                    del broken[key]
+                else:
+                    broken[key]["file"] = "crates/time-core/src/foreign.rs"
+                bad = copy.deepcopy(policy)
+                bad["mutation_inventories"][owner] = {"count": len(broken),
+                    "sha256": MODULE.canonical_sha256({
+                        name: {k: value for k, value in row.items() if k != "diff"} for name, row in broken.items()})}
+                with self.subTest(owner=owner, variant=variant), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_reviewed_mutation_inventories(self.scope, bad, {owner: broken})
+
+    def test_only_actual_misses_are_excluded_without_adding_a_kill(self):
+        """Synthetic outcome ledger only; this executes no generated Rust specimen."""
+        policy = copy.deepcopy(self.policy)
+        inventories = self.inventory_fixture(policy)
+
+        def phases(summary):
+            command = ["cargo", "test", "--verbose", "--package=time-core@0.0.0", "--frozen"]
+            build = {"phase": "Build", "duration": 0.25, "process_status": "Success",
+                     "argv": [*command[:2], "--no-run", *command[2:]]}
+            test = {"phase": "Test", "duration": 0.5, "process_status": "Success", "argv": command}
+            if summary == "Unviable":
+                return [{**build, "process_status": {"Failure": 101}}]
+            if summary == "CaughtMutant":
+                test["process_status"] = {"Failure": 101}
+            return [build, test]
+
+        def report(rows):
+            counts = [row["summary"] for row in rows[1:]]
+            return {"cargo_mutants_version": "27.1.0", "outcomes": rows, "total_mutants": len(rows) - 1,
+                "caught": counts.count("CaughtMutant"), "missed": counts.count("MissedMutant"),
+                "unviable": counts.count("Unviable"), "timeout": counts.count("Timeout"), "success": 0}
+
+        for owner, inventory in inventories.items():
+            filename = dict(MODULE.PHASE_STEP_SUBJECTS)[owner]
+            expected = {name: {key: value for key, value in row.items() if key != "diff"}
+                        for name, row in inventory.items()}
+            equivalent = [entry for entry in policy["mutation_equivalences"]
+                          if entry["mutant"]["file"] == filename]
+            neighbor = copy.deepcopy(next(iter(expected.values())))
+            neighbor["name"] += " [synthetic caught accounting neighbor]"
+            expected[neighbor["name"]] = neighbor
+            rows = [{"scenario": "Baseline", "summary": "Success", "phase_results": phases("Success")},
+                    {"scenario": {"Mutant": neighbor}, "summary": "CaughtMutant",
+                     "phase_results": phases("CaughtMutant")}]
+            rows.extend({"scenario": {"Mutant": entry["mutant"]}, "summary": "MissedMutant",
+                         "phase_results": phases("MissedMutant")} for entry in equivalent)
+            result = MODULE.mutation_counts(self.scope, report(rows), expected, filename,
+                                            native_exit_code=2, equivalences=equivalent)
+            self.assertEqual((result["killed"], result["survived"], result["excluded"]),
+                             (1, len(equivalent), len(equivalent)))
+            self.assertEqual(result["adjusted_denominator"], 1)
+            self.assertTrue(result["gate_passed"])
+            for summary in ("CaughtMutant", "Unviable", "Timeout"):
+                wrong = copy.deepcopy(rows)
+                wrong[2].update(summary=summary, phase_results=phases(summary))
+                with self.subTest(owner=owner, unreviewable_outcome=summary), self.assertRaises(MODULE.Incomplete):
+                    MODULE.mutation_counts(self.scope, report(wrong), expected, filename,
+                        native_exit_code=2 if len(equivalent) > 1 else 0, equivalences=equivalent)
 
 
 class EngineKeEquivalenceAdmissionTests(unittest.TestCase):

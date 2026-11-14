@@ -21,7 +21,56 @@ use crate::tray_ui::{FixtureTrayMenu, TrayEntry, TrayInteraction, TrayItemId};
 #[cfg(windows)]
 mod windows;
 #[cfg(windows)]
-pub use windows::{NativeTray, StartError, TrayPixels};
+pub use windows::{NativeTray, TrayPixels};
+
+/// Fixed startup/cleanup error; no arbitrary Windows message or text is retained.
+#[cfg(any(windows, test))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StartError {
+    /// A previous observer still owns its native worker.
+    AlreadyRunning,
+    /// The ordinary worker thread could not be created.
+    Worker,
+    /// A native class/window/icon operation failed; no availability is assumed.
+    Native,
+    /// The worker panicked; no panic crosses the Windows callback ABI.
+    WorkerPanic,
+    /// Completion/cleanup has not actually been confirmed.
+    Cleanup,
+}
+#[cfg(any(windows, test))]
+impl fmt::Display for StartError {
+    /// Fixed, redacted UI-safe error text.
+    fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
+        output.write_str("The tray observer could not be confirmed. Keep the main window open.")
+    }
+}
+#[cfg(any(windows, test))]
+impl std::error::Error for StartError {}
+
+/// One observation of the actual worker and its native cleanup disposition.
+/// An operation failure may coexist with confirmed cleanup. Terminal observations
+/// remain latched; neither a stop request nor a timeout creates one.
+#[cfg(any(windows, test))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[must_use]
+pub enum TrayFinish {
+    /// The actual worker has not been joined; no cleanup is acknowledged.
+    Pending,
+    /// The joined worker positively confirmed cleanup, retaining its operation result.
+    CleanupConfirmed {
+        /// Existing joined-worker outcome, not proof that every operation succeeded.
+        operation: Result<(), StartError>,
+    },
+    /// Cleanup is unconfirmed after a join or a missing-worker custody refusal.
+    CleanupUnconfirmed {
+        /// Existing worker outcome or conservative missing-worker refusal.
+        /// A separate cleanup failure cannot replace this fact.
+        operation: Result<(), StartError>,
+        /// Panic or native cleanup failure that prevents acknowledgement.
+        cause: StartError,
+    },
+}
 
 /// Fixed UTF-16 capacity, including the required terminating NUL.
 pub const WIDE_CAPACITY: usize = 128;
@@ -249,7 +298,12 @@ pub struct RestoreToken {
 impl PartialEq for RestoreToken {
     /// Both current instance and generation are required; empty Arc values are not identities.
     fn eq(&self, other: &Self) -> bool {
-        self.generation == other.generation && Arc::ptr_eq(&self.origin, &other.origin)
+        let Self { generation, origin } = self;
+        let Self {
+            generation: other_generation,
+            origin: other_origin,
+        } = other;
+        generation == other_generation && Arc::ptr_eq(origin, other_origin)
     }
 }
 impl Eq for RestoreToken {}
@@ -545,31 +599,37 @@ pub const fn native_command(id: TrayItemId) -> usize {
 
 /// Terminal cleanup can be recorded once; failed completion never becomes success.
 #[cfg(any(windows, test))]
-struct CompletionLatch<E: Copy> {
-    /// First actual terminal result, not a timeout or request.
-    outcome: Option<Result<(), E>>,
+struct CompletionLatch {
+    /// First actual terminal observation, not a timeout or request.
+    outcome: Option<TrayFinish>,
 }
 #[cfg(any(windows, test))]
-impl<E: Copy> CompletionLatch<E> {
-    /// Return an actually recorded completion only.
-    fn result(&self) -> Option<Result<(), E>> {
-        self.outcome
-    }
-    /// Preserve the first terminal observation, including a failure.
-    ///
-    /// # Errors
-    /// Returns the first recorded failure, without replacing it with later success.
-    fn finish(&mut self, value: Result<(), E>) -> Result<(), E> {
-        let prior = self.outcome.get_or_insert(value);
-        *prior
-    }
-}
-
-#[cfg(any(windows, test))]
-impl<E: Copy> Default for CompletionLatch<E> {
-    /// No terminal outcome is manufactured before an actual worker completion.
-    fn default() -> Self {
+impl CompletionLatch {
+    /// No terminal outcome is manufactured before actual worker completion.
+    fn new() -> Self {
         Self { outcome: None }
+    }
+    /// No recorded completion means pending, without a separate cleanup query.
+    fn observation(&self) -> TrayFinish {
+        self.outcome.unwrap_or(TrayFinish::Pending)
+    }
+    /// Latch a joined outcome or conservative missing-worker refusal once.
+    /// For an actual worker, cleanup is sampled only after its join. The operation
+    /// is the existing result, not every underlying native cause.
+    fn finish(&mut self, operation: Result<(), StartError>, cleanup_failed: bool) -> TrayFinish {
+        let observation = if cleanup_failed {
+            TrayFinish::CleanupUnconfirmed {
+                operation,
+                cause: StartError::Cleanup,
+            }
+        } else {
+            match operation {
+                Ok(()) | Err(StartError::Native) => TrayFinish::CleanupConfirmed { operation },
+                Err(cause) => TrayFinish::CleanupUnconfirmed { operation, cause },
+            }
+        };
+        let prior = self.outcome.get_or_insert(observation);
+        *prior
     }
 }
 
@@ -752,6 +812,10 @@ mod tests {
         second.publish(None, false, true);
         let old = first.drain()?.restore.ok_or("first loss missing")?;
         let foreign = second.drain()?.restore.ok_or("second loss missing")?;
+        assert_eq!(old, old.clone());
+        assert_eq!(old.generation, foreign.generation);
+        assert!(!Arc::ptr_eq(&old.origin, &foreign.origin));
+        assert_ne!(old, foreign);
         assert_eq!(
             first.acknowledge_restored_window(foreign),
             Err(TrayError::StaleObserver)
@@ -759,6 +823,7 @@ mod tests {
         first.acknowledge_restored_window(old.clone())?;
         first.publish(None, false, true);
         let current = first.drain()?.restore.ok_or("new loss missing")?;
+        assert_ne!(old, current);
         first.acknowledge_restored_window(current)?;
         assert_eq!(
             first.acknowledge_restored_window(old),
@@ -908,12 +973,76 @@ mod tests {
     /// Fails if a later success or missing worker can replace the sticky failure.
     #[test]
     fn completion_failure_remains_sticky() {
-        let mut completion = CompletionLatch::<u8>::default();
-        assert_eq!(completion.result(), None);
-        assert_eq!(completion.finish(Err(1)), Err(1));
-        assert_eq!(completion.result(), Some(Err(1)));
-        assert_eq!(completion.finish(Ok(())), Err(1));
-        assert_eq!(completion.result(), Some(Err(1)));
+        let mut completion = CompletionLatch::new();
+        let failure = TrayFinish::CleanupUnconfirmed {
+            operation: Err(StartError::Native),
+            cause: StartError::Cleanup,
+        };
+        assert_eq!(completion.observation(), TrayFinish::Pending);
+        assert_eq!(completion.finish(Err(StartError::Native), true), failure);
+        assert_eq!(completion.observation(), failure);
+        assert_eq!(completion.finish(Ok(()), false), failure);
+        assert_eq!(completion.observation(), failure);
+    }
+
+    /// The actual latch distinguishes operation failure from cleanup acknowledgement.
+    /// # Panics
+    /// Fail if panic/destructive-call failure acknowledges cleanup or a poll loses facts.
+    #[test]
+    fn completion_observation_preserves_operation_and_cleanup_disposition() {
+        for (operation, cleanup_failed, expected) in [
+            (
+                Ok(()),
+                false,
+                TrayFinish::CleanupConfirmed { operation: Ok(()) },
+            ),
+            (
+                Err(StartError::Native),
+                false,
+                TrayFinish::CleanupConfirmed {
+                    operation: Err(StartError::Native),
+                },
+            ),
+            (
+                Err(StartError::WorkerPanic),
+                false,
+                TrayFinish::CleanupUnconfirmed {
+                    operation: Err(StartError::WorkerPanic),
+                    cause: StartError::WorkerPanic,
+                },
+            ),
+            (
+                Err(StartError::Cleanup),
+                false,
+                TrayFinish::CleanupUnconfirmed {
+                    operation: Err(StartError::Cleanup),
+                    cause: StartError::Cleanup,
+                },
+            ),
+            (
+                Err(StartError::Native),
+                true,
+                TrayFinish::CleanupUnconfirmed {
+                    operation: Err(StartError::Native),
+                    cause: StartError::Cleanup,
+                },
+            ),
+            (
+                Ok(()),
+                true,
+                TrayFinish::CleanupUnconfirmed {
+                    operation: Ok(()),
+                    cause: StartError::Cleanup,
+                },
+            ),
+        ] {
+            let mut completion = CompletionLatch::new();
+            assert_eq!(completion.observation(), TrayFinish::Pending);
+            assert_eq!(completion.finish(operation, cleanup_failed), expected);
+            assert_eq!(completion.observation(), expected);
+            assert_eq!(completion.finish(Ok(()), false), expected);
+            assert_eq!(completion.observation(), expected);
+        }
     }
     /// The production sequence requires version acknowledgement and never hides Add failure.
     ///

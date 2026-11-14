@@ -40,9 +40,18 @@ records what remains and how each guarantee closes. Completed helpers and green
 tooling do not complete their parent algorithm; this amendment schedules no
 pre-V1 formal work and changes no current product acceptance gate.
 
-**Immediate priority:** within David's temporary Core/Engine-only focus, freeze the invocation-level worker stop latch and actual-completion custody contract in the [existing Engine continuation](../../tasks/engine-transport-pilot.md#materialized-cutoff-control-gnu-checkpoint--12-november-2026), with independent review before dependent implementation. Reuse the actual Config/claim/provider and operation owners. This is WSL-only preparation; native Windows execution remains paused after resource preflight. The healthy Windows KE exit stays separate and pending. Other workstreams retain their owners and prerequisites; this does not schedule service, metadata, UI, storage, formal or optional-tooling work, change production defaults or lift any execution hold.
+**Immediate priority:** continue the seven-owner changed-source Core qualification
+in [section 7](#7-next-executable-task-for-a-development-agent), preserving the
+implemented invocation stop/completion and checked-receiver contracts. David
+authorizes the required resources and bounded main-Windows tests. The existing
+[Engine nested-worker child](../../tasks/engine-transport-pilot.md#nested-worker-native-custody-child--14-november-2026)
+now passes all 235 scripted KE cases, including the three formerly held tests,
+with exact process custody and completed cleanup. Real TLS/CNG/UDP, Core-positive
+production suppliers and broader native qualification remain separate. Other
+workstreams retain their owners and prerequisites; production defaults and
+formal/fuzz/storage/UI holds remain unchanged.
 
-**Current Core checkpoint:** the [frequency-request/achieved-baseline completion ledger](../../TOOLING.md#baseline-feedback-final-qualification) records 557 ordinary/557 optimized tests, 103 doctests, selected contracts and all five line gates. Its complete 1,145-variant union contains 701 caught, 435 compiler-unviable and nine reviewed equivalent misses, with no timeout or unresolved survivor and no added kills for equivalents. The [existing Core task](../../tasks/s1.3-source-selection-readiness.md#baseline-feedback-qualification-completion-routing--10-november-2026) retains frozen routing and source-specific evidence. These selected Linux fixture gates are complete; full S1.4/P1 and production/native qualification remain open.
+**Earlier completed Core checkpoint:** the [frequency-request/achieved-baseline completion ledger](../../TOOLING.md#baseline-feedback-final-qualification) records 557 ordinary/557 optimized tests, 103 doctests, selected contracts and all five line gates. Its complete 1,145-variant union contains 701 caught, 435 compiler-unviable and nine reviewed equivalent misses, with no timeout or unresolved survivor and no added kills for equivalents. The [existing Core task](../../tasks/s1.3-source-selection-readiness.md#baseline-feedback-qualification-completion-routing--10-november-2026) retains frozen routing and source-specific evidence. These selected Linux fixture gates are complete; full S1.4/P1 and production/native qualification remain open.
 
 **Earlier selected Core checkpoints:** the [finite phase-plan two-owner exit](../../tasks/s1.3-source-selection-readiness.md#finite-phase-plan-final-qualification--two-selected-owners) passes its selected Linux fixture gates with 455 ordinary/455 optimized tests, 92 doctests, scoped external contracts and complete per-file coverage/mutation reconciliation. Full S1.4/P1 remains open. Earlier [modeled settled active-time delivery](../../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners) completed its selected four-owner Linux fixture qualification on the sealed 158-input V8 product: portable, contracts, coverage, four mutation cohorts and exact union passed. Its task retains exact bindings, original failures and evidence limits. The [pure-leap final qualification](../../tasks/s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026) and [three-owner controlled-measurement qualification](../../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026) complete their recorded bounded scopes; section 7 routes the later Engine continuation; production observation-to-Core admission remains open. Do not repeat completed finite contract or qualification stages or infer production date policy. The preceding [S1.4c modeled achieved-phase checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14c-final-qualification--one-selected-owner) retains its completed selected Linux-fixture gates on the sealed 156-input preimage. The [S1.4b composition checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14b-final-qualification--three-selected-owners) retains its completed selected Linux-fixture gates on the preceding 156-input candidate. The [S1.4a reference-input checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14a-final-qualification--one-selected-owner) retains its completed 154-input scope. The [S158 nine-owner checkpoint](../../tasks/s1.3-source-selection-readiness.md#s158-final-qualification--nine-selected-owners), [S157](../../tasks/s1.3-source-selection-readiness.md#s157-selected-three-owner-linux-fixture-checkpoint--complete), [S155](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete) and [S156](../../tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete) retain their earlier exact candidates and completed scopes; full S1.4/P1 remains open. [Section 7](#7-next-executable-task-for-a-development-agent) owns current routing; linked tasks retain historical candidates and detailed results.
 
@@ -1057,18 +1066,100 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
-**Current executable product task — 13 November 2026:** continue the implemented
-[conditional numerical receiver's qualification](../../tasks/engine-transport-pilot.md#integrated-lit-0-and-receiver-checkpoint--13-november-2026)
-after the bounded Rust 1.100 checkpoint and later worker-restoration note below.
-Ordinary/optimized, compiler controls and doctests retain their recorded
-toolchain/source/worker scopes; the restored-concurrency matrix is not rerun.
+**Additional owner handoff — 14 November 2026:** the bounded
+[H01–H09 reconciliation](../../tasks/engine-transport-pilot.md#additional-contract-and-integration-handoff--14-november-2026)
+retains the source and hosted dispositions.
+H01/H04/H05 have source implementations. H02 equality, H03 production visibility,
+H06 tray observation and H09 explicit EP1 CI changes have a preceding focused
+source exit on `1cbddfb3`,
+including actual structural/private-production compiler controls, GNU/MSVC
+checks and independent review. H02's principal/combination metrics remain with
+their separate owners. H07's broad ledger rewrite is deferred for lack of a
+current demonstrated maintenance hazard. H08 has a proven local-only Actions
+policy incompatibility and a reviewed pending [owner trust decision](../nevrotick-owner-decisions.md#64-hosted-actions-trust-policy--14-november-2026);
+hold only its settings transition and dependent hosted acceptance, continuing
+independent local work. Keep H08/H09 hosted acceptance open and continue the
+bounded Engine product child below after staging. This source child supplies no old-score
+transfer, native execution, new issuer, graph change or commit authorization.
+
+**Main Windows test authorization — 14 November 2026:** David now permits
+Core/Engine tests on his main Windows instance. Continue the existing
+[Core qualification child](../../tasks/s1.3-source-selection-readiness.md#core-qualification-continuation-and-main-host-test-scope--14-november-2026)
+and S2.2/EP3 ordinary-user scripted Engine tests through the configured runner.
+Refresh the stale native test roster against the current source before execution.
+This lifts the earlier native stop only for bounded tests: host clock, services,
+registry, security/trust changes and elevation remain outside this scope. Other
+fuzz/storage/UI holds, H08's pending Actions decision and post-V1 formal deferral
+remain. Stage the completed checkpoint; do not commit or push.
+
+**Completed selected Core checkpoint — 14 November 2026:** the
+[V6 final qualification](../../tasks/s1.3-source-selection-readiness.md#v6-final-qualification--seven-selected-owners)
+passes its seven-owner GNU fixture perimeter on 603-input product `7701e3b3`,
+private policy `5e127c28`. All 720 baseline cases (608 ordinary/112 doctests),
+seven 90% line gates, 3 legal/32 negative compiler controls, 21 validation
+specimens and seven 95% per-file mutation gates pass. The 1,243 variants are
+819 caught, 408 compiler-unviable and 16 exact reviewed equivalents, with zero
+owner timeouts or unresolved survivors; equivalence adds no kill credit.
+
+The first union's 90-second timeout remains incomplete. Its one reviewed
+completion on the same frozen source passes in 156.470110368 seconds, peak
+322,715,648 bytes. The unchanged ledger totals 9505.109141993/10,800 seconds,
+including failures and both union attempts; no earlier receipt is adopted.
+Ten outer workers/zero extra tokens and existing quality/resource limits remain.
+Main's campaign flag stays false. V4/V5 retain their original scopes; branch
+evidence, complete Core/P1 acceptance and production admission remain open.
+
+**Current Engine child:** [truthful numerical CLI projection](../../tasks/engine-transport-pilot.md#numerical-cli-projection--development-checks-complete-14-november-2026)
+is implemented on `05b1a35c`. Its 415 ordinary/415 optimized cases, 69 doctests,
+GNU/MSVC Clippy, Windows-target check and all 43 compiler controls pass within
+the recorded amended aggregate budget. Original history/custody survives output
+failure; all rows retain prototype scope and no eligibility/freshness claim.
+The facade still supplies no numerical declaration (`None`).
+
+**NEXT after staging:** freeze/rebind the current Engine source, helpers,
+actual roster and reviewed inventories for its existing per-file 90% coverage/
+95% mutation gates. Historical policy bindings and earlier receipts do not
+qualify this changed candidate. Keep public campaign flags closed until fresh
+admission, preserve native/provider/hosted and other holds, and add no new
+supplier or production Core edge. Stage the completed source checkpoint;
+do not commit or push.
+
+The implemented [adaptive correction](../../tasks/s1.3-source-selection-readiness.md#adaptive-phase-correction--implementation-contract-13-november-2026)
+and [matched finite-step mechanism](../../tasks/s1.3-source-selection-readiness.md#matched-step-source-implementation-and-focused-checks--13-november-2026)
+share the actual reference/issue/settlement owner, explicit numerical profiles,
+original permission budgets and take-once recovery. Their selected seven-owner
+mutation gates now pass; preserve the 512-per-file/2,048-total inventory caps.
+Historical source checks and Rust-upgrade results retain their task scopes.
+
+The [main-host Engine child](../../tasks/engine-transport-pilot.md#nested-worker-native-custody-child--14-november-2026)
+records 17 build/inspection steps, 14 supervisor observations and 235 scripted
+KE cases on historical 603-input product `1cbddfb3`. Engine/native-critical bytes
+are unchanged, but later Core test/helper changes create a different product
+identity. This is no whole-product V5 or V6 native pass. Full native KE, real
+TLS/CNG/UDP, services, H08/H09 hosted acceptance and release remain open.
+
+Production Engine→Core admission still needs actual authorized configuration,
+trust, date/scale, mapping and calibrated-quality suppliers. The facade still
+supplies `None`; do not mint a positive supplier from an experimental declaration
+or duplicate existing acquisition sessions. Keep H02 metrics and all unrelated
+native/fuzz/storage/UI holds and the post-V1 formal deferral separate.
+
+**Preceding receiver source checkpoint — 13 November 2026:** the implemented
+[conditional numerical receiver's qualification](../../tasks/engine-transport-pilot.md#receiver-qualification-continuation--13-november-2026)
+on recorded Rust 1.100 candidate `82a19ffa`. Its bounded Engine check passes
+410 ordinary/410 optimized tests (229 KE each), 34 compiler controls, 69 doctests,
+format and GNU/MSVC Clippy. Synthetic controls close the stated capture-forwarding
+gap without generated-kill or native credit. This does not rerun the entire
+restored-concurrency workspace matrix described below.
 Before any remaining
 coverage/mutation/generation campaign, re-admit the complete changed source,
 helper/test roster, inventory and dossier under its existing owner; old 607/E9
-metrics do not transfer. Retain capture-forwarding discrimination and required
+metrics do not transfer. Retain the forwarding controls and required
 per-owner gates. The actual facade caller still supplies `None`; this creates
-no Core-positive issuer. The existing persistent acquisition-session contract
-remains the next receiving prerequisite, with review before dependent source.
+no Core-positive issuer. The [current receiver continuation](../../tasks/engine-transport-pilot.md#receiver-qualification-continuation--13-november-2026)
+records the actual source results before fresh metric admission. Persistent
+acquisition sessions and their reference/coherence children already exist; reuse
+their historical contracts and current source rather than creating another session.
 Continue David's Core/Engine-only focus. Public execution stays one-shot and
 never-send by default; native/fuzz/storage/UI holds and post-V1 formal deferral
 remain, including the separate healthy native KE exit.

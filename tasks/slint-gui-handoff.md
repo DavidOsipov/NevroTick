@@ -905,3 +905,49 @@ Independent fresh-context review, `review_two_dependency_repairs`, accepted the
 scoped correction without finding an introduced defect:
 
 > Independent read-only review found no introduced defect in the consumer correction. The non-narrowing search preserves previous-word semantics at exact starts and the existing cross-run fallback. Eight valid public-API cases retain independent literal expectations, including endpoint 256, neighboring positions, offset 255 and UTF-16 surrogate pairs. Raw REDv2 evidence records four behavioral failures with four healthy controls; unchanged regression bytes pass in the ordinary and optimized 213-test GREEN snapshots. Final source hashes match those snapshots; these results qualify portable consumer behavior only.
+
+### Bound notification attempt hardening — 14 November 2026
+
+Owner explicitly requests tightening the local notification admission/completion
+API under the existing [three-interface coordinator child](engine-transport-pilot.md#owner-requested-api-relationship-hardening--14-november-2026).
+A private affine guard must bind the actual session and immutable prepared notice;
+preparation abandonment remains reusable, while every actual Show attempt stays
+spent, including uncertain acceptance/unwind. Preserve existing native checks,
+activation/privacy/cleanup and fixture-only behavior. This source child lifts no
+UI-M0/D1–D3/native/backend/package hold and supplies no new display or production
+notification capability. Portable tests and Windows-source compilation must be
+reported separately from actual Windows execution; the implementation and checks
+remain unqualified until their current source is executed/reviewed.
+
+The integrated source child now passes all nine selected portable notification
+tests and GNU all-target Clippy; Windows-target UI Clippy in WSL also compiles the
+actual changed native caller. Private-owner compiler controls accept legal guard
+use and reject removed unbound completion (E0599) and simultaneous session loans
+(E0499). Preparation remains unspent, while accepted/indeterminate/unwinding Show
+callbacks consume the exact bound notice once; another session stays independent.
+See the coordinator's 603-input `902f133b` source, raw results, independent review
+and preserved holds. No native Show, Windows cleanup, accessibility, release or
+production-incident qualification is claimed; fresh applicable per-file metrics
+remain with the existing GUI owner.
+
+### Structural equality and combined tray finish — 14 November 2026
+
+The owner's [additional handoff](engine-transport-pilot.md#additional-contract-and-integration-handoff--14-november-2026)
+authorizes local H02/H06 contract work. RestoreToken keeps generation plus
+Arc allocation identity, with exhaustive field decisions. NativeTray now returns
+one latched observation: Pending, CleanupConfirmed retaining the existing worker
+result, or CleanupUnconfirmed retaining that result/custody refusal and its cause.
+The sole Slint Stop consumer handles this closed observation without a second
+cleanup query. Operational Native failure with confirmed cleanup still permits
+the existing cleanup barrier; panic/destructive failure never fabricates an ack.
+Missing-worker refusal does not imply a join. The old generic latch's u8 fixture
+is replaced by cases through the actual typed tray latch/classifier. Preserve
+the notification barrier, finite wait, effect custody and all native/UI holds;
+source compilation/portable cases supply no actual Windows cleanup pass.
+
+Current `1cbddfb3` source passes GNU UI Clippy, Windows-target UI Clippy and all
+13 selected portable tray tests. Actual RestoreToken field addition fails at both
+comparison consumers and compiles after an explicit field decision. The current
+terminal classifier preserves operation/cleanup distinctions and sticky outcomes;
+its exact native producer and Slint consumer compile for Windows. No Windows
+execution, AppVerifier/PageHeap, UIA, cleanup or release acceptance is inferred.

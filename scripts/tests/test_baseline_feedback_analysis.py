@@ -19,6 +19,9 @@ MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 ROLE = MODULE._baseline_feedback_role()
 OWNERS = MODULE.BASELINE_FEEDBACK_SUBJECTS
+HISTORICAL_FIXTURE_ROOT = Path(__file__).resolve().parent / "fixtures/baseline-feedback"
+HISTORICAL_FIXTURE_MAXIMUM = 128 * 1024
+HISTORICAL_COMPILER_MANIFEST_SHA256 = "83deaf865a9b5df42b02a5b9b31ec0f1af3fdd3cbdd291fb064256b88a4d1d41"
 
 
 def policy():
@@ -26,6 +29,40 @@ def policy():
     result = json.loads((ROOT / MODULE.BASELINE_FEEDBACK_POLICY).read_text())
     result["mutation_inventories"] = {name: {"count": 200, "sha256": "b" * 64} for name in OWNERS}
     return result
+
+
+def historical_source_bindings():
+    """Use unchanged legacy role/review hashes, never current product-source bytes."""
+    inputs = policy()["inputs_sha256"]
+    names = {*OWNERS.values(), "crates/time-core/src/lib.rs",
+             "crates/time-core/src/regression/chart/roundoff.rs"}
+    bindings = {name: inputs[name] for name in names}
+    for name, digest in (MODULE._BASELINE_CHART_RESULT_SOURCE,
+                         *MODULE._BASELINE_CHART_RESULT_SOURCES.items(),
+                         MODULE._BASELINE_PHASE_AUXILIARY_SOURCE,
+                         MODULE._BASELINE_PHASE_AUXILIARY_TEST_SOURCE):
+        if name in bindings and bindings[name] != digest:
+            raise MODULE.Incomplete("Historical baseline role/review source bindings disagree.")
+        bindings[name] = digest
+    bindings["policy/tool-manifest.json"] = HISTORICAL_COMPILER_MANIFEST_SHA256
+    return bindings
+
+
+def historical_source_bytes(name):
+    """Read one registered nonlinked bounded source fixture and verify its old hash.
+
+    The existing descriptor-based reader rejects links, devices, multiple links,
+    replacement and oversized data. Tests/CI require no Git executable, checkout
+    history, network, compiler, private report or previously built artifact.
+    """
+    expected = historical_source_bindings().get(name)
+    if expected is None:
+        raise MODULE.Incomplete("Historical baseline source fixture is not registered.")
+    data = MODULE.COMMON.read_analysis_bytes(
+        HISTORICAL_FIXTURE_ROOT / (name + ".txt"), maximum=HISTORICAL_FIXTURE_MAXIMUM)
+    if hashlib.sha256(data).hexdigest() != expected:
+        raise MODULE.Incomplete("Historical baseline source fixture differs from its frozen role hash.")
+    return data
 
 
 def successes(names):
@@ -71,7 +108,7 @@ def compiler_fixture(directory):
 def observed_rate_compiler_case(directory, line):
     """Reconstruct fourteen captured 27.1.0 payloads and unrendered rustc 1.99.1 records.
 
-    Only repository-owned source/manifest bytes are read. No private receipt,
+    Only pinned historical source/manifest fixtures are read. No private receipt,
     compiler, mutation worker or historical four-owner exception is borrowed.
     """
     source = Path(directory)
@@ -80,7 +117,7 @@ def observed_rate_compiler_case(directory, line):
                 OWNERS["frequency_state"] if line in (474, 743, 811) else OWNERS["rate_delivery"])
     identity = {}
     for name in (filename, "crates/time-core/src/lib.rs", "policy/tool-manifest.json"):
-        data = (ROOT / name).read_bytes()
+        data = historical_source_bytes(name)
         path = source / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
@@ -313,7 +350,7 @@ def equivalence_source_fixture(directory):
     """Real source/document hashing around a synthetic tiny product-inventory fixture.
 
     No candidate admission is simulated as product evidence. Only the inventory
-    producer is isolated; COMMON reads all actual source and document bytes.
+    producer is isolated; COMMON reads all captured historical source and document bytes.
     """
     root = Path(directory)
     value = reviewed_equivalence_policy()
@@ -321,7 +358,7 @@ def equivalence_source_fixture(directory):
              for name in MODULE.COMMON.BASELINE_FEEDBACK_EQUIVALENCE_REVIEWS[entry["id"]][3]}
     identity = {}
     for name in names:
-        data = (ROOT / name).read_bytes()
+        data = historical_source_bytes(name)
         path = root / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
@@ -339,6 +376,83 @@ def equivalence_source_fixture(directory):
         entry["candidate_sha256"] = candidate
         entry["proof"]["sha256"] = digest
     return root, value, identity
+
+
+class HistoricalBaselineSourceControls(unittest.TestCase):
+    """Historical recognizers require immutable bounded preimages, not live files."""
+
+    def test_all_thirteen_fixtures_match_the_unchanged_role_and_review_hashes(self):
+        bindings = historical_source_bindings()
+        self.assertEqual(len(bindings), 13)
+        actual = {path.relative_to(HISTORICAL_FIXTURE_ROOT).as_posix().removesuffix(".txt")
+                  for path in HISTORICAL_FIXTURE_ROOT.rglob("*.txt")}
+        self.assertEqual(actual, set(bindings))
+        total = 0
+        for name, expected in bindings.items():
+            with self.subTest(name=name):
+                data = historical_source_bytes(name)
+                self.assertEqual(hashlib.sha256(data).hexdigest(), expected)
+                self.assertLessEqual(len(data), HISTORICAL_FIXTURE_MAXIMUM)
+                total += len(data)
+        self.assertEqual(total, 531604)
+        self.assertIn(HISTORICAL_COMPILER_MANIFEST_SHA256,
+                      MODULE._baseline_feedback_compiler_cause.__code__.co_consts)
+
+    def test_changed_fixture_cannot_replace_a_historical_hash_with_a_fresh_one(self):
+        name = OWNERS["phase_plan"]
+        original = historical_source_bytes(name)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / (name + ".txt")
+            path.parent.mkdir(parents=True)
+            path.write_bytes(original + b"\n")
+            with patch(__name__ + ".HISTORICAL_FIXTURE_ROOT", root):
+                with self.assertRaisesRegex(MODULE.Incomplete, "frozen role hash"):
+                    historical_source_bytes(name)
+            path.write_bytes(original)
+            with patch(__name__ + ".HISTORICAL_FIXTURE_ROOT", root):
+                self.assertEqual(historical_source_bytes(name), original)
+
+    def test_unregistered_path_is_rejected_before_any_file_read(self):
+        for name in ("../outside", "/absolute", "unreviewed.rs"):
+            with self.subTest(name=name), patch.object(MODULE.COMMON, "read_analysis_bytes") as read:
+                with self.assertRaisesRegex(MODULE.Incomplete, "not registered"):
+                    historical_source_bytes(name)
+                read.assert_not_called()
+
+    def test_missing_and_oversized_registered_fixtures_fail_closed(self):
+        name = OWNERS["phase_plan"]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch(__name__ + ".HISTORICAL_FIXTURE_ROOT", root):
+                with self.assertRaises(MODULE.Incomplete):
+                    historical_source_bytes(name)
+                path = root / (name + ".txt")
+                path.parent.mkdir(parents=True)
+                path.write_bytes(b"x" * (HISTORICAL_FIXTURE_MAXIMUM + 1))
+                with self.assertRaisesRegex(MODULE.Incomplete, "bounded regular file"):
+                    historical_source_bytes(name)
+
+    def test_leaf_and_parent_symlinks_cannot_supply_historical_fixtures(self):
+        name = OWNERS["phase_plan"]
+        original = historical_source_bytes(name)
+        for mode in ("leaf", "parent"):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory) / "fixtures"
+                path = root / (name + ".txt")
+                outside = Path(directory) / "outside"
+                outside.mkdir()
+                target = outside / path.name
+                target.write_bytes(original)
+                if mode == "leaf":
+                    path.parent.mkdir(parents=True)
+                    path.symlink_to(target)
+                else:
+                    path.parent.parent.mkdir(parents=True)
+                    path.parent.symlink_to(outside, target_is_directory=True)
+                with patch(__name__ + ".HISTORICAL_FIXTURE_ROOT", root):
+                    with self.assertRaises(MODULE.Incomplete):
+                        historical_source_bytes(name)
 
 
 class BaselineFeedbackAnalysisTests(unittest.TestCase):
@@ -900,9 +1014,9 @@ class BaselineChartResultControls(unittest.TestCase):
         self.assertEqual(len(MODULE._BASELINE_CHART_RESULT_SOURCES), 5)
         name, digest = MODULE._BASELINE_CHART_RESULT_SOURCE
         self.assertEqual(name, OWNERS["chart"])
-        self.assertEqual(hashlib.sha256((ROOT / name).read_bytes()).hexdigest(), digest)
+        self.assertEqual(hashlib.sha256(historical_source_bytes(name)).hexdigest(), digest)
         for name, digest in MODULE._BASELINE_CHART_RESULT_SOURCES.items():
-            self.assertEqual(hashlib.sha256((ROOT / name).read_bytes()).hexdigest(), digest)
+            self.assertEqual(hashlib.sha256(historical_source_bytes(name)).hexdigest(), digest)
 
     def test_mixed_result_has_one_actual_assertion_and_explicit_zero_credit(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1051,7 +1165,7 @@ def auxiliary_panic_fixture(directory, mode):
     values = {filename: original.encode(), "crates/time-core/src/lib.rs":
         b'#[path = "../tests/private/auxiliary.rs"] mod tests;\n',
         test_source: b'fn observed_assertion() {\n    assert!(1 == 2, "direct clock neighbor must retain Map");\n}\nfn dependent_setup() {}\n',
-        "policy/tool-manifest.json": (ROOT / "policy/tool-manifest.json").read_bytes()}
+        "policy/tool-manifest.json": historical_source_bytes("policy/tool-manifest.json")}
     for name, data in values.items():
         path = root / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -1093,7 +1207,7 @@ class BaselineAuxiliaryPanicControls(unittest.TestCase):
     def test_auxiliary_review_catalog_has_only_five_actual_current_cases(self):
         self.assertEqual(len(MODULE._BASELINE_PHASE_AUXILIARY_CASES), 5)
         for name, digest in (MODULE._BASELINE_PHASE_AUXILIARY_SOURCE, MODULE._BASELINE_PHASE_AUXILIARY_TEST_SOURCE):
-            self.assertEqual(hashlib.sha256((ROOT / name).read_bytes()).hexdigest(), digest)
+            self.assertEqual(hashlib.sha256(historical_source_bytes(name)).hexdigest(), digest)
         self.assertEqual(sorted(len(row[5]) for row in MODULE._BASELINE_PHASE_AUXILIARY_CASES.values()), [1, 1, 1, 6, 7])
         self.assertEqual({row[6][2] for row in MODULE._BASELINE_PHASE_AUXILIARY_CASES.values()}, {1425, 1443, 1466})
 

@@ -63,6 +63,7 @@ jobs:
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_ui_text_native.py -v
           python3 -X dev -Werror -B scripts/check-ui-text.py --root .
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_slint_dependency_profile.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_engine_ke_dependency_profile.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_accesskit_path_patch.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_slint_linux_sdk.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_prepare_product.py -v
@@ -171,6 +172,32 @@ jobs:
           PRODUCT_RECEIPT: ${{ runner.temp }}/ui-m0-portable.json
         run: |
           env -u RUSTUP_TOOLCHAIN python3 -B scripts/verify.py --lane portable \
+            --toolchain-dir "${RUSTUP_HOME}/toolchains/1.100.0-x86_64-unknown-linux-gnu" \
+            --vendor-dir "${VENDOR_DIR}" --scratch-root "${PRODUCT_SCRATCH}" \
+            --nextest "${NEXTEST_BINARY}" --json "${PRODUCT_RECEIPT}"
+      - name: Check the explicit KE dependency graph before its package code executes
+        env:
+          PRODUCT_SCRATCH: ${{ runner.temp }}
+          VENDOR_DIR: ${{ runner.temp }}/ui-m0-vendor
+          METADATA_RECEIPT: ${{ runner.temp }}/ui-m0-metadata.json
+          DENY_BINARY: ${{ runner.temp }}/deny-tool/cargo-deny
+          DEPENDENCY_RECEIPT: ${{ runner.temp }}/engine-ke-association-dependencies.json
+        run: |
+          env -u RUSTUP_TOOLCHAIN python3 -B scripts/verify.py --lane dependencies \
+            --profile engine-ke-association \
+            --toolchain-dir "${RUSTUP_HOME}/toolchains/1.100.0-x86_64-unknown-linux-gnu" \
+            --vendor-dir "${VENDOR_DIR}" --scratch-root "${PRODUCT_SCRATCH}" \
+            --deny "${DENY_BINARY}" --advisory-receipt "${METADATA_RECEIPT}" \
+            --json "${DEPENDENCY_RECEIPT}"
+      - name: Verify actual portable KE ownership in the isolated explicit profile
+        env:
+          PRODUCT_SCRATCH: ${{ runner.temp }}
+          VENDOR_DIR: ${{ runner.temp }}/ui-m0-vendor
+          NEXTEST_BINARY: ${{ runner.temp }}/nextest-tool/cargo-nextest
+          PRODUCT_RECEIPT: ${{ runner.temp }}/engine-ke-association-portable.json
+        run: |
+          env -u RUSTUP_TOOLCHAIN python3 -B scripts/verify.py --lane portable \
+            --profile engine-ke-association \
             --toolchain-dir "${RUSTUP_HOME}/toolchains/1.100.0-x86_64-unknown-linux-gnu" \
             --vendor-dir "${VENDOR_DIR}" --scratch-root "${PRODUCT_SCRATCH}" \
             --nextest "${NEXTEST_BINARY}" --json "${PRODUCT_RECEIPT}"

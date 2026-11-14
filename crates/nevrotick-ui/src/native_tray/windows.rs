@@ -10,7 +10,6 @@
 
 use std::cell::RefCell;
 use std::ffi::c_void;
-use std::fmt;
 use std::ptr::{null, null_mut, with_exposed_provenance_mut};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -36,8 +35,8 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
 };
 
 use super::{
-    CompletionLatch, ICON_ID, IconCalls, IconOperation, PreparedTray, TrayBridge, TrayError,
-    native_command, popup_selection, registration_update,
+    CompletionLatch, ICON_ID, IconCalls, IconOperation, PreparedTray, StartError, TrayBridge,
+    TrayError, TrayFinish, native_command, popup_selection, registration_update,
 };
 
 /// Private wake; its raw message alone changes no trusted field.
@@ -58,28 +57,6 @@ thread_local! {
     /// Actual worker-owned association; incoming LPARAM is never a Rust pointer.
     static CURRENT: RefCell<Option<Arc<TrayBridge>>> = const { RefCell::new(None) };
 }
-
-/// Fixed startup/cleanup error; no arbitrary Windows message or text is retained.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum StartError {
-    /// A previous observer still owns its native worker.
-    AlreadyRunning,
-    /// The ordinary worker thread could not be created.
-    Worker,
-    /// A native class/window/icon operation failed; no availability is assumed.
-    Native,
-    /// The worker panicked; no panic crosses the Windows callback ABI.
-    WorkerPanic,
-    /// Completion/cleanup has not actually been confirmed.
-    Cleanup,
-}
-impl fmt::Display for StartError {
-    /// Fixed, redacted UI-safe error text.
-    fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
-        output.write_str("The tray observer could not be confirmed. Keep the main window open.")
-    }
-}
-impl std::error::Error for StartError {}
 
 /// Fixed32x32 premultiplied BGRA pixels, prepared from code-owned brand data.
 ///
@@ -140,7 +117,8 @@ impl TrayPixels {
 /// Sole ordinary native worker owner. Drop is only a best-effort stop request.
 ///
 /// Before acknowledged UI exit the host must call `request_stop` and keep the
-/// visible observer/event loop until `try_finish` reports `Ok(true)`. Pending or
+/// visible observer/event loop until `try_finish` reports confirmed cleanup,
+/// including an operation failure whose cleanup is confirmed. Pending or
 /// failed cleanup cannot be treated as permission to hide/quit successfully.
 pub struct NativeTray {
     /// Shared bounded projection/event custody, never the Root controller.
@@ -148,7 +126,7 @@ pub struct NativeTray {
     /// Exactly one owned worker, joined only after it reports finished.
     worker: Option<JoinHandle<Result<(), StartError>>>,
     /// First observed terminal outcome remains latched across repeated polls.
-    completion: CompletionLatch<StartError>,
+    completion: CompletionLatch,
 }
 impl NativeTray {
     /// Lazily start only for the accepted opt-in, retaining Unknown/Unavailable meanwhile.
@@ -199,7 +177,7 @@ impl NativeTray {
             Ok(Self {
                 bridge,
                 worker: Some(worker),
-                completion: CompletionLatch::default(),
+                completion: CompletionLatch::new(),
             })
         } else {
             ACTIVE.store(false, Ordering::Release);
@@ -207,19 +185,6 @@ impl NativeTray {
             Err(StartError::Worker)
         }
     }
-    /// Whether a joined worker positively confirmed every owned native cleanup.
-    ///
-    /// A startup/runtime native error remains reported by `try_finish`, but is
-    /// distinct from cleanup uncertainty. Panic, pending work and any latched
-    /// destructive-call failure can never supply this acknowledgement.
-    #[must_use]
-    pub fn cleanup_confirmed(&self) -> bool {
-        matches!(
-            self.completion.result(),
-            Some(Ok(()) | Err(StartError::Native))
-        ) && !self.bridge.cleanup_failed.load(Ordering::Acquire)
-    }
-
     /// Publish a completely prepared candidate and wake only this owned worker.
     ///
     /// # Errors
@@ -248,39 +213,37 @@ impl NativeTray {
     }
     /// Poll completion without an unbounded native wait or joining a running worker.
     ///
-    /// # Errors
-    /// An acknowledged worker failure, panic or cleanup uncertainty remains an error.
-    pub fn try_finish(&mut self) -> Result<bool, StartError> {
-        if let Some(result) = self.completion.result() {
-            return result.map(|()| true);
+    /// The terminal observation retains the worker result or conservative custody
+    /// refusal and cleanup certainty together. Repeated polls retain the first facts.
+    pub fn try_finish(&mut self) -> TrayFinish {
+        match self.completion.observation() {
+            TrayFinish::Pending => {}
+            terminal @ (TrayFinish::CleanupConfirmed { .. }
+            | TrayFinish::CleanupUnconfirmed { .. }) => return terminal,
         }
         let Some(worker) = self.worker.as_ref() else {
-            return self
-                .completion
-                .finish(Err(StartError::Cleanup))
-                .map(|()| true);
+            return self.completion.finish(
+                Err(StartError::Cleanup),
+                self.bridge.cleanup_failed.load(Ordering::Acquire),
+            );
         };
         if !worker.is_finished() {
-            return Ok(false);
+            return TrayFinish::Pending;
         }
         let Some(worker) = self.worker.take() else {
-            return self
-                .completion
-                .finish(Err(StartError::Cleanup))
-                .map(|()| true);
+            return self.completion.finish(
+                Err(StartError::Cleanup),
+                self.bridge.cleanup_failed.load(Ordering::Acquire),
+            );
         };
-        let result = worker
+        let operation = worker
             .join()
             .map_err(|_| StartError::WorkerPanic)
-            .and_then(|value| value)
-            .and_then(|()| {
-                if self.bridge.cleanup_failed.load(Ordering::Acquire) {
-                    Err(StartError::Cleanup)
-                } else {
-                    Ok(())
-                }
-            });
-        self.completion.finish(result).map(|()| true)
+            .and_then(|value| value);
+        self.completion.finish(
+            operation,
+            self.bridge.cleanup_failed.load(Ordering::Acquire),
+        )
     }
 }
 impl Drop for NativeTray {

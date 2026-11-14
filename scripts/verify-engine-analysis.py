@@ -5274,21 +5274,17 @@ def _admit_engine_ke_debug_retirement(policy: dict, report: dict) -> None:
     """Require complete debug execution and Clippy custody before removing their cache."""
     binding = policy.get("binding")
     execution = report.get("baseline_execution")
-    names = binding.get("test_inventory") if type(binding) is dict else None
+    names = validate_engine_ke_inventory(binding.get("test_inventory") if type(binding) is dict else None)
     records = execution.get("test_names") if type(execution) is dict else None
-    if (type(names) is not list or len(names) != 400
-            or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
-            or names != sorted(set(names))
-            or sum(name.startswith("nts_ke_experiment::") for name in names) != 222
-            or type(records) is not list or len(records) != 400
+    if (type(records) is not list or len(records) != ENGINE_KE_ORDINARY_COUNT
             or any(type(name) is not str for name in records)
             or sorted(records) != names
             or type(execution.get("tests_executed")) is not int
-            or execution["tests_executed"] != 400
+            or execution["tests_executed"] != ENGINE_KE_ORDINARY_COUNT
             or type(execution.get("ke_tests_executed")) is not int
-            or execution["ke_tests_executed"] != 222
+            or execution["ke_tests_executed"] != ENGINE_KE_CASE_COUNT
             or execution.get("inventory_sha256") != COMMON.canonical_sha256(names)):
-        raise Incomplete("Debug retirement requires the exact validated 400-test/222-KE baseline roster and digest.")
+        raise Incomplete("Debug retirement requires the exact validated 410-test/229-KE baseline roster and digest.")
     lanes, samples = report.get("lanes"), report.get("storage_samples")
     if (type(lanes) is not list or len(lanes) < 2
             or any(type(row) is not dict for row in lanes)
@@ -5622,6 +5618,12 @@ def execute_address_profile(args, report: dict) -> None:
 ENGINE_KE_POLICY = COMMON.ENGINE_KE_POLICY
 ENGINE_KE_HOST_SUBJECTS = dict(COMMON.ENGINE_KE_SUBJECTS)
 ENGINE_KE_SCOPE = COMMON.Scope("nevrotick-engine", COMMON.ENGINE_KE_SUBJECTS, ENGINE_KE_POLICY)
+ENGINE_KE_ORDINARY_COUNT = 410
+ENGINE_KE_CASE_COUNT = 229
+ENGINE_KE_SEND_AFTER_TEST = (
+    "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+    "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted"
+)
 ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/association/tests.rs",
@@ -5634,12 +5636,14 @@ ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/datagram/tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/recovery/tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/recovery/worker_tests.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/recovery/numerics_tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/job_tests.rs",
 )
 ENGINE_KE_BOUND_INPUTS = tuple(dict.fromkeys((
     WRAPPER, TESTS, *COMMON.ENGINE_KE_CRITICAL, *ENGINE_KE_TEST_SOURCES,
     "scripts/portable-analysis.py", "scripts/tests/test_portable_analysis.py",
     "scripts/analysis-runtime.py", "scripts/check-analysis.py",
+    "scripts/analysis-controls.py",
     "scripts/prepare-product.py", "policy/analysis-tools.json", "policy/verification-manifest.toml",
     "policy/tool-manifest.json", "policy/ui-m0-dependencies.json", ".cargo/mutants.toml",
     "Cargo.toml", "Cargo.lock", "crates/nevrotick-engine/Cargo.toml",
@@ -5809,6 +5813,22 @@ def execute_engine_ke_fixtures(args, report: dict) -> None:
         raise Incomplete("Public fixture artifact changed during its final custody bookend.")
 
 
+def validate_engine_ke_inventory(names: object) -> list[str]:
+    """Require the complete fixed roster, including its forwarding regression.
+
+    Reuse this admission at policy, execution and completed-cache retirement;
+    a historical roster or same-count substitution cannot omit the new case.
+    This checks declared identity, never whether a test body actually executed.
+    """
+    if (type(names) is not list or len(names) != ENGINE_KE_ORDINARY_COUNT
+            or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
+            or names != sorted(set(names))
+            or sum(name.startswith("nts_ke_experiment::") for name in names) != ENGINE_KE_CASE_COUNT
+            or ENGINE_KE_SEND_AFTER_TEST not in names):
+        raise Incomplete("Engine KE requires all 410 actual Engine tests including its 229 KE cases and send-after regression.")
+    return names
+
+
 def validate_engine_ke_policy(policy: dict, *, campaign: bool = False) -> dict:
     """Bind the exact current source/helper set and all actual ordinary test identities."""
     COMMON.require_engine_ke_role(ENGINE_KE_SCOPE, policy)
@@ -5825,12 +5845,7 @@ def validate_engine_ke_policy(policy: dict, *, campaign: bool = False) -> dict:
             or type(pins) is not dict or set(pins) != set(ENGINE_KE_BOUND_INPUTS)
             or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None for value in pins.values())):
         raise Incomplete("Engine KE source/helper inputs differ from the exact fixed set.")
-    names = binding["test_inventory"]
-    if (type(names) is not list or len(names) != 400
-            or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
-            or names != sorted(set(names))
-            or sum(name.startswith("nts_ke_experiment::") for name in names) != 222):
-        raise Incomplete("Engine KE requires all 400 actual Engine tests including its 222 KE cases.")
+    validate_engine_ke_inventory(binding["test_inventory"])
     for key in ("ordinary_evidence", "root_graph_evidence"):
         evidence = binding[key]
         if (type(evidence) is not dict or set(evidence) != {"path", "sha256"}
@@ -5845,15 +5860,15 @@ def validate_engine_ke_policy(policy: dict, *, campaign: bool = False) -> dict:
 
 def validate_engine_ke_execution(text: str, binding: dict, *, include_doctests: bool = False) -> dict:
     """Use real entered libtest blocks, not metadata-only names or borrowed counts."""
+    ordinary = validate_engine_ke_inventory(binding["test_inventory"])
     records = read_successful_address_records(text)
-    ordinary = binding["test_inventory"]
     extra = set(records) - set(ordinary)
     if (not set(ordinary) <= set(records)
             or (extra and not include_doctests)
             or any(re.fullmatch(r"[^\r\n]+[.]rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile(?: fail)?)?", name) is None
                    for name in extra)):
         raise Incomplete("Engine KE did not execute every current actual library/integration case.")
-    result = {"tests_executed": len(records), "ke_tests_executed": 222,
+    result = {"tests_executed": len(records), "ke_tests_executed": ENGINE_KE_CASE_COUNT,
               "test_names": records, "inventory_sha256": COMMON.canonical_sha256(sorted(records))}
     if include_doctests:
         result["additional_doctests"] = sorted(extra)
@@ -5951,9 +5966,24 @@ ENGINE_KE_HISTORY_CASES = (
     "mutate-received-profile", "clone-received-numerics",
 )
 
+ENGINE_KE_PROJECTION_CAUSES = {
+    "projection-parent-preview": ("E0599", ("ReceivedCompletion", "Preview")),
+    "projection-parent-inner-mut": ("E0616", ("inner", "private")),
+    "projection-parent-literal": ("E0451", ("completion", "private")),
+    "projection-parent-field": ("E0616", ("completion", "private")),
+    "projection-parent-clone": ("E0277", ("CompletionProjection", "Clone")),
+    "projection-parent-escape": ("E0515", ("owned", "return")),
+    "projection-sibling-preview": ("E0599", ("ReceivedCompletion", "Preview")),
+}
+ENGINE_KE_PROJECTION_CASES = (
+    "projection-parent-legal", "projection-parent-preview", "projection-parent-inner-mut",
+    "projection-parent-literal", "projection-parent-field", "projection-parent-clone",
+    "projection-parent-escape", "projection-sibling-legal", "projection-sibling-preview",
+)
+
 
 def engine_ke_history_contract_examples(original: bytes) -> list[dict]:
-    """Append thirty-four fixed actual-owner compiler consumers; never execute them."""
+    """Append thirty-four existing consumers and nine closed production seal controls."""
     if (type(original) is not bytes or not original or len(original) > 256 * 1024
             or not original.endswith(b"\n") or b"protected_history_contract_probe" in original):
         raise Incomplete("History compiler contracts require the unchanged bounded private owner.")
@@ -6039,8 +6069,8 @@ def engine_ke_history_contract_examples(original: bytes) -> list[dict]:
             "read-received-measurement": ("    let _ = &received.measurement;\n", "    let _ = &received.measurement;"),
             "mutate-received-profile": ("    received.profile = None;\n", "    received.profile = None;"),
             "clone-received-numerics": (
-                "    fn require_clone<T: Clone>(_: &T) {}\n    require_clone(&received);\n",
-                "    require_clone(&received);"),
+                "    fn require_clone<T: Clone>(_: &T) {}\n    require_clone(received);\n",
+                "    require_clone(received);"),
         }
         for case, (body, causal_line) in receiving_bodies.items():
             probe = ("\n/// protected_history_contract_probe: actual collected receiving custody.\n"
@@ -6055,25 +6085,78 @@ def engine_ke_history_contract_examples(original: bytes) -> list[dict]:
         for case, (body, causal_line) in received_bodies.items():
             prefix = ("\n/// protected_history_contract_probe: inferred actual received carrier.\n"
                 f"#[cfg(all(test, {cfg}))]\n")
-            if case == "mutate-received-profile":
-                probe = (prefix + "const _: fn(&mut datagram::ReceivedCompletion) = |completion| {\n"
-                    "    if let datagram::ReceivedCompletion::Protected(received) = completion {\n"
-                    + body + "    }\n};\n")
-            else:
-                probe = (prefix
-                    + "const _: fn(datagram::ReceivedCompletion) -> datagram::ReceivedCompletion = |completion| {\n"
-                    "    match completion {\n"
-                    "        datagram::ReceivedCompletion::Preview(summary) => datagram::ReceivedCompletion::Preview(summary),\n"
-                    "        datagram::ReceivedCompletion::Protected(received) => {\n"
-                    + body + "            datagram::ReceivedCompletion::Protected(received)\n        }\n    }\n};\n")
+            probe = (prefix + "const _: fn(&datagram::ReceivedCompletion) = |completion| {\n"
+                "    if let Some(received) = completion.protected() {\n" + body + "    }\n};\n")
             diagnostic = None
             if causal_line is not None:
                 code, tokens = ENGINE_KE_HISTORY_CAUSES[case]
                 diagnostic = {"code": code, "tokens": list(tokens),
                     "line": len(original_text.splitlines()) + probe.splitlines().index(causal_line) + 1}
-            examples.append({"target": target, "case": case, "owner": "ReceivedCompletion::Protected carrier",
+            examples.append({"target": target, "case": case, "owner": "ReceivedCompletion borrowed protected numerics",
                 "appended_source": probe, "source": original + probe.encode(), "diagnostic": diagnostic})
+    examples.extend(_engine_ke_projection_contract_examples(original, original_text))
     return examples
+
+
+def _engine_ke_projection_contract_examples(original: bytes, original_text: str) -> list[dict]:
+    """Use the actual Windows production parent and its child, never an outer import failure."""
+    legal = (
+        "const _: fn(&job::WorkerSlot) -> Result<datagram::ReceivedCompletion, RunFailed> = |slot| {\n"
+        "    slot.collect().map_err(RunFailed::Collection)?;\n"
+        "    datagram::receive_joined(slot.take_for_receiving().map_err(RunFailed::Collection)?, None)\n};\n"
+        "const _: for<'a> fn(&'a datagram::ReceivedCompletion) -> datagram::CompletionProjection<'a> = |completion| {\n"
+        "    let projection = completion.projection();\n"
+        "    let _ = (projection.summary(), projection.numerical(), projection.numerical_reason());\n"
+        "    projection\n};\n")
+    preview = (
+        "const _: fn(Summary) -> datagram::ReceivedCompletion = |summary| {\n"
+        "    datagram::ReceivedCompletion::Preview(summary)\n};\n",
+        "    datagram::ReceivedCompletion::Preview(summary)")
+    bodies = {
+        "projection-parent-legal": (legal, None),
+        "projection-parent-preview": preview,
+        "projection-parent-inner-mut": (
+            "const _: fn(&mut datagram::ReceivedCompletion) = |completion| {\n"
+            "    let _inner = &mut completion.inner;\n};\n", "    let _inner = &mut completion.inner;"),
+        "projection-parent-literal": (
+            "const _: for<'a> fn(&'a datagram::ReceivedCompletion) -> datagram::CompletionProjection<'a> = |completion| {\n"
+            "    datagram::CompletionProjection { completion }\n};\n", "    datagram::CompletionProjection { completion }"),
+        "projection-parent-field": (
+            "const _: fn(&datagram::CompletionProjection<'_>) = |projection| {\n"
+            "    let _ = &projection.completion;\n};\n", "    let _ = &projection.completion;"),
+        "projection-parent-clone": (
+            "const _: fn(datagram::CompletionProjection<'_>) = |projection| {\n"
+            "    fn require_clone<T: Clone>(_: &T) {}\n"
+            "    require_clone(&projection);\n};\n", "    require_clone(&projection);"),
+        "projection-parent-escape": (
+            "const _: for<'a> fn(&'a datagram::ReceivedCompletion, datagram::ReceivedCompletion)\n"
+            "    -> datagram::CompletionProjection<'a> = |_borrowed, owned| {\n"
+            "    owned.projection()\n};\n", "    owned.projection()"),
+        "projection-sibling-legal": (legal, None),
+        "projection-sibling-preview": preview,
+    }
+    result = []
+    for case in ENGINE_KE_PROJECTION_CASES:
+        body, causal = bodies[case]
+        sibling = case.startswith("projection-sibling-")
+        if sibling:
+            def qualify(text):
+                return (text.replace("datagram::", "super::datagram::").replace("job::", "super::job::")
+                    .replace("RunFailed", "super::RunFailed").replace("Summary", "super::Summary"))
+            body = qualify(body)
+            if causal is not None:
+                causal = qualify(causal)
+        probe = "\n/// protected_history_contract_probe: sealed joined production projection.\n#[cfg(windows)]\n"
+        probe += ("mod joined_projection_contract_probe_sibling {\n" + body + "}\n" if sibling else body)
+        diagnostic = None
+        if causal is not None:
+            code, tokens = ENGINE_KE_PROJECTION_CAUSES[case]
+            diagnostic = {"code": code, "tokens": list(tokens),
+                "line": len(original_text.splitlines()) + probe.splitlines().index(causal) + 1}
+        result.append({"target": "msvc", "case": case,
+            "owner": "ReceivedCompletion/CompletionProjection production " + ("sibling" if sibling else "parent"),
+            "appended_source": probe, "source": original + probe.encode(), "diagnostic": diagnostic})
+    return result
 
 
 def validate_engine_ke_provider_cause(result: dict, specimen: dict, manifest: str) -> None:
@@ -6093,7 +6176,17 @@ def validate_engine_ke_history_cause(result: dict, specimen: dict, manifest: str
     _validate_engine_ke_compiler_cause(result, specimen, manifest, ENGINE_KE_HOST_SUBJECTS["ke_core"])
 
 
-def _validate_engine_ke_compiler_cause(result: dict, specimen: dict, manifest: str, filename: str) -> None:
+def validate_engine_ke_projection_cause(result: dict, specimen: dict, manifest: str) -> None:
+    """Require a fixed production seal cause, including actual non-test library attribution."""
+    if (type(specimen) is not dict or set(specimen) != {"code", "tokens", "line"}
+            or not any(specimen["code"] == code and specimen["tokens"] == list(tokens)
+                       for code, tokens in ENGINE_KE_PROJECTION_CAUSES.values())):
+        raise Incomplete("Projection ownership probe leaves its fixed production diagnostic matrix.")
+    _validate_engine_ke_compiler_cause(result, specimen, manifest, ENGINE_KE_HOST_SUBJECTS["ke_core"], production=True)
+
+
+def _validate_engine_ke_compiler_cause(result: dict, specimen: dict, manifest: str, filename: str,
+                                       *, production: bool = False) -> None:
     """Check actual Cargo attribution before the unchanged rustc causal matcher.
 
     Cargo's pinned JSON emits an exact terminal explanation note without rustc's
@@ -6123,7 +6216,8 @@ def _validate_engine_ke_compiler_cause(result: dict, specimen: dict, manifest: s
         if not line.strip():
             continue
         if not line.startswith("{"):
-            summary = re.fullmatch(r"error: could not compile `nevrotick-engine` \(lib(?: test)?\) due to ([1-9][0-9]*) previous errors?", line)
+            summary = re.fullmatch((r"error: could not compile `nevrotick-engine` \(lib\) due to ([1-9][0-9]*) previous errors?"
+                if production else r"error: could not compile `nevrotick-engine` \(lib(?: test)?\) due to ([1-9][0-9]*) previous errors?"), line)
             if summary:
                 summaries.append(int(summary[1]))
             elif line != "warning: build failed, waiting for other jobs to finish...":
@@ -6214,7 +6308,7 @@ def _engine_ke_owned_contracts(session, policy: dict, report: dict, run, owner: 
         filename, examples_for, validate = (ENGINE_KE_HOST_SUBJECTS["ke_core"],
             engine_ke_history_contract_examples, validate_engine_ke_history_cause)
         report_key, requirement, cases = "protected_history_contracts", "KE-HIST-03/05/07", ENGINE_KE_HISTORY_CASES
-        scope = "Actual private history, collected receiving custody and conditional carrier; six healthy and twenty-eight ownership/privacy metadata refusals; no Windows execution."
+        scope = "Actual history/receiving/carrier contracts: eight healthy and thirty-five ownership/privacy metadata refusals, including nine Windows production parent/sibling seal controls; no Windows execution."
         owner_field = "owner"
     else:
         raise Incomplete("Engine KE compiler controls require a fixed provider or history owner.")
@@ -6226,7 +6320,10 @@ def _engine_ke_owned_contracts(session, policy: dict, report: dict, run, owner: 
     if hashlib.sha256(original).hexdigest() != baseline[filename]:
         raise Incomplete("Provider compiler owner differs from its immutable Session identity.")
     examples = examples_for(original)
-    if [(row["target"], row["case"]) for row in examples] != [(target, case) for target in ("gnu", "msvc") for case in cases]:
+    expected_cases = [(target, case) for target in ("gnu", "msvc") for case in cases]
+    if owner == "history":
+        expected_cases += [("msvc", case) for case in ENGINE_KE_PROJECTION_CASES]
+    if [(row["target"], row["case"]) for row in examples] != expected_cases:
         raise Incomplete("Engine KE compiler controls differ from their complete fixed roster.")
     shutil.copytree(session.source, private)
     if PRODUCT.inventory(private) != baseline:
@@ -6245,8 +6342,9 @@ def _engine_ke_owned_contracts(session, policy: dict, report: dict, run, owner: 
             production.write_bytes(data)
             session.protected_islands[private] = dict(expected)
             try:
+                projection = owner == "history" and example["case"] in ENGINE_KE_PROJECTION_CASES
                 command = ["cargo", "check", "--package", "nevrotick-engine", "--features", "ke-association-prototype",
-                    "--all-targets", "--frozen", "--jobs", "6", "--message-format=json", "--quiet"]
+                    "--lib" if projection else "--all-targets", "--frozen", "--jobs", "6", "--message-format=json", "--quiet"]
                 if example["target"] == "msvc":
                     command += ["--target", "x86_64-pc-windows-msvc"]
                 label = "ke-" + owner + "-contract-" + example["target"] + "-" + example["case"]
@@ -6267,7 +6365,7 @@ def _engine_ke_owned_contracts(session, policy: dict, report: dict, run, owner: 
                             or "failure" not in row or row["failure"] is not None)):
                         raise Incomplete("History legal consumer lacks its retained successful ordinary command.")
                 if negative:
-                    validate(row, example["diagnostic"], manifest)
+                    (validate_engine_ke_projection_cause if projection else validate)(row, example["diagnostic"], manifest)
                 session.check()
                 if PRODUCT.inventory(private) != expected or session.protected_islands.get(private) != expected:
                     raise Incomplete("Provider compiler copy changed outside its admitted single-source delta.")
@@ -6275,6 +6373,8 @@ def _engine_ke_owned_contracts(session, policy: dict, report: dict, run, owner: 
                     key: example[key] for key in ("target", "case", owner_field, "appended_source", "diagnostic")})
                 report[report_key]["probes"][-1].update(
                     source_sha256=expected[filename], appended_sha256=hashlib.sha256(example["appended_source"].encode()).hexdigest())
+                if projection:
+                    report[report_key]["probes"][-1]["compile_scope"] = "Windows production library, no cfg(test)"
             finally:
                 production.write_bytes(original)
                 session.protected_islands[private] = dict(baseline)

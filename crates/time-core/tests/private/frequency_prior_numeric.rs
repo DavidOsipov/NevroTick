@@ -5,7 +5,9 @@ use std::{error::Error, num::NonZeroU64};
 
 use crate::{FixtureAffineChart, FixtureChartDomain, FixtureChartFrames};
 use garde::Validate;
-use time_domain::{DomainError, MonotonicDurationNs, MonotonicNs};
+use time_domain::{
+    ActiveAwakeDurationNs, ActiveAwakeNs, DomainError, MonotonicDurationNs, MonotonicNs,
+};
 
 use super::{
     AffineEffectCoefficients, BaselineChange, BaselineMapNumbers, BaselineOperands,
@@ -42,6 +44,13 @@ fn product_ok<T, E: std::fmt::Debug>(value: Result<T, E>) -> Result<T, E> {
 /// Preserve a genuine time-domain failure.
 fn elapsed(nanoseconds: u64) -> Result<MonotonicDurationNs, DomainError> {
     MonotonicNs::new(nanoseconds).duration_since(MonotonicNs::new(0))
+}
+
+/// Obtain an active-awake duration without erasing its clock-domain identity.
+/// # Errors
+/// Preserve a genuine time-domain failure.
+fn active_elapsed(nanoseconds: u64) -> Result<ActiveAwakeDurationNs, DomainError> {
+    ActiveAwakeNs::new(nanoseconds).duration_since(ActiveAwakeNs::new(0))
 }
 
 /// First intake retains the fresh mean error and exact correlated-zero residual.
@@ -1125,28 +1134,51 @@ fn absolute_actual_map_advances_without_double_charging_old_delivery() -> TestRe
 
 /// Exact integer span consistency is separate from declared-map calibration.
 /// # Errors
+/// Preserve checked duration construction or a supported ratio's refusal.
+/// # Panics
+/// Detect refusal of the typed non-unit or zero-span legal neighbors.
+#[test]
+fn active_ratio_span_signature_preserves_distinct_clock_duration_types() -> TestResult {
+    let checked: fn(
+        ActiveAwakeDurationNs,
+        MonotonicDurationNs,
+        f64,
+        f64,
+    ) -> Result<(), FixtureFrequencyNumericError> = check_active_ratio_span;
+    product_ok(checked(active_elapsed(1)?, elapsed(2)?, 0.5, 0.0))?;
+    product_ok(checked(active_elapsed(0)?, elapsed(0)?, 0.5, 0.0))?;
+    Ok(())
+}
+
+/// Exact integer span consistency is separate from declared-map calibration.
+/// # Errors
 /// Preserve supported ratio/span refusal in the healthy neighboring rows.
 /// # Panics
 /// Reject omitted ratio, impossible spans and one-over exact-integer conversion.
 #[test]
 fn active_ratio_span_checks_nonunit_zero_and_exact_integer_boundaries() -> TestResult {
     for (active, mono) in [(1, 2), (0, 0), (1_u64 << 52, 1_u64 << 53)] {
-        product_ok(check_active_ratio_span(active, mono, 0.5, 0.0))?;
+        product_ok(check_active_ratio_span(
+            active_elapsed(active)?,
+            elapsed(mono)?,
+            0.5,
+            0.0,
+        ))?;
     }
     for (active, mono) in [(1, 0), (0, 1), (1, 3), (2, 3)] {
         assert_eq!(
-            check_active_ratio_span(active, mono, 0.5, 0.0),
+            check_active_ratio_span(active_elapsed(active)?, elapsed(mono)?, 0.5, 0.0),
             Err(FixtureFrequencyNumericError::ActiveRatioMismatch)
         );
     }
     for (active, mono) in [((1_u64 << 53) + 1, 2), (1, (1_u64 << 53) + 1)] {
         assert!(matches!(
-            check_active_ratio_span(active, mono, 0.5, 0.0),
+            check_active_ratio_span(active_elapsed(active)?, elapsed(mono)?, 0.5, 0.0),
             Err(FixtureFrequencyNumericError::Duration { .. })
         ));
     }
     assert!(matches!(
-        check_active_ratio_span(1, 2, 0.5, 0.5),
+        check_active_ratio_span(active_elapsed(1)?, elapsed(2)?, 0.5, 0.5),
         Err(FixtureFrequencyNumericError::Enclosure {
             issue: FixtureFrequencyNumericIssue::NonPositive,
             ..

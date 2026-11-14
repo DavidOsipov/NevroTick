@@ -35,10 +35,62 @@ use crate::{
     enclose_fixture_projection,
 };
 
+/// Genuine counter-history preservation across the matched step's fresh recovery.
+#[path = "step_counter.rs"]
+mod step_counter;
+
 /// Retain an unexpected checked fixture error without inventing fallback values.
 type TestResult<T = ()> = Result<T, Box<dyn Error>>;
 /// Explicit nanoseconds per fixture second, independent of elapsed host time.
 const SECOND: u64 = 1_000_000_000;
+
+/// Literal stored-bit subtraction tests numerical enclosure, not clock authority.
+/// # Errors
+/// Preserve checked debt, actual-step and final numerical admission failures.
+/// # Panics
+/// Detect a missing step subtraction, sign reversal or lost one-rounding error.
+#[test]
+fn matched_step_debt_subtraction_encloses_exact_stored_binary64_inputs() -> TestResult {
+    let tenth = f64::from_bits(0x3fb9_9999_9999_999a);
+    let roundoff = f64::from_bits(968_u64 << 52); // Exactly 2^-55.
+    for sign in [-1.0, 1.0] {
+        let old = product_ok(super::PhaseDebt::new(sign, 0.0))?;
+        let next = product_ok(old.stepped(sign * tenth))?;
+        // Exact 1 - stored(0.1) differs from stored(0.9) by exactly 2^-55.
+        assert_eq!(next.point(), sign * f64::from_bits(0x3fec_cccc_cccc_cccd));
+        assert!(next.error() >= roundoff);
+        assert_eq!(old.point(), sign);
+        let uncertain = product_ok(super::PhaseDebt::new(sign / 8.0, 1.0 / 1024.0))?;
+        let cancelled = product_ok(uncertain.stepped(sign / 8.0))?;
+        assert_eq!(cancelled.point(), 0.0);
+        assert!(cancelled.error() >= 1.0 / 1024.0);
+    }
+    Ok(())
+}
+
+/// Unsupported actual inputs and overflow cannot publish an invented residual.
+/// # Errors
+/// Preserve the independent normal debt's checked construction failure.
+/// # Panics
+/// Detect accepting unsupported inputs or mutating the prior immutable debt.
+#[test]
+fn matched_step_debt_refuses_unsupported_arithmetic_beside_zero_effect() -> TestResult {
+    let old = product_ok(super::PhaseDebt::new(1.0, 0.0))?;
+    for actual in [
+        f64::NAN,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::from_bits(1),
+    ] {
+        assert!(old.stepped(actual).is_err());
+        assert_eq!(old.point(), 1.0);
+    }
+    assert_eq!(product_ok(old.stepped(-0.0))?.point(), 1.0);
+    let large = product_ok(super::PhaseDebt::new(f64::MAX, 0.0))?;
+    assert!(large.stepped(-f64::MAX).is_err());
+    assert_eq!(large.point(), f64::MAX);
+    Ok(())
+}
 
 /// Assert a known-valid pure product trajectory before preserving its refusal.
 /// # Errors
@@ -555,26 +607,31 @@ fn actual_unknown_reception_latches_frequency_before_private_projection() -> Tes
 /// Private full-u64 helper-domain precision control, outside public span admission.
 /// A unit difference at MAX is below f64 ratio resolution; integer cross-products
 /// must preserve it. This supplies no physical trace, mapping or source credit.
+/// # Errors
+/// Preserve checked duration construction instead of inventing a clock span.
 /// # Panics
 /// Require the exact unit ratio and zero-span neighbors; reject the unequal ratio.
 #[test]
-fn exact_clock_ratio_witness_distinguishes_full_u64_precision_neighbor() {
-    let witness = ControllerRatioWitness {
-        active: u64::MAX,
-        monotonic: u64::MAX,
-    };
+fn exact_clock_ratio_witness_distinguishes_full_u64_precision_neighbor() -> TestResult {
+    let active = ActiveAwakeNs::new(u64::MAX).duration_since(ActiveAwakeNs::new(0))?;
+    let monotonic = MonotonicNs::new(u64::MAX).duration_since(MonotonicNs::new(0))?;
+    let witness = ControllerRatioWitness { active, monotonic };
     assert!(
-        witness.admits(u64::MAX, u64::MAX).is_ok(),
+        witness.admits(active, monotonic).is_ok(),
         "MAX squared fits checked u128"
     );
+    let active_neighbor = ActiveAwakeNs::new(u64::MAX - 1).duration_since(ActiveAwakeNs::new(0))?;
     assert!(matches!(
-        witness.admits(u64::MAX - 1, u64::MAX),
+        witness.admits(active_neighbor, monotonic),
         Err(FixtureBaselineError::Map)
     ));
+    let zero_active = ActiveAwakeNs::new(0).duration_since(ActiveAwakeNs::new(0))?;
+    let zero_monotonic = MonotonicNs::new(0).duration_since(MonotonicNs::new(0))?;
     assert!(
-        witness.admits(0, 0).is_ok(),
+        witness.admits(zero_active, zero_monotonic).is_ok(),
         "zero span preserves an existing ratio without creating one"
     );
+    Ok(())
 }
 
 /// Obtain distinct phase/rate points and both inherited coefficient bounds.
@@ -1605,7 +1662,8 @@ fn baseline_terminal_relation_retains_first_known_and_no_effect_observations() -
         let observed = product_ok(owner.baseline_terminal_relation(&issued, event, now))?;
         assert!(
             matches!(observed, Some(relation) if relation.witness.is_some_and(|witness|
-            witness.active == SECOND && witness.monotonic == 2 * SECOND)),
+            witness.active.nanoseconds() == SECOND
+                && witness.monotonic.nanoseconds() == 2 * SECOND)),
             "terminal must retain the first exact 1/2 ratio witness"
         );
         assert_pending_base_without_ratio(&owner)?;

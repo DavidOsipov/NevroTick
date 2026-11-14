@@ -16,18 +16,21 @@
 mod rate_delivery;
 
 pub use rate_delivery::{
-    FixtureBaselineCompletion, FixtureBaselineError, FixtureBaselineFeedback,
-    FixtureBaselineProposal, FixtureBaselineRetirement, FixtureBaselineSettlement,
-    FixtureControllerClockMap, FixtureControllerClockMapInput, FixtureFrequencyAdmission,
-    FixtureFrequencyClockAssociation, FixtureFrequencyError, FixtureFrequencyHistory,
-    FixtureFrequencyProfile, FixtureFrequencyProjection, FixturePhaseBaseline, FixturePhaseBlocked,
+    FixtureAdaptiveHorizonError, FixtureAdaptiveHorizonProfile, FixtureBaselineCompletion,
+    FixtureBaselineError, FixtureBaselineFeedback, FixtureBaselineProposal,
+    FixtureBaselineRetirement, FixtureBaselineSettlement, FixtureControllerClockMap,
+    FixtureControllerClockMapInput, FixtureFrequencyAdmission, FixtureFrequencyClockAssociation,
+    FixtureFrequencyError, FixtureFrequencyHistory, FixtureFrequencyProfile,
+    FixtureFrequencyProjection, FixturePhaseBaseline, FixturePhaseBlocked,
     FixturePhaseConstructionRejected, FixturePhaseError, FixturePhaseNow, FixturePhasePlanOwner,
     FixturePhaseProfile, FixturePhaseProposal, FixturePhaseProvenance,
     FixturePhaseReferenceAdmission, FixturePhaseResidualPermission, FixturePhaseRetirement,
     FixturePhaseRetirementReason, FixturePhaseSettlement, FixtureRateClock,
     FixtureRateClockContext, FixtureRateCursorStatus, FixtureRateDeliveryError,
     FixtureRateSettlement, FixtureRateSettlementCompletion, FixtureRateSettlementCursor,
-    FixtureRateSettlementKind, FixtureRateSpan, FixtureSettledRateInterval,
+    FixtureRateSettlementKind, FixtureRateSpan, FixtureSettledRateInterval, FixtureStepCompletion,
+    FixtureStepDirections, FixtureStepError, FixtureStepFeedback, FixtureStepLimits,
+    FixtureStepProposal, FixtureStepRetirement, FixtureStepSettlement,
 };
 
 use std::{fmt, num::NonZeroU64, ptr};

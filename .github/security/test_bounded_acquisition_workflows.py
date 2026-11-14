@@ -9,10 +9,15 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def workflow_step(file, title):
+    """Select one named step without evaluating workflow expressions."""
+    text = (ROOT / file).read_text()
+    return text.split("      - name: " + title + "\n", 1)[1].split("\n      - name: ", 1)[0]
+
+
 def acquisition_step(file, title):
     """Extract one literal run block; do not evaluate workflow expressions."""
-    text = (ROOT / file).read_text()
-    section = text.split("      - name: " + title + "\n", 1)[1]
+    section = workflow_step(file, title)
     body = section.split("        run: |\n", 1)[1]
     lines = []
     for line in body.splitlines():
@@ -45,6 +50,113 @@ sys.exit(0)
 
 
 class WorkflowAcquisitionControls(unittest.TestCase):
+    def run_product_step(self, title, exit_code=0):
+        """Exercise the actual shell with a recorder instead of the Rust runner."""
+        file = ".github/workflows/rust.yml"
+        section = workflow_step(file, title)
+        raw_environment = dict(line.strip().split(": ", 1) for line in
+                               section.split("        env:\n", 1)[1].split("        run:", 1)[0].splitlines())
+        with tempfile.TemporaryDirectory(prefix="product-profile-shell-") as name:
+            base = Path(name)
+            probe = base / "python3"
+            probe.write_text(
+                "#!/usr/bin/python3\nimport json,os,sys\n"
+                "with open(os.environ['PROBE_LOG'],'a') as output:\n"
+                " json.dump({'args':sys.argv[1:],'rustup':os.environ.get('RUSTUP_TOOLCHAIN'),"
+                "'flags':os.environ.get('RUSTFLAGS')},output);output.write('\\n')\n"
+                "sys.exit(int(os.environ['PROBE_EXIT']))\n"
+            )
+            probe.chmod(0o700)
+            environment = {"PATH": str(base) + ":/usr/bin:/bin", "RUSTUP_HOME": str(base / "rustup"),
+                           "RUSTUP_TOOLCHAIN": "ambient-manager-selection", "RUSTFLAGS": "must-remain-visible",
+                           "PROBE_LOG": str(base / "calls.jsonl"), "PROBE_EXIT": str(exit_code)}
+            environment.update({key: value.replace("${{ runner.temp }}", str(base))
+                                for key, value in raw_environment.items()})
+            run = subprocess.run(["/bin/bash", "--noprofile", "--norc", "-euo", "pipefail", "-c",
+                                  acquisition_step(file, title)], cwd=base, env=environment,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+            calls = [json.loads(line) for line in (base / "calls.jsonl").read_text().splitlines()]
+            return run, calls, environment, raw_environment
+
+    def test_product_rows_route_default_and_ke_profiles_to_exact_fresh_inputs(self):
+        rows = (
+            ("Check the frozen dependency graph before package code executes", "dependencies", None,
+             "ui-m0-dependencies.json"),
+            ("Verify actual portable product code in the isolated row", "portable", None,
+             "ui-m0-portable.json"),
+            ("Check the explicit KE dependency graph before its package code executes", "dependencies",
+             "engine-ke-association", "engine-ke-association-dependencies.json"),
+            ("Verify actual portable KE ownership in the isolated explicit profile", "portable",
+             "engine-ke-association", "engine-ke-association-portable.json"),
+        )
+        for title, lane, profile, receipt in rows:
+            with self.subTest(step=title):
+                run, calls, environment, raw_environment = self.run_product_step(title)
+                self.assertEqual(run.returncode, 0, run.stderr.decode())
+                expected_environment = {"PRODUCT_SCRATCH": "${{ runner.temp }}",
+                                        "VENDOR_DIR": "${{ runner.temp }}/ui-m0-vendor"}
+                expected = ["-B", "scripts/verify.py", "--lane", lane]
+                if profile is not None:
+                    expected += ["--profile", profile]
+                expected += ["--toolchain-dir", environment["RUSTUP_HOME"] +
+                             "/toolchains/1.100.0-x86_64-unknown-linux-gnu",
+                             "--vendor-dir", environment["VENDOR_DIR"],
+                             "--scratch-root", environment["PRODUCT_SCRATCH"]]
+                if lane == "dependencies":
+                    expected_environment.update(METADATA_RECEIPT="${{ runner.temp }}/ui-m0-metadata.json",
+                                                DENY_BINARY="${{ runner.temp }}/deny-tool/cargo-deny",
+                                                DEPENDENCY_RECEIPT="${{ runner.temp }}/" + receipt)
+                    expected += ["--deny", environment["DENY_BINARY"], "--advisory-receipt",
+                                 environment["METADATA_RECEIPT"], "--json", environment["DEPENDENCY_RECEIPT"]]
+                else:
+                    expected_environment.update(NEXTEST_BINARY="${{ runner.temp }}/nextest-tool/cargo-nextest",
+                                                PRODUCT_RECEIPT="${{ runner.temp }}/" + receipt)
+                    expected += ["--nextest", environment["NEXTEST_BINARY"], "--json", environment["PRODUCT_RECEIPT"]]
+                self.assertEqual(raw_environment, expected_environment)
+                self.assertEqual(calls, [{"args": expected, "rustup": None, "flags": "must-remain-visible"}])
+
+    def test_ke_rows_propagate_refusal_and_remain_required_after_acquisition(self):
+        dependency = "Check the explicit KE dependency graph before its package code executes"
+        portable = "Verify actual portable KE ownership in the isolated explicit profile"
+        workflow = (ROOT / ".github/workflows/rust.yml").read_text()
+        self.assertLess(workflow.index("Acquire the reviewed vendor bytes without executing package code"),
+                        workflow.index(dependency))
+        self.assertLess(workflow.index("Acquire current advisory and registry metadata separately"),
+                        workflow.index(dependency))
+        self.assertLess(workflow.index(dependency), workflow.index(portable))
+        self.assertNotIn("continue-on-error:", workflow)
+        for title in (dependency, portable):
+            with self.subTest(step=title):
+                self.assertNotIn("        if:", workflow_step(".github/workflows/rust.yml", title))
+                run, calls, _, _ = self.run_product_step(title, exit_code=29)
+                self.assertEqual(run.returncode, 29, run.stderr.decode())
+                self.assertEqual(len(calls), 1)
+
+    def test_profile_admission_controls_run_without_expanding_hosted_authority(self):
+        with tempfile.TemporaryDirectory(prefix="profile-admission-shell-") as name:
+            base = Path(name)
+            probe = base / "python3"
+            probe.write_text("#!/usr/bin/python3\nimport json,os,sys\n"
+                             "with open(os.environ['PROBE_LOG'],'a') as output:\n"
+                             " json.dump(sys.argv[1:],output);output.write('\\n')\n")
+            probe.chmod(0o700)
+            run = subprocess.run(["/bin/bash", "--noprofile", "--norc", "-euo", "pipefail", "-c",
+                                  acquisition_step(".github/workflows/rust.yml",
+                                                   "Challenge product admission and result accounting")],
+                                 cwd=base, env={"PATH": str(base) + ":/usr/bin:/bin",
+                                                "PROBE_LOG": str(base / "calls.jsonl")},
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+            self.assertEqual(run.returncode, 0, run.stderr.decode())
+            calls = [json.loads(line) for line in (base / "calls.jsonl").read_text().splitlines()]
+            expected = ["-X", "dev", "-Werror", "-B", "-m", "unittest", "discover", "-s", "scripts/tests",
+                        "-p", "test_engine_ke_dependency_profile.py", "-v"]
+            self.assertEqual(calls.count(expected), 1)
+        workflow = (ROOT / ".github/workflows/rust.yml").read_text()
+        self.assertIn("    name: UI-M0 portable model\n    runs-on: ubuntu-24.04\n    timeout-minutes: 35\n"
+                      "    permissions:\n      contents: read\n", workflow)
+        self.assertNotIn("--all-features", workflow)
+        self.assertNotIn("--lane windows", workflow)
+
     def test_facade_step_removes_only_rustup_selection_before_pinned_direct_execution(self):
         with tempfile.TemporaryDirectory(prefix="facade-ci-environment-") as name:
             root = Path(name)

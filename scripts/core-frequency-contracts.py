@@ -462,3 +462,697 @@ def baseline_feedback_contracts(session, policy, report, execute_registry, phase
     combined[LEGAL_NAME] = {"source": _baseline_legal_source(), "code": None}
     markers = {"phase_plan_legal": "legal-phase-plan-contract\n", LEGAL_NAME: LEGAL_MARKER}
     return execute_registry(session, policy, report, combined, markers, BASELINE_LEGAL_SCOPE)
+
+
+# Additive current-source registration only. The historical factories above retain
+# their own fixtures, counts and meanings; this profile transfers no old score.
+PHASE_STEP_INPUTS = (
+    "scripts/core-frequency-contracts.py",
+    "scripts/tests/test_phase_step_contracts.py",
+)
+PHASE_STEP_CRITICAL_FILES = (
+    "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs",
+    "crates/time-core/src/regression/chart/roundoff/phase_plan.rs",
+    "crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs",
+    "crates/time-core/src/reference_input/rate_delivery.rs",
+    "crates/time-core/src/reference_input.rs",
+    "crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs",
+    "crates/time-core/src/regression/chart/roundoff/frequency_prior.rs",
+)
+PHASE_STEP_LEGAL_NAME = "phase_step_legal"
+PHASE_STEP_LEGAL_MARKER = "legal-phase-step-contract\n"
+PHASE_STEP_NEW_LIMITS = {"legal_executions": 1, "negative_compilations": 9}
+PHASE_STEP_LIMITS = {"legal_executions": 3, "negative_compilations": 32}
+PHASE_STEP_CODES = {
+    "phase_step_adaptive_literal": "E0451",
+    "phase_step_adaptive_mutation": "E0616",
+    "phase_step_limits_literal": "E0451",
+    "phase_step_limits_mutation": "E0616",
+    "phase_step_completion_literal": "E0451",
+    "phase_step_completion_mutation": "E0616",
+    "phase_step_live_proposal_settlement": "E0505",
+    "phase_step_double_transfer": "E0499",
+    "phase_step_retirement_escape": "E0515",
+}
+PHASE_STEP_VALIDATION_SCOPE = (
+    "Privacy and invalid-input controls do not establish mandatory Garde-call execution. "
+    "Seven separately registered validation-call boundaries remain: RawAdaptiveProfile and RawAdaptiveArea "
+    "in adaptive.rs; RawLimits, RawStepRequest, RawStepCompletion and RawStepTerminal in step.rs; "
+    "and numeric RawStep in roundoff/phase_plan.rs. Each invokes validate and repeats its shared "
+    "semantic rule for a typed cause. Removing only validate can therefore remain behaviorally "
+    "masked. A Garde-call omission control remains a generation/control gap. A future bounded "
+    "source-copy control can replace only the raw Garde closure result with a sentinel refusal, "
+    "retain its direct semantic rule and require the healthy constructor's ValidationInvariant; "
+    "then omission of validate must remove that observed refusal. Such altered-source controls "
+    "need separate candidate custody, explicit mechanism admission and actual execution; none are claimed here."
+)
+PHASE_STEP_LEGAL_SCOPE = (
+    BASELINE_LEGAL_SCOPE + " The additional Step binary executes checked adaptive-profile, "
+    "per-operation-limit and actual-completion constructors, invalid neighboring controls and "
+    "the actual owner's NoReference issue refusal with an unchanged cursor. Step issue/settle "
+    "and retirement-transfer helpers compile but are not called. Nonempty Source-to-Step "
+    "trajectories remain package-test evidence; no native clock operation is performed. "
+    + PHASE_STEP_VALIDATION_SCOPE
+)
+
+
+def _phase_step_legal_source():
+    """Exercise public checked admission; compile lifetime neighbors without fake effects."""
+    return r'''use std::num::NonZeroU64;
+use time_core::{FixtureAdaptiveHorizonProfile,FixtureAffineChart,FixtureChartDomain,
+    FixtureChartFrames,FixtureCombinationParameters,FixtureCombinationState,FixtureMinimum,
+    FixturePhaseBaseline,FixturePhaseError,FixturePhaseNow,FixturePhasePlanOwner,FixturePhaseProfile,
+    FixturePhaseResidualPermission,FixturePrincipalParameters,FixtureProjectedBatch,
+    FixtureRateClockContext,FixtureRateSettlementCursor,FixtureRateSpan,FixtureSettledRateInterval,
+    FixtureStepCompletion,FixtureStepDirections,FixtureStepError,FixtureStepFeedback,
+    FixtureStepLimits,FixtureStepRetirement};
+use time_domain::{ActiveAwakeDurationNs,ActiveAwakeNs,MonotonicNs};
+type Checked<T> = Result<T,Box<dyn std::error::Error>>;
+fn nz(value:u64)->Checked<NonZeroU64> { Ok(NonZeroU64::new(value).ok_or("zero fixture label")?) }
+fn legal_adaptive_profile(minimum:ActiveAwakeDurationNs,maximum:ActiveAwakeDurationNs)
+    ->Result<FixtureAdaptiveHorizonProfile,FixturePhaseError> {
+    FixtureAdaptiveHorizonProfile::new(4.0,minimum,maximum,0.0)
+}
+fn legal_step_limits()->Result<FixtureStepLimits,FixtureStepError> {
+    FixtureStepLimits::new(1.0/8.0,FixtureStepDirections::Both)
+}
+fn legal_step_completion(delivery:FixtureSettledRateInterval,final_frames:FixtureChartFrames)
+    ->Result<FixtureStepCompletion,FixtureStepError> {
+    FixtureStepCompletion::new(delivery,1.0/32.0,final_frames)
+}
+fn legal_step_issue_then_settle(mut owner:FixturePhasePlanOwner<'_,'_>,now:FixturePhaseNow,
+    limits:FixtureStepLimits,event:FixtureStepFeedback)->Result<(),FixtureStepError> {
+    { let proposal=owner.issue_step(now,FixturePhaseResidualPermission::Allow,limits)?;
+      let _=std::hint::black_box((proposal.ordinal(),proposal.requested_phase_seconds(),
+          proposal.requested_phase_error_seconds(),proposal.known_baseline(),
+          proposal.active_deadline(),proposal.monotonic_deadline(),proposal.provenance())); }
+    let _=std::hint::black_box(owner.settle_step(event,now));
+    Ok(())
+}
+fn legal_step_resume<'producer,'chart>(retired:&'chart mut FixtureStepRetirement<'producer>,
+    now:FixturePhaseNow)->Result<FixturePhasePlanOwner<'producer,'chart>,FixtureStepError> {
+    retired.resume_fresh(now)
+}
+fn legal_step_release_before_inspection(mut retired:FixtureStepRetirement<'_>,now:FixturePhaseNow)
+    ->Result<(),FixtureStepError> {
+    { let owner=retired.resume_fresh(now)?;
+      let _=std::hint::black_box(owner.cursor()); }
+    let _=std::hint::black_box((retired.ordinal(),retired.completion(),retired.provenance()));
+    Ok(())
+}
+fn main()->Checked<()> {
+    let minimum=ActiveAwakeNs::new(1_000_000_000).duration_since(ActiveAwakeNs::new(0))?;
+    let maximum=ActiveAwakeNs::new(16_000_000_000).duration_since(ActiveAwakeNs::new(0))?;
+    let adaptive=legal_adaptive_profile(minimum,maximum)?;
+    for ratio in [0.0,-1.0,f64::NAN,f64::INFINITY,f64::from_bits(1)] {
+        assert!(matches!(FixtureAdaptiveHorizonProfile::new(ratio,minimum,maximum,0.0),
+            Err(FixturePhaseError::InvalidProfile)));
+    }
+    assert!(matches!(FixtureAdaptiveHorizonProfile::new(4.0,maximum,minimum,0.0),
+        Err(FixturePhaseError::InvalidProfile)));
+    assert!(matches!(FixtureAdaptiveHorizonProfile::new(4.0,minimum,maximum,-1.0),
+        Err(FixturePhaseError::InvalidProfile)));
+    let limits=legal_step_limits()?;
+    assert_eq!(limits.maximum_abs_seconds(),1.0/8.0);
+    assert_eq!(limits.directions(),FixtureStepDirections::Both);
+    for cap in [0.0,-0.0,-1.0,f64::NAN,f64::INFINITY,f64::from_bits(1)] {
+        assert!(matches!(FixtureStepLimits::new(cap,FixtureStepDirections::Both),
+            Err(FixtureStepError::InvalidLimits)));
+    }
+    let frames=FixtureChartFrames::new(nz(17)?,nz(23)?,nz(19)?,nz(29)?)?;
+    let domain=FixtureChartDomain::new(MonotonicNs::new(0),MonotonicNs::new(0),
+        MonotonicNs::new(64_000_000_000))?;
+    let chart=FixtureAffineChart::new(frames,domain,0.0,0.0)?;
+    let context=FixtureRateClockContext::new(nz(101)?,nz(103)?,nz(107)?);
+    let now=FixturePhaseNow::new(context,ActiveAwakeNs::new(0),MonotonicNs::new(0));
+    let span=FixtureRateSpan::new((ActiveAwakeNs::new(0),ActiveAwakeNs::new(2_000_000_000)),
+        (MonotonicNs::new(0),MonotonicNs::new(4_000_000_000)))?;
+    let intermediate=FixtureChartFrames::new(nz(19)?,nz(29)?,nz(31)?,nz(37)?)?;
+    let delivery=FixtureSettledRateInterval::new(context,nz(1)?,span,1.0/16.0,intermediate,domain)?;
+    let final_frames=FixtureChartFrames::new(nz(31)?,nz(37)?,nz(41)?,nz(43)?)?;
+    let completion=legal_step_completion(delivery,final_frames)?;
+    assert_eq!(completion.achieved_step_seconds(),1.0/32.0);
+    let _=std::hint::black_box(completion.delivery());
+    assert_eq!(completion.final_frames().target_frame(),nz(41)?);
+    for actual in [f64::NAN,f64::INFINITY,f64::NEG_INFINITY,f64::from_bits(1)] {
+        assert!(matches!(FixtureStepCompletion::new(delivery,actual,final_frames),
+            Err(FixtureStepError::Phase{source:FixturePhaseError::Chart{..}})));
+    }
+    for actual in [0.0,-0.0] {
+        let known=FixtureStepCompletion::new(delivery,actual,final_frames)?;
+        assert_eq!(known.achieved_step_seconds().to_bits(),actual.to_bits());
+    }
+    let foreign=FixtureChartFrames::new(nz(47)?,nz(37)?,nz(41)?,nz(43)?)?;
+    assert!(matches!(FixtureStepCompletion::new(delivery,1.0/32.0,foreign),Err(FixtureStepError::Receipt)));
+    let empty=FixtureProjectedBatch::new(nz(17)?,nz(23)?,MonotonicNs::new(0),&[])?;
+    let mut producer=FixtureCombinationState::seed(&[nz(11)?],FixturePrincipalParameters::new(1.0/1024.0,0.0)?,
+        FixtureCombinationParameters::new(2.0,0.0)?,FixtureMinimum::new(1)?,&empty,&[])?;
+    let phase=FixturePhaseProfile::new(maximum,
+        MonotonicNs::new(32_000_000_000).duration_since(MonotonicNs::new(0))?,
+        1.0/4.0,1.0/8.0,1.0/2.0)?.with_adaptive_horizon(adaptive)?;
+    let cursor=FixtureRateSettlementCursor::new(&chart,context,nz(1)?);
+    let base=FixturePhaseBaseline::new(1.0/16.0)?;
+    let mut owner=FixturePhasePlanOwner::new(&mut producer,&chart,cursor,now,phase,base)?;
+    assert!(matches!(owner.issue_step(now,FixturePhaseResidualPermission::Allow,limits),
+        Err(FixtureStepError::Phase{source:FixturePhaseError::NoReference})));
+    assert!(owner.step_proposal().is_none());
+    assert_eq!(owner.cursor().next_ordinal(),Some(nz(1)?));
+    drop(owner);
+    assert_eq!(producer.emitted_rounds(),0);
+    println!("legal-phase-step-contract");
+    Ok(())
+}
+'''
+
+
+def phase_step_examples():
+    """Return the closed new1+9 registry with attributable primary operations."""
+    rows = [(PHASE_STEP_LEGAL_NAME, {"source": _phase_step_legal_source(), "code": None})]
+
+    def add(name, source, code, line, tokens, positive):
+        row = _negative(source, code, line, tokens, positive)
+        row["external_legal_neighbor"] = {
+            "specimen": PHASE_STEP_LEGAL_NAME, "function": positive,
+            "scope": "compiled typed neighbor; checked constructors and NoReference refusal execute in main",
+        }
+        rows.append((name, row))
+
+    add("phase_step_adaptive_literal", '''use time_core::FixtureAdaptiveHorizonProfile;
+use time_domain::ActiveAwakeDurationNs;
+fn bypass(minimum:ActiveAwakeDurationNs,maximum:ActiveAwakeDurationNs) {
+    let _ = FixtureAdaptiveHorizonProfile { correction_time_ratio:4.0,minimum,maximum,small_debt_threshold:0.0 };
+}
+fn main() {}
+''', "E0451", "    let _ = FixtureAdaptiveHorizonProfile { correction_time_ratio:4.0,minimum,maximum,small_debt_threshold:0.0 };",
+        ("FixtureAdaptiveHorizonProfile", "private"), "legal_adaptive_profile")
+    add("phase_step_adaptive_mutation", '''use time_core::FixtureAdaptiveHorizonProfile;
+fn bypass(profile:&mut FixtureAdaptiveHorizonProfile) {
+    profile.correction_time_ratio = 0.0;
+}
+fn main() {}
+''', "E0616", "    profile.correction_time_ratio = 0.0;",
+        ("correction_time_ratio", "private"), "legal_adaptive_profile")
+    add("phase_step_limits_literal", '''use time_core::{FixtureStepDirections,FixtureStepLimits};
+fn main() {
+    let _ = FixtureStepLimits { maximum:1.0/8.0,directions:FixtureStepDirections::Both };
+}
+''', "E0451", "    let _ = FixtureStepLimits { maximum:1.0/8.0,directions:FixtureStepDirections::Both };",
+        ("FixtureStepLimits", "private"), "legal_step_limits")
+    add("phase_step_limits_mutation", '''use time_core::FixtureStepLimits;
+fn bypass(limits:&mut FixtureStepLimits) {
+    limits.maximum = f64::INFINITY;
+}
+fn main() {}
+''', "E0616", "    limits.maximum = f64::INFINITY;", ("maximum", "private"), "legal_step_limits")
+    add("phase_step_completion_literal", '''use time_core::{FixtureChartFrames,FixtureSettledRateInterval,FixtureStepCompletion};
+fn bypass(delivery:FixtureSettledRateInterval,final_frames:FixtureChartFrames) {
+    let _ = FixtureStepCompletion { delivery,achieved:0.0,final_frames };
+}
+fn main() {}
+''', "E0451", "    let _ = FixtureStepCompletion { delivery,achieved:0.0,final_frames };",
+        ("FixtureStepCompletion", "private"), "legal_step_completion")
+    add("phase_step_completion_mutation", '''use time_core::FixtureStepCompletion;
+fn bypass(completion:&mut FixtureStepCompletion) {
+    completion.achieved = f64::NAN;
+}
+fn main() {}
+''', "E0616", "    completion.achieved = f64::NAN;", ("achieved", "private"), "legal_step_completion")
+    add("phase_step_live_proposal_settlement", '''use time_core::{FixturePhaseNow,FixturePhasePlanOwner,FixturePhaseResidualPermission,
+    FixtureStepError,FixtureStepFeedback,FixtureStepLimits};
+fn overlap(mut owner:FixturePhasePlanOwner<'_,'_>,now:FixturePhaseNow,
+    limits:FixtureStepLimits,event:FixtureStepFeedback)->Result<(),FixtureStepError> {
+    let proposal=owner.issue_step(now,FixturePhaseResidualPermission::Allow,limits)?;
+    let settled=owner.settle_step(event,now);
+    let _=std::hint::black_box(proposal.ordinal());
+    let _=std::hint::black_box(settled);
+    Ok(())
+}
+fn main() {}
+''', "E0505", "    let settled=owner.settle_step(event,now);",
+        ("owner", "borrowed"), "legal_step_issue_then_settle")
+    add("phase_step_double_transfer", '''use time_core::{FixturePhaseNow,FixtureStepError,FixtureStepRetirement};
+fn overlap(mut retired:FixtureStepRetirement<'_>,now:FixturePhaseNow)->Result<(),FixtureStepError> {
+    let first=retired.resume_fresh(now)?;
+    let second=retired.resume_fresh(now)?;
+    let _=std::hint::black_box(first.cursor());
+    let _=std::hint::black_box(second);
+    Ok(())
+}
+fn main() {}
+''', "E0499", "    let second=retired.resume_fresh(now)?;",
+        ("retired", "mutable"), "legal_step_release_before_inspection")
+    add("phase_step_retirement_escape", '''use time_core::{FixturePhaseNow,FixturePhasePlanOwner,FixtureStepError,FixtureStepRetirement};
+fn escape<'producer:'chart,'chart>(mut retired:FixtureStepRetirement<'producer>,now:FixturePhaseNow)
+    ->Result<FixturePhasePlanOwner<'producer,'chart>,FixtureStepError> {
+    retired.resume_fresh(now)
+}
+fn main() {}
+''', "E0515", "    retired.resume_fresh(now)", ("retired", "owned by the current function"), "legal_step_resume")
+    added = dict(rows)
+    if (len(rows) != 10 or len(added) != 10
+            or set(added) != {PHASE_STEP_LEGAL_NAME, *PHASE_STEP_CODES}
+            or any(added[name]["code"] != code for name, code in PHASE_STEP_CODES.items())):
+        raise ValueError("Phase-step consumers differ from their fixed new1+9 registry.")
+    return tuple(rows)
+
+
+def phase_step_contracts(session, policy, report, execute_registry, phase_examples):
+    """Register current seven-file contracts only after explicit outer-role admission.
+
+    The existing executor owns captured-source hashes, protected inputs, compiler
+    admission and exact diagnostic attribution. These checks additionally prevent
+    reusing this new registry under a historical or incompletely bound role.
+    """
+    inputs = policy.get("inputs_sha256")
+    if (policy.get("critical_files") != list(PHASE_STEP_CRITICAL_FILES)
+            or policy.get("tool_admission_profile") != "stable-core"
+            or policy.get("contracts_admitted") is not True
+            or type(inputs) is not dict
+            or not set((*PHASE_STEP_INPUTS, *PHASE_STEP_CRITICAL_FILES)).issubset(inputs)):
+        raise ValueError("Phase-step contracts require their admitted seven-file role and protected inputs.")
+    # Reuse the fixed baseline registry through its existing validation path,
+    # capturing its rows rather than executing any historical consumer twice.
+    baseline = None
+
+    def collect(_session, _policy, _report, rows, markers, scope):
+        nonlocal baseline
+        baseline = rows, markers, scope
+
+    baseline_policy = {**policy, "external_consumer_limits": dict(BASELINE_LIMITS)}
+    baseline_feedback_contracts(session, baseline_policy, report, collect, phase_examples)
+    if baseline is None:
+        raise ValueError("Phase-step contracts lack their validated predecessor registry.")
+    legacy, markers, _scope = baseline
+    rows = phase_step_examples()
+    added = dict(rows)
+    if (len(rows) != 10 or len(added) != 10
+            or set(added) != {PHASE_STEP_LEGAL_NAME, *PHASE_STEP_CODES}
+            or any(type(added[name]) is not dict or added[name].get("code") != code
+                   for name, code in PHASE_STEP_CODES.items())
+            or added[PHASE_STEP_LEGAL_NAME].get("code") is not None
+            or set(legacy) & set(added)):
+        raise ValueError("Phase-step contracts differ from their closed current registry.")
+    combined = {**legacy, **added}
+    actual = {"legal_executions": sum(row["code"] is None for row in combined.values()),
+              "negative_compilations": sum(row["code"] is not None for row in combined.values())}
+    limits = policy.get("external_consumer_limits")
+    if (type(limits) is not dict or set(limits) != set(PHASE_STEP_LIMITS)
+            or any(type(value) is not int for value in limits.values())
+            or limits != PHASE_STEP_LIMITS or actual != PHASE_STEP_LIMITS):
+        raise ValueError("Phase-step consumers differ from their fixed actual3+32 limits.")
+    markers = {**markers, PHASE_STEP_LEGAL_NAME: PHASE_STEP_LEGAL_MARKER}
+    return execute_registry(session, policy, report, combined, markers, PHASE_STEP_LEGAL_SCOPE)
+
+
+# Separate actual-source validation-call controls.  The public compiler registry
+# above remains exactly three legal executions and 32 negative compilations.
+PHASE_STEP_VALIDATION_LIMITS = {
+    "mechanisms": 7, "specimens_per_mechanism": 3, "test_executions": 21,
+}
+PHASE_STEP_VALIDATION_MODES = ("original", "sentinel", "omission")
+PHASE_STEP_VALIDATION_NAMES = (
+    "adaptive_profile", "adaptive_area", "step_limits", "step_request",
+    "step_completion", "step_terminal", "numeric_step",
+)
+PHASE_STEP_VALIDATION_FIXTURE = "crates/time-core/tests/private/phase_plan_lifecycle.rs"
+PHASE_STEP_VALIDATION_TEST = (
+    "reference_input::rate_delivery::phase_plan::tests::"
+    "__phase_step_validation_mechanism::observed"
+)
+
+_VALIDATION_OWNER = r'''
+    fn with_owner(
+        action: impl for<'producer, 'chart> FnOnce(FixturePhasePlanOwner<'producer, 'chart>) -> TestResult,
+    ) -> TestResult {
+        let chart = chart()?;
+        let mut fixture = producer(&chart)?;
+        let at = controller_clock_point(0, 4)?;
+        let batch = FixtureChartBatch::new(&chart, at.monotonic(), &fixture.entries)?;
+        let mut owner = FixturePhasePlanOwner::new(
+            &mut fixture.state, &chart,
+            FixtureRateSettlementCursor::new(&chart, clocks()?, label(1)?),
+            at, profile()?, FixturePhaseBaseline::new(1.0 / 1024.0)?,
+        )?;
+        assert!(matches!(owner.receive_reference(&batch, &fixture.strata, at)?,
+            FixturePhaseReferenceAdmission::Accepted { emitted_round } if emitted_round == label(1)?));
+        assert_eq!(owner.remaining_phase_seconds(), Some(1.0 / 32.0));
+        action(owner)
+    }
+'''
+_VALIDATION_PARTS = r'''
+    fn completion_parts(owner: &FixturePhasePlanOwner<'_, '_>)
+        -> TestResult<(FixtureSettledRateInterval, FixtureChartFrames)> {
+        let span = FixtureRateSpan::new(
+            (controller_clock_point(0, 4)?.active(), controller_clock_point(2, 8)?.active()),
+            (controller_clock_point(0, 4)?.monotonic(), controller_clock_point(2, 8)?.monotonic()),
+        )?;
+        let before = owner.chart().frames();
+        let delivery = FixtureSettledRateInterval::new(
+            clocks()?, label(1)?, span, 1.0 / 1024.0,
+            FixtureChartFrames::new(before.target_frame(), before.target_generation(), label(31)?, label(7)?)?,
+            owner.chart().domain(),
+        )?;
+        let final_frames = FixtureChartFrames::new(label(31)?, label(7)?, label(37)?, label(9)?)?;
+        Ok((delivery, final_frames))
+    }
+'''
+
+
+def phase_step_validation_cases():
+    """Return seven closed actual-consumer specimens; returning them executes no Rust."""
+    adaptive = "crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs"
+    step = "crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs"
+    numeric = "crates/time-core/src/regression/chart/roundoff/phase_plan.rs"
+    rows = []
+
+    def add(name, raw, path, sentinel_from, sentinel_to, scope_start, scope_end, body,
+            *, owner=False, parts=False, validate_indent=8):
+        rows.append({"name": name, "raw_type": raw, "owner_path": path,
+                     "append_path": PHASE_STEP_VALIDATION_FIXTURE,
+                     "sentinel_from": sentinel_from, "sentinel_to": sentinel_to,
+                     "scope_start": scope_start, "scope_end": scope_end,
+                     "validate_from": " " * validate_indent + "let validated = raw.validate();",
+                     "validate_to": " " * validate_indent + "let validated: Result<(), garde::Report> = Ok(());",
+                     "test_identity": PHASE_STEP_VALIDATION_TEST,
+                     "helpers": (_VALIDATION_OWNER if owner else "") + (_VALIDATION_PARTS if parts else ""),
+                     "body": body})
+
+    anchor = "if adaptive_profile_valid(value) { Ok(()) }"
+    add("adaptive_profile", "RawAdaptiveProfile", adaptive, anchor,
+        "if adaptive_profile_valid(value) && value.correction_time_ratio != 4.0 { Ok(()) }",
+        "impl FixtureAdaptiveHorizonProfile {", "impl fmt::Debug for FixtureAdaptiveHorizonProfile",
+        r'''
+        let minimum = ActiveAwakeNs::new(SECOND).duration_since(ActiveAwakeNs::new(0))?;
+        let maximum = ActiveAwakeNs::new(16 * SECOND).duration_since(ActiveAwakeNs::new(0))?;
+        let result = crate::FixtureAdaptiveHorizonProfile::new(4.0, minimum, maximum, 0.0);
+        if REFUSAL {
+            assert!(matches!(result, Err(FixturePhaseError::ValidationInvariant)));
+        } else { assert!(result.is_ok()); }
+        assert!(crate::FixtureAdaptiveHorizonProfile::new(2.0, minimum, maximum, 0.0).is_ok());
+        assert!(matches!(crate::FixtureAdaptiveHorizonProfile::new(0.0, minimum, maximum, 0.0),
+            Err(FixturePhaseError::InvalidProfile)));
+''')
+    anchor = "if adaptive_area_valid(*point) { Ok(()) }"
+    add("adaptive_area", "RawAdaptiveArea", adaptive, anchor,
+        "if adaptive_area_valid(*point) && *point != 0.0 { Ok(()) }",
+        "    fn new(point: f64)", "    /// Form the accepted reference",
+        r'''
+        let minimum = ActiveAwakeNs::new(SECOND).duration_since(ActiveAwakeNs::new(0))?;
+        let maximum = ActiveAwakeNs::new(16 * SECOND).duration_since(ActiveAwakeNs::new(0))?;
+        let adaptive = crate::FixtureAdaptiveHorizonProfile::new(4.0, minimum, maximum, 0.0)?;
+        assert!(super::super::AdaptiveArea::from_reference(adaptive, 1.0, minimum).is_ok());
+        assert!(matches!(super::super::AdaptiveArea::from_reference(adaptive, -1.0, minimum),
+            Err(FixturePhaseError::AdaptiveHorizon { source: crate::FixtureAdaptiveHorizonError::UnsupportedStatistic })));
+        let chart = chart()?;
+        let mut fixture = producer(&chart)?;
+        let at = controller_clock_point(0, 4)?;
+        let batch = FixtureChartBatch::new(&chart, at.monotonic(), &fixture.entries)?;
+        let mut owner = FixturePhasePlanOwner::new(
+            &mut fixture.state, &chart,
+            FixtureRateSettlementCursor::new(&chart, clocks()?, label(1)?),
+            at, profile()?.with_adaptive_horizon(adaptive)?, FixturePhaseBaseline::new(1.0 / 1024.0)?,
+        )?;
+        let result = owner.receive_reference(&batch, &fixture.strata, at)?;
+        if REFUSAL {
+            assert!(matches!(result, FixturePhaseReferenceAdmission::AdmittedNoPlan {
+                emitted_round: Some(round), reason: FixturePhaseError::AdaptiveHorizon {
+                    source: crate::FixtureAdaptiveHorizonError::ValidationInvariant
+                } } if round == label(1)?));
+            assert_eq!(owner.last_accepted_reference_active, None);
+            assert!(owner.obligation.is_none());
+        } else {
+            assert!(matches!(result, FixturePhaseReferenceAdmission::Accepted { emitted_round } if emitted_round == label(1)?));
+            assert_eq!(owner.last_accepted_reference_active, Some(at.active()));
+        }
+        assert_eq!(owner.producer.emitted_rounds(), 1);
+        assert_eq!(owner.cursor().next_ordinal(), Some(label(1)?));
+''')
+    anchor = 'limits_rule(value).map_err(|_| garde::Error::new("invalid explicit step limits"))'
+    add("step_limits", "RawLimits", step, anchor,
+        'if value.maximum == 1.0 / 16.0 { Err(garde::Error::new("validation mechanism sentinel")) } else { ' + anchor + ' }',
+        "impl FixtureStepLimits {", "    /// Copy the explicit cap",
+        r'''
+        let result = crate::FixtureStepLimits::new(1.0 / 16.0, crate::FixtureStepDirections::Both);
+        if REFUSAL {
+            assert!(matches!(result, Err(crate::FixtureStepError::Phase { source: FixturePhaseError::ValidationInvariant })));
+        } else { assert!(result.is_ok()); }
+        assert!(crate::FixtureStepLimits::new(1.0 / 8.0, crate::FixtureStepDirections::Both).is_ok());
+        assert!(matches!(crate::FixtureStepLimits::new(0.0, crate::FixtureStepDirections::Both), Err(crate::FixtureStepError::InvalidLimits)));
+''')
+    anchor = 'request_rule(value).map_err(|_| garde::Error::new("invalid finite step request"))'
+    add("step_request", "RawStepRequest", step, anchor,
+        'if value.limits.maximum == 1.0 / 16.0 { Err(garde::Error::new("validation mechanism sentinel")) } else { ' + anchor + ' }',
+        "    pub fn issue_step(", "\n    }\n",
+        r'''
+        for cap in [1.0 / 64.0, 1.0 / 16.0, 1.0 / 8.0] {
+            with_owner(|mut owner| {
+                let limits = crate::FixtureStepLimits::new(cap, crate::FixtureStepDirections::Both)?;
+                let result = owner.issue_step(controller_clock_point(0, 4)?, FixturePhaseResidualPermission::Allow, limits);
+                if cap == 1.0 / 64.0 {
+                    assert!(matches!(result, Err(crate::FixtureStepError::Magnitude)));
+                } else if REFUSAL && cap == 1.0 / 16.0 {
+                    assert!(matches!(result, Err(crate::FixtureStepError::Phase { source: FixturePhaseError::ValidationInvariant })));
+                } else { assert_eq!(result?.ordinal(), label(1)?); }
+                assert_eq!(owner.cursor().next_ordinal(), Some(label(1)?));
+                assert_eq!(owner.producer.emitted_rounds(), 1);
+                assert_eq!(owner.step_proposal().is_some(), !(cap == 1.0 / 64.0 || (REFUSAL && cap == 1.0 / 16.0)));
+                Ok(())
+            })?;
+        }
+''', owner=True)
+    anchor = 'completion_rule(value).map_err(|_| garde::Error::new("invalid known step descriptor"))'
+    add("step_completion", "RawStepCompletion", step, anchor,
+        'if value.achieved == 1.0 / 64.0 { Err(garde::Error::new("validation mechanism sentinel")) } else { ' + anchor + ' }',
+        "impl FixtureStepCompletion {", "    /// Copy the exact original aggregate interval",
+        r'''
+        with_owner(|mut owner| {
+            let limits = crate::FixtureStepLimits::new(1.0 / 8.0, crate::FixtureStepDirections::Both)?;
+            owner.issue_step(controller_clock_point(0, 4)?, FixturePhaseResidualPermission::Allow, limits)?;
+            let (delivery, final_frames) = completion_parts(&owner)?;
+            let result = crate::FixtureStepCompletion::new(delivery, 1.0 / 64.0, final_frames);
+            if REFUSAL {
+                assert!(matches!(result, Err(crate::FixtureStepError::Phase { source: FixturePhaseError::ValidationInvariant })));
+            } else { assert_eq!(result?.achieved_step_seconds(), 1.0 / 64.0); }
+            let healthy = crate::FixtureStepCompletion::new(delivery, 1.0 / 128.0, final_frames)?;
+            let broken = FixtureChartFrames::new(label(47)?, label(7)?, label(37)?, label(9)?)?;
+            assert!(matches!(crate::FixtureStepCompletion::new(delivery, 1.0 / 128.0, broken), Err(crate::FixtureStepError::Receipt)));
+            assert_eq!(owner.cursor().next_ordinal(), Some(label(1)?));
+            assert_eq!(healthy.achieved_step_seconds(), 1.0 / 128.0);
+            assert!(owner.step_proposal().is_some());
+            Ok(())
+        })?;
+''', owner=True, parts=True)
+    anchor = 'terminal_rule(value).map_err(|_| garde::Error::new("invalid matched step terminal"))'
+    add("step_terminal", "RawStepTerminal", step, anchor,
+        'if matches!(value.event, FixtureStepFeedback::Known(_)) { Err(garde::Error::new("validation mechanism sentinel")) } else { ' + anchor + ' }',
+        "fn check_terminal(value: StepTerminal)", "\n}\n",
+        r'''
+        with_owner(|mut owner| {
+            let limits = crate::FixtureStepLimits::new(1.0 / 8.0, crate::FixtureStepDirections::Both)?;
+            owner.issue_step(controller_clock_point(0, 4)?, FixturePhaseResidualPermission::Allow, limits)?;
+            let wrong = crate::FixtureStepFeedback::ProvenNoEffect { context: clocks()?, ordinal: label(2)? };
+            let crate::FixtureStepSettlement::OuterRejected { owner: returned, error } = owner.settle_step(wrong, controller_clock_point(0, 5)?) else { return Err(io::Error::other("wrong ordinal consumed").into()); };
+            assert_eq!(error, crate::FixtureStepError::Receipt);
+            let owner = returned;
+            let (delivery, final_frames) = completion_parts(&owner)?;
+            let receipt = crate::FixtureStepCompletion::new(delivery, 1.0 / 64.0, final_frames)?;
+            let result = owner.settle_step(crate::FixtureStepFeedback::Known(receipt), controller_clock_point(2, 8)?);
+            if REFUSAL {
+                let crate::FixtureStepSettlement::OuterRejected { owner, error } = result else { return Err(io::Error::other("validation did not retain pending owner").into()); };
+                assert_eq!(error, crate::FixtureStepError::Phase { source: FixturePhaseError::ValidationInvariant });
+                assert_eq!(owner.cursor().next_ordinal(), Some(label(1)?));
+                assert!(owner.step_proposal().is_some());
+                assert_eq!(owner.producer.emitted_rounds(), 1);
+            } else {
+                let crate::FixtureStepSettlement::Known(retired) = result else { return Err(io::Error::other("matching Known did not retire").into()); };
+                assert_eq!(retired.remaining_phase_seconds(), Some(1.0 / 64.0));
+                assert_eq!(retired.replacement()?.phase_at_reference_seconds(), 9.0 / 512.0);
+                assert_eq!(retired.cursor().ok_or_else(|| io::Error::other("lost cursor"))?.next_ordinal(), Some(label(2)?));
+            }
+            Ok(())
+        })?;
+        with_owner(|mut owner| {
+            let limits = crate::FixtureStepLimits::new(1.0 / 8.0, crate::FixtureStepDirections::Both)?;
+            owner.issue_step(controller_clock_point(0, 4)?, FixturePhaseResidualPermission::Allow, limits)?;
+            let result = owner.settle_step(crate::FixtureStepFeedback::ProvenNoEffect { context: clocks()?, ordinal: label(1)? }, controller_clock_point(0, 5)?);
+            let crate::FixtureStepSettlement::ProvenNoEffect(owner) = result else { return Err(io::Error::other("healthy NoEffect refused").into()); };
+            assert_eq!(owner.cursor().next_ordinal(), Some(label(2)?));
+            assert_eq!(owner.cursor().last_active_end(), None);
+            Ok(())
+        })?;
+''', owner=True, parts=True, validate_indent=4)
+    anchor = 'supported(*value, FixturePhaseNumericField::AchievedStep)\n            .map_err(|_| garde::Error::new("invalid achieved phase step"))'
+    add("numeric_step", "RawStep", numeric, anchor,
+        'if *value == 1.0 / 64.0 { Err(garde::Error::new("validation mechanism sentinel")) } else { ' + anchor + ' }',
+        "    pub(crate) fn stepped(self, achieved: f64)", "\n    }\n",
+        r'''
+        let debt = super::super::PhaseDebt::new(1.0 / 32.0, 0.0)?;
+        assert!(matches!(debt.stepped(f64::NAN), Err(crate::FixturePhaseNumericError::Input {
+            field: crate::FixturePhaseNumericField::AchievedStep, issue: crate::FixturePhaseNumericIssue::NonFinite })));
+        for achieved in [1.0 / 64.0, 1.0 / 128.0] {
+            with_owner(|mut owner| {
+                let limits = crate::FixtureStepLimits::new(1.0 / 8.0, crate::FixtureStepDirections::Both)?;
+                owner.issue_step(controller_clock_point(0, 4)?, FixturePhaseResidualPermission::Allow, limits)?;
+                let (delivery, final_frames) = completion_parts(&owner)?;
+                let receipt = crate::FixtureStepCompletion::new(delivery, achieved, final_frames)?;
+                let result = owner.settle_step(crate::FixtureStepFeedback::Known(receipt), controller_clock_point(2, 8)?);
+                let crate::FixtureStepSettlement::Known(retired) = result else { return Err(io::Error::other("numeric refusal erased Known").into()); };
+                assert_eq!(retired.achieved_step_seconds(), achieved);
+                assert_eq!(retired.requested_phase_seconds(), 1.0 / 32.0);
+                assert_eq!(retired.pre_step_phase_seconds(), Some(1.0 / 32.0));
+                assert_eq!(retired.cursor().ok_or_else(|| io::Error::other("lost consumed cursor"))?.next_ordinal(), Some(label(2)?));
+                assert_eq!(retired.provenance().ok_or_else(|| io::Error::other("lost source"))?.emitted_round(), label(1)?);
+                if REFUSAL && achieved == 1.0 / 64.0 {
+                    assert!(matches!(retired.debt_error(), Some(FixturePhaseError::Numeric { source: crate::FixturePhaseNumericError::ValidationInvariant })));
+                    assert_eq!(retired.remaining_phase_seconds(), None);
+                    assert_eq!(retired.replacement()?.phase_at_reference_seconds(), 9.0 / 512.0);
+                } else {
+                    let (remaining, displacement) = if achieved == 1.0 / 64.0 { (1.0 / 64.0, 9.0 / 512.0) } else { (3.0 / 128.0, 5.0 / 512.0) };
+                    assert_eq!(retired.remaining_phase_seconds(), Some(remaining));
+                    assert_eq!(retired.replacement()?.phase_at_reference_seconds(), displacement);
+                    assert!(retired.debt_error().is_none());
+                }
+                Ok(())
+            })?;
+        }
+''', owner=True, parts=True)
+    return tuple(rows)
+
+
+def phase_step_validation_variant(case, source, mode):
+    """Alter only one named Garde closure and its actual consumer's validate call."""
+    if mode not in PHASE_STEP_VALIDATION_MODES or case["name"] not in PHASE_STEP_VALIDATION_NAMES:
+        raise ValueError("Unknown phase-step validation specimen.")
+    if source.count(case["sentinel_from"]) != 1 or source.count(case["scope_start"]) != 1:
+        raise ValueError("Actual Garde closure or consumer source anchor changed.")
+    if mode == "original":
+        return source
+    sentinel = source.replace(case["sentinel_from"], case["sentinel_to"])
+    start = sentinel.index(case["scope_start"])
+    end = sentinel.index(case["scope_end"], start) + len(case["scope_end"])
+    selected = sentinel[start:end]
+    if selected.count(case["validate_from"]) != 1:
+        raise ValueError("Actual consumer validate statement is missing or ambiguous.")
+    if mode == "sentinel":
+        return sentinel
+    return sentinel[:start] + selected.replace(case["validate_from"], case["validate_to"]) + sentinel[end:]
+
+
+def phase_step_validation_test(case, mode):
+    """Append an actual-owner test with code-owned literal outcome expectations."""
+    if mode not in PHASE_STEP_VALIDATION_MODES:
+        raise ValueError("Unknown phase-step validation mode.")
+    if case["body"].count("REFUSAL") < 1:
+        raise ValueError("Validation specimen lacks its independent expected outcome.")
+    body = case["body"].replace("REFUSAL", "true" if mode == "sentinel" else "false")
+    marker = "PHASE_STEP_VALIDATION " + case["name"] + " " + mode
+    return ('\n#[cfg(test)]\nmod __phase_step_validation_mechanism {\n    use super::*;\n'
+            + case["helpers"] + '\n    #[test]\n    fn observed() -> TestResult {\n'
+            + body + '\n        println!("' + marker + '");\n        Ok(())\n    }\n}\n')
+
+
+def phase_step_validation_mechanisms(session, policy, report, *, deadline):
+    """Execute the seven source-bound controls only under separate finite admission."""
+    import hashlib
+    import math
+    from pathlib import Path
+    import re
+    import shutil
+    import time
+
+    limits = policy.get("validation_mechanism_limits")
+    if (policy.get("validation_mechanisms_admitted") is not True
+            or policy.get("contracts_admitted") is not True
+            or type(limits) is not dict or limits != PHASE_STEP_VALIDATION_LIMITS
+            or any(type(value) is not int for value in limits.values())
+            or policy.get("critical_files") != list(PHASE_STEP_CRITICAL_FILES)
+            or policy.get("tool_admission_profile") != "stable-core"
+            or type(policy.get("inputs_sha256")) is not dict
+            or not set((*PHASE_STEP_INPUTS, PHASE_STEP_VALIDATION_FIXTURE,
+                        *PHASE_STEP_CRITICAL_FILES)).issubset(policy["inputs_sha256"])):
+        raise ValueError("Phase-step validation mechanisms require their separate exact admission.")
+    if (type(deadline) not in (int, float) or not math.isfinite(deadline)
+            or not 0 < deadline - time.monotonic() <= policy["contracts_wall_seconds"]):
+        raise ValueError("Phase-step validation mechanisms lack the shared finite contract deadline.")
+    cases = phase_step_validation_cases()
+    if (tuple(row["name"] for row in cases) != PHASE_STEP_VALIDATION_NAMES
+            or len(cases) != limits["mechanisms"]
+            or any(row["owner_path"] not in PHASE_STEP_CRITICAL_FILES
+                   or row["append_path"] != PHASE_STEP_VALIDATION_FIXTURE
+                   or row["test_identity"] != PHASE_STEP_VALIDATION_TEST for row in cases)):
+        raise ValueError("Phase-step validation mechanism registry differs from its seven owners.")
+    prepared = {}
+    for case in cases:
+        paths = (case["owner_path"], case["append_path"])
+        source_text = {name: (session.source / name).read_text() for name in paths}
+        if any(hashlib.sha256(text.encode()).hexdigest() != policy["inputs_sha256"][name]
+               for name, text in source_text.items()):
+            raise ValueError("Validation constructor or actual fixture binding differs.")
+        for mode in PHASE_STEP_VALIDATION_MODES:
+            prepared[case["name"], mode] = (
+                source_text, phase_step_validation_variant(case, source_text[paths[0]], mode),
+                phase_step_validation_test(case, mode))
+    probe = session.work / "phase-step-validation-source"
+    shutil.copytree(session.source, probe)
+    originals = dict(session.identity)
+
+    def identity():
+        found = {}
+        for path in probe.rglob("*"):
+            if path.is_symlink() or not (path.is_file() or path.is_dir()):
+                raise ValueError("Validation source copy contains an unsupported entry.")
+            if path.is_file():
+                found[path.relative_to(probe).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+        return found
+
+    if identity() != originals:
+        raise ValueError("Validation source copy differs from the captured candidate.")
+    evidence = {"status": "incomplete", "limits": dict(limits), "specimens": [],
+                "generated_mutation_credit": 0,
+                "scope": "Actual seven Garde call/result-use boundaries only; no mutation, native or full-domain claim."}
+    report["validation_mechanisms"] = evidence
+    for case in cases:
+        paths = (case["owner_path"], case["append_path"])
+        for mode in PHASE_STEP_VALIDATION_MODES:
+            source_text, owner, test = prepared[case["name"], mode]
+            try:
+                (probe / paths[0]).write_text(owner)
+                (probe / paths[1]).write_text(source_text[paths[1]] + test)
+                expected = {**originals, paths[0]: hashlib.sha256(owner.encode()).hexdigest(),
+                            paths[1]: hashlib.sha256((source_text[paths[1]] + test).encode()).hexdigest()}
+                if identity() != expected:
+                    raise ValueError("Validation specimen changed unrelated source inputs.")
+                label = "validation-" + case["name"] + "-" + mode
+                captured = {}
+                for name in paths:
+                    capture = session.output / (label + "--" + Path(name).name)
+                    shutil.copyfile(probe / name, capture)
+                    captured[name] = hashlib.sha256(capture.read_bytes()).hexdigest()
+                remaining = math.floor(deadline - time.monotonic())
+                if remaining < 1:
+                    raise ValueError("Shared phase-step contract budget is exhausted.")
+                command = [str(session.stable / "bin/cargo"), "test", "--package", "time-core",
+                           "--lib", "--frozen", "--jobs", "6", "--manifest-path",
+                           "/work/phase-step-validation-source/Cargo.toml", PHASE_STEP_VALIDATION_TEST,
+                           "--", "--exact", "--test-threads=1", "--nocapture"]
+                output = session.run(label, command, min(90, remaining), sealed=[probe])
+                marker = "PHASE_STEP_VALIDATION " + case["name"] + " " + mode
+                names = re.findall(r"^test (\S+) \.\.\.", output, re.MULTILINE)
+                summaries = re.findall(r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", output, re.MULTILINE)
+                if (names != [PHASE_STEP_VALIDATION_TEST] or summaries != [("1", "0", "0")]
+                        or output.count(marker) != 1 or output.count("running 1 test") != 1
+                        or identity() != expected):
+                    raise ValueError("Actual validation consumer or intended neighboring assertions did not execute exactly once.")
+                evidence["specimens"].append({"name": case["name"], "mode": mode,
+                    "raw_type": case["raw_type"], "test_identity": PHASE_STEP_VALIDATION_TEST,
+                    "captured_sources_sha256": captured, "status": "passed", "generated_mutation_credit": 0})
+            finally:
+                for name, text in source_text.items():
+                    (probe / name).write_text(text)
+                if identity() != originals:
+                    raise ValueError("Validation source copy failed exact restoration.")
+    if len(evidence["specimens"]) != limits["test_executions"]:
+        raise ValueError("Phase-step validation controls are incomplete.")
+    if time.monotonic() > deadline:
+        raise ValueError("Shared phase-step contract budget is exhausted.")
+    evidence["status"] = "passed"

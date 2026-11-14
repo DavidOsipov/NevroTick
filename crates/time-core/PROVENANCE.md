@@ -1,5 +1,73 @@
 # time-core source and contract provenance
 
+## S1.4 matched finite step operation — 13 November 2026
+
+The existing phase/base owner gains a matched, explicitly requested modeled step
+under the contract in
+`tasks/s1.3-source-selection-readiness.md#matched-finite-step-operation--contract-preparation-13-november-2026`.
+Chrony 4.9 revision `8df4f1263e206585e6c4e61352d042c2dd12916a` supplies the
+[reference step/accumulation call chain](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/reference.c#L975)
+and [`LCL_ApplyStepOffset`](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/local.c#L671).
+Their unchanged complete-file hashes are retained in this document. Original
+Richard P. Curnow, Miroslav Lichvar and Andy Fiddaman notices and GPL-2.0-only
+terms accompany the adapted lifecycle source; David Osipov owns the AI-assisted
+Rust modification.
+
+This child deliberately separates requested displacement, actual aggregate-rate
+delivery and actual constant step. Positive Core displacement means Windows
+behind, opposite the upstream step-offset convention. The common ordinal/frame
+commit precedes numerical or policy failure; later Known/NoEffect/Unknown remain
+distinct. It reuses separately rounded rate/debt arithmetic, then a separately
+bounded step subtraction and fixed constant-effect composition. No synthetic
+one-second rate interval, observation credit or actual clock effect is invented.
+
+Upstream automatic `makestep` threshold/update-count selection and its step-call
+failure fallback are not ported here. There is no automatic-policy default,
+boot-persistent authority ledger or native actuator. Missing acknowledgement
+cannot prove no effect or authorize another relative step. Known recovery needs
+new source evidence and a newly admitted absolute map while retaining independent
+elapsed-counter history. Production UTC mapping, policy/broker authority and
+native qualification remain separate; formal work remains post-V1.
+
+## S1.4 adaptive phase-correction horizon — 13 November 2026
+
+The complete adaptive profile/area arithmetic now resides in
+`src/reference_input/rate_delivery/phase_plan/adaptive.rs`; the parent retains
+accepted-reference timing and lifecycle/actual-delivery custody. This 14 November
+layout extraction preserves the selected equations, checked construction and
+public API. Both files retain the original notices; the new whole file has its
+own critical qualification gate, without transferring historical scores.
+
+The existing phase owner now has an opt-in adaptive correction profile under
+`tasks/s1.3-source-selection-readiness.md#adaptive-phase-correction--implementation-contract-13-november-2026`.
+The source is the same Chrony 4.9 revision
+`8df4f1263e206585e6c4e61352d042c2dd12916a`:
+[`reference.c::get_correction_rate`](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/reference.c#L891),
+its actual reference-intake caller (942–987), and
+[`sys_generic.c::update_slew`](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sys_generic.c#L205).
+Fresh immutable source reads reproduce the complete-file hashes in the finite
+phase-plan section below. Original Richard P. Curnow, Miroslav Lichvar and Andy
+Fiddaman notices and the GPL-2.0-only grant/disclaimer accompany the adapted
+lifecycle source. David Osipov owns the AI-assisted Rust modification.
+
+The selected area rule is `((ratio * 0.5) * statistical_phase_SD) * interval`.
+The current numerical owner deliberately uses explicit active-awake intervals
+between accepted phase obligations, with monotonic expiry kept separate. It
+does not assume native clock-domain equivalence. Each issue derives its time
+constant from the original area and actually remaining debt; that denominator
+stays separate from the shorter remaining permission window. Modeled known
+delivery continues to come from the actual settlement consumer.
+
+All parameters are explicit checked values, with no shipped defaults. First or
+zero interval/SD gives zero area; unsupported nonzero arithmetic refuses instead
+of importing donor NaN/clamp behavior. Exact bit/integer conversion rounds the
+selected binary64 duration upward to integer nanoseconds. Existing requested-rate
+error bounds describe the resulting fixed decision, not an ideal nonlinear law,
+statistical confidence or physical uncertainty. Native stop-delay heuristics,
+fast slew, step policy, physical actuation and production authority remain outside
+this child. Source, focused Rust execution and later phase qualification remain
+distinct; formal work remains post-V1.
+
 ## S1.4 conditional frequency-prior adaptation — 8 November 2026
 
 The reviewed Revision 2 contract in

@@ -1539,3 +1539,95 @@ Future dependent execution must admit the restored source and actual worker
 commands under the existing R4-B-02 / CHECK-19, CHECK-20 and CHECK-26 owners.
 Native Windows, metrics/generation, package/release gates and all existing
 native/fuzz/storage/UI holds and post-V1 formal deferral remain unchanged.
+
+### Hosted startup and explicit EP1 routing — 14 November 2026
+
+H08/H09 belong to the owner's [additional contract handoff](engine-transport-pilot.md#additional-contract-and-integration-handoff--14-november-2026),
+under CHECK-19/25/26/27. Current main/guidance is `02e7e907`; the dirty/staged
+product is separate. Live push runs 43509873376 (Rust) and 43509875354 (Security)
+retain startup_failure, attempt 1 and zero jobs/check-runs. Their startup annotations
+explicitly reject upstream checkout and CodeQL action references under the actual
+repository policy enabled=true/allowed_actions=local_only/sha_pinning_required=true.
+No billing or Rust-error inference is needed. CodeQL's false execution conditions
+do not avoid startup validation. Existing rulesets 26069359/26110199 retain the
+Security gate/UI-M0 portable model checks under integration 15368. Read API admin
+status is not proven Administration-write capability.
+
+[NV-DEC-001 §6.4](../docs/nevrotick-owner-decisions.md#64-hosted-actions-trust-policy--14-november-2026)
+owns the concrete pending two-repository/immutable-SHA allowlist and rollback.
+Only that owner trust decision/settings transition and actual hosted execution
+are held; no settings write/rerun is performed without it. Keep read-only tokens,
+full pinning, rules and CodeQL deferral. Old-main runs cannot qualify new dirty
+source. Raw current API/annotation observations are retained under
+`/home/david_osipov/.local/share/nevrotick/contract-integration-hardening-20261114-v1/hosted-audit/`.
+
+The H09 source child retains both default verification rows and adds explicit
+engine-ke-association dependency/portable rows with unique receipts and the same
+complete freshly acquired lockfile/vendor/tool/advisory inputs. There is no new
+prepare-product profile flag, dependency or all-features row. Existing verifier
+selection requires twelve KE cases in ordinary and optimized Engine runs. Extend
+the actual-shell workflow controls for profile routing, fail-fast and fresh
+receipts; their inert execution is not an actual hosted product run. Preserve the
+35-minute job/worker bounds and native/provider holds. Record integrated source
+checks separately from the still-required hosted exact-candidate results.
+
+The source checkpoint now passes all 51 repository-security Python controls and
+pinned workflow analyzers. Local explicit-EP1 Engine tests, default compatibility
+and GNU/MSVC static rows pass within their focused source scope. The broad local
+folder secret scan remains blocked on ignored retained service receipts; current
+tracked-candidate paths are not those findings. Preserve that raw failure and
+check the complete materialized candidate with unchanged scanner configuration.
+H08 owner approval and actual hosted exact-candidate execution remain missing;
+source routing and passing inert shell controls are not their substitutes.
+
+Complete staged-source materialization now passes the same pinned scanner and
+unchanged-config directory check, with all raw failure/scope distinctions retained.
+This satisfies this source candidate scan only; ignored local service receipts
+remain outside it and their broad-folder findings remain unresolved. H08/H09
+settings/hosted qualification remains open under the pending owner decision.
+
+### Effective mutation compiler concurrency — 14 November 2026
+
+The [current Core trial and causal correction](s1.3-source-selection-readiness.md#seven-owner-mutation-admission--14-november-2026)
+show that ten outer workers plus ten inherited jobserver tokens admit twenty
+compiler jobs despite `CARGO_BUILD_JOBS=1`. This is an execution-recipe defect;
+it does not establish a Rust-upgrade regression or product mathematical defect.
+The GNU-only phase/Step fix selects zero additional tokens and strict 10/8/6
+outer profiles, preserving all existing caps and gates. Its 302 Python controls
+pass. After David's resource authorization, the actual control observes sixteen
+compiler processes under eight extra tokens versus eight under zero, one per
+Cargo. Its 88 compiler traces have independent raw-log/identity/interval review;
+both five-case baselines and ten-variant fixture sets complete, with zero product
+kill credit. Peak memory is 414,908,416 bytes in 19.758 seconds, without OOM or
+PID-limit events. Subsequent product trials and causal-reader repairs retain
+their exact historical scopes in the Core task; they supply no current score.
+
+The [V5 numerical assertion stop and final V6 envelope](s1.3-source-selection-readiness.md#v5-numerical-assertion-stop-and-final-v6-envelope--14-november-2026)
+preserves ten outer workers with zero extra jobserver tokens. V5 product
+`a3facab1` ran all 1,243 variants and passed six scoped owner gates; phase-numeric
+remains incomplete after 23 caught rows lack admitted causal evidence, including
+three without a semantic assertion. Its original failure and V5's baseline,
+coverage, compiler and validation results retain their historical scope.
+
+The [V6 final qualification](s1.3-source-selection-readiness.md#v6-final-qualification--seven-selected-owners)
+passes on 603-input product `7701e3b3`, private policy `5e127c28`: 720 baseline
+cases (608 ordinary/112 doctests), seven line gates, 3 legal/32 negative compiler
+controls, 21 validation specimens and all seven 95% mutation gates. All 1,243
+variants reconcile as 819 caught, 408 compiler-unviable and 16 exact equivalents,
+with zero owner timeouts and no added kills from equivalence.
+The first union remains incomplete at 90 seconds; its one reviewed data-only
+completion passes in 156.470110368 seconds, peak 322,715,648 bytes. Both attempts
+remain charged to the original 9505.109141993/10,800-second ledger; no reset,
+Rust rerun or old-receipt adoption follows. Main stays closed.
+
+After staging, [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+routes the accepted [truthful numerical CLI projection](engine-transport-pilot.md#truthful-numerical-cli-projection--contract-preparation-14-november-2026)
+child. Freeze its source/checks/budget before implementation; this routing claims
+no implementation or new qualification.
+
+Outer-worker configuration is not a universal compiler-process-count ceiling.
+Reconcile effective implicit/shared slots before admitting other profiles.
+No compiler/tool binary, dependency graph, shipping profile or Windows setting
+changes follow. Native 235-case evidence remains tied to historical `1cbddfb3`;
+full Core/native/release qualification and the separate H02/H08/H09 and supplier
+gates remain open.

@@ -2,7 +2,7 @@
 //! Public-material deterministic cases, with no UDP/TLS/native qualification.
 
 #[path = "../recovery/tests.rs"]
-mod recovery_tests;
+pub(in crate::nts_ke_experiment) mod recovery_tests;
 
 use std::collections::VecDeque;
 use std::io;
@@ -61,6 +61,8 @@ pub(super) enum ScriptReady {
 #[derive(Clone, Copy)]
 enum ScriptSend {
     Full,
+    /// Complete the send, then inject a synthetic UTC step into its after capture.
+    AfterWallStep,
     Short,
     Failed(io::ErrorKind),
     Unknown,
@@ -155,9 +157,10 @@ impl Script {
         destination.copy_from_slice(packet);
         self.packet_bytes = packet.len();
         match self.send {
-            ScriptSend::Full | ScriptSend::CancelBeforeGuard | ScriptSend::ScopeStopBeforeGuard => {
-                (SendOutcome::Completed(packet.len()), false)
-            }
+            ScriptSend::Full
+            | ScriptSend::AfterWallStep
+            | ScriptSend::CancelBeforeGuard
+            | ScriptSend::ScopeStopBeforeGuard => (SendOutcome::Completed(packet.len()), false),
             ScriptSend::Short => (
                 SendOutcome::Completed(packet.len().saturating_sub(1)),
                 false,
@@ -165,6 +168,25 @@ impl Script {
             ScriptSend::Failed(kind) => (SendOutcome::Failed(kind), false),
             ScriptSend::Unknown => (SendOutcome::Unknown, false),
             ScriptSend::CancelAfterFull => (SendOutcome::Completed(packet.len()), true),
+        }
+    }
+
+    /// Inject only the closed UTC fault; retain the actual captured monotonic bracket.
+    /// This changes neither the host clock nor syscall, receipt or join ownership.
+    /// # Errors
+    /// Refuse an unrepresentable synthetic UTC coordinate rather than hiding the fault.
+    pub(super) fn observe_send_after(
+        &self,
+        captured: crate::SoftwareClock,
+    ) -> Result<crate::SoftwareClock, Failure> {
+        if matches!(self.send, ScriptSend::AfterWallStep) {
+            let utc = captured
+                .utc()
+                .checked_add(Duration::from_secs(60))
+                .ok_or(Failure::Control)?;
+            Ok(crate::SoftwareClock { utc, ..captured })
+        } else {
+            Ok(captured)
         }
     }
 
@@ -1351,7 +1373,6 @@ fn invocation_stop_orders_retired_commit_without_rewriting_history() -> Result<(
                 let committed = completion.commit(owner)?;
                 assert_eq!(stop.request_stop()?, StopDisposition::Latched);
                 assert_eq!(control.cancel()?, CancelOutcome::AlreadyCommitted);
-                committed.check_control(control)?;
                 let summary = committed.into_summary();
                 assert!(summary.transmitted);
                 assert_eq!(summary.cookies, 1);

@@ -20,7 +20,7 @@ use crate::nts_ke_experiment::job::{
 };
 use crate::nts_ke_experiment::process::ProcessClaim;
 use crate::nts_ke_experiment::{
-    InvocationCompletion, RunFailed, drive_invocation_with, run_synchronously_with,
+    InvocationCompletion, RunFailed, drive_invocation_with, output, run_synchronously_with,
 };
 
 /// Finite component-handshake allowance, not a product/native-operation deadline.
@@ -173,8 +173,11 @@ fn collect(slot: &'static WorkerSlot) -> Result<JoinedOutcome, Failure> {
         slot.observer().poll_until(Instant::now() + WAIT),
         Observation::Joined
     );
-    let outcome = slot.take_result().map_err(|_| Failure::Control)?;
-    assert!(matches!(slot.take_result(), Err(CollectError::NotReady)));
+    let outcome = slot.take_fixture_result().map_err(|_| Failure::Control)?;
+    assert!(matches!(
+        slot.take_fixture_result(),
+        Err(CollectError::NotReady)
+    ));
     assert_eq!(
         slot.observer().poll_until(Instant::now() + WAIT),
         Observation::Taken
@@ -202,7 +205,7 @@ fn whole_job_prestart_stop_preserves_original_control_and_no_producer() -> Resul
     let (start, gate) = owner_gate();
     let mut hooks = Hooks::none();
     hooks.before_start = Some(start);
-    SLOT.submit_with(
+    SLOT.submit_fixture(
         prepared,
         &ADMISSION,
         component_provider,
@@ -221,7 +224,7 @@ fn whole_job_prestart_stop_preserves_original_control_and_no_producer() -> Resul
     .map_err(|_| Failure::Control)?;
     gate.wait(&SLOT)?;
     let stopped = stop.request_stop()?;
-    let pending = SLOT.take_result();
+    let pending = SLOT.take_fixture_result();
     gate.release()?;
     let outcome = collect(&SLOT)?;
     assert_eq!(stopped, StopDisposition::Latched);
@@ -254,7 +257,7 @@ fn whole_job_expired_original_refuses_actual_startup() -> Result<(), Failure> {
     let prepared = PreparedInvocation::checked_fixture(config, control);
     let entered = Arc::new(AtomicBool::new(false));
     let observed = Arc::clone(&entered);
-    SLOT.submit_with(
+    SLOT.submit_fixture(
         prepared,
         &ADMISSION,
         component_provider,
@@ -299,7 +302,7 @@ fn whole_job_callback_abandonment_keeps_custody_and_failure_facts() -> Result<()
         admission_cleanup: Some(Failure::Control),
     };
     let (producer_hold, gate) = producer_gate();
-    SLOT.submit_with(
+    SLOT.submit_fixture(
         prepared,
         &ADMISSION,
         component_provider,
@@ -334,7 +337,7 @@ fn whole_job_callback_abandonment_keeps_custody_and_failure_facts() -> Result<()
     let stopped = stop.request_stop()?;
     let still_running = SLOT.observer().poll_until(Instant::now() + WAIT);
     let second = input(ExchangeMode::Preview)?;
-    let refused = SLOT.submit_with(
+    let refused = SLOT.submit_fixture(
         second.prepared,
         &ADMISSION,
         component_provider,
@@ -345,7 +348,7 @@ fn whole_job_callback_abandonment_keeps_custody_and_failure_facts() -> Result<()
         },
         Hooks::none(),
     );
-    let premature = SLOT.take_result();
+    let premature = SLOT.take_fixture_result();
     gate.release()?;
     let outcome = collect(&SLOT)?;
     assert_eq!(timed_out, Observation::TimedOut);
@@ -392,7 +395,7 @@ fn whole_job_protected_commit_waits_for_actual_outer_retirement() -> Result<(), 
         assert_eq!(config_at_provider.strong_count(), 1);
         observed_order.store(true, Ordering::Release);
     }));
-    SLOT.submit_with(
+    SLOT.submit_fixture(
         prepared,
         &ADMISSION,
         component_provider,
@@ -428,7 +431,7 @@ fn whole_job_protected_commit_waits_for_actual_outer_retirement() -> Result<(), 
     gate.wait(&SLOT)?;
     let live_config = config_lifetime.strong_count();
     let live_provider = provider_witness.get().map(Weak::strong_count);
-    let withheld = SLOT.take_result();
+    let withheld = SLOT.take_fixture_result();
     let hint = SLOT.observer().poll_until(Instant::now() + WAIT);
     let stopped = stop.request_stop()?;
     gate.release()?;
@@ -466,7 +469,7 @@ fn whole_job_stop_before_protected_commit_cannot_publish() -> Result<(), Failure
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
     let Input { prepared, stop, .. } = input(ExchangeMode::ProtectedDatagram)?;
     let (hold, gate) = producer_gate();
-    SLOT.submit_with(
+    SLOT.submit_fixture(
         prepared,
         &ADMISSION,
         component_provider,
@@ -524,7 +527,7 @@ fn whole_job_prespawn_refusal_is_not_completion_or_process_use() -> Result<(), F
     let observed = Arc::clone(&entered);
     let mut hooks = Hooks::none();
     hooks.spawn_refusal = Some(std::io::ErrorKind::OutOfMemory);
-    let submission = SLOT.submit_with(
+    let submission = SLOT.submit_fixture(
         prepared,
         &ADMISSION,
         component_provider,
@@ -543,7 +546,10 @@ fn whole_job_prespawn_refusal_is_not_completion_or_process_use() -> Result<(), F
         Observation::NotSubmitted(expected)
     );
     assert!(matches!(SLOT.collect(), Err(CollectError::NotReady)));
-    assert!(matches!(SLOT.take_result(), Err(CollectError::NotReady)));
+    assert!(matches!(
+        SLOT.take_fixture_result(),
+        Err(CollectError::NotReady)
+    ));
     assert!(!entered.load(Ordering::Acquire));
     assert_eq!(config_lifetime.strong_count(), 0);
     assert!(ADMISSION.claim().is_ok());
@@ -578,7 +584,7 @@ fn whole_job_panic_before_result_seals_payload_without_completion() -> Result<()
         config_lifetime,
         ..
     } = input(ExchangeMode::Preview)?;
-    SLOT.submit_with(
+    SLOT.submit_fixture(
         prepared,
         &ADMISSION,
         component_provider,
@@ -612,6 +618,8 @@ fn whole_job_retirement_panic_preserves_recorded_primary_and_secondaries() -> Re
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
     static DROPS: AtomicUsize = AtomicUsize::new(0);
+    /// Opaque synthetic payload whose bytes must never enter either failure row.
+    const PANIC_SECRET: &str = "synthetic-retirement-panic-secret-7461";
     let Input {
         prepared,
         config_lifetime,
@@ -624,9 +632,9 @@ fn whole_job_retirement_panic_preserves_recorded_primary_and_secondaries() -> Re
     };
     let mut hooks = Hooks::none();
     hooks.before_retire = Some(Box::new(|| {
-        std::panic::resume_unwind(Box::new(Payload { drops: &DROPS }))
+        std::panic::resume_unwind(Box::new((Payload { drops: &DROPS }, PANIC_SECRET)))
     }));
-    SLOT.submit_with(
+    SLOT.submit_fixture(
         prepared,
         &ADMISSION,
         component_provider,
@@ -638,7 +646,42 @@ fn whole_job_retirement_panic_preserves_recorded_primary_and_secondaries() -> Re
         hooks,
     )
     .map_err(|_| Failure::Control)?;
-    let outcome = collect(&SLOT)?;
+    let failure = RunFailed::Abnormal(collect(&SLOT)?);
+    let mut emitted = Vec::new();
+    assert!(output::write_run_failure(&failure, &mut emitted).is_ok());
+    let expected = concat!(
+        "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=worker-termination cause=panicked retirement_confirmed=0\n",
+        "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=handshake cause=io cleanup_stage=shutdown cleanup_cause=io admission_stage=currentness admission_cause=control\n"
+    );
+    assert_eq!(emitted, expected.as_bytes());
+    assert!(
+        !emitted
+            .windows(PANIC_SECRET.len())
+            .any(|bytes| bytes == PANIC_SECRET.as_bytes())
+    );
+    assert!(
+        !emitted
+            .windows(b"completed=1".len())
+            .any(|bytes| bytes == b"completed=1")
+    );
+
+    let mut full = std::io::Cursor::new([0_u8; 32]);
+    let result = output::write_run_failure(&failure, &mut full);
+    assert!(result.is_err(), "full failure sink must refuse");
+    let error = result.err().ok_or(Failure::Control)?;
+    assert_eq!(error.kind(), std::io::ErrorKind::WriteZero);
+    assert_eq!(full.position(), 32);
+    assert_eq!(full.get_ref(), &expected.as_bytes()[..32]);
+    let mut empty = std::io::Cursor::new([]);
+    let result = output::write_run_failure(&failure, &mut empty);
+    assert!(result.is_err(), "empty failure sink must refuse");
+    let error = result.err().ok_or(Failure::Control)?;
+    assert_eq!(error.kind(), std::io::ErrorKind::WriteZero);
+    assert_eq!(empty.position(), 0);
+
+    let RunFailed::Abnormal(outcome) = &failure else {
+        return Err(Failure::Control);
+    };
     assert!(
         matches!(&outcome.operation, Some(Err(actual)) if *actual == primary),
         "KE-JOB-05-recorded-failure-survives"
@@ -665,7 +708,7 @@ fn whole_job_self_join_refuses_without_moving_the_actual_handle() -> Result<(), 
     let mut hooks = Hooks::none();
     hooks.before_start = Some(start);
     let (observed_tx, observed_rx) = sync_channel(1);
-    SLOT.submit_with(
+    SLOT.submit_fixture(
         prepared,
         &ADMISSION,
         component_provider,
@@ -767,7 +810,7 @@ fn whole_job_actual_join_waits_for_thread_local_destruction() -> Result<(), Fail
             watchdog_failed: Arc::clone(&watchdog_failed),
             finished: Arc::clone(&finished),
         };
-        SLOT.submit_with(
+        SLOT.submit_fixture(
             prepared,
             &ADMISSION,
             component_provider,
@@ -802,12 +845,12 @@ fn whole_job_actual_join_waits_for_thread_local_destruction() -> Result<(), Fail
                 _ => break observed,
             }
         };
-        let take_while_held = SLOT.take_result();
+        let take_while_held = SLOT.take_fixture_result();
         let receipt_while_held = collected_rx.recv_timeout(Duration::from_millis(50));
         let finished_before_release = finished.load(Ordering::Acquire);
         let released = gate.release();
         let collector_return = collector.join().map_err(|_| Failure::Control)?;
-        let final_result = SLOT.take_result();
+        let final_result = SLOT.take_fixture_result();
 
         // Reject fixture failures before any marker that can establish behavioral RED.
         released?;
@@ -847,7 +890,10 @@ fn whole_job_actual_join_waits_for_thread_local_destruction() -> Result<(), Fail
         assert!(
             matches!(outcome.operation, Some(Ok(completion)) if !completion.summary().transmitted)
         );
-        assert!(matches!(SLOT.take_result(), Err(CollectError::NotReady)));
+        assert!(matches!(
+            SLOT.take_fixture_result(),
+            Err(CollectError::NotReady)
+        ));
         assert!(matches!(ADMISSION.claim(), Err(Failure::ProcessUsed)));
         Ok(())
     })
@@ -864,7 +910,7 @@ fn submit_facade_script(
     producers: Arc<AtomicUsize>,
 ) -> Result<(), SubmitError> {
     submissions.fetch_add(1, Ordering::AcqRel);
-    slot.submit_with(
+    slot.submit_fixture(
         prepared,
         admission,
         component_provider,
@@ -892,7 +938,7 @@ fn drain_facade_observation(
             collect(slot)?;
         }
         Observation::Joined => {
-            slot.take_result().map_err(|_| Failure::Control)?;
+            slot.take_fixture_result().map_err(|_| Failure::Control)?;
         }
         Observation::Unused | Observation::Taken | Observation::NotSubmitted(_) => {}
         Observation::Busy | Observation::Joining | Observation::Control | Observation::TimedOut => {
@@ -1095,7 +1141,7 @@ fn check_joined_protected_history(
             }))
         }));
     }
-    slot.submit_with(
+    slot.submit_fixture(
         prepared,
         admission,
         component_provider,
@@ -1160,7 +1206,10 @@ fn check_joined_protected_history(
             assert_eq!(PANIC_DROPS.load(Ordering::Acquire), 0);
         }
     }
-    assert!(matches!(slot.take_result(), Err(CollectError::NotReady)));
+    assert!(matches!(
+        slot.take_fixture_result(),
+        Err(CollectError::NotReady)
+    ));
     assert!(matches!(admission.claim(), Err(Failure::ProcessUsed)));
     drop(completion);
     assert_eq!(expected.identity.strong_count(), 0);
@@ -1237,10 +1286,9 @@ fn facade_permanent_submission_refusal_preserves_cause_after_healthy_join() -> R
         submit_facade_script(slot, prepared, &ADMISSION, &submissions, produced)
     })
     .map_err(|_| Failure::Control)?;
-    assert!(matches!(
-        completed,
-        crate::nts_ke_experiment::datagram::ReceivedCompletion::Preview(_)
-    ));
+    assert!(completed.protected().is_none());
+    assert_eq!(completed.projection().numerical(), "not_attempted");
+    assert_eq!(completed.projection().numerical_reason(), "none");
     drop(completed);
     let config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
     let unsubmitted = Arc::downgrade(&config.lifetime);
@@ -1284,7 +1332,7 @@ fn facade_actual_operation_failure_preserves_all_original_causes() -> Result<(),
     let config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
     let lifetime = Arc::downgrade(&config.lifetime);
     let result = run_synchronously_with(config, &SLOT, None, |slot, prepared| {
-        slot.submit_with(
+        slot.submit_fixture(
             prepared,
             &ADMISSION,
             component_provider,
@@ -1336,7 +1384,7 @@ fn facade_actual_retirement_panic_retains_owning_protected_history() -> Result<(
         hooks.before_retire = Some(Box::new(|| {
             std::panic::resume_unwind(Box::new(Payload { drops: &DROPS }))
         }));
-        slot.submit_with(
+        slot.submit_fixture(
             prepared,
             &ADMISSION,
             component_provider,

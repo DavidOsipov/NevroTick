@@ -39,7 +39,7 @@
 use std::fmt;
 
 use garde::Validate;
-use time_domain::{MonotonicDurationNs, MonotonicNs};
+use time_domain::{ActiveAwakeDurationNs, MonotonicDurationNs, MonotonicNs};
 
 use super::{NANOSECONDS_PER_SECOND, bound_arithmetic, coefficient_addition_error};
 use crate::regression::normalization::integer_to_f64;
@@ -2131,8 +2131,8 @@ impl FrequencyAnchor {
 /// # Errors
 /// Reject raw ratio/error, integer envelope or a contradictory span relation.
 pub(crate) fn check_active_ratio_span(
-    active_ns: u64,
-    mono_ns: u64,
+    active: ActiveAwakeDurationNs,
+    monotonic: MonotonicDurationNs,
     ratio: f64,
     error: f64,
 ) -> Result<(), FixtureFrequencyNumericError> {
@@ -2143,9 +2143,9 @@ pub(crate) fn check_active_ratio_span(
     ratio_rule(&raw.value)?;
     validated.map_err(|_| FixtureFrequencyNumericError::ValidationInvariant)?;
     let (ratio, error) = raw.value;
-    let active = integer_to_f64(active_ns, NormalizationComponent::Time)
+    let active = integer_to_f64(active.nanoseconds(), NormalizationComponent::Time)
         .map_err(|source| FixtureFrequencyNumericError::Duration { source })?;
-    let mono = integer_to_f64(mono_ns, NormalizationComponent::Time)
+    let mono = integer_to_f64(monotonic.nanoseconds(), NormalizationComponent::Time)
         .map_err(|source| FixtureFrequencyNumericError::Duration { source })?;
     let step = FixtureFrequencyNumericStep::ActiveRatioSpan;
     let range = Interval::around(ratio, error, step)?.multiply(Interval::point(mono), step)?;

@@ -44,6 +44,8 @@ pub enum FixturePhaseNumericField {
     AggregateRoundoff,
     /// Positive conservative lower bound on exact remaining active seconds.
     RemainingSeconds,
+    /// Known constant achieved displacement, in seconds, independent of any rate.
+    AchievedStep,
 }
 
 /// Unsupported scalar property in the maintained normal-or-zero value envelope.
@@ -90,6 +92,8 @@ pub enum FixturePhaseNumericStep {
     TransientBound,
     /// Bound aggregate proposal addition and inherited transient error.
     AggregateBound,
+    /// Subtract one independently known constant step from the carried debt.
+    StepSubtract,
 }
 
 /// Fixed numerical refusal without raw phase, rate, timestamps or validation reports.
@@ -229,6 +233,17 @@ struct RawSettlement {
         settlement_rule(value).map_err(|_| garde::Error::new("invalid phase settlement numerics"))
     }))]
     value: SettlementInputs,
+}
+
+/// Mandatory scalar admission for a known constant step, never a fabricated rate.
+#[derive(Validate)]
+struct RawStep {
+    /// The shared numerical support rule owns all otherwise untrusted step bits.
+    #[garde(custom(|value: &f64, (): &()| {
+        supported(*value, FixturePhaseNumericField::AchievedStep)
+            .map_err(|_| garde::Error::new("invalid achieved phase step"))
+    }))]
+    value: f64,
 }
 
 /// Immutable explicit proposal inputs, with no adopted or implicit defaults.
@@ -437,6 +452,36 @@ impl PhaseDebt {
             reduced_error,
             base,
             base_error,
+            FixturePhaseNumericStep::DebtBound,
+        )?;
+        Self::new(result, error)
+    }
+
+    /// Subtract a known stored constant displacement through one checked RN step.
+    ///
+    /// The achieved step is an exact modeled binary64 point; inherited debt error
+    /// and the subtraction's rounding error remain separate from physical error.
+    /// The lifecycle has already consumed the actual event; this immutable helper
+    /// grants no acknowledgement, elapsed interval, source credit or authority.
+    /// # Errors
+    /// Refuse unsupported step bits, subtraction/bound arithmetic or final debt
+    /// admission without changing either operand or refunding the matched event.
+    pub(crate) fn stepped(self, achieved: f64) -> Result<Self, FixturePhaseNumericError> {
+        let raw = RawStep { value: achieved };
+        let validated = raw.validate();
+        supported(raw.value, FixturePhaseNumericField::AchievedStep)?;
+        validated.map_err(|_| FixturePhaseNumericError::ValidationInvariant)?;
+        let result = point(
+            self.point,
+            raw.value,
+            ArithmeticOperation::Subtract,
+            FixturePhaseNumericStep::StepSubtract,
+        )?;
+        let error = addition_error(
+            self.point,
+            self.error,
+            -raw.value,
+            0.0,
             FixturePhaseNumericStep::DebtBound,
         )?;
         Self::new(result, error)

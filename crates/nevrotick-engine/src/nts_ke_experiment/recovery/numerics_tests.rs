@@ -2,6 +2,7 @@
 //! Conditional numerical receiving through the actual Script, worker and joined facade.
 //! The fixed Era0 declaration is a model, never a healthy-time or eligibility claim.
 
+use std::io::{self, Write};
 use std::sync::mpsc::TryRecvError;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -14,7 +15,230 @@ use super::{
 };
 use crate::nts_ke_experiment::datagram::ReceivedCompletion;
 use crate::nts_ke_experiment::job::PreparedInvocation;
+use crate::nts_ke_experiment::output;
 use crate::{ExperimentalProfile, MeasurementRefusal};
+
+/// Recognizable admitted input that must never become a diagnostic field.
+const SECRET_NAME: &str = "synthetic-cli-secret.example";
+
+/// Observe the real writer with independent status expectations and original counts.
+/// # Errors
+/// Preserve a real sink failure.
+/// # Panics
+/// Fail on an incorrect row, extra data, unbounded output or a privacy leak.
+fn assert_output(
+    completion: &ReceivedCompletion,
+    state: &str,
+    reason: &str,
+) -> Result<(), Failure> {
+    let mut bytes = Vec::new();
+    let written = output::write_completion(&completion.projection(), &mut bytes);
+    assert!(
+        written.is_ok(),
+        "healthy diagnostic sink must accept the original record"
+    );
+    written.map_err(|_| Failure::Control)?;
+    let summary = completion.summary();
+    let expected = format!(
+        "scope=engine-ke-prototype eligible=0 fresh_sync=0 completed=1 cookies={} cookie_bytes={} sealed_packet_bytes={} transmitted={} native_cleanup_qualified=0 numerical={state} numerical_reason={reason}\n",
+        summary.cookies,
+        summary.cookie_bytes,
+        summary.packet_bytes,
+        u8::from(summary.transmitted)
+    );
+    assert_eq!(bytes, expected.as_bytes());
+    assert!(bytes.is_ascii() && bytes.len() <= 384);
+    let text = std::str::from_utf8(&bytes).map_err(|_| Failure::Control)?;
+    for forbidden in [
+        SECRET_NAME,
+        "127.0.0.1",
+        "22334455",
+        "33445566",
+        "offset=",
+        "age=",
+    ] {
+        assert!(!text.contains(forbidden));
+    }
+    Ok(())
+}
+
+/// Finite sink controls retain delivered bytes and exact write/flush observations.
+#[derive(Default)]
+struct Sink {
+    /// Bytes actually accepted by this sink.
+    bytes: Vec<u8>,
+    /// Maximum bytes accepted per write.
+    chunk: usize,
+    /// Total bounded byte capacity.
+    capacity: usize,
+    /// Closed failure injected before accepting bytes.
+    write_error: Option<io::ErrorKind>,
+    /// Accepted prefix length before injecting that write failure.
+    write_error_after: usize,
+    /// Refuse the final flush after accepting a complete row.
+    flush_error: bool,
+    /// Report an invalid extent without accepting bytes.
+    impossible_extent: bool,
+    /// Actual write invocations, including refusals.
+    writes: usize,
+    /// Actual flush invocations, including refusals.
+    flushes: usize,
+}
+
+impl Write for Sink {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        self.writes += 1;
+        if let Some(kind) = self
+            .write_error
+            .filter(|_| self.bytes.len() >= self.write_error_after)
+        {
+            return Err(io::Error::new(kind, SECRET_NAME));
+        }
+        if self.impossible_extent {
+            return Ok(bytes.len() + 1);
+        }
+        let count = bytes
+            .len()
+            .min(self.chunk)
+            .min(self.capacity - self.bytes.len());
+        self.bytes.extend_from_slice(&bytes[..count]);
+        Ok(count)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.flushes += 1;
+        if self.flush_error {
+            return Err(io::Error::other(SECRET_NAME));
+        }
+        Ok(())
+    }
+}
+
+/// Exercise finite writes and failures on the same genuine joined owner.
+/// # Errors
+/// Preserve typed extraction errors after explicit refusal assertions.
+/// # Panics
+/// Fail on missing refusal, retries, wrong accepted bytes or incorrect flush custody.
+fn assert_sink_dispositions(
+    completion: &ReceivedCompletion,
+    expected: &[u8],
+) -> Result<(), Failure> {
+    let healthy = || Sink {
+        chunk: usize::MAX,
+        capacity: 384,
+        ..Sink::default()
+    };
+    let mut short = Sink {
+        chunk: 1,
+        ..healthy()
+    };
+    assert!(output::write_completion(&completion.projection(), &mut short).is_ok());
+    assert_eq!(short.bytes, expected);
+    assert_eq!((short.writes, short.flushes), (expected.len(), 1));
+    for capacity in [0, 7] {
+        let mut full = Sink {
+            capacity,
+            ..healthy()
+        };
+        let result = output::write_completion(&completion.projection(), &mut full);
+        assert!(
+            result.is_err(),
+            "sink refusal must not become output success"
+        );
+        let Err(error) = result else {
+            return Err(Failure::Control);
+        };
+        assert_eq!(error.kind(), io::ErrorKind::WriteZero);
+        assert_eq!(full.bytes, expected[..capacity]);
+        assert_eq!(
+            (full.writes, full.flushes),
+            (if capacity == 0 { 1 } else { 2 }, 0)
+        );
+    }
+    for kind in [io::ErrorKind::BrokenPipe, io::ErrorKind::Interrupted] {
+        let mut failing = Sink {
+            write_error: Some(kind),
+            ..healthy()
+        };
+        let result = output::write_completion(&completion.projection(), &mut failing);
+        assert!(
+            result.is_err(),
+            "sink refusal must not become output success"
+        );
+        let Err(error) = result else {
+            return Err(Failure::Control);
+        };
+        assert_eq!(error.kind(), kind);
+        assert_eq!(failing.bytes, [0_u8; 0]);
+        assert_eq!((failing.writes, failing.flushes), (1, 0));
+    }
+    let mut partial = Sink {
+        chunk: 7,
+        write_error: Some(io::ErrorKind::BrokenPipe),
+        write_error_after: 7,
+        ..healthy()
+    };
+    let result = output::write_completion(&completion.projection(), &mut partial);
+    assert!(
+        result.is_err(),
+        "sink refusal must not become output success"
+    );
+    let Err(error) = result else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(error.kind(), io::ErrorKind::BrokenPipe);
+    assert_eq!(partial.bytes, expected[..7]);
+    assert_eq!((partial.writes, partial.flushes), (2, 0));
+    let mut invalid = Sink {
+        impossible_extent: true,
+        ..healthy()
+    };
+    let result = output::write_completion(&completion.projection(), &mut invalid);
+    assert!(
+        result.is_err(),
+        "sink refusal must not become output success"
+    );
+    let Err(error) = result else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+    assert_eq!((invalid.writes, invalid.flushes), (1, 0));
+    let mut flushing = Sink {
+        flush_error: true,
+        ..healthy()
+    };
+    assert!(output::write_completion(&completion.projection(), &mut flushing).is_err());
+    assert_eq!(flushing.bytes, expected);
+    assert_eq!((flushing.writes, flushing.flushes), (1, 1));
+    Ok(())
+}
+
+/// Actual joined facts survive every sink disposition; only delivered bytes vary.
+/// # Errors
+/// Preserve checked acquisition and independent historical comparisons.
+/// # Panics
+/// Fail on retries, a lost error, extra flushing or changed historical facts.
+#[test]
+fn facade_completion_output_sink_failures_preserve_joined_history() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let observed = protected_case(
+        &SLOT,
+        &ADMISSION,
+        ExchangeCase::Healthy,
+        Some(declaration()?),
+    )?;
+    let mut expected = Vec::new();
+    let written = output::write_completion(&observed.completion.projection(), &mut expected);
+    assert!(
+        written.is_ok(),
+        "healthy diagnostic sink must accept the original record"
+    );
+    written.map_err(|_| Failure::Control)?;
+    assert_sink_dispositions(&observed.completion, &expected)?;
+    assert_original(&observed, (RECEIVE_BITS, TRANSMIT_BITS))?;
+    assert_independent_math(&observed)
+}
 
 /// Literal authenticated receive coordinate in the maintained healthy fixture.
 const RECEIVE_BITS: u64 = 0x2233_4455_6677_8899;
@@ -53,7 +277,7 @@ struct Observed {
 /// # Errors
 /// Preserve actual argument admission refusal.
 fn config(mode: ExchangeMode) -> Result<Config, Failure> {
-    let mut arguments = vec!["127.0.0.1:4460".into(), "Time.Example".into()];
+    let mut arguments = vec!["127.0.0.1:4460".into(), SECRET_NAME.into()];
     if mode == ExchangeMode::ProtectedDatagram {
         arguments.push("--protected-datagram".into());
     }
@@ -80,7 +304,7 @@ fn submit_case(
     before: Arc<OnceLock<BeforeJoin>>,
     hooks: Hooks,
 ) -> Result<(), SubmitError> {
-    slot.submit_with(
+    slot.submit_fixture(
         prepared,
         admission,
         component_provider,
@@ -141,7 +365,10 @@ fn protected_case(
         slot.observer().poll_until(Instant::now() + WAIT),
         Observation::Taken
     );
-    assert!(matches!(slot.take_result(), Err(CollectError::NotReady)));
+    assert!(matches!(
+        slot.take_fixture_result(),
+        Err(CollectError::NotReady)
+    ));
     assert!(matches!(admission.claim(), Err(Failure::ProcessUsed)));
     Ok(Observed {
         completion,
@@ -156,7 +383,7 @@ fn protected_case(
 /// # Panics
 /// Fail if adaptation changes custody, timestamps, identities, population or CLI counts.
 fn assert_original(observed: &Observed, peer_times: (u64, u64)) -> Result<(), Failure> {
-    let ReceivedCompletion::Protected(carrier) = &observed.completion else {
+    let Some(carrier) = observed.completion.protected() else {
         return Err(Failure::Control);
     };
     let before = observed.before.get().ok_or(Failure::Control)?;
@@ -203,7 +430,7 @@ fn ntp_nanoseconds(wall: SystemTime) -> Result<i128, Failure> {
 /// # Panics
 /// Fail if any coordinate, signed arithmetic, nominal ratio, window or original age differs.
 fn assert_independent_math(observed: &Observed) -> Result<(), Failure> {
-    let ReceivedCompletion::Protected(carrier) = &observed.completion else {
+    let Some(carrier) = observed.completion.protected() else {
         return Err(Failure::Control);
     };
     let measurement = carrier
@@ -279,9 +506,10 @@ fn facade_protected_numerics_none_retains_original_history() -> Result<(), Failu
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
     let observed = protected_case(&SLOT, &ADMISSION, ExchangeCase::Healthy, None)?;
     assert_original(&observed, (RECEIVE_BITS, TRANSMIT_BITS))?;
-    let ReceivedCompletion::Protected(carrier) = &observed.completion else {
+    let Some(carrier) = observed.completion.protected() else {
         return Err(Failure::Control);
     };
+    assert_output(&observed.completion, "unavailable", "mapping_unavailable")?;
     assert!(carrier.profile().is_none());
     assert!(matches!(
         carrier.measurement(),
@@ -303,11 +531,64 @@ fn facade_protected_numerics_declared_era_zero_has_independent_math() -> Result<
     let profile = declaration()?;
     let observed = protected_case(&SLOT, &ADMISSION, ExchangeCase::Healthy, Some(profile))?;
     assert_original(&observed, (RECEIVE_BITS, TRANSMIT_BITS))?;
-    let ReceivedCompletion::Protected(carrier) = &observed.completion else {
+    let Some(carrier) = observed.completion.protected() else {
         return Err(Failure::Control);
     };
     assert_eq!(carrier.profile(), Some(&profile));
+    assert_output(&observed.completion, "nominal_software", "none")?;
     assert_independent_math(&observed)
+}
+
+/// The actual receiving path must consume the original send-after capture.
+/// Only its UTC value has a closed synthetic fault; monotonic captures remain actual.
+/// This is component forwarding evidence, not a genuine host-clock discontinuity.
+/// # Errors
+/// Preserve actual acquisition, checked declaration and independent duration refusal.
+/// # Panics
+/// Fail if the receiver drops the anomalous after capture or changes missing-model precedence.
+#[test]
+fn facade_protected_numerics_send_after_wall_step_is_not_omitted() -> Result<(), Failure> {
+    static SLOTS: [WorkerSlot; 2] = [const { WorkerSlot::new() }; 2];
+    static ADMISSIONS: [ProcessAdmission; 2] = [const { ProcessAdmission::new() }; 2];
+    let profile = declaration()?;
+    for (index, declared) in [None, Some(profile)].into_iter().enumerate() {
+        let observed = protected_case(
+            &SLOTS[index],
+            &ADMISSIONS[index],
+            ExchangeCase::AfterWallStep,
+            declared,
+        )?;
+        assert_original(&observed, (RECEIVE_BITS, TRANSMIT_BITS))?;
+        let Some(carrier) = observed.completion.protected() else {
+            return Err(Failure::Control);
+        };
+        assert_eq!(carrier.profile(), declared.as_ref());
+        let [before, after, read] = carrier.history().captures();
+        let wall_progress = after
+            .utc()
+            .duration_since(before.utc())
+            .map_err(|_| Failure::Control)?;
+        let latest_monotonic_progress = after
+            .monotonic_after()
+            .checked_duration_since(before.monotonic())
+            .ok_or(Failure::Control)?;
+        let excess_wall_progress = wall_progress
+            .checked_sub(latest_monotonic_progress)
+            .ok_or(Failure::Control)?;
+        assert!(excess_wall_progress > Duration::from_secs(30));
+        assert!(after.utc() > read.utc());
+        let expected = if declared.is_some() {
+            MeasurementRefusal::MappingDiscontinuity
+        } else {
+            MeasurementRefusal::Unavailable
+        };
+        assert_eq!(
+            carrier.measurement().as_ref().err(),
+            Some(&expected),
+            "protected-send-after-forwarding"
+        );
+    }
+    Ok(())
 }
 
 /// Incompatible checked dates remain a numerical refusal beside unchanged history.
@@ -324,7 +605,7 @@ fn facade_protected_numerics_exact_declared_dates_refuse_without_losing_history(
     let profile = ExperimentalProfile::new(0, 0, 30_000_000_000).map_err(|_| Failure::Control)?;
     let observed = protected_case(&SLOT, &ADMISSION, ExchangeCase::Healthy, Some(profile))?;
     assert_original(&observed, (RECEIVE_BITS, TRANSMIT_BITS))?;
-    let ReceivedCompletion::Protected(carrier) = &observed.completion else {
+    let Some(carrier) = observed.completion.protected() else {
         return Err(Failure::Control);
     };
     assert_eq!(carrier.profile(), Some(&profile));
@@ -332,6 +613,7 @@ fn facade_protected_numerics_exact_declared_dates_refuse_without_losing_history(
         carrier.measurement(),
         Err(MeasurementRefusal::DateScope)
     ));
+    assert_output(&observed.completion, "unavailable", "date_scope")?;
     Ok(())
 }
 
@@ -356,7 +638,7 @@ fn facade_protected_numerics_authentic_zero_bits_keep_distinct_refusals() -> Res
             let at = 2 * index + declaration_index;
             let observed = protected_case(&SLOTS[at], &ADMISSIONS[at], case, declared)?;
             assert_original(&observed, bits)?;
-            let ReceivedCompletion::Protected(carrier) = &observed.completion else {
+            let Some(carrier) = observed.completion.protected() else {
                 return Err(Failure::Control);
             };
             assert_eq!(carrier.profile(), declared.as_ref());
@@ -366,6 +648,15 @@ fn facade_protected_numerics_authentic_zero_bits_keep_distinct_refusals() -> Res
                 MeasurementRefusal::Unavailable
             };
             assert!(matches!(carrier.measurement(), Err(actual) if *actual == expected));
+            assert_output(
+                &observed.completion,
+                "unavailable",
+                if declared.is_some() {
+                    "not_time_reply"
+                } else {
+                    "mapping_unavailable"
+                },
+            )?;
         }
     }
     Ok(())
@@ -390,6 +681,8 @@ fn facade_protected_numerics_waits_for_join_and_keeps_original_age() -> Result<(
     hooks.before_retire = Some(retire);
     let profile = declaration()?;
     let (sent, received) = sync_channel(1);
+    let delivered = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let writer = Arc::clone(&delivered);
     let completion = std::thread::scope(|scope| {
         let facade = scope.spawn(move || {
             let result = run_synchronously_with(config, &SLOT, Some(profile), |slot, prepared| {
@@ -402,6 +695,15 @@ fn facade_protected_numerics_waits_for_join_and_keeps_original_age() -> Result<(
                     hooks,
                 )
             });
+            if let Ok(completion) = &result {
+                let mut sink = writer.lock().map_err(|_| Failure::Control)?;
+                let written = output::write_completion(&completion.projection(), &mut *sink);
+                assert!(
+                    written.is_ok(),
+                    "healthy diagnostic sink must accept the original record"
+                );
+                written.map_err(|_| Failure::Control)?;
+            }
             sent.send(result).map_err(|_| Failure::Control)
         });
         gate.entered
@@ -416,7 +718,8 @@ fn facade_protected_numerics_waits_for_join_and_keeps_original_age() -> Result<(
         }
         let unavailable = received.try_recv();
         let was_unavailable = matches!(&unavailable, Err(TryRecvError::Empty));
-        let withheld = SLOT.take_result();
+        let was_silent = delivered.lock().map_err(|_| Failure::Control)?.is_empty();
+        let withheld = SLOT.take_fixture_result();
         let original = before.get().ok_or(Failure::Control)?;
         let read = original.protected.captures[2];
         let expected_age = original
@@ -443,6 +746,7 @@ fn facade_protected_numerics_waits_for_join_and_keeps_original_age() -> Result<(
         // A faulty early facade is drained only after the real hold has been released.
         super::drain_facade_observation(&SLOT, SLOT.observer().poll_until(Instant::now() + WAIT))?;
         assert!(was_unavailable, "no carrier before actual join");
+        assert!(was_silent, "no completion output before actual join");
         result.map_err(|_| Failure::Control)
     })?;
     let observed = Observed {
@@ -451,7 +755,69 @@ fn facade_protected_numerics_waits_for_join_and_keeps_original_age() -> Result<(
         config: lifetime,
     };
     assert_original(&observed, (RECEIVE_BITS, TRANSMIT_BITS))?;
+    let mut expected = Vec::new();
+    let written = output::write_completion(&observed.completion.projection(), &mut expected);
+    assert!(
+        written.is_ok(),
+        "healthy diagnostic sink must accept the original record"
+    );
+    written.map_err(|_| Failure::Control)?;
+    assert_eq!(*delivered.lock().map_err(|_| Failure::Control)?, expected);
+    assert_output(&observed.completion, "nominal_software", "none")?;
     assert_independent_math(&observed)
+}
+
+/// Compare the actual Script's primary/secondary failure row with independent codes.
+/// # Errors
+/// Preserve the output sink failure without replacing the Script's original failure.
+/// # Panics
+/// Fail if failure reporting omits a retained cause or claims a completion.
+fn assert_script_failure_output(failure: &RunFailed) -> Result<(), Failure> {
+    let mut failure_bytes = Vec::new();
+    let written = output::write_run_failure(failure, &mut failure_bytes);
+    assert!(
+        written.is_ok(),
+        "healthy diagnostic sink must accept the original record"
+    );
+    written.map_err(|_| Failure::Control)?;
+    assert_eq!(failure_bytes, b"scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=handshake cause=io cleanup_stage=shutdown cleanup_cause=io admission_stage=currentness admission_cause=control\n");
+    Ok(())
+}
+
+/// A real preview joins and emits no protected numerical or freshness claim.
+/// # Errors
+/// Preserve actual configuration, worker and sink failures.
+/// # Panics
+/// Fail if preview acquires protected history or emits different state/reason codes.
+fn assert_preview_output(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+    profile: ExperimentalProfile,
+) -> Result<(), Failure> {
+    let unused = Arc::new(OnceLock::new());
+    let preview = run_synchronously_with(
+        config(ExchangeMode::Preview)?,
+        slot,
+        Some(profile),
+        |slot, prepared| {
+            submit_case(
+                slot,
+                prepared,
+                admission,
+                ExchangeCase::Healthy,
+                Arc::clone(&unused),
+                Hooks::none(),
+            )
+        },
+    )
+    .map_err(|_| Failure::Control)?;
+    assert!(preview.protected().is_none());
+    assert!(!preview.summary().transmitted);
+    assert_eq!(preview.projection().numerical(), "not_attempted");
+    assert_eq!(preview.projection().numerical_reason(), "none");
+    assert!(unused.get().is_none());
+    assert_output(&preview, "not_attempted", "none")?;
+    Ok(())
 }
 
 /// Preview, failed operations and later retirement panic bypass protected adaptation.
@@ -467,28 +833,10 @@ fn facade_protected_numerics_bypasses_preview_failure_and_retirement_panic() -> 
     static ADMISSIONS: [ProcessAdmission; 3] = [const { ProcessAdmission::new() }; 3];
     static DROPS: AtomicUsize = AtomicUsize::new(0);
     let profile = declaration()?;
-    let unused = Arc::new(OnceLock::new());
-    let preview = run_synchronously_with(
-        config(ExchangeMode::Preview)?,
-        &SLOTS[0],
-        Some(profile),
-        |slot, prepared| {
-            submit_case(
-                slot,
-                prepared,
-                &ADMISSIONS[0],
-                ExchangeCase::Healthy,
-                Arc::clone(&unused),
-                Hooks::none(),
-            )
-        },
-    )
-    .map_err(|_| Failure::Control)?;
-    assert!(matches!(preview, ReceivedCompletion::Preview(summary) if !summary.transmitted));
-    assert!(unused.get().is_none());
+    assert_preview_output(&SLOTS[0], &ADMISSIONS[0], profile)?;
     let primary = Failed {
-        primary: Failure::Handshake(std::io::ErrorKind::ConnectionReset),
-        cleanup: Some(Failure::Shutdown(std::io::ErrorKind::BrokenPipe)),
+        primary: Failure::Handshake(io::ErrorKind::ConnectionReset),
+        cleanup: Some(Failure::Shutdown(io::ErrorKind::BrokenPipe)),
         admission_cleanup: Some(Failure::Control),
     };
     let failure = run_synchronously_with(
@@ -496,7 +844,7 @@ fn facade_protected_numerics_bypasses_preview_failure_and_retirement_panic() -> 
         &SLOTS[1],
         Some(profile),
         |slot, prepared| {
-            slot.submit_with(
+            slot.submit_fixture(
                 prepared,
                 &ADMISSIONS[1],
                 component_provider,
@@ -513,7 +861,11 @@ fn facade_protected_numerics_bypasses_preview_failure_and_retirement_panic() -> 
             )
         },
     );
-    assert!(matches!(failure, Err(RunFailed::Operation(actual)) if actual == primary));
+    assert!(matches!(&failure, Err(RunFailed::Operation(actual)) if *actual == primary));
+    let Err(failure) = failure else {
+        return Err(Failure::Control);
+    };
+    assert_script_failure_output(&failure)?;
     let before = Arc::new(OnceLock::new());
     let mut hooks = Hooks::none();
     hooks.before_retire = Some(Box::new(|| {
@@ -534,7 +886,18 @@ fn facade_protected_numerics_bypasses_preview_failure_and_retirement_panic() -> 
             )
         },
     );
-    let Err(RunFailed::Abnormal(outcome)) = abnormal else {
+    let Err(failure @ RunFailed::Abnormal(_)) = abnormal else {
+        return Err(Failure::Control);
+    };
+    let mut abnormal_bytes = Vec::new();
+    let written = output::write_run_failure(&failure, &mut abnormal_bytes);
+    assert!(
+        written.is_ok(),
+        "healthy diagnostic sink must accept the original record"
+    );
+    written.map_err(|_| Failure::Control)?;
+    assert_eq!(abnormal_bytes, b"scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=worker-termination cause=panicked retirement_confirmed=0\n");
+    let RunFailed::Abnormal(outcome) = failure else {
         return Err(Failure::Control);
     };
     assert_eq!(outcome.termination, Termination::Panicked);

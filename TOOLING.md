@@ -147,18 +147,36 @@ Gitleaks receive `GOMAXPROCS=12`, which budgets
 Go execution rather than their external subprocesses. Tools without a supported
 parallel scheduler remain unchanged.
 
-The original mutation budget was twelve outer workers and jobserver tokens.
-Current [Core](scripts/verify-core-analysis.py) and
-[engine](policy/engine-analysis.json) campaigns use ten outer workers/tokens;
-the engine analysis build budget is six. Follow each selected verifier/policy,
-retaining **one Cargo build job and one libtest thread per mutation worker**.
-Both enumeration and campaign commands explicitly enable the pinned tool's
-jobserver. Do not multiply the inner build budget by the outer worker count.
+The original mutation budget was twelve outer workers and jobserver tokens;
+later Core/Engine recipes used ten of each, intending one inner Cargo job.
+The [14 November actual trial](tasks/s1.3-source-selection-readiness.md#seven-owner-mutation-admission--14-november-2026)
+proved that bound ineffective: inherited shared tokens supplement each Cargo's
+implicit slot, and `CARGO_BUILD_JOBS=1` does not constrain that external jobserver.
+Ten workers plus ten shared tokens reached 20 compiler processes and the owned
+memory cap. Do not infer actual inner concurrency from that environment value
+or add explicit `-j1` under the same inherited jobserver.
+
+The current GNU/Linux-only phase/Step recipe admits strict outer profiles 10/8/6
+with **zero additional jobserver tokens**, retaining each Cargo's implicit slot
+and one libtest thread. Its checked default remains ten workers with campaign
+admission false; the prepared private fallback selects eight. Source review and
+Python controls alone do not establish actual concurrency or memory fit. David
+has now authorized resumption. The bounded mechanism passes with eight compiler
+processes and one per Cargo under zero extra tokens; the complete 29-variant
+trial also finishes without OOM. Its causal reader still needs the source-bound
+repairs recorded in the Core task before cohort qualification. Other historical
+recipes/receipts retain their original scopes and token settings; reconcile their
+effective concurrency before future execution, rather than transferring the
+phase/Step correction or the old one-inner-job claim. The engine analysis build
+budget remains six. The phase/Step inner process/time limits and quality
+thresholds remain unchanged. The explicitly authorized outer memory ceilings
+were 3 GiB for the original trial, 4 GiB for the eight-worker retry and 5 GiB
+for the final ten-worker candidate; each receipt retains its actual limit.
 Sequential
 fixture edits, shared output ownership, native Windows operations, deterministic
 resource observations, fuzz campaign ownership and Loom's modeled thread count
 keep their existing ordering/bounds. Release codegen units, numerical semantics,
-security checks and memory/CPU/wall-time limits are unchanged. These are worker
+security checks and product-command memory/CPU/wall-time envelopes are unchanged. These are worker
 budgets per operation, not CPU affinity, an aggregate machine quota or a promise
 of twelve busy cores; admitted dependency graphs may expose less parallel work.
 Run one owner per shared build/output directory.
@@ -1543,8 +1561,9 @@ and selection. The [S1.3 record](tasks/s1.3-source-selection-readiness.md) binds
 outcomes are required before adjustment. The
 [S1.2 concurrency record](tasks/s1.2-regression-readiness.md#user-requested-mutation-concurrency-trials-30-october-2026)
 records the qualified ten-worker regression pilot and failed lower-limit trials.
-The core selects ten outer workers, isolated mutant targets, one inner Cargo/test
-slot and a fixed 512-task sandbox limit for admitted mutation campaigns.
+That historical Core profile selected ten outer workers, isolated mutant targets,
+an intended inner Cargo/test slot and a fixed 512-task sandbox limit. Apply the
+current jobserver correction above before repeating it; retain its actual receipts.
 Other invocations retain 128; this changes no shipping compiler flags, NTS job
 limit or quality threshold. Core coverage explicitly uses
 `-- --test-threads=1` to keep libtest progress from interrupting strict counter
@@ -1911,8 +1930,9 @@ The ordinary and optimized portable `time-core` nextest rows compile with six
 build jobs after a retained twelve-job linker thread-resource failure. Other
 portable build rows keep twelve jobs, and test execution keeps twelve workers.
 The focused verifier regression passes 75 controls. This changes no shipping
-compiler flags, target baseline or toolchain. Full mutation campaigns retain ten
-outer workers, one inner Cargo/test slot and their admitted 512-task envelope.
+compiler flags, target baseline or toolchain. Mutation profiles retain their
+admitted 512-task envelope and must account for both implicit Cargo slots and
+additional jobserver tokens through the current correction above.
 
 **Stable-core admission, 1 November:** the current time-core policy explicitly
 selects `tool_admission_profile = "stable-core"`. Its native contracts, coverage
@@ -2110,7 +2130,12 @@ All product and AES witness images retain the selected v3 flags.
 The bounded [Engine native test runner](scripts/verify-engine-native.py)
 has separate `--lane build` and `--lane native` invocations. Build requires the
 same explicit admitted vendor, toolchain, xwin acquisition/inventory and fresh
-external output arguments as the observer below. It links the Engine KE
+external output arguments as the observer below. It also requires `--test-roster`
+with an independently reviewed, bounded JSON prediction bound to the complete
+current product, runner/helper hashes, MSVC target and explicit KE feature. The
+full sorted library/KE lists, selected KE list and exact code-owned held cases
+are frozen with the build; native discovery cannot supply its own expected list.
+It links the Engine KE
 library tests with unchanged v3 flags, plus three baseline-x64 test diagnostics
 with the release profile. The native lane requires that build's
 `--build-receipt`, a fresh `--native-dir` below the current workspace's Windows
@@ -2118,14 +2143,24 @@ with the release profile. The native lane requires that build's
 It qualifies gate/exit/timeout custody controls, then CPU/OS admission, actual
 test discovery and the serial scripted KE cohort. Its ordinary-user supervisor
 uses `-File`, locks both images and makes no registry/protection/service/clock
-changes. The owned job allows at most four active processes. Bounded process
+changes. Existing flat modes allow at most four active/lifetime processes;
+the six fixed nested test/control modes have a closed six-process ceiling for
+exactly three authored processes and at most three System32 console helpers.
+Neither limit nor child arguments can be supplied by the request. Bounded process
 notifications and handle-bound full-path identities distinguish authored images
 from System32 console hosts; missing or unknown identities remain incomplete.
 The child PID marker is joined to kernel identity rather than trusted alone.
-See the [Windows scripted-component exit](tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit)
-for exact receipts: 18 host admission controls, all 17 build/inspection steps,
-eight native observations, 260 discovered library tests and all 106 selected KE
-cases pass. This is Windows debug/scripted component evidence; actual TLS/CNG,
+The flat KE selection excludes three process-global claim tests; three fixed
+exact-test modes now execute them separately with their actual descendants.
+`scripted_ke_roster_complete` requires every selected case and each of those
+three exact observations. `full_native_ke_qualification` stays false.
+The [current nested-worker exit](tasks/engine-transport-pilot.md#nested-worker-native-custody-child--14-november-2026)
+passes 32 host admission controls, all 17 build/inspection steps and 14 native
+supervisor observations. All 392 library names match the frozen independent
+roster; 232 flat KE cases plus the three exact tests pass. Each nested run
+actually uses five processes and confirms zero active processes after cleanup.
+The [earlier scripted-component exit](tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit)
+retains its older source/count scope. This is Windows debug/scripted component evidence; actual TLS/CNG,
 UDP transport, Core receiving, effective runtime mitigations and mutation gates
 retain their separate qualification requirements.
 
@@ -2548,16 +2583,19 @@ remains closed against the later Core/helper tree.
 
 The association/request preparation route at this checkpoint is historical.
 The [13 November source checkpoint](tasks/engine-transport-pilot.md#complete-current-inventory-and-data-only-adoption--13-november-2026)
-was signed and pushed as `5dd75df`. Current Core/Engine work follows the implemented
+was signed and pushed as `5dd75df`. The preceding Engine work implemented the
 [conditional numerical receiver](tasks/engine-transport-pilot.md#conditional-numerical-receiver--source-development-13-november-2026),
-whose actual caller supplies `None`. Its `df493299` Rust 1.99.1 development
-checkpoint passes 409 ordinary tests, format and GNU/MSVC Clippy; complete
-qualification remains open; 34 ownership/privacy compiler controls and 69 doctests pass. Next freeze/rebind
-the changed source, helper/test roster and inventory with the
-[Rust 1.100 admission owner](tasks/build-optimization.md#rust-1100-candidate-admission--11-november-2026)
-before affected baseline/optimized/doctest/90% coverage/95% mutation qualification.
-Keep the role closed: old bindings fail closed until fresh source/tool admission,
-and the 607/E9 results remain historical `964a9573` evidence. Public execution
+whose actual caller supplies `None`. The [Rust 1.100 receiver continuation](tasks/engine-transport-pilot.md#receiver-qualification-continuation--13-november-2026)
+passes 410 ordinary/410 optimized tests (229 KE each), 34 ownership/privacy
+compiler controls, 69 doctests, format and GNU/MSVC Clippy on the 595-input
+candidate `82a19ffa`. Its synthetic forwarding faults are detected with zero
+generated-mutation credit; native behavior is unqualified. Current Core/Engine
+product work follows the [adaptive phase-correction child](tasks/s1.3-source-selection-readiness.md#adaptive-phase-correction--implementation-contract-13-november-2026)
+inside the existing `FixturePhasePlanOwner`, with focused changed-code checks.
+Future KE metric campaigns require complete fresh source/helper, test-roster
+and reviewed-inventory admission before 90% coverage/95% mutation qualification.
+Keep campaigns closed until that
+admission; the 607/E9 results remain historical `964a9573` evidence. Public execution
 stays one-shot and never-send by default; no source/host exit closes native or
 product gates.
 David accepted both cookie-policy A choices under NV-DEC-001: fresh wire cookies

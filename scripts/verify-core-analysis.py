@@ -8302,6 +8302,94 @@ BASELINE_FEEDBACK_REQUIRED_DOCTESTS = (*FREQUENCY_PRIOR_REQUIRED_DOCTESTS,
 )
 
 
+# A new exact source role; no legacy policy, roster, inventory or score is rebound.
+PHASE_STEP_SUBJECT = "phase_step"
+PHASE_STEP_POLICY = "policy/phase-step-analysis.json"
+PHASE_STEP_SUBJECTS = dict(COMMON.PHASE_STEP_SUBJECTS)
+PHASE_STEP_SCOPE = COMMON.Scope("time-core", tuple(PHASE_STEP_SUBJECTS.items()), PHASE_STEP_POLICY)
+PHASE_STEP_FIXED = COMMON.phase_step_role_facts()
+PHASE_STEP_BOUND_INPUTS = tuple(dict.fromkeys((
+    *PHASE_PLAN_BOUND_INPUTS, *PHASE_STEP_SUBJECTS.values(),
+    "crates/time-core/tests/rate_delivery.rs", "crates/time-core/tests/private/reference_input_readiness.rs",
+    "crates/time-core/tests/private/step_contracts.rs",
+    "crates/time-core/tests/private/step_counter.rs", "crates/time-core/PROVENANCE.md",
+    "crates/time-core/tests/private/step_qualification.rs",
+    "crates/time-core/tests/private/adaptive_horizon.rs",
+    "crates/time-core/tests/private/step_diagnostics.rs",
+    "crates/time-core/tests/frequency_prior.rs",
+    "crates/time-core/tests/private/frequency_prior_numeric.rs",
+    "scripts/core-frequency-contracts.py", "scripts/tests/test_phase_step_contracts.py",
+    "scripts/tests/test_phase_step_analysis.py", "scripts/tests/test_portable_analysis.py",
+)))
+PHASE_STEP_REQUIRED_TESTS = (PHASE_PLAN_REQUIRED_TESTS | frozenset(
+    name for name in BASELINE_FEEDBACK_REQUIRED_TESTS
+    if name.startswith("regression::chart::roundoff::frequency_prior::tests::")
+) | frozenset({
+    "regression::chart::roundoff::frequency_prior::tests::active_ratio_span_signature_preserves_distinct_clock_duration_types",
+    "regression::chart::roundoff::frequency_prior::tests::active_ratio_span_checks_nonunit_zero_and_exact_integer_boundaries",
+    "matched_step_accounts_actual_effect_and_requires_fresh_evidence_for_both_signs",
+    "matched_step_accounts_unexpected_actual_rate_before_refusing_continuation",
+    "matched_known_zero_step_accounts_elapsed_baseline_and_final_target",
+    "matched_step_after_stop_preserves_historical_effects_without_recovery",
+    "adaptive_horizon_profile_rejects_raw_bypasses_and_keeps_explicit_zero_threshold",
+    "adaptive_horizon_tracks_real_reference_and_actual_partial_delivery",
+    "adaptive_small_debt_keeps_signed_rate_and_independent_permission_window",
+    "adaptive_step_fresh_reference_uses_original_accepted_interval",
+    "adaptive_admitted_no_plan_preserves_accepted_stamp_across_fresh_rows",
+    "step_contracts::matched_step_raw_limits_and_receipts_reject_bypasses_before_valid_issue",
+    "step_contracts::matched_step_foreign_clock_and_wrong_ordinal_preserve_outstanding_owner",
+    "step_contracts::matched_step_no_effect_consumes_shared_ordinal_without_renewing_permission",
+    "step_contracts::matched_step_unknown_blocks_without_inventing_delivery",
+    "step_contracts::matched_step_known_actual_violations_remain_owned_historical_facts",
+    "step_contracts::matched_step_known_deadline_equality_preserves_effects_and_blocks_recovery",
+    "step_contracts::matched_step_original_phase_cap_is_inclusive_at_request_and_retirement",
+    "step_contracts::matched_step_limit_and_original_cap_remain_independent",
+    "step_contracts::matched_step_aggregate_baseline_cap_is_inclusive_for_both_signs",
+    "step_contracts::matched_step_bidirectional_permission_still_refuses_opposite_actual_sign",
+    "step_contracts::matched_step_zero_full_and_overshoot_are_distinct_for_both_signs",
+    "step_contracts::matched_step_each_original_clock_deadline_refuses_new_issuance",
+    "step_qualification::matched_step_rate_overflow_retains_known_effect_beside_finite_neighbor",
+    "step_qualification::matched_step_terminal_span_and_current_readings_preserve_pending_owner",
+    "step_qualification::matched_step_lower_consumed_ordinal_rejects_beside_current_completion",
+    "step_qualification::matched_step_neutral_reference_refuses_beside_sign_certain_neighbor",
+    "step_qualification::matched_step_error_getters_retain_positive_bounded_numerical_evidence",
+    "step_diagnostics::matched_step_constructor_diagnostics_are_opaque_and_preserve_checked_receipts",
+    "step_diagnostics::matched_step_request_diagnostics_keep_exact_refusals_and_pending_custody",
+    "step_diagnostics::matched_step_neutral_diagnostic_has_no_delegated_cause",
+    "step_diagnostics::matched_step_retirement_diagnostics_preserve_provenance_after_sole_transfer",
+    "step_diagnostics::matched_step_terminal_diagnostics_do_not_conflate_no_effect_and_unknown",
+    "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_duration_ceiling_preserves_fractional_nanoseconds_at_large_seconds",
+    "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_policy_uses_exact_selected_horizon_for_its_existing_rate_bound",
+    "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_neutral_debt_preserves_baseline_without_overflowing_area_division",
+    "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_clamps_keep_original_integer_limits_and_refuse_nonzero_underflow",
+    "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_near_minimum_quantizes_before_integer_clamping",
+    "reference_input::rate_delivery::phase_plan::tests::matched_step_debt_subtraction_encloses_exact_stored_binary64_inputs",
+    "reference_input::rate_delivery::phase_plan::tests::matched_step_debt_refuses_unsupported_arithmetic_beside_zero_effect",
+    "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_small_debt_threshold_equality_and_adjacent_bits_are_distinct",
+    "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_profile_and_leaf_failures_keep_bounded_redacted_diagnostics",
+    "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_arithmetic_failure_preserves_original_typed_source",
+    "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_private_numeric_boundaries_keep_healthy_neighbors",
+    "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_private_area_boundaries_keep_healthy_neighbors",
+    "reference_input::rate_delivery::phase_plan::tests::step_counter::known_step_fresh_recovery_retains_counter_witness_and_rejects_old_absolute_map",
+    "reference_input::rate_delivery::phase_plan::tests::step_counter::known_step_arithmetic_failure_commits_final_cursor_target_and_actual_facts",
+    "reference_input::rate_delivery::phase_plan::tests::step_counter::step_no_effect_latches_each_original_deadline_before_later_admission",
+    "reference_input::rate_delivery::phase_plan::tests::step_counter::known_step_preserves_negative_zero_rate_in_actual_replacement_geometry",
+    "reference_input::rate_delivery::phase_plan::tests::step_counter::known_step_frequency_history_remains_historical_after_fresh_owner_is_dropped",
+}))
+PHASE_STEP_REQUIRED_DOCTESTS = (
+    *(row for row in BASELINE_FEEDBACK_REQUIRED_DOCTESTS if row[0] in PHASE_STEP_SUBJECTS.values()),
+    (PHASE_STEP_SUBJECTS["adaptive_horizon"], "reference_input::rate_delivery::phase_plan::adaptive::FixtureAdaptiveHorizonProfile", False, 1),
+    (PHASE_STEP_SUBJECTS["adaptive_horizon"], "reference_input::rate_delivery::phase_plan::adaptive::FixtureAdaptiveHorizonProfile", True, 2),
+    (PHASE_STEP_SUBJECTS["reference_input"], "reference_input::FixtureAchievedPhaseCompletion", True, 1),
+    (PHASE_STEP_SUBJECTS["reference_input"], "reference_input::FixtureReferenceInput", False, 2),
+    (PHASE_STEP_SUBJECTS["reference_input"], "reference_input::FixtureReferenceInput", True, 3),
+    (PHASE_STEP_SUBJECTS["step"], "reference_input::rate_delivery::phase_plan::step::FixtureStepLimits", False, 1),
+    (PHASE_STEP_SUBJECTS["step"], "reference_input::rate_delivery::phase_plan::step::FixtureStepLimits", True, 2),
+    (PHASE_STEP_SUBJECTS["step"], "reference_input::rate_delivery::phase_plan::step::FixtureStepProposal", True, 1),
+    (PHASE_STEP_SUBJECTS["step"], "reference_input::rate_delivery::phase_plan::step::FixtureStepCompletion", True, 2),
+)
+
+
 class ConditionedAnalysisRole(NamedTuple):
     """Code-owned selection data; policy cannot choose owners or execution targets."""
 
@@ -8346,11 +8434,20 @@ def _phase_plan_role() -> ConditionedAnalysisRole:
         ("phase_plan",))
 
 
+def _phase_step_role() -> ConditionedAnalysisRole:
+    """Select seven whole changed files; coverage uses the complete Core test graph."""
+    return ConditionedAnalysisRole(
+        PHASE_STEP_SUBJECT, "Phase-step", PHASE_STEP_SCOPE, PHASE_STEP_FIXED,
+        PHASE_STEP_BOUND_INPUTS, PHASE_STEP_REQUIRED_TESTS, PHASE_STEP_REQUIRED_DOCTESTS, ())
+
+
 def _conditioned_inventory_bindings(policy, role, *, required=False):
     """Admit no review yet or both exact nonempty inventories within one cap."""
     if role.selector == FREQUENCY_PRIOR_SUBJECT:
         return frequency_inventory_bindings(policy, required=required)
     if role.selector == BASELINE_FEEDBACK_SUBJECT:
+        return frequency_inventory_bindings(policy, required=required, role=role)
+    if role.selector == PHASE_STEP_SUBJECT:
         return frequency_inventory_bindings(policy, required=required, role=role)
     bindings = policy.get("mutation_inventories")
     if type(bindings) is not dict:
@@ -8391,6 +8488,8 @@ def _conditioned_test_inventories(policy, role):
     if (not (role.required_tests) <= coverage
             or not coverage <= baseline or any(" (line " in name for name in coverage)):
         raise Incomplete(f"{role.label} inventories omit selected ordinary/private controls.")
+    if role.selector == PHASE_STEP_SUBJECT and coverage != {name for name in baseline if " (line " not in name}:
+        raise Incomplete("Phase-step coverage must name the complete ordinary Core roster.")
     docs = [name for name in baseline if " (line " in name]
     groups = role.required_doctests
     for filename, owner, negative, count in groups:
@@ -8405,16 +8504,21 @@ def _conditioned_test_inventories(policy, role):
     return inventories
 
 
-def _read_conditioned_policy(root, role):
+def _read_conditioned_policy(root, role, *, allow_pending_rosters=False):
     """Admit this exact two-owner child; never import historical scope or scores."""
     policy = inventory_document(root / role.scope.policy)
     if role.selector == BASELINE_FEEDBACK_SUBJECT:
         COMMON.require_baseline_feedback_role(role.scope, policy)
+    if role.selector == PHASE_STEP_SUBJECT:
+        COMMON.require_phase_step_role(role.scope, policy)
+    if type(allow_pending_rosters) is not bool or allow_pending_rosters and role.selector != PHASE_STEP_SUBJECT:
+        raise Incomplete("Only phase-step's nonqualifying inventory can discover pending rosters.")
     extra = {"source_file_count", "candidate_sha256", "inputs_sha256", "mutation_inventories",
              "mutation_equivalences", "test_inventories", "scope"}
     if (type(policy) is not dict or set(policy) != set(role.fixed) | extra
             or any(type(policy.get(key)) is not type(value) or policy[key] != value
-                   for key, value in role.fixed.items())
+                   for key, value in role.fixed.items()
+                   if not (role.selector == PHASE_STEP_SUBJECT and key in {"campaigns_admitted", "mutation_jobs"}))
             or type(policy.get("source_file_count")) is not int
             or not 0 < policy["source_file_count"] <= 4096
             or type(policy.get("scope")) is not str or not 0 < len(policy["scope"]) <= 2048):
@@ -8437,7 +8541,8 @@ def _read_conditioned_policy(root, role):
             raise Incomplete(f"{role.label} needs one exact critical/security entry per owner.")
         if re.search(r"#\s*\[\s*test\s*\]", (root / filename).read_text()):
             raise Incomplete(f"{role.label} production coverage cannot contain inline test bodies.")
-    _conditioned_test_inventories(policy, role)
+    if not (allow_pending_rosters and policy.get("test_inventories") == {"baseline": [], "coverage": []}):
+        _conditioned_test_inventories(policy, role)
     _conditioned_inventory_bindings(policy, role)
     COMMON.admit_mutation_equivalences(root, role.scope, policy)
     return policy
@@ -8448,7 +8553,7 @@ def _conditioned_test_execution(text, policy, role, *, doctests):
     if type(doctests) is not bool:
         raise Incomplete(f"{role.label} doctest selection must be Boolean.")
     inventories = _conditioned_test_inventories(policy, role)
-    if (role.selector in {FREQUENCY_PRIOR_SUBJECT, BASELINE_FEEDBACK_SUBJECT}
+    if (role.selector in {FREQUENCY_PRIOR_SUBJECT, BASELINE_FEEDBACK_SUBJECT, PHASE_STEP_SUBJECT}
             and re.search(r"(?m)^(?:thread .+ panicked at|Error:|error(?:\[|:)|fatal runtime error)", text)):
         raise Incomplete("Frequency-prior successful execution contains a panic or compiler/harness error.")
     records = successful_test_records(text, label=role.label)
@@ -8508,7 +8613,8 @@ def configure_phase_plan_mutation(session, policy, report, role):
     """
     if (not ((role.selector == PHASE_PLAN_SUBJECT and role.scope == PHASE_PLAN_SCOPE)
                  or (role.selector == FREQUENCY_PRIOR_SUBJECT and role.scope == FREQUENCY_PRIOR_SCOPE)
-                 or (role.selector == BASELINE_FEEDBACK_SUBJECT and role.scope == BASELINE_FEEDBACK_SCOPE))
+                 or (role.selector == BASELINE_FEEDBACK_SUBJECT and role.scope == BASELINE_FEEDBACK_SCOPE)
+                 or (role.selector == PHASE_STEP_SUBJECT and role.scope == PHASE_STEP_SCOPE))
             or type(policy.get("mutation_debug_info")) is not int
             or policy["mutation_debug_info"] != 0):
         raise Incomplete("Only phase-plan mutation admits integer-zero debug information.")
@@ -8881,7 +8987,7 @@ def phase_plan_contracts(session, policy, report):
         "Constructor assertions executed; the legal two-retirement borrow journey is compiled only. Actual modeled trajectories belong to the package tests.")
 
 
-def _external_contract_registry(session, policy, report, examples, markers, legal_scope):
+def _external_contract_registry(session, policy, report, examples, markers, legal_scope, *, deadline=None):
     """Reuse the existing single-build, sealed-consumer causal execution boundary."""
     if set(markers) != {name for name, row in examples.items() if row["code"] is None}:
         raise Incomplete("External contract markers differ from the exact legal registry.")
@@ -8889,7 +8995,12 @@ def _external_contract_registry(session, policy, report, examples, markers, lega
     if ({"legal_executions": sum(row["code"] is None for row in examples.values()),
          "negative_compilations": sum(row["code"] is not None for row in examples.values())} != limits):
         raise Incomplete("Phase-plan contract registry differs from its closed consumer limits.")
-    deadline = time.monotonic() + policy["contracts_wall_seconds"]
+    now = time.monotonic()
+    if deadline is None:
+        deadline = now + policy["contracts_wall_seconds"]
+    elif (type(deadline) not in (int, float) or not math.isfinite(deadline)
+          or deadline <= now or deadline > now + policy["contracts_wall_seconds"]):
+        raise Incomplete("External contracts require an unexpired bounded shared deadline.")
     output = session.run("contract-library", [str(session.stable / "bin/cargo"), "build",
         "--package", "time-core", "--frozen", "--jobs", str(policy["jobs"]), "--lib",
         "--message-format=json"], COMMON.remaining_timeout(deadline, 120))
@@ -8986,14 +9097,25 @@ def _frequency_analysis_role(role=None):
     """Resolve only the two code-owned stable frequency roles, preserving the old default."""
     if role is None:
         return _frequency_prior_role()
-    if type(role) is not ConditionedAnalysisRole or role not in (_frequency_prior_role(), _baseline_feedback_role()):
+    if type(role) is not ConditionedAnalysisRole or role not in (_frequency_prior_role(), _baseline_feedback_role(), _phase_step_role()):
         raise Incomplete("Unknown exact stable frequency analysis role.")
     return role
 
 
 def _frequency_artifact_key(role):
     """Keep historical metadata unchanged while naming the additive role's raw closure."""
+    if role.selector == PHASE_STEP_SUBJECT:
+        return "phase_step_artifacts"
     return "baseline_feedback_artifacts" if role.selector == BASELINE_FEEDBACK_SUBJECT else "frequency_artifacts"
+
+
+def read_phase_step_policy(root, *, allow_pending_rosters=False):
+    """Require fresh whole-product/helper pins before any additive stage can start."""
+    policy = _read_conditioned_policy(root, _phase_step_role(), allow_pending_rosters=allow_pending_rosters)
+    COMMON.require_phase_step_role(PHASE_STEP_SCOPE, policy)
+    if COMMON.RUNTIME.MAX_JOBS != 12:
+        raise Incomplete("Phase-step requires the unchanged shared job budget.")
+    return policy
 
 
 def read_baseline_feedback_policy(root):
@@ -9015,7 +9137,8 @@ def frequency_inventory_bindings(policy, *, required=False, role=None):
     """Admit none before discovery or this role's complete owner union, never a partial map."""
     role = _frequency_analysis_role(role)
     owners = role.scope.select("all")
-    count = "five" if role.selector == BASELINE_FEEDBACK_SUBJECT else "four"
+    count = ("seven" if role.selector == PHASE_STEP_SUBJECT else
+             "five" if role.selector == BASELINE_FEEDBACK_SUBJECT else "four")
     rows = policy.get("mutation_inventories")
     if type(rows) is not dict or (not rows and required):
         raise Incomplete(f"{role.label} mutation requires all {count} reviewed inventories.")
@@ -9053,8 +9176,19 @@ def frequency_selected_owners(policy, cohort_id, *, role=None):
         return dict(owners)
     if type(cohort_id) is not str or cohort_id not in owners:
         raise Incomplete(f"{role.label} cohort must name one of its "
-            + ("five" if role.selector == BASELINE_FEEDBACK_SUBJECT else "four") + " fixed owners.")
+            + ("seven" if role.selector == PHASE_STEP_SUBJECT else
+               "five" if role.selector == BASELINE_FEEDBACK_SUBJECT else "four") + " fixed owners.")
     return {cohort_id: owners[cohort_id]}
+
+
+def _phase_step_campaign_admission(policy):
+    """Require the reviewed complete role before a named campaign or direct union."""
+    role = _phase_step_role()
+    COMMON.require_phase_step_role(role.scope, policy)
+    if policy["campaigns_admitted"] is not True:
+        raise Incomplete("Phase-step mutation admission remains closed pending complete campaign review.")
+    _conditioned_test_inventories(policy, role)
+    frequency_inventory_bindings(policy, required=True, role=role)
 
 
 def _frequency_captured(session, policy, role):
@@ -9073,15 +9207,194 @@ def _frequency_contracts(session, policy, report):
     helper.contracts(session, policy, report, _external_contract_registry, phase_plan_contract_examples)
 
 
+def _phase_step_contracts(session, policy, report):
+    """Share one deadline across the 3/32 registry and seven validation mechanisms."""
+    helper = COMMON.load_module("core_phase_step_contracts", session.source / "scripts/core-frequency-contracts.py")
+    deadline = time.monotonic() + policy["contracts_wall_seconds"]
+
+    def registry(*arguments):
+        return _external_contract_registry(*arguments, deadline=deadline)
+
+    helper.phase_step_contracts(session, policy, report, registry, phase_plan_contract_examples)
+    helper.phase_step_validation_mechanisms(session, policy, report, deadline=deadline)
+
+
+def phase_step_listing_names(text, *, doctests):
+    """Observe bounded complete native --list records, never successful executions."""
+    if type(text) is not str or type(doctests) is not bool or len(text.encode("utf-8")) > 16 * 1024 * 1024:
+        raise Incomplete("Phase-step native listing is malformed or oversized.")
+    if re.search(r"(?m)^(?:thread .+ panicked at|Error:|error(?:\[|:)|fatal runtime error)", text):
+        raise Incomplete("Phase-step listing contains a compiler, harness or runtime failure.")
+    rows = re.findall(r"(?m)^([^\r\n]+): (test|benchmark)\r?$", text)
+    summaries = re.findall(r"(?m)^([0-9]{1,4}) tests?, ([0-9]{1,4}) benchmarks?\r?$", text)
+    if (not rows or not summaries or any(kind != "test" for _, kind in rows)
+            or any(int(benches) != 0 for _, benches in summaries)
+            or sum(int(tests) for tests, _ in summaries) != len(rows)):
+        raise Incomplete("Phase-step listing omits a complete nonempty native test inventory.")
+    names = [name.removeprefix("/work/source/") for name, _ in rows]
+    if (not 0 < len(names) <= 4096 or len(set(names)) != len(names)
+            or any(not 0 < len(name) <= 512 or (" (line " in name) != doctests for name in names)):
+        raise Incomplete("Phase-step native listing names are duplicated, foreign or malformed.")
+    pattern = (r"crates/time-core/src/[A-Za-z0-9_/]+[.]rs - (?:[^\s\r\n][^\r\n]* )?\(line [1-9][0-9]*\)(?: - compile fail)?"
+               if doctests else r"[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_][A-Za-z0-9_]*)*")
+    if any(re.fullmatch(pattern, name) is None for name in names):
+        raise Incomplete("Phase-step listing has a foreign native or source-doctest identity.")
+    return sorted(names)
+
+
+def _phase_step_literal_fences(text):
+    """Locate complete opening literal line-doc fences; closing lines are not tests."""
+    fences = {}
+    opened = None
+    for number, line in enumerate(text.split("\n"), 1):
+        doc = re.fullmatch(r"[ \t]*(///|//!)(?!/)([^\r\n]*)\r?", line)
+        if doc is None:
+            if opened is not None:
+                raise Incomplete("Phase-step source has an interrupted literal doctest fence.")
+            continue
+        fence = re.fullmatch(r"[ \t]*(`{3,128})([^`\r\n]*)", doc[2])
+        if fence is None:
+            continue
+        ticks, attributes = fence[1], fence[2].strip()
+        if opened is None:
+            opened = (number, doc[1], ticks, attributes)
+        elif doc[1] != opened[1]:
+            raise Incomplete("Phase-step literal doctest changes comment representation.")
+        elif not attributes and len(ticks) >= len(opened[2]):
+            start, marker, opening, attributes = opened
+            fences[start] = {"comment_marker": marker, "opening_fence": opening,
+                             "fence_attributes": attributes, "closing_fence_line": number}
+            opened = None
+    if opened is not None:
+        raise Incomplete("Phase-step source has an unclosed literal doctest fence.")
+    return fences
+
+
+def phase_step_classify_doctests(source_root, product_identity, listed_names):
+    """Bind listing kinds to exact pinned literal declarations, with zero execution.
+
+    Rust 1.100's rustdoc --list omits the compile-fail suffix used by actual
+    execution. Only the exact opening /// or //! source fence supplies that
+    expected declaration. This neither executes a doctest nor observes rejection.
+    Distinct files have a 512-KiB each/16-MiB aggregate owned-read bound.
+    """
+    if (not isinstance(source_root, Path) or not source_root.is_absolute()
+            or type(product_identity) is not dict or not 0 < len(product_identity) <= 4096
+            or any(type(name) is not str or not 0 < len(name) <= 512
+                   or type(digest) is not str or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+                   for name, digest in product_identity.items())
+            or type(listed_names) is not list or not 0 < len(listed_names) <= 4096
+            or any(type(name) is not str or not 0 < len(name) <= 512 for name in listed_names)
+            or len(set(listed_names)) != len(listed_names)):
+        raise Incomplete("Phase-step doctest classification needs bounded captured product/listing identities.")
+    pattern = (r"(?P<source>crates/time-core/src/[A-Za-z0-9_/]+[.]rs) - "
+               r"(?:[^\s\r\n][^\r\n]* )?\(line (?P<line>[1-9][0-9]{0,8})\)"
+               r"(?P<failed> - compile fail)?")
+    sources = {}
+    source_bindings = {}
+    declarations = []
+    locations = set()
+    classified = []
+    total_bytes = 0
+    for observed in sorted(listed_names):
+        match = re.fullmatch(pattern, observed)
+        if match is None:
+            raise Incomplete("Phase-step doctest listing has a foreign or malformed source identity.")
+        filename, line = match["source"], int(match["line"])
+        if filename not in product_identity or (filename, line) in locations:
+            raise Incomplete("Phase-step doctest source is foreign or its declaration is duplicated.")
+        locations.add((filename, line))
+        if filename not in sources:
+            raw = COMMON.read_analysis_bytes(source_root / filename, maximum=512 * 1024)
+            total_bytes += len(raw)
+            if total_bytes > 16 * 1024 * 1024:
+                raise Incomplete("Phase-step literal doctest sources exceed their aggregate bound.")
+            digest = hashlib.sha256(raw).hexdigest()
+            if digest != product_identity[filename]:
+                raise Incomplete("Phase-step doctest source changed before declaration classification.")
+            try:
+                text = raw.decode("utf-8")
+            except UnicodeError as error:
+                raise Incomplete("Phase-step doctest source is not strict UTF-8.") from error
+            sources[filename] = _phase_step_literal_fences(text)
+            source_bindings[filename] = {"sha256": digest, "bytes": len(raw)}
+        fence = sources[filename].get(line)
+        if fence is None:
+            raise Incomplete("Phase-step listed line is not an exact complete opening literal doctest fence.")
+        attributes = fence["fence_attributes"]
+        if attributes == "":
+            negative = False
+        elif re.fullmatch(r"compile_fail(?:,E[0-9]{4})?", attributes):
+            negative = True
+        else:
+            raise Incomplete("Phase-step literal doctest fence has an unreviewed declaration kind.")
+        if match["failed"] is not None and not negative:
+            raise Incomplete("Phase-step observed doctest suffix contradicts its pinned declaration.")
+        name = observed.removesuffix(" - compile fail") + (" - compile fail" if negative else "")
+        classified.append(name)
+        declarations.append({"observed_name": observed, "classified_name": name,
+                             "source": filename, "source_sha256": product_identity[filename],
+                             "opening_fence_line": line, **fence,
+                             "declaration": "compile_fail" if negative else "rust",
+                             "declaration_only": True})
+    if len(set(classified)) != len(classified):
+        raise Incomplete("Phase-step classified doctest identities are duplicated.")
+    return {"names": sorted(classified), "declarations": declarations,
+            "source_bindings": source_bindings, "source_bytes": total_bytes,
+            "product_source_file_count": len(product_identity),
+            "product_identity_sha256": COMMON.canonical_sha256(product_identity),
+            "listed_names_sha256": COMMON.canonical_sha256(sorted(listed_names)),
+            "native_tests_executed": 0,
+            "scope": "Expected kinds from pinned literal source declarations only; no executed doctest or observed compiler rejection."}
+
+
+def _phase_step_inventory(session, policy, report):
+    """List the complete Core ordinary and literal-doctest graphs without running cases."""
+    deadline = time.monotonic() + policy["baseline_wall_seconds"]
+    common = ["cargo", "test", "--package", "time-core", "--frozen", "--jobs", "6"]
+    ordinary = session.run("inventory-native", [*common, "--lib", "--tests", "--", "--list"],
+                           COMMON.remaining_timeout(deadline, policy["baseline_wall_seconds"]))
+    docs = session.run("inventory-doctests", [*common, "--doc", "--", "--list"],
+                       COMMON.remaining_timeout(deadline, policy["baseline_wall_seconds"]))
+    native = phase_step_listing_names(ordinary, doctests=False)
+    listed_doctests = phase_step_listing_names(docs, doctests=True)
+    classification = phase_step_classify_doctests(session.source, session.product_identity, listed_doctests)
+    doctests = classification["names"]
+    observed = {"baseline": sorted([*native, *doctests]), "coverage": native}
+    if len(set(observed["baseline"])) != len(observed["baseline"]):
+        raise Incomplete("Phase-step whole-Core listing repeats a native identity.")
+    report["test_inventory_discovery"] = {
+        "inventories": observed,
+        "bindings": {lane: {"count": len(names), "sha256": COMMON.canonical_sha256(names)}
+                     for lane, names in observed.items()},
+        "native_tests_executed": 0, "listing_commands": 2,
+        "doctest_declaration_classification": classification,
+        "scope": "Whole Core native and doctest listing only; not baseline execution or qualification.",
+    }
+    report["qualification_passed"] = False
+
+
 def _execute_frequency_role(args, report, role, read_policy, contracts):
     """Reuse Session, exact roster readers, complete listing and normal per-file gates."""
     role = _frequency_analysis_role(role)
+    allowed_lanes = {"baseline", "enumerate", "coverage", "contracts", "mutation", "all", "cohort-union"}
+    if role.selector == PHASE_STEP_SUBJECT:
+        allowed_lanes.add("inventory")
+        if args.lane == "all":
+            raise Incomplete("Phase-step all remains closed; use one explicit whole-owner mutation cohort.")
     if (args.subject != role.selector or args.tool_admission_profile != "stable-core"
-            or args.lane not in {"baseline", "enumerate", "coverage", "contracts", "mutation", "all", "cohort-union"}
+            or args.lane not in allowed_lanes
             or getattr(args, "inventory_admission", None) or getattr(args, "cohort_plan", None)):
         raise Incomplete(f"{role.label} requires its exact stable-only "
-            + ("five" if role.selector == BASELINE_FEEDBACK_SUBJECT else "four") + "-owner role.")
-    policy = read_policy(ROOT)
+            + ("seven" if role.selector == PHASE_STEP_SUBJECT else
+               "five" if role.selector == BASELINE_FEEDBACK_SUBJECT else "four") + "-owner role.")
+    policy = (read_phase_step_policy(ROOT, allow_pending_rosters=args.lane == "inventory")
+              if role.selector == PHASE_STEP_SUBJECT else read_policy(ROOT))
+    if role.selector == PHASE_STEP_SUBJECT and args.lane in {"mutation", "cohort-union"}:
+        _phase_step_campaign_admission(policy)
+        if args.lane == "mutation" and (type(args.cohort_id) is not str
+                or args.cohort_id not in role.scope.select("all")):
+            raise Incomplete("Phase-step mutation requires one explicit complete named-owner cohort.")
     if args.lane == "cohort-union":
         return frequency_cohort_union(args, report, policy, role)
     if getattr(args, "cohort_receipt", None) or (args.cohort_id is not None and args.lane not in {"mutation", "all"}):
@@ -9090,10 +9403,12 @@ def _execute_frequency_role(args, report, role, read_policy, contracts):
     if args.lane in {"mutation", "all"}:
         COMMON._require_private_output(ROOT, args.output_dir)
         if shutil.disk_usage(args.output_dir.parent).free < policy["mutation_minimum_free_bytes"]:
+            if role.selector == PHASE_STEP_SUBJECT:
+                raise Incomplete(f"Phase-step {policy['mutation_jobs']}-worker mutation requires five GiB free.")
             raise Incomplete("Frequency-prior ten-worker mutation requires five GiB free.")
     session_args = argparse.Namespace(**vars(args))
-    if args.lane in {"baseline", "enumerate"}:
-        session_args.lane = "contracts" if args.lane == "baseline" else "mutation"
+    if args.lane in {"baseline", "enumerate"} or role.selector == PHASE_STEP_SUBJECT and args.lane == "inventory":
+        session_args.lane = "mutation" if args.lane == "enumerate" else "contracts"
     report.update(subjects=dict(selected), complete_subjects=role.scope.select("all"),
         candidate_sha256=policy["candidate_sha256"], qualification_passed=False,
         full_role_qualification=False, historical_family_bindings_reused=False,
@@ -9101,6 +9416,8 @@ def _execute_frequency_role(args, report, role, read_policy, contracts):
     session = COMMON.Session(ROOT, session_args, report, role.scope, policy, role.bound_inputs)
     try:
         _frequency_captured(session, policy, role)
+        if role.selector == PHASE_STEP_SUBJECT and args.lane == "inventory":
+            _phase_step_inventory(session, policy, report)
         if args.lane == "enumerate":
             _enumerate_conditioned(session, policy, report, role)
             report["native_test_invocations"] = 0
@@ -9109,8 +9426,10 @@ def _execute_frequency_role(args, report, role, read_policy, contracts):
                 "--jobs", "6", "--", "--test-threads=1"], policy["baseline_wall_seconds"])
             report["baseline_execution"] = _conditioned_test_execution(raw, policy, role, doctests=True)
         if args.lane in {"coverage", "all"}:
+            selection = (["--tests"] if role.selector == PHASE_STEP_SUBJECT else
+                         [arg for target in role.coverage_tests for arg in ("--test", target)])
             command = [str(session.tools / "cargo-llvm-cov"), "llvm-cov", "--package", "time-core",
-                "--frozen", "--jobs", "6", "--lib", *(arg for target in role.coverage_tests for arg in ("--test", target)),
+                "--frozen", "--jobs", "6", "--lib", *selection,
                 "--json", "--output-path", "/work/coverage.json", "--failure-mode", "any",
                 "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/", "--", "--test-threads=1"]
             raw = session.run("coverage", command, policy["coverage_wall_seconds"])
@@ -9132,7 +9451,8 @@ def _execute_frequency_role(args, report, role, read_policy, contracts):
             COMMON.run_analysis_lanes(role.scope, selected, policy, session.work, session.tools, run, report, "mutation")
             report[_frequency_artifact_key(role)] = {}
             for owner, filename in selected.items():
-                items, _ = COMMON.parse_mutation_listing(report["mutation_enumeration"][owner]["raw_output"], expected_jobs=10)
+                workers = COMMON.mutation_jobs(policy) if role.selector == PHASE_STEP_SUBJECT else 10
+                items, _ = COMMON.parse_mutation_listing(report["mutation_enumeration"][owner]["raw_output"], expected_jobs=workers)
                 inventory = COMMON.mutation_inventory(role.scope, items, 512, filename)
                 report[_frequency_artifact_key(role)][owner] = frequency_artifact_manifest(
                     session.work, report, policy, owner, inventory, session.identity,
@@ -9266,8 +9586,56 @@ def _baseline_chart_assertion_target(cause, source_root, identity, role):
     return target
 
 
+_PHASE_STEP_COUNTER_SOURCE = (
+    "crates/time-core/tests/private/step_counter.rs",
+    "56465eeebd228784ab86179606209d1c092d14f6b580e7cb8ba345deb5368f24",
+)
+_PHASE_STEP_COUNTER_GUARD_PARENT = (
+    "crates/time-core/tests/private/phase_plan_lifecycle.rs",
+    "3e43d9a9b59607b5760303827ab23c39859099d0abfa39fd16bf1b61ccbb06f7",
+)
+_PHASE_STEP_INTEGRATION_GUARD_CHILDREN = frozenset({
+    "crates/time-core/tests/private/step_contracts.rs",
+    "crates/time-core/tests/private/step_qualification.rs",
+})
+
+
+def _phase_step_tracked_guard_source(source_root, identity, name, source, test, role):
+    """Resolve three code-owned children's literal parent guard imports.
+
+    The assertion token and panic remain owned by the child callsite. Its exact
+    source, unique test and captured include chain cannot borrow another helper.
+    Other sources/roles retain the existing same-file guard requirement.
+    """
+    if (_frequency_analysis_role(role).selector != PHASE_STEP_SUBJECT
+            or name not in {_PHASE_STEP_COUNTER_SOURCE[0], *_PHASE_STEP_INTEGRATION_GUARD_CHILDREN}):
+        return source
+    if name == _PHASE_STEP_COUNTER_SOURCE[0]:
+        child, child_sha = _PHASE_STEP_COUNTER_SOURCE
+        parent, parent_sha = _PHASE_STEP_COUNTER_GUARD_PARENT
+        target = "--lib"
+    else:
+        # These two existing includes and their unique tests are code-owned by
+        # _phase_step_private_test_target. Complete current capture hashes bind
+        # both test files; no policy-provided path can choose a helper parent.
+        child, child_sha = name, identity.get(name)
+        parent, parent_sha = _PHASE_STEP_TEST_ROOT, identity.get(_PHASE_STEP_TEST_ROOT)
+        target = "--test phase_plan"
+    if identity.get(child) != child_sha or hashlib.sha256(source.encode()).hexdigest() != child_sha:
+        raise Incomplete("Phase-step imported guard child differs from its reviewed source.")
+    imports = re.findall(r"(?m)^use super::\{([^{}]*)\};", source)
+    if len(imports) != 1 or [part.strip() for part in imports[0].split(",")].count("product_ok") != 1:
+        raise Incomplete("Phase-step tracked guard lacks its sole literal parent import.")
+    if _phase_step_private_test_target({"source": child, "test": test}, source_root, identity, role) != target:
+        raise Incomplete("Phase-step imported guard lacks its actual test/module owner.")
+    raw = COMMON.read_analysis_bytes(source_root / parent, maximum=512 * 1024)
+    if identity.get(parent) != parent_sha or hashlib.sha256(raw).hexdigest() != parent_sha:
+        raise Incomplete("Phase-step imported guard parent differs from its reviewed source.")
+    return raw.decode("utf-8")
+
+
 def _frequency_assertion(source_root, identity, filename, line, column, message, *, test=None, role=None):
-    """Require an exact real test assertion or its same-file tracked success guard."""
+    """Require a real assertion or its same-file/closed StepCounter tracked guard."""
     name = _frequency_source_name(filename, identity)
     if (not name.startswith("crates/time-core/tests/")
             and _baseline_chart_assertion_target({"source": name, "test": test, "line": line, "column": column}, source_root, identity, role) is None):
@@ -9288,8 +9656,9 @@ def _frequency_assertion(source_root, identity, filename, line, column, message,
         raise Incomplete("Frequency panic is not at an actual source-owned assertion token.")
     kind = token[1]
     if kind == "product_ok":
-        helper = re.findall(r"#\[track_caller\]\s*fn product_ok[^\n]*", source)
-        witness = re.search(r'assert!\s*\(\s*(?:value|result)[.]is_ok\(\)\s*,\s*"([^"\\]*)"', source)
+        guard_source = _phase_step_tracked_guard_source(source_root, identity, name, source, test, role)
+        helper = re.findall(r"#\[track_caller\]\s*fn product_ok[^\n]*", guard_source)
+        witness = re.search(r'assert!\s*\(\s*(?:value|result)[.]is_ok\(\)\s*,\s*"([^"\\]*)"', guard_source)
         if len(helper) != 1 or witness is None:
             raise Incomplete("Frequency tracked guard lacks its unique fixed success assertion.")
         prefix = witness[1].split("{", 1)[0]
@@ -9331,9 +9700,99 @@ def _frequency_residual_failure(text):
                 or re.search(r"(?m)^[ \t]*(?:Error:|error(?:\[[A-Za-z0-9_]+\])?:|[A-Z0-9_]*HARNESS_)", text))
 
 
+_PHASE_STEP_TEST_ROOT = "crates/time-core/tests/phase_plan.rs"
+_PHASE_STEP_LIFECYCLE = "crates/time-core/tests/private/phase_plan_lifecycle.rs"
+_PHASE_STEP_PRIVATE_TEST_BINDINGS = {
+    **{f"crates/time-core/tests/private/{module}.rs": (
+        module, "--test phase_plan", ((_PHASE_STEP_TEST_ROOT, f"private/{module}.rs", module),))
+       for module in ("step_contracts", "step_qualification", "step_diagnostics")},
+    "crates/time-core/tests/private/reference_input_readiness.rs": (
+        "reference_input_readiness", "--test chart_combination_lifecycle", (
+            ("crates/time-core/tests/chart_combination_lifecycle.rs",
+             "private/reference_input_readiness.rs", "reference_input_readiness"),)),
+    "crates/time-core/tests/private/step_counter.rs": (
+        "reference_input::rate_delivery::phase_plan::tests::step_counter", "--lib", (
+            (PHASE_STEP_SUBJECTS["phase_plan"], "../../../tests/private/phase_plan_lifecycle.rs", "tests"),
+            (_PHASE_STEP_LIFECYCLE, "step_counter.rs", "step_counter"))),
+    _PHASE_STEP_LIFECYCLE: (
+        "reference_input::rate_delivery::phase_plan::tests", "--lib", (
+            (PHASE_STEP_SUBJECTS["phase_plan"], "../../../tests/private/phase_plan_lifecycle.rs", "tests"),)),
+    "crates/time-core/tests/private/adaptive_horizon.rs": (
+        "reference_input::rate_delivery::phase_plan::adaptive::tests", "--lib", (
+            (PHASE_STEP_SUBJECTS["adaptive_horizon"], "../../../../tests/private/adaptive_horizon.rs", "tests"),)),
+    "crates/time-core/tests/private/frequency_prior_numeric.rs": (
+        "regression::chart::roundoff::frequency_prior::tests", "--lib", (
+            (PHASE_STEP_SUBJECTS["frequency_numeric"], "../../../../tests/private/frequency_prior_numeric.rs", "tests"),)),
+}
+
+
+def _phase_step_private_test_target(cause, source_root, identity, role):
+    """Resolve only the reviewed actual Step/adaptive test chains in this candidate.
+
+    Literal paths, module ancestry and Cargo targets are code-owned. Hashes come
+    from the complete current source capture; no historical test bytes or
+    arbitrary policy-controlled import can lend an assertion its owner.
+    """
+    if _frequency_analysis_role(role).selector != PHASE_STEP_SUBJECT:
+        return None
+    if cause["source"] not in _PHASE_STEP_PRIVATE_TEST_BINDINGS:
+        return None
+    test = cause.get("test")
+    bindings = [(name, target, edges)
+        for name, (namespace, target, edges) in _PHASE_STEP_PRIVATE_TEST_BINDINGS.items()
+        if type(test) is str
+        and re.fullmatch(re.escape(namespace) + r"::[A-Za-z_][A-Za-z0-9_]*", test) is not None
+        and (cause["source"] == name or cause["source"] in {parent for parent, _, _ in edges})]
+    if len(bindings) != 1:
+        raise Incomplete("Phase-step private assertion has a foreign module namespace.")
+    declaration_source, target, edges = bindings[0]
+    files = {}
+
+    def captured(name):
+        if name not in files:
+            expected = identity.get(name)
+            if type(expected) is not str or re.fullmatch(r"[a-f0-9]{64}", expected) is None:
+                raise Incomplete("Phase-step private test chain has no current source binding.")
+            raw = COMMON.read_analysis_bytes(source_root / name, maximum=512 * 1024)
+            if hashlib.sha256(raw).hexdigest() != expected:
+                raise Incomplete("Phase-step private test/include source changed.")
+            files[name] = raw.decode("utf-8")
+        return files[name]
+
+    # A nested test may reach an assertion in its captured private ancestor.
+    # Its #[test] declaration still belongs only to the exact child module;
+    # neither a sibling nor an arbitrary namespace prefix can lend ownership.
+    captured(cause["source"])
+    source = captured(declaration_source)
+    function = test.rsplit("::", 1)[1]
+    if len(re.findall(r"(?m)^#\[test\]\s*fn " + re.escape(function) + r"\s*\(", source)) != 1:
+        raise Incomplete("Phase-step private assertion has no unique actual test declaration.")
+    declarations = r'#\[path\s*=\s*"([^"\r\n]+)"\]\s*mod\s+([A-Za-z_][A-Za-z0-9_]*)\s*;'
+    for parent, path, module in edges:
+        text = captured(parent)
+        expected_child = _frequency_source_name(str(Path(parent).parent / path), identity)
+        matches = [(value, declared) for value, declared in re.findall(declarations, text)
+                   if Path(value).name == Path(path).name]
+        if matches != [(path, module)]:
+            raise Incomplete("Phase-step private test has a changed or duplicated literal include.")
+        if expected_child not in files:
+            captured(expected_child)
+        # An adjacent declaration cannot lend the same private file a second
+        # ancestry within any of these explicit reviewed source roots.
+        roots = {edge[0] for row in _PHASE_STEP_PRIVATE_TEST_BINDINGS.values() for edge in row[2]}
+        for other in sorted(roots - {parent}):
+            for value, _ in re.findall(declarations, captured(other)):
+                if Path(value).name == Path(path).name:
+                    raise Incomplete("Phase-step private test has ambiguous reviewed-root ownership.")
+    return target
+
+
 def _frequency_failed_target(cause, source_root, identity, *, role=None):
     """Derive Cargo's failed target from its already source-owned assertion."""
     source = cause["source"]
+    reviewed = _phase_step_private_test_target(cause, source_root, identity, role)
+    if reviewed is not None:
+        return reviewed
     reviewed = _baseline_chart_assertion_target(cause, source_root, identity, role)
     if reviewed is not None:
         return reviewed
@@ -9420,6 +9879,57 @@ _BASELINE_CHART_RESULT_SOURCES = {
 }
 
 
+_PHASE_STEP_RESULT_TESTS = {
+    "reference_input::rate_delivery::phase_plan::tests::step_counter::known_step_arithmetic_failure_commits_final_cursor_target_and_actual_facts":
+        (_PHASE_STEP_COUNTER_SOURCE, (
+            'Error: Custom { kind: Other, error: "numeric failure cannot undo a Known step" }',
+            'Error: Custom { kind: Other, error: "lost committed cursor" }',
+            'Error: Custom { kind: Other, error: "missing actual counter witness" }')),
+    "reference_input::rate_delivery::phase_plan::tests::step_counter::known_step_fresh_recovery_retains_counter_witness_and_rejects_old_absolute_map":
+        (_PHASE_STEP_COUNTER_SOURCE, (
+            "Error: Invariant",
+            'Error: Custom { kind: Other, error: "missing actual counter witness" }')),
+    "step_diagnostics::matched_step_retirement_diagnostics_preserve_provenance_after_sole_transfer":
+        (("crates/time-core/tests/private/step_diagnostics.rs",
+          "3c2d2269bc5f7d734c9abfced8c0239d8823f3fb0c9441c1cb31d0fc0fe3fef9"), (
+            'Error: Custom { kind: Other, error: "retirement lost its original source metadata" }',)),
+}
+
+
+def _phase_step_result_sections(sections, source_root, identity, mutant, diff, role):
+    """Retain six exact source/test/body pairs with zero credit for an admitted fault.
+
+    Exact current source, unique test declarations and literal module ancestry
+    bind these inconclusive results. The caller still requires a separate owned
+    semantic assertion and the complete failed-test/target roster.
+    """
+    if (_frequency_analysis_role(role).selector != PHASE_STEP_SUBJECT
+            or type(sections) is not list or not 1 <= len(sections) <= len(_PHASE_STEP_RESULT_TESTS)):
+        raise Incomplete("Phase-step Result sections have an unreviewed role or finite roster.")
+    if _frequency_mutation_source(source_root, identity, mutant, diff, role=role) is None:
+        raise Incomplete("Phase-step Result observation lacks an actual admitted fault.")
+    observations, seen = [], set()
+    for section in sections:
+        if (type(section) is not dict or type(section.get("test")) is not str
+                or section["test"] in seen or section["test"] not in _PHASE_STEP_RESULT_TESTS
+                or section.get("body") not in _PHASE_STEP_RESULT_TESTS[section["test"]][1]
+                or type(section.get("section_sha256")) is not str
+                or re.fullmatch(r"[a-f0-9]{64}", section["section_sha256"]) is None):
+            raise Incomplete("Phase-step Result section has an unknown, duplicate or changed test/body.")
+        test, body = section["test"], section["body"]
+        (test_source, test_sha), _ = _PHASE_STEP_RESULT_TESTS[test]
+        raw = COMMON.read_analysis_bytes(source_root / test_source, maximum=512 * 1024)
+        if identity.get(test_source) != test_sha or hashlib.sha256(raw).hexdigest() != test_sha:
+            raise Incomplete("Phase-step Result test source differs from the reviewed branch.")
+        seen.add(test)
+        target = _phase_step_private_test_target({"source": test_source, "test": test}, source_root, identity, role)
+        observations.append({"test": test, "source": test_source, "source_sha256": test_sha,
+            "section_sha256": section["section_sha256"], "body_sha256": hashlib.sha256(body.encode()).hexdigest(),
+            "reason": "reviewed Result error is inconclusive; only separate source assertions count",
+            "kill_credit": 0, "cargo_target": target})
+    return observations
+
+
 def _baseline_feedback_result_sections(sections, source_root, identity, mutant, diff, role):
     """Retain only a complete reviewed chart Result roster, with zero kill credit.
 
@@ -9429,6 +9939,8 @@ def _baseline_feedback_result_sections(sections, source_root, identity, mutant, 
     the caller must retain these observations and at least one separate owned
     assertion. Unknown source, descriptor, diff, test or body is a refusal.
     """
+    if _frequency_analysis_role(role).selector == PHASE_STEP_SUBJECT:
+        return _phase_step_result_sections(sections, source_root, identity, mutant, diff, role)
     if _frequency_analysis_role(role).selector != BASELINE_FEEDBACK_SUBJECT:
         raise Incomplete("Historical frequency roles admit no Result-section exception.")
     binding = _BASELINE_CHART_RESULT_CASES.get(COMMON.canonical_sha256(mutant)) if type(mutant) is dict else None
@@ -9474,23 +9986,57 @@ _BASELINE_PHASE_AUXILIARY_CASES = {
 }
 
 
+# One actual adaptive mutant has four supplementary overflow frames, never kills.
+_PHASE_STEP_ADAPTIVE_AUXILIARY_SOURCE = (
+    "crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs",
+    "e530725ed2b122af12e11f3a01ade69f11fa92547c4a091fc5f86a7cb6544ba0")
+_PHASE_STEP_ADAPTIVE_AUXILIARY_CASE = (
+    "b2f387332cd3d53f202d274f70cff7548d313ab712370dd4fed5964a333347cd",
+    "1b8bd42c1f14ef4aac51b51c7dfc6e1cd3bc9f25f30a1713ae44f831a5ddb3f9",
+    279, 25, "attempt to multiply with overflow",
+    tuple("reference_input::rate_delivery::phase_plan::adaptive::tests::" + name for name in (
+        "adaptive_clamps_keep_original_integer_limits_and_refuse_nonzero_underflow",
+        "adaptive_policy_uses_exact_selected_horizon_for_its_existing_rate_bound",
+        "adaptive_private_numeric_boundaries_keep_healthy_neighbors",
+        "adaptive_small_debt_threshold_equality_and_adjacent_bits_are_distinct")),
+    ("reference_input::rate_delivery::phase_plan::adaptive::tests::"
+     "adaptive_duration_ceiling_preserves_fractional_nanoseconds_at_large_seconds",
+     "crates/time-core/tests/private/adaptive_horizon.rs", 34, 13, "product_ok"))
+
+
 def _baseline_feedback_auxiliary_panic(body, test, source_root, identity, mutant, diff, role):
     """Recognize one actually reviewed auxiliary arithmetic frame, never a kill.
 
-    Only five exact phase mutants are selected. Their dependent fixture panic
+    Five legacy phase mutants and one current adaptive mutant are selected. Their fixture panic
     is retained with zero credit; a separately validated direct helper assertion
     remains mandatory. No foreign, resource, native or arbitrary panic is masked.
     """
-    filename, pristine = _BASELINE_PHASE_AUXILIARY_SOURCE
+    phase_step = _frequency_analysis_role(role).selector == PHASE_STEP_SUBJECT
+    filename, pristine = (_PHASE_STEP_ADAPTIVE_AUXILIARY_SOURCE if phase_step
+                          else _BASELINE_PHASE_AUXILIARY_SOURCE)
     if "panicked at " + filename + ":" not in body:
         return None
-    if _frequency_analysis_role(role).selector != BASELINE_FEEDBACK_SUBJECT:
-        raise Incomplete("Historical frequency roles admit no auxiliary panic exception.")
-    binding = _BASELINE_PHASE_AUXILIARY_CASES.get(COMMON.canonical_sha256(mutant)) if type(mutant) is dict else None
-    test_source, test_sha = _BASELINE_PHASE_AUXILIARY_TEST_SOURCE
     manifest = "policy/tool-manifest.json"
-    compiler = "83deaf865a9b5df42b02a5b9b31ec0f1af3fdd3cbdd291fb064256b88a4d1d41"
-    if (binding is None or filename != BASELINE_FEEDBACK_SUBJECTS["phase_plan"]
+    if phase_step:
+        binding = (_PHASE_STEP_ADAPTIVE_AUXILIARY_CASE if type(mutant) is dict
+            and COMMON.canonical_sha256(mutant) == "3d7b8cefa055743424d769a21990b58b68abf5b452c4835f84c2c20d42415582"
+            else None)
+        owner = PHASE_STEP_SUBJECTS["adaptive_horizon"]
+        test_source = "crates/time-core/tests/private/adaptive_horizon.rs"
+        test_sha = identity.get(test_source)
+        compiler = "8a156a5573626d7aebb868f257436306c79c2ff64fa3ee3b9357482363ac007d"
+        if (type(test_sha) is not str or re.fullmatch(r"[a-f0-9]{64}", test_sha) is None
+                or _phase_step_private_test_target({"source": test_source, "test": test},
+                    source_root, identity, role) != "--lib"):
+            raise Incomplete("Adaptive auxiliary panic has no actual captured test/include owner.")
+    else:
+        if _frequency_analysis_role(role).selector != BASELINE_FEEDBACK_SUBJECT:
+            raise Incomplete("Historical frequency roles admit no auxiliary panic exception.")
+        binding = _BASELINE_PHASE_AUXILIARY_CASES.get(COMMON.canonical_sha256(mutant)) if type(mutant) is dict else None
+        test_source, test_sha = _BASELINE_PHASE_AUXILIARY_TEST_SOURCE
+        owner = BASELINE_FEEDBACK_SUBJECTS["phase_plan"]
+        compiler = "83deaf865a9b5df42b02a5b9b31ec0f1af3fdd3cbdd291fb064256b88a4d1d41"
+    if (binding is None or filename != owner
             or identity.get(filename) != pristine or identity.get(test_source) != test_sha
             or identity.get(manifest) != compiler or type(diff) is not str
             or hashlib.sha256(diff.encode()).hexdigest() != binding[0]
@@ -9667,6 +10213,22 @@ def _frequency_null_let_chain(message, mutant, mutant_diff, source_root, identit
                                       "text": lines[line - 1].rstrip("\n")}])
 
 
+def _phase_step_span_offsets(text, span):
+    """Convert bounded cargo-mutants character columns without treating UTF-8 as ASCII."""
+    if not COMMON.exact_mutant_span(span):
+        raise Incomplete("Phase-step mutation/function span is malformed.")
+    lines = text.splitlines(keepends=True)
+    offsets = []
+    for point in (span["start"], span["end"]):
+        line, column = point["line"], point["column"]
+        if not 1 <= line <= len(lines) or not 1 <= column <= len(lines[line - 1].rstrip("\r\n")) + 1:
+            raise Incomplete("Phase-step span is outside its current source.")
+        offsets.append(sum(map(len, lines[:line - 1])) + column - 1)
+    if offsets[0] > offsets[1]:
+        raise Incomplete("Phase-step source span is reversed.")
+    return tuple(offsets)
+
+
 def _frequency_mutation_source(source_root, identity, mutant, diff, *, role=None):
     """Apply one reviewed native file diff, requiring every old byte and hunk count."""
     if mutant is None and diff is None:
@@ -9733,6 +10295,16 @@ def _frequency_mutation_source(source_root, identity, mutant, diff, *, role=None
     changed = "".join(output).encode()
     if not hunks or not changes or changed == data or len(changed) > 2 * 1024 * 1024:
         raise Incomplete("Frequency diagnostic diff has no bounded actual mutation.")
+    if _frequency_analysis_role(role).selector == PHASE_STEP_SUBJECT:
+        if (mutant.get("package") != "time-core" or mutant.get("genre") not in {
+                "FnValue", "BinaryOperator", "UnaryOperator", "MatchArm", "MatchArmGuard", "StructField"}
+                or type(mutant.get("replacement")) is not str or len(mutant["replacement"]) > 16384):
+            raise Incomplete("Phase-step mutation has an unsupported typed payload.")
+        text = data.decode("utf-8")
+        first, last = _phase_step_span_offsets(text, mutant["span"])
+        exact = (text[:first] + mutant["replacement"] + " /* ~ changed by cargo-mutants ~ */" + text[last:]).encode()
+        if changed != exact:
+            raise Incomplete("Phase-step applied diff is not the sole exact descriptor-span replacement.")
     return filename, changed
 
 
@@ -9761,12 +10333,88 @@ def _frequency_owned_span(span, filename, data, pristine_sha):
             "diagnostic_source_sha256": hashlib.sha256(data).hexdigest()}
 
 
-def _frequency_const_trait_companion(records, record, mutant, diff, compiled, identity):
-    """Bind four exact catalog payloads to balanced owned const-trait triplets.
+def _phase_step_compiler_cause(records, record, mutant, diff, compiled, source_root, identity, role):
+    """Own only two structural uncoded compiler families; never behavioral kills.
 
-    All four formats have predecessor native evidence. The current state
-    source changes only its private test suffix; fresh outcomes remain required.
+    Re-admit the sole whole-file edit. Exact diagnostic coordinates are derived
+    from its inserted expression/operator, including UTF-8 byte offsets. Unknown
+    syntax, messages, extra producers or unbalanced triplets remain incomplete.
     """
+    if (_frequency_analysis_role(role).selector != PHASE_STEP_SUBJECT or compiled is None
+            or record["message"].get("code") is not None or record["target"]["kind"] != ["lib"]
+            or record["target"].get("test") is not True):
+        return False
+    if _frequency_mutation_source(source_root, identity, mutant, diff, role=role) != compiled:
+        return False
+    filename, changed = compiled
+    pristine = COMMON.read_analysis_bytes(source_root / filename, maximum=512 * 1024).decode("utf-8")
+    first, last = _phase_step_span_offsets(pristine, mutant["span"])
+    function = mutant.get("function")
+    if (type(function) is not dict or set(function) != {"function_name", "return_type", "span"}
+            or type(function.get("function_name")) is not str or type(function.get("return_type")) is not str):
+        return False
+    function_first, function_last = _phase_step_span_offsets(pristine, function.get("span"))
+    if not function_first <= first <= last <= function_last:
+        return False
+    leaf = function["function_name"].rsplit("::", 1)[-1]
+    body = pristine[function_first:function_last]
+    if (re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", leaf) is None
+            or re.search(r"(?m)^[ \t]*(?:pub(?:\([^)]*\))?\s+)?(?:const\s+)?fn\s+"
+                         + re.escape(leaf) + r"\b", body) is None):
+        return False
+    replacement = mutant["replacement"]
+    errors = [candidate for candidate in records if candidate.get("reason") == "compiler-message"
+              and candidate["message"]["level"] == "error"]
+    if any(any(candidate.get(key) != record.get(key) for key in ("package_id", "manifest_path", "target"))
+           for candidate in errors):
+        return False
+    if (mutant["genre"] == "BinaryOperator" and pristine[first:last] == "&&" and replacement == "||"):
+        expected = {None: ("`||` operators are not supported in let chain conditions", first, first + 2)}
+    elif mutant["genre"] == "FnValue" and replacement in {"1.try_into().unwrap()", "Some(1.try_into().unwrap())"}:
+        signature = re.search(r"(?m)^[ \t]*(?:pub(?:\([^)]*\))?\s+)?const\s+fn\s+" + re.escape(leaf)
+            + r"\s*\([^{}]*?\)\s*->\s*(NonZeroU64|Option\s*<\s*NonZeroU64\s*>)\s*\{", body)
+        if (signature is None or not body.endswith("}")
+                or pristine[function_first + signature.end():first].strip()
+                or pristine[last:function_last - 1].strip()):
+            return False
+        returned = re.sub(r"\s", "", signature[1])
+        if (re.sub(r"\s", "", function.get("return_type", "")) != "->" + returned
+                or (returned == "NonZeroU64") != (replacement == "1.try_into().unwrap()")):
+            return False
+        call = first + replacement.index("1.try_into().unwrap()")
+        expected = {
+            None: ("`TryInto` is not yet stable as a const trait", call, call + 12),
+            "E0658": ("cannot call conditionally-const method `<u64 as TryInto<NonZero<u64>>>::try_into` in constant functions", call + 2, call + 12),
+            "E0015": ("cannot call non-const method `Result::<NonZero<u64>, TryFromIntError>::unwrap` in constant functions", call + 13, call + 21),
+        }
+    else:
+        return False
+    if len(errors) != len(expected):
+        return False
+    text, counts = changed.decode("utf-8"), {key: 0 for key in expected}
+    for candidate in errors:
+        message = candidate["message"]
+        raw_code = message.get("code")
+        code = raw_code.get("code") if type(raw_code) is dict else None
+        if code not in expected or (code is None and raw_code is not None) or message["message"] != expected[code][0]:
+            return False
+        primary = [span for span in message["spans"] if span.get("is_primary") is True]
+        if len(primary) != 1 or _frequency_source_name(primary[0].get("file_name"), identity) != filename:
+            return False
+        _, begin, end = expected[code]
+        before, through = text[:begin], text[:end]
+        coordinates = (before.count("\n") + 1, through.count("\n") + 1,
+            len(before.rsplit("\n", 1)[-1]) + 1, len(through.rsplit("\n", 1)[-1]) + 1,
+            len(before.encode()), len(through.encode()))
+        if tuple(primary[0].get(key) for key in ("line_start", "line_end", "column_start", "column_end", "byte_start", "byte_end")) != coordinates:
+            return False
+        _frequency_owned_span(primary[0], filename, changed, identity[filename])
+        counts[code] += 1
+    return set(counts.values()) == {1}
+
+
+def _frequency_const_trait_companion(records, record, mutant, diff, compiled, identity, *, role=None):
+    """Preserve the four historical frequency const-trait bindings unchanged."""
     base = "crates/time-core/src/reference_input/rate_delivery"
     reviewed = {
         "bd96f1630c2456f8e3772aeef1762864b72b069b952977eaaa1c576cccb5da5d": (
@@ -9786,6 +10434,9 @@ def _frequency_const_trait_companion(records, record, mutant, diff, compiled, id
             "97e70b1874a3f24367d91df0294225729b0e8513e6f4d23873b56ebd96427a93",
             "2255974b6312cd40c668f3fd2f71f1c8a27645bd87fd8226ee3f6475d29f6ae5", 495, 9, 19714),
     }
+    selector = _frequency_analysis_role(role).selector
+    if selector != FREQUENCY_PRIOR_SUBJECT:
+        return False
     binding = reviewed.get(COMMON.canonical_sha256(mutant)) if type(mutant) is dict else None
     if binding is None:
         return False
@@ -9991,7 +10642,9 @@ def _frequency_compiler_errors(records, source_root, identity, *, mutant=None, m
                 _frequency_null_let_chain(message, mutant, mutant_diff, source_root, identity, target)
                 or _frequency_const_trait_companion(records, record, mutant, mutant_diff, compiled, identity)))
                 or (role.selector == BASELINE_FEEDBACK_SUBJECT and _baseline_feedback_compiler_cause(
-                    records, record, mutant, mutant_diff, compiled, source_root, identity))):
+                    records, record, mutant, mutant_diff, compiled, source_root, identity))
+                or (role.selector == PHASE_STEP_SUBJECT and _phase_step_compiler_cause(
+                    records, record, mutant, mutant_diff, compiled, source_root, identity, role))):
             raise Incomplete("Frequency compiler error has no admitted source-bound cause.")
         targets = (["lib", *(["lib test"] if target["test"] else [])] if target["kind"] == ["lib"]
                    else ['test "' + target["name"] + '"'])
@@ -10073,8 +10726,9 @@ def frequency_artifact_manifest(work, report, policy, owner, inventory, identity
     """Rebuild the closed actual outcome/log/diff/config manifest with causal observations."""
     role = _frequency_analysis_role(role)
     source = work / "source"
-    if not (COMMON.baseline_feedback_equivalences_valid(policy)
-            if role.selector == BASELINE_FEEDBACK_SUBJECT else COMMON.frequency_prior_equivalences_valid(policy)):
+    if not (COMMON.phase_step_equivalences_valid(policy) if role.selector == PHASE_STEP_SUBJECT
+            else COMMON.baseline_feedback_equivalences_valid(policy) if role.selector == BASELINE_FEEDBACK_SUBJECT
+            else COMMON.frequency_prior_equivalences_valid(policy)):
         raise Incomplete("Frequency raw artifacts have an unreviewed equivalence scope.")
     equivalents = {entry["mutant"]["name"]: entry["mutant"] for entry in policy["mutation_equivalences"]}
     if PRODUCT.inventory(source) != identity:
@@ -10193,14 +10847,16 @@ def frequency_campaign_result(work, receipt, campaign, owner, role, policy, admi
         raise Incomplete("Frequency campaign readonly roots differ from independent admission.")
     configuration = _frequency_config(work, receipt, dependency_policy)
     vendor, tools, stable = Path(configuration["vendor"]), work.parent / "tools", admitted["stable"]
+    workers = COMMON.mutation_jobs(policy) if role.selector == PHASE_STEP_SUBJECT else 10
+    tokens = COMMON.mutation_jobserver_tasks(role.scope, policy, workers=workers)
     inner = [str(tools / "cargo-mutants"), "mutants", "--package", role.scope.package,
              "--file", role.scope.select("all")[owner], "--test-workspace", "false",
-             "--cap-lints", "false", "--jobs", "10", "--jobserver", "true",
-             "--jobserver-tasks", "10", "--cargo-arg=--message-format=json",
+             "--cap-lints", "false", "--jobs", str(workers), "--jobserver", "true",
+             "--jobserver-tasks", str(tokens), "--cargo-arg=--message-format=json",
              "--baseline", "run", "--build-timeout", "90", "--timeout", "60",
              "--output", "/work/mutation/" + owner]
     result = COMMON.mutation_campaign_result(role.scope, tools, owner, inner, campaign,
-        expected_jobs=10, expected_message_format="json", policy=policy)
+        expected_jobs=workers, expected_message_format="json", policy=policy)
     expected = runtime.sandbox_command(ROOT, work, inner,
         readonly=[*readonly, vendor, tools], sealed=[work / "source", work / "cargo-home/config.toml"],
         path_dirs=[stable / "bin", tools], cwd=work / "source",
@@ -10216,13 +10872,18 @@ def frequency_campaign_result(work, receipt, campaign, owner, role, policy, admi
 def frequency_cohort_union(args, report, policy, role):
     """Join this role's complete actual owner receipts through unchanged raw leaf validators."""
     role = _frequency_analysis_role(role)
+    if role.selector == PHASE_STEP_SUBJECT:
+        _phase_step_campaign_admission(policy)
+        if read_phase_step_policy(ROOT) != policy:
+            raise Incomplete("Phase-step union policy differs from its current complete source admission.")
     owners = role.scope.select("all")
     frequency_inventory_bindings(policy, required=True, role=role)
     equivalences = COMMON.admit_mutation_equivalences(ROOT, role.scope, policy)
     paths = getattr(args, "cohort_receipt", [])
     if args.cohort_id is not None or len(paths) != len(owners) or any(not path.is_absolute() for path in paths):
         raise Incomplete(f"{role.label} union requires "
-            + ("five" if role.selector == BASELINE_FEEDBACK_SUBJECT else "four")
+            + ("seven" if role.selector == PHASE_STEP_SUBJECT else
+               "five" if role.selector == BASELINE_FEEDBACK_SUBJECT else "four")
             + " distinct complete named-owner receipts.")
     # The custodian sees the original spelling before resolve can hide a link.
     documents = [COMMON.read_analysis_json(path) for path in paths]
@@ -10247,7 +10908,8 @@ def frequency_cohort_union(args, report, policy, role):
                 or PRODUCT.sha256(tool) != PRODUCT.sha256(COMMON.tool_path(ROOT, "cargo-mutants"))):
             raise Incomplete("Frequency-prior union tool bytes differ.")
         raw = receipt.get("mutation_enumeration", {}).get(owner, {}).get("raw_output")
-        items, _ = COMMON.parse_mutation_listing(raw, expected_jobs=10)
+        workers = COMMON.mutation_jobs(policy) if role.selector == PHASE_STEP_SUBJECT else 10
+        items, _ = COMMON.parse_mutation_listing(raw, expected_jobs=workers)
         inventory = COMMON.mutation_inventory(role.scope, items, 512, owners[owner])
         reviewed.update(COMMON.admit_reviewed_mutation_inventories(role.scope, policy, {owner: inventory}))
         campaigns = [row for row in receipt.get("lanes", []) if row.get("lane") == "mutation-campaign:" + owner]
@@ -10279,7 +10941,9 @@ def frequency_cohort_union(args, report, policy, role):
     report.update(owned_output=str(args.output_dir), subjects=owners,
         candidate_sha256=policy["candidate_sha256"], source_sha256=identity,
         mutation_cohort_union=leaves, qualification_passed=True, mutation_union_passed=True,
-        full_role_qualification=False, scope=("Complete five-owner mutation union only; coverage/contracts/native Windows remain separate."
+        full_role_qualification=False, scope=("Complete seven-owner mutation union only; coverage/contracts/native Windows remain separate."
+            if role.selector == PHASE_STEP_SUBJECT else
+            "Complete five-owner mutation union only; coverage/contracts/native Windows remain separate."
             if role.selector == BASELINE_FEEDBACK_SUBJECT else
             "Complete four-owner mutation union only; coverage/contracts/native Windows remain separate."))
 
@@ -10287,7 +10951,8 @@ def frequency_cohort_union(args, report, policy, role):
 def _main_frequency_role(args, role, execute_role):
     """Keep scoped lane/cohort success distinct from complete role or product qualification."""
     report = {"status": "incomplete", "selected_lane": args.lane,
-        "scope": (("Baseline-feedback five-owner " if role.selector == BASELINE_FEEDBACK_SUBJECT
+        "scope": (("Complete selected perimeter: adaptive phase/explicit step seven-owner " if role.selector == PHASE_STEP_SUBJECT else
+                   "Baseline-feedback five-owner " if role.selector == BASELINE_FEEDBACK_SUBJECT
                    else "Conditional frequency four-owner ") + args.lane),
         "qualification_passed": False, "native_qualification": "not performed"}
     if args.cohort_id is not None:
@@ -10296,7 +10961,8 @@ def _main_frequency_role(args, role, execute_role):
         if args.lane != "cohort-union" and args.vendor_dir is None:
             args.vendor_dir = Path(json.loads(PRODUCT.POINTER.read_text())["vendor_dir"])
         execute_role(args, report)
-        report["status"] = "enumerated" if args.lane == "enumerate" else "passed"
+        report["status"] = ("inventoried" if role.selector == PHASE_STEP_SUBJECT and args.lane == "inventory"
+                            else "enumerated" if args.lane == "enumerate" else "passed")
     except REPORT_FAILURES as error:
         report.update(status="incomplete", qualification_passed=False, selected_lane_passed=False, error=str(error))
     if report.get("owned_output") == str(args.output_dir):
@@ -10304,7 +10970,7 @@ def _main_frequency_role(args, role, execute_role):
     print(report["status"].upper() + ": " + report["scope"], flush=True)
     if report.get("error"):
         print(report["error"], file=sys.stderr)
-    return 0 if report["status"] in {"passed", "enumerated"} else 1
+    return 0 if report["status"] in {"passed", "enumerated", "inventoried"} else 1
 
 
 def main_frequency_prior(args):
@@ -10317,8 +10983,20 @@ def main_baseline_feedback(args):
     return _main_frequency_role(args, _baseline_feedback_role(), execute_baseline_feedback)
 
 
+def execute_phase_step(args, report):
+    """Run the exact seven-file contracts/inventory/baseline/coverage/listing stages."""
+    return _execute_frequency_role(args, report, _phase_step_role(), read_phase_step_policy, _phase_step_contracts)
+
+
+def main_phase_step(args):
+    """Keep observed roster discovery separate from an actual baseline or qualification."""
+    return _main_frequency_role(args, _phase_step_role(), execute_phase_step)
+
+
 def execute(args, report):
     """Run only selected current-admitted rows; preserve partial raw observations."""
+    if args.subject == PHASE_STEP_SUBJECT:
+        return execute_phase_step(args, report)
     if args.subject == BASELINE_FEEDBACK_SUBJECT:
         return execute_baseline_feedback(args, report)
     if args.subject == FREQUENCY_PRIOR_SUBJECT:
@@ -10465,7 +11143,7 @@ def main(argv=None):
     """Fresh owned outputs, fixed scopes and nonzero incomplete status only."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lane", choices=("inventory", "contracts", "baseline", "coverage", "mutation", "cohort-union", "enumerate", "all"), default="coverage")
-    parser.add_argument("--subject", choices=(*SUBJECTS, WINDOW_VARIANCE_SUBJECT, CONDITIONED_WINDOW_SUBJECT, CONDITIONED_FIT_SUBJECT, PHASE_PLAN_SUBJECT, FREQUENCY_PRIOR_SUBJECT, BASELINE_FEEDBACK_SUBJECT, "all"), default="all")
+    parser.add_argument("--subject", choices=(*SUBJECTS, WINDOW_VARIANCE_SUBJECT, CONDITIONED_WINDOW_SUBJECT, CONDITIONED_FIT_SUBJECT, PHASE_PLAN_SUBJECT, FREQUENCY_PRIOR_SUBJECT, BASELINE_FEEDBACK_SUBJECT, PHASE_STEP_SUBJECT, "all"), default="all")
     parser.add_argument("--inventory-admission", type=Path)
     parser.add_argument('--cohort-plan', type=Path)
     parser.add_argument('--cohort-id')
@@ -10474,6 +11152,8 @@ def main(argv=None):
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--tool-admission-profile", choices=COMMON.ANALYSIS.ADMISSION_PROFILES, default="full")
     args = parser.parse_args(argv)
+    if args.subject == PHASE_STEP_SUBJECT:
+        return main_phase_step(args)
     if args.subject == BASELINE_FEEDBACK_SUBJECT:
         return main_baseline_feedback(args)
     if args.subject == FREQUENCY_PRIOR_SUBJECT:

@@ -23,6 +23,28 @@ SELF = "scripts/verify-engine-native.py"
 LAUNCHER = "tools/windows-sandbox/gated-console-launcher.rs"
 CPU = "tools/windows-sandbox/cpu-os-v3-admission.rs"
 TARGET = "x86_64-pc-windows-msvc"
+TEST_ROSTER_NAME = "windows-test-roster.json"
+MAX_TEST_ROSTER_BYTES = 1024 * 1024
+HELD_KE_TESTS = (
+    "nts_ke_experiment::job::tests::job_native_foreign_origin_records_control_before_actual_retirement",
+    "nts_ke_experiment::job::tests::provider_native_authoritative_once_preserves_permanent_admission",
+    "nts_ke_experiment::job::tests::provider_native_foreign_origins_refuse_before_effect_factory",
+)
+NESTED_TEST_MODES = dict(zip(("job-native-foreign", "provider-native-once", "provider-native-foreign"),
+                           HELD_KE_TESTS, strict=True))
+NESTED_CONTROL_MODES = ("control-nested-healthy", "control-nested-fail", "control-nested-wait")
+
+
+def mode_profile(mode):
+    """Own the finite test topology; requests cannot supply counts, images or arguments."""
+    if type(mode) is str and mode in NESTED_TEST_MODES:
+        return 6, 3, "engine-tests.exe"
+    if type(mode) is str and mode in NESTED_CONTROL_MODES:
+        return 6, 3, "gate-control.exe"
+    if type(mode) is str and mode in ("cpu", "list", "ke", "control-healthy", "control-fail", "control-wait"):
+        return 4, 2, ("cpu-v3-probe.exe" if mode == "cpu" else
+                      "engine-tests.exe" if mode in ("list", "ke") else "gate-control.exe")
+    raise Incomplete("Unadmitted fixed native process mode.")
 
 
 def load(name, relative):
@@ -42,7 +64,45 @@ EXTRAS = (SELF, LAUNCHER, CPU, "scripts/verify-time-domain-windows-allocation.py
           "scripts/portable-analysis.py", "scripts/prepare-product.py", "scripts/check-analysis.py", "scripts/analysis-runtime.py",
           "scripts/analysis-controls.py", "policy/analysis-tools.json", "scripts/tests/test_engine_native.py")
 CONTROL_SOURCE = '''//! Fixed healthy, failing and waiting native-supervisor controls.
-use std::{env, ffi::OsStr, process::ExitCode, thread, time::Duration};
+use std::{
+    env,
+    ffi::OsStr,
+    process::{Command, ExitCode, Stdio},
+    thread,
+    time::Duration,
+};
+
+/// Start one exact same-image descendant and preserve its finite exit or live wait.
+/// The supervisor owns timeout cleanup; metadata grace is no acknowledgement.
+fn nested(mode: &str) -> ExitCode {
+    let (argument, output) = match mode {
+        "healthy" => ("nested-child-healthy", "GATE_NESTED_HEALTHY"),
+        "fail" => ("nested-child-fail", "GATE_NESTED_FAIL"),
+        "wait" => ("nested-child-wait", "GATE_NESTED_WAIT"),
+        _ => return ExitCode::from(126),
+    };
+    let Ok(image) = env::current_exe() else {
+        return ExitCode::from(126);
+    };
+    let Ok(mut child) = Command::new(image)
+        .arg(argument)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::inherit())
+        .spawn()
+    else {
+        return ExitCode::from(126);
+    };
+    println!("{output}");
+    let status = child.wait();
+    thread::sleep(Duration::from_millis(250));
+    drop(child);
+    match status.ok().and_then(|value| value.code()) {
+        Some(0) => ExitCode::SUCCESS,
+        Some(7) => ExitCode::from(7),
+        _ => ExitCode::from(126),
+    }
+}
 
 /// Accept one closed mode and perform only its finite synthetic behavior.
 fn main() -> ExitCode {
@@ -65,6 +125,21 @@ fn main() -> ExitCode {
             thread::sleep(Duration::from_secs(60));
             ExitCode::SUCCESS
         }
+        Some(value) if value == OsStr::new("nested-healthy") => nested("healthy"),
+        Some(value) if value == OsStr::new("nested-fail") => nested("fail"),
+        Some(value) if value == OsStr::new("nested-wait") => nested("wait"),
+        Some(value) if value == OsStr::new("nested-child-healthy") => {
+            thread::sleep(Duration::from_millis(250));
+            ExitCode::SUCCESS
+        }
+        Some(value) if value == OsStr::new("nested-child-fail") => {
+            thread::sleep(Duration::from_millis(250));
+            ExitCode::from(7)
+        }
+        Some(value) if value == OsStr::new("nested-child-wait") => {
+            thread::sleep(Duration::from_secs(60));
+            ExitCode::SUCCESS
+        }
         _ => ExitCode::from(126),
     }
 }
@@ -80,6 +155,80 @@ def require(condition, message):
 def read_record(path):
     """Reuse bounded descriptor/ancestor custody and strict analyzer JSON admission."""
     return PE.Q.C.read_analysis_json(path, maximum=ALLOCATION.MAX_JSON)
+
+
+def validate_test_roster(value, candidate, extras):
+    """Admit an independent exact source-bound Windows library/KE prediction."""
+    keys = {"schema_version", "package", "target", "features", "candidate_sha256",
+            "extra_inputs_sha256", "tests", "ke_tests", "selected_ke_tests", "held_ke_tests"}
+    require(type(value) is dict and set(value) == keys
+            and type(value["schema_version"]) is int and value["schema_version"] == 1
+            and value["package"] == "nevrotick-engine" and value["target"] == TARGET
+            and value["features"] == ["ke-association-prototype"]
+            and value["candidate_sha256"] == candidate
+            and type(value["extra_inputs_sha256"]) is dict
+            and value["extra_inputs_sha256"] == extras,
+            "Windows test roster does not bind the exact source, helpers, target and feature.")
+    names = value["tests"]
+    require(type(names) is list and 1 <= len(names) <= 4096
+            and all(type(name) is str and 0 < len(name) <= 4096
+                    and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_][A-Za-z0-9_]*)*", name)
+                    for name in names)
+            and names == sorted(set(names)),
+            "Windows test roster must contain bounded exact sorted unique library identities.")
+    expected_ke = [name for name in names if name.startswith("nts_ke_experiment::")]
+    require(type(value["ke_tests"]) is list and expected_ke
+            and value["ke_tests"] == expected_ke,
+            "Windows KE roster must be the complete exact selected library subset.")
+    require(value["held_ke_tests"] == list(HELD_KE_TESTS)
+            and all(name in expected_ke for name in HELD_KE_TESTS)
+            and value["selected_ke_tests"] == [name for name in expected_ke if name not in HELD_KE_TESTS]
+            and value["selected_ke_tests"],
+            "Windows KE selection must retain exactly the three required nested-child holds.")
+    return value
+
+
+def read_test_roster(path, candidate, extras):
+    """Read one bounded nonlinked manifest once; discovery cannot supply its oracle."""
+    raw = PE.Q.C.read_analysis_bytes(path, maximum=MAX_TEST_ROSTER_BYTES)
+    return validate_test_roster(ALLOCATION.decode(raw), candidate, extras), raw
+
+
+def validate_test_listing(output, roster):
+    """Require the entire actual library listing to equal the independent prediction."""
+    require(type(output) is str, "Native library listing must be text.")
+    lines = [line for line in output.splitlines() if line]
+    names = [line.removesuffix(": test") for line in lines if line.endswith(": test")]
+    summaries = [line for line in lines if re.fullmatch(r"[0-9]+ tests?, 0 benchmarks", line)]
+    require(sorted(names) == roster["tests"] and len(summaries) <= 1
+            and (not summaries or int(summaries[0].split()[0]) == len(roster["tests"]))
+            and len(lines) == len(names) + len(summaries),
+            "Windows library discovery differs from its exact independent source-bound roster.")
+    return names
+
+
+def validate_ke_execution(output, roster):
+    """Require exact selected successes, zero skips and the complete filtered count."""
+    require(type(output) is str, "Native KE results must be text.")
+    expected = roster["selected_ke_tests"]
+    filtered = len(roster["tests"]) - len(expected)
+    output = "\n".join(output.splitlines())
+    summaries = re.findall(r"^test result: ok\. ([0-9]+) passed; 0 failed; 0 ignored; 0 measured; ([0-9]+) filtered out;(?: .*)?$", output, re.M)
+    entries = re.findall(r"^test (\S+) \.\.\. (.+)$", output, re.M)
+    require(summaries == [(str(len(expected)), str(filtered))]
+            and sorted(name for name, status in entries if status == "ok") == expected
+            and len(entries) == len(expected),
+            "Native KE results do not equal the independent selected identities and counts.")
+
+
+def validate_nested_execution(output, roster, mode):
+    """Require one exact outer test; its checked parent alone attests inner exit 86."""
+    require(type(mode) is str and mode in NESTED_TEST_MODES, "Unadmitted exact nested test mode.")
+    name = NESTED_TEST_MODES[mode]
+    require(name in roster["held_ke_tests"] and name in roster["tests"], "Nested test is outside its frozen roster.")
+    validate_ke_execution(output, {**roster, "selected_ke_tests": [name]})
+    return {"test": name, "tests_executed": 1, "filtered_tests": len(roster["tests"]) - 1,
+            "inner_completion_scope": "Actual test parent requires isolated child exit 86; not an external exit-code observation."}
 
 
 def native_directory(path):
@@ -141,13 +290,16 @@ def engine_artifact(output, work):
 def build(args, report):
     """Freeze exact inputs, build offline, inspect emitted PE declarations, and re-admit."""
     require(all(getattr(args, name) is not None for name in
-                ("vendor_dir", "toolchain_dir", "xwin_config", "xwin_inventory")),
-            "Build requires explicit vendor, toolchain and complete xwin admission paths.")
+                ("vendor_dir", "toolchain_dir", "xwin_config", "xwin_inventory", "test_roster")),
+            "Build requires explicit vendor, toolchain, xwin and independent test-roster paths.")
     require(shutil.disk_usage(args.output_dir).free >= 4 * 1024 ** 3,
             "Build requires four GiB of free output space.")
     require(type(args.jobs) is int and 1 <= args.jobs <= 12, "Build jobs must be within 1–12.")
     policy, inputs = PRODUCT.admit_product(ROOT)
     extras = {name: PRODUCT.sha256(ROOT / name) for name in EXTRAS}
+    _, roster_raw = read_test_roster(args.test_roster.absolute(), ALLOCATION.canonical_digest(inputs), extras)
+    roster_path = args.output_dir / TEST_ROSTER_NAME
+    roster_path.write_bytes(roster_raw)
     vendor, toolchain = args.vendor_dir.resolve(strict=True), args.toolchain_dir.resolve(strict=True)
     vendor_before = PRODUCT.admit_vendor(vendor, policy)
     tools_before = PRODUCT.admit_tools(ROOT, toolchain, None, "windows")
@@ -160,7 +312,8 @@ def build(args, report):
                   stable_payload=stable_before, toolchain=str(toolchain), vendor=str(vendor),
                   xwin_config=str(args.xwin_config.resolve(strict=True)),
                   xwin_inventory=str(args.xwin_inventory.resolve(strict=True)), profile="debug",
-                  diagnostic_profile="release", build_jobs=args.jobs, lanes=[])
+                  diagnostic_profile="release", build_jobs=args.jobs, lanes=[],
+                  test_roster={"path": str(roster_path), "sha256": hashlib.sha256(roster_raw).hexdigest()})
     source, work = args.output_dir / "source", args.output_dir / "work"
     source.mkdir(mode=0o700); work.mkdir(mode=0o700)
     (work / "fixture").mkdir(mode=0o700)
@@ -245,10 +398,24 @@ def build(args, report):
             and PRODUCT.library_inventory(libraries) == library_inputs
             and all(PRODUCT.sha256(Path(path)) == checksum for path, checksum in sdk_before.items()),
             "Source, tools, stable payload, vendor or Microsoft inputs changed.")
+    require(read_test_roster(args.test_roster.absolute(), report["candidate_sha256"], extras)[1] == roster_raw
+            and read_test_roster(roster_path, report["candidate_sha256"], extras)[1] == roster_raw,
+            "Independent Windows test roster changed while building.")
     report.update(status="passed", bookends_passed=True, native_windows_execution=False)
 
 
 NATIVE_JOB_OBSERVER = r"""
+    // Closed per-mode hypothesis: three authored processes and at most three
+    // OS console helpers. Existing flat modes retain their original four cap.
+    static uint ProcessLimit(string mode) {
+        switch (mode) {
+            case "job-native-foreign": case "provider-native-once": case "provider-native-foreign":
+            case "control-nested-healthy": case "control-nested-fail": case "control-nested-wait": return 6;
+            case "cpu": case "list": case "ke":
+            case "control-healthy": case "control-fail": case "control-wait": return 4;
+            default: throw new InvalidDataException();
+        }
+    }
     public class Member {
         public long pid; public string basename, image_role, read_failure_type; public bool system_console;
     }
@@ -407,7 +574,7 @@ def native_supervisor():
     replace("No AppVerifier/PageHeap configuration selected for requested-payload counting",
             "No AppVerifier/PageHeap configuration selected for scripted component tests")
     replace("public uint? active_processes_before_handle_release;",
-            "public uint? total_processes, total_processes_before_gate, active_processes_before_gate; "
+            "public uint? process_limit, total_processes, total_processes_before_gate, active_processes_before_gate; "
             "public int? assigned_before_gate, listed_before_gate; public Member[] members_before_gate; "
             "public string membership_read_failure_type; public Notice[] job_events; "
             "public bool event_limit_reached, event_reader_joined, event_port_closed, event_job_handle_retained; "
@@ -422,11 +589,11 @@ def native_supervisor():
     replace("    static uint TotalProcesses(IntPtr job) {",
             NATIVE_JOB_OBSERVER + "\n    static uint TotalProcesses(IntPtr job) {")
     replace("public static Result Run(string image, string directory, string[] arguments) {",
-            "public static Result Run(string image, string directory, string[] arguments, string gate, string child, string console) {")
+            "public static Result Run(string image, string directory, string[] arguments, string gate, string child, string console, string mode) {")
     replace("Result result = new Result(); Process process = null; IntPtr job = IntPtr.Zero;",
             "Result result = new Result(); Process process = null; IntPtr job = IntPtr.Zero; JobEvents observer = null;")
     replace("ExtendedLimit limits = new ExtendedLimit(); limits.basic.flags = 0x2000;",
-            "ExtendedLimit limits = new ExtendedLimit(); limits.basic.flags = 0x2008; limits.basic.activeLimit = 4;")
+            "ExtendedLimit limits = new ExtendedLimit(); limits.basic.flags = 0x2008; limits.basic.activeLimit = ProcessLimit(mode); result.process_limit = limits.basic.activeLimit;")
     replace("            Check(SetInformationJobObject(job, 9, ref limits, (uint)Marshal.SizeOf(typeof(ExtendedLimit))));",
             "            Check(SetInformationJobObject(job, 9, ref limits, (uint)Marshal.SizeOf(typeof(ExtendedLimit))));\n"
             "            observer = new JobEvents(job, image, child, console); observer.Start();")
@@ -469,10 +636,15 @@ def native_supervisor():
     $report.runtime_files_sha256 = @{}""")
     replace("[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)) {",
             "[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName, $systemConsolePath)) {")
-    replace("    $adapterPath = Join-Path $destination 'native-supervisor-adapter.dll'", """    if ($request.mode -cnotin @('cpu','list','ke','control-healthy','control-fail','control-wait') -or
+    replace("    $adapterPath = Join-Path $destination 'native-supervisor-adapter.dll'", """    $requestFields = @('image_path','image_sha256','child_sha256','mode','gate')
+    if (@($request.psobject.Properties.Name).Count -ne $requestFields.Count -or
+        @($request.psobject.Properties.Name | Where-Object { $_ -cnotin $requestFields }).Count -ne 0 -or
+        $request.mode -cnotin @('cpu','list','ke','control-healthy','control-fail','control-wait',
+            'job-native-foreign','provider-native-once','provider-native-foreign',
+            'control-nested-healthy','control-nested-fail','control-nested-wait') -or
         $request.gate -cnotin @('good','bad','missing')) { throw 'Unadmitted console mode or gate.' }
     $childName = if ($request.mode -ceq 'cpu') { 'cpu-v3-probe.exe' }
-        elseif ($request.mode -cin @('list','ke')) { 'engine-tests.exe' } else { 'gate-control.exe' }
+        elseif ($request.mode -cin @('list','ke','job-native-foreign','provider-native-once','provider-native-foreign')) { 'engine-tests.exe' } else { 'gate-control.exe' }
     $child = Get-Item -LiteralPath (Join-Path $destination $childName)
     if ($child.PSIsContainer -or (($child.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) {
         throw 'Unadmitted fixed child image.'
@@ -502,7 +674,7 @@ def native_supervisor():
                 (Get-FileHash -LiteralPath $child.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -cne $request.child_sha256) {
                 throw 'Locked image bytes differ from the frozen build.'
             }
-            $report.execution = [NevroTickEngineSupervisor]::Run($image.FullName, $destination, $arguments, $request.gate, $child.FullName, $systemConsolePath)
+            $report.execution = [NevroTickEngineSupervisor]::Run($image.FullName, $destination, $arguments, $request.gate, $child.FullName, $systemConsolePath, $request.mode)
             $report.image_sha256_after = (Get-FileHash -LiteralPath $image.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             $report.child_image_sha256_after = (Get-FileHash -LiteralPath $child.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
         } finally { $childLock.Dispose() }
@@ -518,7 +690,7 @@ def native_supervisor():
 def observed_child_pid(stderr, authored):
     """Join one fixed launcher marker to kernel identity; it grants no identity alone."""
     import re
-    require(type(authored) is int and authored in (1, 2), "Unadmitted authored-process count.")
+    require(type(authored) is int and authored in (1, 2, 3), "Unadmitted authored-process count.")
     require(type(stderr) is str, "Native stderr must be bounded text.")
     if authored == 1:
         require(stderr == "launcher-stage=gate;os-error=none\n", "Gate refusal exposed a child marker or another failure.")
@@ -542,11 +714,12 @@ def validate_processes(value, request, result, authored):
         return type(item) is int and minimum <= item <= maximum
 
     root = result["pid"]
+    maximum, after_gate_authored, child_name = mode_profile(request["mode"])
+    require(authored == (after_gate_authored if request["gate"] == "good" else 1),
+            "Authored-process count differs from the closed mode and gate.")
     child = observed_child_pid(result.get("stderr"), authored)
     require(child != root, "Launcher and child PIDs cannot alias.")
     root_name = PureWindowsPath(request["image_path"]).name.casefold()
-    child_name = ("cpu-v3-probe.exe" if request["mode"] == "cpu" else
-                  "engine-tests.exe" if request["mode"] in ("list", "ke") else "gate-control.exe")
     console_path = value.get("system_console_path")
     require(type(console_path) is str and PureWindowsPath(console_path).is_absolute()
             and PureWindowsPath(console_path).parent.name.casefold() == "system32"
@@ -559,10 +732,10 @@ def validate_processes(value, request, result, authored):
     for name in ("event_read_failure_type", "event_shutdown_failure_type", "membership_read_failure_type"):
         require(result.get(name) is None, "Owned process observation has an unresolved read or shutdown failure.")
     total = result.get("total_processes")
-    require(uint(total, 4, authored), "Unexpected lifetime association count.")
-    require(uint(result.get("total_processes_before_gate"), 4, 1)
+    require(uint(total, maximum, authored), "Unexpected lifetime association count.")
+    require(uint(result.get("total_processes_before_gate"), maximum, 1)
             and result["total_processes_before_gate"] <= total
-            and uint(result.get("active_processes_before_gate"), 4, 1)
+            and uint(result.get("active_processes_before_gate"), maximum, 1)
             and result["active_processes_before_gate"] <= result["total_processes_before_gate"],
             "Invalid pre-gate accounting.")
 
@@ -574,10 +747,12 @@ def validate_processes(value, request, result, authored):
             role, basename = "launcher", root_name
         elif child is not None and pid == child and not before_gate:
             role, basename = "child", child_name
+        elif authored == 3 and not before_gate and member.get("image_role") == "child":
+            role, basename = "nested-child", child_name
         else:
             role, basename = "system-console", "conhost.exe"
         require(type(member.get("basename")) is str and member["basename"].casefold() == basename
-                and member.get("image_role") == role
+                and member.get("image_role") == ("child" if role == "nested-child" else role)
                 and member.get("system_console") is (role == "system-console"),
                 "Unexpected image path identity or child present before its gate.")
         return pid, role, member["basename"].casefold()
@@ -606,11 +781,12 @@ def validate_processes(value, request, result, authored):
                 exits.add(pair)
     require(len(new) == total and root in new and (child is None or child in new)
             and sum(role == "system-console" for role, _ in new.values()) <= authored
+            and sum(role == "nested-child" for role, _ in new.values()) == (1 if authored == 3 else 0)
             and all(pid in new for _, pid in exits), "Missed, unknown or excessive lifetime process associations.")
     before = result.get("members_before_gate")
-    require(type(before) is list and 1 <= len(before) <= 8
-            and uint(result.get("assigned_before_gate"), 8, 1)
-            and uint(result.get("listed_before_gate"), 8, 1)
+    require(type(before) is list and 1 <= len(before) <= maximum
+            and uint(result.get("assigned_before_gate"), maximum, 1)
+            and uint(result.get("listed_before_gate"), maximum, 1)
             and result["assigned_before_gate"] == result["listed_before_gate"] == len(before),
             "Incomplete pre-gate membership snapshot.")
     seen = set()
@@ -626,6 +802,9 @@ def validate_console(value, request, supervisor_hash, request_hash, *, expected_
                      expected_processes=2, timeout_control=False):
     """Classify exact intended controls separately from genuine completed tests."""
     import re
+    require(type(request) is dict and set(request) == {"image_path", "image_sha256", "child_sha256", "mode", "gate"}
+            and request["gate"] in ("good", "bad", "missing"), "Unadmitted fixed native request fields or gate.")
+    maximum, _, _ = mode_profile(request["mode"])
     require(type(value) is dict, "Native supervisor result must be an object.")
     if (type(value.get("schema_version")) is int and value["schema_version"] == 1
             and value.get("status") == "incomplete" and value.get("execution") is None
@@ -660,15 +839,16 @@ def validate_console(value, request, supervisor_hash, request_hash, *, expected_
             or result.get("cleanup_failure") is not None or result.get("output_overflow") is not False
             or result.get("cleanup_complete") is not True or result.get("streams_released") is not True
             or result.get("process_handle_released") is not True
+            or type(result.get("process_limit")) is not int or result["process_limit"] != maximum
             or result.get("gate_sent") is not (request["gate"] == "good")
             or result.get("stdin_encoding") != "utf-8" or result.get("stdin_preamble_hex") != "EF-BB-BF"
             or type(result.get("active_processes_before_cleanup")) is not int
             or (not timeout_control and result.get("active_processes_before_cleanup") != 0)
             or (timeout_control and (type(result.get("active_processes_before_cleanup")) is not int
-                                     or not 1 <= result["active_processes_before_cleanup"] <= 4))
+                                     or not 1 <= result["active_processes_before_cleanup"] <= maximum))
             or type(result.get("active_processes_after_cleanup")) is not int
             or result["active_processes_after_cleanup"] != 0
-            or type(result.get("total_processes")) is not int or not 1 <= result["total_processes"] <= 4):
+            or type(result.get("total_processes")) is not int or not 1 <= result["total_processes"] <= maximum):
         raise Incomplete("Owned child failed its exact exit, gate, containment or cleanup contract.")
     failure = result.get("failure")
     if timeout_control:
@@ -702,8 +882,17 @@ def native(args, report):
     extras_before = {name: PRODUCT.sha256(ROOT / name) for name in EXTRAS}
     if (build.get("status") != "passed" or build.get("lane") != "build"
             or build.get("product_source_sha256") != source_before
-            or build.get("extra_inputs_sha256") != extras_before):
+            or build.get("extra_inputs_sha256") != extras_before
+            or build.get("candidate_sha256") != ALLOCATION.canonical_digest(source_before)):
         raise Incomplete("Native build receipt does not bind the complete current candidate and runner.")
+    roster_record = build.get("test_roster")
+    roster_path = build_path.parent / TEST_ROSTER_NAME
+    require(type(roster_record) is dict and set(roster_record) == {"path", "sha256"}
+            and roster_record["path"] == str(roster_path),
+            "Native build lacks its frozen independent test roster.")
+    roster, roster_raw = read_test_roster(roster_path, ALLOCATION.canonical_digest(source_before), extras_before)
+    require(hashlib.sha256(roster_raw).hexdigest() == roster_record["sha256"],
+            "Native independent test roster differs from the build binding.")
     artifacts = build.get("artifacts", {})
     names = {"engine-tests.exe", "cpu-v3-probe.exe", "gated-launcher.exe", "gate-control.exe"}
     if type(artifacts) is not dict or set(artifacts) != names:
@@ -727,8 +916,13 @@ def native(args, report):
                   build_receipt_sha256=PRODUCT.sha256(build_path), windows_directory=str(directory),
                   powershell_sha256=ps_before, product_source_sha256=source_before,
                   extra_inputs_sha256=extras_before, observations=[],
+                  test_roster=roster_record,
+                  full_native_ke_qualification=False,
+                  scripted_ke_roster_complete=False, completed_nested_tests=[],
+                  required_held_tests=roster["held_ke_tests"],
+                  selected_ke_tests=roster["selected_ke_tests"],
                   token_scope="Supervisor and launcher directly observed; fixed child inherits primary token.",
-                  scope="Scripted KE component tests; no real TLS, CNG, UDP, service or clock effects.")
+                  scope="Scripted KE component tests with three separately checked nested-child cases. No real TLS, CNG, UDP, service or clock effects.")
     script = native_supervisor()
     supervisor_hash = hashlib.sha256(script.encode()).hexdigest()
     for label, mode, gate, expected_exit, expected_count in (
@@ -737,14 +931,19 @@ def native(args, report):
             ("healthy-control", "control-healthy", "good", 0, 2),
             ("failure-control", "control-fail", "good", 7, 2),
             ("timeout-control", "control-wait", "good", 1, 2),
+            ("nested-healthy-control", "control-nested-healthy", "good", 0, 3),
+            ("nested-failure-control", "control-nested-fail", "good", 7, 3),
+            ("nested-timeout-control", "control-nested-wait", "good", 1, 3),
             ("cpu", "cpu", "good", 0, 2),
             ("list", "list", "good", 0, 2),
-            ("ke", "ke", "good", 0, 2)):
+            ("ke", "ke", "good", 0, 2),
+            ("native-job-foreign", "job-native-foreign", "good", 0, 3),
+            ("native-provider-once", "provider-native-once", "good", 0, 3),
+            ("native-provider-foreign", "provider-native-foreign", "good", 0, 3)):
         observation = directory / label
         observation.mkdir(mode=0o700)
         launcher = observation / ("NevroTick-" + uuid.uuid4().hex + ".exe")
-        selected_child = ("cpu-v3-probe.exe" if mode == "cpu" else
-                          "engine-tests.exe" if mode in ("list", "ke") else "gate-control.exe")
+        selected_child = mode_profile(mode)[2]
         for name, destination in (("gated-launcher.exe", launcher),
                                   (selected_child, observation / selected_child)):
             shutil.copyfile(artifacts[name]["path"], destination)
@@ -775,36 +974,37 @@ def native(args, report):
             raise Incomplete("Native supervisor did not preserve its intended invocation outcome.")
         result = validate_console(value, request, supervisor_hash, request_hash,
                                   expected_exit=expected_exit, expected_processes=expected_count,
-                                  timeout_control=label == "timeout-control")
+                                  timeout_control=label in ("timeout-control", "nested-timeout-control"))
         output, error = result["stdout"], result["stderr"]
         observed_child_pid(error, expected_count)
         expected_output = {"missing-gate": "", "wrong-gate": "",
                            "healthy-control": "GATE_CONTROL_HEALTHY\n",
                            "failure-control": "GATE_CONTROL_FAIL\n",
                            "timeout-control": "GATE_CONTROL_WAIT\n",
+                           "nested-healthy-control": "GATE_NESTED_HEALTHY\n",
+                           "nested-failure-control": "GATE_NESTED_FAIL\n",
+                           "nested-timeout-control": "GATE_NESTED_WAIT\n",
                            "cpu": "cpu-os-v3=accepted\n"}.get(label)
         if expected_output is not None and output != expected_output:
             raise Incomplete("Native control/CPU output did not match independent expected facts.")
         if label == "list":
-            roster = [line.removesuffix(": test") for line in output.splitlines() if line.endswith(": test")]
-            if (len(roster) != 260 or len(set(roster)) != 260
-                    or sum(name.startswith("nts_ke_experiment::") for name in roster) != 106):
-                raise Incomplete("Windows library/KE test discovery differs from the frozen prediction.")
-            report["windows_roster"] = roster
+            report["windows_roster"] = validate_test_listing(output, roster)
         if label == "ke":
-            if not re.search(r"test result: ok\. 106 passed; 0 failed; 0 ignored; 0 measured; 154 filtered out;", output):
-                raise Incomplete("Native KE run did not execute exactly its admitted cohort.")
-            entered = re.findall(r"^test (nts_ke_experiment::\S+) \.\.\. ok$", output, re.M)
-            expected = {name for name in report["windows_roster"] if name.startswith("nts_ke_experiment::")}
-            if len(entered) != 106 or set(entered) != expected:
-                raise Incomplete("Native KE results do not match the actual discovered identities.")
+            validate_ke_execution(output, roster)
+        if mode in NESTED_TEST_MODES:
+            record["exact_test"] = validate_nested_execution(output, roster, mode)
+            report["completed_nested_tests"].append(NESTED_TEST_MODES[mode])
+            report["required_held_tests"] = [name for name in roster["held_ke_tests"]
+                                              if name not in report["completed_nested_tests"]]
         record["classification"] = "expected-rejection" if expected_exit else "completed"
     if (PRODUCT.admit_product(ROOT)[1] != source_before
             or {name: PRODUCT.sha256(ROOT / name) for name in EXTRAS} != extras_before
             or PRODUCT.sha256(build_path) != report["build_receipt_sha256"]
             or PRODUCT.sha256(Path(powershell)) != ps_before
+            or read_test_roster(roster_path, build["candidate_sha256"], extras_before)[1] != roster_raw
             or any(PRODUCT.sha256(Path(item["path"])) != item["sha256"] for item in artifacts.values())):
         raise Incomplete("Native source, images, receipt, supervisor recipe or PowerShell drifted.")
+    report["scripted_ke_roster_complete"] = report["required_held_tests"] == []
     report["status"] = "passed"
 
 
@@ -815,7 +1015,7 @@ def main():
     parser.add_argument("--jobs", type=int, choices=range(1, 13), default=6,
                         help="Bound Cargo build concurrency; default 6, maximum 12.")
     for name in ("vendor-dir", "toolchain-dir", "xwin-config", "xwin-inventory", "output-dir",
-                 "build-receipt", "native-dir"):
+                 "build-receipt", "native-dir", "test-roster"):
         parser.add_argument("--" + name, type=Path, required=name == "output-dir")
     args = parser.parse_args()
     report = {"schema_version": 1, "lane": args.lane, "status": "incomplete", "started_unix": time.time(),

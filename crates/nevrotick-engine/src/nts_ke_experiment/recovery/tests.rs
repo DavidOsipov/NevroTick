@@ -777,8 +777,10 @@ struct ControlTimes {
 
 /// One closed selected protected-operation fixture; no callback fabricates a fact.
 #[derive(Clone, Copy, Debug)]
-enum ExchangeCase {
+pub(in crate::nts_ke_experiment) enum ExchangeCase {
     Healthy,
+    /// Authenticate the healthy reply with one synthetic send-after UTC step.
+    AfterWallStep,
     MultipleCookies,
     ZeroReceive,
     ZeroTransmit,
@@ -849,11 +851,13 @@ struct ProtectedWitness {
 }
 
 /// Replace external KE/entropy facts only; admission and the receiving owner stay real.
-struct ScriptProducer<'fixture> {
+pub(in crate::nts_ke_experiment) struct ScriptProducer<'fixture> {
     config: &'fixture Config,
     provider: &'fixture ProviderScope<'fixture>,
     establishment: VecDeque<Result<(), Failed>>,
     exchange_case: ExchangeCase,
+    /// Select a checked two-cookie initial fixture before the first establishment.
+    spare_initial_cookie: bool,
     establish_calls: usize,
     exchange_calls: usize,
     preview_calls: usize,
@@ -887,6 +891,11 @@ struct ScriptProducer<'fixture> {
 }
 
 impl<'fixture> ScriptProducer<'fixture> {
+    /// Supply fixed distinguishable initial cookies for a real burn/refill control.
+    pub(in crate::nts_ke_experiment) fn supply_two_initial_cookies(&mut self) {
+        self.spare_initial_cookie = true;
+    }
+
     /// Construct the existing fixed Script against the actual borrowed whole-call owners.
     /// All optional gates/faults are absent until a bounded component control selects one.
     fn new(
@@ -900,6 +909,7 @@ impl<'fixture> ScriptProducer<'fixture> {
             provider,
             establishment: establishment.into(),
             exchange_case,
+            spare_initial_cookie: false,
             establish_calls: 0,
             exchange_calls: 0,
             preview_calls: 0,
@@ -978,6 +988,7 @@ fn script_reads(
             .collect(),
         ExchangeCase::UnknownExtent => vec![ScriptRead::UnknownExtent],
         ExchangeCase::Healthy
+        | ExchangeCase::AfterWallStep
         | ExchangeCase::StaleReturned
         | ExchangeCase::SendUnknown
         | ExchangeCase::EntropyFailure => {
@@ -1043,6 +1054,11 @@ impl Producer for ScriptProducer<'_> {
                 ],
                 _ => vec![Zeroizing::new(vec![0x22; 12])],
             }
+        } else if self.spare_initial_cookie {
+            vec![
+                Zeroizing::new(vec![0x77; 12]),
+                Zeroizing::new(vec![0x11; 12]),
+            ]
         } else {
             vec![Zeroizing::new(vec![0x11; 12])]
         };
@@ -1110,6 +1126,8 @@ impl Producer for ScriptProducer<'_> {
                 let reads = script_reads(selected, successor, remote);
                 let send = if matches!(selected, ExchangeCase::SendUnknown) && successor.is_none() {
                     ScriptSend::Unknown
+                } else if matches!(selected, ExchangeCase::AfterWallStep) && successor.is_none() {
+                    ScriptSend::AfterWallStep
                 } else {
                     ScriptSend::Full
                 };
@@ -1218,7 +1236,7 @@ fn experiment(transactions: u8, refusals: u8, observations: u8) -> Result<Limits
 /// Preserve checked construction and the actual shared-step exercise's failure.
 /// # Panics
 /// Fail if component retirement permits a second process claim.
-fn with_fixture(
+pub(in crate::nts_ke_experiment) fn with_fixture(
     mode: ExchangeMode,
     limits: Option<Limits>,
     establishment: Vec<Result<(), Failed>>,
@@ -2824,53 +2842,6 @@ fn timing_constructors_preserve_future_guards_and_original_stale_refusal() -> Re
         Err(Failure::Cancelled)
     ));
     Ok(())
-}
-
-/// The receiving fact's direct guard accepts its committed Control and refuses another.
-/// This does not fabricate an `ActiveReceiver` or claim an impossible cross-step borrow.
-/// # Errors
-/// Preserve genuine checked association, packet completion and guard failures.
-/// # Panics
-/// Fail if wrong-context checking mutates history or makes committed history unpublished.
-#[test]
-fn genuine_committed_fact_control_guard_refuses_foreign_checked_owner() -> Result<(), Failure> {
-    super::with_owner(S2C, |owner, control, _remote| {
-        let completion = exchange_with(owner, control, entropy, |remote| {
-            Ok(backend(
-                remote,
-                Script::new(
-                    ScriptSend::Full,
-                    vec![ScriptRead::Packet(fixtures::HEALTHY, remote)],
-                ),
-            ))
-        })?;
-        let committed = completion.commit(owner)?;
-        let original = owner.status();
-        let receipt = owner.last_receipt().map(Receipt::serial);
-        // Its own Control is already Committed: this guard must not require Published.
-        committed.check_control(control)?;
-        super::with_owner(S2C, |foreign, foreign_control, _foreign_remote| {
-            let before = foreign.status();
-            assert!(matches!(
-                committed.check_control(foreign_control),
-                Err(Failure::Control)
-            ));
-            assert_eq!(foreign.status(), before);
-            assert!(foreign.last_receipt().is_none());
-            foreign_control.remaining(crate::nts_ke_experiment::IoPhase::Exchange)?;
-            assert_eq!(owner.status(), original);
-            assert_eq!(owner.last_receipt().map(Receipt::serial), receipt);
-            committed.check_control(control)?;
-            let summary = committed.into_summary();
-            assert!(summary.transmitted);
-            assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
-            assert_eq!(
-                control.cancel()?,
-                crate::nts_ke_experiment::CancelOutcome::AlreadyCommitted
-            );
-            Ok(())
-        })
-    })
 }
 
 /// A pre-producer refusal closes admission without replacing the latest real failure.

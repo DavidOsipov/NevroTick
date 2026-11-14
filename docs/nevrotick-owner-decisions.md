@@ -353,6 +353,82 @@ clarify their implementation; they are not additional pending decisions.
   not only returned error variants. Native and UI execution retain their own
   environments and holds; the state contract applies before those bindings.
 
+### 6.4 Hosted Actions trust policy — 14 November 2026
+
+**Decision:** NV-DEC-001 §6.4 / H08, CHECK-19/25/26/27. **Status: Ready for
+owner; not accepted.** The dependent action is restoring the existing mandatory
+GitHub Actions jobs. Independent Core/Engine implementation and isolated local
+checks continue. This card changes no product trust, native or release policy.
+
+**Observed rule and cause:** on main `02e7e907`, repository API reads report
+`enabled: true`, `allowed_actions: local_only`, `sha_pinning_required: true`.
+The public repository's [Rust run](https://github.com/DavidOsipov/NevroTick/actions/runs/43509873376)
+and [Security run](https://github.com/DavidOsipov/NevroTick/actions/runs/43509875354)
+have startup failure, attempt 1 and zero jobs. Their startup annotations explicitly
+reject pinned upstream checkout and CodeQL action references under that rule.
+This is an observed trust-policy incompatibility, not a Rust failure or a billing
+diagnosis. Disabled CodeQL steps are still checked at workflow startup.
+
+**Options:** retain `local_only` and keep those hosted jobs blocked, or permit
+only these two exact upstream repository commits using the documented selected
+actions policy:
+
+```text
+actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+github/codeql-action@9b3254085494b55a0f7c4c2b3d2d52cc712ce370
+```
+
+**Recommendation:** the selected, commit-pinned policy. These two repository
+patterns cover the three existing checkout/init/analyze references. GitHub's
+documented granularity is repository/ref; this is not a claim that only two
+CodeQL subdirectories are trusted. Keep `github_owned_allowed: false`,
+`verified_allowed: false`, full-SHA enforcement, read-only workflow tokens,
+`can_approve_pull_request_reviews: false`, active required checks and explicit
+CodeQL deferral. No broader owner wildcard, floating ref, all-Actions allowance,
+new analysis execution or protection bypass is proposed.
+
+**Concrete pending operation:** after fresh settings/active-run checks, temporarily
+disable this repository's Actions while selecting the policy, install the exact
+two-pattern list, read it back, then re-enable. If any operation fails, restore
+the original top-level policy; never re-enable with an unverified selected list.
+The [GitHub REST permission schemas](https://docs.github.com/en/rest/actions/permissions)
+require `allowed_actions: selected` before updating selected actions. The exact
+three proposed request bodies are below. Bodies 1 and 3 use
+`PUT /repos/DavidOsipov/NevroTick/actions/permissions`; body 2 uses
+`PUT /repos/DavidOsipov/NevroTick/actions/permissions/selected-actions`.
+
+```json
+{"enabled":false,"allowed_actions":"selected","sha_pinning_required":true}
+```
+
+```json
+{"github_owned_allowed":false,"verified_allowed":false,"patterns_allowed":["actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1","github/codeql-action@9b3254085494b55a0f7c4c2b3d2d52cc712ce370"]}
+```
+
+```json
+{"enabled":true,"allowed_actions":"selected","sha_pinning_required":true}
+```
+
+Rollback body for the top-level endpoint:
+
+```json
+{"enabled":true,"allowed_actions":"local_only","sha_pinning_required":true}
+```
+
+**Owner/approval:** David; pending. API reads report repository-admin status, but
+Administration-write token acceptance is untested. No settings write or run retry
+has been performed. Residual trust includes all action code within each selected
+immutable repository commit. A changed action pin needs a new reviewed allowlist
+update; this approval, if given, would not permit arbitrary upstream actions.
+
+**Validation and revisit:** verify settings/read-only tokens/rules after the
+transition, then observe actual mandatory jobs and their candidate-specific
+results. Old-main execution cannot qualify dirty or unpushed H09 code. H09 may
+prepare explicit EP1 source routing independently; its hosted acceptance stays
+open until that exact candidate is published and actually executes. Revisit on
+changed pins/policy or a concrete startup annotation; do not retry an unchanged
+failure. The existing build task owns raw observations and follow-through.
+
 ## 7. OD-05 — signing and release ownership
 
 ### 7.1 Accepted choices

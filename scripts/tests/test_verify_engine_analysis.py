@@ -1986,13 +1986,15 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         """A healthy admission reached Session; stop before any execution."""
 
     def policy_fixture(self):
-        """Independently specified limits and clearly synthetic 400/222 identities."""
+        """Independent limits; synthetic 410/229 roster with one real required name."""
         critical = ["crates/nevrotick-engine/src/lib.rs", *self.HOST.values(),
             "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
             "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
             "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"]
-        names = sorted([f"ordinary_fixture_{index:03}" for index in range(178)] +
-                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(222)])
+        names = sorted([f"ordinary_fixture_{index:03}" for index in range(181)] +
+                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(228)] +
+                       ["nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+                        "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted"])
         return {
             "schema_version": 1, "package": "nevrotick-engine",
             "admission_status": "admitted-engine-ke-source-analysis",
@@ -2080,7 +2082,9 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.invoke(accepted=True)
 
     def test_source_helper_and_candidate_pin_drift_refuse_before_session(self):
-        for name in ("scripts/portable-analysis.py", "crates/nevrotick-engine/src/nts_ke_experiment/association.rs"):
+        for name in ("scripts/portable-analysis.py", "scripts/analysis-controls.py",
+                     "crates/nevrotick-engine/src/nts_ke_experiment/association.rs",
+                     "crates/nevrotick-engine/src/nts_ke_experiment/recovery/numerics_tests.rs"):
             path = self.root / name; original = path.read_bytes()
             path.write_bytes(original + b"changed bytes\n")
             with self.subTest(source=name): self.invoke()
@@ -2275,23 +2279,71 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         return (f"running {len(names)} tests\n" + "".join(f"test {name} ... ok\n" for name in names) +
                 f"test result: ok. {len(names)} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n")
 
-    def test_entered_blocks_require_all_400_cases_and_222_ke_neighbors(self):
+    def test_entered_blocks_require_all_410_cases_and_229_ke_neighbors(self):
         binding = self.policy["binding"]; names = binding["test_inventory"]
         healthy = self.execution(names)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 400)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 222)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 410)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 229)
         missing = [name for name in names if name != "nts_ke_experiment::fixture_case_00"]
         old = [name for name in names if not name.startswith("nts_ke_experiment::")]
         variants = [self.execution([]), self.execution(old), self.execution(missing),
             self.execution([*names, names[0]]), healthy.replace(" ... ok", " ... FAILED", 1),
-            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 400", "running 399"),
-            healthy.replace("test result: ok. 400 passed", "test result: ok. 399 passed"),
+            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 410", "running 409"),
+            healthy.replace("test result: ok. 410 passed", "test result: ok. 409 passed"),
             "\n".join(line for line in healthy.splitlines() if not line.startswith("running "))]
         for text in variants:
             with self.subTest(sample=text[-120:]), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_engine_ke_execution(text, binding)
         altered = copy.deepcopy(binding); altered["test_inventory"][0] = "nts_ke_experiment::unexecuted_other_case"
         with self.assertRaises(MODULE.Incomplete): MODULE.validate_engine_ke_execution(healthy, altered)
+
+    def stale_receiving_inventories(self):
+        """Historical and substituted synthetic rosters, independently constructed."""
+        required = ("nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+                    "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted")
+        current = self.policy["binding"]["test_inventory"]
+        return {
+            "historical_400_222": sorted(
+                [f"ordinary_fixture_{index:03}" for index in range(178)] +
+                [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(222)]),
+            "pre_forwarding_409_228": [name for name in current if name != required],
+            "same_counts_missing_forwarding": sorted(
+                [name for name in current if name != required] + ["nts_ke_experiment::other_case"]),
+        }
+
+    def test_old_or_substituted_roster_refuses_policy_and_execution(self):
+        MODULE.validate_engine_ke_policy(self.policy)
+        for label, names in self.stale_receiving_inventories().items():
+            bad = copy.deepcopy(self.policy); bad["binding"]["test_inventory"] = names
+            with self.subTest(roster=label, owner="policy"), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_policy(bad)
+            with self.subTest(roster=label, owner="execution"), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_execution(self.execution(names), bad["binding"])
+
+    def test_fixed_inventory_rejects_malformed_names_and_ke_mix(self):
+        names = self.policy["binding"]["test_inventory"]
+        self.assertEqual(MODULE.validate_engine_ke_inventory(names), names)
+        duplicate = [*names[:-1], names[0]]
+        wrong_mix = sorted([*names[:-1], "nts_ke_experiment::extra_ke_case"])
+        for value in (None, True, tuple(names), names[1:], names[::-1], duplicate, wrong_mix,
+                      [*names[:-1], ""], [*names[:-1], "a" * 4097], [*names[:-1], []]):
+            with self.subTest(kind=type(value).__name__), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_inventory(value)
+
+    def test_missing_numerics_helper_pin_refuses_admission(self):
+        path = "crates/nevrotick-engine/src/nts_ke_experiment/recovery/numerics_tests.rs"
+        self.assertIn(path, self.policy["binding"]["inputs_sha256"])
+        bad = copy.deepcopy(self.policy); del bad["binding"]["inputs_sha256"][path]
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.validate_engine_ke_policy(bad)
+
+    def test_loaded_analysis_controls_is_in_exact_helper_closure(self):
+        path = "scripts/analysis-controls.py"
+        self.assertIn(path, MODULE.ENGINE_KE_BOUND_INPUTS)
+        MODULE.validate_engine_ke_policy(self.policy)
+        bad = copy.deepcopy(self.policy); del bad["binding"]["inputs_sha256"][path]
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.validate_engine_ke_policy(bad)
 
     def test_doctest_forms_require_opt_in_and_preserve_the_complete_ordinary_inventory(self):
         binding = self.policy["binding"]; names = binding["test_inventory"]
@@ -2305,8 +2357,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             with self.subTest(doctest=doc):
                 result = MODULE.validate_engine_ke_execution(text, binding, include_doctests=True)
                 self.assertEqual(result["additional_doctests"], [doc])
-                self.assertEqual(result["tests_executed"], 401)
-                self.assertEqual(result["ke_tests_executed"], 222)
+                self.assertEqual(result["tests_executed"], 411)
+                self.assertEqual(result["ke_tests_executed"], 229)
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.validate_engine_ke_execution(text, binding)
         invalid = [self.execution(names[1:]) + self.execution([doc_forms[0]]),
@@ -2417,8 +2469,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             self.assertIn("--all-targets", argv)
             self.assertNotIn("build", argv)
             self.assertNotIn("run", argv)
-        self.assertEqual(report["baseline_execution"]["tests_executed"], 400)
-        self.assertEqual(report["release_execution"]["ke_tests_executed"], 222)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 410)
+        self.assertEqual(report["release_execution"]["ke_tests_executed"], 229)
         self.assertEqual(report["doctest_execution"]["compilation_only"],
                          ["src/lib.rs - Example::no_run (line 1) - compile"])
         retired = report["release_target_retirement"]
@@ -2472,6 +2524,21 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.assertGreaterEqual(retired["before"]["allocated_bytes"], 65536)
         self.assertEqual([row["phase"] for row in report["storage_samples"]
                           if row["lane"] == "ke-debug-target-retirement"], ["before", "after"])
+
+    def test_debug_retirement_rejects_old_or_substituted_roster_without_deleting_cache(self):
+        for label, names in self.stale_receiving_inventories().items():
+            session, report, debug, kept = self.debug_retirement_fixture()
+            bad = copy.deepcopy(self.policy); bad["binding"]["test_inventory"] = names
+            report["baseline_execution"] = {
+                "test_names": names, "tests_executed": len(names),
+                "ke_tests_executed": sum(name.startswith("nts_ke_experiment::") for name in names),
+                "inventory_sha256": independent_digest(names),
+            }
+            with self.subTest(roster=label), self.assertRaises(MODULE.Incomplete):
+                MODULE.retire_engine_ke_debug_target(session, bad, report)
+            self.assertTrue(debug.is_dir())
+            for path in kept:
+                self.assertEqual(path.read_bytes(), b"unchanged synthetic sentinel")
 
     def test_debug_retirement_requires_complete_ordered_successful_roster_and_storage(self):
         cases = ("missing-baseline", "duplicate-baseline", "order", "failed-baseline", "failed-clippy",
@@ -2568,7 +2635,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         (output / "raw.log").write_text("retained raw child output")
         session = SimpleNamespace(output=output, work=work)
         report = {"lanes": [{"lane": "ke-release", "exit_code": 0, "failure": None}],
-                  "release_execution": {"tests_executed": 400, "ke_tests_executed": 222}}
+                  "release_execution": {"tests_executed": 410, "ke_tests_executed": 229}}
         MODULE.address_storage_checkpoint(session, self.policy, report, "ke-release", "after")
         return session, report, release
 
@@ -2985,7 +3052,7 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
         "mutate-received-profile": ("E0616", ["profile", "private"],
             "field `profile` of struct `ReceivedProtectedNumerics` is private", "received.profile = None;"),
         "clone-received-numerics": ("E0277", ["Clone"],
-            "the trait bound `ReceivedProtectedNumerics: Clone` is not satisfied", "require_clone(&received);"),
+            "the trait bound `ReceivedProtectedNumerics: Clone` is not satisfied", "require_clone(received);"),
     }
     LEGAL_CASES = ("legal", "legal-receiving", "legal-received")
     ORDERED_CASES = (
@@ -3025,7 +3092,9 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
 
     def test_examples_preserve_old_owners_and_reach_new_private_receiving_rules(self):
         original = b"// actual unchanged owner\n// source prefix\n"
-        examples = MODULE.engine_ke_history_contract_examples(original)
+        all_examples = MODULE.engine_ke_history_contract_examples(original)
+        self.assertEqual(len(all_examples), 43)
+        examples = [row for row in all_examples if row["case"] in self.ORDERED_CASES]
         self.assertEqual([(row["target"], row["case"]) for row in examples],
             [(target, case) for target in ("gnu", "msvc") for case in self.ORDERED_CASES])
         self.assertEqual(len(examples), 34)
@@ -3055,7 +3124,7 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
                 else:
                     for method in ("history", "profile", "measurement"):
                         self.assertIn("received." + method + "()", probe)
-                    self.assertIn("datagram::ReceivedCompletion::Protected(received)", probe)
+                    self.assertIn("if let Some(received) = completion.protected()", probe)
                 continue
             expected = self.specimen(row["case"], line=row["diagnostic"]["line"])
             self.assertEqual(row["diagnostic"], expected)
@@ -3078,13 +3147,19 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
                 self.assertIn("let first = receiving.into_normal();", probe)
                 self.assertIn("drop((first, second));", probe)
             if row["case"].startswith(("read-received-", "mutate-received-", "clone-received-")):
-                self.assertIn("datagram::ReceivedCompletion::Protected(received)", probe)
+                self.assertIn("if let Some(received) = completion.protected()", probe)
+                self.assertNotIn("ReceivedCompletion::Protected", probe)
                 self.assertNotIn("datagram::ReceivedProtectedNumerics", probe,
-                    "the carrier type is inferred through its real variant, not an inaccessible alias")
+                    "the carrier type is inferred through its real readonly accessor")
+            if row["case"] == "clone-received-numerics":
+                self.assertIn("require_clone(received);", probe)
+                self.assertNotIn("require_clone(&received);", probe,
+                    "a reference's Clone must not masquerade as the payload's Clone")
             if row["case"] == "mutate-receiving":
                 self.assertIn("fn(&mut job::ReceivingOutcome)", probe)
             if row["case"] == "mutate-received-profile":
-                self.assertIn("fn(&mut datagram::ReceivedCompletion)", probe)
+                self.assertIn("fn(&datagram::ReceivedCompletion)", probe)
+                self.assertNotIn("protected_mut", probe)
             self.assertNotIn("|mut ", probe, "privacy refusal must not add an unrelated unused-mut lint")
         for invalid in (b"", b"no newline", b"\xff\n", b"x" * (256 * 1024) + b"\n",
                         original + b"// protected_history_contract_probe\n", original.decode()):
@@ -3180,14 +3255,16 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
             source = (private / self.FILENAME).read_text()
             target, case = label.removeprefix("ke-history-contract-").split("-", 1)
             calls.append((target, case, command, timeout, options, source))
-            if case in self.LEGAL_CASES:
+            projection = case in EngineKeProjectionCompilerContractTests.ORDERED_CASES
+            fixture = EngineKeProjectionCompilerContractTests() if projection else self
+            if case in fixture.LEGAL_CASES:
                 self.assertNotIn("negative", options)
                 result = {"exit_code": 0, "failure": None, "output": '{"reason":"build-finished","success":true}\n'}
             else:
-                code, _tokens, _message, needle = self.CASES[case]
+                code, _tokens, _message, needle = fixture.CASES[case]
                 self.assertEqual(options["negative"], json.dumps(code))
                 line = next(index + 1 for index, value in enumerate(source.splitlines()) if needle in value)
-                result = self.cargo_result(case, line=line)
+                result = fixture.cargo_result(case, line=line)
             result.update(lane=label, command=["synthetic-bwrap", "--", "synthetic-prlimit", "--", *command])
             report["lanes"].append(result)
             session.check()
@@ -3202,12 +3279,16 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
             MODULE.engine_ke_history_contracts(session, policy, report, self.fake_run(session, report, calls))
             session.check()
         self.assertEqual([(row[0], row[1]) for row in calls],
-            [(target, case) for target in ("gnu", "msvc") for case in self.ORDERED_CASES])
+            [(target, case) for target in ("gnu", "msvc") for case in self.ORDERED_CASES]
+            + [("msvc", case) for case in EngineKeProjectionCompilerContractTests.ORDERED_CASES])
         self.assertEqual(len({row.args[0] for row in remaining.call_args_list}), 1)
-        for target, _case, command, timeout, _options, _source in calls:
+        for target, case, command, timeout, _options, _source in calls:
             self.assertEqual(command[:4], ["cargo", "check", "--package", "nevrotick-engine"])
-            for token in ("--all-targets", "--frozen", "--message-format=json", "--quiet"):
+            for token in ("--frozen", "--message-format=json", "--quiet"):
                 self.assertIn(token, command)
+            production = case in EngineKeProjectionCompilerContractTests.ORDERED_CASES
+            self.assertIn("--lib" if production else "--all-targets", command)
+            self.assertNotIn("--all-targets" if production else "--lib", command)
             self.assertEqual(command[command.index("--jobs") + 1], "6")
             self.assertEqual(command[command.index("--features") + 1], "ke-association-prototype")
             self.assertGreater(timeout, 0)
@@ -3220,7 +3301,10 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
         self.assertEqual(MODULE.PRODUCT.inventory(session.work / "history-contract-source"), session.source_inventory)
         self.assertEqual(MODULE.PRODUCT.inventory(session.source), session.source_inventory)
         self.assertEqual(MODULE.PRODUCT.inventory(session.root), session.identity)
-        self.assertEqual(len(report["protected_history_contracts"]["probes"]), 34)
+        self.assertEqual(len(report["protected_history_contracts"]["probes"]), 43)
+        production = [row for row in report["protected_history_contracts"]["probes"] if "compile_scope" in row]
+        self.assertEqual(len(production), 9)
+        self.assertTrue(all(row["compile_scope"] == "Windows production library, no cfg(test)" for row in production))
         self.assertNotIn("protected_history_contracts_passed", report)
         self.assertNotIn("provider_claim_contracts", report)
 
@@ -3280,6 +3364,100 @@ class EngineKeHistoryCompilerContractTests(unittest.TestCase):
             MODULE.engine_ke_history_contracts(session, policy, report, run)
         run.assert_not_called()
         self.assertFalse((session.work / "history-contract-source").exists())
+
+
+class EngineKeProjectionCompilerContractTests(unittest.TestCase):
+    """Independent production parent/sibling consumers and strict compiler envelopes."""
+
+    FILENAME = "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs"
+    MANIFEST = "/work/history-contract-source/crates/nevrotick-engine/Cargo.toml"
+    CASES = {
+        "projection-parent-preview": ("E0599", ["ReceivedCompletion", "Preview"],
+            "no associated item named `Preview` found for struct `ReceivedCompletion`", "datagram::ReceivedCompletion::Preview(summary)"),
+        "projection-parent-inner-mut": ("E0616", ["inner", "private"],
+            "field `inner` of struct `ReceivedCompletion` is private", "let _inner = &mut completion.inner;"),
+        "projection-parent-literal": ("E0451", ["completion", "private"],
+            "field `completion` of struct `CompletionProjection` is private", "datagram::CompletionProjection { completion }"),
+        "projection-parent-field": ("E0616", ["completion", "private"],
+            "field `completion` of struct `CompletionProjection` is private", "let _ = &projection.completion;"),
+        "projection-parent-clone": ("E0277", ["CompletionProjection", "Clone"],
+            "the trait bound `CompletionProjection: Clone` is not satisfied", "require_clone(&projection);"),
+        "projection-parent-escape": ("E0515", ["owned", "return"],
+            "cannot return value referencing function parameter `owned`", "owned.projection()"),
+        "projection-sibling-preview": ("E0599", ["ReceivedCompletion", "Preview"],
+            "no associated item named `Preview` found for struct `ReceivedCompletion`", "super::datagram::ReceivedCompletion::Preview(summary)"),
+    }
+    LEGAL_CASES = ("projection-parent-legal", "projection-sibling-legal")
+    ORDERED_CASES = (
+        "projection-parent-legal", "projection-parent-preview", "projection-parent-inner-mut",
+        "projection-parent-literal", "projection-parent-field", "projection-parent-clone",
+        "projection-parent-escape", "projection-sibling-legal", "projection-sibling-preview",
+    )
+    specimen = EngineKeHistoryCompilerContractTests.specimen
+
+    def cargo_result(self, case, *, line=42):
+        """Keep the same exact Cargo library envelope but refuse test-build attribution."""
+        result = EngineKeHistoryCompilerContractTests.cargo_result(self, case, line=line)
+        return {**result, "output": result["output"].replace("(lib test)", "(lib)")}
+
+    def test_nine_production_consumers_have_real_accessible_namespaces_and_legal_neighbors(self):
+        original = b"// actual unchanged private parent\n"
+        rows = [row for row in MODULE.engine_ke_history_contract_examples(original)
+                if row["case"] in self.ORDERED_CASES]
+        self.assertEqual([row["case"] for row in rows], list(self.ORDERED_CASES))
+        self.assertEqual((sum(row["diagnostic"] is None for row in rows), len(rows)), (2, 9))
+        for row in rows:
+            probe = row["appended_source"]
+            self.assertEqual(row["target"], "msvc")
+            self.assertEqual(row["source"], original + probe.encode())
+            self.assertIn("#[cfg(windows)]", probe)
+            self.assertNotIn("cfg(all(test", probe)
+            self.assertNotIn("crate::nts_ke_experiment", probe,
+                "an inaccessible outer import cannot qualify an actual parent/sibling guarantee")
+            sibling = row["case"].startswith("projection-sibling-")
+            self.assertEqual("mod joined_projection_contract_probe_sibling" in probe, sibling)
+            if row["case"] in self.LEGAL_CASES:
+                for expected in ("slot.collect()", "slot.take_for_receiving()", "receive_joined(",
+                                 "completion.projection()", "projection.summary()", "projection.numerical()",
+                                 "projection.numerical_reason()"):
+                    self.assertIn(expected, probe)
+                self.assertIsNone(row["diagnostic"])
+            else:
+                code, tokens, _message, needle = self.CASES[row["case"]]
+                self.assertEqual(row["diagnostic"]["code"], code)
+                self.assertEqual(row["diagnostic"]["tokens"], tokens)
+                actual_line = row["source"].decode().splitlines()[row["diagnostic"]["line"] - 1]
+                self.assertIn(needle, actual_line)
+                healthy_case = "projection-sibling-legal" if sibling else "projection-parent-legal"
+                healthy = next(value for value in rows if value["case"] == healthy_case)
+                self.assertLess(rows.index(healthy), rows.index(row))
+                self.assertEqual(healthy["owner"], row["owner"])
+        escape = next(row for row in rows if row["case"] == "projection-parent-escape")["appended_source"]
+        self.assertIn("fn(&'a datagram::ReceivedCompletion, datagram::ReceivedCompletion)", escape,
+            "the rejected return lifetime is tied to a real borrowed owner, avoiding an unrelated E0581")
+        self.assertIn("|_borrowed, owned|", escape)
+
+    def test_production_refusals_reach_exact_matcher_and_reject_cfg_test_summary(self):
+        for case in self.CASES:
+            result, specimen = self.cargo_result(case), self.specimen(case)
+            with self.subTest(case=case), patch.object(MODULE.COMMON, "compiler_cause", wraps=MODULE.COMMON.compiler_cause) as matcher:
+                MODULE.validate_engine_ke_projection_cause(result, specimen, self.MANIFEST)
+            self.assertEqual(matcher.call_args.args[1:], (specimen, self.FILENAME))
+            with self.subTest(case=case, wrong="test attribution"), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_projection_cause(
+                    {**result, "output": result["output"].replace("(lib)", "(lib test)")}, specimen, self.MANIFEST)
+            for wrong in ({**specimen, "code": "E0603"}, {**specimen, "tokens": ["private"]},
+                          {**specimen, "line": 43}):
+                with self.subTest(case=case, wrong=wrong), self.assertRaises(MODULE.Incomplete):
+                    MODULE.validate_engine_ke_projection_cause(result, wrong, self.MANIFEST)
+
+    def test_production_matrix_cannot_borrow_legacy_or_provider_diagnostics(self):
+        old = EngineKeHistoryCompilerContractTests()
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.validate_engine_ke_projection_cause(old.cargo_result("copy-history"), old.specimen("copy-history"), self.MANIFEST)
+        for case in ("projection-parent-preview", "projection-parent-clone", "projection-parent-escape"):
+            with self.subTest(case=case), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_provider_cause(self.cargo_result(case), self.specimen(case), self.MANIFEST)
 
 
 class EngineKeFixtureLaneTests(unittest.TestCase):

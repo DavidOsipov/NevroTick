@@ -22,6 +22,25 @@
   =======================================================================
 
 */
+/*
+Original reference.c notice for the adaptive correction-area rule:
+Copyright (C) Richard P. Curnow  1997-2003
+Copyright (C) Miroslav Lichvar  2009-2018, 2020, 2022
+Copyright (C) Andy Fiddaman  2024
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of version 2 of the GNU General Public License as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
 // SPDX-License-Identifier: GPL-2.0-only
 //! Owning finite modeled phase obligations, adapted from Chrony 4.9 accounting.
 //!
@@ -38,6 +57,12 @@
 //! Chrony 4.9 provenance; the explicit affine conversion is displacement-rate
 //! algebra in Core units, not a copy of upstream ppm or incremental dfreq units.
 //! A request alone never changes the known baseline, chart, estimator or clock.
+//!
+//! 13 November 2026: the opt-in adaptive horizon follows reference.c's
+//! get_correction_rate/REF_SetReference and sys_generic.c's update_slew at the
+//! pinned Chrony 4.9 revision. Its explicit active-time adaptation selects a
+//! computed correction time constant independently of original permission
+//! deadlines. It supplies no native timer heuristics, defaults or clock mapping.
 
 use std::{fmt, num::NonZeroU64};
 
@@ -59,6 +84,20 @@ use crate::{
         BaselineMapNumbers, BaselineOperands, BaselineRequest, FixturePhaseNumericError, PhaseDebt,
         PhaseRates, check_active_ratio_span,
     },
+};
+
+/// Checked adaptive-horizon parameters and numerical policy share one private owner.
+mod adaptive;
+
+use adaptive::{AdaptiveArea, adaptive_error, adaptive_profile_valid};
+pub use adaptive::{FixtureAdaptiveHorizonError, FixtureAdaptiveHorizonProfile};
+
+/// Matched finite step operations share this owner's operation and transfer custody.
+mod step;
+
+pub use step::{
+    FixtureStepCompletion, FixtureStepDirections, FixtureStepError, FixtureStepFeedback,
+    FixtureStepLimits, FixtureStepProposal, FixtureStepRetirement, FixtureStepSettlement,
 };
 
 /// Typed fixture readings; their context is asserted, never a clock supplier.
@@ -175,6 +214,8 @@ pub struct FixturePhaseProfile {
     transient_cap: f64,
     /// Explicit positive cap on the aggregate baseline-plus-transient proposal.
     aggregate_cap: f64,
+    /// Optional immutable controller law; fixed mode retains the original denominator.
+    adaptive: Option<FixtureAdaptiveHorizonProfile>,
 }
 
 /// Check the explicit positive finite profile without mutation.
@@ -185,6 +226,7 @@ fn profile_valid(value: &FixturePhaseProfile) -> bool {
         && [value.phase_cap, value.transient_cap, value.aggregate_cap]
             .iter()
             .all(|v| v.is_normal() && *v > 0.0)
+        && value.adaptive.as_ref().is_none_or(adaptive_profile_valid)
 }
 
 #[derive(Validate)]
@@ -215,6 +257,28 @@ impl FixturePhaseProfile {
                 phase_cap,
                 transient_cap,
                 aggregate_cap,
+                adaptive: None,
+            },
+        };
+        let validated = raw.validate();
+        if !profile_valid(&raw.value) {
+            return Err(FixturePhaseError::InvalidProfile);
+        }
+        validated.map_err(|_| FixturePhaseError::ValidationInvariant)?;
+        Ok(raw.value)
+    }
+
+    /// Opt into checked adaptive selection without changing either original lifetime.
+    /// # Errors
+    /// Preserve complete shared phase-profile admission; no owner or debt is changed.
+    pub fn with_adaptive_horizon(
+        self,
+        adaptive: FixtureAdaptiveHorizonProfile,
+    ) -> Result<Self, FixturePhaseError> {
+        let raw = RawProfile {
+            value: Self {
+                adaptive: Some(adaptive),
+                ..self
             },
         };
         let validated = raw.validate();
@@ -331,6 +395,11 @@ pub enum FixturePhaseError {
         /// Original bounded typed cause without input payloads.
         source: FixturePhaseNumericError,
     },
+    /// The opt-in adaptive policy could not produce a supported checked decision.
+    AdaptiveHorizon {
+        /// Original bounded policy/arithmetic cause, with no raw source values.
+        source: FixtureAdaptiveHorizonError,
+    },
 }
 
 impl fmt::Debug for FixturePhaseError {
@@ -368,6 +437,7 @@ impl fmt::Display for FixturePhaseError {
             Self::Delivery { .. } => "fixture phase: delivery rejected",
             Self::Combination { .. } => "fixture phase: producer rejected",
             Self::Numeric { .. } => "fixture phase: arithmetic rejected",
+            Self::AdaptiveHorizon { .. } => "fixture phase: adaptive horizon rejected",
         })
     }
 }
@@ -381,6 +451,7 @@ impl std::error::Error for FixturePhaseError {
             Self::Delivery { source } => Some(source),
             Self::Combination { source } => Some(source),
             Self::Numeric { source } => Some(source),
+            Self::AdaptiveHorizon { source } => Some(source),
             _ => None,
         }
     }
@@ -476,6 +547,8 @@ struct Obligation {
     residual: bool,
     /// Latched expiry of this obligation; valid later observations cannot rewind it.
     expired: bool,
+    /// Accepted-reference control area; only adaptive mode carries this checked value.
+    adaptive_area: Option<AdaptiveArea>,
 }
 
 #[derive(Clone, Copy)]
@@ -487,19 +560,23 @@ struct Issued {
     started: FixturePhaseNow,
     /// Checked requested rates and bounds; these values never acknowledge delivery.
     rates: PhaseRates,
+    /// Exact selected rate denominator, independent of original permission remaining.
+    correction_horizon: ActiveAwakeDurationNs,
+    /// Requested active span, capped only after rate selection by original permission.
+    requested_active_duration: ActiveAwakeDurationNs,
+    /// Same-domain end of the requested span; neither expiry nor actual completion.
+    requested_active_deadline: ActiveAwakeNs,
 }
 
 /// One shared issued slot; a base request cannot coexist with phase work.
 #[derive(Clone, Copy)]
-#[expect(
-    clippy::large_enum_variant,
-    reason = "The fixed-size inline metadata preserves one Copy pending-operation slot without adding a success-path heap allocation; boxing the base descriptor would change that storage contract."
-)]
 enum PendingOperation {
     /// Existing finite phase proposal and its real terminal identity.
     Phase(Issued),
     /// Model-derived stable-base request sharing the same operation slot.
     Baseline(BaselineIssued),
+    /// Explicit finite step request sharing the same cursor and original obligation.
+    Step(step::StepIssued),
 }
 
 /// An immutable view of one actual issued operation; it borrows its owner.
@@ -540,6 +617,23 @@ impl FixturePhaseProposal<'_> {
     #[must_use]
     pub fn has_useful_transient(&self) -> bool {
         self.issued.rates.has_useful_transient()
+    }
+    /// Exact active-time constant used by the requested-rate arithmetic.
+    /// This may exceed the original remaining permission and proves no delivery.
+    #[must_use]
+    pub const fn correction_horizon(&self) -> ActiveAwakeDurationNs {
+        self.issued.correction_horizon
+    }
+    /// Requested active duration, at most the original allowance remaining at issue.
+    /// This is independent of actual acknowledged completion and monotonic expiry.
+    #[must_use]
+    pub const fn requested_active_duration(&self) -> ActiveAwakeDurationNs {
+        self.issued.requested_active_duration
+    }
+    /// Issuance active reading plus the requested span; no clock conversion occurs.
+    #[must_use]
+    pub const fn requested_active_deadline(&self) -> ActiveAwakeNs {
+        self.issued.requested_active_deadline
     }
     /// Original active deadline, unchanged by cancellation or continuation.
     #[must_use]
@@ -756,6 +850,8 @@ pub struct FixturePhasePlanOwner<'producer, 'chart> {
     baseline: FixturePhaseBaseline,
     /// Last admitted clock readings; valid observations survive later plan refusal.
     last_now: FixturePhaseNow,
+    /// Previous actually Accepted adaptive reference, never settlement/projection time.
+    last_accepted_reference_active: Option<ActiveAwakeNs>,
     /// Monotone stop, conflict or generation retirement of useful proposal authority.
     authority: Option<FixturePhaseRetirementReason>,
     /// Optional useful debt and original deadlines; absent for a context-only owner.
@@ -925,6 +1021,7 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
             profile,
             baseline,
             last_now: now,
+            last_accepted_reference_active: None,
             authority: None,
             obligation: None,
             provenance: None,
@@ -1111,6 +1208,28 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
         Ok(())
     }
 
+    /// Prepare the actual reference's area without installing debt or advancing time.
+    ///
+    /// The receiving boundary has admitted this same owner's active reading and
+    /// obtains deviation from its genuine token. Fixed mode performs no new work.
+    /// Only successful obligation installation commits the accepted-reference stamp.
+    /// # Errors
+    /// Preserve interval/statistical/arithmetic refusal without changing owner or credit.
+    fn prepare_reference_area(
+        &self,
+        deviation: f64,
+        active: ActiveAwakeNs,
+    ) -> Result<Option<AdaptiveArea>, FixturePhaseError> {
+        let Some(profile) = self.profile.adaptive else {
+            return Ok(None);
+        };
+        let previous = self.last_accepted_reference_active.unwrap_or(active);
+        let elapsed = active
+            .duration_since(previous)
+            .map_err(|_| adaptive_error(FixtureAdaptiveHorizonError::ValidationInvariant))?;
+        AdaptiveArea::from_reference(profile, deviation, elapsed).map(Some)
+    }
+
     /// Commit genuine producer advancement, then separately admit one finite debt.
     /// # Errors
     /// Pre-admission rejects preserve the producer and owner. Post-advance phase
@@ -1140,7 +1259,7 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
         self.last_now = now;
         self.obligation = None;
         let round = outcome.emitted_round();
-        let original = {
+        let (original, deviation) = {
             let token = match self.readiness.admit_reference_input(&outcome) {
                 Ok(token) => token,
                 Err(source) => {
@@ -1158,7 +1277,7 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
                 self.cursor.context,
                 now.monotonic,
             );
-            FixturePhaseProvenance {
+            let provenance = FixturePhaseProvenance {
                 phase: estimate.phase_seconds(),
                 error: estimate.phase_mean_roundoff_seconds(),
                 round: token.emitted_round(),
@@ -1168,7 +1287,8 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
                 latest: estimate.latest_observed_at(),
                 fit_reference: estimate.fit_reference(),
                 projected_at: estimate.projected_at(),
-            }
+            };
+            (provenance, estimate.phase_standard_deviation_seconds())
         };
         self.provenance = Some(original);
         let debt = match PhaseDebt::new(original.phase, original.error) {
@@ -1187,13 +1307,26 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
                 reason: FixturePhaseError::PhaseEnvelope,
             });
         }
+        let adaptive_area = match self.prepare_reference_area(deviation, now.active) {
+            Ok(area) => area,
+            Err(reason) => {
+                return Ok(FixturePhaseReferenceAdmission::AdmittedNoPlan {
+                    emitted_round: round,
+                    reason,
+                });
+            }
+        };
         self.obligation = Some(Obligation {
             debt,
             active_deadline,
             monotonic_deadline,
             residual: false,
             expired: false,
+            adaptive_area,
         });
+        if self.profile.adaptive.is_some() {
+            self.last_accepted_reference_active = Some(now.active);
+        }
         Ok(FixturePhaseReferenceAdmission::Accepted {
             emitted_round: original.round,
         })
@@ -1236,11 +1369,29 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
             .active_deadline
             .duration_since(now.active)
             .map_err(|_| FixturePhaseError::Expired)?;
+        let correction_horizon = match (self.profile.adaptive, obligation.adaptive_area) {
+            (Some(profile), Some(area)) => area.horizon(profile, obligation.debt)?,
+            (None, None) => remaining,
+            _ => return Err(FixturePhaseError::ValidationInvariant),
+        };
+        let requested_active_duration =
+            if correction_horizon.nanoseconds() < remaining.nanoseconds() {
+                correction_horizon
+            } else {
+                remaining
+            };
+        let requested_active_deadline = now
+            .active
+            .checked_add(requested_active_duration)
+            .map_err(|_| FixturePhaseError::ClockOverflow)?;
+        if requested_active_deadline > obligation.active_deadline {
+            return Err(FixturePhaseError::ValidationInvariant);
+        }
         let rates = obligation
             .debt
             .proposal(
                 self.baseline.rate,
-                remaining,
+                correction_horizon,
                 self.profile.transient_cap,
                 self.profile.aggregate_cap,
             )
@@ -1249,6 +1400,9 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
             ordinal,
             started: now,
             rates,
+            correction_horizon,
+            requested_active_duration,
+            requested_active_deadline,
         }));
         self.proposal()
             .ok_or(FixturePhaseError::ValidationInvariant)
@@ -1263,7 +1417,7 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
         Some(FixturePhaseProposal {
             issued: match self.issued.as_ref()? {
                 PendingOperation::Phase(issued) => issued,
-                PendingOperation::Baseline(_) => return None,
+                PendingOperation::Baseline(_) | PendingOperation::Step(_) => return None,
             },
             obligation: self.obligation.as_ref()?,
         })
@@ -1312,6 +1466,8 @@ struct Continuation<'producer> {
     baseline: FixturePhaseBaseline,
     /// Last admitted current readings, including valid rejected-resume observations.
     last_now: FixturePhaseNow,
+    /// Only accepted-reference time survives; terminal observations cannot replace it.
+    last_accepted_reference_active: Option<ActiveAwakeNs>,
     /// Monotone retirement that neither transfer path may silently revive.
     authority: Option<FixturePhaseRetirementReason>,
 }
@@ -1554,6 +1710,7 @@ impl<'producer, 'chart> FixturePhasePlanOwner<'producer, 'chart> {
             profile: self.profile,
             baseline: self.baseline,
             last_now: self.last_now,
+            last_accepted_reference_active: self.last_accepted_reference_active,
             authority: self.authority,
         }
     }
@@ -1798,6 +1955,7 @@ impl<'producer> FixturePhaseRetirement<'producer> {
             profile: value.profile,
             baseline,
             last_now: value.last_now,
+            last_accepted_reference_active: value.last_accepted_reference_active,
             authority: value.authority,
             obligation,
             provenance: self.provenance,
@@ -2012,21 +2170,25 @@ impl ControllerBasis {
 /// The first admitted nonzero span fixes one affine ratio for later observations.
 #[derive(Clone, Copy)]
 struct ControllerRatioWitness {
-    /// Exact active nanoseconds in the first admitted nonzero span.
-    active: u64,
-    /// Exact positive monotonic nanoseconds in that same span.
-    monotonic: u64,
+    /// Exact active-awake duration in the first admitted nonzero span.
+    active: ActiveAwakeDurationNs,
+    /// Exact positive monotonic duration in that same span.
+    monotonic: MonotonicDurationNs,
 }
 impl ControllerRatioWitness {
     /// Compare exact ratios with checked integers, without floating division.
     /// # Errors
     /// Refuse a contradictory span or unsupported product without any mutation.
-    fn admits(self, active: u64, monotonic: u64) -> Result<(), FixtureBaselineError> {
-        let left = u128::from(self.active)
-            .checked_mul(u128::from(monotonic))
+    fn admits(
+        self,
+        active: ActiveAwakeDurationNs,
+        monotonic: MonotonicDurationNs,
+    ) -> Result<(), FixtureBaselineError> {
+        let left = u128::from(self.active.nanoseconds())
+            .checked_mul(u128::from(monotonic.nanoseconds()))
             .ok_or(FixtureBaselineError::Map)?;
-        let right = u128::from(active)
-            .checked_mul(u128::from(self.monotonic))
+        let right = u128::from(active.nanoseconds())
+            .checked_mul(u128::from(self.monotonic.nanoseconds()))
             .ok_or(FixtureBaselineError::Map)?;
         if left != right {
             return Err(FixtureBaselineError::Map);
@@ -2059,15 +2221,21 @@ impl ControllerClockRelation {
         {
             return Err(FixtureBaselineError::Map);
         }
-        let active = now.active.nanoseconds() - self.reference.active.nanoseconds();
-        let mono = now.monotonic.nanoseconds() - self.reference.monotonic.nanoseconds();
+        let active = now
+            .active
+            .duration_since(self.reference.active)
+            .map_err(|_| FixtureBaselineError::Map)?;
+        let mono = now
+            .monotonic
+            .duration_since(self.reference.monotonic)
+            .map_err(|_| FixtureBaselineError::Map)?;
         check_active_ratio_span(active, mono, ratio, error)
             .map_err(|source| FixtureBaselineError::Numeric { source })?;
         if let Some(witness) = self.witness {
             check_active_ratio_span(witness.active, witness.monotonic, ratio, error)
                 .map_err(|source| FixtureBaselineError::Numeric { source })?;
             witness.admits(active, mono)?;
-        } else if mono != 0 {
+        } else if mono.nanoseconds() != 0 {
             self.witness = Some(ControllerRatioWitness {
                 active,
                 monotonic: mono,
@@ -2227,8 +2395,14 @@ impl FixtureControllerClockMap {
         {
             return Err(FixtureBaselineError::Map);
         }
-        let active = now.active.nanoseconds() - self.reference.active.nanoseconds();
-        let monotonic = now.monotonic.nanoseconds() - self.reference.monotonic.nanoseconds();
+        let active = now
+            .active
+            .duration_since(self.reference.active)
+            .map_err(|_| FixtureBaselineError::Map)?;
+        let monotonic = now
+            .monotonic
+            .duration_since(self.reference.monotonic)
+            .map_err(|_| FixtureBaselineError::Map)?;
         check_active_ratio_span(
             active,
             monotonic,
@@ -2236,8 +2410,8 @@ impl FixtureControllerClockMap {
             self.numbers.ratio_error(),
         )
         .map_err(|source| FixtureBaselineError::Numeric { source })?;
-        if monotonic == 0 {
-            if active != 0 {
+        if monotonic.nanoseconds() == 0 {
+            if active.nanoseconds() != 0 {
                 return Err(FixtureBaselineError::Map);
             }
         } else if let Some(witness) = self.witness {
@@ -2692,7 +2866,7 @@ impl FixturePhasePlanOwner<'_, '_> {
         }
         match self.issued.as_ref()? {
             PendingOperation::Baseline(issued) => Some(FixtureBaselineProposal { issued }),
-            PendingOperation::Phase(_) => None,
+            PendingOperation::Phase(_) | PendingOperation::Step(_) => None,
         }
     }
 }
@@ -2748,8 +2922,8 @@ fn baseline_terminal(value: &BaselineTerminal) -> Result<(), FixtureBaselineErro
                 .duration_since(span.effective.0)
                 .map_err(|_| FixtureBaselineError::Map)?;
             check_active_ratio_span(
-                span.active_elapsed.nanoseconds(),
-                mono.nanoseconds(),
+                span.active_elapsed,
+                mono,
                 value.issued.map.numbers.ratio(),
                 value.issued.map.numbers.ratio_error(),
             )

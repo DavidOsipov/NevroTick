@@ -300,7 +300,7 @@ pub enum ActivationResolution {
 #[cfg(any(windows, test))]
 pub(crate) struct DeliverySession {
     /// This native observer instance; never a persistent incident generation.
-    pub(crate) nonce: SessionNonce,
+    nonce: SessionNonce,
     /// Highest attempted nonzero sample ID, retained across preference toggles.
     high_water: u64,
     /// Latest current sample actually attempted, plus acceptance certainty.
@@ -309,6 +309,53 @@ pub(crate) struct DeliverySession {
     activated: bool,
     /// Explicit close denies further requests before any native cleanup starts.
     pub(crate) stopped: bool,
+}
+
+/// One exclusive notice/session admission, without a native attempt yet.
+///
+/// Dropping preparation leaves its ID reusable. The only consuming operation
+/// marks the exact bound notice spent before invoking its one Show callback.
+#[cfg(any(windows, test))]
+#[must_use]
+pub(crate) struct DeliveryAttempt<'session, 'notice> {
+    /// Exclusive session custody prevents replacement, regression or a second admission.
+    session: &'session mut DeliverySession,
+    /// Immutable admitted fields and identity used by native preparation.
+    prepared: &'notice PreparedTestNotice,
+}
+
+#[cfg(any(windows, test))]
+impl DeliveryAttempt<'_, '_> {
+    /// Prepare native fields only from the same immutable admitted notice.
+    #[must_use]
+    pub(crate) const fn prepared(&self) -> &PreparedTestNotice {
+        self.prepared
+    }
+
+    /// Derive correlation from this notice and this session, without caller labels.
+    #[must_use]
+    pub(crate) fn activation_token(&self) -> ActivationToken {
+        ActivationToken::new(self.session.nonce, self.prepared.notice)
+    }
+
+    /// Consume one actual Show callback, including an uncertain return or unwind.
+    ///
+    /// All fallible preparation belongs before this boundary. The callback is
+    /// invoked once; its caller must place only Show and outcome mapping inside.
+    /// Before invocation, the bound ID is spent and activation remains uncertain.
+    /// No independent notice/session can be supplied during completion.
+    ///
+    /// # Panics
+    /// Propagates a callback unwind while retaining the spent ID and uncertain result.
+    pub(crate) fn attempt_show(self, show: impl FnOnce() -> Submission) -> Submission {
+        let notice = self.prepared.notice;
+        self.session.high_water = notice.id();
+        self.session.latest = Some((notice, Submission::Indeterminate));
+        self.session.activated = false;
+        let submission = show();
+        self.session.latest = Some((notice, submission));
+        submission
+    }
 }
 
 #[cfg(any(windows, test))]
@@ -324,30 +371,29 @@ impl DeliverySession {
         }
     }
 
-    /// Require current accepted presentation facts before any native operation.
+    /// Bind current accepted presentation facts to exclusive native preparation.
     ///
     /// # Errors
     /// Stopped/disabled/stale observers reject; duplicate or old IDs coalesce.
-    pub(crate) fn admit(
-        &self,
-        prepared: &PreparedTestNotice,
+    pub(crate) fn admit<'notice>(
+        &mut self,
+        prepared: &'notice PreparedTestNotice,
         preferences: &UiPreferences,
         observer: Observation<ObserverPresence>,
-    ) -> Result<bool, NotificationBlock> {
+    ) -> Result<Option<DeliveryAttempt<'_, 'notice>>, NotificationBlock> {
         if self.stopped || !matches!(observer, Observation::Current(ObserverPresence::Running)) {
             return Err(NotificationBlock::ObserverUnavailable);
         }
         if !preferences.notifications_enabled() {
             return Err(NotificationBlock::PreferenceOff);
         }
-        Ok(prepared.notice.id() > self.high_water)
-    }
-
-    /// Consume any actual Show attempt, including uncertain native acceptance.
-    pub(crate) fn attempted(&mut self, notice: FixtureNotice, submission: Submission) {
-        self.high_water = notice.id();
-        self.latest = Some((notice, submission));
-        self.activated = false;
+        if prepared.notice.id() <= self.high_water {
+            return Ok(None);
+        }
+        Ok(Some(DeliveryAttempt {
+            session: self,
+            prepared,
+        }))
     }
 
     /// Revalidate identity, current context and the real UI's modal/exit guard.
@@ -412,6 +458,26 @@ mod tests {
     /// Propagates fixture or text admission failure.
     fn prepared(id: u64) -> Result<PreparedTestNotice, Box<dyn Error>> {
         Ok(PreparedTestNotice::engineering_example(notice(id)?)?)
+    }
+
+    /// Admit actual checked test data under explicit enabled/current fixture facts.
+    ///
+    /// # Errors
+    /// Preserve unexpected blocking or coalescing instead of fabricating a permit.
+    fn admitted<'session, 'notice>(
+        state: &'session mut DeliverySession,
+        value: &'notice PreparedTestNotice,
+    ) -> Result<DeliveryAttempt<'session, 'notice>, Box<dyn Error>> {
+        let mut preferences = UiPreferences::default();
+        preferences.set_notifications_enabled(true);
+        state
+            .admit(
+                value,
+                &preferences,
+                Observation::Current(ObserverPresence::Running),
+            )
+            .map_err(NotificationBlock::text)?
+            .ok_or_else(|| "new fixture notice unexpectedly coalesced".into())
     }
 
     /// Markup-looking text stays literal data; no parser/action field is present.
@@ -563,8 +629,8 @@ mod tests {
         let running = Observation::Current(ObserverPresence::Running);
         preferences.set_notifications_enabled(false);
         assert_eq!(
-            state.admit(&value, &preferences, running),
-            Err(NotificationBlock::PreferenceOff)
+            state.admit(&value, &preferences, running).err(),
+            Some(NotificationBlock::PreferenceOff)
         );
         assert_eq!(state.high_water, 0);
         preferences.set_notifications_enabled(true);
@@ -574,19 +640,181 @@ mod tests {
             Observation::Current(ObserverPresence::Stopped),
         ] {
             assert_eq!(
-                state.admit(&value, &preferences, unavailable),
-                Err(NotificationBlock::ObserverUnavailable)
+                state.admit(&value, &preferences, unavailable).err(),
+                Some(NotificationBlock::ObserverUnavailable)
             );
         }
-        assert_eq!(state.admit(&value, &preferences, running), Ok(true));
-        state.attempted(value.notice(), Submission::AcceptedByOs);
+        let attempt = state
+            .admit(&value, &preferences, running)
+            .map_err(NotificationBlock::text)?
+            .ok_or("new notice unexpectedly coalesced")?;
+        assert_eq!(
+            attempt.attempt_show(|| Submission::AcceptedByOs),
+            Submission::AcceptedByOs
+        );
         preferences.set_notifications_enabled(false);
         preferences.set_notifications_enabled(true);
-        assert_eq!(state.admit(&value, &preferences, running), Ok(false));
-        assert_eq!(state.admit(&prepared(6)?, &preferences, running), Ok(false));
-        assert_eq!(state.admit(&prepared(8)?, &preferences, running), Ok(true));
-        state.attempted(notice(8)?, Submission::Indeterminate);
-        assert_eq!(state.admit(&prepared(8)?, &preferences, running), Ok(false));
+        assert!(matches!(
+            state.admit(&value, &preferences, running),
+            Ok(None)
+        ));
+        assert!(matches!(
+            state.admit(&prepared(6)?, &preferences, running),
+            Ok(None)
+        ));
+        let next = prepared(8)?;
+        let attempt = state
+            .admit(&next, &preferences, running)
+            .map_err(NotificationBlock::text)?
+            .ok_or("next notice unexpectedly coalesced")?;
+        assert_eq!(
+            attempt.attempt_show(|| Submission::Indeterminate),
+            Submission::Indeterminate
+        );
+        assert!(matches!(
+            state.admit(&next, &preferences, running),
+            Ok(None)
+        ));
+        Ok(())
+    }
+
+    /// Abandoned preparation preserves admission; actual entry binds exactly one session/notice.
+    ///
+    /// # Errors
+    /// Preserve checked fixture, nonce and real admission failures.
+    ///
+    /// # Panics
+    /// Detect preparation consumption, cross-session mutation, rebinding or a regressed watermark.
+    #[test]
+    fn attempt_guard_binds_notice_and_session_without_spending_preparation()
+    -> Result<(), Box<dyn Error>> {
+        let mut bound = session()?;
+        let mut other = DeliverySession::new(SessionNonce::new(2).ok_or("nonzero session")?);
+        let value = prepared(7)?;
+        let unrelated = prepared(8)?;
+        {
+            let attempt = admitted(&mut bound, &value)?;
+            assert!(std::ptr::eq(attempt.prepared(), &raw const value));
+            assert_eq!(
+                attempt.activation_token().encode(),
+                "ntn1.00000000000000000000000000000001.0000000000000007"
+            );
+        }
+        assert_eq!(bound.high_water, 0);
+        assert_eq!(bound.latest, None);
+        assert_eq!(other.high_water, 0);
+        let mut calls = 0;
+        let attempt = admitted(&mut bound, &value)?;
+        assert_eq!(
+            attempt.attempt_show(|| {
+                calls += 1;
+                Submission::AcceptedByOs
+            }),
+            Submission::AcceptedByOs
+        );
+        assert_eq!(calls, 1);
+        assert_eq!(bound.high_water, 7);
+        assert_eq!(
+            bound.latest,
+            Some((value.notice(), Submission::AcceptedByOs))
+        );
+        assert_eq!(other.high_water, 0);
+        assert_eq!(other.latest, None);
+        {
+            let foreign = admitted(&mut other, &unrelated)?;
+            assert_eq!(
+                foreign.activation_token().encode(),
+                "ntn1.00000000000000000000000000000002.0000000000000008"
+            );
+        }
+        assert_eq!(other.high_water, 0);
+        let attempt = admitted(&mut bound, &unrelated)?;
+        assert_eq!(
+            attempt.attempt_show(|| Submission::Indeterminate),
+            Submission::Indeterminate
+        );
+        assert_eq!(bound.high_water, 8);
+        assert_eq!(
+            bound.latest,
+            Some((unrelated.notice(), Submission::Indeterminate))
+        );
+        let mut preferences = UiPreferences::default();
+        preferences.set_notifications_enabled(true);
+        for old in [prepared(6)?, prepared(7)?, prepared(8)?] {
+            assert!(matches!(
+                bound.admit(
+                    &old,
+                    &preferences,
+                    Observation::Current(ObserverPresence::Running)
+                ),
+                Ok(None)
+            ));
+            assert_eq!(bound.high_water, 8);
+        }
+        assert_eq!(other.high_water, 0);
+        Ok(())
+    }
+
+    /// Unwinding a portable callback entry cannot restore the consumed attempt.
+    ///
+    /// This is an injected callback fault, not evidence of a native Show call.
+    ///
+    /// # Errors
+    /// Preserve checked notice, genuine admission and healthy-neighbor failures.
+    ///
+    /// # Panics
+    /// Detect replay credit after unwind, false accepted activation or duplicate callback entry.
+    #[test]
+    fn attempt_callback_unwind_keeps_id_spent_and_acceptance_indeterminate()
+    -> Result<(), Box<dyn Error>> {
+        let mut state = session()?;
+        let value = prepared(7)?;
+        let attempt = admitted(&mut state, &value)?;
+        let token = attempt.activation_token();
+        let mut calls = 0;
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            attempt.attempt_show(|| {
+                calls += 1;
+                std::panic::resume_unwind(Box::new("bounded attempt callback fault"));
+            })
+        }));
+        assert!(result.is_err());
+        assert_eq!(calls, 1);
+        assert_eq!(state.high_water, 7);
+        assert_eq!(
+            state.latest,
+            Some((value.notice(), Submission::Indeterminate))
+        );
+        assert_eq!(
+            state.resolve_activation(
+                Ok(token),
+                Observation::Current(value.notice()),
+                TrayInteraction::Free,
+                true,
+            ),
+            ActivationResolution::Navigate(ShellRoute::Status)
+        );
+        let mut preferences = UiPreferences::default();
+        preferences.set_notifications_enabled(true);
+        assert!(matches!(
+            state.admit(
+                &value,
+                &preferences,
+                Observation::Current(ObserverPresence::Running)
+            ),
+            Ok(None)
+        ));
+        let next = prepared(8)?;
+        let attempt = admitted(&mut state, &next)?;
+        assert_eq!(
+            attempt.attempt_show(|| Submission::AcceptedByOs),
+            Submission::AcceptedByOs
+        );
+        assert_eq!(state.high_water, 8);
+        assert_eq!(
+            state.latest,
+            Some((next.notice(), Submission::AcceptedByOs))
+        );
         Ok(())
     }
 
@@ -602,8 +830,13 @@ mod tests {
     -> Result<(), Box<dyn Error>> {
         let mut state = session()?;
         let value = notice(7)?;
-        let token = ActivationToken::new(state.nonce, value);
-        state.attempted(value, Submission::AcceptedByOs);
+        let prepared = PreparedTestNotice::engineering_example(value)?;
+        let attempt = admitted(&mut state, &prepared)?;
+        let token = attempt.activation_token();
+        assert_eq!(
+            attempt.attempt_show(|| Submission::AcceptedByOs),
+            Submission::AcceptedByOs
+        );
         assert_eq!(
             state.resolve_activation(
                 Ok(token),
@@ -696,8 +929,13 @@ mod tests {
     fn stop_precedes_native_fault_and_dialog_fallback() -> Result<(), Box<dyn Error>> {
         let mut state = session()?;
         let value = notice(7)?;
-        let token = ActivationToken::new(state.nonce, value);
-        state.attempted(value, Submission::AcceptedByOs);
+        let prepared = PreparedTestNotice::engineering_example(value)?;
+        let attempt = admitted(&mut state, &prepared)?;
+        let token = attempt.activation_token();
+        assert_eq!(
+            attempt.attempt_show(|| Submission::AcceptedByOs),
+            Submission::AcceptedByOs
+        );
         assert_eq!(
             state.resolve_activation(
                 Ok(token),
@@ -748,8 +986,13 @@ mod tests {
     fn uncertain_submission_and_changed_sample_context_open_status() -> Result<(), Box<dyn Error>> {
         let mut state = session()?;
         let value = notice(7)?;
-        state.attempted(value, Submission::Indeterminate);
-        let token = ActivationToken::new(state.nonce, value);
+        let first = PreparedTestNotice::engineering_example(value)?;
+        let attempt = admitted(&mut state, &first)?;
+        let token = attempt.activation_token();
+        assert_eq!(
+            attempt.attempt_show(|| Submission::Indeterminate),
+            Submission::Indeterminate
+        );
         assert_eq!(
             state.resolve_activation(
                 Ok(token),
@@ -759,9 +1002,25 @@ mod tests {
             ),
             ActivationResolution::Navigate(ShellRoute::Status)
         );
-        state.attempted(value, Submission::AcceptedByOs);
+        let mut preferences = UiPreferences::default();
+        preferences.set_notifications_enabled(true);
+        assert!(matches!(
+            state.admit(
+                &first,
+                &preferences,
+                Observation::Current(ObserverPresence::Running)
+            ),
+            Ok(None)
+        ));
+        let next = prepared(8)?;
+        let attempt = admitted(&mut state, &next)?;
+        let token = attempt.activation_token();
+        assert_eq!(
+            attempt.attempt_show(|| Submission::AcceptedByOs),
+            Submission::AcceptedByOs
+        );
         let changed =
-            FixtureNotice::new(7, FixtureNoticeContext::ServiceNeedsReview).ok_or("nonzero")?;
+            FixtureNotice::new(8, FixtureNoticeContext::ServiceNeedsReview).ok_or("nonzero")?;
         assert_eq!(
             state.resolve_activation(
                 Ok(token),
