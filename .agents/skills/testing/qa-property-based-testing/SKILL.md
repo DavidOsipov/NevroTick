@@ -1,13 +1,24 @@
 ---
 name: "qa-property-based-testing"
-description: "Use bounded generated cases and shrinking to test a NevroTick invariant with an independent oracle and reproducible counterexamples."
+description: "Test NevroTick Rust invariants and Python admission readers with bounded generated cases, independent oracles and replayable counterexamples; use Proptest or Hypothesis only when admitted."
 ---
 
-# Check quantified Rust invariants
+# Check quantified invariants and admission contracts
 
 Read [the testing contract](../CONTRACT.md).
 
 First state quantified property/admitted domain/preconditions/plausible wrong implementation. Use existing generator framework such as adopted proptest, or deterministic generated tables without dependency. No library merely for skill.
+
+Rust histories: [Proptest state machines](../references/proptest-state-machines.md).
+Python receipt/policy readers: [Hypothesis admission](../references/hypothesis-admission.md).
+Prefer ordinary input properties unless history affects results. Without framework
+admission, use deterministic cases; no installation or invented configured lane.
+
+Admission properties: call the real reader on physical fixtures. Change semantic
+facts while preserving valid integrity; test corrupt hashes separately. Compare
+exact independent identities/rosters; observe rejection before protected effects.
+Successful exit, matching digest or model-generated expectation alone proves no
+semantic admission.
 
 Generate related fields jointly/meaningful partitions by construction; avoid near-total filtering. Distinguish valid-domain invariants/malformed wire rejection. Useful properties: logical-source deduplication, monotonic budget consumption, generation isolation, finite bounded estimates, conversion constraints; include named analytic examples.
 

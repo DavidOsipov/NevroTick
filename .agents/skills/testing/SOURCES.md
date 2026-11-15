@@ -201,3 +201,24 @@ The recipe and any isolated fixture controls qualify query-development mechanics
 only. They supply no current product extraction, Windows behavior, vulnerability
 absence or hosted-scanning result; candidate-specific receipts remain outside
 the skills pack.
+
+## Generated histories, schedules and admission readers — 15 November 2026
+
+Extended existing lifecycle, model, property and independent-review skills with
+original local references; no new skill leaf or imported upstream skill body.
+Context7 resolved `/proptest-rs/proptest` and `/hypothesisworks/hypothesis`.
+Its Shuttle search returned the unrelated cloud platform; official upstream
+GitHub source supplied concurrency-tool evidence. Retrieval summaries were
+checked against current API documentation and implementation before integration.
+
+| Primary evidence | Applied guidance and limits |
+| --- | --- |
+| [Shuttle v0.9.10 source](https://github.com/awslabs/shuttle/tree/855ae5d92a02dd3c02ddd3ca99dfaeb3b5e31d5b), [release](https://github.com/awslabs/shuttle/releases/tag/v0.9.10), [configuration](https://github.com/awslabs/shuttle/blob/v0.9.10/shuttle-engine/src/config.rs), [Tokio time adapter](https://github.com/awslabs/shuttle/blob/v0.9.10/wrappers/tokio/impls/tokio/inner/src/time.rs) | [Concurrency reference](references/shuttle-concurrency.md): actual primitive/adapter mapping, sequentially consistent atomic model, explicit timeout triggers instead of elapsed-time modeling, bounded scheduler and external supervision, persistence directory and exact replay configuration. Changelog date differs from release publication; neither supplies every registry timestamp needed for Cargo admission. |
+| [Proptest state-machine API](https://docs.rs/proptest-state-machine/latest/proptest_state_machine/test_runner/trait.StateMachineTest.html), [runner source](https://docs.rs/proptest-state-machine/latest/src/proptest_state_machine/test_runner.rs.html), [failure persistence](https://proptest-rs.github.io/proptest/proptest/failure-persistence.html) | [Sequential reference](references/proptest-state-machines.md): reviewed 0.9.0; explicit invariants because the default hook is a no-op, already-advanced reference state at application, panic-safe owned cleanup, deliberate invalid commands and concrete histories. Generated sequential transitions do not explore thread schedules. |
+| [Hypothesis API/settings](https://hypothesis.readthedocs.io/en/latest/reference/api.html), [stateful tests](https://hypothesis.readthedocs.io/en/latest/stateful.html), [replay](https://hypothesis.readthedocs.io/en/latest/tutorial/replaying-failures.html) | [Admission reference](references/hypothesis-admission.md): reviewed 6.170.15; ordinary input properties before stateful machinery, real physical fixtures, integrity-valid semantic faults, independent exact rosters and refusal before effects. Record effective CI/settings/database behavior; concrete regressions outlive seeds and version-specific replay blobs. |
+
+These are dated source observations, not installed versions, admitted graphs or
+product qualification. Cargo OD-19 does not automatically establish Python
+package policy. Current task permissions, remaining holds and the post-V1 proof
+deferral remain authoritative. The historical EP1 omission supplies a defect
+class for controls, not a verdict on another agent's unseen uncommitted repair.

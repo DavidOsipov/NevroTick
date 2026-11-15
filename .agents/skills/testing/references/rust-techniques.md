@@ -24,6 +24,8 @@ If Tokio is selected, paused time requires its `time`/`test-util` capabilities a
 
 ## Generated and concurrent cases
 
+- **Generated histories:** [proptest-state-machine](proptest-state-machines.md): independent sequential commands through production entry points, explicit invariants, deliberate rejected operations, concrete shrink/replay evidence. Python receipt/policy readers: conditional [Hypothesis procedure](hypothesis-admission.md). Rust dependency policy does not admit a Python environment.
+- **Schedule exploration:** [Shuttle](shuttle-concurrency.md): admitted instrumented ownership/publication paths. Inspect actual adapter/transitive coverage, time stubs and memory-model limits; retain exact schedules and corresponding real-Tokio controls. Recent release establishes no adopted graph or execution permission.
 - **Property testing:** proptest is a candidate for composable generators/shrinking. State the invariant and independent oracle first. Generate valid values by construction; test malformed wire representations separately. Bound rejection/shrink work and retain concrete minimized inputs as well as seeds. Persisted seeds can generate different inputs after strategy changes; replay the actual counterexample as a named regression. Keep regression files available for review; do not stage them automatically.
 - **Concurrency models:** Loom can explore small Rust synchronization models after the code's relevant primitives are instrumented. Ordinary `std`/OS synchronization outside that model is not automatically covered. Bound state space and record the model/configuration. Its documented C11-model omissions can yield missed executions or false alarms; a pass is not proof of Windows scheduling, FFI or all interleavings.
 - **Undefined behavior:** Miri can interpret selected portable Rust tests and expose invalid memory/use/aliasing on reached paths. Qualify the admitted nightly and healthy/defect controls through the [analysis entry point](configured-tooling.md#additional-rust-analysis); preserve its admitted sysroot, strict provenance, alignment checks and seed selection. Do not disable validation or isolation to clear a failure. Unsupported native calls or unexecuted paths remain gaps.
@@ -36,7 +38,8 @@ use the guarded [analysis selection](configured-tooling.md#additional-rust-analy
 and current [qualification status](../../../../TOOLING.md#additional-rust-analysis-tools).
 Installed identity and bounded bootstrap controls do not qualify a product
 harness, Windows target or the exact dependency/features under test. Preserve
-shipping Rust 1.99.1; select analysis toolchains explicitly without global changes.
+the [selected shipping toolchain](../../../../TOOLING.md); select analysis
+toolchains explicitly without global changes.
 
 For address, initialization, race or leak detection, use
 [sanitizer selection and controls](sanitizers.md). It complements these existing

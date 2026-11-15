@@ -58,6 +58,16 @@ no new parser framework or dependency required.
 
 ## Challenge the changed guarantee
 
+Generated histories or schedule exploration: inspect delivered actions, instrumented
+primitives, observed state/effects and independent oracle. Require healthy and
+requirement-linked fault controls, fresh concrete replay, exact source/configuration
+identity and honest selected/completed counts. Seeds, sampled schedules or minimized
+model-only traces cannot establish untouched production paths or missing
+real-runtime/native behavior. Select the relevant
+[state-machine](../references/proptest-state-machines.md),
+[Shuttle](../references/shuttle-concurrency.md) or
+[Python admission](../references/hypothesis-admission.md) reference.
+
 For changed function/module contracts, follow
 [contract enforcement](../../implementation/implement-rust-contracts/references/contract-enforcement.md)
 from requirement to enforcing owner and real consumer. Independently challenge

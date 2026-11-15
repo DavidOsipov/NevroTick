@@ -1,4 +1,4 @@
 interface:
-  display_name: "Check quantified Rust invariants"
-  short_description: "Use bounded generated cases and shrinking to test a NevroTick"
-  default_prompt: "Use $qa-property-based-testing to use bounded generated cases and shrinking to test a NevroTick invariant with an independent oracle and reproducible counterexamples."
+  display_name: "Check invariants and admission contracts"
+  short_description: "Test Rust properties and Python admission contracts"
+  default_prompt: "Use $qa-property-based-testing to test Rust invariants or Python admission readers with independent oracles, bounded generation and concrete replay; select Proptest or Hypothesis only when admitted."

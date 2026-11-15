@@ -1,6 +1,6 @@
 ---
 name: "qa-model-based-testing"
-description: "Test NevroTick controller, authority and recovery sequences against an independently defined transition model."
+description: "Test NevroTick controller, authority and recovery sequences against an independent transition model, with conditional proptest-state-machine generation and shrinking."
 ---
 
 # Compare state transitions with an independent model
@@ -15,6 +15,12 @@ Define small requirements-derived model; no production reducer helpers. Specify 
 
 Run bounded explicit/generated command sequences through production entry point. Compare model/application after every action; invalid commands must exercise documented rejection/no-state-change, never silently skip. Track eligible/executed actions; empty path cannot pass.
 
+Generated Rust histories: read [Proptest state machines](../references/proptest-state-machines.md).
+Until framework and graph admission, use existing deterministic sequences.
+Implement explicit invariants; fresh-state cleanup for every case, shrink and
+replay. Retain concrete original/minimized histories; persisted seeds cannot
+identify the same input after strategy changes.
+
 When creating/changing the driver or trace comparator, use [harness qualification](../references/harness-qualification.md) for independently specified input identity, clock, ordinal and comparison controls. Agreement with the model is insufficient if the driver delivered a different action.
 
 Model acknowledgement loss, stale late completion, reconnect/restart/suspend/successor ownership. Separate UTC/monotonic/active-awake clocks. Minimize/replay failing concrete sequences from fresh state; preserve failure seam.
@@ -25,12 +31,12 @@ For a concrete search gap between meaningful states sharing familiar branches,
 use [state-guided fuzzing](../qa-state-guided-fuzzing/SKILL.md). Keep the model as
 the oracle and derive exploration feedback from actual target observations.
 
-For a synchronization/property gap, select admitted Loom or Kani through
+Synchronization gap: select admitted Loom through
 [configured analysis](../references/configured-tooling.md#additional-rust-analysis):
-`python3 -B scripts/check-analysis.py --tool loom --fixtures` or the corresponding
-`--tool kani --fixtures` controls. Loom requires instrumented primitives and a
-bounded state space; Kani requires a reachable property harness, justified
-assumptions and unwind bounds. Bootstrap controls prove no application model.
+`python3 -B scripts/check-analysis.py --tool loom --fixtures` supplies tool controls,
+then an actual model with instrumented primitives and bounded state space.
+Bootstrap controls prove no application model. Kani remains deferred; use the
+[formal workflow](../references/formal-verification.md) only on authorized post-V1 resumption.
 Keep the requirements-derived oracle independent and record all reachable,
 excluded, incomplete and failed obligations before claiming model coverage.
 

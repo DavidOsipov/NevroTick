@@ -442,6 +442,7 @@ no new report tree or orchestration campaign.
 | Cargo dependency changes | [dependency-updates](.agents/skills/environment/dependency-updates/SKILL.md). |
 | Windows Sandbox configuration, WSL-to-guest control or disposable lab evidence | [manage-windows-sandbox](.agents/skills/environment/manage-windows-sandbox/SKILL.md); check current task/incident holds before any Windows command. |
 | Verification, failure triage or commit preparation | [Testing index](.agents/skills/testing/README.md), [testing contract](.agents/skills/testing/CONTRACT.md); smallest relevant evidence layer. |
+| Scheduling races, generated transition histories or Python admission semantics | [Lifecycle](.agents/skills/testing/qa-state-concurrency-lifecycle/SKILL.md), [model](.agents/skills/testing/qa-model-based-testing/SKILL.md) or [property](.agents/skills/testing/qa-property-based-testing/SKILL.md) testing; conditional tool references preserve current admission and execution scope. |
 
 Use [upstream specialists](.agents/skills/upstream/README.md) for actual
 compiler/borrow/Send-Sync problems or qualified Windows UI automation. Skills hold

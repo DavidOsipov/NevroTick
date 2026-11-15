@@ -1570,3 +1570,88 @@ hashes; advance the expected parent without force. The resulting commit supplies
 the publication identity. No Rust compilation, product test, native execution,
 formal job, CI settings write or release qualification was performed by this
 instruction/documentation task.
+
+## Generated-testing tool skills — 15 November 2026
+
+David requested parallel authorship/review, current MCP-backed tool research,
+new or adjusted skills, Caveman compression and publication to `main`. This
+documentation slice started from clean local and remote commit
+`bb90f0c5eee4e356fe1391f38d241b7c47a48e3e`. Another agent's reported uncommitted
+product fixes were not present in this checkout; their correctness is not
+established by this work.
+
+Extended four existing workflows and added three conditional references; the
+inventory remains 66 skills. The property workflow's UI metadata now includes
+Python admission. Root, documentation and testing routers point to existing
+owners; no parallel skill or task hierarchy was introduced.
+
+| Owner | Added method |
+| --- | --- |
+| [Lifecycle QA](../skills/testing/qa-state-concurrency-lifecycle/SKILL.md) | [Shuttle](../skills/testing/references/shuttle-concurrency.md): instrument actual production synchronization, retain schedule replay, verify healthy/fault controls and corresponding real-Tokio scenarios. |
+| [Model QA](../skills/testing/qa-model-based-testing/SKILL.md) | [proptest-state-machine](../skills/testing/references/proptest-state-machines.md): independent sequential oracle, explicit invariants, deliberate rejected commands, fresh shrinking and concrete histories. |
+| [Property QA](../skills/testing/qa-property-based-testing/SKILL.md) | [Hypothesis](../skills/testing/references/hypothesis-admission.md): real physical receipts, valid integrity for semantic-negative cases, independently specified rosters and refusal before protected effects. |
+| [Independent review](../skills/testing/qa-independent-review/SKILL.md) | Actual delivered actions, modeled primitives, fault sensitivity, concrete replay, candidate identity and honest runtime/native gaps. |
+
+Two author agents researched separate tool families; an integration reviewer
+checked existing owners, metadata and policy. A separate primary-source reviewer
+verified APIs and limitations. [Research provenance](../skills/testing/SOURCES.md#generated-histories-schedules-and-admission-readers--15-november-2026)
+records Context7 and official GitHub/documentation evidence. Source review caught
+the difference between Shuttle's persistence directory and its emitted replay
+file; integration corrected it before compression. It also retained explicit
+time-stub, atomic-ordering and failure-teardown limits. Current upstream versions
+are observations, not selected package graphs.
+
+The shared Rust guide now routes the shipping toolchain to current `TOOLING.md`
+instead of repeating stale 1.99.1. The model leaf's mixed Loom/Kani recipe now
+separates current nonformal selection from post-V1 formal resumption. Configured
+tooling explicitly exposes no invented Shuttle/Proptest/Hypothesis CLI flags.
+No dependencies, product code, admission policies, execution holds or acceptance
+thresholds changed; current task permissions remain authoritative.
+
+### Compression and verification
+
+Nine complete expanded workflow/reference files were byte-verified and frozen
+outside the autoloaded tree before compression. Frozen manifest SHA-256:
+`83c0116310821bde6292361ae7ad07668f8cd9148c7bcfc3101080872fbe4d8c`.
+Final totals: **67,878 → 66,486 bytes**, **7,839 → 7,517 words**. The three new
+references account for **2,264 → 2,012 words**. These are byte/word measurements,
+not token counts, savings relative to the smaller previous repository, or an
+agent-performance improvement claim.
+
+All nine Caveman validator pairs pass with zero errors and warnings. Repairs
+were limited to path-token punctuation, accidental new slash compounds and one
+grammar correction; no file needed more than two repair passes. Protected syntax, headings, links,
+numeric/version tokens and list/table structure match the frozen intended inputs.
+
+Package validation passes **66 skills**, including metadata, UI prompts, local
+links and inventories. No checker implementation or covered inventory contract
+changed, so no checker regression campaign was required. Root/documentation
+routing checks resolve **489 local links/anchors**, including the existing
+explicit HTML WinGet anchor; all **63** local links/anchors in this existing task
+record also resolve. No root `docs/SHA256SUMS.txt` is present.
+
+Independent semantic review: **READY**, no required repairs. The reviewer checked
+all nine complete compression deltas against verified originals, current policy,
+tool selection and routing, then reviewed this record's scope and measurements.
+The final grammar-only verb correction also passes the original-pair validator.
+
+Two fresh agents received raw scenarios and current guidance without coordinator
+diagnoses or grading criteria. Both completed read-only instruction-use exercises:
+
+| Scenario | Observed selection and reasoning |
+| --- | --- |
+| Two-slot refresh cache, cancellation, generation replacement; proposed 1,000-schedule qualification | Selected lifecycle/model guidance; required actual permit custody, publication-boundary orderings, stale-result refusal, useful recovery and healthy/fault controls. Distinguished sampled schedules, replay, real-runtime cases and native evidence; rejected blanket lifecycle qualification. |
+| Reservation ledger with invalid commands filtered out; seed-only failures; Python report reader | Selected model/property guidance; required actual invalid requests, unchanged balances, independent per-step comparisons and concrete fresh-state replay. Chose deterministic physical report fixtures while framework admission was unavailable; separated semantic corruption from hash corruption. |
+
+These are observed instruction-use exercises, not executed product tests, unseen
+holdout results, an old/new comparison or measured improvement in agent behavior.
+The reviewers did not install dependencies, modify product source or run campaigns.
+
+Before publication, verify the complete intended index, pack and changed-document
+links, whitespace and unchanged product/configuration paths; reconcile remote
+`main` without force. The commit containing this record supplies its publication
+identity; final remote verification belongs to delivery.
+
+This slice installs no tool and executes no Rust compilation, product test,
+schedule campaign, property campaign, native Windows or formal job. Product
+harness adoption and qualification remain with the existing task owners.

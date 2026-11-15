@@ -35,15 +35,15 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 | [qa-boundary-edge-cases](qa-boundary-edge-cases/SKILL.md) | Build explicit just-below, exact and just-above NevroTick boundary cases for time, resources, representation and lifecycle rules. |
 | [qa-adversarial-inputs](qa-adversarial-inputs/SKILL.md) | Design bounded hostile NevroTick input cases that challenge the actual protocol, IPC, persistence and resource admission path. |
 | [qa-security-boundaries](qa-security-boundaries/SKILL.md) | Test NevroTick trust boundaries using real caller identity, current guards and observable protected effects. |
-| [qa-state-concurrency-lifecycle](qa-state-concurrency-lifecycle/SKILL.md) | Verify NevroTick asynchronous state, concurrency, cancellation, service and resource lifecycle behavior at its actual ownership boundaries. |
+| [qa-state-concurrency-lifecycle](qa-state-concurrency-lifecycle/SKILL.md) | Verify asynchronous state, cancellation and resource ownership; select conditional Shuttle/Loom exploration for a specific scheduling gap. |
 | [qa-fault-recovery](qa-fault-recovery/SKILL.md) | Test NevroTick controlled failures for bounded recovery, preserved authority, durable state and honest status. |
 
 ## Choose a focused technique or product surface
 
 | Skill | Use |
 | --- | --- |
-| [qa-property-based-testing](qa-property-based-testing/SKILL.md) | Use bounded generated cases and shrinking to test a NevroTick invariant with an independent oracle and reproducible counterexamples. |
-| [qa-model-based-testing](qa-model-based-testing/SKILL.md) | Test NevroTick controller, authority and recovery sequences against an independently defined transition model. |
+| [qa-property-based-testing](qa-property-based-testing/SKILL.md) | Test Rust invariants and Python admission readers with independent generated properties, bounded shrinking and concrete replay. |
+| [qa-model-based-testing](qa-model-based-testing/SKILL.md) | Test controller, authority and recovery histories against an independent transition model, with conditional proptest-state-machine generation. |
 | [qa-structured-fuzzing](qa-structured-fuzzing/SKILL.md) | Run or design a bounded NevroTick fuzz target for structured IPC/configuration, NTP/NTS parsing or numeric conversion with useful seeds and explicit oracles. |
 | [qa-state-guided-fuzzing](qa-state-guided-fuzzing/SKILL.md) | Compare real coverage with bounded semantic-state feedback through one actual-target driver and an independent transition oracle. |
 | [qa-mutation-testing](qa-mutation-testing/SKILL.md) | Use a bounded NevroTick mutation campaign to assess behavioral assertions, preserving the architecture per-critical-file gate and honest outcome accounting. |
@@ -58,6 +58,9 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 
 ## Conditional shared references
 
+- [Shuttle concurrency](references/shuttle-concurrency.md) for instrumented schedule exploration, adapter/time limits, failure replay and the corresponding real-Tokio scenarios. Current upstream research is not dependency admission.
+- [Proptest state machines](references/proptest-state-machines.md) for generated sequential histories, explicit invariants, actual production actions, invalid requests and fresh-state shrinking/replay.
+- [Hypothesis admission](references/hypothesis-admission.md) for Python properties over physical receipts, integrity-valid semantic faults, exact execution identities and refusal before effects. Use existing deterministic cases when the framework is unavailable.
 - [Configured tool execution](references/configured-tooling.md) when selecting existing compiler/lint/test, dependency, workflow/security, coverage/mutation or SBOM entry points. Its additional-analysis section routes Miri, cargo-fuzz, Loom, Kani, Lockbud and cargo-vet by the changed guarantee; tool controls and product harnesses remain separate evidence.
 - [Sanitizer selection and controls](references/sanitizers.md) for ASan/LSan, Miri, TSan, MSan, native C/C++ UBSan, future Android HWASan and their relationship to Windows diagnostics. Choose by defect and admitted environment; distinguish detector faults from semantic assertion controls.
 - [CodeQL data-flow analysis](references/codeql-data-flow.md) for local MCP readiness, extraction scope and trace evidence; [the Rust query recipe](references/codeql-rust-query.md) for pinned APIs, source/sink selection, path queries, missing-flow diagnostics and sensitivity controls. Local analysis does not enable deferred hosted scanning.

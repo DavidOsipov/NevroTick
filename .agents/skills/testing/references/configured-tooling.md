@@ -89,6 +89,15 @@ mitigation flags in `.cargo/config.toml`; convenience `RUSTFLAGS` can replace th
 
 ## Additional Rust analysis
 
+Conditional [Shuttle](shuttle-concurrency.md),
+[proptest-state-machine](proptest-state-machines.md) or
+[Hypothesis](hypothesis-admission.md) recipes: inspect current manifest, lockfile
+and approved environment first. Documented candidates are not installed/admitted
+product lanes. Analysis entry point has no `--tool shuttle`, `--tool proptest`
+or `--tool hypothesis` selection. Follow the dependency/environment owner before
+adoption; preserve current task permissions and holds. Cargo's registry cooldown
+does not define Python package admission.
+
 [The analysis policy](../../../../policy/analysis-tools.json) and
 [TOOLING's analysis status](../../../../TOOLING.md#additional-rust-analysis-tools)
 own the exact separate tool/compiler pins and observed fixture qualifications.

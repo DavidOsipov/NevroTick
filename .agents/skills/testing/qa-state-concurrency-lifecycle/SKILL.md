@@ -1,6 +1,6 @@
 ---
 name: "qa-state-concurrency-lifecycle"
-description: "Verify NevroTick asynchronous state, concurrency, cancellation, service and resource lifecycle behavior at its actual ownership boundaries."
+description: "Verify NevroTick asynchronous state, concurrency, cancellation and resource ownership with deterministic scenarios and conditional Shuttle or Loom schedule exploration."
 ---
 
 # Test timing, cancellation and ownership
@@ -22,6 +22,16 @@ bounded retention or release of every task/permit.
 SCM wrapper/status/callback qualification: read [Windows service adapters](../../implementation/implement-rust/references/windows-service-adapters.md). Distinguish native-lifecycle permitted controls/synthetic facade sequences; invoking released callback outside contract is not native product RED.
 
 Use instrumented small models only for their declared primitives/state space; an imported Loom crate does not explore ordinary OS synchronization. Read [Rust techniques](../references/rust-techniques.md) and [Windows evidence](../references/windows-evidence.md); pure scheduling tests do not qualify actual SCM/FFI effects.
+
+Reproducible asynchronous ownership or publication schedule gap: read
+[Shuttle concurrency](../references/shuttle-concurrency.md). Qualify a small
+production path with healthy and requirement-linked fault controls. Compare
+returned outcome, published checkpoint and protected effects against the same
+current authority; an older local snapshot is no fresh guard. Map relevant
+primitives and transitive dependencies; retain concrete schedule replay and run
+the same semantic scenarios on the real selected Tokio runtime. Sampled schedules,
+sequential models and native observations have distinct scopes. Reference admits
+no dependency or analysis-command flag.
 
 Select admitted Loom for a specific synchronization invariant and bounded
 preemption/permutation model; use Miri for reached portable ownership/aliasing
