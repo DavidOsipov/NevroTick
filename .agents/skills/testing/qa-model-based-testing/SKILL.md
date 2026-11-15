@@ -11,6 +11,10 @@ The tool capabilities below create no pre-V1 proof execution or acceptance gate.
 
 Read [the testing contract](../CONTRACT.md).
 
+Use the [tool-selection guide](../references/generated-testing-selection.md) for
+explicit histories, ordinary properties, state-machine generation or
+schedule exploration. A generated sequential driver does not explore thread schedules.
+
 Define small requirements-derived model; no production reducer helpers. Specify states/actions/preconditions/expected outputs/effects/forbidden transitions. Useful dimensions: policy/clock generations, source eligibility, pending proposals/acknowledgements, authority budgets, cancellation, recovery ownership.
 
 Run bounded explicit/generated command sequences through production entry point. Compare model/application after every action; invalid commands must exercise documented rejection/no-state-change, never silently skip. Track eligible/executed actions; empty path cannot pass.

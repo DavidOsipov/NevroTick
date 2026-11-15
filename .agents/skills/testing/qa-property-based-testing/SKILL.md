@@ -7,6 +7,11 @@ description: "Test NevroTick Rust invariants and Python admission readers with b
 
 Read [the testing contract](../CONTRACT.md).
 
+Choose a method and smallest useful pilot with the
+[tool-selection guide](../references/generated-testing-selection.md). The selected
+manual supplies strategy/API examples, effective settings, execution, replay and
+troubleshooting; examples alone establish no product harness or executed result.
+
 First state quantified property/admitted domain/preconditions/plausible wrong implementation. Use existing generator framework such as adopted proptest, or deterministic generated tables without dependency. No library merely for skill.
 
 Rust histories: [Proptest state machines](../references/proptest-state-machines.md).

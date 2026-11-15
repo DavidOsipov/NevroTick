@@ -222,3 +222,28 @@ product qualification. Cargo OD-19 does not automatically establish Python
 package policy. Current task permissions, remaining holds and the post-V1 proof
 deferral remain authoritative. The historical EP1 omission supplies a defect
 class for controls, not a verdict on another agent's unseen uncommitted repair.
+
+### Extended implementation manuals — second review, 15 November 2026
+
+The follow-up reread expanded the three references into operational manuals and
+added a [shared selection guide](references/generated-testing-selection.md).
+Three tool-specific authors and a separate source-based reviewer checked selection,
+integration boundaries, examples, effective configuration, replay and diagnosis.
+Context7 discovery was checked against official documentation and pinned source;
+an unrelated Shuttle search result was not used as concurrency evidence.
+The manuals' examples are original educational material, not imported upstream
+tests or executed NevroTick harnesses. The Python example calls the current real
+raw reader but does not implement complete semantic-admission qualification.
+
+| Reviewed implementation | Corrections or details the manual now preserves |
+| --- | --- |
+| [Shuttle scheduler APIs](https://github.com/awslabs/shuttle/blob/855ae5d92a02dd3c02ddd3ca99dfaeb3b5e31d5b/shuttle-schedulers/src/check.rs), [PCT](https://github.com/awslabs/shuttle/blob/855ae5d92a02dd3c02ddd3ca99dfaeb3b5e31d5b/shuttle-schedulers/src/pct.rs), [runner](https://github.com/awslabs/shuttle/blob/855ae5d92a02dd3c02ddd3ca99dfaeb3b5e31d5b/shuttle-engine/src/runtime/runner.rs), [Tokio exports](https://github.com/awslabs/shuttle/blob/855ae5d92a02dd3c02ddd3ca99dfaeb3b5e31d5b/wrappers/tokio/impls/tokio/src/lib.rs) | Reviewed v0.9.10 and its wrapper cohort. DFS iteration count differs from depth; PCT depth differs from a global switch cap; random-seed environment overrides matter. Runner time limits act between executions. Some wrapper exports retain ordinary Tokio, so import aliases alone cannot establish modeled coverage. Full code examples distinguish healthy and intentionally faulty counter implementations and retain exact configured replay. |
+| [Proptest 1.12.0 configuration](https://github.com/proptest-rs/proptest/blob/70cf37d46b7d83393b6ed94c611f8c52209f585d/proptest/src/test_runner/config.rs), [macro](https://github.com/proptest-rs/proptest/blob/70cf37d46b7d83393b6ed94c611f8c52209f585d/proptest/src/sugar.rs), [state-machine 0.9.0 strategy](https://github.com/proptest-rs/proptest/blob/70cf37d46b7d83393b6ed94c611f8c52209f585d/proptest-state-machine/src/strategy.rs), [runner](https://github.com/proptest-rs/proptest/blob/70cf37d46b7d83393b6ed94c611f8c52209f585d/proptest-state-machine/src/test_runner.rs) | Macro configuration is contextualized again, allowing ambient `PROPTEST_*` overrides even for explicit fields. State-machine precondition failure uses local rejection in the actual strategy, despite the trait documentation saying global. Direct concrete `test_sequential` calls bypass generated cases and the outer timeout runner. Feature unification, normal-only teardown, post-state application and observed receiver actions are explicit. |
+| [Hypothesis 6.170.15 settings](https://github.com/HypothesisWorks/hypothesis/blob/9ab0be61aaaa27396fc1bbf4b34e7925cc68d1e2/hypothesis/src/hypothesis/_settings.py), [stateful adapter](https://github.com/HypothesisWorks/hypothesis/blob/9ab0be61aaaa27396fc1bbf4b34e7925cc68d1e2/hypothesis/src/hypothesis/stateful.py), [seed selection](https://github.com/HypothesisWorks/hypothesis/blob/9ab0be61aaaa27396fc1bbf4b34e7925cc68d1e2/hypothesis/src/hypothesis/core.py), [pytest option](https://github.com/HypothesisWorks/hypothesis/blob/9ab0be61aaaa27396fc1bbf4b34e7925cc68d1e2/hypothesis/src/_hypothesis_pytestplugin.py) | Generated state-machine `.TestCase` defaults disable deadlines and suppress all health checks; explicit settings restore the intended checks. Seed precedence is decorator, then derandomization, then CLI global seed. Class-level seeded replay must retain explicit database settings because the adapter forwards seed/reproduction attributes, not decorated settings. Database replay uses `Phase.reuse`; a tutorial sentence referring to `Phase.explain` does not control this API. |
+| [Loom documented limitations](https://github.com/tokio-rs/loom#unsupported-features) and the existing local tool references | Selection distinguishes controlled schedules, small atomic models, sequential histories, generated Python inputs, deterministic anchors, fuzzing and static flow analysis. Loom's documented C11 gaps are retained; no exhaustive or native qualification is inferred. |
+
+These are version-specific observations. Recheck the admitted release/source when
+implementing; current docs cannot silently update dependency policy or replay
+identities. Source/API review and Python syntax parsing establish neither runtime
+success nor product correctness. The existing task record owns validation and
+publication evidence; this registry owns source provenance.

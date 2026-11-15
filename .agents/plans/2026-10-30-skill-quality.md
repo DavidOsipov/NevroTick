@@ -1655,3 +1655,118 @@ identity; final remote verification belongs to delivery.
 This slice installs no tool and executes no Rust compilation, product test,
 schedule campaign, property campaign, native Windows or formal job. Product
 harness adoption and qualification remain with the existing task owners.
+
+## Extensive tool-reference reread — 15 November 2026
+
+David requested another upstream-documentation review and sufficiently extensive
+references for another AI to choose and implement the methods. This follow-up
+starts from clean local/remote `main` at
+`45b0ba8a28a74b5ff47eede89b47825deb94ae3f`. It continues the authorized skill
+publication workflow; no product repair or framework adoption is included.
+
+Three authors separately reread Shuttle, Proptest and Hypothesis documentation
+and pinned implementation through MCPs. A fourth reviewer independently checked
+the full manuals against primary source and the actual Python receiving boundary.
+[Research provenance](../skills/testing/SOURCES.md#extended-implementation-manuals--second-review-15-november-2026)
+records observed versions, source discrepancies and the documentation-only limit.
+
+### Delivered instructional scope
+
+Added a shared selection guide, expanded the three references and linked them
+from four existing skills and existing catalog/tooling/documentation routers.
+The inventory remains 66 skills; no extra overlapping entrypoint is introduced.
+
+| Manual | Prior words / lines | Delivered words / lines | Added practical guidance |
+| --- | ---: | ---: | --- |
+| [Selection](../skills/testing/references/generated-testing-selection.md) | New | 2,298 / 193 | Defect-to-tool decisions, actual NevroTick source owners, bounded pilot, driver/oracle/observer responsibilities, combined generation and scheduling, result classification and replay evidence. |
+| [Shuttle](../skills/testing/references/shuttle-concurrency.md) | 724 / 104 | 3,162 / 386 | Actual synchronization and wrapper integration, feature topology, scheduler API/bounds, complete educational healthy/fault example, persistence/replay, adapter limits, real-Tokio counterpart and troubleshooting. |
+| [Proptest](../skills/testing/references/proptest-state-machines.md) | 613 / 93 | 2,777 / 385 | Ordinary properties versus histories, dependent strategies, model/SUT trait lifecycle, complete FIFO example and fixed witness, effective configuration, execution, shrinking and concrete replay. |
+| [Hypothesis](../skills/testing/references/hypothesis-admission.md) | 675 / 92 | 3,262 / 427 | Input versus stateful choice, complete physical-file property targeting the current raw reader, full semantic-admission route, effective profiles/settings, fixture lifetime, runner selection, replay and diagnosis. |
+
+Counts use whitespace-delimited words and physical lines, including code and
+source links; they are not model-token or instruction-effectiveness measurements.
+The four manuals total 11,499 words after conservative compression. Entry skills
+remain short and route to the selected manual through progressive disclosure.
+
+The reread corrected material operational assumptions:
+
+- Shuttle wrapper aliases do not instrument all dependencies or original-Tokio
+  exports. Scheduler bounds, random-seed overrides, time stubs and configured
+  replay need separate inspection; a run count supplies no completeness claim.
+- Proptest macros contextualize explicit settings again, so ambient variables
+  can override them. Actual state-machine precondition rejection uses the local
+  counter despite contrary trait prose. A direct concrete `test_sequential`
+  invocation supplies no outer Proptest timeout supervision.
+- Hypothesis state-machine test defaults differ from ordinary tests. Decorator
+  seeds override derandomization, while the pytest CLI seed follows it; both
+  example settings therefore need an explicit replay choice. The stateful
+  adapter forwards reproduction attributes without forwarding decorated settings.
+- Fresh physical fixtures, valid integrity for semantic-negative cases, exact
+  independent rosters and actual refusal-before-effect observation remain
+  distinct from raw JSON shape checking. The worked reader example claims only
+  its raw-boundary scope and omits runtime qualification and artifact persistence.
+
+### Compression and review evidence
+
+Nine complete accepted originals were byte-verified outside the autoloaded tree.
+Original manifest SHA-256:
+`b6e23325c0f9e4af824dc6b339f2ab6b932906839f5d40ae7b8a58e41048e1d8`.
+The light Caveman pass reduced **138,674 → 137,378 bytes** and
+**15,988 → 15,720 words**, preserving extensive implementation detail.
+All nine validator pairs pass with zero errors and warnings. No file required
+more than one targeted repair pass. Code blocks/whitespace, inline code,
+front matter, headings, links, numeric/version tokens and list/table structure
+match their frozen intended originals.
+
+Independent source review: **READY** after repairing the Hypothesis seed
+precedence and stateful database nuance. Independent post-compression review:
+**READY**, with no semantic loss found. A provenance sentence was also corrected
+to identify the intentionally faulty counter implementation; its independent
+assertions are unchanged. Package validation passes **66 skills**. The Python
+example passes syntax-only AST parsing; Rust examples were source/API checked
+but not compiled or executed.
+
+A fresh agent received three raw synthetic proposals and current guidance,
+without author/reviewer notes or expected diagnoses. Its read-only exercise
+produced these practical choices:
+
+| Proposal | Observed instructional result |
+| --- | --- |
+| Rust reservation histories with skipped invalid commands, production-reducer expectations, seed-only retention, ambient zero cases and direct replay | Required independent state/effect expectations, actual refused commands, effective nonzero settings, concrete original/minimized histories and an external replay deadline. Distinguished sequential coverage from scheduling. |
+| Python receipt mutation, stale parent digest, broad exception handling, shared fixture and CLI-seeded replay | Selected a physical-input pilot with recomputed integrity, intended semantic refusal and forbidden-effect observation; required fresh per-invocation fixtures, correct seed precedence and explicit later state-machine settings. |
+| Shuttle integration-test alias with library test-cfg gating, direct std synchronization, networking and changed replay bounds | Required actual library instrumentation and controlled ports, bounded executed schedules, original replay configuration and real-Tokio counterparts; rejected Windows/elapsed-time certification from sampled schedules. |
+
+This is an observed practice exercise, not an unseen holdout, old/new comparison,
+measured defect reduction or executed product test. Authors and reviewers made
+no dependency installation, product-source change or campaign execution.
+
+Before incoming-main reconciliation, changed-document validation passed 772 local
+links/anchors, 33 reference-style links, balanced code fences and one Python
+example's syntax across 14 files.
+
+During publication preparation, remote `main` advanced to
+`546e66435788ae13a6f7dcf10854e7dde784ee04`, adding flow/invariant-audit guidance.
+A three-way reconciliation retained all incoming work and this slice's selection
+hooks. The testing catalog keeps the new flow-audit route alongside the extensive
+manual routes; both overlapping skill leaves retain the incoming bodies plus
+only this slice's selection links. The four manuals remain byte-identical to the
+reviewed candidate. No product files changed in the intervening commit.
+Independent integration review: **READY**; removing only the added hooks restores
+both incoming skill leaves byte-for-byte, and all incoming audit routes remain.
+
+The two integrated leaf originals were re-frozen outside the autoloaded tree
+before reapplying only their small prose compression. Reconciled nine-file
+manifest SHA-256:
+`4074bb4fbe401492bdee024bc78a690d83029c19e5e48f841c1cdaa097200352`.
+All nine final pairs pass without errors/warnings: **138,098 → 136,802 bytes**,
+**15,822 → 15,554 words**. The earlier manifest remains preserved; the difference
+between sets comes from the incoming skill bodies, not removed manual detail.
+
+Before publication, recheck these gates and whitespace against the complete
+intended index, materializing and verifying every tracked path/mode/content.
+No checker or inventory contract
+changed, so no checker regression campaign is required. Advance the verified
+remote parent without force; the containing commit supplies publication identity.
+Existing admission policies, runtime/native obligations and post-V1 formal
+deferral remain with their current owners. Another agent's unseen uncommitted
+product repair is outside this documentation verdict.

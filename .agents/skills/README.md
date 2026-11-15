@@ -32,7 +32,7 @@ product acceptance IDs and native qualification gates do not apply to that work.
 | Plan a change, architecture, review or threat model | [Planning guide](planning/README.md) |
 | Change privilege, IPC, NTS, logging or installation security | [Security guide](security/README.md) |
 | Choose or run testing and qualification | [Testing guide](testing/README.md) |
-| Challenge scheduling races, generated histories or Python admission semantics | [Lifecycle](testing/qa-state-concurrency-lifecycle/SKILL.md), [model](testing/qa-model-based-testing/SKILL.md) or [property](testing/qa-property-based-testing/SKILL.md) testing; conditional Shuttle, proptest-state-machine and Hypothesis references preserve actual admission and evidence limits |
+| Challenge scheduling races, generated histories or Python admission semantics | [Tool-selection guide](testing/references/generated-testing-selection.md), then [lifecycle](testing/qa-state-concurrency-lifecycle/SKILL.md), [model](testing/qa-model-based-testing/SKILL.md) or [property](testing/qa-property-based-testing/SKILL.md) testing; extensive conditional tool manuals preserve admission and evidence limits |
 | Explore semantic states that revisit familiar code paths | [qa-state-guided-fuzzing](testing/qa-state-guided-fuzzing/SKILL.md), with an independent transition oracle |
 | Evaluate new or materially revised skill instructions on actual agent work | [qa-skill-evaluations](testing/qa-skill-evaluations/SKILL.md) |
 | Investigate native heap/handle faults or retained resources | [Windows memory diagnostics](testing/references/windows-memory.md), then [resource QA](testing/qa-performance-resources/SKILL.md) for retention |

@@ -98,6 +98,12 @@ or `--tool hypothesis` selection. Follow the dependency/environment owner before
 adoption; preserve current task permissions and holds. Cargo's registry cooldown
 does not define Python package admission.
 
+Use [generated-testing selection](generated-testing-selection.md) for method
+choice, then the selected manual's concrete setup/run/replay guidance. Upstream
+command examples describe tool mechanics; route product work
+through its admitted runner and preserve source custody, effective settings and
+resource limits. An illustrative example is not a qualified product test.
+
 [The analysis policy](../../../../policy/analysis-tools.json) and
 [TOOLING's analysis status](../../../../TOOLING.md#additional-rust-analysis-tools)
 own the exact separate tool/compiler pins and observed fixture qualifications.

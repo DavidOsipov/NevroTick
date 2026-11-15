@@ -72,6 +72,8 @@ untouched production nor missing real-runtime/native behavior. Select relevant
 [state-machine](../references/proptest-state-machines.md),
 [Shuttle](../references/shuttle-concurrency.md) or
 [Python admission](../references/hypothesis-admission.md) reference.
+Use [result classification](../references/generated-testing-selection.md#classify-results-before-changing-anything)
+for product, oracle, adapter, selection, resource and replay failures.
 
 Changed contracts: follow [contract enforcement](../../implementation/implement-rust-contracts/references/contract-enforcement.md)
 from requirement to enforcing owner/actual consumer. Challenge missing garde call,
