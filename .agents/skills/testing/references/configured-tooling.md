@@ -104,6 +104,20 @@ command examples describe tool mechanics; route product work
 through its admitted runner and preserve source custody, effective settings and
 resource limits. An illustrative example is not a qualified product test.
 
+For a missing selected framework, follow [setup and availability](generated-testing-setup.md).
+At the 16 November 2026 documentation checkpoint, inspected repository routes
+follow; check host installation separately:
+
+| Framework | Setup mechanism | Current repository route |
+| --- | --- | --- |
+| Shuttle | Cargo library plus production instrumentation | Candidate; no product selection or analysis selector. Dependency updates plus lifecycle task own graph, feature and runner preparation. |
+| Proptest / proptest-state-machine | Cargo test dependency, with the state-machine crate only for histories | Candidate; no product selection or analysis selector. Dependency updates plus property/model task own preparation. |
+| Hypothesis | Owned Python environment with exact interpreter, package closure and test runner | Candidate; no generic admitted installer. Selected Python test/environment task owns adoption; the fixed mypy environment is separate. |
+
+Use current task authorization to complete necessary setup; do not request the
+same permission again or turn package absence into a permanent project block.
+Keep any specific unresolved decision or explicit execution hold scoped.
+
 [The analysis policy](../../../../policy/analysis-tools.json) and
 [TOOLING's analysis status](../../../../TOOLING.md#additional-rust-analysis-tools)
 own the exact separate tool/compiler pins and observed fixture qualifications.

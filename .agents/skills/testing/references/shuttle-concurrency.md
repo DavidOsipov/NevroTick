@@ -8,6 +8,10 @@ This manual admits no dependency, installation, product harness or new
 holds and OD-10's post-V1 formal deferral remain. Schedule tests establish bounded
 execution evidence; they do not discharge formal or native product obligations.
 
+If the selected library/runtime is missing, use [setup and availability](generated-testing-setup.md#rust-libraries-and-the-actual-test-build)
+for dependency declarations and existing guarded preparation. Current
+task authority controls adoption; a missing package is a preparation task.
+
 ## Contents
 
 - [Reviewed source and adoption status](#reviewed-source-and-adoption-status)
@@ -71,7 +75,7 @@ See [Shuttle's design][overview], [atomic limits][atomics] and [Loom's limitatio
    joins, while an old generation cannot publish or acquire replacement custody.
 2. Inspect current source/dirty bytes, manifests, lockfile, compiler, target,
    default/optional features, build scripts and runner. Record any missing
-   admitted harness. This documentation task installs/resolves nothing.
+   admitted harness and prepare it through the shared setup procedure when authorized.
 3. Use a narrow import/adapter seam for synchronization in the **same
    production implementation**. Do not copy its state machine into a second test
    implementation and treat agreement as qualification. After feature and dependency

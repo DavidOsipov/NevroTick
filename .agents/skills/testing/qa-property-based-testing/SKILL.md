@@ -17,7 +17,8 @@ First state quantified property/admitted domain/preconditions/plausible wrong im
 Rust histories: [Proptest state machines](../references/proptest-state-machines.md).
 Python receipt/policy readers: [Hypothesis admission](../references/hypothesis-admission.md).
 Prefer ordinary input properties unless history affects results. Without framework
-admission, use deterministic cases; no installation or invented configured lane.
+admission, use deterministic cases while preparing [the selected environment](../references/generated-testing-setup.md).
+Use current task authority; invent no configured lane.
 
 Admission properties: call the real reader on physical fixtures. Change semantic
 facts while preserving valid integrity; test corrupt hashes separately. Compare

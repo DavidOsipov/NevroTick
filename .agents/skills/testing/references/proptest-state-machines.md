@@ -47,8 +47,11 @@ OD-10's post-V1 formal-work deferral and all existing holds remain unchanged.
 Follow [dependency updates](../../environment/dependency-updates/SKILL.md),
 [Cargo operations](../../environment/dependency-updates/references/cargo-operations.md)
 and [configured tooling](configured-tooling.md). No
-`check-analysis.py --tool proptest` lane. This manual authorizes no installation,
-resolution, build, campaign, new product crate or direct-Cargo fallback.
+`check-analysis.py --tool proptest` lane exists. For a missing library, follow
+[setup and availability](generated-testing-setup.md#rust-libraries-and-the-actual-test-build)
+through dependency preparation and actual runner. Current task authority
+controls installation/resolution; this reference creates no product crate,
+configured lane or direct-Cargo fallback.
 
 For an authorized proposal, exact requirements for the researched pair:
 

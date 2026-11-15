@@ -70,8 +70,10 @@ of inserting a test seam that manufactures an impossible interleaving.
    driver or framework. For Rust dependency adoption follow [dependency updates](../../environment/dependency-updates/SKILL.md),
    including the complete changed graph and selected registry cooldown. Python
    needs its approved environment and package policy; Cargo policy is not
-   a Python installer policy. Missing admission does not prevent design review
-   or existing deterministic cases.
+   a Python installer policy. If a selected framework or runtime is missing,
+   follow [setup and availability](generated-testing-setup.md) for detection,
+   dependency setup, acquisition and readiness checks under current task
+   authority. Missing admission does not prevent design review or existing cases.
 3. Read the selected manual's setup, example and execution sections. Its example
    is not a product harness: name every API, observer and fixture connection
    requiring replacement or mapping to current production behavior. Source review,

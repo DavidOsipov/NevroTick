@@ -1770,3 +1770,64 @@ remote parent without force; the containing commit supplies publication identity
 Existing admission policies, runtime/native obligations and post-V1 formal
 deferral remain with their current owners. Another agent's unseen uncommitted
 product repair is outside this documentation verdict.
+
+## Missing-framework setup instructions — 16 November 2026
+
+David asked whether the skills precisely cover method selection, defect classes
+and installation when unavailable. Audit of published `17db1f1` confirmed concrete
+selection/failure maps, but installation preparation was only partly operational.
+This documentation follow-up starts from clean local/remote
+`17db1f123c5bccba6f92d04d1798eefa16916d35` and continues authorized publication.
+
+Added [generated-testing setup](../skills/testing/references/generated-testing-setup.md),
+linked from the three owning skills, selection guide, tool manuals and existing
+catalog/tooling routes. Its 304 lines / 2,159 whitespace-delimited words cover:
+
+- Missing selected payload versus incomplete admission, new adoption, absent
+  compiler/interpreter and a specifically held run. Existing task authorization
+  continues without a duplicate permission request; every affected hold remains.
+- Rust library declarations, ordinary Proptest versus history-only dependencies,
+  Shuttle production-library instrumentation, actual guarded graph resolution,
+  archive acquisition and exact verifier dependency/feature rows.
+- Isolated Python setup in Bash and PowerShell, exact interpreter/pip discovery,
+  a wheel-only proposal, reviewed transitive hash closure, bounded acquisition,
+  offline installation and selected plugin/control readiness.
+- Declared/resolved/acquired/installed, compiled/imported, discovered, controls,
+  production execution and replay as separate observed stages.
+
+Repository/authority and separate Rust/Python source reviewers checked the actual
+instructions. Primary metadata confirmed Hypothesis 6.170.15 requires Python
+3.11+ and includes a native extension with a Maturin source-build backend; the
+recipe therefore requires compatible wheels instead of a silent source-build
+fallback. The pip report remains proposal evidence, not a lock or approval.
+The scoped mypy environment, Cargo cooldown and existing six analysis selectors
+remain unchanged. [Source provenance](../skills/testing/SOURCES.md#missing-framework-setup--16-november-2026)
+records official references and the absence of runtime evidence.
+
+One shared held-run sentence was tightened during independent review: only
+separately permitted tests continue, and all affected held results stay incomplete.
+No new installer, dependency graph, global Python policy or approval gate was added.
+
+Nine complete intended originals were byte-verified outside the autoloaded tree;
+manifest SHA-256:
+`50cf9d8355ad59bf5c66ebd62f0e5a522e692fa7f1131b3141012c89709d1eea`.
+Light Caveman compression preserved all command/code blocks, headings, links,
+front matter, numeric/version tokens and list/table structure. All nine pairs
+pass without errors or warnings: **151,697 → 151,525 bytes** and
+**17,376 → 17,346 words**. These counts include the complete touched references;
+they are not model-token measurements or an agent-performance comparison.
+
+Independent post-compression review: **READY**, with no meaning loss or remaining
+repair. Four source-based walkthroughs retained the intended behavior for already
+authorized missing Shuttle, ordinary Proptest without a history dependency,
+Hypothesis metadata present without its optional CLI, and held native execution.
+These are instruction conclusions, not a fresh blind evaluation or runtime result.
+
+The 66-skill package check and whitespace check pass. Before publication, validate
+links/anchors, reference definitions, fences, Python/TOML examples and shell syntax
+against the complete materialized index; verify every tracked blob/mode and exact
+remote parent without force. PowerShell recipes are source-reviewed, not executed.
+No checker or inventory implementation changed, so no checker regression campaign
+is needed. This task installs no framework and runs no product, Rust, Hypothesis,
+native Windows or formal campaign. The containing commit supplies publication
+identity; real host setup remains an explicitly observed implementation step.

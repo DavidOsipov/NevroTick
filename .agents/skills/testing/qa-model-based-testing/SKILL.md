@@ -21,6 +21,8 @@ Run bounded explicit/generated command sequences through production entry point.
 
 Generated Rust histories: read [Proptest state machines](../references/proptest-state-machines.md).
 Until framework and graph admission, use existing deterministic sequences.
+Prepare missing dependencies/runner through [setup and availability](../references/generated-testing-setup.md);
+continue already-authorized preparation without duplicate permission requests.
 Implement explicit invariants; fresh-state cleanup for every case, shrink and
 replay. Retain concrete original/minimized histories; persisted seeds cannot
 identify the same input after strategy changes.

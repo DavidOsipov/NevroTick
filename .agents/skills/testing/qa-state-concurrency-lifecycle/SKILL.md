@@ -11,6 +11,9 @@ For deterministic runtime cases, Shuttle or Loom, use the
 [tool-selection guide](../references/generated-testing-selection.md). Read the
 selected manual's integration, execution and replay sections before building a harness.
 
+Missing selected framework or runtime: use [setup and availability](../references/generated-testing-setup.md)
+under current task authority, then return to the selected production scenario.
+
 Source review: shared [flow/invariant audit](../references/flow-audit.md).
 Separate data from state/happens-before obligations: each read's value/version,
 lock/lease, invalidation, effect, acknowledgement. Compare terminal-decision

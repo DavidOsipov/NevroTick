@@ -247,3 +247,24 @@ implementing; current docs cannot silently update dependency policy or replay
 identities. Source/API review and Python syntax parsing establish neither runtime
 success nor product correctness. The existing task record owns validation and
 publication evidence; this registry owns source provenance.
+
+### Missing-framework setup — 16 November 2026
+
+The [setup reference](references/generated-testing-setup.md) closes the follow-up
+gap between method selection and an available, admitted runner. A repository
+auditor checked actual package declarations and setup/analysis entrypoints;
+separate Rust and Python researchers checked primary installation sources through
+MCPs. Context7 discovery was reconciled with pinned manifests rather than using
+older retrieved Proptest examples as current package facts.
+
+| Primary evidence | Applied setup guidance |
+| --- | --- |
+| [Cargo executable installation](https://doc.rust-lang.org/cargo/commands/cargo-install.html), [integration tests](https://doc.rust-lang.org/cargo/reference/cargo-targets.html#integration-tests), [Shuttle manifest](https://github.com/awslabs/shuttle/blob/855ae5d92a02dd3c02ddd3ca99dfaeb3b5e31d5b/shuttle/Cargo.toml), [Proptest manifest](https://github.com/proptest-rs/proptest/blob/70cf37d46b7d83393b6ed94c611f8c52209f585d/proptest/Cargo.toml) | Testing libraries use an owning Cargo manifest and actual test-build topology. Optional normal dependencies may be needed for production-library instrumentation. Existing guarded resolution, acquisition and exact runner feature/dependency checks remain authoritative. |
+| [Hypothesis package metadata](https://github.com/HypothesisWorks/hypothesis/blob/9ab0be61aaaa27396fc1bbf4b34e7925cc68d1e2/hypothesis/pyproject.toml), [Python venv](https://docs.python.org/3/library/venv.html), [ensurepip](https://docs.python.org/3/library/ensurepip.html) | Reviewed Hypothesis requires Python 3.11+, includes a native extension and uses Maturin for source builds. Distinguish interpreter, venv/pip, distribution and native/import failures; choose compatible wheels and the exact environment interpreter. The optional CLI and pytest integration are separate choices. |
+| [pip installation/report](https://pip.pypa.io/en/stable/cli/pip_install/), [report schema](https://pip.pypa.io/en/stable/reference/installation-report/), [secure installs](https://pip.pypa.io/en/stable/topics/secure-installs/), [download](https://pip.pypa.io/en/stable/cli/pip_download/), [pytest plugins](https://docs.pytest.org/en/stable/how-to/plugins.html) | Wheel-only resolution proposal, reviewed exact transitive hash closure, bounded acquisition, offline local-wheel installation and compatibility/control checks. A report is not a lock; `--no-index` alone is not network isolation. Verify the selected pytest plugin and nodes separately from direct invocation. |
+
+This guidance supplies concrete preparation recipes without installing anything,
+choosing a Python package policy, changing product graphs or inventing configured
+analysis selectors. Current task authorization governs necessary preparation;
+skills create no extra approval round. Version observations and illustrative
+paths must be reconciled with the actual target before execution.

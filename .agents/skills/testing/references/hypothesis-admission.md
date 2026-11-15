@@ -14,6 +14,11 @@ pytest/plugin and runner identities before use. Follow
 installation, adopted CI profile or `check-analysis.py --tool hypothesis` lane.
 Cargo's 14-day registry cooldown supplies no Python package-admission policy.
 
+For a missing interpreter, package or runner, follow
+[isolated Python setup](generated-testing-setup.md#hypothesis-in-an-owned-python-environment).
+Covers prerequisites, compatible wheels, exact dependency closure,
+installation commands and readiness without extending the unrelated mypy environment.
+
 ## Contents
 
 - [Choose the smallest useful method](#choose-the-smallest-useful-method)
