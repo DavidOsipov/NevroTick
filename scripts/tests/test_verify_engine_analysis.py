@@ -3870,6 +3870,9 @@ class EngineKeFixtureLaneTests(unittest.TestCase):
 class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
     """Declared synthetic reader/dispatch controls; no compiler or product executes."""
 
+    class SessionReached(Exception):
+        pass
+
     OWNERS = {
         "source_policy": "crates/nevrotick-engine/src/source_policy.rs",
         "library": "crates/nevrotick-engine/src/lib.rs",
@@ -3917,6 +3920,11 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                                + [f"source_policy::tests::synthetic_case_{index:02}" for index in range(26)]
                                + ["source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted",
                                   "source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund"])
+        # The reviewed development contract has 209 default cases and 234
+        # additional KE cases in EP1. These synthetic identities are not read
+        # from either production roster or the consumer being challenged.
+        self.ep1_ordinary = sorted(self.ordinary
+                                  + [f"nts_ke_experiment::synthetic_case_{index:03}" for index in range(234)])
         self.docs = sorted([f"crates/nevrotick-engine/src/lib.rs - synthetic_doc_{index:02} (line {index + 1})"
                             for index in range(69)]
                            + [f"crates/nevrotick-engine/src/source_policy.rs - synthetic_doc (line {index}) - compile fail"
@@ -3949,6 +3957,8 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                 patch.object(MODULE, "ROOT", self.root),
                 patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, self.identity)),
                 patch.object(MODULE, "SOURCE_POLICY_ORDINARY_DIGEST", independent_digest(self.ordinary)),
+                patch.object(MODULE, "SOURCE_POLICY_EP1_ORDINARY_DIGEST",
+                             independent_digest(self.ep1_ordinary)),
                 patch.object(MODULE, "SOURCE_POLICY_DOCTEST_DIGEST", independent_digest(self.docs)),
                 patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=8 * 1024**3))):
             context.start()
@@ -3965,6 +3975,7 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                      "default-ordinary", "default-optimized", "default-doctests",
                      "ep1-ordinary", "ep1-optimized", "ep1-doctests"):
             output = (self.execution(self.docs) if name.endswith("doctests")
+                      else self.execution(self.ep1_ordinary) if name in {"ep1-ordinary", "ep1-optimized"}
                       else self.execution(self.ordinary) if "ordinary" in name or "optimized" in name
                       else "synthetic fixture only\n")
             path = self.base / (name + ".json")
@@ -3976,6 +3987,20 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
             "resource_observer_joined": True, "terminal_resource_failures": [],
             "source_sha256": self.identity, "lanes": lanes}))
         self.policy["binding"]["development_evidence"]["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.write_policy()
+
+    def replace_reference_lane_output(self, lane, output):
+        """Keep physical integrity valid while changing only the selected observation."""
+        reference_path = self.base / "reference.json"
+        reference = json.loads(reference_path.read_text())
+        row = next(row for row in reference["lanes"] if row["lane"] == lane)
+        raw_path = Path(row["path"])
+        raw = json.loads(raw_path.read_text())
+        raw["output"] = output
+        raw_path.write_text(json.dumps(raw))
+        row["sha256"] = hashlib.sha256(raw_path.read_bytes()).hexdigest()
+        reference_path.write_text(json.dumps(reference))
+        self.policy["binding"]["development_evidence"]["sha256"] = hashlib.sha256(reference_path.read_bytes()).hexdigest()
         self.write_policy()
 
     def fake_session(self, *, finish_failure=False, coverage=None):
@@ -4147,6 +4172,73 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         self.assertEqual(MODULE.source_policy_execution(both, binding, doctests=True)["tests_executed"], 282)
         with self.assertRaises(MODULE.Incomplete):
             MODULE.source_policy_execution(self.execution(self.ordinary).replace("0 filtered out", "1 filtered out"), binding)
+
+    def test_development_ep1_admits_distinct_complete_graphs_before_session(self):
+        self.assertEqual(len(self.ordinary), 209)
+        self.assertEqual(len(self.ep1_ordinary), 443)
+        self.assertEqual(len(set(self.ep1_ordinary) - set(self.ordinary)), 234)
+        self.reference_fixture()
+        admitted = MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
+        self.assertEqual(admitted, {str(path): hashlib.sha256(path.read_bytes()).hexdigest()
+                                   for path in self.base.glob("*.json")})
+        self.assertEqual(len(admitted), 13)
+        # Ordering and sub-binary boundaries are not part of the roster contract.
+        for lane in ("ep1-ordinary", "ep1-optimized"):
+            self.replace_reference_lane_output(lane,
+                self.execution(list(reversed(self.ep1_ordinary[:234])))
+                + self.execution(list(reversed(self.ep1_ordinary[234:]))))
+        with patch.object(MODULE.COMMON, "Session", side_effect=self.SessionReached) as session:
+            with self.assertRaises(self.SessionReached):
+                MODULE.execute_source_policy_profile(self.args, {})
+            session.assert_called_once()
+        self.assertFalse(self.args.output_dir.exists())
+
+    def test_development_ep1_rejects_hash_valid_execution_faults(self):
+        missing = [name for name in self.ep1_ordinary
+                   if name != "nts_ke_experiment::synthetic_case_000"]
+        substituted = [name if name != "nts_ke_experiment::synthetic_case_000"
+                       else "nts_ke_experiment::foreign_same_count_case" for name in self.ep1_ordinary]
+        self.assertEqual(len(missing), 442)
+        self.assertEqual(len(substituted), 443)
+        self.assertEqual(sum(name.startswith("nts_ke_experiment::") for name in substituted), 234)
+        cases = (
+            ("empty", "", "native block declaration or summary"),
+            ("zero-tests", self.execution([]), "native block declaration or summary"),
+            ("missing-ke", self.execution(missing), "Source-policy.*EP1"),
+            ("duplicate-ke", self.execution(self.ep1_ordinary + ["nts_ke_experiment::synthetic_case_000"]),
+             "native records are duplicated"),
+            ("same-count-substitute", self.execution(substituted), "Source-policy.*EP1"),
+            ("default-graph-swap", self.execution(self.ordinary), "Source-policy.*EP1"),
+            ("filtered", self.execution(self.ep1_ordinary).replace("0 filtered out", "1 filtered out"),
+             "native block declaration or summary"),
+            ("unfinished-block", self.execution(self.ep1_ordinary) + "running 1 test\n",
+             "native block declaration or summary"),
+        )
+        for lane in ("ep1-ordinary", "ep1-optimized"):
+            for fault, output, reason in cases:
+                with self.subTest(lane=lane, fault=fault):
+                    self.reference_fixture()
+                    self.replace_reference_lane_output(lane, output)
+                    with self.assertRaisesRegex(MODULE.Incomplete, reason):
+                        MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
+        self.reference_fixture()
+        self.assertEqual(len(MODULE.admit_source_policy_development(self.policy["binding"], self.identity)), 13)
+
+    def test_development_ep1_missing_case_refuses_before_session(self):
+        missing = [name for name in self.ep1_ordinary
+                   if name != "nts_ke_experiment::synthetic_case_000"]
+        for lane in ("ep1-ordinary", "ep1-optimized"):
+            with self.subTest(lane=lane):
+                self.reference_fixture()
+                self.replace_reference_lane_output(lane, self.execution(missing))
+                report = {}
+                with patch.object(MODULE.COMMON, "Session", side_effect=self.SessionReached) as session:
+                    with self.assertRaisesRegex(MODULE.Incomplete, "Source-policy.*EP1"):
+                        MODULE.execute_source_policy_profile(self.args, report)
+                    session.assert_not_called()
+                self.assertFalse(self.args.output_dir.exists())
+                self.assertFalse(report["selected_lane_passed"])
+                self.assertFalse(report["qualification_passed"])
 
     def test_actual_dispatch_runs_default_baseline_and_separate_docs_then_finishes(self):
         self.reference_fixture()

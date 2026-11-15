@@ -19808,3 +19808,77 @@ for an already collected, inactive unit before Git/source changes. Retain its
 only alongside an absent/empty owned development cgroup, without assuming
 that a stop request establishes completion. Prior staging/campaign results
 are preserved; no commit or push is authorized.
+
+### EP1 development-receipt admission repair — 15 November 2026 (UTC)
+
+David requests pulling current main, repairing unresolved audit findings, and
+committing/pushing the repair. Main `dfd74fb5c92be8131b942a9590d64c7a4df44f77`
+retains the earlier skill fixes, but its source-policy development reader still
+accepts integrity-valid EP1 records without checking their executed identities.
+This is a verification-admission defect; no runtime NTS or clock exploit is
+established. Keep the existing REQ-8/BND-2 and CHECK-6/8/9/17/21/25/26/27 owners.
+
+The bounded repair in [the existing verifier](../scripts/verify-engine-analysis.py)
+requires both `ep1-ordinary` and `ep1-optimized` to contain complete successful
+libtest blocks and the exact **443-case GNU EP1 roster**. The existing parser
+rejects empty, unfinished, duplicated, filtered or inconsistent execution.
+Count plus canonical digest rejects missing or substituted identities, while
+sorting preserves valid execution order and sub-binary partitioning. Admission
+runs before `COMMON.Session` construction and again after its existing finish
+bookend; the default and doctest contracts are unchanged.
+
+Independent source reviewers reconcile **209 default + 234 KE = 443 distinct
+cases**, including current Unix/GNU gates and excluding the Windows-only test
+module. All 234 fully qualified KE names match the retained KE roster, and all
+28 retained KE source/test pins match current bytes. The canonical sorted-list
+SHA-256 is
+`b2608bc74f6051dfc5365f0790f193c6c940a002ea3b11c905fe0ef1c88e187b`.
+This is source reconciliation against the current routing and retained names,
+not fresh compiler discovery or fresh historical-receipt execution.
+
+[Regression controls](../scripts/tests/test_verify_engine_analysis.py) declare
+their own synthetic 209/443 graphs. Each malformed observation is physically
+rewritten and rehashed through its parent and policy reference, so an integrity
+failure cannot mask the semantic check. Both EP1 lanes cover empty/zero-test,
+missing KE, duplicate KE, same-count identity substitution, default-graph swap,
+filtered output and unfinished blocks. Healthy reordered multi-block output
+reaches the same Session seam; missing-case inputs fail before Session/output
+creation and leave both pass flags false.
+
+The pre-repair RED run observed all sixteen malformed-reader subcases accepted
+and both missing-case caller controls reaching the deliberate Session sentinel.
+The healthy neighbor passed. These observations remain in the review session;
+no on-disk raw RED transcript was retained. After repair, all **19 focused
+methods pass**. Linux Python **3.12.14**, `-X dev -Werror -B`, also passes all
+**159 methods** in `test_verify_engine_analysis.py` in 23.434 seconds, without
+failure, error or skip. Helper/test/policy bytes match before and after the run.
+
+Preserve the first full-suite failure: the host's `/tmp` filesystem has only
+4.9 GiB total, below the unchanged 7 GiB startup floor used by older synthetic
+KE fixtures. That run records five failures/four errors before their intended
+downstream behavior. Rerunning the identical module with an owned `TMPDIR` on
+the workspace filesystem supplies the required capacity and passes. No test
+or production disk guard was weakened to obtain that result. External evidence
+root `nevrotick-ep1-admission-fix-20261116` retains both full-run logs and JSON
+receipts, focused GREEN, roster reconciliation and role-binding checks; the
+passing full-run log SHA-256 is
+`d658efb04847392c3bc10525d6ed7fa2b160b4514e2eefa4c3afe4e03f11579d`.
+
+Only the two changed helper/test pins in the
+[current source-policy role](../policy/engine-source-policy-analysis.json) are
+refreshed. The actual data-only reader admits all **43 protected inputs** and
+the unchanged **605-input** product
+`a6a6f9924df30a24df21a20821b07cc9969cc149d678d333bb126e7533ca3db3`.
+The repaired helper SHA-256 is
+`a7c6a2cd805494cba65fcb953a92c3f44ca7f46a30b3fafcad965f25c1d8c96f`;
+the regression module is
+`260e09f389c930d0d19a94752082c413983e8030a7fa34ef66d4c0a6bef31466`.
+All other policy fields and historical bindings remain unchanged. The external
+development receipt is absent on this host and has not been revalidated.
+
+The [current development queue](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+still owns the failed 66.30% source-policy mutation result and remaining cohorts.
+This repair adds no generated kill, coverage, native, Rust-build or formal
+result. Public campaigns remain closed, thresholds remain 90%/95%, and existing
+holds retain their scope. Independent review accepts the bounded repair; final
+publication separately verifies the complete staged candidate and remote parent.

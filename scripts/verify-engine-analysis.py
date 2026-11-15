@@ -6551,6 +6551,10 @@ SOURCE_POLICY_DOCTEST_COUNT = 73
 # these complete sorted identities. They identify a roster, not current execution.
 SOURCE_POLICY_ORDINARY_DIGEST = "9b7c9509495400f141583022d85e3a8eb289aef571a159035d497558b4935dff"
 SOURCE_POLICY_DOCTEST_DIGEST = "2fa097da2f35b79fa8fd8a2c2b93c49efcbf023896dc181dc7510c94ee50172a"
+# Source-reconciled GNU EP1 identities: 209 default plus 234 unchanged KE cases.
+# Current module/cfg review and retained identities establish a roster, not a new run.
+SOURCE_POLICY_EP1_ORDINARY_COUNT = 443
+SOURCE_POLICY_EP1_ORDINARY_DIGEST = "b2608bc74f6051dfc5365f0790f193c6c940a002ea3b11c905fe0ef1c88e187b"
 SOURCE_POLICY_BOUND_INPUTS = tuple(dict.fromkeys((
     WRAPPER, TESTS, *SOURCE_POLICY_SUBJECTS.values(),
     "crates/nevrotick-engine/tests/private/source_policy.rs",
@@ -6709,6 +6713,11 @@ def admit_source_policy_development(binding: dict, identity: dict) -> dict:
         admitted[str(raw_path)] = digest
         if row["lane"] in {"default-ordinary", "default-optimized"}:
             source_policy_execution(raw["output"], binding)
+        elif row["lane"] in {"ep1-ordinary", "ep1-optimized"}:
+            names = read_successful_address_records(raw["output"])
+            if (len(names) != SOURCE_POLICY_EP1_ORDINARY_COUNT
+                    or COMMON.canonical_sha256(sorted(names)) != SOURCE_POLICY_EP1_ORDINARY_DIGEST):
+                raise Incomplete("Source-policy EP1 execution omitted or substituted an admitted case.")
         elif row["lane"] in {"default-doctests", "ep1-doctests"}:
             docs = validate_engine_ke_doctests(raw["output"])["test_names"]
             if sorted(docs) != binding["doctest_inventory"]:
