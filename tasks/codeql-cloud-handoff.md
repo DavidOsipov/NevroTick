@@ -457,3 +457,228 @@ optimized rows then passed. This resolves both hosted integration failures
 above without increasing acquisition limits or weakening isolation. Raw output
 and final observation remain under `metadata-only-repair-v1` in the same local
 evidence root. No native Windows, new critical-file metric or release pass follows.
+
+## Cloud refresh and completed scan — 15 November 2026
+
+David requested fresh CodeQL analysis in parallel with his WSL Core/Engine work.
+Cloud `main` was fast-forwarded to
+`bb90f0c5eee4e356fe1391f38d241b7c47a48e3e`. Ten pre-existing changed files were
+preserved in stash `1c8488d18c9d7f3a0bc2092cf9151cc6ed8b17ec` and an independent
+byte/patch backup; they were not reapplied. Unpublished WSL work is excluded.
+This checkpoint changes documentation only, preserving coordinator ownership of
+Core/Engine, manifests, lockfiles, verification policies and hosted workflows.
+
+This continues CHECK-22/25 source/security analysis and CHECK-24/25 evidence
+custody. The fresh immutable product projection has 608 files, including 294
+indexed workspace Rust files. Its manifest SHA256 is
+`c81b5a465873df14ea4646ba0fbcd40dfcbccf44627e2cfd98256b209c10ef15`.
+All four fresh databases archive those 294 Rust inputs byte-exactly. Root-only
+Cargo discovery excludes independent lab/fuzz/formal workspaces; path dependencies
+remain available to Cargo, with dependency bodies not selected for extraction.
+
+The external owner-authorized tool profile uses CodeQL **2.27.4**, bundled
+`rust-all` **0.2.25** / `rust-queries` **0.1.46**, Rust **1.100.0**, and all **585**
+locked registry packages. It selects four analyzer threads, one Cargo compilation
+job and a 28,672-MiB RAM hint, with a 30-GiB aggregate RSS stop and 4-GiB free-space
+reserve. Offline namespaces keep source/tools/vendor read-only and host network,
+credentials and services inaccessible. Boundary, low-space, RSS and allocated-work
+stop controls passed. No shared tool policy was changed.
+
+### Exact source results
+
+Every row below completed extraction, sealing, both builtin suites, complete BQRS
+info/decoding, its independent 15-check flow oracle and one interpreted UI value
+path. Both faulty queries are empty and fail comparison to the unchanged healthy
+oracle as intended; no source/sink selection was silently dropped to obtain a pass.
+
+| Actual configuration | Endpoint rows | Local positives | Native positives | Security-extended alerts | Security-and-quality alerts |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| GNU host, default, `-test` | 16 | 3 | 0 | 0 | 16 unused-variable |
+| GNU host, default + KE, test retained | 28 | 6 | 0 | 27 crypto-value | 27 crypto-value |
+| MSVC Windows, default, `-test` | 16 | 3 | 0 | 0 | 16 unused-variable |
+| MSVC Windows, default + KE, `-test` | 28 (24 + 4 native) | 5 | 1 | 0 | 16 unused-variable |
+
+All rows have exactly one global UI value pair, one localization taint pair and
+one interpreted UI path, with their forbidden pairs absent. Windows KE includes
+the required packet-argument flow into the resolved `try_send_to` call inside
+`send_guarded`. These are value/taint facts, not authorization or scheduling proofs.
+The suites contain 39 and 41 queries respectively, sharing 39; they are not 80
+independent checks per row. Windows target selection uses the real MSVC target,
+not a fake host cfg. Compiler metadata confirms Windows/MSVC and v3 probe variants;
+its mixed probe cache proves no per-dependency or runtime-hardening qualification.
+
+Separate `--threat-model=all --rerun` security-and-quality runs completed on host
+default and Windows KE production. Both return the same 38 alert fingerprints:
+16 unused-variable, 21 path-injection and one command-line-injection. Host source
+activation changes from 1 active / 27 disabled to **28 / 0**, and generic non-summary
+taint reach from **0 to 370** nodes. Windows KE all-model metrics are **29 / 0**
+and **366** reached nodes. These are modeled graph counts, not first-party coverage
+percentages. All native final exits are zero with successful before/after custody.
+
+### Critical alert dispositions
+
+- The 16 unused-variable notes are the same fixture cohort across the three
+  production-cfg rows: actual uses occur inside unavailable assertion/Tokio
+  macros. No unused production value or justified source fix was established.
+- All 27 crypto-value detections are in `ntp-wire/tests/nts_client_request.rs`:
+  24 flag integer nonce **lengths** because a helper parameter is named `nonce`;
+  three flag intentional byte fixtures passed to a copy-only formatter. No AEAD
+  operation, production key or secret is established in these paths. Actual
+  entropy/key callers were reviewed separately; no literal production nonce/key
+  lead was established. No generic AES-SIV nonce-safety exception was used.
+- The 22 additional all-model security detections are real harness taint flows:
+  temporary-directory values into fixed capture-file operations, plus
+  `current_exe` into a direct self-respawn with literal arguments. Independent
+  reviews found no unauthorized deletion or executable selection under the
+  configured env-clear/private-temp/0700-work/executable-custody premises.
+  Exclusive directory creation and `create_new` precede fixed-leaf cleanup after
+  child reap. Later opens are not generally dirfd/no-follow operations and images
+  are not open-handle sealed; hostile same-UID replacement and unsupported raw
+  ambient runs are not declared safe. No application fix or suppression follows.
+
+Repeated fingerprints across suites/configurations are not separate defects.
+No actionable production security vulnerability was validated by these alerts.
+
+### Scope limits and remaining source lead
+
+The fully decoded host builtin source inventory has 28 entries: 23 fixture/test
+locations, three UI examples, the observe diagnostic binary and one historical,
+undeclared transport file. Its sole remote-source entry is `connect_timeout` in
+`nts_ke_experiment/transport.rs:399`, a file logged semantically unavailable for
+this configuration. Source kinds are 8 environment, 5 commandargs, 13 file,
+1 stdin and 1 remote. The query's `(DEFAULT)` marker means active under the
+**current** all-model configuration. This explains why the initial builtin remote
+model cannot establish broad runtime ingress coverage. Pure UI/parser parameters
+and unmodeled I/O still require explicit source questions or independently
+qualified domain models; the successful custom queries use actual input seams.
+
+The default host's 6,199 notifications are diagnostics/metrics, not 6,199 errors.
+Of 5,807 unresolved macro records, 5,806 belong to 79 wholly inactive files. The
+persistent active gap is Engine `next_wake`'s reverse Tokio expansion at
+`lib.rs:1432`. KE/test adds two warnings on one Windows-gated test assertion.
+Windows default/KE have 74/60 wholly inactive files respectively. Signature-only
+path/dependency implementations, unretained generated Slint/OUT_DIR output,
+native effects and the independent Windows service fixture remain coverage gaps.
+No whole-crypto, whole-program, Windows runtime or release clearance follows.
+
+Independent source review identified a **not behaviorally reproduced** terminal
+checkpoint race in `series.rs`: final Stop/Stale retirement may accompany an
+older quiet snapshot. `SeriesReceiver::receive` then rejects and discards the
+actual terminal record as `InternalState/Failure`, potentially retiring a session
+that a clean stop would preserve. Final send/commit guards fail closed; no
+authorization bypass is established. The Engine owner should force control delivery
+between the two reads, preserve the healthy and post-completion neighbors, and
+propagate the snapshot used by the actual terminal decision. Relaxing the
+receiver invariant or indiscriminately rereading after commit is not a repair.
+This analysis does not modify Engine or substitute for its 90%/95% gates.
+
+### Tool qualification and retained evidence
+
+Default and extra/test tool probes pass 34 and 38 checks respectively, with five
+and seven actual function bodies. Each retains six relay edges, four endpoints,
+one unsafe taint pair, the clean negative and a 13-step interpreted path through
+both actual macro/generated helpers. Exact expansion ancestry and the concrete
+`<core::str as alloc::borrow::ToOwned>::to_owned` target are checked against pinned
+APIs and archived source; no additional summaries or universal flow steps were
+invented. Earlier failed metadata/canonical-name/type-encoding oracle versions
+remain preserved. Standalone generated probe OUT_DIR bytes were not archived.
+
+All four rows' 41 raw builtin result files were copied independently before
+reruns or cache cleanup: 164 BQRS files retained. Removing only two completed
+rows' generated cache directories reclaimed about 3.58 GiB; imported core/source
+and retained results were rechecked unchanged. Controller/query preparation
+failures remain recorded; successful runs do not rewrite their status.
+
+Machine-local evidence is under
+`/workspace/.nevrotick-cloud/codeql-refresh-20261115-v1/`:
+`scan-summary.json`, `source-manifest.json`, `admission.json`, `qualified.json`,
+`cores/`, per-command receipts/custody, complete `work/results/`,
+`prior-builtin-results/`, the four `extraction-review/*coverage.md` records,
+`scope-review/*triage.md`, and `scope-review/current-analysis.md` for the race.
+The source inventory uses the pinned builtin `TaintSources.ql` through supported
+`database run-queries`; `query run` does not accept its threat-model option.
+
+Next: qualify the race with the existing Engine owner; add narrow validated
+runtime-ingress models where needed; rebuild after the WSL changes are published.
+Preserve post-V1 formal deferral and all Windows execution, fuzz, storage, UI,
+package and release holds. This source scan creates no native pass or fresh
+coverage/mutation score.
+
+## Incremental flow-audit skills — 15 November 2026 (UTC)
+
+David requested a more efficient long-chain audit method, updated skills,
+Caveman compression and publication to remote `main`. Before this update,
+`main` fast-forwarded to `45b0ba8a28a74b5ff47eede89b47825deb94ae3f`, retaining
+its new generated-history, Hypothesis/Proptest and Shuttle instructions. The
+completed scan above remains bound to `bb90f0c`, not this documentation baseline.
+The ten-file prior-work stash and byte backups remain untouched.
+
+Updated the existing
+[data-flow](../.agents/skills/testing/qa-data-flow-analysis/SKILL.md),
+[lifecycle](../.agents/skills/testing/qa-state-concurrency-lifecycle/SKILL.md)
+and [independent-review](../.agents/skills/testing/qa-independent-review/SKILL.md)
+leaves, with one conditional
+[shared flow-audit reference](../.agents/skills/testing/references/flow-audit.md).
+Existing routers, data-flow discovery metadata and CodeQL reference now route
+to that method; no new skill, checker, application framework or dependency was
+added. Continue this task's CHECK-22/25 analysis and CHECK-24/25 evidence custody.
+
+The method inventories actual inputs and effects independently of analyzer
+models, then reviews bounded connected data/control/state slices with explicit
+invariants, complete relevant bodies, caller/callee contracts and an open frontier.
+An integration challenger checks the composed guarantee. Reuse requires matching
+relevant source, caller wiring, callee contracts, configuration and evidence;
+changed dependencies invalidate affected transitive chains. New callers need
+fresh composition even when callee bytes match. Unrelated edits need no wholesale
+rescan. This is a way to avoid redundant work, not a measured speedup or complete
+logical-bug detector. CodeQL remains qualified supporting evidence.
+
+The three leaves and new reference were first expanded to the intended full
+instructions, then compressed in place using the requested Caveman skill.
+Byte-verified originals and expanded candidates remain outside the autoloaded
+skill tree. Final totals are **26,721 to 22,231 UTF-8 bytes** and **3,196 to 2,346
+whitespace-delimited words**, compared with those expanded candidates, not with
+the previous repository or a tokenizer. No agent-cost or reliability uplift was
+measured. Frontmatter, headings/order, fenced/inline code, link destinations,
+list/table structure and numeric tokens passed local protected-syntax checks.
+The skill provider could not supply Caveman's bundled `scripts/validate.py`;
+that script was not run. The replacement uses Python's standard library and
+does not substitute syntax equality for semantic review.
+
+Independent original-to-expanded and expanded-to-compressed review retained the
+existing safeguards and upstream additions. Compression v1 lost three explicit
+qualifications: faulty/clean endpoint expectations, real selected-Tokio execution,
+and genuine emitted consumer fixtures. All three were restored in v2; focused
+review found no remaining semantic blocker. Prior bytes and failed judgments are
+retained. Current package validation passes **66 skills**. An earlier metadata
+check rejected an overlong UI short description; it was shortened without
+changing the checker or its acceptance criteria.
+
+One fresh-context, read-only source exercise used three standalone Rust files
+and a separately prepared private grader. The worker received raw requirements
+and source, without the expected diagnosis, and delegated its complementary
+change-impact assessment. Coordinator grading accepted all seven semantic
+outcomes and four independent deltas: checked-object/time divergence, both public
+caller routes, a useful accepted neighbor, exact local error restoration, and
+selective reuse/invalidation for unrelated, guard, callee and caller changes.
+The initial exercise used compression v1; a separate same-worker v2 impact check
+found the three wording restorations outside its exercised mechanisms, with no
+affected conclusion. That follow-up is not another independent trial. Inputs and
+grader hashes remain unchanged. No accidental answer exposure was reported;
+shared filesystem access is not an isolation boundary. This development exercise
+demonstrates only its source-review case, not statistical generalization.
+
+No product, Cargo, compiler, CodeQL, native, formal, fuzz, storage or UI job was
+run for the skill update. The source-only exercise establishes no executed
+behavior or remote-delivery guarantee. Existing 90%/95% coverage/mutation gates,
+ownership boundaries, post-V1 formal deferral and all execution/release holds
+remain unchanged. The earlier source lead still belongs to the Engine owner.
+
+Machine-local records are under
+`/workspace/.nevrotick-cloud/flow-audit-skills-20261116-v1/`: `originals/`,
+`expanded/`, both compression-validation records, both semantic reviews,
+`exercise-input-identities.json`, and `evaluation/` with raw inputs, private
+grader, worker result, coordinator grading and v2 impact check. Final staged-tree
+verification and publication identities belong to the same evidence root.
+Commit/push to remote `main` is explicitly authorized by this request; no prior
+stash restoration or Core/Engine implementation is included.

@@ -5,101 +5,103 @@ description: "Independently review NevroTick verification claims, tests and cand
 
 # Review evidence independently
 
-Read [the testing contract](../CONTRACT.md).
+Read [testing contract](../CONTRACT.md).
 
-Receive bounded requirement/scope, frozen candidate inputs, raw evidence; implementer conclusion is no oracle. Inspect actual changed path/test selection/expectations/valid controls/effect reachability/remaining platform gaps.
+Receive bounded requirements/scope, frozen inputs, raw evidence. Implementer
+conclusion is no oracle. Inspect changed paths, selection, expectations, valid
+controls, reached effects and platform gaps.
 
-Distinguish source reasoning/proposed tests/executed host tests/native Windows observations. Challenge zero-selection success, setup-as-RED, shared-oracle round trips, mocks-as-OS-authority, stale candidate identity, cleanup/retry omissions.
+Logical/long chains: challenge [flow/invariant audit](../references/flow-audit.md)
+against actual callers, complete relevant bodies, boundary contracts. Independently
+seek omitted roots, alternate constructors, bypasses, errors, changing context.
+Trace checked versus consumed object, exact units, ownership, acknowledgements,
+original failure through cleanup. Require source-backed continuation obligations;
+review slice integration, not just local verdicts. Check reuse against callers,
+callee contracts, configuration/evidence identity. Ledger proves no correctness
+and adds no approval gate.
+
+Separate source reasoning, proposed tests, host execution, native observations.
+Challenge zero selection, setup-as-RED, shared-oracle round trips, mocks-as-authority,
+stale identity and omitted cleanup/retries.
 
 ## Compare verification criteria with the accepted baseline
 
-Compare candidate verification changes with the last accepted baseline and
-authoritative requirements; passing candidate output is insufficient.
-Cover semantic expected values and tolerances; test, feature, target and
-job selection; critical-file lists, thresholds and denominators; mutation
-exclusions and equivalent dispositions; incomplete-to-pass reclassification;
-and checker or workflow acceptance logic. Record affected surfaces in a small
-table in the existing review/task record:
+Compare candidate with accepted baseline/requirements, not merely passing output:
+expected values/tolerances; tests/features/targets/jobs; critical files, thresholds,
+denominators; mutation exclusions/equivalences; incomplete-to-pass changes;
+checker/workflow acceptance. Record in existing review/task:
 
 | Surface | Accepted baseline | Candidate | Authority and independent evidence |
 | --- | --- | --- | --- |
-| Source/hash binding | Exact admitted inputs | Exact new inputs | Rebind through existing admission; retain unchanged acceptance criteria. |
-| Acceptance criterion | Exact old value, selection or rule | Exact proposed value, selection or rule | Name authoritative reason; retain counterexample and healthy control. |
+| Source/hash binding | Exact admitted inputs | Exact new inputs | Existing re-admission; unchanged acceptance criteria. |
+| Acceptance criterion | Exact old value, selection or rule | Exact proposed value, selection or rule | Authoritative reason, counterexample, healthy control. |
 
-Separate legitimate source/hash rebinding from acceptance changes. Compare old
-and new criteria; never blindly run an old source-bound verifier on new bytes or
-weaken custody rejection. Execute with authorized current binding. A candidate-
-supplied or changed checker cannot independently authorize its own acceptance;
-inspect semantic delta and authority. Inherited failure, timeout or missing
-required result stays incomplete unless the requirement and evidence support
-another disposition. Existing owner/decision rules govern material changes; no
-universal human approval or server-policy change.
+Separate hash/source rebinding from acceptance changes. Compare old/new criteria;
+never apply stale source-bound verifier blindly or weaken custody rejection.
+Execute authorized current binding. Changed/candidate checker cannot authorize
+itself: inspect semantic delta/authority. Inherited failure, timeout or missing
+required evidence stays incomplete absent supporting requirement/evidence.
+Existing owner/decision rules govern material changes; no universal human approval
+or server-policy change.
 
 ## Review lint-suppression changes
 
-Inspect new or widened suppressions: inner `#![allow(...)]`,
-outer `#[allow(...)]`, `#[expect(...)]`, lint groups, module scope and active
-`cfg_attr` branches. [Clippy's `allow_attributes`](https://clippy.rust-lang.org/rust-1.100.0/index.html#allow_attributes)
-does not cover inner allow attributes. Rust permits [reason-bearing lint attributes](https://doc.rust-lang.org/reference/attributes/diagnostics.html#lint-reasons),
-including allows; a reason proves neither necessity nor narrow scope.
-Check the named lint, exact item/target/features, justification and stale-
-expectation behavior. Group/module expectations may stay fulfilled while hiding
-additional findings; warning-free output proves no narrow exception. Preserve
-legitimate admitted `cfg_attr` and generated Slint's named, scoped expectations.
-Do not replace them with blanket group exceptions or reject them merely for
-requiring a generated-code exception.
+Inspect new/widened inner `#![allow(...)]`, outer `#[allow(...)]`,
+`#[expect(...)]`, groups/module scope and active `cfg_attr`.
+[Clippy's `allow_attributes`](https://clippy.rust-lang.org/rust-1.100.0/index.html#allow_attributes)
+misses inner allows. Rust [reason-bearing lint attributes](https://doc.rust-lang.org/reference/attributes/diagnostics.html#lint-reasons)
+include allows; reason proves neither necessity nor narrowness.
+Check lint, item/target/features, justification, stale-expectation behavior.
+Group/module expectations can remain fulfilled while hiding other findings;
+warning-free proves no narrow exception. Preserve legitimate `cfg_attr` and
+generated Slint's named scoped expectations; neither blanket group replacements
+nor rejection solely for generated-code exception.
 
-If recurring suppression or acceptance drift reveals a concrete automation gap,
-prefer bounded source-aware checks in existing tooling with paired bad/healthy
-controls. Account for comments/strings, nested attributes, conditional activation
-and generated-source ownership; substring matches prove no effective policy.
-Name unsupported syntax and coverage limits. No check claimed implemented;
-no new parser framework or dependency required.
+Recurring suppression/acceptance drift: bounded source-aware existing-tool checks,
+paired bad/healthy controls. Account for comments/strings, nesting, conditional
+activation, generated ownership. Substrings prove no effective policy. Name syntax/
+coverage gaps; claim no implementation, require no new parser/dependency framework.
 
 ## Challenge the changed guarantee
 
-Generated histories or schedule exploration: inspect delivered actions, instrumented
-primitives, observed state/effects and independent oracle. Require healthy and
-requirement-linked fault controls, fresh concrete replay, exact source/configuration
-identity and honest selected/completed counts. Seeds, sampled schedules or minimized
-model-only traces cannot establish untouched production paths or missing
-real-runtime/native behavior. Select the relevant
+Generated histories/schedules: inspect delivered actions, instrumented primitives,
+observed state/effects, independent oracle. Require healthy/requirement-linked
+fault controls, fresh concrete replay, exact source/configuration, honest selected/
+completed counts. Seeds/sampled schedules/minimized model traces prove neither
+untouched production nor missing real-runtime/native behavior. Select relevant
 [state-machine](../references/proptest-state-machines.md),
 [Shuttle](../references/shuttle-concurrency.md) or
 [Python admission](../references/hypothesis-admission.md) reference.
 
-For changed function/module contracts, follow
-[contract enforcement](../../implementation/implement-rust-contracts/references/contract-enforcement.md)
-from requirement to enforcing owner and real consumer. Independently challenge
-omitted garde invocation, original-DTO use, constructor/mutation bypasses,
-unchecked transformed outputs, release-disabled rejection and stale context.
-Review each `skip` justification; reject `allow_unvalidated`. Confirm valid
-neighboring controls and intended external compile diagnostics, not only attributes
-or tests that manually validate before calling an unchecked API.
+Changed contracts: follow [contract enforcement](../../implementation/implement-rust-contracts/references/contract-enforcement.md)
+from requirement to enforcing owner/actual consumer. Challenge missing garde call,
+original DTO, constructor/mutation bypass, unchecked transformed output,
+release-disabled rejection, stale context. Review each `skip`; reject
+`allow_unvalidated`. Require legitimate neighbors and intended external compile
+diagnostics; attributes/manual prevalidation of unchecked APIs are insufficient.
 
-For analyzer-derived claims, separate tool controls from actual product
-harness/database execution and inspect bounds, assumptions and excluded paths.
-For mathematical proof claims, use the [proof workflow](../references/formal-verification.md)
-to challenge semantic strength, actual-operation reachability, constructor/callee
-composition and expected-versus-completed scope independently of harness names.
-Identify the named useful product-operation guarantee and independent specification.
-Check each helper closes a real requirement or necessary declared dependency,
-with a credible remaining composition route. Preserve useful local results and
-keep the product guarantee open; no discovered bug required to prove value.
-Reconcile total preparation/tooling/solver effort and stopped
-attempts; reject an unrelated easy theorem or green infrastructure as completion.
-Check report consumers against genuine emitted fixtures or pinned exporter
-schema, not mutually confirming mocks. Separate attempted/completed/qualified jobs,
-unique guarantees, semantic controls and tool-only checks. A historical fixed
-campaign is no repeatable current-candidate regression gate. Retain gaps in the
-[post-V1 debt record](../../../../tasks/development-backlog.md#product-guarantees-still-open);
-review grants no execution or consumer-repair exception to the V1 deferral.
+Analyzer claims: separate tool controls from actual product/database execution;
+inspect bounds, assumptions, excluded paths. Proof claims: [proof workflow](../references/formal-verification.md)
+for semantic strength, actual-operation reachability, constructor/callee composition,
+expected/completed scope independent of harness names. Name useful product guarantee
+and independent specification. Helpers must close requirement/necessary declared
+dependency with credible composition route. Preserve local results; parent remains
+open, no bug required for value. Account total prep/tooling/solver effort/stops;
+reject unrelated easy theorem/green infrastructure as completion.
+Check consumers against genuine emitted fixtures/pinned exporter schema, not mutually
+confirming mocks. Separate attempts/completions/qualified jobs, unique guarantees,
+semantic controls, tooling. Historical fixed campaign is no current repeatable gate.
+Retain [post-V1 debt](../../../../tasks/development-backlog.md#product-guarantees-still-open);
+review lifts no V1 execution/consumer-repair deferral.
 
-Apply [CodeQL data-flow evidence checks](../references/codeql-data-flow.md) when
-paths or empty results support conclusions: verify source/database/query/model
-identity, real source/sink reachability and guard semantics yourself. A diagram,
-query compilation or alert count is no independent reproduction of a defect.
+For paths/empty results, apply [CodeQL evidence checks](../references/codeql-data-flow.md):
+verify source/database/query/models, real endpoints and guards yourself. Diagram,
+compilation or alert count is no independent defect reproduction.
 
-Plausible finding: location/violated guarantee/reachable scenario/consequence/evidence/uncertainty. Use permitted bounded discriminating check; no speculative unrelated repairs or reviewer-agreement-as-statistical-independence claim.
+Plausible finding: location, violated guarantee, reachable scenario, consequence,
+evidence, uncertainty. Use authorized bounded discriminating check. No speculative
+unrelated repair or reviewer-agreement-as-statistical-independence claim.
 
-Return a scoped verdict with unresolved required evidence and material findings. Independent review supports [final qualification](../qa-final-qualification/SKILL.md), but does not multiply executions or replace missing runtime checks.
+Return scoped verdict, unresolved required evidence, material findings. Support
+[final qualification](../qa-final-qualification/SKILL.md); do not multiply executions
+or replace missing runtime checks.

@@ -10,6 +10,13 @@ installation and qualification status; [the local policy](../../../../policy/cod
 owns pins, allowed tools, limits and retained advisories. Hosted CodeQL remains
 deferred. A local MCP connection does not establish a hosted scan or product pass.
 
+Long-chain or logical review: use [source-backed flow audits](flow-audit.md) for
+independent root/effect inventory, data/control/state slices, change-based reuse
+and integration challenges. CodeQL supplies scoped path evidence; AI review and
+alert counts establish no complete bug detection. Inspect actual modeled input
+kinds and reached source locations; built-in sources may cover mostly fixtures,
+examples or inactive code. Enabling all models does not invent runtime ingress.
+
 ## Prepare the evidence
 
 1. State the suspected flow: external or secret source, value/taint propagation,

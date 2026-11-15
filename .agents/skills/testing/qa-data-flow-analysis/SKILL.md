@@ -1,76 +1,73 @@
 ---
 name: "qa-data-flow-analysis"
-description: "Trace NevroTick Rust external, untrusted or secret inputs through functions, transformations, state and guards to privileged effects or output sinks using scoped CodeQL MCP analysis and independent path checks."
+description: "Audit NevroTick Rust data, control and lifecycle chains against invariants using source-backed slices, qualified CodeQL paths and independent counterexamples."
 ---
 
 # Analyze Rust source-to-sink paths
 
-Formal/Kani proof work and pending proof admission/metadata repairs are deferred
-until after V1 under [OD-10 §14.1](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
-The tool capabilities below create no pre-V1 proof execution or acceptance gate.
+Formal/Kani proofs and pending proof admission/metadata repairs: post-V1 under
+[OD-10 §14.1](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
+Tools below grant no pre-V1 proof execution or acceptance gate.
 
-Read [the testing contract](../CONTRACT.md) and
-[CodeQL data-flow analysis](../references/codeql-data-flow.md). For query authoring,
-use the [pinned Rust query recipe](../references/codeql-rust-query.md). Use this skill
-when propagation, a guard bypass or secret disclosure is uncertain; preserve
-the requested review/tests/implementation scope and current candidate identity.
+Read [testing contract](../CONTRACT.md), [CodeQL data-flow analysis](../references/codeql-data-flow.md);
+queries use [pinned Rust recipe](../references/codeql-rust-query.md). Use for uncertain
+propagation, guard bypass or secret disclosure. Preserve requested review/tests/
+implementation scope and current candidate identity.
 
-1. State one path question and its expected allowed/forbidden result: attacker
-   or secret source, derived representations, stored state, required guards and
-   protected/output sink. Map each hop to the actual producer and consumer,
-   including the field/value consumed and its enforcing owner. Include error,
-   callback, asynchronous and alternate-constructor paths. Distinguish value
-   flow, taint propagation, call reachability and current authorization.
-2. Inspect the installed CodeQL MCP server's currently exposed tools/resources
-   and admitted CLI/query packs. Freeze source/database identity, extractor,
-   target, features, dependencies and query/model versions. Check extractor
-   defaults and the launcher's actual configuration controls before claiming a
-   Windows/production configuration. Verify relevant source, functions and call
-   targets are actually extracted; database existence and query compilation prove
-   no path result. Keep bounded extraction and query outputs under one owner.
-3. Use the admitted Rust pack's primary API documentation/source to choose
-   local/global data flow or taint models appropriate to the question. Current
-   online examples may use APIs newer than the admitted pack. Enumerate source
-   and sink membership separately before tracing; validate additional flow steps
-   and barriers independently. Scope selectors by resolved identity and location,
-   not merely a function name shared by unrelated implementations.
-   AST, CFG and call graphs locate code; they do not establish taint propagation.
-4. Treat a guard as a barrier only for the exact property and value it protects.
-   Serde success, authentication or earlier authorization grants no universal
-   safety. Follow checked results versus original DTOs, secret copies/formatting,
-   stale state after awaits and each caller's actual guard-to-effect ordering.
-   For garde-backed contracts, trace the mandatory constructor invocation and
-   success branch to the consumed object. A `Validate` derive, a function named
-   `validate` or `Valid<T>` does not establish every semantic invariant; inspect
-   custom rules, exemptions, alternate construction and later mutation/context.
-5. Challenge the query with reachable faulty and clean controls at the intended
-   seam. Assert the expected source/sink pairs, including expected absences;
-   prove that a deliberately broken selector or overbroad barrier fails those
-   expectations when qualifying a new query/model. Debug a missing path through
-   selector inventories, local edges and bounded partial flow before adding a
-   model. Record process exit, query result/path counts and exclusions. Reconcile
-   decoded rows with BQRS totals and retain pagination/path limits. Setup errors,
-   zero selection or an unmodeled sink
-   cannot establish absence of a defect; preserve the failing control.
-6. Inspect returned paths in current code and test a competing explanation.
-   State reachability, violated guarantee, consequence and remaining uncertainty;
-   confirm a credible defect through an independent bounded behavioral case.
-   Map cross-process paths at actual IPC seams and retain unmodeled macro,
-   generated-code, dependency and native FFI coverage gaps.
+Logical/long chains: [source-backed flow audits](../references/flow-audit.md).
+Reuse existing task's flow/invariant ledger. Inventory real inputs, protected
+effects, alternate callers independently of CodeQL models. Prioritize high-impact,
+poorly modeled boundaries; expose unaudited frontiers. Read complete relevant
+functions/types in bounded slices; retain boundary contracts and integration review.
+Diagrams locate evidence.
 
-Without product Cargo source, use only authorized isolated query/runner fixtures;
-do not scaffold an application or call fixture results a product scan. Local MCP
-analysis leaves hosted CodeQL deferral in place. Rust source analysis proves no
-native Windows token/pipe/clock or complete-package enforcement.
-When CodeQL or a required database configuration is unavailable, deliver the
-bounded source trace that is possible and name the missing analysis stage;
-do not turn tool unavailability into an absence-of-flow conclusion.
+Before repeat work, compare source, caller wiring, callee contracts, configuration,
+query/model/evidence identities. Reuse unchanged qualified segments; invalidate
+changed dependencies and affected transitive consumers. Check new callers even
+with unchanged callees. Record reuse reasons/gaps; claim no measured speed or
+exhaustive paths.
 
-For a path needing execution evidence, select bounded cargo-fuzz for raw inputs,
-Miri for portable memory behavior, Loom for instrumented synchronization or Kani
-for a finite invariant through [configured analysis](../references/configured-tooling.md#additional-rust-analysis).
-Use [security boundaries](../qa-security-boundaries/SKILL.md) for protected effects.
-Use the reference's compact trace/evidence record in the existing task; keep
-one-off receipts outside the skills pack. Report candidate/database/query identity,
-controls, reviewed paths, observations
-and unresolved coverage; an empty alert set is not a whole-system safety claim.
+1. Name path question, allowed/forbidden result: attacker/secret source, derived
+   representations, stored state, guards, protected/output sink. Trace actual
+   producers/consumers, consumed fields/values and enforcing owners. Include
+   errors, callbacks, async and alternate constructors. Separate value flow,
+   taint, call reachability and current authorization.
+2. When using CodeQL, inspect exposed MCP tools/resources and admitted CLI/packs.
+   Freeze source/database, extractor, target/features/dependencies, query/models.
+   Check extractor defaults and actual launcher controls before Windows/production
+   claims. Verify extracted source/functions/call targets; database existence or
+   compilation proves no path. One owner; bounded extraction/query outputs.
+3. Use admitted Rust pack's primary API/source for appropriate local/global
+   value/taint models; online examples may be newer. Inventory sources/sinks
+   separately; independently validate extra steps/barriers. Select by resolved
+   identity/location, not shared name. AST/CFG/call graphs prove no taint flow.
+4. Barrier only for exact protected property/value. Serde, authentication or earlier
+   authorization grants no universal safety. Trace checked result versus original
+   DTO, secret copies/formatting, stale state after awaits and guard/effect order.
+   For garde, require mandatory constructor invocation and success path to consumed
+   object. `Validate`, `validate` or `Valid<T>` alone proves no complete invariant;
+   inspect custom rules, exemptions, alternate construction, later mutation/context.
+5. Challenge intended seam with reachable faulty/clean controls and exact expected
+   endpoint pairs/absences. New query/model: broken selector or overbroad barrier
+   must fail those endpoint expectations. Diagnose missing paths via selectors, local
+   edges, bounded partial flow before adding models. Retain exits, result/path
+   counts, exclusions, pagination/path limits; reconcile full decode with BQRS.
+   Setup errors, zero selection, unmodeled sinks prove no absence; retain failure.
+6. Inspect paths in current callers; challenge competing explanation. State
+   reachability, violated guarantee, consequence, uncertainty; independently
+   reproduce credible defects with bounded behavior. Map actual IPC seams; retain
+   macro/generated/dependency/native FFI gaps.
+
+No product Cargo source: authorized isolated query/runner fixtures only; no app
+scaffolding or fixture-as-product scan. Local MCP leaves hosted CodeQL deferred.
+Rust source proves no native Windows token/pipe/clock/package enforcement.
+Unavailable CodeQL/configuration: deliver possible bounded source trace, name
+missing stage; unavailability proves no absent flow.
+
+Needed execution: bounded cargo-fuzz for raw inputs, Miri for portable memory,
+Loom for instrumented synchronization, post-V1 Kani for finite invariants through
+[configured analysis](../references/configured-tooling.md#additional-rust-analysis).
+Protected effects: [security boundaries](../qa-security-boundaries/SKILL.md).
+Use compact reference record in existing task; one-off receipts outside skill pack.
+Report candidate/database/query identity, controls, paths, observations, gaps.
+Empty alerts establish no whole-system safety.

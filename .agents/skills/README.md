@@ -36,7 +36,7 @@ product acceptance IDs and native qualification gates do not apply to that work.
 | Explore semantic states that revisit familiar code paths | [qa-state-guided-fuzzing](testing/qa-state-guided-fuzzing/SKILL.md), with an independent transition oracle |
 | Evaluate new or materially revised skill instructions on actual agent work | [qa-skill-evaluations](testing/qa-skill-evaluations/SKILL.md) |
 | Investigate native heap/handle faults or retained resources | [Windows memory diagnostics](testing/references/windows-memory.md), then [resource QA](testing/qa-performance-resources/SKILL.md) for retention |
-| Trace Rust inputs or secrets through guards to effects or output sinks | [qa-data-flow-analysis](testing/qa-data-flow-analysis/SKILL.md) |
+| Audit logical data/state chains or trace Rust inputs and secrets to effects | [qa-data-flow-analysis](testing/qa-data-flow-analysis/SKILL.md) |
 | Assess or change Cargo dependencies | [dependency-updates](environment/dependency-updates/SKILL.md) |
 | Analyze WSL storage or clean authorized caches, artifacts and unused Docker data | [wsl-cleanup](environment/wsl-cleanup/SKILL.md) |
 | Configure or manage an owned Windows Sandbox from Windows/WSL and collect disposable-lab evidence | [manage-windows-sandbox](environment/manage-windows-sandbox/SKILL.md), with selective operations, configuration, resource, winapp, evidence and troubleshooting references |

@@ -49,7 +49,7 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 | [qa-mutation-testing](qa-mutation-testing/SKILL.md) | Use a bounded NevroTick mutation campaign to assess behavioral assertions, preserving the architecture per-critical-file gate and honest outcome accounting. |
 | [qa-golden-fixture-parity](qa-golden-fixture-parity/SKILL.md) | Compare NevroTick golden outputs or differential results from pinned references with independent semantic facts and a tested comparator. |
 | [qa-static-checks](qa-static-checks/SKILL.md) | Select and validate NevroTick compiler, Clippy, source-policy, bounded static analysis and CodeQL data-flow evidence for the actual target/features. |
-| [qa-data-flow-analysis](qa-data-flow-analysis/SKILL.md) | Trace Rust external, untrusted or secret inputs through functions, state and guards to privileged effects or output sinks with scoped CodeQL MCP analysis and independent path checks. |
+| [qa-data-flow-analysis](qa-data-flow-analysis/SKILL.md) | Audit Rust input, state and lifecycle chains against invariants with source-backed slices, change-based reuse and qualified CodeQL paths. |
 | [qa-package-artifacts](qa-package-artifacts/SKILL.md) | Verify emitted NevroTick binaries, selected complete-package contents, metadata, provenance and submitted/Store-delivered MSIX consistency independently of source configuration. |
 | [qa-accessibility](qa-accessibility/SKILL.md) | Assess NevroTick native control semantics, keyboard use, Narrator behavior and accessibility error/status communication. |
 | [qa-visual-dpi](qa-visual-dpi/SKILL.md) | Test NevroTick visual usability across Windows DPI, text scaling, contrast, window sizing and multi-monitor changes. |
@@ -58,6 +58,7 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 
 ## Conditional shared references
 
+- [Source-backed flow audits](references/flow-audit.md) for independent input/effect inventory, bounded data/control/state slices, dependency-based reuse, integration challenges and explicit audit frontiers.
 - [Shuttle concurrency](references/shuttle-concurrency.md) for instrumented schedule exploration, adapter/time limits, failure replay and the corresponding real-Tokio scenarios. Current upstream research is not dependency admission.
 - [Proptest state machines](references/proptest-state-machines.md) for generated sequential histories, explicit invariants, actual production actions, invalid requests and fresh-state shrinking/replay.
 - [Hypothesis admission](references/hypothesis-admission.md) for Python properties over physical receipts, integrity-valid semantic faults, exact execution identities and refusal before effects. Use existing deterministic cases when the framework is unavailable.
