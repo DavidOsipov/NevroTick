@@ -80,8 +80,13 @@ explanation. Agreement proves neither statistical independence nor correctness.
 Credible defect: seek authorized bounded behavioral reproduction at real receiving/
 consumer seam, useful accepted neighbor, discriminating expectation. Separate
 behavioral failure from setup/import/timeout-before-behavior/zero-selection failure.
-Unavailable reproduction: retain lead, source argument, consequence, uncertainty;
-no confirmed-defect promotion. Repair follows existing scope/workflow.
+Unavailable reproduction: retain source trace, consequence, assumptions and
+uncertainty. A source-confirmed defect needs concrete admitted input/state,
+complete reachable path through actual callers/callees, independently
+specified violated contract and resolved relevant assumptions. Unresolved
+reachability, configuration or platform behavior remains an open lead. Label
+source confirmation separately from executed behavioral/native reproduction;
+never infer execution from reasoning. Repair follows existing scope/workflow.
 
 Analyzer paths: [CodeQL evidence controls](codeql-data-flow.md); name sources/sinks,
 queries/models, actual extraction. Empty alerts, giant diagram or successful
@@ -120,7 +125,7 @@ Diagram may supplement, never replace record.
 | Frontier | Open branches/callees/constructors, cancellation/retry/Drop/native/model gaps. |
 | Challenge | Independent expectation, accepted/fault controls, competing explanation, reproduction. |
 | Evidence | Separate source review, analyzer execution, host behavior, native observations. |
-| Disposition | Reviewed slice, open lead, confirmed defect, executed check or incomplete stage; limits. |
+| Disposition | Reviewed slice, open lead, source-confirmed defect, reproduced defect, executed check or incomplete stage; evidence basis and limits. |
 | Reuse and next action | Dependencies, invalidation reason, affected reruns, remaining owner. |
 
 Retain failures/exits, actual selected/completed counts, retries, cancellation,

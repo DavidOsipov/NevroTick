@@ -97,6 +97,17 @@ The synthetic `count`/`ids` relationship demonstrates correlated generation;
 this raw reader does **not** establish their semantics. Full receipt
 admission needs the next section's real semantic reader and consumer checks.
 
+Run this reader example in the admitted Linux/WSL environment, using
+its Linux interpreter. The reader loads `portable-analysis.py`, then `verify.py`
+and `advisory_snapshot.py`, which imports the Unix-only
+[`resource` module](https://docs.python.org/3/library/resource.html). Its raw-file
+path also reaches [`check-analysis.py`](../../../../scripts/check-analysis.py)
+and Unix-only [`os.open` flags](https://docs.python.org/3/library/os.html#os.O_CLOEXEC).
+Native Windows Python cannot execute this unchanged import/reader closure.
+The [Windows setup recipe](generated-testing-setup.md#hypothesis-in-an-owned-python-environment)
+can serve a separately selected portable consumer; it does not make this reader
+portable. Keep the real reader and its I/O controls intact when choosing the host.
+
 Illustrative test-file location: `scripts/tests/test_hypothesis_admission.py`;
 this reference adopts neither file nor dependency. Review actual import
 closure before authorized execution. Example limits are tutorial choices,

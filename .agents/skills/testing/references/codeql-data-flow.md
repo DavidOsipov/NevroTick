@@ -70,9 +70,12 @@ other languages. The pinned extractor's defaults need particular attention:
 | `extract_dependencies_as_source` | Dependency signatures by default, rather than their complete bodies. Inspect models or admit body extraction for a path crossing those implementations. |
 
 These are upstream extractor options, **not flags exposed by this repository's
-launcher**. Its current CLI accepts `--check`, `--create-database`,
-`--finalize-database` and `--name`;
-it forwards no explicit target/feature/cfg overrides. Inspect effective logs and
+launcher**. Its [current CLI](../../../../scripts/codeql-mcp.py) accepts `--check`,
+`--create-database`, `--finalize-database` and `--name`.
+Finalization resumes a retained unfinished database for the same admitted source
+under [TOOLING's finalization controls](../../../../TOOLING.md#local-codeql-development-mcp).
+Current execution holds apply. None of these options forwards explicit
+target/feature/cfg overrides. Inspect effective logs and
 database contents, record the resulting scope, and keep a required but unextracted
 configuration incomplete. A separately reviewed launcher/configuration change is
 needed to select a missing matrix entry; do not bypass the launcher or silently

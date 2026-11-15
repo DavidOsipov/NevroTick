@@ -183,6 +183,12 @@ below are placeholders. A venv separates packages; the admitted bounded runner
 supplies process/network/resource isolation. Activation is unnecessary, including
 on PowerShell; no execution-policy change or automatic pip upgrade is required.
 
+Choose host from the actual consumer's import and I/O requirements. The
+[worked Engine-reader example](hypothesis-admission.md#worked-example-physical-files-and-a-real-reader)
+requires Linux/WSL and its Linux interpreter because its tool closure uses
+Unix-only APIs. The native Windows recipe below prepares Hypothesis for a
+separately selected Windows-compatible consumer, not that unchanged reader.
+
 ```bash
 NV_BASE_PYTHON='/absolute/reviewed/python3'
 NV_ENV='/absolute/new/private/hypothesis-env'
@@ -276,7 +282,8 @@ visible without blocking unrelated useful work.
 For Rust, use the selected manual's separate healthy/fault controls and actual
 production scenario through its admitted runner. For Python, first use the exact
 environment interpreter for a bounded import/generated-property control, then
-the selected real-reader test. Require a healthy result, positive invocation
+the selected real-reader test on its supported host. The Engine-reader example
+uses the Linux/WSL environment identified above. Require a healthy result, positive invocation
 count, intended fault assertion and propagated failing exit. Import failure,
 missing native extension, setup failure or timeout cannot satisfy the fault
 control. Use fresh state and an external aggregate deadline.

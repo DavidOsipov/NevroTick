@@ -268,3 +268,20 @@ choosing a Python package policy, changing product graphs or inventing configure
 analysis selectors. Current task authorization governs necessary preparation;
 skills create no extra approval round. Version observations and illustrative
 paths must be reconciled with the actual target before execution.
+
+### Follow-up skill audit — 16 November 2026
+
+Independent Rust/API, Python/setup and workflow reviewers rechecked the recent
+tool manuals and owning skill routes against candidate `f06d57b0`. The selected
+Shuttle, Proptest and Hypothesis API/version guidance needed no correction.
+The following local instruction changes retain the same tool/dependency choices:
+
+| Evidence | Guidance correction |
+| --- | --- |
+| [Engine reader](../../../scripts/verify-engine-analysis.py), [shared tooling imports](../../../scripts/portable-analysis.py), [product verifier](../../../scripts/verify.py), [advisory module](../../../scripts/advisory_snapshot.py), [bounded reader](../../../scripts/check-analysis.py); Python [`resource`](https://docs.python.org/3/library/resource.html) and [open-flag availability](https://docs.python.org/3/library/os.html#os.O_CLOEXEC) | The concrete Hypothesis reader example requires the admitted Linux/WSL interpreter. Native Windows setup remains available for a separately selected Windows-compatible consumer; no I/O protection is removed to make this example run. |
+| [Testing contract](CONTRACT.md#scope-expectations-and-repairs) and [review-only evaluation rule](qa-skill-evaluations/SKILL.md) | A complete source demonstration can establish a source-confirmed defect. Unresolved assumptions remain explicit; source reasoning supplies no executed host/native result or missing required gate. |
+| [CodeQL launcher](../../../scripts/codeql-mcp.py) and [existing finalization controls](../../../TOOLING.md#local-codeql-development-mcp) | Mention the existing retained-database finalization option with the same source/ownership controls and execution holds. No new launcher capability is added. |
+
+These findings come from source and instruction review. The existing skill-quality
+task owns independent review, practice-case and candidate-validation evidence;
+none establishes framework installation or product/native execution.

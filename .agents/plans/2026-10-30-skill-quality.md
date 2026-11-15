@@ -1898,3 +1898,88 @@ identity; advance the remote parent without force. This slice changes no product
 runner, query, acceptance threshold, verification policy or execution hold and
 runs no Rust/product/CodeQL/native/formal/fuzz campaign. Post-V1 formal deferral
 and current owner-specific 90%/95% obligations remain unchanged.
+
+## Follow-up multi-agent skill audit — 16 November 2026
+
+David requested another audit of the skills. Started from clean local/remote
+`f06d57b0aba4ce1072dcedaff4b1b275dda32d71`. Three read-only reviewers independently
+covered Rust/concurrency APIs, Python/package setup, and repository workflow/
+instruction routing. A fourth reviewer judged the resulting semantic candidate.
+Scope: the recent property, model, lifecycle, data-flow and independent-review
+routes, their generated-testing and CodeQL references, catalogs and authority.
+This was not an exhaustive audit of every skill or product implementation.
+
+| Finding | Resolution and evidence limit |
+| --- | --- |
+| Medium: flow review unconditionally withheld every confirmed-defect label without executable reproduction | Permit a source-confirmed finding only with a concrete admitted case, complete reachable source path, independent violated contract and resolved relevant assumptions. Preserve open leads, required unavailable checks and the distinction from executed host/native reproduction. This corrects a classification rule; no measured defect-detection improvement is claimed. |
+| Low: native Windows setup led toward a concrete reader example with Unix-only dependencies | Label the Engine-reader example for the admitted Linux/WSL interpreter; cross-link host selection from setup. Trace its unconditional `resource` import and POSIX file-opening controls. Windows setup remains for Windows-compatible consumers; underlying reader protections are unchanged. |
+| Optional completeness: CodeQL argument summary omitted existing finalization | Link `--finalize-database` to the current retained-database controls, preserving same-source custody and all execution holds. No launcher or policy change. |
+
+The Rust reviewer found no substantiated material defect in the assigned API,
+instrumentation, model lifecycle, effective-setting, replay or setup claims.
+Python review likewise retained the pinned settings/seed/stateful/plugin behavior,
+native-wheel requirements, transitive hash closure and separate network isolation.
+These are source-review conclusions, not successful installations or executed
+examples. [Source provenance](../skills/testing/SOURCES.md#follow-up-skill-audit--16-november-2026)
+records the corrected local call chains and official platform documentation.
+
+The independent judge returned **READY** on the four-reference semantic candidate:
+source confirmation creates no execution credit; the host qualification changes
+no product-support policy; finalization remains under existing restrictions.
+Three workflow walkthroughs separately checked source-only review, integrity-valid
+Python receipt faults and cancellation/generation changes under a native hold.
+They are instruction reasoning, not executed tests.
+
+A fresh-context agent then reviewed an owned synthetic source fixture using the
+revised guidance, without the coordinator's findings, plan or expected answers.
+It identified the stale-epoch append as source-confirmed with a concrete case,
+retained the equality-checked route as a valid neighbor, and left completion in an
+unavailable worker adapter unresolved. It claimed no execution. This is one
+practice case with an independently specified contract and grader, not a measured
+old/new comparison or a general reliability result. Shared filesystem access is
+not an isolation boundary; supplied inputs and grader were separate. Its actual
+guidance exposure and source hashes remain in the owned audit evidence.
+The agent's original read contains the pre-compression source-classification
+paragraph. It did not hash instruction files, so the exercise is not a byte-bound
+evaluation of the final compressed candidate; the final independent delta review
+owns that semantic comparison.
+
+Four intended reference originals were byte-verified outside the autoloaded tree.
+Manifest SHA-256:
+`5e8c23e74ac5d099ddcce9f9c39071a38b8de5343d085bddcd6a0f571760edf4`.
+Light Caveman compression preserves the extensive instructions, all protected
+syntax and structure: **68,905 → 68,876 bytes**, **7,909 → 7,902 words**.
+All four validator pairs pass with zero errors/warnings. These are complete-file
+byte/word counts, not model-token savings or evidence of improved agent behavior.
+
+Before publication, independently review the final compression/provenance delta;
+run the 66-skill package check, scoped link/anchor and example-syntax checks, and
+whitespace check against the complete materialized index. Verify every tracked
+blob/mode and the current remote parent without force. No checker or inventory
+implementation changed, so no checker regression campaign is needed.
+
+Linked-source inspection also observed that this base commit's development-evidence
+reader checks detailed ordinary/optimized rosters only for the default graph;
+EP1 ordinary/optimized lanes receive generic integrity/exit/output checks. This
+is separate from the skill findings and was not behaviorally reproduced here.
+Another agent's reported uncommitted repair is not visible in this checkout;
+no claim is made about that worktree, and no product repair is included.
+
+This audit installs no framework, changes no product source/dependency/policy,
+and runs no Rust, Hypothesis, CodeQL, native Windows or formal campaign. Existing
+execution holds and required product gates remain with their current owners.
+
+During publication preparation, `main` advanced to
+`3f0744fdc4b5985d71423f62f6dfd706a74cdff4`. Its audit-selection, single-ledger and
+local/cloud-status refinements are retained, including the existing finalization
+flag. Three-way integration preserves its task entry, TOOLING text and portable
+bundle README/checksum byte-for-byte; this slice adds the finalization controls
+link and source/platform corrections. The intervening commit changes no product
+source, so the linked-reader observation keeps its stated base scope.
+
+The two overlapping reference originals were re-frozen before the final light
+compression. Reconciled four-file manifest SHA-256:
+`0eed44d02a77adf71dae72da1b5e6064a1b55008271482c50cc543bdcfc5f298`.
+The complete integrated references total **70,190 → 70,160 bytes** and
+**8,057 → 8,050 words**. Recheck the final pairs and integrated candidate;
+the earlier originals/validation remain preserved under their original scope.
