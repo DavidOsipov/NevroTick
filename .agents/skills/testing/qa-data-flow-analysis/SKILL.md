@@ -9,14 +9,16 @@ Formal/Kani proofs and pending proof admission/metadata repairs: post-V1 under
 [OD-10 §14.1](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
 Tools below grant no pre-V1 proof execution or acceptance gate.
 
-Read [testing contract](../CONTRACT.md), [CodeQL data-flow analysis](../references/codeql-data-flow.md);
-queries use [pinned Rust recipe](../references/codeql-rust-query.md). Use for uncertain
+Read [testing contract](../CONTRACT.md); choose the method with
+[source-backed flow audits](../references/flow-audit.md). Use for uncertain
 propagation, guard bypass or secret disclosure. Preserve requested review/tests/
 implementation scope and current candidate identity.
 
-Logical/long chains: [source-backed flow audits](../references/flow-audit.md).
-Reuse existing task's flow/invariant ledger. Inventory real inputs, protected
-effects, alternate callers independently of CodeQL models. Prioritize high-impact,
+When CodeQL is selected, read [CodeQL data-flow analysis](../references/codeql-data-flow.md);
+queries use [pinned Rust recipe](../references/codeql-rust-query.md).
+
+Logical/long chains: reuse existing task's flow/invariant ledger. Inventory real
+inputs, protected effects, alternate callers independently of CodeQL models. Prioritize high-impact,
 poorly modeled boundaries; expose unaudited frontiers. Read complete relevant
 functions/types in bounded slices; retain boundary contracts and integration review.
 Diagrams locate evidence.

@@ -5,6 +5,14 @@ hand unfinished CodeQL analysis to a cloud AI. **Do not resume local analysis.**
 This continues the existing [GUI audit/evidence record](slint-gui-handoff.md#rust-data-flow-audit-and-text-range-lock-repair--6-november-2026),
 not a new product implementation plan.
 
+**CHECK mapping clarification:** use the
+[canonical acceptance catalog](../docs/windows-time-architecture.md#202-acceptance-catalog).
+Generic source/SAST references to CHECK-22/25 in dated entries below used an
+incorrect label: applicable tooling controls belong to CHECK-19, domain invariants
+to CHECK-25, and independent exact-candidate review to CHECK-24. CHECK-22 concerns
+accessibility. This corrects routing only; historical candidates, raw results and
+execution dispositions remain unchanged and supply no accessibility pass.
+
 ## First message to the cloud AI
 
 > Continue the Rust data-flow audit in this repository using

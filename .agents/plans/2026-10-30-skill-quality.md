@@ -1838,8 +1838,9 @@ David authorized implementation of the four-file research/judge recommendation,
 then commit/push to remote `main`. Clean local `546e664` fast-forwarded to
 `17db1f123c5bccba6f92d04d1798eefa16916d35` before editing. The incoming generated-
 testing manuals, selection guide and skill hooks are retained. This slice owns
-documentation and instruction review, continuing CHECK-22/25 analysis methods
-and CHECK-24/25 evidence custody; it does not take over the Core/Engine work.
+documentation and instruction review, continuing applicable CHECK-19 tooling
+and CHECK-25 invariant questions, with CHECK-24 exact-candidate evidence review;
+it does not take over the Core/Engine work.
 
 During publication preparation, remote `main` advanced to
 `f06d57b0aba4ce1072dcedaff4b1b275dda32d71`. Fast-forward integration retains its
@@ -1983,3 +1984,39 @@ compression. Reconciled four-file manifest SHA-256:
 The complete integrated references total **70,190 → 70,160 bytes** and
 **8,057 → 8,050 words**. Recheck the final pairs and integrated candidate;
 the earlier originals/validation remain preserved under their original scope.
+
+## Post-publication CHECK mapping and reading order — 15 November 2026 (UTC)
+
+David requested pulling current `main`, applying the post-publication judge's
+corrections, then committing/pushing. Clean `3f0744f` fast-forwarded to
+`901c23afd7e3c71f1dade0e2228c248f969f3605`. Its source-confirmation classification,
+reader-platform guidance and retained-database controls remain unchanged.
+
+Corrected the current flow-audit CHECK mapping and the earlier audit-method entry
+in this log against [architecture §20.2](../../docs/windows-time-architecture.md#202-acceptance-catalog):
+CHECK-19 covers applicable lint/SAST/discovery controls, CHECK-25 the relevant
+decoder/construction/module invariants, CHECK-24 exact-candidate review/artifact
+identity, and CHECK-22 accessibility. The
+[cloud handoff](../../tasks/codeql-cloud-handoff.md) now clarifies inherited generic
+analysis labels without rewriting dated results, source identities or receipts.
+This label correction creates no accessibility or other execution credit.
+
+The [data-flow skill](../skills/testing/qa-data-flow-analysis/SKILL.md) now loads
+the testing contract and flow-method guide first. Its CodeQL manual is conditional
+on selecting CodeQL; query authors still load the pinned Rust recipe and retain
+all model, endpoint, sensitivity and evidence controls. This is progressive
+reading order, not removal of a check or measured context/performance improvement.
+
+Initial package validation passes 66 skills. Final publication checks use the
+complete intended index, scoped local links/anchors, preserved protected syntax
+and whitespace, plus source review of canonical IDs and retained incoming work.
+No checker or inventory contract changed; no checker regression campaign or new
+instruction-performance comparison is needed for these wording corrections.
+The oracle-handoff pilot remains an unexecuted proposal. Current source owners,
+90%/95% obligations, execution holds and post-V1 formal deferral are unchanged;
+this slice runs no product/compiler/CodeQL/native/formal/fuzz job.
+
+Machine-local originals and review/check records are under
+`/workspace/.nevrotick-cloud/audit-label-routing-fix-20261115-v1/`. The containing
+commit supplies publication identity; preserve hooks/signing and advance remote
+`main` without force. Previously preserved work stashes remain outside this slice.

@@ -5,7 +5,10 @@ Use [testing contract](../CONTRACT.md),
 [lifecycle testing](../qa-state-concurrency-lifecycle/SKILL.md),
 [independent review](../qa-independent-review/SKILL.md). Reuse existing task ledger;
 cloud audit continues [its handoff](../../../../tasks/codeql-cloud-handoff.md).
-CHECK-22/25: applicable source/security analysis; CHECK-24/25: evidence custody.
+Use the [acceptance catalog](../../../../docs/windows-time-architecture.md#202-acceptance-catalog):
+CHECK-19 for applicable lint/SAST/discovery controls; CHECK-25 for decoder,
+construction and module invariants; CHECK-24 for exact-candidate review/artifact
+identity. CHECK-22 covers reached accessibility scope.
 Canonical requirements retain authority/execution scope.
 
 ## Establish roots and protected effects
