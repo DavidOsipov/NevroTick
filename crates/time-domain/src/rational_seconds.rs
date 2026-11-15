@@ -66,6 +66,22 @@ impl std::error::Error for RationalSecondsError {}
 /// assert_eq!(value.denominator(), NonZeroU64::MIN);
 /// assert_eq!(value.seconds().to_bits(), 0);
 /// assert_eq!(value.absolute_roundoff_seconds().to_bits(), 0);
+/// fn require_copy<T: Clone + Copy>() {}
+/// require_copy::<RoundedRationalSeconds>();
+/// let two = NonZeroU64::new(2).ok_or(RationalSecondsError::ArithmeticInvariant)?;
+/// let four = NonZeroU64::new(4).ok_or(RationalSecondsError::ArithmeticInvariant)?;
+/// let half = RoundedRationalSeconds::new(
+///     RationalSign::Positive, 1, two,
+/// )?;
+/// let unreduced = RoundedRationalSeconds::new(
+///     RationalSign::Positive, 2, four,
+/// )?;
+/// assert_eq!(half.numerator_magnitude(), 1);
+/// assert_eq!(half.denominator().get(), 2);
+/// assert_eq!(unreduced.numerator_magnitude(), 2);
+/// assert_eq!(unreduced.denominator().get(), 4);
+/// assert_eq!(half.seconds().to_bits(), 0.5_f64.to_bits());
+/// assert_eq!(unreduced.seconds().to_bits(), 0.5_f64.to_bits());
 /// # Ok(()) }
 /// ```
 /// Raw fields cannot bypass construction:
@@ -94,6 +110,25 @@ impl std::error::Error for RationalSecondsError {}
 /// ```compile_fail,E0599
 /// use time_domain::RoundedRationalSeconds;
 /// let _ = RoundedRationalSeconds::default();
+/// ```
+/// Numeric equality must not be inferred from the retained representation:
+/// ```compile_fail,E0277
+/// use time_domain::RoundedRationalSeconds;
+/// fn require_partial_eq<T: PartialEq<T>>() {}
+/// require_partial_eq::<RoundedRationalSeconds>();
+/// ```
+/// Ordering is a separate contract, not a consequence of a rounded value:
+/// ```compile_fail,E0277
+/// use time_domain::RoundedRationalSeconds;
+/// fn require_partial_ord<T: PartialOrd<T>>() {}
+/// require_partial_ord::<RoundedRationalSeconds>();
+/// ```
+/// Hashing requires an explicitly chosen equivalence relation:
+/// ```compile_fail,E0277
+/// use std::hash::Hash;
+/// use time_domain::RoundedRationalSeconds;
+/// fn require_hash<T: Hash>() {}
+/// require_hash::<RoundedRationalSeconds>();
 /// ```
 #[derive(Clone, Copy)]
 pub struct RoundedRationalSeconds {

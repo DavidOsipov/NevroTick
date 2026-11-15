@@ -13,6 +13,8 @@ allow-dbg-in-tests = false
 disallowed-methods = [
     { path = "std::time::SystemTime::now", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
     { path = "std::time::Instant::now", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::time::Instant::elapsed", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::time::SystemTime::elapsed", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
     { path = "std::env::var", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
     { path = "std::env::var_os", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
     { path = "std::env::vars", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },

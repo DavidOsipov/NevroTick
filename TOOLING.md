@@ -142,10 +142,21 @@ limits: [the product verifier](scripts/verify.py) uses six build jobs for portab
 UI, wire, domain and Core tests. Default Engine builds use twelve; the explicit
 KE Engine override retains six. Analysis policies separately bound build,
 coverage and mutation concurrency. Test execution is distinct from test-binary
-compilation. Independent inventory hashing uses twelve workers. actionlint and
+compilation. Independent inventory hashing uses two workers: bounded probes linked
+twelve-thread admission to longer concurrent observer scans, while two threads
+preserved the complete checks and reduced admission wall time. This
+lower lane limit does not change mutation concurrency or guarantee observer
+freshness; see the [diagnosis](tasks/engine-transport-pilot.md#v11-early-admission-stop-and-contention-diagnosis--15-november-2026).
+actionlint and
 Gitleaks receive `GOMAXPROCS=12`, which budgets
 Go execution rather than their external subprocesses. Tools without a supported
 parallel scheduler remain unchanged.
+
+For memory-constrained host work, keep Serena project activation on demand.
+The local `--project-from-cwd` startup flag eagerly starts a Rust analyzer for
+each client; removing it keeps MCP tools available and defers the project/LSP
+until explicit activation. This host choice changes no product verification
+profile, worker budget or compiler setting.
 
 The original mutation budget was twelve outer workers and jobserver tokens;
 later Core/Engine recipes used ten of each, intending one inner Cargo job.
@@ -167,7 +178,29 @@ trial also finishes without OOM. Its causal reader still needs the source-bound
 repairs recorded in the Core task before cohort qualification. Other historical
 recipes/receipts retain their original scopes and token settings; reconcile their
 effective concurrency before future execution, rather than transferring the
-phase/Step correction or the old one-inner-job claim. The engine analysis build
+phase/Step correction or the old one-inner-job claim.
+The later [GNU KE scheduling correction](tasks/engine-transport-pilot.md#ke-jobserver-resource-child--14-november-2026)
+also requires its exact six-worker role with zero extra tokens. Its later
+309-helper-test profile adopts seven GiB startup disk/three GiB total owned
+output after independent review; Phase/Step and Address limits remain unchanged.
+The initial one-use resource canary stopped before compiler/mutation execution:
+its observer exceeded the two-second complete-sample bound during preparation.
+The 4.5 GiB memory ceiling/six GiB startup floor is not a measured campaign pass.
+Preserve that incomplete attempt; no automatic retry or wider campaign is
+admitted. Public campaigns remain closed. The later V9 attempt selects all
+35 variants and observes six
+compilers/one per Cargo and passes its full baseline, then hits the owned 4.5-GiB
+memory ceiling without OOM. Its partial results supply no score/resource pass;
+the proposed 6-GiB ceiling requires a fresh 7.5-GiB startup available-RAM floor and a new
+reviewed lease. The later [V13 exit](tasks/engine-transport-pilot.md#v13-association-gate-and-bounded-resource-exit--15-november-2026)
+passes that one complete 35-descriptor association cohort after reviewed scanner/
+inventory-concurrency repairs and RAM cleanup. Peak counted memory is
+5,724,635,136 bytes, with zero limit events; final custody and the unchanged
+two-second observer guard pass. Independent review accepts the selected file's
+mutation gate; other owners require their own bounded admission and the whole
+profile stays incomplete. No future timing guarantee or automatic wider lease
+follows. Historical native receipts retain their executed helper
+identities. The engine analysis build
 budget remains six. The phase/Step inner process/time limits and quality
 thresholds remain unchanged. The explicitly authorized outer memory ceilings
 were 3 GiB for the original trial, 4 GiB for the eight-worker retry and 5 GiB
@@ -1858,6 +1891,32 @@ below with fresh external output. Review complete generation before admitting
 a bounded single-owner mutation cohort. Eight mutation workers and all existing 90/95,
 time and storage limits remain. Windows-target checks execute no native tests.
 
+**Managed laboratory KoD analysis — 15 November 2026:** the Engine verifier's
+fixed `--profile source_policy` role selects exactly `source_policy.rs`, `lib.rs`,
+`session.rs`, `series.rs` and `address_round.rs` on the default feature graph.
+It reuses the existing stable-core Product sandbox, Session custody, coverage,
+enumeration and mutation accounting. It is separate from the historical KE role
+and supplies no protected/NTS, native or production qualification.
+
+After current candidate/helper/manifest/roster admission, select `--lane baseline`,
+`enumerate` or `coverage`, `--subject all`, `--tool-admission-profile stable-core`,
+an explicit admitted `--vendor-dir` and a fresh external `--output-dir`:
+
+```sh
+python3 -B scripts/verify-engine-analysis.py --profile source_policy --lane baseline --subject all --tool-admission-profile stable-core --vendor-dir /absolute/admitted-vendor --output-dir /absolute/new-kod-baseline
+```
+
+The role preserves 90% executable lines and 95% per-file viable mutation. Its
+current six mutation workers use zero extra shared jobserver tokens, one inner
+slot per worker, and unchanged finite time/process/storage controls. Listing
+admits at most 512 descriptors per owner/2560 total; a campaign still admits at
+most 512, so a larger union needs separately bounded owner cohorts. The policy
+starts closed with no equivalence exclusions; no mutation starts until all five
+complete inventories and generation gaps receive independent review. Baseline
+and current line results, if executed, retain their own identities and scope.
+The [existing Engine task](tasks/engine-transport-pilot.md#five-owner-kod-qualification-admission--15-november-2026)
+owns actual disposition, first failures, cumulative budget and remaining exits.
+
 **Historical EP1/EP2 initial source analysis, 11 November 2026:** the same
 [Engine verifier](scripts/verify-engine-analysis.py) has the exact
 `--profile ke_association` [role](policy/engine-ke-association-analysis.json).
@@ -2154,13 +2213,74 @@ The flat KE selection excludes three process-global claim tests; three fixed
 exact-test modes now execute them separately with their actual descendants.
 `scripted_ke_roster_complete` requires every selected case and each of those
 three exact observations. `full_native_ke_qualification` stays false.
-The [current nested-worker exit](tasks/engine-transport-pilot.md#nested-worker-native-custody-child--14-november-2026)
+The opt-in `--facade-consumer` flag on both lanes instead selects the
+[V20 production-facade baseline](tasks/engine-transport-pilot.md#v20-production-facade-refusal-source-preparation--15-november-2026).
+It attributes normal Windows Engine/Tokio libraries from Cargo JSON and links
+the fixed `engine-facade-consumer.rs` with product v3 flags. The four-image
+bundle replaces libtest with that consumer; its two modes admit only missing
+arguments and entered-runtime refusal before provider effects. No independent
+test roster is claimed for these fixed cases. Exact diagnostics, exit 2/1,
+empty stdout and the same process/token/CPU/cleanup controls are required.
+Only `facade_refusal_cases_complete` can complete; scripted/full-native flags
+remain false. The later [V23 cross-build](tasks/engine-transport-pilot.md#v23-facade-cross-build-accepted-windows-ram-hold--15-november-2026)
+passes its actual 20 build steps; Windows preflight refuses below the RAM floor,
+before any test process. Native evidence and four fault classifications remain
+open. It supplies no mutation score or provider permission. Default libtest behavior and its roster
+remain required; changed helper hashes require fresh admission before reuse.
+The [V22 producer correction](tasks/engine-transport-pilot.md#v21v22-real-facade-build-and-manifest-alias-repair--15-november-2026)
+requires the admitted physical vendor when reading normal artifacts: a crate
+name comes from its exact manifest, including overrides such as
+`rustls-webpki` → `webpki`. Its 45 controls and retained real Cargo metadata
+pass; V23 subsequently completes consumer lint/link/PE, while native observations
+remain open.
+The [V24 source-only child](tasks/engine-transport-pilot.md#v24-exact-windows-fault-preparation--15-november-2026)
+implements the closed `prepare-facade-faults` lane for four exact retained Windows
+faults. It requires `--raw-outcomes` pointing to V19's original outcomes beside
+its four raw diffs and a fresh external `--output-dir`. No vendor/toolchain,
+compiler or Windows invocation belongs to preparation. Product source stays
+unchanged; output is explicitly prepared, not executed. All 53 Python controls,
+the isolation boundary and the actual four-overlay CLI preparation pass within
+that scope. A future consumer must admit the successful verification receipt,
+matching manifest/helper identities and all custody flags; the manifest alone
+is insufficient. No build/native overlay consumer or classification is claimed.
+V19's failed gate and the native/resource holds remain unchanged.
+Changing this runner or its tests changes the extra-input identity: retain
+V23's frozen 617-input runner/source for exact native-only reuse, or re-admit
+a matching build. Never bypass the current runner's exact receipt check.
+The [V25 overlay-build source child](tasks/engine-transport-pilot.md#v25-isolated-overlay-build-source-integration--15-november-2026)
+adds `--facade-fault FIXED_ID --prepared-faults PREPARATION_VERIFICATION
+--healthy-build-receipt HEALTHY_VERIFICATION` only with `--lane build
+--facade-consumer` and the existing explicit build inputs. It admits the current
+preparation receipt/all four source-diff pairs and an ordinary current healthy
+build's environment, custody facts and four physical PE/PDB pairs. Old helper
+receipts are not current prerequisites. One fault changes only the copied
+module after controls; base and variant identities remain separate. Final
+input checks run on command failure; artifacts not reached stay not reached,
+and secondary custody errors cannot replace the primary failure. Successful
+fault builds use `fault-build-completed`. The ordinary native lane explicitly
+rejects fault/variant metadata, including a wrongly relabelled `passed` record.
+The source/Python selection passes 61 controls, fresh preparation and four real
+reader selections. Actual build/native execution, viability classification and
+mutation credit remain open under the resource hold; this source addition
+does not authorize execution or lower any gate.
+The [historical nested-worker exit](tasks/engine-transport-pilot.md#nested-worker-native-custody-child--14-november-2026)
 passes 32 host admission controls, all 17 build/inspection steps and 14 native
 supervisor observations. All 392 library names match the frozen independent
 roster; 232 flat KE cases plus the three exact tests pass. Each nested run
 actually uses five processes and confirms zero active processes after cleanup.
 The [earlier scripted-component exit](tasks/engine-transport-pilot.md#ep3-windows-scripted-component-exit)
-retains its older source/count scope. This is Windows debug/scripted component evidence; actual TLS/CNG,
+retains its older source/count scope. The current
+[KE admission checkpoint](tasks/engine-transport-pilot.md#current-ke-line-gates-and-reviewed-catalogue--14-november-2026)
+has a [current scripted Windows exit](tasks/engine-transport-pilot.md#current-scripted-windows-ke-exit--14-november-2026):
+17 build/inspection steps and 14 supervisor observations pass, with actual
+discovery of the independently predicted 393-library roster and execution of
+236 KE cases (233 flat plus the same three exact nested cases). All observations
+confirm cleanup; the earlier native pass retains its historical scope.
+Owned Linux qualification units use `UMask=0077` and explicitly include the
+admitted Cargo-bin directory in PATH. Otherwise private-cache retirement or
+installed-extension discovery can fail before the intended qualification;
+preserve those guards and check these prerequisites before costly admission.
+This is Windows debug/scripted component evidence; actual TLS/CNG,
 UDP transport, Core receiving, effective runtime mitigations and mutation gates
 retain their separate qualification requirements.
 

@@ -334,6 +334,14 @@ class Scope(NamedTuple):
 
 
 ENGINE_KE_POLICY = "policy/engine-ke-association-analysis.json"
+ENGINE_SOURCE_POLICY_POLICY = "policy/engine-source-policy-analysis.json"
+ENGINE_SOURCE_POLICY_SUBJECTS = (
+    ("source_policy", "crates/nevrotick-engine/src/source_policy.rs"),
+    ("library", "crates/nevrotick-engine/src/lib.rs"),
+    ("session", "crates/nevrotick-engine/src/session.rs"),
+    ("series", "crates/nevrotick-engine/src/series.rs"),
+    ("address_round", "crates/nevrotick-engine/src/address_round.rs"),
+)
 ENGINE_KE_SUBJECTS = (
     ("ke_core", "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs"),
     ("ke_association", "crates/nevrotick-engine/src/nts_ke_experiment/association.rs"),
@@ -360,7 +368,7 @@ ENGINE_KE_CRITICAL = (
 # caller arguments. Any source/candidate/proof drift requires a new review.
 ENGINE_KE_EQUIVALENCE_PROOF = "tasks/engine-ke-association-equivalences.md"
 ENGINE_KE_EQUIVALENCE_REQUIREMENT = "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27"
-ENGINE_KE_EQUIVALENCE_REVIEWERS = '/root; /root/ledger_boundary_domain; /root/resource_envelope_review'
+ENGINE_KE_EQUIVALENCE_REVIEWERS = '/root; /root/kod_owner_source_design; /root/v10_execution_admission_review'
 ENGINE_KE_EQUIVALENCE_IDS = frozenset({
     'KE-RETURN-POOL-CAPACITY-OR',
     'KE-RETURN-POOL-BYTES-OR',
@@ -372,18 +380,18 @@ ENGINE_KE_EQUIVALENCE_IDS = frozenset({
     'KE-SEND-ARCHIVE-BYTES-INCLUSIVE',
     'KE-RECEIVE-STABLE-SLOT-OR',
 })
-ENGINE_KE_EQUIVALENCE_CANDIDATE = '964a9573143e5668a63d264bb44906fa103d5b4c3ddf1fc82cecea33012c5468'
-ENGINE_KE_EQUIVALENCE_PROOF_SHA256 = 'f67b973c6ed616a8206c0f0a80f7737d4b459aa1106eb09b9b00f729441cd695'
+ENGINE_KE_EQUIVALENCE_CANDIDATE = '0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d'
+ENGINE_KE_EQUIVALENCE_PROOF_SHA256 = '6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409'
 ENGINE_KE_EQUIVALENCE_REVIEWS = {
-    'KE-RETURN-POOL-CAPACITY-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', '565ae40e381f980a35548caa0ce690dcc1f2b8658cfa0e47672bb5b2fd0c7dfe', 'The complete admitted return domain includes genuine Reserved, Preparing and Prepared tickets, failed preparation, exact pool-byte equality, cancellation and expiry; it does not assume successful encoding. After the unchanged guards, reservation has removed one exact pool entry and no admitted writer can shrink or replace that pool before return. Its remaining length is at most seven and its capacity still exceeds that length; its reserved-plus-available byte sum remains within 131072. The changed connector combines only false predicates. Both forms preserve the same returned allocation, any retired UID, spent attempts, original deadline and error paths.'),
-    'KE-RETURN-POOL-BYTES-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', 'ed4cf1652fa16495dbfdd843f34d528630bddd5fd9288461ec597581f0c6087a', 'After the unchanged ticket, Published-control and pre-invocation phase checks, the exact reserved cookie was removed from a checked pool of at most eight entries. No admitted operation changes that pool while the slot remains reserved. Available count is therefore at most seven, available-plus-reserved payload remains at most 131072 bytes, and removal preserves an allocated slot beyond the current length. All three rejection predicates are false, including strict byte excess at exact equality. Both operator forms move back the same cookie without copying, exposing it, refunding work or renewing its original expiry. Earlier refusal paths are unchanged.'),
-    'KE-SEND-PREDECESSOR-VALUE-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', '6ded4b8df9e6af0867252161051f49d0e4856528022e7cfbf9049a8dce5bd3d8', 'The stored predecessor set is filtered before reservation selects the exact cookie. It is immutable thereafter; install_previous requires the untouched reservation allowance and cannot replace it once any ticket has been issued. Consequently the selected Prepared cookie is not a member of the stored predecessor, whether that set is empty, arbitrary or complete. Local count, capacity, encoded-byte and local-membership predicates are also false. Replacing the final connector with AND therefore changes no error, archive move, callback, no-reuse or lifecycle outcome. This argument does not certify completeness or provenance of the predecessor set; actual consuming retirement and checked projection enforce that separate producer contract.'),
-    'KE-SEND-ARCHIVE-VALUE-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', 'faecc1877ce8bfd6a3ada4a9fa96ab3f7d6407ce1c54f6e5d49b30bd7eaecf9f', 'Reservation filters every value in the current local used archive before moving its selected cookie into the single occupied slot. No other invocation can append a local archive entry while that ticket owns the slot, and pre-send return consumes the ticket without refunding its checkout. Thus the local membership predicate is false at the unchanged Prepared/currentness guard. Count, capacity, encoded-byte and predecessor predicates are also false in that domain. Changing this connector only changes pure bounded reads; both forms archive the same cookie before callback exposure and preserve all errors, receipt absence, budgets and completion custody.'),
-    'KE-SEND-ARCHIVE-CAPACITY-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', '835047e112b1b1bb8fb21647a053968639703703f3aa7a8f247fcf6f427ac40e', 'On the whole admitted Prepared-ticket domain, including the last checkout, local archive capacity is at least 32 and pre-push length is at most 31. Return and failure never refund a reservation or shrink this archive. The encoded-byte ceiling makes excess false; reservation and immutable predecessor installation make both membership predicates false. The changed connector therefore joins false conditions only. Neither form changes the moved cookie, Invoked transition, callback arguments, unknown-completion custody or subsequent original-control checks. This is a local-context argument: predecessor history remains a separate bounded owner, not extra entries in the local Vec.'),
-    'KE-SEND-ARCHIVE-BYTES-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', 'c6792fd2f33e35cf60db7fc48415f709eded660721391e6c91926de366a2d91d', 'Only a checked same-owner Prepared packet reaches the archive predicate. The current checkout is one of at most 32 irreversible local reservations and is not archived yet, so existing local length is at most 31 and capacity is at least 32. Every sendable cookie fits the 4096-byte algorithm-15 packet after at least 128 bytes of header, UID, cookie header and authenticator overhead, hence each is at most 3968 bytes and the post-push local total is at most 126976, strictly below 131072. Reservation excludes both local and stored-predecessor members. All five local/predecessor rejection predicates are false. Both variants archive before the same callback and preserve every completion, failure, cancellation and no-reuse disposition.'),
-    'KE-SEND-ARCHIVE-BYTES-EQUALITY': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', '8d5545f1e57acfc22966622c010df9dc0718ea65b243425c02a8538dbe755f8f', 'The unchanged checked packet formatter admits at most 3968 cookie bytes per actual prepared send and at most 32 such cookies enter one local archive. Its checked post-push sum is at most 126976, so both sum > 131072 and sum == 131072 are false without overflow. Earlier ticket, phase, expiry and preparation refusals remain unchanged. The mutation supplies no permission to narrow the raw history-bounds checker or return-pool domain: those independently admit exact 131072-byte data and retain their own negative and healthy controls.'),
-    'KE-SEND-ARCHIVE-BYTES-INCLUSIVE': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', '5bc3655bf490aeb9efa2180785d299ca5774c427233b389e236c1a495e061398', 'For every admitted Prepared invocation, including the 32nd local reservation, the packet/attempt bounds give a post-push local archive maximum of 126976 bytes. Both sum > 131072 and sum >= 131072 are therefore false. The same cookie and packet reach the same callback after one archive move; no error, budget, expiry, cancellation or completion disposition differs. The bound concerns only this formatter-produced local archive, not arbitrary bounded data, total predecessor-plus-current memory, TLS traffic, native allocations or a wider future profile.'),
-    'KE-RECEIVE-STABLE-SLOT-OR': ('8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36', 'a25a4a9e6b3396c7336c9a8358aaf0836d189daf96e497637967efc1ea453f2a', 'The complete receive_reply input domain is guarded at the actual charged receiver. Its initial Published guard requires Pending and captures that active serial, UID, wire token, allowance and send observation before charging. Successful stage_current_reply and stage_replacement only immutably borrow the owner, use its own keys and checked issued-UID prefix, and expose no effectful publisher, await or owner-mutating callback. Staging errors may retire work but exit before the final comparison. The final fresh Published guard rejects stop or expiry before entering the inline publication closure. Whenever the changed expression executes, the actual serial and Pending phase still match the captured values, so both mismatch predicates are false. Both variants atomically publish the same cookies/receipt once; physical timing and native completion are not established.'),
+    'KE-RETURN-POOL-CAPACITY-OR': ('e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a', '16e08842c5f2c0e21fd06ad059e02b8ea027ba552c170e66f480f0931e50f41e', 'The complete admitted return domain includes genuine Reserved, Preparing and Prepared tickets, failed preparation, exact pool-byte equality, cancellation and expiry; it does not assume successful encoding. After the unchanged guards, reservation has removed one exact pool entry and no admitted writer can shrink or replace that pool before return. Its remaining length is at most seven and its capacity still exceeds that length; its reserved-plus-available byte sum remains within 131072. The changed connector combines only false predicates. Both forms preserve the same returned allocation, any retired UID, spent attempts, original deadline and error paths.'),
+    'KE-RETURN-POOL-BYTES-OR': ('e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a', '2d57f03539fd6a87e97d7f281c4352dcbf9739e2d41afb3f77e8b84c29f325c4', 'After the unchanged ticket, Published-control and pre-invocation phase checks, the exact reserved cookie was removed from a checked pool of at most eight entries. No admitted operation changes that pool while the slot remains reserved. Available count is therefore at most seven, available-plus-reserved payload remains at most 131072 bytes, and removal preserves an allocated slot beyond the current length. All three rejection predicates are false, including strict byte excess at exact equality. Both operator forms move back the same cookie without copying, exposing it, refunding work or renewing its original expiry. Earlier refusal paths are unchanged.'),
+    'KE-SEND-PREDECESSOR-VALUE-OR': ('e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a', '8e8117f2590015aeb9c2fec30c04c3fa8438f874a0f777eb9f262be9ae9d1f86', 'The stored predecessor set is filtered before reservation selects the exact cookie. It is immutable thereafter; install_previous requires the untouched reservation allowance and cannot replace it once any ticket has been issued. Consequently the selected Prepared cookie is not a member of the stored predecessor, whether that set is empty, arbitrary or complete. Local count, capacity, encoded-byte and local-membership predicates are also false. Replacing the final connector with AND therefore changes no error, archive move, callback, no-reuse or lifecycle outcome. This argument does not certify completeness or provenance of the predecessor set; actual consuming retirement and checked projection enforce that separate producer contract.'),
+    'KE-SEND-ARCHIVE-VALUE-OR': ('e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a', '5ab07003a4de7d9658122e282085b089e8f7a410d43e8ebe99b29c83be841d61', 'Reservation filters every value in the current local used archive before moving its selected cookie into the single occupied slot. No other invocation can append a local archive entry while that ticket owns the slot, and pre-send return consumes the ticket without refunding its checkout. Thus the local membership predicate is false at the unchanged Prepared/currentness guard. Count, capacity, encoded-byte and predecessor predicates are also false in that domain. Changing this connector only changes pure bounded reads; both forms archive the same cookie before callback exposure and preserve all errors, receipt absence, budgets and completion custody.'),
+    'KE-SEND-ARCHIVE-CAPACITY-OR': ('e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a', '6b1a0aa91c73726293b63e809df50e3228e1d052a7f2d462e4f1857b1a2d9bce', 'On the whole admitted Prepared-ticket domain, including the last checkout, local archive capacity is at least 32 and pre-push length is at most 31. Return and failure never refund a reservation or shrink this archive. The encoded-byte ceiling makes excess false; reservation and immutable predecessor installation make both membership predicates false. The changed connector therefore joins false conditions only. Neither form changes the moved cookie, Invoked transition, callback arguments, unknown-completion custody or subsequent original-control checks. This is a local-context argument: predecessor history remains a separate bounded owner, not extra entries in the local Vec.'),
+    'KE-SEND-ARCHIVE-BYTES-OR': ('e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a', '31cf93b5a76fce8937a7fe9786cb71ff0f80f27954e5d4ce69b0e712bca20ddc', 'Only a checked same-owner Prepared packet reaches the archive predicate. The current checkout is one of at most 32 irreversible local reservations and is not archived yet, so existing local length is at most 31 and capacity is at least 32. Every sendable cookie fits the 4096-byte algorithm-15 packet after at least 128 bytes of header, UID, cookie header and authenticator overhead, hence each is at most 3968 bytes and the post-push local total is at most 126976, strictly below 131072. Reservation excludes both local and stored-predecessor members. All five local/predecessor rejection predicates are false. Both variants archive before the same callback and preserve every completion, failure, cancellation and no-reuse disposition.'),
+    'KE-SEND-ARCHIVE-BYTES-EQUALITY': ('e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a', '85d4f5fab43ec0ab64afeb712e17664901a146e9ee28e180d66547ec9348254f', 'The unchanged checked packet formatter admits at most 3968 cookie bytes per actual prepared send and at most 32 such cookies enter one local archive. Its checked post-push sum is at most 126976, so both sum > 131072 and sum == 131072 are false without overflow. Earlier ticket, phase, expiry and preparation refusals remain unchanged. The mutation supplies no permission to narrow the raw history-bounds checker or return-pool domain: those independently admit exact 131072-byte data and retain their own negative and healthy controls.'),
+    'KE-SEND-ARCHIVE-BYTES-INCLUSIVE': ('e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a', '3e3469cb3fcd7383a4267b80585556336f278d0f76377801d67b217afa7e53fd', 'For every admitted Prepared invocation, including the 32nd local reservation, the packet/attempt bounds give a post-push local archive maximum of 126976 bytes. Both sum > 131072 and sum >= 131072 are therefore false. The same cookie and packet reach the same callback after one archive move; no error, budget, expiry, cancellation or completion disposition differs. The bound concerns only this formatter-produced local archive, not arbitrary bounded data, total predecessor-plus-current memory, TLS traffic, native allocations or a wider future profile.'),
+    'KE-RECEIVE-STABLE-SLOT-OR': ('e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a', '6d45a2494f8b8136f65063652cf2e40a1b8b917c86ad93277e850293b46e2f56', 'The complete receive_reply input domain is guarded at the actual charged receiver. Its initial Published guard requires Pending and captures that active serial, UID, wire token, allowance and send observation before charging. Successful stage_current_reply and stage_replacement only immutably borrow the owner, use its own keys and checked issued-UID prefix, and expose no effectful publisher, await or owner-mutating callback. Staging errors may retire work but exit before the final comparison. The final fresh Published guard rejects stop or expiry before entering the inline publication closure. Whenever the changed expression executes, the actual serial and Pending phase still match the captured values, so both mismatch predicates are false. Both variants atomically publish the same cookies/receipt once; physical timing and native completion are not established.'),
 }
 
 
@@ -460,9 +468,10 @@ def engine_ke_role_facts() -> dict:
         "enumeration_wall_seconds": 240, "mutation_wall_seconds": 1200,
         "mutation_build_seconds": 90, "mutation_test_seconds": 60,
         "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
-        "mutation_jobs": 6, "mutation_process_limit": 512, "mutation_message_format": "json",
-        "minimum_free_bytes": 5 * 1024**3, "stop_free_bytes": 4 * 1024**3,
-        "owned_output_maximum_allocated_bytes": 768 * 1024**2,
+        "mutation_jobs": 6, "mutation_jobserver_tasks": 0,
+        "mutation_process_limit": 512, "mutation_message_format": "json",
+        "minimum_free_bytes": 7 * 1024**3, "stop_free_bytes": 4 * 1024**3,
+        "owned_output_maximum_allocated_bytes": 3 * 1024**3,
         "owned_output_maximum_entries": 32768, "mutation_equivalences": [],
     }
 
@@ -488,6 +497,99 @@ def require_engine_ke_role(scope: Scope, policy: dict) -> None:
         raise Incomplete("Engine KE reviewed inventory records need exact positive counts and hashes.")
     if policy["campaigns_admitted"] and not reviewed:
         raise Incomplete("Engine KE campaigns require the independently reviewed complete enumeration.")
+
+
+def engine_source_policy_role_facts() -> dict:
+    """Fix the five ordinary GNU owners without borrowing the optional KE graph."""
+    return {
+        "schema_version": 1, "package": "nevrotick-engine",
+        "admission_status": "admitted-engine-source-policy-analysis",
+        "subjects": dict(ENGINE_SOURCE_POLICY_SUBJECTS),
+        "critical_files": list(dict(ENGINE_SOURCE_POLICY_SUBJECTS).values()),
+        "features": [], "test_workspace": False, "tool_admission_profile": "stable-core",
+        "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+        "maximum_mutants": 512, "maximum_listed_per_file": 512, "maximum_listed_total": 2560,
+        "baseline_wall_seconds": 300, "coverage_wall_seconds": 300,
+        "enumeration_wall_seconds": 240, "mutation_wall_seconds": 1200,
+        "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+        "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
+        "mutation_jobs": 6, "mutation_jobserver_tasks": 0,
+        "mutation_process_limit": 512, "mutation_message_format": "json",
+        "minimum_free_bytes": 7 * 1024**3, "stop_free_bytes": 4 * 1024**3,
+        "owned_output_maximum_allocated_bytes": 3 * 1024**3,
+        "owned_output_maximum_entries": 32768, "mutation_equivalences": [],
+    }
+
+
+def _engine_source_policy_role(scope: Scope, policy: dict) -> bool:
+    """Recognize the new leaf even in a renamed scope; historical overlaps remain separate."""
+    return ((type(scope) is Scope and (
+                scope.policy == ENGINE_SOURCE_POLICY_POLICY
+                or scope.subjects == ENGINE_SOURCE_POLICY_SUBJECTS
+                or (type(scope.subjects) is tuple
+                    and any(type(pair) is tuple and len(pair) == 2
+                            and pair[1] == ENGINE_SOURCE_POLICY_SUBJECTS[0][1]
+                            for pair in scope.subjects))))
+            or (type(policy) is dict
+                and policy.get("admission_status") == "admitted-engine-source-policy-analysis"))
+
+
+def require_engine_source_policy_role(scope: Scope, policy: dict) -> None:
+    """Refuse scope, metadata, resource or scoring drift before narrowed tool/effect custody."""
+    facts = engine_source_policy_role_facts()
+    if (type(scope) is not Scope or scope.package != "nevrotick-engine"
+            or scope.policy != ENGINE_SOURCE_POLICY_POLICY
+            or scope.subjects != ENGINE_SOURCE_POLICY_SUBJECTS or type(policy) is not dict
+            or set(policy) != set(facts) | {"binding", "mutation_inventories", "campaigns_admitted"}
+            or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                   for key, value in facts.items())
+            or type(policy["campaigns_admitted"]) is not bool):
+        raise Incomplete("Engine source-policy analysis requires its exact five-owner stable role and unchanged gates.")
+    binding = policy["binding"]
+    if (type(binding) is not dict
+            or set(binding) != {"candidate_sha256", "source_file_count", "inputs_sha256",
+                                "test_inventory", "doctest_inventory", "development_evidence"}
+            or type(binding["candidate_sha256"]) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", binding["candidate_sha256"]) is None
+            or type(binding["source_file_count"]) is not int
+            or not 0 < binding["source_file_count"] <= 100000):
+        raise Incomplete("Engine source-policy candidate binding has invalid identities or count.")
+    pins = binding["inputs_sha256"]
+    if (type(pins) is not dict or not set(dict(ENGINE_SOURCE_POLICY_SUBJECTS).values()) <= set(pins)
+            or len(pins) > 100000
+            or any(type(name) is not str or not 0 < len(name) <= 512
+                   or Path(name).is_absolute() or ".." in Path(name).parts
+                   or name != Path(name).as_posix() or any(char in name for char in ("\\", "\0", "\n", "\r"))
+                   or type(digest) is not str or re.fullmatch(r"[a-f0-9]{64}", digest) is None
+                   for name, digest in pins.items())):
+        raise Incomplete("Engine source-policy binding lacks its complete owner hashes.")
+    for field in ("test_inventory", "doctest_inventory"):
+        names = binding[field]
+        if (type(names) is not list or not 0 < len(names) <= 4096
+                or any(type(name) is not str or not 0 < len(name) <= 4096
+                       or "\n" in name or "\r" in name for name in names)
+                or names != sorted(set(names))):
+            raise Incomplete("Engine source-policy binding requires bounded unique executed identities.")
+    evidence = binding["development_evidence"]
+    if (type(evidence) is not dict or set(evidence) != {"path", "sha256"}
+            or type(evidence["path"]) is not str or not 0 < len(evidence["path"]) <= 4096
+            or not Path(evidence["path"]).is_absolute() or ".." in Path(evidence["path"]).parts
+            or type(evidence["sha256"]) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", evidence["sha256"]) is None):
+        raise Incomplete("Engine source-policy development reference has invalid external custody.")
+    reviewed = policy["mutation_inventories"]
+    if (type(reviewed) is not dict
+            or (reviewed and set(reviewed) != set(dict(ENGINE_SOURCE_POLICY_SUBJECTS)))
+            or any(type(spec) is not dict or set(spec) != {"count", "sha256"}
+                   or type(spec["count"]) is not int
+                   or not 0 < spec["count"] <= facts["maximum_listed_per_file"]
+                   or type(spec["sha256"]) is not str
+                   or re.fullmatch(r"[a-f0-9]{64}", spec["sha256"]) is None
+                   for spec in reviewed.values())):
+        raise Incomplete("Engine source-policy inventories require all five exact positive count/hash records.")
+    if policy["campaigns_admitted"] and not reviewed:
+        raise Incomplete("Engine source-policy campaigns require a complete independently reviewed enumeration.")
+
 
 def require_unchanged(root: Path, identity: dict[str, str]) -> None:
     """Reject changed, removed, linked or replaced admitted input bytes."""
@@ -596,6 +698,8 @@ def admit_reviewed_mutation_inventories(scope: Scope, policy: dict, inventories:
     Hash the name-keyed admitted descriptors, preserving every member except the
     optional top-level rendered diff. No campaign is launched by this check.
     """
+    if _engine_source_policy_role(scope, policy):
+        require_engine_source_policy_role(scope, policy)
     if "mutation_inventories" not in policy:
         return None
     phase_step = _phase_step_scope(scope)
@@ -658,6 +762,11 @@ def admit_mutation_equivalences(root: Path, scope: Scope, policy: dict) -> list[
     substance of a proof. Independent review remains a coordinator obligation.
     Empty E is the default; no pattern, function skip or inferred approval exists.
     """
+    # Bind the KE approvals at this receiving operation too: a direct caller
+    # must not bypass code-owned reviews by omitting its earlier role check.
+    if (engine_ke_features(scope)
+            or any(filename in dict(ENGINE_KE_SUBJECTS).values() for _, filename in scope.subjects)):
+        require_engine_ke_role(scope, policy)
     entries = policy.get("mutation_equivalences", [])
     if not isinstance(entries, list) or len(entries) > policy.get("maximum_mutants", 512):
         raise Incomplete("Invalid or oversized exact mutation-equivalence inventory.")
@@ -867,7 +976,7 @@ def mutation_jobs(policy: dict) -> int:
 
 
 def mutation_jobserver_tasks(scope: Scope, policy: dict, *, workers: int) -> int:
-    """Keep legacy tokens unchanged; this exact GNU role adds no shared tokens.
+    """Keep legacy tokens unchanged; the exact GNU roles add no shared tokens.
 
     Cargo supplies each child its own implicit slot. The admitted Unix
     cargo-mutants/jobserver implementation accepts an empty token pipe; zero
@@ -880,8 +989,18 @@ def mutation_jobserver_tasks(scope: Scope, policy: dict, *, workers: int) -> int
         if workers != mutation_jobs(policy):
             raise Incomplete("Phase-step caller workers differ from its exact admitted profile.")
         return policy["mutation_jobserver_tasks"]
+    if engine_ke_features(scope):
+        require_engine_ke_role(scope, policy)
+        if workers != mutation_jobs(policy):
+            raise Incomplete("Engine KE caller workers differ from its exact admitted profile.")
+        return policy["mutation_jobserver_tasks"]
+    if _engine_source_policy_role(scope, policy):
+        require_engine_source_policy_role(scope, policy)
+        if workers != mutation_jobs(policy):
+            raise Incomplete("Engine source-policy caller workers differ from its exact admitted profile.")
+        return policy["mutation_jobserver_tasks"]
     if "mutation_jobserver_tasks" in policy:
-        raise Incomplete("Only the exact GNU phase-step role admits an extra-token override.")
+        raise Incomplete("Only the exact admitted GNU roles allow an extra-token override.")
     return workers
 
 
@@ -1131,6 +1250,14 @@ def mutation_campaign_command(scope: Scope, tools: Path, subject: str, command: 
         require_phase_step_role(scope, policy)
         if not policy["campaigns_admitted"]:
             raise Incomplete("Phase-step mutation admission is closed until contracts and complete inventories are reviewed.")
+    if _engine_source_policy_role(scope, {} if policy is None else policy):
+        if policy is None:
+            raise Incomplete("Engine source-policy campaign requires its exact current role policy.")
+        require_engine_source_policy_role(scope, policy)
+        if jobs != mutation_jobs(policy) or message_format != mutation_message_format(policy):
+            raise Incomplete("Engine source-policy caller parameters differ from the actual role policy.")
+        if not policy["campaigns_admitted"] or not policy["mutation_inventories"]:
+            raise Incomplete("Engine source-policy campaign admission remains closed at the effect boundary.")
     tokens = mutation_jobserver_tasks(scope, {} if policy is None else policy, workers=jobs)
     expected = [str(tools / "cargo-mutants"), "mutants", "--package", scope.package, "--file", filename,
                 "--test-workspace", "false", "--cap-lints", "false", "--jobs", str(jobs),
@@ -2406,6 +2533,11 @@ def admission_profile(args, scope, policy):
         raise Incomplete("Unknown analysis admission profile.")
     if policy.get("tool_admission_profile", "full") != profile:
         raise Incomplete("Analysis admission profile differs from the current policy.")
+    if _engine_source_policy_role(scope, policy):
+        require_engine_source_policy_role(scope, policy)
+        if profile != "stable-core" or args.lane not in {"baseline", "coverage", "mutation", "all"}:
+            raise Incomplete("Engine source-policy admits only its fixed stable baseline/coverage/listing/mutation stages.")
+        return profile
     if (scope.policy == "policy/phase-step-analysis.json"
             or scope.subjects == PHASE_STEP_SUBJECTS):
         require_phase_step_role(scope, policy)

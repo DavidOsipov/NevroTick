@@ -752,7 +752,7 @@ RATIONAL_SECONDS_REQUIRED_TESTS = frozenset({
 })
 RATIONAL_SECONDS_REQUIRED_DOCTESTS = (
     ("rational_seconds::RoundedRationalSeconds", False, 1),
-    ("rational_seconds::RoundedRationalSeconds", True, 4),
+    ("rational_seconds::RoundedRationalSeconds", True, 7),
 )
 
 

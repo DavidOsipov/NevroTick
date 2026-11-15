@@ -9,6 +9,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import tempfile
 from types import SimpleNamespace
@@ -1098,11 +1099,20 @@ class EngineExternalContractTests(unittest.TestCase):
     """Current inert external contracts never inherit the historical campaigns."""
 
     def setUp(self):
-        # Only lower Product admission is assumed for these inert policy roots;
-        # the actual complete current map is independently admitted once here.
-        self.current_identity = MODULE.PRODUCT.admit_product(ROOT)[1]
-        admitted = patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, self.current_identity))
-        admitted.start(); self.addCleanup(admitted.stop)
+        # Synthetic reader input, not current-product admission or evidence.
+        # Both captured and dynamically consulted role bindings must agree;
+        # expected identity comes from this declaration, never the validator.
+        # One input also makes True numerically equal to the legal count, so
+        # the boolean refusal cannot rely only on a different numeric value.
+        self.fixture_identity = {"synthetic/engine.rs": "a" * 64}
+        self.fixture_binding = {"source_file_count": len(self.fixture_identity),
+                                "candidate_sha256": independent_digest(self.fixture_identity)}
+        self.contract_policy = {**copy.deepcopy(MODULE.FIXED_CONTRACT_POLICY), **self.fixture_binding}
+        for scoped in (
+                patch.object(MODULE, "FIXED_CONTRACT_POLICY", self.contract_policy),
+                patch.object(MODULE.COMMON, "CONTRACT_PRODUCT_BINDING", self.fixture_binding),
+                patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, self.fixture_identity))):
+            scoped.start(); self.addCleanup(scoped.stop)
 
     def fixture(self, root):
         for name in (MODULE.POLICY,"policy/verification-manifest.toml"):
@@ -1110,6 +1120,7 @@ class EngineExternalContractTests(unittest.TestCase):
             shutil.copyfile(ROOT/name,target)
         parent=json.loads((root/MODULE.POLICY).read_text())
         parent["mutation_equivalences"]=[]
+        parent["external_contracts"]=copy.deepcopy(self.contract_policy)
         (root/MODULE.POLICY).write_text(json.dumps(parent))
         return parent
 
@@ -1133,7 +1144,7 @@ class EngineExternalContractTests(unittest.TestCase):
             for name in MODULE.BOUND_INPUTS:
                 target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
                 shutil.copyfile(ROOT/name,target)
-            identity=self.current_identity
+            identity=self.fixture_identity
             parent["candidate_sha256"]=independent_digest(identity)
             parent["mutation_inventories"]={}
             parent["mutation_equivalences"]=[]
@@ -1154,8 +1165,8 @@ class EngineExternalContractTests(unittest.TestCase):
                 path.write_text(json.dumps(parent))
                 self.assertEqual(MODULE.read_policy(root),parent)
                 self.assertEqual(MODULE.read_contract_policy(root),policy)
-        self.assertEqual(policy["source_file_count"],595)
-        self.assertEqual(policy["candidate_sha256"],independent_digest(self.current_identity))
+        self.assertEqual(policy["source_file_count"],len(self.fixture_identity))
+        self.assertEqual(policy["candidate_sha256"],independent_digest(self.fixture_identity))
         self.assertEqual(policy["critical_files"],["crates/nevrotick-engine/src/lib.rs"])
         self.assertEqual(policy["jobs"],6)
         self.assertEqual(policy["test_threads"],1)
@@ -1171,20 +1182,41 @@ class EngineExternalContractTests(unittest.TestCase):
             root=Path(temporary);parent=self.fixture(root)
             historical={key:copy.deepcopy(value) for key,value in parent.items() if key!="external_contracts"}
             healthy=MODULE.read_contract_policy(root)
+            count=len(self.fixture_identity)
             for key,value in (("schema_version",2),("admission_status","passed"),
-                              ("source_file_count",True),("source_file_count",167),
-                              ("source_file_count",169),("candidate_sha256","0"*64),("jobs",12),("test_threads",12),
+                              ("package","time-domain"),("source_file_count",True),
+                              ("source_file_count",False),("source_file_count",float(count)),
+                              ("source_file_count",count-1),("source_file_count",count+1),
+                              ("candidate_sha256","0"*64),("jobs",12),("test_threads",12),
                               ("tool_admission_profile","full"),("critical_files",list(MODULE.SUBJECTS.values())),
                               ("mutation_equivalences",[{}]),("mutation_error_values",{"library":["panic!()"]}),
                               ("contracts_wall_seconds",0),("unexpected",1)):
                 bad=copy.deepcopy(parent);bad["external_contracts"][key]=value
-                (root/MODULE.POLICY).write_text(json.dumps(bad))
-                with self.subTest(key=key),self.assertRaises(MODULE.Incomplete):
+                path=root/MODULE.POLICY
+                path.write_text(json.dumps(bad));original=path.read_bytes()
+                with self.subTest(key=key,value=value),self.assertRaises(MODULE.Incomplete):
                     MODULE.read_contract_policy(root)
+                self.assertEqual(path.read_bytes(),original)
             (root/MODULE.POLICY).write_text(json.dumps(parent))
             self.assertEqual(MODULE.read_contract_policy(root),healthy)
             self.assertEqual({key:value for key,value in MODULE.read_json(root/MODULE.POLICY).items()
                               if key!="external_contracts"},historical)
+
+    def test_contract_candidate_requires_declared_fixture_paths_and_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);self.fixture(root)
+            path=root/MODULE.POLICY;original=path.read_bytes()
+            healthy=MODULE.read_contract_policy(root)
+            altered_bytes={**self.fixture_identity,"synthetic/engine.rs":"c"*64}
+            altered_path={"synthetic/other.rs":self.fixture_identity["synthetic/engine.rs"]}
+            for kind,identity in (("bytes",altered_bytes),("path",altered_path)):
+                self.assertEqual(len(identity),len(self.fixture_identity))
+                with self.subTest(kind=kind), \
+                     patch.object(MODULE.PRODUCT,"admit_product",return_value=({},identity)):
+                    with self.assertRaisesRegex(MODULE.Incomplete,"complete contract candidate path/byte digest"):
+                        MODULE.read_contract_policy(root)
+                self.assertEqual(path.read_bytes(),original)
+            self.assertEqual(MODULE.read_contract_policy(root),healthy)
 
     def test_privacy_trait_and_raw_api_fixtures_have_owned_causal_lines(self):
         cases=MODULE.contract_examples()
@@ -1225,7 +1257,8 @@ class EngineExternalContractTests(unittest.TestCase):
     def test_contract_library_copy_and_command_dispatch_preserve_real_artifact(self):
         cases=MODULE.contract_examples()
         with tempfile.TemporaryDirectory() as temporary:
-            work=Path(temporary);deps=work/"target/debug/deps";deps.mkdir(parents=True)
+            work=Path(temporary);self.fixture(work)
+            deps=work/"target/debug/deps";deps.mkdir(parents=True)
             artifact=work/"target/debug/libnevrotick_engine.rlib";artifact.write_bytes(b"actual emitted library")
             dependency=deps/("libtokio-"+"1"*16+".rlib"); dependency.write_bytes(b"actual dependency")
             calls=[]
@@ -1242,7 +1275,7 @@ class EngineExternalContractTests(unittest.TestCase):
             report={}
             with patch.object(MODULE.COMMON,"library_artifact",
                               return_value="/work/target/debug/libnevrotick_engine.rlib"):
-                MODULE.contracts(session,MODULE.read_contract_policy(ROOT),report)
+                MODULE.contracts(session,MODULE.read_contract_policy(work),report)
             self.assertEqual(report["contracts"]["legal_consumers_compiled_and_executed"],1)
             self.assertEqual(len([case for _,_,case in calls if case is not None]),12)
             copied=work/"contract-deps/libnevrotick_engine.rlib"
@@ -1252,7 +1285,8 @@ class EngineExternalContractTests(unittest.TestCase):
             self.assertTrue(all("--error-format=json" in command for label,command,_ in calls
                                 if label.startswith("external-consumer-")))
         with tempfile.TemporaryDirectory() as temporary:
-            work=Path(temporary);(work/"target/debug/deps").mkdir(parents=True)
+            work=Path(temporary);self.fixture(work)
+            (work/"target/debug/deps").mkdir(parents=True)
             (work/"target/debug/libnevrotick_engine.rlib").write_bytes(b"emitted library")
             def missing_marker(label,command,timeout,**kwargs):
                 return "not the expected actual consumer marker" if label=="external-legal-execution" else messages if label=="contract-library" else ""
@@ -1262,34 +1296,67 @@ class EngineExternalContractTests(unittest.TestCase):
             with patch.object(MODULE.COMMON,"library_artifact",
                               return_value="/work/target/debug/libnevrotick_engine.rlib"):
                 with self.assertRaisesRegex(MODULE.Incomplete,"Legal engine consumer"):
-                    MODULE.contracts(session,MODULE.read_contract_policy(ROOT),report)
+                    MODULE.contracts(session,MODULE.read_contract_policy(work),report)
             self.assertNotIn("contracts",report)
 
     def test_contracts_reject_wrong_profile_or_subject_before_session(self):
-        for lane,subject,profile in (("contracts","all","full"),("contracts","cli","stable-core"),
-                                     ("contracts","measurement","stable-core")):
-            with self.subTest(subject=subject,profile=profile),patch.object(MODULE.COMMON,"Session") as session:
-                with self.assertRaises(MODULE.Incomplete):
-                    MODULE.execute(SimpleNamespace(lane=lane,subject=subject,tool_admission_profile=profile),{})
-                session.assert_not_called()
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);self.fixture(root)
+            cases=(("all","full","Analysis admission profile differs from the current policy."),
+                   ("cli","stable-core","External engine contracts belong only to the library owner."),
+                   ("measurement","stable-core","External engine contracts belong only to the library owner."))
+            with patch.object(MODULE,"ROOT",root):
+                for subject,profile,diagnostic in cases:
+                    with self.subTest(subject=subject,profile=profile), \
+                         patch.object(MODULE.COMMON,"Session") as session:
+                        with self.assertRaises(MODULE.Incomplete) as refused:
+                            MODULE.execute(SimpleNamespace(lane="contracts",subject=subject,
+                                           tool_admission_profile=profile),{})
+                        self.assertEqual(str(refused.exception),diagnostic)
+                        session.assert_not_called()
 
     def test_failed_current_custody_never_publishes_contract_qualification(self):
         with tempfile.TemporaryDirectory() as temporary:
-            source=Path(temporary);self.fixture(source)
-            fake=SimpleNamespace(source=source,product_identity={"fixture.rs":"a"*64},
-                                 finish=lambda:(_ for _ in ()).throw(MODULE.Incomplete("final custody failure")))
+            root=Path(temporary)/"original";source=Path(temporary)/"captured"
+            self.fixture(root);self.fixture(source)
+            finished=[]
+            def finish():
+                finished.append(True)
+                raise MODULE.Incomplete("final custody failure")
+            fake=SimpleNamespace(source=source,product_identity=dict(self.fixture_identity),finish=finish)
             report={}
-            with patch.object(MODULE.COMMON,"Session",return_value=fake), \
-                 patch.object(MODULE,"contracts"):
+            with patch.object(MODULE,"ROOT",root), \
+                 patch.object(MODULE.COMMON,"Session",return_value=fake) as session, \
+                 patch.object(MODULE,"contracts") as contracts:
                 with self.assertRaisesRegex(MODULE.Incomplete,"final custody failure"):
                     MODULE.execute(SimpleNamespace(lane="contracts",subject="all",
                                    tool_admission_profile="stable-core"),report)
+                session.assert_called_once()
+                contracts.assert_called_once_with(fake,self.contract_policy,report)
+            self.assertEqual(finished,[True])
+            self.assertEqual(report["candidate_sha256"],independent_digest(self.fixture_identity))
             self.assertFalse(report["qualification_passed"])
             self.assertFalse(report["contracts_qualification_passed"])
 
 
 class QualityAnalysisTests(unittest.TestCase):
     """Q1 registration controls use synthetic native logs; no analyzer is invoked."""
+
+    def setUp(self):
+        """Keep reader identities independent of the host home and private evidence."""
+        self.fixture_receipt = Path("/synthetic/q1-reader/ordinary.json")
+        self.fixture_receipt_sha256 = hashlib.sha256(b"synthetic Q1 ordinary identity\n").hexdigest()
+        names = ("quality_ordinary_v2.py", "quality_ordinary_v1.py", "relative_bridge_ordinary.py",
+                 "conditioned_fit_ordinary_v2.py", "series_ordinary_v1.py", "series_ordinary_v3.py")
+        self.fixture_recipe_pins = {name: hashlib.sha256(
+            ("# Synthetic Q1 registration recipe: " + name + "\n").encode()).hexdigest()
+            for name in names}
+        for context in (
+                patch.object(MODULE, "QUALITY_ORDINARY_RECEIPT", self.fixture_receipt),
+                patch.object(MODULE, "QUALITY_ORDINARY_SHA256", self.fixture_receipt_sha256),
+                patch.object(MODULE, "QUALITY_ORDINARY_RECIPES", self.fixture_recipe_pins)):
+            context.start()
+            self.addCleanup(context.stop)
 
     @staticmethod
     def assertion_sources():
@@ -1388,6 +1455,7 @@ fn actual_series_quality_retains_signed_intervals_source_and_original_age() {
                 "sha256": hashlib.sha256(raw).hexdigest(), "recipes_sha256": recipe_pins}
             with patch.object(MODULE, "QUALITY_EVIDENCE_ROOT", recipes), \
                  patch.object(MODULE, "QUALITY_ORDINARY_RECEIPT", receipt), \
+                 patch.object(MODULE, "QUALITY_ORDINARY_SHA256", hashlib.sha256(raw).hexdigest()), \
                  patch.object(MODULE, "QUALITY_ORDINARY_RECIPES", recipe_pins):
                 yield policy, receipt, recipes
 
@@ -1404,7 +1472,13 @@ fn actual_series_quality_retains_signed_intervals_source_and_original_age() {
         self.assertEqual(MODULE.QUALITY_FIXED_POLICY["source_file_count"], 421)
 
     def policy(self):
-        return copy.deepcopy(json.loads((ROOT / MODULE.QUALITY_POLICY).read_text()))
+        """Reuse fixed historical role fields with separately declared reader identities."""
+        policy = copy.deepcopy(json.loads((ROOT / MODULE.QUALITY_POLICY).read_text()))
+        policy["ordinary_evidence"] = {
+            "receipt": str(self.fixture_receipt), "sha256": self.fixture_receipt_sha256,
+            "recipes_sha256": dict(self.fixture_recipe_pins),
+        }
+        return policy
 
     def execution(self, *, doctests=True):
         """Render declared parser-fixture identities, never claim product execution."""
@@ -1632,6 +1706,7 @@ fn actual_series_quality_retains_signed_intervals_source_and_original_age() {
             with self.assertRaisesRegex(MODULE.Incomplete, "Unreviewed quality"):
                 MODULE.validate_quality_policy(policy)
         policy = self.policy()
+        self.assertEqual(MODULE.validate_quality_policy(policy), policy)
         with patch.object(MODULE,"read_json",return_value=policy), \
              patch.object(MODULE.PRODUCT,"admit_product",return_value=({}, {"new-source.rs":"a"*64})):
             with self.assertRaisesRegex(MODULE.Incomplete,"complete current product"):
@@ -1986,13 +2061,13 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         """A healthy admission reached Session; stop before any execution."""
 
     def policy_fixture(self):
-        """Independent limits; synthetic 410/229 roster with one real required name."""
+        """Independent limits; synthetic 415/234 roster with one real required name."""
         critical = ["crates/nevrotick-engine/src/lib.rs", *self.HOST.values(),
             "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
             "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
             "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"]
         names = sorted([f"ordinary_fixture_{index:03}" for index in range(181)] +
-                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(228)] +
+                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(233)] +
                        ["nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
                         "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted"])
         return {
@@ -2007,9 +2082,10 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             "enumeration_wall_seconds": 240, "mutation_wall_seconds": 1200,
             "mutation_build_seconds": 90, "mutation_test_seconds": 60,
             "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
-            "mutation_jobs": 6, "mutation_process_limit": 512, "mutation_message_format": "json",
-            "minimum_free_bytes": 5 * 1024**3, "stop_free_bytes": 4 * 1024**3,
-            "owned_output_maximum_allocated_bytes": 768 * 1024**2,
+            "mutation_jobs": 6, "mutation_jobserver_tasks": 0,
+            "mutation_process_limit": 512, "mutation_message_format": "json",
+            "minimum_free_bytes": 7 * 1024**3, "stop_free_bytes": 4 * 1024**3,
+            "owned_output_maximum_allocated_bytes": 3 * 1024**3,
             "owned_output_maximum_entries": 32768, "mutation_equivalences": [],
             "campaigns_admitted": False, "mutation_inventories": {},
             "binding": {"candidate_sha256": "a" * 64, "source_file_count": 2,
@@ -2048,7 +2124,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.args = SimpleNamespace(profile="ke_association", lane="baseline", subject="all",
             tool_admission_profile="stable-core", output_dir=self.base / "new-output", vendor_dir=self.base / "vendor")
 
-    def invoke(self, *, accepted=False, free=5 * 1024**3):
+    def invoke(self, *, accepted=False, free=7 * 1024**3):
         """Exercise real pre-Session guards with assumed prior product admission."""
         (self.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(self.policy))
         dependency = {"engine_ke_association": {"rows": {}}}
@@ -2083,6 +2159,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
 
     def test_source_helper_and_candidate_pin_drift_refuse_before_session(self):
         for name in ("scripts/portable-analysis.py", "scripts/analysis-controls.py",
+                     "scripts/check-analysis.py",
                      "crates/nevrotick-engine/src/nts_ke_experiment/association.rs",
                      "crates/nevrotick-engine/src/nts_ke_experiment/recovery/numerics_tests.rs"):
             path = self.root / name; original = path.read_bytes()
@@ -2103,9 +2180,27 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             path.write_bytes(original)
         self.invoke(accepted=True)
 
-    def test_five_gib_startup_boundary_refuses_below_and_accepts_exact(self):
-        self.invoke(free=5 * 1024**3 - 1)
-        self.invoke(accepted=True, free=5 * 1024**3)
+    def test_seven_gib_startup_boundary_precedes_product_and_evidence_admission(self):
+        (self.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(self.policy))
+        dependency = {"engine_ke_association": {"rows": {}}}
+        for free, accepted in ((7516192767, False), (7516192768, True)):
+            with self.subTest(free=free), patch.object(MODULE, "ROOT", self.root), \
+                    patch.object(MODULE.PRODUCT, "admit_product", return_value=(dependency, self.identity)) as product, \
+                    patch.object(MODULE, "admit_engine_ke_evidence", wraps=MODULE.admit_engine_ke_evidence) as evidence, \
+                    patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=free)), \
+                    patch.object(MODULE.COMMON, "Session", side_effect=self.SessionReached) as session:
+                if accepted:
+                    with self.assertRaises(self.SessionReached):
+                        MODULE.execute_engine_ke_profile(self.args, {})
+                    product.assert_called_once()
+                    evidence.assert_called_once()
+                    session.assert_called_once()
+                else:
+                    with self.assertRaisesRegex(MODULE.Incomplete, "seven GiB"):
+                        MODULE.execute_engine_ke_profile(self.args, {})
+                    product.assert_not_called()
+                    evidence.assert_not_called()
+                    session.assert_not_called()
 
     def test_six_worker_fallback_refuses_eight_before_session(self):
         self.args.lane = "mutation"
@@ -2120,6 +2215,92 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                 self.invoke()
         self.policy["mutation_jobs"] = 6
         self.invoke(accepted=True)
+
+    def test_ke_zero_extra_tokens_are_required_before_session(self):
+        self.invoke(accepted=True)
+        for value in (6, True, False, 0.0, "0", None, -1):
+            self.policy["mutation_jobserver_tasks"] = value
+            with self.subTest(tokens=value):
+                self.invoke()
+        self.policy.pop("mutation_jobserver_tasks")
+        self.invoke()
+        self.policy["mutation_jobserver_tasks"] = 0
+        self.invoke(accepted=True)
+
+    def test_current_ke_policy_selects_zero_extra_tokens_and_keeps_campaign_closed(self):
+        policy = json.loads((ROOT / MODULE.ENGINE_KE_POLICY).read_text())
+        self.assertIs(type(policy.get("mutation_jobserver_tasks")), int)
+        self.assertEqual(policy["mutation_jobserver_tasks"], 0)
+        self.assertEqual(policy["mutation_jobs"], 6)
+        self.assertIs(type(policy["minimum_free_bytes"]), int)
+        self.assertEqual(policy["minimum_free_bytes"], 7516192768)
+        self.assertIs(type(policy["owned_output_maximum_allocated_bytes"]), int)
+        self.assertEqual(policy["owned_output_maximum_allocated_bytes"], 3221225472)
+        self.assertEqual(policy["stop_free_bytes"], 4294967296)
+        self.assertEqual(set(policy["mutation_inventories"]), set(self.HOST))
+        self.assertEqual(sum(row["count"] for row in policy["mutation_inventories"].values()), 633)
+        self.assertIs(policy["campaigns_admitted"], False)
+        self.assertEqual(len(policy["mutation_equivalences"]), 9)
+        self.assertTrue(MODULE.COMMON.engine_ke_equivalences_valid(policy))
+        legacy = copy.deepcopy(policy)
+        legacy_candidate = "964a9573143e5668a63d264bb44906fa103d5b4c3ddf1fc82cecea33012c5468"
+        legacy["binding"]["candidate_sha256"] = legacy_candidate
+        for entry in legacy["mutation_equivalences"]:
+            entry["candidate_sha256"] = legacy_candidate
+        self.assertFalse(MODULE.COMMON.engine_ke_equivalences_valid(legacy))
+
+    def test_storage_usage_charges_actual_work_tmp_allocated_blocks(self):
+        output = self.base / "scratch-output"
+        temporary = output / "work/tmp"
+        temporary.mkdir(mode=0o700, parents=True)
+        before = MODULE.address_storage_usage(output)
+        payload = temporary / "worker-target"
+        payload.write_bytes(b"x" * 65536)
+        allocated = payload.stat().st_blocks * 512
+        self.assertGreater(allocated, 0)
+        after = MODULE.address_storage_usage(output)
+        self.assertEqual(after["entries"], before["entries"] + 1)
+        self.assertGreaterEqual(after["allocated_bytes"] - before["allocated_bytes"], allocated)
+
+    def test_ke_storage_checkpoint_accepts_below_three_gib_and_refuses_at_or_above(self):
+        output = self.base / "checkpoint-output"
+        output.mkdir(mode=0o700)
+        session = SimpleNamespace(output=output)
+        for allocated, accepted in ((3221225471, True), (3221225472, False), (3221225473, False)):
+            report = {}
+            with self.subTest(allocated=allocated), \
+                    patch.object(MODULE, "address_storage_usage", return_value={"allocated_bytes": allocated, "entries": 1}), \
+                    patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=7516192768)):
+                if accepted:
+                    MODULE.address_storage_checkpoint(session, self.policy, report, "ke-mutation", "after")
+                else:
+                    with self.assertRaisesRegex(MODULE.Incomplete, "allocated cap"):
+                        MODULE.address_storage_checkpoint(session, self.policy, report, "ke-mutation", "after")
+            expected = {"lane": "ke-mutation", "phase": "after", "allocated_bytes": allocated,
+                        "entries": 1, "available_bytes": 7516192768}
+            self.assertEqual(report["storage_samples"], [expected])
+            self.assertEqual(json.loads((output / "progress.json").read_text())["storage_samples"], [expected])
+
+    def test_address_storage_neighbor_preserves_five_gib_and_768_mib_limits(self):
+        policy = MODULE.ADDRESS_FIXED_POLICY
+        self.assertEqual(policy["minimum_free_bytes"], 5368709120)
+        self.assertEqual(policy["stop_free_bytes"], 4294967296)
+        self.assertEqual(policy["owned_output_maximum_allocated_bytes"], 805306368)
+        self.assertEqual(policy["owned_output_maximum_entries"], 32768)
+        output = self.base / "address-checkpoint-output"
+        output.mkdir(mode=0o700)
+        session = SimpleNamespace(output=output)
+        for allocated, accepted in ((805306367, True), (805306368, False)):
+            report = {}
+            with self.subTest(allocated=allocated), \
+                    patch.object(MODULE, "address_storage_usage", return_value={"allocated_bytes": allocated, "entries": 1}), \
+                    patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=5368709120)):
+                if accepted:
+                    MODULE.address_storage_checkpoint(session, policy, report, "address", "after")
+                else:
+                    with self.assertRaisesRegex(MODULE.Incomplete, "allocated cap"):
+                        MODULE.address_storage_checkpoint(session, policy, report, "address", "after")
+            self.assertEqual(report["storage_samples"][-1]["allocated_bytes"], allocated)
 
     def test_owned_contract_lane_requires_exact_profile_subject_and_stable_role_before_session(self):
         self.args.lane = "contracts"
@@ -2245,7 +2426,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         tools = Path("/owned/synthetic-tools")
         command = [str(tools / "cargo-mutants"), "mutants", "--package", "nevrotick-engine",
             "--file", self.HOST["ke_association"], "--test-workspace", "false", "--cap-lints", "false",
-            "--jobs", "6", "--jobserver", "true", "--jobserver-tasks", "6",
+            "--jobs", "6", "--jobserver", "true", "--jobserver-tasks", "0",
             "--cargo-arg=--message-format=json", "--features", "ke-association-prototype",
             "--baseline", "run", "--build-timeout", "90", "--timeout", "60", "--output", "/work/mutation/ke_association"]
         with self.assertRaises(MODULE.Incomplete):
@@ -2255,6 +2436,11 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.policy["mutation_inventories"] = {name: {"count": 1, "sha256": "a" * 64} for name in self.HOST}
         MODULE.COMMON.mutation_campaign_command(MODULE.ENGINE_KE_SCOPE, tools, "ke_association", command,
             expected_jobs=6, expected_message_format="json", policy=self.policy)
+        extra_tokens = command.copy()
+        extra_tokens[extra_tokens.index("--jobserver-tasks") + 1] = "6"
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.COMMON.mutation_campaign_command(MODULE.ENGINE_KE_SCOPE, tools, "ke_association", extra_tokens,
+                expected_jobs=6, expected_message_format="json", policy=self.policy)
         # A coherent caller/command pair must still obey the actual role policy.
         for foreign_jobs in (8, 10):
             substituted = command.copy()
@@ -2279,17 +2465,17 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         return (f"running {len(names)} tests\n" + "".join(f"test {name} ... ok\n" for name in names) +
                 f"test result: ok. {len(names)} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n")
 
-    def test_entered_blocks_require_all_410_cases_and_229_ke_neighbors(self):
+    def test_entered_blocks_require_all_415_cases_and_234_ke_neighbors(self):
         binding = self.policy["binding"]; names = binding["test_inventory"]
         healthy = self.execution(names)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 410)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 229)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 415)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 234)
         missing = [name for name in names if name != "nts_ke_experiment::fixture_case_00"]
         old = [name for name in names if not name.startswith("nts_ke_experiment::")]
         variants = [self.execution([]), self.execution(old), self.execution(missing),
             self.execution([*names, names[0]]), healthy.replace(" ... ok", " ... FAILED", 1),
-            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 410", "running 409"),
-            healthy.replace("test result: ok. 410 passed", "test result: ok. 409 passed"),
+            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 415", "running 414"),
+            healthy.replace("test result: ok. 415 passed", "test result: ok. 414 passed"),
             "\n".join(line for line in healthy.splitlines() if not line.startswith("running "))]
         for text in variants:
             with self.subTest(sample=text[-120:]), self.assertRaises(MODULE.Incomplete):
@@ -2306,7 +2492,13 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             "historical_400_222": sorted(
                 [f"ordinary_fixture_{index:03}" for index in range(178)] +
                 [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(222)]),
-            "pre_forwarding_409_228": [name for name in current if name != required],
+            "historical_410_229": sorted(
+                [f"ordinary_fixture_{index:03}" for index in range(181)] +
+                [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(228)] + [required]),
+            "historical_409_228": sorted(
+                [f"ordinary_fixture_{index:03}" for index in range(181)] +
+                [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(228)]),
+            "pre_forwarding_414_233": [name for name in current if name != required],
             "same_counts_missing_forwarding": sorted(
                 [name for name in current if name != required] + ["nts_ke_experiment::other_case"]),
         }
@@ -2337,6 +2529,16 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         with self.assertRaises(MODULE.Incomplete):
             MODULE.validate_engine_ke_policy(bad)
 
+    def test_receiving_supplier_requires_one_source_owner_and_its_helper_pin(self):
+        path = "crates/nevrotick-engine/src/nts_ke_experiment/recovery/receiving_tests.rs"
+        self.assertEqual(MODULE.ENGINE_KE_TEST_SOURCES.count(path), 1)
+        self.assertEqual(MODULE.ENGINE_KE_BOUND_INPUTS.count(path), 1)
+        self.assertIn(path, self.policy["binding"]["inputs_sha256"])
+        MODULE.validate_engine_ke_policy(self.policy)
+        bad = copy.deepcopy(self.policy); del bad["binding"]["inputs_sha256"][path]
+        with self.assertRaisesRegex(MODULE.Incomplete, "source/helper inputs differ"):
+            MODULE.validate_engine_ke_policy(bad)
+
     def test_loaded_analysis_controls_is_in_exact_helper_closure(self):
         path = "scripts/analysis-controls.py"
         self.assertIn(path, MODULE.ENGINE_KE_BOUND_INPUTS)
@@ -2357,8 +2559,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             with self.subTest(doctest=doc):
                 result = MODULE.validate_engine_ke_execution(text, binding, include_doctests=True)
                 self.assertEqual(result["additional_doctests"], [doc])
-                self.assertEqual(result["tests_executed"], 411)
-                self.assertEqual(result["ke_tests_executed"], 229)
+                self.assertEqual(result["tests_executed"], 416)
+                self.assertEqual(result["ke_tests_executed"], 234)
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.validate_engine_ke_execution(text, binding)
         invalid = [self.execution(names[1:]) + self.execution([doc_forms[0]]),
@@ -2469,8 +2671,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             self.assertIn("--all-targets", argv)
             self.assertNotIn("build", argv)
             self.assertNotIn("run", argv)
-        self.assertEqual(report["baseline_execution"]["tests_executed"], 410)
-        self.assertEqual(report["release_execution"]["ke_tests_executed"], 229)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 415)
+        self.assertEqual(report["release_execution"]["ke_tests_executed"], 234)
         self.assertEqual(report["doctest_execution"]["compilation_only"],
                          ["src/lib.rs - Example::no_run (line 1) - compile"])
         retired = report["release_target_retirement"]
@@ -2635,7 +2837,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         (output / "raw.log").write_text("retained raw child output")
         session = SimpleNamespace(output=output, work=work)
         report = {"lanes": [{"lane": "ke-release", "exit_code": 0, "failure": None}],
-                  "release_execution": {"tests_executed": 410, "ke_tests_executed": 229}}
+                  "release_execution": {"tests_executed": 415, "ke_tests_executed": 234}}
         MODULE.address_storage_checkpoint(session, self.policy, report, "ke-release", "after")
         return session, report, release
 
@@ -2705,7 +2907,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                 def measured_usage(directory):
                     usage = original_usage(directory)
                     if mode == "storage" and artifact.exists():
-                        return {**usage, "allocated_bytes": 805306368}
+                        return {**usage, "allocated_bytes": 3221225472}
                     return usage
                 with patch.object(MODULE, "ROOT", self.root), \
                         patch.object(MODULE.PRODUCT, "admit_product", return_value=({"engine_ke_association": {"rows": {}}}, self.identity)), \
@@ -2718,7 +2920,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                 self.assertNotIn("release_target_retirement", report)
                 if mode == "storage":
                     self.assertEqual((report["storage_samples"][-1]["lane"], report["storage_samples"][-1]["phase"],
-                                      report["storage_samples"][-1]["allocated_bytes"]), ("ke-release", "after", 805306368))
+                                      report["storage_samples"][-1]["allocated_bytes"]), ("ke-release", "after", 3221225472))
 
 class EngineKeProviderCompilerContractTests(unittest.TestCase):
     """Synthetic Cargo and custody controls; never execute a compiler or product."""
@@ -3599,17 +3801,27 @@ class EngineKeFixtureLaneTests(unittest.TestCase):
                 self.assertEqual(error.exception.code, 2)
                 session.assert_not_called()
 
-    def test_fixture_startup_free_space_is_enforced_before_session(self):
+    def test_fixture_seven_gib_startup_boundary_precedes_product_and_lock_admission(self):
         support = self.fixture_context()
         (support.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(support.policy))
-        for free, accepted in ((5 * 1024**3 - 1, False), (5 * 1024**3, True)):
-            with patch.object(MODULE, "ROOT", support.root), \
-                    patch.object(MODULE.PRODUCT, "admit_product", return_value=(support.fixture_dependency, support.identity)), \
+        for free, accepted in ((7516192767, False), (7516192768, True)):
+            with self.subTest(free=free), patch.object(MODULE, "ROOT", support.root), \
+                    patch.object(MODULE.PRODUCT, "admit_product", return_value=(support.fixture_dependency, support.identity)) as product, \
+                    patch.object(MODULE, "admit_engine_ke_fixture_lock", wraps=MODULE.admit_engine_ke_fixture_lock) as lock, \
                     patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=free)), \
                     patch.object(MODULE.COMMON, "Session", side_effect=EngineKeAnalysisRoleTests.SessionReached) as session:
-                with self.assertRaises(EngineKeAnalysisRoleTests.SessionReached if accepted else MODULE.Incomplete):
-                    MODULE.execute_engine_ke_fixtures(support.args, {})
-                self.assertEqual(session.call_count, int(accepted))
+                if accepted:
+                    with self.assertRaises(EngineKeAnalysisRoleTests.SessionReached):
+                        MODULE.execute_engine_ke_fixtures(support.args, {})
+                    product.assert_called_once()
+                    lock.assert_called_once()
+                    session.assert_called_once()
+                else:
+                    with self.assertRaisesRegex(MODULE.Incomplete, "seven GiB"):
+                        MODULE.execute_engine_ke_fixtures(support.args, {})
+                    product.assert_not_called()
+                    lock.assert_not_called()
+                    session.assert_not_called()
 
     def test_standalone_lock_requires_exact_selected_root_identities(self):
         support = self.fixture_context()
@@ -3653,6 +3865,419 @@ class EngineKeFixtureLaneTests(unittest.TestCase):
         self.assertEqual(finished, [True])
         self.assertFalse(report["fixture_generation"]["generated"])
         self.assertFalse((support.args.output_dir / "ep2-response-fixtures.rs").exists())
+
+
+class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
+    """Declared synthetic reader/dispatch controls; no compiler or product executes."""
+
+    OWNERS = {
+        "source_policy": "crates/nevrotick-engine/src/source_policy.rs",
+        "library": "crates/nevrotick-engine/src/lib.rs",
+        "session": "crates/nevrotick-engine/src/session.rs",
+        "series": "crates/nevrotick-engine/src/series.rs",
+        "address_round": "crates/nevrotick-engine/src/address_round.rs",
+    }
+
+    @staticmethod
+    def execution(names):
+        return (f"running {len(names)} tests\n"
+                + "".join(f"test {name} ... ok\n" for name in names)
+                + f"test result: ok. {len(names)} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n")
+
+    def write_manifest(self, critical=None, modules=None):
+        critical = list(self.OWNERS.values()) if critical is None else critical
+        modules = ([{"package": "nevrotick-engine", "files": [name]} for name in self.OWNERS.values()]
+                   if modules is None else modules)
+        text = "critical_files = " + json.dumps(critical) + "\nsecurity_modules = [\n"
+        for row in modules:
+            text += "{ package = " + json.dumps(row["package"]) + ", files = " + json.dumps(row["files"]) + " },\n"
+        path = self.root / "policy/verification-manifest.toml"
+        path.write_text(text + "]\n")
+        if hasattr(self, "policy"):
+            self.policy["binding"]["inputs_sha256"]["policy/verification-manifest.toml"] = hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def write_policy(self):
+        (self.root / MODULE.SOURCE_POLICY_POLICY).write_text(json.dumps(self.policy))
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.base = Path(temporary.name)
+        self.root = self.base / "source"
+        self.root.mkdir()
+        for name in MODULE.SOURCE_POLICY_BOUND_INPUTS:
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("synthetic source-policy fixture: " + name + "\n")
+        self.write_manifest()
+        # This five-path identity is declared independently of checkout growth.
+        self.identity = {name: hashlib.sha256((self.root / name).read_bytes()).hexdigest()
+                         for name in self.OWNERS.values()}
+        self.ordinary = sorted([f"ordinary_fixture_{index:03}" for index in range(181)]
+                               + [f"source_policy::tests::synthetic_case_{index:02}" for index in range(26)]
+                               + ["source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted",
+                                  "source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund"])
+        self.docs = sorted([f"crates/nevrotick-engine/src/lib.rs - synthetic_doc_{index:02} (line {index + 1})"
+                            for index in range(69)]
+                           + [f"crates/nevrotick-engine/src/source_policy.rs - synthetic_doc (line {index}) - compile fail"
+                              for index in range(1, 4)]
+                           + ["crates/nevrotick-engine/src/source_policy.rs - synthetic_doc (line 4)"])
+        self.policy = {
+            "schema_version": 1, "package": "nevrotick-engine",
+            "admission_status": "admitted-engine-source-policy-analysis",
+            "subjects": self.OWNERS.copy(), "critical_files": list(self.OWNERS.values()),
+            "features": [], "test_workspace": False, "tool_admission_profile": "stable-core",
+            "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+            "maximum_mutants": 512, "maximum_listed_per_file": 512, "maximum_listed_total": 2560,
+            "baseline_wall_seconds": 300, "coverage_wall_seconds": 300,
+            "enumeration_wall_seconds": 240, "mutation_wall_seconds": 1200,
+            "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+            "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
+            "mutation_jobs": 6, "mutation_jobserver_tasks": 0,
+            "mutation_process_limit": 512, "mutation_message_format": "json",
+            "minimum_free_bytes": 7 * 1024**3, "stop_free_bytes": 4 * 1024**3,
+            "owned_output_maximum_allocated_bytes": 3 * 1024**3,
+            "owned_output_maximum_entries": 32768, "mutation_equivalences": [],
+            "campaigns_admitted": False, "mutation_inventories": {},
+            "binding": {"candidate_sha256": independent_digest(self.identity), "source_file_count": 5,
+                "inputs_sha256": {name: hashlib.sha256((self.root / name).read_bytes()).hexdigest()
+                                  for name in MODULE.SOURCE_POLICY_BOUND_INPUTS},
+                "test_inventory": self.ordinary.copy(), "doctest_inventory": self.docs.copy(),
+                "development_evidence": {"path": str(self.base / "reference.json"), "sha256": "a" * 64}},
+        }
+        for context in (
+                patch.object(MODULE, "ROOT", self.root),
+                patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, self.identity)),
+                patch.object(MODULE, "SOURCE_POLICY_ORDINARY_DIGEST", independent_digest(self.ordinary)),
+                patch.object(MODULE, "SOURCE_POLICY_DOCTEST_DIGEST", independent_digest(self.docs)),
+                patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=8 * 1024**3))):
+            context.start()
+            self.addCleanup(context.stop)
+        self.write_policy()
+        self.args = SimpleNamespace(profile="source_policy", lane="baseline", subject="all",
+            tool_admission_profile="stable-core", vendor_dir=self.base / "vendor",
+            output_dir=self.base / "output")
+
+    def reference_fixture(self):
+        """Create physical hash-bound synthetic observations, without claiming executions."""
+        lanes = []
+        for name in ("boundary-control", "format", "gnu-check", "gnu-clippy", "msvc-clippy", "msvc-check",
+                     "default-ordinary", "default-optimized", "default-doctests",
+                     "ep1-ordinary", "ep1-optimized", "ep1-doctests"):
+            output = (self.execution(self.docs) if name.endswith("doctests")
+                      else self.execution(self.ordinary) if "ordinary" in name or "optimized" in name
+                      else "synthetic fixture only\n")
+            path = self.base / (name + ".json")
+            path.write_text(json.dumps({"exit_code": 0, "failure": None, "output": output}))
+            lanes.append({"lane": name, "path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                          "exit_code": 0, "failure": None})
+        path = self.base / "reference.json"
+        path.write_text(json.dumps({"status": "workload-passed", "custody_unchanged": True,
+            "resource_observer_joined": True, "terminal_resource_failures": [],
+            "source_sha256": self.identity, "lanes": lanes}))
+        self.policy["binding"]["development_evidence"]["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.write_policy()
+
+    def fake_session(self, *, finish_failure=False, coverage=None):
+        support = self
+
+        class FakeSession:
+            def __init__(self, root, args, report, scope, policy, inputs):
+                support.assertEqual(scope.subjects, tuple(support.OWNERS.items()))
+                support.assertEqual(set(inputs), set(MODULE.SOURCE_POLICY_BOUND_INPUTS))
+                self.source = root
+                self.product_identity = support.identity.copy()
+                self.output = args.output_dir
+                self.output.mkdir()
+                self.work = self.output / "work"
+                self.work.mkdir()
+                self.tools = self.output / "tools"
+                self.tools.mkdir()
+                support.commands = []
+                support.finished = False
+
+            def run(self, label, command, timeout, **options):
+                support.commands.append((label, command, timeout, options))
+                if label == "source-policy-baseline":
+                    return support.execution(support.ordinary)
+                if label == "source-policy-doctests":
+                    return support.execution(support.docs)
+                if label == "coverage" and coverage is not None:
+                    (self.work / "coverage.json").write_text(json.dumps(coverage))
+                    return support.execution(support.ordinary)
+                raise AssertionError("Unadmitted synthetic command: " + label)
+
+            def finish(self):
+                support.finished = True
+                if finish_failure:
+                    raise MODULE.Incomplete("synthetic late current custody failure")
+
+        return FakeSession
+
+    def test_real_reader_admits_declared_fixture_without_live_checkout_identity(self):
+        policy, binding, identity = MODULE.read_source_policy_policy(self.root)
+        self.assertEqual(identity, self.identity)
+        self.assertEqual(binding["candidate_sha256"], independent_digest(self.identity))
+        self.assertEqual(policy["critical_files"], list(self.OWNERS.values()))
+        (self.root / "unrelated-future-source.txt").write_text("not declared product evidence\n")
+        self.assertEqual(MODULE.read_source_policy_policy(self.root)[2], self.identity)
+
+    def test_real_reader_rejects_poison_and_incomplete_role_before_lower_admission(self):
+        for field, value in (("features", ["ke-association-prototype"]), ("jobs", True),
+                             ("schema_version", True), ("coverage_minimum_line_percent", 89),
+                             ("mutation_minimum_viable_killed_percent", 94),
+                             ("mutation_jobserver_tasks", 1), ("extra_poison", True)):
+            with self.subTest(field=field):
+                bad = json.loads(json.dumps(self.policy))
+                bad[field] = value
+                with patch.object(MODULE.PRODUCT, "admit_product") as lower:
+                    (self.root / MODULE.SOURCE_POLICY_POLICY).write_text(json.dumps(bad))
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.read_source_policy_policy(self.root)
+                    lower.assert_not_called()
+        self.write_policy()
+        self.assertEqual(MODULE.read_source_policy_policy(self.root)[2], self.identity)
+
+    def test_count_types_and_altered_source_or_helper_identity_refuse(self):
+        for count in (True, False, 0, 4, 6, "5"):
+            with self.subTest(count=count):
+                original = self.policy["binding"]["source_file_count"]
+                self.policy["binding"]["source_file_count"] = count
+                self.write_policy()
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.read_source_policy_policy(self.root)
+                self.policy["binding"]["source_file_count"] = original
+        self.write_policy()
+        changed = dict(self.identity, **{self.OWNERS["source_policy"]: "f" * 64})
+        with patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, changed)):
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.read_source_policy_policy(self.root)
+        helper = self.root / "scripts/analysis-runtime.py"
+        original = helper.read_bytes()
+        helper.write_bytes(original + b"changed")
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.read_source_policy_policy(self.root)
+        helper.write_bytes(original)
+        self.assertEqual(MODULE.read_source_policy_policy(self.root)[2], self.identity)
+
+    def test_incomplete_and_foreign_protected_closures_refuse(self):
+        for name in ("scripts/analysis-runtime.py", "/absolute/foreign.rs", "../outside.rs"):
+            with self.subTest(name=name):
+                bad = json.loads(json.dumps(self.policy))
+                if name.startswith("scripts/"):
+                    del bad["binding"]["inputs_sha256"][name]
+                else:
+                    bad["binding"]["inputs_sha256"][name] = "e" * 64
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.validate_source_policy_policy(bad)
+
+    def test_duplicate_missing_or_foreign_security_registrations_refuse(self):
+        healthy = [{"package": "nevrotick-engine", "files": [name]} for name in self.OWNERS.values()]
+        path = self.OWNERS["source_policy"]
+        cases = [([], healthy), (list(self.OWNERS.values()) + [path], healthy),
+                 (list(self.OWNERS.values()), healthy[1:]),
+                 (list(self.OWNERS.values()), healthy + [healthy[0]]),
+                 (list(self.OWNERS.values()), [{"package": "nevrotick-engine", "files": [path, path]}, *healthy[1:]]),
+                 (list(self.OWNERS.values()), [{"package": "time-core", "files": [path]}, *healthy[1:]])]
+        for index, (critical, modules) in enumerate(cases):
+            with self.subTest(case=index):
+                self.write_manifest(critical, modules)
+                self.write_policy()
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.read_source_policy_policy(self.root)
+        self.write_manifest()
+        self.write_policy()
+        self.assertEqual(MODULE.read_source_policy_policy(self.root)[2], self.identity)
+
+    def test_roster_removal_same_count_substitution_and_missing_compiler_examples_refuse(self):
+        for key in ("test_inventory", "doctest_inventory"):
+            for alteration in ("remove", "substitute", "duplicate"):
+                with self.subTest(key=key, alteration=alteration):
+                    bad = json.loads(json.dumps(self.policy))
+                    names = bad["binding"][key]
+                    if alteration == "remove":
+                        names.pop()
+                    else:
+                        names[-1] = names[0] if alteration == "duplicate" else "same_count_foreign_case"
+                        names.sort()
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.validate_source_policy_policy(bad)
+        MODULE.validate_source_policy_policy(self.policy)
+        missing_diagnostics = json.loads(json.dumps(self.policy))
+        names = missing_diagnostics["binding"]["test_inventory"]
+        names.remove("source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted")
+        names.append("source_policy::tests::synthetic_diagnostics_substitute")
+        names.sort()
+        # Admit this independently declared synthetic identity so only omission
+        # of the mandatory case, rather than a prior hash/count check, refuses it.
+        with patch.object(MODULE, "SOURCE_POLICY_ORDINARY_DIGEST", independent_digest(names)):
+            with self.assertRaisesRegex(MODULE.Incomplete, "public diagnostics"):
+                MODULE.validate_source_policy_policy(missing_diagnostics)
+
+    def test_same_count_budget_substitution_reaches_mandatory_case_refusal(self):
+        MODULE.validate_source_policy_policy(self.policy)
+        missing_budget = json.loads(json.dumps(self.policy))
+        names = missing_budget["binding"]["test_inventory"]
+        names.remove("source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund")
+        names.append("source_policy::tests::synthetic_budget_substitute")
+        names.sort()
+        self.assertEqual(len(names), 209)
+        self.assertEqual(sum(name.startswith("source_policy::tests::") for name in names), 28)
+        # Reconcile this independent synthetic digest so the real named-case
+        # guard supplies refusal, rather than an earlier count or stale hash.
+        with patch.object(MODULE, "SOURCE_POLICY_ORDINARY_DIGEST", independent_digest(names)):
+            with self.assertRaisesRegex(MODULE.Incomplete, "setup budget"):
+                MODULE.validate_source_policy_policy(missing_budget)
+        MODULE.validate_source_policy_policy(self.policy)
+
+    def test_closed_campaign_refuses_before_session_or_output(self):
+        self.args.lane = "mutation"
+        with patch.object(MODULE.COMMON, "Session") as session:
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.execute_source_policy_profile(self.args, {})
+            session.assert_not_called()
+        self.assertFalse(self.args.output_dir.exists())
+
+    def test_full_blocks_are_required_and_doctests_remain_a_separate_union(self):
+        binding = self.policy["binding"]
+        self.assertEqual(MODULE.source_policy_execution(self.execution(self.ordinary), binding)["tests_executed"], 209)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.source_policy_execution(self.execution(self.docs), binding, doctests=True)
+        both = self.execution(self.ordinary) + self.execution(self.docs)
+        self.assertEqual(MODULE.source_policy_execution(both, binding, doctests=True)["tests_executed"], 282)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.source_policy_execution(self.execution(self.ordinary).replace("0 filtered out", "1 filtered out"), binding)
+
+    def test_actual_dispatch_runs_default_baseline_and_separate_docs_then_finishes(self):
+        self.reference_fixture()
+        report = {}
+        with patch.object(MODULE.COMMON, "Session", self.fake_session()):
+            MODULE.execute(self.args, report)
+        self.assertTrue(self.finished)
+        self.assertEqual([row[0] for row in self.commands], ["source-policy-baseline", "source-policy-doctests"])
+        self.assertTrue(all("--features" not in row[1] and 0 < row[2] <= 300 for row in self.commands))
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 209)
+        self.assertEqual(report["doctest_execution"]["tests_executed"], 73)
+        self.assertTrue(report["selected_lane_passed"])
+        self.assertFalse(report["qualification_passed"])
+
+    def test_failed_final_custody_never_publishes_a_baseline_pass(self):
+        self.reference_fixture()
+        report = {}
+        with patch.object(MODULE.COMMON, "Session", self.fake_session(finish_failure=True)):
+            with self.assertRaisesRegex(MODULE.Incomplete, "late current custody"):
+                MODULE.execute_source_policy_profile(self.args, report)
+        self.assertTrue(self.finished)
+        self.assertEqual(len(self.commands), 2)
+        self.assertFalse(report["selected_lane_passed"])
+        self.assertFalse(report["qualification_passed"])
+
+    def coverage_fixture(self):
+        """Independently declared LLVM rows: each selected owner has exactly90/100 lines."""
+        return {"data": [{"files": [{"filename": "/work/source/" + name,
+            "summary": {"lines": {"count": 100, "covered": 90}}}
+            for name in self.OWNERS.values()]}]}
+
+    def test_actual_coverage_dispatch_attributes_exactly_five_owners(self):
+        unselected = "crates/nevrotick-engine/src/unselected_fixture.rs"
+        path = self.root / unselected
+        path.write_text("synthetic unselected Rust input\n")
+        self.identity[unselected] = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.policy["binding"]["source_file_count"] = len(self.identity)
+        self.policy["binding"]["candidate_sha256"] = independent_digest(self.identity)
+        self.reference_fixture()
+        self.args.lane = "coverage"
+        report = {}
+        with patch.object(MODULE.COMMON, "Session", self.fake_session(coverage=self.coverage_fixture())):
+            MODULE.execute_source_policy_profile(self.args, report)
+        self.assertTrue(self.finished)
+        self.assertEqual(set(report["coverage"]), set(self.OWNERS))
+        self.assertTrue(all(row["covered_lines"] == 90 and row["executable_lines"] == 100
+                            and row["line_percent"] == 90 for row in report["coverage"].values()))
+        self.assertEqual(report["coverage_execution"]["tests_executed"], 209)
+        label, command, timeout, options = self.commands[0]
+        self.assertEqual(label, "coverage")
+        self.assertNotIn("--features", command)
+        self.assertEqual(command[command.index("--fail-under-file-lines") + 1], "90")
+        expression = command[command.index("--ignore-filename-regex") + 1]
+        self.assertTrue(re.search(expression, "/work/source/" + unselected))
+        self.assertTrue(all(re.search(expression, "/work/source/" + name) is None
+                            for name in self.OWNERS.values()))
+        self.assertTrue(report["selected_lane_passed"])
+        self.assertFalse(report["qualification_passed"])
+
+    def test_coverage_omission_foreign_duplicate_and_low_owner_refuse_after_finish(self):
+        self.reference_fixture()
+        self.args.lane = "coverage"
+        for change in ("omit", "foreign", "duplicate", "low", "empty"):
+            with self.subTest(change=change):
+                coverage = self.coverage_fixture()
+                rows = coverage["data"][0]["files"]
+                if change == "omit":
+                    rows.pop()
+                elif change == "foreign":
+                    rows[-1]["filename"] = "/work/source/crates/foreign.rs"
+                elif change == "duplicate":
+                    rows.append(json.loads(json.dumps(rows[0])))
+                else:
+                    rows[-1]["summary"]["lines"] = ({"count": 100, "covered": 89}
+                        if change == "low" else {"count": 0, "covered": 0})
+                self.args.output_dir = self.base / ("coverage-" + change)
+                report = {}
+                with patch.object(MODULE.COMMON, "Session", self.fake_session(coverage=coverage)):
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.execute_source_policy_profile(self.args, report)
+                self.assertTrue(self.finished)
+                self.assertFalse(report["selected_lane_passed"])
+                self.assertFalse(report["qualification_passed"])
+
+    def test_all_raw_gates_cannot_publish_independent_qualification(self):
+        self.policy["campaigns_admitted"] = True
+        self.policy["mutation_inventories"] = {name: {"count": 1, "sha256": "e" * 64}
+                                               for name in self.OWNERS}
+        self.reference_fixture()
+        self.args.lane = "all"
+        report = {}
+        with patch.object(MODULE.COMMON, "Session", self.fake_session(coverage=self.coverage_fixture())), \
+                patch.object(MODULE.COMMON, "run_analysis_lanes") as mutation:
+            MODULE.execute_source_policy_profile(self.args, report)
+        mutation.assert_called_once()
+        self.assertEqual(mutation.call_args.args[-1], "mutation")
+        self.assertTrue(self.finished)
+        self.assertTrue(report["selected_lane_passed"])
+        self.assertFalse(report["qualification_passed"])
+
+    def test_changed_reference_or_lane_bytes_refuse_before_session(self):
+        self.reference_fixture()
+        for filename in ("reference.json", "default-ordinary.json"):
+            path = self.base / filename
+            original = path.read_bytes()
+            path.write_bytes(original + b" ")
+            with self.subTest(filename=filename), patch.object(MODULE.COMMON, "Session") as session:
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.execute_source_policy_profile(self.args, {})
+                session.assert_not_called()
+            path.write_bytes(original)
+        self.assertEqual(len(MODULE.admit_source_policy_development(self.policy["binding"], self.identity)), 13)
+
+    def test_cli_subject_guards_preserve_existing_profile_ownership(self):
+        valid = [("source_policy", name) for name in (*self.OWNERS, "all")]
+        valid += [("series", "series"), ("session", "session"), ("address_round", "address_round")]
+        for profile, subject in valid:
+            with self.subTest(profile=profile, subject=subject), patch.object(MODULE, "execute") as execute:
+                execute.side_effect = MODULE.Incomplete("synthetic dispatch reached")
+                self.assertEqual(MODULE.main(["--profile", profile, "--subject", subject,
+                    "--lane", "coverage", "--vendor-dir", str(self.base / "vendor"),
+                    "--output-dir", str(self.base / "unused")]), 1)
+                execute.assert_called_once()
+        for profile, subject in (("source_policy", "quality"), ("source_policy", "address_progress"),
+                                 ("legacy", "source_policy"), ("series", "source_policy"),
+                                 ("legacy", "session"), ("legacy", "address_round")):
+            with self.subTest(profile=profile, subject=subject), patch.object(MODULE, "execute") as execute:
+                with self.assertRaises(SystemExit):
+                    MODULE.main(["--profile", profile, "--subject", subject, "--lane", "coverage",
+                        "--output-dir", str(self.base / "unused")])
+                execute.assert_not_called()
 
 
 if __name__ == "__main__":

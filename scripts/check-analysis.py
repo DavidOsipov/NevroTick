@@ -304,9 +304,10 @@ def check_inventory(base, specification, stable=None):
             raise Incomplete("Special files are forbidden in payload scopes.")
 
     # Discover every terminal first, so extra/missing membership fails before
-    # hashing. Reuse the same twelve workers for file metadata and exact bytes;
-    # neither admission scopes, mounted roots nor pre/post custody are narrowed.
-    with ThreadPoolExecutor(max_workers=12) as workers:
+    # hashing. Two workers limit contention with the concurrent resource observer;
+    # every terminal still receives the same metadata and exact-byte checks.
+    # Admission scopes, mounted roots and pre/post custody remain unchanged.
+    with ThreadPoolExecutor(max_workers=2) as workers:
         for _ in workers.map(verify_terminal, terminals):
             pass
     return {"name": specification["name"], "sha256": expected_hash, "entries": len(found),

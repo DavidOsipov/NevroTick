@@ -9,6 +9,80 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**KoD owner decision — 15 November 2026:**
+[NV-DEC-001 §6.5](nevrotick-owner-decisions.md#65-kod-source-lifecycle--15-november-2026)
+now accepts the amended bounded same-process integration. Exact remote-endpoint
+sharing replaces the proposed IP-only scope; logical-source restrictions persist
+without transitive propagation. RATE continues capped probes, re-enable targets
+exact current-revision records, and all applicable NTS KoD controls retain their
+outstanding-UID requirement. The [Engine task](../tasks/engine-transport-pilot.md#current-kod-send-owner-cut--14-november-2026)
+owns implementation and evidence. No shipped intervals, persistence mechanism or
+product/native pass is selected. David's later separate restart permits reviewed
+Core/Engine continuation; V10/V11 outcomes below retain their actual scope.
+After RAM cleanup and David's explicit restart, the repaired admission passes
+the [V13 association cohort](../tasks/engine-transport-pilot.md#v13-association-gate-and-bounded-resource-exit--15-november-2026).
+Eleven GNU mutation owners remain; whole-profile/native exits stay open.
+The [KoD issuer/send contract](../tasks/engine-transport-pilot.md#same-process-issuer-and-final-effect-contract--15-november-2026)
+has a following [source-only laboratory implementation](../tasks/engine-transport-pilot.md#same-process-kod-laboratory-owner--source-only-implementation-15-november-2026)
+through actual session/series/slot consumers. After David's explicit heavy-work
+restart, [development checks pass](../tasks/engine-transport-pilot.md#kod-development-checks-complete--15-november-2026)
+on 605-input candidate `c97bbe55…`: 207 default and 441 EP1 tests per ordinary/
+optimized graph, 73 doctests per graph, GNU/MSVC compiler and Clippy. All 26 KoD
+cases execute, including healthy public contention/release/actual queries.
+Rustdoc accepts three compiler-refusal examples and one legal neighbor; raw
+output does not independently expose the diagnostic causes. Old 603-input
+receipts retain their historical scopes. Fresh five-owner 90%/95% qualification,
+protected/NTS and production suppliers, and native evidence remain separate.
+
+The [fresh KoD inventory/line result](../tasks/engine-transport-pilot.md#kod-inventory-and-first-line-result--15-november-2026)
+records 333 passing tooling cases, a fresh 207-case/73-doctest baseline and 627
+reviewed descriptors on registered candidate `b5b086eb…`. Coverage executes all
+207 cases but fails the policy owner at 722/807 lines (89.47%); the other four
+owners exceed 90%. Mutation remains closed. Next is bounded diagnostic/privacy
+test work and fresh measurement, with thresholds and first failures preserved.
+
+That [bounded diagnostic/privacy child now passes](../tasks/engine-transport-pilot.md#diagnosticprivacy-child-and-five-line-gates-pass--15-november-2026)
+on candidate `a14f44bc…`: 208 default and 442 EP1 cases per build mode, 73 doctests
+per graph and all 27 KoD cases. Fresh tooling/baseline/listing also pass; source
+policy reaches 754/807 lines (93.43%), and all five owners exceed 90%. The first
+89.47% failure remains historical. Mutation stays closed pending sensitivity/
+generation review and bounded per-owner cohorts; branch/native/product exits
+remain separate.
+
+The [64-hint and fixed-sensitivity child](../tasks/engine-transport-pilot.md#setup-budget-and-fixed-sensitivity-verified--15-november-2026)
+now passes on `a6a6f992…`: 209 default/443 EP1 cases per build mode, 73 doctests,
+28 KoD cases, 334 tooling cases and all five line gates. Four exact copied-source
+faults reach their intended assertions with healthy neighbors and restoration;
+they earn no generated mutation credit. The [first raw source-policy cohort](../tasks/engine-transport-pilot.md#first-generated-source-policy-cohort--gate-failed-15-november-2026)
+now completes all 133 variants: 61 caught, 41 compiler-unviable, 31 surviving,
+zero timeouts. Its 66.30% viable score fails the unchanged 95% gate. Next repair
+the focused refusal, correlation and lifecycle test gaps; four other owner
+cohorts remain unrun. The 627 union stays above the 512 cap. Main stays closed;
+actual mutex-poison evidence and broader qualification remain open.
+
+**Current ordinary continuation — 14 November 2026:** David subsequently
+requests returning to ordinary work. Resume bounded Core/Engine verification
+through the configured workflow; preserve other holds and stage-only publication.
+The focused result below supersedes the preceding source-only disposition;
+broader historical scores retain their original scope.
+
+The [focused hardening result](../tasks/engine-transport-pilot.md#focused-hardening-verification--14-november-2026)
+now records 197 passing Python cases, twelve pure-role compiler lanes and eight
+selected exact-rational doctests with their actual trait diagnostics. It closes
+AUDIT-BINDING-01 within the reader-fixture scope. The first wrapper's filtered-
+output reader failure remains incomplete; an independently reviewed same-source
+data-only completion passes without workload reruns. The subsequent Engine
+admission and twelve GNU line gates pass below; mutation, native, hosted and
+release scopes stay separate.
+
+**Preceding source-only continuation — 14 November 2026:** the
+[unified handoff](../tasks/engine-transport-pilot.md#unified-handoff-source-only-continuation--14-november-2026)
+holds tests, mutations, compiler-control drivers and native scripted runners.
+Reader-fixture isolation and selected exact-rational/indirect-clock controls
+are source corrections, not executed acceptance. Earlier results below retain
+their original candidates; current source/configuration changes require later
+admission and affected evidence. Keep Engine metrics and other holds explicit.
+
 **Current Core/Engine checkpoint:** the
 [V6 final qualification](../tasks/s1.3-source-selection-readiness.md#v6-final-qualification--seven-selected-owners)
 completes its seven selected GNU fixture owners. Follow
@@ -34,10 +108,53 @@ passes development checks on product `05b1a35c`: 415 ordinary/415 optimized
 cases, 69 doctests, GNU/MSVC Clippy, Windows-target compilation and 43 actual
 compiler controls (8 legal/35 intended refusals). Joined-only typed output
 preserves original facts and explicitly denies eligibility/freshness claims;
-the actual caller still supplies `None`. Fresh Engine source/helper/roster
-admission and per-file 90% coverage/95% mutation qualification are NEXT.
-No native, hosted, Core-positive or release pass follows from this child.
+the actual caller still supplies `None`.
+The [current KE admission](../tasks/engine-transport-pilot.md#current-ke-line-gates-and-reviewed-catalogue--14-november-2026)
+on 603-input product `0b7be101` passes 415 ordinary/415 optimized cases,
+69 doctests, 49 compiler controls and all twelve 90% GNU file-line gates.
+Its 633-descriptor catalogue is reviewed and prospectively bound; at that
+checkpoint no mutation had executed and campaigns remained closed. Assess effective mutation concurrency
+before the existing 95% per-file gates. The
+[current main-Windows child](../tasks/engine-transport-pilot.md#current-scripted-windows-ke-exit--14-november-2026)
+passes 17 build/inspection steps and 14 supervisor observations: exact discovery
+of 393 library names and actual execution of all 236 scripted KE cases, with
+confirmed cleanup. The other 157 library cases are listed, not executed there;
+full native KE and healthy TLS/CNG/UDP remain open.
+The subsequent [GNU KE scheduling correction](../tasks/engine-transport-pilot.md#ke-jobserver-resource-child--14-november-2026)
+passes 309 helper tests and enforces six workers/zero extra shared tokens with
+the reviewed scratch-profile guards. The bounded resource canary stopped during
+preparation on its two-second observer bound, before compiler/mutation execution.
+Its incomplete receipt and monitoring gap remain; no automatic retry follows.
+Campaigns stay closed and these helper changes supply no new native execution or
+mutation score.
+The later [V9 attempt selecting all 35 variants](../tasks/engine-transport-pilot.md#association-resource-cohort-stop--15-november-2026)
+passes all 415 ordinary/69 doctest baseline cases and observes six compilers,
+but reaches the 4.5-GiB memory ceiling without OOM. Its 35 variants reconcile
+as one unviable, six interrupted builds and 28 unstarted: no score or resource
+pass. Stopped build copies are deleted; the next larger-memory profile remains
+a proposal requiring fresh headroom and reviewed admission.
+No hosted, Core-positive or release pass follows from these scoped results.
 V5's incomplete receipt and earlier results retain their original scopes.
+The later [V10 full raw association cohort](../tasks/engine-transport-pilot.md#v10-complete-raw-cohort-and-monitor-stop--15-november-2026)
+finishes 28 caught/seven unviable variants with no misses/timeouts, beside
+415 ordinary/69 doctest baseline passes. It remains incomplete: the strict
+two-second monitor gate trips at 2.177575426 seconds and final tool/vendor
+admission is unestablished. Peak owned memory is 5,029,515,264 bytes with no
+limit events; no qualified score/resource pass follows. Raw evidence remains,
+scratch is retired, and another campaign needs a changed reviewed approach.
+The [V11 attempt and diagnostic](../tasks/engine-transport-pilot.md#v11-early-admission-stop-and-contention-diagnosis--15-november-2026)
+stop before tests or mutants execute: an allocation scan violates the unchanged
+two-second guard during early admission. Four isolated actual-admission probes
+support lowering the inventory hashing pool from twelve threads to two while
+retaining every file check. The [repair](../tasks/engine-transport-pilot.md#inventory-concurrency-repair-and-current-role-readmission--15-november-2026)
+passes 35 focused Python controls and actual stable-core tool admission; two
+current helper/test pins are re-admitted. The subsequent
+[V13 exit](../tasks/engine-transport-pilot.md#v13-association-gate-and-bounded-resource-exit--15-november-2026)
+completes all 35 variants (28 caught/seven unviable) with actual final custody and
+maximum observer freshness age 1.375076063 seconds. Independent review accepts
+the association file's 95% mutation gate and that bounded resource cohort.
+Peak counted memory is 5,724,635,136 bytes with zero limit events. Whole-profile
+qualification remains false; V10/V11 do not become passes.
 
 The owner's [additional H01–H09 handoff](../tasks/engine-transport-pilot.md#additional-contract-and-integration-handoff--14-november-2026)
 continues from that source. H01/H04/H05 are already addressed; H02 semantic

@@ -15,7 +15,7 @@ use super::{
     ControlHandle, ControlSchedule, ExperimentalMeasurement, ExperimentalProfile,
     ExperimentalReferenceNs, MeasurementRefusal, PilotError, PreparedSeries,
     RelativeMeasurementRefusal, SeriesAttempt, SeriesConfig, SeriesEnd, SeriesReport, SlotReport,
-    TransportFacts, execute_series, measurement::series_coherence_residuals, prepare_series,
+    TransportFacts, execute_series, measurement::series_coherence_residuals,
     relative::reference_from_instants,
 };
 
@@ -42,6 +42,8 @@ struct SessionChart {
 /// Fixed session failures, retaining an original driver error as a typed source.
 /// No variant carries a peer, chart, request, raw packet or formatted native text.
 pub enum AcquisitionError {
+    /// The retained managed source or endpoint refused a new preparation.
+    SourcePolicy(super::SourcePolicyError),
     /// A prepared or executing acquisition already owns the session's capacity.
     Busy,
     /// This owner has been terminally retired.
@@ -63,6 +65,7 @@ impl fmt::Display for AcquisitionError {
     /// Render a bounded operation description without repeating its source.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str(match self {
+            Self::SourcePolicy(_) => "acquisition source policy refused",
             Self::Busy => "acquisition session busy",
             Self::Retired => "acquisition session retired",
             Self::Invariant => "acquisition session invariant",
@@ -72,9 +75,10 @@ impl fmt::Display for AcquisitionError {
 }
 
 impl Error for AcquisitionError {
-    /// Borrow only the original bounded driver cause; expose no other payload.
+    /// Borrow the original bounded driver or source-policy cause.
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            Self::SourcePolicy(cause) => Some(cause),
             Self::Driver(cause) => Some(cause),
             Self::Busy | Self::Retired | Self::Invariant => None,
         }
@@ -126,6 +130,8 @@ impl Error for AcquisitionError {
 /// let _ = AcquisitionSession::default();
 /// ```
 pub struct AcquisitionSession {
+    /// Retained explicit ownership; preparing another series cannot erase managed policy.
+    source_policy: super::source_policy::SourceMode,
     /// Immutable admitted configuration; only `SeriesConfig` owns raw validation.
     config: SeriesConfig,
     /// Actual shared chart, created before any plan can be prepared.
@@ -139,7 +145,25 @@ impl AcquisitionSession {
     /// No entropy, socket, runtime, mapping evidence or authority is created here.
     #[must_use]
     pub fn new(config: SeriesConfig) -> Self {
+        Self::with_source_policy(config, super::source_policy::SourceMode::UnmanagedLab)
+    }
+
+    /// Construct only from the actual checked source owner's endpoint binding.
+    /// The public source handle derives this binding from the same configuration.
+    pub(super) fn new_managed(
+        config: SeriesConfig,
+        binding: super::source_policy::SourceBinding,
+    ) -> Self {
+        Self::with_source_policy(config, super::source_policy::SourceMode::Managed(binding))
+    }
+
+    /// Capture the same genuine chart and lifecycle for both explicit ownership modes.
+    fn with_source_policy(
+        config: SeriesConfig,
+        source_policy: super::source_policy::SourceMode,
+    ) -> Self {
         Self {
+            source_policy,
             config,
             chart: Arc::new(SessionChart {
                 origin: Instant::now(),
@@ -163,8 +187,13 @@ impl AcquisitionSession {
             }
             SessionState::Retired => return Err(AcquisitionError::Retired),
         }
+        self.source_policy
+            .admit()
+            .map_err(AcquisitionError::SourcePolicy)?;
         let chart = Arc::clone(&self.chart);
-        let (prepared, control) = prepare_series(&self.config).map_err(AcquisitionError::Driver)?;
+        let (prepared, control) =
+            super::series::prepare_series_for_source(&self.config, self.source_policy.clone())
+                .map_err(AcquisitionError::Driver)?;
         self.state = SessionState::Prepared;
         Ok((
             PreparedAcquisition {

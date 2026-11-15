@@ -1066,6 +1066,33 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
+**Ordinary workflow resumed — 14 November 2026:** David subsequently instructs
+“No need, just carry on work in our ordinary fashion”. Resume ordinary bounded
+Core/Engine implementation and required verification through configured runners;
+the temporary test/mutation hold in the preceding handoff is superseded. Preserve
+all unrelated execution/ownership holds, stage-only publication and historical
+failures. Start with the changed reader/trait/strict-policy controls, then prepare
+the next Engine source/helper/roster/inventory admission. No old ledger resets,
+hash-only admission or historical-score transfer.
+
+The [focused hardening verification](../../tasks/engine-transport-pilot.md#focused-hardening-verification--14-november-2026)
+passes 197 Python cases, all twelve selected pure-role compiler lanes and eight
+rational doctests, closing the reader-fixture P2 within that scope. Its wrapper
+failure remains recorded; same-source data-only completion adds no rerun or
+mutation credit. The subsequent Engine admission and GNU line gates pass below;
+these focused results do not replace the remaining per-file mutation gates.
+
+**Preceding execution hold — 14 November 2026:** David's unified handoff carries
+forward “Do not run tests and mutations checks - they are already green”. No
+tests, mutation checks, compiler-control drivers or native scripted runners run
+while this hold stands. The older execution instructions below describe future
+work, not permission to execute it. Source-only continuation addresses
+[AUDIT-BINDING-01 and the selected H11/H12 controls](../../tasks/engine-transport-pilot.md#unified-handoff-source-only-continuation--14-november-2026).
+The expanded 133-case Python run's one failure and three errors remain
+incomplete; its separate passing 11-case selection does not replace that result.
+Keep the next Engine metric admission and campaigns held. Stage this bounded
+source checkpoint without committing or pushing; retain all other holds.
+
 **Additional owner handoff — 14 November 2026:** the bounded
 [H01–H09 reconciliation](../../tasks/engine-transport-pilot.md#additional-contract-and-integration-handoff--14-november-2026)
 retains the source and hosted dispositions.
@@ -1116,13 +1143,267 @@ the recorded amended aggregate budget. Original history/custody survives output
 failure; all rows retain prototype scope and no eligibility/freshness claim.
 The facade still supplies no numerical declaration (`None`).
 
-**NEXT after staging:** freeze/rebind the current Engine source, helpers,
-actual roster and reviewed inventories for its existing per-file 90% coverage/
-95% mutation gates. Historical policy bindings and earlier receipts do not
-qualify this changed candidate. Keep public campaign flags closed until fresh
-admission, preserve native/provider/hosted and other holds, and add no new
-supplier or production Core edge. Stage the completed source checkpoint;
-do not commit or push.
+**Current Engine admission and line gates:** the
+[current KE checkpoint](../../tasks/engine-transport-pilot.md#current-ke-line-gates-and-reviewed-catalogue--14-november-2026)
+on 603-input product `0b7be101` passes 135 Engine Python cases, 415 ordinary/
+415 optimized cases, 69 doctests, 43 history/projection plus six provider
+compiler controls, both-target checks and all twelve 90% GNU file-line gates.
+All 633 mutation descriptors reconcile with independently reviewed source,
+diffs and canonical inventories. Their prospective policy bindings transfer
+no score; campaigns remain false and equivalences empty. Both first-attempt
+environment failures remain incomplete. The original admission ledger totals
+872.278191260/3,600 seconds, including preparation and terminal cleanup.
+
+The [current scripted Windows exit](../../tasks/engine-transport-pilot.md#current-scripted-windows-ke-exit--14-november-2026)
+also passes: all 17 build/inspection steps, 14 actual supervisor observations,
+393 independently predicted library names and 236 executed KE cases (233 flat
+plus three exact nested). Cleanup is confirmed for every observation; the
+separate ledger totals 254.184109996/1,200 seconds including terminal cleanup.
+Full native provider/transport/product qualification remains separate.
+
+**Current GNU scheduling correction:** the
+[zero-token child](../../tasks/engine-transport-pilot.md#ke-jobserver-resource-child--14-november-2026)
+now enforces six outer workers with zero extra shared tokens; the later reviewed
+scratch-profile/early-disk guards pass all 309 affected helper tests after
+retained RED, with unchanged foreign profiles and closed campaigns. No current
+mutation has executed. Source/scratch inspection rejects
+the proposed six-worker/768 MiB live-output combination: each independent target
+is about 301–363 MB. Owner-requested retirement of obsolete audits and compiled
+outputs recovers 3.59 GiB, leaving about 9.5 GiB available; current V6/KE evidence
+and its actual dependencies remain intact.
+
+The one-use 35-variant association resource canary is now **incomplete**: its
+monitoring cycle exceeded the two-second sample bound during preparation,
+before compiler/mutation execution. Five scans completed without a recorded
+race; the evidence does not isolate which operation consumed the interval.
+The failed unit exited and its cgroup is absent. Child pre-finalization limit
+counters were zero; final external kernel counters were unavailable. No
+resource-fit, concurrency or mutation pass follows. The disposable source copy
+is deleted; raw failure and observer records remain.
+
+The [observer source correction](../../tasks/engine-transport-pilot.md#observer-reporting-preparation--14-november-2026)
+now passes 23 source-local controls after retained RED and independent review.
+It preserves the strict bound and first failure; the corrected recipe remains
+inert. These controls do not execute a live observer, Session or any mutant.
+
+The subsequent [runtime setup preparation](../../tasks/engine-transport-pilot.md#runtime-setup-preparation-closeout--14-november-2026)
+reaches its work cutoff before launch: four selected controls, zero executed.
+The controller preflight refuses, with two source-ownership/finalization issues
+still open. Conservative accounting closes at 1,502.492/1,500 seconds; preserve
+the overrun and incomplete result, rather than resetting the allowance.
+
+At that setup closeout the two source issues and all runtime checks remained
+open; the later four-case result below records the changed disposition.
+Do not automatically retry or expand the mutation cohort.
+The seven-GiB disk/three-GiB output and 4.5-GiB RAM/six-GiB startup profile remain
+source-admitted only. Every quality threshold remains; 633 descriptors exceed
+one 512-variant selection. Further execution needs a concrete changed approach
+and reconciled cumulative budget, not a new name for the expired attempt.
+
+The later [four-case setup result](../../tasks/engine-transport-pilot.md#four-case-runtime-setup-result--14-november-2026)
+supersedes that source-only setup disposition: the two controller defects are
+repaired and all four tiny Linux cases execute with their expected outcomes
+under a separately reviewed, cumulatively accounted 180-second allocation.
+The four cases finish before its work cutoff; first staging records 241/180
+seconds after closeout overhead, so budget qualification remains incomplete.
+Cleanup is confirmed. Hook-time counters do not prove main-workload cgroup
+continuity. The subsequent [persistent-supervisor result](../../tasks/engine-transport-pilot.md#persistent-cgroup-workload-custody--15-november-2026)
+now retains one cgroup instance through three actual child runs/reaping and
+recovers the threaded observer's cumulative PID peak 3. This qualifies only
+those child-workload counter intervals, with later absence observed separately.
+The later [actual admission bookends](../../tasks/engine-transport-pilot.md#actual-admission-bookends--15-november-2026)
+now pass Session construction/check/finish with zero configured commands,
+matching source/tool identities and timely live sampling. The subsequent
+35-descriptor resource cohort uses the counted supervisor with a fresh lease
+and cumulative accounting. The actual
+[V9 cohort](../../tasks/engine-transport-pilot.md#association-resource-cohort-stop--15-november-2026)
+then enumerates all 35 and passes 415 ordinary/69 doctest baseline identities,
+but stops at its 4.5-GiB memory ceiling without OOM. One variant is unviable,
+six builds interrupted and 28 unstarted; no mutation score/resource pass follows.
+Six managed compilers/one per Cargo are actually observed. Stopped scratch is
+deleted, recovering 1,050,390,528 bytes; raw partial evidence remains.
+
+**Next review the proposed 6-GiB/7.5-GiB-startup envelope and corrected reporting
+before any fresh lease.** It keeps all quality thresholds and strict event
+stops. Current recorded RAM is below the proposed floor; the larger envelope
+is unadmitted and has no fit evidence. The original spent canary and public
+campaign closure remain, with no automatic retry.
+The [V10 source preparation](../../tasks/engine-transport-pilot.md#v10-source-preparation-and-resource-hold--15-november-2026)
+now passes nine small reporting/retention controls and independent source review.
+Actual observed RAM is about 4.8 GiB, so heavy work remains held awaiting
+resource availability; no lease or runtime qualification follows.
+Its source-preparation closeout records 470/300 seconds; retain that overrun
+separately from the nine passing light controls.
+David's later [15 November restart](../../tasks/engine-transport-pilot.md#v10-restart-and-execution-admission--15-november-2026)
+now resolves that separate prerequisite. Fresh RAM/disk meet the proposed
+startup floors. Review and admit the byte-identical V10 recipe for one full
+35-descriptor six-worker/six-GiB association cohort before launch; retain the
+closed public policy, prior failures, original thresholds and cumulative costs.
+The 1,800-second whole-phase allowance is conservatively anchored before
+preparation and adds to 5,115.491616520 seconds previously charged. No mutation
+or fit result follows from restart/admission alone.
+The subsequent [V10 result](../../tasks/engine-transport-pilot.md#v10-complete-raw-cohort-and-monitor-stop--15-november-2026)
+finishes all 35 variants (28 caught/seven unviable, no misses/timeouts) and all
+484 baseline cases. Its strict monitor guard trips at 2.177575426 seconds;
+successful final tool/vendor admission is unestablished. The counted child
+peaks at 5,029,515,264 bytes with zero limit events, but no qualified score or
+overall resource pass follows. Raw results remain; disposable copies are
+deleted. Next fix the measured observer-cycle traversal/contention while
+preserving the two-second guard before any freshly admitted further campaign;
+do not automatically repeat or promote the raw ratio. Keep cumulative costs
+and all other owners/holds intact.
+The [V11 scan preparation](../../tasks/engine-transport-pilot.md#v11-descriptor-relative-scan-preparation--15-november-2026)
+changes only allocation traversal, retaining the strict guard and accounting.
+Fourteen controls pass after a retained descriptor-reuse RED; seven paired warm
+fixture observations favor the new scanner (72.201 → 44.566 ms median).
+The inert actual-worker binding is reviewed separately. The subsequent
+[V11 actual attempt](../../tasks/engine-transport-pilot.md#v11-early-admission-stop-and-contention-diagnosis--15-november-2026)
+stops during early admission: a 2.885526858-second scan violates the unchanged
+two-second guard before any tests or mutants execute. Its raw failure remains;
+disposable private copies are retired. A four-case actual tool-admission probe
+(12/2/2/12 threads, identical 3,975-entry checks) supports admission concurrency
+as a contributor to scan delay, not a guaranteed cure. The
+[two-thread inventory repair](../../tasks/engine-transport-pilot.md#inventory-concurrency-repair-and-current-role-readmission--15-november-2026)
+now passes 22 focused admission/custody and 13 KE reader/role controls, plus
+actual 3,975-entry stable-core tool admission. Its two current helper/test pins
+are re-admitted; product bytes, roster, descriptors and thresholds are unchanged.
+Initial V12 preparation finds only 6.73 GiB available RAM against the reviewed
+7.5-GiB startup floor; no execution lease or workload launches. After RAM cleanup
+David separately resumes heavy qualification. The fresh
+[V13 association exit](../../tasks/engine-transport-pilot.md#v13-association-gate-and-bounded-resource-exit--15-november-2026)
+passes its complete 35-descriptor selection: 28 caught/seven unviable, no
+survivors/timeouts/exclusions, beside 415 ordinary/69 doctest baseline passes.
+Final Session/cgroup/source custody and the unchanged two-second observer gate
+pass; independent review accepts this file's 100% viable mutation gate and this
+bounded resource cohort. Whole-profile/host/native qualification stays false.
+Disposable copies are deleted. Next admit bounded remaining GNU selections:
+11 files/598 descriptors remain, beyond one 512-descriptor aggregate selection;
+preserve each invocation's shared 1,200-second deadline and cumulative costs.
+Existing 12-file line evidence retains its exact source scope. Four additional
+critical owners, Windows/provider arms and generation gaps remain open.
+The [V14 ledger preparation](../../tasks/engine-transport-pilot.md#v14-ledger-preparation-and-observer-forwarding-repair--15-november-2026)
+corrects an inherited association-only observer completion label before launch.
+Its 18 targeted controls pass; independent source review accepts the inert
+166-descriptor ledger recipe. V14 runs no campaign and retains its preparation
+charge. Next admit the first actual ledger run with fresh whole-phase resources/
+custody and the unchanged shared deadline; no old execution allowance is reset.
+The [V15 raw completion](../../tasks/engine-transport-pilot.md#v15-ledger-raw-completion-and-open-equivalence-admission--15-november-2026)
+runs all 166: 112 caught/45 unviable/nine missed. Its frozen E[] correctly fails
+the ledger gate. The [V16 current-source admission](../../tasks/engine-transport-pilot.md#v16-current-ledger-equivalence-admission--15-november-2026)
+separately admits nine exact reviewed equivalents and reconciles the original
+outcomes through real readers: adjusted 112/112, 100%, with zero added kills.
+All 134 affected Python controls pass; final independent integrated review is
+recorded with the selected gate. Preserve V15's failed receipts, native exit 2
+and 1810/1800-second allocation overrun. Ten GNU cohorts/432 descriptors remain
+unexecuted at V16. The [V17 process cohort](../../tasks/engine-transport-pilot.md#v17-process-selected-qualification--15-november-2026)
+then completes all three descriptors: one meaningful kill, two compiler-unviable,
+zero exclusions/misses/timeouts, 1/1 viable = 100%. Actual 415 ordinary/69
+doctest baseline, 617-input Session, full custody/resource/cleanup checks and
+independent review pass. The [V18 handoff cohort](../../tasks/engine-transport-pilot.md#v18-handoff-selected-qualification--15-november-2026)
+then completes nine descriptors: seven meaningful kills/two compiler-unviable,
+zero exclusions/misses/timeouts, 7/7 viable = 100%, with actual baseline,
+custody, resource, cleanup and independent review passing. Eight GNU owners/420
+descriptors remain at V18. The [V19 orchestration run](../../tasks/engine-transport-pilot.md#v19-orchestration-raw-completion-and-windows-target-gap--15-november-2026)
+then completes all 99: 40 caught/55 compiler-unviable/four missed, no timeout or
+exclusion. Raw 40/44 = 90.90909% correctly fails the strict gate; the four misses
+are Windows-only wrappers omitted by GNU. Preserve the failed native exit 2 and
+all receipts; no exclusion, score transfer or automatic repeat is justified.
+Prepare admitted Windows-target consumer/fault evidence without lifting provider
+holds. The [V20 baseline source child](../../tasks/engine-transport-pilot.md#v20-production-facade-refusal-source-preparation--15-november-2026)
+implements the fixed normal-production consumer/two refusal modes and passes
+44 Python controls. Actual build/native observations and exact four fault
+overlays remain open; no V19 survivor is closed.
+
+The [V21/V22 actual producer](../../tasks/engine-transport-pilot.md#v21v22-real-facade-build-and-manifest-alias-repair--15-november-2026)
+compiles the normal Windows library, then exposes a legitimate vendor crate-name
+override rejected by the new reader. Manifest-derived attribution repairs it;
+45 controls and all 145 retained actual artifacts pass. The overall build and
+Windows observations remain incomplete; refused late retries and all prior
+preparation charges remain recorded. No V19 survivor or score is changed.
+
+The [V23 facade cross-build](../../tasks/engine-transport-pilot.md#v23-facade-cross-build-accepted-windows-ram-hold--15-november-2026)
+passes 20 real steps and exact artifact/source/tool bookends after a minimal
+consumer borrow repair. Windows preflight then refuses at 991,996 KiB RAM,
+below 2 GiB, before any test process. Heavy work is stopped pending David's
+explicit memory/restart response; retain the 44-MB active export bundle for
+native-only readmission instead of rebuilding. All native/mutation gaps stay open.
+The [V24 source-only preparation](../../tasks/engine-transport-pilot.md#v24-exact-windows-fault-preparation--15-november-2026)
+freezes exact isolated overlays for the four retained Windows descriptors while
+that hold stands. Its 53 Python controls, isolation boundary and actual
+four-overlay preparation CLI pass; source/manifest controls supply no Windows fault
+classification or mutation credit. Changed helper bytes require the preserved
+V23 frozen runner/source for native-only reuse, or a newly admitted build;
+current receipt admission must stay exact.
+The [V25 build-consumer source child](../../tasks/engine-transport-pilot.md#v25-isolated-overlay-build-source-integration--15-november-2026)
+now admits fresh preparation and a matching ordinary healthy build before one
+isolated overlay, records failure-path input custody separately from artifacts
+not reached, and bars fault metadata from ordinary native admission. Its 61
+Python controls, fresh preparation and actual four reader selections pass;
+no compiler/native execution or classification follows. A future actual healthy
+build under the final helper bytes remains required before fault compilation.
+Seven GNU cohorts/321 descriptors remain unexecuted. After explicit restart,
+continue existing complete cohorts without restarting completed owners. Whole-profile
+and native/production gaps remain open.
+Do not automatically repeat the cohort; V10/V11 remain incomplete and no raw
+ratio becomes qualified through diagnosis or a source repair.
+Keep public campaigns closed outside exact private admission, preserve production/
+provider/hosted and unrelated holds, and add no new supplier or production Core
+edge. Stage the completed checkpoint; do not commit or push.
+
+Independent product preparation also records the [current KoD send-owner
+cut](../../tasks/engine-transport-pilot.md#current-kod-send-owner-cut--14-november-2026).
+It locates the real post-readiness send seam and unresolved lifecycle choices;
+it does not reopen the completed upstream survey, choose production polling
+defaults or admit an isolated classifier as integration. The concrete
+[NV-DEC-001 §6.5](../nevrotick-owner-decisions.md#65-kod-source-lifecycle--15-november-2026)
+is now **accepted as amended on 15 November** for bounded same-process
+integration: capped RATE probes; separate logical-source and canonical remote
+IP/UDP-port/IPv6-zone endpoint records; shared exact-endpoint allowance without
+transitive propagation; exactly targeted current-revision re-enable preserving
+other restrictions and admitted floors; all applicable NTS KoD UID checks;
+unhandled codes preserve healthy pending work and spent budgets. Reuse the
+existing Engine receive/send owners and freeze their enforcing representation
+before implementation. The [same-process issuer/final-effect contract](../../tasks/engine-transport-pilot.md#same-process-issuer-and-final-effect-contract--15-november-2026)
+now identifies the private process-retained root, fixed source catalogue,
+mandatory managed bindings, atomic direct A/E transitions, current-revision
+re-enable and correlation epochs, and actual post-readiness sender custody.
+It separates contention notifications from future-floor waits and preserves
+definite/uncertain sender accounting. The following
+[source-only implementation](../../tasks/engine-transport-pilot.md#same-process-kod-laboratory-owner--source-only-implementation-15-november-2026)
+now reaches the existing session/series/slot send and receive consumers. It has
+26 behavioral cases and four compiler examples. David explicitly resumes heavy
+work; [development checks now pass](../../tasks/engine-transport-pilot.md#kod-development-checks-complete--15-november-2026)
+on 605-input candidate `c97bbe55…`: default 207/207 and EP1 441/441 ordinary/
+optimized cases, 73 doctests per graph, GNU/MSVC compiler and Clippy. All 26 KoD
+cases execute, including the actual public contention/release/query path.
+Rustdoc accepts three expected refusals and a legal neighbor, without exposed
+diagnostic-cause text. Old 603-input qualification remains historical.
+The complete five-owner role is now registered/admitted through the existing
+machinery. Its [first inventory/line result](../../tasks/engine-transport-pilot.md#kod-inventory-and-first-line-result--15-november-2026)
+has 333 passing tooling cases, fresh 207/73 baseline and 627 reviewed descriptors;
+the 90% line gate fails source policy at 722/807 (89.47%), while four adapters pass.
+The [diagnostic/privacy child](../../tasks/engine-transport-pilot.md#diagnosticprivacy-child-and-five-line-gates-pass--15-november-2026)
+now passes fresh development on `a14f44bc…` (208 default/442 EP1 per build mode,
+73 doctests per graph, 27 KoD cases), full tooling/baseline/listing and all five
+90% line gates. Source policy measures 754/807 (93.43%); the 89.47% first failure
+remains. The [64-hint/fixed-sensitivity child](../../tasks/engine-transport-pilot.md#setup-budget-and-fixed-sensitivity-verified--15-november-2026)
+then passes current development (209 default/443 EP1 per build mode, 73 doctests,
+28 KoD cases), 334 tooling cases, fresh baseline/listing and all five line gates.
+Four exact copied faults have behavioral failures, healthy neighbors and verified
+restoration; none adds a generated kill or exclusion. The [first generated
+source-policy cohort](../../tasks/engine-transport-pilot.md#first-generated-source-policy-cohort--gate-failed-15-november-2026)
+completes 133 variants: 61 caught, 41 compiler-unviable, 31 surviving, no timeouts;
+61/92 = 66.30% fails the unchanged 95% gate. Next repair the focused receiving,
+selection, final-guard and lifecycle test gaps before fresh changed-candidate
+admission. Four other per-owner cohorts remain unrun. No survivor equivalence is
+accepted. The 627 union exceeds the 512 campaign cap; main stays closed.
+Actual mutex-poison refusal remains an
+explicit full-failure-path gap; retain NTS/protected-path, other critical owners
+and native exits. No old score or branch qualification is transferred.
+No shipped poll intervals, persistence or production/
+native qualification are selected. The KoD decision itself grants no heavy-work
+restart; David's later separate restart is governed by the V10 admission above.
+Cross-restart continuity, production suppliers and other holds remain separate.
 
 The implemented [adaptive correction](../../tasks/s1.3-source-selection-readiness.md#adaptive-phase-correction--implementation-contract-13-november-2026)
 and [matched finite-step mechanism](../../tasks/s1.3-source-selection-readiness.md#matched-step-source-implementation-and-focused-checks--13-november-2026)
@@ -1134,8 +1415,8 @@ Historical source checks and Rust-upgrade results retain their task scopes.
 The [main-host Engine child](../../tasks/engine-transport-pilot.md#nested-worker-native-custody-child--14-november-2026)
 records 17 build/inspection steps, 14 supervisor observations and 235 scripted
 KE cases on historical 603-input product `1cbddfb3`. Engine/native-critical bytes
-are unchanged, but later Core test/helper changes create a different product
-identity. This is no whole-product V5 or V6 native pass. Full native KE, real
+matched Core V6, but the later CLI Engine delta requires its fresh native
+checkpoint. This is no whole-product V5 or V6 native pass. Full native KE, real
 TLS/CNG/UDP, services, H08/H09 hosted acceptance and release remain open.
 
 Production Engine→Core admission still needs actual authorized configuration,

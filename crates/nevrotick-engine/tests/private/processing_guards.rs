@@ -149,6 +149,12 @@ async fn send_query(
     peer: &UdpSocket,
     deadline: Instant,
 ) -> Result<[u8; RECEIVE_BYTES], Box<dyn Error>> {
+    // These existing fixtures are explicitly unmanaged laboratory requests.
+    // Retain a real, quiescent invocation-control owner across the concrete send.
+    let (_control_owner, control) = watch::channel(Control {
+        stop: false,
+        epoch: 0,
+    });
     Ok(tokio::time::timeout(IO_LIMIT, async {
         // An independent finite ceiling also bounds mutations that keep readiness
         // immediately ready forever; an async timeout cannot preempt that loop.
@@ -157,7 +163,7 @@ async fn send_query(
                 break;
             }
             slot.socket.writable().await?;
-            attempt_send(slot, deadline);
+            attempt_send(slot, deadline, &control);
         }
         if slot.can_send() {
             return Err(io::Error::other(
@@ -1946,7 +1952,7 @@ async fn check_commit_processing_boundaries(
     );
     assert!(charge_selected_datagram(&mut slots[0], &selected));
     assert_eq!((slots[0].received, slots[0].rejected), (3, 2));
-    commit_reply(&mut slots[0], &staged, processing);
+    commit_reply(&mut slots[0], &staged, processing, deadline);
     assert_eq!(slots[0].last_rejection, Some(Rejection::Origin));
     if offset_ns >= 0 {
         assert_eq!(
@@ -2016,6 +2022,7 @@ fn check_independent_staged_context_guards(
     candidate: &mut StagedReply,
     neighbor: &LiveSlot,
     processing: Instant,
+    deadline: Instant,
 ) -> Result<(), MeasurementRefusal> {
     let original_identity = Arc::clone(&candidate.identity);
     let original_run = Arc::clone(&candidate.run_context);
@@ -2093,7 +2100,7 @@ fn check_independent_staged_context_guards(
             differences.into_iter().filter(|changed| *changed).count(),
             1
         );
-        commit_reply(slot, candidate, processing);
+        commit_reply(slot, candidate, processing, deadline);
         assert!(
             matches!(&slot.phase, Phase::Pending(_)),
             "an independent {field} mismatch consumed the pending request"
@@ -2158,7 +2165,7 @@ fn staged_reply_cannot_cross_socket_owner_or_commit_twice() -> Result<(), Box<dy
         .map_err(|_| io::Error::other("original socket's real reply did not stage"))?;
         let processing = Instant::now();
 
-        commit_reply(&mut slots[1], &candidate, processing);
+        commit_reply(&mut slots[1], &candidate, processing, deadline);
         assert!(
             matches!(&slots[1].phase, Phase::Pending(_)),
             "a staged reply consumed another pending socket/request"
@@ -2167,9 +2174,15 @@ fn staged_reply_cannot_cross_socket_owner_or_commit_twice() -> Result<(), Box<dy
 
         {
             let [slot, neighbor] = &mut slots;
-            check_independent_staged_context_guards(slot, &mut candidate, neighbor, processing)?;
+            check_independent_staged_context_guards(
+                slot,
+                &mut candidate,
+                neighbor,
+                processing,
+                deadline,
+            )?;
         }
-        commit_reply(&mut slots[0], &candidate, processing);
+        commit_reply(&mut slots[0], &candidate, processing, deadline);
         assert_eq!(
             slots[0].terminal().map(TerminalOutcome::status),
             Some(Status::Header)
@@ -2178,7 +2191,7 @@ fn staged_reply_cannot_cross_socket_owner_or_commit_twice() -> Result<(), Box<dy
         let later = processing
             .checked_add(Duration::from_nanos(1))
             .ok_or(PilotError::DeadlineOverflow)?;
-        commit_reply(&mut slots[0], &candidate, later);
+        commit_reply(&mut slots[0], &candidate, later, deadline);
         check_fact_getters(&snapshot_facts(&slots[0])?, &original);
 
         let neighbor = response(&slots[1], &peers[1], &second_query, 2, false).await?;
@@ -2190,7 +2203,7 @@ fn staged_reply_cannot_cross_socket_owner_or_commit_twice() -> Result<(), Box<dy
             limits,
         )
         .map_err(|_| io::Error::other("preserved neighboring reply did not stage"))?;
-        commit_reply(&mut slots[1], &neighbor_candidate, Instant::now());
+        commit_reply(&mut slots[1], &neighbor_candidate, Instant::now(), deadline);
         assert_eq!(
             slots[1].terminal().and_then(TerminalOutcome::stratum),
             Some(2)
@@ -2901,7 +2914,7 @@ fn complete_header_survives_actual_staging_and_terminal_projection() -> Result<(
             FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?,
         )
         .map_err(|_| io::Error::other("complete literal metadata did not stage"))?;
-        commit_reply(&mut slot, &candidate, Instant::now());
+        commit_reply(&mut slot, &candidate, Instant::now(), deadline);
         let saved = snapshot_facts(&slot)?;
         let report = slot.into_report(0)?;
         let facts = report
@@ -3503,7 +3516,7 @@ fn real_udp_measurement_matches_independent_captured_coordinates() -> Result<(),
             FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?,
         )
         .map_err(|_| io::Error::other("actual measurement reply did not stage"))?;
-        commit_reply(&mut slot, &candidate, Instant::now());
+        commit_reply(&mut slot, &candidate, Instant::now(), deadline);
         let facts = snapshot_facts(&slot)?;
         check_observed_measurement(&facts)?;
         let report = slot.into_report(0)?;
@@ -3555,7 +3568,7 @@ fn measurement_refusal_consumes_the_correlated_request_once() -> Result<(), Box<
             limits,
         )
         .map_err(|_| io::Error::other("transport-only reply did not stage"))?;
-        commit_reply(&mut slot, &candidate, Instant::now());
+        commit_reply(&mut slot, &candidate, Instant::now(), deadline);
         let original = snapshot_facts(&slot)?;
         assert!(matches!(
             original.measurement(),
@@ -3576,7 +3589,7 @@ fn measurement_refusal_consumes_the_correlated_request_once() -> Result<(), Box<
             ),
             Err(Rejection::NoPending)
         ));
-        commit_reply(&mut slot, &candidate, Instant::now());
+        commit_reply(&mut slot, &candidate, Instant::now(), deadline);
         let retained = snapshot_facts(&slot)?;
         assert!(matches!(
             retained.measurement(),

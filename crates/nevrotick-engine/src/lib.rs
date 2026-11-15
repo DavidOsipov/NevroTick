@@ -16,6 +16,7 @@ mod quality;
 mod relative;
 mod series;
 mod session;
+mod source_policy;
 
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 mod nts_ke_experiment;
@@ -75,6 +76,9 @@ pub use session::{
     AcquisitionError, AcquisitionReference, AcquisitionReferenceRefusal, AcquisitionReport,
     AcquisitionSession, CoherenceUnavailable, PreparedAcquisition, SeriesCoherence,
 };
+pub use source_policy::{
+    SourceHandle, SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits, SourcePolicyTarget,
+};
 
 use ntp_wire::{FrameLimits, RawHeader, frame_no_legacy_mac_datagram};
 use std::{
@@ -133,6 +137,12 @@ impl IoCause {
 /// Bounded safe errors for the diagnostic entrypoint.
 #[derive(Clone, Copy, Debug)]
 pub enum PilotError {
+    /// The original request bound expired before managed policy admitted a socket.
+    PolicyAdmissionDeadline,
+    /// A fixed laboratory pre-socket contention-work bound was exhausted.
+    PolicyAdmissionBudget,
+    /// A managed source is unavailable before entropy/socket admission.
+    SourcePolicy(SourcePolicyError),
     /// Endpoint is outside the exact loopback/nonzero-port laboratory contract.
     InvalidPeer,
     /// Two configured peers identify the same endpoint.
@@ -185,6 +195,9 @@ impl PilotError {
     #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
+            Self::PolicyAdmissionDeadline => "source_policy_admission_deadline",
+            Self::PolicyAdmissionBudget => "source_policy_admission_budget",
+            Self::SourcePolicy(_) => "source-policy",
             Self::InvalidPeer => "invalid_peer",
             Self::DuplicatePeer => "duplicate_peer",
             Self::InvalidTimeout => "invalid_timeout",
@@ -332,6 +345,8 @@ impl ControlHandle {
 
 /// One uniquely owned nonblocking socket and its one request.
 struct PreparedSlot {
+    /// Explicit laboratory ownership; managed requests never lose their source binding.
+    source_policy: source_policy::SourceMode,
     /// Actual OS-bound socket; not cloned or shared.
     socket: StdSocket,
     /// The exact checked peer endpoint.
@@ -438,6 +453,7 @@ fn prepare_slot(peer: SocketAddr, packet: [u8; PACKET_BYTES]) -> Result<Prepared
             .map_err(|e| PilotError::LocalAddress(IoCause::capture(&e)))?,
     )?;
     Ok(PreparedSlot {
+        source_policy: source_policy::SourceMode::UnmanagedLab,
         socket,
         peer,
         local,
@@ -464,6 +480,8 @@ fn checked_local_endpoint(local: SocketAddr) -> Result<SocketAddr, PilotError> {
 /// retires only unfinished slots and does not rewrite a completed outcome.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Status {
+    /// A managed laboratory source policy refused or invalidated this request.
+    SourcePolicy,
     /// One raw ordinary header was accepted; this is not a time sample.
     Header,
     /// One correlated stratum-zero message ended the query as opaque control.
@@ -485,6 +503,7 @@ impl Status {
     #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
+            Self::SourcePolicy => "source-policy",
             Self::Header => "header",
             Self::Control => "control",
             Self::Timeout => "timeout",
@@ -667,6 +686,8 @@ enum IoOutcome {
 /// A terminal status and its matching payload form one indivisible owner value.
 /// Independent send/rejection history remains outside this value.
 enum TerminalOutcome {
+    /// Preserve the closed source-policy refusal without exposing its keys.
+    SourcePolicy(SourcePolicyError),
     /// One validated ordinary header with its stratum and native-path observations.
     Header {
         /// The validated ordinary header's nonzero stratum.
@@ -696,6 +717,7 @@ impl TerminalOutcome {
     /// Project the fixed historical status without exposing the private representation.
     fn status(&self) -> Status {
         match self {
+            Self::SourcePolicy(_) => Status::SourcePolicy,
             Self::Header { .. } => Status::Header,
             Self::Control { .. } => Status::Control,
             Self::Timeout => Status::Timeout,
@@ -731,6 +753,13 @@ impl TerminalOutcome {
     fn io_cause(&self) -> Option<IoCause> {
         match self {
             Self::Io(IoOutcome::Native(cause)) => Some(*cause),
+            _ => None,
+        }
+    }
+    /// Preserve the closed managed-policy cause independently of native errors.
+    fn source_policy_refusal(&self) -> Option<SourcePolicyError> {
+        match self {
+            Self::SourcePolicy(cause) => Some(*cause),
             _ => None,
         }
     }
@@ -855,6 +884,11 @@ impl SlotReport {
     pub fn io_cause(&self) -> Option<IoCause> {
         self.outcome.io_cause()
     }
+    /// Return a closed managed laboratory policy refusal; this is no authority to retry.
+    #[must_use]
+    pub fn source_policy_refusal(&self) -> Option<SourcePolicyError> {
+        self.outcome.source_policy_refusal()
+    }
     /// Return the most recent protocol/parser rejection, if that stage was reached.
     ///
     /// Lifecycle guards may reject selected data without replacing this value.
@@ -914,6 +948,8 @@ enum Phase {
 
 /// Exclusive runtime owner; no rearm or socket-cloning API.
 struct LiveSlot {
+    /// Actual managed policy, wait custody and request stamp, or explicit unmanaged lab mode.
+    policy: source_policy::LivePolicy,
     /// Sole registered native socket owner.
     socket: UdpSocket,
     /// Immutable exact response peer.
@@ -953,6 +989,7 @@ impl LiveSlot {
         let socket = UdpSocket::from_std(value.socket)
             .map_err(|e| PilotError::Registration(IoCause::capture(&e)))?;
         Ok(Self {
+            policy: source_policy::LivePolicy::from_mode(value.source_policy),
             socket,
             peer: value.peer,
             local: value.local,
@@ -987,7 +1024,7 @@ impl LiveSlot {
     }
     /// Report whether the sole request still waits for writable readiness.
     fn can_send(&self) -> bool {
-        matches!(&self.phase, Phase::Sending)
+        matches!(&self.phase, Phase::Sending) && self.policy.wants_writable()
     }
     /// Report pending state and remaining declared receive-work budget.
     fn can_receive(&self) -> bool {
@@ -1028,6 +1065,8 @@ impl LiveSlot {
 
 /// One selected await result; no packet bytes escape the owner buffer.
 enum Wake {
+    /// An actual relevant policy change, eligibility floor or contention release became ready.
+    SourcePolicy,
     /// A watch change arrived, or its sender side closed.
     Control(bool),
     /// The declared common active-operation deadline became ready.
@@ -1068,12 +1107,29 @@ fn retire_for_control(slots: &mut [LiveSlot; 2], state: Control) {
 }
 
 /// Attempt one nonblocking native send after current owner guards; never repeat a confirmed/anomalous send.
-fn attempt_send(slot: &mut LiveSlot, deadline: Instant) {
+fn attempt_send(slot: &mut LiveSlot, deadline: Instant, control: &watch::Receiver<Control>) {
+    // Keep the actual invocation's read custody through the concrete synchronous
+    // sender. Stop/invalidation linearizes before this guard or after the effect.
+    let state = control.borrow();
+    if state.stop {
+        slot.finish(TerminalOutcome::Stopped);
+        return;
+    }
+    if state.epoch != 0 {
+        slot.finish(TerminalOutcome::Stale);
+        return;
+    }
     if !slot.can_send() {
         return;
     }
     if slot.send_attempts == SEND_READY_CAP {
         slot.finish(TerminalOutcome::Budget);
+        return;
+    }
+    if matches!(
+        source_policy::attempt_managed_send(slot, deadline),
+        source_policy::ManagedEffect::Handled
+    ) {
         return;
     }
     slot.send_attempts += 1;
@@ -1091,7 +1147,9 @@ fn attempt_send(slot: &mut LiveSlot, deadline: Instant) {
 /// Only a full result arms a pending request; readiness failure can rearm sending.
 /// A prior pending/terminal state can never be replaced by another completion.
 fn complete_send(slot: &mut LiveSlot, result: io::Result<usize>, bracket: SendBracket) {
-    if !slot.can_send() {
+    // Completion belongs to the invocation that already happened. Its debited
+    // policy floor controls only future sending, never acceptance of this result.
+    if !matches!(&slot.phase, Phase::Sending) {
         return;
     }
     match result {
@@ -1190,6 +1248,10 @@ fn charge_selected_datagram(slot: &mut LiveSlot, result: &NativeReadOutcome) -> 
 /// Closed inert rejection reasons, never rejected packet contents.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Rejection {
+    /// A managed reply no longer belongs to an available current source/request epoch.
+    SourcePolicy(SourcePolicyError),
+    /// This managed plain profile implements no disposition for the correlated control code.
+    UnhandledControl,
     /// No sent request remains pending in this slot.
     NoPending,
     /// The complete datagram is outside the exact 48-byte lab profile.
@@ -1213,6 +1275,8 @@ pub enum Rejection {
 /// Fully checked immutable packet facts; current control/deadline remain unproved
 /// until the sole owner commits immediately after its final guards.
 struct StagedReply {
+    /// Sealed actual managed request/source/endpoint epochs, or explicit unmanaged lab mode.
+    policy: source_policy::StagedPolicy,
     /// The precise native socket/request owner that admitted this candidate.
     identity: Arc<()>,
     /// Actual run identity retained across staging and checked again at commit.
@@ -1282,7 +1346,18 @@ fn stage_reply(
             return Err(Rejection::Timestamp);
         }
     }
+    let policy = slot
+        .policy
+        .stage(&slot.identity, &header)
+        .map_err(|error| {
+            if error == SourcePolicyError::UnhandledControl {
+                Rejection::UnhandledControl
+            } else {
+                Rejection::SourcePolicy(error)
+            }
+        })?;
     Ok(StagedReply {
+        policy,
         identity: Arc::clone(&slot.identity),
         run_context: Arc::clone(&slot.run_context),
         peer: source,
@@ -1306,6 +1381,15 @@ fn stage_reply(
     })
 }
 
+/// Retire only genuine policy invalidation; next-send floors do not reject replies.
+fn refresh_source_policy(slot: &mut LiveSlot) {
+    if !slot.done()
+        && let Err(error) = slot.policy.refresh(&slot.identity)
+    {
+        slot.finish(TerminalOutcome::SourcePolicy(error));
+    }
+}
+
 /// Admit current control and exclusive deadline retirement at one owner checkpoint.
 /// Completed slots remain historical; no guard reopens or overwrites them.
 fn refresh_owner(
@@ -1315,9 +1399,12 @@ fn refresh_owner(
 ) {
     retire_for_control(slots, latest(control));
     if Instant::now() >= deadline {
-        for slot in slots {
+        for slot in slots.iter_mut() {
             slot.expire();
         }
+    }
+    for slot in slots {
+        refresh_source_policy(slot);
     }
 }
 
@@ -1325,7 +1412,7 @@ fn refresh_owner(
 /// Both receive futures are pinned and dropped before this helper returns. Control
 /// and deadline stay first; the caller alternates slot priority after every wake.
 async fn next_wake(
-    slots: &[LiveSlot; 2],
+    slots: &mut [LiveSlot; 2],
     buffers: &mut [[u8; RECEIVE_BYTES]; 2],
     control: &mut watch::Receiver<Control>,
     control_open: bool,
@@ -1337,11 +1424,16 @@ async fn next_wake(
     let (ra, rb, wa, wb) = (a.can_receive(), b.can_receive(), a.can_send(), b.can_send());
     let receive_a = a.socket.recv_from(ba);
     let receive_b = b.socket.recv_from(bb);
+    let policy_a = a.policy.wake();
+    let policy_b = b.policy.wake();
     tokio::pin!(receive_a, receive_b);
+    tokio::pin!(policy_a, policy_b);
     if reverse {
         tokio::select! { biased;
             changed = control.changed(), if control_open => Wake::Control(changed.is_ok()),
             () = &mut timer => Wake::Deadline,
+            () = &mut policy_b => Wake::SourcePolicy,
+            () = &mut policy_a => Wake::SourcePolicy,
             result = &mut receive_b, if rb => selected_read(1, result),
             result = &mut receive_a, if ra => selected_read(0, result),
             result = b.socket.writable(), if wb => Wake::Writable { slot: 1, result },
@@ -1351,6 +1443,8 @@ async fn next_wake(
         tokio::select! { biased;
             changed = control.changed(), if control_open => Wake::Control(changed.is_ok()),
             () = &mut timer => Wake::Deadline,
+            () = &mut policy_a => Wake::SourcePolicy,
+            () = &mut policy_b => Wake::SourcePolicy,
             result = &mut receive_a, if ra => selected_read(0, result),
             result = &mut receive_b, if rb => selected_read(1, result),
             result = a.socket.writable(), if wa => Wake::Writable { slot: 0, result },
@@ -1373,7 +1467,12 @@ struct ReadDatagram<'a> {
 /// Commit checked packet facts only after the caller's fresh owner guards.
 /// No await or external effect intervenes; an impossible local read order rejects
 /// the datagram while preserving its pending slot and prior rejection cause.
-fn commit_reply(slot: &mut LiveSlot, candidate: &StagedReply, processing: Instant) {
+fn commit_reply(
+    slot: &mut LiveSlot,
+    candidate: &StagedReply,
+    processing: Instant,
+    deadline: Instant,
+) {
     if !Arc::ptr_eq(&slot.identity, &candidate.identity)
         || !Arc::ptr_eq(&slot.run_context, &candidate.run_context)
         || slot.peer != candidate.peer
@@ -1381,6 +1480,10 @@ fn commit_reply(slot: &mut LiveSlot, candidate: &StagedReply, processing: Instan
         || slot.profile != candidate.profile
         || !matches!(slot.phase, Phase::Pending(_))
     {
+        return;
+    }
+    if processing >= deadline {
+        slot.expire();
         return;
     }
     // Windows can clamp a tiny negative checked duration to zero. Ordering must
@@ -1393,6 +1496,34 @@ fn commit_reply(slot: &mut LiveSlot, candidate: &StagedReply, processing: Instan
         slot.rejected += 1;
         return;
     };
+    if matches!(
+        source_policy::commit_managed_reply(slot, candidate, deadline),
+        source_policy::ManagedEffect::Handled
+    ) {
+        return;
+    }
+    finish_valid_reply_with_age(slot, candidate, processing, age);
+}
+
+/// Commit an already checked ordinary/control result while managed policy custody
+/// remains with the concrete caller. This helper supplies no fresh permission.
+fn finish_valid_reply(slot: &mut LiveSlot, candidate: &StagedReply, processing: Instant) {
+    if processing < candidate.read.mono_after {
+        slot.rejected += 1;
+        return;
+    }
+    if let Some(age) = processing.checked_duration_since(candidate.read.mono_after) {
+        finish_valid_reply_with_age(slot, candidate, processing, age);
+    }
+}
+
+/// Move the accepted historical facts once without reopening policy or control.
+fn finish_valid_reply_with_age(
+    slot: &mut LiveSlot,
+    candidate: &StagedReply,
+    processing: Instant,
+    age: Duration,
+) {
     if candidate.stratum == 0 {
         slot.finish(TerminalOutcome::Control {
             code: candidate.code,
@@ -1460,7 +1591,14 @@ fn process_reply(
         return;
     }
     if let Ok(candidate) = staged {
-        commit_reply(&mut slots[index], &candidate, processing);
+        let state = control.borrow();
+        if state.stop {
+            slots[index].finish(TerminalOutcome::Stopped);
+        } else if state.epoch != 0 {
+            slots[index].finish(TerminalOutcome::Stale);
+        } else {
+            commit_reply(&mut slots[index], &candidate, processing, deadline);
+        }
     }
 }
 
@@ -1477,6 +1615,7 @@ fn handle_wake(
     deadline: Instant,
 ) {
     match wake {
+        Wake::SourcePolicy => {}
         Wake::Control(open) => *control_open = open,
         Wake::Deadline => {
             for slot in slots {
@@ -1496,7 +1635,7 @@ fn handle_wake(
                     &error,
                 ))));
             } else {
-                attempt_send(slot, deadline);
+                attempt_send(slot, deadline, control);
             }
         }
         Wake::Read {
@@ -1573,7 +1712,7 @@ impl PreparedPilot {
                 break;
             }
             let wake = next_wake(
-                &slots,
+                &mut slots,
                 &mut buffers,
                 &mut self.control,
                 control_open,

@@ -686,6 +686,20 @@ V1 implementation, phase acceptance or release.
 work at their qualified seams; fixtures, isolated kernels and host receipts do
 not inherit production admission. **Exit:** [plan §6/P2](../docs/plans/development-plan.md#p2--secure-bounded-ntpnts-communication).
 
+The bounded same-process KoD child is separately accepted by
+[NV-DEC-001 §6.5 — 15 November](../docs/nevrotick-owner-decisions.md#65-kod-source-lifecycle--15-november-2026):
+continue capped RATE probes; retain independent source/exact-endpoint records
+and non-transitive alias sharing; target authorized re-enable precisely;
+preserve pending work, charged budgets and all applicable NTS control UID checks.
+The [existing Engine task](engine-transport-pilot.md#current-kod-send-owner-cut--14-november-2026)
+owns its reviewed issuer/final-effect contract and next implementation. Production,
+restart persistence, native qualification and shipped intervals stay open.
+After RAM cleanup David separately resumes heavy qualification. The task's
+[V13 exit](engine-transport-pilot.md#v13-association-gate-and-bounded-resource-exit--15-november-2026)
+passes the 35-variant association gate and bounded resource cohort; 11 GNU
+mutation owners and native/production gaps remain. The KoD policy decision
+itself grants no execution pass.
+
 Under [OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral),
 P2/P5 retain Direct interface/family policy, upstream-failure recovery and path
 reuse. Proxy support and its specific checks/UI are deferred to SOCKS-0 below;

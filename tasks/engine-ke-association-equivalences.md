@@ -1,9 +1,17 @@
 # Engine KE checked-caller mutation equivalences
 
-**Current reviewed identity:** candidate
+**Current source-domain review — 15 November 2026:** candidate
+`0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d`;
+see the [V15 current-source reconciliation](#v15-current-source-reconciliation--15-november-2026).
+The nine exact current equivalence arguments are source-reviewed; current
+exclusion admission and data-only evaluation remain pending. The raw gate fails
+with E[]. Earlier dated reconciliations, including their uses of "current",
+retain only their stated historical candidates, outcomes and admission scopes.
+
+**Historical protected-history reviewed identity — 13 November 2026:** candidate
 `964a9573143e5668a63d264bb44906fa103d5b4c3ddf1fc82cecea33012c5468`;
 see the [13 November protected-history reconciliation](#protected-history-candidate-reconciliation--13-november-2026)
-for current raw outcomes, enforced domains and exact admission.
+for its historical raw outcomes, enforced domains and exact admission.
 
 **Historical invocation-stop identity, 12 November 2026:** candidate `008583ad2df7cfd7c642250a2c14ede4f4b08407f42c1f6580df6019c353f568`, ledger
 `8c689ee8e42441a7aa64c69098970aa7d32d24db45c02ab732047bd492781c36`.
@@ -518,3 +526,173 @@ changes helper/policy metadata; it cannot label that execution capture unchanged
 Exact-nine role checks and actual-custody/accounting negative controls remain
 mandatory. Windows-only misses, nongenerated alternatives and every native,
 Core/Engine parent, package and release gate retain their existing scope.
+
+## V15 current-source reconciliation — 15 November 2026
+
+**Status: current source-domain arguments reviewed; exclusion admission and
+data-only evaluation pending.** Product candidate is
+`0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d`
+(603 product inputs), with ledger SHA-256
+`e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a`.
+This supersedes the dossier's historical `964a9573`/`8c689ee8` identities only
+for this new reconciliation; no older receipt, outcome or exclusion transfers.
+The existing Engine task owns REQ-8/BND-2, the accepted NV-DEC-001 fresh-cookie/
+pre-send-return decision and CHECK-6/8/9/17/21/27. The separately proposed KoD
+source-policy owner is not implemented and supplies no premise for these arguments.
+
+The actual V15 GNU `ke_ledger` cohort completes all 166 descriptors as **112
+caught, 45 compiler-unviable, nine missed, zero timeouts and E[]**. Raw
+112/121 = **92.56198347107438%**, native mutation exit 2 and the failed 95%
+file gate remain unchanged. The outer V15 verification remains `incomplete`;
+complete raw mutation accounting does not convert that wrapper/resource result
+into a pass. This documentation update executes no workload or accounting gate.
+
+Retained evidence root:
+`/home/david_osipov/.local/share/nevrotick/engine-ke-zero-token-20261114-v1/ledger-resource-v15/`.
+Its `equivalence-candidates.json` SHA-256 is
+`ef721e9acf9162eba2b76f084f7b8edbe3fa6a340c1f990cc8c410a763c059d6`;
+it records all nine complete seven-field descriptors, raw diff/log hashes,
+constructor/caller context, E[] and zero kill credit with status `not-admitted`.
+Actual raw descriptors, outcomes, missed list, logs and diffs remain in
+`ledger-cohort/retained-mutants.out/`; `outcomes.json` SHA-256 is
+`13cf21b4007bd16d92a92af7ee4169d330c897a80ccda131f05f09e7284d30a4`.
+The failed original `verification.json` SHA-256 at this review is
+`8555d9968d2eed4ad77e5a24055abe558feb42f55b9159ebdb689f496b5c65cf`.
+Those original raw records stay immutable through later metadata adoption.
+
+**Actual current reviewers:** coordinator `/root`, source-domain reviewer
+`/root/kod_owner_source_design` and independent reviewer
+`/root/v10_execution_admission_review`. The current review independently traces
+checked constructors, all relevant writers and every production caller; agreement
+adds neither executions nor kill credit. This is ordinary source-domain analysis,
+not formal compiler/solver work, native/provider qualification, product completion
+or a source repair. No invariant-forged owner is used to manufacture a kill.
+
+### Exact current identities
+
+Descriptor hashes use the existing canonical seven-field JSON encoding
+(`sort_keys=True`, compact separators), including current function/span metadata.
+Each row must also match its actual current `MissedMutant` and complete raw diff;
+line numbers, an old ID or a similar expression alone are insufficient.
+All locations are in `association/ledger.rs` under the Engine KE source owner.
+
+| Existing ID | Current location / replacement | Typed descriptor SHA-256 | Raw diff SHA-256 |
+| --- | --- | --- | --- |
+| KE-RETURN-POOL-CAPACITY-OR | `return_unused` 774:17, OR → AND | `16e08842c5f2c0e21fd06ad059e02b8ea027ba552c170e66f480f0931e50f41e` | `0a101a3ffba8e37e508f61aeeab6bced6ad21d98650eaaad63e6c93fe2dc2e74` |
+| KE-RETURN-POOL-BYTES-OR | `return_unused` 773:17, OR → AND | `2d57f03539fd6a87e97d7f281c4352dcbf9739e2d41afb3f77e8b84c29f325c4` | `1107fb53db36313cc4203fcdc1d85c2f67ca19b6267b9e95b1cd214faa1eebd7` |
+| KE-SEND-PREDECESSOR-VALUE-OR | `invoke_sender` 854:17, OR → AND | `8e8117f2590015aeb9c2fec30c04c3fa8438f874a0f777eb9f262be9ae9d1f86` | `6ae85fe27aed7cf03f7a389e064e3a87f5b32b3d416e0be823c554e5bd49e4be` |
+| KE-SEND-ARCHIVE-VALUE-OR | `invoke_sender` 853:17, OR → AND | `5ab07003a4de7d9658122e282085b089e8f7a410d43e8ebe99b29c83be841d61` | `a2dc6240bb124c74e013f05d92d733540683b7ac5fc9933a2c06826a854d24cd` |
+| KE-SEND-ARCHIVE-CAPACITY-OR | `invoke_sender` 852:17, OR → AND | `6b1a0aa91c73726293b63e809df50e3228e1d052a7f2d462e4f1857b1a2d9bce` | `aff775fe7d32c1435102be055756f58aaf65966979ed1e9220d55bc8026a5908` |
+| KE-SEND-ARCHIVE-BYTES-OR | `invoke_sender` 851:17, OR → AND | `31cf93b5a76fce8937a7fe9786cb71ff0f80f27954e5d4ce69b0e712bca20ddc` | `e18867ad53340f33adcc831ab5c5fcccc577647343502041a52db181c6aa979c` |
+| KE-SEND-ARCHIVE-BYTES-EQUALITY | `invoke_sender` 851:26, `>` → `==` | `85d4f5fab43ec0ab64afeb712e17664901a146e9ee28e180d66547ec9348254f` | `33e47c3e9eb4de859419a1936e56c6f02b072ccc47dc6952f1a62ce26949367d` |
+| KE-SEND-ARCHIVE-BYTES-INCLUSIVE | `invoke_sender` 851:26, `>` → `>=` | `3e3469cb3fcd7383a4267b80585556336f278d0f76377801d67b217afa7e53fd` | `e9caaefec1272ed3b0a99616daaddfb263be261374b7b727a6ea3ba63753e336` |
+| KE-RECEIVE-STABLE-SLOT-OR | `receive_reply` 1084:40, OR → AND | `6d45a2494f8b8136f65063652cf2e40a1b8b917c86ad93277e850293b46e2f56` | `bf8491fefad0cf79aeeb83f8f14f15e1033bcf874d4889e01f202799629ae366` |
+
+The current constructor/caller bindings below supplement the exact ledger hash
+above. Paths under `KE/` expand to
+`crates/nevrotick-engine/src/nts_ke_experiment/`; these are source identities,
+not claims that their native or other independent gates passed.
+
+| Source owner | SHA-256 |
+| --- | --- |
+| `KE/association.rs` | `7fc8d5d2a880c811a8250414fd4e31365721757634b3f49364fb4f0eb38a0078` |
+| `KE/association/ledger/retirement.rs` | `a92ad8f0a7c56a27fd8c32694c8ba6f557f8dfc177bb1fd7fc1d381a91ca9ce6` |
+| `KE/request.rs` | `1efaca2025c5dd4ab74f195b63e7ef85fcb7156663c9a282b9700626819e2c5a` |
+| `KE/datagram.rs` | `696d57f89006c0dea1eaa457e57529e90f4526da05510cb58200e35503e3caca` |
+| `KE/response.rs` | `ad3689083f0d3bcb185f4988a959d4247d048b8cc860bf754a90959ef709a6b7` |
+| `KE/mod.rs` | `fda1bb48ac9751bb70a31f9501f7f8cca04de82b4481c1beab9c5e456c173287` |
+| `KE/transport.rs` | `c986d7b3d894f00be7907314e229f56029470d96436bb0b4b0be4576c1cdad0b` |
+| `KE/recovery.rs` | `b32c243c2c2bf8b51dd86d0244c0426defc17222025efa5640bd5a4fb9caac48` |
+| `tools/crypto-aes-siv-witness/sealing.rs` | `e1efd849e0943a59773e14c6cc3ebcb462be37b1113715336b2594a94f864b57` |
+| `crates/ntp-wire/src/nts_request.rs` | `f8e9629e33a92962d1eae712758243ccf2f54f237bc322ffcc1bfb564ea2e97a` |
+
+### Current enforced domains and effects
+
+The named argument sections above remain semantically applicable only after
+this fresh source/caller reconciliation. `AssociationOwner::receive` is still
+the sole production publication constructor: it checks Config/Control/provider
+binding, endpoint, a nonempty pool of at most eight entries, aggregate bytes at
+most 131072 and complete ledger construction before publication. Normal TLS
+production follows `read_response` → `copy_cookies` →
+`InternalCandidate::publish` → `AssociationOwner::receive`. Private fields,
+exclusive mutation and the complete writer trace enforce the checked `Self`
+domain; the argument does not silently narrow a raw helper's accepted inputs.
+
+**Return records.** `reserve` charges an irreversible attempt, filters exact
+used values and removes one cookie into the sole occupied slot. At the changed
+predicate, the unchanged ticket, current Published-control, pre-invocation phase,
+cookie-presence and freshness guards have succeeded. Available length is at most
+seven, reserved-plus-available bytes are at most 131072, and removal preserves
+capacity greater than available length. All three rejection terms are false.
+The domain includes genuine Reserved/Preparing/Prepared tickets, failed entropy/
+encoding and exact byte equality. No eligible writer grows, shrinks or replaces
+the available pool before return: successful response replacement requires
+Pending and clears active custody; predecessor installation requires pristine
+attempt state and only filters entries; retirement consumes the owner.
+Repeated legitimate returns preserve these facts by induction. The sole normal
+return caller is `ledger_preview` → `prepare_preview` → `preview_once` under
+`recovery::step_with`'s Preview branch. Both operator forms restore the same moved
+cookie without allocation, UID/attempt refund, clock effect or expiry renewal.
+
+**Send records.** At the unchanged current-ticket/Prepared/Packet guards, the
+current request has not yet been archived. At most 32 nonrefundable reservations
+exist, local used length is at most 31, and `LedgerState::new` preallocates at
+least 32 archive slots. Its only append archives the exact cookie before sender
+exposure; no writer shrinks or refunds that archive. Every existing/current
+sendable cookie passed the actual 4096-byte algorithm-15 formatter. Its minimum
+non-cookie overhead is 48 header + 36 UID + 4 cookie-field header + 40
+authenticator = 128 bytes. Each cookie is therefore at most 3968 bytes; at most
+32 bodies total at most **126976 < 131072** without overflow. Hence strict
+excess, equality and inclusive excess are all false in this send domain.
+Reservation excludes both local used values and the immutable installed
+predecessor; no late installation or concurrent append is admitted. Exact-copy
+aligned cookie formatting creates no padding alias. All five rejection terms
+are false, so all four connector changes and both comparison changes preserve
+the same archive move, callback arguments and no-reuse outcome. Failed, short,
+unknown, cancelled and panicking sender outcomes never restore pre-send custody.
+The sole production caller is `datagram::operation`'s `invoke_sender` call.
+The strict bound is local to this encoded send archive: **return pools and the
+raw history checker still admit exact 131072-byte totals** and receive no
+exemption for their independent equality/boundary contracts.
+
+**Receive record.** `receive_reply` first requires current Pending, captures
+that actual serial/UID/token/send coordinate and charges original frame/byte
+budgets. Successful `stage_current_reply` → `response::stage_reply` →
+`stage_replacement` only immutably borrows the owner and stages bounded data.
+Exclusive `&mut self`, synchronous staging and closed decoding callbacks admit
+no active writer, await or owner-reentrant callback. Staging errors may retire
+work but return before the changed expression. The fresh final Published guard
+rejects cancellation/expiry before publication. Whenever the predicate executes,
+both serial and Pending phase still match, so both mismatch terms are false.
+The sole production caller is the sequential `datagram::operation` receive loop.
+Both forms retain charged rejection budgets, arrival checks, failure cleanup and
+the same atomic cookie/receipt publication exactly once.
+
+The changed predicates/scans are bounded and pure: no allocation, state mutation,
+collaborator or clock read is skipped. Equivalence compares functional results,
+errors, effects and custody for corresponding external observations; it asserts
+**no identical physical timing, CPU usage or timing independence**. Existing
+native guards retain their actual currentness obligations. No native completion,
+TLS/CNG trust, freshness, Core eligibility or formal result follows.
+
+### Invalidation and pending admission
+
+Reconcile again on changed source/candidate/descriptors/diffs, unchecked or new
+constructors, state writers, multiple occupied slots, refunds/resets/shrink,
+mutable or late predecessor installation, packet/shape/attempt bounds, cookie
+normalization, raw/helper contracts, owner-reentrant or asynchronous staging,
+changed caller ordering, Control/deadline/charging semantics or effect publication.
+Foreign tickets, invalid phases, arbitrary packet bytes, cancellation and expiry
+remain real admitted rejection inputs; forging invariant-bearing private state
+is not an authorized substitute for a missing legitimate-state witness.
+
+**No current E admission or adjusted pass is recorded here.** The coordinator
+must bind this current dossier hash, exact nine actual missed descriptors/diffs,
+source identities and reviewers through the existing policy/registry, then run
+the existing actual-custody/accounting controls and data-only evaluation. Until
+that succeeds, current E[] and the failed raw 92.561983% gate remain. Any later
+accepted adjustment adds **zero kills**: 112 caught stays 112, 45 unviable stay
+unviable, and all nine raw missed logs/outcomes stay missed. It may adjust only
+the exact justified denominator; it cannot rewrite the original failed receipts,
+declare their original input capture unchanged, transfer historical admission,
+or discharge native, nongenerated, other-file or parent-product gates.

@@ -94,20 +94,22 @@ class PolicyAdmissionTests(unittest.TestCase):
         for name in PURE_CLIPPY_FILES:
             path = self.root / name
             original = path.read_bytes()
-            configuration = tomllib.loads(original.decode("utf-8"))
-            methods = configuration["disallowed-methods"]
-            selected = [entry for entry in methods
-                        if (entry if isinstance(entry, str) else entry.get("path"))
-                        == "std::time::Instant::now"]
-            self.assertEqual(len(selected), 1)
-            configuration["disallowed-methods"] = [entry for entry in methods
-                                                   if entry not in selected]
-            with self.subTest(configuration=name):
-                self.write_clippy_configuration(name, configuration)
-                with self.assertRaises(STRICT.ENV.Incomplete):
-                    STRICT.read_configuration(self.root)
-            path.write_bytes(original)
-            STRICT.read_configuration(self.root)
+            healthy = tomllib.loads(original.decode("utf-8"))
+            methods = healthy["disallowed-methods"]
+            for method in ("std::time::Instant::now", "std::time::SystemTime::now",
+                           "std::time::Instant::elapsed", "std::time::SystemTime::elapsed"):
+                selected = [entry for entry in methods
+                            if (entry if isinstance(entry, str) else entry.get("path")) == method]
+                self.assertEqual(len(selected), 1)
+                configuration = dict(healthy)
+                configuration["disallowed-methods"] = [entry for entry in methods
+                                                       if entry not in selected]
+                with self.subTest(configuration=name, method=method):
+                    self.write_clippy_configuration(name, configuration)
+                    with self.assertRaises(STRICT.ENV.Incomplete):
+                        STRICT.read_configuration(self.root)
+                path.write_bytes(original)
+                STRICT.read_configuration(self.root)
 
     def test_pure_role_common_settings_cannot_be_changed_or_omitted(self):
         for name in PURE_CLIPPY_FILES:

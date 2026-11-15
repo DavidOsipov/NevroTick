@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 import re
 import shutil
+import stat
 import sys
 import time
 import tomllib
@@ -22,9 +23,38 @@ ROOT = Path(__file__).resolve().parents[1]
 SELF = "scripts/verify-engine-native.py"
 LAUNCHER = "tools/windows-sandbox/gated-console-launcher.rs"
 CPU = "tools/windows-sandbox/cpu-os-v3-admission.rs"
+FACADE_CONSUMER = "tools/windows-sandbox/engine-facade-consumer.rs"
+FACADE_CASES = {
+    "facade-arguments": (2, "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=admission cause=arguments "
+                         "cleanup_stage=none cleanup_cause=none admission_stage=none admission_cause=none\n"),
+    "facade-entered-runtime": (1, "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=caller-context "
+                               "cause=entered-runtime retirement_confirmed=0\n"),
+}
 TARGET = "x86_64-pc-windows-msvc"
 TEST_ROSTER_NAME = "windows-test-roster.json"
 MAX_TEST_ROSTER_BYTES = 1024 * 1024
+FACADE_FAULT_SOURCE = "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs"
+FACADE_FAULT_SOURCE_SHA256 = "fda1bb48ac9751bb70a31f9501f7f8cca04de82b4481c1beab9c5e456c173287"
+FACADE_FAULT_OUTCOMES_SHA256 = "cee574bd36df9cbf1b7f2042ea2cf4aafb7f194366a19fe686e5fe94e70d3ca0"
+FACADE_HEALTHY_FIELDS = ("product_source_sha256", "extra_inputs_sha256", "candidate_sha256", "tools_sha256",
+                         "stable_payload", "toolchain", "vendor", "xwin_config", "xwin_inventory", "windows_inputs",
+                         "profile", "diagnostic_profile", "product_target_flags", "facade_target_flags",
+                         "diagnostic_target_flags")
+# Fixed V19 descriptors, not caller-selected Rust spans or replacement programs.
+FACADE_FAULTS = (
+    ("run-default", "run", "-> Result<datagram::ReceivedCompletion, RunFailed>",
+     (889, 1, 897, 2), (894, 5, 896, 7), "Ok(Default::default())",
+     "286aa05c9850dc196b7802b37c71ce420ba93bb9b5666b92fd784dee21593f92"),
+    ("report-run-failure-default", "report_run_failure", "-> std::process::ExitCode",
+     (947, 1, 952, 2), (950, 5, 951, 36), "Default::default()",
+     "70f2389f06be3dd4072feafcd04aec04cb90913f02824c063a445954a80d83a6"),
+    ("report-failure-default", "report_failure", "-> std::process::ExitCode",
+     (1063, 1, 1068, 2), (1066, 5, 1067, 9), "Default::default()",
+     "3e05f53f0fd4cc424b1ae2dfa7482a30bddb075e3a3e5a192f47bedee6c4b5b7"),
+    ("entry-default", "entry", "-> std::process::ExitCode",
+     (1251, 1, 1274, 2), (1258, 5, 1273, 6), "Default::default()",
+     "aba04af7225bf2d9850e76db7aea2c5606175442f4790acfd501d4308f89bdd5"),
+)
 HELD_KE_TESTS = (
     "nts_ke_experiment::job::tests::job_native_foreign_origin_records_control_before_actual_retirement",
     "nts_ke_experiment::job::tests::provider_native_authoritative_once_preserves_permanent_admission",
@@ -41,6 +71,8 @@ def mode_profile(mode):
         return 6, 3, "engine-tests.exe"
     if type(mode) is str and mode in NESTED_CONTROL_MODES:
         return 6, 3, "gate-control.exe"
+    if type(mode) is str and mode in FACADE_CASES:
+        return 4, 2, "engine-facade-consumer.exe"
     if type(mode) is str and mode in ("cpu", "list", "ke", "control-healthy", "control-fail", "control-wait"):
         return 4, 2, ("cpu-v3-probe.exe" if mode == "cpu" else
                       "engine-tests.exe" if mode in ("list", "ke") else "gate-control.exe")
@@ -59,7 +91,7 @@ ALLOCATION = load("engine_native_allocation", "scripts/verify-time-domain-window
 PRODUCT, ANALYSIS, ENV = ALLOCATION.PRODUCT, ALLOCATION.ANALYSIS, ALLOCATION.ENV
 PE = load("engine_native_pe", "scripts/cross-link-service-fixture.py")
 Incomplete = ENV.Incomplete
-EXTRAS = (SELF, LAUNCHER, CPU, "scripts/verify-time-domain-windows-allocation.py",
+EXTRAS = (SELF, LAUNCHER, CPU, FACADE_CONSUMER, "scripts/verify-time-domain-windows-allocation.py",
           "scripts/cross-link-service-fixture.py", "tools/windows-service-fixture/qualification.py",
           "scripts/portable-analysis.py", "scripts/prepare-product.py", "scripts/check-analysis.py", "scripts/analysis-runtime.py",
           "scripts/analysis-controls.py", "policy/analysis-tools.json", "scripts/tests/test_engine_native.py")
@@ -155,6 +187,304 @@ def require(condition, message):
 def read_record(path):
     """Reuse bounded descriptor/ancestor custody and strict analyzer JSON admission."""
     return PE.Q.C.read_analysis_json(path, maximum=ALLOCATION.MAX_JSON)
+
+
+def facade_fault_sources(source: bytes, outcomes_record: dict) -> list[dict]:
+    """Prepare only four exact V19 overlays; grant no build or execution result."""
+    require(type(source) is bytes and len(source) <= 256 * 1024
+            and hashlib.sha256(source).hexdigest() == FACADE_FAULT_SOURCE_SHA256,
+            "Facade fault preparation requires the exact unchanged Engine module.")
+    require(type(outcomes_record) is dict and type(outcomes_record.get("outcomes")) is list
+            and len(outcomes_record["outcomes"]) <= 513,
+            "Facade fault outcomes must be a bounded record list.")
+    missed = []
+    for row in outcomes_record["outcomes"]:
+        require(type(row) is dict, "Facade outcome row must be an object.")
+        if row.get("summary") == "MissedMutant":
+            scenario = row.get("scenario")
+            require(type(scenario) is dict and set(scenario) == {"Mutant"}
+                    and type(scenario["Mutant"]) is dict,
+                    "Facade missed outcome lacks one complete descriptor.")
+            missed.append(scenario["Mutant"])
+    require(len(missed) == 4, "Facade preparation requires exactly four actual missed descriptors.")
+    try:
+        identities = [json.dumps(item, sort_keys=True, separators=(",", ":"), allow_nan=False)
+                      for item in missed]
+    except (TypeError, ValueError, RecursionError) as error:
+        raise Incomplete("Facade descriptor is not a bounded JSON identity.") from error
+    require(len(set(identities)) == 4, "Duplicate facade missed descriptor.")
+    lines = source.splitlines(keepends=True)
+    prepared = []
+    for identifier, function, returns, function_span, span, replacement, diff_sha in FACADE_FAULTS:
+        def coordinates(value):
+            return {"start": {"line": value[0], "column": value[1]},
+                    "end": {"line": value[2], "column": value[3]}}
+        name = f"{FACADE_FAULT_SOURCE}:{span[0]}:{span[1]}: replace {function} {returns} with {replacement}"
+        mutant = {"name": name, "package": "nevrotick-engine", "file": FACADE_FAULT_SOURCE,
+                  "function": {"function_name": function, "return_type": returns,
+                               "span": coordinates(function_span)},
+                  "span": coordinates(span), "replacement": replacement, "genre": "FnValue"}
+        identity = json.dumps(mutant, sort_keys=True, separators=(",", ":"))
+        require(identity in identities, "Missing, extra or altered facade descriptor.")
+        start = sum(map(len, lines[:span[0] - 1])) + span[1] - 1
+        end = sum(map(len, lines[:span[2] - 1])) + span[3] - 1
+        changed = source[:start] + (replacement + " /* ~ changed by cargo-mutants ~ */").encode() + source[end:]
+        # Serialize the single code-owned span directly. Sequence matching can
+        # misalign entry's identical inner/outer braces despite identical bytes.
+        first, last = span[0] - 1, span[2]
+        context_start, context_end = max(0, first - 8), min(len(lines), last + 8)
+        old_count = context_end - context_start
+        new_count = old_count - (last - first) + 1
+        header = (f"--- {FACADE_FAULT_SOURCE}\n"
+                  f"+++ replace {function} {returns} with {replacement}\n"
+                  f"@@ -{context_start + 1},{old_count} +{context_start + 1},{new_count} @@\n").encode()
+        diff = (header + b"".join(b" " + line for line in lines[context_start:first])
+                + b"".join(b"-" + line for line in lines[first:last])
+                + b"+" + changed.splitlines(keepends=True)[first]
+                + b"".join(b" " + line for line in lines[last:context_end]))
+        require(hashlib.sha256(diff).hexdigest() == diff_sha,
+                "Generated facade overlay differs from the exact retained raw diff.")
+        raw_diff = "diff/crates__nevrotick-engine__src__nts_ke_experiment__mod.rs_line_" + str(span[0]) + "_col_" + str(span[1]) + ".diff"
+        prepared.append({"id": identifier, "mutant": mutant, "source": changed, "diff": diff,
+                         "raw_diff_path": raw_diff, "source_sha256": hashlib.sha256(changed).hexdigest(),
+                         "diff_sha256": diff_sha})
+    return prepared
+
+
+def prepare_facade_faults(args, report):
+    """Seal exact future overlay inputs without invoking tools, builds or native work."""
+    read = PE.Q.C.read_analysis_bytes
+    source_path = ROOT / FACADE_FAULT_SOURCE
+    raw_path = None
+    output_binding = None
+    before = None
+    source = None
+    helpers = None
+    raw_inputs = {}
+    written = {}
+    original_error = None
+    report.update(scope="Four exact Windows facade source overlays; preparation only, no execution or qualification.",
+                  source_custody_unchanged=False, helper_custody_unchanged=False,
+                  raw_custody_unchanged=False, output_custody_unchanged=False)
+    try:
+        require(isinstance(getattr(args, "raw_outcomes", None), Path),
+                "Facade preparation requires the retained raw outcomes path.")
+        raw_path = args.raw_outcomes.absolute()
+        output_info = args.output_dir.lstat()
+        require(stat.S_ISDIR(output_info.st_mode) and not stat.S_ISLNK(output_info.st_mode)
+                and args.output_dir == args.output_dir.resolve(strict=True),
+                "Facade preparation output must be its fresh physical directory.")
+        output_binding = (output_info.st_dev, output_info.st_ino, output_info.st_mode)
+        source = read(source_path, maximum=256 * 1024)
+        helpers = {name: hashlib.sha256(read(ROOT / name, maximum=4 * 1024 * 1024)).hexdigest()
+                   for name in EXTRAS}
+        before = PRODUCT.admit_product(ROOT)[1]
+        raw = read(raw_path, maximum=ALLOCATION.MAX_JSON)
+        raw_inputs[raw_path] = hashlib.sha256(raw).hexdigest()
+        require(raw_inputs[raw_path] == FACADE_FAULT_OUTCOMES_SHA256,
+                "Facade outcomes differ from the exact retained V19 bytes.")
+        faults = facade_fault_sources(source, ALLOCATION.decode(raw))
+        for fault in faults:
+            path = raw_path.parent / fault["raw_diff_path"]
+            data = read(path, maximum=64 * 1024)
+            raw_inputs[path] = hashlib.sha256(data).hexdigest()
+            require(data == fault["diff"] and raw_inputs[path] == fault["diff_sha256"],
+                    "Retained facade diff differs from the code-owned overlay.")
+        records = []
+        for fault in faults:
+            directory = args.output_dir / fault["id"]
+            directory.mkdir(mode=0o700)
+            record = {key: fault[key] for key in ("id", "mutant", "raw_diff_path", "source_sha256", "diff_sha256")}
+            for field, name in (("source", "mod.rs"), ("diff", "mutation.diff")):
+                relative = fault["id"] + "/" + name
+                destination = args.output_dir / relative
+                with destination.open("xb") as stream:
+                    written[relative] = fault[field]
+                    stream.write(fault[field])
+                record[field + "_path"] = relative
+            records.append(record)
+        manifest = {"schema_version": 1, "status": "prepared-not-executed",
+                    "source_path": FACADE_FAULT_SOURCE, "source_sha256": FACADE_FAULT_SOURCE_SHA256,
+                    "candidate_sha256": ALLOCATION.canonical_digest(before), "source_file_count": len(before),
+                    "extra_inputs_sha256": helpers, "raw_outcomes_sha256": FACADE_FAULT_OUTCOMES_SHA256,
+                    "faults": records,
+                    "scope": "Future isolated build overlay supply only; compiler classification and native sensitivity remain open."}
+        data = (json.dumps(manifest, indent=2) + "\n").encode()
+        with (args.output_dir / "facade-faults.json").open("xb") as stream:
+            written["facade-faults.json"] = data
+            stream.write(data)
+        report.update(status="prepared-not-executed", manifest_path=str(args.output_dir / "facade-faults.json"),
+                      manifest_sha256=hashlib.sha256(data).hexdigest(), prepared_fault_count=len(records))
+    except BaseException as error:
+        original_error = error
+        report["status"] = "incomplete"
+        raise
+    finally:
+        errors = []
+        checks = (
+            ("source_custody_unchanged", lambda: source is not None and before is not None
+             and read(source_path, maximum=256 * 1024) == source and PRODUCT.admit_product(ROOT)[1] == before),
+            ("helper_custody_unchanged", lambda: helpers is not None and helpers == {
+                name: hashlib.sha256(read(ROOT / name, maximum=4 * 1024 * 1024)).hexdigest() for name in EXTRAS}),
+            ("raw_custody_unchanged", lambda: bool(raw_inputs) and all(
+                hashlib.sha256(read(path, maximum=ALLOCATION.MAX_JSON)).hexdigest() == digest
+                for path, digest in raw_inputs.items())),
+        )
+        for key, check in checks:
+            try:
+                report[key] = check()
+                if not report[key]:
+                    errors.append(key)
+            except Exception:
+                errors.append(key)
+        try:
+            info = args.output_dir.lstat()
+            require(output_binding == (info.st_dev, info.st_ino, info.st_mode)
+                    and not stat.S_ISLNK(info.st_mode)
+                    and args.output_dir == args.output_dir.resolve(strict=True),
+                    "Facade preparation output directory changed.")
+            files, directories = set(), {"."}
+            for index, path in enumerate(args.output_dir.rglob("*"), 1):
+                require(index <= 32, "Facade preparation output exceeds its fixed entry bound.")
+                info = path.lstat()
+                relative = str(path.relative_to(args.output_dir))
+                require(not stat.S_ISLNK(info.st_mode), "Redirected facade preparation output.")
+                if stat.S_ISDIR(info.st_mode):
+                    directories.add(relative)
+                else:
+                    require(stat.S_ISREG(info.st_mode), "Nonregular facade preparation output.")
+                    files.add(relative)
+                    require(relative in written and read(path, maximum=256 * 1024) == written[relative],
+                            "Facade preparation output bytes changed.")
+            expected_dirs = {".", *(str(Path(name).parent) for name in written)}
+            require(files == set(written) and directories == expected_dirs,
+                    "Facade preparation output paths changed.")
+            report["output_custody_unchanged"] = True
+        except Exception:
+            errors.append("output_custody_unchanged")
+        report["custody_errors"] = errors
+        if errors:
+            report["status"] = "incomplete"
+            if original_error is None:
+                raise Incomplete("Facade preparation custody changed: " + ", ".join(errors))
+
+
+def read_prepared_facade_fault(receipt_path: Path, fault_id: str, inputs: dict, extras: dict) -> dict:
+    """Admit all four current physical overlays before returning one fixed selection."""
+    require(type(fault_id) is str and fault_id in {row[0] for row in FACADE_FAULTS},
+            "Unadmitted facade fault ID.")
+    read = PE.Q.C.read_analysis_bytes
+    path = receipt_path.absolute()
+    raw = read(path, maximum=ALLOCATION.MAX_JSON)
+    receipt = ALLOCATION.decode(raw)
+    require(type(receipt) is dict and type(receipt.get("schema_version")) is int and receipt["schema_version"] == 1
+            and receipt.get("lane") == "prepare-facade-faults"
+            and receipt.get("status") == "prepared-not-executed" and "error" not in receipt
+            and type(receipt.get("prepared_fault_count")) is int and receipt["prepared_fault_count"] == 4
+            and receipt.get("custody_errors") == []
+            and all(receipt.get(key) is True for key in ("source_custody_unchanged", "helper_custody_unchanged",
+                                                        "raw_custody_unchanged", "output_custody_unchanged")),
+            "Facade preparation receipt is incomplete or lacks successful custody.")
+    manifest_path = path.parent / "facade-faults.json"
+    manifest_raw = read(manifest_path, maximum=ALLOCATION.MAX_JSON)
+    digest = hashlib.sha256(manifest_raw).hexdigest()
+    require(receipt.get("manifest_path") == str(manifest_path) and receipt.get("manifest_sha256") == digest,
+            "Facade manifest differs from its preparation receipt.")
+    manifest = ALLOCATION.decode(manifest_raw)
+    require(type(manifest) is dict and set(manifest) == {
+                "schema_version", "status", "source_path", "source_sha256", "candidate_sha256",
+                "source_file_count", "extra_inputs_sha256", "raw_outcomes_sha256", "faults", "scope"}
+            and type(manifest.get("schema_version")) is int and manifest["schema_version"] == 1
+            and manifest.get("status") == "prepared-not-executed"
+            and manifest.get("source_path") == FACADE_FAULT_SOURCE
+            and manifest.get("source_sha256") == FACADE_FAULT_SOURCE_SHA256
+            and manifest.get("candidate_sha256") == ALLOCATION.canonical_digest(inputs)
+            and type(manifest.get("source_file_count")) is int and manifest["source_file_count"] == len(inputs)
+            and manifest.get("extra_inputs_sha256") == extras
+            and manifest.get("raw_outcomes_sha256") == FACADE_FAULT_OUTCOMES_SHA256
+            and type(manifest.get("faults")) is list and len(manifest["faults"]) == 4,
+            "Facade preparation does not bind the current product and helpers.")
+    records = manifest["faults"]
+    require(all(type(row) is dict and set(row) == {"id", "mutant", "raw_diff_path", "source_sha256",
+                                                  "diff_sha256", "source_path", "diff_path"} for row in records),
+            "Facade manifest has altered overlay fields.")
+    original = read(ROOT / FACADE_FAULT_SOURCE, maximum=256 * 1024)
+    regenerated = facade_fault_sources(original, {"outcomes": [
+        {"summary": "MissedMutant", "scenario": {"Mutant": row["mutant"]}} for row in records]})
+    custody = {path: hashlib.sha256(raw).hexdigest(), manifest_path: digest}
+    selected = None
+    for fault, row in zip(regenerated, records, strict=True):
+        expected = {key: fault[key] for key in ("id", "mutant", "raw_diff_path", "source_sha256", "diff_sha256")}
+        expected.update(source_path=fault["id"] + "/mod.rs", diff_path=fault["id"] + "/mutation.diff")
+        require(ALLOCATION.canonical_digest(row) == ALLOCATION.canonical_digest(expected),
+                "Prepared facade descriptor, paths or hashes changed.")
+        for field in ("source", "diff"):
+            member = path.parent / expected[field + "_path"]
+            data = read(member, maximum=256 * 1024)
+            require(data == fault[field], "Prepared facade overlay bytes changed.")
+            custody[member] = hashlib.sha256(data).hexdigest()
+        if fault["id"] == fault_id:
+            selected = fault
+    require(selected is not None, "Selected facade fault is absent.")
+    return {key: selected[key] for key in ("id", "mutant", "source", "source_sha256", "diff_sha256")} | {
+        "receipt_sha256": hashlib.sha256(raw).hexdigest(), "manifest_sha256": digest, "custody_inputs": custody}
+
+
+def validate_healthy_facade_build(record: dict, expected: dict) -> None:
+    """Require an ordinary successful current facade build in the same tool environment."""
+    require(type(record) is dict and type(record.get("schema_version")) is int and record["schema_version"] == 1
+            and all(type(key) is str for key in record)
+            and record.get("lane") == "build" and record.get("status") == "passed"
+            and record.get("facade_consumer") is True and record.get("bookends_passed") is True
+            and record.get("native_windows_execution") is False
+            and not any(key.startswith(("fault", "facade_fault", "variant_", "prepared_faults", "healthy_build"))
+                        for key in record),
+            "Healthy parent must be an ordinary successful facade build, without fault metadata.")
+    input_labels = {"product", "helpers", "copied_source", "control", "vendor", "tools", "stable_payload",
+                    "windows_libraries", "sdk_records"}
+    require(all(record.get(key) is True for key in ("input_bookends_passed", "normal_library_bookends",
+                                                    "exported_artifact_bookends"))
+            and record.get("custody_errors") == []
+            and type(record.get("input_bookends")) is dict and set(record["input_bookends"]) == input_labels
+            and all(value is True for value in record["input_bookends"].values()),
+            "Healthy facade parent has incomplete or contradictory detailed custody.")
+    require(type(expected) is dict and set(expected) == set(FACADE_HEALTHY_FIELDS),
+            "Healthy facade comparison requires the complete current environment.")
+    def path_value(value):
+        if isinstance(value, Path):
+            return str(value)
+        raise TypeError("Unsupported healthy environment value.")
+    try:
+        same = all(key in record and json.dumps(record[key], sort_keys=True, separators=(",", ":"), allow_nan=False)
+                   == json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False, default=path_value)
+                   for key, value in expected.items())
+    except (TypeError, ValueError, RecursionError) as error:
+        raise Incomplete("Healthy facade environment is not an exact JSON/Path identity.") from error
+    require(same,
+            "Healthy facade build differs from current product, helpers or tool environment.")
+
+
+def read_healthy_facade_build(receipt_path: Path, expected: dict) -> dict:
+    """Bind the healthy receipt and all four exported PE/PDB pairs physically."""
+    read = PE.Q.C.read_analysis_bytes
+    path = receipt_path.absolute()
+    raw = read(path, maximum=ALLOCATION.MAX_JSON)
+    record = ALLOCATION.decode(raw)
+    validate_healthy_facade_build(record, expected)
+    names = {"gated-launcher.exe", "cpu-v3-probe.exe", "gate-control.exe", "engine-facade-consumer.exe"}
+    artifacts = record.get("artifacts")
+    require(type(artifacts) is dict and set(artifacts) == names, "Healthy facade images are incomplete.")
+    custody = {path: hashlib.sha256(raw).hexdigest()}
+    for name in sorted(names):
+        facts = artifacts[name]
+        image = path.parent / name
+        require(type(facts) is dict and facts.get("path") == str(image), "Healthy image path changed.")
+        for member, key in ((image, "sha256"), (image.with_suffix(".pdb"), "pdb_sha256")):
+            data = read(member, maximum=64 * 1024 * 1024)
+            digest = hashlib.sha256(data).hexdigest()
+            require(facts.get(key) == digest, "Healthy exported image or PDB bytes changed.")
+            custody[member] = digest
+    return {"receipt": record, "receipt_sha256": hashlib.sha256(raw).hexdigest(), "custody_inputs": custody}
 
 
 def validate_test_roster(value, candidate, extras):
@@ -287,19 +617,151 @@ def engine_artifact(output, work):
     return found[0]
 
 
+def engine_libraries(output, work, source, *, vendor, evidence=None):
+    """Attribute normal Windows libraries and their bounded Cargo search directories.
+
+    The caller has admitted/frozen the complete graph. This reader additionally
+    binds every selected artifact to that lock and manifest, never a file glob.
+    """
+    require(type(output) is str and len(output) <= 16 * 1024**2,
+            "Normal library output exceeds its finite text bound.")
+    require(vendor.is_dir() and not vendor.is_symlink() and vendor.resolve() == vendor,
+            "Normal library vendor must be the canonical admitted directory.")
+    locked = tomllib.loads((source / "Cargo.lock").read_text())["package"]
+    registry = "registry+https://github.com/rust-lang/crates.io-index"
+    owners = {(p["name"], p["version"], p.get("source")) for p in locked}
+    require(len(owners) == len(locked), "Duplicate locked normal-library owner.")
+    engine_manifest = tomllib.loads((source / "crates/nevrotick-engine/Cargo.toml").read_text())
+    requirement = engine_manifest["dependencies"]["tokio"]["version"]
+    require(type(requirement) is str and re.fullmatch(r"=[0-9]+\.[0-9]+\.[0-9]+", requirement),
+            "Consumer Tokio must retain the Engine's exact admitted version.")
+    libraries, directories, paths, units = {}, set(), set(), set()
+    for line in output.splitlines():
+        if not line.startswith("{"):
+            continue
+        item = ALLOCATION.decode(line.encode())
+        require(type(item) is dict, "Normal Cargo event must be an object.")
+        if item.get("reason") != "compiler-artifact":
+            continue
+        target, profile = item.get("target", {}), item.get("profile", {})
+        require(type(target) is dict and type(profile) is dict, "Malformed normal Cargo target/profile.")
+        kind = target.get("kind")
+        if kind == ["custom-build"]:
+            continue
+        require(kind in (["lib"], ["proc-macro"]) and target.get("crate_types") == kind
+                and profile.get("test") is False and item.get("executable") is None,
+                "Expected normal library/proc-macro artifacts, not libtests or executables.")
+        package, manifest = item.get("package_id"), item.get("manifest_path")
+        require(type(package) is str and type(manifest) is str, "Missing normal-library owner.")
+        match = re.fullmatch(re.escape(registry) + r"#([A-Za-z0-9_-]+)@([^\s/@]+)", package)
+        if match:
+            name, version = match.groups()
+            require((name, version, registry) in owners
+                    and manifest == f"/vendor/{name}-{version}/Cargo.toml",
+                    "Normal registry library differs from the locked manifest.")
+            declared_path = vendor / f"{name}-{version}" / "Cargo.toml"
+            require(declared_path.is_file() and not declared_path.is_symlink()
+                    and declared_path.resolve() == declared_path,
+                    "Normal registry manifest is absent or redirected.")
+            declared = tomllib.loads(declared_path.read_text())
+            require(declared["package"]["name"] == name and declared["package"]["version"] == version,
+                    "Normal registry manifest has a different locked owner.")
+            crate = declared.get("lib", {}).get("name", name.replace("-", "_"))
+        else:
+            require(manifest.startswith("/work/fixture/") and manifest.endswith("/Cargo.toml"),
+                    "Normal local library has a foreign manifest.")
+            relative = manifest.removeprefix("/work/fixture/")
+            require(".." not in Path(relative).parts, "Normal local manifest escapes its source.")
+            local = source / relative
+            require(local.is_file() and not local.is_symlink() and local.resolve() == local,
+                    "Normal local manifest is absent or redirected.")
+            declared = tomllib.loads(local.read_text())
+            name, version = declared["package"]["name"], declared["package"]["version"]
+            fragment = version if Path(manifest).parent.name == name else name + "@" + version
+            require((name, version, None) in owners
+                    and package == "path+file://" + manifest.removesuffix("/Cargo.toml") + "#" + fragment,
+                    "Normal local library differs from the locked source owner.")
+            crate = declared.get("lib", {}).get("name", name.replace("-", "_"))
+        macro = declared.get("lib", {}).get("proc-macro", False)
+        require(type(macro) is bool and macro is (kind == ["proc-macro"]),
+                "Normal library/proc-macro kind differs from its declared manifest.")
+        require(target.get("name") == crate, "Normal library crate name differs from its owner.")
+        files = item.get("filenames")
+        require(type(files) is list and 0 < len(files) <= 2
+                and all(type(p) is str for p in files) and len(set(files)) == len(files),
+                "Normal library filenames are missing, duplicated or unbounded.")
+        host = all(p.startswith("/work/target/debug/") for p in files)
+        prefix = "/work/target/debug/" if host else f"/work/target/{TARGET}/debug/"
+        require(kind != ["proc-macro"] or host, "Proc macro must belong to the admitted host compiler.")
+        unit = (package, crate, host)
+        require(unit not in units, "Duplicate normal library compilation unit.")
+        units.add(unit)
+        extensions = {Path(p).suffix for p in files}
+        require(extensions == {".so"} if kind == ["proc-macro"] else
+                ".rlib" in extensions and extensions <= {".rlib", ".rmeta"},
+                "Normal library filenames have the wrong artifact kinds.")
+        selected = []
+        for emitted in files:
+            top = name == "nevrotick-engine" and emitted == prefix + "libnevrotick_engine.rlib"
+            require(top or re.fullmatch(re.escape(prefix) + r"(?:deps/|build/" + re.escape(name)
+                    + r"/[a-f0-9]{16}/out/)lib" + re.escape(crate)
+                    + r"-[a-f0-9]{16}\.(?:rlib|rmeta|so)", emitted),
+                    "Normal library path differs from its exact host/target owner.")
+            local = work / emitted.removeprefix("/work/")
+            require(emitted not in paths and local.is_file() and not local.is_symlink()
+                    and local.resolve() == local and local.stat().st_size <= 256 * 1024**2,
+                    "Normal library is duplicated, absent, redirected or oversized.")
+            paths.add(emitted); directories.add(local.parent)
+            if evidence is not None:
+                evidence[emitted] = {"sha256": PRODUCT.sha256(local), "package_id": package,
+                                     "manifest_path": manifest, "host": host}
+            if local.suffix == ".rlib":
+                selected.append(local)
+        if name in ("nevrotick-engine", "tokio"):
+            require(type(item.get("features")) is list
+                    and all(type(f) is str for f in item["features"]), "Invalid normal library features.")
+            require(not host and kind == ["lib"] and len(selected) == 1,
+                    "Consumer requires one normal Windows library for each actual owner.")
+            require(profile.get("opt_level") == "0" and profile.get("overflow_checks") is True
+                    and profile.get("debug_assertions") is True,
+                    "Consumer requires the admitted checked debug library profile.")
+            if name == "nevrotick-engine":
+                require(manifest == "/work/fixture/crates/nevrotick-engine/Cargo.toml"
+                        and item.get("features") == ["ke-association-prototype"],
+                        "Consumer Engine lacks the exact production KE feature.")
+            else:
+                require(version == requirement[1:] and "rt" in item["features"],
+                        "Consumer Tokio differs from the Engine version/runtime requirement.")
+            require(crate not in libraries, "Ambiguous selected normal library.")
+            libraries[crate] = selected[0]
+    require(set(libraries) == {"nevrotick_engine", "tokio"}, "Missing normal Engine or Tokio library.")
+    return libraries, sorted(directories)
+
+
 def build(args, report):
     """Freeze exact inputs, build offline, inspect emitted PE declarations, and re-admit."""
+    facade = getattr(args, "facade_consumer", False)
+    require(type(facade) is bool, "Facade profile must be an explicit Boolean.")
+    fault_id = getattr(args, "facade_fault", None)
+    fault_flags = (fault_id, getattr(args, "prepared_faults", None), getattr(args, "healthy_build_receipt", None))
+    require(not any(value is not None for value in fault_flags)
+            or (facade and all(value is not None for value in fault_flags)
+                and type(fault_id) is str and fault_id in {row[0] for row in FACADE_FAULTS}),
+            "Fault builds require one fixed ID, prepared inputs and a healthy facade parent.")
     require(all(getattr(args, name) is not None for name in
-                ("vendor_dir", "toolchain_dir", "xwin_config", "xwin_inventory", "test_roster")),
+                ("vendor_dir", "toolchain_dir", "xwin_config", "xwin_inventory"))
+            and (facade or args.test_roster is not None),
             "Build requires explicit vendor, toolchain, xwin and independent test-roster paths.")
     require(shutil.disk_usage(args.output_dir).free >= 4 * 1024 ** 3,
             "Build requires four GiB of free output space.")
     require(type(args.jobs) is int and 1 <= args.jobs <= 12, "Build jobs must be within 1–12.")
     policy, inputs = PRODUCT.admit_product(ROOT)
     extras = {name: PRODUCT.sha256(ROOT / name) for name in EXTRAS}
-    _, roster_raw = read_test_roster(args.test_roster.absolute(), ALLOCATION.canonical_digest(inputs), extras)
-    roster_path = args.output_dir / TEST_ROSTER_NAME
-    roster_path.write_bytes(roster_raw)
+    roster_raw = None
+    if not facade:
+        _, roster_raw = read_test_roster(args.test_roster.absolute(), ALLOCATION.canonical_digest(inputs), extras)
+        roster_path = args.output_dir / TEST_ROSTER_NAME
+        roster_path.write_bytes(roster_raw)
     vendor, toolchain = args.vendor_dir.resolve(strict=True), args.toolchain_dir.resolve(strict=True)
     vendor_before = PRODUCT.admit_vendor(vendor, policy)
     tools_before = PRODUCT.admit_tools(ROOT, toolchain, None, "windows")
@@ -313,7 +775,9 @@ def build(args, report):
                   xwin_config=str(args.xwin_config.resolve(strict=True)),
                   xwin_inventory=str(args.xwin_inventory.resolve(strict=True)), profile="debug",
                   diagnostic_profile="release", build_jobs=args.jobs, lanes=[],
-                  test_roster={"path": str(roster_path), "sha256": hashlib.sha256(roster_raw).hexdigest()})
+                  facade_consumer=facade)
+    if roster_raw is not None:
+        report["test_roster"] = {"path": str(roster_path), "sha256": hashlib.sha256(roster_raw).hexdigest()}
     source, work = args.output_dir / "source", args.output_dir / "work"
     source.mkdir(mode=0o700); work.mkdir(mode=0o700)
     (work / "fixture").mkdir(mode=0o700)
@@ -326,12 +790,22 @@ def build(args, report):
     control = source / "gate-control.rs"
     control.write_text(CONTROL_SOURCE)
     report["control_source_sha256"] = PRODUCT.sha256(control)
-    libraries, library_inputs = PRODUCT.windows_libraries(
+    libraries, windows_library_inputs = PRODUCT.windows_libraries(
         ROOT, toolchain, args.xwin_config, work, args.xwin_inventory)
-    report["windows_inputs"] = {"records_sha256": sdk_before, "library_files": len(library_inputs),
-                                "library_map_sha256": ALLOCATION.canonical_digest(library_inputs)}
+    report["windows_inputs"] = {"records_sha256": sdk_before, "library_files": len(windows_library_inputs),
+                                "library_map_sha256": ALLOCATION.canonical_digest(windows_library_inputs)}
     (work / "cargo-home/config.toml").write_text(
         '[source.crates-io]\nreplace-with="reviewed"\n[source.reviewed]\ndirectory="/vendor"\n')
+
+    source_expected = {**inputs, **extras}
+    prepared_fault = healthy_build = None
+    fault_inputs = {}
+    normal_library_inputs = {}
+    normal_attributed = False
+    build_completed = False
+    primary_error = None
+    report.update(input_bookends_passed=False, normal_library_bookends="not-reached" if facade else "not-applicable",
+                  bookends_passed=False, native_windows_execution=False)
 
     def run(label, command):
         """Retain the first raw command outcome before classifying failure."""
@@ -346,62 +820,167 @@ def build(args, report):
                                 "raw_path": str(raw_path), "raw_sha256": PRODUCT.sha256(raw_path)})
         return ENV.require_ok(result)
 
-    PRODUCT.boundary_control(run)
-    run("runner-controls", ["python3", "-X", "dev", "-Werror", "-B", "-m", "unittest", "discover",
-                            "-s", "/work/fixture/scripts/tests", "-p", "test_engine_native.py", "-v"])
-    version = run("compiler-version", ["rustc", "-vV"])
-    ENV.require_admitted_compiler(policy=json.loads((ROOT / "policy/tool-manifest.json").read_text()),
-                                  channel=tomllib.loads((source / "rust-toolchain.toml").read_text())["toolchain"]["channel"],
-                                  compiler_info=version)
-    cargo = ["cargo", "--config", f'target.{TARGET}.linker="/work/linker"', "test",
-             "--package", "nevrotick-engine", "--lib", "--features", "ke-association-prototype",
-             "--frozen", "--jobs", str(args.jobs), "--target", TARGET, "--no-run", "--message-format=json"]
-    workspace = tomllib.loads((source / "Cargo.toml").read_text())
-    flags = list(ENV.MSVC_FLAGS)
-    flags[flags.index("target-cpu=x86-64-v3")] = "target-cpu=x86-64"
-    report["product_target_flags"] = ENV.MSVC_FLAGS
-    report["diagnostic_target_flags"] = flags
-    direct = ["--edition=2024", "--target", TARGET, "-C", "linker=/work/linker",
-              *flags, *ALLOCATION.profile_flags("release"), *ALLOCATION.lint_flags(workspace)]
-    images = {}
-    for name, relative in (("gated-launcher", LAUNCHER), ("cpu-v3-probe", CPU), ("gate-control", "gate-control.rs")):
-        source_arg = "/work/fixture/" + relative
-        run(name + "-format", ["rustfmt", "--edition", "2024", "--check", source_arg])
-        run(name + "-clippy", ["clippy-driver", *direct, "--crate-name", name.replace("-", "_"),
-                              "--emit=metadata", "-o", "/work/" + name + ".rmeta", source_arg])
-        image = work / (name + ".exe")
-        run(name + "-link", ["rustc", *direct, "--crate-name", name.replace("-", "_"),
-                            "-o", "/work/" + image.name, source_arg])
-        images[name] = image
-    # Qualify small diagnostic consumers before the substantial Engine link.
-    images["engine-tests"] = engine_artifact(run("engine-libtest-link", cargo), work)
-    report["artifacts"] = {}
-    inspector = "/toolchain/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-readobj"
-    for name, image in images.items():
-        raw = PE.pe_readback(image)
-        run(name + "-pe", [inspector, "--file-headers", "--coff-load-config", "--coff-debug-directory",
-                           "--coff-imports", "/work/" + str(image.relative_to(work))])
-        pdb = image.with_suffix(".pdb")
-        require(pdb.is_file() and not pdb.is_symlink(), "Matching emitted PDB is absent.")
-        for original, destination in ((image, args.output_dir / (name + ".exe")),
-                                      (pdb, args.output_dir / (name + ".pdb"))):
-            shutil.copyfile(original, destination)
-            require(PRODUCT.sha256(destination) == PRODUCT.sha256(original), "Export changed emitted bytes.")
-        report["artifacts"][name + ".exe"] = {"path": str(args.output_dir / (name + ".exe")),
-                                             "sha256": PRODUCT.sha256(image), "pe": raw,
-                                             "pdb_sha256": PRODUCT.sha256(pdb)}
-    require(PRODUCT.admit_product(ROOT)[1] == inputs
-            and all(PRODUCT.sha256(ROOT / name) == checksum for name, checksum in extras.items())
-            and PRODUCT.admit_vendor(vendor, policy) == vendor_before
-            and PRODUCT.admit_tools(ROOT, toolchain, None, "windows") == tools_before
-            and stable_identity(ANALYSIS.admit(ROOT, profile="stable-core")) == stable_before
-            and PRODUCT.library_inventory(libraries) == library_inputs
-            and all(PRODUCT.sha256(Path(path)) == checksum for path, checksum in sdk_before.items()),
-            "Source, tools, stable payload, vendor or Microsoft inputs changed.")
-    require(read_test_roster(args.test_roster.absolute(), report["candidate_sha256"], extras)[1] == roster_raw
-            and read_test_roster(roster_path, report["candidate_sha256"], extras)[1] == roster_raw,
-            "Independent Windows test roster changed while building.")
-    report.update(status="passed", bookends_passed=True, native_windows_execution=False)
+    if fault_id is not None:
+        report["facade_fault"] = fault_id
+    try:
+        if fault_id is not None:
+            prepared_fault = read_prepared_facade_fault(args.prepared_faults, fault_id, inputs, extras)
+            expected_parent = {key: report[key] for key in (
+                "product_source_sha256", "extra_inputs_sha256", "candidate_sha256", "tools_sha256", "stable_payload",
+                "toolchain", "vendor", "xwin_config", "xwin_inventory", "windows_inputs", "profile", "diagnostic_profile")}
+            expected_parent.update(product_target_flags=ENV.MSVC_FLAGS, facade_target_flags=ENV.MSVC_FLAGS)
+            diagnostic_flags = list(ENV.MSVC_FLAGS)
+            diagnostic_flags[diagnostic_flags.index("target-cpu=x86-64-v3")] = "target-cpu=x86-64"
+            expected_parent["diagnostic_target_flags"] = diagnostic_flags
+            fault_inputs.update(prepared_fault["custody_inputs"])
+            healthy_build = read_healthy_facade_build(args.healthy_build_receipt, expected_parent)
+            fault_inputs.update(healthy_build["custody_inputs"])
+            report.update(facade_fault=fault_id, prepared_faults_sha256=prepared_fault["receipt_sha256"],
+                          prepared_manifest_sha256=prepared_fault["manifest_sha256"],
+                          healthy_build_receipt_sha256=healthy_build["receipt_sha256"],
+                          variant_source_sha256={**inputs, FACADE_FAULT_SOURCE: prepared_fault["source_sha256"]})
+            report["variant_candidate_sha256"] = ALLOCATION.canonical_digest(report["variant_source_sha256"])
+        PRODUCT.boundary_control(run)
+        run("runner-controls", ["python3", "-X", "dev", "-Werror", "-B", "-m", "unittest", "discover",
+                                "-s", "/work/fixture/scripts/tests", "-p", "test_engine_native.py", "-v"])
+        version = run("compiler-version", ["rustc", "-vV"])
+        ENV.require_admitted_compiler(policy=json.loads((ROOT / "policy/tool-manifest.json").read_text()),
+                                      channel=tomllib.loads((source / "rust-toolchain.toml").read_text())["toolchain"]["channel"],
+                                      compiler_info=version)
+        cargo = ["cargo", "--config", f'target.{TARGET}.linker="/work/linker"', "test",
+                 "--package", "nevrotick-engine", "--lib", "--features", "ke-association-prototype",
+                 "--frozen", "--jobs", str(args.jobs), "--target", TARGET, "--no-run", "--message-format=json"]
+        workspace = tomllib.loads((source / "Cargo.toml").read_text())
+        flags = list(ENV.MSVC_FLAGS)
+        flags[flags.index("target-cpu=x86-64-v3")] = "target-cpu=x86-64"
+        report["product_target_flags"] = ENV.MSVC_FLAGS
+        report["diagnostic_target_flags"] = flags
+        direct = ["--edition=2024", "--target", TARGET, "-C", "linker=/work/linker",
+                  *flags, *ALLOCATION.profile_flags("release"), *ALLOCATION.lint_flags(workspace)]
+        images = {}
+        for name, relative in (("gated-launcher", LAUNCHER), ("cpu-v3-probe", CPU), ("gate-control", "gate-control.rs")):
+            source_arg = "/work/fixture/" + relative
+            run(name + "-format", ["rustfmt", "--edition", "2024", "--check", source_arg])
+            run(name + "-clippy", ["clippy-driver", *direct, "--crate-name", name.replace("-", "_"),
+                                  "--emit=metadata", "-o", "/work/" + name + ".rmeta", source_arg])
+            image = work / (name + ".exe")
+            run(name + "-link", ["rustc", *direct, "--crate-name", name.replace("-", "_"),
+                                "-o", "/work/" + image.name, source_arg])
+            images[name] = image
+        if prepared_fault is not None:
+            (source / FACADE_FAULT_SOURCE).write_bytes(prepared_fault["source"])
+            source_expected[FACADE_FAULT_SOURCE] = prepared_fault["source_sha256"]
+            require(PRODUCT.sha256(source / FACADE_FAULT_SOURCE) == prepared_fault["source_sha256"],
+                    "Copied facade overlay differs before Engine compilation.")
+        # Qualify small diagnostic consumers before the substantial Engine link.
+        if facade:
+            normal_cargo = [*cargo]
+            normal_cargo[normal_cargo.index("test")] = "build"
+            normal_cargo.remove("--no-run")
+            normal_output = run("engine-library-link", normal_cargo)
+            report["normal_library_inputs"] = normal_library_inputs
+            linked, search = engine_libraries(normal_output, work, source, vendor=vendor, evidence=normal_library_inputs)
+            normal_attributed = True
+            report["normal_libraries"] = {name: {"path": str(path), "sha256": PRODUCT.sha256(path)}
+                                          for name, path in linked.items()}
+            dependency_flags = []
+            for directory in search:
+                dependency_flags += ["-L", "dependency=/work/" + str(directory.relative_to(work))]
+            for name, path in linked.items():
+                dependency_flags += ["--extern", name + "=/work/" + str(path.relative_to(work))]
+            consumer_flags = ["--edition=2024", "--target", TARGET, "-C", "linker=/work/linker",
+                              *ENV.MSVC_FLAGS, *ALLOCATION.profile_flags("debug"),
+                              *ALLOCATION.lint_flags(workspace), *dependency_flags]
+            consumer_source = "/work/fixture/" + FACADE_CONSUMER
+            run("facade-format", ["rustfmt", "--edition", "2024", "--check", consumer_source])
+            run("facade-clippy", ["clippy-driver", *consumer_flags, "--crate-name", "engine_facade_consumer",
+                                 "--emit=metadata", "-o", "/work/facade.rmeta", consumer_source])
+            run("facade-link", ["rustc", *consumer_flags, "--crate-name", "engine_facade_consumer",
+                               "-o", "/work/engine-facade-consumer.exe", consumer_source])
+            images["engine-facade-consumer"] = work / "engine-facade-consumer.exe"
+            report["facade_target_flags"] = ENV.MSVC_FLAGS
+        else:
+            images["engine-tests"] = engine_artifact(run("engine-libtest-link", cargo), work)
+        report["artifacts"] = {}
+        inspector = "/toolchain/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-readobj"
+        for name, image in images.items():
+            raw = PE.pe_readback(image)
+            run(name + "-pe", [inspector, "--file-headers", "--coff-load-config", "--coff-debug-directory",
+                               "--coff-imports", "/work/" + str(image.relative_to(work))])
+            pdb = image.with_suffix(".pdb")
+            require(pdb.is_file() and not pdb.is_symlink(), "Matching emitted PDB is absent.")
+            for original, destination in ((image, args.output_dir / (name + ".exe")),
+                                          (pdb, args.output_dir / (name + ".pdb"))):
+                shutil.copyfile(original, destination)
+                require(PRODUCT.sha256(destination) == PRODUCT.sha256(original), "Export changed emitted bytes.")
+            report["artifacts"][name + ".exe"] = {"path": str(args.output_dir / (name + ".exe")),
+                                                 "sha256": PRODUCT.sha256(image), "pe": raw,
+                                                 "pdb_sha256": PRODUCT.sha256(pdb)}
+        build_completed = True
+    except BaseException as error:
+        primary_error = error
+        report["status"] = "incomplete"
+        raise
+    finally:
+        checks = [
+            ("product", lambda: PRODUCT.admit_product(ROOT)[1] == inputs),
+            ("helpers", lambda: all(PRODUCT.sha256(ROOT / name) == digest for name, digest in extras.items())),
+            ("copied_source", lambda: all(PRODUCT.sha256(source / name) == digest for name, digest in source_expected.items())),
+            ("control", lambda: PRODUCT.sha256(control) == report["control_source_sha256"]),
+            ("vendor", lambda: PRODUCT.admit_vendor(vendor, policy) == vendor_before),
+            ("tools", lambda: PRODUCT.admit_tools(ROOT, toolchain, None, "windows") == tools_before),
+            ("stable_payload", lambda: stable_identity(ANALYSIS.admit(ROOT, profile="stable-core")) == stable_before),
+            ("windows_libraries", lambda: PRODUCT.library_inventory(libraries) == windows_library_inputs),
+            ("sdk_records", lambda: all(PRODUCT.sha256(Path(path)) == digest for path, digest in sdk_before.items())),
+        ]
+        if not facade:
+            checks.extend([
+                ("original_roster", lambda: read_test_roster(args.test_roster.absolute(), report["candidate_sha256"], extras)[1] == roster_raw),
+                ("copied_roster", lambda: read_test_roster(roster_path, report["candidate_sha256"], extras)[1] == roster_raw),
+            ])
+        if prepared_fault is not None:
+            checks.append(("fault_inputs", lambda: all(hashlib.sha256(PE.Q.C.read_analysis_bytes(
+                path, maximum=64 * 1024 * 1024)).hexdigest() == digest for path, digest in fault_inputs.items())))
+        facts, errors = {}, []
+        for name, check in checks:
+            try:
+                facts[name] = check() is True
+            except Exception:
+                facts[name] = False
+            if not facts[name]:
+                errors.append(name)
+        report["input_bookends"] = facts
+        report["input_bookends_passed"] = all(facts.values())
+        if facade and normal_attributed:
+            try:
+                require(bool(normal_library_inputs) and all(
+                    PRODUCT.sha256(work / path.removeprefix("/work/")) == item["sha256"]
+                    for path, item in normal_library_inputs.items()),
+                    "Attributed normal-library bytes changed during consumer linking.")
+                report["normal_library_bookends"] = True
+            except Exception:
+                report["normal_library_bookends"] = False
+                errors.append("normal_libraries")
+        exported = report.get("artifacts")
+        report["exported_artifact_bookends"] = "not-reached"
+        if exported:
+            try:
+                require(all(PRODUCT.sha256(Path(item["path"])) == item["sha256"]
+                            and PRODUCT.sha256(Path(item["path"]).with_suffix(".pdb")) == item["pdb_sha256"]
+                            for item in exported.values()), "Exported image or PDB bytes changed.")
+                report["exported_artifact_bookends"] = True
+            except Exception:
+                report["exported_artifact_bookends"] = False
+                errors.append("exported_artifacts")
+        report["custody_errors"] = errors
+        report["bookends_passed"] = (build_completed and report["input_bookends_passed"]
+                                      and (not facade or report["normal_library_bookends"] is True)
+                                      and report["exported_artifact_bookends"] is True)
+        if not report["bookends_passed"]:
+            report["status"] = "incomplete"
+            if primary_error is None:
+                raise Incomplete("Build custody incomplete: " + ", ".join(errors or ["unfinished artifacts"]))
+    report["status"] = "fault-build-completed" if fault_id is not None else "passed"
 
 
 NATIVE_JOB_OBSERVER = r"""
@@ -412,6 +991,7 @@ NATIVE_JOB_OBSERVER = r"""
             case "job-native-foreign": case "provider-native-once": case "provider-native-foreign":
             case "control-nested-healthy": case "control-nested-fail": case "control-nested-wait": return 6;
             case "cpu": case "list": case "ke":
+            case "facade-arguments": case "facade-entered-runtime":
             case "control-healthy": case "control-fail": case "control-wait": return 4;
             default: throw new InvalidDataException();
         }
@@ -641,10 +1221,13 @@ def native_supervisor():
         @($request.psobject.Properties.Name | Where-Object { $_ -cnotin $requestFields }).Count -ne 0 -or
         $request.mode -cnotin @('cpu','list','ke','control-healthy','control-fail','control-wait',
             'job-native-foreign','provider-native-once','provider-native-foreign',
-            'control-nested-healthy','control-nested-fail','control-nested-wait') -or
+            'control-nested-healthy','control-nested-fail','control-nested-wait',
+            'facade-arguments','facade-entered-runtime') -or
         $request.gate -cnotin @('good','bad','missing')) { throw 'Unadmitted console mode or gate.' }
     $childName = if ($request.mode -ceq 'cpu') { 'cpu-v3-probe.exe' }
-        elseif ($request.mode -cin @('list','ke','job-native-foreign','provider-native-once','provider-native-foreign')) { 'engine-tests.exe' } else { 'gate-control.exe' }
+        elseif ($request.mode -cin @('list','ke','job-native-foreign','provider-native-once','provider-native-foreign')) { 'engine-tests.exe' }
+        elseif ($request.mode -cin @('facade-arguments','facade-entered-runtime')) { 'engine-facade-consumer.exe' }
+        else { 'gate-control.exe' }
     $child = Get-Item -LiteralPath (Join-Path $destination $childName)
     if ($child.PSIsContainer -or (($child.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) {
         throw 'Unadmitted fixed child image.'
@@ -687,14 +1270,24 @@ def native_supervisor():
     return source
 
 
-def observed_child_pid(stderr, authored):
+def observed_child_pid(stderr, authored, *, mode=None):
     """Join one fixed launcher marker to kernel identity; it grants no identity alone."""
     import re
     require(type(authored) is int and authored in (1, 2, 3), "Unadmitted authored-process count.")
-    require(type(stderr) is str, "Native stderr must be bounded text.")
+    require(type(stderr) is str and len(stderr) <= 512, "Native stderr must be bounded text.")
     if authored == 1:
         require(stderr == "launcher-stage=gate;os-error=none\n", "Gate refusal exposed a child marker or another failure.")
         return None
+    if mode is not None:
+        mode_profile(mode)
+    if mode in FACADE_CASES:
+        require(authored == 2, "Facade has exactly one authored child.")
+        diagnostic = FACADE_CASES[mode][1]
+        lines = stderr.splitlines(keepends=True)
+        require(len(lines) == 2 and lines.count(diagnostic) == 1,
+                "Facade needs its exact diagnostic and one launcher marker.")
+        # Spawned child and launcher can write either complete line first.
+        stderr = lines[1] if lines[0] == diagnostic else lines[0]
     match = re.fullmatch(r"launcher-child-pid=([1-9][0-9]{0,9})\n", stderr)
     require(match is not None, "Native child needs exactly one bounded PID marker.")
     pid = int(match[1])
@@ -717,7 +1310,7 @@ def validate_processes(value, request, result, authored):
     maximum, after_gate_authored, child_name = mode_profile(request["mode"])
     require(authored == (after_gate_authored if request["gate"] == "good" else 1),
             "Authored-process count differs from the closed mode and gate.")
-    child = observed_child_pid(result.get("stderr"), authored)
+    child = observed_child_pid(result.get("stderr"), authored, mode=request["mode"])
     require(child != root, "Launcher and child PIDs cannot alias.")
     root_name = PureWindowsPath(request["image_path"]).name.casefold()
     console_path = value.get("system_console_path")
@@ -805,6 +1398,9 @@ def validate_console(value, request, supervisor_hash, request_hash, *, expected_
     require(type(request) is dict and set(request) == {"image_path", "image_sha256", "child_sha256", "mode", "gate"}
             and request["gate"] in ("good", "bad", "missing"), "Unadmitted fixed native request fields or gate.")
     maximum, _, _ = mode_profile(request["mode"])
+    if request["mode"] in FACADE_CASES and request["gate"] == "good":
+        require(expected_exit == FACADE_CASES[request["mode"]][0] and expected_processes == 2,
+                "Facade disposition must match its fixed expected refusal.")
     require(type(value) is dict, "Native supervisor result must be an object.")
     if (type(value.get("schema_version")) is int and value["schema_version"] == 1
             and value.get("status") == "incomplete" and value.get("execution") is None
@@ -834,6 +1430,9 @@ def validate_console(value, request, supervisor_hash, request_hash, *, expected_
                    for name, digest in value["runtime_files_sha256"].items())):
         raise Incomplete("Native image, settings, runtime or completed-state admission failed.")
     result = value.get("execution", {})
+    if request["mode"] in FACADE_CASES and request["gate"] == "good":
+        require(type(result) is dict and result.get("stdout") == "",
+                "Refused facade call emitted an unexpected stdout payload.")
     if (type(result.get("pid")) is not int or result["pid"] <= 0
             or type(result.get("exit_code")) is not int or result["exit_code"] != expected_exit
             or result.get("cleanup_failure") is not None or result.get("output_overflow") is not False
@@ -878,23 +1477,36 @@ def native(args, report):
     build_path = args.build_receipt.absolute()
     build = read_record(build_path)
     require(type(build) is dict, "Native build receipt must be an object.")
+    require(not any(type(key) is str and key.startswith(
+        ("fault", "facade_fault", "variant_", "prepared_faults", "healthy_build")) for key in build),
+        "Fault-build metadata is not admitted by the ordinary native lane.")
     policy, source_before = PRODUCT.admit_product(ROOT)
     extras_before = {name: PRODUCT.sha256(ROOT / name) for name in EXTRAS}
+    facade = getattr(args, "facade_consumer", False)
+    require(type(facade) is bool and build.get("facade_consumer", False) is facade,
+            "Native facade selection differs from the exact build profile.")
     if (build.get("status") != "passed" or build.get("lane") != "build"
             or build.get("product_source_sha256") != source_before
             or build.get("extra_inputs_sha256") != extras_before
             or build.get("candidate_sha256") != ALLOCATION.canonical_digest(source_before)):
         raise Incomplete("Native build receipt does not bind the complete current candidate and runner.")
-    roster_record = build.get("test_roster")
-    roster_path = build_path.parent / TEST_ROSTER_NAME
-    require(type(roster_record) is dict and set(roster_record) == {"path", "sha256"}
-            and roster_record["path"] == str(roster_path),
-            "Native build lacks its frozen independent test roster.")
-    roster, roster_raw = read_test_roster(roster_path, ALLOCATION.canonical_digest(source_before), extras_before)
-    require(hashlib.sha256(roster_raw).hexdigest() == roster_record["sha256"],
-            "Native independent test roster differs from the build binding.")
+    roster_record, roster, roster_raw = None, None, None
+    if facade:
+        require(build.get("bookends_passed") is True and build.get("facade_target_flags") == ENV.MSVC_FLAGS,
+                "Facade build lacks its success bookend or product v3 flags.")
+    else:
+        roster_record = build.get("test_roster")
+        roster_path = build_path.parent / TEST_ROSTER_NAME
+        require(type(roster_record) is dict and set(roster_record) == {"path", "sha256"}
+                and roster_record["path"] == str(roster_path),
+                "Native build lacks its frozen independent test roster.")
+        roster, roster_raw = read_test_roster(roster_path, ALLOCATION.canonical_digest(source_before), extras_before)
+        require(hashlib.sha256(roster_raw).hexdigest() == roster_record["sha256"],
+                "Native independent test roster differs from the build binding.")
     artifacts = build.get("artifacts", {})
     names = {"engine-tests.exe", "cpu-v3-probe.exe", "gated-launcher.exe", "gate-control.exe"}
+    if facade:
+        names = (names - {"engine-tests.exe"}) | {"engine-facade-consumer.exe"}
     if type(artifacts) is not dict or set(artifacts) != names:
         raise Incomplete("Native build does not contain the four fixed bounded images.")
     for name, item in artifacts.items():
@@ -919,13 +1531,14 @@ def native(args, report):
                   test_roster=roster_record,
                   full_native_ke_qualification=False,
                   scripted_ke_roster_complete=False, completed_nested_tests=[],
-                  required_held_tests=roster["held_ke_tests"],
-                  selected_ke_tests=roster["selected_ke_tests"],
+                  required_held_tests=[] if facade else roster["held_ke_tests"],
+                  selected_ke_tests=[] if facade else roster["selected_ke_tests"],
+                  facade_consumer=facade, facade_refusal_cases_complete=False,
                   token_scope="Supervisor and launcher directly observed; fixed child inherits primary token.",
                   scope="Scripted KE component tests with three separately checked nested-child cases. No real TLS, CNG, UDP, service or clock effects.")
     script = native_supervisor()
     supervisor_hash = hashlib.sha256(script.encode()).hexdigest()
-    for label, mode, gate, expected_exit, expected_count in (
+    cases = (
             ("missing-gate", "control-healthy", "missing", 126, 1),
             ("wrong-gate", "control-healthy", "bad", 126, 1),
             ("healthy-control", "control-healthy", "good", 0, 2),
@@ -939,7 +1552,12 @@ def native(args, report):
             ("ke", "ke", "good", 0, 2),
             ("native-job-foreign", "job-native-foreign", "good", 0, 3),
             ("native-provider-once", "provider-native-once", "good", 0, 3),
-            ("native-provider-foreign", "provider-native-foreign", "good", 0, 3)):
+            ("native-provider-foreign", "provider-native-foreign", "good", 0, 3))
+    if facade:
+        cases = (*cases[:5], ("cpu", "cpu", "good", 0, 2),
+                 *((mode, mode, "good", facts[0], 2) for mode, facts in FACADE_CASES.items()))
+        report["scope"] = "Two fixed production-facade refusals before provider effects; no mutation or full native qualification."
+    for label, mode, gate, expected_exit, expected_count in cases:
         observation = directory / label
         observation.mkdir(mode=0o700)
         launcher = observation / ("NevroTick-" + uuid.uuid4().hex + ".exe")
@@ -976,7 +1594,9 @@ def native(args, report):
                                   expected_exit=expected_exit, expected_processes=expected_count,
                                   timeout_control=label in ("timeout-control", "nested-timeout-control"))
         output, error = result["stdout"], result["stderr"]
-        observed_child_pid(error, expected_count)
+        observed_child_pid(error, expected_count, mode=mode)
+        if mode in FACADE_CASES and output != "":
+            raise Incomplete("Refused facade call emitted an unexpected stdout payload.")
         expected_output = {"missing-gate": "", "wrong-gate": "",
                            "healthy-control": "GATE_CONTROL_HEALTHY\n",
                            "failure-control": "GATE_CONTROL_FAIL\n",
@@ -1001,30 +1621,46 @@ def native(args, report):
             or {name: PRODUCT.sha256(ROOT / name) for name in EXTRAS} != extras_before
             or PRODUCT.sha256(build_path) != report["build_receipt_sha256"]
             or PRODUCT.sha256(Path(powershell)) != ps_before
-            or read_test_roster(roster_path, build["candidate_sha256"], extras_before)[1] != roster_raw
+            or (not facade and read_test_roster(roster_path, build["candidate_sha256"], extras_before)[1] != roster_raw)
             or any(PRODUCT.sha256(Path(item["path"])) != item["sha256"] for item in artifacts.values())):
         raise Incomplete("Native source, images, receipt, supervisor recipe or PowerShell drifted.")
-    report["scripted_ke_roster_complete"] = report["required_held_tests"] == []
+    if facade:
+        report["facade_refusal_cases_complete"] = True
+    else:
+        report["scripted_ke_roster_complete"] = report["required_held_tests"] == []
     report["status"] = "passed"
 
 
 def main():
     """Select one closed lane and retain its partial outcome in fresh owned output."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--lane", required=True, choices=("build", "native"))
+    parser.add_argument("--lane", required=True, choices=("build", "native", "prepare-facade-faults"))
+    parser.add_argument("--raw-outcomes", type=Path,
+                        help="Read only the exact retained V19 outcomes for source-only facade preparation.")
+    parser.add_argument("--facade-consumer", action="store_true",
+                        help="Select two fixed provider-free production facade refusal cases; no mutation scoring.")
+    parser.add_argument("--facade-fault", choices=tuple(row[0] for row in FACADE_FAULTS),
+                        help="Build one admitted prepared overlay; no native execution or classification.")
     parser.add_argument("--jobs", type=int, choices=range(1, 13), default=6,
                         help="Bound Cargo build concurrency; default 6, maximum 12.")
     for name in ("vendor-dir", "toolchain-dir", "xwin-config", "xwin-inventory", "output-dir",
-                 "build-receipt", "native-dir", "test-roster"):
+                 "build-receipt", "native-dir", "test-roster", "prepared-faults", "healthy-build-receipt"):
         parser.add_argument("--" + name, type=Path, required=name == "output-dir")
     args = parser.parse_args()
     report = {"schema_version": 1, "lane": args.lane, "status": "incomplete", "started_unix": time.time(),
               "scope": "Bounded Windows Engine scripted KE libtest; no product or release qualification."}
     output = None
     try:
+        fault_options = (args.facade_fault, args.prepared_faults, args.healthy_build_receipt)
+        require(not any(value is not None for value in fault_options)
+                or (args.lane == "build" and args.facade_consumer and all(value is not None for value in fault_options)),
+                "Facade fault flags require build, facade consumer and both admitted parent receipts.")
         output = ALLOCATION.new_output(args.output_dir)
         args.output_dir = output
-        (build if args.lane == "build" else native)(args, report)
+        if args.lane == "prepare-facade-faults":
+            prepare_facade_faults(args, report)
+        else:
+            (build if args.lane == "build" else native)(args, report)
     except (Incomplete, PE.Incomplete, ANALYSIS.Incomplete, OSError, ValueError, KeyError, TypeError) as error:
         report["error"] = str(error)
     report["completed_unix"] = time.time()
@@ -1032,7 +1668,9 @@ def main():
         (output / "verification.json").write_text(json.dumps(report, indent=2, default=str) + "\n")
     print(json.dumps({"status": report["status"], "lane": args.lane,
                       "error": report.get("error"), "verification_path": str(output / "verification.json") if output else None}))
-    return 0 if report["status"] == "passed" else 1
+    expected_status = ("prepared-not-executed" if args.lane == "prepare-facade-faults" else
+                       "fault-build-completed" if args.lane == "build" and args.facade_fault is not None else "passed")
+    return 0 if report["status"] == expected_status else 1
 
 
 if __name__ == "__main__":

@@ -1586,6 +1586,46 @@ This satisfies this source candidate scan only; ignored local service receipts
 remain outside it and their broad-folder findings remain unresolved. H08/H09
 settings/hosted qualification remains open under the pending owner decision.
 
+### Pure-role indirect-clock restrictions — source-only H12, 14 November 2026
+
+**Later execution result:** the [focused hardening verification](engine-transport-pilot.md#focused-hardening-verification--14-november-2026)
+records all twelve configured pure-role lanes passing under Rust 1.100.0.
+Each of the six added role/method cases fails with its intended Clippy
+`disallowed_methods` diagnostic; both healthy controls compile. These fixture
+functions never execute clock reads. The earlier source-only/hold record below
+is superseded by that scoped result, not whole-product qualification.
+
+The [unified continuation](engine-transport-pilot.md#unified-handoff-source-only-continuation--14-november-2026)
+routes selected H12 through this strict-policy owner under CHECK-19/25/26/27.
+Baseline is `bad2db638bb112496d16bb1172835473440b421e`, declared Rust 1.100.0.
+No compiler, test, mutation or configured check driver executes under David's
+current hold. Existing future qualification commands do not override it.
+
+**Applied, not executed:** `scripts/check-strict.py::PURE_METHOD_PATHS` and
+the `time-domain`, `ntp-exchange` and `time-core` Clippy configurations now ban
+exactly `std::time::Instant::elapsed` and `std::time::SystemTime::elapsed`, with
+the existing pure-role reason. These methods read the ambient clock; retaining
+a timestamp type or computing a difference between two supplied coordinates
+does not. No product call to either method was identified in these pure crates
+in this source slice.
+
+Six separate proposed compiler lanes cover each role/method. Each receives its
+timestamp as a parameter, so a forbidden `now()` constructor cannot mask an
+absent elapsed restriction. Healthy explicit-pair arithmetic and the permitted
+adapter remain in the same fixture; existing alias/function-reference controls
+are retained. Configuration omission controls now independently remove each of
+the four clock paths in each pure role, restoring healthy bytes afterward.
+Nothing claims these controls have compiled or run.
+
+H13 acceptance comparison against `bad2db63`: only the two selected bans and
+six corresponding negative lanes are added; thresholds, old selections,
+diagnostic requirements and admission are retained. H14 review finds no new or
+widened lint suppression in this delta. Source-aware suppression automation is
+deferred: this bounded path-list edit supplies no selected syntax/scope contract
+for conditional or generated-code exceptions. No dependency/parser framework,
+blanket API ban or graph/toolchain change is introduced. Current-source compiler
+and policy results remain pending; historical receipts retain their own bytes.
+
 ### Effective mutation compiler concurrency — 14 November 2026
 
 The [current Core trial and causal correction](s1.3-source-selection-readiness.md#seven-owner-mutation-admission--14-november-2026)
@@ -1631,3 +1671,19 @@ No compiler/tool binary, dependency graph, shipping profile or Windows setting
 changes follow. Native 235-case evidence remains tied to historical `1cbddfb3`;
 full Core/native/release qualification and the separate H02/H08/H09 and supplier
 gates remain open.
+
+### Engine resource continuation — 15 November 2026
+
+The [V13 association exit](engine-transport-pilot.md#v13-association-gate-and-bounded-resource-exit--15-november-2026)
+uses the current two-thread full-inventory checker and reviewed fd-relative
+observer, after owner-requested RAM cleanup and explicit heavy-work restart.
+Six mutation workers/zero extra tokens execute all 35 descriptors beside the
+484-case baseline. Independent raw review accepts 28/28 viable kills and this
+bounded six-GiB resource cohort: peak 5,724,635,136 bytes/112 tasks, zero limit
+events, final tool/source/vendor custody and actual cgroup retirement confirmed.
+The two-second guard stays unchanged; its observed maximum age is
+1.375076063 seconds. Disposable copies are deleted and raw results retained.
+No compiler, graph, shipping policy, Windows setting or security threshold
+changes. Eleven GNU mutation owners and four additional critical/native owner
+gaps remain. Further selections retain shared deadlines, fresh private admission
+and cumulative budgets; one cohort is no whole-profile/resource guarantee.

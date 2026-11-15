@@ -518,11 +518,11 @@ fn series_coherence_debug_contains_only_fixed_scalar_causes() {
     }
 }
 
-/// Error projection retains a typed driver source without exposing chart values.
+/// Error projection retains typed driver/policy sources without exposing chart values.
 /// # Errors
 /// Preserve configuration and genuine preparation errors.
 /// # Panics
-/// Require fixed Debug/Display text and the original typed entered-runtime cause.
+/// Require fixed Debug/Display text and the original typed driver/policy causes.
 #[test]
 fn session_debug_and_driver_error_sources_are_fixed_and_typed() -> Check<()> {
     let mut owner = AcquisitionSession::new(config()?);
@@ -543,6 +543,10 @@ fn session_debug_and_driver_error_sources_are_fixed_and_typed() -> Check<()> {
         (AcquisitionError::Retired, "acquisition session retired"),
         (AcquisitionError::Invariant, "acquisition session invariant"),
         (
+            AcquisitionError::SourcePolicy(crate::SourcePolicyError::Contended),
+            "acquisition source policy refused",
+        ),
+        (
             AcquisitionError::Driver(PilotError::EnteredRuntime),
             "acquisition driver failed",
         ),
@@ -558,6 +562,12 @@ fn session_debug_and_driver_error_sources_are_fixed_and_typed() -> Check<()> {
             "acquisition error Display must remain fixed and redacted"
         );
         match &error {
+            AcquisitionError::SourcePolicy(_) => {
+                assert!(error.source().is_some_and(|source| {
+                    source.downcast_ref::<crate::SourcePolicyError>()
+                        == Some(&crate::SourcePolicyError::Contended)
+                }));
+            }
             AcquisitionError::Driver(_) => assert!(error.source().is_some_and(|source| matches!(
                 source.downcast_ref::<PilotError>(),
                 Some(PilotError::EnteredRuntime)

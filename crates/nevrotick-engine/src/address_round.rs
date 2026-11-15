@@ -381,25 +381,24 @@ fn end_at(state: Control, now: Instant, deadline: Instant) -> Option<AddressRoun
     }
 }
 
-/// Serialize the final control/time guard with one nonblocking native send.
-/// No callback, await or recursive watch borrow occurs while the read guard lives.
+/// Refresh retirement, then let the shared concrete sender own its sole final
+/// control read guard. No nested watch read can deadlock behind a queued writer.
 fn guarded_writable(
     slot: &mut LiveSlot,
     control: &mut watch::Receiver<Control>,
     writable: std::io::Result<()>,
     deadline: Instant,
 ) {
-    let state = control.borrow_and_update();
-    refresh_slot(slot, *state, Instant::now(), deadline);
+    let state = latest(control);
+    refresh_slot(slot, state, Instant::now(), deadline);
     if !slot.done() {
         match writable {
-            Ok(()) => attempt_send(slot, deadline),
+            Ok(()) => attempt_send(slot, deadline, control),
             Err(error) => slot.finish(TerminalOutcome::Io(IoOutcome::Native(IoCause::capture(
                 &error,
             )))),
         }
     }
-    drop(state);
 }
 
 /// Drive one actual request under the shared parser/commit and a serialized send guard.
@@ -420,10 +419,11 @@ async fn run_attempt(
         if slot.done() {
             return slot;
         }
-        let wake = next_series_wake(&slot, &mut buffer, control, open, timer.as_mut()).await;
+        let wake = next_series_wake(&mut slot, &mut buffer, control, open, timer.as_mut()).await;
         state = latest(control);
         refresh_slot(&mut slot, state, Instant::now(), deadline);
         match wake {
+            SeriesWake::SourcePolicy => {}
             SeriesWake::Control(value) => open = value,
             SeriesWake::Deadline => slot.expire(),
             SeriesWake::Writable(result) => guarded_writable(&mut slot, control, result, deadline),
@@ -583,6 +583,11 @@ where
             return report;
         }
         match status {
+            Status::SourcePolicy => {
+                // This compatibility round has no managed source issuer. Retain
+                // its completed refusal above and stop instead of trying a peer.
+                return report.fail(PilotError::InternalState);
+            }
             Status::Header => {
                 report.end = AddressRoundEnd::Reply;
                 return report;

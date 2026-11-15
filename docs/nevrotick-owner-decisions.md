@@ -430,6 +430,158 @@ open until that exact candidate is published and actually executes. Revisit on
 changed pins/policy or a concrete startup annotation; do not retry an unchanged
 failure. The existing build task owns raw observations and follow-through.
 
+### 6.5 KoD source lifecycle — 15 November 2026
+
+**Decision:** NV-DEC-001 §6.5 / S2.1–S2.2, REQ-8/BND-2,
+CHECK-6/8/9/17/21/27. **Status: Accepted as amended by David — 15 November
+2026.** Approval covers bounded, same-process source-to-send integration in
+the [existing Engine task](../tasks/engine-transport-pilot.md#current-kod-send-owner-cut--14-november-2026).
+The earlier Chrony/ntpd-rs comparison is complete. David selects continued
+probes at the checked RATE maximum and amends the proposed IP-only sharing to
+exact remote endpoints without transitive propagation. **Heavy qualification
+still requires separate restart confirmation; this approval does not grant it.**
+
+**Existing rule and evidence:** [RFC 5905 §7.4](https://www.rfc-editor.org/rfc/rfc5905.html#section-7.4)
+with verified [erratum 3007](https://www.rfc-editor.org/errata/eid3007)
+requires RATE to slow polling and DENY/RSTR to cease sending to the server.
+Unknown codes have no control effect. [RFC 8633 §5.4](https://www.rfc-editor.org/rfc/rfc8633.html#section-5.4)
+requires origin correlation, permits an implementation-defined increase and
+warns against blindly adopting the received poll value. Its suggested maximum
+is not an adopted NevroTick constant. [RFC 8915 §5.7](https://www.rfc-editor.org/rfc/rfc8915.html#section-5.7)
+retains the special correlated NTS control/NAK path and delayed, rate-limited
+KE recovery. Correlation supplies no authenticated time. Direct retrieval of
+the erratum page remained unavailable on this date; the RFC Editor's
+[informative rendering](https://www.rfc-editor.org/rfc/inline-errata/rfc5905.html#eid3007)
+displays the verified correction. This rendering is supporting evidence,
+not a replacement normative RFC.
+
+On `c85918ce` plus the preserved staged checkpoint, the real plain-UDP
+`stage_reply` retains the header, `commit_reply` consumes every stratum-zero
+result, and the next `attempt_send` has no source-owned KoD guard. The current
+series/session fixtures do not implement continuous policy. No new runtime
+failure or production vulnerability is claimed.
+
+**Accepted policy — explicit source-owned and endpoint-owned restrictions:**
+
+1. Inspect correlated controls before destructive request commit. Discard
+   all unhandled codes, including unknown/experimental codes, while retaining
+   the healthy original pending request, its deadline and remaining charged
+   receive budget. No receive-work refund
+   or renewed timeout. Recognized RATE/DENY/RSTR consumes that outstanding
+   request once, with no time/cookie/freshness publication.
+2. Use one checked KoD bounds profile for the bounded source owner; admit
+   positive bounds only when minimum ≤ effective interval ≤ maximum for all
+   retained source/endpoint intervals. A new profile cannot bypass existing state.
+   An admitted RATE directly updates its logical-source record and exact
+   endpoint record. Each doubles its own retained interval, saturating at the
+   checked maximum without an overflowing intermediate. It never reduces the
+   retained interval; a later
+   policy cap below it is refused. Ignore the untrusted peer's
+   poll value for scheduling. The new earliest send is no earlier than either
+   the existing floor or a full revised interval after control admission.
+   At the maximum, retain that interval and full wait; continue finite capped
+   probes subject to all other current guards. Reaching the cap alone must not
+   suspend the source. Replays cannot extend the wait because their request has
+   been consumed. Jitter can only delay it.
+   An unrepresentable deadline refuses sending without clearing the restriction.
+   Doubling and capped continuation are selected local policy, not RFC formulas.
+3. Keep distinct restriction records for the stable logical source and the
+   canonical remote endpoint: **remote IP + UDP port + required IPv6 scope/zone**.
+   IPv4-mapped aliases normalize to the same IP; local socket identity is not
+   part of the endpoint key. Independently configured services at different
+   ports or zones have distinct endpoint records. Exact wire-endpoint
+   correlation is unchanged.
+   Aliases of the same endpoint share its state and allowance. A send must
+   satisfy both its source record and its exact endpoint record and reserve
+   the shared endpoint eligibility; separate aliases
+   cannot each acquire an independent full polling allowance. Actual or
+   possibly sent attempts advance each applicable floor using that record's
+   own interval and the owner's fresh send-attempt observation, preserving any
+   later existing floor; uncertainty grants no refund. Do not copy an inherited
+   source interval into another endpoint's state, or an endpoint interval into
+   another source's state. A request rejected before sender invocation cannot
+   erase an existing floor.
+   The logical source retains its own restriction across DNS, address, port,
+   session, refresh, network and association/KE changes within the owning
+   process. A valid reply supplies no automatic rate reset. An explicit trusted
+   source-policy operation may revise the interval; it cannot shorten an
+   already admitted earliest-send floor. There is no selected shipped interval.
+4. An admitted DENY/RSTR stops its affected logical source and associations to
+   its restricted endpoint. Mark exactly those two records; do not disable all
+   independently configured services sharing an IP. Restriction propagation is
+   **not transitive**: if source A receives a control at endpoint E, alias B at
+   E observes E's shared restriction without acquiring A's source restriction.
+   If B subsequently uses endpoint F, it remains subject to B's own and F's
+   existing records. A remains restricted at F by A's own record, without
+   spreading that restriction to F or its other sources. No alias, DNS or
+   session/association change silently resets either original record.
+5. Re-enable requires an explicit authorized source-policy operation identifying
+   exactly which source/endpoint records it changes and their current revisions;
+   validate the complete selection before changing any record. Ordinary Sync now,
+   DNS/KE success,
+   cancellation, reconnect or a generation change is insufficient. Re-enable
+   preserves every unselected or otherwise applicable restriction and every
+   already admitted earliest-send floor. Clearing a selected refusal does not
+   implicitly reset RATE state. It permits only ordinary bounded acquisition,
+   supplies no burst allowance and invalidates old outstanding correlation.
+   It grants no plain-NTP downgrade.
+6. Apply RFC 8915's outstanding-UID requirement to **all applicable NTS KoD
+   controls**, including RATE/DENY/RSTR, not only NTSN; retain its
+   previously-authenticated-server condition and the other admission checks.
+   Keep NTSN's separate delayed recovery: its forbidden cookie/authenticator
+   fields, no immediate KE loop or cookie flush, and bounded replacement.
+   Ordinary NTS replies still require authentication. No new NTSN reset or
+   persistent-cache policy is selected by this card.
+
+The actual source owner must retain these restrictions outside individual
+invocations and check them again **after readiness, immediately before send**.
+Reserve bounded restriction state before admission; exhaustion cannot evict a
+live restriction and grant a send. Callers cannot manufacture a trusted reset
+by constructing a new session. This is an implementation acceptance condition,
+not an assertion that the owner already exists.
+
+**Decision history:** the original proposal's IP-only sharing and suspension at
+the RATE cap are not selected. David accepts capped probes, explicit re-enable,
+and the amended non-transitive endpoint scope. Automatic DENY/RSTR retry
+remains forbidden. The earlier proposal review qualifies only its historical
+decision-preparation scope; it is not review or execution of this amendment.
+
+**Residual risk and scope:** correlated unauthenticated control can still reduce
+availability for the affected logical source and shared endpoint. Preserve
+entropy/OPEN-9, exact endpoint/origin/currentness checks, once-only consumption and a healthy
+neighbor. The immediate child uses explicit laboratory bounds and genuine
+same-process owner custody; no production configuration issuer is invented.
+Cross-restart/reboot enforcement needs the existing mandatory-state and
+trusted-configuration owners: do not restore process-local monotonic instants,
+claim persistence, add a new store or treat missing continuity as a fresh burst.
+That later exit stays open under architecture §7.3. No shipped polling default,
+native/provider/clock authority or release completion follows.
+
+**Owner/approval:** David's explicit instruction on 15 November 2026 accepts
+this amended, bounded same-process integration only. It selects no shipped
+polling interval or persistence mechanism and closes no production/native
+qualification. Heavy qualification restart is explicitly **not approved**.
+Recording this decision runs no tests, mutations, native operations or policy
+execution. Required implementation validation must reach the actual receive
+owner and post-readiness sender: unknown-code
+storms retain the spent budget/deadline; recognized replays do not reapply;
+RATE below/at cap and zero/overflow bounds; old/revised deadline neighbors;
+stop/policy change while awaiting readiness; endpoint aliases versus independent
+ports/zones; non-transitive A/E, B/E, A/F and B/F cases; session/DNS/address/port
+replacement; exactly targeted current/stale re-enable preserving other
+restrictions/floors; all applicable NTS control UID checks; delayed NTSN and a
+permitted healthy source. Observe actual sends and absence of time/cookie
+effects. Revisit on identity aggregation, restart persistence, poll/reset or
+protocol-contract changes. Independent qualification and source work may
+continue under their existing authority; the separate heavy-work stop remains
+in force.
+
+**Later separate restart — 15 November 2026:** David subsequently states,
+“I've also restarted - you may continue.” The reviewed Core/Engine qualification
+may resume through the existing Engine task's fresh resource/recipe admission.
+This is a separate execution instruction, not a widening of the KoD policy
+approval. All unrelated holds, cumulative budgets and publication limits remain.
+
 ## 7. OD-05 — signing and release ownership
 
 ### 7.1 Accepted choices

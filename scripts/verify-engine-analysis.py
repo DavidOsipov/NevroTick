@@ -317,11 +317,16 @@ def finite_number(value: str) -> float:
     return number
 
 
-def read_json(path: Path, *, maximum: int = 524288) -> dict:
+def read_json(path: Path, *, maximum: int = 524288, expected_sha256: str | None = None) -> dict:
     """Read bounded regular, nonlinked JSON; reject duplicates and nonfinite values."""
     if path != path.resolve(strict=True):
         raise Incomplete("Engine JSON input cannot use a linked path.")
     data = COMMON.ANALYSIS.read_once(path, maximum=maximum)
+    if expected_sha256 is not None and (
+            type(expected_sha256) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", expected_sha256) is None
+            or hashlib.sha256(data).hexdigest() != expected_sha256):
+        raise Incomplete("Engine JSON snapshot bytes differ from their exact binding.")
     try:
         value = json.loads(data, object_pairs_hook=COMMON.ANALYSIS.unique_object,
                            parse_float=finite_number, parse_constant=invalid_number)
@@ -5259,13 +5264,14 @@ def address_storage_usage(directory: Path) -> dict:
 
 
 def address_storage_checkpoint(session, policy: dict, report: dict, label: str, phase: str) -> None:
-    """Keep one aggregate 768-MiB sample and the four-GiB free reserve per command."""
+    """Sample the whole owned tree against this role's cap and free-space reserve."""
     usage = address_storage_usage(session.output)
     row = {"lane": label, "phase": phase, **usage, "available_bytes": shutil.disk_usage(session.output).free}
     report.setdefault("storage_samples", []).append(row)
     (session.output / "progress.json").write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
     if row["allocated_bytes"] >= policy["owned_output_maximum_allocated_bytes"]:
-        raise Incomplete("Address-round aggregate owned output reached its 768-MiB allocated cap.")
+        raise Incomplete("Aggregate owned output reached its allocated cap "
+                         f"({policy['owned_output_maximum_allocated_bytes']} bytes).")
     if row["available_bytes"] < policy["stop_free_bytes"]:
         raise Incomplete("Address-round four-GiB available reserve reached.")
 
@@ -5284,7 +5290,7 @@ def _admit_engine_ke_debug_retirement(policy: dict, report: dict) -> None:
             or type(execution.get("ke_tests_executed")) is not int
             or execution["ke_tests_executed"] != ENGINE_KE_CASE_COUNT
             or execution.get("inventory_sha256") != COMMON.canonical_sha256(names)):
-        raise Incomplete("Debug retirement requires the exact validated 410-test/229-KE baseline roster and digest.")
+        raise Incomplete("Debug retirement requires the exact validated 415-test/234-KE baseline roster and digest.")
     lanes, samples = report.get("lanes"), report.get("storage_samples")
     if (type(lanes) is not list or len(lanes) < 2
             or any(type(row) is not dict for row in lanes)
@@ -5618,8 +5624,8 @@ def execute_address_profile(args, report: dict) -> None:
 ENGINE_KE_POLICY = COMMON.ENGINE_KE_POLICY
 ENGINE_KE_HOST_SUBJECTS = dict(COMMON.ENGINE_KE_SUBJECTS)
 ENGINE_KE_SCOPE = COMMON.Scope("nevrotick-engine", COMMON.ENGINE_KE_SUBJECTS, ENGINE_KE_POLICY)
-ENGINE_KE_ORDINARY_COUNT = 410
-ENGINE_KE_CASE_COUNT = 229
+ENGINE_KE_ORDINARY_COUNT = 415
+ENGINE_KE_CASE_COUNT = 234
 ENGINE_KE_SEND_AFTER_TEST = (
     "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
     "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted"
@@ -5635,6 +5641,7 @@ ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/response/fixtures.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/datagram/tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/recovery/tests.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/recovery/receiving_tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/recovery/worker_tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/recovery/numerics_tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/job_tests.rs",
@@ -5764,13 +5771,13 @@ def execute_engine_ke_fixtures(args, report: dict) -> None:
     COMMON.require_engine_ke_role(ENGINE_KE_SCOPE, policy)
     if policy["campaigns_admitted"] or policy["mutation_inventories"]:
         raise Incomplete("Public fixture preparation requires closed mutation campaign admission.")
+    if shutil.disk_usage(args.output_dir.parent).free < policy["minimum_free_bytes"]:
+        raise Incomplete("Public fixtures require seven GiB before admission.")
     dependency, identity = PRODUCT.admit_product(ROOT)
     PRODUCT.SLINT.profile_rows(dependency, PRODUCT.SLINT.EP1_PROFILE)
     if any(name not in identity for name in (ENGINE_KE_FIXTURE_SOURCE, ENGINE_KE_FIXTURE_LOCK)):
         raise Incomplete("The actual public generator is outside the admitted product source inventory.")
     graph = admit_engine_ke_fixture_lock(ROOT, dependency)
-    if shutil.disk_usage(args.output_dir.parent).free < policy["minimum_free_bytes"]:
-        raise Incomplete("Public fixtures require five GiB before admission.")
     inputs = (*ENGINE_KE_BOUND_INPUTS, ENGINE_KE_FIXTURE_SOURCE, ENGINE_KE_FIXTURE_MANIFEST, ENGINE_KE_FIXTURE_LOCK)
     current = {name: PRODUCT.sha256(ROOT / name) for name in inputs}
     selected = argparse.Namespace(**vars(args))
@@ -5825,7 +5832,7 @@ def validate_engine_ke_inventory(names: object) -> list[str]:
             or names != sorted(set(names))
             or sum(name.startswith("nts_ke_experiment::") for name in names) != ENGINE_KE_CASE_COUNT
             or ENGINE_KE_SEND_AFTER_TEST not in names):
-        raise Incomplete("Engine KE requires all 410 actual Engine tests including its 229 KE cases and send-after regression.")
+        raise Incomplete("Engine KE requires all 415 actual Engine tests including its 234 KE cases and send-after regression.")
     return names
 
 
@@ -6394,6 +6401,8 @@ def execute_engine_ke_profile(args, report: dict) -> None:
         raise Incomplete("Engine KE requires the selected stable host analysis lane.")
     policy = read_json(ROOT / ENGINE_KE_POLICY)
     binding = validate_engine_ke_policy(policy, campaign=args.lane in {"mutation", "all"})
+    if shutil.disk_usage(args.output_dir.parent).free < policy["minimum_free_bytes"]:
+        raise Incomplete("Engine KE metrics require seven GiB before admission.")
     subjects = ENGINE_KE_SCOPE.select(args.subject)
     dependency, identity = PRODUCT.admit_product(ROOT)
     try:
@@ -6412,8 +6421,6 @@ def execute_engine_ke_profile(args, report: dict) -> None:
                        for row in manifest.get("security_modules", [])) != 1):
             raise Incomplete("Engine KE requires the complete current critical/security inventory.")
     evidence_before = admit_engine_ke_evidence(binding)
-    if shutil.disk_usage(args.output_dir.parent).free < policy["minimum_free_bytes"]:
-        raise Incomplete("Engine KE metrics require five GiB before admission.")
     selected = argparse.Namespace(**vars(args))
     if args.lane == "enumerate":
         selected.lane = "mutation"
@@ -6534,9 +6541,285 @@ def execute_engine_ke_profile(args, report: dict) -> None:
     # A selected GNU pass never closes the remaining owners, Windows or native custody.
     report["qualification_passed"] = False
 
+SOURCE_POLICY_POLICY = COMMON.ENGINE_SOURCE_POLICY_POLICY
+SOURCE_POLICY_SUBJECTS = dict(COMMON.ENGINE_SOURCE_POLICY_SUBJECTS)
+SOURCE_POLICY_SCOPE = COMMON.Scope(
+    "nevrotick-engine", COMMON.ENGINE_SOURCE_POLICY_SUBJECTS, SOURCE_POLICY_POLICY)
+SOURCE_POLICY_ORDINARY_COUNT = 209
+SOURCE_POLICY_DOCTEST_COUNT = 73
+# Independent inspection of boundary-sensitivity-v5 development attempt 1 established
+# these complete sorted identities. They identify a roster, not current execution.
+SOURCE_POLICY_ORDINARY_DIGEST = "9b7c9509495400f141583022d85e3a8eb289aef571a159035d497558b4935dff"
+SOURCE_POLICY_DOCTEST_DIGEST = "2fa097da2f35b79fa8fd8a2c2b93c49efcbf023896dc181dc7510c94ee50172a"
+SOURCE_POLICY_BOUND_INPUTS = tuple(dict.fromkeys((
+    WRAPPER, TESTS, *SOURCE_POLICY_SUBJECTS.values(),
+    "crates/nevrotick-engine/tests/private/source_policy.rs",
+    "crates/nevrotick-engine/tests/private/session.rs",
+    "crates/nevrotick-engine/tests/private/series.rs",
+    "crates/nevrotick-engine/tests/private/series_process.rs",
+    "crates/nevrotick-engine/tests/private/address_round.rs",
+    "crates/nevrotick-engine/tests/private/address_progress.rs",
+    "crates/nevrotick-engine/tests/private/processing_guards.rs",
+    "crates/nevrotick-engine/tests/private/argument_guards.rs",
+    "crates/nevrotick-engine/tests/runtime_boundary.rs",
+    "crates/nevrotick-engine/tests/prepare_release.rs",
+    "crates/nevrotick-engine/tests/prepare_entered.rs",
+    "crates/nevrotick-engine/tests/execute_entered.rs",
+    "crates/nevrotick-engine/tests/series.rs",
+    "scripts/portable-analysis.py", "scripts/tests/test_portable_analysis.py",
+    "scripts/analysis-runtime.py", "scripts/check-analysis.py", "scripts/analysis-controls.py",
+    "scripts/prepare-product.py", "scripts/verify.py", "scripts/check-environment.py",
+    "scripts/check-strict.py", "scripts/slint_dependency_profile.py",
+    "scripts/slint_linux_sdk.py", "scripts/advisory_snapshot.py",
+    "policy/analysis-tools.json", "policy/verification-manifest.toml",
+    "policy/tool-manifest.json", "policy/ui-m0-dependencies.json",
+    "Cargo.toml", "Cargo.lock", "crates/nevrotick-engine/Cargo.toml", "rust-toolchain.toml",
+    ".cargo/config.toml", ".cargo/mutants.toml", ".config/nextest.toml",
+)))
+
+
+def source_policy_test_inventory(binding: dict) -> tuple[list[str], list[str]]:
+    """Require complete independent default identities, not a same-count substitute."""
+    ordinary, docs = binding.get("test_inventory"), binding.get("doctest_inventory")
+    for names, count, digest in (
+            (ordinary, SOURCE_POLICY_ORDINARY_COUNT, SOURCE_POLICY_ORDINARY_DIGEST),
+            (docs, SOURCE_POLICY_DOCTEST_COUNT, SOURCE_POLICY_DOCTEST_DIGEST)):
+        if (type(names) is not list or len(names) != count
+                or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
+                or names != sorted(set(names)) or COMMON.canonical_sha256(names) != digest):
+            raise Incomplete("Source-policy qualification requires its complete 209/73 default roster.")
+    selected = [name for name in ordinary if name.startswith("source_policy::tests::")]
+    kod_docs = [name for name in docs if name.startswith(
+        "crates/nevrotick-engine/src/source_policy.rs - ")]
+    if (len(selected) != 28
+            or "source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted" not in ordinary
+            or "source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund" not in ordinary
+            or any(name.startswith("nts_ke_experiment::") for name in ordinary)
+            or len(kod_docs) != 4 or sum(name.endswith(" - compile fail") for name in kod_docs) != 3):
+        raise Incomplete("Source-policy roster must retain all 28 controls, public diagnostics, the setup budget and four compiler examples.")
+    return ordinary, docs
+
+
+def validate_source_policy_policy(policy: dict, *, campaign: bool = False) -> dict:
+    """Admit only the closed five-owner role and independently bound current inputs."""
+    COMMON.require_engine_source_policy_role(SOURCE_POLICY_SCOPE, policy)
+    binding = policy["binding"]
+    fields = {"candidate_sha256", "source_file_count", "inputs_sha256", "test_inventory",
+              "doctest_inventory", "development_evidence"}
+    if type(binding) is not dict or set(binding) != fields:
+        raise Incomplete("Source-policy current candidate binding has not been admitted.")
+    if (type(binding["source_file_count"]) is not int or binding["source_file_count"] <= 0
+            or type(binding["candidate_sha256"]) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", binding["candidate_sha256"]) is None):
+        raise Incomplete("Source-policy candidate identity is malformed.")
+    pins = binding["inputs_sha256"]
+    if (type(pins) is not dict or set(pins) != set(SOURCE_POLICY_BOUND_INPUTS)
+            or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None
+                   for value in pins.values())):
+        raise Incomplete("Source-policy protected source/helper closure is incomplete.")
+    source_policy_test_inventory(binding)
+    evidence = binding["development_evidence"]
+    if (type(evidence) is not dict or set(evidence) != {"path", "sha256"}
+            or type(evidence["path"]) is not str or not Path(evidence["path"]).is_absolute()
+            or type(evidence["sha256"]) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", evidence["sha256"]) is None):
+        raise Incomplete("Source-policy development reference needs exact external custody.")
+    if campaign and (not policy["campaigns_admitted"] or not policy["mutation_inventories"]):
+        raise Incomplete("Source-policy campaigns remain closed pending all five reviewed inventories.")
+    return binding
+
+
+def read_source_policy_policy(root: Path, *, campaign: bool = False) -> tuple[dict, dict, dict]:
+    """Refuse stale bytes or incomplete security registration before any Session/effect."""
+    policy = read_json(root / SOURCE_POLICY_POLICY)
+    binding = validate_source_policy_policy(policy, campaign=campaign)
+    _, identity = PRODUCT.admit_product(root)
+    if (len(identity) != binding["source_file_count"]
+            or COMMON.canonical_sha256(identity) != binding["candidate_sha256"]
+            or any(PRODUCT.sha256(root / name) != digest
+                   for name, digest in binding["inputs_sha256"].items())):
+        raise Incomplete("Source-policy actual candidate or protected helper bytes differ.")
+    manifest = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
+    critical, modules = manifest.get("critical_files"), manifest.get("security_modules")
+    if (type(critical) is not list or any(type(name) is not str for name in critical)
+            or type(modules) is not list
+            or any(type(row) is not dict or type(row.get("package")) is not str
+                   or type(row.get("files")) is not list
+                   or any(type(name) is not str for name in row["files"]) for row in modules)):
+        raise Incomplete("Source-policy critical/security inventory has malformed records.")
+    for filename in SOURCE_POLICY_SUBJECTS.values():
+        owners = [row["package"] for row in modules for name in row["files"] if name == filename]
+        if critical.count(filename) != 1 or owners != ["nevrotick-engine"]:
+            raise Incomplete("Every source-policy owner needs one exact critical/security registration.")
+    return policy, binding, identity
+
+
+def source_policy_execution(text: str, binding: dict, *, doctests: bool = False) -> dict:
+    """Reconcile actual complete libtest blocks against independently frozen identities."""
+    ordinary, docs = source_policy_test_inventory(binding)
+    names = read_successful_address_records(text)
+    if sorted(names) != sorted(ordinary + docs if doctests else ordinary):
+        raise Incomplete("Source-policy execution omitted or substituted an admitted case.")
+    return {"tests_executed": len(names), "test_names": names,
+            "inventory_sha256": COMMON.canonical_sha256(sorted(names))}
+
+
+def admit_source_policy_development(binding: dict, identity: dict) -> dict:
+    """Retain prior-source development evidence without transferring a candidate pass.
+
+    Current helper/manifest changes have their own admission. Every actual Rust,
+    Cargo and compiler configuration byte must still match the development
+    source; new runtime inputs require new development evidence.
+    """
+    evidence = binding["development_evidence"]
+    path = Path(evidence["path"])
+    reference = read_json(path, maximum=4 * 1024**2, expected_sha256=evidence["sha256"])
+    if (PRODUCT.sha256(path) != evidence["sha256"] or reference.get("status") != "workload-passed"
+            or reference.get("custody_unchanged") is not True
+            or reference.get("resource_observer_joined") is not True
+            or reference.get("terminal_resource_failures") != []):
+        raise Incomplete("Source-policy development evidence lacks passing terminal custody.")
+    previous = reference.get("source_sha256")
+    if type(previous) is not dict:
+        raise Incomplete("Source-policy development source identity is missing.")
+    runtime_names = {name for name in identity if name.endswith((".rs", "Cargo.toml", "Cargo.lock", "clippy.toml"))
+                     or name in {"rust-toolchain.toml", ".cargo/config.toml", ".cargo/mutants.toml", ".config/nextest.toml"}}
+    if any(previous.get(name) != identity[name] for name in runtime_names):
+        raise Incomplete("Source-policy runtime/graph/configuration differs from its development reference.")
+    lanes = reference.get("lanes")
+    required = {"boundary-control", "format", "gnu-check", "gnu-clippy", "msvc-clippy", "msvc-check",
+                "default-ordinary", "default-optimized", "default-doctests",
+                "ep1-ordinary", "ep1-optimized", "ep1-doctests"}
+    if (type(lanes) is not list or len(lanes) != len(required)
+            or any(type(row) is not dict for row in lanes)
+            or {row.get("lane") for row in lanes} != required):
+        raise Incomplete("Source-policy development evidence lacks its complete twelve lanes.")
+    admitted = {str(path): evidence["sha256"]}
+    for row in lanes:
+        raw_path = Path(row.get("path", ""))
+        if not raw_path.is_absolute() or raw_path.parent != path.parent:
+            raise Incomplete("Source-policy development lane leaves its fixed receipt directory.")
+        raw = read_json(raw_path, maximum=4 * 1024**2, expected_sha256=row.get("sha256"))
+        digest = PRODUCT.sha256(raw_path)
+        if (digest != row.get("sha256") or type(row.get("exit_code")) is not int
+                or row["exit_code"] != 0 or row.get("failure") is not None
+                or type(raw.get("exit_code")) is not int or raw["exit_code"] != 0
+                or raw.get("failure") is not None or type(raw.get("output")) is not str):
+            raise Incomplete("Source-policy development raw lane is failed or changed.")
+        admitted[str(raw_path)] = digest
+        if row["lane"] in {"default-ordinary", "default-optimized"}:
+            source_policy_execution(raw["output"], binding)
+        elif row["lane"] in {"default-doctests", "ep1-doctests"}:
+            docs = validate_engine_ke_doctests(raw["output"])["test_names"]
+            if sorted(docs) != binding["doctest_inventory"]:
+                raise Incomplete("Source-policy development compiler examples differ.")
+    return admitted
+
+
+def execute_source_policy_profile(args, report: dict) -> None:
+    """Use the existing isolated metric machinery for exactly five default-graph owners."""
+    report.update(profile="source_policy", qualification_passed=False, selected_lane_passed=False)
+    if (args.tool_admission_profile != "stable-core"
+            or args.lane not in {"baseline", "enumerate", "coverage", "mutation", "all"}):
+        raise Incomplete("Source-policy admits only fixed stable-core baseline/enumeration/metric lanes.")
+    policy, binding, identity = read_source_policy_policy(
+        ROOT, campaign=args.lane in {"mutation", "all"})
+    subjects = SOURCE_POLICY_SCOPE.select(args.subject)
+    if shutil.disk_usage(args.output_dir.parent).free < policy["minimum_free_bytes"]:
+        raise Incomplete("Source-policy metrics require seven GiB before admission.")
+    evidence_before = admit_source_policy_development(binding, identity)
+    selected = argparse.Namespace(**vars(args))
+    if args.lane == "enumerate":
+        selected.lane = "mutation"
+    report.update(subjects=subjects, candidate_sha256=binding["candidate_sha256"],
+                  full_critical_files=list(SOURCE_POLICY_SUBJECTS.values()),
+                  scope="Selected managed laboratory KoD owners; no NTS, native or product qualification",
+                  dependency_profile="default", development_reference=binding["development_evidence"],
+                  development_reference_scope="Prior-source development only; current helpers/manifest and metric results retain their own admission.",
+                  pending_qualification="Generation gaps, independent outcomes, EP1/native/production and other critical owners remain separate.")
+    session = COMMON.Session(ROOT, selected, report, SOURCE_POLICY_SCOPE, policy, SOURCE_POLICY_BOUND_INPUTS)
+    try:
+        if (session.product_identity != identity
+                or read_json(session.source / SOURCE_POLICY_POLICY) != policy
+                or any(PRODUCT.sha256(session.source / name) != digest
+                       for name, digest in binding["inputs_sha256"].items())):
+            raise Incomplete("Captured source-policy source/role/helper identity differs before execution.")
+
+        def run(label, command, timeout, **options):
+            address_storage_checkpoint(session, policy, report, label, "before")
+            try:
+                result = session.run(label, command, timeout, **options)
+                if label.startswith("mutation-campaign:"):
+                    subject = label.removeprefix("mutation-campaign:")
+                    directory = session.work / "mutation" / subject / "mutants.out"
+                    outcomes = COMMON.read_analysis_json(directory / "outcomes.json")
+                    baseline = next(row for row in outcomes["outcomes"] if row["scenario"] == "Baseline")
+                    relative = COMMON.analysis_output_path(baseline["log_path"])
+                    if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+                        raise Incomplete("Source-policy baseline log leaves its owned output.")
+                    report.setdefault("baseline_execution", {})[subject] = source_policy_execution(
+                        COMMON.read_analysis_text(directory / relative), binding, doctests=True)
+                return result
+            finally:
+                address_storage_checkpoint(session, policy, report, label, "after")
+
+        if args.lane == "baseline":
+            deadline = time.monotonic() + policy["baseline_wall_seconds"]
+            prefix = ["cargo", "test", "--package", "nevrotick-engine", "--frozen", "--jobs", "6"]
+            raw = run("source-policy-baseline", [*prefix, "--lib", "--tests", "--", "--test-threads=1"],
+                      COMMON.remaining_timeout(deadline, policy["baseline_wall_seconds"]))
+            report["baseline_execution"] = source_policy_execution(raw, binding)
+            raw = run("source-policy-doctests", [*prefix, "--doc", "--", "--test-threads=1"],
+                      COMMON.remaining_timeout(deadline, policy["baseline_wall_seconds"]))
+            docs = validate_engine_ke_doctests(raw)
+            if sorted(docs["test_names"]) != binding["doctest_inventory"]:
+                raise Incomplete("Source-policy baseline omitted or substituted a compiler example.")
+            report["doctest_execution"] = docs
+        if args.lane == "enumerate":
+            listing = COMMON.enumerate_mutation_inventories(
+                SOURCE_POLICY_SCOPE, subjects, policy, session.tools, run, report,
+                deadline=time.monotonic() + policy["enumeration_wall_seconds"],
+                maximum_per_file=512, maximum_total=min(2560, 512 * len(subjects)))
+            report.update(listed_inventories=listing.inventories,
+                          listed_inventory_bindings=listed_summary(listing.inventories),
+                          listed_total=listing.total, campaign_admission=False)
+        if args.lane in {"coverage", "all"}:
+            ignored = [re.escape("/work/source/" + name) + "$" for name in session.product_identity
+                       if name.endswith(".rs") and name not in subjects.values()]
+            ignored.append("/rustlib/src/rust/library/")
+            regex = "|".join(ignored)
+            if len(regex.encode()) > 65_536:
+                raise Incomplete("Source-policy exact coverage filename filter exceeds its bound.")
+            raw = run("coverage", [str(session.tools / "cargo-llvm-cov"), "llvm-cov",
+                "--package", "nevrotick-engine", "--frozen", "--jobs", "6", "--lib", "--tests",
+                "--json", "--output-path", "/work/coverage.json", "--failure-mode", "any",
+                "--ignore-filename-regex", regex, "--fail-under-file-lines", "90", "--", "--test-threads=1"],
+                policy["coverage_wall_seconds"])
+            report["coverage_execution"] = source_policy_execution(raw, binding)
+            coverage = COMMON.read_analysis_json(session.work / "coverage.json")
+            report["coverage"] = {name: COMMON.coverage_counts(
+                SOURCE_POLICY_SCOPE, coverage, "/work/source/" + filename)
+                for name, filename in subjects.items()}
+        if args.lane in {"mutation", "all"}:
+            COMMON.run_analysis_lanes(SOURCE_POLICY_SCOPE, subjects, policy, session.work,
+                                      session.tools, run, report, "mutation")
+    finally:
+        session.finish()
+        if admit_source_policy_development(binding, identity) != evidence_before:
+            raise Incomplete("Source-policy development reference changed during execution.")
+    report["selected_lane_passed"] = args.lane != "enumerate"
+    # Raw gates do not establish independent outcome/generation review. The
+    # coordinator owns that separate conclusion, including a per-owner union.
+    report["qualification_passed"] = False
+    report["independent_mutation_classification"] = "Every outcome and ungenerated guard requires separate review; no manual kill credit."
+
+
 def execute(args, report: dict) -> None:
     """Execute only the fixed selected lane, with full shared custody bookends."""
     profile = getattr(args, "profile", "legacy")
+    if profile == "source_policy":
+        execute_source_policy_profile(args, report)
+        return
     if args.lane in {"baseline", "fixtures"} and profile != "ke_association":
         raise Incomplete("The baseline and fixture lanes belong solely to the Engine KE role.")
     if profile == "ke_association":
@@ -6611,24 +6894,30 @@ def execute(args, report: dict) -> None:
 def main(argv=None) -> int:
     """Keep listing completion distinct from selected host coverage/mutation gates."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--profile", choices=("legacy", "series", "quality", "session", "address_round", "ke_association"), default="legacy")
+    parser.add_argument("--profile", choices=("legacy", "series", "quality", "session", "address_round", "ke_association", "source_policy"), default="legacy")
     parser.add_argument("--lane", choices=("contracts", "baseline", "fixtures", "enumerate", "coverage", "mutation", "all"), required=True)
-    parser.add_argument("--subject", choices=(*SUBJECTS, "series", "quality", "session", *ADDRESS_SUBJECTS, *ENGINE_KE_HOST_SUBJECTS, "all"), default="all")
+    parser.add_argument("--subject", choices=(*SUBJECTS, "series", "quality", "session", *ADDRESS_SUBJECTS, *ENGINE_KE_HOST_SUBJECTS, "source_policy", "all"), default="all")
     parser.add_argument("--tool-admission-profile", choices=("full", "stable-core"), default="full")
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
+    if args.profile == "source_policy" and args.subject not in {*SOURCE_POLICY_SUBJECTS, "all"}:
+        parser.error("Source-policy selects only its exact five named owners or all")
+    if args.profile != "source_policy" and args.subject == "source_policy":
+        parser.error("--subject source_policy requires --profile source_policy")
     if args.profile == "ke_association" and args.subject not in {*ENGINE_KE_HOST_SUBJECTS, "all"}:
         parser.error("Engine KE selects only its exact named host owners or all")
     if args.profile != "ke_association" and args.subject in ENGINE_KE_HOST_SUBJECTS:
         parser.error("Engine KE subjects require --profile ke_association")
-    if args.lane in {"baseline", "fixtures"} and args.profile != "ke_association":
-        parser.error("--lane baseline/fixtures requires --profile ke_association")
+    if args.lane == "baseline" and args.profile not in {"ke_association", "source_policy"}:
+        parser.error("--lane baseline requires --profile ke_association or source_policy")
+    if args.lane == "fixtures" and args.profile != "ke_association":
+        parser.error("--lane fixtures requires --profile ke_association")
     if args.lane == "fixtures" and args.subject != "all":
         parser.error("--lane fixtures requires --subject all")
     if args.profile == "address_round" and args.subject not in {*ADDRESS_SUBJECTS, "all"}:
         parser.error("--profile address_round selects only address_round, address_progress or all")
-    if args.profile != "address_round" and args.subject in ADDRESS_SUBJECTS:
+    if args.profile not in {"address_round", "source_policy"} and args.subject in ADDRESS_SUBJECTS:
         parser.error("Address-round subjects require --profile address_round")
     if args.profile == "legacy" and args.subject == "series":
         parser.error("--subject series requires --profile series")
@@ -6640,7 +6929,7 @@ def main(argv=None) -> int:
         parser.error("--profile quality selects only quality or all")
     if args.profile == "session" and args.subject not in {*SESSION_SUBJECTS, "all"}:
         parser.error("--profile session selects only session, series, measurement or all")
-    if args.profile != "session" and args.subject == "session":
+    if args.profile not in {"session", "source_policy"} and args.subject == "session":
         parser.error("--subject session requires --profile session")
     report = {"status": "incomplete", "scope": "Bounded host engine " + args.lane,
               "selected_lane": args.lane, "qualification_passed": False,

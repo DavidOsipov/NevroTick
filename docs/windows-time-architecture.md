@@ -1018,6 +1018,26 @@ Port isolation supplies neither authentication nor source independence. [S19]
 
 **Kiss-o'-Death support is required in S2.1/S2.2.** Extend the existing [protocol comparison](../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up) and Chrony port ledger before implementation: inspect pinned Chrony and at least one independent implementation, then reuse/adapt their qualified algorithms. Cover `RATE`, `DENY`/`RSTR`, unknown/experimental codes, correlation/replay, NTS KoD/`NTSN`, polling and source lifecycle. Reconcile differences against RFC 5905 section 7.4, verified erratum 3007 and RFC 8633 section 5.4; `RATE` increases the interval (reduces request frequency). KoD receive/transmit timestamps supply no time observation. Freeze bounds and recovery/re-enable behavior from that review rather than inventing a scheduler here. The current opaque stratum-zero fixture result is not implemented KoD policy. [S16, S18, S20]
 
+**Accepted bounded same-process policy — 15 November 2026:**
+[NV-DEC-001 §6.5](nevrotick-owner-decisions.md#65-kod-source-lifecycle--15-november-2026)
+selects saturating RATE doubling with continued probes at the checked local
+maximum. Unhandled controls preserve the healthy pending request, original
+deadline and spent receive budget. Keep separate stable logical-source and
+canonical remote-endpoint records (IP, UDP port and required IPv6 scope/zone).
+Aliases of the same endpoint share its state/allowance; a source retains its
+own restriction across DNS, address, port, session and association/KE changes.
+Apply the source and exact endpoint guards at the actual post-readiness send.
+Do not copy inherited restrictions into other source/endpoint records or take
+a transitive closure through aliases. DENY/RSTR stops the affected source and
+restricted endpoint until an explicit authorized, current-revision re-enable
+names the records changed, preserves other restrictions and never shortens an
+admitted earliest-send floor. Ordinary success does not reset RATE. Checked
+arithmetic, bounded non-evicting state, replay/deadline/work guards and current
+send admission remain mandatory. This approval selects no shipped intervals or
+persistence mechanism and proves no implemented/native behavior. Heavy
+qualification uses its separate restart instruction and fresh resource admission;
+recording this policy does not grant either.
+
 Cap datagram size, extension count, source history, outstanding requests and allocation work. Check lengths/alignment and numeric conversions before slicing or allocation. Distinguish parser rejection from statistical rejection. A malformed unauthenticated packet must not flush healthy source history or alter clock state.
 
 Inventory the unpredictability and actual entropy of every anti-spoofing value. Plain-NTP origin/correlation fields and source ports are protocol-constrained; they do not individually meet ASVS V11.5.1's 128-bit entropy floor merely because they are not bearer credentials. Retaining legacy compatibility requires an explicit scoped exception/risk decision under OPEN-9/S0.7. Do not sum timestamp and port widths to claim per-value conformity. An optional standalone UID extension is a separate interoperability decision, not an assumption about every legacy server. [S03, S19, S20]
@@ -1450,6 +1470,13 @@ not merely configuration or constructor tests. [S20, S122]
 RFC 8915 section 5.7 permits trailing unauthenticated extension fields and requires discarding those fields. Accept an otherwise valid protected response with well-framed trailing fields while giving them no semantic effect; malformed framing remains a separate rejection. The inspected Chrony 4.9 authenticator-last behavior is a recorded upstream difference, not an alternative RFC-alignment claim. Test the protected prefix and forbidden influence of trailing fields independently. [S17, S20]
 
 Freeze the relevant contracts before S2.2 integration and close the [RFC 8915 alignment checklist](../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up) across S2.2–S2.4 before P2 exit: KE record/error handling, retry reset, exporter/nonce/associated-data mapping, cookie lifecycle and the special KoD/NAK path. Ordinary time responses require packet authentication; the correlated KoD exception in section 5.7 is control-only and supplies neither authenticated time nor permission to downgrade. Keep the existing TLS/provider/trust gates; documentation alignment is not protocol qualification. [S20]
+
+The outstanding-UID requirement applies to all applicable NTS KoD controls,
+including RATE/DENY/RSTR, under RFC 8915 §5.7's previously-authenticated-server
+condition. It is not confined to NTSN. NTSN separately retains its forbidden
+cookie/authenticator fields and delayed, bounded recovery procedure. Discard
+unhandled codes without consuming a healthy pending request or refunding its
+spent receive budget; a control supplies no time/cookie/freshness authority.
 
 The [ordinary S2.2 composition card](../tasks/engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026)
 joins the existing kernels to fresh KE, atomic association publication, protected

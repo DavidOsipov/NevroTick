@@ -42,6 +42,8 @@ PURE_API_REASON = "Pure libraries receive explicit inputs; delegate ambient stat
 PURE_METHOD_PATHS = (
     "std::time::SystemTime::now",
     "std::time::Instant::now",
+    "std::time::Instant::elapsed",
+    "std::time::SystemTime::elapsed",
     "std::env::var",
     "std::env::var_os",
     "std::env::vars",
@@ -506,7 +508,45 @@ PURE_API_HEALTHY = '''//! A pure-role explicit-input policy control.
 pub const fn explicit_tick(tick: u64) -> Option<u64> {
     tick.checked_add(1)
 }
+/// Compute a monotonic span from two supplied coordinates.
+#[must_use]
+pub fn explicit_monotonic_span(
+    end: std::time::Instant,
+    start: std::time::Instant,
+) -> Option<std::time::Duration> {
+    end.checked_duration_since(start)
+}
+/// Compute a UTC span from two supplied coordinates.
+/// # Errors
+/// Returns the supplied-coordinate ordering error when `end` precedes `start`.
+pub fn explicit_utc_span(
+    end: std::time::SystemTime,
+    start: std::time::SystemTime,
+) -> Result<std::time::Duration, std::time::SystemTimeError> {
+    end.duration_since(start)
+}
 '''
+
+PURE_ELAPSED_CONTROLS = (
+    ("instant", "std::time::Instant::elapsed", '''
+/// Deliberately read elapsed time from a supplied monotonic timestamp.
+#[must_use]
+pub fn ambient_monotonic_elapsed(since: std::time::Instant) -> std::time::Duration {
+    use std::time::Instant as Clock;
+    Clock::elapsed(&since)
+}
+'''),
+    ("system-time", "std::time::SystemTime::elapsed", '''
+/// Deliberately read elapsed time from a supplied UTC timestamp.
+/// # Errors
+/// Returns the standard error when the supplied coordinate is later than now.
+pub fn ambient_utc_elapsed(
+    since: std::time::SystemTime,
+) -> Result<std::time::Duration, std::time::SystemTimeError> {
+    since.elapsed()
+}
+'''),
+)
 
 PURE_API_VIOLATIONS = '''
 /// Deliberately read the ambient monotonic clock through an alias.
@@ -622,12 +662,17 @@ def qualify_pure_api_fixtures(root: Path, metadata: dict, evidence: dict,
 
         execute("pure-explicit-input-workspace-positive", ["--workspace"])
         adapter = fixture / "crates/adapter-control/src/lib.rs"
-        adapter.write_text(PURE_API_HEALTHY + PURE_API_VIOLATIONS)
+        adapter.write_text(PURE_API_HEALTHY + PURE_API_VIOLATIONS
+                           + "".join(control for _, _, control in PURE_ELAPSED_CONTROLS))
         execute("adapter-identical-capabilities-positive", ["--package", "adapter-control"])
         for name in roles:
             source = fixture / "crates" / name / "src/lib.rs"
             source.write_text(PURE_API_HEALTHY + PURE_API_VIOLATIONS)
             execute(f"{name}-ambient-capabilities-negative", ["--package", name], rejected=True)
+            for label, method, control in PURE_ELAPSED_CONTROLS:
+                source.write_text(PURE_API_HEALTHY + control)
+                execute(f"{name}-{label}-elapsed-negative", ["--package", name],
+                        rejected=True, required=("disallowed_methods", PURE_API_REASON, method))
             source.write_text(PURE_API_HEALTHY)
         source = fixture / "crates" / roles[0] / "src/lib.rs"
         source.write_text(PURE_API_HEALTHY + '''

@@ -25,8 +25,8 @@ use super::{
     IoOutcome, LiveSlot, MAX_TIMEOUT, NativeDatagramPlatform, NativeReadOutcome, PACKET_BYTES,
     PilotError, RECEIVE_BYTES, Rejection, RunClockContext, SlotReport, SoftwareClock, StagedReply,
     Status, TerminalOutcome, TimerAction, attempt_send, charge_selected_datagram,
-    classify_read_result, commit_reply, finish_timer, latest, prepare_slot, stage_reply,
-    start_timer,
+    classify_read_result, commit_reply, finish_timer, latest, prepare_slot, refresh_source_policy,
+    stage_reply, start_timer,
 };
 use ntp_wire::FrameLimits;
 
@@ -35,6 +35,8 @@ pub(super) mod address_round;
 
 /// Fixed planned attempts, never a target count of successful measurements.
 const ATTEMPTS: usize = 3;
+/// Maximum pre-socket retry hints after the first setup attempt, not a poll interval.
+const POLICY_SETUP_WAKE_CAP: usize = 64;
 
 /// Raw new configuration fields share one mandatory bounded rule.
 #[derive(Validate)]
@@ -107,6 +109,10 @@ pub struct SeriesConfig {
 }
 
 impl SeriesConfig {
+    /// Copy the actual checked destination without introducing a new configuration source.
+    pub(super) const fn peer(&self) -> SocketAddr {
+        self.peer
+    }
     /// Admit endpoint and lifetimes through the sole mandatory Garde path.
     /// # Errors
     /// Reject endpoint first, then zero, inverted or oversized lifetimes.
@@ -228,6 +234,8 @@ fn series_packets(entropy: &[u8; 24]) -> Result<[[u8; PACKET_BYTES]; ATTEMPTS], 
 /// fn bypass(base: PreparedSeries, peer: std::net::SocketAddr) { let _ = PreparedSeries { peer, ..base }; }
 /// ```
 pub struct PreparedSeries {
+    /// Actual retained source ownership for every request in this prepared series.
+    source_policy: super::source_policy::SourceMode,
     /// Immutable endpoint admitted by the actual configuration constructor.
     peer: SocketAddr,
     /// Admitted per-request lifetime.
@@ -264,6 +272,18 @@ pub fn prepare_series(
     })
 }
 
+/// Preserve the owning session's closed policy mode through the same entropy kernel.
+/// # Errors
+/// Reject an entered runtime before entropy, then entropy or checked-token failure.
+pub(super) fn prepare_series_for_source(
+    config: &SeriesConfig,
+    source_policy: super::source_policy::SourceMode,
+) -> Result<(PreparedSeries, ControlHandle), PilotError> {
+    prepare_series_with_policy(config, source_policy, |entropy| {
+        getrandom::fill(entropy).map_err(|_| PilotError::Entropy)
+    })
+}
+
 /// Invoke exactly one entropy operation after rejecting an entered runtime.
 /// The private seam changes no public provider or retry policy; production uses
 /// the single original getrandom fill, and fault controls establish propagation only.
@@ -271,6 +291,17 @@ pub fn prepare_series(
 /// Preserve entered-runtime, entropy or subsequent mandatory token refusal.
 fn prepare_series_with_entropy(
     config: &SeriesConfig,
+    fill: impl FnOnce(&mut [u8; 24]) -> Result<(), PilotError>,
+) -> Result<(PreparedSeries, ControlHandle), PilotError> {
+    prepare_series_with_policy(config, super::source_policy::SourceMode::UnmanagedLab, fill)
+}
+
+/// One preparation kernel retains ownership and invokes its entropy operation exactly once.
+/// # Errors
+/// Preserve entered-runtime, entropy-provider or mandatory packet/token refusal.
+fn prepare_series_with_policy(
+    config: &SeriesConfig,
+    source_policy: super::source_policy::SourceMode,
     fill: impl FnOnce(&mut [u8; 24]) -> Result<(), PilotError>,
 ) -> Result<(PreparedSeries, ControlHandle), PilotError> {
     if tokio::runtime::Handle::try_current().is_ok() {
@@ -286,6 +317,7 @@ fn prepare_series_with_entropy(
     let control_handle = ControlHandle { sender };
     Ok((
         PreparedSeries {
+            source_policy,
             peer: config.peer,
             request_timeout: config.request_timeout,
             series_timeout: config.series_timeout,
@@ -746,10 +778,13 @@ fn refresh_slot(slot: &mut LiveSlot, state: Control, now: Instant, deadline: Ins
     if now >= deadline {
         slot.expire();
     }
+    refresh_source_policy(slot);
 }
 
 /// One selected operation, with no borrowed buffer or pending receive future.
 enum SeriesWake {
+    /// Relevant source policy changed, its send floor arrived, or lock custody was released.
+    SourcePolicy,
     /// The watch changed or closed.
     Control(bool),
     /// This request's bounded deadline became ready.
@@ -770,20 +805,23 @@ struct SeriesRead {
 
 /// Await one bounded request; dropped receive futures cannot escape this owner.
 async fn next_series_wake(
-    slot: &LiveSlot,
+    slot: &mut LiveSlot,
     buffer: &mut [u8; RECEIVE_BYTES],
     control: &mut watch::Receiver<Control>,
     open: bool,
     mut timer: Pin<&mut Sleep>,
 ) -> SeriesWake {
+    let receive = slot.can_receive();
+    let writable = slot.can_send();
     tokio::select! { biased;
         changed = control.changed(), if open => SeriesWake::Control(changed.is_ok()),
         () = &mut timer => SeriesWake::Deadline,
-        result = slot.socket.recv_from(buffer), if slot.can_receive() => {
+        () = slot.policy.wake() => SeriesWake::SourcePolicy,
+        result = slot.socket.recv_from(buffer), if receive => {
             let read = SoftwareClock::capture();
             SeriesWake::Read(SeriesRead { result: classify_read_result(NativeDatagramPlatform::current(), result), read })
         },
-        result = slot.socket.writable(), if slot.can_send() => SeriesWake::Writable(result),
+        result = slot.socket.writable(), if writable => SeriesWake::Writable(result),
     }
 }
 
@@ -824,7 +862,14 @@ fn publish_series_reply(
             slot.rejected += 1;
         }
     } else if let Ok(candidate) = staged {
-        commit_reply(slot, &candidate, processing);
+        let current = control.borrow();
+        if current.stop {
+            slot.finish(TerminalOutcome::Stopped);
+        } else if current.epoch != 0 {
+            slot.finish(TerminalOutcome::Stale);
+        } else {
+            commit_reply(slot, &candidate, processing, deadline);
+        }
     }
     state
 }
@@ -880,7 +925,7 @@ fn handle_series_writable(
         refresh_slot(slot, state, Instant::now(), deadline);
         if !slot.done() {
             match result {
-                Ok(()) => attempt_send(slot, deadline),
+                Ok(()) => attempt_send(slot, deadline, control),
                 Err(error) => slot.finish(TerminalOutcome::Io(IoOutcome::Native(
                     IoCause::capture(&error),
                 ))),
@@ -911,10 +956,11 @@ async fn run_request(
         if slot.done() {
             return (slot, state);
         }
-        let wake = next_series_wake(&slot, &mut buffer, control, open, timer.as_mut()).await;
+        let wake = next_series_wake(&mut slot, &mut buffer, control, open, timer.as_mut()).await;
         state = latest(control);
         refresh_slot(&mut slot, state, Instant::now(), deadline);
         match wake {
+            SeriesWake::SourcePolicy => {}
             SeriesWake::Control(value) => open = value,
             SeriesWake::Deadline => slot.expire(),
             SeriesWake::Writable(result) => {
@@ -933,7 +979,10 @@ async fn run_request(
 }
 
 /// Inputs to the one actual bind/registration operation for a planned request.
+#[derive(Clone)]
 struct RequestSetup {
+    /// The actual session binding; no fresh request can default a managed series to lab mode.
+    source_policy: super::source_policy::SourceMode,
     /// Immutable checked destination for this series.
     peer: SocketAddr,
     /// This planned request's separately admitted opaque token packet.
@@ -948,7 +997,12 @@ struct RequestSetup {
 /// # Errors
 /// Preserve the original typed bind/nonblocking/address/registration cause.
 fn setup_request(setup: RequestSetup) -> Result<LiveSlot, PilotError> {
+    setup
+        .source_policy
+        .admit()
+        .map_err(PilotError::SourcePolicy)?;
     let mut request = prepare_slot(setup.peer, setup.packet)?;
+    request.source_policy = setup.source_policy;
     request.profile = setup.profile;
     LiveSlot::from_prepared(request, setup.context)
 }
@@ -980,14 +1034,65 @@ where
             Ok(value) => value,
             Err(error) => return receiver.finish(SeriesEnd::Failure, Some(error)),
         };
-        let slot = match setup(RequestSetup {
+        let plan = RequestSetup {
+            source_policy: prepared.source_policy.clone(),
             peer: prepared.peer,
             packet,
             profile: prepared.profile,
             context: Arc::clone(&receiver.context),
-        }) {
-            Ok(value) => value,
-            Err(error) => return receiver.finish(SeriesEnd::Failure, Some(error)),
+        };
+        let mut contention_wakes = 0;
+        let slot = loop {
+            if let Some(end) = current_series_end(&mut prepared.control, deadline) {
+                return receiver.finish(end, None);
+            }
+            if matches!(
+                &plan.source_policy,
+                super::source_policy::SourceMode::Managed(_)
+            ) && Instant::now() >= request_end
+            {
+                return receiver.finish(
+                    SeriesEnd::Failure,
+                    Some(PilotError::PolicyAdmissionDeadline),
+                );
+            }
+            match setup(plan.clone()) {
+                Ok(value) => break value,
+                Err(PilotError::SourcePolicy(super::SourcePolicyError::Contended))
+                    if matches!(
+                        &plan.source_policy,
+                        super::source_policy::SourceMode::Managed(_)
+                    ) => {}
+                Err(error) => return receiver.finish(SeriesEnd::Failure, Some(error)),
+            }
+            if contention_wakes == POLICY_SETUP_WAKE_CAP {
+                return receiver
+                    .finish(SeriesEnd::Failure, Some(PilotError::PolicyAdmissionBudget));
+            }
+            contention_wakes += 1;
+            // Neither branch creates a socket or resets either original bound.
+            // The coalesced hint registers before checking the actual policy.
+            let retry = tokio::select! { biased;
+                changed = prepared.control.changed() => {
+                    if changed.is_err() {
+                        return receiver.finish(SeriesEnd::Failure, Some(PilotError::InternalState));
+                    }
+                    continue;
+                },
+                () = sleep_until(TokioInstant::from_std(request_end)) => {
+                    if let Some(end) = current_series_end(&mut prepared.control, deadline) {
+                        return receiver.finish(end, None);
+                    }
+                    return receiver.finish(SeriesEnd::Failure, Some(PilotError::PolicyAdmissionDeadline));
+                },
+                result = plan.source_policy.retry_after_contention() => result,
+            };
+            if let Err(error) = retry {
+                return receiver.finish(SeriesEnd::Failure, Some(PilotError::SourcePolicy(error)));
+            }
+            // A release is a hint rather than a reservation. Yield before a
+            // fresh attempt so lock handoffs cannot make a synchronous spin.
+            tokio::task::yield_now().await;
         };
         let Ok(position) = u8::try_from(index) else {
             return receiver.finish(SeriesEnd::Failure, Some(PilotError::InternalState));

@@ -1,0 +1,1540 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Process-retained laboratory source/endpoint policy at actual UDP effects.
+//!
+//! Stable source handles never arise from sessions or endpoints. This private
+//! owner supplies no production configuration, persistent continuity, NTS trust,
+//! clock authority or native qualification. Its explicit laboratory limits and
+//! single process installation survive authority/session drop.
+#![forbid(unsafe_code)]
+
+use std::{
+    error::Error,
+    fmt,
+    future::pending,
+    net::{Ipv4Addr, Ipv6Addr, SocketAddr},
+    pin::Pin,
+    sync::{Arc, Mutex, MutexGuard, OnceLock, TryLockError},
+    time::{Duration, Instant},
+};
+
+use garde::Validate;
+use ntp_wire::RawHeader;
+use tokio::sync::{Notify, futures::OwnedNotified, watch};
+
+use super::{
+    AcquisitionSession, LiveSlot, PACKET_BYTES, Phase, SEND_READY_CAP, SendBracket, SeriesConfig,
+    SoftwareClock, StagedReply, TerminalOutcome, complete_send, finish_valid_reply,
+};
+
+/// Fixed maximum catalogue, not an adopted product source count.
+const MAX_SOURCES: usize = 32;
+/// Fixed non-evicting endpoint capacity ceiling.
+const MAX_ENDPOINTS: usize = 64;
+/// Maximum notification/selection work in one bounded policy transaction.
+const MAX_RECORDS: usize = MAX_SOURCES + MAX_ENDPOINTS;
+/// RATE control reference-ID bytes, interpreted only after request correlation.
+const RATE: u32 = u32::from_be_bytes(*b"RATE");
+/// DENY control reference-ID bytes.
+const DENY: u32 = u32::from_be_bytes(*b"DENY");
+/// RSTR control reference-ID bytes.
+const RSTR: u32 = u32::from_be_bytes(*b"RSTR");
+/// Retains the one successful process installation even with no live facade.
+static PROCESS_POLICY: OnceLock<Arc<PolicyCell>> = OnceLock::new();
+
+/// Closed, payload-free policy refusals; none contains a peer or request.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SourcePolicyError {
+    /// Raw laboratory limits failed their mandatory constructor.
+    InvalidLimits,
+    /// A successful process installation already exists.
+    AlreadyInstalled,
+    /// Bounded policy storage could not be reserved.
+    Allocation,
+    /// The requested catalogue source does not exist.
+    UnknownSource,
+    /// An endpoint has not been bound by this owner.
+    UnknownEndpoint,
+    /// A numeric endpoint lacks its required port or zone.
+    InvalidEndpoint,
+    /// All preallocated endpoint slots are already retained.
+    Capacity,
+    /// A short policy transaction currently owns the cell.
+    Contended,
+    /// A panicked policy transaction made the cell unavailable.
+    Poisoned,
+    /// A handle or token belongs to another actual cell.
+    Foreign,
+    /// A record revision, outstanding request or correlation epoch is stale.
+    Stale,
+    /// A re-enable selection contains the same record more than once.
+    Duplicate,
+    /// A re-enable selection is empty or exceeds its fixed bound.
+    InvalidSelection,
+    /// An applicable record retains a server refusal.
+    Disabled,
+    /// An applicable record exhausted representable arithmetic or identity.
+    Unavailable,
+    /// An applicable earliest-send floor has not yet been reached.
+    NotDue,
+    /// A stratum-zero code has no selected control behavior.
+    UnhandledControl,
+}
+
+impl fmt::Display for SourcePolicyError {
+    /// Render only the closed category, never policy/input payloads.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::InvalidLimits => "invalid source policy limits",
+            Self::AlreadyInstalled => "source policy already installed",
+            Self::Allocation => "source policy allocation refused",
+            Self::UnknownSource => "unknown source policy source",
+            Self::UnknownEndpoint => "unknown source policy endpoint",
+            Self::InvalidEndpoint => "invalid source policy endpoint",
+            Self::Capacity => "source policy capacity exhausted",
+            Self::Contended => "source policy contended",
+            Self::Poisoned => "source policy poisoned",
+            Self::Foreign => "foreign source policy owner",
+            Self::Stale => "stale source policy identity",
+            Self::Duplicate => "duplicate source policy target",
+            Self::InvalidSelection => "invalid source policy selection",
+            Self::Disabled => "source policy refused",
+            Self::Unavailable => "source policy unavailable",
+            Self::NotDue => "source policy not due",
+            Self::UnhandledControl => "unhandled source control",
+        })
+    }
+}
+
+impl Error for SourcePolicyError {}
+
+/// Raw constructor fields share one mandatory Garde admission rule.
+#[derive(Validate)]
+struct LimitsCandidate {
+    /// Catalogue/capacity and both positive interval bounds are checked together.
+    #[garde(custom(limits_rule))]
+    values: (usize, usize, Duration, Duration),
+}
+
+/// Admit finite storage and intervals representable from actual construction time.
+/// # Errors
+/// Reject zero/oversized counts, zero/inverted intervals or deadline overflow.
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "Garde custom rules borrow raw fields and their unit context"
+)]
+fn limits_rule(values: &(usize, usize, Duration, Duration), (): &()) -> garde::Result {
+    let (sources, endpoints, initial, maximum) = *values;
+    if !(1..=MAX_SOURCES).contains(&sources)
+        || !(1..=MAX_ENDPOINTS).contains(&endpoints)
+        || initial.is_zero()
+        || initial > maximum
+        || Instant::now().checked_add(maximum).is_none()
+    {
+        return Err(garde::Error::new("invalid laboratory source policy limits"));
+    }
+    Ok(())
+}
+
+/// Immutable checked laboratory capacities and intervals; no shipped default.
+#[derive(Clone, Copy)]
+pub struct SourcePolicyLimits {
+    /// Fixed catalogue length, admitted before any source handle exists.
+    source_count: usize,
+    /// Preallocated endpoint count, never evicted or reused.
+    endpoint_capacity: usize,
+    /// Independent initial interval for every new record.
+    initial_interval: Duration,
+    /// Saturation bound, immutable throughout this root's lifetime.
+    maximum_interval: Duration,
+}
+
+impl SourcePolicyLimits {
+    /// Admit all raw limits through the sole mandatory Garde constructor.
+    /// # Errors
+    /// Refuse invalid capacities/intervals before installing state or handles.
+    pub fn new(
+        source_count: usize,
+        endpoint_capacity: usize,
+        initial_interval: Duration,
+        maximum_interval: Duration,
+    ) -> Result<Self, SourcePolicyError> {
+        LimitsCandidate {
+            values: (
+                source_count,
+                endpoint_capacity,
+                initial_interval,
+                maximum_interval,
+            ),
+        }
+        .validate()
+        .map_err(|_| SourcePolicyError::InvalidLimits)?;
+        Ok(Self {
+            source_count,
+            endpoint_capacity,
+            initial_interval,
+            maximum_interval,
+        })
+    }
+}
+
+impl fmt::Debug for SourcePolicyLimits {
+    /// Redact laboratory policy values.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("SourcePolicyLimits { .. }")
+    }
+}
+
+/// Canonical remote identity; local socket and IPv6 flow information are absent.
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum EndpointKey {
+    /// IPv4, including normalized IPv4-mapped aliases.
+    V4(Ipv4Addr, u16),
+    /// IPv6 with its required zone, or zero for an unscoped address.
+    V6(Ipv6Addr, u16, u32),
+}
+
+impl EndpointKey {
+    /// Normalize endpoint identity without widening the actual socket adapter.
+    /// # Errors
+    /// Refuse zero ports or a missing zone for a scoped IPv6 destination.
+    fn new(peer: SocketAddr) -> Result<Self, SourcePolicyError> {
+        if peer.port() == 0 {
+            return Err(SourcePolicyError::InvalidEndpoint);
+        }
+        match peer {
+            SocketAddr::V4(address) => Ok(Self::V4(*address.ip(), address.port())),
+            SocketAddr::V6(address) => {
+                let ip = *address.ip();
+                if let Some(mapped) = ip.to_ipv4_mapped() {
+                    return Ok(Self::V4(mapped, address.port()));
+                }
+                let scoped = ip.is_unicast_link_local()
+                    || (ip.is_multicast() && ip.segments()[0] & 0x000f != 0x000e);
+                if scoped && address.scope_id() == 0 {
+                    return Err(SourcePolicyError::InvalidEndpoint);
+                }
+                Ok(Self::V6(
+                    ip,
+                    address.port(),
+                    if scoped { address.scope_id() } else { 0 },
+                ))
+            }
+        }
+    }
+}
+
+/// One independently retained restriction and its actual-change channel.
+struct Record {
+    /// This record's own interval, never an inherited effective maximum.
+    interval: Duration,
+    /// An admitted earliest send; None means no attempt/control floor exists yet.
+    floor: Option<Instant>,
+    /// A direct DENY/RSTR, cleared only by the root authority.
+    refused: bool,
+    /// Sticky representational failure; ordinary re-enable cannot clear it.
+    unavailable: bool,
+    /// Ordinary state revision, including actual allowance reservations.
+    revision: u64,
+    /// Changes only for refusal/re-enable, independently of ordinary floors.
+    epoch: u64,
+    /// Changed state awaiting notification after the lock is released.
+    changed: bool,
+    /// Coalesced actual changes; read-only lock release does not publish here.
+    changes: watch::Sender<()>,
+}
+
+impl Record {
+    /// Allocate the actual-change channel before publication or send custody.
+    fn new(interval: Duration) -> Self {
+        let (changes, receiver) = watch::channel(());
+        drop(receiver);
+        Self {
+            interval,
+            floor: None,
+            refused: false,
+            unavailable: false,
+            revision: 1,
+            epoch: 1,
+            changed: false,
+            changes,
+        }
+    }
+
+    /// Snapshot inert transition fields without copying notification authority.
+    fn update(&self) -> Update {
+        Update {
+            interval: self.interval,
+            floor: self.floor,
+            refused: self.refused,
+            unavailable: self.unavailable,
+            revision: self.revision,
+            epoch: self.epoch,
+        }
+    }
+
+    /// Publish one already staged transition; no allocation or failure follows.
+    fn apply(&mut self, update: Update) {
+        self.interval = update.interval;
+        self.floor = update.floor;
+        self.refused = update.refused;
+        self.unavailable = update.unavailable;
+        self.revision = update.revision;
+        self.epoch = update.epoch;
+        self.changed = true;
+    }
+
+    /// Retain existing facts while closing an exhausted representation permanently.
+    fn exhaust(&mut self) {
+        self.unavailable = true;
+        self.changed = true;
+    }
+
+    /// Current receive availability intentionally ignores the next-send floor.
+    /// # Errors
+    /// Refuse a sticky unavailable record or its retained direct server refusal.
+    fn available(&self) -> Result<(), SourcePolicyError> {
+        if self.unavailable {
+            Err(SourcePolicyError::Unavailable)
+        } else if self.refused {
+            Err(SourcePolicyError::Disabled)
+        } else {
+            Ok(())
+        }
+    }
+}
+
+/// Copyable inert staged mutation; it grants no ownership or current permission.
+#[derive(Clone, Copy)]
+struct Update {
+    /// Revised own interval.
+    interval: Duration,
+    /// Preserved or later floor.
+    floor: Option<Instant>,
+    /// Revised direct refusal.
+    refused: bool,
+    /// Sticky unavailable state.
+    unavailable: bool,
+    /// Checked next revision.
+    revision: u64,
+    /// Checked correlation epoch.
+    epoch: u64,
+}
+
+/// One preallocated endpoint slot; binding is permanent once selected.
+struct EndpointRecord {
+    /// None only before first binding; a live key is never replaced.
+    key: Option<EndpointKey>,
+    /// Independent endpoint restriction.
+    record: Record,
+}
+
+/// Private canonical state; only short checked transactions may mutate it.
+struct PolicyState {
+    /// Immutable admitted bounds, retained across all sessions.
+    limits: SourcePolicyLimits,
+    /// Fixed source catalogue.
+    sources: Vec<Record>,
+    /// Fixed endpoint storage, preallocated before root publication.
+    endpoints: Vec<EndpointRecord>,
+}
+
+/// Stable record selector, never accepted without actual root identity.
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum RecordKey {
+    /// Fixed source catalogue position.
+    Source(usize),
+    /// Permanently bound endpoint slot.
+    Endpoint(usize),
+}
+
+impl PolicyState {
+    /// Read one actual existing record; unused endpoint slots are not targets.
+    /// # Errors
+    /// Refuse an unknown source position or an unknown/unbound endpoint position.
+    fn record(&self, key: RecordKey) -> Result<&Record, SourcePolicyError> {
+        match key {
+            RecordKey::Source(index) => self
+                .sources
+                .get(index)
+                .ok_or(SourcePolicyError::UnknownSource),
+            RecordKey::Endpoint(index) => self
+                .endpoints
+                .get(index)
+                .filter(|value| value.key.is_some())
+                .map(|value| &value.record)
+                .ok_or(SourcePolicyError::UnknownEndpoint),
+        }
+    }
+
+    /// Publish only to a previously validated permanent record position.
+    /// # Errors
+    /// Refuse an unknown source position or an unknown/unbound endpoint position.
+    fn record_mut(&mut self, key: RecordKey) -> Result<&mut Record, SourcePolicyError> {
+        match key {
+            RecordKey::Source(index) => self
+                .sources
+                .get_mut(index)
+                .ok_or(SourcePolicyError::UnknownSource),
+            RecordKey::Endpoint(index) => self
+                .endpoints
+                .get_mut(index)
+                .filter(|value| value.key.is_some())
+                .map(|value| &mut value.record)
+                .ok_or(SourcePolicyError::UnknownEndpoint),
+        }
+    }
+
+    /// Validate both actual binding positions before any transition.
+    /// # Errors
+    /// Refuse an unknown source or a canonical endpoint that differs from its slot.
+    fn binding(&self, binding: &SourceBinding) -> Result<(), SourcePolicyError> {
+        self.record(RecordKey::Source(binding.source.index))?;
+        if self
+            .endpoints
+            .get(binding.endpoint)
+            .and_then(|value| value.key)
+            != Some(binding.key)
+        {
+            return Err(SourcePolicyError::Foreign);
+        }
+        Ok(())
+    }
+
+    /// Return the maximum independently retained floor after availability checks.
+    /// # Errors
+    /// Refuse an invalid binding or either record's retained refusal/unavailability.
+    fn earliest(&self, binding: &SourceBinding) -> Result<Option<Instant>, SourcePolicyError> {
+        self.binding(binding)?;
+        let source = self.record(RecordKey::Source(binding.source.index))?;
+        let endpoint = self.record(RecordKey::Endpoint(binding.endpoint))?;
+        source.available()?;
+        endpoint.available()?;
+        Ok(source.floor.max(endpoint.floor))
+    }
+
+    /// Stage both own-interval debits before invocation; failure debits neither.
+    /// # Errors
+    /// Refuse invalid/unavailable bindings, an unreached floor or unrepresentable
+    /// deadlines/revisions. Arithmetic exhaustion marks only affected records
+    /// unavailable without debiting either record's send allowance.
+    fn reserve(
+        &mut self,
+        binding: &SourceBinding,
+        request: &Arc<()>,
+        now: Instant,
+    ) -> Result<(Correlation, Instant), SourcePolicyError> {
+        if self.earliest(binding)?.is_some_and(|floor| now < floor) {
+            return Err(SourcePolicyError::NotDue);
+        }
+        let keys = [
+            RecordKey::Source(binding.source.index),
+            RecordKey::Endpoint(binding.endpoint),
+        ];
+        let mut plans = [None, None];
+        for (key, plan) in keys.into_iter().zip(plans.iter_mut()) {
+            let record = self.record(key)?;
+            *plan = now.checked_add(record.interval).and_then(|floor| {
+                record.revision.checked_add(1).map(|revision| {
+                    let mut update = record.update();
+                    update.floor = Some(record.floor.map_or(floor, |old| old.max(floor)));
+                    update.revision = revision;
+                    update
+                })
+            });
+        }
+        if plans.iter().any(Option::is_none) {
+            for (key, plan) in keys.into_iter().zip(plans) {
+                if plan.is_none() {
+                    self.record_mut(key)?.exhaust();
+                }
+            }
+            return Err(SourcePolicyError::Unavailable);
+        }
+        let [Some(source_update), Some(endpoint_update)] = plans else {
+            return Err(SourcePolicyError::Unavailable);
+        };
+        let floor = source_update
+            .floor
+            .zip(endpoint_update.floor)
+            .map(|(source, endpoint)| source.max(endpoint))
+            .ok_or(SourcePolicyError::Unavailable)?;
+        let correlation = Correlation {
+            cell: Arc::clone(&binding.source.cell),
+            source: binding.source.index,
+            endpoint: binding.endpoint,
+            request: Arc::clone(request),
+            sent_at: now,
+            source_epoch: self.record(keys[0])?.epoch,
+            endpoint_epoch: self.record(keys[1])?.epoch,
+        };
+        for (key, plan) in keys.into_iter().zip(plans) {
+            self.record_mut(key)?
+                .apply(plan.ok_or(SourcePolicyError::Unavailable)?);
+        }
+        Ok((correlation, floor))
+    }
+
+    /// Admit this actual outstanding request without applying send-due rules.
+    /// # Errors
+    /// Refuse invalid/foreign binding or request identity, unavailable/refused
+    /// records, or correlation epochs invalidated since the actual send.
+    fn receiving(
+        &self,
+        binding: &SourceBinding,
+        stamp: &Correlation,
+        request: &Arc<()>,
+    ) -> Result<(), SourcePolicyError> {
+        self.binding(binding)?;
+        if !Arc::ptr_eq(&binding.source.cell, &stamp.cell)
+            || stamp.source != binding.source.index
+            || stamp.endpoint != binding.endpoint
+            || !Arc::ptr_eq(request, &stamp.request)
+        {
+            return Err(SourcePolicyError::Foreign);
+        }
+        let source = self.record(RecordKey::Source(stamp.source))?;
+        let endpoint = self.record(RecordKey::Endpoint(stamp.endpoint))?;
+        source.available()?;
+        endpoint.available()?;
+        if source.epoch != stamp.source_epoch || endpoint.epoch != stamp.endpoint_epoch {
+            return Err(SourcePolicyError::Stale);
+        }
+        Ok(())
+    }
+
+    /// Atomically publish the complete direct A/E control, including fail-closed plans.
+    /// # Errors
+    /// Refuse an invalid binding or inaccessible record position. Arithmetic
+    /// exhaustion instead marks the affected record unavailable while publishing
+    /// the other record's valid direct restriction.
+    fn control(
+        &mut self,
+        binding: &SourceBinding,
+        kind: ControlKind,
+        now: Instant,
+    ) -> Result<(), SourcePolicyError> {
+        self.binding(binding)?;
+        let keys = [
+            RecordKey::Source(binding.source.index),
+            RecordKey::Endpoint(binding.endpoint),
+        ];
+        let mut plans = [None, None];
+        for (key, plan) in keys.into_iter().zip(plans.iter_mut()) {
+            let record = self.record(key)?;
+            let mut update = record.update();
+            *plan = record.revision.checked_add(1).and_then(|revision| {
+                update.revision = revision;
+                match kind {
+                    ControlKind::Rate => {
+                        let remaining =
+                            self.limits.maximum_interval.checked_sub(record.interval)?;
+                        update.interval = if record.interval >= remaining {
+                            self.limits.maximum_interval
+                        } else {
+                            record.interval.checked_add(record.interval)?
+                        };
+                        let floor = now.checked_add(update.interval)?;
+                        update.floor = Some(record.floor.map_or(floor, |old| old.max(floor)));
+                    }
+                    ControlKind::Deny | ControlKind::Restrict => {
+                        update.refused = true;
+                        update.epoch = record.epoch.checked_add(1)?;
+                    }
+                }
+                Some(update)
+            });
+        }
+        for (key, plan) in keys.into_iter().zip(plans) {
+            let record = self.record_mut(key)?;
+            if let Some(update) = plan {
+                record.apply(update);
+            } else {
+                record.exhaust();
+            }
+        }
+        Ok(())
+    }
+}
+
+/// One retained cell and a separate release wake for bounded lock contention.
+struct PolicyCell {
+    /// All state/allowance commits serialize here; never block waiting for it.
+    state: Mutex<PolicyState>,
+    /// Read-only release is distinct from an actual policy change.
+    released: Arc<Notify>,
+    /// One fixed test pulse at the real setup-contention wait, never a callback.
+    #[cfg(test)]
+    setup_contention_probe: Mutex<Option<std::sync::mpsc::SyncSender<()>>>,
+}
+
+impl PolicyCell {
+    /// Allocate every source/endpoint record and channel before publication.
+    /// # Errors
+    /// Refuse bounded source or endpoint vector reservation without publishing a root.
+    fn new(limits: SourcePolicyLimits) -> Result<Arc<Self>, SourcePolicyError> {
+        let mut sources = Vec::new();
+        sources
+            .try_reserve_exact(limits.source_count)
+            .map_err(|_| SourcePolicyError::Allocation)?;
+        let mut endpoints = Vec::new();
+        endpoints
+            .try_reserve_exact(limits.endpoint_capacity)
+            .map_err(|_| SourcePolicyError::Allocation)?;
+        for _ in 0..limits.source_count {
+            sources.push(Record::new(limits.initial_interval));
+        }
+        for _ in 0..limits.endpoint_capacity {
+            endpoints.push(EndpointRecord {
+                key: None,
+                record: Record::new(limits.initial_interval),
+            });
+        }
+        Ok(Arc::new(Self {
+            state: Mutex::new(PolicyState {
+                limits,
+                sources,
+                endpoints,
+            }),
+            released: Arc::new(Notify::new()),
+            #[cfg(test)]
+            setup_contention_probe: Mutex::new(None),
+        }))
+    }
+
+    /// Acquire without waiting; no failed attempt grants permission or resets state.
+    /// # Errors
+    /// Refuse current contention or poisoning by a panicked policy transaction.
+    fn lock(&self) -> Result<PolicyGuard<'_>, SourcePolicyError> {
+        let guard = self.state.try_lock().map_err(|error| match error {
+            TryLockError::WouldBlock => SourcePolicyError::Contended,
+            TryLockError::Poisoned(_) => SourcePolicyError::Poisoned,
+        })?;
+        Ok(PolicyGuard {
+            guard: Some(guard),
+            cell: self,
+        })
+    }
+}
+
+/// Short transaction; release notifications occur only after actual mutex release.
+struct PolicyGuard<'a> {
+    /// Some throughout the transaction, taken exactly once during Drop.
+    guard: Option<MutexGuard<'a, PolicyState>>,
+    /// Actual cell supplying release and change notification owners.
+    cell: &'a PolicyCell,
+}
+
+impl PolicyGuard<'_> {
+    /// Borrow the actual guarded state, never a detached mutation snapshot.
+    /// # Errors
+    /// Refuse unavailable custody after this guard has relinquished its mutex guard.
+    fn state(&self) -> Result<&PolicyState, SourcePolicyError> {
+        self.guard.as_deref().ok_or(SourcePolicyError::Unavailable)
+    }
+
+    /// Mutably borrow only the actual guarded state.
+    /// # Errors
+    /// Refuse unavailable custody after this guard has relinquished its mutex guard.
+    fn state_mut(&mut self) -> Result<&mut PolicyState, SourcePolicyError> {
+        self.guard
+            .as_deref_mut()
+            .ok_or(SourcePolicyError::Unavailable)
+    }
+}
+
+impl Drop for PolicyGuard<'_> {
+    /// Publish bounded actual changes separately from every lock-release wake.
+    fn drop(&mut self) {
+        let mut notifications: [Option<watch::Sender<()>>; MAX_RECORDS] =
+            std::array::from_fn(|_| None);
+        if let Some(state) = self.guard.as_deref_mut() {
+            for (index, record) in state
+                .sources
+                .iter_mut()
+                .chain(
+                    state
+                        .endpoints
+                        .iter_mut()
+                        .map(|endpoint| &mut endpoint.record),
+                )
+                .enumerate()
+            {
+                if record.changed {
+                    if let Some(destination) = notifications.get_mut(index) {
+                        *destination = Some(record.changes.clone());
+                    }
+                    record.changed = false;
+                }
+            }
+        }
+        drop(self.guard.take());
+        for channel in notifications.into_iter().flatten() {
+            channel.send_replace(());
+        }
+        self.cell.released.notify_waiters();
+    }
+}
+
+/// Non-clonable laboratory policy authority; it is not production administration.
+/// The administrative facade cannot be duplicated through a convenience trait:
+/// ```compile_fail,E0277
+/// use nevrotick_engine::SourcePolicyAuthority;
+/// fn requires_clone<T: Clone>() {}
+/// requires_clone::<SourcePolicyAuthority>();
+/// ```
+pub struct SourcePolicyAuthority {
+    /// Actual once-installed process cell, not a caller identity label.
+    cell: Arc<PolicyCell>,
+}
+
+impl SourcePolicyAuthority {
+    /// Install exactly one successful process root; dropping this facade cannot reset it.
+    /// # Errors
+    /// Preserve prior installation or allocation failure; publish no partial root.
+    pub fn install(limits: SourcePolicyLimits) -> Result<Self, SourcePolicyError> {
+        if PROCESS_POLICY.get().is_some() {
+            return Err(SourcePolicyError::AlreadyInstalled);
+        }
+        let cell = PolicyCell::new(limits)?;
+        PROCESS_POLICY
+            .set(Arc::clone(&cell))
+            .map_err(|_| SourcePolicyError::AlreadyInstalled)?;
+        Ok(Self { cell })
+    }
+
+    /// Retrieve one existing opaque catalogue handle without minting a new source.
+    /// # Errors
+    /// Refuse an unknown catalogue position or unavailable policy custody.
+    pub fn source(&self, index: usize) -> Result<SourceHandle, SourcePolicyError> {
+        let guard = self.cell.lock()?;
+        guard.state()?.record(RecordKey::Source(index))?;
+        Ok(SourceHandle {
+            cell: Arc::clone(&self.cell),
+            index,
+        })
+    }
+
+    /// Issue a current source-revision target from this actual authority only.
+    /// # Errors
+    /// Refuse foreign source identity or unavailable custody.
+    pub fn source_target(
+        &self,
+        source: &SourceHandle,
+    ) -> Result<SourcePolicyTarget, SourcePolicyError> {
+        if !Arc::ptr_eq(&self.cell, &source.cell) {
+            return Err(SourcePolicyError::Foreign);
+        }
+        self.target(RecordKey::Source(source.index))
+    }
+
+    /// Issue a target for an already bound canonical endpoint without creating it.
+    /// # Errors
+    /// Refuse an invalid/unknown endpoint or unavailable custody.
+    pub fn endpoint_target(
+        &self,
+        peer: SocketAddr,
+    ) -> Result<SourcePolicyTarget, SourcePolicyError> {
+        let key = EndpointKey::new(peer)?;
+        let guard = self.cell.lock()?;
+        let index = guard
+            .state()?
+            .endpoints
+            .iter()
+            .position(|endpoint| endpoint.key == Some(key))
+            .ok_or(SourcePolicyError::UnknownEndpoint)?;
+        let revision = guard.state()?.record(RecordKey::Endpoint(index))?.revision;
+        Ok(SourcePolicyTarget {
+            cell: Arc::clone(&self.cell),
+            key: RecordKey::Endpoint(index),
+            revision,
+        })
+    }
+
+    /// Capture an existing record's revision under actual custody.
+    /// # Errors
+    /// Refuse policy contention/poisoning, unavailable guard custody or an unknown
+    /// source/endpoint record; no target is issued on refusal.
+    fn target(&self, key: RecordKey) -> Result<SourcePolicyTarget, SourcePolicyError> {
+        let guard = self.cell.lock()?;
+        let revision = guard.state()?.record(key)?.revision;
+        Ok(SourcePolicyTarget {
+            cell: Arc::clone(&self.cell),
+            key,
+            revision,
+        })
+    }
+
+    /// Atomically clear exactly selected current refusals, preserving intervals/floors.
+    /// # Errors
+    /// Reject the complete selection before mutation on foreign, duplicate, stale,
+    /// unavailable or unrepresentable targets. No earlier epoch becomes current.
+    pub fn reenable(&mut self, targets: &[SourcePolicyTarget]) -> Result<(), SourcePolicyError> {
+        if targets.is_empty() || targets.len() > MAX_RECORDS {
+            return Err(SourcePolicyError::InvalidSelection);
+        }
+        let mut guard = self.cell.lock()?;
+        let state = guard.state_mut()?;
+        let mut plans = [None; MAX_RECORDS];
+        for (index, target) in targets.iter().enumerate() {
+            if !Arc::ptr_eq(&self.cell, &target.cell) {
+                return Err(SourcePolicyError::Foreign);
+            }
+            if targets.iter().take(index).any(|old| old.key == target.key) {
+                return Err(SourcePolicyError::Duplicate);
+            }
+            let record = state.record(target.key)?;
+            if record.unavailable {
+                return Err(SourcePolicyError::Unavailable);
+            }
+            if record.revision != target.revision {
+                return Err(SourcePolicyError::Stale);
+            }
+            let mut update = record.update();
+            update.revision = record
+                .revision
+                .checked_add(1)
+                .ok_or(SourcePolicyError::Unavailable)?;
+            update.epoch = record
+                .epoch
+                .checked_add(1)
+                .ok_or(SourcePolicyError::Unavailable)?;
+            update.refused = false;
+            *plans
+                .get_mut(index)
+                .ok_or(SourcePolicyError::InvalidSelection)? = Some((target.key, update));
+        }
+        for (key, update) in plans.into_iter().flatten() {
+            state.record_mut(key)?.apply(update);
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Debug for SourcePolicyAuthority {
+    /// Redact root identity and policy contents.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("SourcePolicyAuthority { .. }")
+    }
+}
+
+/// Authority-issued exact current-revision selection; it grants no authority by itself.
+#[derive(Clone)]
+pub struct SourcePolicyTarget {
+    /// Actual issuer cell, not an integer/Boolean authorization claim.
+    cell: Arc<PolicyCell>,
+    /// Exactly one existing source or endpoint record.
+    key: RecordKey,
+    /// Revision which must still be current at the atomic operation.
+    revision: u64,
+}
+
+impl fmt::Debug for SourcePolicyTarget {
+    /// Redact identity and revision.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("SourcePolicyTarget { .. }")
+    }
+}
+
+/// Cloneable use handle for one already issued stable logical source.
+#[derive(Clone)]
+/// A caller cannot manufacture a different source from an existing handle:
+/// ```compile_fail,E0451
+/// use nevrotick_engine::SourceHandle;
+/// fn forge(existing: SourceHandle) -> SourceHandle { SourceHandle { ..existing } }
+/// ```
+/// Nor can it change the registered source position:
+/// ```compile_fail,E0616
+/// use nevrotick_engine::SourceHandle;
+/// fn relabel(mut source: SourceHandle) { source.index = 1; }
+/// ```
+/// The legal path retains the issued source and checked session constructor:
+/// ```
+/// use nevrotick_engine::{AcquisitionSession, SeriesConfig, SourceHandle, SourcePolicyError};
+/// fn session(source: &SourceHandle, config: SeriesConfig)
+///     -> Result<AcquisitionSession, SourcePolicyError> {
+///     source.session(config)
+/// }
+/// ```
+pub struct SourceHandle {
+    /// Retains exactly the same actual cell across every session replacement.
+    cell: Arc<PolicyCell>,
+    /// Existing immutable catalogue position, never a session-derived identity.
+    index: usize,
+}
+
+impl SourceHandle {
+    /// Create a managed session from the original checked one-peer configuration.
+    /// # Errors
+    /// Preserve endpoint/capacity/custody refusal before preparation or socket work.
+    pub fn session(&self, config: SeriesConfig) -> Result<AcquisitionSession, SourcePolicyError> {
+        let binding = self.bind(config.peer())?;
+        Ok(AcquisitionSession::new_managed(config, binding))
+    }
+
+    /// Bind one permanent endpoint slot, reusing every canonical alias's record.
+    /// # Errors
+    /// Refuse an invalid numeric endpoint, unavailable policy custody, unknown
+    /// source or exhausted permanent endpoint capacity.
+    pub(super) fn bind(&self, peer: SocketAddr) -> Result<SourceBinding, SourcePolicyError> {
+        let key = EndpointKey::new(peer)?;
+        let mut guard = self.cell.lock()?;
+        let state = guard.state_mut()?;
+        let source_changes = state.record(RecordKey::Source(self.index))?.changes.clone();
+        let endpoint = if let Some(index) = state
+            .endpoints
+            .iter()
+            .position(|value| value.key == Some(key))
+        {
+            index
+        } else {
+            let index = state
+                .endpoints
+                .iter()
+                .position(|value| value.key.is_none())
+                .ok_or(SourcePolicyError::Capacity)?;
+            state
+                .endpoints
+                .get_mut(index)
+                .ok_or(SourcePolicyError::Capacity)?
+                .key = Some(key);
+            index
+        };
+        let endpoint_changes = state.record(RecordKey::Endpoint(endpoint))?.changes.clone();
+        Ok(SourceBinding {
+            source: self.clone(),
+            endpoint,
+            key,
+            source_changes,
+            endpoint_changes,
+        })
+    }
+}
+
+impl fmt::Debug for SourceHandle {
+    /// Redact stable source/root identity.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("SourceHandle { .. }")
+    }
+}
+
+/// Mandatory immutable source/endpoint custody passed down the prepared chain.
+#[derive(Clone)]
+pub(super) struct SourceBinding {
+    /// Stable source identity retained independently of this endpoint.
+    source: SourceHandle,
+    /// Permanently bound endpoint position in the same actual cell.
+    endpoint: usize,
+    /// Canonical key checked against each concrete native destination.
+    key: EndpointKey,
+    /// Existing source change channel, shared without copying restriction values.
+    source_changes: watch::Sender<()>,
+    /// Existing endpoint change channel.
+    endpoint_changes: watch::Sender<()>,
+}
+
+/// Every constructor explicitly selects historical fixture or managed custody.
+#[derive(Clone)]
+pub(super) enum SourceMode {
+    /// Historical one-shot observation; confers no managed-policy claim.
+    UnmanagedLab,
+    /// Mandatory original same-root source/endpoint binding.
+    Managed(SourceBinding),
+}
+
+impl SourceMode {
+    /// Observe at most one release after a fresh availability check. This is
+    /// only a retry hint: the actual setup must re-admit the same binding.
+    /// # Errors
+    /// Refuse unmanaged use or any fresh binding/availability failure other than
+    /// contention. A release wake grants no permission or completed setup.
+    pub(super) async fn retry_after_contention(&self) -> Result<(), SourcePolicyError> {
+        let Self::Managed(binding) = self else {
+            return Err(SourcePolicyError::Foreign);
+        };
+        let released = binding.source.cell.released.notified();
+        tokio::pin!(released);
+        released.as_mut().enable();
+        match self.admit() {
+            Ok(()) => Ok(()),
+            Err(SourcePolicyError::Contended) => {
+                #[cfg(test)]
+                {
+                    if let Ok(mut probe) = binding.source.cell.setup_contention_probe.try_lock()
+                        && let Some(sender) = probe.take()
+                    {
+                        let _delivery = sender.try_send(());
+                    }
+                }
+                released.await;
+                Ok(())
+            }
+            Err(error) => Err(error),
+        }
+    }
+    /// Admit current availability before preparation without checking send floors.
+    /// Final send/receive custody remains mandatory after this earlier observation.
+    /// # Errors
+    /// Refuse policy contention/poisoning, an invalid managed binding or either
+    /// applicable record's retained refusal/unavailability.
+    pub(super) fn admit(&self) -> Result<(), SourcePolicyError> {
+        let Self::Managed(binding) = self else {
+            return Ok(());
+        };
+        let guard = binding.source.cell.lock()?;
+        let state = guard.state()?;
+        state.binding(binding)?;
+        state
+            .record(RecordKey::Source(binding.source.index))?
+            .available()?;
+        state
+            .record(RecordKey::Endpoint(binding.endpoint))?
+            .available()
+    }
+}
+
+/// One actual attempted-send correlation, never issued by a session constructor.
+#[derive(Clone)]
+struct Correlation {
+    /// Actual root cell identity.
+    cell: Arc<PolicyCell>,
+    /// Original source record.
+    source: usize,
+    /// Original endpoint record.
+    endpoint: usize,
+    /// Actual prepared socket/request allocation identity.
+    request: Arc<()>,
+    /// Epochs sampled at the concrete invocation, not during preparation.
+    source_epoch: u64,
+    /// Exact endpoint epoch at that same invocation.
+    endpoint_epoch: u64,
+    /// Fresh owner attempt observation for ordering control admission.
+    sent_at: Instant,
+}
+
+/// Code-specific control semantics; peer poll fields never enter this type.
+#[derive(Clone, Copy)]
+enum ControlKind {
+    /// Increase each directly affected record's own retained interval.
+    Rate,
+    /// Refuse the directly affected source and endpoint until authorized action.
+    Deny,
+    /// Apply the same refusal lifetime for a restricted server.
+    Restrict,
+}
+
+impl ControlKind {
+    /// Interpret only the three selected correlated control codes.
+    /// # Errors
+    /// Refuse every code other than RATE, DENY or RSTR without changing state.
+    fn from_code(code: u32) -> Result<Self, SourcePolicyError> {
+        match code {
+            RATE => Ok(Self::Rate),
+            DENY => Ok(Self::Deny),
+            RSTR => Ok(Self::Restrict),
+            _ => Err(SourcePolicyError::UnhandledControl),
+        }
+    }
+}
+
+/// Sealed staged request/cell/epoch evidence, not current receive permission.
+pub(super) struct StagedPolicy {
+    /// Closed historical or actual-request evidence, privately constructed.
+    kind: StagedKind,
+}
+
+/// Explicit historical compatibility versus one exact actual managed request.
+enum StagedKind {
+    /// No managed claim is introduced for the existing fixture API.
+    UnmanagedLab,
+    /// Actual request correlation plus optional recognized control.
+    Managed {
+        /// Original cell, request and actual invocation epochs.
+        stamp: Correlation,
+        /// A recognized control, or an ordinary time-header path.
+        control: Option<ControlKind>,
+    },
+}
+
+/// Cached wait cause; only a fresh guarded concrete sender grants an effect.
+#[derive(Clone, Copy)]
+enum WaitState {
+    /// Writable readiness may be selected; the actual sender still rechecks.
+    Ready,
+    /// Observe the already enabled release waiter before trying custody again.
+    Contended,
+    /// Await this eligibility time or an actual policy/control change.
+    Floor(Instant),
+}
+
+/// One managed slot's private notification and outstanding-request custody.
+struct ManagedLive {
+    /// Original immutable source/endpoint owner.
+    binding: SourceBinding,
+    /// Issued only after a confirmed full actual send.
+    pending: Option<Correlation>,
+    /// Distinguishes contention release from actual policy/floor changes.
+    wait: WaitState,
+    /// Source's original actual-change observation.
+    source_changes: watch::Receiver<()>,
+    /// Exact endpoint's actual-change observation.
+    endpoint_changes: watch::Receiver<()>,
+    /// One preallocated pinned intrusive waiter, reset without allocating at send.
+    released: Pin<Box<OwnedNotified>>,
+}
+
+impl ManagedLive {
+    /// Enable before `try_lock`; notification custody spans the failed acquisition.
+    fn arm_release(&mut self) {
+        self.released
+            .as_mut()
+            .set(Arc::clone(&self.binding.source.cell.released).notified_owned());
+        self.released.as_mut().enable();
+    }
+
+    /// Cancel unused release registration after successful acquisition.
+    fn disarm_release(&mut self) {
+        self.released
+            .as_mut()
+            .set(Arc::clone(&self.binding.source.cell.released).notified_owned());
+    }
+}
+
+/// Closed live owner; unmanaged construction cannot accidentally omit managed fields.
+pub(super) struct LivePolicy {
+    /// Mandatory closed lifetime custody, without an optional managed escape.
+    mode: LiveMode,
+}
+
+/// Native lifetime policy alternatives remain closed inside the leaf.
+enum LiveMode {
+    /// Existing one-shot fixture with no managed-policy claim.
+    UnmanagedLab,
+    /// Original checked same-process binding and its wake/request state.
+    Managed(Box<ManagedLive>),
+}
+
+impl LivePolicy {
+    /// Allocate the single pinned release waiter outside actual sender custody.
+    pub(super) fn from_mode(mode: SourceMode) -> Self {
+        let mode = match mode {
+            SourceMode::UnmanagedLab => LiveMode::UnmanagedLab,
+            SourceMode::Managed(binding) => {
+                let source_changes = binding.source_changes.subscribe();
+                let endpoint_changes = binding.endpoint_changes.subscribe();
+                let released = Box::pin(Arc::clone(&binding.source.cell.released).notified_owned());
+                LiveMode::Managed(Box::new(ManagedLive {
+                    binding,
+                    pending: None,
+                    wait: WaitState::Ready,
+                    source_changes,
+                    endpoint_changes,
+                    released,
+                }))
+            }
+        };
+        Self { mode }
+    }
+
+    /// Readiness hint only; the mandatory sender independently rechecks current state.
+    pub(super) fn wants_writable(&self) -> bool {
+        match &self.mode {
+            LiveMode::UnmanagedLab => true,
+            LiveMode::Managed(live) => matches!(live.wait, WaitState::Ready),
+        }
+    }
+
+    /// Refresh pending availability or send waits with a fresh owned clock reading.
+    /// Contention arms a bounded wait, never terminal retirement or permission.
+    /// # Errors
+    /// Refuse poisoned/unavailable custody, invalid or foreign binding/request
+    /// identity, retained refusal or a stale outstanding correlation epoch.
+    pub(super) fn refresh(&mut self, request: &Arc<()>) -> Result<(), SourcePolicyError> {
+        let LiveMode::Managed(live) = &mut self.mode else {
+            return Ok(());
+        };
+        live.source_changes.mark_unchanged();
+        live.endpoint_changes.mark_unchanged();
+        live.arm_release();
+        let cell = Arc::clone(&live.binding.source.cell);
+        let guard = match cell.lock() {
+            Ok(guard) => guard,
+            Err(SourcePolicyError::Contended) => {
+                live.wait = WaitState::Contended;
+                return Ok(());
+            }
+            Err(error) => return Err(error),
+        };
+        live.disarm_release();
+        let state = guard.state()?;
+        if let Some(stamp) = &live.pending {
+            state.receiving(&live.binding, stamp, request)?;
+            live.wait = WaitState::Ready;
+        } else {
+            let floor = state.earliest(&live.binding)?;
+            let now = Instant::now();
+            live.wait = floor
+                .filter(|value| now < *value)
+                .map_or(WaitState::Ready, WaitState::Floor);
+        }
+        Ok(())
+    }
+
+    /// Await actual changes for every phase; release wakes apply only to contention.
+    pub(super) async fn wake(&mut self) {
+        let LiveMode::Managed(live) = &mut self.mode else {
+            pending::<()>().await;
+            return;
+        };
+        let floor = if let WaitState::Floor(value) = live.wait {
+            Some(value)
+        } else {
+            None
+        };
+        let timer = async {
+            if let Some(value) = floor {
+                tokio::time::sleep_until(value.into()).await;
+            } else {
+                pending::<()>().await;
+            }
+        };
+        tokio::pin!(timer);
+        tokio::select! { biased;
+            _ = live.source_changes.changed() => {},
+            _ = live.endpoint_changes.changed() => {},
+            () = live.released.as_mut(), if matches!(live.wait, WaitState::Contended) => {},
+            () = &mut timer => {},
+        }
+        live.wait = WaitState::Ready;
+    }
+
+    /// Seal actual pending correlation and classify controls exactly once.
+    /// # Errors
+    /// Refuse missing outstanding correlation, foreign request identity or an
+    /// unhandled stratum-zero code; no pending request is consumed here.
+    pub(super) fn stage(
+        &self,
+        request: &Arc<()>,
+        header: &RawHeader,
+    ) -> Result<StagedPolicy, SourcePolicyError> {
+        let kind = match &self.mode {
+            LiveMode::UnmanagedLab => StagedKind::UnmanagedLab,
+            LiveMode::Managed(live) => {
+                let stamp = live.pending.as_ref().ok_or(SourcePolicyError::Stale)?;
+                if !Arc::ptr_eq(&stamp.request, request) {
+                    return Err(SourcePolicyError::Foreign);
+                }
+                let control = if header.stratum() == 0 {
+                    Some(ControlKind::from_code(header.reference_id())?)
+                } else {
+                    None
+                };
+                StagedKind::Managed {
+                    stamp: stamp.clone(),
+                    control,
+                }
+            }
+        };
+        Ok(StagedPolicy { kind })
+    }
+}
+
+/// Concrete delegation result, never a reusable allowed/denied permission value.
+#[must_use = "historical unmanaged delegation must be handled explicitly"]
+pub(super) enum ManagedEffect {
+    /// Parent may run the existing explicitly unmanaged implementation.
+    UnmanagedLab,
+    /// The managed owner already performed or refused the concrete effect.
+    Handled,
+}
+
+/// Own current policy admission, both debits and the actual nonblocking send.
+/// The parent retains invocation-control read custody before entering here.
+pub(super) fn attempt_managed_send(slot: &mut LiveSlot, deadline: Instant) -> ManagedEffect {
+    let LiveMode::Managed(live) = &mut slot.policy.mode else {
+        return ManagedEffect::UnmanagedLab;
+    };
+    let binding = live.binding.clone();
+    live.arm_release();
+    let cell = Arc::clone(&binding.source.cell);
+    let mut guard = match cell.lock() {
+        Ok(guard) => guard,
+        Err(SourcePolicyError::Contended) => {
+            live.wait = WaitState::Contended;
+            return ManagedEffect::Handled;
+        }
+        Err(error) => {
+            slot.finish(TerminalOutcome::SourcePolicy(error));
+            return ManagedEffect::Handled;
+        }
+    };
+    live.disarm_release();
+    if !slot.can_send() {
+        return ManagedEffect::Handled;
+    }
+    if slot.send_attempts == SEND_READY_CAP {
+        slot.finish(TerminalOutcome::Budget);
+        return ManagedEffect::Handled;
+    }
+    if EndpointKey::new(slot.peer) != Ok(binding.key) {
+        slot.finish(TerminalOutcome::SourcePolicy(SourcePolicyError::Foreign));
+        return ManagedEffect::Handled;
+    }
+    let before = SoftwareClock::capture();
+    if before.mono_after >= deadline {
+        slot.expire();
+        return ManagedEffect::Handled;
+    }
+    let state = match guard.state_mut() {
+        Ok(state) => state,
+        Err(error) => {
+            slot.finish(TerminalOutcome::SourcePolicy(error));
+            return ManagedEffect::Handled;
+        }
+    };
+    match state.earliest(&binding) {
+        Ok(Some(floor)) if before.mono_after < floor => {
+            if let LiveMode::Managed(live) = &mut slot.policy.mode {
+                live.wait = WaitState::Floor(floor);
+            }
+            return ManagedEffect::Handled;
+        }
+        Ok(_) => {}
+        Err(error) => {
+            slot.finish(TerminalOutcome::SourcePolicy(error));
+            return ManagedEffect::Handled;
+        }
+    }
+    let (stamp, floor) = match state.reserve(&binding, &slot.identity, before.mono_after) {
+        Ok(reservation) => reservation,
+        Err(error) => {
+            slot.finish(TerminalOutcome::SourcePolicy(error));
+            return ManagedEffect::Handled;
+        }
+    };
+    slot.send_attempts += 1;
+    let result = slot.socket.try_send_to(&slot.packet, slot.peer);
+    let after = SoftwareClock::capture();
+    if let LiveMode::Managed(live) = &mut slot.policy.mode {
+        live.pending = if matches!(&result, Ok(PACKET_BYTES)) {
+            Some(stamp)
+        } else {
+            None
+        };
+    }
+    complete_send(slot, result, SendBracket { before, after });
+    if let LiveMode::Managed(live) = &mut slot.policy.mode {
+        live.wait = WaitState::Floor(floor);
+    }
+    ManagedEffect::Handled
+}
+
+/// Hold current policy custody through the parent's concrete terminal publication.
+/// The third argument is the original request deadline, never an old observation.
+pub(super) fn commit_managed_reply(
+    slot: &mut LiveSlot,
+    candidate: &StagedReply,
+    deadline: Instant,
+) -> ManagedEffect {
+    let (live, stamp, control) = match (&mut slot.policy.mode, &candidate.policy.kind) {
+        (LiveMode::UnmanagedLab, StagedKind::UnmanagedLab) => return ManagedEffect::UnmanagedLab,
+        (LiveMode::Managed(live), StagedKind::Managed { stamp, control }) => (live, stamp, control),
+        _ => {
+            slot.rejected += 1;
+            slot.last_rejection = Some(super::Rejection::SourcePolicy(SourcePolicyError::Foreign));
+            return ManagedEffect::Handled;
+        }
+    };
+    let binding = live.binding.clone();
+    let pending_stamp = live.pending.clone();
+    live.arm_release();
+    let cell = Arc::clone(&binding.source.cell);
+    let mut guard = match cell.lock() {
+        Ok(guard) => guard,
+        Err(SourcePolicyError::Contended) => {
+            live.wait = WaitState::Contended;
+            slot.rejected += 1;
+            return ManagedEffect::Handled;
+        }
+        Err(error) => {
+            slot.finish(TerminalOutcome::SourcePolicy(error));
+            return ManagedEffect::Handled;
+        }
+    };
+    live.disarm_release();
+    let now = Instant::now();
+    if now >= deadline {
+        slot.rejected += 1;
+        slot.expire();
+        return ManagedEffect::Handled;
+    }
+    if !matches!(slot.phase, Phase::Pending(_)) {
+        return ManagedEffect::Handled;
+    }
+    if now < candidate.read.mono_after
+        || now
+            .checked_duration_since(candidate.read.mono_after)
+            .is_none()
+    {
+        slot.rejected += 1;
+        return ManagedEffect::Handled;
+    }
+    let admission = (|| {
+        let state = guard.state_mut()?;
+        let actual = pending_stamp.as_ref().ok_or(SourcePolicyError::Stale)?;
+        state.receiving(&binding, actual, &slot.identity)?;
+        if !Arc::ptr_eq(&actual.cell, &stamp.cell)
+            || !Arc::ptr_eq(&actual.request, &stamp.request)
+            || actual.source != stamp.source
+            || actual.endpoint != stamp.endpoint
+            || actual.source_epoch != stamp.source_epoch
+            || actual.endpoint_epoch != stamp.endpoint_epoch
+            || actual.sent_at != stamp.sent_at
+        {
+            slot.rejected += 1;
+            slot.last_rejection = Some(super::Rejection::SourcePolicy(SourcePolicyError::Foreign));
+            return Ok(false);
+        }
+        if now < stamp.sent_at {
+            return Err(SourcePolicyError::Stale);
+        }
+        if let Some(kind) = control {
+            state.control(&binding, *kind, now)?;
+        }
+        Ok(true)
+    })();
+    match admission {
+        Err(error) => slot.finish(TerminalOutcome::SourcePolicy(error)),
+        Ok(true) => finish_valid_reply(slot, candidate, now),
+        Ok(false) => {}
+    }
+    ManagedEffect::Handled
+}
+
+/// Create an isolated laboratory fixture root using the same bounded allocator.
+/// # Errors
+/// Preserve bounded source/endpoint allocation refusal before fixture publication.
+#[cfg(test)]
+fn isolated_authority(
+    limits: SourcePolicyLimits,
+) -> Result<SourcePolicyAuthority, SourcePolicyError> {
+    Ok(SourcePolicyAuthority {
+        cell: PolicyCell::new(limits)?,
+    })
+}
+
+/// Inert test observation of the actual record, without mutation/authority access.
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct RecordSnapshot {
+    /// Actual own interval.
+    interval: Duration,
+    /// Actual retained floor.
+    floor: Option<Instant>,
+    /// Actual direct refusal.
+    refused: bool,
+    /// Actual ordinary revision.
+    revision: u64,
+    /// Actual correlation epoch.
+    epoch: u64,
+    /// Actual sticky unavailable state.
+    unavailable: bool,
+}
+
+/// Observe source then endpoint through actual guarded record lookup.
+/// # Errors
+/// Preserve custody, invalid-binding and unknown-record failures without mutation.
+#[cfg(test)]
+fn record_snapshots(binding: &SourceBinding) -> Result<[RecordSnapshot; 2], SourcePolicyError> {
+    let guard = binding.source.cell.lock()?;
+    let state = guard.state()?;
+    state.binding(binding)?;
+    let snapshot = |record: &Record| RecordSnapshot {
+        interval: record.interval,
+        floor: record.floor,
+        refused: record.refused,
+        revision: record.revision,
+        epoch: record.epoch,
+        unavailable: record.unavailable,
+    };
+    Ok([
+        snapshot(state.record(RecordKey::Source(binding.source.index))?),
+        snapshot(state.record(RecordKey::Endpoint(binding.endpoint))?),
+    ])
+}
+
+/// One checked kernel fixture request; no native-send fact is asserted.
+#[cfg(test)]
+struct FixtureRequest {
+    /// Same actual reservation stamp used by the production sender.
+    stamp: Correlation,
+    /// Consume-once fixture completion, independent of native qualification.
+    consumed: bool,
+}
+
+/// Exercise the production debit kernel with deterministic laboratory time only.
+/// # Errors
+/// Preserve custody, binding, availability, not-due and arithmetic failures from
+/// the actual reservation kernel; no native send is performed.
+#[cfg(test)]
+fn fixture_send(
+    binding: &SourceBinding,
+    request: &Arc<()>,
+    now: Instant,
+) -> Result<FixtureRequest, SourcePolicyError> {
+    let mut guard = binding.source.cell.lock()?;
+    let (stamp, _floor) = guard.state_mut()?.reserve(binding, request, now)?;
+    Ok(FixtureRequest {
+        stamp,
+        consumed: false,
+    })
+}
+
+/// Exercise the same current receive and direct-control kernels once.
+/// # Errors
+/// Refuse consumed/stale or foreign requests, unhandled codes, unavailable
+/// custody/records and observations preceding the actual reservation time.
+#[cfg(test)]
+fn fixture_control(
+    binding: &SourceBinding,
+    request: &mut FixtureRequest,
+    code: u32,
+    now: Instant,
+) -> Result<(), SourcePolicyError> {
+    if request.consumed {
+        return Err(SourcePolicyError::Stale);
+    }
+    let kind = ControlKind::from_code(code)?;
+    let mut guard = binding.source.cell.lock()?;
+    let state = guard.state_mut()?;
+    state.receiving(binding, &request.stamp, &request.stamp.request)?;
+    if now < request.stamp.sent_at {
+        return Err(SourcePolicyError::Stale);
+    }
+    state.control(binding, kind, now)?;
+    request.consumed = true;
+    Ok(())
+}
+
+/// Exercise successful receive availability without treating a send floor as expiry.
+/// # Errors
+/// Refuse consumed requests and preserve the production receiver's custody,
+/// binding, availability, request-identity and correlation-epoch failures.
+#[cfg(test)]
+fn fixture_receive(
+    binding: &SourceBinding,
+    request: &mut FixtureRequest,
+) -> Result<(), SourcePolicyError> {
+    if request.consumed {
+        return Err(SourcePolicyError::Stale);
+    }
+    let guard = binding.source.cell.lock()?;
+    guard
+        .state()?
+        .receiving(binding, &request.stamp, &request.stamp.request)?;
+    request.consumed = true;
+    Ok(())
+}
+
+#[cfg(test)]
+#[path = "../tests/private/source_policy.rs"]
+mod tests;

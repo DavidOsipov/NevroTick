@@ -4159,6 +4159,14 @@ class PhaseStepEquivalenceAdmissionTests(unittest.TestCase):
     def current_product(self):
         return {name: MODULE.PRODUCT.sha256(self.root / name) for name in self.product_names}
 
+    def test_phase_step_keeps_its_existing_zero_extra_token_profile(self):
+        self.assertIs(type(self.policy["mutation_jobserver_tasks"]), int)
+        self.assertEqual(self.policy["mutation_jobserver_tasks"], 0)
+        for workers in (6, 8, 10):
+            policy = {**self.policy, "mutation_jobs": workers}
+            with self.subTest(workers=workers):
+                self.assertEqual(MODULE.mutation_jobserver_tasks(self.scope, policy, workers=workers), 0)
+
     def bind_candidate(self, policy):
         candidate = MODULE.canonical_sha256(self.current_product())
         policy["candidate_sha256"] = candidate
@@ -4496,6 +4504,25 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
         self.assertTrue(MODULE.engine_ke_equivalences_valid(empty))
         MODULE.require_engine_ke_role(self.scope, empty)
 
+    def test_ke_scratch_profile_requires_exact_role_and_literal_limits(self):
+        limits = {"minimum_free_bytes": 7516192768,
+                  "owned_output_maximum_allocated_bytes": 3221225472}
+        policy = {**self.policy, **limits, "mutation_equivalences": []}
+        MODULE.require_engine_ke_role(self.scope, policy)
+        for field, expected in limits.items():
+            self.assertIs(type(MODULE.engine_ke_role_facts()[field]), int)
+            self.assertEqual(MODULE.engine_ke_role_facts()[field], expected)
+            for value in (True, False, float(expected), str(expected), None,
+                          expected - 1, expected + 1):
+                bad = {**policy, field: value}
+                with self.subTest(field=field, value=value), self.assertRaises(MODULE.Incomplete):
+                    MODULE.require_engine_ke_role(self.scope, bad)
+        for scope in (MODULE.Scope("foreign", self.scope.subjects, self.scope.policy),
+                      MODULE.Scope(self.scope.package, self.scope.subjects, "policy/foreign.json"),
+                      MODULE.Scope(self.scope.package, self.scope.subjects[:-1], self.scope.policy)):
+            with self.subTest(scope=scope), self.assertRaises(MODULE.Incomplete):
+                MODULE.require_engine_ke_role(scope, policy)
+
     def test_owned_contract_lane_requires_a_fixed_subject_and_stable_role(self):
         policy = {**self.policy, "mutation_equivalences": []}
         for subject in ("ke_process", "ke_job"):
@@ -4515,7 +4542,8 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
                 self.assertEqual(MODULE.admission_profile(args, self.scope, policy), "stable-core")
 
     def test_six_worker_role_keeps_exact_admission_and_campaign_command(self):
-        policy = {**self.policy, "mutation_jobs": 6, "mutation_equivalences": [],
+        policy = {**self.policy, "mutation_jobs": 6, "mutation_jobserver_tasks": 0,
+                  "mutation_equivalences": [],
                   "campaigns_admitted": True,
                   "mutation_inventories": {name: {"count": 1, "sha256": "a" * 64}
                                            for name, _path in MODULE.ENGINE_KE_SUBJECTS}}
@@ -4524,12 +4552,21 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
         command = [str(tools / "cargo-mutants"), "mutants", "--package", "nevrotick-engine",
             "--file", "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs",
             "--test-workspace", "false", "--cap-lints", "false", "--jobs", "6",
-            "--jobserver", "true", "--jobserver-tasks", "6", "--cargo-arg=--message-format=json",
+            "--jobserver", "true", "--jobserver-tasks", "0", "--cargo-arg=--message-format=json",
             "--features", "ke-association-prototype", "--baseline", "run", "--build-timeout", "90",
             "--timeout", "60", "--output", "/work/mutation/ke_core"]
         self.assertEqual(MODULE.admission_profile(args, self.scope, policy), "stable-core")
         MODULE.mutation_campaign_command(self.scope, tools, "ke_core", command,
             expected_jobs=6, expected_message_format="json", policy=policy)
+        extra_tokens = command.copy()
+        extra_tokens[extra_tokens.index("--jobserver-tasks") + 1] = "6"
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.mutation_campaign_command(self.scope, tools, "ke_core", extra_tokens,
+                expected_jobs=6, expected_message_format="json", policy=policy)
+        closed = {**policy, "campaigns_admitted": False}
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.mutation_campaign_command(self.scope, tools, "ke_core", command,
+                expected_jobs=6, expected_message_format="json", policy=closed)
         for workers in (8, 10):
             bad = {**policy, "mutation_jobs": workers}
             with self.subTest(workers=workers), self.assertRaises(MODULE.Incomplete):
@@ -4540,6 +4577,60 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
             with self.subTest(coherent_foreign_command=workers), self.assertRaises(MODULE.Incomplete):
                 MODULE.mutation_campaign_command(self.scope, tools, "ke_core", substituted,
                     expected_jobs=workers, expected_message_format="json", policy=bad)
+
+    def test_zero_extra_jobserver_tokens_require_exact_ke_role_and_literal_integer(self):
+        policy = {**self.policy, "mutation_equivalences": [], "mutation_jobserver_tasks": 0}
+        MODULE.require_engine_ke_role(self.scope, policy)
+        self.assertEqual(MODULE.mutation_jobserver_tasks(self.scope, policy, workers=6), 0)
+        for value in (6, True, False, 0.0, "0", None, -1):
+            bad = {**policy, "mutation_jobserver_tasks": value}
+            with self.subTest(tokens=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.require_engine_ke_role(self.scope, bad)
+            with self.subTest(supplier_tokens=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_jobserver_tasks(self.scope, bad, workers=6)
+        missing = policy.copy(); missing.pop("mutation_jobserver_tasks")
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.mutation_jobserver_tasks(self.scope, missing, workers=6)
+        for workers in (1, 8, 10, 12):
+            with self.subTest(caller_workers=workers), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_jobserver_tasks(self.scope, policy, workers=workers)
+        for scope in (MODULE.Scope("foreign", self.scope.subjects, self.scope.policy),
+                      MODULE.Scope(self.scope.package, self.scope.subjects, "policy/foreign.json"),
+                      MODULE.Scope(self.scope.package, self.scope.subjects[:-1], self.scope.policy)):
+            with self.subTest(scope=scope), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_jobserver_tasks(scope, policy, workers=6)
+
+    def test_foreign_mutation_roles_preserve_tokens_and_refuse_ke_override(self):
+        for scope in (SCOPE, MODULE.Scope("nevrotick-engine", (("legacy", "crates/nevrotick-engine/src/lib.rs"),),
+                                        "policy/engine-analysis.json")):
+            for workers in (1, 6, 10, 12):
+                policy = {"mutation_jobs": workers}
+                with self.subTest(scope=scope, workers=workers):
+                    self.assertEqual(MODULE.mutation_jobserver_tasks(scope, policy, workers=workers), workers)
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.mutation_jobserver_tasks(scope, {**policy, "mutation_jobserver_tasks": 0}, workers=workers)
+
+    def test_ke_listing_emits_six_workers_zero_extra_tokens_without_opening_campaign(self):
+        policy = {**self.policy, "mutation_equivalences": [], "mutation_jobserver_tasks": 0}
+        calls, report = [], {}
+        def run(label, command, timeout):
+            calls.append((label, command, timeout))
+            return json.dumps([{"file": self.filename, "name": "synthetic listing only", "package": "nevrotick-engine"}])
+        listing = MODULE.enumerate_mutation_inventories(self.scope, {"ke_ledger": self.filename},
+            policy, Path("/owned/synthetic-tools"), run, report,
+            deadline=MODULE.time.monotonic() + 240, maximum_per_file=512, maximum_total=512)
+        self.assertEqual(len(calls), 1)
+        label, command, timeout = calls[0]
+        self.assertEqual(label, "mutation-enumeration:ke_ledger")
+        self.assertEqual(command[command.index("--jobs") + 1], "6")
+        self.assertEqual(command[command.index("--jobserver-tasks") + 1], "0")
+        self.assertEqual(command[command.index("--features") + 1], "ke-association-prototype")
+        self.assertEqual(command[-2:], ["--list", "--json"])
+        self.assertNotIn("--baseline", command)
+        self.assertLessEqual(timeout, 120)
+        self.assertEqual(listing.total, 1)
+        self.assertFalse(policy["campaigns_admitted"])
+        self.assertEqual(policy["mutation_inventories"], {})
 
     def test_exact_complete_review_catalog_still_requires_generic_live_custody(self):
         self.assertEqual(MODULE.ENGINE_KE_EQUIVALENCE_IDS, frozenset({
@@ -4594,6 +4685,239 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
                 self.assertFalse(MODULE.engine_ke_equivalences_valid(policy))
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.require_engine_ke_role(self.scope, policy)
+
+    def test_generic_ke_consumer_cannot_skip_code_owned_equivalence_admission(self):
+        """The receiving helper rejects invented approvals without a caller precheck."""
+        with self.reviewed(), patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, self.identity)):
+            self.assertEqual(MODULE.admit_mutation_equivalences(self.root, self.scope, self.policy),
+                             self.policy["mutation_equivalences"])
+            for edit in (
+                lambda p: p["mutation_equivalences"][0].update(rationale="Caller invented approval"),
+                lambda p: p["mutation_equivalences"][0]["proof"].update(reviewer="self-approved"),
+                lambda p: p["mutation_equivalences"].pop(),
+            ):
+                bad = copy.deepcopy(self.policy)
+                edit(bad)
+                with self.subTest(edit=edit), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_mutation_equivalences(self.root, self.scope, bad)
+            for scope in (
+                MODULE.Scope("foreign", self.scope.subjects, self.scope.policy),
+                MODULE.Scope(self.scope.package, self.scope.subjects, "policy/foreign.json"),
+                MODULE.Scope(self.scope.package, self.scope.subjects[:-1], self.scope.policy),
+                MODULE.Scope(self.scope.package, (("alias", self.filename),), "policy/foreign.json"),
+            ):
+                with self.subTest(scope=scope), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_mutation_equivalences(self.root, scope, self.policy)
+
+
+class EngineSourcePolicyAdmissionTests(unittest.TestCase):
+    """Synthetic five-owner admission controls; no current product score or execution."""
+
+    OWNERS = (
+        ("source_policy", "crates/nevrotick-engine/src/source_policy.rs"),
+        ("library", "crates/nevrotick-engine/src/lib.rs"),
+        ("session", "crates/nevrotick-engine/src/session.rs"),
+        ("series", "crates/nevrotick-engine/src/series.rs"),
+        ("address_round", "crates/nevrotick-engine/src/address_round.rs"),
+    )
+    POLICY = "policy/engine-source-policy-analysis.json"
+
+    def setUp(self):
+        self.scope = MODULE.Scope("nevrotick-engine", self.OWNERS, self.POLICY)
+        # Literal independent limits challenge the shared code-owned facts.
+        self.policy = {
+            "schema_version": 1, "package": "nevrotick-engine",
+            "admission_status": "admitted-engine-source-policy-analysis",
+            "subjects": dict(self.OWNERS), "critical_files": [path for _, path in self.OWNERS],
+            "features": [], "test_workspace": False, "tool_admission_profile": "stable-core",
+            "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+            "maximum_mutants": 512, "maximum_listed_per_file": 512, "maximum_listed_total": 2560,
+            "baseline_wall_seconds": 300, "coverage_wall_seconds": 300,
+            "enumeration_wall_seconds": 240, "mutation_wall_seconds": 1200,
+            "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+            "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
+            "mutation_jobs": 6, "mutation_jobserver_tasks": 0,
+            "mutation_process_limit": 512, "mutation_message_format": "json",
+            "minimum_free_bytes": 7516192768, "stop_free_bytes": 4294967296,
+            "owned_output_maximum_allocated_bytes": 3221225472,
+            "owned_output_maximum_entries": 32768, "mutation_equivalences": [],
+            "binding": {
+                "candidate_sha256": "a" * 64, "source_file_count": 5,
+                "inputs_sha256": {path: "b" * 64 for _, path in self.OWNERS},
+                "test_inventory": ["source_policy::tests::synthetic_healthy"],
+                "doctest_inventory": ["synthetic_source_policy_doc - compile fail"],
+                "development_evidence": {"path": "/synthetic/prior-development.json", "sha256": "c" * 64},
+            },
+            "campaigns_admitted": False, "mutation_inventories": {},
+        }
+        self.tools = Path("/owned/synthetic-tools")
+
+    def campaign_policy(self):
+        """Admit synthetic inventories only; the fixture supplies no product review."""
+        policy = copy.deepcopy(self.policy)
+        policy["campaigns_admitted"] = True
+        policy["mutation_inventories"] = {
+            name: {"count": 1, "sha256": "d" * 64} for name, _path in self.OWNERS}
+        return policy
+
+    def command(self, subject="source_policy"):
+        """Declare the exact expected no-feature concrete campaign command independently."""
+        return [str(self.tools / "cargo-mutants"), "mutants", "--package", "nevrotick-engine",
+            "--file", dict(self.OWNERS)[subject], "--test-workspace", "false", "--cap-lints", "false",
+            "--jobs", "6", "--jobserver", "true", "--jobserver-tasks", "0",
+            "--cargo-arg=--message-format=json", "--baseline", "run", "--build-timeout", "90",
+            "--timeout", "60", "--output", "/work/mutation/" + subject]
+
+    def test_exact_five_owner_role_and_no_feature_graph_are_required(self):
+        self.assertEqual(MODULE.ENGINE_SOURCE_POLICY_SUBJECTS, self.OWNERS)
+        self.assertEqual(MODULE.ENGINE_SOURCE_POLICY_POLICY, self.POLICY)
+        MODULE.require_engine_source_policy_role(self.scope, self.policy)
+        self.assertEqual(MODULE.engine_ke_features(self.scope), ())
+        for scope in (
+            MODULE.Scope("foreign", self.OWNERS, self.POLICY),
+            MODULE.Scope("nevrotick-engine", self.OWNERS, "policy/foreign.json"),
+            MODULE.Scope("nevrotick-engine", self.OWNERS[:-1], self.POLICY),
+            MODULE.Scope("nevrotick-engine", self.OWNERS + (self.OWNERS[0],), self.POLICY),
+            MODULE.Scope("nevrotick-engine", (("alias", self.OWNERS[0][1]),), "policy/foreign.json"),
+        ):
+            with self.subTest(scope=scope), self.assertRaises(MODULE.Incomplete):
+                MODULE.require_engine_source_policy_role(scope, self.policy)
+        for key, value in (("features", ["ke-association-prototype"]),
+                           ("mutation_error_values", {}), ("mutation_equivalences", [{}])):
+            policy = {**self.policy, key: value}
+            with self.subTest(key=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.require_engine_source_policy_role(self.scope, policy)
+
+    def test_literal_limits_reject_bool_float_missing_and_changed_values(self):
+        for key, expected in self.policy.items():
+            if type(expected) is not int:
+                continue
+            for value in (True, False, float(expected), str(expected), None, expected - 1, expected + 1):
+                with self.subTest(key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                    MODULE.require_engine_source_policy_role(self.scope, {**self.policy, key: value})
+            policy = self.policy.copy(); policy.pop(key)
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.require_engine_source_policy_role(self.scope, policy)
+        for value in (0, 1, "false", None):
+            with self.subTest(campaign_flag=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.require_engine_source_policy_role(self.scope, {**self.policy, "campaigns_admitted": value})
+
+    def test_only_stable_coverage_listing_and_mutation_use_the_new_role(self):
+        for lane in ("baseline", "coverage", "mutation", "all"):
+            args = SimpleNamespace(lane=lane, tool_admission_profile="stable-core")
+            self.assertEqual(MODULE.admission_profile(args, self.scope, self.policy), "stable-core")
+        for lane in ("contracts", "fixtures", "enumerate", "foreign"):
+            args = SimpleNamespace(lane=lane, tool_admission_profile="stable-core")
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, self.scope, self.policy)
+        for profile in ("full", "foreign", True, None):
+            args = SimpleNamespace(lane="coverage", tool_admission_profile=profile)
+            with self.subTest(profile=profile), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, self.scope, {**self.policy, "tool_admission_profile": profile})
+
+    def test_candidate_metadata_and_execution_identity_shapes_refuse_poison(self):
+        for fault in ("bool_count", "zero_count", "candidate", "missing_owner", "hash", "empty_tests",
+                      "duplicate_tests", "bad_test_type", "line_break", "empty_docs", "relative_receipt",
+                      "receipt_parent", "receipt_hash", "absolute_pin", "parent_pin", "extra_field", "unbound"):
+            policy = copy.deepcopy(self.policy); binding = policy["binding"]
+            if fault == "bool_count": binding["source_file_count"] = True
+            elif fault == "zero_count": binding["source_file_count"] = 0
+            elif fault == "candidate": binding["candidate_sha256"] = "not a hash"
+            elif fault == "missing_owner": binding["inputs_sha256"].pop(self.OWNERS[0][1])
+            elif fault == "hash": binding["inputs_sha256"][self.OWNERS[0][1]] = "g" * 64
+            elif fault == "empty_tests": binding["test_inventory"] = []
+            elif fault == "duplicate_tests": binding["test_inventory"] *= 2
+            elif fault == "bad_test_type": binding["test_inventory"] = [True]
+            elif fault == "line_break": binding["test_inventory"] = ["first\nsecond"]
+            elif fault == "empty_docs": binding["doctest_inventory"] = []
+            elif fault == "relative_receipt": binding["development_evidence"]["path"] = "relative.json"
+            elif fault == "receipt_parent": binding["development_evidence"]["path"] = "/synthetic/../other.json"
+            elif fault == "receipt_hash": binding["development_evidence"]["sha256"] = "not a hash"
+            elif fault == "absolute_pin": binding["inputs_sha256"]["/unowned.rs"] = "a" * 64
+            elif fault == "parent_pin": binding["inputs_sha256"]["crates/../unowned.rs"] = "a" * 64
+            elif fault == "extra_field": binding["assume_passed"] = True
+            elif fault == "unbound": policy["binding"] = None
+            with self.subTest(fault=fault), self.assertRaises(MODULE.Incomplete):
+                MODULE.require_engine_source_policy_role(self.scope, policy)
+
+    def test_inventory_admission_requires_all_five_exact_positive_records(self):
+        healthy = self.campaign_policy()
+        MODULE.require_engine_source_policy_role(self.scope, healthy)
+        for fault in ("missing", "foreign", "bool", "zero", "over_cap", "hash", "extra", "empty_open"):
+            policy = copy.deepcopy(healthy); rows = policy["mutation_inventories"]
+            if fault == "missing": rows.pop("series")
+            elif fault == "foreign": rows["foreign"] = rows.pop("series")
+            elif fault == "bool": rows["series"]["count"] = True
+            elif fault == "zero": rows["series"]["count"] = 0
+            elif fault == "over_cap": rows["series"]["count"] = 513
+            elif fault == "hash": rows["series"]["sha256"] = "z" * 64
+            elif fault == "extra": rows["series"]["unreviewed"] = True
+            elif fault == "empty_open": policy["mutation_inventories"] = {}
+            with self.subTest(fault=fault), self.assertRaises(MODULE.Incomplete):
+                MODULE.require_engine_source_policy_role(self.scope, policy)
+
+    def test_final_campaign_requires_current_role_and_open_reviewed_inventory(self):
+        policy = self.campaign_policy(); command = self.command()
+        MODULE.mutation_campaign_command(self.scope, self.tools, "source_policy", command,
+            expected_jobs=6, expected_message_format="json", policy=policy)
+        for candidate in (None, self.policy, {**policy, "campaigns_admitted": False},
+                          {**policy, "mutation_inventories": {}},
+                          {**policy, "mutation_jobs": 8}, {**policy, "coverage_minimum_line_percent": 89}):
+            with self.subTest(policy=candidate), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_campaign_command(self.scope, self.tools, "source_policy", command,
+                    expected_jobs=6, expected_message_format="json", policy=candidate)
+        for flag, value in (("--jobs", "8"), ("--jobserver-tasks", "6"), ("--timeout", "61"),
+                            ("--file", self.OWNERS[1][1]), ("--cap-lints", "true")):
+            changed = command.copy(); changed[changed.index(flag) + 1] = value
+            with self.subTest(flag=flag), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_campaign_command(self.scope, self.tools, "source_policy", changed,
+                    expected_jobs=6, expected_message_format="json", policy=policy)
+        renamed = MODULE.Scope("nevrotick-engine", (("alias", self.OWNERS[0][1]),), "policy/foreign.json")
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.mutation_campaign_command(renamed, self.tools, "alias", self.command(),
+                expected_jobs=6, expected_message_format="json", policy=policy)
+
+    def test_zero_extra_tokens_are_narrow_and_listing_cannot_start_campaigns(self):
+        self.assertEqual(MODULE.mutation_jobserver_tasks(self.scope, self.policy, workers=6), 0)
+        for workers in (1, 8, 10, 12):
+            with self.subTest(workers=workers), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_jobserver_tasks(self.scope, self.policy, workers=workers)
+        filename = self.OWNERS[0][1]; calls = []
+        def run(label, command, timeout):
+            calls.append((label, command, timeout))
+            return json.dumps([{"name": "synthetic listed variant", "file": filename, "package": "nevrotick-engine"}])
+        listing = MODULE.enumerate_mutation_inventories(self.scope, {"source_policy": filename},
+            self.policy, self.tools, run, {}, deadline=MODULE.time.monotonic() + 240,
+            maximum_per_file=512, maximum_total=512)
+        self.assertEqual(listing.total, 1)
+        self.assertEqual(len(calls), 1)
+        label, command, timeout = calls[0]
+        self.assertEqual(label, "mutation-enumeration:source_policy")
+        self.assertEqual(command[-2:], ["--list", "--json"])
+        self.assertEqual(command[command.index("--jobs") + 1], "6")
+        self.assertEqual(command[command.index("--jobserver-tasks") + 1], "0")
+        self.assertNotIn("--features", command)
+        self.assertNotIn("--baseline", command)
+        self.assertLessEqual(timeout, 120)
+        legacy = MODULE.Scope("nevrotick-engine", (("library", self.OWNERS[1][1]),), "policy/engine-analysis.json")
+        self.assertEqual(MODULE.mutation_jobserver_tasks(legacy, {}, workers=6), 6)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.mutation_jobserver_tasks(legacy, {"mutation_jobserver_tasks": 0}, workers=6)
+
+    def test_actual_inventory_hash_is_checked_against_independent_declared_descriptors(self):
+        policy = self.campaign_policy()
+        item = {"name": "synthetic exact descriptor", "package": "nevrotick-engine", "file": self.OWNERS[0][1]}
+        inventory = {item["name"]: item}
+        expected_hash = hashlib.sha256(json.dumps(inventory, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        policy["mutation_inventories"]["source_policy"] = {"count": 1, "sha256": expected_hash}
+        admitted = MODULE.admit_reviewed_mutation_inventories(self.scope, policy, {"source_policy": inventory})
+        self.assertEqual(admitted["source_policy"], {"count": 1, "sha256": expected_hash})
+        changed = copy.deepcopy(inventory); changed[item["name"]]["replacement"] = "false"
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admit_reviewed_mutation_inventories(self.scope, policy, {"source_policy": changed})
+        poison = copy.deepcopy(policy); poison["binding"]["source_file_count"] = True
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admit_reviewed_mutation_inventories(self.scope, poison, {"source_policy": inventory})
 
 
 if __name__ == "__main__":

@@ -150,6 +150,10 @@ enum Mode {
     List,
     /// Run only the scripted KE component cohort, serially.
     Ke,
+    /// Reach the production facade's missing-argument refusal without provider work.
+    FacadeArguments,
+    /// Reach its entered-runtime refusal before preparation or provider work.
+    FacadeEnteredRuntime,
     /// Run the supervisor's bounded successful synthetic neighbor.
     ControlHealthy,
     /// Preserve the synthetic child's deliberate exit code 7.
@@ -181,6 +185,10 @@ impl Mode {
             Some(value) if value == OsStr::new("cpu") => Self::Cpu,
             Some(value) if value == OsStr::new("list") => Self::List,
             Some(value) if value == OsStr::new("ke") => Self::Ke,
+            Some(value) if value == OsStr::new("facade-arguments") => Self::FacadeArguments,
+            Some(value) if value == OsStr::new("facade-entered-runtime") => {
+                Self::FacadeEnteredRuntime
+            }
             Some(value) if value == OsStr::new("control-healthy") => Self::ControlHealthy,
             Some(value) if value == OsStr::new("control-fail") => Self::ControlFail,
             Some(value) if value == OsStr::new("control-wait") => Self::ControlWait,
@@ -208,6 +216,8 @@ impl Mode {
         match self {
             Self::Cpu => ("cpu-v3-probe.exe", &[]),
             Self::List => ("engine-tests.exe", &["--list", "--format", "terse"]),
+            Self::FacadeArguments => ("engine-facade-consumer.exe", &["arguments"]),
+            Self::FacadeEnteredRuntime => ("engine-facade-consumer.exe", &["entered-runtime"]),
             // These required nested-child controls await their separate custody
             // qualification; the flat supervisor keeps its existing process cap.
             Self::Ke => (

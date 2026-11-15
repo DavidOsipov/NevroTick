@@ -39,7 +39,7 @@ def synthetic_product(root):
 
 
 def literal_execution(*, doctests):
-    """Literal records for seven raw guards, six public cases and five examples."""
+    """Synthetic records for seven raw guards, six public cases and eight examples."""
     text = """running 7 tests
 test rational_seconds::tests::transformed_seconds_faults_have_valid_scalar_neighbors ... ok
 test rational_seconds::tests::transformed_bounds_require_power_and_exactness_association ... ok
@@ -59,13 +59,16 @@ test counted_binary_scalings_span_full_unsigned_shift_domain ... ok
 test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 """
     if doctests:
-        text += """running 5 tests
+        text += """running 8 tests
 test crates/time-domain/src/rational_seconds.rs - rational_seconds::RoundedRationalSeconds (line 100) ... ok
 test crates/time-domain/src/rational_seconds.rs - rational_seconds::RoundedRationalSeconds (line 110) - compile fail ... ok
 test crates/time-domain/src/rational_seconds.rs - rational_seconds::RoundedRationalSeconds (line 120) - compile fail ... ok
 test crates/time-domain/src/rational_seconds.rs - rational_seconds::RoundedRationalSeconds (line 130) - compile fail ... ok
 test crates/time-domain/src/rational_seconds.rs - rational_seconds::RoundedRationalSeconds (line 140) - compile fail ... ok
-test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test crates/time-domain/src/rational_seconds.rs - rational_seconds::RoundedRationalSeconds (line 150) - compile fail ... ok
+test crates/time-domain/src/rational_seconds.rs - rational_seconds::RoundedRationalSeconds (line 160) - compile fail ... ok
+test crates/time-domain/src/rational_seconds.rs - rational_seconds::RoundedRationalSeconds (line 170) - compile fail ... ok
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 """
     return text
 
@@ -238,11 +241,11 @@ class RationalSecondsAnalysisTests(unittest.TestCase):
                 MODULE.COMMON.coverage_counts(MODULE.RATIONAL_SECONDS_SCOPE, bad,
                                               "/work/source/" + MODULE.RATIONAL_SECONDS_FILE)
 
-    def test_actual_baseline_requires_every_independent_external_case_and_five_doctests(self):
+    def test_actual_baseline_requires_every_independent_external_case_and_eight_doctests(self):
         ordinary = literal_execution(doctests=False)
         self.assertEqual(MODULE.rational_seconds_test_execution(ordinary, doctests=False)["tests_executed"], 13)
         self.assertEqual(MODULE.rational_seconds_test_execution(literal_execution(doctests=True), doctests=True)
-                         ["selected_doctests"], 5)
+                         ["selected_doctests"], 8)
         rows = [line for line in ordinary.splitlines() if line.startswith("test ") and line.endswith(" ... ok")]
         self.assertEqual(len(rows), 13)
         for row in rows:
@@ -262,8 +265,8 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
     def test_native_instrumented_test_completion_matches_its_named_summary(self):
         result = MODULE.rational_seconds_test_execution(self.instrumented_execution(), doctests=True)
-        self.assertEqual(result["tests_executed"], 19)
-        self.assertEqual(result["selected_doctests"], 5)
+        self.assertEqual(result["tests_executed"], 22)
+        self.assertEqual(result["selected_doctests"], 8)
 
     def test_instrumented_test_requires_unique_named_complete_success(self):
         healthy = self.instrumented_execution()
@@ -278,7 +281,7 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
                     healthy + header + "CORE_PROFILE_COUNTS fits=0 points=8\n"):
             with self.subTest(bad=bad[-150:]), self.assertRaises(MODULE.Incomplete):
                 MODULE.rational_seconds_test_execution(bad, doctests=True)
-        self.assertEqual(MODULE.rational_seconds_test_execution(healthy, doctests=True)["tests_executed"], 19)
+        self.assertEqual(MODULE.rational_seconds_test_execution(healthy, doctests=True)["tests_executed"], 22)
 
     def test_crate_level_doctest_counts_without_replacing_owned_privacy_examples(self):
         crate = """running 1 test
@@ -286,7 +289,7 @@ test crates/time-domain/src/lib.rs - (line 18) ... ok
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 """
         result = MODULE.rational_seconds_test_execution(crate + literal_execution(doctests=True), doctests=True)
-        self.assertEqual((result["all_package_doctests"], result["selected_doctests"]), (6, 5))
+        self.assertEqual((result["all_package_doctests"], result["selected_doctests"]), (9, 8))
 
     def test_baseline_rejects_zero_failed_ignored_filtered_printed_and_redirected_records(self):
         healthy = literal_execution(doctests=True)
@@ -313,7 +316,7 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
             baseline = {"scenario": "Baseline", "summary": "Success", "log_path": "baseline.log"}
             path = directory / "outcomes.json"
             path.write_text(json.dumps({"outcomes": [baseline]}))
-            self.assertEqual(MODULE.rational_seconds_baseline(work)["tests_executed"], 18)
+            self.assertEqual(MODULE.rational_seconds_baseline(work)["tests_executed"], 21)
             for malformed in ([], {"outcomes": None}, {"outcomes": {}}):
                 path.write_text(json.dumps(malformed))
                 with self.subTest(malformed=malformed), self.assertRaisesRegex(
