@@ -1831,3 +1831,70 @@ No checker or inventory implementation changed, so no checker regression campaig
 is needed. This task installs no framework and runs no product, Rust, Hypothesis,
 native Windows or formal campaign. The containing commit supplies publication
 identity; real host setup remains an explicitly observed implementation step.
+
+## Audit-method selection and status pointers — 15 November 2026
+
+David authorized implementation of the four-file research/judge recommendation,
+then commit/push to remote `main`. Clean local `546e664` fast-forwarded to
+`17db1f123c5bccba6f92d04d1798eefa16916d35` before editing. The incoming generated-
+testing manuals, selection guide and skill hooks are retained. This slice owns
+documentation and instruction review, continuing CHECK-22/25 analysis methods
+and CHECK-24/25 evidence custody; it does not take over the Core/Engine work.
+
+During publication preparation, remote `main` advanced to
+`f06d57b0aba4ce1072dcedaff4b1b275dda32d71`. Fast-forward integration retains its
+complete missing-framework setup guidance and plan entry. The five reviewed
+documentation/checksum files remain byte-identical; the practice agent's actual
+instruction inputs also remain unchanged. The incoming setup route preserves
+current task authority; this documentation slice selects no framework setup.
+
+The [flow-audit reference](../skills/testing/references/flow-audit.md) now selects
+direct invariant review, local/global propagation analysis or deterministic
+actual-consumer histories by the remaining question. It links the existing
+generated-test selector for a concrete history/schedule gap and requires a finite
+query/model-development stop with unresolved edges and owners retained. Existing
+required checkpoints and gates remain authoritative.
+
+The [CodeQL reference](../skills/testing/references/codeql-data-flow.md) documents
+the already implemented `--finalize-database`, separates local and completed cloud
+profiles, and attaches query-specific evidence to the existing flow item instead
+of requiring a second ledger. [TOOLING.md](../../TOOLING.md) and the
+[portable bundle README](../../tools/codeql-audit/README.md) point to the
+[completed 15 November checkpoint](../../tasks/codeql-cloud-handoff.md#cloud-refresh-and-completed-scan--15-november-2026).
+That scan remains bound to `bb90f0c` / CLI 2.27.4 / Rust library 0.2.25. The local
+2.27.3 / 0.2.24 profile and original `bd1f7c4` bundle retain their historical
+scope/failures; neither supplies fresh qualification for a changed candidate.
+
+The bundle checksum list covers its README. Only that row was refreshed; all
+other 13 entries and actual query, expectation, pack/lock and evidence bytes are
+unchanged. All 14 bundle checksum checks pass. Package validation passes 66 skills.
+Independent review of the frozen five-file documentation/checksum candidate is
+READY with no required repairs. A pre-freeze checksum read overlapped editing
+and observed the then-old README digest; the final frozen manifest passes.
+
+One fresh-context read-only practice set checked three requests against a private
+expected-outcome record. The agent selected direct unit review with a concrete
+bad/healthy neighbor, stopped incomplete model work at its expired budget, and
+attached query evidence without transferring historical results to a new
+candidate or Windows runtime. All three satisfy the source-only grading criteria.
+Two initially incorrect reference-path reads were recovered through the skill's
+actual links. No grader exposure or prohibited execution was reported. This is
+instruction-use evidence, not an old/new comparison, unseen holdout result or
+measured improvement in efficiency or detection.
+
+The requirements-first oracle handoff remains an **unexecuted proposal**: one
+actual consumer owner, four healthy/fault variants, two arms retaining the actual
+current skills/checks, with only the extra oracle handoff in the treatment arm.
+Any selected comparison must count preparation, oracle, reviewer, repair and
+tooling costs within a predeclared aggregate budget; the judge proposed eight
+investigator-hours. No pilot recipe, dependency or new execution lane is adopted.
+
+Machine-local originals, frozen inputs, review and practice outputs are under
+`/workspace/.nevrotick-cloud/audit-docs-implementation-20261115-v1/`; the prior
+four-role research/judgment remains under `audit-method-research-20261115-v1`.
+Before publication, verify the complete intended index, package, changed-document
+links, bundle checksums and whitespace. The containing commit supplies publication
+identity; advance the remote parent without force. This slice changes no product,
+runner, query, acceptance threshold, verification policy or execution hold and
+runs no Rust/product/CodeQL/native/formal/fuzz campaign. Post-V1 formal deferral
+and current owner-specific 90%/95% obligations remain unchanged.

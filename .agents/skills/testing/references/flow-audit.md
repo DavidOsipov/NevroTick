@@ -27,6 +27,15 @@ concurrent ownership, numerical/time boundaries. Retain accepted neighbors and
 lower-risk roots awaiting review. Priority changes order, never evidence credit
 or permission to omit open branches.
 
+Choose by remaining uncertainty: direct invariant review for state/semantic
+questions; CodeQL for unresolved propagation or recurring caller patterns.
+Use local flow within one callable, global when propagation crosses functions.
+Disputed transitions need deterministic histories
+at the actual consumer; use [generated-test selection](generated-testing-selection.md)
+for a remaining history/schedule gap. Set a finite query/model-development budget
+and stop condition before expansion; at the limit retain unresolved edges and
+their owners. Selection preserves existing required checkpoints and gates.
+
 ## Review bounded connected slices
 
 Existing ledger worklist: root/effect, requirement, actual symbols, inspected

@@ -16,6 +16,13 @@ version requires compatibility and control evidence. Frozen expectations describ
 `bd1f7c4` product inputs. Verify relevant byte/configuration equality before reuse
 on a tooling-only successor; independently update facts when product inputs change.
 
+The later [15 November cloud scan](../../tasks/codeql-cloud-handoff.md#cloud-refresh-and-completed-scan--15-november-2026)
+completed four configurations and scoped global-flow queries on `bb90f0c` with
+CLI 2.27.4 / Rust library 0.2.25. It does not rebind this bundle's `bd1f7c4`
+expectations, local pins or historical incomplete results below. The current
+`files.sha256` reflects this README update; query, lock and evidence bytes retain
+their existing identities.
+
 ## Inside an already qualified isolated cloud runner
 
 The following is a command shape, not permission to bypass repository admission
@@ -49,4 +56,5 @@ The existing local MCP supports evaluator logging level 1 and
 `tuple-counting:false` to reduce unnecessary logging. Its allowlist and sandbox
 remain authoritative. Large native decoder stdout exceeded an upstream buffer;
 file output succeeded for all 16,699 inventory rows. The relevant flow results
-remain incomplete—do not interpret the inventory as a passed data-flow audit.
+from original local preparation remain incomplete—do not interpret that inventory
+as a passed data-flow audit.

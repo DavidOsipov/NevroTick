@@ -10,6 +10,12 @@ installation and qualification status; [the local policy](../../../../policy/cod
 owns pins, allowed tools, limits and retained advisories. Hosted CodeQL remains
 deferred. A local MCP connection does not establish a hosted scan or product pass.
 
+This reference describes the pinned local profile. The separate
+[15 November cloud scan](../../../../tasks/codeql-cloud-handoff.md#cloud-refresh-and-completed-scan--15-november-2026)
+completed on `bb90f0c` with CLI 2.27.4 / Rust library 0.2.25; the local profile
+retains CLI 2.27.3 / 0.2.24. Neither profile transfers qualification to the other
+or supplies fresh evidence for a changed candidate.
+
 Long-chain or logical review: use [source-backed flow audits](flow-audit.md) for
 independent root/effect inventory, data/control/state slices, change-based reuse
 and integration challenges. CodeQL supplies scoped path evidence; AI review and
@@ -64,7 +70,8 @@ other languages. The pinned extractor's defaults need particular attention:
 | `extract_dependencies_as_source` | Dependency signatures by default, rather than their complete bodies. Inspect models or admit body extraction for a path crossing those implementations. |
 
 These are upstream extractor options, **not flags exposed by this repository's
-launcher**. Its current CLI accepts `--check`, `--create-database` and `--name`;
+launcher**. Its current CLI accepts `--check`, `--create-database`,
+`--finalize-database` and `--name`;
 it forwards no explicit target/feature/cfg overrides. Inspect effective logs and
 database contents, record the resulting scope, and keep a required but unextracted
 configuration incomplete. A separately reviewed launcher/configuration change is
@@ -140,6 +147,10 @@ Loom, Kani, Lockbud or cargo-vet through
 [configured tooling](configured-tooling.md) when their distinct guarantee matters.
 
 Use a compact record in the existing task, proportional to the question:
+attach query-specific identities, controls, counts and result paths to the
+[existing flow-ledger item](flow-audit.md#record-results-in-the-existing-ledger).
+Reuse its shared identity, trace and frontier fields; the table below adds no
+second mandatory ledger. Retain all applicable query evidence.
 
 | Field | Record |
 | --- | --- |

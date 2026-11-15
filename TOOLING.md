@@ -549,6 +549,12 @@ local extraction/inventory/endpoint checks, the disk-exhausted flow attempt and
 portable query bundle. Local analysis is stopped at the owner's request;
 resource-profile qualification is separate from product data-flow results.
 
+The later [15 November cloud checkpoint](tasks/codeql-cloud-handoff.md#cloud-refresh-and-completed-scan--15-november-2026)
+completed four configurations and scoped global-flow queries on `bb90f0c`, using
+the separately authorized CLI 2.27.4 / Rust library 0.2.25 profile. Those results
+retain their exact source/model scope; they do not requalify the local 2.27.3 /
+0.2.24 profile, erase its earlier failures or qualify a changed candidate.
+
 The registry precheck returned [grade F and unverified identity](https://policylayer.com/tools/codeql-development)
 (last scan 24 October), recommending restrictions on `audit_clear_repo` and
 `annotation_delete`; both are excluded. Independent dependency inspection found
