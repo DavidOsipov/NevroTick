@@ -9,22 +9,24 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
-**Active Core/Engine work — 16 November 2026:**
-[Managed fixed-address rounds](../tasks/engine-transport-pilot.md#batch-count-survivor-control-and-current-requalification--16-november-2026)
-pass source/development checks on `582a995a…`: all twelve lanes, 241 default/475
-EP1 cases per mode and 75 doctests per graph. The preceding `e80714d9…`
-source-policy cohort failed its gate on one genuine raw batch-count survivor.
-The existing pure test now checks empty/four-peer refusal, no publication and
-valid one/three-peer neighbors; focused fault/restored controls pass. Three
-whole-library 215-case retirement controls and six restored 241/75 runs also pass.
-Current development and E5 receiving admission pass; public campaigns stay closed.
-Next run fresh metadata and metrics, then all five bounded owner cohorts at 95%.
-Current 350-case tooling, line, listing and mutation gates are not yet requalified.
-The earlier `e80714d9…` line/listing results and retained C2 scores keep their own
-candidates. Existing source restrictions, cutoffs, floors and custody remain;
-no new dependency, production Core authority, native or release qualification.
+**Active Core/Engine work — 17 November 2026:**
+[Selected-reply rejection accounting](../tasks/engine-transport-pilot.md#selected-reply-rejection-accounting--17-november-2026)
+now passes all twelve development lanes on `4703646b…`: 245 default/479 EP1 cases
+per ordinary/optimized mode, 75 doctests per graph, format and GNU/MSVC checks/
+Clippy. Six causal counter regressions fail before the repair and pass afterward,
+beside four healthy controls. Selected replies refused by final Stop/invalidation
+or managed-policy failure retain their rejection charge; unsent and committed
+neighbors retain their existing meaning. The public session counter assertion was
+corrected from the documented contract, with other lifecycle observations preserved.
+Fresh 90% line/95% per-critical-file mutation qualification is still open. The
+preceding [address-round repair](../tasks/engine-transport-pilot.md#address-round-typed-error-controls-and-requalification--16-november-2026)
+retains its B83 development, sensitivity and partial cohort results; none supplies
+a new-candidate score. Failed attempts and resource stops remain recorded.
+Main campaigns stay closed. The new source/roster/equivalence rebind is an
+unexecuted external draft, excluded from this source checkpoint. H02 remains an
+external draft until the current Engine five-owner qualification ends.
+Production/Core, native, hosted, release and post-V1 formal exits remain separate.
 Updated skill tools remain in separate owned environments documented in TOOLING.md.
-
 **Retained C2 KoD qualification — 16 November 2026:**
 [The selected five-owner qualification](../tasks/engine-transport-pilot.md#kod-audit-corrections--selected-qualification-complete--16-november-2026)
 now passes on product `0c7f5a6d…`: all five 90% line and 95% generated-mutation

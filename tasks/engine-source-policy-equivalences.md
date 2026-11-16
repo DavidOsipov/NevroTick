@@ -4,7 +4,7 @@ Status: **historical C2 arguments retained; repaired 582a source/data reconcilia
 Prepared 16 November 2026 for the existing Engine transport task, CHECK-10/19/21/25/27.
 This is a source-review dossier, not a formal/compiler/solver proof job or another roadmap.
 
-Current registry-data candidate: `582a995a86f9b01dece493b74ac640533e4efdd48ca5b41e4b35e88a843fd983` (605 product inputs).
+Current registry-data candidate: `b83d0421901fd650a85f9858fc01262c19d1c63f34cb1e3a20d57292fd5a22e0` (605 product inputs).
 The current-source notes below update exact identities without rewriting the historical
 C2 records. The preceding e807 source-only update initially left E empty. Its later
 physical admission selected the five exact rows while public campaigns remained
@@ -833,7 +833,7 @@ mutation outcomes, native and release qualification remain open.
 
 ### Raw batch-count test repair — 16 November 2026
 
-The active registry candidate is `582a995a86f9b01dece493b74ac640533e4efdd48ca5b41e4b35e88a843fd983` (605 inputs).
+That repair's registry candidate was `582a995a86f9b01dece493b74ac640533e4efdd48ca5b41e4b35e88a843fd983` (605 inputs).
 Relative to e807, only the existing pure atomic-batch test changes. All five
 production owners, configuration, feature/target selection, descriptor/diff
 identities and standard-library premises above remain unchanged. No argument
@@ -856,3 +856,45 @@ SHA-256 `ba3c79be565d9e813b90997920189d921177469c47d222234ed41b63803f877e`. Thes
 earn no generated kill or E credit. New complete development, lifecycle, metric
 and generated-cohort evidence must retain its actual scope; no earlier score
 transfers to this candidate.
+
+### Address-round typed-error test repair — 16 November 2026
+
+The compiler-unadmitted predecessor candidate was `cb41c8e1814c892c4654f9e215107d9edcdce5ee980697d5a1515e837b65e16e`
+(605 inputs). Relative to `582a995a…`, only the existing private address-round
+tests change. All five production owners, their five E descriptors/rendered
+differences and full safe helper domains remain byte-identical. The ten
+code-owned configuration/dependency pins and five installed primary std-source
+files were physically reread and matched. The complete installed-tool inventory
+premise is unchanged and remains mandatory at actual receiving admission.
+
+The two newly observed address-round survivors are **not equivalent** and are
+outside this five-entry catalogue: an unmanaged legal setup error must not enter
+managed contention recovery; an actual managed non-Disabled terminal policy
+cause must not become InternalState. The new controls exercise those typed
+boundaries and genuine slot/report custody; they add no E entry or generated kill.
+The earlier raw results, approvals and failed gates keep their exact candidates.
+
+The same two closed Unavailable getters, locally unreachable checked-duration
+fallbacks and default-GNU-only absent facade arguments above apply without caller
+domain narrowing. EP1 remains excluded from the facade argument. This is a static
+candidate/dossier rebind, not fresh execution, independent semantic approval or
+mutation qualification. Actual complete new development, current helper/proof/tool
+receiving admission and all required metric/cohort checks remain necessary.
+No 90%/95% gate, timeout, feature, dependency, production source or native/release
+policy changes. Main campaigns remain closed; E rows require exact receiving use.
+
+### Compiler-corrected address test context — 16 November 2026
+
+Current registry-data candidate is `b83d0421901fd650a85f9858fc01262c19d1c63f34cb1e3a20d57292fd5a22e0`
+(605 inputs). The preceding `cb41c8e1…` development attempt failed GNU compilation
+with E0614 before any Rust tests ran: the test dereferenced a copied error value.
+The correction removes that dereference; the intended typed-error oracle,
+existing test IDs, all five production owners and the complete E premises are
+unchanged. Its failed receipt and exact source/configuration remain retained in
+`address-repair-v2/bootstrap-before-compile-fix/`; no earlier GREEN transfers.
+
+Only the candidate/dossier static data are rebound here. The same five exact
+producer/std/tool/configuration domains above control receiving admission;
+no E rationale, descriptor, difference, ID, domain, threshold or effect changes.
+Both address survivors remain non-equivalent. New development, lifecycle,
+metadata/metric and generated-cohort evidence remains unclaimed by this update.

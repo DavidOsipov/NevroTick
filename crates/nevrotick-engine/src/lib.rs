@@ -1575,6 +1575,30 @@ fn process_reply(
     limits: FrameLimits,
     deadline: Instant,
 ) {
+    process_reply_observing(
+        slots,
+        control,
+        index,
+        datagram,
+        limits,
+        deadline,
+        (|| {}, || {}),
+    );
+}
+
+/// Run the original reply kernel with bounded invocation-local observations.
+/// Callbacks run outside watch/policy custody immediately before the final
+/// control guard and after its release. Production supplies no-ops; observers
+/// grant no permission, terminal outcome or completion acknowledgement.
+fn process_reply_observing(
+    slots: &mut [LiveSlot; 2],
+    control: &mut watch::Receiver<Control>,
+    index: usize,
+    datagram: &ReadDatagram<'_>,
+    limits: FrameLimits,
+    deadline: Instant,
+    (before_final_guard, after_final_guard): (impl FnOnce(), impl FnOnce()),
+) {
     let staged = stage_reply(
         &slots[index],
         datagram.bytes,
@@ -1603,14 +1627,20 @@ fn process_reply(
         return;
     }
     if let Ok(candidate) = staged {
-        let state = control.borrow();
-        if state.stop {
-            slots[index].finish(TerminalOutcome::Stopped);
-        } else if state.epoch != 0 {
-            slots[index].finish(TerminalOutcome::Stale);
-        } else {
-            commit_reply(&mut slots[index], &candidate, processing, deadline);
+        before_final_guard();
+        {
+            let state = control.borrow();
+            if state.stop {
+                slots[index].rejected += 1;
+                slots[index].finish(TerminalOutcome::Stopped);
+            } else if state.epoch != 0 {
+                slots[index].rejected += 1;
+                slots[index].finish(TerminalOutcome::Stale);
+            } else {
+                commit_reply(&mut slots[index], &candidate, processing, deadline);
+            }
         }
+        after_final_guard();
     }
 }
 

@@ -1066,25 +1066,27 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
-**Active Engine continuation — 16 November 2026:**
-[Managed fixed-address rounds](../../tasks/engine-transport-pilot.md#batch-count-survivor-control-and-current-requalification--16-november-2026)
-pass all twelve source/development lanes on `582a995a…`: 241 default/475 EP1 cases
-per ordinary/optimized mode, 75 doctests per graph and GNU/MSVC checks/Clippy.
-The preceding `e80714d9…` source-policy cohort failed on one non-equivalent
-raw batch-count guard survivor despite its numerical 99.115% score. Production
-source was correct; the existing pure test now directly checks empty/four-peer
-refusal without endpoint publication or fact changes, with valid one/three-peer
-and capacity neighbors. Focused fault/restored controls pass, as do three
-whole-library 215-case retirement faults and six restored 241/75 selections.
-Current development and all five E receiving controls pass with 22 physical
-development references; this is no current mutation pass. Next run fresh current
-metadata and baseline/listing/line metrics, then the five bounded owner cohorts
-at the unchanged 95% gates. Current 350-case tooling, line, 691-listing and mutation
-qualification remain open. Earlier `e80714d9…` metrics and historical C2 scores
-retain their candidates. Public campaigns stay closed. Preserve §6.5, original
-cutoffs/floors/custody and production/native/hosted/release exits; no new graph,
-Core-positive supplier or formal execution. Publication stays stage-only.
-
+**Active Engine continuation — 17 November 2026:**
+[Selected-reply rejection accounting](../../tasks/engine-transport-pilot.md#selected-reply-rejection-accounting--17-november-2026)
+passes development on `4703646b…` (605 product inputs): all twelve configured
+lanes, 245 default/479 EP1 cases in each ordinary/optimized mode, 75 doctests per
+graph, format and GNU/MSVC checks/Clippy. Six intended counter REDs and four
+healthy neighbors establish the causal repair. The final Stop/invalidation and
+managed-policy refusal branches charge the selected reply once without changing
+deadlines, spent work, primary failure or historical completion. The later public
+session zero-counter assertion was corrected through independent contract review;
+all other reuse/retirement and no-extra-effect assertions remain.
+The preceding B83 address-round checkpoint retains its development, fault controls
+and partial cohort results. Its failed library observer stop and all earlier
+failures remain recorded; historical scores do not qualify this changed candidate.
+Next admit the complete current source/helpers/245-case roster/75-doctest roster
+and fresh inventories, then execute the existing five-owner 90% line and 95%
+mutation gates. Those current gates remain open. Main stays closed; source/roster/
+equivalence rebind and H02 preparation remain external, unexecuted drafts.
+Preserve §6.5, original cutoffs/floors/custody, cumulative costs and separate
+production/Core, native, hosted, release and formal-deferral exits. David's latest
+instruction authorizes pulling, committing and pushing this verified source
+checkpoint; it does not declare the open qualification phase complete.
 **Retained C2 qualification — 16 November 2026:**
 [The KoD audit corrections](../../tasks/engine-transport-pilot.md#kod-audit-corrections--selected-qualification-complete--16-november-2026) complete the selected
 five-owner GNU fixture checkpoint on product `0c7f5a6d…`: five executable-line

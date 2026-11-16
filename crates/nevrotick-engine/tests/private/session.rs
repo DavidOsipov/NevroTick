@@ -590,7 +590,13 @@ fn assert_public_session_checkpoint(
     assert_eq!(record.status(), expected_status);
     assert_eq!(record.sent(), case.needs_reply());
     assert_eq!(record.received(), u16::from(case.needs_reply()));
-    assert_eq!(record.rejected(), 0);
+    let expected_rejected = match case {
+        PublicSessionCheckpointRace::ReplyStop | PublicSessionCheckpointRace::ReplyInvalidate => 1,
+        PublicSessionCheckpointRace::WritableStop
+        | PublicSessionCheckpointRace::WritableInvalidate
+        | PublicSessionCheckpointRace::ReplyCommittedStop => 0,
+    };
+    assert_eq!(record.rejected(), expected_rejected);
     assert_eq!(record.facts().is_some(), committed);
     assert!(record.io_cause().is_none());
     let remaining = if stale {

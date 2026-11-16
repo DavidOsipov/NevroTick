@@ -2,10 +2,10 @@
   "admission_status": "admitted-engine-source-policy-analysis",
   "baseline_wall_seconds": 300,
   "binding": {
-    "candidate_sha256": "582a995a86f9b01dece493b74ac640533e4efdd48ca5b41e4b35e88a843fd983",
+    "candidate_sha256": "b83d0421901fd650a85f9858fc01262c19d1c63f34cb1e3a20d57292fd5a22e0",
     "development_evidence": {
-      "path": "/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/current-owner-cohorts-v1/repair-1/revision-1/verification.json",
-      "sha256": "6d2cfb0740f1d57abed8cbb7b6448b7a102d922492ca1ec4d7536b88f314fb8a"
+      "path": "/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/current-owner-cohorts-v1/repair-1/address-repair-v2/revision-3/verification.json",
+      "sha256": "c6778a5df924ce2ffdf948b4df21cf09eb77d17f20573ac1234ee2e98a4d667e"
     },
     "doctest_inventory": [
       "crates/nevrotick-engine/src/address_round.rs - series::address_round::AddressPolicyRefusal (line 337) - compile fail",
@@ -85,52 +85,52 @@
       "crates/nevrotick-engine/src/source_policy.rs - source_policy::SourcePolicyAuthority (line 828) - compile fail"
     ],
     "inputs_sha256": {
-      ".cargo/config.toml": "0f56f93b35b5d85a490afe3d62f53511f5697465b0d18564ffee805b761232a5",
-      ".cargo/mutants.toml": "af0e3b1d7774464fb6d3b8566b61472a853ce2e6b0ba26a1c4fbe82f676b5f5b",
-      ".config/nextest.toml": "138a3584caddb823362272ed590954f58e228913bddc4ce1fe2e3b84e8ee9f35",
-      "Cargo.lock": "2ccabde33a800b745c42b4fe96dc4a6c300b1961ac87e149d313cae41fde5f2e",
-      "Cargo.toml": "570bf74e4682b8931172fe066c999cfbca470d2026c5455d629c942d9adfd1eb",
-      "crates/nevrotick-engine/Cargo.toml": "89439a0d87f6a74f9d946b4186b01e80062d6ed3cc0709f4904aee3c3050b52c",
-      "crates/nevrotick-engine/src/address_round.rs": "d20039bf768c8fd47288a77c66e34e6d1a11b5639ddd0194962630944e5e6657",
-      "crates/nevrotick-engine/src/lib.rs": "0865faa12a992a7fa791cd106b590d421dc6498616ca486c2bce6b7b9b4174e4",
-      "crates/nevrotick-engine/src/series.rs": "c832ba7273ae77bdf75aa26002c2243febe15d06fff8fa2948af742af0448615",
-      "crates/nevrotick-engine/src/session.rs": "dcfaba8328f5b8eac79be4920ba06e1f103927d70a529a97feb7ace85cd7f77b",
+      "scripts/verify-engine-analysis.py": "4a06206b2c8cf6ea51cd329adffd8574fc032fcbb0b7153c79a146daa4926b28",
+      "scripts/tests/test_verify_engine_analysis.py": "acda8019a37e675c91a03886f1fd723463a7102170acc64856e51cf92ce1059c",
       "crates/nevrotick-engine/src/source_policy.rs": "6101a03c4c87368aa2e60abc1236c529cbac1463d6341059f17bd8d51d280143",
-      "crates/nevrotick-engine/tests/execute_entered.rs": "a8fea0f70cf2bc147900e2e639a3252c0c7dea0b9a10f2d3f25794273f9ba97a",
-      "crates/nevrotick-engine/tests/prepare_entered.rs": "84a38779f863697a58f36e7ebf8d4acf80d0bab653fe2ae0ac488fa2ece96666",
-      "crates/nevrotick-engine/tests/prepare_release.rs": "f089024cd0bea7c84bbba360c55cf78683978983966267573c1ae6b9f198991d",
-      "crates/nevrotick-engine/tests/private/address_progress.rs": "e1100409013c1f09e94e9151167164839c437aee78c4468079d7095483a5f818",
-      "crates/nevrotick-engine/tests/private/address_round.rs": "2feda108cd787542d426481652a93ed9e356a1d5f73f852e1e7fab32bea39217",
-      "crates/nevrotick-engine/tests/private/argument_guards.rs": "ef528d3eb92be421c70db7331381f7ab8b5985987292bd46a3bba243f812fff5",
-      "crates/nevrotick-engine/tests/private/processing_guards.rs": "9f5a371c37481cdc7d5113ae413362168588a130a051ba360df0c992bb2d87fb",
+      "crates/nevrotick-engine/src/lib.rs": "0865faa12a992a7fa791cd106b590d421dc6498616ca486c2bce6b7b9b4174e4",
+      "crates/nevrotick-engine/src/session.rs": "dcfaba8328f5b8eac79be4920ba06e1f103927d70a529a97feb7ace85cd7f77b",
+      "crates/nevrotick-engine/src/series.rs": "c832ba7273ae77bdf75aa26002c2243febe15d06fff8fa2948af742af0448615",
+      "crates/nevrotick-engine/src/address_round.rs": "d20039bf768c8fd47288a77c66e34e6d1a11b5639ddd0194962630944e5e6657",
+      "crates/nevrotick-engine/tests/private/source_policy.rs": "e6cbebbd69cc5334f3b514eeeaf7bb95a1ea27df7c2df961f4f656b4fe7186f5",
+      "crates/nevrotick-engine/tests/private/session.rs": "72c49735beaf311866162768a3f9cc86aa6623b498665f2cd6e7bf023884a752",
       "crates/nevrotick-engine/tests/private/series.rs": "5b7fcf2ac45f76f3d4cb0183584517ed4af8c164215b5f9c9dcb8a917f643595",
       "crates/nevrotick-engine/tests/private/series_process.rs": "17b59158e19aa281a7dc03bd9eff16989a70eda488430a1a269cb8d05b87ff9a",
-      "crates/nevrotick-engine/tests/private/session.rs": "72c49735beaf311866162768a3f9cc86aa6623b498665f2cd6e7bf023884a752",
-      "crates/nevrotick-engine/tests/private/source_policy.rs": "e6cbebbd69cc5334f3b514eeeaf7bb95a1ea27df7c2df961f4f656b4fe7186f5",
-      "crates/nevrotick-engine/tests/quality.rs": "2814ed0f733e09e3d6f6abe5c8c3bad83e0ad05f3c34a6d827c9cbedb24ee2b7",
+      "crates/nevrotick-engine/tests/private/address_round.rs": "218c93dab141bea8234ebebbb110a5e70f9c5934cb980f02d31724b49a6fd3ef",
+      "crates/nevrotick-engine/tests/private/address_progress.rs": "e1100409013c1f09e94e9151167164839c437aee78c4468079d7095483a5f818",
+      "crates/nevrotick-engine/tests/private/processing_guards.rs": "9f5a371c37481cdc7d5113ae413362168588a130a051ba360df0c992bb2d87fb",
+      "crates/nevrotick-engine/tests/private/argument_guards.rs": "ef528d3eb92be421c70db7331381f7ab8b5985987292bd46a3bba243f812fff5",
       "crates/nevrotick-engine/tests/runtime_boundary.rs": "98b315838a63d267863be97a9e297af1b0da67031b8237a78e1935ac5721ae9e",
+      "crates/nevrotick-engine/tests/prepare_release.rs": "f089024cd0bea7c84bbba360c55cf78683978983966267573c1ae6b9f198991d",
+      "crates/nevrotick-engine/tests/prepare_entered.rs": "84a38779f863697a58f36e7ebf8d4acf80d0bab653fe2ae0ac488fa2ece96666",
+      "crates/nevrotick-engine/tests/execute_entered.rs": "a8fea0f70cf2bc147900e2e639a3252c0c7dea0b9a10f2d3f25794273f9ba97a",
       "crates/nevrotick-engine/tests/series.rs": "17e6b06854aa4891e69c55066ba6475e82974cda267ebb520020ec77ba73947d",
       "crates/nevrotick-engine/tests/session.rs": "579e088c17c05a820f43b27b54643366004d49135b0a6f2bd7fccc948a5d32ea",
-      "policy/analysis-tools.json": "be49c57c0262415314daeb41ff06b65283a221ab2b68b3f7edf372449f152f53",
-      "policy/tool-manifest.json": "8a156a5573626d7aebb868f257436306c79c2ff64fa3ee3b9357482363ac007d",
-      "policy/ui-m0-dependencies.json": "30c5b238af6a94d379348b71341e4d6422a32f82fd458d7821fb3a2603d3aac4",
-      "policy/verification-manifest.toml": "50700c30e906e1596f5be967ee4c8b7d0632694533e5cde9601eb4db23e6c736",
-      "rust-toolchain.toml": "6cd2b242c217bc0d383324c0a05a2f3f7dbf7608083afd4950f37a5eba561ca9",
-      "scripts/advisory_snapshot.py": "ecfe75811cb40a1d9c12b842e5bfb3f5b8bf8ffdbfe1a196531ce08c474a9ccd",
-      "scripts/analysis-controls.py": "f39eb0123e279331e38b48addc5bdc61d29dcbb3e26e8c18ec99512b0affe1a0",
+      "crates/nevrotick-engine/tests/quality.rs": "2814ed0f733e09e3d6f6abe5c8c3bad83e0ad05f3c34a6d827c9cbedb24ee2b7",
+      "tasks/engine-source-policy-equivalences.md": "95c8f82cd85f2a72bdafd93c9cdd7ad14c6cfc7ad7e19c84f992321c43e2fe0a",
+      "scripts/portable-analysis.py": "d7bea3d58a16bfba7f31d44f482a5367bdbc4c34c544bed1026b59d528ec0942",
+      "scripts/tests/test_portable_analysis.py": "170d34a54e2488e208629ec02dd79312e62b34bbd83c430e862ef964eea6de59",
       "scripts/analysis-runtime.py": "0de6d23b2e52fea78ee81f038d216c962ef87511df53443984bb6e6aacb79dc9",
       "scripts/check-analysis.py": "39a3f1dcbdbc495c767753d43260207a5fb9aff6221410a3fbb27fc1ee199c2f",
+      "scripts/analysis-controls.py": "f39eb0123e279331e38b48addc5bdc61d29dcbb3e26e8c18ec99512b0affe1a0",
+      "scripts/prepare-product.py": "e4d3b33d82ab5b8049065a0eb29e380e84c559002127d452aeb492fd5bb3b29f",
+      "scripts/verify.py": "09beef5c97e0d601818d544a0640d415539eab58bbfd4c7d044ba1ab79c2e506",
       "scripts/check-environment.py": "df124d3c05865882fda7a18ff6b5c6e70d76e453a0196e777fa39ca0aa6a5b27",
       "scripts/check-strict.py": "6779c6b97ef627be5aec6553c1b3f328bbe5adcccb3fb5dd62bbabb2ebfc8f81",
-      "scripts/portable-analysis.py": "ab2241ba5a32bcab98449190ef077cb93c90ccaecfe76235768da66c5c6424a9",
-      "scripts/prepare-product.py": "e4d3b33d82ab5b8049065a0eb29e380e84c559002127d452aeb492fd5bb3b29f",
       "scripts/slint_dependency_profile.py": "b54ebe99adc3a19c5a256341f19875de86b65914afe009d9125ddd3164f7cb2e",
       "scripts/slint_linux_sdk.py": "fb093b629e52be3cc771dc7f5d59eec9f7e74e625c000cb553004fb995760a91",
-      "scripts/tests/test_portable_analysis.py": "170d34a54e2488e208629ec02dd79312e62b34bbd83c430e862ef964eea6de59",
-      "scripts/tests/test_verify_engine_analysis.py": "acda8019a37e675c91a03886f1fd723463a7102170acc64856e51cf92ce1059c",
-      "scripts/verify-engine-analysis.py": "4a06206b2c8cf6ea51cd329adffd8574fc032fcbb0b7153c79a146daa4926b28",
-      "scripts/verify.py": "09beef5c97e0d601818d544a0640d415539eab58bbfd4c7d044ba1ab79c2e506",
-      "tasks/engine-source-policy-equivalences.md": "07157a67ac45dec5ef973a12b410c23375e9db9750eebb65ec36d07035e59fc5"
+      "scripts/advisory_snapshot.py": "ecfe75811cb40a1d9c12b842e5bfb3f5b8bf8ffdbfe1a196531ce08c474a9ccd",
+      "policy/analysis-tools.json": "be49c57c0262415314daeb41ff06b65283a221ab2b68b3f7edf372449f152f53",
+      "policy/verification-manifest.toml": "50700c30e906e1596f5be967ee4c8b7d0632694533e5cde9601eb4db23e6c736",
+      "policy/tool-manifest.json": "8a156a5573626d7aebb868f257436306c79c2ff64fa3ee3b9357482363ac007d",
+      "policy/ui-m0-dependencies.json": "30c5b238af6a94d379348b71341e4d6422a32f82fd458d7821fb3a2603d3aac4",
+      "Cargo.toml": "570bf74e4682b8931172fe066c999cfbca470d2026c5455d629c942d9adfd1eb",
+      "Cargo.lock": "2ccabde33a800b745c42b4fe96dc4a6c300b1961ac87e149d313cae41fde5f2e",
+      "crates/nevrotick-engine/Cargo.toml": "89439a0d87f6a74f9d946b4186b01e80062d6ed3cc0709f4904aee3c3050b52c",
+      "rust-toolchain.toml": "6cd2b242c217bc0d383324c0a05a2f3f7dbf7608083afd4950f37a5eba561ca9",
+      ".cargo/config.toml": "0f56f93b35b5d85a490afe3d62f53511f5697465b0d18564ffee805b761232a5",
+      ".cargo/mutants.toml": "af0e3b1d7774464fb6d3b8566b61472a853ce2e6b0ba26a1c4fbe82f676b5f5b",
+      ".config/nextest.toml": "138a3584caddb823362272ed590954f58e228913bddc4ce1fe2e3b84e8ee9f35"
     },
     "source_file_count": 605,
     "test_inventory": [
@@ -399,7 +399,7 @@
   "mutation_equivalences": [
     {
       "id": "KOD-COMMIT-DURATION-NONE-MUL",
-      "candidate_sha256": "582a995a86f9b01dece493b74ac640533e4efdd48ca5b41e4b35e88a843fd983",
+      "candidate_sha256": "b83d0421901fd650a85f9858fc01262c19d1c63f34cb1e3a20d57292fd5a22e0",
       "source_sha256": "0865faa12a992a7fa791cd106b590d421dc6498616ca486c2bce6b7b9b4174e4",
       "mutant": {
         "file": "crates/nevrotick-engine/src/lib.rs",
@@ -436,7 +436,7 @@
       "rationale": "Every execution reaching this fallback has passed the helper-local processing >= candidate.read.mono_after guard for the exact unchanged operands. Pinned Rust1.100 GNU/Windows Instant implementations return Some for that ordered pair. Counter multiplication-by-one versus increment therefore occurs on no admitted execution, not merely on none of today callers. Earlier predecessor rejection, including counter overflow/panic/wrap behavior, is unchanged. Matching/mismatched identity/phase, deadline, control, measurement, Box/Arc and resource-lifecycle paths remain identical. No raw invalid Instant representation or forged caller-domain narrowing is assumed.",
       "proof": {
         "path": "tasks/engine-source-policy-equivalences.md",
-        "sha256": "07157a67ac45dec5ef973a12b410c23375e9db9750eebb65ec36d07035e59fc5",
+        "sha256": "95c8f82cd85f2a72bdafd93c9cdd7ad14c6cfc7ad7e19c84f992321c43e2fe0a",
         "section": "KOD-COMMIT-DURATION-NONE-MUL",
         "reviewer": "root/kod_metric_plan_judge; coordinator source review",
         "verdict": "independently-justified-equivalent"
@@ -444,7 +444,7 @@
     },
     {
       "id": "KOD-COMMIT-DURATION-NONE-SUB",
-      "candidate_sha256": "582a995a86f9b01dece493b74ac640533e4efdd48ca5b41e4b35e88a843fd983",
+      "candidate_sha256": "b83d0421901fd650a85f9858fc01262c19d1c63f34cb1e3a20d57292fd5a22e0",
       "source_sha256": "0865faa12a992a7fa791cd106b590d421dc6498616ca486c2bce6b7b9b4174e4",
       "mutant": {
         "file": "crates/nevrotick-engine/src/lib.rs",
@@ -481,7 +481,7 @@
       "rationale": "The helper itself rejects processing < candidate.read.mono_after before checked_duration_since on those same immutable Instant values, without await, new clock read or operand mutation. In pinned Rust1.100 GNU, ordered Timespec subtraction always returns Some(Duration); Windows stored Duration order/subtraction also returns Some, while its small-negative epsilon clamp is already preceded by the raw predecessor guard. Thus None implies the earlier strict predecessor relation, and the changed fallback counter is unreachable across the complete valid helper domain. Arbitrary u16 counter values, overflow behavior on the earlier unchanged increment, errors, later allocation/refcounts and cleanup remain identical. Subtraction is not claimed equivalent to increment on a reachable branch.",
       "proof": {
         "path": "tasks/engine-source-policy-equivalences.md",
-        "sha256": "07157a67ac45dec5ef973a12b410c23375e9db9750eebb65ec36d07035e59fc5",
+        "sha256": "95c8f82cd85f2a72bdafd93c9cdd7ad14c6cfc7ad7e19c84f992321c43e2fe0a",
         "section": "KOD-COMMIT-DURATION-NONE-SUB",
         "reviewer": "root/kod_metric_plan_judge; coordinator source review",
         "verdict": "independently-justified-equivalent"
@@ -489,7 +489,7 @@
     },
     {
       "id": "KOD-DEFAULT-KE-FACADE-ABSENT",
-      "candidate_sha256": "582a995a86f9b01dece493b74ac640533e4efdd48ca5b41e4b35e88a843fd983",
+      "candidate_sha256": "b83d0421901fd650a85f9858fc01262c19d1c63f34cb1e3a20d57292fd5a22e0",
       "source_sha256": "0865faa12a992a7fa791cd106b590d421dc6498616ca486c2bce6b7b9b4174e4",
       "mutant": {
         "file": "crates/nevrotick-engine/src/lib.rs",
@@ -526,7 +526,7 @@
       "rationale": "Only the exact source-policy GNU default graph is proposed: features=[]; the engine manifest has no default feature enabling ke-association-prototype; actual admitted Cargo/rustc inputs do not enable it. The entire experimental_nts_ke_probe item is cfg(feature=ke-association-prototype), so the selected compiled program has no such callable item in original or replacement. The body replacement is valid syntax and adds no cfg attribute, macro invocation or compiled effect. This is configuration elision, not a claim that an available function happens untested. EP1, another feature/target/rustflags/configuration or a consumer exposing the item is outside this E scope and triggers refusal/review. Keep raw inventory and actual Missed; E remains held until independent exact configuration-domain review.",
       "proof": {
         "path": "tasks/engine-source-policy-equivalences.md",
-        "sha256": "07157a67ac45dec5ef973a12b410c23375e9db9750eebb65ec36d07035e59fc5",
+        "sha256": "95c8f82cd85f2a72bdafd93c9cdd7ad14c6cfc7ad7e19c84f992321c43e2fe0a",
         "section": "KOD-DEFAULT-KE-FACADE-ABSENT",
         "reviewer": "root/kod_metric_plan_judge; coordinator source review",
         "verdict": "independently-justified-equivalent"
@@ -534,7 +534,7 @@
     },
     {
       "id": "KOD-SERIES-UNAVAILABLE-ADMITTED-ZERO",
-      "candidate_sha256": "582a995a86f9b01dece493b74ac640533e4efdd48ca5b41e4b35e88a843fd983",
+      "candidate_sha256": "b83d0421901fd650a85f9858fc01262c19d1c63f34cb1e3a20d57292fd5a22e0",
       "source_sha256": "c832ba7273ae77bdf75aa26002c2243febe15d06fff8fa2948af742af0448615",
       "mutant": {
         "file": "crates/nevrotick-engine/src/series.rs",
@@ -571,7 +571,7 @@
       "rationale": "For every valid SeriesReport, StatisticalAdmission is the closed fieldless one-variant Unavailable enum. Matching that field yields usize0 with no payload, guard, destructor, callback, allocation or external effect. Returning0 directly has the same result and lifecycle behavior for every valid receiver. This does not infer an invariant from current callers or permit positive sample authority. Invalid Rust discriminants are outside the safe typed domain. Reopen review if admission representation, constructor/mutation paths, getter body, cfg, signature or effects change.",
       "proof": {
         "path": "tasks/engine-source-policy-equivalences.md",
-        "sha256": "07157a67ac45dec5ef973a12b410c23375e9db9750eebb65ec36d07035e59fc5",
+        "sha256": "95c8f82cd85f2a72bdafd93c9cdd7ad14c6cfc7ad7e19c84f992321c43e2fe0a",
         "section": "KOD-SERIES-UNAVAILABLE-ADMITTED-ZERO",
         "reviewer": "root/kod_metric_plan_judge; coordinator source review",
         "verdict": "independently-justified-equivalent"
@@ -579,7 +579,7 @@
     },
     {
       "id": "KOD-SERIES-UNAVAILABLE-ELIGIBLE-ZERO",
-      "candidate_sha256": "582a995a86f9b01dece493b74ac640533e4efdd48ca5b41e4b35e88a843fd983",
+      "candidate_sha256": "b83d0421901fd650a85f9858fc01262c19d1c63f34cb1e3a20d57292fd5a22e0",
       "source_sha256": "c832ba7273ae77bdf75aa26002c2243febe15d06fff8fa2948af742af0448615",
       "mutant": {
         "file": "crates/nevrotick-engine/src/series.rs",
@@ -616,7 +616,7 @@
       "rationale": "The complete valid receiver domain contains only StatisticalAdmission::Unavailable. The sole match arm returns usize0 without resource/error/effect work; replacement returns the identical typed0. The discriminant-only match moves no payload and calls no trait or Drop operation. No positive eligibility is implemented or authorized. This exact source/domain argument is independent of observed zero results; new variants, unsafe/serialized construction, changed getter effects or configuration invalidate it.",
       "proof": {
         "path": "tasks/engine-source-policy-equivalences.md",
-        "sha256": "07157a67ac45dec5ef973a12b410c23375e9db9750eebb65ec36d07035e59fc5",
+        "sha256": "95c8f82cd85f2a72bdafd93c9cdd7ad14c6cfc7ad7e19c84f992321c43e2fe0a",
         "section": "KOD-SERIES-UNAVAILABLE-ELIGIBLE-ZERO",
         "reviewer": "root/kod_metric_plan_judge; coordinator source review",
         "verdict": "independently-justified-equivalent"

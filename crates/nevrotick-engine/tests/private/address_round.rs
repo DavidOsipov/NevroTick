@@ -1002,6 +1002,45 @@ fn control_after_actual_setup_prevents_the_first_native_send() -> Check<()> {
     Ok(())
 }
 
+/// An unmanaged setup error is not permission to enter managed contention recovery.
+/// # Errors
+/// Preserve actual checked preparation/runtime and quiet-peer observation errors.
+/// # Panics
+/// Reject changed typed attribution, retries, publication or native sends.
+fn assert_unmanaged_setup_policy_error(cause: crate::SourcePolicyError) -> Check<()> {
+    let socket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peer = socket.local_addr()?;
+    let (prepared, control) = prepare_address_round(checked_config(&[peer])?)?;
+    assert!(prepared.source_policy.is_none());
+    let runtime = runtime()?;
+    let origin = Instant::now();
+    let deadline = origin
+        .checked_add(Duration::from_secs(2))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let mut calls = 0;
+    let report = runtime.block_on(run_round_with(
+        prepared,
+        origin,
+        deadline,
+        &mut |_, _, _, _, _, _| {
+            calls += 1;
+            Err(PilotError::SourcePolicy(cause))
+        },
+        &mut |_, _| {},
+    ));
+    drop((runtime, control));
+    assert_eq!(calls, 1, "unmanaged setup error must not retry");
+    assert_eq!(report.end(), AddressRoundEnd::Failure);
+    assert!(
+        matches!(report.primary_error(), Some(PilotError::SourcePolicy(actual)) if actual == cause),
+        "unmanaged setup must preserve its original typed policy error"
+    );
+    assert!(report.attempts().is_empty() && report.policy_refusals().is_empty());
+    assert!(report.cleanup_errors().iter().all(Option::is_none));
+    assert_eq!(observe_queries(&socket)?.0, 0);
+    Ok(())
+}
+
 /// A second setup error retains the first actual timeout and stops further setup.
 /// The injected error is a captured native refusal, not a claimed failure of the
 /// default ephemeral-bind adapter.
@@ -1011,6 +1050,12 @@ fn control_after_actual_setup_prevents_the_first_native_send() -> Check<()> {
 /// Require one real first query, unchanged primary attribution and no later query.
 #[test]
 fn setup_failure_retains_prior_timeout_and_the_actual_injected_cause() -> Check<()> {
+    for cause in [
+        crate::SourcePolicyError::Contended,
+        crate::SourcePolicyError::Poisoned,
+    ] {
+        assert_unmanaged_setup_policy_error(cause)?;
+    }
     let sockets = [
         bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?,
         bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?,
@@ -2416,6 +2461,114 @@ fn assert_postterminal_policy_history(
     Ok(())
 }
 
+/// Pure neighboring classifier inputs retain their deliberately distinct meanings.
+/// # Panics
+/// Reject an unmanaged policy result, a missing managed cause or a lost Disabled end.
+fn assert_terminal_policy_neighbors() {
+    assert!(matches!(
+        terminal_round_end(
+            Status::SourcePolicy,
+            Some(crate::SourcePolicyError::Poisoned),
+            false
+        ),
+        Err(PilotError::InternalState)
+    ));
+    assert!(matches!(
+        terminal_round_end(Status::SourcePolicy, None, true),
+        Err(PilotError::InternalState)
+    ));
+    assert!(matches!(
+        terminal_round_end(
+            Status::SourcePolicy,
+            Some(crate::SourcePolicyError::Disabled),
+            true
+        ),
+        Ok(Some(AddressRoundEnd::Policy))
+    ));
+}
+
+/// A real issued slot must transfer a non-Disabled policy failure without rewriting it.
+/// # Errors
+/// Preserve checked owners, actual native setup/runtime and quiet-peer failures.
+/// # Panics
+/// Reject failed poisoning, changed primary/history or any send after lost custody.
+fn assert_managed_poisoned_terminal_cause() -> Check<()> {
+    assert_terminal_policy_neighbors();
+    let authority = crate::source_policy::isolated_authority(crate::SourcePolicyLimits::new(
+        1,
+        1,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let source = authority.source(0)?;
+    let socket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peer = socket.local_addr()?;
+    let (prepared, control) = source.prepare_address_round(checked_config(&[peer])?)?;
+    let bindings = prepared.source_policy.clone();
+    let binding = source.bind(peer)?;
+    let runtime = runtime()?;
+    let origin = Instant::now();
+    let deadline = origin
+        .checked_add(Duration::from_secs(2))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let mut calls = 0;
+    let report = runtime.block_on(run_round_with(
+        prepared,
+        origin,
+        deadline,
+        &mut |peer, packet, context, receiver, request_end, round_end| {
+            let outcome = setup_address_request_bound(
+                peer,
+                packet,
+                context,
+                receiver,
+                request_end,
+                round_end,
+                candidate_mode(bindings.as_ref(), peer)?,
+            )?;
+            assert!(matches!(&outcome, SetupOutcome::Ready(_)));
+            calls += 1;
+            let poison: Result<Result<(), crate::SourcePolicyError>, _> =
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    crate::source_policy::fixture_while_locked(&binding, || {
+                        std::panic::resume_unwind(Box::new(
+                            "intentional isolated policy mutex poisoning",
+                        ));
+                    })
+                }));
+            assert!(
+                poison.is_err(),
+                "actual isolated policy mutex must be poisoned"
+            );
+            Ok(outcome)
+        },
+        &mut |_, _| {},
+    ));
+    drop((runtime, control));
+    classify_native_report(&report)?;
+    assert_eq!(calls, 1);
+    assert_eq!(report.end(), AddressRoundEnd::Failure);
+    assert!(
+        matches!(
+            report.primary_error(),
+            Some(PilotError::SourcePolicy(crate::SourcePolicyError::Poisoned))
+        ),
+        "managed terminal must preserve its original poisoned policy cause"
+    );
+    assert_eq!(report.attempts().len(), 1);
+    let retained = report.attempts()[0].report();
+    assert_eq!(retained.status(), Status::SourcePolicy);
+    assert_eq!(
+        retained.source_policy_refusal(),
+        Some(crate::SourcePolicyError::Poisoned)
+    );
+    assert!(!retained.sent());
+    assert!(report.policy_refusals().is_empty());
+    assert!(report.cleanup_errors().iter().all(Option::is_none));
+    assert_eq!(observe_queries(&socket)?.0, 0);
+    Ok(())
+}
+
 /// Re-enable after actual policy retirement cannot reconstruct a different history.
 /// # Errors
 /// Preserve checked owners, bounded handshakes and every scoped native/join result.
@@ -2423,6 +2576,7 @@ fn assert_postterminal_policy_history(
 /// Reject a lost captured Disabled cause, invented source scope or forbidden tail send.
 #[test]
 fn managed_round_postterminal_reenable_keeps_the_actual_live_policy_cause() -> Check<()> {
+    assert_managed_poisoned_terminal_cause()?;
     drop(runtime()?);
     let mut authority = crate::source_policy::isolated_authority(crate::SourcePolicyLimits::new(
         2,

@@ -21315,3 +21315,98 @@ owner cohorts. Current 350-case tooling, line, listing and mutation qualificatio
 remain open; old `e80714d9…` metrics and C2 scores retain their candidates.
 Main stays closed. Preserve all failures, 90%/95%, native/production/hosted/release
 exits and post-V1 formal deferral. Stage-only; no overall KoD/Core/product pass.
+
+### Address-round typed-error controls and requalification — 16 November 2026
+
+Current product `b83d0421901fd650a85f9858fc01262c19d1c63f34cb1e3a20d57292fd5a22e0`
+has 605 inputs; only private address-round tests differ from `582a995a…`.
+All five production owners remain unchanged. REQ-8/BND-1 and
+CHECK-6/8/21/25/26/27 retain their owners and contracts.
+
+Evidence under `current-owner-cohorts-v1/repair-1/address-repair-v2/`:
+`revision-3/verification.json` (`c6778a5d…`) passes twelve development lanes,
+241 default/475 EP1 cases per mode, 75 doctests per graph and GNU/MSVC checks/Clippy.
+`causal-controls/verification.json` (`65171aaf…`) passes healthy0/RED101/restored0
+for both exact surviving faults: legal unmanaged Contended setup retains its
+original error once; a genuine managed slot's actual poisoned cause survives
+refresh, terminal/report transfer and primary-error classification.
+`liveness-output/verification.json` (`69327158…`) passes three whole-library
+215-case faults and six restored 241/75 selections; all six required roots reach
+the genuine retirement prerequisite. No claim covers the 26 downstream cases
+under failed library targets. Custody/resources pass; no control adds kills.
+
+Old `582a995a…` source166/library235/series160 passes retain their scopes.
+Address85 remains FAILED: 35 caught, 48 unviable, two non-equivalent Missed,
+zero timeouts, 94.5946%; session was unrun. Neither error-contract survivor is E.
+The initial `cb41c8e1…` GNU E0614 receipt (`da4e780f…`) ran no Rust tests;
+its one-character correction produced `b83d0421…`. The first liveness zero-test
+disk refusal stays retained; changed disk availability and the conditional-check
+correction precede the accepted retry. No failure is rewritten.
+
+Same start1794833286/prior107039.9990003109 and 23100-second allowance continue.
+Spent mutation-case allowance258172 plus fresh five-owner plan219936 gives478108
+within explicit483676; new nonmutation libtest work has a separate6000 cap.
+No reset, refund, score transfer or 90%/95% change follows. Next: fresh350 metadata,
+baseline/691 listing/five line gates, then all five mutation cohorts; none has run
+yet for this repair. Main stays closed; H02 stays external until this qualifies.
+No whole Core/Engine/P1, native, hosted, release or formal pass; staging only.
+
+### Selected-reply rejection accounting — 17 November 2026
+
+The new cloud lead is valid under `SlotReport`'s existing contract: a selected
+actual datagram that never commits as a header/control remains rejected. Late
+Stop/invalidation omitted that charge in both final reply owners; final managed
+policy lock/admission errors had the same omission. The repair adds one charge
+in each of those six mutually exclusive receive-refusal branches. Send guards,
+original deadlines, spent receive work, primary causes and committed history are
+preserved. This establishes no authorization or clock-safety bypass.
+
+Under `address-repair-v2/reply-accounting-repair-1/`, `red-2/verification.json`
+(`fb51e90b…`) records six individually attributed counter failures and four
+healthy cases. `green/verification.json` (`88c23fe3…`) runs the same ten cases
+successfully with unchanged expectations. It includes historical Header `(1,0)`,
+writable retirement `(0,0)`, actual prior-rejection history and checked source/
+endpoint re-enable cases. Independent review (`48ef8455…`) accepts the focused
+repair within the actual serialized production caller contract. It does not
+claim arbitrary replay of the private managed leaf is idempotent.
+
+Full development now passes on product
+`4703646bd205102d61d73b6a46712f1d2910d8d370b7847f7f291513e5534646`
+(605 inputs). `observer-v4/development-4/verification.json` (`cdacaa3e…`)
+records all twelve configured lanes: 245 default and 479 EP1 cases in each
+ordinary/optimized mode, 75 doctests per graph, format, GNU/MSVC compilation and
+Clippy. The original start/cumulative costs and all previous failures remain;
+resource/custody closeout reports no failures. These are GNU behavioral and
+Windows-target compiler results, not fresh native Windows qualification.
+
+The first local TDD attempt ran no tests because its fresh Cargo home lacked
+the existing vendor mapping. The first broader preflight also ran no workload:
+its historical policy-reference comparison and filtered-GREEN reader were
+corrected. The second attempt reached Clippy and exposed two overlong test
+helpers; their extraction preserved the behavioral checks. The third passed all
+six static lanes, then 218 of 219 library cases and failed the old session
+assertion that unconditionally expected zero rejections. Independent review
+(`c83e259f…`, integrated `80f631a3…`) accepted the contract-derived exhaustive
+correction: ReplyStop/ReplyInvalidate expect one; writable retirement and a
+reply committed before Stop expect zero. All other session status, custody,
+reuse/retirement, historical facts and no-extra-send checks remain. The complete
+fourth attempt supplies GREEN for that correction; no failed run is relabelled.
+
+This child retains REQ-8, BND-1 and CHECK-6/8/21/25/26/27. Four new runtime IDs
+require fresh package rosters and qualification. Current coverage/mutation
+qualification remains open; historical B83 scores are not transferred. Main's
+general mutation campaign remains closed. Next re-admit the coherent source,
+helpers, complete rosters and inventories under the unchanged 90% line and 95%
+per-critical-file mutation gates. Preserve the original clock, prior charges,
+resource controls and all failed attempts. Completed derived build outputs and
+obsolete duplicate source copies were deleted after terminal checks; raw results,
+source maps and unique reconstruction bytes remain.
+
+Publication continuation: David subsequently requested the latest pull, commit
+and push. Guidance-only `4bf9a6fca3214af2211064e2ac664405249c2128` was fast-forwarded
+with both staged and unstaged patches preserved. All 605 product inputs and 179
+captured helpers match the completed development receipt. The updated data-flow
+skill is adopted for subsequent work; no new CodeQL execution or current metric
+pass follows. This publication includes the verified repair and existing B83
+address-round checkpoint records. The proposed current-role five-file rebind and
+fresh qualification runner remain out of tree, unapplied and unexecuted.

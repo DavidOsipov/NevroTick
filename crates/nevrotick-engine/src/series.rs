@@ -955,8 +955,10 @@ fn publish_series_reply_observing(
             let current = control.borrow();
             state = *current;
             if current.stop {
+                slot.rejected += 1;
                 slot.finish(TerminalOutcome::Stopped);
             } else if current.epoch != 0 {
+                slot.rejected += 1;
                 slot.finish(TerminalOutcome::Stale);
             } else {
                 commit_reply(slot, &candidate, processing, deadline);

@@ -1688,6 +1688,7 @@ fn commit_managed_reply_observing(
             return ManagedEffect::Handled;
         }
         Err(error) => {
+            slot.rejected += 1;
             slot.finish(TerminalOutcome::SourcePolicy(error));
             return ManagedEffect::Handled;
         }
@@ -1731,7 +1732,10 @@ fn commit_managed_reply_observing(
         Ok(true)
     })();
     match admission {
-        Err(error) => slot.finish(TerminalOutcome::SourcePolicy(error)),
+        Err(error) => {
+            slot.rejected += 1;
+            slot.finish(TerminalOutcome::SourcePolicy(error));
+        }
         Ok(true) => finish_valid_reply(slot, candidate, now),
         Ok(false) => {}
     }

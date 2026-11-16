@@ -3181,6 +3181,270 @@ fn final_commit_leaf_guards_preserve_nonzero_receive_accounting_and_original_exp
     })
 }
 
+/// One actual current-policy failure introduced after native reply selection.
+#[derive(Clone, Copy, Debug)]
+enum FinalPolicyFailure {
+    /// Unwind while the actual policy mutex guard retains custody.
+    Poisoned,
+    /// Advance the actual source's current revision and correlation epoch.
+    SourceReenabled,
+    /// Advance the actual endpoint's current revision and correlation epoch.
+    EndpointReenabled,
+}
+
+/// Commit a genuine fresh neighboring reply with no invented rejection.
+/// # Errors
+/// Preserve real setup, query, selected receive, staging and policy failures.
+/// # Panics
+/// Fail if an unchanged current policy rejects work or publishes no header facts.
+async fn final_policy_failure_healthy_neighbor() -> Check<()> {
+    let mut healthy = io_fixture()?;
+    let original_deadline = healthy.deadline;
+    let packet = query(&mut healthy).await?;
+    let candidate = ordinary_candidate(&mut healthy, &packet).await?;
+    let retained = facts(&healthy.binding)?;
+    assert_eq!(
+        (healthy.slots[0].received, healthy.slots[0].rejected),
+        (1, 0)
+    );
+    assert!(matches!(
+        final_leaf_with_control(&mut healthy, &candidate),
+        ManagedEffect::Handled
+    ));
+    assert_eq!(
+        healthy.slots[0].terminal().map(TerminalOutcome::status),
+        Some(Status::Header)
+    );
+    assert!(
+        healthy.slots[0]
+            .terminal()
+            .and_then(TerminalOutcome::facts)
+            .is_some()
+    );
+    assert_eq!(
+        (healthy.slots[0].received, healthy.slots[0].rejected),
+        (1, 0)
+    );
+    assert_eq!(facts(&healthy.binding)?, retained);
+    assert_eq!(healthy.deadline, original_deadline);
+    Ok(())
+}
+
+/// Introduce the selected failure through this actual fixture's policy owner.
+/// # Errors
+/// Preserve actual policy custody, checked target and re-enable failures.
+/// # Panics
+/// Fail if unwinding the actual held guard does not retain policy poisoning.
+fn introduce_final_policy_failure(
+    fixture: &mut IoFixture,
+    failure: FinalPolicyFailure,
+) -> Check<SourcePolicyError> {
+    use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+
+    let expected_error = match failure {
+        FinalPolicyFailure::Poisoned => {
+            let cell = Arc::clone(&fixture.binding.source.cell);
+            let held = cell.lock()?;
+            // This is the real owner guard unwinding, not a forged poison flag.
+            let unwind: Result<(), _> = catch_unwind(AssertUnwindSafe(move || {
+                let _held_during_unwind = held;
+                resume_unwind(Box::new("selected-reply policy poisoning specimen"));
+            }));
+            assert!(unwind.is_err());
+            assert!(cell.state.is_poisoned());
+            SourcePolicyError::Poisoned
+        }
+        FinalPolicyFailure::SourceReenabled => {
+            let source = fixture.authority.source(0)?;
+            let target = fixture.authority.source_target(&source)?;
+            fixture.authority.reenable(&[target])?;
+            SourcePolicyError::Stale
+        }
+        FinalPolicyFailure::EndpointReenabled => {
+            let target = fixture
+                .authority
+                .endpoint_target(fixture.peers[0].local_addr()?)?;
+            fixture.authority.reenable(&[target])?;
+            SourcePolicyError::Stale
+        }
+    };
+    Ok(expected_error)
+}
+
+/// Observe the actual retained records without recovering poisoned authority.
+/// # Errors
+/// Preserve checked record failures or refuse lost actual poison custody.
+fn final_policy_failure_retained_facts(
+    fixture: &IoFixture,
+    failure: FinalPolicyFailure,
+) -> Check<[RecordFacts; 2]> {
+    if !matches!(failure, FinalPolicyFailure::Poisoned) {
+        return Ok(facts(&fixture.binding)?);
+    }
+    // Read-only observation of the poisoned state: never clear or recover it
+    // into live authority, and never write the records or their counters.
+    match fixture.binding.source.cell.state.try_lock() {
+        Err(TryLockError::Poisoned(error)) => {
+            let state = error.get_ref();
+            Ok([
+                state.record(RecordKey::Source(fixture.binding.source.index))?,
+                state.record(RecordKey::Endpoint(fixture.binding.endpoint))?,
+            ]
+            .map(|record| {
+                (
+                    record.interval,
+                    record.floor,
+                    record.refused,
+                    record.revision,
+                    record.epoch,
+                    record.unavailable,
+                )
+            }))
+        }
+        Ok(_) | Err(TryLockError::WouldBlock) => {
+            Err("final policy refusal lost actual poison custody".into())
+        }
+    }
+}
+
+/// Refuse one selected native reply after a real final policy-state change.
+/// Nonzero history comes from three real UNKNOWN datagrams, never counter writes.
+/// # Errors
+/// Preserve actual UDP/charge/staging, checked re-enable and record observations.
+/// # Panics
+/// Fail if the exact final refusal loses one reject, refunds prior work, changes
+/// policy custody, publishes header facts or renews the original deadline.
+async fn final_policy_failure_case(
+    failure: FinalPolicyFailure,
+    with_rejected_history: bool,
+) -> Check<()> {
+    let mut fixture = io_fixture()?;
+    let original_deadline = fixture.deadline;
+    let candidate = if with_rejected_history {
+        seeded_final_commit_candidate(&mut fixture).await?
+    } else {
+        let packet = query(&mut fixture).await?;
+        ordinary_candidate(&mut fixture, &packet).await?
+    };
+    let expected_before = if with_rejected_history {
+        (4, 3)
+    } else {
+        (1, 0)
+    };
+    assert_eq!(
+        (fixture.slots[0].received, fixture.slots[0].rejected),
+        expected_before
+    );
+    {
+        let slot = &mut fixture.slots[0];
+        slot.policy.refresh(&slot.identity)?;
+    }
+    assert!(matches!(fixture.slots[0].phase, Phase::Pending(_)));
+    assert!(candidate.read.mono_after < original_deadline);
+    let last_rejection = fixture.slots[0].last_rejection;
+    let before = facts(&fixture.binding)?;
+    let expected_error = introduce_final_policy_failure(&mut fixture, failure)?;
+    let retained = if matches!(failure, FinalPolicyFailure::Poisoned) {
+        before
+    } else {
+        facts(&fixture.binding)?
+    };
+    assert!(matches!(
+        final_leaf_with_control(&mut fixture, &candidate),
+        ManagedEffect::Handled
+    ));
+    assert!(matches!(
+        fixture.slots[0].terminal(),
+        Some(TerminalOutcome::SourcePolicy(error)) if *error == expected_error
+    ));
+    assert!(
+        fixture.slots[0]
+            .terminal()
+            .and_then(TerminalOutcome::facts)
+            .is_none()
+    );
+    let expected_after = if with_rejected_history {
+        (4, 4)
+    } else {
+        (1, 1)
+    };
+    assert_eq!(
+        (fixture.slots[0].received, fixture.slots[0].rejected),
+        expected_after,
+        "the genuine selected native reply must add exactly one final-policy rejection"
+    );
+    for _ in 0..2 {
+        crate::refresh_source_policy(&mut fixture.slots[0]);
+        assert!(matches!(
+            fixture.slots[0].terminal(),
+            Some(TerminalOutcome::SourcePolicy(error)) if *error == expected_error
+        ));
+        assert_eq!(
+            (fixture.slots[0].received, fixture.slots[0].rejected),
+            expected_after
+        );
+        assert_eq!(fixture.slots[0].last_rejection, last_rejection);
+        assert!(fixture.slots[0].sent);
+        assert_eq!(fixture.slots[0].send_attempts, 1);
+        assert_eq!(fixture.deadline, original_deadline);
+    }
+    let after = final_policy_failure_retained_facts(&fixture, failure)?;
+    assert_eq!(after, retained);
+    let mut extra = [0_u8; RECEIVE_BYTES];
+    for peer in &fixture.peers {
+        assert!(matches!(
+            peer.try_recv_from(&mut extra),
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock
+        ));
+    }
+    Ok(())
+}
+
+/// The final non-Contended lock error rejects its genuinely selected reply once.
+/// # Errors
+/// Preserve runtime and each finite actual-receive/poisoning scenario's failure.
+/// # Panics
+/// Fail if poison loses the exact reason, selected rejection or valid neighbor.
+#[test]
+fn final_commit_poisoned_policy_counts_the_selected_reply_once() -> Check<()> {
+    runtime()?.block_on(async {
+        final_policy_failure_healthy_neighbor().await?;
+        for with_rejected_history in [false, true] {
+            tokio::time::timeout(
+                Duration::from_secs(2),
+                final_policy_failure_case(FinalPolicyFailure::Poisoned, with_rejected_history),
+            )
+            .await??;
+        }
+        Ok(())
+    })
+}
+
+/// A checked current-revision change rejects its genuinely selected old reply once.
+/// # Errors
+/// Preserve runtime and each finite native/checked-re-enable scenario's failure.
+/// # Panics
+/// Fail if either record's final Stale refusal loses work or creates header facts.
+#[test]
+fn final_commit_reenabled_policy_counts_the_selected_reply_once() -> Check<()> {
+    runtime()?.block_on(async {
+        final_policy_failure_healthy_neighbor().await?;
+        for failure in [
+            FinalPolicyFailure::SourceReenabled,
+            FinalPolicyFailure::EndpointReenabled,
+        ] {
+            for with_rejected_history in [false, true] {
+                tokio::time::timeout(
+                    Duration::from_secs(2),
+                    final_policy_failure_case(failure, with_rejected_history),
+                )
+                .await??;
+            }
+        }
+        Ok(())
+    })
+}
+
 /// Independently specified floor neighbors; equality is an admitted send point.
 /// # Errors
 /// Refuse fixture coordinate overflow instead of wrapping its modeled boundary.

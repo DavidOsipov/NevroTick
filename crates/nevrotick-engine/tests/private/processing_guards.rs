@@ -551,6 +551,158 @@ async fn check_guard(
     Ok(neighbor_snapshot)
 }
 
+/// A public control change delivered at one precise final reply boundary.
+#[derive(Clone, Copy)]
+enum FinalReplyControl {
+    /// Retire the selected reply only at the final watch guard.
+    Stop,
+    /// Invalidate the selected reply only at the final watch guard.
+    Invalidate,
+    /// Preserve a committed historical header after a later stop.
+    PostcommitStop,
+}
+
+/// Challenge the original pilot kernel using one actual selected native reply.
+/// The other association commits first and remains an unchanged historical neighbor.
+/// # Errors
+/// Preserve native fixture, receive, wire, generation and original report failures.
+/// # Panics
+/// Require exactly one receive/rejection charge on final refusal, a committed
+/// neighbor with no rejection, and no rewriting of either historical payload.
+async fn pilot_final_guard_case(
+    prepared: [PreparedSlot; 2],
+    peers: [StdSocket; 2],
+    action: FinalReplyControl,
+) -> Result<(), Box<dyn Error>> {
+    let mut slots = live_pair(prepared)?;
+    let [first, second] = peers;
+    let peers = [UdpSocket::from_std(first)?, UdpSocket::from_std(second)?];
+    let deadline = Instant::now()
+        .checked_add(MAX_TIMEOUT)
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let (sender, mut receiver) = watch::channel(Control {
+        stop: false,
+        epoch: 0,
+    });
+    let control = ControlHandle { sender };
+    let saved_neighbor = commit_neighbor(&mut slots, &peers[1], &mut receiver, deadline).await?;
+    let (datagram, _) = receive_reply(&mut slots[0], &peers[0], deadline, 15, false).await?;
+    let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
+    let selected = classify_read_result(
+        NativeDatagramPlatform::current(),
+        Ok((datagram.length, datagram.source)),
+    );
+    assert!(charge_selected_datagram(&mut slots[0], &selected));
+    assert_eq!((slots[0].received, slots[0].rejected), (1, 0));
+    assert!(
+        stage_reply(
+            &slots[0],
+            &datagram.bytes[..datagram.length],
+            datagram.source,
+            datagram.read,
+            limits,
+        )
+        .is_ok()
+    );
+    let mut delivery = Ok(());
+    process_reply_observing(
+        &mut slots,
+        &mut receiver,
+        0,
+        &ReadDatagram {
+            bytes: &datagram.bytes[..datagram.length],
+            source: datagram.source,
+            read: datagram.read,
+        },
+        limits,
+        deadline,
+        (
+            || match action {
+                FinalReplyControl::Stop => control.stop(),
+                FinalReplyControl::Invalidate => delivery = control.invalidate(),
+                FinalReplyControl::PostcommitStop => {}
+            },
+            || {
+                if matches!(action, FinalReplyControl::PostcommitStop) {
+                    control.stop();
+                }
+            },
+        ),
+    );
+    product_ok(delivery, "valid final pilot control delivery failed")?;
+    let expected = match action {
+        FinalReplyControl::Stop => Status::Stopped,
+        FinalReplyControl::Invalidate => Status::Stale,
+        FinalReplyControl::PostcommitStop => Status::Header,
+    };
+    let state = latest(&mut receiver);
+    assert_eq!(state.stop, !matches!(action, FinalReplyControl::Invalidate));
+    assert_eq!(
+        state.epoch,
+        u64::from(matches!(action, FinalReplyControl::Invalidate))
+    );
+    assert_eq!(
+        slots[0].terminal().map(TerminalOutcome::status),
+        Some(expected)
+    );
+    // This assertion is causal RED for both final refusals before the repair.
+    assert_eq!(
+        (slots[0].received, slots[0].rejected),
+        (
+            1,
+            u16::from(!matches!(action, FinalReplyControl::PostcommitStop))
+        ),
+        "final pilot guard must count each selected reply exactly once"
+    );
+    assert!(slots[0].last_rejection.is_none());
+    // A subsequent whole-pilot control refresh must preserve both historical
+    // outcomes and must not add another charge for this selected reply.
+    refresh_owner(&mut slots, &mut receiver, deadline);
+    let [first, neighbor] = slots;
+    let first = first.into_report(0)?;
+    let neighbor = neighbor.into_report(1)?;
+    check_final_reply_reports(&first, &neighbor, expected, action, &saved_neighbor)?;
+    Ok(())
+}
+
+/// Check the original target/neighbor reports after their owner's control refresh.
+/// Both reports and the saved neighbor facts belong to the caller's actual pair;
+/// `expected` is that same closed action's previously selected terminal status.
+/// This borrow-only observer performs no I/O or owner transition.
+/// # Errors
+/// Preserve absence of the original neighbor's committed facts.
+/// # Panics
+/// Require unchanged statuses, exact counters, payload presence and saved facts.
+fn check_final_reply_reports(
+    first: &SlotReport,
+    neighbor: &SlotReport,
+    expected: Status,
+    action: FinalReplyControl,
+    saved_neighbor: &TransportFacts,
+) -> Result<(), Box<dyn Error>> {
+    assert_eq!(first.status(), expected);
+    assert_eq!(
+        (first.received(), first.rejected()),
+        (
+            1,
+            u16::from(!matches!(action, FinalReplyControl::PostcommitStop))
+        )
+    );
+    assert_eq!(
+        first.facts().is_some(),
+        matches!(action, FinalReplyControl::PostcommitStop)
+    );
+    assert_eq!((neighbor.received(), neighbor.rejected()), (1, 0));
+    assert_eq!(neighbor.status(), Status::Header);
+    check_fact_getters(
+        neighbor
+            .facts()
+            .ok_or_else(|| io::Error::other("final-guard neighbor facts lost"))?,
+        saved_neighbor,
+    );
+    Ok(())
+}
+
 /// A valid read cannot bypass fresh processing time or current owner requests.
 /// Every case first commits the other association as a healthy historical neighbor.
 /// Private preparation uses real OS nonces and sockets, without calling public
@@ -608,7 +760,53 @@ fn processing_uses_fresh_deadline_and_current_control() -> Result<(), Box<dyn Er
             Ok::<(), Box<dyn Error>>(())
         })?;
     }
+    let Fixture { prepared, peers } = fixture()?;
+    runtime.block_on(pilot_final_guard_case(
+        prepared,
+        peers,
+        FinalReplyControl::PostcommitStop,
+    ))?;
     Ok(())
+}
+
+/// A stop delivered only at the final pilot guard rejects its selected reply once.
+/// # Errors
+/// Preserve real runtime, native fixture, delivery and original report failures.
+/// # Panics
+/// Require one received/rejected reply and an unchanged committed neighbor.
+#[test]
+fn pilot_final_guard_stop_rejects_selected_reply_once() -> Result<(), Box<dyn Error>> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .max_blocking_threads(2)
+        .build()?;
+    let Fixture { prepared, peers } = fixture()?;
+    runtime.block_on(pilot_final_guard_case(
+        prepared,
+        peers,
+        FinalReplyControl::Stop,
+    ))
+}
+
+/// Invalidation at the final pilot guard rejects its selected reply exactly once.
+/// # Errors
+/// Preserve real runtime, native fixture, delivery and original report failures.
+/// # Panics
+/// Require one received/rejected reply and an unchanged committed neighbor.
+#[test]
+fn pilot_final_guard_invalidation_rejects_selected_reply_once() -> Result<(), Box<dyn Error>> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .max_blocking_threads(2)
+        .build()?;
+    let Fixture { prepared, peers } = fixture()?;
+    runtime.block_on(pilot_final_guard_case(
+        prepared,
+        peers,
+        FinalReplyControl::Invalidate,
+    ))
 }
 
 /// Compare public getters with the observations saved before the later control.

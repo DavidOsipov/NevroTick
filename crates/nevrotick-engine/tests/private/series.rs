@@ -2948,6 +2948,18 @@ fn final_guard_transfer_case(
                 .status(),
             expected_status
         );
+        let expected_counts = match path {
+            FinalGuardPath::Reply => (1, 1),
+            FinalGuardPath::Writable => (0, 0),
+        };
+        let first = series.attempts()[0]
+            .report()
+            .ok_or(PilotError::InternalState)?;
+        assert_eq!(
+            (first.received(), first.rejected()),
+            expected_counts,
+            "final-guard refusal must count each selected reply exactly once"
+        );
         assert!(
             series.attempts()[1..]
                 .iter()
@@ -3053,6 +3065,7 @@ fn reply_postcommit_stop_preserves_the_historical_receiving_checkpoint()
             .report()
             .ok_or(PilotError::InternalState)?;
         assert_eq!(accepted.status(), Status::Header);
+        assert_eq!((accepted.received(), accepted.rejected()), (1, 0));
         assert!(accepted.facts().is_some());
         assert!(series.primary_failure().is_none());
         assert!(
