@@ -1,56 +1,61 @@
 # Rust data-flow analysis with the local CodeQL MCP
 
-Formal/Kani proof work and pending proof admission/metadata repairs are deferred
+Formal/Kani proof work, pending proof admission/metadata repairs: deferred
 until after V1 under [OD-10 §14.1](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
-The tool capabilities below create no pre-V1 proof execution or acceptance gate.
+Tool capabilities below create no pre-V1 proof execution or acceptance gate.
 
-Use this reference for a concrete source-to-sink question across Rust functions,
+Use for concrete source-to-sink questions across Rust functions,
 validation, state or trust boundaries. [TOOLING.md](../../../../TOOLING.md) owns
 installation and qualification status; [the local policy](../../../../policy/codeql-mcp.json)
 owns pins, allowed tools, limits and retained advisories. Hosted CodeQL remains
-deferred. A local MCP connection does not establish a hosted scan or product pass.
+deferred. Local MCP connection establishes no hosted scan or product pass.
 
-This reference describes the pinned local profile. The separate
+This reference describes pinned local profile. Separate
 [15 November cloud scan](../../../../tasks/codeql-cloud-handoff.md#cloud-refresh-and-completed-scan--15-november-2026)
 completed on `bb90f0c` with CLI 2.27.4 / Rust library 0.2.25; the local profile
 retains CLI 2.27.3 / 0.2.24. Neither profile transfers qualification to the other
-or supplies fresh evidence for a changed candidate.
+or supplies fresh evidence for changed candidates.
 
 Long-chain or logical review: use [source-backed flow audits](flow-audit.md) for
 independent root/effect inventory, data/control/state slices, change-based reuse
 and integration challenges. CodeQL supplies scoped path evidence; AI review and
-alert counts establish no complete bug detection. Inspect actual modeled input
+alert counts prove no complete bug detection. Inspect actual modeled input
 kinds and reached source locations; built-in sources may cover mostly fixtures,
 examples or inactive code. Enabling all models does not invent runtime ingress.
+Declare expected propagation or forbidden effect. Taint reaching parser,
+authenticated field or staging object alone proves no defect; identify property,
+consumed representation and violated requirement.
 
 ## Prepare the evidence
 
-1. State the suspected flow: external or secret source, value/taint propagation,
-   intended guards, observable sink and affected owners. Distinguish value flow,
-   taint flow, control-flow reachability and authorization; they answer different
-   questions. Keep the applicable architecture REQ/BND/THR/CHECK identities.
+1. State suspected flow: external or secret source, value/taint propagation,
+   intended guards, observable sink, affected owners. Distinguish value flow,
+   taint flow, control-flow reachability and authorization: different questions.
+   Keep applicable architecture REQ/BND/THR/CHECK identities.
 2. Record checkout/source identity, manifest/lockfile, target, features, cfgs,
-   macro/build-script inputs and tool/query/model versions. Inspect extraction
+   macro/build-script inputs and tool/query/model versions. Record project-declared,
+   extractor-requested and effective compiler identities separately; project
+   version or wrapper setting alone proves no effective compiler. Inspect extraction
    logs and unresolved code. Retain hashes of authored queries, fixtures and
    expected results outside the runtime work directory; compare them after each
-   run. Upstream compilation/test artifacts share a writable workspace, so
-   launcher admission alone does not freeze those inputs during a session.
+   run. Upstream compilation/test artifacts share writable workspace;
+   launcher admission alone does not freeze inputs during session.
    Rust extraction can execute Cargo build scripts and
    proc macros even with `--build-mode=none`; use the isolated offline launcher.
 3. Admit the environment with `python3 -B scripts/codeql-mcp.py --check`. For an
    actual Cargo tree, create a new database using
    `python3 -B scripts/codeql-mcp.py --create-database /absolute/source --name NAME`.
-   Sources must be this checkout or its owned external fixtures. Do not create
-   a product workspace just to satisfy analysis. Missing cached dependencies,
+   Sources must be this checkout or its owned external fixtures. No product
+   workspace creation merely for analysis. Missing cached dependencies,
    unsupported targets or unresolved extraction remain incomplete.
 4. Inspect `codeql_resolve_database`, compare archived source using
    `read_database_source`, and query a nonempty inventory of the exact
-   source/functions/call targets needed. Archived text alone does not establish
-   usable semantic extraction. Rebuild after relevant
-   source/configuration changes; do not silently reuse a stale database.
+   source/functions/call targets needed. Archived text alone proves no usable
+   semantic extraction. Rebuild after relevant source/configuration changes;
+   never silently reuse stale database.
 
-The configured server is `codeql_dev`. Discover its current exposed schema after
-restarting Codex; do not invent calls if this session has not loaded the server.
+Configured server: `codeql_dev`. Discover current exposed schema after
+restarting Codex; do not invent calls when session has not loaded server.
 The private host workspace is recorded in
 `~/.local/share/nevrotick/codeql-installation.json`; it appears as `/work` inside
 the server. Use host paths for file edits and `/work/...` paths in MCP arguments.
@@ -59,8 +64,8 @@ the admitted offline tool pack `/work/packs/rust-tools` explicitly for built-ins
 
 ### Rust extraction scope
 
-Rust supports `none` extraction, not Rust `autobuild`/`manual` recipes copied from
-other languages. The pinned extractor's defaults need particular attention:
+Rust supports `none` extraction; no Rust `autobuild`/`manual` recipes copied from
+other languages. Inspect pinned extractor defaults:
 
 | Setting | Pinned behavior and implication |
 | --- | --- |
@@ -69,22 +74,29 @@ other languages. The pinned extractor's defaults need particular attention:
 | `cargo_cfg_overrides` | Can add/remove cfgs; `test` starts enabled and can be removed with `-test`. Separate test-only reachability from production paths. |
 | `extract_dependencies_as_source` | Dependency signatures by default, rather than their complete bodies. Inspect models or admit body extraction for a path crossing those implementations. |
 
-These are upstream extractor options, **not flags exposed by this repository's
-launcher**. Its [current CLI](../../../../scripts/codeql-mcp.py) accepts `--check`,
+These upstream extractor options are **not exposed launcher flags**.
+Its [current CLI](../../../../scripts/codeql-mcp.py) accepts `--check`,
 `--create-database`, `--finalize-database` and `--name`.
 Finalization resumes a retained unfinished database for the same admitted source
 under [TOOLING's finalization controls](../../../../TOOLING.md#local-codeql-development-mcp).
-Current execution holds apply. None of these options forwards explicit
-target/feature/cfg overrides. Inspect effective logs and
-database contents, record the resulting scope, and keep a required but unextracted
-configuration incomplete. A separately reviewed launcher/configuration change is
-needed to select a missing matrix entry; do not bypass the launcher or silently
-change product Cargo configuration to obtain it. Even an admitted Windows-target
+Current execution holds apply. These options forward no explicit
+target/feature/cfg overrides. Inspect effective logs and database contents, record
+scope; required unextracted configuration stays incomplete. Missing matrix entry
+needs separately reviewed launcher/configuration change; never bypass launcher or
+silently change product Cargo configuration to obtain it. Even admitted Windows-target
 database supplies source evidence, not Windows execution.
 
 The [pinned extractor definition](https://github.com/github/codeql/blob/a1575b98a8cc19bcfa7bb6cb41be688cb3dae65c/rust/codeql-extractor.yml)
 and [cfg implementation](https://github.com/github/codeql/blob/a1575b98a8cc19bcfa7bb6cb41be688cb3dae65c/rust/extractor/src/config.rs)
 control these details. Recheck after an admitted tool update.
+
+The cloud CLI 2.27.4 [toolchain implementation](https://github.com/github/codeql/blob/codeql-cli/v2.27.4/rust/extractor/src/toolchain.rs)
+requests Rust 1.99.0 for stable projects; its
+[configuration](https://github.com/github/codeql/blob/codeql-cli/v2.27.4/rust/extractor/src/config.rs)
+uses `--ignore-rust-version`. Verify effective compiler and wrapper behavior
+against current project requirement. Extraction-scope question alone proves no
+invalid historical scan. Missing runtime evidence stays unknown; no compiler
+installation or admission bypass.
 
 ## Trace and challenge the flow
 
@@ -128,6 +140,16 @@ control these details. Recheck after an admitted tool update.
   macros, cfg branches, absent models or query mistakes. Findings remain leads
   until their effect and reachability are independently established.
 
+Missing external API edge or AI-proposed source, sink, summary or guard:
+use [Rust domain models](codeql-rust-domain-models.md). Preserve raw alerts and
+query outputs before AI filtering. Reuse independent reviewer to challenge
+claims and dismissals; record exact bytes/fields, guards, branches, current
+callers, unresolved assumptions. Unsupported dismissal cannot become a
+sanitizer, neutral model, suppression or changed oracle. Separate expected flow,
+model/extraction gap, concrete defect lead, source-confirmed defect and behavioral
+reproduction in existing ledger. Unresolved reachability or requirement
+assumptions preclude source-confirmed status.
+
 Useful NevroTick flows include IPC bytes → DTO → domain constructor → current
 authorization → broker effect; NTP/NTS bytes → parser → selection/correction;
 and secrets → formatting → logs/exports. Cross-process IPC, Windows tokens,
@@ -149,24 +171,24 @@ coverage. Pair the result with focused behavioral tests; select Miri, fuzzing,
 Loom, Kani, Lockbud or cargo-vet through
 [configured tooling](configured-tooling.md) when their distinct guarantee matters.
 
-Use a compact record in the existing task, proportional to the question:
+Use compact record in existing task, proportional to question:
 attach query-specific identities, controls, counts and result paths to the
 [existing flow-ledger item](flow-audit.md#record-results-in-the-existing-ledger).
-Reuse its shared identity, trace and frontier fields; the table below adds no
-second mandatory ledger. Retain all applicable query evidence.
+Reuse shared identity, trace and frontier fields; table adds no second mandatory
+ledger. Retain all applicable query evidence.
 
 | Field | Record |
 | --- | --- |
 | Question/expectation | Requirement ID, source, sink, forbidden effect and valid neighboring case. |
 | Trace | Producer/location → representation or stored field → checked result/branch → actual consumer; guard owner and changing context at each relevant hop. |
-| Identity/scope | Dirty candidate inputs; database/source archive; CLI, Rust library and model hashes; target/features/cfg/dependency-body coverage. |
+| Identity/scope | Dirty candidate inputs; database/source archive; CLI, Rust library and model hashes; declared/requested/effective compiler; target/features/cfg/dependency-body coverage. |
 | Controls/results | Expected endpoint pairs and absences; actual selection/result counts; sensitivity-control failure; exit/log/BQRS/SARIF paths and hashes. |
 | Verdict | Confirmed path, blocked under the stated model, or incomplete; source inspection and independent behavioral reproduction separately. |
 | Gaps/next action | Missing configurations, models, bounded-path truncation, unresolved external/native seams and their owner. |
 
-Do not turn a single rendered path into an exhaustive path inventory. Multiple
-routes may collapse to one alert; a bounded partial-flow trace is not a complete
-source-to-sink result. No path under a stated model is narrower than no defect.
+Single rendered path is no exhaustive inventory. Multiple routes may collapse to
+one alert; bounded partial-flow trace is no complete source-to-sink result.
+No path under stated model is narrower than no defect.
 
 The server has an explicit tool allowlist, bounded protocol and an offline OS
 sandbox. Its bundled Zod advisory remains recorded; these restrictions do not
