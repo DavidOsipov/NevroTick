@@ -3870,9 +3870,6 @@ class EngineKeFixtureLaneTests(unittest.TestCase):
 class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
     """Declared synthetic reader/dispatch controls; no compiler or product executes."""
 
-    class SessionReached(Exception):
-        pass
-
     OWNERS = {
         "source_policy": "crates/nevrotick-engine/src/source_policy.rs",
         "library": "crates/nevrotick-engine/src/lib.rs",
@@ -3916,17 +3913,17 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         # This five-path identity is declared independently of checkout growth.
         self.identity = {name: hashlib.sha256((self.root / name).read_bytes()).hexdigest()
                          for name in self.OWNERS.values()}
-        self.ordinary = sorted([f"ordinary_fixture_{index:03}" for index in range(181)]
-                               + [f"source_policy::tests::synthetic_case_{index:02}" for index in range(26)]
+        self.ordinary = sorted([f"ordinary_fixture_{index:03}" for index in range(192)]
+                               + [f"source_policy::tests::synthetic_case_{index:02}" for index in range(47)]
                                + ["source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted",
                                   "source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund"])
-        # The reviewed development contract has 209 default cases and 234
-        # additional KE cases in EP1. These synthetic identities are not read
-        # from either production roster or the consumer being challenged.
-        self.ep1_ordinary = sorted(self.ordinary
-                                  + [f"nts_ke_experiment::synthetic_case_{index:03}" for index in range(234)])
+        # Independently declared full optional-profile identity. The reader under
+        # test supplies neither these names nor their expected digest.
+        self.ep1 = sorted(self.ordinary
+                          + [f"nts_ke_experiment::synthetic_ep1_case_{index:03}"
+                             for index in range(234)])
         self.docs = sorted([f"crates/nevrotick-engine/src/lib.rs - synthetic_doc_{index:02} (line {index + 1})"
-                            for index in range(69)]
+                            for index in range(71)]
                            + [f"crates/nevrotick-engine/src/source_policy.rs - synthetic_doc (line {index}) - compile fail"
                               for index in range(1, 4)]
                            + ["crates/nevrotick-engine/src/source_policy.rs - synthetic_doc (line 4)"])
@@ -3957,8 +3954,7 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                 patch.object(MODULE, "ROOT", self.root),
                 patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, self.identity)),
                 patch.object(MODULE, "SOURCE_POLICY_ORDINARY_DIGEST", independent_digest(self.ordinary)),
-                patch.object(MODULE, "SOURCE_POLICY_EP1_ORDINARY_DIGEST",
-                             independent_digest(self.ep1_ordinary)),
+                patch.object(MODULE, "SOURCE_POLICY_EP1_DIGEST", independent_digest(self.ep1), create=True),
                 patch.object(MODULE, "SOURCE_POLICY_DOCTEST_DIGEST", independent_digest(self.docs)),
                 patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=8 * 1024**3))):
             context.start()
@@ -3968,40 +3964,194 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
             tool_admission_profile="stable-core", vendor_dir=self.base / "vendor",
             output_dir=self.base / "output")
 
-    def reference_fixture(self):
+    @contextmanager
+    def synthetic_source_policy_equivalence(self):
+        """Declare a synthetic review without weakening either actual reader."""
+        identifier = "KOD-SERIES-UNAVAILABLE-ADMITTED-ZERO"
+        filename = self.OWNERS["series"]
+        descriptor = {"name": "independent synthetic zero-result review", "package": "nevrotick-engine",
+            "file": filename, "function": {"function_name": "independent_synthetic_zero", "return_type": "-> usize",
+                "span": {"start": {"line": 1, "column": 1}, "end": {"line": 2, "column": 2}}},
+            "span": {"start": {"line": 1, "column": 1}, "end": {"line": 1, "column": 2}},
+            "replacement": "0", "genre": "FnValue"}
+        path = self.root / "tasks/engine-source-policy-equivalences.md"
+        original = copy.deepcopy(self.policy)
+        original_proof = path.read_bytes() if path.exists() else None
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("Synthetic independent review only.\n## " + identifier + "\n")
+        proof_sha = hashlib.sha256(path.read_bytes()).hexdigest()
+        reviewer = "synthetic independent reader control"
+        rationale = "Independent synthetic closed-domain zero result"
+        entry = {"id": identifier, "candidate_sha256": independent_digest(self.identity),
+            "source_sha256": self.identity[filename], "mutant": descriptor,
+            "requirement": "CHECK-10/CHECK-19/CHECK-21/CHECK-25/CHECK-27", "rationale": rationale,
+            "proof": {"path": "tasks/engine-source-policy-equivalences.md", "sha256": proof_sha,
+                "section": identifier, "reviewer": reviewer, "verdict": "independently-justified-equivalent"}}
+        dependency_names = ("Cargo.toml", "Cargo.lock", "crates/nevrotick-engine/Cargo.toml", "rust-toolchain.toml",
+            ".cargo/config.toml", ".cargo/mutants.toml", ".config/nextest.toml", "policy/analysis-tools.json",
+            "policy/tool-manifest.json", "policy/verification-manifest.toml")
+        dependencies = {name: self.policy["binding"]["inputs_sha256"][name] for name in dependency_names}
+        stable = self.base / "synthetic-stable"
+        standard_sources = {}
+        for name in ("core/src/time.rs", "std/src/sys/pal/unix/time.rs", "std/src/sys/time/unix.rs",
+                     "std/src/sys/time/windows.rs", "std/src/time.rs"):
+            source = stable / "lib/rustlib/src/rust/library" / name
+            source.parent.mkdir(parents=True, exist_ok=True)
+            source.write_text("Independent synthetic standard source: " + name)
+            standard_sources[name] = hashlib.sha256(source.read_bytes()).hexdigest()
+        tool_inventory = [{"name": "stable", "sha256": "d" * 64, "entries": 5, "root": "stable"}]
+        self.policy["mutation_equivalences"] = [entry]
+        self.policy["binding"]["inputs_sha256"]["tasks/engine-source-policy-equivalences.md"] = proof_sha
+        self.write_policy()
+        with patch.multiple(MODULE.COMMON,
+                ENGINE_SOURCE_POLICY_EQUIVALENCE_CANDIDATE=independent_digest(self.identity),
+                ENGINE_SOURCE_POLICY_EQUIVALENCE_PROOF_SHA256=proof_sha,
+                ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWERS=reviewer,
+                ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWS={identifier: (self.identity[filename],
+                    independent_digest(descriptor), hashlib.sha256(b"synthetic rendered diff").hexdigest(), rationale)},
+                ENGINE_SOURCE_POLICY_EQUIVALENCE_DEPENDENCIES=dependencies,
+                ENGINE_SOURCE_POLICY_EQUIVALENCE_TOOL_INVENTORY_SHA256=independent_digest(tool_inventory),
+                ENGINE_SOURCE_POLICY_EQUIVALENCE_STANDARD_SOURCES=standard_sources), \
+                patch.object(MODULE.COMMON.ANALYSIS, "admit", return_value={"stable": stable,
+                    "inventories": tool_inventory}):
+            try:
+                yield entry
+            finally:
+                if original_proof is None:
+                    path.unlink()
+                else:
+                    path.write_bytes(original_proof)
+                self.policy = original
+                self.write_policy()
+
+    def test_source_policy_reader_retains_exact_equivalence_and_actual_refusals(self):
+        with self.synthetic_source_policy_equivalence() as entry:
+            policy, _binding, _identity = MODULE.read_source_policy_policy(self.root)
+            self.assertEqual(policy["mutation_equivalences"], [entry])
+            self.assertEqual(MODULE.COMMON.admit_mutation_equivalences(
+                self.root, MODULE.SOURCE_POLICY_SCOPE, policy), [entry])
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.COMMON.admit_mutation_equivalences(self.root, MODULE.SCOPE, policy)
+            for key, value in (("id", "UNREVIEWED"), ("source_sha256", "f" * 64),
+                               ("rationale", "policy-approved itself")):
+                bad = copy.deepcopy(entry)
+                bad[key] = value
+                self.policy["mutation_equivalences"] = [bad]
+                self.write_policy()
+                before = (self.root / MODULE.SOURCE_POLICY_POLICY).read_bytes()
+                with self.subTest(field=key), self.assertRaises(MODULE.Incomplete):
+                    MODULE.read_source_policy_policy(self.root)
+                self.assertEqual((self.root / MODULE.SOURCE_POLICY_POLICY).read_bytes(), before)
+
+    def test_new_catalogue_does_not_change_historical_engine_fallback_scope(self):
+        """The old exact receiving validator still accepts its literal pair."""
+        entries = []
+        for suffix, replacement in (("SUB", "-="), ("MUL", "*=")):
+            entries.append({"id": "ENGINE-COMMIT-DURATION-FALLBACK-" + suffix,
+                "source_sha256": "6f3c6eb2f491de7f27a89f8fba84556e818874a9c875643b08081206f5dd4d46",
+                "mutant": {"name": f"crates/nevrotick-engine/src/lib.rs:1335:23: replace += with {replacement} in commit_reply",
+                    "package": "nevrotick-engine", "file": "crates/nevrotick-engine/src/lib.rs",
+                    "function": {"function_name": "commit_reply", "return_type": "",
+                        "span": {"start": {"line": 1315, "column": 1}, "end": {"line": 1364, "column": 2}}},
+                    "span": {"start": {"line": 1335, "column": 23}, "end": {"line": 1335, "column": 25}},
+                    "replacement": replacement, "genre": "BinaryOperator"},
+                "proof": {"path": "tasks/engine-analysis-equivalences.md"}})
+        MODULE.validate_equivalence_scope(entries)
+        self.assertFalse(MODULE.COMMON._engine_source_policy_equivalence_role(MODULE.SCOPE,
+            {"mutation_equivalences": entries}))
+        for scope in (MODULE.SERIES_SCOPE, MODULE.SESSION_SCOPE):
+            self.assertFalse(MODULE.COMMON._engine_source_policy_equivalence_role(scope,
+                {"mutation_equivalences": entries}))
+        with self.synthetic_source_policy_equivalence() as entry, self.assertRaises(MODULE.Incomplete):
+            MODULE.validate_equivalence_scope([entry])
+
+    def reference_fixture(self, *, ep1_outputs=None, independent_monitor=False):
         """Create physical hash-bound synthetic observations, without claiming executions."""
+        directory = self.base / "development/revision-8" if independent_monitor else self.base
+        directory.mkdir(parents=True, exist_ok=True)
         lanes = []
         for name in ("boundary-control", "format", "gnu-check", "gnu-clippy", "msvc-clippy", "msvc-check",
                      "default-ordinary", "default-optimized", "default-doctests",
                      "ep1-ordinary", "ep1-optimized", "ep1-doctests"):
             output = (self.execution(self.docs) if name.endswith("doctests")
-                      else self.execution(self.ep1_ordinary) if name in {"ep1-ordinary", "ep1-optimized"}
+                      else self.execution(self.ep1) if name.startswith("ep1-")
                       else self.execution(self.ordinary) if "ordinary" in name or "optimized" in name
                       else "synthetic fixture only\n")
-            path = self.base / (name + ".json")
+            if ep1_outputs is not None and name in ep1_outputs:
+                output = ep1_outputs[name]
+            path = directory / (name + ".json")
             path.write_text(json.dumps({"exit_code": 0, "failure": None, "output": output}))
             lanes.append({"lane": name, "path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                           "exit_code": 0, "failure": None})
-        path = self.base / "reference.json"
-        path.write_text(json.dumps({"status": "workload-passed", "custody_unchanged": True,
-            "resource_observer_joined": True, "terminal_resource_failures": [],
-            "source_sha256": self.identity, "lanes": lanes}))
+        path = directory / "reference.json"
+        reference = {"status": "workload-passed", "custody_unchanged": True,
+                     "source_sha256": self.identity, "lanes": lanes}
+        if independent_monitor:
+            reference.update(self.independent_monitor_fixture(directory))
+        else:
+            reference.update(resource_observer_joined=True, terminal_resource_failures=[])
+            # Actual accepted legacy receipts also contain this diagnostic, but
+            # none of the three current-format provenance markers.
+            reference["independent_monitor"] = {"ok": True, "errors": [], "joined": True,
+                "exit_code": 0, "result": {"status": "stopped", "role": "attempt-2"},
+                "result_sha256": "b" * 64, "resource_samples_sha256": "c" * 64}
+        path.write_text(json.dumps(reference))
+        self.policy["binding"]["development_evidence"]["path"] = str(path)
         self.policy["binding"]["development_evidence"]["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
         self.write_policy()
 
-    def replace_reference_lane_output(self, lane, output):
-        """Keep physical integrity valid while changing only the selected observation."""
-        reference_path = self.base / "reference.json"
-        reference = json.loads(reference_path.read_text())
-        row = next(row for row in reference["lanes"] if row["lane"] == lane)
-        raw_path = Path(row["path"])
-        raw = json.loads(raw_path.read_text())
-        raw["output"] = output
-        raw_path.write_text(json.dumps(raw))
-        row["sha256"] = hashlib.sha256(raw_path.read_bytes()).hexdigest()
-        reference_path.write_text(json.dumps(reference))
-        self.policy["binding"]["development_evidence"]["sha256"] = hashlib.sha256(reference_path.read_bytes()).hexdigest()
-        self.write_policy()
+    def independent_monitor_fixture(self, directory):
+        """Declare durable monitor bytes and expectations independently of the reader."""
+        source = directory.parent / "monitor.py"
+        source.write_bytes(b"# independently declared synthetic sampler source\n")
+        source_sha = hashlib.sha256(source.read_bytes()).hexdigest()
+        result = {"status": "stopped", "parent_pid": 11, "parent_start": 12, "observer_pid": 13,
+                  "role": "attempt-8", "recipe_sha256": source_sha, "samples": 2,
+                  "maximum_gap_seconds": 1.0, "finished_monotonic": 101.5,
+                  "recipe_final_sha256": source_sha}
+        samples = [{"monotonic_seconds": 100.0, "gap_seconds": 0.25,
+                    "available_bytes": 2 * 1024**3, "free_bytes": 8 * 1024**3,
+                    "memory_bytes": 1024**3, "tasks": 2},
+                   {"monotonic_seconds": 101.0, "gap_seconds": 1.0,
+                    "available_bytes": 2 * 1024**3, "free_bytes": 8 * 1024**3,
+                    "memory_bytes": 1024**3, "tasks": 2}]
+        observer = directory / "observer"
+        observer.mkdir(exist_ok=True)
+        terminal = observer / "monitor-result.json"
+        terminal.write_text(json.dumps(result))
+        sampled = observer / "resources.jsonl"
+        sampled.write_text("".join(json.dumps(row) + "\n" for row in samples))
+        controls = {}
+        for role in ("healthy", "gap"):
+            copied_directory = directory / "monitor-controls" / role
+            copied_directory.mkdir(parents=True, exist_ok=True)
+            # Declared prior-control artifacts, not executed controls. The gap
+            # result intentionally reports failure; it is never runtime GREEN.
+            gap = role == "gap"
+            observed = dict(result, role=role)
+            observed_samples = copy.deepcopy(samples)
+            if gap:
+                observed.update(status="failed", maximum_gap_seconds=4.0, finished_monotonic=104.5,
+                                error="Resource observer freshness exceeded two seconds.",
+                                parent_notification="pidfd-SIGTERM")
+                observed_samples[-1].update(monotonic_seconds=104.0, gap_seconds=4.0)
+            terminal_copy = copied_directory / "monitor-result.json"
+            terminal_copy.write_text(json.dumps(observed))
+            samples_copy = copied_directory / "resources.jsonl"
+            samples_copy.write_text("".join(json.dumps(row) + "\n" for row in observed_samples))
+            control = {"expected_control_observed": True, "notifications": [104.6] if gap else [],
+                       "monitor": {"ok": not gap, "errors": ["Monitor failed or stopped unexpectedly."] if gap else [],
+                           "result": observed, "exit_code": 2 if gap else 0, "joined": True,
+                           "result_sha256": hashlib.sha256(terminal_copy.read_bytes()).hexdigest(),
+                           "resource_samples_sha256": hashlib.sha256(samples_copy.read_bytes()).hexdigest()}}
+            (copied_directory / "control.json").write_text(json.dumps(control))
+            for leaf in ("control.json", "monitor-result.json", "resources.jsonl"):
+                copied = copied_directory / leaf
+                controls[f"/dev/shm/synthetic-source-policy-observer/{role}/{leaf}"] = hashlib.sha256(copied.read_bytes()).hexdigest()
+        return {"source_revision": 8, "monitor_sha256": source_sha, "monitor_control_inputs": controls,
+                "independent_monitor": {"ok": True, "errors": [], "result": result, "exit_code": 0,
+                    "joined": True, "result_sha256": hashlib.sha256(terminal.read_bytes()).hexdigest(),
+                    "resource_samples_sha256": hashlib.sha256(sampled.read_bytes()).hexdigest()}}
 
     def fake_session(self, *, finish_failure=False, coverage=None):
         support = self
@@ -4146,8 +4296,8 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         names.remove("source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund")
         names.append("source_policy::tests::synthetic_budget_substitute")
         names.sort()
-        self.assertEqual(len(names), 209)
-        self.assertEqual(sum(name.startswith("source_policy::tests::") for name in names), 28)
+        self.assertEqual(len(names), 241)
+        self.assertEqual(sum(name.startswith("source_policy::tests::") for name in names), 49)
         # Reconcile this independent synthetic digest so the real named-case
         # guard supplies refusal, rather than an earlier count or stale hash.
         with patch.object(MODULE, "SOURCE_POLICY_ORDINARY_DIGEST", independent_digest(names)):
@@ -4165,80 +4315,13 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
 
     def test_full_blocks_are_required_and_doctests_remain_a_separate_union(self):
         binding = self.policy["binding"]
-        self.assertEqual(MODULE.source_policy_execution(self.execution(self.ordinary), binding)["tests_executed"], 209)
+        self.assertEqual(MODULE.source_policy_execution(self.execution(self.ordinary), binding)["tests_executed"], 241)
         with self.assertRaises(MODULE.Incomplete):
             MODULE.source_policy_execution(self.execution(self.docs), binding, doctests=True)
         both = self.execution(self.ordinary) + self.execution(self.docs)
-        self.assertEqual(MODULE.source_policy_execution(both, binding, doctests=True)["tests_executed"], 282)
+        self.assertEqual(MODULE.source_policy_execution(both, binding, doctests=True)["tests_executed"], 316)
         with self.assertRaises(MODULE.Incomplete):
             MODULE.source_policy_execution(self.execution(self.ordinary).replace("0 filtered out", "1 filtered out"), binding)
-
-    def test_development_ep1_admits_distinct_complete_graphs_before_session(self):
-        self.assertEqual(len(self.ordinary), 209)
-        self.assertEqual(len(self.ep1_ordinary), 443)
-        self.assertEqual(len(set(self.ep1_ordinary) - set(self.ordinary)), 234)
-        self.reference_fixture()
-        admitted = MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
-        self.assertEqual(admitted, {str(path): hashlib.sha256(path.read_bytes()).hexdigest()
-                                   for path in self.base.glob("*.json")})
-        self.assertEqual(len(admitted), 13)
-        # Ordering and sub-binary boundaries are not part of the roster contract.
-        for lane in ("ep1-ordinary", "ep1-optimized"):
-            self.replace_reference_lane_output(lane,
-                self.execution(list(reversed(self.ep1_ordinary[:234])))
-                + self.execution(list(reversed(self.ep1_ordinary[234:]))))
-        with patch.object(MODULE.COMMON, "Session", side_effect=self.SessionReached) as session:
-            with self.assertRaises(self.SessionReached):
-                MODULE.execute_source_policy_profile(self.args, {})
-            session.assert_called_once()
-        self.assertFalse(self.args.output_dir.exists())
-
-    def test_development_ep1_rejects_hash_valid_execution_faults(self):
-        missing = [name for name in self.ep1_ordinary
-                   if name != "nts_ke_experiment::synthetic_case_000"]
-        substituted = [name if name != "nts_ke_experiment::synthetic_case_000"
-                       else "nts_ke_experiment::foreign_same_count_case" for name in self.ep1_ordinary]
-        self.assertEqual(len(missing), 442)
-        self.assertEqual(len(substituted), 443)
-        self.assertEqual(sum(name.startswith("nts_ke_experiment::") for name in substituted), 234)
-        cases = (
-            ("empty", "", "native block declaration or summary"),
-            ("zero-tests", self.execution([]), "native block declaration or summary"),
-            ("missing-ke", self.execution(missing), "Source-policy.*EP1"),
-            ("duplicate-ke", self.execution(self.ep1_ordinary + ["nts_ke_experiment::synthetic_case_000"]),
-             "native records are duplicated"),
-            ("same-count-substitute", self.execution(substituted), "Source-policy.*EP1"),
-            ("default-graph-swap", self.execution(self.ordinary), "Source-policy.*EP1"),
-            ("filtered", self.execution(self.ep1_ordinary).replace("0 filtered out", "1 filtered out"),
-             "native block declaration or summary"),
-            ("unfinished-block", self.execution(self.ep1_ordinary) + "running 1 test\n",
-             "native block declaration or summary"),
-        )
-        for lane in ("ep1-ordinary", "ep1-optimized"):
-            for fault, output, reason in cases:
-                with self.subTest(lane=lane, fault=fault):
-                    self.reference_fixture()
-                    self.replace_reference_lane_output(lane, output)
-                    with self.assertRaisesRegex(MODULE.Incomplete, reason):
-                        MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
-        self.reference_fixture()
-        self.assertEqual(len(MODULE.admit_source_policy_development(self.policy["binding"], self.identity)), 13)
-
-    def test_development_ep1_missing_case_refuses_before_session(self):
-        missing = [name for name in self.ep1_ordinary
-                   if name != "nts_ke_experiment::synthetic_case_000"]
-        for lane in ("ep1-ordinary", "ep1-optimized"):
-            with self.subTest(lane=lane):
-                self.reference_fixture()
-                self.replace_reference_lane_output(lane, self.execution(missing))
-                report = {}
-                with patch.object(MODULE.COMMON, "Session", side_effect=self.SessionReached) as session:
-                    with self.assertRaisesRegex(MODULE.Incomplete, "Source-policy.*EP1"):
-                        MODULE.execute_source_policy_profile(self.args, report)
-                    session.assert_not_called()
-                self.assertFalse(self.args.output_dir.exists())
-                self.assertFalse(report["selected_lane_passed"])
-                self.assertFalse(report["qualification_passed"])
 
     def test_actual_dispatch_runs_default_baseline_and_separate_docs_then_finishes(self):
         self.reference_fixture()
@@ -4248,8 +4331,8 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         self.assertTrue(self.finished)
         self.assertEqual([row[0] for row in self.commands], ["source-policy-baseline", "source-policy-doctests"])
         self.assertTrue(all("--features" not in row[1] and 0 < row[2] <= 300 for row in self.commands))
-        self.assertEqual(report["baseline_execution"]["tests_executed"], 209)
-        self.assertEqual(report["doctest_execution"]["tests_executed"], 73)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 241)
+        self.assertEqual(report["doctest_execution"]["tests_executed"], 75)
         self.assertTrue(report["selected_lane_passed"])
         self.assertFalse(report["qualification_passed"])
 
@@ -4286,7 +4369,7 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         self.assertEqual(set(report["coverage"]), set(self.OWNERS))
         self.assertTrue(all(row["covered_lines"] == 90 and row["executable_lines"] == 100
                             and row["line_percent"] == 90 for row in report["coverage"].values()))
-        self.assertEqual(report["coverage_execution"]["tests_executed"], 209)
+        self.assertEqual(report["coverage_execution"]["tests_executed"], 241)
         label, command, timeout, options = self.commands[0]
         self.assertEqual(label, "coverage")
         self.assertNotIn("--features", command)
@@ -4351,6 +4434,307 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                 session.assert_not_called()
             path.write_bytes(original)
         self.assertEqual(len(MODULE.admit_source_policy_development(self.policy["binding"], self.identity)), 13)
+
+    def test_development_complete_ep1_modes_have_healthy_reader_and_custody(self):
+        self.assertEqual(len(self.ep1), len(self.ordinary) + 234)
+        self.assertTrue(set(self.ordinary) <= set(self.ep1))
+        self.assertEqual(sum(name.startswith("nts_ke_experiment::") for name in self.ep1), 234)
+        self.reference_fixture()
+        self.assertEqual(len(MODULE.admit_source_policy_development(
+            self.policy["binding"], self.identity)), 13)
+        report = {}
+        with patch.object(MODULE.COMMON, "Session", self.fake_session()):
+            MODULE.execute_source_policy_profile(self.args, report)
+        self.assertTrue(self.finished)
+        self.assertTrue(report["selected_lane_passed"])
+        self.assertFalse(report["qualification_passed"])
+
+    def test_development_monitor_formats_bind_their_actual_physical_inputs(self):
+        for current, expected_count in ((False, 13), (True, 22)):
+            with self.subTest(independent_monitor=current):
+                self.reference_fixture(independent_monitor=current)
+                admitted = MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
+                self.assertEqual(len(admitted), expected_count)
+                self.assertEqual(admitted, {name: hashlib.sha256(Path(name).read_bytes()).hexdigest()
+                                            for name in admitted})
+                self.assertTrue(all(not name.startswith("/dev/shm/") for name in admitted))
+        for marker, value in (("source_revision", 8), ("monitor_sha256", "d" * 64),
+                              ("monitor_control_inputs", {})):
+            with self.subTest(partial_current_marker=marker):
+                self.reference_fixture()
+                path = Path(self.policy["binding"]["development_evidence"]["path"])
+                reference = json.loads(path.read_text())
+                reference[marker] = value
+                path.write_text(json.dumps(reference))
+                self.policy["binding"]["development_evidence"]["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
+        self.reference_fixture()
+        path = Path(self.policy["binding"]["development_evidence"]["path"])
+        reference = json.loads(path.read_text())
+        reference["resource_observer_joined"] = False
+        path.write_text(json.dumps(reference))
+        self.policy["binding"]["development_evidence"]["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
+
+    def test_development_monitor_controls_preserve_owned_negative_disposition(self):
+        faults = (
+            ("healthy", ("monitor", "ok"), False),
+            ("healthy", ("monitor", "result", "observer_pid"), 11),
+            ("healthy", ("notifications",), [100.0]),
+            ("gap", ("expected_control_observed",), 1),
+            ("gap", ("monitor", "ok"), True),
+            ("gap", ("monitor", "joined"), False),
+            ("gap", ("monitor", "result", "observer_pid"), 11),
+            ("gap", ("monitor", "exit_code"), False),
+            ("gap", ("monitor", "result", "maximum_gap_seconds"), 1.5),
+            ("gap", ("monitor", "result", "error"), "unrelated failure"),
+            ("gap", ("monitor", "result", "parent_notification"), "unbound-SIGTERM"),
+            ("gap", ("notifications",), []),
+        )
+        for role, keys, value in faults:
+            with self.subTest(role=role, field=keys, value=value):
+                self.reference_fixture(independent_monitor=True)
+                path = Path(self.policy["binding"]["development_evidence"]["path"])
+                reference = json.loads(path.read_text())
+                directory = path.parent / "monitor-controls" / role
+                control_path = directory / "control.json"
+                control = json.loads(control_path.read_text())
+                target = control
+                for key in keys[:-1]:
+                    target = target[key]
+                target[keys[-1]] = value
+                terminal = directory / "monitor-result.json"
+                terminal.write_text(json.dumps(control["monitor"]["result"]))
+                control["monitor"]["result_sha256"] = hashlib.sha256(terminal.read_bytes()).hexdigest()
+                control_path.write_text(json.dumps(control))
+                for leaf in ("control.json", "monitor-result.json"):
+                    declared = f"/dev/shm/synthetic-source-policy-observer/{role}/{leaf}"
+                    reference["monitor_control_inputs"][declared] = hashlib.sha256((directory / leaf).read_bytes()).hexdigest()
+                path.write_text(json.dumps(reference))
+                self.policy["binding"]["development_evidence"]["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
+        self.reference_fixture(independent_monitor=True)
+        self.assertEqual(len(MODULE.admit_source_policy_development(self.policy["binding"], self.identity)), 22)
+
+    def test_development_current_monitor_refuses_unproven_custody_and_physical_drift(self):
+        for removed in ("source_revision", "monitor_sha256", "monitor_control_inputs", "independent_monitor"):
+            with self.subTest(missing_current_marker=removed):
+                self.reference_fixture(independent_monitor=True)
+                path = Path(self.policy["binding"]["development_evidence"]["path"])
+                reference = json.loads(path.read_text())
+                del reference[removed]
+                path.write_text(json.dumps(reference))
+                self.policy["binding"]["development_evidence"]["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
+        faults = (
+            (("independent_monitor", "ok"), 1),
+            (("independent_monitor", "joined"), 1),
+            (("independent_monitor", "joined"), False),
+            (("independent_monitor", "exit_code"), False),
+            (("independent_monitor", "exit_code"), 2),
+            (("independent_monitor", "errors"), ["sample failed"]),
+            (("independent_monitor", "result", "status"), "failed"),
+            (("independent_monitor", "result", "samples"), True),
+            (("independent_monitor", "result", "samples"), 3),
+            (("independent_monitor", "result", "observer_pid"), 11),
+            (("independent_monitor", "result", "maximum_gap_seconds"), float("nan")),
+            (("independent_monitor", "result", "maximum_gap_seconds"), float("inf")),
+            (("independent_monitor", "result", "maximum_gap_seconds"), 2.01),
+            (("independent_monitor", "result", "maximum_gap_seconds"), 0.5),
+            (("independent_monitor", "result", "finished_monotonic"), 104.0),
+            (("independent_monitor", "result", "finished_monotonic"), float("nan")),
+            (("independent_monitor", "result", "recipe_final_sha256"), "f" * 64),
+            (("source_revision",), True),
+            (("resource_observer_joined",), True),
+        )
+        for keys, value in faults:
+            with self.subTest(field=keys, value=value):
+                self.reference_fixture(independent_monitor=True)
+                path = Path(self.policy["binding"]["development_evidence"]["path"])
+                reference = json.loads(path.read_text())
+                target = reference
+                for key in keys[:-1]:
+                    target = target[key]
+                target[keys[-1]] = value
+                # Keep physical terminal custody coherent so semantic refusal is
+                # not accidentally supplied by an unrelated stale terminal hash.
+                terminal = path.parent / "observer/monitor-result.json"
+                terminal.write_text(json.dumps(reference["independent_monitor"]["result"]))
+                reference["independent_monitor"]["result_sha256"] = hashlib.sha256(terminal.read_bytes()).hexdigest()
+                path.write_text(json.dumps(reference))
+                self.policy["binding"]["development_evidence"]["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
+        for key, value in (("monotonic_seconds", True), ("monotonic_seconds", float("inf")),
+                           ("gap_seconds", 0.5), ("tasks", True), ("free_bytes", 4 * 1024**3 - 1)):
+            with self.subTest(sample_field=key, value=value):
+                self.reference_fixture(independent_monitor=True)
+                path = Path(self.policy["binding"]["development_evidence"]["path"])
+                reference = json.loads(path.read_text())
+                sampled = path.parent / "observer/resources.jsonl"
+                rows = [json.loads(line) for line in sampled.read_text().splitlines()]
+                rows[-1][key] = value
+                sampled.write_text("".join(json.dumps(row) + "\n" for row in rows))
+                reference["independent_monitor"]["resource_samples_sha256"] = hashlib.sha256(sampled.read_bytes()).hexdigest()
+                path.write_text(json.dumps(reference))
+                self.policy["binding"]["development_evidence"]["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
+        for replacement in ("/dev/shm/other-parent/healthy/control.json",
+                            "/dev/shm/synthetic-source-policy-observer/healthy/../control.json",
+                            "/tmp/synthetic-source-policy-observer/healthy/control.json"):
+            with self.subTest(declared_control=replacement):
+                self.reference_fixture(independent_monitor=True)
+                path = Path(self.policy["binding"]["development_evidence"]["path"])
+                reference = json.loads(path.read_text())
+                controls = reference["monitor_control_inputs"]
+                controls[replacement] = controls.pop("/dev/shm/synthetic-source-policy-observer/healthy/control.json")
+                path.write_text(json.dumps(reference))
+                self.policy["binding"]["development_evidence"]["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
+        self.reference_fixture(independent_monitor=True)
+        path = Path(self.policy["binding"]["development_evidence"]["path"])
+        physical = [path.parent.parent / "monitor.py", path.parent / "observer/monitor-result.json",
+                    path.parent / "observer/resources.jsonl"]
+        physical += [path.parent / "monitor-controls" / role / leaf for role in ("healthy", "gap")
+                     for leaf in ("control.json", "monitor-result.json", "resources.jsonl")]
+        for filename in physical:
+            for missing in (False, True):
+                with self.subTest(path=filename.relative_to(self.base), missing=missing):
+                    self.reference_fixture(independent_monitor=True)
+                    if missing:
+                        filename.unlink()
+                    else:
+                        filename.write_bytes(filename.read_bytes() + b"changed\n")
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
+        self.reference_fixture(independent_monitor=True)
+        self.assertEqual(len(MODULE.admit_source_policy_development(self.policy["binding"], self.identity)), 22)
+
+    def test_development_ep1_modes_reject_hash_bound_incomplete_or_substituted_rosters(self):
+        mandatory = "source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted"
+        missing_kod = [name for name in self.ep1 if name != mandatory]
+        substituted = self.ep1.copy()
+        substituted[substituted.index("nts_ke_experiment::synthetic_ep1_case_000")] = (
+            "nts_ke_experiment::unadmitted_same_count_case")
+        duplicated = self.ep1.copy()
+        duplicated[duplicated.index("nts_ke_experiment::synthetic_ep1_case_001")] = (
+            "nts_ke_experiment::synthetic_ep1_case_000")
+        alternate_mode = self.ep1.copy()
+        alternate_mode[alternate_mode.index(mandatory)] = (
+            "source_policy::tests::unadmitted_other_mode_case")
+        proposals = {
+            "zero": [],
+            "default-only": self.ordinary,
+            "missing-required-kod": missing_kod,
+            "same-count-ke-substitution": sorted(substituted),
+            "duplicate": sorted(duplicated),
+            "different-mode-roster": sorted(alternate_mode),
+        }
+        for lane in ("ep1-ordinary", "ep1-optimized"):
+            for defect, names in proposals.items():
+                with self.subTest(lane=lane, defect=defect):
+                    # Rebuild both physical hashes so an earlier custody
+                    # mismatch cannot stand in for actual roster rejection.
+                    # The other mode retains the full independent healthy set.
+                    self.reference_fixture(ep1_outputs={lane: self.execution(names)})
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.admit_source_policy_development(
+                            self.policy["binding"], self.identity)
+                    with patch.object(MODULE.COMMON, "Session") as session:
+                        with self.assertRaises(MODULE.Incomplete):
+                            MODULE.execute_source_policy_profile(self.args, {})
+                        session.assert_not_called()
+
+    class SessionReached(Exception):
+        pass
+
+    def replace_reference_lane_output(self, lane, output):
+        """Keep physical integrity valid while changing only the selected observation."""
+        reference_path = self.base / "reference.json"
+        reference = json.loads(reference_path.read_text())
+        row = next(row for row in reference["lanes"] if row["lane"] == lane)
+        raw_path = Path(row["path"])
+        raw = json.loads(raw_path.read_text())
+        raw["output"] = output
+        raw_path.write_text(json.dumps(raw))
+        row["sha256"] = hashlib.sha256(raw_path.read_bytes()).hexdigest()
+        reference_path.write_text(json.dumps(reference))
+        self.policy["binding"]["development_evidence"]["sha256"] = hashlib.sha256(reference_path.read_bytes()).hexdigest()
+        self.write_policy()
+
+    def test_development_ep1_admits_distinct_complete_graphs_before_session(self):
+        self.assertEqual(len(self.ordinary), 241)
+        self.assertEqual(len(self.ep1), 475)
+        self.assertEqual(len(set(self.ep1) - set(self.ordinary)), 234)
+        self.reference_fixture()
+        admitted = MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
+        self.assertEqual(admitted, {str(path): hashlib.sha256(path.read_bytes()).hexdigest()
+                                   for path in self.base.glob("*.json")})
+        self.assertEqual(len(admitted), 13)
+        # Ordering and sub-binary boundaries are not part of the roster contract.
+        for lane in ("ep1-ordinary", "ep1-optimized"):
+            self.replace_reference_lane_output(lane,
+                self.execution(list(reversed(self.ep1[:234])))
+                + self.execution(list(reversed(self.ep1[234:]))))
+        with patch.object(MODULE.COMMON, "Session", side_effect=self.SessionReached) as session:
+            with self.assertRaises(self.SessionReached):
+                MODULE.execute_source_policy_profile(self.args, {})
+            session.assert_called_once()
+        self.assertFalse(self.args.output_dir.exists())
+
+    def test_development_ep1_rejects_hash_valid_execution_faults(self):
+        missing = [name for name in self.ep1
+                   if name != "nts_ke_experiment::synthetic_ep1_case_000"]
+        substituted = [name if name != "nts_ke_experiment::synthetic_ep1_case_000"
+                       else "nts_ke_experiment::foreign_same_count_case" for name in self.ep1]
+        self.assertEqual(len(missing), 474)
+        self.assertEqual(len(substituted), 475)
+        self.assertEqual(sum(name.startswith("nts_ke_experiment::") for name in substituted), 234)
+        cases = (
+            ("empty", "", "native block declaration or summary"),
+            ("zero-tests", self.execution([]), "native block declaration or summary"),
+            ("missing-ke", self.execution(missing), "Source-policy.*EP1"),
+            ("duplicate-ke", self.execution(self.ep1 + ["nts_ke_experiment::synthetic_ep1_case_000"]),
+             "native records are duplicated"),
+            ("same-count-substitute", self.execution(substituted), "Source-policy.*EP1"),
+            ("default-graph-swap", self.execution(self.ordinary), "Source-policy.*EP1"),
+            ("filtered", self.execution(self.ep1).replace("0 filtered out", "1 filtered out"),
+             "native block declaration or summary"),
+            ("unfinished-block", self.execution(self.ep1) + "running 1 test\n",
+             "native block declaration or summary"),
+        )
+        for lane in ("ep1-ordinary", "ep1-optimized"):
+            for fault, output, reason in cases:
+                with self.subTest(lane=lane, fault=fault):
+                    self.reference_fixture()
+                    self.replace_reference_lane_output(lane, output)
+                    with self.assertRaisesRegex(MODULE.Incomplete, reason):
+                        MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
+        self.reference_fixture()
+        self.assertEqual(len(MODULE.admit_source_policy_development(self.policy["binding"], self.identity)), 13)
+
+    def test_development_ep1_missing_case_refuses_before_session(self):
+        missing = [name for name in self.ep1
+                   if name != "nts_ke_experiment::synthetic_ep1_case_000"]
+        for lane in ("ep1-ordinary", "ep1-optimized"):
+            with self.subTest(lane=lane):
+                self.reference_fixture()
+                self.replace_reference_lane_output(lane, self.execution(missing))
+                report = {}
+                with patch.object(MODULE.COMMON, "Session", side_effect=self.SessionReached) as session:
+                    with self.assertRaisesRegex(MODULE.Incomplete, "Source-policy.*EP1"):
+                        MODULE.execute_source_policy_profile(self.args, report)
+                    session.assert_not_called()
+                self.assertFalse(self.args.output_dir.exists())
+                self.assertFalse(report["selected_lane_passed"])
+                self.assertFalse(report["qualification_passed"])
+
 
     def test_cli_subject_guards_preserve_existing_profile_ownership(self):
         valid = [("source_policy", name) for name in (*self.OWNERS, "all")]

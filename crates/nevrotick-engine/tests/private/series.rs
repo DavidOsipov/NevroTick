@@ -27,12 +27,17 @@ fn peer() -> SocketAddr {
 
 /// Own a bounded I/O-enabled runtime for genuine socket registration fixtures.
 /// # Errors
-/// Preserve the actual runtime construction failure.
+/// Preserve actual runtime construction and nested socket-registration failures.
+/// # Panics
+/// Reject a broken one-way retirement prerequisite before entering an owner loop.
 fn runtime() -> Result<tokio::runtime::Runtime, std::io::Error> {
-    tokio::runtime::Builder::new_current_thread()
+    let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_io()
         .enable_time()
-        .build()
+        .build()?;
+    crate::processing_guard_tests::require_retirement_contract(&runtime)
+        .map_err(std::io::Error::other)?;
+    Ok(runtime)
 }
 
 /// Retain a real origin without asserting a production mapping or clock generation.
@@ -2584,6 +2589,83 @@ fn current_checkpoint_observes_new_controls_before_expired_deadline() -> Result<
     Ok(())
 }
 
+/// An unmanaged setup error remains primary even when that callback delivers Stop.
+/// The closed failure summary cannot distinguish Contended from Foreign alone.
+/// # Errors
+/// Preserve native fixture, checked preparation and deadline construction failures.
+/// # Panics
+/// Reject retry, a lost primary error, invented completion or any datagram send.
+fn unmanaged_contended_setup_keeps_primary_failure(
+    runtime: &tokio::runtime::Runtime,
+    stop: bool,
+) -> Result<(), Box<dyn Error>> {
+    let remote = crate::StdSocket::bind(SocketAddr::from((Ipv4Addr::LOCALHOST, 0)))?;
+    remote.set_nonblocking(true)?;
+    let config = SeriesConfig::new(
+        remote.local_addr()?,
+        Duration::from_secs(1),
+        Duration::from_secs(2),
+    )?;
+    let (prepared, handle) = prepare_series_with_entropy(&config, |entropy| {
+        entropy[..8].fill(1);
+        entropy[8..16].fill(2);
+        entropy[16..].fill(3);
+        Ok(())
+    })?;
+    let origin = Instant::now();
+    let receiver = SeriesReceiver::new(Arc::new(RunClockContext { origin }), config.peer, None);
+    let deadline = origin
+        .checked_add(Duration::from_secs(2))
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let mut calls = 0;
+    let mut setup = |request: RequestSetup| {
+        calls += 1;
+        assert!(matches!(
+            &request.source_policy,
+            crate::source_policy::SourceMode::UnmanagedLab
+        ));
+        if stop {
+            handle.stop();
+        }
+        Err(PilotError::SourcePolicy(
+            crate::SourcePolicyError::Contended,
+        ))
+    };
+    let report = runtime.block_on(run_series(
+        prepared,
+        receiver,
+        deadline,
+        &mut setup,
+        &mut |_, _| {},
+    ));
+    assert_eq!(calls, 1);
+    assert_eq!(handle.sender.borrow().stop, stop);
+    assert_eq!(
+        report.end(),
+        SeriesEnd::Failure,
+        "unmanaged setup failure must remain primary when its callback delivers Stop"
+    );
+    let primary = report
+        .primary_failure()
+        .ok_or("unmanaged setup lost its primary error")?;
+    assert_eq!(primary.code(), "source-policy");
+    assert!(primary.native_cause().is_none());
+    assert!(report.stop_cleanup_failure().is_none());
+    assert!(report.invalidate_cleanup_failure().is_none());
+    for attempt in report.attempts() {
+        assert!(attempt.report().is_none());
+        assert_eq!(
+            attempt.not_started_cause(),
+            Some(SeriesNotStartedCause::PrimaryFailure)
+        );
+    }
+    let mut bytes = [0_u8; RECEIVE_BYTES];
+    assert!(
+        matches!(remote.recv_from(&mut bytes), Err(error) if error.kind() == std::io::ErrorKind::WouldBlock)
+    );
+    Ok(())
+}
+
 /// Both bind and registration causes preserve an actual first completed observation.
 /// # Errors
 /// Preserve real acquisition and typed injected-error control failures.
@@ -2601,6 +2683,9 @@ fn setup_and_registration_failures_preserve_actual_prior_completion() -> Result<
     // Use a distinct peer/socket to establish the native-send prerequisite before
     // either whole-series scenario. Dropping it adds no row to those real runs.
     drop(runtime.block_on(queued_native_reply())?);
+    for stop in [false, true] {
+        unmanaged_contended_setup_keeps_primary_failure(&runtime, stop)?;
+    }
     for registration in [false, true] {
         let remote = crate::StdSocket::bind(SocketAddr::from((Ipv4Addr::LOCALHOST, 0)))?;
         remote.set_nonblocking(true)?;
@@ -2634,4 +2719,347 @@ fn setup_and_registration_failures_preserve_actual_prior_completion() -> Result<
         runtime.block_on(setup_failure_case(cause, prepared, handle, remote))?;
     }
     Ok(())
+}
+
+/// Late invocation control delivered between the outer and final owner guards.
+#[derive(Clone, Copy)]
+enum FinalGuardAction {
+    /// The public handle stops the original invocation.
+    Stop,
+    /// The public handle advances the original invocation generation.
+    Invalidate,
+}
+
+/// Actual handler boundary challenged by a late public control delivery.
+#[derive(Clone, Copy)]
+enum FinalGuardPath {
+    /// A genuine received reply has staged before the final publication guard.
+    Reply,
+    /// A genuine sending socket has observed writable readiness.
+    Writable,
+}
+
+/// Actual native fixture facts retained until the original handler consumes them.
+struct FinalGuardFixture {
+    /// One original registered sending or pending request.
+    slot: LiveSlot,
+    /// An actual selected and charged reply, present only for publication.
+    staged: Option<StagedReply>,
+    /// Peer retained for the zero-send observation on the writable path.
+    remote: Option<crate::StdSocket>,
+    /// The original request deadline, never renewed by the observer.
+    deadline: Instant,
+}
+
+/// Prepare the real native input for one final-guard boundary.
+/// # Errors
+/// Preserve socket, readiness, actual receive, parser and original deadline failures.
+/// # Panics
+/// Require the genuine selected datagram's charge and admitted staged header.
+async fn final_guard_fixture(path: FinalGuardPath) -> Result<FinalGuardFixture, Box<dyn Error>> {
+    match path {
+        FinalGuardPath::Reply => {
+            let SelectedReply {
+                mut slot,
+                selected,
+                buffer,
+                deadline,
+            } = selected_native_reply().await?;
+            assert!(charge_selected_datagram(&mut slot, &selected.result));
+            let NativeReadOutcome::Datagram { length, source } = selected.result else {
+                return Err(PilotError::InternalState.into());
+            };
+            let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
+            let staged = stage_reply(&slot, &buffer[..length], source, selected.read, limits);
+            assert!(staged.is_ok(), "genuine final-guard reply failed staging");
+            Ok(FinalGuardFixture {
+                slot,
+                staged: Some(staged.map_err(|_| PilotError::InternalState)?),
+                remote: None,
+                deadline,
+            })
+        }
+        FinalGuardPath::Writable => {
+            let remote = crate::StdSocket::bind(SocketAddr::from((Ipv4Addr::LOCALHOST, 0)))?;
+            remote.set_nonblocking(true)?;
+            let mut packet = [0_u8; PACKET_BYTES];
+            packet[0] = 0x23;
+            packet[40..48].fill(0x5a);
+            let prepared = prepare_slot(remote.local_addr()?, packet)?;
+            let slot = LiveSlot::from_prepared(prepared, context())?;
+            let deadline = Instant::now()
+                .checked_add(Duration::from_secs(2))
+                .ok_or(PilotError::DeadlineOverflow)?;
+            tokio::time::timeout(Duration::from_secs(2), slot.socket.writable()).await??;
+            Ok(FinalGuardFixture {
+                slot,
+                staged: None,
+                remote: Some(remote),
+                deadline,
+            })
+        }
+    }
+}
+
+/// Deliver a first valid change through the invocation's actual public handle.
+/// # Errors
+/// Preserve the public generation change's original checked failure.
+fn deliver_final_guard_action(
+    handle: &ControlHandle,
+    action: FinalGuardAction,
+) -> Result<(), PilotError> {
+    match action {
+        FinalGuardAction::Stop => {
+            handle.stop();
+            Ok(())
+        }
+        FinalGuardAction::Invalidate => handle.invalidate(),
+    }
+}
+
+/// Independently inspect the actual retirement and any possible native send.
+/// # Errors
+/// Preserve a missing original peer or actual peer observation failure.
+/// # Panics
+/// Require the selected terminal category, no published facts and the original
+/// charged receive or confirmed zero-send history at its real socket boundary.
+fn check_final_guard_retirement(
+    fixture: &FinalGuardFixture,
+    path: FinalGuardPath,
+    expected_status: Status,
+) -> Result<(), Box<dyn Error>> {
+    assert_eq!(
+        fixture.slot.terminal().map(TerminalOutcome::status),
+        Some(expected_status)
+    );
+    assert!(
+        fixture
+            .slot
+            .terminal()
+            .and_then(TerminalOutcome::facts)
+            .is_none()
+    );
+    match path {
+        FinalGuardPath::Reply => {
+            assert!(fixture.slot.sent);
+            assert_eq!(fixture.slot.send_attempts, 1);
+            assert_eq!(fixture.slot.received, 1);
+        }
+        FinalGuardPath::Writable => {
+            assert!(!fixture.slot.sent);
+            assert_eq!(fixture.slot.send_attempts, 0);
+            assert_eq!(fixture.slot.received, 0);
+            let mut bytes = [0_u8; RECEIVE_BYTES];
+            assert!(
+                matches!(fixture.remote.as_ref().ok_or(PilotError::InternalState)?.recv_from(&mut bytes),
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock)
+            );
+        }
+    }
+    Ok(())
+}
+
+/// Transfer a real late-retired request through its actual series receiver.
+/// # Errors
+/// Preserve native fixture, delivery, issue, original report and transfer failures.
+/// # Panics
+/// Require the exact terminal/control pair, no forbidden send/facts, successful
+/// original receiving custody and a clean summary retaining the late control.
+fn final_guard_transfer_case(
+    path: FinalGuardPath,
+    action: FinalGuardAction,
+) -> Result<(), Box<dyn Error>> {
+    runtime()?.block_on(async {
+        let mut fixture = final_guard_fixture(path).await?;
+        let quiet = Control {
+            stop: false,
+            epoch: 0,
+        };
+        let (sender, mut control) = watch::channel(quiet);
+        let handle = ControlHandle { sender };
+        let mut receiver = SeriesReceiver::new(
+            Arc::clone(&fixture.slot.run_context),
+            fixture.slot.peer,
+            fixture.slot.profile,
+        );
+        receiver.issue(RequestOwner::from_slot(0, &fixture.slot))?;
+        let mut delivery = Err(PilotError::InternalState);
+        let observed = match path {
+            FinalGuardPath::Reply => publish_series_reply_observing(
+                &mut fixture.slot,
+                &mut control,
+                Ok(fixture.staged.take().ok_or(PilotError::InternalState)?),
+                fixture.deadline,
+                || delivery = deliver_final_guard_action(&handle, action),
+                || {},
+            ),
+            FinalGuardPath::Writable => handle_series_writable_observing(
+                &mut fixture.slot,
+                &mut control,
+                Ok(()),
+                fixture.deadline,
+                quiet,
+                || delivery = deliver_final_guard_action(&handle, action),
+                || {},
+            ),
+        };
+        product_ok(delivery, "valid late public control delivery failed")?;
+        let (expected_status, expected_end, remaining_cause) = match action {
+            FinalGuardAction::Stop => (
+                Status::Stopped,
+                SeriesEnd::Stopped,
+                SeriesNotStartedCause::Stopped,
+            ),
+            FinalGuardAction::Invalidate => (
+                Status::Stale,
+                SeriesEnd::Stale,
+                SeriesNotStartedCause::Stale,
+            ),
+        };
+        check_final_guard_retirement(&fixture, path, expected_status)?;
+        let owner = RequestOwner::from_slot(0, &fixture.slot);
+        let report = fixture.slot.into_report(0)?;
+        let accepted = receiver.receive(Completion { owner, report }, observed);
+        // This is the causal RED on the original code: the real receiver refuses
+        // a genuine Stopped/Stale report paired with the older quiet checkpoint.
+        product_ok(
+            accepted,
+            "final-guard terminal report lost its actual control checkpoint",
+        )?;
+        assert_eq!(receiver.next, 1);
+        assert!(receiver.issued.is_none());
+        assert_eq!(observed.stop, matches!(action, FinalGuardAction::Stop));
+        assert_eq!(
+            observed.epoch,
+            u64::from(matches!(action, FinalGuardAction::Invalidate))
+        );
+        let end =
+            current_series_end(&mut control, fixture.deadline).ok_or(PilotError::InternalState)?;
+        assert_eq!(end, expected_end);
+        let series = receiver.finish(end, None);
+        assert_eq!(series.end(), expected_end);
+        assert!(series.primary_failure().is_none());
+        assert!(series.stop_cleanup_failure().is_none());
+        assert!(series.invalidate_cleanup_failure().is_none());
+        assert_eq!(
+            series.attempts()[0]
+                .report()
+                .ok_or(PilotError::InternalState)?
+                .status(),
+            expected_status
+        );
+        assert!(
+            series.attempts()[1..]
+                .iter()
+                .all(|attempt| attempt.not_started_cause() == Some(remaining_cause))
+        );
+        assert_eq!(series.admitted_sample_count(), 0);
+        assert_eq!(series.eligible_sample_count(), 0);
+        Ok(())
+    })
+}
+
+/// A stop arriving only at the final reply guard retains a valid completion pair.
+/// # Errors
+/// Preserve actual fixture and receiving failures.
+/// # Panics
+/// Require the late stopped completion and clean original receiving custody.
+#[test]
+fn reply_final_guard_stop_keeps_its_actual_receiving_checkpoint() -> Result<(), Box<dyn Error>> {
+    final_guard_transfer_case(FinalGuardPath::Reply, FinalGuardAction::Stop)
+}
+
+/// An invalidation arriving at the final reply guard retains a valid completion pair.
+/// # Errors
+/// Preserve actual fixture and receiving failures.
+/// # Panics
+/// Require the late stale completion and clean original receiving custody.
+#[test]
+fn reply_final_guard_invalidation_keeps_its_actual_receiving_checkpoint()
+-> Result<(), Box<dyn Error>> {
+    final_guard_transfer_case(FinalGuardPath::Reply, FinalGuardAction::Invalidate)
+}
+
+/// A stop arriving at the concrete sender's final guard remains a stopped completion.
+/// # Errors
+/// Preserve actual fixture and receiving failures.
+/// # Panics
+/// Require no native send and the stopped report's actual control checkpoint.
+#[test]
+fn writable_final_guard_stop_keeps_its_actual_receiving_checkpoint() -> Result<(), Box<dyn Error>> {
+    final_guard_transfer_case(FinalGuardPath::Writable, FinalGuardAction::Stop)
+}
+
+/// Invalidation at the concrete sender's final guard remains a stale completion.
+/// # Errors
+/// Preserve actual fixture and receiving failures.
+/// # Panics
+/// Require no native send and the stale report's actual control checkpoint.
+#[test]
+fn writable_final_guard_invalidation_keeps_its_actual_receiving_checkpoint()
+-> Result<(), Box<dyn Error>> {
+    final_guard_transfer_case(FinalGuardPath::Writable, FinalGuardAction::Invalidate)
+}
+
+/// A postcommit stop cannot replace the historical header's quiet checkpoint.
+/// # Errors
+/// Preserve actual fixture, original report and receiving failures.
+/// # Panics
+/// Require a genuine header to transfer after the later stop, with fresh stop
+/// summary and unchanged original facts rather than a rewritten terminal record.
+#[test]
+fn reply_postcommit_stop_preserves_the_historical_receiving_checkpoint()
+-> Result<(), Box<dyn Error>> {
+    runtime()?.block_on(async {
+        let mut fixture = final_guard_fixture(FinalGuardPath::Reply).await?;
+        let quiet = Control {
+            stop: false,
+            epoch: 0,
+        };
+        let (sender, mut control) = watch::channel(quiet);
+        let handle = ControlHandle { sender };
+        let mut receiver = SeriesReceiver::new(
+            Arc::clone(&fixture.slot.run_context),
+            fixture.slot.peer,
+            fixture.slot.profile,
+        );
+        receiver.issue(RequestOwner::from_slot(0, &fixture.slot))?;
+        let observed = publish_series_reply_observing(
+            &mut fixture.slot,
+            &mut control,
+            Ok(fixture.staged.take().ok_or(PilotError::InternalState)?),
+            fixture.deadline,
+            || {},
+            || handle.stop(),
+        );
+        assert!(latest(&mut control).stop);
+        assert_eq!(
+            fixture.slot.terminal().map(TerminalOutcome::status),
+            Some(Status::Header)
+        );
+        assert_eq!(fixture.slot.received, 1);
+        let owner = RequestOwner::from_slot(0, &fixture.slot);
+        let report = fixture.slot.into_report(0)?;
+        product_ok(
+            receiver.receive(Completion { owner, report }, observed),
+            "postcommit stop replaced a historical header checkpoint",
+        )?;
+        assert!(!observed.stop && observed.epoch == 0);
+        let end =
+            current_series_end(&mut control, fixture.deadline).ok_or(PilotError::InternalState)?;
+        assert_eq!(end, SeriesEnd::Stopped);
+        let series = receiver.finish(end, None);
+        let accepted = series.attempts()[0]
+            .report()
+            .ok_or(PilotError::InternalState)?;
+        assert_eq!(accepted.status(), Status::Header);
+        assert!(accepted.facts().is_some());
+        assert!(series.primary_failure().is_none());
+        assert!(
+            series.attempts()[1..]
+                .iter()
+                .all(|attempt| attempt.not_started_cause() == Some(SeriesNotStartedCause::Stopped))
+        );
+        Ok(())
+    })
 }

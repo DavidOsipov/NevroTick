@@ -250,6 +250,58 @@ pub struct PreparedSeries {
     control: watch::Receiver<Control>,
     /// Internal sender makes external-handle drop harmless.
     control_handle: ControlHandle,
+    /// Invocation-local notification selected by private causal controls only.
+    #[cfg(test)]
+    test_final_guard_observer: Option<fn(TestFinalGuardEvent, &ControlHandle)>,
+}
+
+/// Notification points outside the final watch guard of an actual request.
+#[cfg(test)]
+#[derive(Clone, Copy)]
+pub(super) enum TestFinalGuardEvent {
+    /// A genuine staged reply is about to enter its final control guard.
+    ReplyBefore,
+    /// The final reply guard has completed and dropped its watch borrow.
+    ReplyAfter,
+    /// Actual writable readiness is about to enter its final send guard.
+    WritableBefore,
+    /// The concrete send guard has completed and dropped its watch borrow.
+    WritableAfter,
+}
+
+/// Notification bound internally to the prepared invocation's actual control owner.
+#[cfg(test)]
+#[derive(Clone)]
+pub(super) struct TestFinalGuardObserver {
+    /// No captured/global state or substitute control handle can be installed.
+    callback: fn(TestFinalGuardEvent, &ControlHandle),
+    /// The exact sender owned by this prepared series, never a caller label.
+    handle: ControlHandle,
+}
+
+#[cfg(test)]
+impl TestFinalGuardObserver {
+    /// Bind the test notification to the exact plan's existing control owner.
+    fn from_prepared(prepared: &PreparedSeries) -> Option<Self> {
+        prepared.test_final_guard_observer.map(|callback| Self {
+            callback,
+            handle: prepared.control_handle.clone(),
+        })
+    }
+
+    /// Notify a private causal control only after releasing protected custody.
+    fn observe(&self, event: TestFinalGuardEvent) {
+        (self.callback)(event, &self.handle);
+    }
+}
+
+/// Select a notification on this actual plan without accepting another control owner.
+#[cfg(test)]
+pub(super) fn set_test_final_guard_observer(
+    prepared: &mut PreparedSeries,
+    observer: fn(TestFinalGuardEvent, &ControlHandle),
+) {
+    prepared.test_final_guard_observer = Some(observer);
 }
 
 impl fmt::Debug for PreparedSeries {
@@ -325,6 +377,8 @@ fn prepare_series_with_policy(
             packets,
             control,
             control_handle: control_handle.clone(),
+            #[cfg(test)]
+            test_final_guard_observer: None,
         },
         control_handle,
     ))
@@ -850,11 +904,45 @@ fn publish_series_reply(
     staged: Result<StagedReply, Rejection>,
     deadline: Instant,
 ) -> Control {
+    #[cfg(test)]
+    let observer = slot.test_final_guard_observer.clone();
+    publish_series_reply_observing(
+        slot,
+        control,
+        staged,
+        deadline,
+        || {
+            #[cfg(test)]
+            if let Some(value) = &observer {
+                value.observe(TestFinalGuardEvent::ReplyBefore);
+            }
+        },
+        || {
+            #[cfg(test)]
+            if let Some(value) = &observer {
+                value.observe(TestFinalGuardEvent::ReplyAfter);
+            }
+        },
+    )
+}
+
+/// Run the same publication with bounded invocation-local checkpoint observers.
+/// The callbacks run outside watch/policy custody, immediately before the final
+/// control guard and after that guard has completed. Production supplies no-ops;
+/// observers grant no permission, terminal outcome or completion acknowledgement.
+fn publish_series_reply_observing(
+    slot: &mut LiveSlot,
+    control: &mut watch::Receiver<Control>,
+    staged: Result<StagedReply, Rejection>,
+    deadline: Instant,
+    before_final_guard: impl FnOnce(),
+    after_final_guard: impl FnOnce(),
+) -> Control {
     if let Err(reason) = &staged {
         slot.last_rejection = Some(*reason);
         slot.rejected += 1;
     }
-    let state = latest(control);
+    let mut state = latest(control);
     let processing = Instant::now();
     refresh_slot(slot, state, processing, deadline);
     if slot.done() {
@@ -862,14 +950,19 @@ fn publish_series_reply(
             slot.rejected += 1;
         }
     } else if let Ok(candidate) = staged {
-        let current = control.borrow();
-        if current.stop {
-            slot.finish(TerminalOutcome::Stopped);
-        } else if current.epoch != 0 {
-            slot.finish(TerminalOutcome::Stale);
-        } else {
-            commit_reply(slot, &candidate, processing, deadline);
+        before_final_guard();
+        {
+            let current = control.borrow();
+            state = *current;
+            if current.stop {
+                slot.finish(TerminalOutcome::Stopped);
+            } else if current.epoch != 0 {
+                slot.finish(TerminalOutcome::Stale);
+            } else {
+                commit_reply(slot, &candidate, processing, deadline);
+            }
         }
+        after_final_guard();
     }
     state
 }
@@ -918,14 +1011,53 @@ fn handle_series_writable(
     control: &mut watch::Receiver<Control>,
     result: std::io::Result<()>,
     deadline: Instant,
+    state: Control,
+) -> Control {
+    #[cfg(test)]
+    let observer = slot.test_final_guard_observer.clone();
+    handle_series_writable_observing(
+        slot,
+        control,
+        result,
+        deadline,
+        state,
+        || {
+            #[cfg(test)]
+            if let Some(value) = &observer {
+                value.observe(TestFinalGuardEvent::WritableBefore);
+            }
+        },
+        || {
+            #[cfg(test)]
+            if let Some(value) = &observer {
+                value.observe(TestFinalGuardEvent::WritableAfter);
+            }
+        },
+    )
+}
+
+/// Observe only the unguarded boundaries around the original concrete sender.
+/// A pre-existing terminal slot or a native-error result invokes no observer.
+/// Production supplies no-ops; no callback runs under final control/policy custody.
+fn handle_series_writable_observing(
+    slot: &mut LiveSlot,
+    control: &mut watch::Receiver<Control>,
+    result: std::io::Result<()>,
+    deadline: Instant,
     mut state: Control,
+    before_final_guard: impl FnOnce(),
+    after_final_guard: impl FnOnce(),
 ) -> Control {
     if !slot.done() {
         state = latest(control);
         refresh_slot(slot, state, Instant::now(), deadline);
         if !slot.done() {
             match result {
-                Ok(()) => attempt_send(slot, deadline, control),
+                Ok(()) => {
+                    before_final_guard();
+                    state = attempt_send(slot, deadline, control);
+                    after_final_guard();
+                }
                 Err(error) => slot.finish(TerminalOutcome::Io(IoOutcome::Native(
                     IoCause::capture(&error),
                 ))),
@@ -991,6 +1123,9 @@ struct RequestSetup {
     profile: Option<ExperimentalProfile>,
     /// Actual common series identity/origin, never a caller label.
     context: Arc<RunClockContext>,
+    /// Notification already bound to the actual originating prepared series.
+    #[cfg(test)]
+    test_final_guard_observer: Option<TestFinalGuardObserver>,
 }
 
 /// Bind and register exactly one fresh socket through the unchanged native owners.
@@ -1004,7 +1139,14 @@ fn setup_request(setup: RequestSetup) -> Result<LiveSlot, PilotError> {
     let mut request = prepare_slot(setup.peer, setup.packet)?;
     request.source_policy = setup.source_policy;
     request.profile = setup.profile;
-    LiveSlot::from_prepared(request, setup.context)
+    let slot = LiveSlot::from_prepared(request, setup.context)?;
+    #[cfg(test)]
+    let slot = {
+        let mut observed = slot;
+        observed.test_final_guard_observer = setup.test_final_guard_observer;
+        observed
+    };
+    Ok(slot)
 }
 
 /// Execute exactly three planned sequential requests, preserving every prior record.
@@ -1040,6 +1182,8 @@ where
             packet,
             profile: prepared.profile,
             context: Arc::clone(&receiver.context),
+            #[cfg(test)]
+            test_final_guard_observer: TestFinalGuardObserver::from_prepared(&prepared),
         };
         let mut contention_wakes = 0;
         let slot = loop {

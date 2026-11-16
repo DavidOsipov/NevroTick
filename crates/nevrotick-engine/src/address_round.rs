@@ -24,6 +24,7 @@ use tokio::{
 };
 
 use super::{SeriesWake, handle_series_read, next_series_wake, refresh_slot, series_packets};
+use crate::source_policy::{RoundBindings, SourceMode};
 use crate::{
     Control, ControlHandle, ControlSchedule, FailureSummary, IoCause, IoOutcome, LiveSlot,
     MAX_TIMEOUT, PACKET_BYTES, PilotError, RECEIVE_BYTES, RunClockContext, SlotReport, Status,
@@ -199,6 +200,8 @@ impl fmt::Debug for AddressRoundConfig {
 /// }
 /// ```
 pub struct PreparedAddressRound {
+    /// Actual source-owned batch, or the explicitly retained unmanaged API.
+    source_policy: Option<RoundBindings>,
     /// Original checked input order and budgets, moved from its constructor.
     config: AddressRoundConfig,
     /// Exactly three independently validated opaque tokens; unused positions stay inert.
@@ -227,11 +230,49 @@ pub fn prepare_address_round(
     })
 }
 
+impl crate::SourceHandle {
+    /// Prepare one fixed round under this original stable logical source.
+    /// Bindings are permanent after successful atomic catalogue admission, even
+    /// if later entropy/preparation fails. No socket or send starts here.
+    /// # Errors
+    /// Preserve original binding, entered-runtime and entropy/token refusals.
+    /// ```
+    /// use nevrotick_engine::{AddressRoundConfig, ControlHandle, PilotError,
+    ///     PreparedAddressRound, SourceHandle};
+    /// fn prepare(source: &SourceHandle, config: AddressRoundConfig)
+    ///     -> Result<(PreparedAddressRound, ControlHandle), PilotError> {
+    ///     source.prepare_address_round(config)
+    /// }
+    /// ```
+    pub fn prepare_address_round(
+        &self,
+        config: AddressRoundConfig,
+    ) -> Result<(PreparedAddressRound, ControlHandle), PilotError> {
+        let bindings = self
+            .bind_round(&config.peers)
+            .map_err(PilotError::SourcePolicy)?;
+        prepare_with_policy(config, Some(bindings), |entropy| {
+            getrandom::fill(entropy).map_err(|_| PilotError::Entropy)
+        })
+    }
+}
+
 /// Private causal entropy seam; production always uses the actual single OS fill.
 /// # Errors
 /// Preserve original context/entropy/token errors before constructing controls.
 fn prepare_with_entropy(
     config: AddressRoundConfig,
+    fill: impl FnOnce(&mut [u8; 24]) -> Result<(), PilotError>,
+) -> Result<(PreparedAddressRound, ControlHandle), PilotError> {
+    prepare_with_policy(config, None, fill)
+}
+
+/// Retain the actual issued policy through the unchanged one-fill preparation.
+/// # Errors
+/// Preserve original preparation failures; successful catalogue admission is not undone.
+fn prepare_with_policy(
+    config: AddressRoundConfig,
+    source_policy: Option<RoundBindings>,
     fill: impl FnOnce(&mut [u8; 24]) -> Result<(), PilotError>,
 ) -> Result<(PreparedAddressRound, ControlHandle), PilotError> {
     if tokio::runtime::Handle::try_current().is_ok() {
@@ -247,6 +288,7 @@ fn prepare_with_entropy(
     let handle = ControlHandle { sender };
     Ok((
         PreparedAddressRound {
+            source_policy,
             config,
             packets,
             control,
@@ -259,6 +301,10 @@ fn prepare_with_entropy(
 /// Closed current round outcome, separate from historical attempt records.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AddressRoundEnd {
+    /// A current logical-source refusal prevented this candidate's native setup.
+    SourceRestricted,
+    /// An actual live request retained a policy refusal without claiming its scope.
+    Policy,
     /// An ordinary correlated header completed; authentication and eligibility remain absent.
     Reply,
     /// A correlated control/KoD ended this source round without address evasion.
@@ -275,6 +321,52 @@ pub enum AddressRoundEnd {
     SetupDeadline,
     /// A setup/invariant/cleanup error stopped the round; causes remain available.
     Failure,
+}
+
+/// Scope observed under the actual policy guard before candidate socket setup.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum AddressPolicyRefusalScope {
+    /// The stable logical-source record refused; no alternative may evade it.
+    Source,
+    /// Only this exact endpoint refused; the next candidate remains independent.
+    Endpoint,
+}
+
+/// Historical pre-socket refusal; common round/runtime work may already exist.
+/// Private construction prevents callers from inventing a skipped completion.
+/// ```compile_fail,E0451
+/// use nevrotick_engine::{AddressPolicyRefusal, AddressPolicyRefusalScope};
+/// let _forged = AddressPolicyRefusal {
+///     index: 0,
+///     scope: AddressPolicyRefusalScope::Endpoint,
+/// };
+/// ```
+pub struct AddressPolicyRefusal {
+    /// Exact original candidate position whose socket/send never started.
+    index: u8,
+    /// Original guarded observation, not reusable current permission.
+    scope: AddressPolicyRefusalScope,
+}
+
+impl AddressPolicyRefusal {
+    /// Return the original candidate position without admitting a successor.
+    #[must_use]
+    pub const fn index(&self) -> u8 {
+        self.index
+    }
+
+    /// Borrow the captured refusal meaning without rereading current policy.
+    #[must_use]
+    pub const fn scope(&self) -> AddressPolicyRefusalScope {
+        self.scope
+    }
+}
+
+impl fmt::Debug for AddressPolicyRefusal {
+    /// Keep endpoint, source identity and current policy private.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("AddressPolicyRefusal { .. }")
+    }
 }
 
 /// One actual attempt, with its original destination and consume-once terminal report.
@@ -301,6 +393,8 @@ impl AddressAttempt {
 
 /// Bounded owned output, returned after both timer jobs and the private runtime end.
 pub struct AddressRoundReport {
+    /// At most three actual pre-socket refusals, disjoint from terminal attempts.
+    policy_refusals: Vec<AddressPolicyRefusal>,
     /// At most three actual terminal records in their original attempt order.
     attempts: Vec<AddressAttempt>,
     /// Fresh final decision, which does not rewrite historical records.
@@ -317,6 +411,7 @@ impl AddressRoundReport {
     /// Construct bounded empty receiving state; no attempt is reported as completed.
     fn empty() -> Self {
         Self {
+            policy_refusals: Vec::with_capacity(CAPACITY),
             attempts: Vec::with_capacity(CAPACITY),
             end: AddressRoundEnd::Exhausted,
             primary: None,
@@ -329,6 +424,12 @@ impl AddressRoundReport {
     #[must_use]
     pub fn attempts(&self) -> &[AddressAttempt] {
         &self.attempts
+    }
+
+    /// Borrow genuine skipped-candidate facts; absent tail entries stay absent.
+    #[must_use]
+    pub fn policy_refusals(&self) -> &[AddressPolicyRefusal] {
+        &self.policy_refusals
     }
 
     /// Return the final serialized round summary, distinct from transport history.
@@ -393,7 +494,11 @@ fn guarded_writable(
     refresh_slot(slot, state, Instant::now(), deadline);
     if !slot.done() {
         match writable {
-            Ok(()) => attempt_send(slot, deadline, control),
+            Ok(()) => {
+                // This owner transfers the terminal slot alone and separately
+                // samples its summary; no report/checkpoint pair is handed off.
+                let _checkpoint = attempt_send(slot, deadline, control);
+            }
             Err(error) => slot.finish(TerminalOutcome::Io(IoOutcome::Native(IoCause::capture(
                 &error,
             )))),
@@ -446,11 +551,33 @@ async fn run_round(
     origin: Instant,
     deadline: Instant,
 ) -> AddressRoundReport {
+    let bindings = prepared.source_policy.clone();
     run_round_with(
         prepared,
         origin,
         deadline,
-        &mut setup_address_request,
+        &mut |peer, packet, context, control, request_end, round_end| {
+            if bindings.is_none() {
+                return setup_address_request(
+                    peer,
+                    packet,
+                    context,
+                    control,
+                    request_end,
+                    round_end,
+                );
+            }
+            let mode = candidate_mode(bindings.as_ref(), peer)?;
+            setup_address_request_bound(
+                peer,
+                packet,
+                context,
+                control,
+                request_end,
+                round_end,
+                mode,
+            )
+        },
         &mut |_, _| {},
     )
     .await
@@ -467,6 +594,8 @@ enum RoundCheckpoint {
 
 /// Actual setup either owns a socket or records why none was admitted.
 enum SetupOutcome {
+    /// Actual guarded refusal before any socket/registration/send for this candidate.
+    PolicyRefused(AddressPolicyRefusalScope),
     /// The sole actual bind/registration succeeded under the current guard.
     /// One bounded box avoids storing the large live socket state in a refusal.
     Ready(Box<LiveSlot>),
@@ -485,6 +614,41 @@ fn setup_address_request(
     request_end: Instant,
     round_end: Instant,
 ) -> Result<SetupOutcome, PilotError> {
+    setup_address_request_bound(
+        peer,
+        packet,
+        context,
+        control,
+        request_end,
+        round_end,
+        SourceMode::UnmanagedLab,
+    )
+}
+
+/// Derive one original candidate's issued custody; missing bindings never downgrade.
+/// # Errors
+/// Preserve canonical-key or foreign-batch refusal.
+fn candidate_mode(
+    bindings: Option<&RoundBindings>,
+    peer: SocketAddr,
+) -> Result<SourceMode, PilotError> {
+    bindings
+        .map_or(Ok(SourceMode::UnmanagedLab), |value| value.mode(peer))
+        .map_err(PilotError::SourcePolicy)
+}
+
+/// Shared native setup with actual source custody and current pre-socket refusal.
+/// # Errors
+/// Preserve original policy and native setup causes; no permission survives this check.
+fn setup_address_request_bound(
+    peer: SocketAddr,
+    packet: [u8; PACKET_BYTES],
+    context: Arc<RunClockContext>,
+    control: &mut watch::Receiver<Control>,
+    request_end: Instant,
+    round_end: Instant,
+    mode: SourceMode,
+) -> Result<SetupOutcome, PilotError> {
     // Serialize the current guard with actual synchronous bind/registration.
     // Never invoke an observer, arbitrary setup callback or await under this lock.
     let state = control.borrow_and_update();
@@ -495,10 +659,206 @@ fn setup_address_request(
     if now >= request_end {
         return Ok(SetupOutcome::Retired(AddressRoundEnd::SetupDeadline));
     }
-    let request = prepare_slot(peer, packet)?;
+    if let Some(scope) = mode
+        .pre_socket_refusal()
+        .map_err(PilotError::SourcePolicy)?
+    {
+        return Ok(SetupOutcome::PolicyRefused(scope));
+    }
+    let mut request = prepare_slot(peer, packet)?;
+    request.source_policy = mode;
     let slot = LiveSlot::from_prepared(request, context)?;
     drop(state);
     Ok(SetupOutcome::Ready(Box::new(slot)))
+}
+
+/// One immutable original candidate and its independently retained cutoffs.
+struct CandidateSetup {
+    /// Original checked destination; no alternate peer is admitted here.
+    peer: SocketAddr,
+    /// Original opaque correlation packet for this candidate.
+    packet: [u8; PACKET_BYTES],
+    /// Genuine shared round origin and allocation identity.
+    context: Arc<RunClockContext>,
+    /// Actual immutable source/endpoint custody, never cached permission.
+    mode: SourceMode,
+    /// Once-captured candidate monotonic cutoff.
+    request_end: Instant,
+    /// Original immutable whole-round monotonic cutoff.
+    round_end: Instant,
+}
+
+/// Construct one immutable setup from the exact cursor's original candidate.
+/// # Errors
+/// Reject a missing packet or binding before any socket work; retain original cutoffs.
+fn checked_candidate_setup(
+    prepared: &PreparedAddressRound,
+    claim: &progress::Claim<'_, '_>,
+    context: &Arc<RunClockContext>,
+    deadline: Instant,
+) -> Result<CandidateSetup, PilotError> {
+    let (index, peer, request_end) = claim.parts();
+    Ok(CandidateSetup {
+        peer,
+        packet: prepared
+            .packets
+            .get(usize::from(index))
+            .copied()
+            .ok_or(PilotError::InternalState)?,
+        context: Arc::clone(context),
+        mode: candidate_mode(prepared.source_policy.as_ref(), peer)?,
+        request_end,
+        round_end: deadline,
+    })
+}
+
+/// Retry only genuine custody contention within the original candidate budget.
+/// # Errors
+/// Preserve original setup/custody errors and the finite hint-budget failure.
+async fn setup_candidate<F>(
+    plan: &CandidateSetup,
+    control: &mut watch::Receiver<Control>,
+    setup: &mut F,
+) -> Result<SetupOutcome, PilotError>
+where
+    F: FnMut(
+        SocketAddr,
+        [u8; PACKET_BYTES],
+        Arc<RunClockContext>,
+        &mut watch::Receiver<Control>,
+        Instant,
+        Instant,
+    ) -> Result<SetupOutcome, PilotError>,
+{
+    let mut contention_wakes = 0_u8;
+    loop {
+        if let Some(end) = current_end(control, plan.round_end) {
+            return Ok(SetupOutcome::Retired(end));
+        }
+        match setup(
+            plan.peer,
+            plan.packet,
+            Arc::clone(&plan.context),
+            control,
+            plan.request_end,
+            plan.round_end,
+        ) {
+            Err(PilotError::SourcePolicy(crate::SourcePolicyError::Contended))
+                if matches!(&plan.mode, SourceMode::Managed(_)) => {}
+            Ok(SetupOutcome::Ready(slot)) if !slot.policy.belongs_to(&plan.mode) => {
+                return Err(PilotError::SourcePolicy(crate::SourcePolicyError::Foreign));
+            }
+            value => return value,
+        }
+        if contention_wakes == 64 {
+            return Err(PilotError::PolicyAdmissionBudget);
+        }
+        contention_wakes += 1;
+        let retry = tokio::select! { biased;
+            changed = control.changed() => {
+                if changed.is_err() { return Err(PilotError::InternalState); }
+                continue;
+            },
+            () = sleep_until(TokioInstant::from_std(plan.request_end)) => {
+                return Ok(SetupOutcome::Retired(current_end(control, plan.round_end).unwrap_or(AddressRoundEnd::SetupDeadline)));
+            },
+            result = plan.mode.retry_after_contention() => result,
+        };
+        match retry {
+            Ok(()) | Err(crate::SourcePolicyError::Disabled) => {}
+            Err(error) => return Err(PilotError::SourcePolicy(error)),
+        }
+        // Fresh Disabled is not scoped: only the actual guarded setup above can
+        // classify it. Never infer source/endpoint or renew either cutoff here.
+        tokio::task::yield_now().await;
+    }
+}
+
+/// Interpret only the captured terminal facts, without fresh policy inference.
+/// # Errors
+/// Preserve typed live policy errors or an impossible unmanaged policy result.
+fn terminal_round_end(
+    status: Status,
+    cause: Option<crate::SourcePolicyError>,
+    managed: bool,
+) -> Result<Option<AddressRoundEnd>, PilotError> {
+    Ok(match status {
+        Status::SourcePolicy => match (managed, cause) {
+            (true, Some(crate::SourcePolicyError::Disabled)) => Some(AddressRoundEnd::Policy),
+            (true, Some(error)) => return Err(PilotError::SourcePolicy(error)),
+            _ => return Err(PilotError::InternalState),
+        },
+        Status::Header => Some(AddressRoundEnd::Reply),
+        Status::Control => Some(AddressRoundEnd::Control),
+        Status::Stopped => Some(AddressRoundEnd::Stopped),
+        Status::Stale => Some(AddressRoundEnd::Stale),
+        Status::Timeout | Status::Budget | Status::Io => None,
+    })
+}
+
+/// Retain one genuine pre-socket fact before completing its exact cursor claim.
+/// The fresh summary observes current control without rewriting that history.
+/// # Errors
+/// Preserve a cursor contradiction; it cannot admit a successor or fake native completion.
+fn record_policy_refusal<O>(
+    report: &mut AddressRoundReport,
+    claim: progress::Claim<'_, '_>,
+    scope: AddressPolicyRefusalScope,
+    control: &mut watch::Receiver<Control>,
+    deadline: Instant,
+    observe: &mut O,
+) -> Result<Option<AddressRoundEnd>, PilotError>
+where
+    O: FnMut(u8, RoundCheckpoint),
+{
+    let (index, _, _) = claim.parts();
+    report
+        .policy_refusals
+        .push(AddressPolicyRefusal { index, scope });
+    claim.finish(index)?;
+    observe(index, RoundCheckpoint::Before);
+    let end = current_end(control, deadline);
+    observe(index, RoundCheckpoint::After);
+    Ok(end
+        .or((scope == AddressPolicyRefusalScope::Source)
+            .then_some(AddressRoundEnd::SourceRestricted)))
+}
+
+/// Transfer actual socket retirement and its historical terminal facts exactly once.
+/// Cursor acknowledgement and fresh summary follow the real report/drop transfer.
+/// # Errors
+/// Preserve report/cursor contradictions and the captured original policy cause.
+fn transfer_candidate_report<O>(
+    slot: LiveSlot,
+    claim: progress::Claim<'_, '_>,
+    report: &mut AddressRoundReport,
+    control: &mut watch::Receiver<Control>,
+    plan: &CandidateSetup,
+    observe: &mut O,
+) -> Result<Option<AddressRoundEnd>, PilotError>
+where
+    O: FnMut(u8, RoundCheckpoint),
+{
+    let (index, peer, _) = claim.parts();
+    let completed = slot.into_report(index)?;
+    let status = completed.status();
+    let policy_cause = completed.source_policy_refusal();
+    report.attempts.push(AddressAttempt {
+        peer,
+        report: completed,
+    });
+    claim.finish(index)?;
+    observe(index, RoundCheckpoint::Before);
+    let end = current_end(control, plan.round_end);
+    observe(index, RoundCheckpoint::After);
+    if end.is_some() {
+        return Ok(end);
+    }
+    terminal_round_end(
+        status,
+        policy_cause,
+        matches!(&plan.mode, SourceMode::Managed(_)),
+    )
 }
 
 /// Actual driver with private causal setup/notification seams; public execution
@@ -542,69 +902,52 @@ where
             }
             Err(error) => return report.fail(error),
         };
-        let (index, peer, request_end) = claim.parts();
-        let Some(packet) = prepared.packets.get(usize::from(index)).copied() else {
-            return report.fail(PilotError::InternalState);
+        let plan = match checked_candidate_setup(&prepared, &claim, &context, deadline) {
+            Ok(plan) => plan,
+            Err(error) => return report.fail(error),
         };
-        let slot = match setup(
-            peer,
-            packet,
-            Arc::clone(&context),
-            &mut prepared.control,
-            request_end,
-            deadline,
-        ) {
+        let outcome = setup_candidate(&plan, &mut prepared.control, setup).await;
+        let slot = match outcome {
             Ok(SetupOutcome::Ready(slot)) => *slot,
+            Ok(SetupOutcome::PolicyRefused(scope)) => {
+                match record_policy_refusal(
+                    &mut report,
+                    claim,
+                    scope,
+                    &mut prepared.control,
+                    deadline,
+                    observe,
+                ) {
+                    Ok(Some(end)) => {
+                        report.end = end;
+                        return report;
+                    }
+                    Ok(None) => {}
+                    Err(error) => return report.fail(error),
+                }
+                continue;
+            }
             Ok(SetupOutcome::Retired(end)) => {
                 report.end = end;
                 return report;
             }
             Err(error) => return report.fail(error),
         };
-        let slot = run_attempt(slot, &mut prepared.control, request_end, limits).await;
-        let completed = match slot.into_report(index) {
-            Ok(completed) => completed,
+        let slot = run_attempt(slot, &mut prepared.control, plan.request_end, limits).await;
+        match transfer_candidate_report(
+            slot,
+            claim,
+            &mut report,
+            &mut prepared.control,
+            &plan,
+            observe,
+        ) {
+            Ok(Some(end)) => {
+                report.end = end;
+                return report;
+            }
+            Ok(None) => {}
             Err(error) => return report.fail(error),
-        };
-        let status = completed.status();
-        // Historical transfer follows actual Rust socket drop, before fresh summary.
-        report.attempts.push(AddressAttempt {
-            peer,
-            report: completed,
-        });
-        if let Err(error) = claim.finish(index) {
-            return report.fail(error);
-        }
-        observe(index, RoundCheckpoint::Before);
-        let end = current_end(&mut prepared.control, deadline);
-        observe(index, RoundCheckpoint::After);
-        if let Some(end) = end {
-            report.end = end;
-            return report;
-        }
-        match status {
-            Status::SourcePolicy => {
-                // This compatibility round has no managed source issuer. Retain
-                // its completed refusal above and stop instead of trying a peer.
-                return report.fail(PilotError::InternalState);
-            }
-            Status::Header => {
-                report.end = AddressRoundEnd::Reply;
-                return report;
-            }
-            Status::Control => {
-                report.end = AddressRoundEnd::Control;
-                return report;
-            }
-            Status::Stopped => {
-                report.end = AddressRoundEnd::Stopped;
-                return report;
-            }
-            Status::Stale => {
-                report.end = AddressRoundEnd::Stale;
-                return report;
-            }
-            Status::Timeout | Status::Budget | Status::Io => {}
         }
     }
 }

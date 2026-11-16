@@ -41,6 +41,154 @@ const RSTR: u32 = u32::from_be_bytes(*b"RSTR");
 /// Retains the one successful process installation even with no live facade.
 static PROCESS_POLICY: OnceLock<Arc<PolicyCell>> = OnceLock::new();
 
+/// Sealed read capabilities preserve the real guarded observation positions.
+mod observations {
+    use super::{Instant, SoftwareClock};
+
+    /// A single deferred owner-clock read; construction samples nothing.
+    pub(super) struct InstantRead {
+        /// Only this leaf can select hardware or a test-only fixed observation.
+        source: InstantSource,
+    }
+
+    /// Closed observation alternatives; fixed coordinates never enter production.
+    enum InstantSource {
+        /// Read freshly only when the guarded owner consumes the capability.
+        Hardware,
+        /// Test-only fixed coordinate with an independent consumption observer.
+        #[cfg(test)]
+        Fixed(Instant, std::rc::Rc<std::cell::Cell<usize>>),
+    }
+
+    impl InstantRead {
+        /// Construct an unsampled production capability.
+        pub(super) fn hardware() -> Self {
+            Self {
+                source: InstantSource::Hardware,
+            }
+        }
+
+        /// Consume exactly one observation at the original guarded read point.
+        pub(super) fn read(self) -> Instant {
+            match self.source {
+                InstantSource::Hardware => Instant::now(),
+                #[cfg(test)]
+                InstantSource::Fixed(value, count) => {
+                    count.set(1);
+                    value
+                }
+            }
+        }
+
+        /// Issue one modeled coordinate and its read-only consumption observer.
+        #[cfg(test)]
+        pub(super) fn fixed(value: Instant) -> (Self, ReadCount) {
+            let count = std::rc::Rc::new(std::cell::Cell::new(0));
+            (
+                Self {
+                    source: InstantSource::Fixed(value, std::rc::Rc::clone(&count)),
+                },
+                ReadCount { count },
+            )
+        }
+    }
+
+    /// Two deferred captures surrounding the one actual synchronous send.
+    pub(super) struct SendReads {
+        /// Private hardware/test selection, never an arbitrary callback.
+        source: SendSource,
+    }
+
+    /// Closed capture alternatives; the test script has exactly two entries.
+    enum SendSource {
+        /// Capture actual software brackets at each original effect position.
+        Hardware,
+        /// Complete coherent test brackets and their bounded next-read index.
+        #[cfg(test)]
+        Fixed {
+            /// Original before/after captures, copied only when consumed.
+            values: [SoftwareClock; 2],
+            /// Next index, bounded by the fixed two-entry script.
+            next: usize,
+            /// Shared solely with an immutable test observation handle.
+            count: std::rc::Rc<std::cell::Cell<usize>>,
+        },
+    }
+
+    impl SendReads {
+        /// Construct an unsampled production capture capability.
+        pub(super) fn hardware() -> Self {
+            Self {
+                source: SendSource::Hardware,
+            }
+        }
+
+        /// Capture at the current original guard/effect position.
+        /// # Panics
+        /// A test fixture reading beyond its two declared captures fails clearly.
+        pub(super) fn capture(&mut self) -> SoftwareClock {
+            match &mut self.source {
+                SendSource::Hardware => SoftwareClock::capture(),
+                #[cfg(test)]
+                SendSource::Fixed {
+                    values,
+                    next,
+                    count,
+                } => {
+                    assert!(
+                        *next < values.len(),
+                        "fixed sender capture script exhausted"
+                    );
+                    let value = values[*next];
+                    *next += 1;
+                    count.set(*next);
+                    value
+                }
+            }
+        }
+
+        /// Issue exactly two coherent monotonic captures and a read observer.
+        /// Wall-clock readings retain their original independent values and may step.
+        /// # Panics
+        /// Reject an inverted individual bracket or cross-capture monotonic order.
+        #[cfg(test)]
+        pub(super) fn fixed(before: SoftwareClock, after: SoftwareClock) -> (Self, ReadCount) {
+            assert!(
+                before.mono <= before.mono_after
+                    && before.mono_after <= after.mono
+                    && after.mono <= after.mono_after,
+                "fixed sender captures must have coherent monotonic brackets"
+            );
+            let count = std::rc::Rc::new(std::cell::Cell::new(0));
+            (
+                Self {
+                    source: SendSource::Fixed {
+                        values: [before, after],
+                        next: 0,
+                        count: std::rc::Rc::clone(&count),
+                    },
+                },
+                ReadCount { count },
+            )
+        }
+    }
+
+    /// Test-only inert observation of actual capability consumption.
+    #[cfg(test)]
+    pub(super) struct ReadCount {
+        /// Private counter; callers can observe but cannot manufacture a count.
+        count: std::rc::Rc<std::cell::Cell<usize>>,
+    }
+
+    #[cfg(test)]
+    impl ReadCount {
+        /// Return the number of actual reads through the issued capability.
+        pub(super) fn reads(&self) -> usize {
+            self.count.get()
+        }
+    }
+}
+
 /// Closed, payload-free policy refusals; none contains a peer or request.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SourcePolicyError {
@@ -863,6 +1011,87 @@ pub struct SourceHandle {
 }
 
 impl SourceHandle {
+    /// Bind a complete fixed round without partially publishing endpoint keys.
+    /// # Errors
+    /// Reject invalid count/keys, unavailable custody or insufficient permanent
+    /// capacity before changing any record. Canonical aliases share one slot.
+    pub(super) fn bind_round(
+        &self,
+        peers: &[SocketAddr],
+    ) -> Result<RoundBindings, SourcePolicyError> {
+        if peers.is_empty() || peers.len() > 3 {
+            return Err(SourcePolicyError::InvalidSelection);
+        }
+        let mut keys = [None; 3];
+        for (key, peer) in keys.iter_mut().zip(peers) {
+            *key = Some(EndpointKey::new(*peer)?);
+        }
+        let mut guard = self.cell.lock()?;
+        let state = guard.state_mut()?;
+        let source_changes = state.record(RecordKey::Source(self.index))?.changes.clone();
+        let mut positions = [None; 3];
+        let mut publications = [None; 3];
+        for (position, key) in keys.iter().copied().enumerate().take(peers.len()) {
+            let key = key.ok_or(SourcePolicyError::InvalidEndpoint)?;
+            let existing = state
+                .endpoints
+                .iter()
+                .position(|entry| entry.key == Some(key));
+            let planned = publications
+                .iter()
+                .flatten()
+                .find_map(|(index, value)| (*value == key).then_some(*index));
+            let index = if let Some(index) = existing.or(planned) {
+                index
+            } else {
+                let index = state
+                    .endpoints
+                    .iter()
+                    .enumerate()
+                    .find_map(|(index, entry)| {
+                        (entry.key.is_none()
+                            && !publications
+                                .iter()
+                                .flatten()
+                                .any(|(used, _)| *used == index))
+                        .then_some(index)
+                    })
+                    .ok_or(SourcePolicyError::Capacity)?;
+                publications[position] = Some((index, key));
+                index
+            };
+            positions[position] = Some(index);
+        }
+        let mut bindings = std::array::from_fn(|_| None);
+        for (position, binding) in bindings.iter_mut().enumerate().take(peers.len()) {
+            let endpoint = positions[position].ok_or(SourcePolicyError::Capacity)?;
+            *binding = Some(SourceBinding {
+                source: self.clone(),
+                endpoint,
+                key: keys[position].ok_or(SourcePolicyError::InvalidEndpoint)?,
+                source_changes: source_changes.clone(),
+                endpoint_changes: state
+                    .endpoints
+                    .get(endpoint)
+                    .ok_or(SourcePolicyError::Capacity)?
+                    .record
+                    .changes
+                    .clone(),
+            });
+        }
+        // All fallible work and complete result construction precede publication.
+        for (index, endpoint) in state.endpoints.iter_mut().enumerate() {
+            if let Some((_, key)) = publications
+                .iter()
+                .flatten()
+                .find(|(slot, _)| *slot == index)
+            {
+                endpoint.key = Some(*key);
+            }
+        }
+        Ok(RoundBindings { bindings })
+    }
+
     /// Create a managed session from the original checked one-peer configuration.
     /// # Errors
     /// Preserve endpoint/capacity/custody refusal before preparation or socket work.
@@ -910,6 +1139,29 @@ impl SourceHandle {
     }
 }
 
+/// Complete bounded endpoint custody issued atomically by one actual source.
+#[derive(Clone)]
+pub(super) struct RoundBindings {
+    /// Occupied entries retain their genuine source/root and canonical endpoint.
+    bindings: [Option<SourceBinding>; 3],
+}
+
+impl RoundBindings {
+    /// Derive the actual candidate's mode; absent/foreign entries never downgrade.
+    /// # Errors
+    /// Reject a destination outside this immutable issued batch.
+    pub(super) fn mode(&self, peer: SocketAddr) -> Result<SourceMode, SourcePolicyError> {
+        let key = EndpointKey::new(peer)?;
+        self.bindings
+            .iter()
+            .flatten()
+            .find(|binding| binding.key == key)
+            .cloned()
+            .map(SourceMode::Managed)
+            .ok_or(SourcePolicyError::Foreign)
+    }
+}
+
 impl fmt::Debug for SourceHandle {
     /// Redact stable source/root identity.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -942,6 +1194,37 @@ pub(super) enum SourceMode {
 }
 
 impl SourceMode {
+    /// Classify both current records before this candidate starts native work.
+    /// Source refusal takes precedence; floors remain the final sender's waits.
+    /// # Errors
+    /// Preserve non-refusal custody/binding/availability failures without guessing scope.
+    pub(super) fn pre_socket_refusal(
+        &self,
+    ) -> Result<Option<crate::AddressPolicyRefusalScope>, SourcePolicyError> {
+        let Self::Managed(binding) = self else {
+            return Ok(None);
+        };
+        let guard = binding.source.cell.lock()?;
+        let state = guard.state()?;
+        state.binding(binding)?;
+        for (key, scope) in [
+            (
+                RecordKey::Source(binding.source.index),
+                crate::AddressPolicyRefusalScope::Source,
+            ),
+            (
+                RecordKey::Endpoint(binding.endpoint),
+                crate::AddressPolicyRefusalScope::Endpoint,
+            ),
+        ] {
+            match state.record(key)?.available() {
+                Ok(()) => {}
+                Err(SourcePolicyError::Disabled) => return Ok(Some(scope)),
+                Err(error) => return Err(error),
+            }
+        }
+        Ok(None)
+    }
     /// Observe at most one release after a fresh availability check. This is
     /// only a retry hint: the actual setup must re-admit the same binding.
     /// # Errors
@@ -1114,6 +1397,20 @@ enum LiveMode {
 }
 
 impl LivePolicy {
+    /// Receiving check for a setup result before any request can be driven.
+    /// Identity is actual root/source/endpoint custody, not a copied label.
+    pub(super) fn belongs_to(&self, mode: &SourceMode) -> bool {
+        match (&self.mode, mode) {
+            (LiveMode::UnmanagedLab, SourceMode::UnmanagedLab) => true,
+            (LiveMode::Managed(live), SourceMode::Managed(binding)) => {
+                Arc::ptr_eq(&live.binding.source.cell, &binding.source.cell)
+                    && live.binding.source.index == binding.source.index
+                    && live.binding.endpoint == binding.endpoint
+                    && live.binding.key == binding.key
+            }
+            _ => false,
+        }
+    }
     /// Allocate the single pinned release waiter outside actual sender custody.
     pub(super) fn from_mode(mode: SourceMode) -> Self {
         let mode = match mode {
@@ -1149,6 +1446,17 @@ impl LivePolicy {
     /// Refuse poisoned/unavailable custody, invalid or foreign binding/request
     /// identity, retained refusal or a stale outstanding correlation epoch.
     pub(super) fn refresh(&mut self, request: &Arc<()>) -> Result<(), SourcePolicyError> {
+        self.refresh_observing(request, observations::InstantRead::hardware())
+    }
+
+    /// Use one deferred observation only if this refresh reaches the floor guard.
+    /// # Errors
+    /// Preserve the same binding/custody/refusal/epoch failures as hardware refresh.
+    fn refresh_observing(
+        &mut self,
+        request: &Arc<()>,
+        observation: observations::InstantRead,
+    ) -> Result<(), SourcePolicyError> {
         let LiveMode::Managed(live) = &mut self.mode else {
             return Ok(());
         };
@@ -1171,7 +1479,7 @@ impl LivePolicy {
             live.wait = WaitState::Ready;
         } else {
             let floor = state.earliest(&live.binding)?;
-            let now = Instant::now();
+            let now = observation.read();
             live.wait = floor
                 .filter(|value| now < *value)
                 .map_or(WaitState::Ready, WaitState::Floor);
@@ -1250,6 +1558,15 @@ pub(super) enum ManagedEffect {
 /// Own current policy admission, both debits and the actual nonblocking send.
 /// The parent retains invocation-control read custody before entering here.
 pub(super) fn attempt_managed_send(slot: &mut LiveSlot, deadline: Instant) -> ManagedEffect {
+    attempt_managed_send_observing(slot, deadline, observations::SendReads::hardware())
+}
+
+/// Preserve one concrete send with deferred captures at its original positions.
+fn attempt_managed_send_observing(
+    slot: &mut LiveSlot,
+    deadline: Instant,
+    mut observations: observations::SendReads,
+) -> ManagedEffect {
     let LiveMode::Managed(live) = &mut slot.policy.mode else {
         return ManagedEffect::UnmanagedLab;
     };
@@ -1279,7 +1596,7 @@ pub(super) fn attempt_managed_send(slot: &mut LiveSlot, deadline: Instant) -> Ma
         slot.finish(TerminalOutcome::SourcePolicy(SourcePolicyError::Foreign));
         return ManagedEffect::Handled;
     }
-    let before = SoftwareClock::capture();
+    let before = observations.capture();
     if before.mono_after >= deadline {
         slot.expire();
         return ManagedEffect::Handled;
@@ -1313,7 +1630,7 @@ pub(super) fn attempt_managed_send(slot: &mut LiveSlot, deadline: Instant) -> Ma
     };
     slot.send_attempts += 1;
     let result = slot.socket.try_send_to(&slot.packet, slot.peer);
-    let after = SoftwareClock::capture();
+    let after = observations.capture();
     if let LiveMode::Managed(live) = &mut slot.policy.mode {
         live.pending = if matches!(&result, Ok(PACKET_BYTES)) {
             Some(stamp)
@@ -1334,6 +1651,21 @@ pub(super) fn commit_managed_reply(
     slot: &mut LiveSlot,
     candidate: &StagedReply,
     deadline: Instant,
+) -> ManagedEffect {
+    commit_managed_reply_observing(
+        slot,
+        candidate,
+        deadline,
+        observations::InstantRead::hardware(),
+    )
+}
+
+/// Consume one deferred final observation under the same actual policy custody.
+fn commit_managed_reply_observing(
+    slot: &mut LiveSlot,
+    candidate: &StagedReply,
+    deadline: Instant,
+    observation: observations::InstantRead,
 ) -> ManagedEffect {
     let (live, stamp, control) = match (&mut slot.policy.mode, &candidate.policy.kind) {
         (LiveMode::UnmanagedLab, StagedKind::UnmanagedLab) => return ManagedEffect::UnmanagedLab,
@@ -1361,7 +1693,7 @@ pub(super) fn commit_managed_reply(
         }
     };
     live.disarm_release();
-    let now = Instant::now();
+    let now = observation.read();
     if now >= deadline {
         slot.rejected += 1;
         slot.expire();
@@ -1370,11 +1702,7 @@ pub(super) fn commit_managed_reply(
     if !matches!(slot.phase, Phase::Pending(_)) {
         return ManagedEffect::Handled;
     }
-    if now < candidate.read.mono_after
-        || now
-            .checked_duration_since(candidate.read.mono_after)
-            .is_none()
-    {
+    if now < candidate.read.mono_after {
         slot.rejected += 1;
         return ManagedEffect::Handled;
     }
@@ -1414,12 +1742,27 @@ pub(super) fn commit_managed_reply(
 /// # Errors
 /// Preserve bounded source/endpoint allocation refusal before fixture publication.
 #[cfg(test)]
-fn isolated_authority(
+pub(super) fn isolated_authority(
     limits: SourcePolicyLimits,
 ) -> Result<SourcePolicyAuthority, SourcePolicyError> {
     Ok(SourcePolicyAuthority {
         cell: PolicyCell::new(limits)?,
     })
+}
+
+/// Invoke one bounded causal setup probe while genuine policy custody is held.
+/// This fixture-only helper creates no alternative production transition.
+/// # Errors
+/// Preserve actual lock/custody failure before invoking the probe.
+#[cfg(test)]
+pub(super) fn fixture_while_locked<T>(
+    binding: &SourceBinding,
+    probe: impl FnOnce() -> T,
+) -> Result<T, SourcePolicyError> {
+    let held = binding.source.cell.lock()?;
+    let result = probe();
+    drop(held);
+    Ok(result)
 }
 
 /// Inert test observation of the actual record, without mutation/authority access.
@@ -1464,7 +1807,7 @@ fn record_snapshots(binding: &SourceBinding) -> Result<[RecordSnapshot; 2], Sour
 
 /// One checked kernel fixture request; no native-send fact is asserted.
 #[cfg(test)]
-struct FixtureRequest {
+pub(super) struct FixtureRequest {
     /// Same actual reservation stamp used by the production sender.
     stamp: Correlation,
     /// Consume-once fixture completion, independent of native qualification.
@@ -1476,7 +1819,7 @@ struct FixtureRequest {
 /// Preserve custody, binding, availability, not-due and arithmetic failures from
 /// the actual reservation kernel; no native send is performed.
 #[cfg(test)]
-fn fixture_send(
+pub(super) fn fixture_send(
     binding: &SourceBinding,
     request: &Arc<()>,
     now: Instant,
@@ -1494,7 +1837,7 @@ fn fixture_send(
 /// Refuse consumed/stale or foreign requests, unhandled codes, unavailable
 /// custody/records and observations preceding the actual reservation time.
 #[cfg(test)]
-fn fixture_control(
+pub(super) fn fixture_control(
     binding: &SourceBinding,
     request: &mut FixtureRequest,
     code: u32,

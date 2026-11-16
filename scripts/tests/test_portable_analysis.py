@@ -4710,6 +4710,234 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
                     MODULE.admit_mutation_equivalences(self.root, scope, self.policy)
 
 
+class EngineSourcePolicyEquivalenceTests(unittest.TestCase):
+    """Synthetic exact approvals; no product proof, mutant execution or kill."""
+
+    OWNERS = (
+        ("source_policy", "crates/nevrotick-engine/src/source_policy.rs"),
+        ("library", "crates/nevrotick-engine/src/lib.rs"),
+        ("session", "crates/nevrotick-engine/src/session.rs"),
+        ("series", "crates/nevrotick-engine/src/series.rs"),
+        ("address_round", "crates/nevrotick-engine/src/address_round.rs"),
+    )
+    POLICY = "policy/engine-source-policy-analysis.json"
+    PROOF = "tasks/engine-source-policy-equivalences.md"
+    REQUIREMENT = "CHECK-10/CHECK-19/CHECK-21/CHECK-25/CHECK-27"
+    IDS = (
+        "KOD-SERIES-UNAVAILABLE-ADMITTED-ZERO", "KOD-SERIES-UNAVAILABLE-ELIGIBLE-ZERO",
+        "KOD-COMMIT-DURATION-NONE-SUB", "KOD-COMMIT-DURATION-NONE-MUL",
+        "KOD-DEFAULT-KE-FACADE-ABSENT",
+    )
+    CONFIGURATION = (
+        "Cargo.toml", "Cargo.lock", "crates/nevrotick-engine/Cargo.toml", "rust-toolchain.toml",
+        ".cargo/config.toml", ".cargo/mutants.toml", ".config/nextest.toml",
+        "policy/analysis-tools.json", "policy/tool-manifest.json", "policy/verification-manifest.toml",
+    )
+
+    @staticmethod
+    def digest(value):
+        return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+    def setUp(self):
+        # Reuse the independently literal policy fixture, not code-owned role facts.
+        EngineSourcePolicyAdmissionTests.setUp(self)
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.base = Path(temporary.name)
+        self.root = self.base / "source"
+        self.root.mkdir()
+        self.identity = {}
+        for name in [path for _, path in self.OWNERS] + list(self.CONFIGURATION):
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("Synthetic custody input, never compiled: " + name + "\n")
+            self.identity[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.candidate = self.digest(self.identity)
+        self.dependencies = {name: self.identity[name] for name in self.CONFIGURATION}
+        self.stable = self.base / "stable"
+        self.standard_sources = {}
+        for name in ("core/src/time.rs", "std/src/sys/pal/unix/time.rs", "std/src/sys/time/unix.rs",
+                     "std/src/sys/time/windows.rs", "std/src/time.rs"):
+            path = self.stable / "lib/rustlib/src/rust/library" / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("Independent synthetic standard source, never compiled: " + name)
+            self.standard_sources[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.tool_inventory = [{"name": "stable", "sha256": "d" * 64, "entries": 5, "root": "stable"}]
+        self.admitted_tools = {"stable": self.stable, "inventories": self.tool_inventory}
+        path = self.root / self.PROOF
+        path.parent.mkdir()
+        path.write_text("Synthetic review only.\n" + "".join("## " + name + "\n" for name in self.IDS))
+        self.proof_sha = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.reviewer = "synthetic independent-review control"
+        self.catalog, self.rows, self.diffs = {}, [], {}
+        for index, identifier in enumerate(self.IDS):
+            filename = dict(self.OWNERS)["series" if index < 2 else "library"]
+            mutant = {"name": "independent synthetic fault " + identifier,
+                "package": "nevrotick-engine", "file": filename,
+                "function": {"function_name": "independent_synthetic_helper", "return_type": "-> usize",
+                    "span": {"start": {"line": 1, "column": 1}, "end": {"line": 2, "column": 2}}},
+                "span": {"start": {"line": 1, "column": index + 1}, "end": {"line": 1, "column": index + 2}},
+                "replacement": "0", "genre": "FnValue"}
+            diff = "Independent synthetic rendered diff " + identifier + "\n"
+            rationale = "Independent synthetic domain review " + identifier
+            self.diffs[identifier] = diff
+            self.catalog[identifier] = (self.identity[filename], self.digest(mutant),
+                                       hashlib.sha256(diff.encode()).hexdigest(), rationale)
+            self.rows.append({"id": identifier, "candidate_sha256": self.candidate,
+                "source_sha256": self.identity[filename], "mutant": mutant,
+                "requirement": self.REQUIREMENT, "rationale": rationale,
+                "proof": {"path": self.PROOF, "sha256": self.proof_sha, "section": identifier,
+                    "reviewer": self.reviewer, "verdict": "independently-justified-equivalent"}})
+        self.policy["binding"].update(candidate_sha256=self.candidate,
+            source_file_count=len(self.identity), inputs_sha256=self.identity.copy())
+        self.policy["mutation_equivalences"] = copy.deepcopy(self.rows)
+
+    @contextmanager
+    def reviewed(self, *, allow_ke=True):
+        catalog = self.catalog.copy()
+        if not allow_ke:
+            catalog.pop("KOD-DEFAULT-KE-FACADE-ABSENT")
+        with patch.multiple(MODULE, ENGINE_SOURCE_POLICY_EQUIVALENCE_CANDIDATE=self.candidate,
+                ENGINE_SOURCE_POLICY_EQUIVALENCE_PROOF_SHA256=self.proof_sha,
+                ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWERS=self.reviewer,
+                ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWS=catalog,
+                ENGINE_SOURCE_POLICY_EQUIVALENCE_DEPENDENCIES=self.dependencies,
+                ENGINE_SOURCE_POLICY_EQUIVALENCE_TOOL_INVENTORY_SHA256=self.digest(self.tool_inventory),
+                ENGINE_SOURCE_POLICY_EQUIVALENCE_STANDARD_SOURCES=self.standard_sources), \
+                patch.object(MODULE.ANALYSIS, "admit", return_value=self.admitted_tools), \
+                patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, self.identity)):
+            yield
+
+    def test_empty_is_legal_and_pending_catalogue_cannot_approve_itself(self):
+        self.assertEqual(MODULE.ENGINE_SOURCE_POLICY_EQUIVALENCE_IDS, frozenset(self.IDS))
+        self.assertFalse(MODULE.engine_source_policy_equivalences_valid(self.policy))
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admit_mutation_equivalences(self.root, self.scope, self.policy)
+        empty = {**self.policy, "mutation_equivalences": []}
+        MODULE.require_engine_source_policy_role(self.scope, empty)
+        self.assertEqual(MODULE.admit_mutation_equivalences(self.root, self.scope, empty), [])
+
+    def test_only_independently_approved_closed_subsets_and_live_bytes_are_admitted(self):
+        with self.reviewed():
+            for number in range(1, 6):
+                policy = {**self.policy, "mutation_equivalences": self.rows[:number]}
+                MODULE.require_engine_source_policy_role(self.scope, policy)
+                self.assertEqual(MODULE.admit_mutation_equivalences(self.root, self.scope, policy), self.rows[:number])
+            for relative in (dict(self.OWNERS)["series"], self.PROOF, "Cargo.toml", "policy/analysis-tools.json"):
+                path = self.root / relative
+                before = path.read_bytes()
+                path.write_bytes(before + b"changed\n")
+                try:
+                    with self.subTest(path=relative), self.assertRaises(MODULE.Incomplete):
+                        MODULE.admit_mutation_equivalences(self.root, self.scope, self.policy)
+                finally:
+                    path.write_bytes(before)
+        with self.reviewed(allow_ke=False):
+            approved = {**self.policy, "mutation_equivalences": self.rows[:4]}
+            self.assertEqual(MODULE.admit_mutation_equivalences(self.root, self.scope, approved), self.rows[:4])
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_mutation_equivalences(self.root, self.scope, self.policy)
+
+    def test_direct_receiver_rechecks_installed_inventory_and_all_primary_sources(self):
+        with self.reviewed():
+            self.assertEqual(MODULE.admit_mutation_equivalences(self.root, self.scope, self.policy), self.rows)
+            changed_inventory = [{**self.tool_inventory[0], "sha256": "e" * 64}]
+            with patch.object(MODULE.ANALYSIS, "admit", return_value={**self.admitted_tools,
+                    "inventories": changed_inventory}), self.assertRaisesRegex(MODULE.Incomplete, "installed tool inventory"):
+                MODULE.admit_mutation_equivalences(self.root, self.scope, self.policy)
+            with patch.object(MODULE.ANALYSIS, "admit", side_effect=MODULE.Incomplete("actual payload drift")), \
+                    self.assertRaisesRegex(MODULE.Incomplete, "actual payload drift"):
+                MODULE.admit_mutation_equivalences(self.root, self.scope, self.policy)
+            for name in self.standard_sources:
+                path = self.stable / "lib/rustlib/src/rust/library" / name
+                original = path.read_bytes()
+                path.write_bytes(original + b"changed")
+                try:
+                    with self.subTest(source=name), self.assertRaisesRegex(MODULE.Incomplete, "primary standard source"):
+                        MODULE.admit_mutation_equivalences(self.root, self.scope, self.policy)
+                finally:
+                    path.write_bytes(original)
+
+    def test_direct_receiver_refuses_aliases_poison_and_disguised_current_family(self):
+        aliases = (
+            MODULE.Scope("foreign", self.OWNERS, self.POLICY),
+            MODULE.Scope("nevrotick-engine", self.OWNERS, "policy/foreign.json"),
+            MODULE.Scope("nevrotick-engine", self.OWNERS[:-1], self.POLICY),
+            MODULE.Scope("nevrotick-engine", (("alias", dict(self.OWNERS)["library"]),), "policy/foreign.json"),
+        )
+        edits = (
+            lambda p: p["mutation_equivalences"].append(copy.deepcopy(p["mutation_equivalences"][0])),
+            lambda p: p["mutation_equivalences"][0].update(id="UNREVIEWED"),
+            lambda p: p["mutation_equivalences"][0].update(id=[]),
+            lambda p: p["mutation_equivalences"][0].update(candidate_sha256="f" * 64),
+            lambda p: p["mutation_equivalences"][0].update(source_sha256="f" * 64),
+            lambda p: p["mutation_equivalences"][0].update(rationale="Self-approved"),
+            lambda p: p["mutation_equivalences"][0]["mutant"].update(file=dict(self.OWNERS)["session"]),
+            lambda p: p["mutation_equivalences"][0]["mutant"].update(replacement="1"),
+            lambda p: p["mutation_equivalences"][0]["proof"].update(reviewer="Self-approved"),
+            lambda p: p["mutation_equivalences"][0]["proof"].update(section="UNREVIEWED"),
+            lambda p: p["mutation_equivalences"][0].update(skip_function=True),
+            lambda p: p.update(features=["ke-association-prototype"]),
+        )
+        with self.reviewed():
+            for scope in aliases:
+                with self.subTest(scope=scope), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_mutation_equivalences(self.root, scope, self.policy)
+            for edit in edits:
+                policy = copy.deepcopy(self.policy)
+                edit(policy)
+                with self.subTest(edit=edit), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_mutation_equivalences(self.root, self.scope, policy)
+            disguised = copy.deepcopy(self.policy)
+            for entry in disguised["mutation_equivalences"]:
+                entry["id"] = "DISGUISED-" + entry["id"]
+                entry["proof"]["path"] = "tasks/foreign.md"
+                entry["mutant"]["name"] += " disguised"
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_mutation_equivalences(self.root, aliases[-1], disguised)
+
+    def test_reviewed_inventories_require_own_exact_rendering(self):
+        inventories = {name: {} for name, _path in self.OWNERS}
+        for entry in self.rows:
+            owner = "series" if entry["mutant"]["file"] == dict(self.OWNERS)["series"] else "library"
+            inventories[owner][entry["mutant"]["name"]] = {**entry["mutant"], "diff": self.diffs[entry["id"]]}
+        for owner, path in self.OWNERS:
+            if not inventories[owner]:
+                inventories[owner]["independent neighbor " + owner] = {"name": "independent neighbor " + owner,
+                    "package": "nevrotick-engine", "file": path}
+        policy = copy.deepcopy(self.policy)
+        policy["mutation_inventories"] = {
+            name: {"count": len(rows), "sha256": self.digest({key: {k: v for k, v in item.items() if k != "diff"}
+                                                            for key, item in rows.items()})}
+            for name, rows in inventories.items()}
+        with self.reviewed():
+            for owner in ("library", "series"):
+                MODULE.admit_reviewed_mutation_inventories(self.scope, policy, {owner: inventories[owner]})
+                for fault in ("changed_diff", "missing_diff"):
+                    broken = copy.deepcopy(inventories[owner])
+                    first = next(iter(broken.values()))
+                    if fault == "changed_diff": first["diff"] += "changed\n"
+                    else: first.pop("diff")
+                    with self.subTest(owner=owner, fault=fault), self.assertRaises(MODULE.Incomplete):
+                        MODULE.admit_reviewed_mutation_inventories(self.scope, policy, {owner: broken})
+
+    def test_session_keeps_new_proof_in_actual_frozen_identity(self):
+        for relative in (self.POLICY, "scripts/portable-analysis.py", "scripts/prepare-product.py",
+                         "scripts/analysis-runtime.py", "scripts/check-analysis.py"):
+            path = self.root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("Synthetic helper, not executed.\n")
+        args = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core", output_dir=self.base / "output")
+        session = MODULE.Session.__new__(MODULE.Session)
+        with self.reviewed(), patch.object(MODULE.ANALYSIS, "admit",
+                side_effect=[self.admitted_tools, MODULE.Incomplete("later tool admission")]), \
+                self.assertRaisesRegex(MODULE.Incomplete, "later tool admission"):
+            MODULE.Session.__init__(session, self.root, args, {}, self.scope, self.policy, ())
+        self.assertEqual(session.identity[self.PROOF], self.proof_sha)
+        self.assertFalse(args.output_dir.exists())
+
+
+
 class EngineSourcePolicyAdmissionTests(unittest.TestCase):
     """Synthetic five-owner admission controls; no current product score or execution."""
 

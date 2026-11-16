@@ -20,6 +20,9 @@ use nevrotick_engine::{
 };
 use time_domain::{RationalSign, RoundedRationalSeconds};
 
+#[path = "private/series_process.rs"]
+mod quality_process;
+
 /// Retain setup, application and joined-peer errors without flattening them.
 type Check<T> = Result<T, Box<dyn Error + Send + Sync>>;
 /// Bound each fixture socket operation and its application-completion notice.
@@ -130,6 +133,7 @@ fn check(condition: bool, fact: &'static str) -> io::Result<()> {
     if condition {
         Ok(())
     } else {
+        quality_process::semantic_check_failed(fact);
         Err(io::Error::other(fact))
     }
 }
@@ -505,6 +509,11 @@ fn check_quality(
 /// Preserve fixture, application, quality and independently reconstructed failures.
 #[test]
 fn actual_series_quality_retains_signed_intervals_source_and_original_age() -> Check<()> {
+    if quality_process::parent_or_child(
+        "actual_series_quality_retains_signed_intervals_source_and_original_age",
+    )? {
+        return Ok(());
+    }
     let (report, observed) = run_series(true)?;
     check_report(&report, &observed)?;
     let declared = assumptions(32_768.0, 128.0, 1.0 / 4.0)?;
@@ -539,6 +548,11 @@ fn actual_series_quality_retains_signed_intervals_source_and_original_age() -> C
 /// Preserve fixture failures or a wrong semantic missing-measurement classification.
 #[test]
 fn absent_measurement_refuses_quality_with_actual_valid_neighbor() -> Check<()> {
+    if quality_process::parent_or_child(
+        "absent_measurement_refuses_quality_with_actual_valid_neighbor",
+    )? {
+        return Ok(());
+    }
     let declared = assumptions(32_768.0, 128.0, 1.0 / 4.0)?;
     let (unavailable, observed) = run_series(false)?;
     check_report(&unavailable, &observed)?;
@@ -573,6 +587,11 @@ fn absent_measurement_refuses_quality_with_actual_valid_neighbor() -> Check<()> 
 /// Preserve fixture or constructor errors and reject wrong closed policy variants.
 #[test]
 fn actual_quality_limits_refuse_without_rewriting_completion_or_age() -> Check<()> {
+    if quality_process::parent_or_child(
+        "actual_quality_limits_refuse_without_rewriting_completion_or_age",
+    )? {
+        return Ok(());
+    }
     let (report, observed) = run_series(true)?;
     check_report(&report, &observed)?;
     let record = slot(&report, 0)?;

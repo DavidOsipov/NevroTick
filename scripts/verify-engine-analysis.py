@@ -6545,16 +6545,16 @@ SOURCE_POLICY_POLICY = COMMON.ENGINE_SOURCE_POLICY_POLICY
 SOURCE_POLICY_SUBJECTS = dict(COMMON.ENGINE_SOURCE_POLICY_SUBJECTS)
 SOURCE_POLICY_SCOPE = COMMON.Scope(
     "nevrotick-engine", COMMON.ENGINE_SOURCE_POLICY_SUBJECTS, SOURCE_POLICY_POLICY)
-SOURCE_POLICY_ORDINARY_COUNT = 209
-SOURCE_POLICY_DOCTEST_COUNT = 73
-# Independent inspection of boundary-sensitivity-v5 development attempt 1 established
+SOURCE_POLICY_ORDINARY_COUNT = 241
+SOURCE_POLICY_DOCTEST_COUNT = 75
+# Independent inspection of managed-round development revision 8 established
 # these complete sorted identities. They identify a roster, not current execution.
-SOURCE_POLICY_ORDINARY_DIGEST = "9b7c9509495400f141583022d85e3a8eb289aef571a159035d497558b4935dff"
-SOURCE_POLICY_DOCTEST_DIGEST = "2fa097da2f35b79fa8fd8a2c2b93c49efcbf023896dc181dc7510c94ee50172a"
-# Source-reconciled GNU EP1 identities: 209 default plus 234 unchanged KE cases.
-# Current module/cfg review and retained identities establish a roster, not a new run.
-SOURCE_POLICY_EP1_ORDINARY_COUNT = 443
-SOURCE_POLICY_EP1_ORDINARY_DIGEST = "b2608bc74f6051dfc5365f0790f193c6c940a002ea3b11c905fe0ef1c88e187b"
+SOURCE_POLICY_ORDINARY_DIGEST = '08441dafc351661d628de1a6da48f601b11f8d360fda536c47a73c6edaa2ad7a'
+SOURCE_POLICY_DOCTEST_DIGEST = 'cd5fcc0a29e43c2262202a07a9b85b2e7373b42f2d79b18964e441f3e8eb8abf'
+# The same independently inspected receipt contains the complete optional
+# profile in both modes: its default roster plus these 234 KE identities.
+SOURCE_POLICY_EP1_EXTRA_COUNT = 234
+SOURCE_POLICY_EP1_DIGEST = 'b82faa91464b0e0773ae18da34ba1c2fc3f2bd622dee87aa80dff6d1483c82a1'
 SOURCE_POLICY_BOUND_INPUTS = tuple(dict.fromkeys((
     WRAPPER, TESTS, *SOURCE_POLICY_SUBJECTS.values(),
     "crates/nevrotick-engine/tests/private/source_policy.rs",
@@ -6570,6 +6570,9 @@ SOURCE_POLICY_BOUND_INPUTS = tuple(dict.fromkeys((
     "crates/nevrotick-engine/tests/prepare_entered.rs",
     "crates/nevrotick-engine/tests/execute_entered.rs",
     "crates/nevrotick-engine/tests/series.rs",
+    "crates/nevrotick-engine/tests/session.rs",
+    "crates/nevrotick-engine/tests/quality.rs",
+    "tasks/engine-source-policy-equivalences.md",
     "scripts/portable-analysis.py", "scripts/tests/test_portable_analysis.py",
     "scripts/analysis-runtime.py", "scripts/check-analysis.py", "scripts/analysis-controls.py",
     "scripts/prepare-product.py", "scripts/verify.py", "scripts/check-environment.py",
@@ -6591,16 +6594,16 @@ def source_policy_test_inventory(binding: dict) -> tuple[list[str], list[str]]:
         if (type(names) is not list or len(names) != count
                 or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
                 or names != sorted(set(names)) or COMMON.canonical_sha256(names) != digest):
-            raise Incomplete("Source-policy qualification requires its complete 209/73 default roster.")
+            raise Incomplete("Source-policy qualification requires its complete 241/75 default roster.")
     selected = [name for name in ordinary if name.startswith("source_policy::tests::")]
     kod_docs = [name for name in docs if name.startswith(
         "crates/nevrotick-engine/src/source_policy.rs - ")]
-    if (len(selected) != 28
+    if (len(selected) != 49
             or "source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted" not in ordinary
             or "source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund" not in ordinary
             or any(name.startswith("nts_ke_experiment::") for name in ordinary)
             or len(kod_docs) != 4 or sum(name.endswith(" - compile fail") for name in kod_docs) != 3):
-        raise Incomplete("Source-policy roster must retain all 28 controls, public diagnostics, the setup budget and four compiler examples.")
+        raise Incomplete("Source-policy roster must retain all 49 controls, public diagnostics, the setup budget and four compiler examples.")
     return ordinary, docs
 
 
@@ -6668,6 +6671,169 @@ def source_policy_execution(text: str, binding: dict, *, doctests: bool = False)
             "inventory_sha256": COMMON.canonical_sha256(sorted(names))}
 
 
+def source_policy_ep1_execution(text: str, binding: dict) -> dict:
+    """Require the complete independently bound optional-profile execution."""
+    ordinary, _docs = source_policy_test_inventory(binding)
+    names = read_successful_address_records(text)
+    default_names = set(ordinary)
+    extras = [name for name in names if name not in default_names]
+    digest = COMMON.canonical_sha256(sorted(names))
+    if (len(names) != len(ordinary) + SOURCE_POLICY_EP1_EXTRA_COUNT
+            or not default_names <= set(names)
+            or len(extras) != SOURCE_POLICY_EP1_EXTRA_COUNT
+            or any(not name.startswith("nts_ke_experiment::") for name in extras)
+            or digest != SOURCE_POLICY_EP1_DIGEST):
+        raise Incomplete("Source-policy EP1 execution omitted or substituted an admitted case.")
+    return {"tests_executed": len(names), "test_names": names,
+            "inventory_sha256": digest}
+
+
+def admit_source_policy_resource_samples(raw: bytes, result: dict, *, gap_control: bool = False) -> None:
+    """Reconcile the retained sampler's finite timeline and unchanged resource floors."""
+    try:
+        samples = [json.loads(line, object_pairs_hook=COMMON.ANALYSIS.unique_object,
+                             parse_float=finite_number, parse_constant=invalid_number)
+                   for line in raw.decode("utf-8").splitlines()]
+    except (ValueError, UnicodeError, RecursionError) as error:
+        raise Incomplete("Source-policy resource samples are malformed.") from error
+    if not samples or len(samples) != result["samples"]:
+        raise Incomplete("Source-policy resource sample count differs.")
+    previous = None
+    for sample in samples:
+        if (type(sample) is not dict
+                or any(type(sample.get(key)) not in {int, float}
+                       or not 0 <= sample[key] <= sys.float_info.max or not math.isfinite(sample[key])
+                       for key in ("monotonic_seconds", "gap_seconds"))
+                or (not gap_control and sample["gap_seconds"] > 2)
+                or (previous is not None and (sample["monotonic_seconds"] < previous
+                    or sample["monotonic_seconds"] - previous != sample["gap_seconds"]))
+                or any(type(sample.get(key)) is not int or sample[key] < minimum
+                       for key, minimum in (("available_bytes", 1024**3), ("free_bytes", 4 * 1024**3),
+                                            ("memory_bytes", 0), ("tasks", 1)))
+                or sample["memory_bytes"] > 4 * 1024**3 or sample["tasks"] > 512):
+            raise Incomplete("Source-policy resource samples violate their clock or resource bounds.")
+        previous = sample["monotonic_seconds"]
+    maximum = max(sample["gap_seconds"] for sample in samples)
+    terminal_gap = result["finished_monotonic"] - previous
+    if (result["maximum_gap_seconds"] != maximum or not 0 <= terminal_gap <= 2
+            or (gap_control and maximum <= 2)):
+        raise Incomplete("Source-policy resource gap or terminal freshness differs.")
+
+
+def admit_source_policy_monitor_control(directory: Path, role: str, recipe: str, inputs: dict, raw: dict) -> None:
+    """Keep the deliberately failed freshness control distinct from healthy runtime proof."""
+    control_path = directory / "control.json"
+    terminal_path = directory / "monitor-result.json"
+    samples_path = directory / "resources.jsonl"
+    control = read_json(control_path, expected_sha256=inputs[control_path])
+    terminal = read_json(terminal_path, expected_sha256=inputs[terminal_path])
+    monitor = control.get("monitor")
+    gap = role == "gap"
+    if (control.get("expected_control_observed") is not True or type(control.get("notifications")) is not list
+            or type(monitor) is not dict or monitor.get("joined") is not True
+            or monitor.get("ok") is not (not gap) or type(monitor.get("exit_code")) is not int
+            or monitor["exit_code"] != (2 if gap else 0)
+            or monitor.get("errors") != (["Monitor failed or stopped unexpectedly."] if gap else [])
+            or type(monitor.get("result")) is not dict
+            or COMMON.canonical_sha256(monitor["result"]) != COMMON.canonical_sha256(terminal)
+            or monitor.get("result_sha256") != inputs[terminal_path]
+            or monitor.get("resource_samples_sha256") != inputs[samples_path]
+            or terminal.get("status") != ("failed" if gap else "stopped")
+            or terminal.get("role") != role or terminal.get("recipe_sha256") != recipe
+            or terminal.get("recipe_final_sha256") != recipe
+            or any(type(terminal.get(key)) is not int or terminal[key] <= 0
+                   for key in ("samples", "parent_pid", "parent_start", "observer_pid"))
+            or terminal["parent_pid"] == terminal["observer_pid"]
+            or any(type(terminal.get(key)) not in {int, float}
+                   or not 0 <= terminal[key] <= sys.float_info.max or not math.isfinite(terminal[key])
+                   for key in ("maximum_gap_seconds", "finished_monotonic"))
+            or terminal["finished_monotonic"] <= 0):
+        raise Incomplete("Source-policy prior monitor control lacks its exact observed disposition.")
+    notifications = control["notifications"]
+    if ((gap and (len(notifications) != 1
+                  or type(notifications[0]) not in {int, float}
+                  or not 0 < notifications[0] <= sys.float_info.max or not math.isfinite(notifications[0])
+                  or terminal["maximum_gap_seconds"] <= 2
+                  or terminal.get("error") != "Resource observer freshness exceeded two seconds."
+                  or terminal.get("parent_notification") != "pidfd-SIGTERM"))
+            or (not gap and (notifications != [] or terminal["maximum_gap_seconds"] > 2
+                             or "error" in terminal or "parent_notification" in terminal))):
+        raise Incomplete("Source-policy monitor freshness control or owned notification differs.")
+    admit_source_policy_resource_samples(raw[samples_path], terminal, gap_control=gap)
+
+
+def admit_source_policy_observer(reference: dict, path: Path) -> dict:
+    """Admit one exclusive legacy or durable independent-monitor custody format."""
+    legacy = {"resource_observer_joined", "terminal_resource_failures"}
+    current = {"source_revision", "monitor_sha256", "monitor_control_inputs"}
+    if not current & set(reference):
+        # Historical receipts already carried independent_monitor diagnostics;
+        # their accepted guarantee is the separately recorded flat custody pair.
+        if (reference.get("resource_observer_joined") is not True
+                or reference.get("terminal_resource_failures") != []):
+            raise Incomplete("Source-policy development evidence lacks passing terminal custody.")
+        return {}
+    monitor = reference.get("independent_monitor")
+    fields = {"ok", "errors", "result", "exit_code", "joined", "result_sha256", "resource_samples_sha256"}
+    result_fields = {"status", "parent_pid", "parent_start", "observer_pid", "role", "recipe_sha256",
+                     "samples", "maximum_gap_seconds", "finished_monotonic", "recipe_final_sha256"}
+    if (not current <= set(reference) or legacy & set(reference)
+            or type(monitor) is not dict or set(monitor) != fields
+            or monitor["ok"] is not True or monitor["joined"] is not True or monitor["errors"] != []
+            or type(monitor["exit_code"]) is not int or monitor["exit_code"] != 0
+            or type(reference.get("source_revision")) is not int or reference["source_revision"] <= 0
+            or type(monitor["result"]) is not dict or set(monitor["result"]) != result_fields):
+        raise Incomplete("Source-policy independent monitor lacks exclusive passing terminal custody.")
+    result = monitor["result"]
+    hashes = (reference.get("monitor_sha256"), monitor["result_sha256"], monitor["resource_samples_sha256"],
+              result["recipe_sha256"], result["recipe_final_sha256"])
+    if (any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None for value in hashes)
+            or hashes[0] != hashes[3] or hashes[0] != hashes[4] or result["status"] != "stopped"
+            or result["role"] != f"attempt-{reference['source_revision']}"
+            or any(type(result[key]) is not int or result[key] <= 0
+                   for key in ("samples", "parent_pid", "parent_start", "observer_pid"))
+            or result["parent_pid"] == result["observer_pid"]
+            or any(type(result[key]) not in {int, float} or not 0 <= result[key] <= sys.float_info.max
+                   or not math.isfinite(result[key]) for key in ("maximum_gap_seconds", "finished_monotonic"))
+            or result["maximum_gap_seconds"] > 2 or result["finished_monotonic"] <= 0):
+        raise Incomplete("Source-policy independent monitor identity or clock bounds differ.")
+    inputs = {path.parent.parent / "monitor.py": hashes[0],
+              path.parent / "observer/monitor-result.json": hashes[1],
+              path.parent / "observer/resources.jsonl": hashes[2]}
+    controls = reference.get("monitor_control_inputs")
+    expected = {(role, leaf) for role in ("healthy", "gap")
+                for leaf in ("control.json", "monitor-result.json", "resources.jsonl")}
+    if type(controls) is not dict or len(controls) != len(expected):
+        raise Incomplete("Source-policy monitor controls are incomplete.")
+    roots, received = set(), set()
+    for name, digest in controls.items():
+        if type(name) is not str or type(digest) is not str or re.fullmatch(r"[a-f0-9]{64}", digest) is None:
+            raise Incomplete("Source-policy monitor control identity is malformed.")
+        declared = Path(name)
+        if (not declared.is_absolute() or declared.as_posix() != name or ".." in declared.parts
+                or len(declared.parts) != 6 or declared.parts[:3] != ("/", "dev", "shm")
+                or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", declared.parts[3]) is None
+                or (declared.parts[-2], declared.name) not in expected):
+            raise Incomplete("Source-policy monitor control leaves its fixed declared RAM layout.")
+        roots.add(declared.parent.parent)
+        received.add((declared.parent.name, declared.name))
+        inputs[path.parent / "monitor-controls" / declared.parent.name / declared.name] = digest
+    if len(roots) != 1 or received != expected:
+        raise Incomplete("Source-policy monitor control roles or parent differ.")
+    raw = {}
+    for filename, digest in inputs.items():
+        raw[filename] = COMMON.read_analysis_bytes(filename, maximum=4 * 1024**2)
+        if hashlib.sha256(raw[filename]).hexdigest() != digest:
+            raise Incomplete("Source-policy physical monitor evidence is missing or changed.")
+    terminal = read_json(path.parent / "observer/monitor-result.json", expected_sha256=hashes[1])
+    if COMMON.canonical_sha256(terminal) != COMMON.canonical_sha256(result):
+        raise Incomplete("Source-policy physical monitor terminal result differs.")
+    admit_source_policy_resource_samples(raw[path.parent / "observer/resources.jsonl"], result)
+    for role in ("healthy", "gap"):
+        admit_source_policy_monitor_control(path.parent / "monitor-controls" / role, role, hashes[0], inputs, raw)
+    return {str(filename): digest for filename, digest in inputs.items()}
+
+
 def admit_source_policy_development(binding: dict, identity: dict) -> dict:
     """Retain prior-source development evidence without transferring a candidate pass.
 
@@ -6679,10 +6845,9 @@ def admit_source_policy_development(binding: dict, identity: dict) -> dict:
     path = Path(evidence["path"])
     reference = read_json(path, maximum=4 * 1024**2, expected_sha256=evidence["sha256"])
     if (PRODUCT.sha256(path) != evidence["sha256"] or reference.get("status") != "workload-passed"
-            or reference.get("custody_unchanged") is not True
-            or reference.get("resource_observer_joined") is not True
-            or reference.get("terminal_resource_failures") != []):
+            or reference.get("custody_unchanged") is not True):
         raise Incomplete("Source-policy development evidence lacks passing terminal custody.")
+    observer_inputs = admit_source_policy_observer(reference, path)
     previous = reference.get("source_sha256")
     if type(previous) is not dict:
         raise Incomplete("Source-policy development source identity is missing.")
@@ -6714,15 +6879,12 @@ def admit_source_policy_development(binding: dict, identity: dict) -> dict:
         if row["lane"] in {"default-ordinary", "default-optimized"}:
             source_policy_execution(raw["output"], binding)
         elif row["lane"] in {"ep1-ordinary", "ep1-optimized"}:
-            names = read_successful_address_records(raw["output"])
-            if (len(names) != SOURCE_POLICY_EP1_ORDINARY_COUNT
-                    or COMMON.canonical_sha256(sorted(names)) != SOURCE_POLICY_EP1_ORDINARY_DIGEST):
-                raise Incomplete("Source-policy EP1 execution omitted or substituted an admitted case.")
+            source_policy_ep1_execution(raw["output"], binding)
         elif row["lane"] in {"default-doctests", "ep1-doctests"}:
             docs = validate_engine_ke_doctests(raw["output"])["test_names"]
             if sorted(docs) != binding["doctest_inventory"]:
                 raise Incomplete("Source-policy development compiler examples differ.")
-    return admitted
+    return {**admitted, **observer_inputs}
 
 
 def execute_source_policy_profile(args, report: dict) -> None:

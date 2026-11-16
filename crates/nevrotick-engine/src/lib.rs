@@ -65,8 +65,9 @@ pub use relative::{
     ExperimentalReferenceNs, ExperimentalRelativeMeasurement, RelativeMeasurementRefusal,
 };
 pub use series::address_round::{
-    AddressAttempt, AddressRoundConfig, AddressRoundConfigError, AddressRoundEnd,
-    AddressRoundReport, PreparedAddressRound, execute_address_round, prepare_address_round,
+    AddressAttempt, AddressPolicyRefusal, AddressPolicyRefusalScope, AddressRoundConfig,
+    AddressRoundConfigError, AddressRoundEnd, AddressRoundReport, PreparedAddressRound,
+    execute_address_round, prepare_address_round,
 };
 pub use series::{
     PreparedSeries, SeriesAttempt, SeriesConfig, SeriesEnd, SeriesNotStartedCause, SeriesReport,
@@ -948,6 +949,9 @@ enum Phase {
 
 /// Exclusive runtime owner; no rearm or socket-cloning API.
 struct LiveSlot {
+    /// Invocation-local causal notification; absent from every production build.
+    #[cfg(test)]
+    test_final_guard_observer: Option<series::TestFinalGuardObserver>,
     /// Actual managed policy, wait custody and request stamp, or explicit unmanaged lab mode.
     policy: source_policy::LivePolicy,
     /// Sole registered native socket owner.
@@ -989,6 +993,8 @@ impl LiveSlot {
         let socket = UdpSocket::from_std(value.socket)
             .map_err(|e| PilotError::Registration(IoCause::capture(&e)))?;
         Ok(Self {
+            #[cfg(test)]
+            test_final_guard_observer: None,
             policy: source_policy::LivePolicy::from_mode(value.source_policy),
             socket,
             peer: value.peer,
@@ -1107,40 +1113,46 @@ fn retire_for_control(slots: &mut [LiveSlot; 2], state: Control) {
 }
 
 /// Attempt one nonblocking native send after current owner guards; never repeat a confirmed/anomalous send.
-fn attempt_send(slot: &mut LiveSlot, deadline: Instant, control: &watch::Receiver<Control>) {
+/// Return the exact serialized control checkpoint that admitted or retired this attempt.
+fn attempt_send(
+    slot: &mut LiveSlot,
+    deadline: Instant,
+    control: &watch::Receiver<Control>,
+) -> Control {
     // Keep the actual invocation's read custody through the concrete synchronous
     // sender. Stop/invalidation linearizes before this guard or after the effect.
     let state = control.borrow();
     if state.stop {
         slot.finish(TerminalOutcome::Stopped);
-        return;
+        return *state;
     }
     if state.epoch != 0 {
         slot.finish(TerminalOutcome::Stale);
-        return;
+        return *state;
     }
     if !slot.can_send() {
-        return;
+        return *state;
     }
     if slot.send_attempts == SEND_READY_CAP {
         slot.finish(TerminalOutcome::Budget);
-        return;
+        return *state;
     }
     if matches!(
         source_policy::attempt_managed_send(slot, deadline),
         source_policy::ManagedEffect::Handled
     ) {
-        return;
+        return *state;
     }
     slot.send_attempts += 1;
     let before = SoftwareClock::capture();
     if before.mono >= deadline {
         slot.expire();
-        return;
+        return *state;
     }
     let result = slot.socket.try_send_to(&slot.packet, slot.peer);
     let after = SoftwareClock::capture();
     complete_send(slot, result, SendBracket { before, after });
+    *state
 }
 
 /// Consume the completed synchronous send result while retaining its adjacent bracket.

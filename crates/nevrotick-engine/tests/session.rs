@@ -21,6 +21,9 @@ use nevrotick_engine::{
 };
 use ntp_wire::RawHeader;
 
+#[path = "private/series_process.rs"]
+mod session_process;
+
 /// Keep native/driver fixture errors typed; generic errors never earn semantic credit.
 type Check<T> = Result<T, Box<dyn Error + Send + Sync>>;
 /// Bound the independent peer and its actual-return acknowledgement.
@@ -166,6 +169,7 @@ fn check(condition: bool, fact: &'static str) -> io::Result<()> {
     if condition {
         Ok(())
     } else {
+        session_process::semantic_check_failed(fact);
         Err(io::Error::other(fact))
     }
 }
@@ -695,6 +699,11 @@ fn unchanged(report: &AcquisitionReport, saved: &[Snapshot]) -> Check<()> {
 /// Preserve real fixture/driver errors after bounded peer join.
 #[test]
 fn two_requested_series_share_chart_keep_distinct_runs_and_old_handles_isolated() -> Check<()> {
+    if session_process::parent_or_child(
+        "two_requested_series_share_chart_keep_distinct_runs_and_old_handles_isolated",
+    )? {
+        return Ok(());
+    }
     let peer = UdpSocket::bind(SocketAddr::from(([127, 0, 0, 1], 0)))?;
     let before = Instant::now();
     let mut owner = AcquisitionSession::new(config(peer.local_addr()?)?);
@@ -774,6 +783,11 @@ fn two_requested_series_share_chart_keep_distinct_runs_and_old_handles_isolated(
 /// Preserve native/driver/control failures and require a healthy replacement neighbor.
 #[test]
 fn stale_execution_retires_owner_without_refreshing_retained_facts() -> Check<()> {
+    if session_process::parent_or_child(
+        "stale_execution_retires_owner_without_refreshing_retained_facts",
+    )? {
+        return Ok(());
+    }
     let peer = UdpSocket::bind(SocketAddr::from(([127, 0, 0, 1], 0)))?;
     let mut owner = AcquisitionSession::new(config(peer.local_addr()?)?);
     let (first, _first_control) = run_three(&mut owner, &peer, None, Ok(()))?;
@@ -815,6 +829,11 @@ fn stale_execution_retires_owner_without_refreshing_retained_facts() -> Check<()
 /// Preserve real preparation/runtime/driver errors; no query-count assumption is made.
 #[test]
 fn clean_stop_and_real_deadline_each_allow_a_fresh_preparation() -> Check<()> {
+    if session_process::parent_or_child(
+        "clean_stop_and_real_deadline_each_allow_a_fresh_preparation",
+    )? {
+        return Ok(());
+    }
     let peer = UdpSocket::bind(SocketAddr::from(([127, 0, 0, 1], 0)))?;
     let config = product_ok(
         SeriesConfig::new(
@@ -872,6 +891,11 @@ fn clean_stop_and_real_deadline_each_allow_a_fresh_preparation() -> Check<()> {
 /// Preserve real socket/configuration/driver/peer failures outside semantic credit.
 #[test]
 fn session_reference_refusals_preserve_original_causes_and_checked_positions() -> Check<()> {
+    if session_process::parent_or_child(
+        "session_reference_refusals_preserve_original_causes_and_checked_positions",
+    )? {
+        return Ok(());
+    }
     let peer = UdpSocket::bind(SocketAddr::from(([127, 0, 0, 1], 0)))?;
     let address = peer.local_addr()?;
     let outside_profile = product_ok(

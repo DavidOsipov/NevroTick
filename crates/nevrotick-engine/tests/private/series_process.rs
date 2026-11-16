@@ -14,7 +14,7 @@ const CHILD_WALL: Duration = Duration::from_secs(5);
 const REAP_WALL: Duration = Duration::from_millis(500);
 const OUTPUT_LIMIT: u64 = 16_384;
 const COVERAGE_PROFILE: &str = "/work/target/llvm-cov-target/source-%p-%m.profraw";
-const CASES: [&str; 12] = [
+const CASES: [&str; 19] = [
     "series::tests::single_slot_driver_enforces_receive_cap_with_valid_boundary_neighbor",
     "series::tests::single_slot_driver_enforces_send_cap_with_valid_boundary_neighbor",
     "series::tests::setup_and_registration_failures_preserve_actual_prior_completion",
@@ -27,6 +27,13 @@ const CASES: [&str; 12] = [
     "stop_preserves_first_completion_and_marks_third_not_started",
     "invalidation_preserves_first_completion_and_marks_third_not_started",
     "total_deadline_preserves_first_completion_and_prevents_third_send",
+    "two_requested_series_share_chart_keep_distinct_runs_and_old_handles_isolated",
+    "stale_execution_retires_owner_without_refreshing_retained_facts",
+    "clean_stop_and_real_deadline_each_allow_a_fresh_preparation",
+    "session_reference_refusals_preserve_original_causes_and_checked_positions",
+    "actual_series_quality_retains_signed_intervals_source_and_original_age",
+    "absent_measurement_refuses_quality_with_actual_valid_neighbor",
+    "actual_quality_limits_refuse_without_rewriting_completion_or_age",
 ];
 
 /// Run the whole named body in an owned child, or admit that exact child body.
@@ -215,12 +222,16 @@ impl OwnedCase {
     }
 
     /// Kill/reap only this retained child before releasing any capture ownership.
+    /// Sample expiry before the corresponding actual status observation, matching
+    /// `wait()`. Observed exit wins; this does not prove exit happened within the bound.
     /// # Errors
     /// Preserve kill/wait failure. All finish/cleanup/Drop calls share one reap budget.
     fn stop(&mut self) -> io::Result<()> {
         let Some(child) = self.child.as_mut() else {
             return Ok(());
         };
+        let began = *self.reap_started.get_or_insert_with(Instant::now);
+        let budget_elapsed = began.elapsed() >= REAP_WALL;
         if child
             .try_wait()
             .map_err(|error| native_error("initial reap observation failed", &error))?
@@ -228,8 +239,7 @@ impl OwnedCase {
         {
             return Ok(());
         }
-        let began = *self.reap_started.get_or_insert_with(Instant::now);
-        if began.elapsed() >= REAP_WALL {
+        if budget_elapsed {
             return Err(io::Error::other(
                 "N3 owned child global reap deadline exceeded",
             ));
@@ -243,6 +253,7 @@ impl OwnedCase {
             return Err(native_error("kill failed", &error));
         }
         loop {
+            let budget_elapsed = began.elapsed() >= REAP_WALL;
             if child
                 .try_wait()
                 .map_err(|error| native_error("reap observation failed", &error))?
@@ -250,7 +261,7 @@ impl OwnedCase {
             {
                 return Ok(());
             }
-            if began.elapsed() >= REAP_WALL {
+            if budget_elapsed {
                 return Err(io::Error::other(
                     "N3 owned child global reap deadline exceeded",
                 ));
@@ -498,32 +509,7 @@ fn semantic_evidence(stderr: &str, name: &str) -> Option<String> {
         let mut parts = location.trim_end_matches(':').rsplitn(3, ':');
         let column = parts.next()?.parse::<u32>().ok()?;
         let row = parts.next()?.parse::<u32>().ok()?;
-        let path = match parts.next()? {
-            // This is the one spelling emitted for the path-included private test.
-            "crates/nevrotick-engine/src/../tests/private/series.rs" => {
-                "crates/nevrotick-engine/tests/private/series.rs"
-            }
-            path => path,
-        };
-        let (source, kind) = [
-            (
-                "crates/nevrotick-engine/tests/private/series.rs",
-                "test assertion/panic",
-            ),
-            (
-                "crates/nevrotick-engine/tests/series.rs",
-                "test assertion/panic",
-            ),
-            ("crates/nevrotick-engine/src/lib.rs", "product panic"),
-            ("crates/nevrotick-engine/src/series.rs", "product panic"),
-            (
-                "crates/nevrotick-engine/src/measurement.rs",
-                "product panic",
-            ),
-            ("crates/nevrotick-engine/src/relative.rs", "product panic"),
-        ]
-        .into_iter()
-        .find(|(source, _)| path == *source)?;
+        let (source, kind) = admitted_panic_site(parts.next()?)?;
         if row != 0 && column != 0 {
             return Some(format!("{kind} at {source}:{row}:{column}"));
         }
@@ -531,11 +517,92 @@ fn semantic_evidence(stderr: &str, name: &str) -> Option<String> {
     None
 }
 
+/// Retain exact admitted source spellings, including the two compiler aliases.
+/// Unknown prefixes, traversals and unregistered files provide no semantic cause.
+fn admitted_panic_site(path: &str) -> Option<(&'static str, &'static str)> {
+    let source = match path {
+        "crates/nevrotick-engine/src/../tests/private/series.rs"
+        | "crates/nevrotick-engine/tests/private/series.rs" => {
+            "crates/nevrotick-engine/tests/private/series.rs"
+        }
+        "crates/nevrotick-engine/src/../tests/private/processing_guards.rs"
+        | "crates/nevrotick-engine/tests/private/processing_guards.rs" => {
+            "crates/nevrotick-engine/tests/private/processing_guards.rs"
+        }
+        "crates/nevrotick-engine/tests/series.rs" => "crates/nevrotick-engine/tests/series.rs",
+        "crates/nevrotick-engine/tests/session.rs" => "crates/nevrotick-engine/tests/session.rs",
+        "crates/nevrotick-engine/tests/quality.rs" => "crates/nevrotick-engine/tests/quality.rs",
+        "crates/nevrotick-engine/src/lib.rs" => {
+            return Some(("crates/nevrotick-engine/src/lib.rs", "product panic"));
+        }
+        "crates/nevrotick-engine/src/series.rs" => {
+            return Some(("crates/nevrotick-engine/src/series.rs", "product panic"));
+        }
+        "crates/nevrotick-engine/src/measurement.rs" => {
+            return Some((
+                "crates/nevrotick-engine/src/measurement.rs",
+                "product panic",
+            ));
+        }
+        "crates/nevrotick-engine/src/relative.rs" => {
+            return Some(("crates/nevrotick-engine/src/relative.rs", "product panic"));
+        }
+        _ => return None,
+    };
+    Some((source, "test assertion/panic"))
+}
+
+/// Check the additional fixture and integration sites through the real reader.
+/// # Panics
+/// Reject a hidden preflight cause or an unrelated integration-test thread.
+fn check_added_panic_sites() {
+    let name = "series::tests::setup_and_registration_failures_preserve_actual_prior_completion";
+    let panic_at = |thread: &str, path: &str| {
+        format!(
+            "thread '{thread}' (7) panicked at {path}:23:7:\nassertion `left == right` failed\n"
+        )
+    };
+    for (name, path) in [
+        (
+            name,
+            "crates/nevrotick-engine/tests/private/processing_guards.rs",
+        ),
+        (
+            "two_requested_series_share_chart_keep_distinct_runs_and_old_handles_isolated",
+            "crates/nevrotick-engine/tests/session.rs",
+        ),
+        (
+            "actual_series_quality_retains_signed_intervals_source_and_original_age",
+            "crates/nevrotick-engine/tests/quality.rs",
+        ),
+    ] {
+        assert_eq!(
+            semantic_evidence(&panic_at(name, path), name),
+            Some(format!("test assertion/panic at {path}:23:7"))
+        );
+        assert!(semantic_evidence(&panic_at("foreign::test", path), name).is_none());
+    }
+    assert_eq!(
+        semantic_evidence(
+            &panic_at(
+                name,
+                "crates/nevrotick-engine/src/../tests/private/processing_guards.rs"
+            ),
+            name,
+        )
+        .as_deref(),
+        Some(
+            "test assertion/panic at crates/nevrotick-engine/tests/private/processing_guards.rs:23:7"
+        )
+    );
+}
+
 /// Admit only the named test's exact source spellings and retain incomplete errors.
 /// # Panics
-/// Require canonical evidence for the two admitted paths and reject every control.
+/// Require canonical evidence for the named test sites and reject every control.
 #[test]
 fn semantic_evidence_accepts_only_exact_named_admitted_sites() {
+    check_added_panic_sites();
     let name = "series::tests::setup_and_registration_failures_preserve_actual_prior_completion";
     let canonical = "crates/nevrotick-engine/tests/private/series.rs";
     let compiler_alias = "crates/nevrotick-engine/src/../tests/private/series.rs";
@@ -571,6 +638,14 @@ fn semantic_evidence_accepts_only_exact_named_admitted_sites() {
         panic_at(
             name,
             "crates/nevrotick-engine/src/../../tests/private/series.rs",
+        ),
+        panic_at(
+            name,
+            "/foreign/crates/nevrotick-engine/tests/private/processing_guards.rs",
+        ),
+        panic_at(
+            name,
+            "crates/nevrotick-engine/src/../../tests/private/processing_guards.rs",
         ),
         String::from("Error: InternalState\n"),
         String::from("Error: Elapsed(())\n"),

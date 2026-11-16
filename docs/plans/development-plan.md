@@ -1066,6 +1066,43 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
+**Active Engine continuation — 16 November 2026:**
+[Managed fixed-address rounds](../../tasks/engine-transport-pilot.md#batch-count-survivor-control-and-current-requalification--16-november-2026)
+pass all twelve source/development lanes on `582a995a…`: 241 default/475 EP1 cases
+per ordinary/optimized mode, 75 doctests per graph and GNU/MSVC checks/Clippy.
+The preceding `e80714d9…` source-policy cohort failed on one non-equivalent
+raw batch-count guard survivor despite its numerical 99.115% score. Production
+source was correct; the existing pure test now directly checks empty/four-peer
+refusal without endpoint publication or fact changes, with valid one/three-peer
+and capacity neighbors. Focused fault/restored controls pass, as do three
+whole-library 215-case retirement faults and six restored 241/75 selections.
+Current development and all five E receiving controls pass with 22 physical
+development references; this is no current mutation pass. Next run fresh current
+metadata and baseline/listing/line metrics, then the five bounded owner cohorts
+at the unchanged 95% gates. Current 350-case tooling, line, 691-listing and mutation
+qualification remain open. Earlier `e80714d9…` metrics and historical C2 scores
+retain their candidates. Public campaigns stay closed. Preserve §6.5, original
+cutoffs/floors/custody and production/native/hosted/release exits; no new graph,
+Core-positive supplier or formal execution. Publication stays stage-only.
+
+**Retained C2 qualification — 16 November 2026:**
+[The KoD audit corrections](../../tasks/engine-transport-pilot.md#kod-audit-corrections--selected-qualification-complete--16-november-2026) complete the selected
+five-owner GNU fixture checkpoint on product `0c7f5a6d…`: five executable-line
+coverage gates exceed 90%; all five generated-mutation gates exceed 95%.
+The complete 637-descriptor union contains 340 meaningful catches, 292 genuine
+compiler-unviable variants, five independently justified equivalents, no Cargo
+mutation timeouts and no unresolved survivors. Equivalents contribute no kills. Current
+development retains 233 default/467 EP1 cases per build mode, 73 doctests per
+graph and 347 tooling cases. The guarded terminal snapshot and complete EP1
+roster repairs remain intact. Every failed child attempt stays recorded;
+a mixed mutant's nested cleanup uncertainty earns no credit or acknowledgement.
+This completes this bounded qualification phase, not Core/Engine production or
+native integration. Continue the existing Engine-to-Core supplier and optional
+KE qualification queue; re-admit changed inputs before its dependent campaigns.
+Main campaigns remain closed with empty inventories. Preserve separate native,
+branch, hosted, service/clock/package/release exits, unrelated holds and the
+post-V1 formal deferral. Publication remains stage-only.
+
 **Ordinary workflow resumed — 14 November 2026:** David subsequently instructs
 “No need, just carry on work in our ordinary fashion”. Resume ordinary bounded
 Core/Engine implementation and required verification through configured runners;
@@ -1404,6 +1441,61 @@ No shipped poll intervals, persistence or production/
 native qualification are selected. The KoD decision itself grants no heavy-work
 restart; David's later separate restart is governed by the V10 admission above.
 Cross-restart continuity, production suppliers and other holds remain separate.
+
+The [six survivor controls](../../tasks/engine-transport-pilot.md#six-survivor-controls--development-verified-15-november-2026)
+now pass source development on `9114ef7f…`: 215 default/449 EP1 cases in each
+ordinary/optimized build, 73 doctests per profile and all 34 KoD cases, with
+GNU/MSVC checks/Clippy. Real mutex poisoning through public preparation and the
+selected full/empty/oversized re-enable, genuine receiving-identity and one-sided
+epoch boundaries have actual scoped evidence. The only product delta is the
+private test file. No new coverage/mutation score or native result is adopted.
+Next complete live-contention/final-send/final-commit controls, then re-admit the
+final source/helper/roster/inventories under the same per-owner gates. Main stays
+closed at its older binding; do not transfer V6's failed score or V5 line scores
+to this new candidate. KoD native selection needs a bounded extension of the
+existing KE-only runner before its namespace can actually execute on Windows.
+
+The subsequent [live/final-commit child](../../tasks/engine-transport-pilot.md#live-and-final-commit-controls--development-verified-15-november-2026)
+passes all twelve current development lanes on `c633a643…`: 219 default/453 EP1
+ordinary and optimized cases, 73 doctests per profile, all 38 KoD cases and
+GNU/MSVC checks/Clippy. Exactly four test groups are added; production code,
+helpers and graph remain unchanged. Their actual live/final-leaf refusal and
+healthy-neighbor observations retain the documented clock/replay sensitivity
+limits. Next rebind the stable source/helper/219-case roster/development receipt,
+run fresh configured controls, baseline, all-five enumeration and coverage, then
+review actual typed inventories before a bounded private mutation cohort. Keep
+90%/95%, empty equivalences, original budgets and main's closed state; the failed
+V6 score and earlier line gates keep their exact historical candidates.
+
+The [owner-audited runtime/reader repairs](../../tasks/engine-transport-pilot.md#audit-repairs--verified-closeout-16-november-2026)
+now pass source development on `db58083c…`: 225 default/459 EP1 cases in both
+build modes, 73 doctests per profile and all 336 Python controls. The guarded
+terminal snapshot now reaches receiving custody; real public-session Stop reuse
+and invalidation retirement remain distinct, and later Stop cannot rewrite an
+earlier committed result. EP1 development admission now checks complete actual
+rosters in both modes. Current source/helper/reference bindings are coherent and
+the real reference is admitted, with main generated campaigns still closed and
+90%/95% unchanged. Continue fresh baseline/coverage/all-five enumeration before
+reviewed private mutation; none of those metrics or native/release gates is
+closed by the source repair. Preserve every earlier failed/incomplete result.
+
+That [fresh preparation](../../tasks/engine-transport-pilot.md#repaired-candidate-metrics--verified-preparation-16-november-2026)
+now passes all five unchanged 90% line gates, the complete 225-case ordinary and
+73-doctest baseline, and complete enumeration/review of 629 current descriptors.
+Next select separately bounded named owner mutation cohorts; every owner fits
+the 512 cap, while the union does not. Preserve 95% per file, main's closed
+state, generation gaps and the historical V6 failure. No current mutation,
+branch, native or production qualification follows from this preparation.
+
+The [V12 clock/waiter boundary repair](../../tasks/engine-transport-pilot.md#clock-and-waiter-boundary-repair-v12--verified-development-16-november-2026)
+now passes development on `aa0a550f…`: 231 default/465 EP1 cases per build
+mode, 73 doctests per graph, 336 Python controls, five production-parent
+compiler controls and four targeted causal RED/healthy/restored checks.
+The interrupted V11 attempts stay recorded; the phase remains active under
+David's instruction to repair failures and continue until success. Fresh
+all-five coverage/catalogues and per-file 95% mutation gates are next;
+no old score transfers to these changed bytes. Campaigns stay closed in main,
+with unchanged 90%/95% thresholds and separate native/production/release holds.
 
 The implemented [adaptive correction](../../tasks/s1.3-source-selection-readiness.md#adaptive-phase-correction--implementation-contract-13-november-2026)
 and [matched finite-step mechanism](../../tasks/s1.3-source-selection-readiness.md#matched-step-source-implementation-and-focused-checks--13-november-2026)

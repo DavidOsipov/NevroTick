@@ -9,6 +9,34 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**Active Core/Engine work — 16 November 2026:**
+[Managed fixed-address rounds](../tasks/engine-transport-pilot.md#batch-count-survivor-control-and-current-requalification--16-november-2026)
+pass source/development checks on `582a995a…`: all twelve lanes, 241 default/475
+EP1 cases per mode and 75 doctests per graph. The preceding `e80714d9…`
+source-policy cohort failed its gate on one genuine raw batch-count survivor.
+The existing pure test now checks empty/four-peer refusal, no publication and
+valid one/three-peer neighbors; focused fault/restored controls pass. Three
+whole-library 215-case retirement controls and six restored 241/75 runs also pass.
+Current development and E5 receiving admission pass; public campaigns stay closed.
+Next run fresh metadata and metrics, then all five bounded owner cohorts at 95%.
+Current 350-case tooling, line, listing and mutation gates are not yet requalified.
+The earlier `e80714d9…` line/listing results and retained C2 scores keep their own
+candidates. Existing source restrictions, cutoffs, floors and custody remain;
+no new dependency, production Core authority, native or release qualification.
+Updated skill tools remain in separate owned environments documented in TOOLING.md.
+
+**Retained C2 KoD qualification — 16 November 2026:**
+[The selected five-owner qualification](../tasks/engine-transport-pilot.md#kod-audit-corrections--selected-qualification-complete--16-november-2026)
+now passes on product `0c7f5a6d…`: all five 90% line and 95% generated-mutation
+gates; 637 variants reconcile as 340 meaningful catches, 292 compiler-unviable
+and five reviewed equivalents, with no Cargo mutation timeouts or unresolved survivors.
+Development retains 233 default/467 EP1 cases per mode, 73 doctests per graph,
+GNU/MSVC checks and 347 tooling cases. The terminal-control race and EP1 reader
+repairs are verified. Historical failures and one nested cleanup uncertainty
+remain explicit; neither supplies kill credit. Main campaigns remain closed.
+Production suppliers, optional KE metrics, native, hosted and release exits stay
+separate. The dated records below retain their original candidates and scope.
+
 **KoD owner decision — 15 November 2026:**
 [NV-DEC-001 §6.5](nevrotick-owner-decisions.md#65-kod-source-lifecycle--15-november-2026)
 now accepts the amended bounded same-process integration. Exact remote-endpoint
@@ -58,7 +86,50 @@ now completes all 133 variants: 61 caught, 41 compiler-unviable, 31 surviving,
 zero timeouts. Its 66.30% viable score fails the unchanged 95% gate. Next repair
 the focused refusal, correlation and lifecycle test gaps; four other owner
 cohorts remain unrun. The 627 union stays above the 512 cap. Main stays closed;
-actual mutex-poison evidence and broader qualification remain open.
+at that candidate, actual mutex-poison evidence and broader qualification remain
+open. The following child supplies the narrower public-preparation evidence.
+
+The [six survivor controls](../tasks/engine-transport-pilot.md#six-survivor-controls--development-verified-15-november-2026)
+now pass development on `9114ef7f…`: 215 default/449 EP1 cases in each build mode,
+73 doctests per profile, all 34 KoD controls, GNU/MSVC checks and Clippy. Actual
+mutex poisoning and the selected re-enable/receiving boundaries have scoped
+behavioral evidence. Production source is unchanged. No generated kill or new
+metric/native gate is credited; finish the live/final-commit controls before
+fresh metric admission. The current native runner selects KE cases and cannot
+supply a KoD native pass without a bounded extension.
+
+The [live/final-commit controls](../tasks/engine-transport-pilot.md#live-and-final-commit-controls--development-verified-15-november-2026)
+then pass all twelve development lanes on `c633a643…`: 219 default/453 EP1 cases
+in both build modes, 73 doctests per profile and all 38 KoD cases. Four added
+groups cover repeated live contention, a floor introduced after readiness and
+final-leaf correlation/accounting refusal. Next re-admit current source, helper
+pins, roster and inventories for fresh metrics. Main stays closed; no old score,
+generated kill, native or production qualification is transferred.
+
+The [owner-audited checkpoint/EP1 repairs](../tasks/engine-transport-pilot.md#audit-repairs--verified-closeout-16-november-2026)
+now pass current development: 225 default/459 EP1 cases per build mode, 73
+doctests per profile and all 336 Python controls. Actual final-guard snapshots
+prevent clean cancellation becoming an internal transfer failure; real session
+Stop reuse, invalidation retirement and postcommit history are covered. Both
+EP1 modes require their complete admitted roster, including rejection of empty
+or substituted logs. The real current reference and all 43 pins are admitted;
+generated campaigns remain closed pending fresh coverage/inventory qualification.
+
+Fresh [repaired-candidate metric preparation](../tasks/engine-transport-pilot.md#repaired-candidate-metrics--verified-preparation-16-november-2026)
+now passes all five 90% line gates with 225 ordinary cases and 73 doctests.
+All 629 current descriptors receive complete source/diff and generation-gap
+review. Next admit separately bounded owner mutation cohorts at unchanged 95%;
+current mutation qualification remains open and main remains closed.
+
+The [V12 clock/waiter boundary repair](../tasks/engine-transport-pilot.md#clock-and-waiter-boundary-repair-v12--verified-development-16-november-2026)
+now passes development on `aa0a550f…`: 231 default/465 EP1 cases per build
+mode, 73 doctests per graph, 336 Python controls, five production-parent
+compiler controls and four targeted causal RED/healthy/restored checks.
+The interrupted V11 attempts stay recorded; the phase remains active under
+David's instruction to repair failures and continue until success. Fresh
+all-five coverage/catalogues and per-file 95% mutation gates are next;
+no old score transfers to these changed bytes. Campaigns stay closed in main,
+with unchanged 90%/95% thresholds and separate native/production/release holds.
 
 **Current ordinary continuation — 14 November 2026:** David subsequently
 requests returning to ordinary work. Resume bounded Core/Engine verification

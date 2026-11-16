@@ -612,6 +612,58 @@ Preserve post-V1 formal deferral and all Windows execution, fuzz, storage, UI,
 package and release holds. This source scan creates no native pass or fresh
 coverage/mutation score.
 
+## Local Engine reconciliation — 16 November 2026
+
+David requests critical assessment of the completed scan report. The source
+checkpoint above explicitly selects clean `bb90f0c5` and excludes unpublished
+WSL work. Later remote guidance commits through `f06d57b0` change no product or
+verification-helper bytes. Its terminal-snapshot race is the same defect already
+reproduced and repaired by the existing Engine owner, not a second finding.
+
+The actual final read now supplies the snapshot returned from `attempt_send`
+and reply publication through `run_request` into `SeriesReceiver::receive`.
+The receiving invariant stays strict; later Stop does not replace a historical
+successful checkpoint. Four deterministic Stop/invalidation RED cases, their
+healthy/postcommit neighbors and real public-session reuse/retirement controls
+pass. The [Engine audit repair](engine-transport-pilot.md#audit-repairs--verified-closeout-16-november-2026)
+and [V12 continuation](engine-transport-pilot.md#clock-and-waiter-boundary-repair-v12--verified-development-16-november-2026)
+own the original repair and earlier evidence. The later
+[selected five-owner checkpoint](engine-transport-pilot.md#kod-audit-corrections--selected-qualification-complete--16-november-2026)
+qualifies product `0c7f5a6d…` within its GNU default fixture scope: five 90% line
+and 95% mutation gates, 637 reconciled variants and zero unresolved survivors or
+Cargo mutation timeouts. Development retains 233 default/467 EP1 cases per mode, 73 doctests
+per graph and 347 tooling cases. One nested cleanup uncertainty remains explicit
+and receives no kill credit. Remote `e86f63a8` and its three additional reader
+controls were adopted; the final fetch still matches that HEAD.
+These local changes remain unpublished; the old databases qualify no repaired bytes.
+
+Source inspection confirms the nonce helper's `nonce: usize` is a length and
+its byte fixtures feed a copy-only packet formatter. The inspected process
+harnesses use exclusive temporary-directory/capture creation, fixed leaves and
+closed child arguments; self-respawn clears its environment. The CLI child's
+inherited environment still depends on the configured outer admission. These
+facts support the report's bounded dispositions; they establish no safe hostile
+same-UID replacement, arbitrary ambient invocation or whole-crypto clearance.
+No application repair or warning suppression is justified by those alert labels.
+
+The cloud root `/workspace/.nevrotick-cloud/codeql-refresh-20261115-v1/` is not
+available in this WSL checkout. Its 164 BQRS files, alert counts, complete
+fingerprints, extraction diagnostics and query-control results have not been
+independently reopened here; they retain the reporting agent's evidence scope.
+The 608-file CodeQL projection and 605-input Engine product map are distinct
+inventories, not interchangeable candidate counts. Missing macro expansion,
+generated bodies, dependency implementations and narrow builtin remote-source
+coverage remain analysis limitations, not proof of safe ingress or a demonstrated
+runtime bug. Use CHECK-19 for source/tooling analysis, CHECK-25 for domain
+invariants and CHECK-24 for independent exact-candidate review, following the
+[canonical acceptance catalog](../docs/windows-time-architecture.md#202-acceptance-catalog).
+After the repaired source is published, refresh exact-source analysis and select
+narrow runtime-ingress questions/models with independent endpoints and refusal
+controls. Do not rerun
+the 30-GiB cloud profile in the smaller WSL envelope or invent model edges merely
+to obtain a path. No new dependency, security exception, native pass or lifted
+formal/fuzz/storage/UI/package/release hold follows.
+
 ## Incremental flow-audit skills — 15 November 2026 (UTC)
 
 David requested a more efficient long-chain audit method, updated skills,

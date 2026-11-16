@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Independent lifecycle guards; modeled execution cases create no native work.
+//! Independent lifecycle guards, with modeled and bounded actual loopback cases.
 
 use super::*;
 use std::{net::SocketAddr, panic::AssertUnwindSafe, time::Duration};
@@ -451,6 +451,256 @@ fn synthetic_execution_unwind_retires_and_releases_prepared_resources() -> Check
     assert_eq!(control.sender.receiver_count(), 0);
     assert_eq!(owner.state, SessionState::Retired);
     assert!(matches!(owner.prepare(), Err(AcquisitionError::Retired)));
+    Ok(())
+}
+
+/// A public-session race at one actual final guard or its committed neighbor.
+#[derive(Clone, Copy)]
+enum PublicSessionCheckpointRace {
+    /// Stop after writable readiness but before the final sender guard.
+    WritableStop,
+    /// Invalidate after writable readiness but before the final sender guard.
+    WritableInvalidate,
+    /// Stop after genuine reply staging but before the final commit guard.
+    ReplyStop,
+    /// Invalidate after genuine reply staging but before the final commit guard.
+    ReplyInvalidate,
+    /// Stop after actual Header commit without rewriting its historical record.
+    ReplyCommittedStop,
+}
+
+impl PublicSessionCheckpointRace {
+    /// Only reply-boundary controls allow the single real query to leave.
+    fn needs_reply(self) -> bool {
+        matches!(
+            self,
+            Self::ReplyStop | Self::ReplyInvalidate | Self::ReplyCommittedStop
+        )
+    }
+
+    /// Invalidation retires this issuer; clean stop permits explicit reuse.
+    fn invalidates(self) -> bool {
+        matches!(self, Self::WritableInvalidate | Self::ReplyInvalidate)
+    }
+
+    /// Select a no-capture callback; the actual plan supplies its own handle.
+    /// # Panics
+    /// The returned invalidation callbacks reject failure of a fresh genuine epoch advance.
+    fn observer(self) -> fn(crate::series::TestFinalGuardEvent, &ControlHandle) {
+        match self {
+            Self::WritableStop => |event, handle| {
+                if matches!(event, crate::series::TestFinalGuardEvent::WritableBefore) {
+                    handle.stop();
+                }
+            },
+            Self::WritableInvalidate => |event, handle| {
+                if matches!(event, crate::series::TestFinalGuardEvent::WritableBefore) {
+                    assert!(
+                        handle.invalidate().is_ok(),
+                        "fresh writable epoch could not advance"
+                    );
+                }
+            },
+            Self::ReplyStop => |event, handle| {
+                if matches!(event, crate::series::TestFinalGuardEvent::ReplyBefore) {
+                    handle.stop();
+                }
+            },
+            Self::ReplyInvalidate => |event, handle| {
+                if matches!(event, crate::series::TestFinalGuardEvent::ReplyBefore) {
+                    assert!(
+                        handle.invalidate().is_ok(),
+                        "fresh reply epoch could not advance"
+                    );
+                }
+            },
+            Self::ReplyCommittedStop => |event, handle| {
+                if matches!(event, crate::series::TestFinalGuardEvent::ReplyAfter) {
+                    handle.stop();
+                }
+            },
+        }
+    }
+}
+
+/// Reply to exactly one genuine full query, returning the owned socket for a
+/// post-execution no-extra-query observation after this worker has joined.
+/// # Errors
+/// Preserve bounded native I/O failures and reject incomplete or malformed queries/replies.
+fn serve_public_session_checkpoint(
+    peer: std::net::UdpSocket,
+) -> std::io::Result<std::net::UdpSocket> {
+    let mut query = [0_u8; crate::RECEIVE_BYTES];
+    let (length, client) = peer.recv_from(&mut query)?;
+    if length != crate::PACKET_BYTES || query[0] != 0x23 || query[40..48] == [0_u8; 8] {
+        return Err(std::io::Error::other(
+            "checkpoint peer did not receive one genuine query",
+        ));
+    }
+    let mut reply = [0_u8; crate::PACKET_BYTES];
+    reply[0] = 0x24;
+    reply[1] = 2;
+    reply[24..32].copy_from_slice(&query[40..48]);
+    reply[32..40].copy_from_slice(&1_u64.to_be_bytes());
+    reply[40..48].copy_from_slice(&2_u64.to_be_bytes());
+    if peer.send_to(&reply, client)? != crate::PACKET_BYTES {
+        return Err(std::io::Error::other(
+            "checkpoint peer did not send its complete reply",
+        ));
+    }
+    Ok(peer)
+}
+
+/// Assess only the actual public execute result after all owned workers joined.
+/// # Errors
+/// Preserve actual missing-record, no-extra-query and same-issuer preparation failures.
+/// # Panics
+/// Fail if final control custody loses a report, invents facts/cleanup, sends
+/// after pre-send control, or changes the original reuse/retirement disposition.
+fn assert_public_session_checkpoint(
+    case: PublicSessionCheckpointRace,
+    report: &AcquisitionReport,
+    owner: &mut AcquisitionSession,
+    control: &ControlHandle,
+    peer: &std::net::UdpSocket,
+) -> Check<()> {
+    let series = report.series();
+    let stale = case.invalidates();
+    let expected_end = if stale {
+        SeriesEnd::Stale
+    } else {
+        SeriesEnd::Stopped
+    };
+    assert_eq!(series.end(), expected_end);
+    assert!(series.primary_failure().is_none());
+    assert!(series.stop_cleanup_failure().is_none());
+    assert!(series.invalidate_cleanup_failure().is_none());
+    let [first, later @ ..] = series.attempts();
+    let record = first
+        .report()
+        .ok_or_else(|| std::io::Error::other("actual checkpoint report missing"))?;
+    let committed = matches!(case, PublicSessionCheckpointRace::ReplyCommittedStop);
+    let expected_status = if committed {
+        crate::Status::Header
+    } else if stale {
+        crate::Status::Stale
+    } else {
+        crate::Status::Stopped
+    };
+    assert_eq!(record.status(), expected_status);
+    assert_eq!(record.sent(), case.needs_reply());
+    assert_eq!(record.received(), u16::from(case.needs_reply()));
+    assert_eq!(record.rejected(), 0);
+    assert_eq!(record.facts().is_some(), committed);
+    assert!(record.io_cause().is_none());
+    let remaining = if stale {
+        crate::SeriesNotStartedCause::Stale
+    } else {
+        crate::SeriesNotStartedCause::Stopped
+    };
+    assert!(later.iter().all(
+        |attempt| attempt.report().is_none() && attempt.not_started_cause() == Some(remaining)
+    ));
+    assert_eq!(control.sender.receiver_count(), 0);
+    peer.set_nonblocking(true)?;
+    let mut bytes = [0_u8; crate::RECEIVE_BYTES];
+    assert!(
+        matches!(peer.recv_from(&mut bytes), Err(error) if error.kind() == std::io::ErrorKind::WouldBlock)
+    );
+    if stale {
+        assert_eq!(owner.state, SessionState::Retired);
+        assert!(matches!(owner.prepare(), Err(AcquisitionError::Retired)));
+    } else {
+        assert_eq!(owner.state, SessionState::Idle);
+        let chart = Arc::clone(&owner.chart);
+        let (next, next_control) = owner.prepare()?;
+        assert!(Arc::ptr_eq(&next.chart, &chart));
+        drop(next);
+        assert_eq!(next_control.sender.receiver_count(), 0);
+        assert_eq!(owner.state, SessionState::Idle);
+    }
+    Ok(())
+}
+
+/// Run one bounded real session with a plan-bound final-guard observer.
+/// # Errors
+/// Preserve setup/worker failures and the original public execute error after
+/// joining the worker; an execute unwind is resumed only after that join.
+/// # Panics
+/// Resume the original execute or worker panic after owned thread completion.
+fn run_public_session_checkpoint(case: PublicSessionCheckpointRace) -> Check<()> {
+    let preflight = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .build()?;
+    crate::processing_guard_tests::require_retirement_contract(&preflight)?;
+    drop(preflight);
+    let peer = std::net::UdpSocket::bind(SocketAddr::from(([127, 0, 0, 1], 0)))?;
+    peer.set_read_timeout(Some(Duration::from_secs(2)))?;
+    peer.set_write_timeout(Some(Duration::from_secs(2)))?;
+    let config = SeriesConfig::new(
+        peer.local_addr()?,
+        Duration::from_secs(1),
+        Duration::from_secs(2),
+    )?;
+    let mut owner = AcquisitionSession::new(config);
+    let (mut plan, control) = owner.prepare()?;
+    crate::series::set_test_final_guard_observer(
+        plan.prepared
+            .as_mut()
+            .ok_or_else(|| std::io::Error::other("actual session preparation missing"))?,
+        case.observer(),
+    );
+    let schedule = ControlSchedule::new(None, None)?;
+    let mut local_peer = Some(peer);
+    let server = if case.needs_reply() {
+        let socket = local_peer
+            .take()
+            .ok_or_else(|| std::io::Error::other("checkpoint peer missing"))?;
+        Some(
+            std::thread::Builder::new()
+                .name("session-checkpoint-reply".into())
+                .spawn(move || serve_public_session_checkpoint(socket))?,
+        )
+    } else {
+        None
+    };
+    let execution = std::panic::catch_unwind(AssertUnwindSafe(|| plan.execute(&schedule)));
+    let joined = server.map(std::thread::JoinHandle::join);
+    // Every join precedes all assertions, execute-error propagation and resumed
+    // unwinds. A secondary peer failure cannot replace a primary execute error.
+    let result = match execution {
+        Ok(result) => result,
+        Err(payload) => std::panic::resume_unwind(payload),
+    };
+    let report = result?;
+    let peer = match joined {
+        Some(Ok(result)) => result?,
+        Some(Err(payload)) => std::panic::resume_unwind(payload),
+        None => local_peer
+            .take()
+            .ok_or_else(|| std::io::Error::other("checkpoint peer lost"))?,
+    };
+    assert_public_session_checkpoint(case, &report, &mut owner, &control, &peer)
+}
+
+/// Public preparation/execution must retain the exact final control checkpoint
+/// through real `SeriesReceiver` completion, cleanup and issuer lifecycle.
+/// # Errors
+/// Preserve each genuine session/UDP/worker/cleanup failure without fabrication.
+/// # Panics
+/// Fail if any race loses custody or incorrectly permits reuse/retirement.
+#[test]
+fn public_session_receiving_checkpoint_races_keep_reuse_and_retirement() -> Check<()> {
+    for case in [
+        PublicSessionCheckpointRace::WritableStop,
+        PublicSessionCheckpointRace::WritableInvalidate,
+        PublicSessionCheckpointRace::ReplyStop,
+        PublicSessionCheckpointRace::ReplyInvalidate,
+        PublicSessionCheckpointRace::ReplyCommittedStop,
+    ] {
+        run_public_session_checkpoint(case)?;
+    }
     Ok(())
 }
 

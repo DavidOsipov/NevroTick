@@ -727,6 +727,40 @@ harness, source/lockfile, target/features, reachable healthy/defect controls and
 reported limitations; native Windows and complete-package evidence remain
 separate obligations.
 
+### Machine-local generated-testing environments — 16 November 2026
+
+The local discovery record is
+`~/.local/share/nevrotick/continuation-20261116-tools-v1/tool-readiness-pointer.json`;
+its sibling README and two hash-bound readiness records retain installation and
+control evidence. The isolated Python 3.12.3 environment has Hypothesis 6.170.15
+and sortedcontainers 2.4.0, without pytest or CLI extras. A separate, nonshipped
+Rust 1.100.0 control package has Proptest 1.12.0, proptest-state-machine 0.9.0 and
+the age-eligible Shuttle 0.9.9 cohort. Its copied executable is
+`rust-frameworks/work/bin/framework-controls`; derived compilation output was
+deleted after actual copied-binary controls passed. Source, vendor, lock and
+receipts remain external.
+
+Use these tools through the existing credentialless, offline namespace pattern
+with private output, read-only admitted inputs, finite resources and a fresh
+task-owned selection. Retained installation scripts have expired budgets and
+are not general launchers. Python evidence includes actual-reader synthetic
+fixture controls; Rust evidence covers framework mechanics, faults and replays.
+Neither establishes product graph adoption, complete concurrency/weak-memory
+coverage, native Windows, formal or release qualification.
+
+The standalone Rust controls are new Apache-2.0 code. Proptest offers MIT OR
+Apache-2.0; selected Shuttle is Apache-2.0-only. Core/Engine remains GPL-2.0-only:
+linked adoption needs its own graph and licence/composition admission. Hypothesis
+is MPL-2.0 and sortedcontainers Apache-2.0; retain their notices and the existing
+per-task framework-selection guidance.
+
+On this workstation the user systemd manager's default PATH omits Cargo's bin
+directory. Owned metric units explicitly select
+`PATH=/home/david_osipov/.cargo/bin:/usr/bin:/bin`; the normal manifest/hash and
+isolated version admission still apply. The metric preparation's recorded PATH
+probes show the original lookup failure and both pinned extensions resolving
+after this launch-only change. No global shell or tool policy was changed.
+
 ## Standalone sanitizer detector controls
 
 The separate [sanitizer checker](tools/sanitizers/check.py) and
@@ -2558,6 +2592,16 @@ output; Context7 and primary upstream sources resolve API questions. Root
 [AGENTS.md](AGENTS.md) describes when to choose each tool. Existing connection
 history is not a fresh runtime qualification. UI-M0 now supplies Rust source for
 navigation; confirm current indexing before relying on its application graph.
+
+On this workstation, `.serena/project.local.yml` disables language-server startup
+with `language_servers: []` while the coordinator owns Cargo execution. The shared
+project configuration still selects Rust. The installed adapter otherwise enables
+automatic Cargo/build-script/check work; its project-specific initialization
+overrides currently require a trust setting that is not enabled. The empty local
+language list avoids changing global trust. This source-backed local setting has
+not been exercised by another activation; use Probe without LSP or direct reads
+until language-server startup is deliberately admitted. Changing configuration
+does not stop an already-running server.
 
 
 ## Fixture semantic-state guidance

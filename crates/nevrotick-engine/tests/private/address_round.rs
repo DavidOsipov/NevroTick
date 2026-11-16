@@ -54,12 +54,17 @@ fn fixed_entropy(bytes: &mut [u8; 24]) {
 
 /// Build a genuine current-thread fixture runtime without hiding native failure.
 /// # Errors
-/// Preserve the actual runtime construction cause.
+/// Preserve actual runtime construction and nested socket-registration causes.
+/// # Panics
+/// Reject a broken one-way retirement prerequisite before entering any owner loop.
 fn runtime() -> io::Result<tokio::runtime::Runtime> {
-    tokio::runtime::Builder::new_current_thread()
+    let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_io()
         .enable_time()
-        .build()
+        .build()?;
+    crate::processing_guard_tests::require_retirement_contract(&runtime)
+        .map_err(io::Error::other)?;
+    Ok(runtime)
 }
 
 /// Own a real nonblocking endpoint before any driver or peer task starts.
@@ -629,6 +634,7 @@ fn entered_runtime_refuses_before_entropy() -> Check<()> {
 /// # Panics
 /// Require one timed-out first query, a second reply and no third send.
 fn blackhole_then_reply(first_ip: IpAddr, second_ip: IpAddr) -> Check<()> {
+    drop(runtime()?);
     let first = bind_peer(first_ip)?;
     let second = bind_peer(second_ip)?;
     let third = bind_peer(first_ip)?;
@@ -719,6 +725,7 @@ fn ipv6_blackhole_yields_ipv4_reply_without_third_send() -> Check<()> {
 /// Require the original control code, one terminal record and no alternative query.
 #[test]
 fn correlated_control_ends_the_round_without_address_evasion() -> Check<()> {
+    drop(runtime()?);
     let first = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
     let next = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
     let peers = [first.local_addr()?, next.local_addr()?];
@@ -752,6 +759,7 @@ fn correlated_control_ends_the_round_without_address_evasion() -> Check<()> {
 /// Require both independent rejections, one first-address reply and no successor.
 #[test]
 fn wrong_origin_and_mode_do_not_advance_before_the_valid_reply() -> Check<()> {
+    drop(runtime()?);
     let first = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
     let next = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
     let peers = [first.local_addr()?, next.local_addr()?];
@@ -782,6 +790,7 @@ fn wrong_origin_and_mode_do_not_advance_before_the_valid_reply() -> Check<()> {
 /// Require three real timeout queries, stable order and no extra send per address.
 #[test]
 fn three_blackholes_exhaust_exactly_the_frozen_set() -> Check<()> {
+    drop(runtime()?);
     let sockets = [
         bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?,
         bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?,
@@ -822,6 +831,7 @@ fn three_blackholes_exhaust_exactly_the_frozen_set() -> Check<()> {
 /// Require distinct stop/invalidation summaries, zero history and zero traffic.
 #[test]
 fn preexisting_stop_and_invalidation_prevent_every_send() -> Check<()> {
+    drop(runtime()?);
     for invalidated in [false, true] {
         let socket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
         let peer = socket.local_addr()?;
@@ -1781,6 +1791,7 @@ fn setup_handler_control_case(expected: Option<AddressRoundEnd>) -> Check<()> {
             handler_outcome = Some(match &outcome {
                 SetupOutcome::Ready(_) => None,
                 SetupOutcome::Retired(end) => Some(*end),
+                SetupOutcome::PolicyRefused(_) => return Err(PilotError::InternalState),
             });
             Ok(outcome)
         },
@@ -2345,5 +2356,361 @@ fn injected_writable_io_keeps_its_actual_cause_and_continues_to_the_real_reply()
     assert_eq!(observe_queries(&first)?.0, 0);
     assert_eq!(observe_queries(&third)?.0, 0);
     assert_eq!(runtime.metrics().num_alive_tasks(), 0);
+    Ok(())
+}
+
+/// Send a real correlated DENY only after the B socket setup handshake.
+/// # Errors
+/// Preserve native datagrams and finite fixture-channel failures.
+/// # Panics
+/// Reject malformed actual query length or incomplete response write.
+fn serve_postterminal_control(
+    e_socket: &UdpSocket,
+    ready: &std::sync::mpsc::SyncSender<()>,
+    released: &std::sync::mpsc::Receiver<()>,
+) -> io::Result<()> {
+    let mut query = [0; 49];
+    let (length, client) = e_socket.recv_from(&mut query)?;
+    assert_eq!(length, 48);
+    ready
+        .send(())
+        .map_err(|_| io::Error::other("query observer closed"))?;
+    released
+        .recv_timeout(Duration::from_secs(2))
+        .map_err(io::Error::other)?;
+    let mut response = [0; 48];
+    response[0] = 0x24;
+    response[12..16].copy_from_slice(b"DENY");
+    response[24..32].copy_from_slice(&query[40..48]);
+    response[32..40].copy_from_slice(&1_u64.to_be_bytes());
+    response[40..48].copy_from_slice(&2_u64.to_be_bytes());
+    assert_eq!(e_socket.send_to(&response, client)?, 48);
+    Ok(())
+}
+
+/// Independently inspect fixed historical facts beside newly re-enabled current policy.
+/// # Errors
+/// Preserve current binding/guard and native quiet-peer observations.
+/// # Panics
+/// Reject lost original Disabled history, invented scope or any tail query.
+fn assert_postterminal_policy_history(
+    report: &AddressRoundReport,
+    a_report: &AddressRoundReport,
+    b: &crate::SourceHandle,
+    e: SocketAddr,
+    quiet: &UdpSocket,
+) -> Check<()> {
+    assert_eq!(a_report.end(), AddressRoundEnd::Control);
+    assert_eq!(report.end(), AddressRoundEnd::Policy);
+    assert_eq!(report.attempts().len(), 1);
+    assert!(report.policy_refusals().is_empty());
+    let historical = report.attempts()[0].report();
+    assert_eq!(historical.status(), Status::SourcePolicy);
+    assert_eq!(
+        historical.source_policy_refusal(),
+        Some(crate::SourcePolicyError::Disabled)
+    );
+    assert!(!historical.sent());
+    assert_eq!(SourceMode::Managed(b.bind(e)?).pre_socket_refusal()?, None);
+    assert_eq!(observe_queries(quiet)?.0, 0);
+    Ok(())
+}
+
+/// Re-enable after actual policy retirement cannot reconstruct a different history.
+/// # Errors
+/// Preserve checked owners, bounded handshakes and every scoped native/join result.
+/// # Panics
+/// Reject a lost captured Disabled cause, invented source scope or forbidden tail send.
+#[test]
+fn managed_round_postterminal_reenable_keeps_the_actual_live_policy_cause() -> Check<()> {
+    drop(runtime()?);
+    let mut authority = crate::source_policy::isolated_authority(crate::SourcePolicyLimits::new(
+        2,
+        2,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let a = authority.source(0)?;
+    let b = authority.source(1)?;
+    let e_socket = UdpSocket::bind(declared_peer(0))?;
+    e_socket.set_read_timeout(Some(Duration::from_secs(2)))?;
+    let e = e_socket.local_addr()?;
+    let quiet = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let f = quiet.local_addr()?;
+    let (a_plan, a_control) = a.prepare_address_round(AddressRoundConfig::new(
+        &[e],
+        Duration::from_secs(1),
+        Duration::from_secs(3),
+    )?)?;
+    let (b_plan, b_control) = b.prepare_address_round(checked_config(&[e, f])?)?;
+    let bindings = b_plan.source_policy.clone();
+    let (ready, observed) = std::sync::mpsc::sync_channel(1);
+    let (release, released) = std::sync::mpsc::sync_channel(1);
+    let (done, completed) = std::sync::mpsc::sync_channel(1);
+    let (report, a_report, reenabled) = thread::scope(|scope| -> Check<_> {
+        let peer = scope.spawn(move || serve_postterminal_control(&e_socket, &ready, &released));
+        let a_job = scope.spawn(move || {
+            let result = execute_address_round(a_plan, &ControlSchedule::new(None, None)?);
+            let _delivery = done.try_send(());
+            result
+        });
+        observed.recv_timeout(Duration::from_secs(2))?;
+        let runtime = runtime()?;
+        let origin = Instant::now();
+        let deadline = origin
+            .checked_add(Duration::from_secs(2))
+            .ok_or(PilotError::DeadlineOverflow)?;
+        let mut handoff_error = None;
+        let mut reenabled = None;
+        let mut setups = 0;
+        let report = runtime.block_on(run_round_with(
+            b_plan,
+            origin,
+            deadline,
+            &mut |peer, packet, context, control, request_end, round_end| {
+                let mode = candidate_mode(bindings.as_ref(), peer)?;
+                let outcome = setup_address_request_bound(
+                    peer,
+                    packet,
+                    context,
+                    control,
+                    request_end,
+                    round_end,
+                    mode,
+                )?;
+                setups += 1;
+                // Actual B socket exists, but no query is driven until A's real
+                // correlated control has completed through its public owner.
+                if matches!(&outcome, SetupOutcome::Ready(_)) {
+                    let handoff = (|| -> io::Result<()> {
+                        release.send(()).map_err(io::Error::other)?;
+                        completed
+                            .recv_timeout(Duration::from_secs(2))
+                            .map_err(io::Error::other)?;
+                        Ok(())
+                    })();
+                    if let Err(error) = handoff {
+                        handoff_error = Some(error);
+                        return Err(PilotError::InternalState);
+                    }
+                }
+                Ok(outcome)
+            },
+            &mut |index, checkpoint| {
+                if index == 0 && checkpoint == RoundCheckpoint::Before {
+                    reenabled = Some((|| {
+                        let target = authority.endpoint_target(e)?;
+                        authority.reenable(&[target])
+                    })());
+                }
+            },
+        ));
+        let a_result = a_job.join().map_err(|_| "A round worker panicked")?;
+        let peer_result = peer.join().map_err(|_| "A control peer panicked")?;
+        peer_result?;
+        let a_report = a_result?;
+        if let Some(error) = handoff_error {
+            return Err(error.into());
+        }
+        assert_eq!(setups, 1);
+        Ok((report, a_report, reenabled))
+    })?;
+    drop((a_control, b_control));
+    reenabled.ok_or("postterminal observer did not run")??;
+    assert_postterminal_policy_history(&report, &a_report, &b, e, &quiet)
+}
+
+/// Reject a genuine but wrong setup owner before driving any native query.
+/// # Errors
+/// Preserve genuine allocator, runtime, public preparation and joined peer errors.
+/// # Panics
+/// Reject an unmanaged downgrade or foreign source binding; retain a public healthy neighbor.
+#[test]
+fn managed_round_receiving_rejects_downgraded_and_foreign_bindings_before_send() -> Check<()> {
+    let authority = crate::source_policy::isolated_authority(crate::SourcePolicyLimits::new(
+        2,
+        1,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let source = authority.source(0)?;
+    let other = authority.source(1)?;
+    let socket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peer = socket.local_addr()?;
+    for foreign in [false, true] {
+        let (prepared, control) = source.prepare_address_round(checked_config(&[peer])?)?;
+        let wrong = if foreign {
+            SourceMode::Managed(other.bind(peer)?)
+        } else {
+            SourceMode::UnmanagedLab
+        };
+        let runtime = runtime()?;
+        let origin = Instant::now();
+        let end = origin
+            .checked_add(Duration::from_secs(2))
+            .ok_or(PilotError::DeadlineOverflow)?;
+        let report = runtime.block_on(run_round_with(
+            prepared,
+            origin,
+            end,
+            &mut |peer, packet, context, control, request_end, round_end| {
+                setup_address_request_bound(
+                    peer,
+                    packet,
+                    context,
+                    control,
+                    request_end,
+                    round_end,
+                    wrong.clone(),
+                )
+            },
+            &mut |_, _| {},
+        ));
+        drop(control);
+        assert_eq!(report.end(), AddressRoundEnd::Failure);
+        assert!(matches!(
+            report.primary_error(),
+            Some(PilotError::SourcePolicy(crate::SourcePolicyError::Foreign))
+        ));
+        assert!(report.attempts().is_empty() && report.policy_refusals().is_empty());
+        assert_eq!(observe_queries(&socket)?.0, 0);
+    }
+    let (prepared, control) = source.prepare_address_round(checked_config(&[peer])?)?;
+    let responder = ReplyPeer::spawn(socket, ReplyKind::Ordinary)?;
+    let result = execute_address_round(prepared, &ControlSchedule::new(None, None)?);
+    let joined = responder.finish();
+    let (report, seen) = joined_result(result, joined)?;
+    drop(control);
+    assert_eq!(report.end(), AddressRoundEnd::Reply);
+    assert_eq!(report.attempts().len(), 1);
+    check_query(&require_query(seen)?);
+    Ok(())
+}
+
+/// Inspect the exact scoped refusal and the independently observed accepted neighbor.
+/// # Panics
+/// Reject a generic failure, guessed scope, fabricated attempt or missing Header.
+fn assert_reclassified_round(report: &AddressRoundReport, source_refused: bool, f: SocketAddr) {
+    assert!(report.primary_error().is_none());
+    assert_eq!(report.policy_refusals().len(), 1);
+    assert_eq!(report.policy_refusals()[0].index(), 0);
+    if source_refused {
+        assert_eq!(report.end(), AddressRoundEnd::SourceRestricted);
+        assert!(report.attempts().is_empty());
+        assert_eq!(
+            report.policy_refusals()[0].scope(),
+            AddressPolicyRefusalScope::Source
+        );
+    } else {
+        assert_eq!(report.end(), AddressRoundEnd::Reply);
+        assert_eq!(report.attempts().len(), 1);
+        assert_eq!(report.attempts()[0].peer(), f);
+        assert_eq!(
+            report.policy_refusals()[0].scope(),
+            AddressPolicyRefusalScope::Endpoint
+        );
+    }
+}
+
+/// Fresh Disabled during contention must return to the actual scoped classifier.
+/// # Errors
+/// Preserve genuine setup/guard/control-kernel work and bounded joined peer errors.
+/// # Panics
+/// Reject Failure/scope guesses, a lost healthy alternative or any skipped query.
+#[test]
+fn managed_round_reclassifies_restriction_after_actual_setup_contention() -> Check<()> {
+    for source_refused in [false, true] {
+        let authority = crate::source_policy::isolated_authority(crate::SourcePolicyLimits::new(
+            2,
+            2,
+            Duration::from_millis(1),
+            Duration::from_millis(4),
+        )?)?;
+        let source = authority.source(0)?;
+        let control_source = authority.source(usize::from(!source_refused))?;
+        let quiet = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+        let responding = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+        let (e, f) = (quiet.local_addr()?, responding.local_addr()?);
+        let binding = control_source.bind(e)?;
+        // This ancillary timing control uses the actual reserve/control kernels;
+        // the separate public A/E controls establish real UDP control admission.
+        let mut request =
+            crate::source_policy::fixture_send(&binding, &Arc::new(()), Instant::now())?;
+        let (prepared, control) = source.prepare_address_round(checked_config(&[e, f])?)?;
+        let bindings = prepared.source_policy.clone();
+        let responder = if source_refused {
+            None
+        } else {
+            Some(ReplyPeer::spawn(responding, ReplyKind::Ordinary)?)
+        };
+        let runtime = runtime()?;
+        let origin = Instant::now();
+        let end = origin
+            .checked_add(Duration::from_secs(2))
+            .ok_or(PilotError::DeadlineOverflow)?;
+        let mut contended = false;
+        let report = runtime.block_on(run_round_with(
+            prepared,
+            origin,
+            end,
+            &mut |peer, packet, context, receiver, request_end, round_end| {
+                let mode = candidate_mode(bindings.as_ref(), peer)?;
+                if !contended {
+                    let outcome = crate::source_policy::fixture_while_locked(&binding, || {
+                        setup_address_request_bound(
+                            peer,
+                            packet,
+                            context,
+                            receiver,
+                            request_end,
+                            round_end,
+                            mode,
+                        )
+                    })
+                    .map_err(PilotError::SourcePolicy)?;
+                    assert!(matches!(
+                        outcome,
+                        Err(PilotError::SourcePolicy(
+                            crate::SourcePolicyError::Contended
+                        ))
+                    ));
+                    contended = true;
+                    crate::source_policy::fixture_control(
+                        &binding,
+                        &mut request,
+                        u32::from_be_bytes(*b"DENY"),
+                        Instant::now(),
+                    )
+                    .map_err(PilotError::SourcePolicy)?;
+                    return outcome;
+                }
+                setup_address_request_bound(
+                    peer,
+                    packet,
+                    context,
+                    receiver,
+                    request_end,
+                    round_end,
+                    mode,
+                )
+            },
+            &mut |_, _| {},
+        ));
+        let seen = responder.map(ReplyPeer::finish);
+        drop(control);
+        assert!(contended);
+        assert_eq!(observe_queries(&quiet)?.0, 0);
+        assert_reclassified_round(&report, source_refused, f);
+        match (source_refused, seen) {
+            (true, None) => {}
+            (false, Some(observed)) => check_query(&require_query(observed?)?),
+            _ => {
+                return Err(io::Error::other(
+                    "actual fixture worker presence contradicts its admitted scope",
+                )
+                .into());
+            }
+        }
+    }
     Ok(())
 }

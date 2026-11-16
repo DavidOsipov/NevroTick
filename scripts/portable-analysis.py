@@ -499,6 +499,235 @@ def require_engine_ke_role(scope: Scope, policy: dict) -> None:
         raise Incomplete("Engine KE campaigns require the independently reviewed complete enumeration.")
 
 
+# Exact current-source reviews, independently accepted on16November2026.
+# Nonempty E must match these individual approvals and physical installed inputs;
+# current campaigns and scores remain separate from these source verdicts.
+ENGINE_SOURCE_POLICY_EQUIVALENCE_IDS = frozenset({
+    "KOD-SERIES-UNAVAILABLE-ADMITTED-ZERO", "KOD-SERIES-UNAVAILABLE-ELIGIBLE-ZERO",
+    "KOD-COMMIT-DURATION-NONE-SUB", "KOD-COMMIT-DURATION-NONE-MUL",
+    "KOD-DEFAULT-KE-FACADE-ABSENT",
+})
+ENGINE_SOURCE_POLICY_EQUIVALENCE_PROOF = "tasks/engine-source-policy-equivalences.md"
+ENGINE_SOURCE_POLICY_EQUIVALENCE_REQUIREMENT = "CHECK-10/CHECK-19/CHECK-21/CHECK-25/CHECK-27"
+ENGINE_SOURCE_POLICY_EQUIVALENCE_CANDIDATE = '582a995a86f9b01dece493b74ac640533e4efdd48ca5b41e4b35e88a843fd983'
+ENGINE_SOURCE_POLICY_EQUIVALENCE_PROOF_SHA256 = '07157a67ac45dec5ef973a12b410c23375e9db9750eebb65ec36d07035e59fc5'
+ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWERS = 'root/kod_metric_plan_judge; coordinator source review'
+# ID -> (source SHA, complete typed descriptor SHA, rendered diff SHA, rationale).
+ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWS = {'KOD-COMMIT-DURATION-NONE-MUL': ('0865faa12a992a7fa791cd106b590d421dc6498616ca486c2bce6b7b9b4174e4',
+                                  'd9686e9a54564256326fa9796748eb5ce8aa88e6f549822e6788ec51dfb1ba1a',
+                                  'f5d66d9f49f42f2997c67b45f5c0de7ff3c8f520b181694dd5d47b9ce3fe1394',
+                                  'Every execution reaching this fallback has passed the '
+                                  'helper-local processing >= candidate.read.mono_after guard for '
+                                  'the exact unchanged operands. Pinned Rust1.100 GNU/Windows '
+                                  'Instant implementations return Some for that ordered pair. '
+                                  'Counter multiplication-by-one versus increment therefore occurs '
+                                  'on no admitted execution, not merely on none of today callers. '
+                                  'Earlier predecessor rejection, including counter '
+                                  'overflow/panic/wrap behavior, is unchanged. Matching/mismatched '
+                                  'identity/phase, deadline, control, measurement, Box/Arc and '
+                                  'resource-lifecycle paths remain identical. No raw invalid '
+                                  'Instant representation or forged caller-domain narrowing is '
+                                  'assumed.'),
+ 'KOD-COMMIT-DURATION-NONE-SUB': ('0865faa12a992a7fa791cd106b590d421dc6498616ca486c2bce6b7b9b4174e4',
+                                  '12144958ae1f108ba41f2d4ef1414eb35fd6260f13c20966857198204201a567',
+                                  '63c17820a1fb3263cd62a54d4f9da5f0aca181e396485a187abbe678d4e0bca5',
+                                  'The helper itself rejects processing < '
+                                  'candidate.read.mono_after before checked_duration_since on '
+                                  'those same immutable Instant values, without await, new clock '
+                                  'read or operand mutation. In pinned Rust1.100 GNU, ordered '
+                                  'Timespec subtraction always returns Some(Duration); Windows '
+                                  'stored Duration order/subtraction also returns Some, while its '
+                                  'small-negative epsilon clamp is already preceded by the raw '
+                                  'predecessor guard. Thus None implies the earlier strict '
+                                  'predecessor relation, and the changed fallback counter is '
+                                  'unreachable across the complete valid helper domain. Arbitrary '
+                                  'u16 counter values, overflow behavior on the earlier unchanged '
+                                  'increment, errors, later allocation/refcounts and cleanup '
+                                  'remain identical. Subtraction is not claimed equivalent to '
+                                  'increment on a reachable branch.'),
+ 'KOD-DEFAULT-KE-FACADE-ABSENT': ('0865faa12a992a7fa791cd106b590d421dc6498616ca486c2bce6b7b9b4174e4',
+                                  '59dbc9773a52ad40e7fdbe44d51d6d93821a6a504d88474961056d07b36f8d28',
+                                  '0e4020df2d623a45c5398ec58b2e73905d9431366b93cd627255506699ca210d',
+                                  'Only the exact source-policy GNU default graph is proposed: '
+                                  'features=[]; the engine manifest has no default feature '
+                                  'enabling ke-association-prototype; actual admitted Cargo/rustc '
+                                  'inputs do not enable it. The entire experimental_nts_ke_probe '
+                                  'item is cfg(feature=ke-association-prototype), so the selected '
+                                  'compiled program has no such callable item in original or '
+                                  'replacement. The body replacement is valid syntax and adds no '
+                                  'cfg attribute, macro invocation or compiled effect. This is '
+                                  'configuration elision, not a claim that an available function '
+                                  'happens untested. EP1, another '
+                                  'feature/target/rustflags/configuration or a consumer exposing '
+                                  'the item is outside this E scope and triggers refusal/review. '
+                                  'Keep raw inventory and actual Missed; E remains held until '
+                                  'independent exact configuration-domain review.'),
+ 'KOD-SERIES-UNAVAILABLE-ADMITTED-ZERO': ('c832ba7273ae77bdf75aa26002c2243febe15d06fff8fa2948af742af0448615',
+                                          'd8d76eb0a2d6ac7b8dee229ad69d86add41752d7983fe144334916c1d1eb4118',
+                                          'f1c0cc8a6708c4cfac0f0cfda66abc91d1f1140be86b12de6ddf26c0ad64b0cf',
+                                          'For every valid SeriesReport, StatisticalAdmission is '
+                                          'the closed fieldless one-variant Unavailable enum. '
+                                          'Matching that field yields usize0 with no payload, '
+                                          'guard, destructor, callback, allocation or external '
+                                          'effect. Returning0 directly has the same result and '
+                                          'lifecycle behavior for every valid receiver. This does '
+                                          'not infer an invariant from current callers or permit '
+                                          'positive sample authority. Invalid Rust discriminants '
+                                          'are outside the safe typed domain. Reopen review if '
+                                          'admission representation, constructor/mutation paths, '
+                                          'getter body, cfg, signature or effects change.'),
+ 'KOD-SERIES-UNAVAILABLE-ELIGIBLE-ZERO': ('c832ba7273ae77bdf75aa26002c2243febe15d06fff8fa2948af742af0448615',
+                                          'c316f39ef4eea0536a2daa23f8416aebdc75d41cd66d30a2c3ba83b1c7d50bf0',
+                                          'cffc44d585452f3e47c5454fe7d9c291dd1fe0d23754b75a2caeb5354da5e4e3',
+                                          'The complete valid receiver domain contains only '
+                                          'StatisticalAdmission::Unavailable. The sole match arm '
+                                          'returns usize0 without resource/error/effect work; '
+                                          'replacement returns the identical typed0. The '
+                                          'discriminant-only match moves no payload and calls no '
+                                          'trait or Drop operation. No positive eligibility is '
+                                          'implemented or authorized. This exact source/domain '
+                                          'argument is independent of observed zero results; new '
+                                          'variants, unsafe/serialized construction, changed '
+                                          'getter effects or configuration invalidate it.')}
+ENGINE_SOURCE_POLICY_EQUIVALENCE_DEPENDENCY_NAMES = frozenset({
+    "Cargo.toml", "Cargo.lock", "crates/nevrotick-engine/Cargo.toml", "rust-toolchain.toml",
+    ".cargo/config.toml", ".cargo/mutants.toml", ".config/nextest.toml",
+    "policy/analysis-tools.json", "policy/tool-manifest.json", "policy/verification-manifest.toml",
+})
+ENGINE_SOURCE_POLICY_EQUIVALENCE_DEPENDENCIES = {'.cargo/config.toml': '0f56f93b35b5d85a490afe3d62f53511f5697465b0d18564ffee805b761232a5',
+ '.cargo/mutants.toml': 'af0e3b1d7774464fb6d3b8566b61472a853ce2e6b0ba26a1c4fbe82f676b5f5b',
+ '.config/nextest.toml': '138a3584caddb823362272ed590954f58e228913bddc4ce1fe2e3b84e8ee9f35',
+ 'Cargo.lock': '2ccabde33a800b745c42b4fe96dc4a6c300b1961ac87e149d313cae41fde5f2e',
+ 'Cargo.toml': '570bf74e4682b8931172fe066c999cfbca470d2026c5455d629c942d9adfd1eb',
+ 'crates/nevrotick-engine/Cargo.toml': '89439a0d87f6a74f9d946b4186b01e80062d6ed3cc0709f4904aee3c3050b52c',
+ 'policy/analysis-tools.json': 'be49c57c0262415314daeb41ff06b65283a221ab2b68b3f7edf372449f152f53',
+ 'policy/tool-manifest.json': '8a156a5573626d7aebb868f257436306c79c2ff64fa3ee3b9357482363ac007d',
+ 'policy/verification-manifest.toml': '50700c30e906e1596f5be967ee4c8b7d0632694533e5cde9601eb4db23e6c736',
+ 'rust-toolchain.toml': '6cd2b242c217bc0d383324c0a05a2f3f7dbf7608083afd4950f37a5eba561ca9'}
+# Filled only from independently accepted actual stable-core admission. The
+# stable inventory includes all lib sources; explicit source pins also retain
+# the exact five primary-source premises independently of inventory coverage.
+ENGINE_SOURCE_POLICY_EQUIVALENCE_TOOL_INVENTORY_SHA256 = '5a8f366681b3b36386143c07f004d5a9c3cba34e99b79ff6f616b8082dc73518'
+ENGINE_SOURCE_POLICY_EQUIVALENCE_STANDARD_NAMES = frozenset({
+    "core/src/time.rs", "std/src/sys/pal/unix/time.rs", "std/src/sys/time/unix.rs",
+    "std/src/sys/time/windows.rs", "std/src/time.rs",
+})
+ENGINE_SOURCE_POLICY_EQUIVALENCE_STANDARD_SOURCES = {'core/src/time.rs': '375024e28d85a12d312aaa12ab54c289bda39573fbcccfe696488723b086d1f3',
+ 'std/src/sys/pal/unix/time.rs': '6e1caa7b5e1c9a26b0b8cd02d8fd67c0fc57e4de11c89877d01c2b69eb32031a',
+ 'std/src/sys/time/unix.rs': 'b3e23b2f7dce620dddbdb49b80a68c26f3778defbd45baf61bddd3a452bf4c7d',
+ 'std/src/sys/time/windows.rs': '3e344b796c406f5446dc0d31bb7737302723f21b4c606ed2b30794731e9b53de',
+ 'std/src/time.rs': 'dbf93afc64e22548a08fbcfa68290a63b657933eb006ee6670270f6eddc0f9c3'}
+
+
+def engine_source_policy_equivalences_valid(policy: dict) -> bool:
+    """Allow empty E or individually approved subsets of the five closed identities.
+
+    Omitted approvals remain ordinary survivors. No row supplies its own approval;
+    physical candidate/source/configuration/proof and rendered-diff custody are
+    still checked by the existing receiving operations.
+    """
+    if type(policy) is not dict or type(policy.get("mutation_equivalences")) is not list:
+        return False
+    entries = policy["mutation_equivalences"]
+    if not entries:
+        return True
+    reviews = ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWS
+    dependencies = ENGINE_SOURCE_POLICY_EQUIVALENCE_DEPENDENCIES
+    pins = tuple((ENGINE_SOURCE_POLICY_EQUIVALENCE_CANDIDATE,
+                  ENGINE_SOURCE_POLICY_EQUIVALENCE_PROOF_SHA256,
+                  ENGINE_SOURCE_POLICY_EQUIVALENCE_TOOL_INVENTORY_SHA256))
+    if (len(entries) > 5 or type(reviews) is not dict or not reviews
+            or not set(reviews) <= ENGINE_SOURCE_POLICY_EQUIVALENCE_IDS
+            or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None for value in pins)
+            or type(ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWERS) is not str
+            or not 0 < len(ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWERS.strip()) <= 128
+            or type(dependencies) is not dict
+            or set(dependencies) != ENGINE_SOURCE_POLICY_EQUIVALENCE_DEPENDENCY_NAMES
+            or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None
+                   for value in dependencies.values())
+            or type(ENGINE_SOURCE_POLICY_EQUIVALENCE_STANDARD_SOURCES) is not dict
+            or set(ENGINE_SOURCE_POLICY_EQUIVALENCE_STANDARD_SOURCES) != ENGINE_SOURCE_POLICY_EQUIVALENCE_STANDARD_NAMES
+            or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None
+                   for value in ENGINE_SOURCE_POLICY_EQUIVALENCE_STANDARD_SOURCES.values())
+            or type(policy.get("binding")) is not dict
+            or policy["binding"].get("candidate_sha256") != pins[0]
+            or type(policy["binding"].get("inputs_sha256")) is not dict
+            or any(policy["binding"]["inputs_sha256"].get(name) != value
+                   for name, value in dependencies.items())):
+        return False
+    fields = {"id", "candidate_sha256", "source_sha256", "mutant", "requirement", "rationale", "proof"}
+    seen = set()
+    for entry in entries:
+        if type(entry) is not dict or set(entry) != fields:
+            return False
+        identifier = entry["id"]
+        if type(identifier) is not str or identifier not in reviews or identifier in seen:
+            return False
+        facts = reviews[identifier]
+        if (type(facts) is not tuple or len(facts) != 4 or any(type(value) is not str for value in facts)
+                or any(re.fullmatch(r"[a-f0-9]{64}", value) is None for value in facts[:3])):
+            return False
+        source, descriptor, _diff, rationale = facts
+        owner = ("crates/nevrotick-engine/src/series.rs" if identifier.startswith("KOD-SERIES-")
+                 else "crates/nevrotick-engine/src/lib.rs")
+        if (entry["candidate_sha256"] != pins[0] or entry["source_sha256"] != source
+                or policy["binding"]["inputs_sha256"].get(owner) != source
+                or entry["requirement"] != ENGINE_SOURCE_POLICY_EQUIVALENCE_REQUIREMENT
+                or entry["rationale"] != rationale or type(entry["mutant"]) is not dict
+                or entry["mutant"].get("file") != owner):
+            return False
+        try:
+            if canonical_sha256(entry["mutant"]) != descriptor:
+                return False
+        except (TypeError, ValueError):
+            return False
+        if entry["proof"] != {"path": ENGINE_SOURCE_POLICY_EQUIVALENCE_PROOF,
+                "sha256": pins[1], "section": identifier,
+                "reviewer": ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWERS,
+                "verdict": "independently-justified-equivalent"}:
+            return False
+        seen.add(identifier)
+    return True
+
+
+def _engine_source_policy_equivalence_role(scope: Scope, policy: dict) -> bool:
+    """Recognize this E family without adopting overlapping historical profiles.
+
+    Exact current approvals cannot escape through renamed IDs, scopes or proof
+    paths. Historical Engine/series/session IDs, candidates and proof paths retain
+    their existing validators; this is not a global redesign of generic E policy.
+    """
+    if _engine_source_policy_role(scope, policy):
+        return True
+    entries = policy.get("mutation_equivalences", []) if type(policy) is dict else []
+    if type(entries) is not list:
+        return False
+    fingerprints = {facts[1] for facts in ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWS.values()
+                    if type(facts) is tuple and len(facts) == 4 and type(facts[1]) is str}
+    owners = set(dict(ENGINE_SOURCE_POLICY_SUBJECTS).values())
+    overlap = (type(scope) is Scope and type(scope.subjects) is tuple
+               and any(type(pair) is tuple and len(pair) == 2 and type(pair[1]) is str and pair[1] in owners
+                       for pair in scope.subjects))
+    for entry in entries:
+        if type(entry) is not dict:
+            continue
+        proof = entry.get("proof")
+        if ((type(entry.get("id")) is str and entry["id"] in ENGINE_SOURCE_POLICY_EQUIVALENCE_IDS)
+                or (type(proof) is dict and proof.get("path") == ENGINE_SOURCE_POLICY_EQUIVALENCE_PROOF)
+                or (overlap and ENGINE_SOURCE_POLICY_EQUIVALENCE_CANDIDATE is not None
+                    and type(entry.get("mutant")) is dict
+                    and entry["mutant"].get("file") in owners
+                    and entry.get("candidate_sha256") == ENGINE_SOURCE_POLICY_EQUIVALENCE_CANDIDATE)):
+            return True
+        if type(entry.get("mutant")) is dict:
+            try:
+                if canonical_sha256(entry["mutant"]) in fingerprints:
+                    return True
+            except (TypeError, ValueError):
+                continue
+    return False
+
+
 def engine_source_policy_role_facts() -> dict:
     """Fix the five ordinary GNU owners without borrowing the optional KE graph."""
     return {
@@ -542,7 +771,8 @@ def require_engine_source_policy_role(scope: Scope, policy: dict) -> None:
             or scope.subjects != ENGINE_SOURCE_POLICY_SUBJECTS or type(policy) is not dict
             or set(policy) != set(facts) | {"binding", "mutation_inventories", "campaigns_admitted"}
             or any(type(policy.get(key)) is not type(value) or policy[key] != value
-                   for key, value in facts.items())
+                   for key, value in facts.items() if key != "mutation_equivalences")
+            or not engine_source_policy_equivalences_valid(policy)
             or type(policy["campaigns_admitted"]) is not bool):
         raise Incomplete("Engine source-policy analysis requires its exact five-owner stable role and unchanged gates.")
     binding = policy["binding"]
@@ -741,6 +971,15 @@ def admit_reviewed_mutation_inventories(scope: Scope, policy: dict, inventories:
                 if (type(item) is not dict or type(item.get("diff")) is not str
                         or hashlib.sha256(item["diff"].encode()).hexdigest() != facts["diff_sha256"]):
                     raise Incomplete("Phase-step equivalence differs from its exact rendered inventory diff.")
+        if _engine_source_policy_role(scope, policy):
+            for entry in policy["mutation_equivalences"]:
+                if entry["mutant"]["file"] != scope.select("all")[name]:
+                    continue
+                item = inventory.get(entry["mutant"]["name"])
+                review = ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWS[entry["id"]]
+                if (type(item) is not dict or type(item.get("diff")) is not str
+                        or hashlib.sha256(item["diff"].encode()).hexdigest() != review[2]):
+                    raise Incomplete("Source-policy equivalence differs from its exact rendered inventory diff.")
         admitted[name] = actual
     return admitted
 
@@ -762,6 +1001,10 @@ def admit_mutation_equivalences(root: Path, scope: Scope, policy: dict) -> list[
     substance of a proof. Independent review remains a coordinator obligation.
     Empty E is the default; no pattern, function skip or inferred approval exists.
     """
+    # The exact new family is checked here too, including renamed/partial scopes.
+    source_policy = _engine_source_policy_equivalence_role(scope, policy)
+    if source_policy:
+        require_engine_source_policy_role(scope, policy)
     # Bind the KE approvals at this receiving operation too: a direct caller
     # must not bypass code-owned reviews by omitting its earlier role check.
     if (engine_ke_features(scope)
@@ -776,6 +1019,22 @@ def admit_mutation_equivalences(root: Path, scope: Scope, policy: dict) -> list[
     if phase_step and not phase_step_equivalences_valid(policy):
         raise Incomplete("Phase-step equivalences differ from the closed current-source reviews.")
     root = root.resolve(strict=True)
+    if source_policy:
+        for name, expected in ENGINE_SOURCE_POLICY_EQUIVALENCE_DEPENDENCIES.items():
+            path = root / name
+            if (path.resolve(strict=True) != path
+                    or hashlib.sha256(read_analysis_bytes(path, maximum=ANALYSIS_JSON_MAX_BYTES)).hexdigest() != expected):
+                raise Incomplete("Source-policy equivalence configuration differs from its exact reviewed bytes.")
+        admitted_tools = ANALYSIS.admit(root, profile="stable-core")
+        if canonical_sha256(admitted_tools["inventories"]) != ENGINE_SOURCE_POLICY_EQUIVALENCE_TOOL_INVENTORY_SHA256:
+            raise Incomplete("Source-policy equivalence installed tool inventory differs from its exact review.")
+        stable = Path(admitted_tools["stable"])
+        if not stable.is_absolute() or stable.resolve(strict=True) != stable:
+            raise Incomplete("Source-policy equivalence requires the actually admitted canonical stable root.")
+        for name, expected in ENGINE_SOURCE_POLICY_EQUIVALENCE_STANDARD_SOURCES.items():
+            path = stable / "lib/rustlib/src/rust/library" / name
+            if hashlib.sha256(read_analysis_bytes(path, maximum=ANALYSIS_JSON_MAX_BYTES)).hexdigest() != expected:
+                raise Incomplete("Source-policy equivalence primary standard source differs from its exact review.")
     product_identity = PRODUCT.admit_product(root)[1]
     candidate = canonical_sha256(product_identity)
     if phase_step and any(product_identity.get(name) != digest
@@ -834,7 +1093,16 @@ def admit_mutation_equivalences(root: Path, scope: Scope, policy: dict) -> list[
                 or relative.as_posix() != proof["path"] or relative.suffix != ".md"):
             raise Incomplete("Equivalence proof must be a canonical maintained task artifact.")
         artifact = root / relative
-        if phase_step and proof["path"] == PHASE_STEP_EQUIVALENCE_PROOF:
+        if source_policy and proof["path"] == ENGINE_SOURCE_POLICY_EQUIVALENCE_PROOF:
+            data = read_analysis_bytes(artifact, maximum=65536)
+            try:
+                text = data.decode("utf-8")
+            except UnicodeDecodeError as error:
+                raise Incomplete("Source-policy review is not bounded UTF-8 text.") from error
+            if (hashlib.sha256(data).hexdigest() != proof["sha256"]
+                    or len(re.findall(r"^## " + re.escape(identifier) + r"(?:\s|$)", text, re.MULTILINE)) != 1):
+                raise Incomplete("Source-policy review bytes or unique exact section differ.")
+        elif phase_step and proof["path"] == PHASE_STEP_EQUIVALENCE_PROOF:
             data = read_analysis_bytes(artifact, maximum=2 * 1024 * 1024)
             if (hashlib.sha256(data).hexdigest() != proof["sha256"]
                     or len(re.findall(r"^#### " + re.escape(identifier) + r"(?:\s|$)",

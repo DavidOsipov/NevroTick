@@ -22,6 +22,47 @@ fn product_ok<T, E>(result: Result<T, E>, fact: &'static str) -> Result<T, E> {
 /// Maximum fixture I/O wait; unrelated to the processing deadline under test.
 const IO_LIMIT: Duration = Duration::from_secs(2);
 
+/// Check the actual retirement prerequisite before a fixture enters an owner loop.
+/// The timeout below is a modeled terminal value, never a claimed native timeout.
+/// # Errors
+/// Preserve genuine socket preparation and runtime registration failures.
+/// # Panics
+/// Reject lost terminal state, hidden completion or overwritten one-way history.
+pub(super) fn require_retirement_contract(
+    runtime: &tokio::runtime::Runtime,
+) -> Result<(), PilotError> {
+    let entered = runtime.enter();
+    let mut packet = [0_u8; PACKET_BYTES];
+    packet[0] = 0x23;
+    packet[40..48].fill(1);
+    let prepared = prepare_slot(SocketAddr::from(([127, 0, 0, 1], 41001)), packet)?;
+    let mut slot = live_slot(prepared)?;
+    slot.finish(TerminalOutcome::Timeout);
+    assert!(
+        matches!(&slot.phase, Phase::Done(TerminalOutcome::Timeout)),
+        "registered retirement prerequisite lost the actual Done phase"
+    );
+    assert!(
+        matches!(slot.terminal(), Some(TerminalOutcome::Timeout)),
+        "registered retirement prerequisite hid its terminal outcome"
+    );
+    assert!(
+        slot.done(),
+        "registered retirement prerequisite remained active"
+    );
+    slot.finish(TerminalOutcome::Stopped);
+    assert!(matches!(&slot.phase, Phase::Done(TerminalOutcome::Timeout)));
+    assert!(matches!(slot.terminal(), Some(TerminalOutcome::Timeout)));
+    assert!(slot.done());
+    assert_eq!(
+        (slot.sent, slot.send_attempts, slot.received, slot.rejected),
+        (false, 0, 0, 0)
+    );
+    drop(slot);
+    drop(entered);
+    Ok(())
+}
+
 /// Register a fixture pair under one private origin before either native send.
 /// This is fixture construction, not the public execute-origin integration test.
 ///
@@ -1905,6 +1946,7 @@ async fn check_commit_processing_boundaries(
     prepared: [PreparedSlot; 2],
     peers: [StdSocket; 2],
     offset_ns: i8,
+    direct_leaf: bool,
 ) -> Result<(), Box<dyn Error>> {
     let [a, b] = prepared;
     let mut slots = live_pair([a, b])?;
@@ -1952,7 +1994,14 @@ async fn check_commit_processing_boundaries(
     );
     assert!(charge_selected_datagram(&mut slots[0], &selected));
     assert_eq!((slots[0].received, slots[0].rejected), (3, 2));
-    commit_reply(&mut slots[0], &staged, processing, deadline);
+    if direct_leaf {
+        let current = receiver.borrow_and_update();
+        assert!(!current.stop && current.epoch == 0);
+        finish_valid_reply(&mut slots[0], &staged, processing);
+        drop(current);
+    } else {
+        commit_reply(&mut slots[0], &staged, processing, deadline);
+    }
     assert_eq!(slots[0].last_rejection, Some(Rejection::Origin));
     if offset_ns >= 0 {
         assert_eq!(
@@ -1976,7 +2025,11 @@ async fn check_commit_processing_boundaries(
         assert_eq!(facts.peer_transmit_bits, 0x090a_0b0c_0d0e_0f10);
     } else {
         assert!(matches!(&slots[0].phase, Phase::Pending(_)));
-        assert_eq!((slots[0].received, slots[0].rejected), (3, 3));
+        assert_eq!(
+            (slots[0].received, slots[0].rejected),
+            (3, 3),
+            "direct processing predecessor must charge exactly one rejection; direct_leaf={direct_leaf}"
+        );
     }
     check_fact_getters(&snapshot_facts(&slots[1])?, &saved_neighbor);
     Ok(())
@@ -1998,11 +2051,16 @@ fn commit_processing_accepts_equal_read_and_rejects_its_predecessor() -> Result<
         .enable_time()
         .max_blocking_threads(2)
         .build()?;
-    for offset_ns in [-1, 0, 1] {
-        let Fixture { prepared, peers } = fixture()?;
-        runtime.block_on(check_commit_processing_boundaries(
-            prepared, peers, offset_ns,
-        ))?;
+    for direct_leaf in [false, true] {
+        for offset_ns in [-1, 0, 1] {
+            let Fixture { prepared, peers } = fixture()?;
+            runtime.block_on(check_commit_processing_boundaries(
+                prepared,
+                peers,
+                offset_ns,
+                direct_leaf,
+            ))?;
+        }
     }
     Ok(())
 }

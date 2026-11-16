@@ -9,18 +9,334 @@ use super::*;
 use std::{
     error::Error,
     io,
-    net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV6},
-    sync::mpsc::{Receiver, RecvTimeoutError, SyncSender, TryRecvError},
+    net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV6},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        mpsc::{Receiver, RecvTimeoutError, SyncSender, TryRecvError},
+    },
     time::{Duration, Instant},
 };
 
 use crate::{
-    Control, LiveSlot, NativeDatagramPlatform, PACKET_BYTES, Phase, RECEIVE_BYTES, RECEIVE_CAP,
-    Rejection, RunClockContext, SoftwareClock, Status, TerminalOutcome, Wake,
+    AcquisitionReport, Control, LiveSlot, NativeDatagramPlatform, PACKET_BYTES, Phase,
+    RECEIVE_BYTES, RECEIVE_CAP, Rejection, RunClockContext, SoftwareClock, Status, TerminalOutcome,
+    Wake,
 };
 use tokio::{net::UdpSocket, sync::watch};
 
 type Check<T> = Result<T, Box<dyn Error>>;
+
+/// One checked public round; these explicit fixture durations are not defaults.
+/// # Errors
+/// Preserve the actual fixed-round constructor refusal.
+fn managed_round_config(
+    peers: &[SocketAddr],
+) -> Result<crate::AddressRoundConfig, crate::AddressRoundConfigError> {
+    crate::AddressRoundConfig::new(peers, Duration::from_millis(400), Duration::from_secs(2))
+}
+
+/// Retain an actual query and send one independently encoded header/control.
+/// # Errors
+/// Preserve native datagram failure or reject malformed/incomplete fixture traffic.
+/// # Panics
+/// Reject malformed queries or incomplete actual reply writes.
+fn managed_round_reply(
+    peer: &std::net::UdpSocket,
+    query: &[u8; RECEIVE_BYTES],
+    length: usize,
+    client: SocketAddr,
+    code: Option<u32>,
+) -> io::Result<()> {
+    assert_eq!(length, 48, "managed round must emit one exact NTP header");
+    assert_eq!(query[0], 0x23);
+    assert_ne!(&query[40..48], &[0; 8]);
+    let mut response = [0_u8; 48];
+    response[0] = 0x24;
+    response[1] = if code.is_some() { 0 } else { 2 };
+    if let Some(code) = code {
+        response[12..16].copy_from_slice(&code.to_be_bytes());
+    }
+    response[24..32].copy_from_slice(&query[40..48]);
+    response[32..40].copy_from_slice(&1_u64.to_be_bytes());
+    response[40..48].copy_from_slice(&2_u64.to_be_bytes());
+    assert_eq!(peer.send_to(&response, client)?, 48);
+    Ok(())
+}
+
+/// Drive the real public preparation/execution while one finite peer replies.
+/// Every scoped peer is joined before an error or assertion escapes.
+/// # Errors
+/// Preserve runtime, preparation/execution, join and native peer failures.
+/// # Panics
+/// Reject a broken retirement prerequisite before any dependent worker starts.
+fn managed_round_once(
+    source: &SourceHandle,
+    peers: &[SocketAddr],
+    responder: std::net::UdpSocket,
+    code: Option<u32>,
+) -> Check<(crate::AddressRoundReport, std::net::UdpSocket)> {
+    drop(runtime()?);
+    responder.set_read_timeout(Some(Duration::from_secs(2)))?;
+    let (prepared, control) = source.prepare_address_round(managed_round_config(peers)?)?;
+    std::thread::scope(|scope| {
+        let peer = scope.spawn(move || -> io::Result<std::net::UdpSocket> {
+            let mut query = [0; RECEIVE_BYTES];
+            let (length, client) = responder.recv_from(&mut query)?;
+            managed_round_reply(&responder, &query, length, client, code)?;
+            Ok(responder)
+        });
+        let result =
+            crate::execute_address_round(prepared, &crate::ControlSchedule::new(None, None)?);
+        let peer_result = peer.join().map_err(|_| "managed round peer panicked")?;
+        drop(control);
+        Ok((result?, peer_result?))
+    })
+}
+
+/// Atomic batch construction retains existing records and deduplicates aliases.
+/// # Errors
+/// Preserve isolated allocation, binding, target and complete-state observations.
+/// # Panics
+/// Reject any partially published key, reset fact, or extra canonical endpoint slot.
+#[test]
+fn managed_round_batch_binding_is_atomic_and_reuses_canonical_capacity() -> Check<()> {
+    let boundary_authority = isolated_authority(limits(1, 4)?)?;
+    let boundary_source = boundary_authority.source(0)?;
+    let peers = [
+        endpoint(43011),
+        endpoint(43012),
+        endpoint(43013),
+        endpoint(43014),
+    ];
+    let existing = boundary_source.bind(peers[0])?;
+    let existing_before = facts(&existing)?;
+    let invalid_selections: [&[SocketAddr]; 2] = [&[], &peers];
+    for selection in invalid_selections {
+        assert!(
+            matches!(
+                boundary_source.bind_round(selection),
+                Err(SourcePolicyError::InvalidSelection)
+            ),
+            "batch contract rejects empty or more than three peers"
+        );
+        for peer in &peers[1..] {
+            assert!(matches!(
+                boundary_authority.endpoint_target(*peer),
+                Err(SourcePolicyError::UnknownEndpoint)
+            ));
+        }
+        assert_eq!(facts(&existing)?, existing_before);
+    }
+    let single = boundary_source.bind_round(&peers[..1])?;
+    assert!(single.mode(peers[0]).is_ok());
+    let triple = boundary_source.bind_round(&peers[..3])?;
+    for peer in &peers[..3] {
+        assert!(triple.mode(*peer).is_ok());
+    }
+    // The fourth endpoint fits the authority; only a four-peer batch is invalid.
+    assert!(boundary_source.bind(peers[3]).is_ok());
+    assert_eq!(facts(&existing)?, existing_before);
+
+    let authority = isolated_authority(limits(2, 2)?)?;
+    let source = authority.source(0)?;
+    let first = source.bind(endpoint(43001))?;
+    let before = facts(&first)?;
+    assert!(matches!(
+        source.bind_round(&[endpoint(43001), endpoint(43002), endpoint(43003)]),
+        Err(SourcePolicyError::Capacity)
+    ));
+    assert!(matches!(
+        authority.endpoint_target(endpoint(43002)),
+        Err(SourcePolicyError::UnknownEndpoint)
+    ));
+    assert!(matches!(
+        authority.endpoint_target(endpoint(43003)),
+        Err(SourcePolicyError::UnknownEndpoint)
+    ));
+    assert_eq!(facts(&first)?, before);
+    let aliases = [
+        endpoint(43001),
+        SocketAddr::new(Ipv4Addr::LOCALHOST.to_ipv6_mapped().into(), 43001),
+        endpoint(43002),
+    ];
+    let batch = source.bind_round(&aliases)?;
+    assert!(batch.mode(endpoint(43001)).is_ok());
+    assert!(batch.mode(endpoint(43002)).is_ok());
+    assert!(matches!(
+        batch.mode(endpoint(43003)),
+        Err(SourcePolicyError::Foreign)
+    ));
+    assert!(
+        source
+            .bind_round(&[endpoint(43002), endpoint(43001)])
+            .is_ok()
+    );
+    assert_eq!(facts(&first)?, before);
+    let invalid = SocketAddr::from((Ipv4Addr::LOCALHOST, 0));
+    assert!(matches!(
+        source.bind_round(&[invalid]),
+        Err(SourcePolicyError::InvalidEndpoint)
+    ));
+    assert_eq!(facts(&first)?, before);
+    Ok(())
+}
+
+/// Genuine A/E controls preserve A/F blocking, B/E skip and independent B/F use.
+/// # Errors
+/// Preserve public managed preparation/execution and all joined native peer errors.
+/// # Panics
+/// Reject source evasion, transitive state, fabricated attempts or missing healthy traffic.
+#[test]
+fn public_managed_round_restrictions_skip_only_the_endpoint_and_preserve_absent_tail() -> Check<()>
+{
+    for code in [DENY, RSTR] {
+        let authority = isolated_authority(SourcePolicyLimits::new(
+            2,
+            2,
+            Duration::from_millis(1),
+            Duration::from_millis(4),
+        )?)?;
+        let a = authority.source(0)?;
+        let b = authority.source(1)?;
+        let e_socket = std::net::UdpSocket::bind(endpoint(0))?;
+        let f_socket = std::net::UdpSocket::bind(endpoint(0))?;
+        let e = e_socket.local_addr()?;
+        let f = f_socket.local_addr()?;
+        let (control_report, e_socket) = managed_round_once(&a, &[e], e_socket, Some(code))?;
+        assert_eq!(control_report.end(), crate::AddressRoundEnd::Control);
+        assert_eq!(control_report.attempts().len(), 1);
+        assert_eq!(
+            control_report.attempts()[0].report().control_code(),
+            Some(code)
+        );
+        let ae = a.bind(e)?;
+        let be = b.bind(e)?;
+        let restricted = facts(&ae)?;
+        let (prepared, control) = a.prepare_address_round(managed_round_config(&[f])?)?;
+        let stopped =
+            crate::execute_address_round(prepared, &crate::ControlSchedule::new(None, None)?)?;
+        drop(control);
+        assert_eq!(stopped.end(), crate::AddressRoundEnd::SourceRestricted);
+        assert!(stopped.attempts().is_empty());
+        assert_eq!(stopped.policy_refusals().len(), 1);
+        assert_eq!(
+            stopped.policy_refusals()[0].scope(),
+            crate::AddressPolicyRefusalScope::Source
+        );
+        f_socket.set_nonblocking(true)?;
+        let mut bytes = [0; RECEIVE_BYTES];
+        assert!(
+            matches!(f_socket.recv_from(&mut bytes), Err(error) if error.kind() == io::ErrorKind::WouldBlock)
+        );
+        f_socket.set_nonblocking(false)?;
+        let (healthy, f_socket) = managed_round_once(&b, &[e, f], f_socket, None)?;
+        assert_eq!(healthy.end(), crate::AddressRoundEnd::Reply);
+        assert_eq!(healthy.policy_refusals().len(), 1);
+        assert_eq!(healthy.policy_refusals()[0].index(), 0);
+        assert_eq!(
+            healthy.policy_refusals()[0].scope(),
+            crate::AddressPolicyRefusalScope::Endpoint
+        );
+        assert_eq!(healthy.attempts().len(), 1);
+        assert_eq!(healthy.attempts()[0].peer(), f);
+        assert_eq!(healthy.attempts()[0].report().status(), Status::Header);
+        assert!(healthy.attempts()[0].report().sent());
+        assert_eq!(facts(&ae)?, restricted);
+        assert_eq!(facts(&be)?[1], restricted[1]);
+        assert!(!facts(&be)?[0].2, "B must never inherit A's restriction");
+        e_socket.set_nonblocking(true)?;
+        assert!(
+            matches!(e_socket.recv_from(&mut bytes), Err(error) if error.kind() == io::ErrorKind::WouldBlock)
+        );
+        // A stopped before index1 must not manufacture either tail representation.
+        let (prepared, handle) = b.prepare_address_round(managed_round_config(&[f, e])?)?;
+        handle.stop();
+        let stopped =
+            crate::execute_address_round(prepared, &crate::ControlSchedule::new(None, None)?)?;
+        assert_eq!(stopped.end(), crate::AddressRoundEnd::Stopped);
+        assert!(stopped.attempts().is_empty() && stopped.policy_refusals().is_empty());
+        drop((f_socket, handle));
+    }
+    Ok(())
+}
+
+/// A real A/E control interrupts live B/E without transitive B/F refusal.
+/// # Errors
+/// Preserve bounded query handshakes, public owners and every joined fixture result.
+/// # Panics
+/// Reject live-scope invention, current-invocation fallback or inherited B restriction.
+#[test]
+fn public_managed_round_live_endpoint_refusal_preserves_history_and_later_source_use() -> Check<()>
+{
+    drop(runtime()?);
+    let authority = isolated_authority(SourcePolicyLimits::new(
+        2,
+        2,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let a = authority.source(0)?;
+    let b = authority.source(1)?;
+    let e_socket = std::net::UdpSocket::bind(endpoint(0))?;
+    e_socket.set_read_timeout(Some(Duration::from_secs(2)))?;
+    let f_socket = std::net::UdpSocket::bind(endpoint(0))?;
+    let e = e_socket.local_addr()?;
+    let f = f_socket.local_addr()?;
+    let (a_plan, a_control) = a.prepare_address_round(managed_round_config(&[e])?)?;
+    let (b_plan, b_control) = b.prepare_address_round(managed_round_config(&[e, f])?)?;
+    let (signal, first_seen) = std::sync::mpsc::sync_channel(1);
+    let (a_report, b_report, e_socket) = std::thread::scope(|scope| -> Check<_> {
+        let server = scope.spawn(move || -> io::Result<std::net::UdpSocket> {
+            let mut first = [0; RECEIVE_BYTES];
+            let (length, client) = e_socket.recv_from(&mut first)?;
+            signal
+                .send(())
+                .map_err(|_| io::Error::other("query observer closed"))?;
+            let mut second = [0; RECEIVE_BYTES];
+            let (second_length, second_client) = e_socket.recv_from(&mut second)?;
+            assert_eq!(second_length, 48);
+            assert_ne!(client, second_client, "A and B must own separate sockets");
+            managed_round_reply(&e_socket, &first, length, client, Some(DENY))?;
+            Ok(e_socket)
+        });
+        let a_job = scope.spawn(move || {
+            crate::execute_address_round(a_plan, &crate::ControlSchedule::new(None, None)?)
+        });
+        first_seen.recv_timeout(Duration::from_secs(2))?;
+        let b_job = scope.spawn(move || {
+            crate::execute_address_round(b_plan, &crate::ControlSchedule::new(None, None)?)
+        });
+        let a_result = a_job.join().map_err(|_| "A round worker panicked")?;
+        let b_result = b_job.join().map_err(|_| "B round worker panicked")?;
+        let peer_result = server
+            .join()
+            .map_err(|_| "shared endpoint worker panicked")?;
+        Ok((a_result?, b_result?, peer_result?))
+    })?;
+    drop((a_control, b_control));
+    assert_eq!(a_report.end(), crate::AddressRoundEnd::Control);
+    assert_eq!(b_report.end(), crate::AddressRoundEnd::Policy);
+    assert!(b_report.policy_refusals().is_empty());
+    assert_eq!(b_report.attempts().len(), 1);
+    assert_eq!(b_report.attempts()[0].peer(), e);
+    assert_eq!(
+        b_report.attempts()[0].report().source_policy_refusal(),
+        Some(SourcePolicyError::Disabled)
+    );
+    assert!(!facts(&b.bind(e)?)?[0].2);
+    f_socket.set_nonblocking(true)?;
+    let mut bytes = [0; RECEIVE_BYTES];
+    assert!(
+        matches!(f_socket.recv_from(&mut bytes), Err(error) if error.kind() == io::ErrorKind::WouldBlock)
+    );
+    f_socket.set_nonblocking(false)?;
+    let (later, f_socket) = managed_round_once(&b, &[f], f_socket, None)?;
+    assert_eq!(later.end(), crate::AddressRoundEnd::Reply);
+    assert_eq!(later.attempts().len(), 1);
+    assert_eq!(later.attempts()[0].report().status(), Status::Header);
+    drop((f_socket, e_socket));
+    Ok(())
+}
 
 /// Independently declared public refusal labels; no formatter supplies this oracle.
 const POLICY_DIAGNOSTICS: [(SourcePolicyError, &str, &str); 17] = [
@@ -617,25 +933,32 @@ struct IoFixture {
 
 /// Build the bounded current-thread runtime used by actual socket controls.
 /// # Errors
-/// Preserve the runtime builder's original setup error.
+/// Preserve original runtime construction and nested socket-registration errors.
+/// # Panics
+/// Reject a broken one-way retirement prerequisite before a dependent scenario.
 fn runtime() -> io::Result<tokio::runtime::Runtime> {
-    tokio::runtime::Builder::new_current_thread()
+    let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_io()
         .enable_time()
         .max_blocking_threads(2)
-        .build()
+        .build()?;
+    crate::processing_guard_tests::require_retirement_contract(&runtime)
+        .map_err(io::Error::other)?;
+    Ok(runtime)
 }
 
 /// Create two genuine managed sockets and one original invocation control owner.
 /// # Errors
 /// Preserve runtime registration, socket, bounds, policy, conversion and deadline errors.
 fn io_fixture() -> Check<IoFixture> {
-    let authority = isolated_authority(SourcePolicyLimits::new(
-        2,
-        2,
-        Duration::from_secs(30),
-        Duration::from_secs(30),
-    )?)?;
+    io_fixture_with_intervals(Duration::from_secs(30), Duration::from_secs(30))
+}
+
+/// Reuse the genuine two-socket fixture with explicit checked modeled intervals.
+/// # Errors
+/// Preserve the same allocation, configuration, socket and registration failures.
+fn io_fixture_with_intervals(initial: Duration, maximum: Duration) -> Check<IoFixture> {
+    let authority = isolated_authority(SourcePolicyLimits::new(2, 2, initial, maximum)?)?;
     let first_peer = std::net::UdpSocket::bind(endpoint(0))?;
     let second_peer = std::net::UdpSocket::bind(endpoint(0))?;
     first_peer.set_nonblocking(true)?;
@@ -986,6 +1309,97 @@ fn admitted_managed_plan_rechecks_restriction_before_series_socket_setup() -> Ch
     Ok(())
 }
 
+/// Refresh a genuinely pending slot after current-revision operator re-enable.
+/// A matching healthy reply remains historical after the same later operation.
+/// # Errors
+/// Preserve actual socket, selected-reply, target and policy observation failures.
+/// # Panics
+/// Reject lost charged work, stale publication, changed floors or an extra query.
+async fn active_refresh_keeps_charged_history(invalidate_pending: bool) -> Check<()> {
+    let mut fixture = io_fixture()?;
+    let packet = query(&mut fixture).await?;
+    let original_deadline = fixture.deadline;
+    for _ in 0..3 {
+        reply(&mut fixture, &packet, 0, UNKNOWN).await?;
+    }
+    let retained = facts(&fixture.binding)?;
+    let neighbor = fixture
+        .authority
+        .source(1)?
+        .bind(fixture.peers[1].local_addr()?)?;
+    let neighbor_facts = facts(&neighbor)?;
+    crate::refresh_source_policy(&mut fixture.slots[0]);
+    assert!(matches!(&fixture.slots[0].phase, Phase::Pending(_)));
+    assert_eq!(
+        (fixture.slots[0].received, fixture.slots[0].rejected),
+        (3, 3)
+    );
+    assert_eq!(
+        fixture.slots[0].last_rejection,
+        Some(Rejection::UnhandledControl)
+    );
+    assert_eq!(facts(&fixture.binding)?, retained);
+    let historical = if invalidate_pending {
+        None
+    } else {
+        reply(&mut fixture, &packet, 2, 0).await?;
+        let result = fixture.slots[0]
+            .terminal()
+            .and_then(TerminalOutcome::facts)
+            .ok_or("healthy pending neighbor did not commit its header")?;
+        Some((
+            result.processing,
+            result.read_return.mono_after,
+            Arc::clone(&result.identity),
+        ))
+    };
+    let source = fixture.authority.source(0)?;
+    let target = fixture.authority.source_target(&source)?;
+    fixture.authority.reenable(&[target])?;
+    let changed = facts(&fixture.binding)?;
+    assert_eq!(changed[0].0, retained[0].0);
+    assert_eq!(changed[0].1, retained[0].1);
+    assert_eq!(changed[0].3, retained[0].3 + 1);
+    assert_eq!(changed[0].4, retained[0].4 + 1);
+    assert_eq!(changed[1], retained[1]);
+    for _ in 0..2 {
+        crate::refresh_source_policy(&mut fixture.slots[0]);
+        let slot = &fixture.slots[0];
+        if let Some((processing, read, identity)) = &historical {
+            assert_eq!((slot.received, slot.rejected), (4, 3));
+            let result = slot
+                .terminal()
+                .and_then(TerminalOutcome::facts)
+                .ok_or("later refresh rewrote the historical header")?;
+            assert_eq!(
+                (result.processing, result.read_return.mono_after),
+                (*processing, *read)
+            );
+            assert!(Arc::ptr_eq(&result.identity, identity));
+        } else {
+            assert!(
+                matches!(
+                    slot.terminal(),
+                    Some(TerminalOutcome::SourcePolicy(SourcePolicyError::Stale))
+                ),
+                "active policy refresh must retire the genuine stale pending request"
+            );
+            assert_eq!((slot.received, slot.rejected), (3, 3));
+        }
+        assert_eq!(slot.last_rejection, Some(Rejection::UnhandledControl));
+        assert!(slot.sent);
+        assert_eq!(slot.send_attempts, 1);
+        assert_eq!(fixture.deadline, original_deadline);
+        assert_eq!(facts(&fixture.binding)?, changed);
+        assert_eq!(facts(&neighbor)?, neighbor_facts);
+    }
+    let mut extra = [0_u8; RECEIVE_BYTES];
+    assert!(
+        matches!(fixture.peers[0].try_recv_from(&mut extra), Err(error) if error.kind() == io::ErrorKind::WouldBlock)
+    );
+    Ok(())
+}
+
 /// Reject an actual old reply after targeted source/endpoint re-enable.
 /// # Errors
 /// Preserve runtime, socket, timeout, policy, target and record failures.
@@ -994,6 +1408,9 @@ fn admitted_managed_plan_rechecks_restriction_before_series_socket_setup() -> Ch
 #[test]
 fn actual_old_reply_cannot_reenter_after_both_correlation_epochs_advance() -> Check<()> {
     runtime()?.block_on(async {
+        for invalidate_pending in [false, true] {
+            active_refresh_keeps_charged_history(invalidate_pending).await?;
+        }
         let mut fixture = io_fixture()?;
         let packet = query(&mut fixture).await?;
         let due = facts(&fixture.binding)?[0]
@@ -1143,6 +1560,19 @@ async fn ordinary_candidate(
     fixture: &mut IoFixture,
     query: &[u8; RECEIVE_BYTES],
 ) -> Check<StagedReply> {
+    ordinary_candidate_observing(fixture, query, None).await
+}
+
+/// Stage genuine response bytes with a hardware or complete modeled read bracket.
+/// # Errors
+/// Preserve actual receive/charge/staging failures from the shared fixture path.
+/// # Panics
+/// Fail if the selected response or explicitly modeled read bracket is incoherent.
+async fn ordinary_candidate_observing(
+    fixture: &mut IoFixture,
+    query: &[u8; RECEIVE_BYTES],
+    modeled_read: Option<SoftwareClock>,
+) -> Check<StagedReply> {
     let mut packet = [0_u8; PACKET_BYTES];
     packet[0] = 0x24;
     packet[1] = 2;
@@ -1160,7 +1590,11 @@ async fn ordinary_candidate(
         fixture.slots[0].socket.recv_from(&mut bytes).await
     })
     .await??;
-    let read = SoftwareClock::capture();
+    let read = modeled_read.unwrap_or_else(SoftwareClock::capture);
+    assert!(
+        read.mono <= read.mono_after,
+        "fixture read bracket is inverted"
+    );
     let selected =
         crate::classify_read_result(NativeDatagramPlatform::current(), Ok((length, source)));
     assert!(crate::charge_selected_datagram(
@@ -1589,6 +2023,42 @@ fn assert_three_distinct_queries(queries: &[[u8; PACKET_BYTES]]) {
     }
 }
 
+/// Inspect the actual joined driver result before a peer error can hide a
+/// failed continuation. Error context retains only bounded kind/OS facts.
+/// # Errors
+/// Preserve an absent actual slot report instead of inventing completion.
+/// # Panics
+/// Fail if the real series lacks three completed Header facts or clean cleanup.
+fn assert_three_public_headers(
+    report: &AcquisitionReport,
+    peer_error: Option<&io::Error>,
+) -> Check<()> {
+    let peer_context = peer_error.map(|error| (error.kind(), error.raw_os_error()));
+    assert_eq!(
+        report.series().end(),
+        crate::SeriesEnd::Completed,
+        "actual series did not complete; joined peer error={peer_context:?}"
+    );
+    assert!(report.series().primary_failure().is_none());
+    assert!(report.series().stop_cleanup_failure().is_none());
+    assert!(report.series().invalidate_cleanup_failure().is_none());
+    for attempt in report.series().attempts() {
+        let record = attempt
+            .report()
+            .ok_or("actual query lacks its slot report")?;
+        assert_eq!(
+            record.status(),
+            Status::Header,
+            "actual query did not commit a Header; joined peer error={peer_context:?}"
+        );
+        assert!(record.sent());
+        assert_eq!(record.received(), 1);
+        assert_eq!(record.stratum(), Some(2));
+        assert!(record.facts().is_some());
+    }
+    Ok(())
+}
+
 /// The public path must survive the actual pre-socket contention branch and
 /// continue with genuine socket completions, rather than merely its retry leaf.
 /// # Errors
@@ -1604,6 +2074,7 @@ fn public_managed_series_continues_after_observed_setup_contention_release() -> 
     };
 
     const FIXTURE_WAIT: Duration = Duration::from_secs(5);
+    drop(runtime()?);
     let peer = std::net::UdpSocket::bind(endpoint(0))?;
     peer.set_read_timeout(Some(FIXTURE_WAIT))?;
     peer.set_write_timeout(Some(FIXTURE_WAIT))?;
@@ -1682,27 +2153,1810 @@ fn public_managed_series_continues_after_observed_setup_contention_release() -> 
         server_result.map_err(|_| io::Error::other("loopback server worker panicked"));
     let report = execution?;
     let contention_observed = worker_result??;
-    let (queries, peer) = server_result??;
     assert!(contention_observed);
+    let peer_error = match &server_result {
+        Err(error) | Ok(Err(error)) => Some(error),
+        Ok(Ok(_)) => None,
+    };
+    assert_three_public_headers(&report, peer_error)?;
+    let (queries, peer) = server_result??;
     assert_three_distinct_queries(&queries);
     peer.set_nonblocking(true)?;
     let mut extra = [0_u8; RECEIVE_BYTES];
     assert!(
         matches!(peer.recv_from(&mut extra), Err(error) if error.kind() == io::ErrorKind::WouldBlock)
     );
-    assert_eq!(report.series().end(), crate::SeriesEnd::Completed);
-    assert!(report.series().primary_failure().is_none());
-    assert!(report.series().stop_cleanup_failure().is_none());
-    assert!(report.series().invalidate_cleanup_failure().is_none());
-    for attempt in report.series().attempts() {
-        let record = attempt
-            .report()
-            .ok_or("actual query lacks its slot report")?;
-        assert_eq!(record.status(), Status::Header);
-        assert!(record.sent());
-        assert_eq!(record.received(), 1);
-        assert_eq!(record.stratum(), Some(2));
-        assert!(record.facts().is_some());
+    Ok(())
+}
+
+/// Test-owned wake observer; it neither mutates policy nor supplies a release.
+#[derive(Default)]
+struct PolicyReleaseWakeCounter {
+    /// Actual calls to the registered Waker's wake method.
+    wakes: AtomicUsize,
+}
+
+impl std::task::Wake for PolicyReleaseWakeCounter {
+    /// Count only an actual notification of this registered observer.
+    fn wake(self: Arc<Self>) {
+        let _previous = self.wakes.fetch_add(1, Ordering::SeqCst);
+    }
+}
+
+/// Disarming actual managed custody cancels the old registered notification.
+/// # Errors
+/// Preserve checked root/binding construction and actual same-cell lock failures.
+/// # Panics
+/// Fail if a genuine registered neighbor is not woken, a cancelled Waker is
+/// retained/notified, or any observer reference remains after local custody ends.
+#[test]
+fn managed_release_disarm_cancels_registered_waker_without_a_spurious_wake() -> Check<()> {
+    use std::{
+        future::Future,
+        task::{Context, Poll, Waker},
+    };
+
+    let authority = isolated_authority(limits(1, 1)?)?;
+    let binding = authority.source(0)?.bind(endpoint(41001))?;
+    let mut policy = LivePolicy::from_mode(SourceMode::Managed(binding));
+    let LiveMode::Managed(live) = &mut policy.mode else {
+        return Err("checked managed construction lost its live owner".into());
+    };
+    let cell = Arc::clone(&live.binding.source.cell);
+    let counter = Arc::new(PolicyReleaseWakeCounter::default());
+    {
+        let waker = Waker::from(Arc::clone(&counter));
+        let baseline_refs = Arc::strong_count(&counter);
+        let mut context = Context::from_waker(&waker);
+        // The real un-cancelled registration is a healthy neighbor first.
+        live.arm_release();
+        assert!(matches!(
+            live.released.as_mut().poll(&mut context),
+            Poll::Pending
+        ));
+        assert!(Arc::strong_count(&counter) > baseline_refs);
+        let guard = cell.lock()?;
+        drop(guard);
+        assert!(counter.wakes.load(Ordering::SeqCst) >= 1);
+        assert!(matches!(
+            live.released.as_mut().poll(&mut context),
+            Poll::Ready(())
+        ));
+        assert_eq!(Arc::strong_count(&counter), baseline_refs);
+
+        // Reset only the observer count; actual notification custody is issued
+        // by the same production arm/disarm and PolicyGuard Drop operations.
+        counter.wakes.store(0, Ordering::SeqCst);
+        live.arm_release();
+        assert!(matches!(
+            live.released.as_mut().poll(&mut context),
+            Poll::Pending
+        ));
+        assert!(Arc::strong_count(&counter) > baseline_refs);
+        let guard = cell.lock()?;
+        live.disarm_release();
+        let refs_after_disarm = Arc::strong_count(&counter);
+        drop(guard);
+        // Assertions follow real lock release even for a no-op disarm fault.
+        assert_eq!(refs_after_disarm, baseline_refs);
+        assert_eq!(counter.wakes.load(Ordering::SeqCst), 0);
+    }
+    assert_eq!(Arc::strong_count(&counter), 1);
+    Ok(())
+}
+
+/// Reject the empty public selection before attempting actual policy custody.
+/// # Errors
+/// Preserve actual checked bounds, root, target and record-observation failures.
+/// # Panics
+/// Fail if empty input becomes contention/success or changes any retained fact.
+#[test]
+fn public_reenable_empty_selection_refuses_before_actual_policy_lock() -> Check<()> {
+    let mut authority = isolated_authority(limits(1, 1)?)?;
+    let binding = authority.source(0)?.bind(endpoint(41201))?;
+    let before = facts(&binding)?;
+    let cell = Arc::clone(&authority.cell);
+    let held = cell.lock()?;
+    assert_eq!(
+        authority.reenable(&[]),
+        Err(SourcePolicyError::InvalidSelection)
+    );
+    drop(held);
+    assert_eq!(facts(&binding)?, before);
+    // The actual same authority remains usable after rejection.
+    authority.reenable(&[authority.endpoint_target(endpoint(41201))?])?;
+    let after = facts(&binding)?;
+    assert_eq!(after[0], before[0]);
+    let mut expected = before[1];
+    expected.3 = expected
+        .3
+        .checked_add(1)
+        .ok_or("fixture revision overflow")?;
+    expected.4 = expected.4.checked_add(1).ok_or("fixture epoch overflow")?;
+    assert_eq!(after[1], expected);
+    Ok(())
+}
+
+/// Reject 97 genuine targets before lock acquisition or duplicate analysis.
+/// # Errors
+/// Preserve checked root, target and complete record-observation failures.
+/// # Panics
+/// Fail if oversized input reports contention/duplicate/success or changes facts.
+#[test]
+fn public_reenable_97_genuine_target_clones_refuses_before_actual_policy_lock() -> Check<()> {
+    let mut authority = isolated_authority(limits(1, 1)?)?;
+    let source = authority.source(0)?;
+    let binding = source.bind(endpoint(41202))?;
+    let before = facts(&binding)?;
+    let target = authority.source_target(&source)?;
+    let oversized = vec![target.clone(); 97];
+    assert_eq!(oversized.len(), 97);
+    let cell = Arc::clone(&authority.cell);
+    let held = cell.lock()?;
+    assert_eq!(
+        authority.reenable(&oversized),
+        Err(SourcePolicyError::InvalidSelection)
+    );
+    drop(held);
+    assert_eq!(facts(&binding)?, before);
+    // Removing contention must not substitute the later duplicate diagnostic.
+    assert_eq!(
+        authority.reenable(&oversized),
+        Err(SourcePolicyError::InvalidSelection)
+    );
+    assert_eq!(facts(&binding)?, before);
+    authority.reenable(std::slice::from_ref(&target))?;
+    let after = facts(&binding)?;
+    let mut expected = before[0];
+    expected.3 = expected
+        .3
+        .checked_add(1)
+        .ok_or("fixture revision overflow")?;
+    expected.4 = expected.4.checked_add(1).ok_or("fixture epoch overflow")?;
+    assert_eq!(after[0], expected);
+    assert_eq!(after[1], before[1]);
+    Ok(())
+}
+
+/// Admit exactly 32 genuine sources plus all 64 independently bound endpoints.
+/// # Errors
+/// Preserve construction, actual reservation/control, targets and observation errors.
+/// # Panics
+/// Fail if the full legal selection refuses, misses/duplicates an update, resets
+/// RATE/floors, keeps refusal, or changes sticky availability.
+#[test]
+fn public_reenable_96_distinct_current_targets_preserves_all_record_facts() -> Check<()> {
+    let mut authority = isolated_authority(limits(32, 64)?)?;
+    let mut bindings = Vec::with_capacity(64);
+    let mut targets = Vec::with_capacity(96);
+    let now = Instant::now();
+    for index in 0..32 {
+        let source = authority.source(index)?;
+        let port = 42000_u16
+            .checked_add(
+                u16::try_from(index)?
+                    .checked_mul(2)
+                    .ok_or("fixture port overflow")?,
+            )
+            .ok_or("fixture port overflow")?;
+        let first = source.bind(endpoint(port))?;
+        let second_port = port.checked_add(1).ok_or("fixture port overflow")?;
+        let second = source.bind(endpoint(second_port))?;
+        // Real production reservation/control kernels create different own
+        // intervals and floors. No private field write supplies the oracle.
+        let mut rate = fixture_send(&first, &Arc::new(()), now)?;
+        fixture_control(&first, &mut rate, RATE, now)?;
+        let due = facts(&first)?[0].1.ok_or("RATE floor absent")?;
+        let mut denial = fixture_send(&second, &Arc::new(()), due)?;
+        fixture_control(&second, &mut denial, DENY, due)?;
+        targets.push(authority.source_target(&source)?);
+        targets.push(authority.endpoint_target(endpoint(port))?);
+        targets.push(authority.endpoint_target(endpoint(second_port))?);
+        bindings.push(first);
+        bindings.push(second);
+    }
+    assert_eq!(targets.len(), 96);
+    assert_eq!(bindings.len(), 64);
+    let before = bindings.iter().map(facts).collect::<Result<Vec<_>, _>>()?;
+    let (pairs, remainder) = before.as_chunks::<2>();
+    let expected_remainder: &[[RecordFacts; 2]] = &[];
+    assert_eq!(remainder, expected_remainder);
+    for [first, second] in pairs {
+        assert_eq!(first[0], second[0]);
+        assert!(first[0].2 && !first[1].2 && second[1].2);
+        assert_eq!(first[0].0, Duration::from_secs(2));
+        assert_eq!(first[1].0, Duration::from_secs(2));
+        assert_eq!(second[1].0, Duration::from_secs(1));
+        assert!(
+            first
+                .iter()
+                .chain(second)
+                .all(|record| record.1.is_some() && !record.5)
+        );
+    }
+    authority.reenable(&targets)?;
+    for (binding, previous) in bindings.iter().zip(before) {
+        let after = facts(binding)?;
+        for (actual, mut expected) in after.into_iter().zip(previous) {
+            expected.2 = false;
+            expected.3 = expected
+                .3
+                .checked_add(1)
+                .ok_or("fixture revision overflow")?;
+            expected.4 = expected.4.checked_add(1).ok_or("fixture epoch overflow")?;
+            assert_eq!(actual, expected);
+        }
+    }
+    Ok(())
+}
+
+/// A real panic while holding policy custody poisons subsequent public preparation.
+/// # Errors
+/// Preserve checked construction, socket setup, healthy preparation and observation errors.
+/// # Panics
+/// Fail if a poisoned owner prepares, loses its exact refusal, changes any record,
+/// emits a datagram, clears poison, or prevents the independent healthy owner.
+#[test]
+fn actual_poisoned_policy_refuses_public_session_prepare_without_udp_or_state_change() -> Check<()>
+{
+    use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+
+    // Both are isolated real allocator/cells. Never install/reset PROCESS_POLICY:
+    // its one real-installation test remains the only process-global writer.
+    let poisoned_peer = std::net::UdpSocket::bind(endpoint(0))?;
+    let healthy_peer = std::net::UdpSocket::bind(endpoint(0))?;
+    poisoned_peer.set_nonblocking(true)?;
+    healthy_peer.set_nonblocking(true)?;
+    let poisoned_authority = isolated_authority(limits(1, 1)?)?;
+    let poisoned_source = poisoned_authority.source(0)?;
+    let poisoned_binding = poisoned_source.bind(poisoned_peer.local_addr()?)?;
+    let mut poisoned_session = poisoned_source.session(SeriesConfig::new(
+        poisoned_peer.local_addr()?,
+        Duration::from_millis(100),
+        Duration::from_secs(1),
+    )?)?;
+    let healthy_authority = isolated_authority(limits(1, 1)?)?;
+    let healthy_source = healthy_authority.source(0)?;
+    let healthy_binding = healthy_source.bind(healthy_peer.local_addr()?)?;
+    let mut healthy_session = healthy_source.session(SeriesConfig::new(
+        healthy_peer.local_addr()?,
+        Duration::from_millis(100),
+        Duration::from_secs(1),
+    )?)?;
+    let poisoned_before = facts(&poisoned_binding)?;
+    let healthy_before = facts(&healthy_binding)?;
+    let cell = Arc::clone(&poisoned_authority.cell);
+    let held = cell.lock()?;
+    // resume_unwind deliberately starts the real unwind without a panic-hook
+    // side effect; the actual MutexGuard is dropped while the thread unwinds.
+    let unwind: Result<(), _> = catch_unwind(AssertUnwindSafe(move || {
+        let _held_during_unwind = held;
+        resume_unwind(Box::new("owned source-policy poisoning specimen"));
+    }));
+    assert!(unwind.is_err());
+    assert!(cell.state.is_poisoned());
+    for _ in 0..2 {
+        assert!(matches!(
+            poisoned_session.prepare(),
+            Err(crate::AcquisitionError::SourcePolicy(
+                SourcePolicyError::Poisoned
+            ))
+        ));
+    }
+    // Read the real poisoned state only for inert observation. Never clear its
+    // poison bit, recover it into authority, or write any field.
+    let after = match cell.state.try_lock() {
+        Err(TryLockError::Poisoned(error)) => {
+            let state = error.get_ref();
+            [
+                state.record(RecordKey::Source(poisoned_source.index))?,
+                state.record(RecordKey::Endpoint(poisoned_binding.endpoint))?,
+            ]
+            .map(|record| {
+                (
+                    record.interval,
+                    record.floor,
+                    record.refused,
+                    record.revision,
+                    record.epoch,
+                    record.unavailable,
+                )
+            })
+        }
+        Ok(_) | Err(TryLockError::WouldBlock) => {
+            return Err("actual policy poison was not retained".into());
+        }
+    };
+    assert_eq!(after, poisoned_before);
+    assert!(cell.state.is_poisoned());
+    // Real legal public preparation and unused-plan drop still work in another
+    // root. A second successful preparation proves the first released capacity.
+    for _ in 0..2 {
+        let (prepared, control) = healthy_session.prepare()?;
+        drop(prepared);
+        drop(control);
+        assert_eq!(facts(&healthy_binding)?, healthy_before);
+    }
+    for peer in [&poisoned_peer, &healthy_peer] {
+        let mut bytes = [0_u8; RECEIVE_BYTES];
+        assert!(matches!(
+            peer.recv_from(&mut bytes),
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock
+        ));
+    }
+    Ok(())
+}
+
+/// One independently mismatched identity at the actual receiving kernel.
+#[derive(Clone, Copy, Debug)]
+enum ReceivingIdentityMismatch {
+    /// A genuine stamp from another actual root, with matching catalogue positions.
+    Owner,
+    /// Another registered source sharing the exact endpoint in the same root.
+    Source,
+    /// Another endpoint under the same registered source and root.
+    Endpoint,
+    /// Another actual allocation supplied as the consumer's request identity.
+    Request,
+}
+
+/// Reject genuine but unrelated request contexts without spending their history.
+/// # Errors
+/// Preserve checked construction, binding, reservation and actual receiving failures.
+/// # Panics
+/// Fail if the intended one-hot mismatch is absent, refusal changes policy or
+/// consumes the genuine request, or its matching owner cannot receive it once.
+#[test]
+fn receiving_rejects_each_genuine_identity_mismatch_without_spending() -> Check<()> {
+    for mismatch in [
+        ReceivingIdentityMismatch::Owner,
+        ReceivingIdentityMismatch::Source,
+        ReceivingIdentityMismatch::Endpoint,
+        ReceivingIdentityMismatch::Request,
+    ] {
+        let authority = isolated_authority(limits(2, 2)?)?;
+        let source = authority.source(0)?;
+        let receiver = source.bind(endpoint(41001))?;
+        let foreign = isolated_authority(limits(2, 2)?)?;
+        let producer = match mismatch {
+            ReceivingIdentityMismatch::Owner => foreign.source(0)?.bind(endpoint(41001))?,
+            ReceivingIdentityMismatch::Source => authority.source(1)?.bind(endpoint(41001))?,
+            ReceivingIdentityMismatch::Endpoint => source.bind(endpoint(41002))?,
+            ReceivingIdentityMismatch::Request => receiver.clone(),
+        };
+        let request = Arc::new(());
+        let other_request = Arc::new(());
+        let mut pending = fixture_send(&producer, &request, Instant::now())?;
+        let actual_request = match mismatch {
+            ReceivingIdentityMismatch::Request => &other_request,
+            _ => &request,
+        };
+        let recipient_before = facts(&receiver)?;
+        let producer_before = facts(&producer)?;
+        // Both records remain available and their epochs agree. Only the
+        // independently selected identity below may cause the refusal.
+        SourceMode::Managed(receiver.clone()).admit()?;
+        assert_eq!(pending.stamp.source_epoch, recipient_before[0].4);
+        assert_eq!(pending.stamp.endpoint_epoch, recipient_before[1].4);
+        let observed = [
+            !Arc::ptr_eq(&receiver.source.cell, &pending.stamp.cell),
+            receiver.source.index != pending.stamp.source,
+            receiver.endpoint != pending.stamp.endpoint,
+            !Arc::ptr_eq(actual_request, &pending.stamp.request),
+        ];
+        let expected = match mismatch {
+            ReceivingIdentityMismatch::Owner => [true, false, false, false],
+            ReceivingIdentityMismatch::Source => [false, true, false, false],
+            ReceivingIdentityMismatch::Endpoint => [false, false, true, false],
+            ReceivingIdentityMismatch::Request => [false, false, false, true],
+        };
+        assert_eq!(
+            observed, expected,
+            "receiving mismatch fixture selected the wrong role"
+        );
+        let refusal = match mismatch {
+            ReceivingIdentityMismatch::Request => {
+                // The convenience fixture always supplies its own identity;
+                // reach the actual production receiver to challenge that input.
+                let guard = receiver.source.cell.lock()?;
+                guard
+                    .state()?
+                    .receiving(&receiver, &pending.stamp, actual_request)
+            }
+            _ => fixture_receive(&receiver, &mut pending),
+        };
+        assert!(matches!(refusal, Err(SourcePolicyError::Foreign)));
+        assert!(!pending.consumed);
+        assert_eq!(facts(&receiver)?, recipient_before);
+        assert_eq!(facts(&producer)?, producer_before);
+        // The same genuine request is still usable by its original owner.
+        fixture_receive(&producer, &mut pending)?;
+        assert!(pending.consumed);
+        assert!(matches!(
+            fixture_receive(&producer, &mut pending),
+            Err(SourcePolicyError::Stale)
+        ));
+        assert_eq!(facts(&receiver)?, recipient_before);
+        assert_eq!(facts(&producer)?, producer_before);
+    }
+    Ok(())
+}
+
+/// Select exactly one actual public re-enable target, never a raw record index.
+#[derive(Clone, Copy, Debug)]
+enum ReceivingEpochSide {
+    /// Invalidate only the logical source's old outstanding epoch.
+    Source,
+    /// Invalidate only the canonical endpoint's old outstanding epoch.
+    Endpoint,
+}
+
+/// Reject an old request if either individual receiving epoch changes.
+/// # Errors
+/// Preserve checked construction, binding, reservation, public re-enable,
+/// checked expected-successor arithmetic and genuine receiving failures.
+/// # Panics
+/// Fail if re-enable changes other facts, one stale epoch is admitted, rejected
+/// work is consumed or changes policy, or a new matching request is refused.
+#[test]
+fn receiving_rejects_either_individually_reenabled_epoch_without_spending() -> Check<()> {
+    for side in [ReceivingEpochSide::Source, ReceivingEpochSide::Endpoint] {
+        let mut authority = isolated_authority(limits(1, 1)?)?;
+        let source = authority.source(0)?;
+        let binding = source.bind(endpoint(41001))?;
+        let mut old = fixture_send(&binding, &Arc::new(()), Instant::now())?;
+        let before = facts(&binding)?;
+        // Public re-enable is valid for the exact current revision, even when
+        // the record is available. It still invalidates its old correlations.
+        let (target, selected) = match side {
+            ReceivingEpochSide::Source => (authority.source_target(&source)?, 0),
+            ReceivingEpochSide::Endpoint => (authority.endpoint_target(endpoint(41001))?, 1),
+        };
+        authority.reenable(std::slice::from_ref(&target))?;
+        let retained = facts(&binding)?;
+        let mut expected = before;
+        expected[selected].3 = before[selected]
+            .3
+            .checked_add(1)
+            .ok_or("fixture revision overflow")?;
+        expected[selected].4 = before[selected]
+            .4
+            .checked_add(1)
+            .ok_or("fixture epoch overflow")?;
+        assert_eq!(retained, expected);
+        SourceMode::Managed(binding.clone()).admit()?;
+        assert!(matches!(
+            fixture_receive(&binding, &mut old),
+            Err(SourcePolicyError::Stale)
+        ));
+        assert!(!old.consumed);
+        assert_eq!(facts(&binding)?, retained);
+        // A stale control cannot acquire a second effect path either.
+        let old_sent_at = old.stamp.sent_at;
+        assert!(matches!(
+            fixture_control(&binding, &mut old, RATE, old_sent_at),
+            Err(SourcePolicyError::Stale)
+        ));
+        assert!(!old.consumed);
+        assert_eq!(facts(&binding)?, retained);
+        let due = retained[0]
+            .1
+            .max(retained[1].1)
+            .ok_or("retained send floor absent")?;
+        let mut healthy = fixture_send(&binding, &Arc::new(()), due)?;
+        fixture_receive(&binding, &mut healthy)?;
+        assert!(healthy.consumed);
+        assert!(matches!(
+            fixture_receive(&binding, &mut healthy),
+            Err(SourcePolicyError::Stale)
+        ));
+    }
+    Ok(())
+}
+
+/// Observe one actual managed owner's contention, then its concrete release.
+/// The owned policy cell is derived from the slot itself, not supplied separately.
+/// # Errors
+/// Preserve absent managed ownership, actual policy custody and refresh failures.
+fn observe_live_contention_episode(slot: &mut LiveSlot) -> Check<(bool, bool)> {
+    use std::{
+        future::Future,
+        task::{Context, Poll, Waker},
+    };
+
+    let cell = match &slot.policy.mode {
+        LiveMode::Managed(live) => Arc::clone(&live.binding.source.cell),
+        LiveMode::UnmanagedLab => return Err("fixture has no actual managed live owner".into()),
+    };
+    let guard = cell.lock()?;
+    slot.policy.refresh(&slot.identity)?;
+    let mut context = Context::from_waker(Waker::noop());
+    let mut wake = std::pin::pin!(slot.policy.wake());
+    let pending_while_held = matches!(wake.as_mut().poll(&mut context), Poll::Pending);
+    drop(guard);
+    // A completed async future must never be polled again. Preserve a premature
+    // completion as an explicit failed observation after actual guard cleanup.
+    let ready_after_release =
+        pending_while_held && matches!(wake.as_mut().poll(&mut context), Poll::Ready(()));
+    Ok((pending_while_held, ready_after_release))
+}
+
+/// Reset actual live notification custody for a second distinct contention episode.
+/// # Errors
+/// Preserve runtime, checked fixture, native I/O, timeout and actual policy failures.
+/// # Panics
+/// Fail if a held transaction produces readiness, real release loses its wake,
+/// policy or send history changes before admission, or healthy completion differs.
+#[test]
+fn repeated_actual_live_contention_waits_for_each_release_before_a_healthy_send() -> Check<()> {
+    runtime()?.block_on(async {
+        tokio::time::timeout(Duration::from_secs(2), async {
+            let mut fixture = io_fixture()?;
+            let retained = facts(&fixture.binding)?;
+            for _episode in 0..2 {
+                let observed = observe_live_contention_episode(&mut fixture.slots[0])?;
+                assert_eq!(observed, (true, true));
+                assert!(matches!(fixture.slots[0].phase, Phase::Sending));
+                assert!(!fixture.slots[0].sent);
+                assert_eq!(fixture.slots[0].send_attempts, 0);
+                assert_eq!(facts(&fixture.binding)?, retained);
+                let mut bytes = [0_u8; RECEIVE_BYTES];
+                assert!(matches!(fixture.peers[0].try_recv_from(&mut bytes),
+                    Err(error) if error.kind() == io::ErrorKind::WouldBlock));
+                // Do not perform a successful live refresh between episodes:
+                // that would let disarm_release mask a missing arm reset.
+            }
+            let actual_query = query(&mut fixture).await?;
+            assert_eq!(fixture.slots[0].send_attempts, 1);
+            reply(&mut fixture, &actual_query, 2, 0).await?;
+            assert_eq!(
+                fixture.slots[0].terminal().map(TerminalOutcome::status),
+                Some(Status::Header)
+            );
+            assert!(
+                fixture.slots[0]
+                    .terminal()
+                    .and_then(TerminalOutcome::facts)
+                    .is_some()
+            );
+            assert_eq!(fixture.slots[0].received, 1);
+            Ok::<(), Box<dyn Error>>(())
+        })
+        .await?
+    })
+}
+
+/// A floor appearing after readiness keeps the real concrete sender waiting.
+/// # Errors
+/// Preserve runtime, fixture, actual readiness/I/O, policy reservation and timeout failures.
+/// # Panics
+/// Fail if a stale readiness hint sends, retires with `NotDue`, charges work or
+/// changes a retained floor, or the independent healthy actual send is unaccounted.
+#[test]
+fn actual_send_rechecks_a_late_future_floor_without_retirement_or_an_attempt() -> Check<()> {
+    runtime()?.block_on(async {
+        tokio::time::timeout(Duration::from_secs(2), async {
+            let mut fixture = io_fixture()?;
+            let original_deadline = fixture.deadline;
+            {
+                let slot = &mut fixture.slots[0];
+                slot.policy.refresh(&slot.identity)?;
+            }
+            assert!(fixture.slots[0].can_send());
+            fixture.slots[0].socket.writable().await?;
+            // This is a genuine separate reservation through the production
+            // kernel AFTER readiness; no native-send fact is asserted for it.
+            let mut competing = fixture_send(&fixture.binding, &Arc::new(()), Instant::now())?;
+            let retained = facts(&fixture.binding)?;
+            assert!(
+                retained
+                    .iter()
+                    .all(|record| record.1.is_some_and(|floor| floor > Instant::now()))
+            );
+            assert!(fixture.slots[0].can_send());
+            // Deliberately preserve the stale cached Ready hint: a refresh here
+            // would mask the actual final sender's required fresh floor guard.
+            crate::attempt_send(&mut fixture.slots[0], original_deadline, &fixture.control);
+            assert!(matches!(fixture.slots[0].phase, Phase::Sending));
+            assert!(fixture.slots[0].terminal().is_none());
+            assert!(!fixture.slots[0].sent);
+            assert_eq!(fixture.slots[0].send_attempts, 0);
+            assert_eq!(
+                (fixture.slots[0].received, fixture.slots[0].rejected),
+                (0, 0)
+            );
+            assert!(!fixture.slots[0].policy.wants_writable());
+            assert_eq!(fixture.deadline, original_deadline);
+            assert_eq!(facts(&fixture.binding)?, retained);
+            let mut bytes = [0_u8; RECEIVE_BYTES];
+            assert!(matches!(fixture.peers[0].try_recv_from(&mut bytes),
+                Err(error) if error.kind() == io::ErrorKind::WouldBlock));
+            fixture_receive(&fixture.binding, &mut competing)?;
+            assert_eq!(facts(&fixture.binding)?, retained);
+            // A separate genuine managed owner is the actual-send neighbor;
+            // never wait out, shorten or refund the original future floor.
+            let mut healthy = io_fixture()?;
+            let actual_query = query(&mut healthy).await?;
+            assert_eq!(healthy.slots[0].send_attempts, 1);
+            reply(&mut healthy, &actual_query, 2, 0).await?;
+            assert_eq!(
+                healthy.slots[0].terminal().map(TerminalOutcome::status),
+                Some(Status::Header)
+            );
+            assert_eq!(healthy.slots[0].received, 1);
+            Ok::<(), Box<dyn Error>>(())
+        })
+        .await?
+    })
+}
+
+/// Seed nonzero budgets through three actual selected UNKNOWN UDP replies, then
+/// stage the fourth actual datagram without manually writing either counter.
+/// # Errors
+/// Preserve real query/reply, timeout, staging and policy failures.
+/// # Panics
+/// Fail if actual admission does not retain Pending with exactly (4, 3).
+async fn seeded_final_commit_candidate(fixture: &mut IoFixture) -> Check<StagedReply> {
+    let packet = query(fixture).await?;
+    for _ in 0..3 {
+        reply(fixture, &packet, 0, UNKNOWN).await?;
+    }
+    assert_eq!(
+        (fixture.slots[0].received, fixture.slots[0].rejected),
+        (3, 3)
+    );
+    assert!(matches!(fixture.slots[0].phase, Phase::Pending(_)));
+    let candidate = ordinary_candidate(fixture, &packet).await?;
+    assert_eq!(
+        (fixture.slots[0].received, fixture.slots[0].rejected),
+        (4, 3)
+    );
+    Ok(candidate)
+}
+
+/// Enter the actual final leaf while retaining the invocation's real watch Ref.
+/// Deliberately omit the parent's earlier deadline/read-time prechecks: they
+/// otherwise mask the independent final leaf's current-owner obligations.
+fn final_leaf_with_control(fixture: &mut IoFixture, candidate: &StagedReply) -> ManagedEffect {
+    let current_control = fixture.control.borrow();
+    let effect = commit_managed_reply(&mut fixture.slots[0], candidate, fixture.deadline);
+    drop(current_control);
+    effect
+}
+
+/// One changed field in an otherwise genuine well-typed staged proposal.
+/// These are proposal transfers, not whole genuine foreign native histories.
+#[derive(Clone, Copy, Debug)]
+enum FinalStampTransfer {
+    /// Transfer only a genuinely foreign root allocation.
+    Cell,
+    /// Transfer only another real request allocation.
+    Request,
+    /// Transfer only another checked source index.
+    Source,
+    /// Transfer only another checked endpoint position.
+    Endpoint,
+    /// Transfer only a genuine neighbor source's newer epoch.
+    SourceEpoch,
+    /// Transfer only a genuine neighbor endpoint's newer epoch.
+    EndpointEpoch,
+    /// Transfer only a different checked reservation coordinate.
+    SentAt,
+}
+
+/// Transfer one selected field and independently require the exact mismatch mask.
+/// # Panics
+/// Fail if the generated proposal changes a different role or more than one role.
+fn final_stamp_transfer_proposal(
+    field: FinalStampTransfer,
+    genuine: &Correlation,
+    alternate: &Correlation,
+    foreign: &Correlation,
+) -> Correlation {
+    let mut proposal = genuine.clone();
+    let expected = match field {
+        FinalStampTransfer::Cell => {
+            proposal.cell = Arc::clone(&foreign.cell);
+            [true, false, false, false, false, false, false]
+        }
+        FinalStampTransfer::Request => {
+            proposal.request = Arc::clone(&alternate.request);
+            [false, true, false, false, false, false, false]
+        }
+        FinalStampTransfer::Source => {
+            proposal.source = alternate.source;
+            [false, false, true, false, false, false, false]
+        }
+        FinalStampTransfer::Endpoint => {
+            proposal.endpoint = alternate.endpoint;
+            [false, false, false, true, false, false, false]
+        }
+        FinalStampTransfer::SourceEpoch => {
+            proposal.source_epoch = alternate.source_epoch;
+            [false, false, false, false, true, false, false]
+        }
+        FinalStampTransfer::EndpointEpoch => {
+            proposal.endpoint_epoch = alternate.endpoint_epoch;
+            [false, false, false, false, false, true, false]
+        }
+        FinalStampTransfer::SentAt => {
+            proposal.sent_at = alternate.sent_at;
+            [false, false, false, false, false, false, true]
+        }
+    };
+    assert_eq!(
+        [
+            !Arc::ptr_eq(&proposal.cell, &genuine.cell),
+            !Arc::ptr_eq(&proposal.request, &genuine.request),
+            proposal.source != genuine.source,
+            proposal.endpoint != genuine.endpoint,
+            proposal.source_epoch != genuine.source_epoch,
+            proposal.endpoint_epoch != genuine.endpoint_epoch,
+            proposal.sent_at != genuine.sent_at,
+        ],
+        expected,
+        "wrong one-hot final proposal: {field:?}"
+    );
+    proposal
+}
+
+/// Challenge every final-correlation equality with only its one field changed.
+/// # Errors
+/// Preserve real fixture, checked target, kernel reservation and staging failures.
+/// # Panics
+/// Fail if the proposal is not one-hot, is accepted, closes Pending, refunds
+/// accounting, mutates policy/deadline or prevents the restored genuine commit.
+async fn final_stamp_transfer_case(field: FinalStampTransfer) -> Check<()> {
+    let mut fixture = io_fixture()?;
+    let original_deadline = fixture.deadline;
+    let mut candidate = seeded_final_commit_candidate(&mut fixture).await?;
+    let StagedKind::Managed {
+        stamp: genuine,
+        control: None,
+    } = &candidate.policy.kind
+    else {
+        return Err("ordinary genuine candidate lost its managed stamp".into());
+    };
+    let genuine = genuine.clone();
+    let neighbor_source = fixture.authority.source(1)?;
+    let neighbor = neighbor_source.bind(fixture.peers[1].local_addr()?)?;
+    let source_target = fixture.authority.source_target(&neighbor_source)?;
+    let endpoint_target = fixture
+        .authority
+        .endpoint_target(fixture.peers[1].local_addr()?)?;
+    fixture
+        .authority
+        .reenable(&[source_target, endpoint_target])?;
+    let later = genuine
+        .sent_at
+        .checked_add(Duration::from_secs(1))
+        .ok_or("fixture alternate send coordinate overflow")?;
+    // Alternate primitive roles/epochs/time come from genuine checked neighbor
+    // ownership and the real debit kernel. Only one field is transferred below.
+    let alternate = fixture_send(&neighbor, &fixture.slots[1].identity, later)?.stamp;
+    let foreign = isolated_authority(limits(1, 1)?)?;
+    let foreign_binding = foreign.source(0)?.bind(fixture.peers[0].local_addr()?)?;
+    let foreign_request = fixture_send(&foreign_binding, &genuine.request, genuine.sent_at)?;
+    let proposal =
+        final_stamp_transfer_proposal(field, &genuine, &alternate, &foreign_request.stamp);
+    let before = [
+        facts(&fixture.binding)?,
+        facts(&neighbor)?,
+        facts(&foreign_binding)?,
+    ];
+    candidate.policy = StagedPolicy {
+        kind: StagedKind::Managed {
+            stamp: proposal,
+            control: None,
+        },
+    };
+    assert!(!fixture.control.borrow().stop);
+    assert!(matches!(
+        final_leaf_with_control(&mut fixture, &candidate),
+        ManagedEffect::Handled
+    ));
+    assert!(matches!(fixture.slots[0].phase, Phase::Pending(_)));
+    assert_eq!(
+        (fixture.slots[0].received, fixture.slots[0].rejected),
+        (4, 4)
+    );
+    assert_eq!(
+        fixture.slots[0].last_rejection,
+        Some(Rejection::SourcePolicy(SourcePolicyError::Foreign))
+    );
+    assert_eq!(fixture.deadline, original_deadline);
+    assert_eq!(
+        [
+            facts(&fixture.binding)?,
+            facts(&neighbor)?,
+            facts(&foreign_binding)?
+        ],
+        before
+    );
+    candidate.policy = StagedPolicy {
+        kind: StagedKind::Managed {
+            stamp: genuine,
+            control: None,
+        },
+    };
+    assert_final_genuine_commit_once(&mut fixture, &candidate)?;
+    assert_eq!(
+        [
+            facts(&fixture.binding)?,
+            facts(&neighbor)?,
+            facts(&foreign_binding)?
+        ],
+        before
+    );
+    Ok(())
+}
+
+/// Consume the restored real candidate once; a repeated leaf cannot rewrite it.
+/// # Errors
+/// Reject a missing ordinary terminal fact rather than manufacturing completion.
+/// # Panics
+/// Fail if completion changes charged accounting or a repeated leaf republishes.
+fn assert_final_genuine_commit_once(fixture: &mut IoFixture, candidate: &StagedReply) -> Check<()> {
+    assert!(matches!(
+        final_leaf_with_control(fixture, candidate),
+        ManagedEffect::Handled
+    ));
+    assert_eq!(
+        fixture.slots[0].terminal().map(TerminalOutcome::status),
+        Some(Status::Header)
+    );
+    assert_eq!(
+        (fixture.slots[0].received, fixture.slots[0].rejected),
+        (4, 4)
+    );
+    let processing = fixture.slots[0]
+        .terminal()
+        .and_then(TerminalOutcome::facts)
+        .ok_or("genuine final commit has no ordinary facts")?
+        .processing;
+    assert!(matches!(
+        final_leaf_with_control(fixture, candidate),
+        ManagedEffect::Handled
+    ));
+    let saved = fixture.slots[0]
+        .terminal()
+        .and_then(TerminalOutcome::facts)
+        .ok_or("repeated final leaf lost historical facts")?;
+    assert_eq!(saved.processing, processing);
+    assert_eq!(
+        (fixture.slots[0].received, fixture.slots[0].rejected),
+        (4, 4)
+    );
+    Ok(())
+}
+
+/// Exercise the actual final consuming owner, not only the earlier kernel check.
+/// # Errors
+/// Preserve runtime, bounded scenario, query, proposal and healthy commit failures.
+/// # Panics
+/// Fail if any individually transferred field bypasses the intended Foreign guard.
+#[test]
+fn final_commit_rejects_each_one_hot_policy_stamp_transfer_without_refund() -> Check<()> {
+    runtime()?.block_on(async {
+        for field in [
+            FinalStampTransfer::Cell,
+            FinalStampTransfer::Request,
+            FinalStampTransfer::Source,
+            FinalStampTransfer::Endpoint,
+            FinalStampTransfer::SourceEpoch,
+            FinalStampTransfer::EndpointEpoch,
+            FinalStampTransfer::SentAt,
+        ] {
+            tokio::time::timeout(Duration::from_secs(2), final_stamp_transfer_case(field))
+                .await??;
+        }
+        Ok(())
+    })
+}
+
+/// Independently selected final-leaf guard; the parent cannot supply its failure.
+#[derive(Clone, Copy, Debug)]
+enum FinalLeafGuard {
+    /// Hold the actual policy guard through the leaf admission.
+    Contention,
+    /// Wait past the original cutoff admitted before any request work.
+    OriginalDeadline,
+    /// Present an explicitly invalid well-typed future read coordinate.
+    FutureReadProposal,
+}
+
+/// Preserve charged work on final-leaf refusal and preserve healthy continuation.
+/// # Errors
+/// Preserve real setup, bounded UDP/staging, custody and deadline arithmetic errors.
+/// # Panics
+/// Fail if a leaf refunds the seeded counters, refreshes expiry, mutates policy
+/// or commits an invalid proposal; all assertions follow actual guard release.
+async fn final_leaf_guard_case(guard: FinalLeafGuard) -> Check<()> {
+    let mut fixture = io_fixture()?;
+    if matches!(guard, FinalLeafGuard::OriginalDeadline) {
+        // This becomes the ORIGINAL request cutoff before actual query/staging.
+        fixture.deadline = Instant::now()
+            .checked_add(Duration::from_millis(500))
+            .ok_or("fixture original deadline overflow")?;
+    }
+    let original_deadline = fixture.deadline;
+    let mut candidate = seeded_final_commit_candidate(&mut fixture).await?;
+    let genuine_read = candidate.read;
+    let before = facts(&fixture.binding)?;
+    assert!(!fixture.control.borrow().stop);
+    assert!(candidate.read.mono_after < original_deadline);
+    assert!(
+        Instant::now() < original_deadline,
+        "fixture did not stage before its original expiry"
+    );
+    let effect = match guard {
+        FinalLeafGuard::Contention => {
+            let cell = Arc::clone(&fixture.binding.source.cell);
+            let held = cell.lock()?;
+            let effect = final_leaf_with_control(&mut fixture, &candidate);
+            drop(held);
+            effect
+        }
+        FinalLeafGuard::OriginalDeadline => {
+            tokio::time::sleep_until(original_deadline.into()).await;
+            assert!(Instant::now() >= original_deadline);
+            final_leaf_with_control(&mut fixture, &candidate)
+        }
+        FinalLeafGuard::FutureReadProposal => {
+            // Deliberately invalid well-typed proposal, not a native observation.
+            candidate.read.mono_after = Instant::now()
+                .checked_add(Duration::from_secs(30))
+                .ok_or("fixture future read coordinate overflow")?;
+            final_leaf_with_control(&mut fixture, &candidate)
+        }
+    };
+    assert!(matches!(effect, ManagedEffect::Handled));
+    assert_eq!(
+        (fixture.slots[0].received, fixture.slots[0].rejected),
+        (4, 4)
+    );
+    assert_eq!(
+        fixture.slots[0].last_rejection,
+        Some(Rejection::UnhandledControl)
+    );
+    assert_eq!(facts(&fixture.binding)?, before);
+    assert_eq!(fixture.deadline, original_deadline);
+    match guard {
+        FinalLeafGuard::Contention | FinalLeafGuard::FutureReadProposal => {
+            assert!(matches!(fixture.slots[0].phase, Phase::Pending(_)));
+            candidate.read = genuine_read;
+            assert_final_genuine_commit_once(&mut fixture, &candidate)?;
+            assert_eq!(facts(&fixture.binding)?, before);
+        }
+        FinalLeafGuard::OriginalDeadline => {
+            assert_eq!(
+                fixture.slots[0].terminal().map(TerminalOutcome::status),
+                Some(Status::Timeout)
+            );
+            assert!(
+                fixture.slots[0]
+                    .terminal()
+                    .and_then(TerminalOutcome::facts)
+                    .is_none()
+            );
+            // A separate genuine owner remains usable; it gets its own original
+            // deadline, never a replacement cutoff for the expired request.
+            let mut healthy = io_fixture()?;
+            let healthy_candidate = seeded_final_commit_candidate(&mut healthy).await?;
+            let healthy_before = facts(&healthy.binding)?;
+            assert!(matches!(
+                final_leaf_with_control(&mut healthy, &healthy_candidate),
+                ManagedEffect::Handled
+            ));
+            assert_eq!(
+                healthy.slots[0].terminal().map(TerminalOutcome::status),
+                Some(Status::Header)
+            );
+            assert_eq!(
+                (healthy.slots[0].received, healthy.slots[0].rejected),
+                (4, 3)
+            );
+            assert_eq!(facts(&healthy.binding)?, healthy_before);
+        }
+    }
+    Ok(())
+}
+
+/// Leaf contention, original expiry and future-read proposals spend rejection work.
+/// # Errors
+/// Preserve runtime and each independently bounded two-second scenario's failure.
+/// # Panics
+/// Fail if any guard invents completion/refunds work or loses its valid neighbor.
+#[test]
+fn final_commit_leaf_guards_preserve_nonzero_receive_accounting_and_original_expiry() -> Check<()> {
+    runtime()?.block_on(async {
+        for guard in [
+            FinalLeafGuard::Contention,
+            FinalLeafGuard::OriginalDeadline,
+            FinalLeafGuard::FutureReadProposal,
+        ] {
+            tokio::time::timeout(Duration::from_secs(2), final_leaf_guard_case(guard)).await??;
+        }
+        Ok(())
+    })
+}
+
+/// Independently specified floor neighbors; equality is an admitted send point.
+/// # Errors
+/// Refuse fixture coordinate overflow instead of wrapping its modeled boundary.
+fn modeled_floor_neighbors(floor: Instant) -> Check<[(Instant, bool); 3]> {
+    Ok([
+        (
+            floor
+                .checked_sub(Duration::from_nanos(1))
+                .ok_or("modeled floor predecessor overflow")?,
+            false,
+        ),
+        (floor, true),
+        (
+            floor
+                .checked_add(Duration::from_nanos(1))
+                .ok_or("modeled floor successor overflow")?,
+            true,
+        ),
+    ])
+}
+
+/// Model complete coherent software brackets, not native timestamp evidence.
+/// # Errors
+/// Preserve fixture coordinate overflow before issuing any capture capability.
+fn modeled_sender_captures(at: Instant) -> Check<(SoftwareClock, SoftwareClock)> {
+    let after = at
+        .checked_add(Duration::from_nanos(1))
+        .ok_or("modeled capture overflow")?;
+    Ok((
+        SoftwareClock {
+            mono: at,
+            utc: std::time::SystemTime::UNIX_EPOCH,
+            mono_after: at,
+        },
+        SoftwareClock {
+            mono: after,
+            utc: std::time::SystemTime::UNIX_EPOCH,
+            mono_after: after,
+        },
+    ))
+}
+
+/// Exact modeled floor neighbors preserve actual records and early read custody.
+/// # Errors
+/// Preserve checked construction, real reservation, custody and modeled bounds errors.
+/// # Panics
+/// Fail if equality is refused, an early return samples time, or refresh changes debit facts.
+#[test]
+fn modeled_refresh_floor_neighbors_preserve_records_and_deferred_read_counts() -> Check<()> {
+    let authority = isolated_authority(limits(1, 1)?)?;
+    let binding = authority.source(0)?.bind(endpoint(41001))?;
+    let request = Arc::new(());
+    let reserved = fixture_send(&binding, &request, Instant::now())?;
+    let retained = facts(&binding)?;
+    let floor = retained[0].1.ok_or("actual reserved floor absent")?;
+    for (at, due) in modeled_floor_neighbors(floor)? {
+        let mut policy = LivePolicy::from_mode(SourceMode::Managed(binding.clone()));
+        let (read, count) = observations::InstantRead::fixed(at);
+        assert_eq!(count.reads(), 0);
+        policy.refresh_observing(&request, read)?;
+        assert_eq!(count.reads(), 1);
+        assert_eq!(policy.wants_writable(), due);
+        assert_eq!(facts(&binding)?, retained);
+    }
+    let mut unmanaged = LivePolicy::from_mode(SourceMode::UnmanagedLab);
+    let (read, count) = observations::InstantRead::fixed(floor);
+    unmanaged.refresh_observing(&request, read)?;
+    assert_eq!(count.reads(), 0);
+    let mut managed = LivePolicy::from_mode(SourceMode::Managed(binding.clone()));
+    let cell = Arc::clone(&binding.source.cell);
+    let held = cell.lock()?;
+    let (read, count) = observations::InstantRead::fixed(floor);
+    let result = managed.refresh_observing(&request, read);
+    drop(held);
+    result?;
+    assert_eq!(count.reads(), 0);
+    assert!(!managed.wants_writable());
+    assert!(!reserved.consumed);
+    assert_eq!(facts(&binding)?, retained);
+    Ok(())
+}
+
+/// Check retained complete modeled brackets and the genuine concrete-send stamp.
+/// # Errors
+/// Preserve actual missing Pending/managed ownership and checked floor arithmetic errors.
+/// # Panics
+/// Fail if either capture/correlation/debit changes or pending refresh reads unused time.
+fn assert_modeled_send_custody(
+    fixture: &mut IoFixture,
+    before: SoftwareClock,
+    after: SoftwareClock,
+    retained: [RecordFacts; 2],
+) -> Check<()> {
+    let Phase::Pending(bracket) = &fixture.slots[0].phase else {
+        return Err("modeled boundary did not retain the actual complete send".into());
+    };
+    assert_eq!(
+        (
+            bracket.before.mono,
+            bracket.before.mono_after,
+            bracket.before.utc
+        ),
+        (before.mono, before.mono_after, before.utc)
+    );
+    assert_eq!(
+        (
+            bracket.after.mono,
+            bracket.after.mono_after,
+            bracket.after.utc
+        ),
+        (after.mono, after.mono_after, after.utc)
+    );
+    let LiveMode::Managed(live) = &fixture.slots[0].policy.mode else {
+        return Err("actual send lost its checked managed owner".into());
+    };
+    let stamp = live
+        .pending
+        .as_ref()
+        .ok_or("actual send correlation absent")?;
+    assert!(Arc::ptr_eq(&stamp.cell, &fixture.binding.source.cell));
+    assert!(Arc::ptr_eq(&stamp.request, &fixture.slots[0].identity));
+    assert_eq!(
+        (stamp.source, stamp.endpoint),
+        (fixture.binding.source.index, fixture.binding.endpoint)
+    );
+    assert_eq!(
+        (stamp.source_epoch, stamp.endpoint_epoch),
+        (retained[0].4, retained[1].4)
+    );
+    assert_eq!(stamp.sent_at, before.mono_after);
+    let mut expected = retained;
+    for record in &mut expected {
+        record.1 = Some(
+            before
+                .mono_after
+                .checked_add(record.0)
+                .ok_or("modeled debit overflow")?,
+        );
+        record.3 = record.3.checked_add(1).ok_or("modeled revision overflow")?;
+    }
+    assert_eq!(facts(&fixture.binding)?, expected);
+    let (read, count) = observations::InstantRead::fixed(after.mono_after);
+    {
+        let slot = &mut fixture.slots[0];
+        slot.policy.refresh_observing(&slot.identity, read)?;
+    }
+    assert_eq!(
+        count.reads(),
+        0,
+        "current pending admission has no floor-time read"
+    );
+    assert_eq!(facts(&fixture.binding)?, expected);
+    Ok(())
+}
+
+/// Actual concrete send at modeled floor equality/after spends exactly one effect.
+/// # Errors
+/// Preserve runtime/UDP/readiness, real debit, checked modeled clocks and timeout errors.
+/// # Panics
+/// Fail if before-floor sends/retires/refunds, equality is refused, or actual
+/// datagram/debit/correlation/bracket/read counts differ from the independent contract.
+#[test]
+fn modeled_send_floor_neighbors_keep_one_datagram_debit_and_coherent_captures() -> Check<()> {
+    runtime()?.block_on(async {
+        for boundary in 0..3 {
+            let mut fixture = io_fixture_with_intervals(Duration::from_secs(1), Duration::from_secs(4))?;
+            let request = Arc::new(());
+            let _reserved = fixture_send(&fixture.binding, &request, Instant::now())?;
+            let retained = facts(&fixture.binding)?;
+            let floor = retained[0].1.ok_or("actual modeled-send floor absent")?;
+            let (at, due) = modeled_floor_neighbors(floor)?[boundary];
+            let (before, after) = modeled_sender_captures(at)?;
+            assert!(after.mono_after < fixture.deadline);
+            let (captures, count) = observations::SendReads::fixed(before, after);
+            assert_eq!(count.reads(), 0);
+            fixture.slots[0].socket.writable().await?;
+            let control = fixture.control.borrow();
+            let effect = attempt_managed_send_observing(&mut fixture.slots[0], fixture.deadline, captures);
+            drop(control);
+            assert!(matches!(effect, ManagedEffect::Handled));
+            let mut bytes = [0_u8; RECEIVE_BYTES];
+            if due {
+                assert_eq!(count.reads(), 2);
+                assert!(fixture.slots[0].sent);
+                assert_eq!(fixture.slots[0].send_attempts, 1);
+                let (length, source) = tokio::time::timeout(Duration::from_secs(2), fixture.peers[0].recv_from(&mut bytes)).await??;
+                assert_eq!(length, PACKET_BYTES);
+                assert_eq!(source, fixture.slots[0].local);
+                assert_eq!(&bytes[..length], &fixture.slots[0].packet);
+                assert_modeled_send_custody(&mut fixture, before, after, retained)?;
+            } else {
+                assert_eq!(count.reads(), 1);
+                assert!(matches!(fixture.slots[0].phase, Phase::Sending));
+                assert!(!fixture.slots[0].sent);
+                assert_eq!(fixture.slots[0].send_attempts, 0);
+                assert!(!fixture.slots[0].policy.wants_writable());
+                assert_eq!(facts(&fixture.binding)?, retained);
+            }
+            assert!(matches!(fixture.peers[0].try_recv_from(&mut bytes), Err(error) if error.kind() == io::ErrorKind::WouldBlock));
+        }
+        Ok(())
+    })
+}
+
+/// One independent final-commit boundary, never a production trusted-clock input.
+#[derive(Clone, Copy)]
+enum ModeledCommitBoundary {
+    /// A modeled final reading strictly before the genuine read return.
+    BeforeRead,
+    /// Exactly the genuine selected read-return upper bound.
+    AtRead,
+    /// One nanosecond after that upper bound.
+    AfterRead,
+    /// Exactly the original, unchanged request deadline.
+    AtDeadline,
+}
+
+/// Invoke the real guarded owner while retaining actual invocation control custody.
+fn modeled_final_leaf(
+    fixture: &mut IoFixture,
+    candidate: &StagedReply,
+    read: observations::InstantRead,
+) -> ManagedEffect {
+    let control = fixture.control.borrow();
+    let effect =
+        commit_managed_reply_observing(&mut fixture.slots[0], candidate, fixture.deadline, read);
+    drop(control);
+    effect
+}
+
+/// Check a genuine staged reply against independently modeled final owner time.
+/// # Errors
+/// Preserve genuine query/staging, original custody, modeled coordinate and absent-fact errors.
+/// # Panics
+/// Fail if earlier read/expiry admits, a legal equality refuses, spent budgets
+/// change, or a repeated terminal observation rewrites the committed history.
+async fn modeled_commit_boundary_case(boundary: ModeledCommitBoundary) -> Check<()> {
+    let mut fixture = io_fixture()?;
+    let original_deadline = fixture.deadline;
+    let candidate = seeded_final_commit_candidate(&mut fixture).await?;
+    let read_return = candidate.read.mono_after;
+    let at = match boundary {
+        ModeledCommitBoundary::BeforeRead => read_return
+            .checked_sub(Duration::from_nanos(1))
+            .ok_or("modeled read predecessor overflow")?,
+        ModeledCommitBoundary::AtRead => read_return,
+        ModeledCommitBoundary::AfterRead => read_return
+            .checked_add(Duration::from_nanos(1))
+            .ok_or("modeled read successor overflow")?,
+        ModeledCommitBoundary::AtDeadline => original_deadline,
+    };
+    let StagedKind::Managed { stamp, .. } = &candidate.policy.kind else {
+        return Err("genuine modeled candidate lost its pending stamp".into());
+    };
+    assert!(at >= stamp.sent_at);
+    assert!(read_return < original_deadline);
+    let retained = facts(&fixture.binding)?;
+    let (read, count) = observations::InstantRead::fixed(at);
+    assert_eq!(count.reads(), 0);
+    assert!(matches!(
+        modeled_final_leaf(&mut fixture, &candidate, read),
+        ManagedEffect::Handled
+    ));
+    assert_eq!(count.reads(), 1);
+    assert_eq!(fixture.deadline, original_deadline);
+    assert_eq!(facts(&fixture.binding)?, retained);
+    if matches!(boundary, ModeledCommitBoundary::AtDeadline) {
+        assert_eq!(
+            fixture.slots[0].terminal().map(TerminalOutcome::status),
+            Some(Status::Timeout)
+        );
+        assert_eq!(
+            (fixture.slots[0].received, fixture.slots[0].rejected),
+            (4, 4)
+        );
+        assert!(
+            fixture.slots[0]
+                .terminal()
+                .and_then(TerminalOutcome::facts)
+                .is_none()
+        );
+        return Ok(());
+    }
+    let (processing, expected_rejected) = if matches!(boundary, ModeledCommitBoundary::BeforeRead) {
+        assert!(matches!(fixture.slots[0].phase, Phase::Pending(_)));
+        assert_eq!(
+            (fixture.slots[0].received, fixture.slots[0].rejected),
+            (4, 4)
+        );
+        assert_eq!(
+            fixture.slots[0].last_rejection,
+            Some(Rejection::UnhandledControl)
+        );
+        let (read, count) = observations::InstantRead::fixed(read_return);
+        assert!(matches!(
+            modeled_final_leaf(&mut fixture, &candidate, read),
+            ManagedEffect::Handled
+        ));
+        assert_eq!(count.reads(), 1);
+        (read_return, 4)
+    } else {
+        (at, 3)
+    };
+    assert_modeled_committed_history(&mut fixture, &candidate, processing, 4, expected_rejected)?;
+    assert_eq!(facts(&fixture.binding)?, retained);
+    Ok(())
+}
+
+/// Observe the actual historical Header once and preserve it on repeated consumption.
+/// # Errors
+/// Preserve missing actual Header/history failures rather than inventing facts.
+/// # Panics
+/// Fail if genuine captures/identity/processing or spent counters change on replay.
+fn assert_modeled_committed_history(
+    fixture: &mut IoFixture,
+    candidate: &StagedReply,
+    processing: Instant,
+    expected_received: u16,
+    expected_rejected: u16,
+) -> Check<()> {
+    let terminal = fixture.slots[0]
+        .terminal()
+        .ok_or("modeled valid reply did not finish")?;
+    assert_eq!(terminal.status(), Status::Header);
+    let historical = terminal
+        .facts()
+        .ok_or("modeled valid reply lost genuine Header facts")?;
+    assert_eq!(historical.processing, processing);
+    assert_eq!(historical.read_return.mono_after, candidate.read.mono_after);
+    assert!(Arc::ptr_eq(&historical.identity, &candidate.identity));
+    assert_eq!(
+        (fixture.slots[0].received, fixture.slots[0].rejected),
+        (expected_received, expected_rejected)
+    );
+    let (repeat, count) = observations::InstantRead::fixed(processing);
+    assert!(matches!(
+        modeled_final_leaf(fixture, candidate, repeat),
+        ManagedEffect::Handled
+    ));
+    assert_eq!(count.reads(), 1);
+    assert_eq!(
+        fixture.slots[0]
+            .terminal()
+            .and_then(TerminalOutcome::facts)
+            .ok_or("repeat lost history")?
+            .processing,
+        processing
+    );
+    assert_eq!(
+        (fixture.slots[0].received, fixture.slots[0].rejected),
+        (expected_received, expected_rejected)
+    );
+    Ok(())
+}
+
+/// Admit equal modeled send/read/final coordinates through genuine UDP custody.
+/// # Errors
+/// Preserve actual send/receive/staging, checked time and historical owner failures.
+/// # Panics
+/// Fail if equality is rejected, a genuine debit/correlation changes, extra UDP
+/// appears, or the later-time healthy neighbor fails through the same kernels.
+async fn modeled_send_time_commit_boundary(later: bool) -> Check<()> {
+    let mut fixture = io_fixture()?;
+    let original_deadline = fixture.deadline;
+    let at = Instant::now();
+    let capture = SoftwareClock {
+        mono: at,
+        utc: std::time::SystemTime::UNIX_EPOCH,
+        mono_after: at,
+    };
+    let retained_before = facts(&fixture.binding)?;
+    let (captures, capture_count) = observations::SendReads::fixed(capture, capture);
+    fixture.slots[0].socket.writable().await?;
+    let current = fixture.control.borrow();
+    let effect = attempt_managed_send_observing(&mut fixture.slots[0], original_deadline, captures);
+    drop(current);
+    assert!(matches!(effect, ManagedEffect::Handled));
+    assert_eq!(capture_count.reads(), 2);
+    assert!(fixture.slots[0].sent);
+    assert_eq!(fixture.slots[0].send_attempts, 1);
+    let mut query = [0_u8; RECEIVE_BYTES];
+    let (length, source) = tokio::time::timeout(
+        Duration::from_secs(2),
+        fixture.peers[0].recv_from(&mut query),
+    )
+    .await??;
+    assert_eq!(length, PACKET_BYTES);
+    assert_eq!(source, fixture.slots[0].local);
+    assert_eq!(&query[..length], &fixture.slots[0].packet);
+    assert_modeled_send_custody(&mut fixture, capture, capture, retained_before)?;
+    let retained = facts(&fixture.binding)?;
+    let processing = if later {
+        at.checked_add(Duration::from_nanos(1))
+            .ok_or("modeled send-time successor overflow")?
+    } else {
+        at
+    };
+    assert!(processing < original_deadline);
+    let read = SoftwareClock {
+        mono: processing,
+        utc: capture.utc,
+        mono_after: processing,
+    };
+    let candidate = ordinary_candidate_observing(&mut fixture, &query, Some(read)).await?;
+    let StagedKind::Managed { stamp, .. } = &candidate.policy.kind else {
+        return Err("genuine equal-time candidate lost its managed stamp".into());
+    };
+    assert_eq!(stamp.sent_at, at);
+    assert_eq!(candidate.sent.before.mono_after, at);
+    assert_eq!(candidate.sent.after.mono_after, at);
+    assert_eq!(candidate.read.mono, processing);
+    assert_eq!(candidate.read.mono_after, processing);
+    assert_eq!(
+        (fixture.slots[0].received, fixture.slots[0].rejected),
+        (1, 0)
+    );
+    let (read, count) = observations::InstantRead::fixed(processing);
+    assert!(matches!(
+        modeled_final_leaf(&mut fixture, &candidate, read),
+        ManagedEffect::Handled
+    ));
+    assert_eq!(count.reads(), 1);
+    assert_eq!(
+        fixture.slots[0].terminal().map(TerminalOutcome::status),
+        Some(Status::Header),
+        "modeled stamp-time boundary must retain Header; later={later}"
+    );
+    assert_modeled_committed_history(&mut fixture, &candidate, processing, 1, 0)?;
+    assert_eq!(facts(&fixture.binding)?, retained);
+    assert_eq!(fixture.deadline, original_deadline);
+    assert!(matches!(
+        fixture.peers[0].try_recv_from(&mut query),
+        Err(error) if error.kind() == io::ErrorKind::WouldBlock
+    ));
+    Ok(())
+}
+
+/// Model exact read-return and original-cutoff decisions through the real final kernel.
+/// # Errors
+/// Preserve runtime and independently bounded genuine UDP/owner scenario failures.
+/// # Panics
+/// Fail on incorrect boundary admission, refunded rejection or invented history.
+#[test]
+fn modeled_final_commit_read_equality_and_original_deadline_preserve_history() -> Check<()> {
+    runtime()?.block_on(async {
+        for boundary in [
+            ModeledCommitBoundary::BeforeRead,
+            ModeledCommitBoundary::AtRead,
+            ModeledCommitBoundary::AfterRead,
+            ModeledCommitBoundary::AtDeadline,
+        ] {
+            tokio::time::timeout(
+                Duration::from_secs(2),
+                modeled_commit_boundary_case(boundary),
+            )
+            .await??;
+        }
+        // Under a faulty stamp-time guard, the later-time neighbor must finish
+        // before the exact equality assertion can diagnose its distinct failure.
+        for later in [true, false] {
+            tokio::time::timeout(
+                Duration::from_secs(2),
+                modeled_send_time_commit_boundary(later),
+            )
+            .await??;
+        }
+        Ok(())
+    })
+}
+
+/// Sealed modeled scripts sample only on use and fail explicitly after two captures.
+/// # Errors
+/// Preserve checked modeled-coordinate construction failures.
+/// # Panics
+/// Fail if construction consumes a read, two coherent captures change, or a third
+/// read/incoherent supplied bracket is admitted by the test-only fixture owner.
+#[test]
+fn modeled_observation_scripts_are_deferred_coherent_and_bounded() -> Check<()> {
+    use std::panic::{AssertUnwindSafe, catch_unwind};
+    let at = Instant::now();
+    let (before, after) = modeled_sender_captures(at)?;
+    let (single, count) = observations::InstantRead::fixed(at);
+    assert_eq!(count.reads(), 0);
+    assert_eq!(single.read(), at);
+    assert_eq!(count.reads(), 1);
+    let (mut script, count) = observations::SendReads::fixed(before, after);
+    assert_eq!(count.reads(), 0);
+    assert_eq!(script.capture().mono_after, before.mono_after);
+    assert_eq!(script.capture().mono_after, after.mono_after);
+    assert_eq!(count.reads(), 2);
+    let exhausted = catch_unwind(AssertUnwindSafe(|| script.capture()));
+    assert!(exhausted.is_err());
+    assert_eq!(count.reads(), 2);
+    let incoherent = catch_unwind(AssertUnwindSafe(|| {
+        observations::SendReads::fixed(after, before)
+    }));
+    assert!(incoherent.is_err());
+    Ok(())
+}
+
+/// Real contention refuses observations before the original guarded read points.
+/// # Errors
+/// Preserve runtime, actual lock, UDP/staging and healthy continuation failures.
+/// # Panics
+/// Fail if refused setup/commit reads a scripted clock, changes record custody,
+/// refunds receive work or prevents the genuine later completion.
+#[test]
+fn modeled_contended_send_and_commit_leave_deferred_observations_unread() -> Check<()> {
+    runtime()?.block_on(async {
+        let mut fixture = io_fixture()?;
+        let retained = facts(&fixture.binding)?;
+        let (before, after) = modeled_sender_captures(Instant::now())?;
+        let (captures, count) = observations::SendReads::fixed(before, after);
+        let cell = Arc::clone(&fixture.binding.source.cell);
+        let held = cell.lock()?;
+        let control = fixture.control.borrow();
+        let effect =
+            attempt_managed_send_observing(&mut fixture.slots[0], fixture.deadline, captures);
+        drop(control);
+        drop(held);
+        assert!(matches!(effect, ManagedEffect::Handled));
+        assert_eq!(count.reads(), 0);
+        assert!(!fixture.slots[0].sent);
+        assert_eq!(fixture.slots[0].send_attempts, 0);
+        assert!(matches!(fixture.slots[0].phase, Phase::Sending));
+        assert_eq!(facts(&fixture.binding)?, retained);
+        let candidate = seeded_final_commit_candidate(&mut fixture).await?;
+        let retained = facts(&fixture.binding)?;
+        let (read, count) = observations::InstantRead::fixed(candidate.read.mono_after);
+        let held = cell.lock()?;
+        let effect = modeled_final_leaf(&mut fixture, &candidate, read);
+        drop(held);
+        assert!(matches!(effect, ManagedEffect::Handled));
+        assert_eq!(count.reads(), 0);
+        assert!(matches!(fixture.slots[0].phase, Phase::Pending(_)));
+        assert_eq!(
+            (fixture.slots[0].received, fixture.slots[0].rejected),
+            (4, 4)
+        );
+        assert_eq!(facts(&fixture.binding)?, retained);
+        assert_final_genuine_commit_once(&mut fixture, &candidate)?;
+        assert_eq!(facts(&fixture.binding)?, retained);
+        Ok(())
+    })
+}
+
+/// Exhaust the actual round setup loop using 64 observed stale release hints.
+/// # Errors
+/// Preserve real policy custody, bounded worker handshakes and joined execution errors.
+/// # Panics
+/// Reject a 65th wait, any query/refund or fabricated terminal attempt.
+#[test]
+fn public_managed_round_exhausts_64_actual_setup_hints_without_a_send_or_refund() -> Check<()> {
+    use std::{
+        panic::{AssertUnwindSafe, catch_unwind, resume_unwind},
+        sync::mpsc::sync_channel,
+        thread,
+    };
+
+    drop(runtime()?);
+    let peer = std::net::UdpSocket::bind(endpoint(0))?;
+    peer.set_nonblocking(true)?;
+    let destination = peer.local_addr()?;
+    let authority = isolated_authority(limits(1, 1)?)?;
+    let source = authority.source(0)?;
+    let binding = source.bind(destination)?;
+    let now = Instant::now();
+    let mut prior = fixture_send(&binding, &Arc::new(()), now)?;
+    fixture_control(&binding, &mut prior, RATE, now)?;
+    let retained = facts(&binding)?;
+    let (prepared, _control_owner) =
+        source.prepare_address_round(crate::AddressRoundConfig::new(
+            &[destination],
+            Duration::from_secs(10),
+            Duration::from_secs(20),
+        )?)?;
+    let schedule = crate::ControlSchedule::new(None, None)?;
+    let deadline = Instant::now()
+        .checked_add(Duration::from_secs(25))
+        .ok_or("fixture deadline overflow")?;
+    let (pulse_sender, pulse_receiver) = sync_channel(1);
+    let (ready_sender, ready_receiver) = sync_channel(1);
+    let (completed_sender, completed_receiver) = sync_channel(1);
+    let cell = Arc::clone(&binding.source.cell);
+    let worker = thread::Builder::new()
+        .name("source-policy-stale-setup-hints".into())
+        .spawn(move || {
+            observe_setup_hint_budget(
+                &cell,
+                &pulse_sender,
+                &pulse_receiver,
+                &ready_sender,
+                &completed_receiver,
+                deadline,
+            )
+        })?;
+    let execution = catch_unwind(AssertUnwindSafe(|| {
+        ready_receiver
+            .recv_timeout(setup_fixture_remaining(deadline)?)
+            .map_err(|_| io::Error::other("actual policy holder did not become ready"))?;
+        crate::execute_address_round(prepared, &schedule)
+            .map_err(|error| -> Box<dyn Error> { Box::new(error) })
+    }));
+    let completion_signal = completed_sender.send(());
+    let worker_result = worker.join();
+    // No assertion, propagated error or resumed panic precedes the owned join.
+    let execution = match execution {
+        Ok(result) => result,
+        Err(payload) => resume_unwind(payload),
+    };
+    let report = execution?;
+    completion_signal
+        .map_err(|_| io::Error::other("policy worker ended before caller completion"))?;
+    let (pulses, extra) =
+        worker_result.map_err(|_| io::Error::other("policy hint worker panicked"))??;
+    assert_eq!(pulses, 64);
+    assert!(
+        !extra,
+        "a 65th setup wait reached the real contention probe"
+    );
+    assert_eq!(report.end(), crate::AddressRoundEnd::Failure);
+    assert!(matches!(
+        report.primary_error(),
+        Some(crate::PilotError::PolicyAdmissionBudget)
+    ));
+    assert!(report.attempts().is_empty() && report.policy_refusals().is_empty());
+    assert!(report.cleanup_errors().iter().all(Option::is_none));
+    let mut bytes = [0_u8; RECEIVE_BYTES];
+    assert!(
+        matches!(peer.recv_from(&mut bytes), Err(error) if error.kind() == io::ErrorKind::WouldBlock)
+    );
+    assert_eq!(facts(&binding)?, retained);
+    assert!(SourceMode::Managed(binding).admit().is_ok());
+    Ok(())
+}
+
+/// Observe one query without replying; retain its bound socket in the scoped result.
+/// # Errors
+/// Preserve native timeout/receive failures; absent traffic cannot pass.
+/// # Panics
+/// Reject a malformed query or missing opaque origin token.
+fn managed_three_blackhole(peer: std::net::UdpSocket) -> io::Result<std::net::UdpSocket> {
+    peer.set_read_timeout(Some(Duration::from_secs(2)))?;
+    let mut query = [0; RECEIVE_BYTES];
+    let (length, _) = peer.recv_from(&mut query)?;
+    assert_eq!(length, 48);
+    assert_eq!(query[0], 0x23);
+    assert_ne!(&query[40..48], &[0; 8]);
+    Ok(peer)
+}
+
+/// Inspect the original three positions without fabricating a skipped `SlotReport`.
+/// # Panics
+/// Reject missing/duplicate dispositions, wrong peer order or false completion.
+fn assert_managed_three_sequence(report: &crate::AddressRoundReport, peers: &[SocketAddr; 3]) {
+    assert_eq!(report.end(), crate::AddressRoundEnd::Reply);
+    assert!(report.primary_error().is_none());
+    assert!(report.cleanup_errors().iter().all(Option::is_none));
+    assert_eq!(report.policy_refusals().len(), 1);
+    assert_eq!(report.policy_refusals()[0].index(), 0);
+    assert_eq!(
+        report.policy_refusals()[0].scope(),
+        crate::AddressPolicyRefusalScope::Endpoint
+    );
+    let attempts = report.attempts();
+    assert_eq!(attempts.len(), 2);
+    assert_eq!(
+        (attempts[0].peer(), attempts[0].report().slot()),
+        (peers[1], 1)
+    );
+    assert_eq!(
+        (attempts[1].peer(), attempts[1].report().slot()),
+        (peers[2], 2)
+    );
+    assert_eq!(attempts[0].report().status(), Status::Timeout);
+    assert_eq!(attempts[1].report().status(), Status::Header);
+    assert!(attempts.iter().all(|attempt| attempt.report().sent()));
+    assert_eq!(
+        (
+            attempts[0].report().received(),
+            attempts[0].report().rejected()
+        ),
+        (0, 0)
+    );
+    assert_eq!(
+        (
+            attempts[1].report().received(),
+            attempts[1].report().rejected()
+        ),
+        (1, 0)
+    );
+    assert_eq!(attempts[1].report().stratum(), Some(2));
+}
+
+/// Run genuine E refusal, F blackhole and G reply in one admitted address family.
+/// # Errors
+/// Preserve unavailable-family admission, native traffic and all scoped joins.
+/// # Panics
+/// Reject transitive state, changed retained floors or extra native queries.
+fn managed_three_candidate_family(family: IpAddr) -> Check<()> {
+    let authority = isolated_authority(SourcePolicyLimits::new(
+        2,
+        3,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let a = authority.source(0)?;
+    let b = authority.source(1)?;
+    let e_socket = std::net::UdpSocket::bind(SocketAddr::new(family, 0))?;
+    let f_socket = std::net::UdpSocket::bind(SocketAddr::new(family, 0))?;
+    let g_socket = std::net::UdpSocket::bind(SocketAddr::new(family, 0))?;
+    let peers = [
+        e_socket.local_addr()?,
+        f_socket.local_addr()?,
+        g_socket.local_addr()?,
+    ];
+    let (denied, e_socket) = managed_round_once(&a, &peers[..1], e_socket, Some(DENY))?;
+    assert_eq!(denied.end(), crate::AddressRoundEnd::Control);
+    assert_eq!(denied.attempts().len(), 1);
+    assert_eq!(denied.attempts()[0].report().control_code(), Some(DENY));
+    let ae = a.bind(peers[0])?;
+    let be = b.bind(peers[0])?;
+    let retained = facts(&ae)?;
+    assert!(matches!(
+        authority.endpoint_target(peers[1]),
+        Err(SourcePolicyError::UnknownEndpoint)
+    ));
+    assert!(matches!(
+        authority.endpoint_target(peers[2]),
+        Err(SourcePolicyError::UnknownEndpoint)
+    ));
+    let (report, f_socket, g_socket) = std::thread::scope(|scope| -> Check<_> {
+        let blackhole = scope.spawn(move || managed_three_blackhole(f_socket));
+        // Public preparation admits both fresh F/G records in the two remaining
+        // slots. The blackhole socket stays bound until this whole round returns.
+        let result = managed_round_once(&b, &peers, g_socket, None);
+        let observed = blackhole
+            .join()
+            .map_err(|_| "managed blackhole peer panicked")?;
+        let (report, g_socket) = result?;
+        assert_managed_three_sequence(&report, &peers);
+        Ok((report, observed?, g_socket))
+    })?;
+    assert_managed_three_sequence(&report, &peers);
+    assert_eq!(facts(&ae)?, retained);
+    let b_facts = facts(&be)?;
+    let f_facts = facts(&b.bind(peers[1])?)?;
+    let g_facts = facts(&b.bind(peers[2])?)?;
+    assert_eq!(b_facts[1], retained[1]);
+    assert!(!b_facts[0].2 && !f_facts[1].2 && !g_facts[1].2);
+    assert_eq!(b_facts[0].0, Duration::from_millis(1));
+    assert!(f_facts[1].1.is_some() && g_facts[1].1.is_some());
+    assert!(b_facts[0].1 >= f_facts[1].1);
+    assert_eq!(b_facts[0].1, g_facts[1].1);
+    for peer in [e_socket, f_socket, g_socket] {
+        peer.set_nonblocking(true)?;
+        let mut extra = [0; RECEIVE_BYTES];
+        assert!(
+            matches!(peer.recv_from(&mut extra), Err(error) if error.kind() == io::ErrorKind::WouldBlock)
+        );
+    }
+    Ok(())
+}
+
+/// Exercise the complete public managed three-candidate path in both families.
+/// # Errors
+/// Propagate unavailable IPv6 or any fixture/product failure; never skip a family.
+/// # Panics
+/// Reject wrong actual order, traffic, refusal/history cardinality or retained state.
+#[test]
+fn public_managed_round_three_candidates_preserve_actual_fallback_in_both_families() -> Check<()> {
+    for family in [
+        IpAddr::V4(Ipv4Addr::LOCALHOST),
+        IpAddr::V6(Ipv6Addr::LOCALHOST),
+    ] {
+        managed_three_candidate_family(family)?;
     }
     Ok(())
 }
