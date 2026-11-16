@@ -1,19 +1,22 @@
 # Author and debug a Rust flow query
 
-Use after [database and environment admission](codeql-data-flow.md). This is a
-small query-development recipe, not a product-wide vulnerability rule. Choose
-one concrete path and independently specify its expected endpoints first.
+Use after [database and environment admission](codeql-data-flow.md). Small
+query-development recipe, no product-wide vulnerability rule. Choose one concrete
+path; independently specify expected endpoints first.
 
 ## Match the installed API
 
 The admitted profile pins CLI **2.27.3** and `codeql/rust-all` **0.2.24**; the
 library's build metadata identifies source
 `a1575b98a8cc19bcfa7bb6cb41be688cb3dae65c`. Resolve packs and inspect their source
-again after an update. Context7 and current web examples locate useful concepts,
-but may describe a later library API.
+again after updates. Context7, current web examples locate concepts; may describe
+later library API.
 
-- In this pin, `DataFlow::Node.asExpr()` returns an AST `Expr` directly. The newer
-  online guide's `node.asExpr().getExpr()` is incompatible with this pack.
+- In both local **0.2.24** and separately authorized cloud **0.2.25**,
+  `DataFlow::Node.asExpr()` returns an AST `Expr` directly. The newer
+  online guide's `node.asExpr().getExpr()` is incompatible with both packs.
+  The [cloud node definition](https://github.com/github/codeql/blob/codeql-cli/v2.27.4/rust/ql/lib/codeql/rust/dataflow/internal/Node.qll)
+  confirms this; executable example below remains scoped to local pin.
 - `Call.getPositionalArgument(0)` selects the first positional argument;
   a method's receiver is separate (`MethodCall.getReceiver()`). Select the
   correct value, not the entire call or a coincidentally adjacent argument.
@@ -30,10 +33,10 @@ Primary API owners: [nodes](https://github.com/github/codeql/blob/a1575b98a8cc19
 
 ## Small executable example
 
-Keep owned query files in a fresh directory under `/work/queries`. Use an
-admitted query pack with `codeql/rust-all: 0.2.24` and its reviewed lockfile;
-resolve the installed dependency closure rather than fetching packs implicitly.
-Host paths come from the installation record; `/work` paths are for MCP calls.
+Keep owned query files in fresh directory under `/work/queries`. Use admitted
+query pack with `codeql/rust-all: 0.2.24` and reviewed lockfile;
+resolve installed dependency closure; no implicit pack fetching.
+Host paths: installation record; `/work` paths: MCP calls.
 
 This illustrative fixture has two callers of a harmless stand-in sink:
 
@@ -77,11 +80,11 @@ module FixtureConfig implements DataFlow::ConfigSig {
 }
 ```
 
-These name selectors are deliberately limited to the tiny fixture. For product
-queries, use the enumerated resolved identity and appropriate implementation/
-location constraints; challenge a same-named unrelated function. An API argument
-is a valid source when the question concerns the caller's untrusted input;
-external input need not originate at `main` or a built-in threat-model source.
+Name selectors apply only to tiny fixture. Product queries: enumerated resolved
+identity, appropriate implementation/
+location constraints; challenge same-named unrelated function. API argument is
+valid source for caller's untrusted input; external input need not originate at
+`main` or built-in threat-model source.
 
 Before computing flow, run this separate `Selectors.ql`:
 
@@ -95,10 +98,10 @@ where
 select role, node, node.getLocation().getStartLine()
 ```
 
-Inspect identities as well as counts. In larger programs, several nodes can map
-to one expression; do not equate row count with distinct sources or functions.
-For an initial function inventory, `import rust`, select `Function f`, constrain
-its file and return `f.getCanonicalPath()` plus `f.getLocation()`.
+Inspect identities and counts. Several nodes can map to one expression; row count
+need not equal distinct sources or functions. Initial function inventory:
+`import rust`, select `Function f`, constrain file, return `f.getCanonicalPath()`
+plus `f.getLocation()`.
 
 For one callable, try `DataFlow::localFlow(source, sink)` (value-preserving) or
 `TaintTracking::localTaint(source, sink)` (derived influence). The fixture crosses
@@ -133,8 +136,8 @@ selecting two ordinary nodes will not supply path explanations. Metadata such as
 
 ## Execute through the admitted MCP
 
-Inspect the currently exposed tool schema. The following is an ordered argument
-recipe, with your actual directory/database/results paths substituted:
+Inspect currently exposed tool schema. Ordered argument recipe; substitute actual
+directory/database/results paths:
 
 | Operation | Relevant arguments |
 | --- | --- |
@@ -185,8 +188,15 @@ useful for a bounded exploration; identify which form actually ran.
 Add controls for the mechanisms the query claims: derived strings, checked
 result versus original input, ignored validation return, alternate constructor,
 guard bypass, wrong method receiver/argument and unrelated same-name calls.
-An independently observed path can justify a finding only after current source
-and a bounded behavioral case establish reachability and consequence.
+Model with demonstrated missing contribution: compare model-on/off on same
+database/query, independently expected endpoint changes and unaffected neighbors.
+Redundant models need not change results; never invent edges to force difference.
+Reusable defect-seeded rule needs bad, independently verified fixed and relevant
+held-out wiring cases. Choose relevant wrappers and transformations; no unlimited
+mutation campaign. Follow
+[domain-model controls](codeql-rust-domain-models.md) for exact selection and
+consumption checks. Confirm reachability and violated requirement in current
+source before source-confirmed status; behavioral reproduction stays separate.
 
 ## Diagnose a missing path
 
@@ -227,14 +237,22 @@ the effect; data-flow presence alone cannot establish temporal authority.
 
 For external-library gaps, the pinned Rust library exposes source, sink, summary,
 neutral, barrier and barrier-guard model predicates. Use canonical paths and
-`manual` provenance with independently reviewed model controls. Its pack declares
-`/**/*.model.yml` extensions; the newer documentation's JSON guidance must not be
-assumed compatible. A neutral model can suppress generated behavior, so it also
-needs justification. Record the model's actual loading and selected behavior;
-merely adding a YAML file proves neither.
+`manual` provenance with independently reviewed model controls; schema value
+proves no human review. Both current library packs declare `/**/*.model.yml`
+extensions. Retain known YAML recipe until alternative loading qualified; newer
+JSON guidance proves no blanket external JSON model-pack incompatibility.
+Neutral model can suppress generated behavior: justify removed paths. Verify
+extension loading, target/access-path matching, actual query's consumption of
+source, sink or barrier kind. Invented sink kind alone creates no detector.
+See [Rust domain models](codeql-rust-domain-models.md)
+for receiver/reference/post-call shapes, AI challenges and optional
+`StateConfigSig` / `GlobalWithState` use. Prefer separate simple property queries;
+abstract flow states do not establish temporal authority.
 
 Use the [pinned model declarations](https://github.com/github/codeql/blob/a1575b98a8cc19bcfa7bb6cb41be688cb3dae65c/rust/ql/lib/codeql/rust/dataflow/internal/ModelsAsData.qll)
 and [pack manifest](https://github.com/github/codeql/blob/a1575b98a8cc19bcfa7bb6cb41be688cb3dae65c/rust/ql/lib/qlpack.yml).
+The [cloud pack manifest](https://github.com/github/codeql/blob/codeql-cli/v2.27.4/rust/ql/lib/qlpack.yml)
+retains the same extension glob.
 IPC/native FFI/persistence seams require explicit cross-boundary reasoning and
 separate enforcement evidence. Finish with the
 [trace/evidence record](codeql-data-flow.md#finish-and-retain-limits).

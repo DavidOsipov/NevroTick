@@ -742,3 +742,102 @@ grader, worker result, coordinator grading and v2 impact check. Final staged-tre
 verification and publication identities belong to the same evidence root.
 Commit/push to remote `main` is explicitly authorized by this request; no prior
 stash restoration or Core/Engine implementation is included.
+
+## AI-assisted taint-model guidance — 17 November 2026
+
+David requested judged CodeQL research applied to existing skills, Caveman
+compression, commit and push to remote `main`. Instruction-only baseline:
+`2dfe4a734bd8d3ee925f166a2be3097cdb497c97`.
+CHECK-19 owns tool/query evidence, CHECK-25 domain invariants and CHECK-24
+independent exact-candidate review. No analyzer upgrade, new framework, model
+execution, product repair or resumed local analysis.
+
+The [data-flow skill](../.agents/skills/testing/qa-data-flow-analysis/SKILL.md)
+now routes to [Rust domain models](../.agents/skills/testing/references/codeql-rust-domain-models.md).
+Existing query/environment references distinguish actual query consumption,
+property-specific guards, expected propagation, AI triage evidence and declared,
+requested and effective compilers. Preserve the local CLI 2.27.3 / Rust library
+0.2.24 and separately authorized cloud CLI 2.27.4 / 0.2.25 profiles. Local analysis
+stopped; hosted CI deferred. Guidance grants no execution authority or changed
+candidate qualification.
+
+### Current-source pilot order
+
+Rebind source-backed questions to next admitted candidate before execution.
+Current engine path: experimental, feature gated; native socket code also requires
+selected Windows configuration. Parser parameter can bound a narrower question
+when upstream extraction unavailable; establishes no complete network path.
+
+1. **Expected UDP payload propagation.** Trace buffer written by
+   `Backend::receive` through `socket.try_recv_from(buffer)`, its accepted slice,
+   `AssociationOwner::receive_reply`, `stage_current_reply` and
+   `response::stage_reply`. Start in
+   [datagram source](../crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs)
+   and the [association ledger](../crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs).
+   Select post-call buffer bytes, not returned length/address/status or unrelated
+   prior contents. Independently specify endpoint pairs, success versus
+   WouldBlock/error/consumed-unknown extent, and a relevant wrapper/reference
+   control. Inspect existing models first; no redundant summary. Success proves
+   expected propagation, no vulnerability. Stop after selected path and controls or
+   isolated missing extraction/model edge within budget.
+2. **One admitted-representation property.** Trace
+   [response staging](../crates/nevrotick-engine/src/nts_ke_experiment/response.rs)
+   through `DirectionalKeys::open_response`, callback `stage_cookies`,
+   `StagedReply::into_parts` and ledger `stage_replacement` toward actual
+   receiving transaction. Choose one requirement: authenticated representation
+   consumed or cookie count/size bounded before allocation/copy. Trace callback
+   output separately from captured raw input. Challenge ignored errors, wrong
+   checked value, reachable alternate construction and post-check mutation with
+   independently validated faulty/healthy pair. Taint reaching staged
+   timestamps/cookies expected; authentication is no universal sanitizer.
+   Source/control/arithmetic evidence must establish violation. Preserve
+   current-control/cancellation/lifecycle obligations separately; stop at chosen
+   property or exact unresolved callback/guard/model frontier.
+3. **Secret bytes to an actual output sink.** Inventory reached formatting,
+   logging and export consumers before selecting
+   [key material](../crates/nevrotick-engine/src/nts_ke_experiment/request.rs)
+   in `DirectionalKeys::{c2s_key,s2c_key}`, cookies or decrypted plaintext.
+   Distinguish bytes from public lengths/status; `Zeroizing` does not prevent
+   copies; ciphertext dependence on key alone proves no key disclosure.
+   Use a secret-byte positive, public/constant neighbor, relevant wrapper and
+   actual redaction control. No reached sink: retain frontier and choose
+   another bounded question; do not invent product APIs. A reusable defect-seeded
+   detector also needs an independently verified repair and held-out wiring case.
+
+Keep volatile symbols here; reusable modeling rules in reference.
+Future broker/clock IPC architecture is no implemented production path. No
+expansion to every socket API, configuration or feature without concrete remaining
+question. Reuse existing ledger and independent reviewer;
+one writer owns each database/query output. Preserve raw results before AI
+classification and challenge dismissals as well as claimed defects.
+
+The portable `tools/codeql-audit/` queries and original endpoint expectations
+remain historical: inspect current source, derive independent selectors before
+reuse. The 15 November scan remains bound to `bb90f0c`; qualifies no repaired
+source. Terminal-snapshot race already reconciled above: never report again as
+new finding. Current skill changes execute no
+CodeQL, Rust compiler, native, formal, fuzz, storage or UI jobs; proposed pilots
+remain unexecuted. Existing coverage/mutation requirements and execution/release
+holds remain unchanged.
+
+### Instruction validation
+
+Package checker: 66 skills pass; 40 scoped local file/anchor links and Git
+whitespace checks pass. Independent judge accepted five-file change after one
+model-kind clarification: `value` and `taint` apply to summaries. Caveman's bundled
+validator passes four instruction files and this new task section: no errors or
+warnings. Expanded originals retained out of tree. Four instruction files total
+47,644 to 45,503 UTF-8 bytes; 5,613 to 5,143 whitespace-delimited words. Comparison:
+expanded intended content versus compression, not prior repository or model tokens.
+
+One fresh-context, read-only exercise received synthetic requirement, Rust source
+and proposed model/triage packet only; separate prewritten grader. Coordinator
+accepts all ten semantic criteria: 65-byte wrong-value validation counterexample
+and valid neighbor; expected bounded propagation; public length versus secret
+bytes; synchronous post-call buffer versus count; canonical target and actual
+sink-kind consumption; unsupported barriers, neutral models and provenance;
+independent endpoint controls; conditional model contribution; compiler
+uncertainty; source confirmation versus execution. No accidental grader exposure
+reported. Exercise changed no files, ran no Rust or CodeQL jobs. Demonstrates
+this source-review case only; no measured old/new improvement, general detection
+rate or product qualification.

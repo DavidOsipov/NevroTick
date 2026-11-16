@@ -5,7 +5,7 @@ description: "Audit NevroTick Rust data, control and lifecycle chains against in
 
 # Analyze Rust source-to-sink paths
 
-Formal/Kani proofs and pending proof admission/metadata repairs: post-V1 under
+Formal/Kani proofs, pending proof admission/metadata repairs: post-V1 under
 [OD-10 §14.1](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
 Tools below grant no pre-V1 proof execution or acceptance gate.
 
@@ -16,6 +16,10 @@ implementation scope and current candidate identity.
 
 When CodeQL is selected, read [CodeQL data-flow analysis](../references/codeql-data-flow.md);
 queries use [pinned Rust recipe](../references/codeql-rust-query.md).
+Application boundaries, missing library summaries, conditional guards or AI
+model proposals: use [Rust domain models and semantic challenges](../references/codeql-rust-domain-models.md).
+Prefer smallest model justified by current source. Propagation alone proves no
+vulnerability; name violated property before reporting one.
 
 Logical/long chains: reuse existing task's flow/invariant ledger. Inventory real
 inputs, protected effects, alternate callers independently of CodeQL models. Prioritize high-impact,
@@ -23,7 +27,7 @@ poorly modeled boundaries; expose unaudited frontiers. Read complete relevant
 functions/types in bounded slices; retain boundary contracts and integration review.
 Diagrams locate evidence.
 
-Before repeat work, compare source, caller wiring, callee contracts, configuration,
+Before repeating work, compare source, caller wiring, callee contracts, configuration,
 query/model/evidence identities. Reuse unchanged qualified segments; invalidate
 changed dependencies and affected transitive consumers. Check new callers even
 with unchanged callees. Record reuse reasons/gaps; claim no measured speed or
@@ -59,6 +63,12 @@ exhaustive paths.
    reachability, violated guarantee, consequence, uncertainty; independently
    reproduce credible defects with bounded behavior. Map actual IPC seams; retain
    macro/generated/dependency/native FFI gaps.
+
+Preserve raw query results before AI triage. Reuse independent reviewer: challenge
+model proposals and dismissals against exact values, accepting branches, current
+callers. Unsupported dismissals cannot become barriers, neutral models,
+suppressions or changed expectations. Retain existing ledger, finite query budget
+and open frontier; additional agents authorize no second ledger or held analysis.
 
 No product Cargo source: authorized isolated query/runner fixtures only; no app
 scaffolding or fixture-as-product scan. Local MCP leaves hosted CodeQL deferred.
