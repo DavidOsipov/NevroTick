@@ -2498,6 +2498,13 @@ The shared `diagnostics` module owns stable event IDs, versioned field meanings,
 
 Record service lifecycle, policy revision changes, authorization denials, source state transitions, bootstrap entry/exit, step/slew decisions, ownership conflicts, recovery outcomes and diagnostic-session changes. Coalesce routine repeated decisions instead of recording every packet/poll. Include event code/version, component and process-instance discriminator, sequence within that instance, relevant policy/clock generation, operation/request correlation and UTC with its time-quality label. Monotonic ordering remains meaningful across wall-clock repair; separate process sequences do not imply a global total order or correct UTC.
 
+Freeze those producer facts and any admitted diagnostic-session provenance before
+asynchronous handoff; preserve explicit unavailable states through consumption.
+A delayed writer's native timestamp, thread or ambient activity has a separate
+meaning and cannot replace the producer's instance, sequence, observed UTC/quality,
+generation or operation correlation. A selected native activity mapping needs
+explicit ownership; this does not require a second correlation system.
+
 Leap diagnostics add bounded policy-revision, coverage/regime, source-claim
 conflict, guard/reacquisition and native-knowledge qualifiers (§10.5). A silent
 LI=0 source is not an error. Coalesce stale-calendar notices; do not emit recurring
@@ -2561,6 +2568,13 @@ Expire collection on manual stop, duration/size limit, observed product-authoriz
 
 Change only the optional filter/profile in process, without restarting clock services. `tracing-subscriber::reload` is a candidate; qualify its errors/overhead and prefer reloading only the filter. Failed activation retains the previous effective profile and reports failure. An independent session guard must stop accepting verbose records when expiry/revocation/cancellation applies even if filter reload fails, so a failed reset cannot leave troubleshooting active. [S105]
 
+Qualify that live guard through the actual callsite/filter composition, including
+cached interests and maximum-level optimizations. Validate replacement state
+before mutation, keep reload mutation brief and nonlogging, and acknowledge the
+actual effective state. A reload API does not itself guarantee rollback of an
+arbitrary partial mutation or panic. The concrete cases and dated source evidence
+remain in the [W11-W08 research handoff](../tasks/windows11-integration.md#windows-logging-research-and-judge-dispositions--17-november-2026).
+
 Diagnostic revisions are separate from clock/source-policy generations: changing verbosity alone must not reset the estimator, cancel a valid correction or consume/refund clock authority. It does not change persistent security/source policy. Required session-change and denial events use bounded redacted fields and remain subject to the required-event route.
 
 For ETW, effective provider enable/keyword state may aggregate several sessions;
@@ -2583,9 +2597,32 @@ failure paths and their fallback sinks. Product-owned crash files and
 administrator-controlled WER/LocalDumps/debugger collectors retain their separate
 ownership and qualification scopes.
 
-Keep expensive formatting and sink I/O off the time-control critical path with bounded admission and writer work. Guard optional expensive work before evaluation; bound encoded bytes after escaping, rate-limit keys/cardinality and counter arithmetic. Prioritize required records within a finite allocation, coalesce floods and retain first relevant cause/counters. Expose queue loss, unavailable sinks and incomplete export through bounded diagnostic health/status; never recursively log a sink failure into itself. A failed logger must not turn rejection into success, corrupt mandatory state or block necessary clock cleanup. Shutdown flush is finite; loss after the deadline or abrupt termination is reported as a limitation, not a durability guarantee.
+Keep expensive formatting and sink I/O off the time-control critical path with bounded admission and writer work. Guard optional expensive work before evaluation; bound encoded bytes after escaping, rate-limit keys/cardinality and counter arithmetic. Prioritize required records within a finite allocation, coalesce floods and retain first relevant cause/counters. Expose queue loss, unavailable sinks and incomplete export through bounded diagnostic health/status; never recursively log a sink failure into itself. A failed logger must not turn rejection into success, corrupt mandatory state or block necessary clock cleanup. Shutdown flush is finite; distinguish a drain request or acknowledgement from actual worker, flush and native-cleanup completion. Retain custody and truthful incomplete status for outstanding work; loss after the deadline or abrupt termination is a limitation, not a durability guarantee.
+
+Account for work and bytes before enqueue: evaluation, formatting, encoding and
+copying, concurrent producer staging, and any retained span/worker state. Queue
+entry count, inline buffer capacity or truncating an already formatted string
+does not establish an aggregate memory or producer-work bound. Enforce limits
+before an unbounded transformation/allocation; a nonblocking writer name alone
+establishes neither bounded producer latency nor absence of blocking behavior.
+
+Keep record/queue admission and known local refusals, registration availability,
+actual native invocation/result, and independently observed retained/readable
+history distinct. Preserve bounded safe encoding, write, flush and teardown
+outcomes where observed; partial writes can leave an uncertain result. A facade
+return, native success or zero queue-drop count is not a delivery receipt or proof
+of complete history. Unknown downstream loss remains unknown; do not derive
+delivered counts by subtracting local drops. This requires no synchronous
+per-event readback or new durable-receipt protocol.
 
 Required security/operational events use the installed Windows event channel contract in section 15.3; optional ETW needs its own admission and does not replace that durable channel. Keep provider/channel rights, registration resources, retention and unavailable-sink behavior explicit. Crash dumps, raw EVTX and externally collected OS traces have separate access/content risks; they are not automatically redacted support exports.
+
+Before integrating a native encoder, freeze checked descriptor count, schema field
+order/types, actual encoding and terminators, and applicable header/metadata and
+session-buffer limits. Preserve admitted field meaning or reject an
+unrepresentable record explicitly. Native API ceilings and upstream sample caps
+are not adopted product budgets; qualify the chosen smaller limits at the
+Windows delivery stage.
 
 Record process WER policy separately from administrator-controlled LocalDumps and
 debugger collectors. NOHEAP or a memory-exclusion registration cannot be presumed
@@ -2607,8 +2644,11 @@ process-wide changes, and qualify GUI/helper behavior separately. See the
 W11-W05 and W11-W08/ST-W07 retain the existing CHECK-17/21/27 cases.
 
 When WPR/WPA or another ETW trace supports a timing/lifecycle claim, retain
-monotonic correlation and session loss counts; an absent event in an incomplete
-trace is not proof that the operation never occurred. PerfLib V2 is an optional
+monotonic correlation, session loss counts, the actual capture-clock mode and
+raw/converted timestamp provenance. FILETIME-shaped output alone establishes
+neither corrected UTC nor a total order; preserve ambiguity across clock repair
+and equal cross-CPU timestamps. An absent event in an incomplete trace is not
+proof that the operation never occurred. PerfLib V2 is an optional
 aggregate operator-counter candidate, intended for coarse monitoring, not
 profiling or collection faster than once per second. Define trust/freshness and
 queue/resource semantics without raw names or secrets. The [diagnostics review](plans/windows11-integration.md#7-diagnose-actual-windows-behavior-and-inject-native-failures)
