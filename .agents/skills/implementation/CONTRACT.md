@@ -45,6 +45,11 @@ requirements that types cannot express beside the API/module. Bind each such
 requirement to its actual enforcement and detecting check. Simple typed helpers
 need no duplicated schema, boilerplate report or repeated runtime validation.
 
+Apply [source-visible types and assumptions](implement-rust-contracts/references/contract-enforcement.md#make-types-and-assumptions-source-visible):
+default to explicit types for handwritten named locals, preserve domain roles and
+make conversions/defaults deliberate. Classify each consequential assumption by
+its enforcing type, current owner check or evidenced environmental limitation.
+
 Boundaries change trust, representation, persistence or independently versioned
 consumption. Typed calls between immutable validated values in one context need no
 repeated parsing. Meaningful transformations still need invariants, checked outputs

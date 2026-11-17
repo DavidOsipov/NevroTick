@@ -221,6 +221,7 @@ invariants and typed signatures rather than duplicate a large template.
 | Contract item | Required content and enforcement |
 | --- | --- |
 | Inputs | Exact units/sign, range, representation, identity/provenance, ownership and allowed states. Distinguish UTC, monotonic, active-awake, NTP-era timestamps, phase and frequency. Positive offset means Windows is behind. |
+| Explicit types and assumptions | Apply the [source-visible type rule](../windows-time-architecture.md#source-visible-types-and-assumptions--18-november-2026): named local types by default, deliberate generic conversion/default choices, preserved domain roles, and each consequential assumption's enforcing type, current guard or evidenced validity/unavailable outcome. |
 | Preconditions | Which immutable private types establish stable facts; which current policy, generation, freshness, destination, ownership and cumulative-budget checks remain necessary. |
 | Successful outputs | Checked units/ranges, finite numeric values, invariants, exact state transition and guarantees to downstream consumers. Check transformations before publishing results. |
 | Failure | Typed useful error, bounded redaction, preserved prior valid state, no partial protected effect; ambiguous effects enter reconciliation rather than blind retry. |

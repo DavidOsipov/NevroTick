@@ -77,6 +77,57 @@ cannot enforce runtime rejection. Handle invalid input and arithmetic failure
 explicitly; do not turn expected rejection into panic, fallback default,
 silent clamp or ignored `Result`. Test assertions still supply observations.
 
+## Make types and assumptions source-visible
+
+Apply [the owner's explicit-type rule](../../../../../docs/windows-time-architecture.md#source-visible-types-and-assumptions--18-november-2026)
+to new and materially changed handwritten code. Default to explicit type
+annotations for named locals, including intermediate results. For generic
+`parse`, `collect`, deserialization and `try_into` operations, state the intended
+destination in the binding or generic arguments. Keep relevant collection
+key/value, success/error and numeric width/sign choices visible; `_` alone does
+not state them. Pin literal/accumulator representation where it affects arithmetic.
+
+Use existing domain/role types in signatures, fields and intermediate values;
+retain units, clock/epoch, identity/generation and state meaning. A Rust type alias
+names the same underlying type; it does not prevent swapping meanings. Distinct
+types still need the actual owner/context relation: an explicitly typed value can
+come from the wrong field, source, operation or generation. Do not invent wrappers
+for every primitive or erase established types to fit a generic helper.
+
+Rust's compiler checks inferred types. Genericity alone is not an exemption:
+bindings expressible as declared generic parameters or named associated types
+follow the same explicit-binding default. Infer anonymous or intentionally opaque
+local implementation types only under explicit governing inputs, outputs, trait
+bounds, ownership and domain meaning. Anonymous closure/future/iterator types need
+no boxing, `dyn` dispatch, casts or new wrappers just to acquire a written name.
+This exception cannot hide a consequential representation or policy choice.
+
+Use checked fallible conversion where loss/range failure is possible. Make
+rounding, saturation, overflow and signedness policy explicit; a visible `as`
+cast is not a validation operation. Preserve error causes and actual effect
+status through conversions. Select defaults, absence, recovery and state changes
+deliberately under their owner contract; do not replace unknown evidence with
+zero, empty, success or a guessed fallback. Review affected inferred callers when
+signatures, trait implementations, defaults or conversions change, even if wire
+fields are unchanged. An annotation-only edit creates no automatic wire-version
+or runtime-validation requirement.
+
+For each consequential assumption, record its disposition at the existing owner:
+
+| Disposition | Required basis |
+| --- | --- |
+| Established by representation/operation | Exact type, constructor or checked operation; property it proves and inputs it binds |
+| Requires current validation | Authoritative owner, check/serialization point, invalidation condition and failure/effect outcome |
+| Depends on external evidence | Source or observation, applicable environment/range/validity, and unavailable/refused outcome when unestablished |
+
+Reuse that contract across unchanged typed calls; trivial helpers need no separate
+assumption ledger. A comment, API name, annotation or successful build does not
+establish domain meaning or environmental truth. Pair relevant type-substitution
+compiler controls with legitimate use; challenge wrong-but-well-typed facts at
+the real adapter/consumer. Source review checks annotation policy; behavioral and
+native evidence qualify the actual guarantee. Do not add tests that only count
+annotations or compile a redundant type spelling.
+
 ## Parse, don't validate: preserve established invariants
 
 When admission establishes a stable property needed downstream, return the smallest
@@ -449,6 +500,10 @@ behavior and allocations; qualify the exact resolved implementation with real
 controls before making application claims.
 
 Rust primary references: [outcome diagnostics](https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-must_use-attribute),
+[inferred types](https://doc.rust-lang.org/reference/types/inferred.html),
+[anonymous closure types](https://doc.rust-lang.org/reference/types/closure.html),
+[type aliases](https://doc.rust-lang.org/reference/items/type-aliases.html),
+[fallible conversions](https://doc.rust-lang.org/std/convert/trait.TryFrom.html),
 [privacy scopes](https://doc.rust-lang.org/reference/visibility-and-privacy.html),
 [thread transfer](https://doc.rust-lang.org/std/marker/trait.Send.html) and
 [shared references](https://doc.rust-lang.org/std/marker/trait.Sync.html).

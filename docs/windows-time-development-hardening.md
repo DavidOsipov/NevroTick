@@ -185,6 +185,15 @@ Reviewers must reject a path that bypasses required validation, consumes the unc
 
 The selected initial declaration is `garde = { version = "=0.23.0", default-features = false, features = ["derive"] }`; section 18.5 of the architecture owns dependency admission. The current [workspace](../Cargo.toml) and [lockfile](../Cargo.lock) exist; garde is declared by the UI, time-domain and time-core manifests. The [implementation summary](windows-time-architecture.md#1-current-state-capsule) routes their bounded evidence to the existing tasks. Those results do not establish every planned constructor/consumer contract, enforced product CI or completed product qualification. UI-M0's D1/D2/D3 deferrals remain in force; validate its actual fixture-only paths without introducing deferred production integrations.
 
+**18 November explicit-type clarification:** apply
+[architecture §6.3.1](windows-time-architecture.md#source-visible-types-and-assumptions--18-november-2026)
+and the [shared method](../.agents/skills/implementation/implement-rust-contracts/references/contract-enforcement.md#make-types-and-assumptions-source-visible).
+Review named local types, conversion/default choices and each consequential
+assumption's enforcement or evidence. Type spelling alone proves no domain
+meaning; inspect real consumers and retain required contextual/native checks.
+The [existing follow-up](../tasks/engine-transport-pilot.md#explicit-types-and-assumption-disposition--18-november-2026)
+records this instruction-only refinement; current product work remains with its owners.
+
 #### 3.4.1 Explicit contracts against mistaken assumptions — 14 November 2026
 
 David requests these refinements to the existing agent methods. Apply them to

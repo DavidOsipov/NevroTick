@@ -886,6 +886,40 @@ Every function, including private helpers, trait implementations and callbacks, 
 
 Consumers must use the checked return value, not an earlier unchecked copy. Production input/postcondition checks cannot exist only in `debug_assert!`, tests or a caller's convention. Use fallible APIs for invalid input and recoverable faults; fail closed at protected effects without using panic as routine hostile-input validation. Rust types do not prove all semantic postconditions: independent positive/negative tests, external consumer compile-fail checks for bypasses, and selected property/Kani checks must substantiate the guarantees they claim. Kani proofs retain explicit assumptions and bounds. Revalidation is required when a guarantee can change, not merely when control enters another function.
 
+##### Source-visible types and assumptions — 18 November 2026
+
+David requires explicit code, including types and assumptions. For new or
+materially changed handwritten code, make intended types and semantic choices
+visible at declarations and operations. Declare API and stored-field types;
+default to explicit type annotations for named local bindings. Preserve domain
+and role types through intermediate values. Pin numeric width/sign, units,
+clock/epoch, collection shape and conversion/error destinations where they
+affect interpretation, admissibility or effects. An inference placeholder alone
+does not satisfy an explicit-type obligation.
+
+Rust inference is statically checked. Genericity alone is not an exemption:
+bindings expressible as declared generic parameters or named associated types
+follow the same explicit-binding default. Anonymous or intentionally opaque local
+implementation types may remain inferred when their governing input/output,
+trait, ownership and semantic contracts are explicit. Do not add casts, boxing,
+dynamic dispatch or wrapper layers solely to spell an anonymous type. Types that
+must remain interchangeable may share a representation; meanings that must not
+be substituted require distinct domain/role types or an enforcing owner check.
+A type alias or repeated primitive annotation supplies no such separation.
+
+Every consequential assumption has one disposition: established by a named
+type/checked operation; checked dynamically by the current authoritative owner;
+or documented with its evidence, validity/scope and unavailable/refusal behavior.
+Place this beside the owning contract and reuse shared invariants. No unsupported
+default, guessed conversion, caller convention or comment may replace a required
+fact. Types cannot freeze external state, freshness, origin or native completion.
+
+Apply the [shared implementation method](../.agents/skills/implementation/implement-rust-contracts/references/contract-enforcement.md#make-types-and-assumptions-source-visible)
+and existing CHECK-25/affected owner checks. Review source-visible choices and
+independent semantic controls separately. This instruction establishes no
+repository-wide code audit, new analysis tool or completed implementation; apply
+it within each authorized owner's existing work and qualification scope.
+
 ### 6.4 Boundary ownership and failures
 
 | Boundary / owner | Validation responsibility | Failure and preserved authority |
