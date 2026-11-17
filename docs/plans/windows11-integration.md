@@ -1,7 +1,7 @@
 # NevroTick: useful Windows 11 integration mechanisms
 
-**Document:** NV-WIN11-RESEARCH-001, revision 1.3<br>
-**Date:** 7 November 2026<br>
+**Document:** NV-WIN11-RESEARCH-001, revision 1.4<br>
+**Date:** 18 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Owner-requested documentation integration; source research and proposed qualification, no native execution.
 
@@ -78,6 +78,16 @@ For hardware timing, check both supported and currently enabled capabilities. Su
 **Proposed qualification.** Bind every timestamp to the exchange, socket generation, actual interface identity, and a current conversion model. The Windows packet-info structures provide interface information; the simple Microsoft timestamp example assumes a single NIC. Therefore a per-NIC model without actual packet attribution is insufficient. Check two adapters with different capabilities, a route switch, stale TX metadata, counter reset, buffer saturation, and ordinary unsupported hardware. RX interface metadata and qualified TX interface selection belong to this adapter. [T1] [T4]
 
 Maintain a separate local measurement record: receiving a more precise TX time later cannot retroactively rewrite bytes already transmitted or authenticated. Neither software nor hardware timestamping removes network asymmetry or proves the remote server's UTC accuracy. System/driver configuration changes, if eventually needed, belong to an explicitly authorized lifecycle operation rather than the unprivileged engine.
+
+**18 November refinement:** the [fresh source detail](windows11-integration-follow-up.md#additional-packet-timestamp-checks--18-november-2026)
+and [W11-W01 qualification matrix](../../tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
+make direction-specific generic-UDP capability, mutually exclusive active modes,
+NIC→QPC→UTC calibration, bounded TX retirement and the coalesced-TX exclusion
+explicit. They retain independent valid fallback and matched accuracy/cost
+controls on each claimed OS/NIC profile. The finite supplier/receiver contract is
+settled; actual suppliers, physical error bounds and native evidence remain open.
+Software comparison precedes optional hardware adoption; neither becomes a new
+V1 feature requirement or a reason to repeat the original survey.
 
 ### Sleep, timers, and leap presentation
 

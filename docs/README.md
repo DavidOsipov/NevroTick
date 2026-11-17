@@ -9,6 +9,17 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**Timestamp qualification — 18 November 2026:** the
+[W11-W01 matrix](../tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
+adds concrete clock/capability, RX/TX, NIC calibration, transition, fallback and
+measured-benefit cases under existing CHECK owners. The
+[Microsoft source refinement](plans/windows11-integration-follow-up.md#additional-packet-timestamp-checks--18-november-2026)
+records generic-UDP flags, exclusive software/hardware modes, coalesced-TX limits
+and SDK/source discrepancies. The finite supplier/receiver contract is settled;
+actual suppliers, physical uncertainty and native qualification remain open.
+Required V1 provenance stays separate from optional software/NIC adoption.
+These are planned checks, not implementation, executed tests or a hardware requirement.
+
 **Production event logger plan — 17 November 2026:** the
 [W11-W08 continuation](../tasks/windows11-integration.md#43511-production-event-logger-plan--17-november-2026)
 turns the existing diagnostics contract into staged implementation work. Service

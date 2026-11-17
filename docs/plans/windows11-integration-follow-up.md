@@ -1,8 +1,8 @@
 # NevroTick: Microsoft Learn follow-up for Windows 11 integration
 
-**Document:** NV-WIN11-RESEARCH-002, revision 1.1<br>
+**Document:** NV-WIN11-RESEARCH-002, revision 1.2<br>
 **Date:** 3 November 2026 (Asia/Tbilisi)<br>
-**Updated:** 7 November 2026; additional service-practices review<br>
+**Updated:** 18 November 2026; additional packet-timestamp qualification<br>
 **Owner:** David Osipov<br>
 **Status:** Source research and future qualification guidance; no implementation or native result.
 
@@ -58,6 +58,58 @@ was executed for this investigation. Source-backed behavior is identified below;
 the proposed adaptations are engineering inferences requiring their own evidence.
 
 ## 2. Packet timestamps, socket metadata and completion
+
+### Additional packet timestamp checks — 18 November 2026
+
+Fresh Microsoft Learn search/full-page retrieval and repository review at
+`238b9aed6c832d5d5be4a306357c52510395f144` refine the existing W11-W01 work.
+The [task's qualification matrix](../../tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
+owns the concrete cases and evidence. These are source-backed API facts plus
+explicit project qualification requirements, not implemented adapters or results.
+Required V1 capture/mapping/provenance remains separate from optional Winsock/NIC
+adoption; no hardware support requirement or new execution permission is added.
+
+| Microsoft source fact | Consequence for the selected adapter |
+| --- | --- |
+| `GetInterfaceSupportedTimestampCapabilities` and `GetInterfaceActiveTimestampCapabilities` report different states; socket `SIO_TIMESTAMPING` alone does not enable system/interface timestamp generation. Hardware and software timestamping cannot be enabled together on an interface. [T19] [T20] [T21] | Record supported, active and actually observed source separately. Test software and hardware modes separately, retaining application captures in each. Query failure or ambiguous/transition-era mode cannot be guessed from the counter magnitude or a configuration request. |
+| `TIMESTAMPING_CONFIG.Flags` enables directions that are present and disables directions that are omitted. [T26] | Apply one explicit intended RX/TX configuration; test that a later direction-specific update does not silently disable the other required direction. |
+| Hardware `AllReceive` covers non-PTP RX; `AllTransmit` or `TaggedTransmit` covers non-PTP TX. PTP-specific flags alone do not cover ordinary NTP/NTS UDP. The software capability structure likewise has direction-specific general-packet flags. [T22] [T23] | Check each direction in the active source's capability set, then observe actual packets on the selected family/interface. A partial RX/TX capability is not full-path support; mixed-source legs need their own qualified mapping and error budget. |
+| `HardwareClockFrequencyHz` is nominal, rounded and may be zero. `SupportsCrossTimestamp` reports a capability; a cross timestamp brackets the NIC reading with QPC `SystemTimestamp1` and `SystemTimestamp2`. [T21] [T24] | The Windows cross-timestamp candidate needs actual successful observations and a measured NIC-to-QPC relationship. Nominal frequency alone cannot convert packet timing accurately. Zero nominal frequency does not disqualify an independently adequate measured model. |
+| RX `SO_TIMESTAMP` is a `UINT64` counter: QPC ticks for software, NIC ticks for hardware. TX IDs are `UINT32`; successful retrieval removes the matching record. `SIO_GET_TX_TIMESTAMP` returns immediately with `WSAEWOULDBLOCK` while unavailable, even with OVERLAPPED; new records are discarded when the buffer is full. [T19] [T25] | Keep units explicit; bound polling, outstanding IDs, retention and queue occupancy. No unbounded busy wait, ID reuse while old records can still arrive, fake exact send time or renewed freshness at retrieval. Stop/timeout and subsequent healthy acquisition must remain usable. |
+| TX timestamps are unsupported for coalesced sends through `UDP_SEND_MSG_SIZE`. [T25] | Keep the selected timestamped TX path uncoalesced. A later batching change must requalify this boundary; do not substitute one timestamp for several NTP exchanges. |
+
+**Measured conversion contract.** Preserve raw cross-timestamp brackets, interface
+and model generation. Before use, the owner must specify the correlation method,
+admitted bracket width, fit-residual interpretation, drift/age allowance, finite
+validity and checked conversion/range limits. Propagate their justified
+uncertainty through the separate qualified QPC-to-UTC mapping; a good NIC-to-QPC
+fit alone supplies no UTC coordinate. A fitted residual or midpoint alone is not
+a worst-case error bound. Test known synthetic rate/offset and drift beside
+inverted/wide brackets, stale models, arithmetic overflow and counter
+reset/discontinuity. Retain a usable measured case with zero/rounded nominal
+frequency. Numeric thresholds and the estimator remain unselected until the
+existing owner justifies them; this adds no pre-V1 formal-proof work.
+
+**Invalidation and path contract.** The existing configuration callback cases
+below also cover a NIC restart that leaves hardware mode enabled. NevroTick must
+retire or re-establish affected calibration/metadata after relevant power,
+device/driver, interface, route or clock-mapping changes. These broader triggers
+are project robustness requirements, not a claim that Microsoft mandates one
+universal invalidation algorithm. A late callback is not an atomic lease on the
+mode of a queued packet. Unknown mapping continuity refuses current admission.
+For virtual/VPN paths, identify the observed packet and interface: an outer tunnel
+timestamp is not automatically the inner NTP packet's timestamp. Future SOCKS
+support retains its deferral and needs its own relay/packet association evidence;
+timestamp failure never authorizes a different route or authentication policy.
+
+**Source discrepancies.** Requirement tables mix build 20348 with Windows 11
+22000.194/Server 2022. The Winsock example assigns a `Version` member to
+`INTERFACE_HARDWARE_CROSSTIMESTAMP`, while the dedicated structure page lists only
+three timestamps. [T19] [T21] [T22] [T24] Pin and check the selected SDK/generated
+bindings, exports, driver and actual OS-family behavior; neither illustrative
+sample fields nor the lowest listed build establish compatibility. Retain the
+unregister and ancillary-layout discrepancies below. The product's OD-14 scope
+is unchanged.
 
 ### Timestamp configuration can change without a route change
 
@@ -678,6 +730,7 @@ Core priority and all native/fuzz/storage holds remain in force.
 ## 8. Primary sources
 
 Retrieved through Windows Learn MCP during the 3 November 2026 investigation.
+T19–T26 were fetched in full for the 18 November packet-timestamp refinement.
 These are Microsoft documentation links, not pinned SDK headers or executed
 platform evidence. Exact supported flags, bindings, build/provider/account and
 effective behavior must be qualified when an adapter is selected. Citations in
@@ -701,6 +754,14 @@ the relevant sections preserve each source's purpose and known conflicts.
 [T16]: https://learn.microsoft.com/windows/win32/winsock/ipproto-udp-socket-options
 [T17]: https://learn.microsoft.com/windows/win32/api/ws2tcpip/nf-ws2tcpip-wsasetudprecvmaxcoalescedsize
 [T18]: https://learn.microsoft.com/windows/win32/hyperv_v2/virtual-machine-generation-identifier
+[T19]: https://learn.microsoft.com/en-us/windows/win32/winsock/winsock-timestamping
+[T20]: https://learn.microsoft.com/en-us/windows/win32/iphlp/packet-timestamping
+[T21]: https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/ns-iphlpapi-interface_timestamp_capabilities
+[T22]: https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/ns-iphlpapi-interface_hardware_timestamp_capabilities
+[T23]: https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/ns-iphlpapi-interface_software_timestamp_capabilities
+[T24]: https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/ns-iphlpapi-interface_hardware_crosstimestamp
+[T25]: https://learn.microsoft.com/en-us/windows/win32/winsock/winsock-ioctls#sio_get_tx_timestamp
+[T26]: https://learn.microsoft.com/en-us/windows/win32/api/mstcpip/ns-mstcpip-timestamping_config
 [L1]: https://learn.microsoft.com/windows/win32/api/combaseapi/nf-combaseapi-coinitializeex
 [L2]: https://learn.microsoft.com/windows/win32/api/combaseapi/nf-combaseapi-coinitializesecurity
 [L3]: https://learn.microsoft.com/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
