@@ -1,10 +1,18 @@
 # NevroTick roadmap
 
-**Updated:** 14 November 2026 (Asia/Tbilisi)
+**Updated:** 18 November 2026 (Asia/Tbilisi)
 
 **Pre-V1 distribution requirement:** [WGT-0, WinGet capability](#wgt-0--winget-distribution-capability-before-v1), prepared and qualified within P6/P7 before V1; actual public catalog availability is tracked separately.
 
 **Pre-V1 literature qualification:** [LIT-0](#lit-0--literature-derived-qualification-before-v1) adds small actual-consumer tests and prepares the reviewed cases before V1 under [OD-18](docs/nevrotick-owner-decisions.md#22-od-18--literature-derived-qualification-before-v1). Substantial implementation follows its existing phase and detailed evidence gates.
+
+**Timestamp qualification:** [W11-W01 TQ-01–10](tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
+make the existing S2.1/P2 provenance, mapping and fallback checks concrete.
+Required V1 acquisition still needs genuine supplier/consumer evidence. Winsock
+software comparison and later NIC timestamping remain conditional improvements,
+with actual capability, calibration, lifecycle and matched accuracy/cost evidence
+before use. Hardware support is not a V1 requirement; this does not reorder the
+post-V1 work below or mark any new native check passed.
 
 **First post-V1 TODO:** [MATH-0, mathematical estimation experiments](#math-0--post-v1-mathematical-estimation-experiments), immediately after V1 is actually released, under [OD-16 §20.1](docs/nevrotick-owner-decisions.md#201-mathematics-experiments-first--13-november-2026).
 
