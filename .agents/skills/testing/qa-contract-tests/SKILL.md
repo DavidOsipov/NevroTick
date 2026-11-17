@@ -73,6 +73,15 @@ future fields must force semantic decision. Preserve required floating
 bit and allocation-identity comparisons; incomplete equality can hide corruption.
 Retain independent observations of critical effects, not equality alone.
 
+Review [source-visible types and assumptions](../../implementation/implement-rust-contracts/references/contract-enforcement.md#make-types-and-assumptions-source-visible)
+at changed declarations, generic conversions, literals/accumulators, defaults and
+raw/native adapters. An explicit primitive or alias establishes no domain barrier.
+Check each consequential assumption's type/operation, current owner guard or
+evidenced validity and unavailable outcome. Annotation-only clarity needs scoped
+source/caller review; do not count it as a new runtime guarantee or add tests that
+only repeat a type spelling. Reject casts/type erasure introduced merely to name
+a type when they weaken the actual contract.
+
 At changed integration seams, select relevant wrong-but-well-typed controls:
 neighboring field, wrong owner/generation, stale snapshot, mismatched admitted
 operation/result or altered unit/sign. Exercise real producer → adapter → consumer

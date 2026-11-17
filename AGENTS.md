@@ -395,6 +395,11 @@ Read canonical sections for exact limits; preserve these boundaries:
   Follow [contract enforcement](.agents/skills/implementation/implement-rust-contracts/references/contract-enforcement.md):
   no `garde(allow_unvalidated)`; each skipped field needs an actual invariant owner
   and independent review. Garde adoption does not qualify a product Cargo graph.
+- Make types and consequential assumptions explicit under
+  [the source-visible type rule](docs/windows-time-architecture.md#source-visible-types-and-assumptions--18-november-2026).
+  Default to explicit types for handwritten named locals; preserve domain/role
+  types, checked conversion targets and real assumption owners. An annotation
+  alone establishes no units, provenance, current authority or native completion.
 - Parse NTP/NTS with bounded protocol-specific byte parsers. Preserve interval
   majority selection/configured minimum agreement; no automatic single-peer
   profile after disagreement.

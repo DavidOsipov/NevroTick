@@ -20384,6 +20384,55 @@ that authorization; other fuzz/storage/UI/provider holds and post-V1 formal
 deferral remain. This handoff changes no product task's stage-only publication
 instruction. Report proposed, implemented, executed and qualified separately.
 
+#### Explicit types and assumption disposition — 18 November 2026
+
+David clarifies that code, including types and assumptions, must be explicit.
+This documentation/skill refinement is based on published
+`dda3f4982fedc285e80a499e9ef9fdfd97e5c791`; it identifies a guidance gap, not a
+completed source audit or a demonstrated product defect. The
+[canonical rule](../docs/windows-time-architecture.md#source-visible-types-and-assumptions--18-november-2026)
+and [implementation method](../.agents/skills/implementation/implement-rust-contracts/references/contract-enforcement.md#make-types-and-assumptions-source-visible)
+require source-visible type choices and an enforcing/evidentiary disposition for
+consequential assumptions. Handwritten named locals default to explicit types,
+including nameable generic bindings; anonymous/opaque implementation types keep
+their precise governing contracts.
+
+Apply at each existing authorized S1.2/S1.3, Engine, GUI, Windows and build owner
+under CHECK-25 and its affected numerical/lifecycle/native checks. Review actual
+conversion/default choices and typed handoffs; use intended wrong-type rejection
+with legal use where the type guarantee changes, and wrong-but-well-typed cases
+through real consumers where origin/context matters. Annotation-only clarity
+does not require a new behavioral campaign. Preserve existing H01–H16 scopes,
+current product order, execution permissions and post-V1 formal deferral. This
+update installs no lint, changes no product source and claims no runtime/native pass.
+
+**Independent review and documentation checks:** fresh-context read-only reviewer
+`explicit_contract_judge` inspected the eight-file candidate, governing contract
+and QA surfaces, and official Rust references. The initial patch SHA-256 was
+`25c09ca895041c78532a89625e105bc31b24da649fc0d6955e868f5ae137ae13`.
+Its comprehension paragraphs are retained verbatim:
+
+> The patch adds an explicit-type and assumption-handling rule across eight Markdown files. It makes annotations the default for handwritten named locals, requires visible conversion destinations and deliberate defaults, preserves existing domain types, and assigns consequential assumptions to a checked representation, a current owner check, or bounded external evidence. It also directs QA to distinguish source clarity from behavioral guarantees.
+
+> The established contracts already require private checked construction, mandatory shared validation where applicable, checked transformations, current authority checks and evidence through actual consumers. CHECK-25 owns the relevant contract path; native qualification and other owner gates remain separate. The patch correctly presents this as documentation and skill integration, preserves existing work scopes and the post-V1 formal deferral, and claims no implemented or executed product guarantee.
+
+The initial REVISE finding, **EXPLICIT-TYPE-01**, identified an overbroad generic
+inference exception. Both normative passages now keep nameable generic parameters
+and associated types under the explicit-binding default. The reviewer verified
+the narrow v2 delta and current working-tree patch SHA-256
+`b3fb147533a358aaa14df5f7e9455d0d50184050a7a457dc1dadf161157734e3`,
+marked the finding resolved and returned **READY for documentation/skill policy
+integration**, with no additional issue in that delta. This receipt is appended
+to that substantive candidate.
+
+`git diff --check` and the standard-library-only skill-package checker pass;
+the latter checks metadata, UI prompts, local links and inventories for 66 skills.
+All 11 new/changed local Markdown link occurrences resolve. The link scan retains
+one unchanged reference-like prose/parser ambiguity in the development plan.
+No Rust compiler, product test, native probe or formal job ran. These results
+establish guidance readiness only; implementation conformity and product
+qualification remain with the actual changed owners.
+
 ### Current main-host scripted Engine tests — 14 November 2026
 
 David explicitly reauthorizes tests on his main Windows instance. Root resumes
