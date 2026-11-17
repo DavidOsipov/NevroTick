@@ -615,6 +615,11 @@ does not qualify optional-storage roots or a different cryptographic operation.
 
 ### W11-W08 Trace native behavior and qualify one fault profile
 
+The [production event logger continuation](#43511-production-event-logger-plan--17-november-2026)
+owns the required operational event pipeline and its staged integration. Optional
+ETW tracing/fault experiments below do not replace that pipeline or lift its
+native/package prerequisites.
+
 **Diagnostic metadata refinement, 7 November 2026:** [metadata §12.3](../docs/plans/windows-package-metadata.md#123-artifact-and-diagnostic-projections)
 and [catalogue C](../docs/supporting-reviews/windows-service-metadata-catalogue.md#appendix-c-diagnostics-and-performance-counters)
 refine this assignment with W11-W10/P6. Before dependent resource authoring,
@@ -6206,6 +6211,153 @@ dump/export secret cases. W11-W05 retains real worker/provisioning and native
 SCM/completion/recovery. Adopt those integrations only at their admitted phase;
 the metric receipt deliberately retains `qualification_passed=false` for the
 unqualified whole product. This completed source child lifts no execution hold.
+
+#### 4.35.11 Production event logger plan — 17 November 2026
+
+**Status and authority.** Documentation/planning continuation of §4.35.10 under
+W11-W08, not a new logger workstream or implementation receipt. David requested
+critical/high/mid/low/info events and a concrete module plan. The
+[canonical classification contract](../docs/windows-time-architecture.md#1232-levels-and-required-events)
+keeps operational importance separate from technical level and required routing.
+Event-specific mappings and native descriptors must be frozen before dependent
+implementation; this plan assigns no numeric encoding or Windows-level mapping.
+F-09/AC-16 and CHECK-17 own the result, with CHECK-2/14/21/26/27 and the existing
+storage/package checks at their affected boundaries. The active Core/Engine
+queue, current Windows/fuzz/storage/UI holds and post-V1 formal deferral remain.
+Planning alone starts no product, native or qualification campaign.
+
+**Observed baseline:** read-only inspection at
+`72b4ae5a92b413a45193e47ef7857aa60f3d524e` found the eight-event
+[service fixture](../tools/windows-service-fixture/src/diagnostics.rs) with only
+INFO/ERROR, two separate fixed memory routes and test-only record/loss readers.
+Its actual invocation composition enables required memory output, with optional
+output off; it supplies no production drain, installed event channel or export.
+The [Engine observer](../crates/nevrotick-engine/src/bin/nevrotick-observe.rs)
+has separate typed console diagnostics; the
+[GUI diagnostic owner](../crates/nevrotick-ui/src/diagnostics_ui.rs) remains
+presentation-only. Preserve those useful foundations and their evidence limits;
+neither console text, fixture records nor dependency presence is an integrated
+product logger. Recheck source/callers before the implementation child starts.
+
+**Ownership and path.** Use
+[architecture §3.4](../docs/windows-time-architecture.md#34-shared-windows-adapters-and-diagnostics)
+and [§12.3](../docs/windows-time-architecture.md#123-logging-and-support):
+
+| Owner | Enforced boundary and handoff |
+| --- | --- |
+| Actual operation/decision owner | Select the reviewed event/outcome once from admitted facts. Lower layers retain typed errors; completion records require the actual acknowledgement. Log generation grants no control authority. |
+| Shared platform-neutral diagnostics | Private checked construction binds stable ID/version, permitted fields, level, importance and routing policy. Bound/encode before queue admission; foreign strings, error chains and whole domain objects cannot supply a record. |
+| Each executable's composition | Initialize its one subscriber/router, finite required/optional allocations, writer lifetime and independent loss/health projection. Libraries cannot replace the process composition; engine logs do not pass wholesale through the broker. |
+| `windows-platform` with W11-W08/W11-W10 | Implement native sinks against installed fixed provider/channel/resources and effective rights; preserve bounded failure, rendering and retention. A sink attempt, accepted write and retained/readable event are distinct observations. |
+| Existing secured read path and S5.3 UI | Publish bounded redacted event/history/health views with gap and process identity. UI previews and writes its own export. Authoritative synchronization state still comes from coherent snapshots; event text cannot manufacture it. |
+
+No logger daemon, generic event bus, arbitrary privileged export path, new clock
+permission or automatic telemetry is introduced. The separate correction
+journal retains its durability/authority rules. ST-W07 owns sensitive-memory,
+dump and export privacy; W11-W05 retains worker/SCM completion and provisioning.
+
+**Staged implementation and exits.** Rows are a bounded dependency sequence,
+not authorization to run held stages. Reuse their existing task/evidence owners.
+
+| Stage / owner | Prerequisites and bounded change | Observable exit |
+| --- | --- | --- |
+| Portable catalogue and routing / diagnostics coordinator, service owner, privacy/QA | Freeze the first-stage contract below, exact source/feature/licence graph and finite portable limits. Extend/reuse the existing invocation seam with platform-neutral policy; choose a separate crate only when actual consumers need its dependency boundary. | Real admitted service decisions reach an inspectable bounded consumer; required INFO survives optional Off/WARN/ERROR and importance filtering. Closed classification, privacy, loss and unchanged operation outcomes pass independent portable controls. No native or durable-delivery claim. |
+| Per-process composition and producers / W11-W05 plus each actual component owner | Consume the portable contract; freeze each process's budgets, instance/sequence lifecycle and concrete subscriber/writer composition. Add lifecycle, policy, denial, trust/source, bootstrap, correction, ownership, recovery and diagnostic-session producers only as their real owners exist. | A source-to-sink coverage table binds every required event to its reached owner/caller and consumer. Startup/stop/failure paths report truthful availability/loss and do not duplicate failures or block cleanup. Missing product producers remain explicit open rows. CHECK-14/17/21/26/27. |
+| Windows delivery and retention / W11-W08, platform, W11-W10, ST-W03/ST-W07 | Admit native execution; freeze provider/channel choice, message resources, event/version/level mapping, effective access matrix, protected paths, retention/rotation and flush deadline under §15.3 and metadata §12.3. | On the exact installed candidate, intended writers/readers work; unauthorized publication/read/clear/configuration/export cases have their declared outcome. Known events render against the matching resources. Missing/full/denied sinks, rotation/flush failure and restart retain bounded useful health, privacy and safe cleanup. Native/package evidence stays separate from host tests. |
+| Authorized temporary diagnostics / P3 broker/helper/target owners, security/QA | Use the existing authorized command boundary and §12.3.3; freeze finite profiles, scopes, duration/byte caps and target/process/session binding. Normal required routing is already independent. | A current authorized session changes only optional collection; each target expires locally across UTC changes, suspend, restart, revocation or control loss. Stale/replayed commands, partial activation and failed filter reset cannot extend collection or imply success. CHECK-2/14/17/21/27. |
+| Recent events and export / S5.3, diagnostics/ST-W07, UI/accessibility | Qualified per-process output/privacy, secured bounded reads, D2 status re-entry and applicable D1/D3/native gates. Connect one real event/history/export journey; W11-W09 separately owns production notifications. | All five importance categories remain distinguishable without color alone, with honest unavailable/lost/history state. Filtering never changes producer collection or required retention. Preview/export excludes secrets, reports incompleteness and uses ordinary-user destination authority. Closing UI leaves service ownership unchanged. CHECK-14/17/21/22/23/27, AC-16. |
+
+**Next portable stage: freeze, implement, verify, stop.** Start at
+`ServiceInvocation` in `tools/windows-service-fixture/src/host.rs`, its existing
+`diagnostics.rs`, `diagnostics_tests.rs` and `host_tests.rs`. The added observable
+outcome is bounded record consumption and health/loss projection through that
+actual invocation, not another enum or only repeated helper tests. The
+consumer and health surface must be reached by non-test invocation composition;
+new `#[cfg(test)]` accessors alone cannot satisfy this exit. Portable harness
+observations still establish no native delivery or installed product behavior. The
+coordinator freezes shared-module placement, exact source/feature graph,
+consumer ownership and finite test budget here before coding; expand only this
+stage. No proposed shared crate is presumed to exist.
+
+1. Freeze a minimal initial catalogue from actual service decisions. Each entry
+   names ID/version, decision owner, permitted cause/context, technical level,
+   operational importance, required/optional route and coalescing rule. Record
+   Critical/High/Medium/Low/Info examples independently; categories without a
+   current real producer use explicitly synthetic controls, never invented live
+   incidents. Translation, remote text and caller-supplied raw labels cannot
+   change classification. Neither importance filters nor optional verbosity can
+   suppress required events, admit DEBUG outside its session or authorize an
+   operation/notification.
+2. Define private fallible construction and checked transformations using the
+   shared garde/domain contract where applicable. Explicit closed enums and
+   typed event-specific fields enforce semantic combinations; generic strings,
+   maps and a final scrubber do not. Preserve caller provenance without treating
+   a role/instance field as proof of identity. Add process instance, local
+   sequence, relevant generations/correlation and UTC quality with explicit
+   unavailable states; no fabricated zero/current/trusted defaults. Freeze
+   restart/sequence-exhaustion behavior and the scope of ordering before use.
+3. Freeze finite encoded record/field bytes, required/optional queue and recent
+   memory capacities, per-key/aggregate rate and cardinality limits, counter
+   saturation and overflow/coalescing policy for this portable slice. Required
+   capacity must not be consumed by optional floods. Export, native retention,
+   writer/flush and session ceilings remain named later-stage inputs, selected
+   before their consumers exist. The fixture's 16-by-9-byte allocation and
+   §12.3's proposed 10 MiB aggregate disk budget are not adopted product limits.
+4. Wire the existing service decision owner through the checked record and real
+   router to an inspectable bounded consumer; expose loss/availability through
+   a separate health projection. Preserve earliest failure, actual completion,
+   admission and cleanup outcomes under healthy/full/unavailable sinks. No sink
+   callback, retry, blocking I/O or recursive failure logging enters the
+   time-control/decision path. Retain original fixture compatibility explicitly
+   or version the changed representation; never silently reuse its codes.
+5. Independently check accepted events and rejected raw/transformed inputs,
+   classification mismatch, required INFO with optional output off, flood and
+   sequence/counter exhaustion, backward UTC/restart, synthetic-secret exclusion
+   and useful ordinary diagnostics. Compare literal expected fields and actual
+   operation outcomes, not solely encoder/decoder round trips. Include legal
+   construction beside constructor bypass refusals, and healthy consumers beside
+   faulty sinks. Extend existing tests/metrics at the affected owners; preserve
+   90% security-module coverage and 95% critical-file mutation requirements with
+   honest generated-fault reconciliation. Run only admitted applicable checks.
+
+The portable exit is a reached, bounded, inspectable event pipeline and health
+consumer at the declared source boundary. It is not production Windows delivery,
+qualified service control, complete event coverage or a GUI connection. Stop at
+that exit; retain absent producers and later native/UI prerequisites in this
+same chain instead of substituting more helper-only tests or launching a held
+campaign. Freeze the integrated candidate before independent review and reuse
+unaffected evidence under the existing testing contract.
+
+**Threats and remaining decisions.** Existing THR-6/22, THR-8, THR-10 and THR-18
+cover unauthorized control, flooding, disclosure and misleading status. Apply
+the unchanged controls and valid/hostile pairs in
+[hardening §9.8](../docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification),
+including privileged fallback-path confinement and installed-provider spoofing
+limits. The coordinator resolves event-specific classification and portable
+limits first; native sink/resource/access mappings and finite disk/session
+allocations stay explicit prerequisites for their stages. `tracing` remains the
+candidate facade, with no dependency/version or generic filter-string adoption
+here. Optional ETW, crash collectors and notification delivery retain separate
+owners and evidence. This documentation amendment ran no product/native tests
+and establishes no completed logging capability or release qualification.
+
+**Independent plan review — 17 November 2026.** `logging_plan_judge`, fresh
+conversation (`fork_turns: none`), completed read-only review of base
+`72b4ae5a92b413a45193e47ef7857aa60f3d524e` and semantic candidate tree
+`ae744836d401808243562388a7b22b7bbb3808c4`; this review record was added afterward.
+The reviewer inspected all seven Markdown changes, the canonical/phase contracts,
+predecessor task, actual service/CLI/UI source and selected fixture assertions.
+Verdict: **ready for the documentation/planning handoff and its portable
+contract-freeze step**; no material finding within that scope. Implementation
+scheduling and native/UI holds remain unchanged. The coordinator checked all
+17 added local links/anchors, preserved existing heading order and passed
+`git diff --cached --check`; these are documentation checks only.
+
+Reviewer comprehension, retained verbatim:
+
+> The proposed change turns the existing diagnostics requirements into a staged delivery plan under W11-W08. It adds **Critical, High, Medium, Low and Info operational importance**, independently of technical log level and required-event routing, then connects the shared event contract to per-process composition, Windows delivery, authorized temporary diagnostics and the later UI/export consumer. The first portable stage starts at the existing service invocation and must produce an inspectable event and health pipeline, with catalogue, limits and ownership frozen before coding. The current development-plan §7 queue remains authoritative.
+>
+> The current source implements useful but narrower foundations. The service fixture has eight closed event variants, explicit INFO/ERROR encodings, separate finite memory routes and test-only record/loss readers; its ordinary invocation selects required output with optional output off. The Engine observer writes its own bounded console projections, while the UI diagnostics module explicitly owns presentation only. Production native delivery, runtime event/health consumption, comprehensive producer coverage, authorized diagnostic sessions and the GUI event stream remain planned or separately gated. The candidate preserves that distinction.
 
 ### 4.36 WinGet distribution before V1 — 7 November 2026
 

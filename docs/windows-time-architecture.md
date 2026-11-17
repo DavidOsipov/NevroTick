@@ -2483,7 +2483,14 @@ environment. [Source and owner map](plans/windows11-integration-follow-up.md#add
 
 ### 12.3 Logging and support
 
-This is the canonical shared diagnostics contract, approved for planning on 29 October 2026. It specifies future behavior; no logger, service control or application Cargo workspace is implemented by this document. Keep implementation in the existing component plan, with `tracing` as the candidate facade and a qualified minimal subscriber/sink composition from section 18.6. [S74]
+This is the canonical shared diagnostics contract, approved for planning on
+29 October 2026, with the requested importance bands and delivery handoff refined
+on 17 November 2026. The existing service fixture and Engine console diagnostics
+are partial implementations; they do not establish the production logger below.
+The [production event logger plan](../tasks/windows11-integration.md#43511-production-event-logger-plan--17-november-2026)
+owns staged delivery under W11-W08 and the existing component owners. `tracing`
+remains the candidate facade, with a qualified minimal subscriber/sink composition
+from section 18.6. This amendment selects no dependency version or native API. [S74]
 
 #### 12.3.1 Ownership, records and status
 
@@ -2507,6 +2514,36 @@ Log a failure at its decision owner with the useful outcome; lower layers propag
 | `INFO` | Lifecycle and meaningful state/policy/correction transitions | Normal application threshold; no routine packet-by-packet output |
 | `DEBUG` | Additional bounded decision context for troubleshooting | Temporary scoped session with finite elapsed duration and resource caps |
 | `TRACE` | Detailed controlled developer/qualification observations | No unrestricted production UI switch; same secret prohibition and finite test budget |
+
+**Operational importance — 17 November 2026 owner request.** The planned shared
+event schema also carries one closed importance band: `Critical`, `High`,
+`Medium` (the requested mid importance), `Low` or `Info`. This is independent of
+technical level and required-event routing. `DEBUG`/`TRACE` describe additional
+detail; they are not substitutes for low/medium importance.
+
+| Importance | Classification criterion | Example requiring the stated context |
+| --- | --- | --- |
+| `Critical` | Observed failure threatens clock safety, ownership or necessary recovery; immediate attention | Required restoration failed, or unresolved ownership prevents safe cleanup |
+| `High` | Significant security or required-service failure needs attention | Required service startup is refused, or sustained authentication failure prevents required operation |
+| `Medium` | Persistent degradation needs investigation without evidence of the critical condition above | Sustained insufficient source availability or agreement |
+| `Low` | Isolated recoverable condition with limited observed impact | One transient source failure while sufficient healthy sources remain |
+| `Info` | Expected meaningful operational transition | Acknowledged start/stop, policy revision change or diagnostic-session expiry |
+
+Freeze each event's ID/version, producer decision, outcome, technical level,
+importance, required route and permitted fields in the shared catalogue before
+wiring that emitter. Use closed descriptors/checked typed variants; arbitrary
+caller text, dependency severity, remote input or translated wording cannot pick
+the classification. Context-dependent bands need explicit outcome variants or
+checked context at the decision owner. An isolated hostile packet is not proof
+of compromise; retries do not become separate incidents merely to raise urgency.
+
+Keep native Event Log level/keyword mapping explicit at the Windows adapter;
+do not reuse Rust discriminants, fixture byte codes or importance ordinals as
+native values. Preserve importance in selected outputs and UI filters without
+changing the underlying outcome or losing required-event attempts. Importance
+alone grants no notification, diagnostic-session, policy or clock authority;
+the existing incident/notification owner still decides user alerts. Band names
+and this classification contract are planned behavior, not implemented coverage.
 
 Admitted dependency messages default to `WARN` or a stricter threshold. Admission reviews their actual fields and error paths; a high severity does not make arbitrary dependency output safe. Map unsafe library errors to product codes. Production profiles are typed finite choices, not user-supplied filter strings, regular expressions, module targets or `RUST_LOG`/other environment directives.
 

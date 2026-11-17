@@ -217,6 +217,15 @@ signing profile. No generic security-state reset or signature bypass is added.
 
 Diagnostics starts with the observed problem and a useful remedy. It contains a bounded recent-event timeline, last failure, product/component compatibility, active profile and relevant policy/ownership state. Technical details are expandable; process names, pipe paths and TLS implementation choices are not required knowledge for normal use.
 
+Show and filter the planned **Critical / High / Medium / Low / Info** operational
+importance from [the shared event contract](windows-time-architecture.md#1232-levels-and-required-events).
+Preserve the producer's typed classification and outcome; importance is separate
+from ERROR/WARN/INFO/DEBUG/TRACE, mandatory recording and notification policy.
+Filtering the view cannot suppress required logging or turn an empty/lossy stream
+into evidence of health. The [existing logger workstream](../tasks/windows11-integration.md#43511-production-event-logger-plan--17-november-2026)
+connects real producers, sinks and the later S5.3 viewer/export; current GUI
+examples are not a live event stream.
+
 Differentiate observed facts from hypotheses. For example: **No reply from the configured servers** is an observation; **Your firewall is blocking NTP** is only a possible cause without further evidence. Offer checks the user can take without recommending weaker authentication.
 
 Expandable time-scale details distinguish source policy, missing announcements,
@@ -518,7 +527,7 @@ retaining product ownership never implicitly hands synchronization to Windows.
 | AC-13 | F-01/07 | Kill engine and broker during correction. Recover only with current ownership; ambiguous/successor state blocks resets. Crash loops preserve consumed budgets. | CHECK-10/12/27 |
 | AC-14 | F-01/06 | Managed-policy takeover defaults to observation; later GPO/controller activation causes honest conflict handling without fighting the owner. | CHECK-5/13 |
 | AC-15 | F-01 | Store package update, compatible higher-version correction from affected state, repair/Reset and uninstall before UI launch, with UI closed, old sessions and last-user transitions; inject interruption. No partial product, erased last recovery path, permissive reset, stale-owner restoration or false completion; listing containment is not installed recovery. | CHECK-13/18/23 |
-| AC-16 | F-09 | Failures yield useful redacted evidence; required events survive optional filters; authorized temporary DEBUG expires; floods/full storage cannot block cleanup or create success. | CHECK-2/14/17/27 |
+| AC-16 | F-09 | Actual events preserve typed importance, technical level and outcome through selected sinks/view/export; failures yield useful redacted evidence and visible loss/unavailability. Required events survive optional filters; authorized temporary DEBUG expires; floods/full storage cannot block cleanup or create success. | CHECK-2/14/17/27 |
 | AC-17 | F-04/06/08/09/10 | Complete status, editing, UAC cancellation, correction review and export using keyboard/Narrator, contrast and 200% scaling. Focus/announcements remain usable. | CHECK-22 |
 | AC-18 | F-10 | Tray disabled means no retained UI; enabled tray and sign-in preference affect only the user observer. Quit UI leaves synchronization active; stale status is labelled. | CHECK-14/21/22 |
 | AC-19 | F-02/03/07 | Independently generated offset/drift/asymmetry cases and real clock measurements establish convergence/holdover behavior within the declared test envelope. | CHECK-7/8/10/11/24 |
