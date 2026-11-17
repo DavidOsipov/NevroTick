@@ -6248,7 +6248,7 @@ and [§12.3](../docs/windows-time-architecture.md#123-logging-and-support):
 | Actual operation/decision owner | Select the reviewed event/outcome once from admitted facts. Lower layers retain typed errors; completion records require the actual acknowledgement. Log generation grants no control authority. |
 | Shared platform-neutral diagnostics | Private checked construction binds stable ID/version, permitted fields, level, importance and routing policy. Bound/encode before queue admission; foreign strings, error chains and whole domain objects cannot supply a record. |
 | Each executable's composition | Initialize its one subscriber/router, finite required/optional allocations, writer lifetime and independent loss/health projection. Libraries cannot replace the process composition; engine logs do not pass wholesale through the broker. |
-| `windows-platform` with W11-W08/W11-W10 | Implement native sinks against installed fixed provider/channel/resources and effective rights; preserve bounded failure, rendering and retention. A sink attempt, accepted write and retained/readable event are distinct observations. |
+| `windows-platform` with W11-W08/W11-W10 | Implement native sinks against installed fixed provider/channel/resources and effective rights; preserve bounded failure, rendering and retention. Record/queue admission, registration availability, native invocation/result and independently observed retained/readable history are distinct. Unknown downstream loss remains unknown. |
 | Existing secured read path and S5.3 UI | Publish bounded redacted event/history/health views with gap and process identity. UI previews and writes its own export. Authoritative synchronization state still comes from coherent snapshots; event text cannot manufacture it. |
 
 No logger daemon, generic event bus, arbitrary privileged export path, new clock
@@ -6262,10 +6262,39 @@ not authorization to run held stages. Reuse their existing task/evidence owners.
 | Stage / owner | Prerequisites and bounded change | Observable exit |
 | --- | --- | --- |
 | Portable catalogue and routing / diagnostics coordinator, service owner, privacy/QA | Freeze the first-stage contract below, exact source/feature/licence graph and finite portable limits. Extend/reuse the existing invocation seam with platform-neutral policy; choose a separate crate only when actual consumers need its dependency boundary. | Real admitted service decisions reach an inspectable bounded consumer; required INFO survives optional Off/WARN/ERROR and importance filtering. Closed classification, privacy, loss and unchanged operation outcomes pass independent portable controls. No native or durable-delivery claim. |
-| Per-process composition and producers / W11-W05 plus each actual component owner | Consume the portable contract; freeze each process's budgets, instance/sequence lifecycle and concrete subscriber/writer composition. Add lifecycle, policy, denial, trust/source, bootstrap, correction, ownership, recovery and diagnostic-session producers only as their real owners exist. | A source-to-sink coverage table binds every required event to its reached owner/caller and consumer. Startup/stop/failure paths report truthful availability/loss and do not duplicate failures or block cleanup. Missing product producers remain explicit open rows. CHECK-14/17/21/26/27. |
-| Windows delivery and retention / W11-W08, platform, W11-W10, ST-W03/ST-W07 | Admit native execution; freeze provider/channel choice, message resources, event/version/level mapping, effective access matrix, protected paths, retention/rotation and flush deadline under §15.3 and metadata §12.3. | On the exact installed candidate, intended writers/readers work; unauthorized publication/read/clear/configuration/export cases have their declared outcome. Known events render against the matching resources. Missing/full/denied sinks, rotation/flush failure and restart retain bounded useful health, privacy and safe cleanup. Native/package evidence stays separate from host tests. |
-| Authorized temporary diagnostics / P3 broker/helper/target owners, security/QA | Use the existing authorized command boundary and §12.3.3; freeze finite profiles, scopes, duration/byte caps and target/process/session binding. Normal required routing is already independent. | A current authorized session changes only optional collection; each target expires locally across UTC changes, suspend, restart, revocation or control loss. Stale/replayed commands, partial activation and failed filter reset cannot extend collection or imply success. CHECK-2/14/17/21/27. |
+| Per-process composition and producers / W11-W05 plus each actual component owner | Consume the portable contract; freeze each process's budgets, producer instance/sequence/provenance, subscriber/bridge initialization order and partial-install disposition, and actual writer/guard owner. Add lifecycle, policy, denial, trust/source, bootstrap, correction, ownership, recovery and diagnostic-session producers only as their real owners exist. | A source-to-sink coverage table binds every required event to its reached owner/caller and consumer. Startup/stop/failure paths distinguish admission from writer health, preserve producer facts through delayed consumption, and report actual drain/completion or unresolved work without duplicate failures or blocked cleanup. Missing producers remain explicit open rows. CHECK-14/17/21/26/27. |
+| Windows delivery and retention / W11-W08, platform, W11-W10, ST-W03/ST-W07 | Admit native execution; freeze provider/channel choice, message resources, event/version/level mapping, checked native descriptor/encoding envelope, effective access matrix, protected paths and flush deadline under §15.3 and metadata §12.3. Declare active-channel size/full behavior and any archive count/byte/age bounds with their authorized lifecycle owner. | On the exact installed candidate, intended writers/readers work; unauthorized publication/read/clear/configuration/export cases have their declared outcome. Known events render against matching resources. Registration failure, native rejection/no-recording-session, full/denied sinks, selected archive growth/recovery and flush/restart cases retain bounded useful health, privacy and safe cleanup. API success is not retained-history evidence; native/package evidence stays separate from host tests. |
+| Authorized temporary diagnostics / P3 broker/helper/target owners, security/QA | Use the existing authorized command boundary and §12.3.3; freeze finite profiles, scopes, duration/byte caps and target/process/session binding. Normal required routing is already independent. | A current authorized session changes only optional collection; each target expires locally across UTC changes, suspend, restart, revocation or control loss. Warm an active verbose callsite, then expire/revoke while reset/reload fails: the next attempted verbose capture is refused despite cached interests/optimizations. Active collection and required INFO remain useful controls. Stale/replayed commands or partial activation cannot extend collection or imply success. CHECK-2/14/17/21/27. |
 | Recent events and export / S5.3, diagnostics/ST-W07, UI/accessibility | Qualified per-process output/privacy, secured bounded reads, D2 status re-entry and applicable D1/D3/native gates. Connect one real event/history/export journey; W11-W09 separately owns production notifications. | All five importance categories remain distinguishable without color alone, with honest unavailable/lost/history state. Filtering never changes producer collection or required retention. Preview/export excludes secrets, reports incompleteness and uses ordinary-user destination authority. Closing UI leaves service ownership unchanged. CHECK-14/17/21/22/23/27, AC-16. |
+
+The composition freeze accounts for producer evaluation/formatting/copying,
+concurrent staging and selected retained span/worker state, in addition to queue
+entries. Review actual blocking modes and feature/generated-code behavior before
+admission; an inline buffer, post-format truncation or queue-count limit is not
+the aggregate budget. Bound the record before allocation/encoding can grow
+without limit. A threaded appender or compatibility bridge is not required for
+the portable child. If selected later, classify prior-subscriber/prior-logger
+conflicts and any partial global installation; no blind retry or library-owned
+repair. Fence producers at the chosen shutdown boundary, preserve custody of
+outstanding work, and report actual completion separately from unresolved/deadline
+outcomes. Guard drop and drain acknowledgement alone do not establish completed
+flush/teardown.
+
+At the Windows freeze, distinguish active-channel configuration from measured
+active-plus-archive allocation and missing-old/rejected-new history. Preserve
+administrator policy; automatic backup is not a finite archive policy. Native
+bounds include descriptor count, field order/types, transformed encoding,
+terminators and relevant header/metadata/session-buffer limits. Reject a field
+that cannot retain its admitted meaning; upstream/API ceilings are not selected
+NevroTick allocations. Use the corresponding healthy/fault cases in §9.8.
+
+If the S5.3 secured read adapter later selects native subscriptions/bookmarks,
+freeze cursor identity, cleared/overwritten/unavailable history, reconnect
+duplicates and partial-query status. Pair valid resume with an owned missing-
+bookmark case and useful later records; require strict or equivalently evidenced
+explicit discontinuity handling, never silently label resumed history complete.
+This condition selects no reader or persistent cursor and grants no direct UI
+channel access. General bounded-ring gaps retain their own mechanism.
 
 **Next portable stage: freeze, implement, verify, stop.** Start at
 `ServiceInvocation` in `tools/windows-service-fixture/src/host.rs`, its existing
@@ -6296,6 +6325,8 @@ stage. No proposed shared crate is presumed to exist.
    sequence, relevant generations/correlation and UTC quality with explicit
    unavailable states; no fabricated zero/current/trusted defaults. Freeze
    restart/sequence-exhaustion behavior and the scope of ordering before use.
+   Capture these facts at the producer and preserve them through delayed
+   consumption; a later writer cannot substitute its own time or context.
 3. Freeze finite encoded record/field bytes, required/optional queue and recent
    memory capacities, per-key/aggregate rate and cardinality limits, counter
    saturation and overflow/coalescing policy for this portable slice. Required
@@ -6306,7 +6337,9 @@ stage. No proposed shared crate is presumed to exist.
 4. Wire the existing service decision owner through the checked record and real
    router to an inspectable bounded consumer; expose loss/availability through
    a separate health projection. Preserve earliest failure, actual completion,
-   admission and cleanup outcomes under healthy/full/unavailable sinks. No sink
+   admission and cleanup outcomes under healthy/full/unavailable sinks, including
+   an available queue with a failing consumer. A local drop count cannot establish
+   successful writes or complete history. No sink
    callback, retry, blocking I/O or recursive failure logging enters the
    time-control/decision path. Retain original fixture compatibility explicitly
    or version the changed representation; never silently reuse its codes.
@@ -6358,6 +6391,141 @@ Reviewer comprehension, retained verbatim:
 > The proposed change turns the existing diagnostics requirements into a staged delivery plan under W11-W08. It adds **Critical, High, Medium, Low and Info operational importance**, independently of technical log level and required-event routing, then connects the shared event contract to per-process composition, Windows delivery, authorized temporary diagnostics and the later UI/export consumer. The first portable stage starts at the existing service invocation and must produce an inspectable event and health pipeline, with catalogue, limits and ownership frozen before coding. The current development-plan §7 queue remains authoritative.
 >
 > The current source implements useful but narrower foundations. The service fixture has eight closed event variants, explicit INFO/ERROR encodings, separate finite memory routes and test-only record/loss readers; its ordinary invocation selects required output with optional output off. The Engine observer writes its own bounded console projections, while the UI diagnostics module explicitly owns presentation only. Production native delivery, runtime event/health consumption, comprehensive producer coverage, authorized diagnostic sessions and the GUI event stream remain planned or separately gated. The candidate preserves that distinction.
+
+##### Windows logging research and judge dispositions — 17 November 2026
+
+**Scope and completed inputs.** David requested separate Windows web research,
+Rust/GitHub research, other-MCP research and an independent judge. All three
+researchers and the judge used fresh task contexts (`fork_turns: none`) against
+clean baseline `877aacf3fa7f422c7a4f0b3d6494ce7d457cf837`. `windows_logging_web`
+completed W-01–W-07 from twelve opened Microsoft pages; `rust_logging_github`
+completed R-01–R-07 from six pinned repositories, separating libraries/examples
+from actual application consumers; `logging_other_mcps` completed M-01–M-08 using
+Context7 resolution/documentation queries and Windows Learn search/full-page
+fetch, then primary-source corroboration. Context7 IDs
+`/websites/rs_tracing-subscriber_tracing_subscriber` and `/tokio-rs/tracing` were
+discovery aids, not version pins. This bounded survey is not exhaustive internet
+coverage, dependency adoption or native qualification.
+
+`logging_research_judge` personally read all three completed reports, the current
+canonical/phase contracts, fixture/invocation/Engine/GUI source, follow-up §4 and
+metadata Appendix C; it independently checked the consequential Microsoft and
+pinned Rust evidence. Verdict: refine the existing plan narrowly; its portable
+contract-freeze step remains ready within the current schedule and authority.
+The local J identifiers below track research disposition, not new acceptance
+gates or demonstrated NevroTick vulnerabilities. Existing CHECK owners remain.
+
+| Judge / research inputs | Disposition and retained owner |
+| --- | --- |
+| J-01 / W-01; R-01/02/04; M-03 | Adopt: separate known admission/refusal, registration, native result and observed retained history. §12.3.4, §9.8 and composition/native exits; unavailable downstream completeness stays unknown. |
+| J-02 / W-03; R-02/03/04/05; M-02/08 | Adopt: account for producer work/staging/retained state and the later native representation. §12.3.4, resource/native controls and each stage's finite-limit freeze. |
+| J-03 / W-04; R-02/05; M-01 | Adopt: producer provenance survives writer handoff and bounded session drain. §12.3.1, provenance controls and composition freeze. |
+| J-04 / R-02/06; M-03/04 | Adopt: requests/acknowledgements differ from worker/flush/native-cleanup completion. §12.3.4, lifecycle controls and W11-W05 composition owner. |
+| J-05 / M-01/07; W-07/R-06 context | Adopt: exercise a warmed callsite after expiry with failed reset and qualify the actual filter composition. §12.3.3, session controls and the later temporary-diagnostics exit. |
+| J-06 / M-05; R-06 | Adopt: executable-owned initialization/bridge order and partial-install disposition, with successful and conflicting neighbors. Composition freeze and §9.8; no bridge selected. |
+| J-07 / M-06; R-01/02/04 | Adopt: inspect reached formatter/span failures and fallback outputs under existing pre-format privacy. §9.8; preserve the source qualification below. |
+| J-08 / W-02; R-03 | Small elaboration of existing policy: freeze selected full-channel behavior and any archive bounds/lifecycle at the native stage. Appendix C.9 already rejects unbounded automatic-backup assumptions. |
+| J-09 / W-05 | Conditional later: explicit cursor/history discontinuity if the secured S5.3 reader selects native subscriptions/bookmarks. No new current-stage gate. |
+| J-10 / W-06 | Conditional later: actual capture-clock and raw/converted timestamp provenance for optional ETW evidence. §12.3.4 and §9.8; no trace campaign selected. |
+| J-11 / W-04/07; R-03/06/07 and overlapping R/M findings | Already covered: schema/importance, required routing, installed resources, separate ACLs, privacy, cleanup, session authority and dependency intake. Retain relevant source cautions below without duplicating policy or skills. |
+| J-12 / all three tracks' limits | Reject unsupported uses: selecting a crate/API from examples, importing numeric defaults, claiming complete/durable delivery from counters, blanket filter/formatter leak claims, or promoting source research to product/native qualification. Preserve current priority and all holds. |
+
+**Dated primary evidence and admission cautions.** Links pin inspected GitHub
+source; manifest versions describe that source, not byte identity with a packaged
+crate. Recheck the exact selected revision/features and reachable calls before
+dependent implementation. No upstream code was copied or executed.
+
+- Microsoft [EventWrite](https://learn.microsoft.com/en-us/windows/win32/api/evntprov/nf-evntprov-eventwrite),
+  [EventRegister](https://learn.microsoft.com/en-us/windows/win32/api/evntprov/nf-evntprov-eventregister)
+  and [EVENT_DATA_DESCRIPTOR](https://learn.microsoft.com/en-us/windows/win32/api/evntprov/ns-evntprov-event_data_descriptor)
+  support J-01/J-02: write success can occur without a recording session; failed
+  registration leaves an inert zero handle. Native descriptor/layout and total
+  encoded-size constraints remain separate from product budgets.
+- `tokio-rs/tracing` at `8d4d4d6ceaba222a1fcf94d98f030d2970a26611`
+  declares tracing 0.1.44, subscriber 0.3.23 and appender 0.2.5.
+  Its [enqueue/guard path](https://github.com/tokio-rs/tracing/blob/8d4d4d6ceaba222a1fcf94d98f030d2970a26611/tracing-appender/src/non_blocking.rs)
+  copies before enqueue; its lossy counter measures enqueue failure. The
+  [worker](https://github.com/tokio-rs/tracing/blob/8d4d4d6ceaba222a1fcf94d98f030d2970a26611/tracing-appender/src/worker.rs)
+  can fail writes/flushes without updating that counter. `NonBlocking::flush`
+  does not drain; guard drop neither joins nor returns worker completion, and
+  a final flush follows its shutdown rendezvous. These details support
+  J-01/J-02/J-04, not product deadlines or a durability promise.
+- At that same pin, [initialization](https://github.com/tokio-rs/tracing/blob/8d4d4d6ceaba222a1fcf94d98f030d2970a26611/tracing-subscriber/src/util.rs)
+  can install the global dispatcher before a failed LogTracer install when the
+  subscriber's `tracing-log` feature is enabled. Earlier dispatcher failure is
+  different; not every error partially installs state. The
+  [Filter contract](https://docs.rs/tracing-subscriber/0.3.23/tracing_subscriber/layer/trait.Filter.html)
+  and [reload source](https://github.com/tokio-rs/tracing/blob/8d4d4d6ceaba222a1fcf94d98f030d2970a26611/tracing-subscriber/src/reload.rs)
+  support J-05/J-06: dynamic guard behavior depends on the full composition, and
+  lock-protected mutation is not automatic product-level rollback.
+- **J-07 source qualification:** the pinned
+  [fmt layer](https://github.com/tokio-rs/tracing/blob/8d4d4d6ceaba222a1fcf94d98f030d2970a26611/tracing-subscriber/src/fmt/fmt_layer.rs)
+  formats before enqueue. Span-creation failure Debug-prints attributes to stderr
+  without consulting `log_internal_errors`; their ValueSet can contain values.
+  The ordinary event-format fallback instead uses field metadata, not the event
+  ValueSet. The judge checked [event](https://github.com/tokio-rs/tracing/blob/8d4d4d6ceaba222a1fcf94d98f030d2970a26611/tracing-core/src/event.rs),
+  [span](https://github.com/tokio-rs/tracing/blob/8d4d4d6ceaba222a1fcf94d98f030d2970a26611/tracing-core/src/span.rs)
+  and [field](https://github.com/tokio-rs/tracing/blob/8d4d4d6ceaba222a1fcf94d98f030d2970a26611/tracing-core/src/field.rs)
+  implementations. Disclosure still requires unsafe values to reach an output;
+  no NevroTick disclosure was observed.
+- `microsoft/tracing-etw` at `a5f6815d659c5612fe440e14c749262b4229db02`
+  (source 0.4.0) [discards native registration/write status](https://github.com/microsoft/tracing-etw/blob/a5f6815d659c5612fe440e14c749262b4229db02/src/native/etw.rs);
+  its [inline formatter spills into a growing String](https://github.com/microsoft/tracing-etw/blob/a5f6815d659c5612fe440e14c749262b4229db02/src/values/mod.rs).
+  `microsoft/tracelogging` at `d8e68c949160e63bde71fc5c815dffdc21c9a358`
+  [defaults omitted activity to the writing thread](https://github.com/microsoft/tracelogging/blob/d8e68c949160e63bde71fc5c815dffdc21c9a358/etw/rust/tracelogging_dynamic/src/builder.rs).
+  These support J-01–J-03; builder success, vendor identity and inline capacity
+  do not qualify the selected product sink.
+- `austinwagner/etw-wrapper-rs` at `8f050bef71d2844203866ab794dd39a8af4ed762`
+  exposes [generated error-mode choices](https://github.com/austinwagner/etw-wrapper-rs/blob/8f050bef71d2844203866ab794dd39a8af4ed762/etw-wrapper-macro/src/lib.rs)
+  and [field transformations](https://github.com/austinwagner/etw-wrapper-rs/blob/8f050bef71d2844203866ab794dd39a8af4ed762/etw-wrapper/src/field.rs).
+  Actual consumers [USNJMon](https://github.com/jsmnsr/USNJMon/blob/21d7450c947d12ff708c0f09db97702183f74e3e/src/windows/event_log/mod.rs)
+  and [Mullvad](https://github.com/mullvad/mullvadvpn-app/blob/a51da85f2b99d3cecbf08a7b55f79c3d2f527666/mullvad-daemon/src/logging.rs)
+  illustrate explicit resource/status checks and writer ownership respectively.
+  USNJMon's preview status and each consumer's local policy, allocation order,
+  features and component licences require independent intake; examples are not
+  transferable defaults.
+- `locryus/eventlog` at `e39fddc5770ead28308b91d9848cbe67264aaead`
+  [uses a debugger-only write-error fallback and empty flush](https://github.com/locryus/eventlog/blob/e39fddc5770ead28308b91d9848cbe67264aaead/src/lib.rs).
+  Its [build script prints environment key/value pairs](https://github.com/locryus/eventlog/blob/e39fddc5770ead28308b91d9848cbe67264aaead/build.rs#L100-L103).
+  Existing architecture §18.2/CHECK-26 dependency/build-script intake owns that upstream caution
+  before execution. Runtime redaction cannot protect build output; this is not
+  an observed NevroTick leak or a new scan campaign.
+- Microsoft [channel logging](https://learn.microsoft.com/en-us/windows/win32/wes/eventmanifestschema-channelloggingtype-complextype)
+  and [wevtutil](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/wevtutil)
+  support J-08's distinction between active capacity, full behavior and archives.
+  [Subscription flags](https://learn.microsoft.com/en-us/windows/win32/api/winevt/ne-winevt-evt_subscribe_flags)
+  support conditional J-09; permissive missing-bookmark/query recovery cannot
+  silently establish complete history. [ProcessTrace](https://learn.microsoft.com/en-us/windows/win32/api/evntrace/nf-evntrace-processtrace)
+  and [WNODE_HEADER](https://learn.microsoft.com/en-us/windows/win32/etw/wnode-header)
+  support conditional J-10's ordering and timestamp-conversion limits. No blanket
+  channel-disable rule or new trace controller is inferred.
+
+**Integrated independent verification — completed 17 November 2026.**
+`logging_research_judge` read the complete three-file amendment and surrounding
+contracts at staged tree `34cfaa6b347d51df3838c8aed7815ad5744def09`, then verified
+the affected correction at `5d90f91da5beda734b0649439c82403536d49140`, against
+baseline `877aacf3fa7f422c7a4f0b3d6494ce7d457cf837`; the index matched that final
+semantic tree with no unstaged changes. This attributed receipt was added
+afterward without changing the reviewed contract. Verdict: **ready for the
+documentation/planning handoff; no unresolved material finding in this scope**.
+
+J-04 initially allowed an unresolved/deadline report to be read as ending custody
+of unfinished work. The correction preserves custody and reports completion
+separately; the reviewer verified it against architecture and hardening. J-05
+now explicitly requires refusal of the next verbose capture after expiry,
+alongside useful active/required-INFO controls. The reviewer verified consistent
+integration of J-01–J-03/J-06–J-08, conditional J-09/J-10, and preserved J-11/J-12
+limits. The coordinator checked the exact three-Markdown scope, existing heading
+order, the added relative link/anchor, syntax and immutable GitHub revision shape
+of 26 external URLs, and `git diff --cached --check`. These checks establish no
+product/native behavior; no application tests, builds, dependency installation
+or scanner/native campaign formed part of this documentation work.
+
+Reviewer comprehension, retained verbatim:
+
+> The amendment turns the bounded Windows, Rust/GitHub and other-MCP research into precise diagnostics requirements and acceptance cases in the existing architecture, hardening matrix and W11-W08 task. It clarifies observable delivery status, producer provenance and resource costs, writer completion, dynamic expiry and partial initialization, then retains native history readers and trace-clock evidence as conditional later-stage work. The task preserves source pins and J-01–J-12 dispositions without selecting a logger or creating another plan.
+>
+> The implemented system remains the narrower service-memory fixture, bounded Engine console output and presentation-only GUI diagnostic surface described in the original plan. The next logger child still stops at a reached portable event/health pipeline through the real service invocation. Native delivery, complete producers, service collection and GUI/export integration retain their own prerequisites; Core/Engine priority, Windows/fuzz/storage/UI holds and post-V1 formal deferral remain intact. The added documentation supplies no product, native or release qualification.
 
 ### 4.36 WinGet distribution before V1 — 7 November 2026
 
