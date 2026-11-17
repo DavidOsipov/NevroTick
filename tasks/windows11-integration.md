@@ -512,6 +512,15 @@ with draining unsubscribe from one-shot APC notification/alertable-wait rules.
 Coalesce and re-query outside callbacks; handle zero-mask and delete-pending
 cases without deadlock or retaining handles that prevent uninstall. Neither a
 notification nor SCM Running establishes authenticated product readiness.
+If the selected observer enumerates services,
+[EnumServicesStatusExW](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-enumservicesstatusexw)
+can silently omit an installed service when query-status access is denied. An
+absent row alone establishes neither service absence nor the cause of omission;
+preserve unknown/unavailable observation separately from independently
+established absence. Under CHECK-13/14/23/27, compare the same known service with
+query access allowed and denied, plus a genuinely absent fixed-target control
+and useful reconnection. No false removal/readiness, automatic elevation or
+widened rights follows.
 Future UI consumers retain D2. These [lifecycle candidates](../docs/plans/windows11-integration-follow-up.md#3-service-lifecycle-installation-and-com)
 reuse this owner and the existing storage task; `ReplaceFileW` failure/recovery
 cases remain with [ST-W02/03](windows-protected-storage.md#st-w02-enforce-operation-outcomes-and-model-durability).
@@ -6288,6 +6297,20 @@ terminators and relevant header/metadata/session-buffer limits. Reject a field
 that cannot retain its admitted meaning; upstream/API ceilings are not selected
 NevroTick allocations. Use the corresponding healthy/fault cases in §9.8.
 
+If the selected native path provisions provider/session ACLs, compare the complete
+resulting policy with the intended identity/operation matrix.
+[EventAccessQuery](https://learn.microsoft.com/windows/win32/api/evntcons/nf-evntcons-eventaccessquery)
+may return defaults without a GUID policy;
+[add versus set DACL operations](https://learn.microsoft.com/windows/win32/api/evntcons/ne-evntcons-eventsecurityoperation)
+preserve versus replace prior entries;
+[EventAccessRemove](https://learn.microsoft.com/windows/win32/api/evntcons/nf-evntcons-eventaccessremove)
+restores defaults. API success, one intended ACE or policy removal alone does not
+establish the required restriction; defaults may satisfy the adopted matrix.
+Pair useful intended access with missing-policy, additive-update and owned
+maintenance/restoration cases under W11-W08/W11-W10 and CHECK-1/15/17/23/27.
+Preserve administrator/successor changes; this selects no provisioning API or
+automatic policy replacement.
+
 If the S5.3 secured read adapter later selects native subscriptions/bookmarks,
 freeze cursor identity, cleared/overwritten/unavailable history, reconnect
 duplicates and partial-query status. Pair valid resume with an owned missing-
@@ -6295,6 +6318,39 @@ bookmark case and useful later records; require strict or equivalently evidenced
 explicit discontinuity handling, never silently label resumed history complete.
 This condition selects no reader or persistent cursor and grants no direct UI
 channel access. General bounded-ring gaps retain their own mechanism.
+
+If that secured reader selects native query/subscription/rendering APIs, retain
+these cases with S5.3/W11-W08 and CHECK-14/17/21/26/27.
+[Callback events](https://learn.microsoft.com/en-us/windows/win32/api/winevt/nc-winevt-evt_subscribe_callback)
+are borrowed only during delivery and must not be closed; discriminate Action
+before reading Event and hand off only bounded admitted owned data.
+[EvtNext](https://learn.microsoft.com/en-us/windows/win32/api/winevt/nf-winevt-evtnext)
+returns owned handles; account for its initialized count and
+[parent-close invalidation](https://learn.microsoft.com/en-us/windows/win32/api/winevt/nf-winevt-evtclose).
+Preserve setup/callback errors without interpreting a quiet subscription as healthy.
+
+Freeze [query-handle thread ownership](https://learn.microsoft.com/en-us/windows/win32/api/winevt/nf-winevt-evtquery)
+alongside the documented
+[cross-thread cancel, synchronize and close sequence](https://learn.microsoft.com/en-us/windows/win32/api/winevt/nf-winevt-evtcancel).
+Select the correct cancellation target, including session scope where required;
+retain actual-work custody until pending calls finish. Neither cancellation nor
+an elapsed deadline establishes completion. Pair healthy delivery with delayed
+consumption, parent invalidation and cancellation during pending work, without
+unrelated cancellation or leaked handles before harness cleanup.
+
+Bind the complete locally constructed query to admitted sources: structured XML
+can supply its own path, and
+[enumeration remains live](https://learn.microsoft.com/en-us/windows/win32/wes/consuming-events).
+Freeze finite record/work/result-window bounds and explicit incomplete history.
+Pair useful permitted results with an attempted alternate source and continuing
+publication; no raw-query interface or additional read authority follows. Check
+[EvtRender byte counts](https://learn.microsoft.com/en-us/windows/win32/api/winevt/nf-winevt-evtrender)
+separately from
+[EvtFormatMessage character counts](https://learn.microsoft.com/en-us/windows/win32/api/winevt/nf-winevt-evtformatmessage),
+typed property/count validity and bounded size-probe retries. Healthy rendering
+and missing/oversized/mismatched values or formatting failure must preserve useful
+bounded redacted status; localized text supplies no event classification or
+application authority.
 
 **Next portable stage: freeze, implement, verify, stop.** Start at
 `ServiceInvocation` in `tools/windows-service-fixture/src/host.rs`, its existing
@@ -6526,6 +6582,57 @@ Reviewer comprehension, retained verbatim:
 > The amendment turns the bounded Windows, Rust/GitHub and other-MCP research into precise diagnostics requirements and acceptance cases in the existing architecture, hardening matrix and W11-W08 task. It clarifies observable delivery status, producer provenance and resource costs, writer completion, dynamic expiry and partial initialization, then retains native history readers and trace-clock evidence as conditional later-stage work. The task preserves source pins and J-01–J-12 dispositions without selecting a logger or creating another plan.
 >
 > The implemented system remains the narrower service-memory fixture, bounded Engine console output and presentation-only GUI diagnostic surface described in the original plan. The next logger child still stops at a reached portable event/health pipeline through the real service invocation. Native delivery, complete producers, service collection and GUI/export integration retain their own prerequisites; Core/Engine priority, Windows/fuzz/storage/UI holds and post-V1 formal deferral remain intact. The added documentation supplies no product, native or release qualification.
+
+**Windows Learn follow-up — 17 November 2026.** David requested another pass
+through Windows Learn MCP on logging and secure OS integration. The coordinator's
+native-consumer track (C-01–C-04), `learn_logging_security` (L-01–L-04) and
+`learn_service_integration` (S-01–S-06) completed their bounded primary-source
+reads against clean baseline `c5a4625fb9cfb79d6b9aca8825a4900903fa0137`.
+Each used actual Windows Learn MCP searches and full-page fetches. The two
+researchers and `learn_integration_judge` used fresh task contexts
+(`fork_turns: none`); the judge personally read all three completed reports,
+reconciled current canonical/task/skill coverage and independently fetched the
+consequential Microsoft pages. The sources for the additions are linked at their
+existing owners above. These local finding IDs preserve research disposition,
+not new requirements or demonstrated NevroTick vulnerabilities.
+
+| Follow-up input | Disposition and retained owner |
+| --- | --- |
+| C-01–C-04 | Adopt conditional S5.3/W11-W08 reader cases: borrowed/owned handles, parent invalidation, thread/cancellation contract, complete query scope, live enumeration and bounded typed rendering. Preserve the documented cross-thread cancellation sequence; choose no wrapper topology or reader API. |
+| L-01 | Adopt conditional W11-W08/W11-W10 access-policy maintenance cases: compare complete resulting rights with the adopted matrix, including defaults and additive updates. Policy removal restores defaults; it proves neither deny-all nor immediate revocation. Preserve owned maintenance and administrator/successor state. |
+| S-04 | Adopt conditional W11-W05 enumeration cases: a missing row alone establishes neither absence nor access denial. Retain allowed/denied/genuinely absent controls and useful reconnection under CHECK-13/14/23/27. |
+| L-02/03; S-01/02/03/05/06 | Already covered: separate channel/provider/session/file permissions, installed metadata versus process registration, exact actual-token profiles, service-SID/read confidentiality, minimum observation rights, supported MSIX pre-start provisioning and package/service-state recovery. Existing unresolved native/package evidence remains open. |
+| L-04 | Conditional detail only: freeze actual writable channel properties and lifecycle effects if selected. Existing metadata/configuration ownership suffices; no generic channel-configuration interface follows. |
+
+Only this task receives semantic additions; the general architecture, hardening
+and skill contracts already cover their governing rules. The first portable
+catalogue/router/health-consumer steps and their exit are unchanged. Conditional
+native cases enter before their dependent adapters under existing owners; no
+API/dependency, privilege expansion, direct UI channel access, numeric allocation,
+new workstream or lifted Windows/fuzz/storage/UI hold follows. Core/Engine
+priority and post-V1 formal deferral remain. These are planned controls, not
+executed product/native tests or package/release qualification.
+
+**Integrated follow-up verification — completed 17 November 2026.**
+`learn_integration_judge` verified the complete 86-line addition and relevant
+W11-W05/§4.35.11 context at staged semantic tree
+`90ddb4571ad9940cb273f551f673009628149487`, against baseline
+`c5a4625fb9cfb79d6b9aca8825a4900903fa0137`. The index matched the supplied tree
+and had no unstaged changes. The reviewer reused its completed source
+reconciliation and verified primary API passages; no new fetch was needed.
+Verdict: **ready for the documentation handoff; no material findings or revision
+required within this scope**. This attributed receipt was added afterward.
+
+The coordinator checked the sole Markdown change, the syntax of all twelve added
+Microsoft source links, unchanged heading order and byte-identical first portable
+steps/exit, and passed `git diff --cached --check`. These are documentation
+checks only; no product/native test, build, installation or scanner campaign ran.
+
+Reviewer comprehension, retained verbatim:
+
+> This candidate adds three conditional native-integration refinements to the existing Windows task: event-reader handle/query/rendering cases, provider/session access-policy maintenance cases, and service-enumeration visibility cases. It also records which completed research observations were adopted, already covered or left conditional. The additions retain existing acceptance owners and source links; they do not select APIs or move native work into the portable logger child.
+>
+> The relevant system contract remains a staged diagnostics design. The first logger child must reach a bounded portable event and independent health consumer through the real service invocation. Production Windows sinks, secured event history, SCM observers, complete service-token/package provisioning and UI integration require their separate later admissions and evidence. Logging cannot confer service/clock authority or manufacture readiness. The current Core/Engine queue, Windows/fuzz/storage/UI holds and post-V1 formal deferral remain in force.
 
 ### 4.36 WinGet distribution before V1 — 7 November 2026
 
