@@ -680,6 +680,14 @@ V1 implementation, phase acceptance or release.
 
 ## P2 acquisition
 
+**Timestamp refinement — 18 November 2026:** reuse the settled finite
+supplier/receiver contract and [W11-W01 TQ-01–10](windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
+when implementing its actual capture/mapping issuer and final consumer. Required
+V1 provenance and useful qualified fallback remain in S2.1/P2; software/NIC
+timestamp adapters are conditional and require their own capability, calibration,
+lifecycle and native benefit evidence. The added cases are planned, not run;
+they introduce no hardware requirement, new task parent or execution permission.
+
 **Owner:** engine/protocol/security with platform/dependency reviewers.
 **Status:** deferred production parent. Reuse [engine](engine-transport-pilot.md),
 [protocol](s0.1-protocol-comparison.md) and [crypto](s0.1-crypto-feasibility.md)

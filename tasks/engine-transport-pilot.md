@@ -14352,6 +14352,15 @@ compression or shared-store deletion occurred.
 
 ##### W11-W01 finite capture/mapping supplier contract — 8 November 2026
 
+**18 November qualification refinement:** this supplier/receiver contract remains
+settled. [W11-W01 TQ-01–10](windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
+now supplies explicit controls for the actual mapping issuer and any selected
+packet adapter: per-leg clock source, NIC→QPC→UTC validity/error composition,
+bounded late-TX retirement and original-capture fallback. Apply them through the
+real producer and serialized consume-once receiver, including invalidation just
+before publication. This adds no affirmative issuer, measured bound, hardware
+adoption or native execution/result to the historical source contract below.
+
 The next source-contract checkpoint is settled under CHECK-6/7/8/9/10/11/15/21/
 25/27, with acquisition/platform and the existing receiving owner. This selects
 no new platform API, dependency, affirmative mapping provider or execution

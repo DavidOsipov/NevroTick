@@ -1286,6 +1286,16 @@ uncertainty and socket-level oversize accounting without attributing an error to
 an unreturned peer identity. The selected SDK/backend, finite mapping profile and
 actual native custody controls remain open under the existing checks below.
 
+For timestamp work, apply [W11-W01 TQ-01–10](../tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
+to the reached capture supplier or selected optional adapter. The finite
+supplier/receiver contract is settled; this matrix makes capability/activation,
+per-direction source, two-stage calibration, TX budgets/retirement, unsupported
+coalescing, transitions and valid/invalid fallback observable at the actual final
+consumer. Bind native evidence to each claimed OS/NIC/driver profile and report
+capture latency, end-to-end error and resource cost separately. No product or
+native pass follows from these planned cases; hardware remains optional and
+missing physical evidence cannot be replaced by a mock or cross-build.
+
 The [4 November leap policy](plans/leap-second-policy.md#6-windows-contract-and-limits)
 adds a selected S0.4/P4 contract under W11-W02, with pure prerequisites in
 [S1.4](../tasks/s1.4-leap-policy.md) after S1.3. The kernel alone executes explicit

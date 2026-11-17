@@ -111,6 +111,9 @@ timeout or exclusion; no complete S2.2 or native qualification follows.
 The source-only actual capture/mapping contract is settled under
 [W11-W01 §4.26](windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026);
 production/native implementation still requires its actual suppliers/admission.
+The [18 November timestamp matrix](windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
+adds planned controls for those suppliers and any selected software/NIC adapter;
+it adds no hardware requirement or native pass.
 Windows-target compiler checks
 establish no native Windows or service qualification.
 It uses actual completed `TransportFacts` and explicit checked assumptions;
@@ -208,7 +211,7 @@ current Core priority and lifts no native, fuzz or storage hold.
 
 The [two-family platform matrix](windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
 records OD-14's Windows 11 26H2/Server 2025 direction at the same S0.4/S0.7,
-W11-W02/04/05/10 and P4/P6/P7 owners. Exact profiles, delivery and actual
+S2.1/P2, W11-W01/02/04/05/10 and P4/P6/P7 owners. Exact profiles, delivery and actual
 qualification remain open; no new task chain or native authorization follows.
 
 Every exit also uses the [phase gates](../docs/plans/development-plan.md#6-phase-implementation-and-acceptance-gates),

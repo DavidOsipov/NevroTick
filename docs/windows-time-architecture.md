@@ -1726,7 +1726,8 @@ neither a stable UTC mapping nor its uncertainty. Carry the qualified local
 mapping and full possible exchange span to the final consumer; all four
 coordinates need compatible scale, while the remote clock retains its own
 calibration. [W11-W01](../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026)
-is partial source preparation, with mapping/profile and native evidence open.
+has a settled finite supplier/receiver contract and partial implementation
+preparation; actual mapping issuance, physical profile and native evidence remain open.
 
 **Optional packet-timestamp adapter:** compare Winsock software RX/TX timestamps
 with the qualified application-boundary path before considering NIC timestamps.
@@ -1751,6 +1752,33 @@ on dual-stack sockets as well as IPv6. A fallback sample must satisfy its own
 admission/provenance contract. Use the selected SDK/generated ABI declarations,
 resolving the documented type/return-value inconsistencies recorded in the
 [follow-up](plans/windows11-integration-follow-up.md#2-packet-timestamps-socket-metadata-and-completion).
+
+**Timestamp qualification refinement — 18 November 2026:** preserve per-direction
+capture source/domain separately from logical source identity and authentication.
+API availability, supported flags, active mode and observed packet metadata are
+distinct admission facts. For a selected packet-timestamp path on generic NTP/NTS
+UDP, RX needs `AllReceive`; TX needs `AllTransmit` or `TaggedTransmit` in the
+selected active source set. PTP-only
+support is insufficient. Hardware and software modes are qualified separately;
+Windows does not support both enabled together on the interface. The selected
+timestamped TX path must not use unsupported `UDP_SEND_MSG_SIZE` coalesced sends.
+Use the [source detail](plans/windows11-integration-follow-up.md#additional-packet-timestamp-checks--18-november-2026)
+and [W11-W01 TQ-01–10](../tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
+for implementation/acceptance rather than inferring support from a NIC label.
+
+NIC-to-QPC correlation and QPC-to-UTC mapping are separate, generation-bound
+conversions. Both need justified uncertainty and validity covering the full
+exchange; nominal NIC frequency, a midpoint or a fit residual alone supplies no
+physical error guarantee. Preserve calibration brackets and drift/age allowances;
+retire affected models and queued observations on relevant mode/device/power/path
+or UTC-mapping changes. Recheck current identity/validity at the existing serialized
+final admission. Late TX retrieval cannot renew age or revise a committed estimate.
+A fallback uses the original independently valid application capture and its own
+mapping/error budget; absent/stale fallback evidence refuses measurement admission.
+Mixed-source RX/TX requires explicit conversion/error composition. Neither failure
+nor fallback relaxes source, route, authentication or correction authority.
+The actual supplier/native evidence remains open. Required V1 provenance does
+not require adoption of optional packet timestamping or hardware support.
 
 Keep stable oscillator compensation separate from transient phase correction. A phase plan has a finite budget, deadline and maximum rate. On new source evidence, cancellation or generation change, account for the actual correction delivered before replacing it. Prevent multiple controllers from integrating the same phase error twice.
 
