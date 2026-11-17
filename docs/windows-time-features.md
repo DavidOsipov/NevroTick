@@ -495,7 +495,16 @@ This tradeoff must be explicit. Default closure leaves **no UI process**. Servic
 
 The optional tray gives a logged-in user ongoing visibility while that observer runs. It can show degraded/unavailable status and open Diagnostics. It is not an independent availability guarantee: if the tray also stops, it cannot display a warning. Critical settings and recovery never depend on finding the tray icon.
 
-A compulsory watcher, an independent watchdog service and always-on notification delivery would be additional architecture/resource decisions. They are outside this v1 plan. Rich Windows toast notifications can be considered later with qualified activation, accessibility, deduplication and privacy behavior. The first release uses clear in-window status, the optional tray indicator and bounded durable diagnostics.
+A compulsory watcher, an independent watchdog service and always-on notification delivery would be additional architecture/resource decisions. They are outside this v1 plan. Rich Windows toast notifications remain deferred from the basic release, with a concrete [Critical/High continuation under W11-W09](../tasks/windows11-integration.md#w11-w09-add-truthful-native-notifications-at-the-deferred-ui-stage). The first release uses clear in-window status, the optional tray indicator and bounded durable diagnostics.
+
+That continuation connects real, current, actionable problems to local Windows
+notifications while the permitted UI/tray observer runs. Repeated observations
+of one incident stay coalesced; dismissal does not resolve it. A notification
+opens current details without performing a service or clock operation. The
+existing per-user problem-notification preference remains separate from Windows
+permission and observer availability; disabling presentation leaves the problem
+and required diagnostics visible. Current sample-toast source is groundwork,
+not implemented Critical/High alerting or a native delivery pass.
 
 ## 8. Acceptance scenarios and evidence
 

@@ -2549,8 +2549,10 @@ do not reuse Rust discriminants, fixture byte codes or importance ordinals as
 native values. Preserve importance in selected outputs and UI filters without
 changing the underlying outcome or losing required-event attempts. Importance
 alone grants no notification, diagnostic-session, policy or clock authority;
-the existing incident/notification owner still decides user alerts. Band names
-and this classification contract are planned behavior, not implemented coverage.
+[W11-W09](../tasks/windows11-integration.md#w11-w09-add-truthful-native-notifications-at-the-deferred-ui-stage)
+owns the separate Critical/High incident eligibility and presentation handoff;
+W11-W08 owns event recording. Band names and these contracts are planned behavior,
+not implemented coverage.
 
 Admitted dependency messages default to `WARN` or a stricter threshold. Admission reviews their actual fields and error paths; a high severity does not make arbitrary dependency output safe. Map unsafe library errors to product codes. Production profiles are typed finite choices, not user-supplied filter strings, regular expressions, module targets or `RUST_LOG`/other environment directives.
 
@@ -3549,6 +3551,18 @@ Unpackaged local notifications do not themselves require package identity;
 Windows App SDK deployment/Singleton costs need their own graph review.
 These [UI candidates](plans/windows11-integration.md#8-present-live-state-through-native-ui-facilities)
 introduce no live UI-M0 status, dependency or accessibility gate.
+
+The planned Critical/High notification path binds the §12.3.2 catalogue's real
+decision owners to current typed incidents and the unelevated per-user observer.
+The [W11-W09 handoff](../tasks/windows11-integration.md#w11-w09-add-truthful-native-notifications-at-the-deferred-ui-stage)
+adopts the existing design's eligibility, suppression, lifecycle and safe-navigation
+rules into production acceptance. Importance or log history alone creates no
+alert; unavailable observation is not proof of service failure. Keep application
+preference, Windows permission, submission and observed presentation distinct.
+UIA announcements and app/toast delivery need separate evidence. The existing
+[rich-toast release deferral](windows-time-features.md#10-defer-from-the-basic-release)
+and last-observer lifetime remain; neither sample-toast source nor D2/D3 readiness
+changes release scope.
 
 Support Windows contrast themes, system text scaling, at least 200% display scaling without lost content, multi-monitor DPI changes and reduced motion. Use text/icon/shape distinctions in addition to color. Error messages identify the failing action and remedy; they must be associated with the relevant control and reachable without a mouse.
 

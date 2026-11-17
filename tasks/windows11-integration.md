@@ -691,28 +691,165 @@ ST-T14/16 and DNS-C12/14 for affected storage/DNS paths.
 ### W11-W09 Add truthful native notifications at the deferred UI stage
 
 **Owner/stage:** UI/accessibility; P5 after the relevant D2/D3 re-entry gate.
+**Status — 17 November 2026:** production incident notifications remain planned
+and deferred. UIA announcements and local app/toast delivery are separate
+qualification surfaces. Technical D2/D3 readiness does not supersede the
+[rich-toast first-release deferral](../docs/windows-time-features.md#10-defer-from-the-basic-release);
+revisit delivery at its existing reopening trigger. This documentation handoff
+changes no release scope, Core/Engine priority or Windows/fuzz/storage/UI hold.
+
 **Prerequisites:** the admitted Slint/backend/renderer and selected accessibility
 exposure from the [UI migration chain](ui-m0.md#slint-migration-handoff--5-november-2026),
 actual authenticated current-generation service snapshots, restored D2/D3
 contracts and [native UI research](../docs/plans/windows11-integration.md#8-present-live-state-through-native-ui-facilities).
 
+**Current source boundary.** The Slint native workflow installs an explicit
+sample-test callback and `WindowsToastPort` using `Windows.UI.Notifications`.
+`PreparedTestNotice` rejects non-test contexts with `LiveIncidentOwnerRequired`;
+the port currently requires observed package identity and rejects its unqualified
+desktop-installation mode. This supplies useful source, not a real incident
+producer, general registration path or native display/activation/cleanup pass.
+Retain the [sample-attempt qualification](slint-gui-handoff.md#bound-notification-attempt-hardening--14-november-2026)
+within its exact scope; neither that receipt nor HTML preview results close this task.
+
 **Work:** qualify the actual Slint accessibility/Windows bridge without assuming
 inherited Win32-control semantics. Evaluate `UiaRaiseNotificationEvent` and supported processing modes for
 meaningful state changes; ordinary ticking status must not create important
-announcement spam. Local Windows App SDK notifications are a separate candidate
-with deployment/dependency cost; unpackaged support does not remove that review
-or justify package identity automatically. Keep presentation unelevated and
+announcement spam. The existing WinRT transport is the inspected source starting
+point; Windows App SDK remains an alternative candidate with deployment/graph
+costs, not an adopted replacement. Windows unpackaged support does not qualify
+this adapter's unimplemented registration path. Keep presentation unelevated and
 revalidate current generation/authority at every notification action.
 Any selected UI COM class also uses W11-W04's class-specific apartment,
 security-initialization and teardown contract; this does not restore D2/D3 early.
+
+**Next bounded stages, when their prerequisites are admitted:**
+
+1. **Freeze the real incident contract.** UI/diagnostics and the actual
+   service/clock/security decision owners bind the
+   [W11-W08 event catalogue](#43511-production-event-logger-plan--17-november-2026)
+   to an eligibility table: event ID/version and outcome, operational importance,
+   incident identity/scope/generation, authoritative current observation,
+   persistence/actionability rule, permitted summary and fixed navigation target.
+   Include actual Critical and High cases with healthy/transient/expected-operation
+   neighbors; retain absent producers as open rather than inventing live incidents.
+   Technical ERROR/WARN, translated text and historical replay do not classify an
+   alert. Name the startup/refusal observation owner: a service that failed to
+   start cannot be presumed to supply its normal snapshot. UI disconnection or a
+   missing SCM row establishes unavailable observation until stronger evidence
+   establishes failure. Preserve W11-W05's observation and authority boundaries.
+2. **Adopt the existing design into a reached portable path.** Use the
+   [v0.4 trigger/lifecycle design](../docs/nevrotick-design-v0.4/review/status-notifications/WINDOWS-NOTIFICATIONS-RESEARCH.md#proposed-trigger-policy-for-the-existing-statuses)
+   and its [completed-design refinements](../docs/nevrotick-design-v0.4/review/status-notifications/IMPLEMENTATION.md#notification-behavior).
+   Freeze finite incident/queue/rate/cardinality bounds, elapsed-time persistence
+   and action lifetimes, user/session ownership, reconnect/restart reconciliation
+   and cleanup before the dependent implementation. The HTML ledger's eight
+   entries are a sample allocation, not a product limit. Bind the admitted real
+   producer/secured observation through the incident owner to an inspectable
+   notification request and independent availability/outcome projection in the
+   actual UI composition; a test-only constructor or isolated helper is insufficient.
+   Stop this source slice at its declared portable exit; native display remains open.
+3. **Qualify the selected Windows path separately.** With actual package/app
+   identity, intended user token/session, current settings and admitted target
+   environment, connect the prepared incident to the native adapter and observe
+   presentation, safe activation, owned retirement and callback/worker cleanup.
+   Record dependency/activation/registration needs at their existing UI/package
+   owners; production text retains localization/privacy approval. Observe actual
+   accessibility and resource behavior; cross-builds, source or API acceptance
+   alone establish no native or release pass.
+
+**Incident and delivery rules.** Preserve problem notifications On and tray/sign-in
+Off as their existing distinct preferences; this handoff selects no new setting
+or recovery-success notification. First eligible occurrence and material
+escalation are reviewed incident transitions. Repetition, navigation, dismissal,
+cancelled commands and preference changes neither resolve nor renumber an episode.
+Expected acquisition/resume, intentional Stop/Disable, old history and isolated
+trouble with healthy alternatives stay quiet under the adopted policy; soft
+failures require a current authoritative persistent/actionable observation.
+The explicit test keeps separate identity and cannot consume or resolve a problem.
+
+Distinguish refusal before submission, actual attempt, OS acceptance/uncertainty
+and independently observed banner/Notification Center behavior. A still-current
+incident never submitted because presentation was unavailable may become eligible
+when readiness returns, within its frozen bounds. An attempted/accepted/uncertain
+submission cannot be retried merely because visibility is unknown or a preference
+changes; do not port the HTML's simulated "unshown" state as a native receipt.
+Respect user/organization suppression even for Critical events; keep underlying
+status and required recording independent. No current presenter means no promise
+of a newly detected immediate alert. Reconnect reconciles current incidents,
+not an unbounded replay of old severe records.
+
+Use bounded public-safe text suitable for lock-screen exposure and approved
+user/session scope. Activation opens current Status/Diagnostics/review context;
+validate the fixed route, incident generation and current state before navigation.
+It performs no Apply/Retry/Start/Stop or clock effect and grants no administrator
+authority. Fresh resolution retires only owned obsolete notices; native cleanup
+failure remains explicit, and retained stale activation is still safely checked.
+
+**Windows-specific admission.** [Toast priority](https://learn.microsoft.com/en-us/uwp/api/windows.ui.notifications.toastnotificationpriority)
+is a presentation/power hint, not NevroTick importance or a suppression bypass.
+The [urgent scenario](https://learn.microsoft.com/en-us/windows/apps/develop/notifications/app-notifications/app-notifications-content#scenarios)
+is separately user-controlled; if selected, qualify availability through the
+actual bindings and target build, with ordinary presentation/status fallback.
+Overview/API build wording supplies no native qualification; do not use
+Alarm/IncomingCall to evade suppression. Native
+[expiration metadata](https://learn.microsoft.com/en-us/uwp/api/windows.ui.notifications.toastnotification.expirationtime)
+uses a date/time; it cannot replace current-generation/elapsed validity checks
+through clock correction, suspend or restart. Selected tag/group/history APIs
+must operate only on owned notices; Windows history is not the incident authority.
+
+| Acceptance pair at the reached stage | Required independent observation |
+| --- | --- |
+| Real Critical and High cases beside healthy/transient/expected-operation cases | Actual producer/observation reaches the incident owner and bounded request consumer; quiet neighbors stay quiet. Missing real producers remain incomplete, even when labelled synthetic controls pass. |
+| New episode, repeat, escalation, dismissal, cancelled command and fresh resolution | Stable identity prevents duplicate attempts and false recovery; escalation/new current incident remains eligible under policy. Resolution retires only the relevant owned notice. |
+| Preference Off, Windows blocked/unknown/suppressed, no presenter, then useful readiness | Status/required records remain; a never-attempted current incident can be reconsidered once, while prior uncertain/accepted attempts are not blindly replayed. Test identity stays separate. |
+| Reconnect/restart, stale generation, historical severe event and unknown service observation | Current evidence determines eligibility; no invented service failure, historical problem resurgence or false healthy state. State and replay work stay bounded. |
+| Current activation beside forged/expired/resolved/cross-user input, including clock changes | Only fixed current navigation succeeds; no protected operation or leaked detail. Native expiration or a successful Show cannot grant action authority. |
+| Permitted Windows presentation beside suppression, unsupported optional urgency and native failure | Submission, acceptance/uncertainty and observed display remain distinct. Useful fallback/status survives; native API success is not evidence of user reading. |
+| Finite flood, shutdown/callback race, privacy and actual keyboard/Narrator controls | Independent resource/lifetime observations show bounded work and completed owned cleanup; safe text and accessible navigation remain usable. No fixture/API-return substitution for actual Windows behavior. |
 
 **Controls/exit:** meaningful current loss/recovery or optional-cache status is
 announced accurately; stale events, rapid repetition and expired actions cannot
 mislead or authorize protected effects. Observe actual Narrator/keyboard behavior
 on the selected build, including a compatible older processing mode where
 required. The build-26100 enum choice is not the base API floor or accessibility
-proof. **Mapping:** CHECK-14/17/22; ST-T01/14 when storage status/privacy is reached.
+proof. **Mapping:** CHECK-14/17/21/22/25/27 at their reached scopes; CHECK-23/26
+when deployment/graph boundaries are reached; ST-T01/14 for storage status/privacy.
 UI-M0 D1/D2/D3 remain Deferred; this task activates none of them.
+
+**Documentation audit and independent review — completed 17 November 2026.**
+Against baseline `c3997241c8cc90ed6cb9b0c91640a2cdfc90e070`,
+`notification_plan_gaps` completed NP-01–NP-03 from current source/design/task
+evidence; `notification_windows_contract` completed NW-01–NW-08 using the same
+boundary and Windows Learn MCP sources. Both reports were complete before the
+integrated review, including NW-05's correction from the earlier proposed
+recovery-notification option to the completed design's explicit exclusion.
+The two researchers and `notification_plan_judge` used fresh delegated contexts
+(`fork_turns: none`). These identifiers track planning findings, not new gates.
+
+| Findings | Disposition in this handoff |
+| --- | --- |
+| NP-01 / NW-01 | Verified documentary correction: bind the catalogue and actual observation/incident owners; retain unavailable startup evidence and absent producers honestly. |
+| NP-02 / NW-03/05/07/08 | Carry existing completed-design rules into real-input and native acceptance; preserve submission uncertainty, session/privacy/action boundaries and no recovery-success feature. |
+| NP-03 / NW-02 | Verified documentary correction: name the actual sample-only WinRT path and route the future continuation consistently through architecture, feature/hardening plans, P5/backlog and GUI handoff, with release/stage deferrals intact. |
+| NW-04/06 | Conditional native details retained: importance versus presentation priority/Urgent, and absolute native expiry versus current-generation/elapsed validity. No API, SDK, duration or new build floor selected. |
+
+`notification_plan_judge` inspected all seven Markdown changes, applicable
+canonical/phase/design contracts, both completed reports, the actual sample
+producer/consumer source and bounded Microsoft evidence at staged semantic tree
+`fb757ff9978c3b0677c05a495ffa6299d8d3a56e`; the index matched that tree with no
+unstaged changes. Verdict: **ready for the documentation/planning handoff only;
+no material unresolved finding**. This attributed receipt was added afterward.
+The coordinator checked all 13 added local links/anchors and three Microsoft
+source URL syntaxes, preserved existing heading order and the byte-identical
+first portable logger steps/exit, and passed `git diff --cached --check`.
+No product test, build, scanner or native operation ran for this amendment.
+
+Reviewer comprehension, retained verbatim:
+
+> This revision makes W11-W09 the explicit continuation for turning real, current Critical/High problems into Windows notifications. It connects the event catalogue's decision owners to a separate incident eligibility contract, carries the completed design's suppression and lifecycle rules into production acceptance, and separates a reached portable request from actual Windows presentation. It updates the existing architecture, hardening and UI/P5 routing without selecting a new dependency, bringing rich toasts into the basic release or starting implementation.
+>
+> The current system has an HTML notification design, fixture UI state and a native `Windows.UI.Notifications` adapter for explicit sample tests. The inspected constructor rejects non-test contexts, and the Slint callback reaches that sample-only path. Actual submission consumes an attempt even when acceptance is uncertain; a successful API result is not a display/read receipt. There is no inspected real incident producer connected to this adapter, while secured production observations, native qualification, the relevant D2/D3 work and the rich-toast release continuation remain open or deferred.
 
 ### W11-W10 Re-enter conditional mechanisms only for a concrete need
 
