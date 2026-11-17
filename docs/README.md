@@ -19,6 +19,21 @@ levels and required routing. The plan binds schema, writers, Windows delivery,
 temporary collection and UI/export to their existing owners and checks. This is
 planning evidence; current Core/Engine priority and execution holds remain.
 
+**Managed logical-source provenance — 17 November 2026:** the
+[current Engine checkpoint](../tasks/engine-transport-pilot.md#managed-source-provenance--development-results--17-november-2026)
+now retains the actual managed source through transport commit and independent
+series/address-round reception. Same endpoints cannot substitute for source
+identity; unmanaged facts remain explicitly distinct. Development passes257
+default/491 KE cases per ordinary/optimized mode,83 doctests per graph and all13
+development lanes, including compiler/Clippy/rustdoc checks. Reader admission passes175 Python controls
+and812 physical inputs. Five actual external compiler controls and all five90%
+line gates pass. All four changed-owner95% mutation gates pass independent
+adjudication with zero unresolved survivors/timeouts. Session reuse retains its
+historical scope. This completes the selected GNU source checkpoint.
+Remote `428bf9a` logging/service/notification documentation is adopted; all605 runtime/configuration
+inputs still match this product's `744f6ea2…` evidence. Identity grants neither
+mapping, authentication, independent votes nor production sample eligibility.
+
 **Managed restriction visibility — 17 November 2026:** the
 [current Engine source child](../tasks/engine-transport-pilot.md#consumer-boundary-reinforcement--17-november-2026)
 adds read-only source/endpoint policy observations through actual source handles

@@ -1980,6 +1980,18 @@ and current line results, if executed, retain their own identities and scope.
 The [existing Engine task](tasks/engine-transport-pilot.md#five-owner-kod-qualification-admission--15-november-2026)
 owns actual disposition, first failures, cumulative budget and remaining exits.
 
+**Observed resource distinction — 17 November 2026:** this role's retained
+resource reader accepts at most4 GiB of sampled cgroup memory, including charged
+file cache. A6 GiB outer `MemoryMax` alone does not establish that condition. The
+[provenance checkpoint](tasks/engine-transport-pilot.md#provenance-qualification--four-current-owners-and-one-reused-owner--17-november-2026)
+retains a complete but unqualified series attempt whose six samples exceeded
+4 GiB. Its source-identical, fully charged retry added `MemoryHigh=3G`, keeping
+the same6 GiB hard maximum,512 MiB swap, six workers, timeouts and4 GiB reader
+criterion. All retry samples passed; the peak was3.00 GiB. The soft threshold
+was exercised; it is not a hard3 GiB guarantee or proof that cache caused the
+earlier peak. Preserve actual sampler admission, failed attempts and original
+clocks rather than substituting the outer limit or automatically copying a lease.
+
 **Current KE Request admission, 17 November 2026:** the existing
 `--profile ke_association` reader now requires479 complete ordinary identities,
 including234 KE cases;75 doctests retain their separate roster. The

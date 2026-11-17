@@ -6545,16 +6545,16 @@ SOURCE_POLICY_POLICY = COMMON.ENGINE_SOURCE_POLICY_POLICY
 SOURCE_POLICY_SUBJECTS = dict(COMMON.ENGINE_SOURCE_POLICY_SUBJECTS)
 SOURCE_POLICY_SCOPE = COMMON.Scope(
     "nevrotick-engine", COMMON.ENGINE_SOURCE_POLICY_SUBJECTS, SOURCE_POLICY_POLICY)
-SOURCE_POLICY_ORDINARY_COUNT = 254
-SOURCE_POLICY_DOCTEST_COUNT = 78
-# Independent inspection of corrective managed-observation full-1 established
+SOURCE_POLICY_ORDINARY_COUNT = 257
+SOURCE_POLICY_DOCTEST_COUNT = 83
+# Independent inspection of actual managed-source provenance full-2 established
 # these complete sorted identities. They identify a roster, not current execution.
-SOURCE_POLICY_ORDINARY_DIGEST = '9e49bfe2ea61e356f3b5a7cefee321c127081c73a8ff89981dfea04babd723cc'
-SOURCE_POLICY_DOCTEST_DIGEST = 'fe9ec436250d993e558aecab1ffeb6d759b983258197f1ff3dc6c68631b35737'
+SOURCE_POLICY_ORDINARY_DIGEST = '9f44f2e217a867f466966c23d476db023a94f22ab8c0dfb3208c47eca8337e25'
+SOURCE_POLICY_DOCTEST_DIGEST = '5f681e846081d9cf9035db68369346ad78e79b129719609fb81bef41359e210c'
 # The same independently inspected receipt contains the complete optional
 # profile in both modes: its default roster plus these 234 KE identities.
 SOURCE_POLICY_EP1_EXTRA_COUNT = 234
-SOURCE_POLICY_EP1_DIGEST = 'a0cd6e3279e21ca28539dbc31bf525458f642d79c6e13e24b1d84684d093e4c3'
+SOURCE_POLICY_EP1_DIGEST = '73949e5128abb78574e8972f44380dc7eb9f42c1a4e835d196af5bb512cc0365'
 SOURCE_POLICY_SNAPSHOT_TESTS = frozenset(
     "source_policy::tests::policy_snapshot_" + name for name in (
         "canonical_aliases_and_unknown_reads_do_not_allocate",
@@ -6567,23 +6567,34 @@ SOURCE_POLICY_SNAPSHOT_TESTS = frozenset(
         "public_sessions_observe_real_restriction_and_unmanaged_absence",
         "status_is_bounded_payload_free_and_preserves_sink_errors",
     ))
+SOURCE_POLICY_PROVENANCE_TESTS = frozenset((
+    "source_policy::tests::managed_source_provenance_follows_actual_owner_across_sessions_and_endpoints",
+    "series::tests::managed_source_provenance_receiving_rejects_absent_and_foreign_owners",
+    "series::address_round::tests::managed_source_provenance_address_transfer_binds_the_original_candidate",
+))
 # One actual full development receipt, independently inspected before reader adoption.
 # These pins admit historical execution bytes, never a reporter-selected replacement.
 SOURCE_POLICY_MANAGED_DEVELOPMENT = {
-    "candidate_sha256": "861987c90a79e60b355c9e5c3e43fcbb6604cc556789fc2ddfeaca30f6d068ea",
-    "captured_inputs_sha256": "4a659a977c9f4b42cd79eec0f4bba84d5eadc46162cf33a7288b16a65929ea86",
-    "recipe_sha256": "4e2b969d5bc5cba99bfac477ea16676f6cd8057de774d758be2fbe1dd0440aa3",
-    "budget_sha256": "3749aa42a191b304cb0d82ac6ccc9fd5e67e22442561aa2cc91b82aa8b18b82a",
-    "monitor_sha256": "851604cf19fe14402c16e6f257e3188e1569cbd657191c1c8aa6ce4ace4ac0da"
+    "candidate_sha256": "744f6ea2c6775f221eea686c35a0a9eb6aa0f45a3643977425f6ad3ee545bf50",
+    "captured_inputs_sha256": "0328aa0b9086bc651f7da9ceb2de421f12d81473f6ca802e14f6997a0ac4b556",
+    "recipe_sha256": "1490bc0f50effc3f59a4a5e69137a49b82ee34cecca673a3caef944183a15866",
+    "budget_sha256": "28eb54c9e27a2197a85c68f960f81de528f19cd5bf38781bf073fb370cd6b880",
+    "monitor_sha256": "7eab5a56d7f8c52541e4c144b781e19578a43287272c1f22be4bc980873906d2"
+}
+# These controls have their own later finite clock. They did not produce full-2
+# and cannot replace or restart its original development allowance.
+SOURCE_POLICY_MANAGED_CONTROL_BUDGET = {
+    "sha256": "736856824579b9ecd71963a9f45e6e6b0b2f8a53f762560dab8faf30863dad06",
+    "start_unix": 1794926017.8365803,
 }
 # Actual healthy and deliberate stale-observer controls; the latter is no product pass.
 SOURCE_POLICY_MANAGED_MONITOR_CONTROLS = {
-    "healthy/control.json": "510251642ed6b0480758fe312b2a88cf94ce35edea2fbbbf281a838d0f7d0a49",
-    "healthy/monitor-result.json": "3560a6f4f0a087a6678f43ce8172e98f1c7c0cd549a10216e1cf9f321327ee84",
-    "healthy/resources.jsonl": "7f01016cfa3676fc998fc9f745d46f1e11c51d8b0e25c6ba8d8ac303f35780f5",
-    "gap/control.json": "0904cdc6dce209b2c098bf857b4399ca92006d1237f05d6e77e8b5e39118cb73",
-    "gap/monitor-result.json": "b5ea7f90f47dd93dbbccb18773de0493d15d42c62835cafd5f746be604d02292",
-    "gap/resources.jsonl": "c7307db44f4530269f3bf2425ec90ab24fa099ec0a44af0986ae6581b71f612d"
+    "healthy/control.json": "1d517b5b235878005fb0391471653500506d69843d18c11e178b578a389198f2",
+    "healthy/monitor-result.json": "d243cbd836fd858efa857671cd987a13d7dd4821ca48a6e177ea6d696b16fef6",
+    "healthy/resources.jsonl": "2f9367719f88cfeb6bc1303c08a43e7b511a9c5474e4d108cbda9c6fe750e45d",
+    "gap/control.json": "c3bd4cc8791d172ebb98a4c1a4b7b957b8d07a6aafcc37910ca129f5a650799d",
+    "gap/monitor-result.json": "64cb2167e5514d0ef3963220e70ea0df96c1821887a1d1a17c317df912762bb6",
+    "gap/resources.jsonl": "a9dc7f9aaf4d958e3b9955157102ae7117ad0da58f76e32b0267cb319bb857e1"
 }
 SOURCE_POLICY_BOUND_INPUTS = tuple(dict.fromkeys((
     WRAPPER, TESTS, *SOURCE_POLICY_SUBJECTS.values(),
@@ -6624,17 +6635,18 @@ def source_policy_test_inventory(binding: dict) -> tuple[list[str], list[str]]:
         if (type(names) is not list or len(names) != count
                 or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
                 or names != sorted(set(names)) or COMMON.canonical_sha256(names) != digest):
-            raise Incomplete("Source-policy qualification requires its complete 254/78 default roster.")
+            raise Incomplete("Source-policy qualification requires its complete 257/83 default roster.")
     selected = [name for name in ordinary if name.startswith("source_policy::tests::")]
     kod_docs = [name for name in docs if name.startswith(
         "crates/nevrotick-engine/src/source_policy.rs - ")]
-    if (len(selected) != 60
+    if (len(selected) != 61
             or "source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted" not in ordinary
             or "source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund" not in ordinary
             or any(name.startswith("nts_ke_experiment::") for name in ordinary)
             or not SOURCE_POLICY_SNAPSHOT_TESTS <= set(selected)
-            or len(kod_docs) != 7 or sum(name.endswith(" - compile fail") for name in kod_docs) != 5):
-        raise Incomplete("Source-policy roster must retain all 60 controls, public diagnostics, the setup budget, snapshots and seven compiler examples.")
+            or not SOURCE_POLICY_PROVENANCE_TESTS <= set(ordinary)
+            or len(kod_docs) != 12 or sum(name.endswith(" - compile fail") for name in kod_docs) != 9):
+        raise Incomplete("Source-policy roster must retain all 61 controls, public diagnostics, the setup budget, snapshots, source provenance and twelve compiler examples.")
     return ordinary, docs
 
 
@@ -6803,11 +6815,11 @@ def admit_source_policy_managed_observer(reference: dict, path: Path) -> dict:
               "terminal_resource_failures", "independent_monitor", "elapsed_seconds"}
     if (set(reference) != fields or reference["status"] != "workload-passed"
             or reference["phase"] != "full" or type(reference["attempt"]) is not int
-            or reference["attempt"] != 1 or reference["custody_unchanged"] is not True
+            or reference["attempt"] != 2 or reference["custody_unchanged"] is not True
             or reference["generated_mutation_credit"] is not False
             or reference["terminal_resource_failures"] != []
             or type(reference["elapsed_seconds"]) not in {int, float}
-            or not 0 < reference["elapsed_seconds"] < 1500
+            or not 0 < reference["elapsed_seconds"] < 2100
             or reference["candidate_sha256"] != pins["candidate_sha256"]
             or reference["recipe_sha256"] != pins["recipe_sha256"]
             or reference["budget_sha256"] != pins["budget_sha256"]):
@@ -6832,19 +6844,64 @@ def admit_source_policy_managed_observer(reference: dict, path: Path) -> dict:
               base / "monitor.py": pins["monitor_sha256"]}
     budget = read_json(budget_path, maximum=262144, expected_sha256=pins["budget_sha256"])
     if (budget.get("admitted") is not True
-            or type(budget.get("budget_seconds")) is not int or budget["budget_seconds"] != 1800
+            or type(budget.get("budget_seconds")) is not int or budget["budget_seconds"] != 2400
             or type(budget.get("reserve_seconds")) is not int or budget["reserve_seconds"] != 300
             or type(budget.get("maximum_attempts_per_phase")) is not int
             or budget["maximum_attempts_per_phase"] != 3 or budget.get("mutations_admitted") is not False
             or budget.get("recipe_sha256") != pins["recipe_sha256"]
             or budget.get("monitor_sha256") != pins["monitor_sha256"]
             or type(budget.get("new_test_names")) is not list
-            or len(budget["new_test_names"]) != len(SOURCE_POLICY_SNAPSHOT_TESTS)
+            or len(budget["new_test_names"]) != len(SOURCE_POLICY_PROVENANCE_TESTS)
             or any(type(name) is not str for name in budget["new_test_names"])
-            or set(budget["new_test_names"]) != SOURCE_POLICY_SNAPSHOT_TESTS
+            or set(budget["new_test_names"]) != SOURCE_POLICY_PROVENANCE_TESTS
+            or any(type(budget.get(key)) not in {int, float}
+                   or not 0 < budget[key] <= sys.float_info.max or not math.isfinite(budget[key])
+                   for key in ("start_unix", "preparation_started_unix"))
+            or budget["start_unix"] != budget["preparation_started_unix"]
+            or type(budget.get("source_files")) is not dict or not budget["source_files"]
+            or any(type(name) is not str or name not in source or source[name] != digest
+                   for name, digest in budget["source_files"].items())
             or reference["HEAD"] != budget.get("baseline")
             or reference["index_sha256"] != budget.get("index_sha256")):
         raise Incomplete("Source-policy managed development allowance or original custody differs.")
+    control_base = base / "qualification-admission"
+    control_budget_path = control_base / "development-budget.json"
+    control_pin = SOURCE_POLICY_MANAGED_CONTROL_BUDGET
+    if (type(control_pin) is not dict or set(control_pin) != {"sha256", "start_unix"}
+            or type(control_pin["sha256"]) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", control_pin["sha256"]) is None
+            or type(control_pin["start_unix"]) not in {int, float}
+            or not 0 < control_pin["start_unix"] <= sys.float_info.max
+            or not math.isfinite(control_pin["start_unix"])):
+        raise Incomplete("Source-policy managed monitor control allowance has not been independently pinned.")
+    control_budget = read_json(control_budget_path, maximum=262144, expected_sha256=control_pin["sha256"])
+    resource_profile = {
+        "memory_max": 6 * 1024**3, "swap_max": 512 * 1024**2, "tasks_max": 512,
+        "startup_free_disk": 7 * 1024**3, "startup_available_ram": 15 * 1024**3 // 2,
+        "running_free_disk": 4 * 1024**3, "running_available_ram": 1024**3,
+        "observation_max_gap_seconds": 2,
+    }
+    if (type(control_budget) is not dict
+            or set(control_budget) != {"admitted", "start_unix", "preparation_started_unix",
+                                       "budget_seconds", "reserve_seconds", "monitor_sha256", "resource_profile"}
+            or control_budget["admitted"] is not True
+            or any(type(control_budget[key]) is not int or control_budget[key] != expected
+                   for key, expected in (("budget_seconds", 2400), ("reserve_seconds", 300)))
+            or any(type(control_budget[key]) not in {int, float}
+                   or not 0 < control_budget[key] <= sys.float_info.max
+                   or not math.isfinite(control_budget[key])
+                   or control_budget[key] != control_pin["start_unix"]
+                   for key in ("start_unix", "preparation_started_unix"))
+            or control_budget["start_unix"] < budget["start_unix"] + budget["budget_seconds"]
+            or control_budget["monitor_sha256"] != pins["monitor_sha256"]
+            or type(control_budget["resource_profile"]) is not dict
+            or set(control_budget["resource_profile"]) != set(resource_profile)
+            or any(type(control_budget["resource_profile"][key]) is not int
+                   or control_budget["resource_profile"][key] != value
+                   for key, value in resource_profile.items())):
+        raise Incomplete("Source-policy managed monitor controls cannot replace or restart the development allowance.")
+    inputs.update({control_budget_path: control_pin["sha256"],
+                   control_base / "monitor.py": pins["monitor_sha256"]})
     monitor = reference["independent_monitor"]
     monitor_fields = {"ok", "errors", "result", "exit_code", "joined", "result_sha256",
                       "resource_samples_sha256"}
@@ -6877,7 +6934,7 @@ def admit_source_policy_managed_observer(reference: dict, path: Path) -> dict:
                 for leaf in ("control.json", "monitor-result.json", "resources.jsonl")}
     if type(controls) is not dict or set(controls) != expected:
         raise Incomplete("Source-policy managed monitor controls have not been independently pinned.")
-    inputs.update({base / "monitor-controls" / name: digest for name, digest in controls.items()})
+    inputs.update({control_base / "monitor-controls" / name: digest for name, digest in controls.items()})
     raw = {}
     for filename, digest in inputs.items():
         if type(digest) is not str or re.fullmatch(r"[a-f0-9]{64}", digest) is None:
@@ -6890,7 +6947,7 @@ def admit_source_policy_managed_observer(reference: dict, path: Path) -> dict:
         raise Incomplete("Source-policy managed physical monitor terminal differs.")
     admit_source_policy_resource_samples(raw[directory / "resources.jsonl"], result)
     for role in ("healthy", "gap"):
-        admit_source_policy_monitor_control(base / "monitor-controls" / role, role,
+        admit_source_policy_monitor_control(control_base / "monitor-controls" / role, role,
                                             pins["monitor_sha256"], inputs, raw)
     for name, digest in captured.items():
         filename = path.parent / "source" / name
@@ -6997,13 +7054,13 @@ def admit_source_policy_development(binding: dict, identity: dict) -> dict:
     if any(previous.get(name) != identity[name] for name in runtime_names):
         raise Incomplete("Source-policy runtime/graph/configuration differs from its development reference.")
     lanes = reference.get("lanes")
-    required = {"boundary-control", "format", "gnu-check", "gnu-clippy", "msvc-clippy", "msvc-check",
+    required = {"boundary-control", "format", "gnu-check", "gnu-clippy", "msvc-clippy", "msvc-check", "gnu-rustdoc",
                 "default-ordinary", "default-optimized", "default-doctests",
                 "ep1-ordinary", "ep1-optimized", "ep1-doctests"}
     if (type(lanes) is not list or len(lanes) != len(required)
             or any(type(row) is not dict for row in lanes)
             or {row.get("lane") for row in lanes} != required):
-        raise Incomplete("Source-policy development evidence lacks its complete twelve lanes.")
+        raise Incomplete("Source-policy development evidence lacks its complete thirteen lanes.")
     admitted = {str(path): evidence["sha256"]}
     for row in lanes:
         raw_path = Path(row.get("path", ""))

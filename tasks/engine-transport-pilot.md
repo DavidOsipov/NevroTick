@@ -22115,3 +22115,299 @@ resource and wrapper failures remain recorded. Next finish the complete staged
 candidate's publication checks, then continue the existing S2.1/W11-W01 actual
 capture/mapping contract. Current observations still confer no production sample
 eligibility, native TLS/CNG/UDP/service/clock or release qualification.
+
+### Managed logical-source provenance — implementation contract — 17 November 2026
+
+Baseline: clean signed `72b4ae5a92b413a45193e47ef7857aa60f3d524e`.
+Existing S2.1/W11-W01 owners retain CHECK-6/11/21/27 and affected CHECK-7/25.
+Independent source reviews confirm that the finite mapping contract is already
+settled, but no genuine calibration/invalidation issuer exists. Repeating raw
+clock wrappers or inventing positive mapping evidence would not advance it.
+Positive production history admission therefore remains held. This child instead
+supplies one actual missing provenance input through the current acquisition.
+
+The real managed catalogue issues immutable logical-source identity. One separate
+allocation identifies the fixed catalogue; its private non-recycled position
+identifies the source. Tokens retain no mutable policy cell, channel, socket or
+permission. Same source across sessions/endpoints remains the same identity;
+different sources sharing an endpoint, and separate catalogues at equal positions,
+remain different. This is neither source independence nor a configuration,
+association, restriction, calendar, clock or mapping revision.
+
+The single successful transport-facts constructor derives the token directly from
+its actual live policy owner. Managed facts retain it; unmanaged laboratory facts
+explicitly lack it. Callers cannot supply an unrelated optional token at commit.
+The original prepared mode binds the series receiving owner, which independently
+checks issued/completed request and returned facts provenance before consuming a
+position. Existing final control/deadline/request/epoch guards remain unchanged.
+Historical identity survives later stop, re-enable and owner retirement, without
+reopening permission, changing counters/age or granting sample eligibility.
+
+Acceptance: actual managed acquisitions across sessions/endpoints; distinct
+sources/root identities; unmanaged absence; foreign/omitted provenance at issue
+and completion rejected without changing receiving state; matching completion
+still consumed once; original one-hot stamp refusal controls retain no facts and
+spent receive work; retained identity outlives an isolated policy cell without
+retaining it. External construction/default refusals and legal identity use reach
+the real public type. No new dependency, default interval or Windows API is needed.
+
+Run focused actual-consumer controls first, then the existing admitted development
+lanes and affected compiler/rustdoc selections. Freeze the settled combined source
+before current per-owner 90% coverage/95% mutation admission. Earlier receipts keep
+their exact scopes; this contract records no execution or qualification result.
+
+#### Managed source provenance — development results — 17 November 2026
+
+Actual source child: `managed-source-provenance-20261117-v1` under the existing
+machine-local `continuation-20261116-tools-v1` evidence root. The final605-input
+product is `744f6ea2c6775f221eea686c35a0a9eb6aa0f45a3643977425f6ad3ee545bf50`;
+its complete785-input capture retains the original graph/tool/vendor custody.
+The source remains dirty on signed `72b4ae5`; nothing is staged or committed.
+
+`SourceHandle::identity()` now issues opaque catalogue/source identity, retaining
+only a separate immutable domain allocation and fixed position. The real final
+facts constructor derives provenance directly from the actual live policy.
+Series issue/completion checks retain the original prepared source, actual owner
+and returned facts; joint owner/facts substitution cannot redefine it. Address
+transfer checks the original candidate before adopting history or finishing its
+cursor. Unmanaged facts explicitly lack managed provenance. Type-level must-use,
+private construction and redacted diagnostics remain; actual source identity is
+neither a restriction/configuration revision nor mapping/authentication authority.
+
+Independent integrated source review accepted the producers, actual consumers,
+failure/custody paths and historical stop/re-enable behavior. A narrow follow-up
+accepted exhaustive request equality and subsequent lint-only fixture cleanup.
+Actual focused execution passed all three new cases. Final `full-2/verification.json`
+(SHA256 `bcf7e4129c4649366a4caf9f7b4fd2530c3de515f195a757b62b276e5a182086`)
+then passed all13 lanes: format/boundary, GNU/MSVC check and Clippy, GNU rustdoc,
+257 ordinary/257 optimized default cases,491 ordinary/491 optimized EP1 cases,
+and83 doctests per graph. Every prior named case is retained; four new negative
+and one legal SourceIdentity examples are added. Doctest execution alone does not
+inspect each intended negative diagnostic; configured compiler controls remain
+part of the next admission. Cross-compilation is not native Windows evidence.
+
+The first focused attempt stopped before behavior on two test-fixture compiler
+errors. The first full attempt passed GNU check, then stopped on naming,
+redundant annotation and fixture-length diagnostics. Original source/logs/native
+exits remain retained. Repairs preserve every oracle, predicate, type-level
+must-use and selected case; no lint exception or threshold changed. Across actual
+passing children there are1,665 named Rust result instances, not the4,995 reserved
+upper allowance. Unused authorization is neither execution nor a refund.
+
+The full workload's independent sampler joined cleanly. Fresh healthy/gap sampler
+controls observed their intended outcomes, but the gap control began after the
+original2,100-second work cutoff. Its expected native0/observer2 output is retained
+without prerequisite-admission credit; it must be requalified in the next
+explicit bounded admission stage. The original2,400-second whole allowance and
+late-control disposition are preserved in `development-closeout.json` (SHA256
+`19d11a947f2501d931dbc0aad4de604eaf6566e8519a9467615379107de35669`).
+No clock or allowance is silently reset and no integrated gate is claimed.
+
+Cleanup removed only joined compiled targets and15 redundant old source copies;
+canonical data, raw failures/results and unique plain reconstruction bytes remain.
+No compression, shared tool/vendor removal or host/native setting change occurred.
+
+**Next:** reconcile the thirteen-lane current reader/policy against `72b4ae5`,
+retaining all old acceptance and the nine snapshot cases plus three provenance
+cases. Admit actual current source/helpers/rosters and timely sampler controls;
+then perform fresh coverage/catalogue and the four changed-owner mutation cohorts
+(`source_policy`, library, series and address-round). Keep unchanged session reuse
+explicit and current equivalents independently adjudicated; numeric95% alone
+cannot excuse unresolved survivors. Main campaigns stay closed with empty
+inventories/E0 until actual admission. This child and the parent Engine/Core,
+production mapping, native and release exits remain open.
+
+#### Provenance reader admission — 17 November 2026
+
+The unchanged final Rust product `744f6ea2…` now has a current closed qualification
+binding:605 product inputs,46 protected helpers and812 actual development/control
+inputs. All175 Python reader controls and host strict policy pass. The raw native
+tool outputs were recovered byte-for-byte from the coordinator's own bounded
+recent transcript window; no test was rerun to manufacture a receipt. The record
+is `current-reader-checks-green.json` (SHA256
+`63d1e59bc3a041d93bf4c643e724dd5cfa495572b5b67d7cc2b63013eacec2f8`).
+
+Independent H13 comparison against signed `72b4ae5` confirms all old selections,
+refusal/type/custody/resource rules,90%/95% thresholds and zero-unresolved rule
+remain. GNU rustdoc is an additional mandatory thirteenth lane. Every old test
+identity and the nine snapshot cases remain; three provenance cases and five
+compiler examples are added, retaining234 KE extras. No nonbinding policy setting
+changed. Main remains `campaigns_admitted=false`, with empty inventories and E0.
+
+The sampler's actual new healthy and deliberate-gap controls both return native0;
+their joined observers return0 and2 respectively. These executions use the
+separately pinned2,400-second admission stage beginning1794926017.8365803, distinct
+from the original source child. Their final elapsed samples422/469 seconds fall
+inside its2,100-second work allowance. The original late gap remains uncredited.
+`checkpoint-closeout.json` (SHA256
+`cb401c3997090002d48261db245f8325694987412cb65d01e15edc946a54a470`)
+records this preparation, prior costs/failures and still-pending metric exits.
+Next use the existing bounded machinery for actual external compiler causes,
+one current shared coverage run and complete catalogue before four changed-owner
+mutation cohorts. No native, production, formal or release exit is closed here.
+
+#### Remote continuation adopted — 17 November 2026
+
+Main is synchronized with remote `c5a4625fb9cfb79d6b9aca8825a4900903fa0137`,
+including the two production-event-logger planning commits. The local thirteen
+other dirty files were retained byte-for-byte; the development plan's independent
+edits were merged with both incoming changes. Staging remains empty. One preflight
+stopped on Git's index stat-cache refresh before merge; index entries and staging
+were independently checked unchanged, and retry used read-only observational Git
+commands. No stash, reset, force update or new commit was required.
+
+All605 runtime/configuration inputs remain exactly `744f6ea2…`; current46 helper
+pins and812-input physical reader admission still pass. The earlier development
+receipt keeps its actual `72b4ae5` Git baseline; it is reused only through this
+explicit product identity bridge. New logging contracts enter the existing
+W11-W08 chain: producer facts, independent importance/level/required routing,
+bounded pre-enqueue work and truthful native/flush/cleanup outcomes. They select
+no new dependency or native API and preserve the Core/Engine queue. This child
+adds no production event writer, clock mapping or native qualification claim.
+
+The first metric-preparation source draft remained unarmed: no compiler, coverage
+or mutation child executed. Adding the actual compiler-cause controls and adopting
+the new baseline consumed its720-second complete-work launch window. Preserve
+its original clock/cost record rather than lowering the guard. Separately named
+`metrics-preparation-v2` now freezes the reviewed final recipe on `c5a4625`, with
+the same1,800/300-second limits, two-attempt ceilings, all prior preparation costs
+and the parent qualification clock retained. It selects five private external
+compiler consumers through the existing ordinary admission/helper machinery,
+then complete catalogues and shared coverage. This is no standalone baseline,
+generated kill, native pass or completed metric gate.
+
+#### Provenance compiler and coverage results — 17 November 2026
+
+The actual `metrics-preparation-v2/attempt-1` completed with native exit0,
+unchanged source/helper/tool custody and a joined passing independent observer.
+Its receipt SHA256 is
+`a888cc479be15224d1fb61faac9d1cba3a3db09eb3c24a1c7cb52da43413189b`.
+The source/configuration product remains `744f6ea2…` on adopted `c5a4625`.
+
+Five actual external controls inspect the public `SourceIdentity`: raw
+construction E0451, mutation E0616, default E0599 and unchecked conversion E0277
+reach their intended private/type restrictions. The legal consumer compiles and
+executes through the real catalogue/source owner. Ordinary environment admission
+uses the existing baseline role solely to dispatch the shared compiler helper;
+no standalone baseline tests, production contract qualification or mutation
+credit is claimed. Compiler receipt SHA256:
+`36f5735c3633eeba014570c10a99100f779913cd3fc0d9d51f7010836a4a8a23`.
+
+One fresh instrumented257-case execution passes all five90% executable-line gates:
+
+| Owner | Covered / executable | Line coverage |
+| --- | ---: | ---: |
+| Source policy | 1101 / 1148 | 95.91% |
+| Library | 947 / 993 | 95.37% |
+| Session | 249 / 249 | 100% |
+| Series | 749 / 781 | 95.90% |
+| Address round | 582 / 609 | 95.57% |
+
+Coverage receipt SHA256:
+`9191820dc8985c0280222e8be4dcaacec6ddb7541676f50fbbebd03963868681`.
+No branch coverage result is claimed. The complete fresh default catalogue has750
+descriptors: source-policy207, library242, session47, series168, address-round86.
+Enumeration receipt SHA256:
+`fb398cd234e4f317eb4c907efe042b3b818e827fbcfaafdb1450e24231a54ffc`.
+Listing supplies no generated-kill or campaign-pass credit. Next review and admit
+the four changed-owner inventories; retain unchanged session results only through
+an exact source/configuration/catalogue/consumer bridge. Public campaigns remain
+closed, equivalents require current independent adjudication, and95% cannot
+excuse unresolved survivors. Original clocks, failures and cumulative costs remain.
+
+#### Provenance qualification — four current owners and one reused owner — 17 November 2026
+
+The unchanged605-input runtime/configuration product is `744f6ea2…`.
+Four fresh default-GNU owner campaigns completed on the frozen `c5a4625` baseline.
+Remote `c399724` adds only logging/service documentation; its fast-forward and
+clean task-file merge preserve all605 product inputs,785 captured inputs and46
+protected helpers. Other dirty files and empty staging were preserved. The
+remote adoption record is `publication-remote-refresh-v1/complete.json` under the
+existing managed-source-provenance evidence root. No incoming research selects
+a native API or changes this Core/Engine queue.
+
+The final pre-sign remote check then found documentation-only `428bf9a`.
+Its Critical/High notification plan was adopted by clean three-way merges of
+the two overlapping task/plan files, preserving all17 staged phase edits and
+all785 captured inputs. W11-W09 retains its UI owner, D2/D3/native prerequisites
+and rich-toast release deferral. No notification runtime or dependency changed.
+The earlier complete staged tree and secret pass retain their original scope;
+the revised complete tree receives its own materialization and secret checks.
+No signature was requested for the superseded tree.
+
+| Owner | Generated | Caught | Compiler-unviable | Reviewed equivalents | Evidence scope |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Source policy | 207 | 132 | 75 | 0 | Current cohort1; independently adjudicated |
+| Library | 242 | 112 | 127 | 3 | Current cohort1; independently adjudicated |
+| Series | 168 | 106 | 60 | 2 | Current cohort2; independently adjudicated |
+| Address round | 86 | 38 | 48 | 0 | Current cohort1; independently adjudicated |
+| Session | 47 | 14 | 33 | 0 | Historical results reused through exact current bridge |
+
+Each selected file meets the unchanged95% adjusted gate with zero unresolved
+survivors/timeouts after the stated adjudications. This completes the selected
+GNU source checkpoint; combined publication review remains separate. Four current
+cohorts contain703 distinct variants. The47-session bridge retains its actual
+historical execution, unchanged catalogue/source/configuration/callee obligations
+and eight decisive current coverage witnesses. It supplies no fresh session
+campaign. The five equivalents remove only their own denominator entries and add
+zero kills. Library's raw native2/CLI1/gate failure and series' raw native2/CLI1/gate
+failure remain unchanged; exact current descriptors, complete executed rosters,
+source/standard-library domain and effect arguments support report-only resolution.
+Generation gaps retain independent consumer/lifetime/compiler evidence, without
+invented generated-kill credit.
+
+The pure current reader independently reconciled all raw outcomes and exact
+equivalence rows again without compiler/test execution. The scoped union record
+is `selected-source-metric-union.json` (SHA256
+`4dd1980638c90a3d0ccf72bfa9c251dea40a841dc8345c4a0119a28bdf1143d3`).
+It records402 catches,343 compiler-unviable variants and five equivalents across
+the750-entry mixed union, preserving each owner's separate gate. The four valid
+current cohorts contain92,839 actual named Rust result instances; this excludes
+the incomplete first series attempt's execution from qualified credit without
+erasing its cost or raw results. Actual five-attempt upper charges are476,285;
+the659,205 global held allowance is neither actual execution nor refunded unused
+capacity. Independent source-policy adjudication SHA256 is
+`0ce1d5fcd00e01e0e58bb800dcf29064c88111991ad5e803138647c09c783715`.
+
+Current supervision receipt SHA256 values:
+
+- Source policy: `5d08a0a8ff5c35f1e006a970f82f03086f9519274192e59d3c867ff1c9d137c1`.
+- Library: `ff425f5bb0a15a1b4b24c298a60bb2cdd56b1a0d2dc1e51d5e344a31779ae7a1`.
+- Series2: `d161989ddc02dd8d0469418cae44d7c8fbed55013e4120781754a8cc46f930e0`.
+- Address round: `85cece6a2491024b98fea44cdf14e1027ad4378e27574abbf07b1e5279263e03`.
+
+The first series attempt completed all168 variants but remains **incomplete**:
+six sampled cgroup-memory values exceeded the unchanged4 GiB gate, peaking at
+4,414,877,696 bytes. Its raw results, receipt `071ba1a1…`, charges and failure are
+retained without qualification credit. The admitted second attempt added a
+3 GiB soft reclaim/throttle threshold while retaining the6 GiB hard maximum,
+512 MiB swap, six workers, all timeouts and4 GiB receiving criterion. Its682
+samples passed with peak3,221,323,776 bytes. Soft-pressure events are recorded,
+not misreported as zero events; no OOM or PID-limit event occurred. Cache was not
+identified as the cause of the first peak. This is no future timing/resource
+guarantee or silently widened limit.
+
+The private admission's first attempt also stopped before Cargo because its
+launcher expected a never-run `--workspace` strict command and shortened stdout.
+The causal repair matches the actual three-field bootstrap receipt exactly,
+including its two-line scope limitation; native exit/type/extra-output rejection
+remain. Original recipes, freeze, failed native result and unchanged stage origin
+are retained. Full product compiler/Clippy evidence comes from actual `full-2`,
+not that bootstrap receipt. No failed verification input was fabricated or rerun
+merely to fit the reader.
+
+All native work and observers are joined; the cohort unit is inactive and its
+ledger has no active owner. Original parent/stage starts,900/600-second reserves,
+all failed upper charges and per-owner two-attempt ceilings remain. Main stays
+closed with empty inventories/E0. Cleanup deletes only joined compiled data and
+redundant source copies, retaining physical canonical sources, plain unique
+preimages, reconstruction maps and raw outcomes. No compression or shared-cache
+removal occurred.
+
+**Next:** complete final independent/publication review, stage the exact candidate,
+sign and push under existing owner authorization. Then freeze the genuine
+managed configuration/association revision supplier contract in this same S2.1
+chain, preserving legitimate parallel candidates and all KoD records/floors.
+Source identity alone grants no configuration revision, uninterrupted mapping,
+calibrated error, authentication, independence, sample eligibility or clock
+authority. Production/native, hosted, Core/P1 and release exits remain separate.

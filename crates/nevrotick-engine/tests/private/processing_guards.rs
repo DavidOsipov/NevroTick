@@ -420,6 +420,7 @@ fn snapshot_facts(slot: &LiveSlot) -> Result<TransportFacts, Box<dyn Error>> {
         .and_then(TerminalOutcome::facts)
         .ok_or_else(|| io::Error::other("neighbor facts absent"))?;
     Ok(TransportFacts {
+        source_identity: facts.source_identity.clone(),
         send_before: facts.send_before,
         send_after: facts.send_after,
         read_return: facts.read_return,

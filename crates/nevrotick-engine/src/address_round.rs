@@ -841,6 +841,14 @@ where
 {
     let (index, peer, _) = claim.parts();
     let completed = slot.into_report(index)?;
+    if completed.facts().is_some_and(|facts| {
+        !crate::SourceIdentity::same_optional(
+            facts.source_identity(),
+            plan.mode.source_identity().as_ref(),
+        )
+    }) {
+        return Err(PilotError::InternalState);
+    }
     let status = completed.status();
     let policy_cause = completed.source_policy_refusal();
     report.attempts.push(AddressAttempt {

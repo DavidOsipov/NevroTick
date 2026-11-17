@@ -2741,6 +2741,202 @@ fn managed_round_receiving_rejects_downgraded_and_foreign_bindings_before_send()
     Ok(())
 }
 
+/// One synthetic receiving proposal after genuine managed header completion.
+#[derive(Clone, Copy)]
+enum SourceTransferProposal {
+    /// Preserve the genuine final commit's original managed identity.
+    Original,
+    /// Replace only historical provenance with another valid catalogue source.
+    Foreign,
+    /// Remove only the managed provenance, without changing its actual header.
+    Missing,
+}
+
+/// Admit native fixture observations only after the actual peer has been joined.
+/// # Errors
+/// Preserve the driver failure, joined peer cause and original request cutoff.
+/// # Panics
+/// Require one genuine ordinary header with exactly one accepted receive.
+fn joined_source_transfer_slot(
+    produced: Check<LiveSlot>,
+    joined: io::Result<Option<SeenQuery>>,
+    request_end: Instant,
+) -> Check<LiveSlot> {
+    if let Err(error) = &joined {
+        eprintln!(
+            "ADDRESS_ROUND_SOURCE_TRANSFER_PEER kind={:?} native_code={:?}",
+            error.kind(),
+            error.raw_os_error()
+        );
+    }
+    let slot = produced?;
+    let seen = require_query(joined?)?;
+    check_query(&seen);
+    let terminal = slot.terminal().ok_or("actual request was not terminal")?;
+    if let Some(cause) = terminal.io_cause() {
+        return Err(cause
+            .native_code()
+            .map_or_else(
+                || io::Error::new(cause.kind(), "source-transfer native datagram failed"),
+                io::Error::from_raw_os_error,
+            )
+            .into());
+    }
+    if terminal.status() == Status::Timeout && Instant::now() >= request_end {
+        return Err(io::Error::new(
+            io::ErrorKind::TimedOut,
+            "source-transfer fixture exceeded its original request cutoff",
+        )
+        .into());
+    }
+    assert_eq!(terminal.status(), Status::Header);
+    assert!(slot.sent);
+    assert_eq!((slot.received, slot.rejected), (1, 0));
+    Ok(slot)
+}
+
+/// Observe the actual adopted healthy neighbor independently of its transfer result.
+/// # Panics
+/// Reject an omitted history, relabelled peer, changed counters or wrong source.
+fn assert_source_transfer_history(
+    report: &AddressRoundReport,
+    source: &crate::SourceHandle,
+    peer: SocketAddr,
+    observed: u8,
+) {
+    assert_eq!(observed, 2);
+    assert_eq!(report.attempts().len(), 1);
+    let accepted = &report.attempts()[0];
+    assert_eq!(accepted.peer(), peer);
+    assert_eq!(accepted.report().status(), Status::Header);
+    assert_eq!(
+        (accepted.report().received(), accepted.report().rejected()),
+        (1, 0)
+    );
+    assert!(accepted.report().facts().is_some_and(|facts| {
+        facts
+            .source_identity()
+            .is_some_and(|identity| identity.same_source(&source.identity()))
+    }));
+}
+
+/// Transfer one real completed request through its original round claim.
+/// # Errors
+/// Preserve allocation, setup, native I/O, runtime and joined peer failures.
+/// # Panics
+/// Refuse misplaced provenance before adopting history or acknowledging progress.
+fn source_transfer_case(proposal: SourceTransferProposal) -> Check<()> {
+    let authority = crate::source_policy::isolated_authority(crate::SourcePolicyLimits::new(
+        2,
+        2,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let source = authority.source(0)?;
+    let foreign = authority.source(1)?.identity();
+    let socket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let quiet = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peers = [socket.local_addr()?, quiet.local_addr()?];
+    let config = checked_config(&peers)?;
+    let bindings = source.bind_round(&peers)?;
+    let (mut prepared, control) = prepare_with_policy(config, Some(bindings), |bytes| {
+        fixed_entropy(bytes);
+        Ok(())
+    })?;
+    let runtime = runtime()?;
+    let origin = Instant::now();
+    let deadline = origin
+        .checked_add(prepared.config.round_timeout)
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let context = Arc::new(RunClockContext { origin });
+    let mut cursor = Progress::new(&prepared.config, deadline);
+    let claim = cursor
+        .claim_next(origin)?
+        .ok_or("known-valid source-transfer phase had no first claim")?;
+    let plan = checked_candidate_setup(&prepared, &claim, &context, deadline)?;
+    let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
+    let responder = ReplyPeer::spawn(socket, ReplyKind::Ordinary)?;
+    let produced: Check<LiveSlot> = runtime.block_on(async {
+        let outcome = setup_address_request_bound(
+            plan.peer,
+            plan.packet,
+            Arc::clone(&plan.context),
+            &mut prepared.control,
+            plan.request_end,
+            plan.round_end,
+            plan.mode.clone(),
+        )?;
+        let SetupOutcome::Ready(slot) = outcome else {
+            return Err("known-valid source-transfer setup did not create its request".into());
+        };
+        Ok(run_attempt(*slot, &mut prepared.control, plan.request_end, limits).await)
+    });
+    let joined = responder.finish();
+    let mut slot = joined_source_transfer_slot(produced, joined, plan.request_end)?;
+    let crate::Phase::Done(TerminalOutcome::Header { facts, .. }) = &mut slot.phase else {
+        return Err("genuine ordinary terminal result lost its facts".into());
+    };
+    assert!(
+        facts
+            .source_identity()
+            .is_some_and(|identity| identity.same_source(&source.identity()))
+    );
+    // These are synthetic transfer inputs, not different native acquisitions.
+    match proposal {
+        SourceTransferProposal::Original => {}
+        SourceTransferProposal::Foreign => facts.source_identity = Some(foreign),
+        SourceTransferProposal::Missing => facts.source_identity = None,
+    }
+    let mut report = AddressRoundReport::empty();
+    let mut observed = 0_u8;
+    let transferred = transfer_candidate_report(
+        slot,
+        claim,
+        &mut report,
+        &mut prepared.control,
+        &plan,
+        &mut |_, _| observed += 1,
+    );
+    match proposal {
+        SourceTransferProposal::Original => {
+            assert_eq!(transferred?, Some(AddressRoundEnd::Reply));
+            assert_source_transfer_history(&report, &source, peers[0], observed);
+        }
+        SourceTransferProposal::Foreign | SourceTransferProposal::Missing => {
+            assert!(matches!(transferred, Err(PilotError::InternalState)));
+            assert_eq!(observed, 0);
+            assert!(report.attempts().is_empty() && report.policy_refusals().is_empty());
+            assert_eq!(report.end(), AddressRoundEnd::Exhausted);
+            assert!(report.primary_error().is_none());
+            assert!(report.cleanup_errors().iter().all(Option::is_none));
+            assert!(matches!(
+                cursor.claim_next(origin),
+                Err(PilotError::InternalState)
+            ));
+        }
+    }
+    assert_eq!(observe_queries(&quiet)?.0, 0);
+    drop(control);
+    Ok(())
+}
+
+/// Source substitution cannot adopt history, finish the cursor or start fallback.
+/// # Errors
+/// Preserve each independent phase's actual setup, native, runtime and peer errors.
+/// # Panics
+/// Reject foreign/absent facts while preserving the genuine transfer neighbor.
+#[test]
+fn managed_source_provenance_address_transfer_binds_the_original_candidate() -> Check<()> {
+    for proposal in [
+        SourceTransferProposal::Original,
+        SourceTransferProposal::Foreign,
+        SourceTransferProposal::Missing,
+    ] {
+        source_transfer_case(proposal)?;
+    }
+    Ok(())
+}
+
 /// Inspect the exact scoped refusal and the independently observed accepted neighbor.
 /// # Panics
 /// Reject a generic failure, guessed scope, fabricated attempt or missing Header.

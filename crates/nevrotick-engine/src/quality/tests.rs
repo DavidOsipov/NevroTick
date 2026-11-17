@@ -120,6 +120,7 @@ fn facts_with_wall(
     let peer: SocketAddr = "127.0.0.1:8123".parse()?;
     let local: SocketAddr = "127.0.0.1:18123".parse()?;
     Ok(TransportFacts {
+        source_identity: None,
         send_before: before,
         send_after: before,
         read_return: read,

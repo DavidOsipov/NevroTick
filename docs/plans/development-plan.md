@@ -1073,7 +1073,49 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
-**Current product child — 17 November 2026:**
+**Qualified source child — 17 November 2026:**
+[Managed logical-source provenance](../../tasks/engine-transport-pilot.md#managed-logical-source-provenance--implementation-contract--17-november-2026)
+continues S2.1/W11-W01 from signed `72b4ae5`. The mapping supplier contract is
+settled; a genuine finite-error/invalidation issuer is still absent. Preserve
+that hold and implement the ready actual source-identity prerequisite instead:
+retain the real managed catalogue source through final facts publication and
+independently check it at series/address-round receiving owners. Unmanaged
+laboratory facts have no managed identity. Source identity supplies no clock or
+configuration revision, mapping, authentication, independent vote or eligibility.
+Its [development results](../../tasks/engine-transport-pilot.md#managed-source-provenance--development-results--17-november-2026)
+now pass three focused controls and all13 development lanes on `744f6ea2…`:
+257 default/491 EP1 cases in each ordinary/optimized mode,83 doctests per graph,
+GNU/MSVC check/Clippy and GNU rustdoc. Original compiler/lint failures remain
+recorded. Current reader/source/helper/roster admission now passes812 physical
+inputs,175 Python controls and strict policy, with independent no-weakening
+review against `72b4ae5`. Fresh timely sampler controls pass under their separate
+bounded admission clock; the old late result gains no credit. Five actual external
+compiler controls now pass: four intended private-construction/mutation/default/
+conversion refusals and one executed legal consumer. Fresh257-case instrumented
+execution passes all five90% line gates (95.37–100%); the complete catalogue has750
+variants. All four changed-owner95% gates pass independent adjudication with zero
+unresolved survivors/timeouts. Unchanged session reuse is explicit. The selected
+GNU source checkpoint is qualified; publication review is separate. Keep public
+campaigns closed. Parent Core/Engine, native and production exits remain open.
+
+Remote `428bf9a` and its production-event-logger/service/notification refinements are adopted without
+changing the605-input Rust/configuration candidate. W11-W08 keeps its staged
+logging owner and future delivery exits; it does not reschedule this Core/Engine
+checkpoint. Metric preparation uses the separately bounded, reviewed v2 child;
+the earlier unarmed preparation clock and incomplete disposition remain recorded.
+
+**Next bounded product child:** freeze the actual managed configuration/association
+revision supplier contract in the existing S2.1 Engine task, CHECK-6/11/21/27.
+Identify its genuine install/replace owner and current revision before acquisition,
+carry that relationship to final send/reply guards and independent receiving,
+and preserve valid parallel address candidates. Replacement must retain historical
+completed facts, charged work and all applicable KoD restrictions/floors. Source
+identity and restriction epochs supply different facts. Implement only the settled
+bounded owner contract; do not invent a clock-error/date/trust supplier or add
+another generic clock wrapper. Genuine mapping/calibration/invalidation and
+positive production Core admission remain separate prerequisites.
+
+**Published preceding product child — 17 November 2026:**
 [Managed restriction visibility](../../tasks/engine-transport-pilot.md#consumer-boundary-reinforcement--17-november-2026)
 is implemented and development-verified on `861987c9…`. Source handles and managed
 sessions expose actual separate source/endpoint restrictions and bounded,

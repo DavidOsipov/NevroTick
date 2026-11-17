@@ -78,7 +78,7 @@ pub use session::{
     AcquisitionSession, CoherenceUnavailable, PreparedAcquisition, SeriesCoherence,
 };
 pub use source_policy::{
-    SourceHandle, SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits,
+    SourceHandle, SourceIdentity, SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits,
     SourcePolicySnapshot, SourcePolicyTarget, SourceRestrictionSnapshot,
 };
 
@@ -565,6 +565,8 @@ struct RunClockContext {
 /// Read-only transport observations and explicitly conditional nominal arithmetic.
 /// Neither raw header retention nor a measurement grants sample/trust authority.
 pub struct TransportFacts {
+    /// Actual managed logical source; absent only for unmanaged laboratory work.
+    source_identity: Option<SourceIdentity>,
     /// Local readings immediately before the successful `try_send_to` call.
     send_before: SoftwareClock,
     /// Local readings immediately after that synchronous call returned.
@@ -593,6 +595,16 @@ pub struct TransportFacts {
     profile: Option<ExperimentalProfile>,
 }
 impl TransportFacts {
+    /// Borrow original managed-source provenance without granting current validity.
+    ///
+    /// This is distinct from endpoint, exchange, run and session identity. Later
+    /// stop, policy changes and retirement cannot rewrite a committed fact.
+    /// Unmanaged laboratory acquisitions explicitly return `None`.
+    #[must_use]
+    pub const fn source_identity(&self) -> Option<&SourceIdentity> {
+        self.source_identity.as_ref()
+    }
+
     /// Return the original declared scope/model, never a window inferred from results.
     #[must_use]
     pub fn experimental_profile(&self) -> Option<ExperimentalProfile> {
@@ -1545,6 +1557,7 @@ fn finish_valid_reply_with_age(
         slot.finish(TerminalOutcome::Header {
             stratum: candidate.stratum,
             facts: Box::new(TransportFacts {
+                source_identity: slot.policy.source_identity(),
                 send_before: candidate.sent.before,
                 send_after: candidate.sent.after,
                 read_return: candidate.read,

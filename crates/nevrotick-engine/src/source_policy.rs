@@ -915,6 +915,8 @@ impl PolicyState {
 
 /// One retained cell and a separate release wake for bounded lock contention.
 struct PolicyCell {
+    /// Immutable catalogue identity, separately retained without mutable state.
+    identity_domain: Arc<()>,
     /// All state/allowance commits serialize here; never block waiting for it.
     state: Mutex<PolicyState>,
     /// Read-only release is distinct from an actual policy change.
@@ -947,6 +949,7 @@ impl PolicyCell {
             });
         }
         Ok(Arc::new(Self {
+            identity_domain: Arc::new(()),
             state: Mutex::new(PolicyState {
                 limits,
                 sources,
@@ -1220,6 +1223,19 @@ pub struct SourceHandle {
 }
 
 impl SourceHandle {
+    /// Identify this fixed catalogue source without reading mutable policy.
+    ///
+    /// The original authority admits the immutable catalogue position. It is
+    /// never recycled within this domain, including after session replacement,
+    /// endpoint changes or re-enable. The returned value retains no policy cell
+    /// and proves neither an exchange occurred nor any current permission.
+    pub fn identity(&self) -> SourceIdentity {
+        SourceIdentity {
+            domain: Arc::clone(&self.cell.identity_domain),
+            index: self.index,
+        }
+    }
+
     /// Observe this source and one already-bound canonical endpoint atomically.
     ///
     /// Refusal and unavailability remain visible data. This bounded read creates
@@ -1402,6 +1418,84 @@ impl fmt::Debug for SourceHandle {
     }
 }
 
+/// Immutable identity of one actual managed catalogue source.
+///
+/// Same endpoints do not imply the same source. A source keeps this identity
+/// across sessions and endpoints; separate installed catalogues never share it.
+/// Only the real catalogue handle can issue a token. Clones retain a separate
+/// identity allocation and immutable position, without mutable policy, channels
+/// or native resources. Retained identity is historical provenance, not source
+/// independence, authentication, configuration revision or current permission.
+///
+/// Raw allocation labels cannot manufacture an accepted identity:
+/// ```compile_fail,E0451
+/// use nevrotick_engine::SourceIdentity;
+/// use std::sync::Arc;
+/// let forged = SourceIdentity { domain: Arc::new(()), index: 0 };
+/// ```
+/// An issued identity cannot be retargeted:
+/// ```compile_fail,E0616
+/// use nevrotick_engine::SourceIdentity;
+/// fn retarget(mut identity: SourceIdentity) { identity.index = 1; }
+/// ```
+/// No default source exists:
+/// ```compile_fail,E0599
+/// use nevrotick_engine::SourceIdentity;
+/// let identity = SourceIdentity::default();
+/// ```
+/// An arbitrary catalogue number supplies no identity:
+/// ```compile_fail,E0277
+/// use nevrotick_engine::SourceIdentity;
+/// let identity: SourceIdentity = 0_usize.into();
+/// ```
+/// A real consumer compares returned provenance with its actual source handle:
+/// ```
+/// use nevrotick_engine::{SourceHandle, TransportFacts};
+/// fn belongs_to_source(source: &SourceHandle, facts: &TransportFacts) -> bool {
+///     facts.source_identity().is_some_and(|identity|
+///         identity.same_source(&source.identity()))
+/// }
+/// ```
+#[derive(Clone)]
+#[must_use = "retain and compare source provenance explicitly"]
+pub struct SourceIdentity {
+    /// Separately retained original catalogue allocation, never a numeric label.
+    domain: Arc<()>,
+    /// Original admitted position; fixed catalogues never remove/recycle sources.
+    index: usize,
+}
+
+impl SourceIdentity {
+    /// Compare actual logical-source identity, without reading policy or time.
+    /// Equal identities establish neither independent votes nor current validity.
+    #[must_use]
+    pub fn same_source(&self, other: &Self) -> bool {
+        let Self { domain, index } = self;
+        let Self {
+            domain: other_domain,
+            index: other_index,
+        } = other;
+        Arc::ptr_eq(domain, other_domain) && index == other_index
+    }
+
+    /// Compare complete managed/unmanaged provenance at the receiving owner.
+    /// Managed absence is never interchangeable with an issued identity.
+    pub(super) fn same_optional(left: Option<&Self>, right: Option<&Self>) -> bool {
+        match (left, right) {
+            (None, None) => true,
+            (Some(left), Some(right)) => left.same_source(right),
+            (None, Some(_)) | (Some(_), None) => false,
+        }
+    }
+}
+
+impl fmt::Debug for SourceIdentity {
+    /// Retain no catalogue position, allocation address or correlatable label.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("SourceIdentity { .. }")
+    }
+}
+
 /// Mandatory immutable source/endpoint custody passed down the prepared chain.
 #[derive(Clone)]
 pub(super) struct SourceBinding {
@@ -1439,6 +1533,15 @@ pub(super) enum SourceMode {
 }
 
 impl SourceMode {
+    /// Derive historical source identity from the actual prepared policy owner.
+    /// Unmanaged laboratory work makes no managed-source claim.
+    pub(super) fn source_identity(&self) -> Option<SourceIdentity> {
+        match self {
+            Self::UnmanagedLab => None,
+            Self::Managed(binding) => Some(binding.source.identity()),
+        }
+    }
+
     /// Classify both current records before this candidate starts native work.
     /// Source refusal takes precedence; floors remain the final sender's waits.
     /// # Errors
@@ -1642,6 +1745,17 @@ enum LiveMode {
 }
 
 impl LivePolicy {
+    /// Derive provenance only from this actual slot's retained owner.
+    ///
+    /// This immutable observation changes no policy, reads no clock and grants
+    /// no permission. The final guarded commit alone attaches it to facts.
+    pub(super) fn source_identity(&self) -> Option<SourceIdentity> {
+        match &self.mode {
+            LiveMode::UnmanagedLab => None,
+            LiveMode::Managed(live) => Some(live.binding.source.identity()),
+        }
+    }
+
     /// Receiving check for a setup result before any request can be driven.
     /// Identity is actual root/source/endpoint custody, not a copied label.
     pub(super) fn belongs_to(&self, mode: &SourceMode) -> bool {

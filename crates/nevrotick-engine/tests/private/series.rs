@@ -50,6 +50,7 @@ fn context() -> Arc<RunClockContext> {
 /// Copy an actual request descriptor for a replay/substitution fault control.
 fn copy_owner(owner: &RequestOwner) -> RequestOwner {
     RequestOwner {
+        source_identity: owner.source_identity.clone(),
         index: owner.index,
         identity: Arc::clone(&owner.identity),
         context: Arc::clone(&owner.context),
@@ -139,6 +140,7 @@ fn duplicate_header(original: &Completion) -> Result<Completion, PilotError> {
             outcome: TerminalOutcome::Header {
                 stratum: *stratum,
                 facts: Box::new(crate::TransportFacts {
+                    source_identity: facts.source_identity.clone(),
                     send_before: facts.send_before,
                     send_after: facts.send_after,
                     read_return: facts.read_return,
@@ -170,6 +172,17 @@ fn duplicate_header(original: &Completion) -> Result<Completion, PilotError> {
 /// Require quiet control/deadline/issue prerequisites, the predeadline charge,
 /// and the independently observed query's pending owner.
 async fn queued_native_reply() -> Result<(LiveSlot, Instant), Box<dyn Error>> {
+    queued_native_reply_for_source(None).await
+}
+
+/// Issue the same real query with its original optional managed source binding.
+/// # Errors
+/// Preserve checked binding, native setup, send and peer failures.
+/// # Panics
+/// Require actual issue/send accounting and an independently observed query.
+async fn queued_native_reply_for_source(
+    source: Option<&crate::SourceHandle>,
+) -> Result<(LiveSlot, Instant), Box<dyn Error>> {
     let lifetime = Duration::from_secs(2);
     let remote = crate::StdSocket::bind(SocketAddr::from((Ipv4Addr::LOCALHOST, 0)))?;
     remote.set_read_timeout(Some(lifetime))?;
@@ -185,7 +198,12 @@ async fn queued_native_reply() -> Result<(LiveSlot, Instant), Box<dyn Error>> {
         !matches!(&prepared, Err(PilotError::InvalidPeer)),
         "bound loopback preparation rejected its local endpoint"
     );
-    let prepared = prepared?;
+    let mut prepared = prepared?;
+    if let Some(source) = source {
+        prepared.source_policy =
+            crate::source_policy::SourceMode::Managed(source.bind(destination)?);
+    }
+    let mode = prepared.source_policy.clone();
     let mut slot = LiveSlot::from_prepared(prepared, context())?;
     let before = Instant::now();
     let deadline = before
@@ -200,7 +218,12 @@ async fn queued_native_reply() -> Result<(LiveSlot, Instant), Box<dyn Error>> {
     assert!(matches!(&slot.phase, crate::Phase::Sending));
     // This separate descriptor owner borrows no socket and cannot alter the
     // genuine slot. Its pure issue prerequisite precedes dependent peer work.
-    let mut boundary = SeriesReceiver::new(Arc::clone(&slot.run_context), slot.peer, slot.profile);
+    let mut boundary = SeriesReceiver::new(
+        Arc::clone(&slot.run_context),
+        slot.peer,
+        slot.profile,
+        &mode,
+    );
     let issued = boundary.issue(RequestOwner::from_slot(0, &slot));
     assert!(
         issued.is_ok(),
@@ -248,6 +271,217 @@ async fn queued_native_reply() -> Result<(LiveSlot, Instant), Box<dyn Error>> {
         return Err(PilotError::InternalState.into());
     }
     Ok((slot, deadline))
+}
+
+/// Construct the original fixture receiver with explicitly unmanaged provenance.
+fn unmanaged_receiver(
+    context: Arc<RunClockContext>,
+    peer: SocketAddr,
+    profile: Option<ExperimentalProfile>,
+) -> SeriesReceiver {
+    SeriesReceiver::new(
+        context,
+        peer,
+        profile,
+        &crate::source_policy::SourceMode::UnmanagedLab,
+    )
+}
+
+/// Challenge source admission independently before registering the actual owner.
+/// # Panics
+/// Require each refused proposal to preserve empty history and capacity.
+fn reject_source_provenance_issues(
+    receiver: &mut SeriesReceiver,
+    owner: &RequestOwner,
+    replacements: &[Option<crate::SourceIdentity>; 3],
+    managed: bool,
+) {
+    for replacement in replacements {
+        if !managed && replacement.is_none() {
+            continue;
+        }
+        let mut wrong = copy_owner(owner);
+        wrong.source_identity.clone_from(replacement);
+        assert!(matches!(
+            receiver.issue(wrong),
+            Err(PilotError::InternalState)
+        ));
+        assert_eq!(receiver.next, 0);
+        assert!(receiver.issued.is_none());
+        assert!(
+            receiver
+                .attempts
+                .iter()
+                .all(|attempt| attempt.report().is_none())
+        );
+    }
+}
+
+/// Refuse one owner/facts substitution at a time while preserving actual custody.
+/// # Errors
+/// Preserve absence of the original genuine header facts.
+/// # Panics
+/// Require unchanged original issue/position after each foreign or absent token.
+fn reject_source_provenance_completions(
+    receiver: &mut SeriesReceiver,
+    completed: &Completion,
+    observed: Control,
+    replacements: &[Option<crate::SourceIdentity>; 3],
+    managed: bool,
+) -> Result<(), Box<dyn Error>> {
+    for replacement in replacements {
+        if !managed && replacement.is_none() {
+            continue;
+        }
+        for fields in 0..3 {
+            let mut wrong = duplicate_header(completed)?;
+            if fields != 0 {
+                wrong.owner.source_identity.clone_from(replacement);
+            }
+            if fields != 1 {
+                let TerminalOutcome::Header { facts, .. } = &mut wrong.report.outcome else {
+                    return Err(PilotError::InternalState.into());
+                };
+                facts.source_identity.clone_from(replacement);
+            }
+            assert!(matches!(
+                receiver.receive(wrong, observed),
+                Err(PilotError::InternalState)
+            ));
+            assert_eq!(receiver.next, 0);
+            assert!(
+                receiver
+                    .issued
+                    .as_ref()
+                    .is_some_and(|expected| expected.same_request(&completed.owner))
+            );
+            assert!(
+                receiver
+                    .attempts
+                    .iter()
+                    .all(|attempt| attempt.report().is_none())
+            );
+        }
+    }
+    Ok(())
+}
+
+/// Acquire one genuine header and challenge its independent receiving owner.
+/// # Errors
+/// Preserve binding, native read, publication and original transfer failures.
+/// # Panics
+/// Require atomic refusal, original accounting and once-only history after Stop.
+async fn source_provenance_receiving_case(
+    source: &crate::SourceHandle,
+    foreign: &[crate::SourceIdentity; 2],
+    managed: bool,
+) -> Result<(), Box<dyn Error>> {
+    let (mut slot, deadline) = queued_native_reply_for_source(managed.then_some(source)).await?;
+    let mode = if managed {
+        crate::source_policy::SourceMode::Managed(source.bind(slot.peer)?)
+    } else {
+        crate::source_policy::SourceMode::UnmanagedLab
+    };
+    let mut receiver = SeriesReceiver::new(
+        Arc::clone(&slot.run_context),
+        slot.peer,
+        slot.profile,
+        &mode,
+    );
+    let owner = RequestOwner::from_slot(0, &slot);
+    let replacements = [None, Some(foreign[0].clone()), Some(foreign[1].clone())];
+    reject_source_provenance_issues(&mut receiver, &owner, &replacements, managed);
+    receiver.issue(copy_owner(&owner))?;
+    let quiet = Control {
+        stop: false,
+        epoch: 0,
+    };
+    let (sender, mut control) = watch::channel(quiet);
+    let mut buffer = [0; RECEIVE_BYTES];
+    let read =
+        tokio::time::timeout(Duration::from_secs(2), slot.socket.recv_from(&mut buffer)).await??;
+    let selected = SeriesRead {
+        result: classify_read_result(NativeDatagramPlatform::current(), Ok(read)),
+        read: SoftwareClock::capture(),
+    };
+    let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
+    let observed = handle_series_read(
+        &mut slot,
+        &mut control,
+        selected,
+        &buffer,
+        limits,
+        deadline,
+        quiet,
+    );
+    assert_eq!(
+        slot.terminal().map(TerminalOutcome::status),
+        Some(Status::Header)
+    );
+    let completed = Completion {
+        owner,
+        report: slot.into_report(0)?,
+    };
+    assert_eq!(
+        (completed.report.received(), completed.report.rejected()),
+        (1, 0)
+    );
+    reject_source_provenance_completions(
+        &mut receiver,
+        &completed,
+        observed,
+        &replacements,
+        managed,
+    )?;
+    let replay = duplicate_header(&completed)?;
+    ControlHandle { sender }.stop();
+    receiver.receive(completed, observed)?;
+    assert_eq!(receiver.next, 1);
+    assert!(receiver.issued.is_none());
+    let historical = receiver.attempts[0]
+        .report()
+        .ok_or(PilotError::InternalState)?;
+    assert_eq!(historical.status(), Status::Header);
+    let identity = historical
+        .facts()
+        .ok_or(PilotError::InternalState)?
+        .source_identity();
+    if managed {
+        assert!(identity.is_some_and(|identity| identity.same_source(&source.identity())));
+    } else {
+        assert!(identity.is_none());
+    }
+    assert!(matches!(
+        receiver.receive(replay, observed),
+        Err(PilotError::InternalState)
+    ));
+    assert_eq!(receiver.next, 1);
+    Ok(())
+}
+
+/// Actual managed/unmanaged replies cannot redefine their receiving source.
+/// # Errors
+/// Preserve checked source construction and each bounded real acquisition case.
+/// # Panics
+/// Require independent root/source identities and all receiving-boundary controls.
+#[test]
+fn managed_source_provenance_receiving_rejects_absent_and_foreign_owners()
+-> Result<(), Box<dyn Error>> {
+    let limits =
+        crate::SourcePolicyLimits::new(2, 2, Duration::from_millis(1), Duration::from_millis(4))?;
+    let authority = crate::source_policy::isolated_authority(limits)?;
+    let foreign_authority = crate::source_policy::isolated_authority(limits)?;
+    let source = authority.source(0)?;
+    let foreign = [
+        authority.source(1)?.identity(),
+        foreign_authority.source(0)?.identity(),
+    ];
+    runtime()?.block_on(async {
+        for managed in [false, true] {
+            source_provenance_receiving_case(&source, &foreign, managed).await?;
+        }
+        Ok(())
+    })
 }
 
 /// A genuine selected native datagram, retained separately from later publication.
@@ -750,7 +984,7 @@ fn receiver_rejects_duplicate_foreign_and_reused_identity_atomically() -> Result
     let runtime = runtime()?;
     let _entered = runtime.enter();
     let shared = context();
-    let mut receiver = SeriesReceiver::new(Arc::clone(&shared), peer(), None);
+    let mut receiver = unmanaged_receiver(Arc::clone(&shared), peer(), None);
     let first = completion(0, Arc::clone(&shared))?;
     let replay = duplicate_timeout(&first);
     let mut reused_owner = copy_owner(&first.owner);
@@ -972,7 +1206,7 @@ fn transfer_control_and_irreversible_retirement_are_distinct() -> Result<(), Box
     let runtime = runtime()?;
     let _entered = runtime.enter();
     let shared = context();
-    let mut receiver = SeriesReceiver::new(Arc::clone(&shared), peer(), None);
+    let mut receiver = unmanaged_receiver(Arc::clone(&shared), peer(), None);
     let first = completion(0, Arc::clone(&shared))?;
     product_ok(
         receiver.issue(copy_owner(&first.owner)),
@@ -1110,7 +1344,7 @@ fn post_commit_control_preserves_header_and_measurement_refusal() -> Result<(), 
     let handle = ControlHandle { sender };
     let observed = publish_series_reply(&mut slot, &mut control, Ok(staged), deadline);
     assert!(slot.done());
-    let mut receiver = SeriesReceiver::new(shared, destination, None);
+    let mut receiver = unmanaged_receiver(shared, destination, None);
     product_ok(
         receiver.issue(RequestOwner::from_slot(0, &slot)),
         "valid original series owner issue was refused",
@@ -1239,7 +1473,7 @@ fn cleanup_boundary_neighbors() -> Result<(), Box<dyn Error>> {
         [(false, false), (true, false), (false, true), (true, true)]
     {
         let shared = context();
-        let mut receiver = SeriesReceiver::new(Arc::clone(&shared), peer(), None);
+        let mut receiver = unmanaged_receiver(Arc::clone(&shared), peer(), None);
         let first = completion(0, shared)?;
         product_ok(
             receiver.issue(copy_owner(&first.owner)),
@@ -1312,7 +1546,7 @@ fn partial_report_preserves_primary_and_both_cleanup_causes() -> Result<(), Box<
     let runtime = runtime()?;
     let _entered = runtime.enter();
     let shared = context();
-    let mut receiver = SeriesReceiver::new(Arc::clone(&shared), peer(), None);
+    let mut receiver = unmanaged_receiver(Arc::clone(&shared), peer(), None);
     let first = completion(0, shared)?;
     product_ok(
         receiver.issue(copy_owner(&first.owner)),
@@ -1366,7 +1600,7 @@ fn partial_report_preserves_primary_and_both_cleanup_causes() -> Result<(), Box<
             Some(SeriesNotStartedCause::PrimaryFailure)
         );
     }
-    let invalid = SeriesReceiver::new(context(), peer(), None).finish(SeriesEnd::Completed, None);
+    let invalid = unmanaged_receiver(context(), peer(), None).finish(SeriesEnd::Completed, None);
     assert_eq!(invalid.end(), SeriesEnd::Failure);
     assert!(invalid.primary_failure().is_some());
     assert_eq!(
@@ -1426,7 +1660,7 @@ fn all_series_debug_outputs_are_exact_fixed_redactions() -> Result<(), Box<dyn E
     )?;
     assert_fixed_redaction(&format!("{config:?}"), "SeriesConfig { .. }");
     assert_fixed_redaction(&format!("{prepared:?}"), "PreparedSeries { .. }");
-    let mut receiver = SeriesReceiver::new(Arc::clone(&slot.run_context), slot.peer, None);
+    let mut receiver = unmanaged_receiver(Arc::clone(&slot.run_context), slot.peer, None);
     let (sender, mut control) = watch::channel(Control {
         stop: false,
         epoch: 0,
@@ -1829,7 +2063,7 @@ async fn setup_failure_case(
     let remote = tokio::net::UdpSocket::from_std(remote)?;
     let destination = prepared.peer;
     let origin = Instant::now();
-    let receiver = SeriesReceiver::new(Arc::new(RunClockContext { origin }), destination, None);
+    let receiver = unmanaged_receiver(Arc::new(RunClockContext { origin }), destination, None);
     let deadline = origin
         .checked_add(Duration::from_secs(2))
         .ok_or(PilotError::DeadlineOverflow)?;
@@ -2440,7 +2674,7 @@ fn final_checkpoint_case(
         .origin
         .checked_add(CHECKPOINT_WAIT)
         .ok_or(PilotError::DeadlineOverflow)?;
-    let receiver = SeriesReceiver::new(shared, prepared.peer, prepared.profile);
+    let receiver = unmanaged_receiver(shared, prepared.peer, prepared.profile);
     let runtime = runtime()?;
     let (entered, entering) = std::sync::mpsc::sync_channel(1);
     let (acknowledge, acknowledged) = std::sync::mpsc::sync_channel(1);
@@ -2613,7 +2847,7 @@ fn unmanaged_contended_setup_keeps_primary_failure(
         Ok(())
     })?;
     let origin = Instant::now();
-    let receiver = SeriesReceiver::new(Arc::new(RunClockContext { origin }), config.peer, None);
+    let receiver = unmanaged_receiver(Arc::new(RunClockContext { origin }), config.peer, None);
     let deadline = origin
         .checked_add(Duration::from_secs(2))
         .ok_or(PilotError::DeadlineOverflow)?;
@@ -2877,7 +3111,7 @@ fn final_guard_transfer_case(
         };
         let (sender, mut control) = watch::channel(quiet);
         let handle = ControlHandle { sender };
-        let mut receiver = SeriesReceiver::new(
+        let mut receiver = unmanaged_receiver(
             Arc::clone(&fixture.slot.run_context),
             fixture.slot.peer,
             fixture.slot.profile,
@@ -3030,7 +3264,7 @@ fn reply_postcommit_stop_preserves_the_historical_receiving_checkpoint()
         };
         let (sender, mut control) = watch::channel(quiet);
         let handle = ControlHandle { sender };
-        let mut receiver = SeriesReceiver::new(
+        let mut receiver = unmanaged_receiver(
             Arc::clone(&fixture.slot.run_context),
             fixture.slot.peer,
             fixture.slot.profile,

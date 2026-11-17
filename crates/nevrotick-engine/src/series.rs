@@ -584,6 +584,8 @@ impl fmt::Debug for SeriesReport {
 
 /// Actual request/socket association copied only from the exclusive live owner.
 struct RequestOwner {
+    /// Original actual managed source, distinct from request/session identity.
+    source_identity: Option<super::SourceIdentity>,
     /// Fixed original series position.
     index: u8,
     /// Actual socket/request identity, distinct from its numeric endpoint.
@@ -602,6 +604,7 @@ impl RequestOwner {
     /// Borrow the actual live request's identity/context without cloning its socket.
     fn from_slot(index: u8, slot: &LiveSlot) -> Self {
         Self {
+            source_identity: slot.policy.source_identity(),
             index,
             identity: Arc::clone(&slot.identity),
             context: Arc::clone(&slot.run_context),
@@ -613,12 +616,31 @@ impl RequestOwner {
 
     /// Compare complete actual request association; equal endpoints alone never pass.
     fn same_request(&self, other: &Self) -> bool {
-        self.index == other.index
-            && Arc::ptr_eq(&self.identity, &other.identity)
-            && Arc::ptr_eq(&self.context, &other.context)
-            && self.peer == other.peer
-            && self.local == other.local
-            && self.profile == other.profile
+        let Self {
+            source_identity,
+            index,
+            identity,
+            context,
+            peer,
+            local,
+            profile,
+        } = self;
+        let Self {
+            source_identity: other_source,
+            index: other_index,
+            identity: other_identity,
+            context: other_context,
+            peer: other_peer,
+            local: other_local,
+            profile: other_profile,
+        } = other;
+        super::SourceIdentity::same_optional(source_identity.as_ref(), other_source.as_ref())
+            && index == other_index
+            && Arc::ptr_eq(identity, other_identity)
+            && Arc::ptr_eq(context, other_context)
+            && peer == other_peer
+            && local == other_local
+            && profile == other_profile
     }
 }
 
@@ -632,6 +654,8 @@ struct Completion {
 
 /// Sole receiving transaction owner; prior positions cannot be overwritten.
 struct SeriesReceiver {
+    /// Original prepared source; returned owner/facts cannot redefine it together.
+    source_identity: Option<super::SourceIdentity>,
     /// Actual shared series context created during this execution.
     context: Arc<RunClockContext>,
     /// Immutable configured source endpoint.
@@ -652,8 +676,10 @@ impl SeriesReceiver {
         context: Arc<RunClockContext>,
         peer: SocketAddr,
         profile: Option<ExperimentalProfile>,
+        source_policy: &super::source_policy::SourceMode,
     ) -> Self {
         Self {
+            source_identity: source_policy.source_identity(),
             context,
             peer,
             profile,
@@ -677,6 +703,10 @@ impl SeriesReceiver {
             || !Arc::ptr_eq(&owner.context, &self.context)
             || owner.peer != self.peer
             || owner.profile != self.profile
+            || !super::SourceIdentity::same_optional(
+                owner.source_identity.as_ref(),
+                self.source_identity.as_ref(),
+            )
             || self.attempts.iter().any(|attempt| {
                 attempt
                     .identity
@@ -709,6 +739,10 @@ impl SeriesReceiver {
                 && facts.peer == completion.owner.peer
                 && facts.local == completion.owner.local
                 && facts.profile == completion.owner.profile
+                && super::SourceIdentity::same_optional(
+                    facts.source_identity(),
+                    completion.owner.source_identity.as_ref(),
+                )
         });
         if !expected.same_request(&completion.owner)
             || !checkpoint_matches
@@ -1375,7 +1409,12 @@ pub fn execute_series(
         .build()
         .map_err(|error| PilotError::RuntimeBuild(IoCause::capture(&error)))?;
     let context = Arc::new(RunClockContext { origin });
-    let receiver = SeriesReceiver::new(context, prepared.peer, prepared.profile);
+    let receiver = SeriesReceiver::new(
+        context,
+        prepared.peer,
+        prepared.profile,
+        &prepared.source_policy,
+    );
     let mut report = runtime.block_on(run_series_owned(
         prepared,
         receiver,

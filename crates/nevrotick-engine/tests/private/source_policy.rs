@@ -19,8 +19,8 @@ use std::{
 
 use crate::{
     AcquisitionReport, Control, LiveSlot, NativeDatagramPlatform, PACKET_BYTES, Phase,
-    RECEIVE_BYTES, RECEIVE_CAP, Rejection, RunClockContext, SoftwareClock, Status, TerminalOutcome,
-    Wake,
+    RECEIVE_BYTES, RECEIVE_CAP, Rejection, RunClockContext, SlotReport, SoftwareClock, Status,
+    TerminalOutcome, Wake,
 };
 use tokio::{net::UdpSocket, sync::watch};
 
@@ -68,7 +68,7 @@ fn managed_round_reply(
 /// # Errors
 /// Preserve runtime, preparation/execution, join and native peer failures.
 /// # Panics
-/// Reject a broken retirement prerequisite before any dependent worker starts.
+/// Reject a broken retirement prerequisite or facts with the wrong source owner.
 fn managed_round_once(
     source: &SourceHandle,
     peers: &[SocketAddr],
@@ -89,7 +89,25 @@ fn managed_round_once(
             crate::execute_address_round(prepared, &crate::ControlSchedule::new(None, None)?);
         let peer_result = peer.join().map_err(|_| "managed round peer panicked")?;
         drop(control);
-        Ok((result?, peer_result?))
+        let responder = peer_result?;
+        let report = result?;
+        let expected = source.identity();
+        for attempt in report.attempts() {
+            if attempt.report().status() == Status::Header {
+                let observed = attempt
+                    .report()
+                    .facts()
+                    .ok_or("actual managed round header lost its facts")?;
+                assert!(
+                    observed
+                        .source_identity()
+                        .is_some_and(|identity| identity.same_source(&expected))
+                );
+            } else {
+                assert!(attempt.report().facts().is_none());
+            }
+        }
+        Ok((report, responder))
     })
 }
 
@@ -1351,6 +1369,10 @@ async fn active_refresh_keeps_charged_history(invalidate_pending: bool) -> Check
             result.processing,
             result.read_return.mono_after,
             Arc::clone(&result.identity),
+            result
+                .source_identity()
+                .ok_or("committed managed history lost its source identity")?
+                .clone(),
         ))
     };
     let source = fixture.authority.source(0)?;
@@ -1365,7 +1387,7 @@ async fn active_refresh_keeps_charged_history(invalidate_pending: bool) -> Check
     for _ in 0..2 {
         crate::refresh_source_policy(&mut fixture.slots[0]);
         let slot = &fixture.slots[0];
-        if let Some((processing, read, identity)) = &historical {
+        if let Some((processing, read, identity, source_identity)) = &historical {
             assert_eq!((slot.received, slot.rejected), (4, 3));
             let result = slot
                 .terminal()
@@ -1376,6 +1398,12 @@ async fn active_refresh_keeps_charged_history(invalidate_pending: bool) -> Check
                 (*processing, *read)
             );
             assert!(Arc::ptr_eq(&result.identity, identity));
+            assert!(source.identity().same_source(source_identity));
+            assert!(
+                result
+                    .source_identity()
+                    .is_some_and(|retained| retained.same_source(source_identity))
+            );
         } else {
             assert!(
                 matches!(
@@ -2956,6 +2984,13 @@ async fn final_stamp_transfer_case(field: FinalStampTransfer) -> Check<()> {
         ManagedEffect::Handled
     ));
     assert!(matches!(fixture.slots[0].phase, Phase::Pending(_)));
+    assert!(
+        fixture.slots[0]
+            .terminal()
+            .and_then(TerminalOutcome::facts)
+            .is_none(),
+        "a foreign proposal cannot publish historical source provenance"
+    );
     assert_eq!(
         (fixture.slots[0].received, fixture.slots[0].rejected),
         (4, 4)
@@ -2997,6 +3032,7 @@ async fn final_stamp_transfer_case(field: FinalStampTransfer) -> Check<()> {
 /// # Panics
 /// Fail if completion changes charged accounting or a repeated leaf republishes.
 fn assert_final_genuine_commit_once(fixture: &mut IoFixture, candidate: &StagedReply) -> Check<()> {
+    let expected_source = fixture.authority.source(0)?.identity();
     assert!(matches!(
         final_leaf_with_control(fixture, candidate),
         ManagedEffect::Handled
@@ -3009,11 +3045,16 @@ fn assert_final_genuine_commit_once(fixture: &mut IoFixture, candidate: &StagedR
         (fixture.slots[0].received, fixture.slots[0].rejected),
         (4, 4)
     );
-    let processing = fixture.slots[0]
+    let committed = fixture.slots[0]
         .terminal()
         .and_then(TerminalOutcome::facts)
-        .ok_or("genuine final commit has no ordinary facts")?
-        .processing;
+        .ok_or("genuine final commit has no ordinary facts")?;
+    let processing = committed.processing;
+    let committed_source = committed
+        .source_identity()
+        .ok_or("genuine managed final commit has no logical source")?
+        .clone();
+    assert!(committed_source.same_source(&expected_source));
     assert!(matches!(
         final_leaf_with_control(fixture, candidate),
         ManagedEffect::Handled
@@ -3023,6 +3064,11 @@ fn assert_final_genuine_commit_once(fixture: &mut IoFixture, candidate: &StagedR
         .and_then(TerminalOutcome::facts)
         .ok_or("repeated final leaf lost historical facts")?;
     assert_eq!(saved.processing, processing);
+    assert!(
+        saved
+            .source_identity()
+            .is_some_and(|source| source.same_source(&committed_source))
+    );
     assert_eq!(
         (fixture.slots[0].received, fixture.slots[0].rejected),
         (4, 4)
@@ -4750,6 +4796,118 @@ fn snapshot_public_session_exchange(
         peer_result?;
         Ok(result?)
     })
+}
+
+/// Inspect every actual ordinary result against its explicitly configured owner.
+/// # Errors
+/// Preserve missing real terminal reports or transport facts as fixture failures.
+/// # Panics
+/// Reject wrong status, accounting, source identity or fabricated unmanaged identity.
+fn committed_source_provenance<'a>(
+    report: &'a AcquisitionReport,
+    expected: Option<&SourceIdentity>,
+) -> Check<&'a crate::TransportFacts> {
+    assert_eq!(report.series().end(), crate::SeriesEnd::Completed);
+    for attempt in report.series().attempts() {
+        let result = attempt.report().ok_or("actual source report missing")?;
+        assert_eq!(result.status(), Status::Header);
+        assert_eq!((result.received(), result.rejected()), (1, 0));
+        let observed = result.facts().ok_or("actual source facts missing")?;
+        match (observed.source_identity(), expected) {
+            (Some(actual), Some(expected)) => assert!(actual.same_source(expected)),
+            (None, None) => {}
+            _ => {
+                return Err("actual source ownership presence disagrees with configuration".into());
+            }
+        }
+    }
+    report.series().attempts()[0]
+        .report()
+        .and_then(SlotReport::facts)
+        .ok_or_else(|| "first actual source fact missing".into())
+}
+
+/// Logical source identity survives endpoint/session changes without endpoint votes.
+/// # Errors
+/// Preserve actual socket, checked owner/configuration and joined acquisition errors.
+/// # Panics
+/// Reject endpoint/index-based identity, invented unmanaged provenance or retained
+/// mutable policy custody after all actual owners have been dropped.
+#[test]
+fn managed_source_provenance_follows_actual_owner_across_sessions_and_endpoints() -> Check<()> {
+    let authority = isolated_authority(SourcePolicyLimits::new(
+        2,
+        2,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let a = authority.source(0)?;
+    let b = authority.source(1)?;
+    let e = std::net::UdpSocket::bind(endpoint(0))?;
+    let f = std::net::UdpSocket::bind(endpoint(0))?;
+    let config = |peer: &std::net::UdpSocket| -> Check<SeriesConfig> {
+        Ok(SeriesConfig::new(
+            peer.local_addr()?,
+            Duration::from_millis(400),
+            Duration::from_secs(2),
+        )?)
+    };
+    let a_identity = a.identity();
+    let b_identity = b.identity();
+    assert!(!a_identity.same_source(&b_identity));
+    assert!(a.identity().same_source(&a_identity));
+    assert_eq!(format!("{a_identity:?}"), "SourceIdentity { .. }");
+    let mut ae = a.session(config(&e)?)?;
+    let mut af = a.session(config(&f)?)?;
+    let mut be = b.session(config(&e)?)?;
+    let original_report = snapshot_public_session_exchange(&mut ae, &e, None, 3)?;
+    let moved_report = snapshot_public_session_exchange(&mut af, &f, None, 3)?;
+    let be_report = snapshot_public_session_exchange(&mut be, &e, None, 3)?;
+    let original_facts = committed_source_provenance(&original_report, Some(&a_identity))?;
+    let moved_facts = committed_source_provenance(&moved_report, Some(&a_identity))?;
+    let be_facts = committed_source_provenance(&be_report, Some(&b_identity))?;
+    assert!(!original_report.same_session(&moved_report));
+    assert!(!original_facts.same_exchange(moved_facts));
+    assert!(!original_facts.same_exchange(be_facts));
+    assert_eq!(original_facts.peer_endpoint(), be_facts.peer_endpoint());
+    assert_ne!(original_facts.peer_endpoint(), moved_facts.peer_endpoint());
+
+    // Equal source indices and endpoints in independently owned domains are not
+    // the same logical source; actual report consumption must preserve that.
+    let foreign = isolated_authority(SourcePolicyLimits::new(
+        1,
+        1,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let foreign_source = foreign.source(0)?;
+    let foreign_identity = foreign_source.identity();
+    assert!(!a_identity.same_source(&foreign_identity));
+    let mut foreign_session = foreign_source.session(config(&e)?)?;
+    let foreign_report = snapshot_public_session_exchange(&mut foreign_session, &e, None, 3)?;
+    let foreign_facts = committed_source_provenance(&foreign_report, Some(&foreign_identity))?;
+    assert_eq!(
+        foreign_facts.peer_endpoint(),
+        original_facts.peer_endpoint()
+    );
+    assert!(!foreign_facts.same_exchange(original_facts));
+    let mut unmanaged = AcquisitionSession::new(config(&e)?);
+    let unmanaged_report = snapshot_public_session_exchange(&mut unmanaged, &e, None, 3)?;
+    committed_source_provenance(&unmanaged_report, None)?;
+
+    ae.retire();
+    assert!(matches!(
+        ae.prepare(),
+        Err(crate::AcquisitionError::Retired)
+    ));
+    committed_source_provenance(&original_report, Some(&a_identity))?;
+    let old_cell = Arc::downgrade(&a.cell);
+    drop((ae, af, be, a, b, authority));
+    assert!(old_cell.upgrade().is_none());
+    // Historical token/report retention carries no live policy lock or records.
+    committed_source_provenance(&original_report, Some(&a_identity))?;
+    committed_source_provenance(&moved_report, Some(&a_identity))?;
+    Ok(())
 }
 
 /// Public session status consumes genuine control traffic without granting retry.

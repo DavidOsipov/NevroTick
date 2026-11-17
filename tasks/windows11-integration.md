@@ -3588,6 +3588,21 @@ enhanced-provenance policy remain. No native recovery or release pass is claimed
 
 ### 4.26 S2.1 timestamp-provenance preparation — 5 November 2026
 
+**17 November source continuation:** the
+[managed logical-source child](engine-transport-pilot.md#managed-logical-source-provenance--implementation-contract--17-november-2026)
+retains actual catalogue/source identity through transport publication and
+independent series/address-round reception. Managed and unmanaged provenance
+cannot substitute for each other; session/endpoint replacement does not redefine
+the logical source. Identity retains no mutable policy cell or permission.
+Development, intended compiler controls and current line gates pass within the
+[recorded scope](engine-transport-pilot.md#provenance-compiler-and-coverage-results--17-november-2026);
+all four changed-owner95% gates pass independent adjudication with zero unresolved
+survivors/timeouts, within the recorded GNU source scope. This supplies one genuine
+provenance prerequisite, not a configuration/association revision, uninterrupted
+clock mapping, calibrated error, authentication or Core eligibility. The settled
+supplier contract and its other missing production/native exits remain in force.
+Use development §7 for current implementation and execution routing.
+
 **8 November receiving checkpoint:** the
 [report-owned session reference](engine-transport-pilot.md#report-owned-reference-final-qualification--8-november-2026)
 now has bounded Linux qualification on 424-input `e931838b...`. Genuine reports
