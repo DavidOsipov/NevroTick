@@ -9,6 +9,16 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**Production event logger plan — 17 November 2026:** the
+[W11-W08 continuation](../tasks/windows11-integration.md#43511-production-event-logger-plan--17-november-2026)
+turns the existing diagnostics contract into staged implementation work. Service
+fixture events and Engine console records exist; production sinks and the GUI
+event stream remain incomplete. The [canonical classification](windows-time-architecture.md#1232-levels-and-required-events)
+adds planned Critical/High/Medium/Low/Info importance independently of technical
+levels and required routing. The plan binds schema, writers, Windows delivery,
+temporary collection and UI/export to their existing owners and checks. This is
+planning evidence; current Core/Engine priority and execution holds remain.
+
 **Managed restriction visibility — 17 November 2026:** the
 [current Engine source child](../tasks/engine-transport-pilot.md#consumer-boundary-reinforcement--17-november-2026)
 adds read-only source/endpoint policy observations through actual source handles

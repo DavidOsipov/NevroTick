@@ -766,6 +766,13 @@ wait cycles only where present. W11-W08/ST-W07 and SEC-A02 retain diagnostics,
 privacy and live-spill evidence. These source-ready refinements add no acceptance
 IDs, runtime vulnerability claim, selected API/account/wrapper or native permission.
 
+Implement the shared logger through the
+[17 November W11-W08 delivery plan](../../tasks/windows11-integration.md#43511-production-event-logger-plan--17-november-2026).
+Reuse the portable service diagnostics; freeze the production event catalogue,
+independent importance/level/routing meanings and finite limits before connecting
+per-process writers. Native channel delivery, authorized DEBUG and later S5.3
+view/export retain separate exits. This route does not reschedule section 7.
+
 | Acceptance | Required Windows observation | Mapping |
 | --- | --- | --- |
 | Service isolation | Actual engine/UI tokens cannot set time or inject/write into the broker; broker has only qualified rights and no external network role. No LocalSystem shortcut. Valid permitted broker operation remains possible in the owned fixture. | CHECK-1/2/27 |
@@ -774,7 +781,7 @@ IDs, runtime vulnerability claim, selected API/account/wrapper or native permiss
 | Framing and native completion | Partial frames, slow readers/senders, trickle input, cancellation and storms cannot exceed byte/client/job bounds or duplicate effects. Native buffers/handles/OVERLAPPED/permits outlive actual I/O; cancellation request is not completion. Valid neighboring traffic remains usable. | CHECK-3/25/27 |
 | State and persistence | Strict schema/garde construction precedes current guards. Invalid, stale or unauthorized requests have no protected effect. Corrupt critical policy blocks safely; bounded atomic replacement survives disk-full/interruption. Reparse/hardlink/path-swap cannot redirect privileged writes. | CHECK-15/25, AC-07 |
 | Protected optional state — S3.3 | Apply [section 12.1.2](../windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback): consume provisioning authority durably once; distinguish deliberate no-root state from missing expected keys; deny another service key/file/owner-mediated access while the intended service succeeds. Qualify collision-safe creation, exact catalogue/envelope commit, every interruption, late-result rejection and bounded failed retirement. Authorized optional reset preserves mandatory broker policy, floors and charged authority. | [Section 8.4](#84-protected-optional-storage-design-and-qualification); ST-T03–07/10/16/17; CHECK-1/2/3/14/15/17/25/27, plus scenario-specific clock/continuity checks |
-| Truthful status/diagnostics | Real snapshots distinguish availability, authentication, agreement, freshness, uncertainty and acknowledged correction. Redacted required events survive optional filters; authorized DEBUG expires locally and sink failure/flood remains bounded. Logs are not authoritative state or the clock journal. | CHECK-14/17, AC-05/16 |
+| Truthful status/diagnostics | Real snapshots distinguish availability, authentication, agreement, freshness, uncertainty and acknowledged correction. Events preserve typed importance/level/outcome; redacted required events survive optional level/importance filters. Authorized DEBUG expires locally and sink failure/flood remains bounded. Logs are not authoritative state or the clock journal. | CHECK-14/17, AC-05/16 |
 
 P3 exit requires CHECK-1/2/3/14/15/17, service CHECK-27 and real-handler CHECK-25.
 OS-token revocation limits remain explicit. “Sync now” requests fresh measurement
@@ -3310,6 +3317,15 @@ This review executed no product or native tests and establishes no implementatio
 default approval, residual-risk acceptance or release qualification.
 
 ### 8.5 Windows 11 integration research and qualification
+
+**Production event logger planning — 17 November 2026:**
+[W11-W08's staged continuation](../../tasks/windows11-integration.md#43511-production-event-logger-plan--17-november-2026)
+connects the existing fixture/console diagnostics to the shared catalogue,
+per-process routes, actual native/local sinks, diagnostic health and S5.3
+view/export. Architecture §12.3 owns the requested five importance bands,
+technical levels and independent required routing; hardening §9.8/AC-16 own
+their observations. Portable preparation, native delivery and production UI
+remain distinct. The active Core/Engine queue and all execution holds remain.
 
 **Service privilege profiles, 9 November 2026:** the
 [canonical sets](../windows-time-architecture.md#411-service-privilege-profiles),

@@ -751,6 +751,13 @@ applied before the first dependent production adapter, handler or event emitter.
 P0 prepares finite limits/sink policy; P2 uses it at reached protocol boundaries;
 S3.1–S3.4 integrate it and S5.3 consumes redacted output. Current Core stays separate.
 
+The portable service-fixture diagnostics and Engine console outputs already
+exist. The [17 November production logger plan](windows11-integration.md#43511-production-event-logger-plan--17-november-2026)
+is their single staged continuation under W11-W08: shared typed importance/level/
+routing, bounded per-process writers, qualified native sinks and later UI
+consumers. Its first portable slice remains subject to the coordinator's current
+queue; this documentation update starts no implementation or native campaign.
+
 Use [architecture §3.4](../docs/windows-time-architecture.md#34-shared-windows-adapters-and-diagnostics),
 [§6.5](../docs/windows-time-architecture.md#65-errors-diagnostics-and-proof-obligations),
 [§12.3](../docs/windows-time-architecture.md#123-logging-and-support) and
@@ -819,7 +826,7 @@ earlier corresponding qualification claim. **Exit:** [plan §6/P5](../docs/plans
 | --- | --- | --- |
 | S5.1 real status/sources / UI/service | Admitted Slint adapter/checked bridge from the UI-M0 chain, actual secured current snapshots, relevant P2/P3 evidence and D2 status re-entry; wire one read-only journey using canonical design references. | Valid real status matches authentication/agreement/ages/principal/supporters; unavailable/stale/malformed/old-generation evidence cannot look current. CHECK-14/25, AC-02/03/05; applicable ST-T01/14. |
 | S5.2 settings/helper/review / UI/security/platform | Admitted Slint adapter/checked handler bridge, actual receiver/helper/policy revisions and D2 command re-entry, plus applicable P4 authority; expand one current operation and rejection/cancellation pair. | Authorized current request succeeds; UAC cancellation, stale edit, denied/lost/unknown result and replayed approval cannot appear successful. CHECK-2/3/10/15/25, AC-06/07/11. |
-| S5.3 diagnostics/tray / UI/diagnostics | Qualified per-process output/privacy and observer lifecycle; freeze/admit any actual Slint tray feature/native graph expansion, then select one export or optional-tray journey. The pilot omitted tray; normal Close must still leave no UI by default. | Useful redacted export and enabled observer work; sink failure/stale status cannot mislead, disabled tray/default close retains no UI, services survive UI exit. CHECK-12/14/17/21/23, AC-01/16/18. |
+| S5.3 diagnostics/tray / UI/diagnostics | Qualified per-process output/privacy from the [logger continuation](windows11-integration.md#43511-production-event-logger-plan--17-november-2026) and observer lifecycle; freeze/admit any actual Slint tray feature/native graph expansion, then select one export or optional-tray journey. The pilot omitted tray; normal Close must still leave no UI by default. | Useful redacted export preserves event identity/importance and truthful gaps; enabled observer works. Sink failure/stale status cannot mislead, disabled tray/default close retains no UI, services survive UI exit. CHECK-12/14/17/21/23, AC-01/16/18. |
 | S5.4 full usability/resources / accessibility/QA | Reached production journeys, D1/D3 restored, admitted accessibility-enabled Slint graph/Windows bridge and supported display profile; qualify one complete critical journey before expanding the matrix. The pilot's omitted feature and Win32 receipts are no accessibility pass. | Actual keyboard/Narrator/UIA, contrast/scaling/long-text and native resource observations pass; lost focus/inaccessible action/retained resources fail qualification. CHECK-21/22/27, AC-17/18/20. |
 
 ### Production UI contract handoff
