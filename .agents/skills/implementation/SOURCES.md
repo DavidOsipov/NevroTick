@@ -27,6 +27,22 @@ not configuration added by these instructions. This update changes only skills
 and their existing evidence record; it claims no Rust/native execution or measured
 AI defect reduction. See the [skill-quality record](../../plans/2026-10-30-skill-quality.md#rust-1100-feature-contract-skills--13-november-2026).
 
+**Diagnostic refinement, 18 November 2026:** the compiler's
+[Reference submodule binding](https://api.github.com/repos/rust-lang/rust/contents/src/doc/reference?ref=0ef1bc386059596dada8fb65b50425aab2ea637a)
+selects `e24eecf97b0c9a6dbac67191098204dc8a190aaa`. Its
+[diagnostics chapter](https://github.com/rust-lang/reference/blob/e24eecf97b0c9a6dbac67191098204dc8a190aaa/src/attributes/diagnostics.md)
+supports the trait-implementation and uninhabited-result `must_use` limits,
+independent named expectations versus group expectations, and optional trait
+diagnostic hints. The separate
+[Clippy implementation](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/src/tools/clippy/clippy_lints/src/let_underscore.rs)
+supports the discard-lint distinction. Trait diagnostic hints were introduced in
+[1.78](https://blog.rust-lang.org/2024/05/02/Rust-1.78.0/) and
+[1.85](https://blog.rust-lang.org/2025/02/20/Rust-1.85.0/), not 1.100.
+Context7's versioned Rust query did not supply relevant semantics; its Reference
+results used `master`, and versioned hosted Reference pages were unavailable.
+The immutable submodule/source fallback supplies version evidence, not executed
+compiler controls or measured agent improvement.
+
 ## Modern Rust release review — 9 November 2026
 
 The [modern stable Rust reference](implement-rust/references/modern-rust.md)

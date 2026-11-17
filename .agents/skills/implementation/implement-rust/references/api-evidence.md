@@ -56,6 +56,15 @@ Do not repeatedly prompt or broaden the graph without a new causal explanation.
 Stop the bounded investigation when its prerequisite is unavailable and record
 the specific missing source/environment instead of fabricating a working example.
 
+For an existing trait API with demonstrated confusing errors, consider
+`diagnostic::on_unimplemented` on the trait declaration to explain the unmet
+contract and legitimate construction path. If an existing blanket implementation
+produces misleading advice, consider `diagnostic::do_not_recommend` on that impl.
+These optional compiler hints may be ignored; they change no trait, privacy or
+admission guarantee and do not customize arbitrary type mismatches. Do not invent
+traits or blanket impls for nicer messages. Check the actual diagnostic and a
+legal consumer in the affected lane when applying them; both features predate 1.100.
+
 For an unfamiliar diagnostic classifier, check both faulty and healthy controls:
 missing trait import, unavailable feature/target, renamed dependency, nonexistent
 API, transport/setup failure and a compiling implementation with wrong semantics.
@@ -81,6 +90,7 @@ NevroTick's actual target/feature, mutation, security or native QA gates.
 
 ## Primary technical sources
 
+- [Diagnostic hints in the selected compiler's Reference revision](https://github.com/rust-lang/reference/blob/e24eecf97b0c9a6dbac67191098204dc8a190aaa/src/attributes/diagnostics.md#the-diagnostic-tool-attribute-namespace).
 - [Rust E0599](https://doc.rust-lang.org/error_codes/E0599.html) and
   [method lookup](https://doc.rust-lang.org/reference/expressions/method-call-expr.html).
 - [Cargo dependency renaming](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#renaming-dependencies-in-cargotoml)

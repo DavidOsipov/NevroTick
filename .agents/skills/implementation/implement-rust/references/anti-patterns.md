@@ -95,7 +95,7 @@ Use this deliberately unnecessary owned clone as a negative control:
 /// Return the owned text without needing an independent snapshot.
 #[must_use]
 pub fn unnecessary_snapshot() -> String {
-    let original = String::from("probe");
+    let original: String = String::from("probe");
     original.clone()
 }
 ```

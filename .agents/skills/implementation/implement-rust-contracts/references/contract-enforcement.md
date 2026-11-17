@@ -159,8 +159,8 @@ Existing [era APIs](../../../../../crates/time-domain/src/era.rs) illustrate
 checked construction followed by a consumer requiring the resulting type:
 
 ```rust
-let window = EraWindow::new(earliest, latest)?;
-let coordinate = unfold_ntp(seconds, fraction, &window)?;
+let window: EraWindow = EraWindow::new(earliest, latest)?;
+let coordinate: UtcCoordinateQ32 = unfold_ntp(seconds, fraction, &window)?;
 ```
 
 `EraWindow` carries checked coordinate bounds and endpoint ordering, not trust in
@@ -329,11 +329,21 @@ results such as
 need that obligation across return boundaries. At the next substantive owner edit,
 pair an ignored-expression compiler-negative consumer at the actual wrapper with
 legal outcome handling. Admit effective `unused_must_use` error level; require its
-intended diagnostic. Deliberate discard such as `let _ = outcome;` suppresses it
-and is no negative control. This diagnostic imposes no linear or exactly-once
-consumption and proves neither correct handling or application nor lifetime or
-cleanup completion. Preserve appropriate `Copy`/`Clone`; retain state and effect observations
-for actual outcome behavior.
+intended diagnostic. Deliberate discard such as `let _ = outcome;` suppresses
+rustc's `unused_must_use`, but the separately denied
+`clippy::let_underscore_must_use` may reject it. Identify the actual diagnostic;
+another lint's rejection does not qualify the rustc control.
+
+For a trait method, place the obligation on the method in the trait declaration
+or important outcome type: `#[must_use]` on the method in a trait implementation
+has no effect.
+The type-based lint also exempts `Result<(), E>` when `E` is uninhabited and
+`ControlFlow<B, ()>` when `B` is uninhabited. Do not promise ignored-result rejection
+from `Result<(), !>` alone or invent a result wrapper without a real handling
+obligation. These diagnostic limits impose no linear or exactly-once consumption
+and prove neither correct handling or application nor lifetime or cleanup
+completion. Preserve appropriate `Copy`/`Clone`; retain state and effect
+observations for actual outcome behavior.
 Use [static checks](../../../testing/qa-static-checks/SKILL.md) for claimed compiler
 guarantees and existing runtime/proof owners for semantic correctness.
 
@@ -502,7 +512,8 @@ These explain field coverage, explicit execution, wrapper limits, floating range
 behavior and allocations; qualify the exact resolved implementation with real
 controls before making application claims.
 
-Rust primary references: [outcome diagnostics](https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-must_use-attribute),
+Rust primary references: [outcome diagnostics at the selected compiler's Reference revision](https://github.com/rust-lang/reference/blob/e24eecf97b0c9a6dbac67191098204dc8a190aaa/src/attributes/diagnostics.md#the-must_use-attribute),
+[separate Clippy discard diagnostic](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/src/tools/clippy/clippy_lints/src/let_underscore.rs),
 [inferred types](https://doc.rust-lang.org/reference/types/inferred.html),
 [anonymous closure types](https://doc.rust-lang.org/reference/types/closure.html),
 [type aliases](https://doc.rust-lang.org/reference/items/type-aliases.html),

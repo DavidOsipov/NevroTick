@@ -1687,3 +1687,43 @@ No compiler, graph, shipping policy, Windows setting or security threshold
 changes. Eleven GNU mutation owners and four additional critical/native owner
 gaps remain. Further selections retain shared deadlines, fresh private admission
 and cumulative budgets; one cohort is no whole-profile/resource guarantee.
+
+### Shared-verifier case-identity follow-up — 18 November 2026
+
+**Source review, planned implementation:** on `32e56be3efae69adf70dc349fbd2eb7d87fa8930`,
+`scripts/verify.py::validate_test_result` rejects empty, wrong-package, skipped
+and failed results and checks selected Engine/optimized sentinels. It does not
+generally reject absent testcase names or duplicate qualified testcase identities,
+nor require every claim-critical ordinary case. `summarize_test_counts` already
+rejects missing or duplicate package lanes; retain that distinct protection.
+Stronger Engine analysis readers already check their selected rosters. This
+source observation establishes no omitted actual product test or invalid receipt.
+
+At the next substantive shared-verifier edit, the existing build/tooling owner
+under CHECK-6/19/25 should bind each selected mandatory case to package, test
+binary/suite and case identity in the affected target/feature/profile. Keep
+planned, discovered and executed identities separate. Reuse current roster and
+receipt owners; no second accounting framework. Observable exit: the actual
+result consumer rejects missing names, missing mandatory cases, duplicate
+qualified identities and same-count substitutions; healthy selections and equal
+test names from distinct legitimate binaries remain accepted. Preserve existing
+package/sentinel, status, native-exit, custody and failure-propagation checks.
+Apply [harness qualification](../.agents/skills/testing/references/harness-qualification.md)
+and validate only the affected admitted lanes when implementation is authorized.
+
+If precise result types help that bounded change, apply
+[Python verification typing](../.agents/skills/testing/references/python-verification-typing.md)
+to this result and its immediate dynamic-import/consumer seam under the admitted
+checker. Complete/partial records, real module compatibility and bounded runtime
+validation remain separate obligations; do not hide unchecked data behind casts
+or expand to a repository-wide conversion. A non-executing plan view remains
+conditional on a measured need and the existing command builder. The command
+`cargo test --no-run` compiles and may execute build scripts; it is not a plan view.
+
+The stale Clippy version comment is in a bound product input, `clippy.toml`.
+Refresh it with the next substantive admitted pin/configuration maintenance,
+including normal source re-admission; this documentation slice leaves those
+bytes and historical receipts intact. The current product priority remains
+[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+No runner implementation, tool admission, product/native execution, campaign
+restart or post-V1 formal work is performed by this follow-up.

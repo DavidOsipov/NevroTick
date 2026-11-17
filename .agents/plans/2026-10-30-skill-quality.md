@@ -2020,3 +2020,55 @@ Machine-local originals and review/check records are under
 `/workspace/.nevrotick-cloud/audit-label-routing-fix-20261115-v1/`. The containing
 commit supplies publication identity; preserve hooks/signing and advance remote
 `main` without force. Previously preserved work stashes remain outside this slice.
+
+## Agent-authored Rust guidance judge — 18 November 2026
+
+**Judge comprehension — proposed change:** this slice corrects examples that
+conflict with the explicit-type instruction, clarifies the exact diagnostic
+mechanisms agents can rely on, and repairs current-work navigation. One observed
+result-accounting gap becomes bounded planned work at its existing owner.
+Research is not a reason to rewrite product code or add another workflow.
+
+**Judge comprehension — current system:** NevroTick selects Rust 1.100.0 and
+already has contract, review, typing and harness guidance. Its completed source
+checkpoints have candidate-specific scope; the current next product child is the
+managed configuration/association revision supplier in development §7. Native,
+production and release exits remain separate, public campaigns remain closed,
+and formal work is deferred until after V1.
+
+David requested external research, a repository comparison, a Context7/Rust
+review and a separate final judge with publication authority. The coordinator
+delivered all three completed read-only reports before this judge edited clean
+`32e56be3efae69adf70dc349fbd2eb7d87fa8930`: `agent_coding_external_research`
+(primary research), `agent_coding_repo_recheck` (docs/skills/source), and
+`rust_1100_agent_guidance` (Context7 plus pinned upstream fallback). The judge
+used a separate context, read the current owners and relevant source, and
+independently fetched the compiler's Reference submodule and diagnostics/Clippy
+sources. Research reports and judge review supply no product execution credit.
+
+| Candidate | Judge disposition and basis |
+| --- | --- |
+| Explicit local types | **Accept:** annotate the era consumer and clone-control examples with their actual named types. Preserve the owner's rule, including its anonymous/opaque exception; inferability is no exemption. No annotation-count tests. |
+| Current-work and compiler navigation | **Accept:** replace obsolete CLI-next imperatives with development §7; preserve completed CLI/V6 receipts. Point Lockbud's comparison to the selected shipping pin. Defer the bound `clippy.toml` comment to substantive admitted maintenance. |
+| Diagnostic precision | **Accept:** distinguish type-level outcomes, trait method declarations, ineffective trait-impl placement, uninhabited-result exceptions and the separately denied Clippy discard lint. Named `expect` items are independent; a group needs only one member. No new lint policy or compiler pass. |
+| Trait error hints | **Accept conditionally:** document optional hints only for existing traits/impls with demonstrated confusing diagnostics. No new trait abstraction or admission guarantee follows. |
+| Required test identities | **Accept as planned work:** [the shared-verifier owner](../../tasks/build-optimization.md#shared-verifier-case-identity-follow-up--18-november-2026) gets qualified identities and missing/duplicate/substituted-result controls. Package-lane and stronger Engine roster checks already exist; no actual omitted run is established. |
+| Outcome/privacy/directional mechanisms | **Already covered:** H10 owns `CloseOutcome`; H16 is specifically the S1.2 `FitPoint` assessment, not Engine `Config`. R3-C-01 owns directional-key review, and a private exclusive pair now exists. Keep actual producer/context checks; no demonstrated current swap or constructor bypass. |
+| Coupled state, Python typing and plan view | **Defer broad work:** no malformed principal state was shown; preserve observed-but-consumed metadata. Typing may serve the bounded verifier seam through existing guidance. A plan view needs a concrete cost/use case; compilation is execution. No migration, new checker or competing result taxonomy. |
+| Context-file and multi-agent prescriptions | **Already covered / refute overclaim:** existing skill evaluation and dispatch guidance accounts for independent outcomes, costs, bounded ownership and completed reviews. External benchmarks justify neither wholesale shortening nor a fixed agent count, and establish no NevroTick defect-reduction percentage. |
+
+The external comparisons use [context-file evaluation v3](https://arxiv.org/html/2602.11988v3)
+and [agent-scaling v3](https://arxiv.org/html/2512.08296v3); their benchmark and
+architecture limits prevent universal prescriptions. Rust version qualification,
+Context7 limitations and the immutable fallback are in the
+[existing source register](../skills/implementation/SOURCES.md#rust-1100-contract-guidance--13-november-2026).
+Source confirmation is distinct from future compiler controls and application
+qualification. The 90%/95% gates, current §7 priority, execution holds and
+post-V1 formal deferral remain unchanged.
+
+This candidate passes the standard-library package checker for all **66 skills**,
+the scoped check of **19 changed local links / 16 anchors**, and `git diff --check`.
+Source comparison confirms the example types, selected toolchain, existing lint
+denials and current §7 owner. No checker/inventory implementation changed, so no
+checker regression campaign or product build is required. This slice executes no
+Rust, native, fuzz, metric or formal job and changes no runtime/configuration bytes.

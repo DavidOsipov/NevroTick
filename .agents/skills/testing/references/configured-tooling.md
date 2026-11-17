@@ -87,6 +87,16 @@ Zero tests, a successful admission command, or `cargo check` without linking
 cannot satisfy a claim needing execution or delivered Windows behavior. Keep
 mitigation flags in `.cargo/config.toml`; convenience `RUSTFLAGS` can replace them.
 
+When a claim requires named cases, bind expected selections to qualified
+package/binary/test identities; nonempty totals alone do not prove their execution.
+Distinguish planned, discovered and executed selections. The existing
+[shared-verifier follow-up](../../../../tasks/build-optimization.md#shared-verifier-case-identity-follow-up--18-november-2026)
+owns its remaining ordinary-result gap; stronger Engine readers retain their scope.
+Any future non-executing plan view must avoid Cargo/compiler/test subprocesses.
+[`cargo test --no-run`](https://doc.rust-lang.org/cargo/commands/cargo-test.html#test-options)
+still compiles, including applicable
+[build-script execution](https://doc.rust-lang.org/cargo/reference/build-scripts.html#life-cycle-of-a-build-script).
+
 ## Additional Rust analysis
 
 Conditional [Shuttle](shuttle-concurrency.md),

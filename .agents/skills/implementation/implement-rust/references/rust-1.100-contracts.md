@@ -83,6 +83,8 @@ is impossible. Neither type proves absence of panic, allocation failure or
 nontermination. Return-position `fn ... -> !` predates this release.
 
 `Infallible` now aliases `!`: spelling changes add no guarantee.
+Apply the [outcome-diagnostic limits](../../implement-rust-contracts/references/contract-enforcement.md#make-structural-changes-require-review):
+`Result<(), !>` alone does not trigger the type-based unused-result lint.
 Do not erase real input/state/native failures or use panic/defaults to satisfy an
 infallible signature. Real Windows status reporter remains fallible;
 test reporter may use `!`. The [native message loop](../../../../../crates/nevrotick-ui/src/native.rs)

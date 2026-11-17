@@ -87,6 +87,13 @@ or a source version annotation alone, to establish shipped behavior.
 
 ## Select compiler and documentation controls only when relevant
 
+Keep `#[expect]` narrow and reasoned. Multiple named lints create separate
+expectations; a lint-group expectation is fulfilled by any one member. Prefer
+the exact intended lint and actual target/feature/tool lane: `#[expect(unused)]`
+does not establish that several intended diagnostics occurred. Tool lint
+expectations require that tool to run. These semantics predate this release;
+retain the existing `unfulfilled_lint_expectations` denial.
+
 Rust 1.100 extends `dropping_references`, `dropping_copy_types` and
 `undropped_manually_drops` to free-function and pointer-method `drop_in_place`.
 Existing warning denial/default denial covers them. Unsafe deny/forbid already
@@ -110,6 +117,7 @@ existing post-V1 proof deferral; clean diagnostics prove no authorization or cle
 
 [cargo-lints]: https://github.com/rust-lang/cargo/blob/3acc79c0c841844675bc53a605922dbfc441e750/doc/book/src/reference/lints.md
 
+- [Lint expectations and tool-lint activation](https://github.com/rust-lang/reference/blob/e24eecf97b0c9a6dbac67191098204dc8a190aaa/src/attributes/diagnostics.md#the-expect-attribute), at the selected compiler's Reference submodule revision.
 - [Cargo inheritance](https://github.com/rust-lang/cargo/blob/3acc79c0c841844675bc53a605922dbfc441e750/src/diagnostics/rules/missing_lints_inheritance.rs) and [unused dependencies](https://github.com/rust-lang/cargo/blob/3acc79c0c841844675bc53a605922dbfc441e750/src/diagnostics/rules/unused_dependencies.rs).
 - [Clippy Option diagnostic](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/src/tools/clippy/clippy_lints/src/methods/option_zip_none.rs), [NonZero diagnostic](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/src/tools/clippy/clippy_lints/src/needless_nonzero_get.rs) and [group registration](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/src/tools/clippy/declare_clippy_lint/src/lib.rs).
 - [Drop diagnostics](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/compiler/rustc_lint/src/drop_forget_useless.rs), [repr lint definitions](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/compiler/rustc_lint_defs/src/builtin.rs) and [rustdoc rules](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/src/librustdoc/lint.rs).

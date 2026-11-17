@@ -15,7 +15,7 @@ owns their reuse, integration prerequisites and remaining qualification. Reuse
 these owners when service work resumes; qualified product adoption, final account/
 provisioning admission and native Windows lifecycle evidence remain open.
 
-**Current Core/Engine continuation — 14 November 2026:**
+**Retained Core/Engine checkpoint — 14 November 2026:**
 [plan §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
 records the [V6 final qualification](s1.3-source-selection-readiness.md#v6-final-qualification--seven-selected-owners):
 603-input product `7701e3b3`, private policy `5e127c28`, passes 720 baseline
@@ -26,11 +26,10 @@ The first union timeout stays incomplete; the reviewed completion passes with
 no old-receipt adoption or added kills. The original ledger totals
 9505.109/10,800 seconds. Main stays closed; whole-Core/P1 and release remain open.
 
-**Next after staging:** implement the accepted
-[truthful numerical CLI projection](engine-transport-pilot.md#truthful-numerical-cli-projection--contract-preparation-14-november-2026).
-Freeze affected source, checks and a finite budget first; use the actual joined
-receiver and delivered-output controls. This names the next child, not a pass.
-V5's incomplete receipt and earlier candidate results remain historical.
+The [truthful numerical CLI projection](engine-transport-pilot.md#numerical-cli-projection--development-checks-complete-14-november-2026)
+has its own completed development checkpoint. Follow
+[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+for the current next child and prerequisites. V5's incomplete receipt and earlier candidate results remain historical.
 
 The [H01–H09 handoff](engine-transport-pilot.md#additional-contract-and-integration-handoff--14-november-2026)
 retains separate H02 metric owners, deferred H07 and pending H08/H09 hosted

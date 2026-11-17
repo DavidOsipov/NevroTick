@@ -665,7 +665,7 @@ patch the tool under its closed card. Full-domain addition remains open.
 | Miri | nightly-2026-10-28 | One-off controls observed across four seeds each: healthy execution and use-after-free rejection. Product core tests remain unqualified; this is not Win32/FFI execution. |
 | Loom | 0.7.2 | Isolated library payload, not a Cargo executable. One-off healthy atomic-update control and lost-update counterexample observed. Product models still need instrumented primitives and bounded state space. |
 | Kani | 0.68.0 | Source-bound rounding/valid-window era and named domain/helper proofs have scoped qualified checkpoints in the [current task](tasks/s1.1-time-domain.md). Public Garde-constructor proofs and remaining leap/Core obligations are open; tool controls alone establish no product proof. |
-| Lockbud | a1b5303cdbb1d4d0ad886359cc71418570e7c5fd | One-off healthy/DoubleLock controls observed using experimental nightly-2026-02-07 / Rust 1.95. This older analysis compiler does not change shipping Rust 1.99.1; admit each real source/feature row before relying on diagnostics. |
+| Lockbud | a1b5303cdbb1d4d0ad886359cc71418570e7c5fd | One-off healthy/DoubleLock controls observed using experimental nightly-2026-02-07 / Rust 1.95. This older analysis compiler does not change the [selected shipping toolchain](rust-toolchain.toml); admit each real source/feature row before relying on diagnostics. |
 | cargo-vet | 0.10.3 | One-off controls observed: std-only healthy exit 0; unreviewed Loom graph exit 255 with missing reviews and no audits/exemptions. Application audit-policy acceptance and real dependency reviews remain pending. |
 
 The reusable guarded checker also exercised the healthy and defect controls:
