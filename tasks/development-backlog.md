@@ -831,6 +831,11 @@ earlier corresponding qualification claim. **Exit:** [plan §6/P5](../docs/plans
 
 ### Production UI contract handoff
 
+[W11-W09](windows11-integration.md#w11-w09-add-truthful-native-notifications-at-the-deferred-ui-stage)
+separately owns real Critical/High notification admission and delivery, using the
+W11-W08 catalogue and existing incident design. Its release/stage deferrals remain;
+S5.3 diagnostics/tray/export or explicit sample-toast completion cannot close it.
+
 For externalized translations, follow [OD-15's catalog design](../docs/plans/ui-localization.md).
 S0.5 records the implemented source/interface profile and exact branch source-control evidence; merged-candidate and semantic approval remain separate. S5.1/S5.2 project stable codes and typed
 arguments into localized status/settings/errors without changing authorization;

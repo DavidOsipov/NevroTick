@@ -120,6 +120,11 @@ receipts retain the old graph and cannot qualify this current candidate.
    sign-in registration, persistence or diagnostic collection/export. Current
    fixture ports cannot become production authority through an implementation
    swap; restore D2 contracts and independent receiver authorization first.
+   Real Critical/High notifications continue under the
+   [W11-W09 incident handoff](windows11-integration.md#w11-w09-add-truthful-native-notifications-at-the-deferred-ui-stage),
+   using the W11-W08 catalogue and existing incident design. Preserve the sample-only
+   boundary, rich-toast release deferral and D2/D3/native prerequisites; completing
+   the test notification does not complete that production continuation.
 2. **Native Windows:** admitted SDK/CRT inventory, target linking and actual
    ordinary-user execution remain open. Qualify keyboard/IME cancellation,
    clipboard, COM/proxies, menu timing, tray/toast callbacks, UIA/Narrator, DPI,
