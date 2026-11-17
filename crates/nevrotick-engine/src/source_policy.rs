@@ -11,6 +11,7 @@ use std::{
     error::Error,
     fmt,
     future::pending,
+    io,
     net::{Ipv4Addr, Ipv6Addr, SocketAddr},
     pin::Pin,
     sync::{Arc, Mutex, MutexGuard, OnceLock, TryLockError},
@@ -329,6 +330,214 @@ impl fmt::Debug for SourcePolicyLimits {
     /// Redact laboratory policy values.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("SourcePolicyLimits { .. }")
+    }
+}
+
+/// Immutable historical facts about one actual restriction record.
+///
+/// Copies retain the original observation; neither the values nor a zero wait
+/// grant current send permission, re-enable authority or fresh synchronization.
+#[must_use]
+#[derive(Clone, Copy)]
+pub struct SourceRestrictionSnapshot {
+    /// This record's own retained interval, independent of the other record.
+    interval: Duration,
+    /// The same checked maximum that governed the observed record.
+    maximum_interval: Duration,
+    /// Original admitted earliest-send floor, including an already elapsed floor.
+    floor: Option<Instant>,
+    /// Remaining wait at the enclosing snapshot's one owned observation time.
+    remaining_at_capture: Duration,
+    /// Retained direct DENY/RSTR fact, including on an unavailable record.
+    refused: bool,
+    /// Sticky representational unavailability, never hidden as a clear record.
+    unavailable: bool,
+    /// Historical ordinary revision; this value is not a re-enable target.
+    revision: u64,
+}
+
+impl SourceRestrictionSnapshot {
+    /// Copy one guarded record and compute its wait only at the captured time.
+    fn capture(record: &Record, maximum_interval: Duration, captured_at: Instant) -> Self {
+        Self {
+            interval: record.interval,
+            maximum_interval,
+            floor: record.floor,
+            remaining_at_capture: record.floor.map_or(Duration::ZERO, |floor| {
+                floor.saturating_duration_since(captured_at)
+            }),
+            refused: record.refused,
+            unavailable: record.unavailable,
+            revision: record.revision,
+        }
+    }
+
+    /// Return this record's own interval at capture.
+    #[must_use]
+    pub fn interval(&self) -> Duration {
+        self.interval
+    }
+
+    /// Return the checked maximum retained by this policy owner at capture.
+    #[must_use]
+    pub fn maximum_interval(&self) -> Duration {
+        self.maximum_interval
+    }
+
+    /// Report whether this record's own interval reached that checked maximum.
+    #[must_use]
+    pub fn at_maximum(&self) -> bool {
+        self.interval == self.maximum_interval
+    }
+
+    /// Return the retained earliest-send floor without interpreting it as authority.
+    #[must_use]
+    pub fn floor(&self) -> Option<Instant> {
+        self.floor
+    }
+
+    /// Return the wait at capture; later calls do not resample or count it down.
+    #[must_use]
+    pub fn remaining_at_capture(&self) -> Duration {
+        self.remaining_at_capture
+    }
+
+    /// Return the retained direct refusal, independently of availability or wait.
+    #[must_use]
+    pub fn refused(&self) -> bool {
+        self.refused
+    }
+
+    /// Return sticky unavailability without erasing any other retained fact.
+    #[must_use]
+    pub fn unavailable(&self) -> bool {
+        self.unavailable
+    }
+
+    /// Return the historical revision; it cannot authorize a policy operation.
+    #[must_use]
+    pub fn revision(&self) -> u64 {
+        self.revision
+    }
+}
+
+impl fmt::Debug for SourceRestrictionSnapshot {
+    /// Redact restriction values and historical timing/revision facts.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("SourceRestrictionSnapshot { .. }")
+    }
+}
+
+/// One immutable source/endpoint observation under the actual policy mutex.
+///
+/// It contains no binding, request, re-enable target or current permission.
+/// Copies remain historical even when the owner subsequently changes.
+/// External callers cannot forge a replacement record:
+/// ```compile_fail,E0451
+/// use nevrotick_engine::SourcePolicySnapshot;
+/// fn forge(snapshot: SourcePolicySnapshot) -> SourcePolicySnapshot {
+///     SourcePolicySnapshot { ..snapshot }
+/// }
+/// ```
+/// An absent observation cannot be manufactured as a clear default:
+/// ```compile_fail,E0599
+/// use nevrotick_engine::SourcePolicySnapshot;
+/// let snapshot = SourcePolicySnapshot::default();
+/// ```
+/// Only the actual source owner can observe an already-bound endpoint:
+/// ```
+/// use std::net::SocketAddr;
+/// use nevrotick_engine::{SourceHandle, SourcePolicyError, SourcePolicySnapshot};
+/// fn observe(source: &SourceHandle, peer: SocketAddr)
+///     -> Result<SourcePolicySnapshot, SourcePolicyError> {
+///     source.policy_snapshot(peer)
+/// }
+/// ```
+#[must_use]
+#[derive(Clone, Copy)]
+pub struct SourcePolicySnapshot {
+    /// Actual logical-source facts from this capture.
+    source: SourceRestrictionSnapshot,
+    /// Actual canonical-endpoint facts from the same capture.
+    endpoint: SourceRestrictionSnapshot,
+    /// One owned clock observation sampled after obtaining mutex custody.
+    captured_at: Instant,
+}
+
+impl SourcePolicySnapshot {
+    /// Copy both actual records while the caller retains the same mutex guard.
+    /// # Errors
+    /// Refuse unknown source or unbound endpoint positions without mutation.
+    fn capture(
+        guard: &PolicyGuard<'_>,
+        source: usize,
+        endpoint: usize,
+    ) -> Result<Self, SourcePolicyError> {
+        let state = guard.state()?;
+        let source = state.record(RecordKey::Source(source))?;
+        let endpoint = state.record(RecordKey::Endpoint(endpoint))?;
+        let captured_at = Instant::now();
+        let maximum = state.limits.maximum_interval;
+        Ok(Self {
+            source: SourceRestrictionSnapshot::capture(source, maximum, captured_at),
+            endpoint: SourceRestrictionSnapshot::capture(endpoint, maximum, captured_at),
+            captured_at,
+        })
+    }
+
+    /// Borrow historical logical-source facts, not current source permission.
+    #[must_use]
+    pub fn source(&self) -> &SourceRestrictionSnapshot {
+        &self.source
+    }
+
+    /// Borrow historical endpoint facts, not current endpoint permission.
+    #[must_use]
+    pub fn endpoint(&self) -> &SourceRestrictionSnapshot {
+        &self.endpoint
+    }
+
+    /// Return the one monotonic observation shared by both retained records.
+    #[must_use]
+    pub fn captured_at(&self) -> Instant {
+        self.captured_at
+    }
+
+    /// Write exactly two fixed-scope diagnostic rows after policy custody ends.
+    ///
+    /// Each row is below 320 bytes even at maximum `Duration` values. No row
+    /// includes addresses, source indices, revisions, packet or request values.
+    /// The writer allocates no buffer and asserts no present permission or fresh
+    /// synchronization. Repeated writes describe the same historical capture.
+    /// # Errors
+    /// Preserve the sink error and any partial output; neither failure nor a
+    /// successful write changes this snapshot or the actual policy owner.
+    pub fn write_status(&self, output: &mut impl io::Write) -> io::Result<()> {
+        for (scope, record) in [("source", &self.source), ("endpoint", &self.endpoint)] {
+            writeln!(
+                output,
+                concat!(
+                    "event=source_policy scope={} interval_ns={} maximum_ns={} ",
+                    "remaining_at_capture_ns={} refused={} unavailable={} ",
+                    "at_maximum={} eligible=0 fresh_sync=0"
+                ),
+                scope,
+                record.interval.as_nanos(),
+                record.maximum_interval.as_nanos(),
+                record.remaining_at_capture.as_nanos(),
+                u8::from(record.refused),
+                u8::from(record.unavailable),
+                u8::from(record.at_maximum()),
+            )?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Debug for SourcePolicySnapshot {
+    /// Redact the captured clock coordinate and both restriction records.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("SourcePolicySnapshot { .. }")
     }
 }
 
@@ -1011,6 +1220,30 @@ pub struct SourceHandle {
 }
 
 impl SourceHandle {
+    /// Observe this source and one already-bound canonical endpoint atomically.
+    ///
+    /// Refusal and unavailability remain visible data. This bounded read creates
+    /// no endpoint/channel, publishes no record change and changes no allowance.
+    /// Existing contention-release notifications remain part of guard cleanup.
+    /// It never grants current send permission or issues a re-enable target.
+    /// # Errors
+    /// Preserve invalid/unknown endpoint, unknown source, contention or poisoning
+    /// as typed errors without binding an endpoint or returning a clear default.
+    pub fn policy_snapshot(
+        &self,
+        peer: SocketAddr,
+    ) -> Result<SourcePolicySnapshot, SourcePolicyError> {
+        let key = EndpointKey::new(peer)?;
+        let guard = self.cell.lock()?;
+        let state = guard.state()?;
+        let endpoint = state
+            .endpoints
+            .iter()
+            .position(|entry| entry.key == Some(key))
+            .ok_or(SourcePolicyError::UnknownEndpoint)?;
+        SourcePolicySnapshot::capture(&guard, self.index, endpoint)
+    }
+
     /// Bind a complete fixed round without partially publishing endpoint keys.
     /// # Errors
     /// Reject invalid count/keys, unavailable custody or insufficient permanent
@@ -1182,6 +1415,18 @@ pub(super) struct SourceBinding {
     source_changes: watch::Sender<()>,
     /// Existing endpoint change channel.
     endpoint_changes: watch::Sender<()>,
+}
+
+impl SourceBinding {
+    /// Observe only this genuine issued source/endpoint binding under one lock.
+    /// # Errors
+    /// Preserve contention, poisoning, unknown records or foreign binding failure;
+    /// no error changes policy state or falls back to an unmanaged observation.
+    pub(super) fn policy_snapshot(&self) -> Result<SourcePolicySnapshot, SourcePolicyError> {
+        let guard = self.source.cell.lock()?;
+        guard.state()?.binding(self)?;
+        SourcePolicySnapshot::capture(&guard, self.source.index, self.endpoint)
+    }
 }
 
 /// Every constructor explicitly selects historical fixture or managed custody.

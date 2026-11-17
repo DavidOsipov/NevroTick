@@ -15,7 +15,7 @@ use super::{
     ControlHandle, ControlSchedule, ExperimentalMeasurement, ExperimentalProfile,
     ExperimentalReferenceNs, MeasurementRefusal, PilotError, PreparedSeries,
     RelativeMeasurementRefusal, SeriesAttempt, SeriesConfig, SeriesEnd, SeriesReport, SlotReport,
-    TransportFacts, execute_series, measurement::series_coherence_residuals,
+    SourcePolicySnapshot, TransportFacts, execute_series, measurement::series_coherence_residuals,
     relative::reference_from_instants,
 };
 
@@ -169,6 +169,31 @@ impl AcquisitionSession {
                 origin: Instant::now(),
             }),
             state: SessionState::Idle,
+        }
+    }
+
+    /// Observe the actual managed source and endpoint without admitting new work.
+    ///
+    /// Both record views share one captured monotonic observation. Their remaining
+    /// waits describe that capture only; they grant no current send permission or
+    /// re-enable authority. This read does not alter the session, historical
+    /// reports, allowance floors or record-change notifications. Existing
+    /// contention-release notification preserves waiting operations' progress.
+    /// A retired session can
+    /// still explain its retained source restrictions without reopening itself.
+    /// An explicitly unmanaged laboratory session returns `None`, never a
+    /// fabricated unrestricted managed-policy observation.
+    ///
+    /// # Errors
+    /// Preserve actual policy contention, poisoning or binding lookup failure.
+    pub fn policy_snapshot(
+        &self,
+    ) -> Result<Option<SourcePolicySnapshot>, super::source_policy::SourcePolicyError> {
+        match &self.source_policy {
+            super::source_policy::SourceMode::UnmanagedLab => Ok(None),
+            super::source_policy::SourceMode::Managed(binding) => {
+                binding.policy_snapshot().map(Some)
+            }
         }
     }
 

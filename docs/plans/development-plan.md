@@ -1066,6 +1066,27 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
+**Current product child — 17 November 2026:**
+[Managed restriction visibility](../../tasks/engine-transport-pilot.md#consumer-boundary-reinforcement--17-november-2026)
+is implemented and development-verified on `861987c9…`. Source handles and managed
+sessions expose actual separate source/endpoint restrictions and bounded,
+payload-free diagnostics, without changing policy or granting permission.
+Nine focused cases and the complete254/488/78 default/EP1 development selections
+pass, including strengthened managed-session error/endpoint and elapsed-floor
+assertions. The actual current reader and 170 controls pass; all five fresh 90%
+line gates and the 731-descriptor catalogue are admitted. The195-source-policy
+and47-session cohorts now pass unchanged95% gates with independent classification:
+142 catches,100 genuine compiler-unviable variants and no survivors/timeouts.
+The other three owners reuse their original resolved gates through the exact
+489-descriptor source/caller/span bridge; no current all-five E0 gate is claimed.
+Preserve all old failures and scores, closed public campaigns,
+native/production prerequisites and the post-V1 formal deferral. This is the
+current source child; published `305a855` remains its baseline until publication.
+Next complete its staged-tree/signing publication, then resume the existing
+S2.1/W11-W01 capture and mapping-issuer contract for actual Engine-to-Core
+integration. Genuine date/scale/trust/quality suppliers remain necessary for
+positive production admission; retain the separate remaining KE/native gates.
+
 **Active Engine continuation — 17 November 2026:**
 [Selected-reply rejection accounting](../../tasks/engine-transport-pilot.md#selected-reply-rejection-accounting--17-november-2026)
 passes development on `4703646b…` (605 product inputs): all twelve configured
@@ -1121,7 +1142,10 @@ for positive production Engine-to-Core admission. No substitute fixture grants i
 Preserve §6.5, original cutoffs/floors/custody, cumulative costs and separate
 production/Core, native, hosted, release and formal-deferral exits. The runtime
 correction is signed and published as `dc7938a`; the later qualification bindings
-and records remain working changes until their publication checkpoint.
+and records are signed and published as `305a855`. The complete publication
+candidate passes428 Python cases, strict policy and secret checks. Two required
+hosted checks were still expected when GitHub accepted that push through the
+existing account bypass; publication establishes no hosted pass.
 **Retained C2 qualification — 16 November 2026:**
 [The KoD audit corrections](../../tasks/engine-transport-pilot.md#kod-audit-corrections--selected-qualification-complete--16-november-2026) complete the selected
 five-owner GNU fixture checkpoint on product `0c7f5a6d…`: five executable-line

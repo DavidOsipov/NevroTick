@@ -841,3 +841,31 @@ uncertainty; source confirmation versus execution. No accidental grader exposure
 reported. Exercise changed no files, ran no Rust or CodeQL jobs. Demonstrates
 this source-review case only; no measured old/new improvement, general detection
 rate or product qualification.
+
+## Supplied Engine/Core taint audit — local reconciliation — 17 November 2026
+
+The owner supplied a completed cloud-audit handoff based on `4bf9a6f`, reporting
+608 unchanged extraction inputs from `2dfe4a7`,10 taint/8 value endpoint pairs
+and3 optional-model UDP paths. These are attributed static-analysis results.
+The named cloud artifacts and unpublished300-line task addition are not present
+in this checkout; their listed hashes alone do not permit independent result
+verification. Preserve the supplied originals and their failed/interrupted
+attempts. No fresh CodeQL execution or whole-system/native clearance follows.
+
+Its known rejection-counter lead is already fixed by the later `dc7938a`,
+retained in current published `305a855`. The
+[Engine reconciliation](engine-transport-pilot.md#cloud-taint-handoff--current-source-reconciliation--17-november-2026)
+links the actual six causal REDs, ten-case GREEN, current source/callers and
+separate five-owner qualification. Do not reapply or reopen that historical lead
+without a new counterexample. Current `lib.rs`, `series.rs` and `source_policy.rs`
+differ from the extraction baseline; affected consumer evidence needs fresh
+admission before reuse.
+
+The report correctly retains unknown effective extractor compiler, partial
+macro/callback/representation propagation, unqualified secret-byte paths and
+model-OFF disk failures. Expected influence is not a vulnerability; zero paths
+are not sanitization, and a logical empty-set consequence is not an executed
+OFF path result. Engine has no `ntp-exchange`/`time-core` dependency, so this
+supplies no integrated network-to-Core-to-clock path. The source-only review
+changes no query/model, product code, tool pin, policy threshold or execution
+hold. Continue the existing Core/Engine queue and named analysis frontiers.

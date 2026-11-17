@@ -21880,5 +21880,238 @@ cannot silently delete or misdirect the historical negative control. Test IDs,
 Only the two test-helper pins are rebound. The previous qualified Rust605/A35,
 tool/consumer/validator source remains unchanged; raw metric48-input receipts
 retain the prior test-helper bytes, which their lanes hash but never execute.
-Fresh complete staged metadata checks are required before publication. Original
-244-case RED and bootstrap namespace refusals remain in the publication record.
+Fresh complete staged checks pass428 Python cases, strict policy and pinned
+secret controls/history/working-tree scans. The exact21-file tree
+`9d98120a43091881fba39bd5a836caa4dd842547` is signed and published as
+`305a855b8f400192dfe367de55b2a94061e5e71d`; remote main and the clean checkout
+match. Original244-case RED and bootstrap namespace refusals remain in the
+publication record. Two required hosted checks were still expected when GitHub
+accepted the ordinary non-force push through the existing account bypass; no
+settings changed and no hosted pass follows. Disposable publication sources and
+private homes were deleted without compression; raw receipts and canonical
+metric sources remain.
+
+### Cloud taint handoff — current-source reconciliation — 17 November 2026
+
+The supplied Engine/Core taint report concerns `4bf9a6f`, reusing an extraction
+of `2dfe4a7` after its reported608-input comparison. Current coordinator source
+is the later published `305a855`. CHECK-19/24/25/27 retain this source/evidence
+reconciliation; existing REQ-8/BND-1 and the
+[selected-reply accounting repair](#selected-reply-rejection-accounting--17-november-2026)
+retain the runtime finding and its acceptance owner.
+
+The report's statement that the rejection-counter defect remains open is stale.
+`dc7938a` already repairs the six final receive-refusal branches. Source review
+traces the actual serialized callers, selected datagram charge and historical
+commit; final Stop/invalidation and managed-policy refusal charge one rejection,
+writable-only retirement charges none, and committed Header remains `(1,0)`.
+The physically retained six causal REDs, ten-case GREEN and twelve-lane
+development receipts match their recorded hashes. Engine source/tests are
+unchanged between that repair and `305a855`; the later five-owner qualification
+retains its own source, roster, exclusions and raw-result scope. No second repair
+or repeat campaign is needed for this historical lead. This does not claim that
+arbitrary repeated direct calls to the private managed leaf are idempotent;
+production's Pending/custody gate remains essential.
+
+The supplied10 taint pairs,8 value pairs and model-enabled3 UDP routes describe
+expected influence, not new defects or coverage percentages. Its unknown
+effective extraction compiler, incomplete callbacks/wrappers/macros, unqualified
+secret-byte propagation and failed model-OFF path attempts remain limitations.
+Zero OFF selectors support the stated logical consequence, not an executed empty
+path result. Engine still has no dependency on `ntp-exchange` or `time-core`; no
+live network-to-Core-to-clock chain follows. Parsing, authentication, garde and
+zeroization supply no universal taint barrier.
+
+Neither cloud evidence root is present on this WSL host. Counts, hashes and
+receipts in the supplied Markdown remain attributed reports, not independently
+reopened artifacts. The local handoff lacks the cloud-only300-line addition;
+no absent/unpublished text is treated as remote main or overwritten. Current
+`lib.rs`, `series.rs` and `source_policy.rs` differ from the scan baseline, so
+affected query/consumer claims need new source admission before any future reuse.
+No CodeQL, compiler, test, native or mutation job runs for this reconciliation.
+Existing execution permission, resource controls,90%/95% gates, production/native
+gaps and post-V1 formal deferral are unchanged.
+
+Read-only specialist records are under
+`~/.local/share/nevrotick/continuation-20261116-tools-v1/taint-handoff-reconciliation-20261117-v1/`.
+`baseline.json` captures clean HEAD/index and2124 tracked file identities; all48
+current KE input pins physically match. `counter-review.json` (`e548b167…`)
+records the branch/caller and raw TDD checks. Continue the existing remaining-KE
+owner reconciliation below the Request checkpoint; do not repeat a GNU Fault
+campaign whose18 Windows-only survivors remain unreachable.
+
+### Managed restriction visibility — implementation contract — 17 November 2026
+
+**Current product child; source implementation and focused development next.**
+REQ-8/14, BND-2 and CHECK-6/8/17/21/25/27 retain the existing Engine owner.
+Baseline is published `305a855` plus the coordinator's three documentation-only
+reconciliation edits. This ordinary diagnostic addition changes no §6.5 policy,
+graph, shipped interval, persistence, production issuer or execution permission.
+
+Expose immutable observations of the actual logical-source and already-bound
+canonical-endpoint records through `SourceHandle` and the managed acquisition
+session. Acquire the existing cell once; copy both records and an owned monotonic
+observation time under that guard. Preserve each own interval, maximum, retained
+floor, refusal, sticky unavailability and revision. Remaining waits refer only to
+that captured time. Refused/unavailable records remain visible as data; unknown
+or invalid endpoints and unavailable lock custody remain typed errors. An
+unmanaged session returns explicit absence, never a fabricated clear policy.
+
+Observation allocates no endpoint/channel, advances no revision/epoch, publishes
+no new record-change notification, reserves no allowance and issues no re-enable
+target. Existing contention-release notification remains required: a concurrent
+operation can observe the diagnostic read's lock and must wake when it releases.
+Floor waiters retain their separate actual-change channels; inspection creates
+no policy-change self-wake. A snapshot is no
+current send permission; all final effect guards remain mandatory. Historical
+request reports are unchanged by later policy observations. Bounded rendering
+runs after policy custody is released, omits identities/addresses/packet contents
+and marks no fresh synchronization or sample eligibility. Sink failure preserves
+the snapshot and actual policy state. The existing CLI remains unmanaged; no CLI
+or UI integration is claimed by this library addition.
+
+Acceptance observes actual A/E versus B/E and B/F records, RATE saturation and
+retained floors, selective re-enable, contention/poisoning, canonical aliases,
+unknown-endpoint nonallocation, managed/unmanaged session behavior, immutable
+historical snapshots and failing/partial output sinks. Use actual existing policy
+and session consumers with independently specified values. Focused development
+uses the configured isolated Rust 1.100 default/EP1 GNU/MSVC profiles; per-owner
+90%/95% qualification follows the settled-source checkpoint. No historical score
+or new generated kill is inferred from this implementation contract.
+
+### Managed restriction visibility — source development exit — 17 November 2026
+
+**Implemented; ordinary development passes, fresh metrics remain open.**
+The actual `SourceHandle::policy_snapshot` and
+`AcquisitionSession::policy_snapshot` return immutable, coherent source/endpoint
+facts. Refused and sticky-unavailable records remain visible; unmanaged sessions
+return explicit absence. Captured waits never count down or become permission.
+`SourcePolicySnapshot::write_status` emits two bounded fixed-scope rows after
+custody, with no endpoint/identity/revision/packet payload and with
+`eligible=0 fresh_sync=0`. Existing sender/receiver guards and re-enable authority
+are unchanged. Required contention-release wakes remain; no new record-change
+publication or floor self-wake is introduced.
+
+Actual product is605-input
+`8d2fd9e2d5760f980e4a0eb6726a58ec3aa283dbb4a20cc20b60960d6a1948c9`.
+Under `~/.local/share/nevrotick/continuation-20261116-tools-v1/managed-policy-observation-20261117-v1/`,
+`focused-3/verification.json` records nine actual passing cases. The final
+`full-2/verification.json` (`1e2b83a5…`) passes all twelve configured lanes:
+254 default and488 EP1 ordinary/optimized cases,78 doctests per graph, format
+and GNU/MSVC compiler/Clippy. Every prior runtime case and doctest remains
+selected; nine runtime IDs and three snapshot constructor/use doctests are added.
+The real managed-session tests receive actual DENY and three healthy loopback
+replies; kernel cases separately check nontransitivity, RATE retention/cap,
+selective re-enable, aliases, unavailable/poisoned state and immutable snapshots.
+Actual writer output checks clear, RATE-cap, source-only DENY and unavailable
+fields, plus immediate/partial sink errors. No fixture is called a native pass.
+
+The first focused attempt stops before tests on qualification lints introduced
+by a local import; removing that import preserves existing tests. The second
+stops before admission on disk headroom occupied by the first disposable build.
+Only the terminal owned build is deleted before the successful focused retry.
+The first full attempt reaches Clippy and rejects a new test's manual match;
+`let Err(...) else` preserves the same assertion and error. The complete second
+attempt passes with no lint exception or oracle change. Original failures,
+same1800-second development clock/300-second closeout reserve and all charges
+remain; no failed attempt is relabelled. The independent monitor joins cleanly
+with300 samples and maximum gap1.003276 seconds. Its algorithm is reused with
+only declared namespace/role/budget specialization; no resource limit is widened.
+
+Independent integrated source/result review `finalintegration-review.json`
+(`9a658117…`) accepts the current four Rust files and actual focused/full outputs.
+The five old equivalence arguments receive a separate observer-domain review
+(`2ae3a3b7…`); it grants no current score or binding. Next rebind the actual
+current development reader, roster and source/inventories, then qualify the two
+changed behavioral owners at unchanged90%/95%. Series/address source is unchanged;
+the library export-only change needs an exact span/caller reuse bridge. Do not
+repeat blanket campaigns or relabel old leaves as current. Main campaigns stay
+closed, and the old policy remains historical until actual admission. Disposable
+builds and duplicate materializations are deleted without compression; raw results,
+canonical final source and independently verified reconstruction bytes remain.
+This source/development child is not the parent qualification or release exit.
+
+### Consumer-boundary reinforcement — 17 November 2026
+**Development, current line gates and both selected mutation cohorts pass.**
+Independent catalogue review found three missing assertions, without a runtime
+defect: managed-session contention/poisoning must remain errors, a nonzero
+endpoint binding must expose its own record, and an elapsed retained `Some`
+floor must report zero wait. The existing nine snapshot cases now exercise
+those actual consumers and healthy neighbors. No production body, case ID,
+dependency, threshold or authority changes. The proposed three manual faulty
+replacements were not executed and receive no mutation credit.
+
+The resulting 605-input product is
+`861987c90a79e60b355c9e5c3e43fcbb6604cc556789fc2ddfeaca30f6d068ea`.
+Under the existing managed-policy evidence root,
+`consumer-test-reinforcement/full-1/verification.json` (`f8a62a63…`) passes all
+twelve lanes:254 default/488 EP1 cases in each build mode,78 doctests per graph,
+format and GNU/MSVC compiler/Clippy. Its306 resource samples have maximum
+gap1.004980 seconds and actual joined custody. Independent review
+`final-integration-review.json` (`5453a17a…`) accepts this bounded result.
+The current reader binds the actual full-1 producer, physical785 capture and
+new healthy/stale monitor controls; only exact identities and the attempt slot
+change. Legacy/v4 refusal semantics remain. All170 Python reader controls and
+workspace strict checks pass; physical admission checks809 files. Main stays
+closed with empty inventories and E0; old E5 arguments retain their old bindings.
+
+Fresh preparation `consumer-test-reinforcement/metrics-preparation/attempt-1/`
+passes with parent receipt `33138c02…`, joined96-sample observer and254 actual
+instrumented cases. Executable-line results are source-policy1070/1117,
+library943/989, session249/249, series730/762 and address-round574/600; all
+unchanged90% gates pass. Branch evidence remains separate. The complete731
+catalogue contains195/240/47/164/85 variants respectively. The489 unchanged-owner
+descriptors match their reviewed source/caller/span/rendered-diff bridges exactly;
+no historical raw result is relabelled as fresh execution. Next qualify only
+source-policy and session at unchanged95%, with independent outcomes and
+generation-gap review. Earlier failures, original clocks and costs remain
+retained. Completed targets and superseded materializations are deleted without
+compression; the current canonical source, raw results and exact plaintext
+reconstruction inputs remain. No native, production or release exit follows.
+
+#### Selected mutation exit and evidence reuse
+The private `metrics-cohorts/` lease retains six workers, zero extra jobserver
+tasks,90-second build/60-second test limits, a whole1200-second limit per cohort,
+one3600-second stage with600-second closeout reserve and the original3GiB owned
+data bound. Actual session/source-policy native exits are0; their joined
+supervisors finish in201.536/764.785 seconds. No retry or limit increase occurs.
+
+| Fresh current owner | Generated | Caught | Compiler-unviable | Survived / timed out | Viable score |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Source policy |195|128|67|0 /0|128/128,100% |
+| Session |47|14|33|0 /0|14/14,100% |
+
+Independent reviews `source_policy-independent-review.json` (`c798ddc9…`) and
+`session-independent-review.json` (`2500234c…`) inspect every descriptor,
+rendered diff and raw outcome. Both actual332-case baselines match the complete
+254+78 roster. Caught variants stop after the228-case library harness rejects
+them; actual named results are29,516 and3,524, separately from reserved ceilings.
+Compiler failures contribute no kills. The new session getter variants are both
+compiler-unviable; its executed consumer checks remain separate evidence.
+Source policy's25 added variants contribute11 catches and14 compiler refusals.
+All128 source-policy catches have independently inspected assertion, arithmetic
+or typed-refusal witnesses. Recorded resource samples stay within the admitted
+observed bounds, with maximum gaps1.014977/1.004244 seconds; sampled maxima do
+not establish continuous peaks. Parent/native custody and final tool/source
+bookends pass; branch qualification remains separate.
+
+Library, series and address-round retain their **original accepted resolved
+gates**, under their original470-candidate/native0-or2/E3-or-E2 dispositions.
+The exact current489-descriptor source/body/cfg/caller/span bridge permits that
+scoped evidence reuse. Their raw97.3913%/98.0769%/100% numbers alone are not
+configured gate passes: the maintained checker also requires zero unresolved
+survivors. The five historically resolved misses remain visible and are not
+fresh kills, current E5 registrations or a new all-five E0 result. Main remains
+closed with empty inventories/E0; only the two changed behavioral owners have
+fresh E0 mutation execution. This is a mixed-evidence selected GNU exit.
+
+The original independent integration record's numeric-only raw-gate wording
+required correction against that zero-unresolved rule; retain its explicit
+erratum and corrected scope. No production code or acceptance rule changed to
+obtain the result. The cohort ledger holds91,918 upper case reservations,
+including10,910 conservative prior authorization envelopes; it does not count
+unused reservations as tests or refund failed/unused allowance. Earlier source,
+resource and wrapper failures remain recorded. Next finish the complete staged
+candidate's publication checks, then continue the existing S2.1/W11-W01 actual
+capture/mapping contract. Current observations still confer no production sample
+eligibility, native TLS/CNG/UDP/service/clock or release qualification.

@@ -9,6 +9,21 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**Managed restriction visibility — 17 November 2026:** the
+[current Engine source child](../tasks/engine-transport-pilot.md#consumer-boundary-reinforcement--17-november-2026)
+adds read-only source/endpoint policy observations through actual source handles
+and managed acquisition sessions. It distinguishes retained refusals, unavailable
+state, each own RATE interval/cap and captured wait; observation grants no send or
+re-enable permission. Nine focused cases and all twelve development lanes pass
+on `861987c9…`:254 default/488 EP1 cases per ordinary/optimized mode,78 doctests
+per graph and GNU/MSVC compiler/Clippy checks. Real controlled-loopback and failing
+sink cases execute. The same cases now also check managed-session errors,
+nonzero endpoint binding and elapsed retained floors. All five 90% line gates
+and 170 reader controls pass. Fresh source-policy/session mutation gates pass;
+the other three owners reuse their original resolved qualification through the
+exact source/caller bridge. This mixed-evidence GNU checkpoint supplies no new
+all-five E0 campaign, native or release pass.
+
 **Active Core/Engine work — 17 November 2026:**
 [Selected-reply rejection accounting](../tasks/engine-transport-pilot.md#selected-reply-rejection-accounting--17-november-2026)
 now passes all twelve development lanes on `4703646b…`: 245 default/479 EP1 cases

@@ -4224,3 +4224,834 @@ fn public_managed_round_three_candidates_preserve_actual_fallback_in_both_famili
     }
     Ok(())
 }
+
+/// Complete public record observations, excluding the separately captured wait.
+type VisibleRestriction = (Duration, Duration, Option<Instant>, bool, bool, u64, bool);
+
+/// Borrow the public values without consulting the private record as an oracle.
+fn visible_restriction(record: &SourceRestrictionSnapshot) -> VisibleRestriction {
+    (
+        record.interval(),
+        record.maximum_interval(),
+        record.floor(),
+        record.refused(),
+        record.unavailable(),
+        record.revision(),
+        record.at_maximum(),
+    )
+}
+
+/// Observe real direct refusals and exact selective clearing without transitivity.
+/// # Errors
+/// Preserve checked policy, binding, reservation, control and target failures.
+/// # Panics
+/// Fail if a snapshot merges scopes, clears a floor, follows later mutations or
+/// makes an already observed revision target current again.
+fn snapshot_direct_refusal_case(code: u32) -> Check<()> {
+    let mut authority = isolated_authority(limits(2, 2)?)?;
+    let a = authority.source(0)?;
+    let b = authority.source(1)?;
+    let e = endpoint(43101);
+    let f = endpoint(43102);
+    let ae = a.bind(e)?;
+    let _be = b.bind(e)?;
+    let _af = a.bind(f)?;
+    let _bf = b.bind(f)?;
+    let now = Instant::now();
+    let floor = now
+        .checked_add(Duration::from_secs(1))
+        .ok_or("snapshot floor overflow")?;
+    let mut request = fixture_send(&ae, &Arc::new(()), now)?;
+    fixture_control(&ae, &mut request, code, now)?;
+    let before = Instant::now();
+    let historical = a.policy_snapshot(e)?;
+    assert!(before <= historical.captured_at() && historical.captured_at() <= Instant::now());
+    let refused = (
+        Duration::from_secs(1),
+        Duration::from_secs(4),
+        Some(floor),
+        true,
+        false,
+        3,
+        false,
+    );
+    let clear = (
+        Duration::from_secs(1),
+        Duration::from_secs(4),
+        None,
+        false,
+        false,
+        1,
+        false,
+    );
+    assert_eq!(visible_restriction(historical.source()), refused);
+    assert_eq!(visible_restriction(historical.endpoint()), refused);
+    let be = b.policy_snapshot(e)?;
+    let bf = b.policy_snapshot(f)?;
+    let af = a.policy_snapshot(f)?;
+    assert_eq!(visible_restriction(be.source()), clear);
+    assert_eq!(visible_restriction(be.endpoint()), refused);
+    assert_eq!(visible_restriction(bf.source()), clear);
+    assert_eq!(visible_restriction(bf.endpoint()), clear);
+    assert_eq!(visible_restriction(af.source()), refused);
+    assert_eq!(visible_restriction(af.endpoint()), clear);
+    reenable_visible_refusals(&mut authority, &a, &b, [e, f], floor, &historical)
+}
+
+/// Consume exact current targets while preserving independently observed history.
+/// # Errors
+/// Preserve actual target issuance, selective clearing and snapshot failures.
+/// # Panics
+/// Fail if unselected state, a floor or an earlier observation changes.
+fn reenable_visible_refusals(
+    authority: &mut SourcePolicyAuthority,
+    a: &SourceHandle,
+    b: &SourceHandle,
+    [e, f]: [SocketAddr; 2],
+    floor: Instant,
+    historical: &SourcePolicySnapshot,
+) -> Check<()> {
+    let refused = (
+        Duration::from_secs(1),
+        Duration::from_secs(4),
+        Some(floor),
+        true,
+        false,
+        3,
+        false,
+    );
+    let clear = (
+        Duration::from_secs(1),
+        Duration::from_secs(4),
+        None,
+        false,
+        false,
+        1,
+        false,
+    );
+    let old_source_target = authority.source_target(a)?;
+    authority.reenable(&[authority.endpoint_target(e)?])?;
+    let endpoint_cleared = a.policy_snapshot(e)?;
+    assert_eq!(visible_restriction(endpoint_cleared.source()), refused);
+    assert_eq!(
+        visible_restriction(endpoint_cleared.endpoint()),
+        (
+            Duration::from_secs(1),
+            Duration::from_secs(4),
+            Some(floor),
+            false,
+            false,
+            4,
+            false
+        )
+    );
+    assert!(a.policy_snapshot(f)?.source().refused());
+    assert!(!b.policy_snapshot(e)?.source().refused());
+    authority.reenable(&[authority.source_target(a)?])?;
+    let cleared = a.policy_snapshot(e)?;
+    assert!(!cleared.source().refused() && !cleared.endpoint().refused());
+    assert_eq!(cleared.source().floor(), Some(floor));
+    assert_eq!(cleared.endpoint().floor(), Some(floor));
+    assert_eq!(cleared.source().revision(), 4);
+    assert!(matches!(
+        authority.reenable(&[old_source_target]),
+        Err(SourcePolicyError::Stale)
+    ));
+    assert_eq!(visible_restriction(historical.source()), refused);
+    assert_eq!(visible_restriction(historical.endpoint()), refused);
+    assert_eq!(visible_restriction(b.policy_snapshot(f)?.source()), clear);
+    Ok(())
+}
+
+/// Public observations preserve both direct control kinds and exact endpoint scope.
+/// # Errors
+/// Preserve each real kernel/target scenario's failure.
+/// # Panics
+/// Fail on transitive restrictions or changing historical observations.
+#[test]
+fn policy_snapshot_distinguishes_source_endpoint_and_selective_reenable() -> Check<()> {
+    for code in [DENY, RSTR] {
+        snapshot_direct_refusal_case(code)?;
+    }
+    Ok(())
+}
+
+/// A snapshot reports own intervals rather than an inherited effective maximum.
+/// # Errors
+/// Preserve checked allocation and actual RATE/reservation failures.
+/// # Panics
+/// Fail if a higher source interval is copied into its endpoint or another source.
+#[test]
+fn policy_snapshot_preserves_independent_rate_intervals() -> Check<()> {
+    let authority = isolated_authority(limits(2, 2)?)?;
+    let a = authority.source(0)?;
+    let b = authority.source(1)?;
+    let af = a.bind(endpoint(43112))?;
+    let ae = a.bind(endpoint(43111))?;
+    let _be = b.bind(endpoint(43111))?;
+    let now = Instant::now();
+    let mut first = fixture_send(&af, &Arc::new(()), now)?;
+    fixture_control(&af, &mut first, RATE, now)?;
+    let later = now
+        .checked_add(Duration::from_secs(2))
+        .ok_or("snapshot time overflow")?;
+    let mut second = fixture_send(&ae, &Arc::new(()), later)?;
+    fixture_control(&ae, &mut second, RATE, later)?;
+    let observed = a.policy_snapshot(endpoint(43111))?;
+    assert_eq!(observed.source().interval(), Duration::from_secs(4));
+    assert_eq!(observed.endpoint().interval(), Duration::from_secs(2));
+    assert!(observed.source().at_maximum());
+    assert!(!observed.endpoint().at_maximum());
+    assert_eq!(
+        observed.source().floor(),
+        later.checked_add(Duration::from_secs(4))
+    );
+    assert_eq!(
+        observed.endpoint().floor(),
+        later.checked_add(Duration::from_secs(2))
+    );
+    let alias = b.policy_snapshot(endpoint(43111))?;
+    assert_eq!(alias.source().interval(), Duration::from_secs(1));
+    assert_eq!(alias.source().floor(), None);
+    assert_eq!(alias.endpoint().interval(), Duration::from_secs(2));
+    assert!(!alias.source().refused() && !alias.endpoint().refused());
+    Ok(())
+}
+
+/// Elapsed observation time and a successful reply cannot reset a capped RATE.
+/// # Errors
+/// Preserve genuine kernel requests, observations and checked modeled times.
+/// # Panics
+/// Fail if elapsed time mutates a captured wait, clears a cap or refunds a floor.
+#[test]
+fn policy_snapshot_capped_rate_and_wait_are_historical() -> Check<()> {
+    let authority = isolated_authority(limits(1, 1)?)?;
+    let source = authority.source(0)?;
+    let peer = endpoint(43121);
+    let binding = source.bind(peer)?;
+    // Explicit modeled kernel times keep the floor ahead of the hardware capture;
+    // these calls are not claimed as native send/receive observations.
+    let mut now = Instant::now()
+        .checked_add(Duration::from_secs(60))
+        .ok_or("snapshot time overflow")?;
+    for seconds in [2, 4, 4] {
+        let mut request = fixture_send(&binding, &Arc::new(()), now)?;
+        fixture_control(&binding, &mut request, RATE, now)?;
+        now = now
+            .checked_add(Duration::from_secs(seconds))
+            .ok_or("snapshot floor overflow")?;
+    }
+    let historical = source.policy_snapshot(peer)?;
+    let saved_wait = historical.source().remaining_at_capture();
+    assert!(!saved_wait.is_zero());
+    assert_eq!(historical.source().floor(), Some(now));
+    assert_eq!(historical.source().revision(), 7);
+    assert_eq!(historical.endpoint().revision(), 7);
+    for record in [historical.source(), historical.endpoint()] {
+        assert_eq!(record.interval(), Duration::from_secs(4));
+        assert_eq!(record.maximum_interval(), Duration::from_secs(4));
+        assert!(record.at_maximum());
+        assert!(!record.refused() && !record.unavailable());
+    }
+    std::thread::sleep(Duration::from_millis(2));
+    let later = source.policy_snapshot(peer)?;
+    assert!(later.captured_at() >= historical.captured_at());
+    assert!(later.source().remaining_at_capture() <= saved_wait);
+    assert_eq!(historical.source().remaining_at_capture(), saved_wait);
+    let mut healthy = fixture_send(&binding, &Arc::new(()), now)?;
+    fixture_receive(&binding, &mut healthy)?;
+    let after_success = source.policy_snapshot(peer)?;
+    assert_eq!(after_success.source().interval(), Duration::from_secs(4));
+    assert_eq!(after_success.endpoint().interval(), Duration::from_secs(4));
+    assert_eq!(
+        after_success.source().floor(),
+        now.checked_add(Duration::from_secs(4))
+    );
+    assert_eq!(after_success.source().revision(), 8);
+    assert_eq!(historical.source().revision(), 7);
+    assert_eq!(historical.source().floor(), Some(now));
+    let elapsed_authority = isolated_authority(limits(1, 1)?)?;
+    let elapsed_source = elapsed_authority.source(0)?;
+    let elapsed_peer = endpoint(43122);
+    let elapsed_binding = elapsed_source.bind(elapsed_peer)?;
+    // Admit a real kernel reservation at an explicit modeled past time.
+    let past = Instant::now()
+        .checked_sub(Duration::from_secs(2))
+        .ok_or("snapshot past time overflow")?;
+    let elapsed_floor = past
+        .checked_add(Duration::from_secs(1))
+        .ok_or("snapshot elapsed floor overflow")?;
+    let _elapsed_request = fixture_send(&elapsed_binding, &Arc::new(()), past)?;
+    let retained = facts(&elapsed_binding)?;
+    let elapsed = elapsed_source.policy_snapshot(elapsed_peer)?;
+    assert!(elapsed.captured_at() > elapsed_floor);
+    for record in [elapsed.source(), elapsed.endpoint()] {
+        assert_eq!(record.floor(), Some(elapsed_floor));
+        assert_eq!(record.remaining_at_capture(), Duration::ZERO);
+        assert_eq!(record.interval(), Duration::from_secs(1));
+        assert_eq!(record.revision(), 2);
+    }
+    assert_eq!(facts(&elapsed_binding)?, retained);
+    Ok(())
+}
+
+/// Reads preserve change versions while retaining ordinary contention-release wakes.
+/// # Errors
+/// Preserve runtime, actual policy custody, reservation and watcher failures.
+/// # Panics
+/// Fail on a changed record, stranded release waiter or future-floor self-wake.
+#[test]
+fn policy_snapshot_does_not_publish_changes_or_wake_a_future_floor() -> Check<()> {
+    use std::{
+        future::Future,
+        task::{Context, Poll, Waker},
+    };
+
+    runtime()?.block_on(async {
+        let authority = isolated_authority(SourcePolicyLimits::new(
+            1,
+            1,
+            Duration::from_secs(30),
+            Duration::from_secs(30),
+        )?)?;
+        let source = authority.source(0)?;
+        let peer = endpoint(43131);
+        let binding = source.bind(peer)?;
+        let request = Arc::new(());
+        let _reservation = fixture_send(&binding, &request, Instant::now())?;
+        let retained = facts(&binding)?;
+        let mut live = LivePolicy::from_mode(SourceMode::Managed(binding.clone()));
+        live.refresh(&request)?;
+        let (source_changes, endpoint_changes) = {
+            let guard = authority.cell.lock()?;
+            (
+                guard
+                    .state()?
+                    .record(RecordKey::Source(0))?
+                    .changes
+                    .subscribe(),
+                guard
+                    .state()?
+                    .record(RecordKey::Endpoint(binding.endpoint))?
+                    .changes
+                    .subscribe(),
+            )
+        };
+        for _ in 0..2 {
+            let mut released = std::pin::pin!(authority.cell.released.notified());
+            assert!(!released.as_mut().enable());
+            let observed = source.policy_snapshot(peer)?;
+            assert_eq!(observed.source().revision(), 2);
+            let mut context = Context::from_waker(Waker::noop());
+            assert!(matches!(
+                released.as_mut().poll(&mut context),
+                Poll::Ready(())
+            ));
+            assert!(!source_changes.has_changed()? && !endpoint_changes.has_changed()?);
+            assert!(
+                tokio::time::timeout(Duration::from_millis(10), live.wake())
+                    .await
+                    .is_err()
+            );
+        }
+        assert_eq!(facts(&binding)?, retained);
+        assert!(!live.wants_writable());
+        Ok(())
+    })
+}
+
+/// Unknown reads consume no canonical capacity; aliases retain the actual record.
+/// # Errors
+/// Preserve real allocator/binding and checked endpoint observation failures.
+/// # Panics
+/// Fail on hidden endpoint binding, alias duplication or loss of required IPv6 zone.
+#[test]
+fn policy_snapshot_canonical_aliases_and_unknown_reads_do_not_allocate() -> Check<()> {
+    let authority = isolated_authority(limits(1, 2)?)?;
+    let source = authority.source(0)?;
+    let peer = endpoint(43141);
+    let binding = source.bind(peer)?;
+    let before = facts(&binding)?;
+    for _ in 0..3 {
+        assert!(matches!(
+            source.policy_snapshot(endpoint(43142)),
+            Err(SourcePolicyError::UnknownEndpoint)
+        ));
+    }
+    assert!(matches!(
+        source.policy_snapshot(endpoint(0)),
+        Err(SourcePolicyError::InvalidEndpoint)
+    ));
+    let mapped = SocketAddr::new(Ipv4Addr::LOCALHOST.to_ipv6_mapped().into(), 43141);
+    assert_eq!(
+        visible_restriction(source.policy_snapshot(mapped)?.endpoint()),
+        (
+            Duration::from_secs(1),
+            Duration::from_secs(4),
+            None,
+            false,
+            false,
+            1,
+            false
+        )
+    );
+    let address = "fe80::1".parse::<Ipv6Addr>()?;
+    let scoped = SocketAddr::V6(SocketAddrV6::new(address, 43143, 0, 7));
+    let _scoped_binding = source.bind(scoped)?;
+    // That second binding fits only if all unknown diagnostic reads were inert.
+    assert!(source.policy_snapshot(scoped).is_ok());
+    let different_zone = SocketAddr::V6(SocketAddrV6::new(address, 43143, 0, 8));
+    let missing_zone = SocketAddr::V6(SocketAddrV6::new(address, 43143, 0, 0));
+    assert!(matches!(
+        source.policy_snapshot(different_zone),
+        Err(SourcePolicyError::UnknownEndpoint)
+    ));
+    assert!(matches!(
+        source.policy_snapshot(missing_zone),
+        Err(SourcePolicyError::InvalidEndpoint)
+    ));
+    assert_eq!(facts(&binding)?, before);
+    Ok(())
+}
+
+/// Genuine arithmetic exhaustion remains readable without recovering authority.
+/// # Errors
+/// Preserve policy transitions and independently located representability bounds.
+/// # Panics
+/// Fail if sticky unavailable state is hidden, cleared, or confused with refusal.
+#[test]
+fn policy_snapshot_keeps_unavailable_records_as_data() -> Check<()> {
+    let authority = isolated_authority(limits(1, 1)?)?;
+    let source = authority.source(0)?;
+    let peer = endpoint(43151);
+    let binding = source.bind(peer)?;
+    let start = Instant::now();
+    for now in [
+        start,
+        start
+            .checked_add(Duration::from_secs(2))
+            .ok_or("snapshot time overflow")?,
+    ] {
+        let mut request = fixture_send(&binding, &Arc::new(()), now)?;
+        fixture_control(&binding, &mut request, RATE, now)?;
+    }
+    let retained_floor = start
+        .checked_add(Duration::from_secs(6))
+        .ok_or("snapshot floor overflow")?;
+    assert!(matches!(
+        fixture_send(&binding, &Arc::new(()), near_instant_limit(start)?),
+        Err(SourcePolicyError::Unavailable)
+    ));
+    let observed = source.policy_snapshot(peer)?;
+    for record in [observed.source(), observed.endpoint()] {
+        assert_eq!(record.interval(), Duration::from_secs(4));
+        assert_eq!(record.floor(), Some(retained_floor));
+        assert_eq!(record.revision(), 5);
+        assert!(record.at_maximum() && record.unavailable());
+        assert!(!record.refused());
+    }
+    let held = authority.cell.lock()?;
+    assert!(matches!(
+        source.policy_snapshot(peer),
+        Err(SourcePolicyError::Contended)
+    ));
+    drop(held);
+    assert!(source.policy_snapshot(peer)?.source().unavailable());
+    Ok(())
+}
+
+/// A genuinely poisoned cell refuses observation; another owner remains readable.
+/// # Errors
+/// Preserve real policy setup, lock and healthy neighboring observation failures.
+/// # Panics
+/// Fail if observation hides poisoning, repairs it or poisons another root.
+#[test]
+fn policy_snapshot_preserves_poison_and_the_healthy_owner() -> Check<()> {
+    use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+
+    let authority = isolated_authority(limits(1, 1)?)?;
+    let source = authority.source(0)?;
+    let peer = endpoint(43161);
+    let _binding = source.bind(peer)?;
+    let session = source.session(SeriesConfig::new(
+        peer,
+        Duration::from_millis(400),
+        Duration::from_secs(2),
+    )?)?;
+    let historical = source.policy_snapshot(peer)?;
+    let cell = Arc::clone(&authority.cell);
+    let held = cell.lock()?;
+    assert!(matches!(
+        session.policy_snapshot(),
+        Err(SourcePolicyError::Contended)
+    ));
+    let unwind: Result<(), _> = catch_unwind(AssertUnwindSafe(move || {
+        let _held_during_unwind = held;
+        resume_unwind(Box::new("snapshot policy poisoning specimen"));
+    }));
+    assert!(unwind.is_err());
+    assert!(cell.state.is_poisoned());
+    assert!(matches!(
+        source.policy_snapshot(peer),
+        Err(SourcePolicyError::Poisoned)
+    ));
+    assert!(matches!(
+        session.policy_snapshot(),
+        Err(SourcePolicyError::Poisoned)
+    ));
+    assert!(!historical.source().unavailable());
+    let healthy = isolated_authority(limits(1, 1)?)?;
+    let neighbor = healthy.source(0)?;
+    let _neighbor_binding = neighbor.bind(peer)?;
+    assert_eq!(neighbor.policy_snapshot(peer)?.source().revision(), 1);
+    let healthy_session = neighbor.session(SeriesConfig::new(
+        peer,
+        Duration::from_millis(400),
+        Duration::from_secs(2),
+    )?)?;
+    assert!(
+        healthy_session
+            .policy_snapshot()?
+            .ok_or("healthy managed policy absent")?
+            .endpoint()
+            .floor()
+            .is_none()
+    );
+    assert!(cell.state.is_poisoned());
+    Ok(())
+}
+
+/// Drive an actual public managed session while a bounded scoped peer responds.
+/// # Errors
+/// Preserve setup, public preparation/execution, native reply and joined peer errors.
+fn snapshot_public_session_exchange(
+    session: &mut AcquisitionSession,
+    peer: &std::net::UdpSocket,
+    code: Option<u32>,
+    responses: usize,
+) -> Check<AcquisitionReport> {
+    drop(runtime()?);
+    peer.set_read_timeout(Some(Duration::from_secs(2)))?;
+    let (prepared, control) = session.prepare()?;
+    std::thread::scope(|scope| {
+        let responder = scope.spawn(|| -> io::Result<()> {
+            for _ in 0..responses {
+                let mut packet = [0; RECEIVE_BYTES];
+                let (length, client) = peer.recv_from(&mut packet)?;
+                managed_round_reply(peer, &packet, length, client, code)?;
+            }
+            Ok(())
+        });
+        let result = prepared.execute(&crate::ControlSchedule::new(None, None)?);
+        let peer_result = responder
+            .join()
+            .map_err(|_| "snapshot session peer panicked")?;
+        drop(control);
+        peer_result?;
+        Ok(result?)
+    })
+}
+
+/// Public session status consumes genuine control traffic without granting retry.
+/// # Errors
+/// Preserve actual sockets, public managed/unmanaged owners and joined acquisitions.
+/// # Panics
+/// Fail on fabricated clear state, hidden restriction, lost report or invented traffic.
+#[test]
+fn policy_snapshot_public_sessions_observe_real_restriction_and_unmanaged_absence() -> Check<()> {
+    let authority = isolated_authority(SourcePolicyLimits::new(
+        2,
+        2,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let a = authority.source(0)?;
+    let b = authority.source(1)?;
+    let e = std::net::UdpSocket::bind(endpoint(0))?;
+    let f = std::net::UdpSocket::bind(endpoint(0))?;
+    let config = || -> Check<SeriesConfig> {
+        Ok(SeriesConfig::new(
+            e.local_addr()?,
+            Duration::from_millis(400),
+            Duration::from_secs(2),
+        )?)
+    };
+    let mut session = a.session(config()?)?;
+    let historical = session
+        .policy_snapshot()?
+        .ok_or("managed policy observation absent")?;
+    assert!(!historical.source().refused() && !historical.endpoint().refused());
+    let report = snapshot_public_session_exchange(&mut session, &e, Some(DENY), 1)?;
+    let first = report.series().attempts()[0]
+        .report()
+        .ok_or("actual DENY report missing")?;
+    assert_eq!(first.status(), Status::Control);
+    assert_eq!(first.control_code(), Some(DENY));
+    assert_eq!((first.received(), first.rejected()), (1, 0));
+    let restricted = session
+        .policy_snapshot()?
+        .ok_or("managed restriction hidden")?;
+    assert!(restricted.source().refused() && restricted.endpoint().refused());
+    assert!(!historical.source().refused() && !historical.endpoint().refused());
+    session.retire();
+    assert!(
+        session
+            .policy_snapshot()?
+            .ok_or("retired diagnostic absent")?
+            .source()
+            .refused()
+    );
+    let mut replacement = a.session(config()?)?;
+    assert!(matches!(
+        replacement.prepare(),
+        Err(crate::AcquisitionError::SourcePolicy(
+            SourcePolicyError::Disabled
+        ))
+    ));
+    check_healthy_snapshot_session(&b, &f)?;
+    assert_eq!((first.received(), first.rejected()), (1, 0));
+    e.set_nonblocking(true)?;
+    let mut extra = [0; RECEIVE_BYTES];
+    assert!(
+        matches!(e.recv_from(&mut extra), Err(error) if error.kind() == io::ErrorKind::WouldBlock)
+    );
+    let mut unmanaged = AcquisitionSession::new(config()?);
+    assert!(unmanaged.policy_snapshot()?.is_none());
+    unmanaged.retire();
+    assert!(unmanaged.policy_snapshot()?.is_none());
+    Ok(())
+}
+
+/// Pair the refused public session with three actual healthy public acquisitions.
+/// # Errors
+/// Preserve actual configuration, joined replies and managed observation failures.
+/// # Panics
+/// Fail on missing/extra attempts, rejected healthy replies or hidden policy data.
+fn check_healthy_snapshot_session(source: &SourceHandle, peer: &std::net::UdpSocket) -> Check<()> {
+    let mut healthy = source.session(SeriesConfig::new(
+        peer.local_addr()?,
+        Duration::from_millis(400),
+        Duration::from_secs(2),
+    )?)?;
+    let initial = healthy
+        .policy_snapshot()?
+        .ok_or("healthy initial policy absent")?;
+    // E already occupies the refused first record; this session owns distinct F.
+    for record in [initial.source(), initial.endpoint()] {
+        assert_eq!(
+            visible_restriction(record),
+            (
+                Duration::from_millis(1),
+                Duration::from_millis(4),
+                None,
+                false,
+                false,
+                1,
+                false
+            )
+        );
+    }
+    let report = snapshot_public_session_exchange(&mut healthy, peer, None, 3)?;
+    assert_eq!(report.series().end(), crate::SeriesEnd::Completed);
+    assert_eq!(report.series().attempts().len(), 3);
+    assert!(report.series().attempts().iter().all(|attempt| {
+        attempt
+            .report()
+            .is_some_and(|value| value.status() == Status::Header)
+    }));
+    let observed = healthy.policy_snapshot()?.ok_or("healthy policy absent")?;
+    for record in [observed.source(), observed.endpoint()] {
+        assert_eq!(record.interval(), Duration::from_millis(1));
+        assert_eq!(record.maximum_interval(), Duration::from_millis(4));
+        assert!(record.floor().is_some());
+        assert!(!record.refused() && !record.unavailable() && !record.at_maximum());
+        assert_eq!(record.revision(), 4);
+    }
+    Ok(())
+}
+
+/// A finite prefix sink reports its original error instead of completing a row.
+struct SnapshotPrefixSink {
+    /// Actual bytes accepted before the explicit failure boundary.
+    bytes: Vec<u8>,
+    /// Maximum accepted prefix for this one diagnostic operation.
+    limit: usize,
+}
+
+impl io::Write for SnapshotPrefixSink {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        let remaining = self.limit.saturating_sub(self.bytes.len());
+        if remaining == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::BrokenPipe,
+                "snapshot sink refused",
+            ));
+        }
+        let count = remaining.min(bytes.len());
+        self.bytes.extend_from_slice(&bytes[..count]);
+        Ok(count)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+/// Independent static fields and the modeled retained floor for one output row.
+type ExpectedSnapshotStatus = (&'static str, &'static str, Option<Instant>);
+
+/// Check literal fields and elapsed wait from a known kernel floor, not getters.
+/// # Errors
+/// Preserve writer/UTF-8/decimal failures and missing output fields.
+/// # Panics
+/// Fail on wrong scope/flags/interval, extra output or an incorrect captured wait.
+fn check_snapshot_status_rows(
+    snapshot: &SourcePolicySnapshot,
+    expected: [ExpectedSnapshotStatus; 2],
+) -> Check<()> {
+    let mut bytes = Vec::new();
+    snapshot.write_status(&mut bytes)?;
+    assert!(bytes.len() <= 512);
+    let mut rows = std::str::from_utf8(&bytes)?.lines();
+    for (prefix, suffix, floor) in expected {
+        let row = rows.next().ok_or("snapshot status row absent")?;
+        let (actual_prefix, remainder) = row
+            .split_once(" remaining_at_capture_ns=")
+            .ok_or("snapshot wait field absent")?;
+        let (wait, actual_suffix) = remainder.split_once(' ').ok_or("snapshot flags absent")?;
+        assert_eq!(actual_prefix, prefix);
+        assert_eq!(actual_suffix, suffix);
+        let elapsed_wait = floor.map_or(Duration::ZERO, |at| {
+            at.saturating_duration_since(snapshot.captured_at())
+        });
+        assert_eq!(wait.parse::<u128>()?, elapsed_wait.as_nanos());
+    }
+    assert!(rows.next().is_none());
+    Ok(())
+}
+
+/// Render actual capped RATE, direct refusal and arithmetic exhaustion states.
+/// # Errors
+/// Preserve real policy kernels, observations and independently checked times.
+/// # Panics
+/// Fail if a positive flag is hardcoded clear or an endpoint copies source state.
+fn check_positive_snapshot_status_fields() -> Check<()> {
+    const SOURCE_CAP: &str =
+        "event=source_policy scope=source interval_ns=4000000000 maximum_ns=4000000000";
+    const ENDPOINT_CAP: &str =
+        "event=source_policy scope=endpoint interval_ns=4000000000 maximum_ns=4000000000";
+    const ENDPOINT_INITIAL: &str =
+        "event=source_policy scope=endpoint interval_ns=1000000000 maximum_ns=4000000000";
+    const CAP: &str = "refused=0 unavailable=0 at_maximum=1 eligible=0 fresh_sync=0";
+    const REFUSED: &str = "refused=1 unavailable=0 at_maximum=1 eligible=0 fresh_sync=0";
+    const CLEAR: &str = "refused=0 unavailable=0 at_maximum=0 eligible=0 fresh_sync=0";
+    const UNAVAILABLE: &str = "refused=0 unavailable=1 at_maximum=1 eligible=0 fresh_sync=0";
+    let mut authority = isolated_authority(limits(1, 2)?)?;
+    let source = authority.source(0)?;
+    let e = endpoint(43181);
+    let f = endpoint(43182);
+    let binding = source.bind(e)?;
+    let _other_endpoint = source.bind(f)?;
+    let start = Instant::now();
+    let base = start
+        .checked_add(Duration::from_secs(60))
+        .ok_or("status time overflow")?;
+    // These are real policy transitions with explicit modeled times, not UDP work.
+    for now in [
+        base,
+        base.checked_add(Duration::from_secs(2))
+            .ok_or("status time overflow")?,
+    ] {
+        let mut request = fixture_send(&binding, &Arc::new(()), now)?;
+        fixture_control(&binding, &mut request, RATE, now)?;
+    }
+    let capped_floor = base
+        .checked_add(Duration::from_secs(6))
+        .ok_or("status floor overflow")?;
+    check_snapshot_status_rows(
+        &source.policy_snapshot(e)?,
+        [
+            (SOURCE_CAP, CAP, Some(capped_floor)),
+            (ENDPOINT_CAP, CAP, Some(capped_floor)),
+        ],
+    )?;
+    let mut request = fixture_send(&binding, &Arc::new(()), capped_floor)?;
+    fixture_control(&binding, &mut request, DENY, capped_floor)?;
+    let refused_floor = base
+        .checked_add(Duration::from_secs(10))
+        .ok_or("status floor overflow")?;
+    check_snapshot_status_rows(
+        &source.policy_snapshot(f)?,
+        [
+            (SOURCE_CAP, REFUSED, Some(refused_floor)),
+            (ENDPOINT_INITIAL, CLEAR, None),
+        ],
+    )?;
+    authority.reenable(&[
+        authority.source_target(&source)?,
+        authority.endpoint_target(e)?,
+    ])?;
+    assert!(matches!(
+        fixture_send(&binding, &Arc::new(()), near_instant_limit(start)?),
+        Err(SourcePolicyError::Unavailable)
+    ));
+    check_snapshot_status_rows(
+        &source.policy_snapshot(e)?,
+        [
+            (SOURCE_CAP, UNAVAILABLE, Some(refused_floor)),
+            (ENDPOINT_CAP, UNAVAILABLE, Some(refused_floor)),
+        ],
+    )?;
+    Ok(())
+}
+
+/// Exact status fields omit peer/owner/revision data and survive partial sink failure.
+/// # Errors
+/// Preserve real snapshot capture and successful neighboring output failures.
+/// # Panics
+/// Fail on extra fields, unbounded output, swallowed sink error or policy mutation.
+#[test]
+fn policy_snapshot_status_is_bounded_payload_free_and_preserves_sink_errors() -> Check<()> {
+    check_positive_snapshot_status_fields()?;
+    let authority = isolated_authority(limits(1, 1)?)?;
+    let source = authority.source(0)?;
+    let peer = endpoint(43171);
+    let binding = source.bind(peer)?;
+    let observed = source.policy_snapshot(peer)?;
+    let retained = facts(&binding)?;
+    let expected = concat!(
+        "event=source_policy scope=source interval_ns=1000000000 maximum_ns=4000000000 remaining_at_capture_ns=0 refused=0 unavailable=0 at_maximum=0 eligible=0 fresh_sync=0\n",
+        "event=source_policy scope=endpoint interval_ns=1000000000 maximum_ns=4000000000 remaining_at_capture_ns=0 refused=0 unavailable=0 at_maximum=0 eligible=0 fresh_sync=0\n",
+    );
+    let mut bytes = Vec::new();
+    observed.write_status(&mut bytes)?;
+    assert_eq!(bytes, expected.as_bytes());
+    assert!(bytes.len() <= 512);
+    assert_eq!(format!("{observed:?}"), "SourcePolicySnapshot { .. }");
+    assert_eq!(
+        format!("{:?}", observed.source()),
+        "SourceRestrictionSnapshot { .. }"
+    );
+    for limit in [
+        0,
+        1,
+        expected.len().checked_sub(1).ok_or("empty status oracle")?,
+    ] {
+        let mut sink = SnapshotPrefixSink {
+            bytes: Vec::new(),
+            limit,
+        };
+        let Err(failure) = observed.write_status(&mut sink) else {
+            return Err("partial status unexpectedly succeeded".into());
+        };
+        assert_eq!(failure.kind(), io::ErrorKind::BrokenPipe);
+        assert_eq!(sink.bytes, expected.as_bytes()[..limit]);
+        assert_eq!(facts(&binding)?, retained);
+        assert_eq!(observed.source().revision(), 1);
+    }
+    let mut healthy = Vec::new();
+    observed.write_status(&mut healthy)?;
+    assert_eq!(healthy, expected.as_bytes());
+    assert_eq!(facts(&binding)?, retained);
+    Ok(())
+}

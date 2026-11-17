@@ -78,7 +78,8 @@ pub use session::{
     AcquisitionSession, CoherenceUnavailable, PreparedAcquisition, SeriesCoherence,
 };
 pub use source_policy::{
-    SourceHandle, SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits, SourcePolicyTarget,
+    SourceHandle, SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits,
+    SourcePolicySnapshot, SourcePolicyTarget, SourceRestrictionSnapshot,
 };
 
 use ntp_wire::{FrameLimits, RawHeader, frame_no_legacy_mac_datagram};
