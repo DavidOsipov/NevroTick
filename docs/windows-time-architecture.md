@@ -888,8 +888,11 @@ Consumers must use the checked return value, not an earlier unchecked copy. Prod
 
 ##### Source-visible types and assumptions — 18 November 2026
 
-David requires explicit code, including types and assumptions. For new or
-materially changed handwritten code, make intended types and semantic choices
+David requires explicit code, including types and assumptions, because AI agents
+author, refactor and review it. The purpose is to keep intended choices local and
+visible, reducing what agents must reconstruct from surrounding context. Correct
+compiler inference or apparent obviousness alone does not waive this requirement.
+For new or materially changed handwritten code, make intended types and semantic choices
 visible at declarations and operations. Declare API and stored-field types;
 default to explicit type annotations for named local bindings. Preserve domain
 and role types through intermediate values. Pin numeric width/sign, units,
