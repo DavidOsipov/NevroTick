@@ -81,7 +81,10 @@ silent clamp or ignored `Result`. Test assertions still supply observations.
 
 Apply [the owner's explicit-type rule](../../../../../docs/windows-time-architecture.md#source-visible-types-and-assumptions--18-november-2026)
 to new and materially changed handwritten code. Default to explicit type
-annotations for named locals, including intermediate results. For generic
+annotations for named locals, including intermediate results. Keep intended
+choices local and visible for AI authors, refactoring agents and reviewers;
+compiler inferability or apparent obviousness alone is no exemption. Retain only
+the anonymous/opaque implementation exception defined below. For generic
 `parse`, `collect`, deserialization and `try_into` operations, state the intended
 destination in the binding or generic arguments. Keep relevant collection
 key/value, success/error and numeric width/sign choices visible; `_` alone does
