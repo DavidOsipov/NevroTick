@@ -233,9 +233,13 @@ class EngineArtifactAdmission(unittest.TestCase):
                 record = {"reason": "compiler-artifact", "package_id": "path+file:///work/fixture/crates/nevrotick-engine#0.0.0",
                     "manifest_path": "/work/fixture/crates/nevrotick-engine/Cargo.toml",
                     "target": {"name": "nevrotick_engine", "kind": ["lib"], "crate_types": ["lib"]},
-                    "profile": {"test": True, "opt_level": "0", "debug_assertions": True, "overflow_checks": True},
+                    "profile": {"test": True, "opt_level": "0", "debug_assertions": True, "overflow_checks": True}, "features": ["ke-association-prototype"],
                     "executable": name, "filenames": [name]}
-                self.assertEqual(NATIVE.engine_artifact(json.dumps(record), work), local)
+                for features in ((), ("ke-association-prototype",)):
+                    record["features"] = list(features)
+                    self.assertEqual(NATIVE.engine_artifact(json.dumps(record), work, features=features), local)
+                with self.assertRaises(NATIVE.Incomplete):
+                    NATIVE.engine_artifact(json.dumps(record), work, features=())
                 for fault in ("package", "manifest", "profile", "inventory", "extra_executable", "host", "duplicate", "symlink"):
                     bad = json.loads(json.dumps(record))
                     if fault == "package": bad["package_id"] += "wrong"
@@ -1096,6 +1100,95 @@ class TestRosterAdmission(unittest.TestCase):
             expected += ["--skip", name]
         self.assertEqual(re.findall(r'"([^"\n]*)"', body), expected)
         self.assertEqual(len(NATIVE.HELD_KE_TESTS), 3)
+
+
+class DefaultEngineCohortAdmission(unittest.TestCase):
+    """Synthetic controls for a real fixed selection, not claimed Windows evidence."""
+
+    def roster(self):
+        selected = sorted(NATIVE.DEFAULT_COHORT_CASES.values())
+        return {"schema_version": 1, "package": "nevrotick-engine", "target": NATIVE.TARGET,
+                "features": [], "candidate_sha256": HASH,
+                "extra_inputs_sha256": {name: HASH for name in NATIVE.EXTRAS},
+                "tests": sorted(["common::healthy_neighbor", *selected]),
+                "selected_default_tests": selected}
+
+    def admit(self, value):
+        return NATIVE.validate_test_roster(value, HASH, self.roster()["extra_inputs_sha256"],
+                                         default_cohort=True)
+
+    def test_default_roster_requires_every_fixed_id_and_the_actual_empty_feature(self):
+        value = self.roster()
+        self.assertIs(self.admit(value), value)
+        for field, bad in (("features", ["ke-association-prototype"]),
+                           ("selected_default_tests", value["selected_default_tests"][:-1]),
+                           ("tests", value["tests"][:-1]), ("candidate_sha256", "b" * 64)):
+            with self.subTest(field=field), self.assertRaises(NATIVE.Incomplete):
+                self.admit(dict(value, **{field: bad}))
+        for change in ({"ke_tests": []}, {"selected_ke_tests": []}, {"arbitrary_filter": "source_policy"}):
+            with self.subTest(change=change), self.assertRaises(NATIVE.Incomplete):
+                self.admit(dict(value, **change))
+        substituted = json.loads(json.dumps(value))
+        substituted["selected_default_tests"][0] = "source_policy::tests::same_count_substitute"
+        with self.assertRaises(NATIVE.Incomplete): self.admit(substituted)
+        with self.assertRaises(NATIVE.Incomplete):
+            NATIVE.validate_test_roster(value, HASH, value["extra_inputs_sha256"])
+        ke = TestRosterAdmission().roster()
+        with self.assertRaises(NATIVE.Incomplete): self.admit(ke)
+
+    def test_default_result_requires_one_exact_success_and_full_filtered_count(self):
+        value = self.roster()
+        for mode, name in NATIVE.DEFAULT_COHORT_CASES.items():
+            output = (f"running 1 test\ntest {name} ... ok\n\n"
+                      f"test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; {len(value['tests']) - 1} filtered out; finished in 0.01s\n")
+            self.assertEqual(NATIVE.validate_default_execution(output, value, mode), name)
+            for bad in (output.replace(name, "same_count::substitute"), output.replace("1 passed", "0 passed"),
+                        output.replace("0 ignored", "1 ignored"), output.replace("11 filtered", "10 filtered")):
+                with self.subTest(mode=mode, bad=bad), self.assertRaises(NATIVE.Incomplete):
+                    NATIVE.validate_default_execution(bad, value, mode)
+        with self.assertRaises(NATIVE.Incomplete):
+            NATIVE.validate_default_execution(output, value, "caller-selected-filter")
+
+    def test_default_command_is_offline_closed_and_excludes_the_ke_feature(self):
+        default = NATIVE.engine_test_command(6, default_cohort=True)
+        ke = NATIVE.engine_test_command(6)
+        self.assertIn("--no-default-features", default)
+        self.assertNotIn("--features", default)
+        self.assertNotIn("ke-association-prototype", default)
+        self.assertEqual(ke[ke.index("--features") + 1], "ke-association-prototype")
+        for command in (default, ke):
+            self.assertIn("--frozen", command)
+            self.assertIn("--no-run", command)
+            self.assertEqual(command[command.index("--package") + 1], "nevrotick-engine")
+        for jobs in (True, 0, 13, "6"):
+            with self.subTest(jobs=jobs), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.engine_test_command(jobs, default_cohort=True)
+        for selected in (1, None, "true"):
+            with self.subTest(selected=selected), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.engine_test_command(6, default_cohort=selected)
+
+    def test_default_selection_cannot_overlap_facade_or_expand_process_caps(self):
+        args = type("Arguments", (), {"default_cohort": True, "facade_consumer": False})()
+        self.assertTrue(NATIVE.default_cohort_requested(args))
+        args.facade_consumer = True
+        with self.assertRaises(NATIVE.Incomplete): NATIVE.default_cohort_requested(args)
+        for mode in NATIVE.DEFAULT_COHORT_CASES:
+            self.assertEqual(NATIVE.mode_profile(mode), (4, 2, "engine-tests.exe"))
+        with self.assertRaises(NATIVE.Incomplete): NATIVE.mode_profile("default-arbitrary")
+
+    def test_default_launcher_exact_names_and_supervisor_closed_modes_match(self):
+        source = (ROOT / NATIVE.LAUNCHER).read_text()
+        body = source.split("impl DefaultCase {", 1)[1].split("/// Closed selection", 1)[0]
+        actual = re.findall(r'"([^"\n]*)"', body.split("fn arguments", 1)[1])
+        expected = []
+        for name in NATIVE.DEFAULT_COHORT_CASES.values():
+            expected += ["--exact", name, "--test-threads=1"]
+        self.assertEqual(actual, expected)
+        supervisor = NATIVE.native_supervisor()
+        for mode in NATIVE.DEFAULT_COHORT_CASES:
+            self.assertIn("'" + mode + "'", supervisor)
+            self.assertIn('case "' + mode + '":', supervisor)
+        self.assertNotIn("-EncodedCommand", supervisor)
 
 
 class ConsoleAdmission(unittest.TestCase):

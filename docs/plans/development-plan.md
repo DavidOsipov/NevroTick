@@ -1079,14 +1079,49 @@ all other reuse/retirement and no-extra-effect assertions remain.
 The preceding B83 address-round checkpoint retains its development, fault controls
 and partial cohort results. Its failed library observer stop and all earlier
 failures remain recorded; historical scores do not qualify this changed candidate.
-Next admit the complete current source/helpers/245-case roster/75-doctest roster
-and fresh inventories, then execute the existing five-owner 90% line and 95%
-mutation gates. Those current gates remain open. Main stays closed; source/roster/
-equivalence rebind and H02 preparation remain external, unexecuted drafts.
+The [current five-owner results](../../tasks/engine-transport-pilot.md#selected-reply-accounting--current-five-owner-results--17-november-2026)
+now execute on the freshly admitted 605-source/179-helper candidate, complete
+245-case/75-doctest rosters and 704-variant inventory. All five unchanged 90%
+line and 95% generated-mutation gates pass: 382 meaningful catches, 317 real
+compiler-unviable variants and five reviewed equivalents; no timeout or unexpected
+survivor. Independent integrated review accepts this bounded GNU checkpoint.
+Main stays closed with empty
+inventories. The source/roster/equivalence rebind passes 350 helper controls.
+The [bounded default Windows child](../../tasks/engine-transport-pilot.md#current-default-windows-guardlifecycle-exit--17-november-2026)
+also passes: 66 portable runner controls, 17 build checks, 219-name discovery
+and eleven exact cases across 18 supervision observations. Its verified
+three-file amendment is adopted. The original 120-second cleanup criterion
+remains failed; exact staging cleanup completes under the recorded 360-second
+same-clock continuation, with raw evidence retained and duplicate builds removed.
+H02's [two-owner preparation](../../tasks/s1.3-source-selection-readiness.md#principalcombination-h02-preparation-and-discovery--17-november-2026)
+now completes its [selected GNU fixture qualification](../../tasks/s1.3-source-selection-readiness.md#h02-final-selected-qualification--17-november-2026)
+on `a35b710d…`: 362 helper controls, 612 ordinary cases/112 doctests and 612
+instrumented cases pass. Principal line coverage is706/758 (93.1398%); combination
+lifecycle is787/824 (95.5097%). All459 variants reconcile as285 catches,173
+compiler refusals and one independently reviewed equivalent. Separate report-only
+adjudication passes both unchanged95% per-file gates; original empty-E/native2
+execution and failed wrapper remain incomplete and retained. No equivalent or
+compiler refusal contributes kill credit. Four healthy/four runtime-fault
+observations cover the raw-Garde sensitivity gap. Source-local reuse of eleven
+compiler controls remains bounded; branch and broader Core exits stay open.
+The [selected KE Request checkpoint](../../tasks/engine-transport-pilot.md#request-final-selected-gnu-qualification--17-november-2026)
+now passes on605-input `a35b710d…`:479 instrumented cases,48/50 executable lines
+(96%), and all6 variants as3 catches/3 compiler-unviable/zero survivors or timeouts.
+The viable generated score is3/3 (100%), E0; compiler refusals add no kills.
+The actual baseline is479 ordinary cases/75 doctests, including60 compile-only
+examples. Public campaigns remain closed, all633 identities bound; historical
+scores/E9 retain their original scopes. The first resource failure and late
+coordinator closeout remain recorded; neither is rewritten as passing.
+Next reconcile remaining KE owners against retained evidence. Fault's unchanged
+27-descriptor cohort retains18 Windows-only survivors; a GNU repeat cannot close
+that native gate. H02's debug0 permission does not extend to KE.
+The main facade still supplies no numerical declaration; genuine
+W11-W01 mapping issuance and date/scale/trust/quality suppliers remain prerequisites
+for positive production Engine-to-Core admission. No substitute fixture grants it.
 Preserve §6.5, original cutoffs/floors/custody, cumulative costs and separate
-production/Core, native, hosted, release and formal-deferral exits. David's latest
-instruction authorizes pulling, committing and pushing this verified source
-checkpoint; it does not declare the open qualification phase complete.
+production/Core, native, hosted, release and formal-deferral exits. The runtime
+correction is signed and published as `dc7938a`; the later qualification bindings
+and records remain working changes until their publication checkpoint.
 **Retained C2 qualification — 16 November 2026:**
 [The KoD audit corrections](../../tasks/engine-transport-pilot.md#kod-audit-corrections--selected-qualification-complete--16-november-2026) complete the selected
 five-owner GNU fixture checkpoint on product `0c7f5a6d…`: five executable-line

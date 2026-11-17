@@ -142,6 +142,115 @@ impl Failure {
     }
 }
 
+/// Closed exact default-profile cases, each independently supervised.
+enum DefaultCase {
+    /// Execute only the fixed pilot-stop control.
+    PilotStop,
+    /// Execute only the fixed pilot-invalidate control.
+    PilotInvalidate,
+    /// Execute only the fixed pilot-healthy control.
+    PilotHealthy,
+    /// Execute only the fixed series-stop control.
+    SeriesStop,
+    /// Execute only the fixed series-invalidate control.
+    SeriesInvalidate,
+    /// Execute only the fixed series-healthy control.
+    SeriesHealthy,
+    /// Execute only the fixed writable-stop control.
+    WritableStop,
+    /// Execute only the fixed writable-invalidate control.
+    WritableInvalidate,
+    /// Execute only the fixed policy-poison control.
+    PolicyPoison,
+    /// Execute only the fixed policy-reenable control.
+    PolicyReenable,
+    /// Execute only the fixed session-checkpoints control.
+    SessionCheckpoints,
+}
+
+impl DefaultCase {
+    /// Admit one code-owned name, never a caller-supplied test filter.
+    /// # Errors
+    /// Refuse every other argument without starting a child.
+    fn from_argument(value: &OsStr) -> io::Result<Self> {
+        match value.to_str() {
+            Some("default-pilot-stop") => Ok(Self::PilotStop),
+            Some("default-pilot-invalidate") => Ok(Self::PilotInvalidate),
+            Some("default-pilot-healthy") => Ok(Self::PilotHealthy),
+            Some("default-series-stop") => Ok(Self::SeriesStop),
+            Some("default-series-invalidate") => Ok(Self::SeriesInvalidate),
+            Some("default-series-healthy") => Ok(Self::SeriesHealthy),
+            Some("default-writable-stop") => Ok(Self::WritableStop),
+            Some("default-writable-invalidate") => Ok(Self::WritableInvalidate),
+            Some("default-policy-poison") => Ok(Self::PolicyPoison),
+            Some("default-policy-reenable") => Ok(Self::PolicyReenable),
+            Some("default-session-checkpoints") => Ok(Self::SessionCheckpoints),
+            _ => Err(io::Error::other("Unadmitted launcher mode.")),
+        }
+    }
+
+    /// Return one fixed exact test and serial execution, with no extra argv.
+    fn arguments(&self) -> &'static [&'static str] {
+        match self {
+            Self::PilotStop => &[
+                "--exact",
+                "processing_guard_tests::pilot_final_guard_stop_rejects_selected_reply_once",
+                "--test-threads=1",
+            ],
+            Self::PilotInvalidate => &[
+                "--exact",
+                "processing_guard_tests::pilot_final_guard_invalidation_rejects_selected_reply_once",
+                "--test-threads=1",
+            ],
+            Self::PilotHealthy => &[
+                "--exact",
+                "processing_guard_tests::processing_uses_fresh_deadline_and_current_control",
+                "--test-threads=1",
+            ],
+            Self::SeriesStop => &[
+                "--exact",
+                "series::tests::reply_final_guard_stop_keeps_its_actual_receiving_checkpoint",
+                "--test-threads=1",
+            ],
+            Self::SeriesInvalidate => &[
+                "--exact",
+                "series::tests::reply_final_guard_invalidation_keeps_its_actual_receiving_checkpoint",
+                "--test-threads=1",
+            ],
+            Self::SeriesHealthy => &[
+                "--exact",
+                "series::tests::reply_postcommit_stop_preserves_the_historical_receiving_checkpoint",
+                "--test-threads=1",
+            ],
+            Self::WritableStop => &[
+                "--exact",
+                "series::tests::writable_final_guard_stop_keeps_its_actual_receiving_checkpoint",
+                "--test-threads=1",
+            ],
+            Self::WritableInvalidate => &[
+                "--exact",
+                "series::tests::writable_final_guard_invalidation_keeps_its_actual_receiving_checkpoint",
+                "--test-threads=1",
+            ],
+            Self::PolicyPoison => &[
+                "--exact",
+                "source_policy::tests::final_commit_poisoned_policy_counts_the_selected_reply_once",
+                "--test-threads=1",
+            ],
+            Self::PolicyReenable => &[
+                "--exact",
+                "source_policy::tests::final_commit_reenabled_policy_counts_the_selected_reply_once",
+                "--test-threads=1",
+            ],
+            Self::SessionCheckpoints => &[
+                "--exact",
+                "session::tests::public_session_receiving_checkpoint_races_keep_reuse_and_retirement",
+                "--test-threads=1",
+            ],
+        }
+    }
+}
+
 /// Closed selection of admitted sibling images and fixed argument sequences.
 enum Mode {
     /// Observe CPU/OS v3 support before starting the v3 Engine image.
@@ -150,6 +259,8 @@ enum Mode {
     List,
     /// Run only the scripted KE component cohort, serially.
     Ke,
+    /// Run one exact default-profile guard in its own flat process observation.
+    DefaultCohort(DefaultCase),
     /// Reach the production facade's missing-argument refusal without provider work.
     FacadeArguments,
     /// Reach its entered-runtime refusal before preparation or provider work.
@@ -202,7 +313,8 @@ impl Mode {
             }
             Some(value) if value == OsStr::new("control-nested-fail") => Self::ControlNestedFail,
             Some(value) if value == OsStr::new("control-nested-wait") => Self::ControlNestedWait,
-            _ => return Err(io::Error::other("Unadmitted launcher mode.")),
+            Some(value) => Self::DefaultCohort(DefaultCase::from_argument(value)?),
+            None => return Err(io::Error::other("Unadmitted launcher mode.")),
         };
         if arguments.next().is_some() {
             return Err(io::Error::other("Extra launcher argument."));
@@ -216,6 +328,7 @@ impl Mode {
         match self {
             Self::Cpu => ("cpu-v3-probe.exe", &[]),
             Self::List => ("engine-tests.exe", &["--list", "--format", "terse"]),
+            Self::DefaultCohort(case) => ("engine-tests.exe", case.arguments()),
             Self::FacadeArguments => ("engine-facade-consumer.exe", &["arguments"]),
             Self::FacadeEnteredRuntime => ("engine-facade-consumer.exe", &["entered-runtime"]),
             // These required nested-child controls await their separate custody

@@ -8614,7 +8614,9 @@ def configure_phase_plan_mutation(session, policy, report, role):
     if (not ((role.selector == PHASE_PLAN_SUBJECT and role.scope == PHASE_PLAN_SCOPE)
                  or (role.selector == FREQUENCY_PRIOR_SUBJECT and role.scope == FREQUENCY_PRIOR_SCOPE)
                  or (role.selector == BASELINE_FEEDBACK_SUBJECT and role.scope == BASELINE_FEEDBACK_SCOPE)
-                 or (role.selector == PHASE_STEP_SUBJECT and role.scope == PHASE_STEP_SCOPE))
+                 or (role.selector == PHASE_STEP_SUBJECT and role.scope == PHASE_STEP_SCOPE)
+                 or (role.selector == CORE_H02_SUBJECT and type(role.scope) is COMMON.Scope
+                     and role.scope == CORE_H02_SCOPE))
             or type(policy.get("mutation_debug_info")) is not int
             or policy["mutation_debug_info"] != 0):
         raise Incomplete("Only phase-plan mutation admits integer-zero debug information.")
@@ -10993,8 +10995,369 @@ def main_phase_step(args):
     return _main_frequency_role(args, _phase_step_role(), execute_phase_step)
 
 
+# H02 is a new source-bound role, never a rebind of an old Core campaign.
+CORE_H02_SUBJECT = "principal_combination"
+CORE_H02_SCOPE = COMMON.Scope("time-core", COMMON.CORE_H02_SUBJECTS, COMMON.CORE_H02_POLICY)
+CORE_H02_BOUND_INPUTS = tuple(dict.fromkeys((
+    *PHASE_PLAN_BOUND_INPUTS, *dict(COMMON.CORE_H02_SUBJECTS).values(),
+    "crates/time-core/tests/principal.rs", "crates/time-core/tests/combination_lifecycle.rs",
+    "crates/time-core/tests/private/principal_guards.rs",
+    "crates/time-core/tests/private/chart_combination_lifecycle_guards.rs",
+    "scripts/tests/test_conditioned_fit_analysis.py", "scripts/tests/test_portable_analysis.py",
+)))
+CORE_H02_REQUIRED_TESTS = frozenset({
+    "principal::private_decision_guards::principal_equality_keeps_checked_bits_and_independently_seeded_sources",
+    "principal_seed_and_genuine_update_hysteresis",
+    "lifecycle_raw_parameter_and_ordinal_admission_neighbors",
+    "lifecycle_rejection_rolls_back_and_same_event_recovers",
+    "lifecycle_maturity_countdown_relapse_and_event_order",
+    "lifecycle_capacity_neighbors_preserve_pending_credit",
+    "principal::private_decision_guards::principal_raw_reselect_garde_rejects_zero",
+    "principal::private_decision_guards::principal_raw_stratum_weight_garde_rejects_negative",
+    "principal::private_decision_guards::principal_raw_roster_garde_rejects_empty",
+    "principal::private_decision_guards::principal_raw_receiver_garde_rejects_foreign_frame",
+})
+
+
+def _core_h02_role() -> ConditionedAnalysisRole:
+    """Keep the real two producers and named consumer minima code-owned."""
+    return ConditionedAnalysisRole(CORE_H02_SUBJECT, "Principal/combination H02",
+        CORE_H02_SCOPE, COMMON.core_h02_role_facts(), CORE_H02_BOUND_INPUTS,
+        CORE_H02_REQUIRED_TESTS, (), ())
+
+
+def core_h02_test_inventories(policy: dict, *, allow_pending: bool = False) -> dict:
+    """Admit complete measured Core rosters, or explicit discovery-only emptiness."""
+    rows = policy.get("test_inventories")
+    if (type(allow_pending) is not bool or not CORE_H02_REQUIRED_TESTS
+            or type(rows) is not dict or set(rows) != {"baseline", "coverage"}):
+        raise Incomplete("H02 requires its two exact native roster fields.")
+    if allow_pending and rows == {"baseline": [], "coverage": []}:
+        return rows
+    for names in rows.values():
+        if (type(names) is not list or not 0 < len(names) <= 4096
+                or any(type(name) is not str or not 0 < len(name) <= 512
+                       or "\n" in name or "\r" in name for name in names)
+                or names != sorted(set(names))):
+            raise Incomplete("H02 needs bounded nonempty sorted unique native identities.")
+    baseline, coverage = rows["baseline"], rows["coverage"]
+    if (coverage != [name for name in baseline if " (line " not in name]
+            or not CORE_H02_REQUIRED_TESTS <= set(coverage)
+            or not any(" (line " in name for name in baseline)
+            or any(" (line " in name and any(name.startswith(path + " - ")
+                      for path in CORE_H02_SCOPE.select("all").values()) for name in baseline)):
+        raise Incomplete("H02 omits complete ordinary consumers or adds unreviewed owner doctests.")
+    return rows
+
+
+def admit_core_h02_campaign(root, policy):
+    """Re-admit actual current metrics and unchanged historical structural specimens."""
+    COMMON.require_core_h02_role(CORE_H02_SCOPE, policy)
+    core_h02_test_inventories(policy)
+    refs = policy["campaign_admission"]
+
+    def record(ref):
+        path = Path(ref["path"])
+        raw = COMMON.read_analysis_bytes(path, maximum=64 * 1024 * 1024)
+        if hashlib.sha256(raw).hexdigest() != ref["sha256"]:
+            raise Incomplete("H02 physical campaign evidence changed.")
+        value = COMMON.ANALYSIS.decode(raw.decode("utf-8"))
+        if type(value) is not dict:
+            raise Incomplete("H02 campaign evidence is not an object.")
+        return path, value
+
+    _, product = PRODUCT.admit_product(root)
+    if (type(policy.get("source_file_count")) is not int or len(product) != policy["source_file_count"]
+            or COMMON.canonical_sha256(product) != policy["candidate_sha256"]):
+        raise Incomplete("H02 campaign proof does not identify the actual complete current product.")
+    pins = policy["inputs_sha256"]
+    if set(pins) != set(CORE_H02_BOUND_INPUTS) or any(PRODUCT.sha256(root / name) != digest for name, digest in pins.items()):
+        raise Incomplete("H02 campaign proof does not bind every actual current protected input.")
+    expected = {**product, **pins}
+    def exact_argv(row, expected):
+        argv = row.get("command")
+        return (type(argv) is list and len(argv) > len(expected)
+                and argv[-len(expected)-1] == "--" and argv[-len(expected):] == expected)
+
+    reports = {}
+    for lane in ("baseline", "coverage", "enumeration"):
+        _, value = record(refs[lane])
+        selected = "enumerate" if lane == "enumeration" else lane
+        if (type(value.get("source_sha256")) is not dict
+                or set(value["source_sha256"]) != set(expected) | {COMMON.CORE_H02_POLICY}
+                or type(value.get("lanes")) is not list or not value["lanes"]
+                or any(type(row) is not dict or type(row.get("output")) is not str
+                       for row in value["lanes"])
+                or type(value.get("analysis_admission")) is not dict
+                or type(value.get("analysis_admission_after")) is not dict
+                or value["analysis_admission"].get("profile") != "stable-core"
+                or value["analysis_admission_after"].get("profile") != "stable-core"
+                or type(value.get("work")) is not str or not Path(value["work"]).is_absolute()):
+            raise Incomplete("H02 metric evidence has malformed source, lane or admission facts.")
+        if (value.get("status") != ("enumerated" if lane == "enumeration" else "passed")
+                or value.get("selected_lane") != selected or value.get("selected_lane_passed") is not True
+                or value.get("candidate_sha256") != policy["candidate_sha256"]
+                or value.get("subjects") != CORE_H02_SCOPE.select("all")
+                or value.get("tool_admission_profile") != "stable-core"
+                or value.get("qualification_passed") is not False
+                or any(value.get("source_sha256", {}).get(name) != digest for name, digest in expected.items())
+                or value.get("analysis_admission_after", {}).get("unchanged") is not True
+                or any(type(row.get("exit_code")) is not int or row["exit_code"] != 0
+                       or row.get("failure") is not None for row in value.get("lanes", []))):
+            raise Incomplete("H02 campaign metrics do not bind the actual current source and execution.")
+        if PRODUCT.inventory(Path(value["work"]) / "source") != value["source_sha256"]:
+            raise Incomplete("H02 retained metric source snapshot changed or gained inputs.")
+        reports[lane] = value
+    for lane in ("baseline", "coverage"):
+        value = reports[lane]
+        if len(value["lanes"]) != 1 or value["lanes"][0].get("lane") != lane:
+            raise Incomplete("H02 metric execution has an unexpected command set.")
+        expected_command = (["cargo", "test", "--package", "time-core", "--frozen", "--jobs", "6",
+                             "--", "--test-threads=1"] if lane == "baseline" else
+            [str(Path(value["work"]).parent / "tools/cargo-llvm-cov"), "llvm-cov", "--package", "time-core",
+             "--frozen", "--jobs", "6", "--lib", "--tests", "--json", "--output-path", "/work/coverage.json",
+             "--failure-mode", "any", "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/",
+             "--", "--test-threads=1"])
+        if not exact_argv(value["lanes"][0], expected_command):
+            raise Incomplete("H02 metric proof changed its actual package, feature or test selection.")
+        actual = core_h02_test_execution(value["lanes"][0]["output"], policy, doctests=lane == "baseline")
+        if actual != value[lane + "_execution"]:
+            raise Incomplete("H02 metric execution differs from its actual complete native records.")
+    coverage = COMMON.read_analysis_json(Path(reports["coverage"]["work"]) / "coverage.json")
+    for name, filename in CORE_H02_SCOPE.select("all").items():
+        if COMMON.coverage_counts(CORE_H02_SCOPE, coverage, "/work/source/" + filename) != reports["coverage"]["coverage"][name]:
+            raise Incomplete("H02 actual owner line data differs from its reported gate.")
+    listed = reports["enumeration"]
+    if (len(listed["lanes"]) != 2 or listed.get("campaign_admission") is not False
+            or listed.get("listed_inventory_bindings") != policy["mutation_inventories"]):
+        raise Incomplete("H02 needs both actual complete reviewed owner inventories.")
+    COMMON.admit_reviewed_mutation_inventories(CORE_H02_SCOPE, policy, listed["listed_inventories"])
+    expected_labels = ["mutation-enumeration:" + name for name in CORE_H02_SCOPE.select("all")]
+    if [row["lane"] for row in listed["lanes"]] != expected_labels:
+        raise Incomplete("H02 listing proof labels do not identify both complete owners once.")
+    for row, (owner, filename) in zip(listed["lanes"], CORE_H02_SCOPE.select("all").items(), strict=True):
+        expected_command = [str(Path(listed["work"]).parent / "tools/cargo-mutants"), "mutants",
+            "--package", "time-core", "--file", filename, "--test-workspace", "false", "--cap-lints", "false",
+            "--jobs", "6", "--jobserver", "true", "--jobserver-tasks", "0",
+            "--cargo-arg=--message-format=json", "--list", "--json"]
+        if (not exact_argv(row, expected_command)
+                or row["output"] != listed["mutation_enumeration"][owner]["raw_output"]):
+            raise Incomplete("H02 listing proof changed its actual argv, feature set or raw payload.")
+        items, _ = COMMON.parse_mutation_listing(row["output"], expected_jobs=6)
+        actual = COMMON.mutation_inventory(CORE_H02_SCOPE, items, 512, filename)
+        if actual != listed["listed_inventories"][owner]:
+            raise Incomplete("H02 native listing payload differs from its complete typed/rendered inventory.")
+    compiler_path, compiler = record(refs["compiler_controls"])
+    if compiler.get("status") != "workload-passed" or compiler.get("custody_unchanged") is not True:
+        raise Incomplete("H02 retained compiler-control custody is incomplete.")
+    prior = compiler["source_sha256"]
+    production = [name for name in prior if name.startswith("crates/time-core/src/")]
+    if (len(production) != 38 or set(production) != {name for name in product if name.startswith("crates/time-core/src/")}
+            or any(product[name] != prior[name] for name in production)):
+        raise Incomplete("H02 retained structural owners no longer match current Core production.")
+    graph = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo/config.toml",
+             "crates/time-core/Cargo.toml", "crates/time-domain/Cargo.toml",
+             "policy/ui-m0-dependencies.json", "policy/tool-manifest.json", "policy/rust-workspace.toml")
+    if any(PRODUCT.sha256(root / name) != prior[name] for name in graph):
+        raise Incomplete("H02 retained structural compiler/graph inputs changed.")
+    for name, digest in prior.items():
+        if not name.startswith("crates/time-domain/src/") or PRODUCT.sha256(root / name) == digest:
+            continue
+        old = compiler_path.parent.parent / "checks-v3/source" / name
+        if name != "crates/time-domain/src/rational_seconds.rs" or PRODUCT.sha256(old) != digest:
+            raise Incomplete("H02 dependent domain implementation changed.")
+        without_docs = lambda text: "\n".join(line for line in text.splitlines()
+                                               if not line.lstrip().startswith(("///", "//!")))
+        if without_docs(old.read_text()) != without_docs((root / name).read_text()):
+            raise Incomplete("H02 dependent domain difference is not solely retained documentation.")
+    stable = compiler["tool_inventories"]
+    if any(value["analysis_admission"]["inventories"] != stable
+           or value["analysis_admission_after"]["inventories"] != stable for value in reports.values()):
+        raise Incomplete("H02 structural reuse needs its exact current admitted stable payload.")
+    types = ("FixturePrincipalParameters", "FixturePrincipalSourceState", "FixturePrincipalState",
+             "FixtureCombinationParameters", "FixtureCombinationState")
+    expected_names = {"h02-core-legal"} | {"h02_" + name + suffix for name in types
+                    for suffix in ("-field-added", "-reviewed-repair")}
+    rows = [row for row in compiler["reused_h02_controls"] if row.get("package") == "time-core"]
+    if len(rows) != 11 or {row["name"] for row in rows} != expected_names:
+        raise Incomplete("H02 requires exactly its eleven Core controls, excluding GUI rows.")
+    directory = compiler_path.parent.parent / "contract-controls-v1"
+    for row in rows:
+        if (row.get("target") != "x86_64-unknown-linux-gnu" or row.get("cfg_test") is not False
+                or row.get("status") != "passed" or row.get("generated_mutation_credit") != 0):
+            raise Incomplete("H02 structural-control scope changed.")
+        _, raw = record({"path": str(directory / (row["name"] + ".json")), "sha256": row["raw_sha256"]})
+        if (type(raw.get("exit_code")) is not int or raw["exit_code"] != (101 if row["expected_code"] else 0)
+                or raw.get("failure") is not None or "--lib" not in raw["command"]):
+            raise Incomplete("H02 structural control did not reach its recorded compiler result.")
+        errors = []
+        for line in raw["output"].splitlines():
+            if not line.startswith("{"):
+                continue
+            item = COMMON.ANALYSIS.decode(line)
+            if item.get("reason") == "compiler-message" and item.get("message", {}).get("level") == "error":
+                errors.append(item["message"])
+        if ([item["code"]["code"] for item in errors] != row["actual_codes"]
+                or any(("__contract_review_field" if row["expected_code"] == "E0027"
+                        else "ContractReviewNoPartialEq") not in item["message"] for item in errors)):
+            raise Incomplete("H02 compiler refusals no longer have their intended field/trait meaning.")
+        for name, digest in row["captured_sources_sha256"].items():
+            if name not in CORE_H02_SCOPE.select("all").values() or PRODUCT.sha256(
+                    directory / (row["name"] + "--" + name.replace("/", "_"))) != digest:
+                raise Incomplete("H02 retained added/repaired Rust specimen changed.")
+    return {"scope": "Retained owner-local structural reuse; not a current whole-candidate compiler execution.",
+            "historical_candidate_sha256": compiler["candidate_sha256"], "Core_control_rows": 11,
+            "generated_mutation_credit": 0}
+
+
+# Bind the one H02 effect reader in source, never through policy labels or callbacks.
+COMMON._CORE_H02_CAMPAIGN_ADMISSION = admit_core_h02_campaign
+
+
+def read_core_h02_policy(root: Path, *, allow_pending_rosters: bool = False) -> dict:
+    """Bind real current source/helpers before discovery or metrics; no placeholder policy."""
+    policy = inventory_document(root / COMMON.CORE_H02_POLICY)
+    COMMON.require_core_h02_role(CORE_H02_SCOPE, policy)
+    _, product = PRODUCT.admit_product(root)
+    if (len(product) != policy["source_file_count"]
+            or COMMON.canonical_sha256(product) != policy["candidate_sha256"]):
+        raise Incomplete("H02 requires its exact complete product candidate.")
+    pins = policy["inputs_sha256"]
+    if (set(pins) != set(CORE_H02_BOUND_INPUTS)
+            or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None
+                   or PRODUCT.sha256(root / name) != value for name, value in pins.items())):
+        raise Incomplete("H02 protected source/helper bytes differ.")
+    manifest = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
+    for path in CORE_H02_SCOPE.select("all").values():
+        if (manifest.get("critical_files", []).count(path) != 1
+                or sum(row.get("package") == "time-core" and path in row.get("files", [])
+                       for row in manifest.get("security_modules", [])) != 1
+                or re.search(r"#\s*\[\s*test\s*\]", (root / path).read_text())):
+            raise Incomplete("H02 needs one exact critical/security registration and external test bodies.")
+    core_h02_test_inventories(policy, allow_pending=allow_pending_rosters)
+    if policy["campaigns_admitted"]:
+        admit_core_h02_campaign(root, policy)
+    return policy
+
+
+def core_h02_test_execution(text: str, policy: dict, *, doctests: bool) -> dict:
+    """Match complete actual successes, never a count-only or zero-test result."""
+    if type(doctests) is not bool or re.search(
+            r"(?m)^(?:thread .+ panicked at|Error:|error(?:\[|:)|fatal runtime error)", text):
+        raise Incomplete("H02 successful execution contains a compiler, harness or runtime failure.")
+    names = [name.removeprefix("/work/source/")
+             for name in successful_test_records(text, label="H02")]
+    lane = "baseline" if doctests else "coverage"
+    roster = core_h02_test_inventories(policy)[lane]
+    if sorted(names) != roster:
+        raise Incomplete("H02 actual complete passing identities differ from the frozen roster.")
+    return {"tests_executed": len(names), "test_names": sorted(names),
+            "inventory_sha256": COMMON.canonical_sha256(roster)}
+
+
+def execute_core_h02(args, report: dict) -> None:
+    """Reuse configured H02 lanes; contracts/union stay closed, mutation needs private evidence."""
+    if (args.subject != CORE_H02_SUBJECT or args.tool_admission_profile != "stable-core"
+            or args.lane not in {"inventory", "baseline", "enumerate", "coverage", "mutation"}
+            or any(getattr(args, name, None) for name in
+                   ("inventory_admission", "cohort_plan", "cohort_id", "cohort_receipt"))):
+        raise Incomplete("H02 admits only explicit stable preparation or proof-bound private mutation; contracts/all/union remain closed.")
+    policy = read_core_h02_policy(ROOT, allow_pending_rosters=args.lane == "inventory")
+    role = _core_h02_role()
+    if args.lane == "mutation":
+        if not policy["campaigns_admitted"]:
+            raise Incomplete("H02 Main campaigns remain closed.")
+        if shutil.disk_usage(args.output_dir.parent).free < policy["mutation_minimum_free_bytes"]:
+            raise Incomplete("H02 six-worker mutation requires seven GiB free.")
+    selected = argparse.Namespace(**vars(args))
+    if args.lane in {"inventory", "baseline", "enumerate"}:
+        selected.lane = "mutation" if args.lane == "enumerate" else "contracts"
+    report.update(subjects=role.scope.select("all"), candidate_sha256=policy["candidate_sha256"],
+                  qualification_passed=False, historical_family_bindings_reused=False,
+                  compiler_controls_admitted=False, mutation_campaigns_open=policy["campaigns_admitted"])
+    session = COMMON.Session(ROOT, selected, report, role.scope, policy, role.bound_inputs)
+    try:
+        if (session.product_identity != PRODUCT.admit_product(ROOT)[1]
+                or inventory_document(session.source / role.scope.policy) != policy
+                or any(PRODUCT.sha256(session.source / name) != policy["inputs_sha256"][name]
+                       for name in role.bound_inputs)):
+            raise Incomplete("Captured H02 product, policy or protected source differs.")
+        if args.lane == "inventory":
+            _phase_step_inventory(session, policy, report)
+        elif args.lane == "enumerate":
+            _enumerate_conditioned(session, policy, report, role)
+        elif args.lane == "baseline":
+            raw = session.run("baseline", ["cargo", "test", "--package", "time-core", "--frozen",
+                "--jobs", "6", "--", "--test-threads=1"], policy["baseline_wall_seconds"])
+            report["baseline_execution"] = core_h02_test_execution(raw, policy, doctests=True)
+        elif args.lane == "mutation":
+            configure_phase_plan_mutation(session, policy, report, role)
+            report["mutation_debug_configuration"]["scope"] = (
+                "Private H02 mutation enumeration/build/tests only; other profile settings unchanged.")
+            def run(label, command, timeout, **options):
+                value = session.run(label, command, timeout, **options)
+                if label.startswith("mutation-campaign:"):
+                    owner = label.removeprefix("mutation-campaign:")
+                    directory = session.work / "mutation" / owner / "mutants.out"
+                    outcomes = COMMON.read_analysis_json(directory / "outcomes.json")
+                    if type(outcomes) is not dict or type(outcomes.get("outcomes")) is not list:
+                        raise Incomplete("H02 mutation outcomes lack their actual outcome array.")
+                    rows = [row for row in outcomes["outcomes"]
+                            if type(row) is dict and row.get("scenario") == "Baseline"]
+                    if len(rows) != 1 or rows[0].get("summary") != "Success":
+                        raise Incomplete("H02 needs exactly one actual healthy baseline per owner.")
+                    relative = COMMON.analysis_output_path(rows[0]["log_path"])
+                    if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+                        raise Incomplete("H02 mutation baseline log escapes owned output.")
+                    data = COMMON.read_analysis_bytes(directory / relative, maximum=16 * 1024 * 1024)
+                    actual = core_h02_test_execution(data.decode("utf-8"), policy, doctests=True)
+                    report.setdefault("baseline_executions", {})[owner] = {
+                        **actual, "log_sha256": hashlib.sha256(data).hexdigest()}
+                return value
+            COMMON.run_analysis_lanes(role.scope, role.scope.select("all"), policy,
+                session.work, session.tools, run, report, "mutation")
+            report["structural_control_reuse"] = admit_core_h02_campaign(ROOT, policy)
+            report["mutation_execution_complete_requires_independent_semantic_review"] = True
+        else:
+            raw = session.run("coverage", [str(session.tools / "cargo-llvm-cov"), "llvm-cov",
+                "--package", "time-core", "--frozen", "--jobs", "6", "--lib", "--tests", "--json",
+                "--output-path", "/work/coverage.json", "--failure-mode", "any",
+                "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/",
+                "--", "--test-threads=1"], policy["coverage_wall_seconds"])
+            report["coverage_execution"] = core_h02_test_execution(raw, policy, doctests=False)
+            coverage = COMMON.read_analysis_json(session.work / "coverage.json")
+            report["coverage"] = {name: COMMON.coverage_counts(role.scope, coverage, "/work/source/" + path)
+                                  for name, path in role.scope.select("all").items()}
+    finally:
+        session.finish()
+    report["selected_lane_passed"] = True
+
+
+def main_core_h02(args) -> int:
+    """Keep nonqualifying preparation success distinct from H02 mutation completion."""
+    report = {"status": "incomplete", "selected_lane": args.lane,
+              "qualification_passed": False, "scope": "H02 two-owner source preparation only",
+              "native_qualification": "not performed"}
+    try:
+        if args.vendor_dir is None:
+            args.vendor_dir = Path(json.loads(PRODUCT.POINTER.read_text())["vendor_dir"])
+        execute_core_h02(args, report)
+        report["status"] = "inventoried" if args.lane == "inventory" else "enumerated" if args.lane == "enumerate" else "passed"
+    except REPORT_FAILURES as error:
+        report.update(status="incomplete", qualification_passed=False, selected_lane_passed=False, error=str(error))
+    if report.get("owned_output") == str(args.output_dir):
+        (args.output_dir / "verification.json").write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
+    print(report["status"].upper() + ": " + report["scope"], flush=True)
+    if report.get("error"):
+        print(report["error"], file=sys.stderr)
+    return 0 if report["status"] in {"passed", "enumerated", "inventoried"} else 1
+
+
+
 def execute(args, report):
     """Run only selected current-admitted rows; preserve partial raw observations."""
+    if args.subject == CORE_H02_SUBJECT:
+        return execute_core_h02(args, report)
     if args.subject == PHASE_STEP_SUBJECT:
         return execute_phase_step(args, report)
     if args.subject == BASELINE_FEEDBACK_SUBJECT:
@@ -11143,7 +11506,7 @@ def main(argv=None):
     """Fresh owned outputs, fixed scopes and nonzero incomplete status only."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lane", choices=("inventory", "contracts", "baseline", "coverage", "mutation", "cohort-union", "enumerate", "all"), default="coverage")
-    parser.add_argument("--subject", choices=(*SUBJECTS, WINDOW_VARIANCE_SUBJECT, CONDITIONED_WINDOW_SUBJECT, CONDITIONED_FIT_SUBJECT, PHASE_PLAN_SUBJECT, FREQUENCY_PRIOR_SUBJECT, BASELINE_FEEDBACK_SUBJECT, PHASE_STEP_SUBJECT, "all"), default="all")
+    parser.add_argument("--subject", choices=(*SUBJECTS, WINDOW_VARIANCE_SUBJECT, CONDITIONED_WINDOW_SUBJECT, CONDITIONED_FIT_SUBJECT, PHASE_PLAN_SUBJECT, FREQUENCY_PRIOR_SUBJECT, BASELINE_FEEDBACK_SUBJECT, PHASE_STEP_SUBJECT, CORE_H02_SUBJECT, "all"), default="all")
     parser.add_argument("--inventory-admission", type=Path)
     parser.add_argument('--cohort-plan', type=Path)
     parser.add_argument('--cohort-id')
@@ -11152,6 +11515,8 @@ def main(argv=None):
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--tool-admission-profile", choices=COMMON.ANALYSIS.ADMISSION_PROFILES, default="full")
     args = parser.parse_args(argv)
+    if args.subject == CORE_H02_SUBJECT:
+        return main_core_h02(args)
     if args.subject == PHASE_STEP_SUBJECT:
         return main_phase_step(args)
     if args.subject == BASELINE_FEEDBACK_SUBJECT:

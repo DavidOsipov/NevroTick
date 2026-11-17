@@ -25,6 +25,22 @@
 //! positives select original A at entry0; the three negatives reject beforehand.
 //! At most two input records, three checked batches and no explicit state clone,
 //! whole-state equality or formatting operation occur in this test.
+//! The existing public/direct-receiver profile above belongs only to
+//! `principal_private_decision_relations`; it does not count the equality case
+//! or the four additional raw Garde cases below. Each new case performs exactly
+//! two direct validation calls on healthy completion (at most two on failure),
+//! with the healthy neighbor first: eight direct calls in total. The two raw
+//! parameter cases invoke two field rules per call; roster and receiver each
+//! invoke one. This bounds the eight direct calls to twelve custom-rule visits
+//! and at most twelve fixed-text report entries by payload shape. The original
+//! healthy/invalid pairs produce four expected entries; a no-op fault removes
+//! its rejection. Each temporary report is dropped before the next direct call.
+//! The receiver case separately makes one checked parameter construction, one
+//! checked minimum, one checked empty batch and one genuine one-source seed;
+//! their normal constructor validation is outside those eight direct probes.
+//! New cases make no histories, projections, advances, state clones, equality
+//! calls or protected effects, and emit no old public-attempt marker. These are
+//! explicit source bounds, not measured heap allocations or runtime telemetry.
 #![forbid(unsafe_code)]
 
 use std::{
@@ -33,6 +49,8 @@ use std::{
     io::{self, Write},
     num::NonZeroU64,
 };
+
+use garde::Validate;
 
 use crate::{
     FixtureContext, FixtureHistory, FixtureMinimum, FixtureObservation, FixtureOutcomeKind,
@@ -43,7 +61,10 @@ use crate::{
 };
 use time_domain::{MonotonicNs, PhaseOffsetQ33, UtcCoordinateQ32, exchange_arithmetic};
 
-use super::{SameBatchSelection, complete_decision, select_same_batch};
+use super::{
+    RawParameters, ReceiverCandidate, ReceiverEntries, ReceiverInput, RosterCandidate,
+    SameBatchSelection, complete_decision, select_same_batch,
+};
 
 /// Preserve actual producer/receiver failures separately from harness failures.
 type TestResult<T = ()> = Result<T, Box<dyn Error>>;
@@ -97,6 +118,111 @@ fn principal_equality_keeps_checked_bits_and_independently_seeded_sources() -> T
     assert_eq!(source.distance_seconds().map(f64::to_bits), None);
     assert_eq!(source.latest_observed_at(), None);
     assert!(!source.pending());
+    Ok(())
+}
+
+/// Reach the actual reselect annotation without the constructor's semantic fallback.
+/// # Panics
+/// The positive neighbor validates; raw zero must fail its own Garde field rule.
+#[test]
+fn principal_raw_reselect_garde_rejects_zero() {
+    let healthy = RawParameters {
+        reselect_distance_seconds: 0.25,
+        stratum_weight_seconds: 0.0,
+    };
+    assert!(healthy.validate().is_ok(), "healthy raw reselect rejected");
+    let invalid = RawParameters {
+        reselect_distance_seconds: 0.0,
+        stratum_weight_seconds: 0.0,
+    };
+    assert!(
+        invalid.validate().is_err(),
+        "raw reselect Garde accepted zero"
+    );
+}
+
+/// Reach the actual weight annotation with the other raw parameter kept valid.
+/// # Panics
+/// Zero weight validates; a negative normal weight fails its own Garde field rule.
+#[test]
+fn principal_raw_stratum_weight_garde_rejects_negative() {
+    let healthy = RawParameters {
+        reselect_distance_seconds: 0.25,
+        stratum_weight_seconds: 0.0,
+    };
+    assert!(healthy.validate().is_ok(), "healthy raw weight rejected");
+    let invalid = RawParameters {
+        reselect_distance_seconds: 0.25,
+        stratum_weight_seconds: -1.0,
+    };
+    assert!(
+        invalid.validate().is_err(),
+        "raw weight Garde accepted negative"
+    );
+}
+
+/// Reach the actual raw roster annotation before any checked state is constructed.
+/// # Errors
+/// Preserve the fixed nonzero-label constructor failure.
+/// # Panics
+/// A single registered label validates; an empty raw roster fails Garde.
+#[test]
+fn principal_raw_roster_garde_rejects_empty() -> TestResult {
+    let roster = [tag(101)?];
+    assert!(
+        RosterCandidate { values: &roster }.validate().is_ok(),
+        "healthy raw roster rejected"
+    );
+    assert!(
+        RosterCandidate { values: &[] }.validate().is_err(),
+        "raw roster Garde accepted empty"
+    );
+    Ok(())
+}
+
+/// Reach contextual raw Garde with one actual checked seed and no transition.
+/// # Errors
+/// Preserve genuine tag, parameter, minimum, batch and seed construction failures.
+/// # Panics
+/// Equal current context validates; changing only the asserted frame fails Garde.
+#[test]
+fn principal_raw_receiver_garde_rejects_foreign_frame() -> TestResult {
+    let roster = [tag(101)?];
+    let frame = tag(11)?;
+    let generation = tag(12)?;
+    let at = MonotonicNs::new(0);
+    let batch = FixtureProjectedBatch::new(frame, generation, at, &[])?;
+    let state = FixturePrincipalState::seed(
+        &roster,
+        FixturePrincipalParameters::new(0.25, 0.0)?,
+        FixtureMinimum::new(1)?,
+        &batch,
+        &[],
+    )?;
+    let healthy = ReceiverCandidate {
+        input: ReceiverInput {
+            entries: ReceiverEntries::Legacy(&[]),
+            strata: &[],
+            frame,
+            mapping_generation: generation,
+            at,
+            seed: false,
+        },
+    };
+    assert!(
+        healthy.validate_with(&state).is_ok(),
+        "healthy raw receiver rejected"
+    );
+    let invalid = ReceiverCandidate {
+        input: ReceiverInput {
+            frame: tag(13)?,
+            ..healthy.input
+        },
+    };
+    assert!(
+        invalid.validate_with(&state).is_err(),
+        "raw receiver Garde accepted foreign frame"
+    );
     Ok(())
 }
 

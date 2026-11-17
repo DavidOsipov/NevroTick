@@ -92,6 +92,18 @@ def main(argv=None):
             # and a public u64 wire fixture are not credentials. Construct the
             # trigger words in pieces so these definitions do not become new
             # scanner findings; the complete payload is challenged below.
+            service_manifest = (
+                "artifacts/windows-services/recovery-20261107-v1/source-digest-control.json")
+            # Five reviewed source identities, not an arbitrary-hex exception.
+            # Only two complete old source preimages were recovered; the other
+            # three retain independently reviewed repair-manifest provenance.
+            service_source_digests = (
+                '00315280b8f6a696b52d0735764c8146f091ed530de59f3216c66e9e7c893ebf',
+                '4a8a5c4280cfccdcb470960b5cff55d083c1f278f9c5d4c835b52f8ca435e1c5',
+                '56a1d575473ba85d40632ddf0c1a3b1dac1270a780040a991f0bb1a132c33791',
+                '5e5edf89b420358a174b1eed4962b694e498c61e1fc7b720e4b8976e1e170ea7',
+                'fe9d5ff3f32a28e0c5251db033456c54df50288b1e8bfa12b87e479867c7571b',
+            )
             reviewed_cases = (
                 ("tasks/s0.5-ui-comparison.md",
                  "Independent audit recomputed every selected statistic, "
@@ -118,6 +130,11 @@ def main(argv=None):
                  '    "usr/include/freetype2/freetype/ft' + 'modapi.h": "'
                  '3b05e210b4705017d68e00def6820749fd0fca2f185ab2bb5df06d71928e29eb",'),
             )
+            reviewed_cases += tuple(
+                (service_manifest,
+                 '    "tools/windows-service-fixture/src/native_' + "to" + 'ken.rs": "'
+                 + digest + '",')
+                for digest in service_source_digests)
             for relative, text in reviewed_cases:
                 reviewed = control / relative
                 reviewed.parent.mkdir(parents=True, exist_ok=True)
@@ -140,6 +157,18 @@ def main(argv=None):
                 if run(command, environment, timeout=30) != 1:
                     raise ValueError(f"Public-text exception escaped its exact path: {relative}.")
                 unrelated.unlink()
+                if relative == service_manifest:
+                    # The fixture ends in a digest, quote and comma. Change
+                    # one digest digit while retaining the actual assignment.
+                    unknown_digest = (text[:-3]
+                                      + ("0" if text[-3] != "0" else "1")
+                                      + text[-2:])
+                    wrong_key = text.replace("native_" + "to" + "ken.rs",
+                                             "unrelated_" + "to" + "ken.rs", 1)
+                    for rejected in (wrong_key, unknown_digest):
+                        reviewed.write_text(rejected + "\n")
+                        if run(command, environment, timeout=30) != 1:
+                            raise ValueError("Source-digest exception hid a changed key or unknown digest.")
                 reviewed.write_text(text + "\n")
                 if run(command, environment, timeout=30) != 0:
                     raise ValueError("Restored public-text disposition control failed.")

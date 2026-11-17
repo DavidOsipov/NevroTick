@@ -2061,12 +2061,12 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         """A healthy admission reached Session; stop before any execution."""
 
     def policy_fixture(self):
-        """Independent limits; synthetic 415/234 roster with one real required name."""
+        """Independent limits; synthetic 479/234 roster with one real required name."""
         critical = ["crates/nevrotick-engine/src/lib.rs", *self.HOST.values(),
             "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
             "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
             "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"]
-        names = sorted([f"ordinary_fixture_{index:03}" for index in range(181)] +
+        names = sorted([f"ordinary_fixture_{index:03}" for index in range(245)] +
                        [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(233)] +
                        ["nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
                         "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted"])
@@ -2240,9 +2240,311 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.assertEqual(set(policy["mutation_inventories"]), set(self.HOST))
         self.assertEqual(sum(row["count"] for row in policy["mutation_inventories"].values()), 633)
         self.assertIs(policy["campaigns_admitted"], False)
-        self.assertEqual(len(policy["mutation_equivalences"]), 9)
+        self.assertEqual(policy["mutation_equivalences"], [])
         self.assertTrue(MODULE.COMMON.engine_ke_equivalences_valid(policy))
-        legacy = copy.deepcopy(policy)
+        # Fixed historical E9 validator fixture from policy fa5a5d37; no
+        # current campaign/score claim and no dependence on current E[].
+        historical = {'binding': {'candidate_sha256': '0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d'},
+         'mutation_equivalences': [{'id': 'KE-RETURN-POOL-CAPACITY-OR',
+                                    'candidate_sha256': '0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d',
+                                    'source_sha256': 'e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a',
+                                    'mutant': {'name': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:774:17: '
+                                                       "replace || with && in AssociationOwner<'a>::return_unused",
+                                               'package': 'nevrotick-engine',
+                                               'file': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs',
+                                               'function': {'function_name': "AssociationOwner<'a>::return_unused",
+                                                            'return_type': '-> Result<(), Failure>',
+                                                            'span': {'start': {'line': 737, 'column': 5},
+                                                                     'end': {'line': 787, 'column': 6}}},
+                                               'span': {'start': {'line': 774, 'column': 17},
+                                                        'end': {'line': 774, 'column': 19}},
+                                               'replacement': '&&',
+                                               'genre': 'BinaryOperator'},
+                                    'requirement': 'REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27',
+                                    'rationale': 'The complete admitted return domain includes genuine Reserved, '
+                                                 'Preparing and Prepared tickets, failed preparation, exact '
+                                                 'pool-byte equality, cancellation and expiry; it does not assume '
+                                                 'successful encoding. After the unchanged guards, reservation has '
+                                                 'removed one exact pool entry and no admitted writer can shrink or '
+                                                 'replace that pool before return. Its remaining length is at most '
+                                                 'seven and its capacity still exceeds that length; its '
+                                                 'reserved-plus-available byte sum remains within 131072. The '
+                                                 'changed connector combines only false predicates. Both forms '
+                                                 'preserve the same returned allocation, any retired UID, spent '
+                                                 'attempts, original deadline and error paths.',
+                                    'proof': {'path': 'tasks/engine-ke-association-equivalences.md',
+                                              'sha256': '6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409',
+                                              'section': 'KE-RETURN-POOL-CAPACITY-OR',
+                                              'reviewer': '/root; /root/kod_owner_source_design; '
+                                                          '/root/v10_execution_admission_review',
+                                              'verdict': 'independently-justified-equivalent'}},
+                                   {'id': 'KE-RETURN-POOL-BYTES-OR',
+                                    'candidate_sha256': '0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d',
+                                    'source_sha256': 'e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a',
+                                    'mutant': {'name': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:773:17: '
+                                                       "replace || with && in AssociationOwner<'a>::return_unused",
+                                               'package': 'nevrotick-engine',
+                                               'file': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs',
+                                               'function': {'function_name': "AssociationOwner<'a>::return_unused",
+                                                            'return_type': '-> Result<(), Failure>',
+                                                            'span': {'start': {'line': 737, 'column': 5},
+                                                                     'end': {'line': 787, 'column': 6}}},
+                                               'span': {'start': {'line': 773, 'column': 17},
+                                                        'end': {'line': 773, 'column': 19}},
+                                               'replacement': '&&',
+                                               'genre': 'BinaryOperator'},
+                                    'requirement': 'REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27',
+                                    'rationale': 'After the unchanged ticket, Published-control and pre-invocation '
+                                                 'phase checks, the exact reserved cookie was removed from a checked '
+                                                 'pool of at most eight entries. No admitted operation changes that '
+                                                 'pool while the slot remains reserved. Available count is therefore '
+                                                 'at most seven, available-plus-reserved payload remains at most '
+                                                 '131072 bytes, and removal preserves an allocated slot beyond the '
+                                                 'current length. All three rejection predicates are false, '
+                                                 'including strict byte excess at exact equality. Both operator '
+                                                 'forms move back the same cookie without copying, exposing it, '
+                                                 'refunding work or renewing its original expiry. Earlier refusal '
+                                                 'paths are unchanged.',
+                                    'proof': {'path': 'tasks/engine-ke-association-equivalences.md',
+                                              'sha256': '6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409',
+                                              'section': 'KE-RETURN-POOL-BYTES-OR',
+                                              'reviewer': '/root; /root/kod_owner_source_design; '
+                                                          '/root/v10_execution_admission_review',
+                                              'verdict': 'independently-justified-equivalent'}},
+                                   {'id': 'KE-SEND-PREDECESSOR-VALUE-OR',
+                                    'candidate_sha256': '0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d',
+                                    'source_sha256': 'e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a',
+                                    'mutant': {'name': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:854:17: '
+                                                       "replace || with && in AssociationOwner<'a>::invoke_sender",
+                                               'package': 'nevrotick-engine',
+                                               'file': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs',
+                                               'function': {'function_name': "AssociationOwner<'a>::invoke_sender",
+                                                            'return_type': '-> Result<(), Failure>',
+                                                            'span': {'start': {'line': 813, 'column': 5},
+                                                                     'end': {'line': 907, 'column': 6}}},
+                                               'span': {'start': {'line': 854, 'column': 17},
+                                                        'end': {'line': 854, 'column': 19}},
+                                               'replacement': '&&',
+                                               'genre': 'BinaryOperator'},
+                                    'requirement': 'REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27',
+                                    'rationale': 'The stored predecessor set is filtered before reservation selects '
+                                                 'the exact cookie. It is immutable thereafter; install_previous '
+                                                 'requires the untouched reservation allowance and cannot replace it '
+                                                 'once any ticket has been issued. Consequently the selected '
+                                                 'Prepared cookie is not a member of the stored predecessor, whether '
+                                                 'that set is empty, arbitrary or complete. Local count, capacity, '
+                                                 'encoded-byte and local-membership predicates are also false. '
+                                                 'Replacing the final connector with AND therefore changes no error, '
+                                                 'archive move, callback, no-reuse or lifecycle outcome. This '
+                                                 'argument does not certify completeness or provenance of the '
+                                                 'predecessor set; actual consuming retirement and checked '
+                                                 'projection enforce that separate producer contract.',
+                                    'proof': {'path': 'tasks/engine-ke-association-equivalences.md',
+                                              'sha256': '6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409',
+                                              'section': 'KE-SEND-PREDECESSOR-VALUE-OR',
+                                              'reviewer': '/root; /root/kod_owner_source_design; '
+                                                          '/root/v10_execution_admission_review',
+                                              'verdict': 'independently-justified-equivalent'}},
+                                   {'id': 'KE-SEND-ARCHIVE-VALUE-OR',
+                                    'candidate_sha256': '0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d',
+                                    'source_sha256': 'e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a',
+                                    'mutant': {'name': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:853:17: '
+                                                       "replace || with && in AssociationOwner<'a>::invoke_sender",
+                                               'package': 'nevrotick-engine',
+                                               'file': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs',
+                                               'function': {'function_name': "AssociationOwner<'a>::invoke_sender",
+                                                            'return_type': '-> Result<(), Failure>',
+                                                            'span': {'start': {'line': 813, 'column': 5},
+                                                                     'end': {'line': 907, 'column': 6}}},
+                                               'span': {'start': {'line': 853, 'column': 17},
+                                                        'end': {'line': 853, 'column': 19}},
+                                               'replacement': '&&',
+                                               'genre': 'BinaryOperator'},
+                                    'requirement': 'REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27',
+                                    'rationale': 'Reservation filters every value in the current local used archive '
+                                                 'before moving its selected cookie into the single occupied slot. '
+                                                 'No other invocation can append a local archive entry while that '
+                                                 'ticket owns the slot, and pre-send return consumes the ticket '
+                                                 'without refunding its checkout. Thus the local membership '
+                                                 'predicate is false at the unchanged Prepared/currentness guard. '
+                                                 'Count, capacity, encoded-byte and predecessor predicates are also '
+                                                 'false in that domain. Changing this connector only changes pure '
+                                                 'bounded reads; both forms archive the same cookie before callback '
+                                                 'exposure and preserve all errors, receipt absence, budgets and '
+                                                 'completion custody.',
+                                    'proof': {'path': 'tasks/engine-ke-association-equivalences.md',
+                                              'sha256': '6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409',
+                                              'section': 'KE-SEND-ARCHIVE-VALUE-OR',
+                                              'reviewer': '/root; /root/kod_owner_source_design; '
+                                                          '/root/v10_execution_admission_review',
+                                              'verdict': 'independently-justified-equivalent'}},
+                                   {'id': 'KE-SEND-ARCHIVE-CAPACITY-OR',
+                                    'candidate_sha256': '0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d',
+                                    'source_sha256': 'e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a',
+                                    'mutant': {'name': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:852:17: '
+                                                       "replace || with && in AssociationOwner<'a>::invoke_sender",
+                                               'package': 'nevrotick-engine',
+                                               'file': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs',
+                                               'function': {'function_name': "AssociationOwner<'a>::invoke_sender",
+                                                            'return_type': '-> Result<(), Failure>',
+                                                            'span': {'start': {'line': 813, 'column': 5},
+                                                                     'end': {'line': 907, 'column': 6}}},
+                                               'span': {'start': {'line': 852, 'column': 17},
+                                                        'end': {'line': 852, 'column': 19}},
+                                               'replacement': '&&',
+                                               'genre': 'BinaryOperator'},
+                                    'requirement': 'REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27',
+                                    'rationale': 'On the whole admitted Prepared-ticket domain, including the last '
+                                                 'checkout, local archive capacity is at least 32 and pre-push '
+                                                 'length is at most 31. Return and failure never refund a '
+                                                 'reservation or shrink this archive. The encoded-byte ceiling makes '
+                                                 'excess false; reservation and immutable predecessor installation '
+                                                 'make both membership predicates false. The changed connector '
+                                                 'therefore joins false conditions only. Neither form changes the '
+                                                 'moved cookie, Invoked transition, callback arguments, '
+                                                 'unknown-completion custody or subsequent original-control checks. '
+                                                 'This is a local-context argument: predecessor history remains a '
+                                                 'separate bounded owner, not extra entries in the local Vec.',
+                                    'proof': {'path': 'tasks/engine-ke-association-equivalences.md',
+                                              'sha256': '6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409',
+                                              'section': 'KE-SEND-ARCHIVE-CAPACITY-OR',
+                                              'reviewer': '/root; /root/kod_owner_source_design; '
+                                                          '/root/v10_execution_admission_review',
+                                              'verdict': 'independently-justified-equivalent'}},
+                                   {'id': 'KE-SEND-ARCHIVE-BYTES-OR',
+                                    'candidate_sha256': '0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d',
+                                    'source_sha256': 'e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a',
+                                    'mutant': {'name': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:851:17: '
+                                                       "replace || with && in AssociationOwner<'a>::invoke_sender",
+                                               'package': 'nevrotick-engine',
+                                               'file': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs',
+                                               'function': {'function_name': "AssociationOwner<'a>::invoke_sender",
+                                                            'return_type': '-> Result<(), Failure>',
+                                                            'span': {'start': {'line': 813, 'column': 5},
+                                                                     'end': {'line': 907, 'column': 6}}},
+                                               'span': {'start': {'line': 851, 'column': 17},
+                                                        'end': {'line': 851, 'column': 19}},
+                                               'replacement': '&&',
+                                               'genre': 'BinaryOperator'},
+                                    'requirement': 'REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27',
+                                    'rationale': 'Only a checked same-owner Prepared packet reaches the archive '
+                                                 'predicate. The current checkout is one of at most 32 irreversible '
+                                                 'local reservations and is not archived yet, so existing local '
+                                                 'length is at most 31 and capacity is at least 32. Every sendable '
+                                                 'cookie fits the 4096-byte algorithm-15 packet after at least 128 '
+                                                 'bytes of header, UID, cookie header and authenticator overhead, '
+                                                 'hence each is at most 3968 bytes and the post-push local total is '
+                                                 'at most 126976, strictly below 131072. Reservation excludes both '
+                                                 'local and stored-predecessor members. All five local/predecessor '
+                                                 'rejection predicates are false. Both variants archive before the '
+                                                 'same callback and preserve every completion, failure, cancellation '
+                                                 'and no-reuse disposition.',
+                                    'proof': {'path': 'tasks/engine-ke-association-equivalences.md',
+                                              'sha256': '6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409',
+                                              'section': 'KE-SEND-ARCHIVE-BYTES-OR',
+                                              'reviewer': '/root; /root/kod_owner_source_design; '
+                                                          '/root/v10_execution_admission_review',
+                                              'verdict': 'independently-justified-equivalent'}},
+                                   {'id': 'KE-SEND-ARCHIVE-BYTES-EQUALITY',
+                                    'candidate_sha256': '0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d',
+                                    'source_sha256': 'e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a',
+                                    'mutant': {'name': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:851:26: '
+                                                       "replace > with == in AssociationOwner<'a>::invoke_sender",
+                                               'package': 'nevrotick-engine',
+                                               'file': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs',
+                                               'function': {'function_name': "AssociationOwner<'a>::invoke_sender",
+                                                            'return_type': '-> Result<(), Failure>',
+                                                            'span': {'start': {'line': 813, 'column': 5},
+                                                                     'end': {'line': 907, 'column': 6}}},
+                                               'span': {'start': {'line': 851, 'column': 26},
+                                                        'end': {'line': 851, 'column': 27}},
+                                               'replacement': '==',
+                                               'genre': 'BinaryOperator'},
+                                    'requirement': 'REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27',
+                                    'rationale': 'The unchanged checked packet formatter admits at most 3968 cookie '
+                                                 'bytes per actual prepared send and at most 32 such cookies enter '
+                                                 'one local archive. Its checked post-push sum is at most 126976, so '
+                                                 'both sum > 131072 and sum == 131072 are false without overflow. '
+                                                 'Earlier ticket, phase, expiry and preparation refusals remain '
+                                                 'unchanged. The mutation supplies no permission to narrow the raw '
+                                                 'history-bounds checker or return-pool domain: those independently '
+                                                 'admit exact 131072-byte data and retain their own negative and '
+                                                 'healthy controls.',
+                                    'proof': {'path': 'tasks/engine-ke-association-equivalences.md',
+                                              'sha256': '6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409',
+                                              'section': 'KE-SEND-ARCHIVE-BYTES-EQUALITY',
+                                              'reviewer': '/root; /root/kod_owner_source_design; '
+                                                          '/root/v10_execution_admission_review',
+                                              'verdict': 'independently-justified-equivalent'}},
+                                   {'id': 'KE-SEND-ARCHIVE-BYTES-INCLUSIVE',
+                                    'candidate_sha256': '0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d',
+                                    'source_sha256': 'e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a',
+                                    'mutant': {'name': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:851:26: '
+                                                       "replace > with >= in AssociationOwner<'a>::invoke_sender",
+                                               'package': 'nevrotick-engine',
+                                               'file': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs',
+                                               'function': {'function_name': "AssociationOwner<'a>::invoke_sender",
+                                                            'return_type': '-> Result<(), Failure>',
+                                                            'span': {'start': {'line': 813, 'column': 5},
+                                                                     'end': {'line': 907, 'column': 6}}},
+                                               'span': {'start': {'line': 851, 'column': 26},
+                                                        'end': {'line': 851, 'column': 27}},
+                                               'replacement': '>=',
+                                               'genre': 'BinaryOperator'},
+                                    'requirement': 'REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27',
+                                    'rationale': 'For every admitted Prepared invocation, including the 32nd local '
+                                                 'reservation, the packet/attempt bounds give a post-push local '
+                                                 'archive maximum of 126976 bytes. Both sum > 131072 and sum >= '
+                                                 '131072 are therefore false. The same cookie and packet reach the '
+                                                 'same callback after one archive move; no error, budget, expiry, '
+                                                 'cancellation or completion disposition differs. The bound concerns '
+                                                 'only this formatter-produced local archive, not arbitrary bounded '
+                                                 'data, total predecessor-plus-current memory, TLS traffic, native '
+                                                 'allocations or a wider future profile.',
+                                    'proof': {'path': 'tasks/engine-ke-association-equivalences.md',
+                                              'sha256': '6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409',
+                                              'section': 'KE-SEND-ARCHIVE-BYTES-INCLUSIVE',
+                                              'reviewer': '/root; /root/kod_owner_source_design; '
+                                                          '/root/v10_execution_admission_review',
+                                              'verdict': 'independently-justified-equivalent'}},
+                                   {'id': 'KE-RECEIVE-STABLE-SLOT-OR',
+                                    'candidate_sha256': '0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d',
+                                    'source_sha256': 'e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a',
+                                    'mutant': {'name': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:1084:40: '
+                                                       "replace || with && in AssociationOwner<'a>::receive_reply",
+                                               'package': 'nevrotick-engine',
+                                               'file': 'crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs',
+                                               'function': {'function_name': "AssociationOwner<'a>::receive_reply",
+                                                            'return_type': '-> Result<Receipt, Failure>',
+                                                            'span': {'start': {'line': 1003, 'column': 5},
+                                                                     'end': {'line': 1107, 'column': 6}}},
+                                               'span': {'start': {'line': 1084, 'column': 40},
+                                                        'end': {'line': 1084, 'column': 42}},
+                                               'replacement': '&&',
+                                               'genre': 'BinaryOperator'},
+                                    'requirement': 'REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27',
+                                    'rationale': 'The complete receive_reply input domain is guarded at the actual '
+                                                 'charged receiver. Its initial Published guard requires Pending and '
+                                                 'captures that active serial, UID, wire token, allowance and send '
+                                                 'observation before charging. Successful stage_current_reply and '
+                                                 'stage_replacement only immutably borrow the owner, use its own '
+                                                 'keys and checked issued-UID prefix, and expose no effectful '
+                                                 'publisher, await or owner-mutating callback. Staging errors may '
+                                                 'retire work but exit before the final comparison. The final fresh '
+                                                 'Published guard rejects stop or expiry before entering the inline '
+                                                 'publication closure. Whenever the changed expression executes, the '
+                                                 'actual serial and Pending phase still match the captured values, '
+                                                 'so both mismatch predicates are false. Both variants atomically '
+                                                 'publish the same cookies/receipt once; physical timing and native '
+                                                 'completion are not established.',
+                                    'proof': {'path': 'tasks/engine-ke-association-equivalences.md',
+                                              'sha256': '6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409',
+                                              'section': 'KE-RECEIVE-STABLE-SLOT-OR',
+                                              'reviewer': '/root; /root/kod_owner_source_design; '
+                                                          '/root/v10_execution_admission_review',
+                                              'verdict': 'independently-justified-equivalent'}}]}
+        self.assertTrue(MODULE.COMMON.engine_ke_equivalences_valid(historical))
+        legacy = copy.deepcopy(historical)
         legacy_candidate = "964a9573143e5668a63d264bb44906fa103d5b4c3ddf1fc82cecea33012c5468"
         legacy["binding"]["candidate_sha256"] = legacy_candidate
         for entry in legacy["mutation_equivalences"]:
@@ -2468,14 +2770,14 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
     def test_entered_blocks_require_all_415_cases_and_234_ke_neighbors(self):
         binding = self.policy["binding"]; names = binding["test_inventory"]
         healthy = self.execution(names)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 415)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 479)
         self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 234)
         missing = [name for name in names if name != "nts_ke_experiment::fixture_case_00"]
         old = [name for name in names if not name.startswith("nts_ke_experiment::")]
         variants = [self.execution([]), self.execution(old), self.execution(missing),
             self.execution([*names, names[0]]), healthy.replace(" ... ok", " ... FAILED", 1),
-            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 415", "running 414"),
-            healthy.replace("test result: ok. 415 passed", "test result: ok. 414 passed"),
+            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 479", "running 478"),
+            healthy.replace("test result: ok. 479 passed", "test result: ok. 478 passed"),
             "\n".join(line for line in healthy.splitlines() if not line.startswith("running "))]
         for text in variants:
             with self.subTest(sample=text[-120:]), self.assertRaises(MODULE.Incomplete):
@@ -2559,7 +2861,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             with self.subTest(doctest=doc):
                 result = MODULE.validate_engine_ke_execution(text, binding, include_doctests=True)
                 self.assertEqual(result["additional_doctests"], [doc])
-                self.assertEqual(result["tests_executed"], 416)
+                self.assertEqual(result["tests_executed"], 480)
                 self.assertEqual(result["ke_tests_executed"], 234)
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.validate_engine_ke_execution(text, binding)
@@ -2671,7 +2973,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             self.assertIn("--all-targets", argv)
             self.assertNotIn("build", argv)
             self.assertNotIn("run", argv)
-        self.assertEqual(report["baseline_execution"]["tests_executed"], 415)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 479)
         self.assertEqual(report["release_execution"]["ke_tests_executed"], 234)
         self.assertEqual(report["doctest_execution"]["compilation_only"],
                          ["src/lib.rs - Example::no_run (line 1) - compile"])
@@ -2837,7 +3139,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         (output / "raw.log").write_text("retained raw child output")
         session = SimpleNamespace(output=output, work=work)
         report = {"lanes": [{"lane": "ke-release", "exit_code": 0, "failure": None}],
-                  "release_execution": {"tests_executed": 415, "ke_tests_executed": 234}}
+                  "release_execution": {"tests_executed": 479, "ke_tests_executed": 234}}
         MODULE.address_storage_checkpoint(session, self.policy, report, "ke-release", "after")
         return session, report, release
 
@@ -3913,8 +4215,8 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         # This five-path identity is declared independently of checkout growth.
         self.identity = {name: hashlib.sha256((self.root / name).read_bytes()).hexdigest()
                          for name in self.OWNERS.values()}
-        self.ordinary = sorted([f"ordinary_fixture_{index:03}" for index in range(192)]
-                               + [f"source_policy::tests::synthetic_case_{index:02}" for index in range(47)]
+        self.ordinary = sorted([f"ordinary_fixture_{index:03}" for index in range(194)]
+                               + [f"source_policy::tests::synthetic_case_{index:02}" for index in range(49)]
                                + ["source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted",
                                   "source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund"])
         # Independently declared full optional-profile identity. The reader under
@@ -4296,8 +4598,8 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         names.remove("source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund")
         names.append("source_policy::tests::synthetic_budget_substitute")
         names.sort()
-        self.assertEqual(len(names), 241)
-        self.assertEqual(sum(name.startswith("source_policy::tests::") for name in names), 49)
+        self.assertEqual(len(names), 245)
+        self.assertEqual(sum(name.startswith("source_policy::tests::") for name in names), 51)
         # Reconcile this independent synthetic digest so the real named-case
         # guard supplies refusal, rather than an earlier count or stale hash.
         with patch.object(MODULE, "SOURCE_POLICY_ORDINARY_DIGEST", independent_digest(names)):
@@ -4315,11 +4617,11 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
 
     def test_full_blocks_are_required_and_doctests_remain_a_separate_union(self):
         binding = self.policy["binding"]
-        self.assertEqual(MODULE.source_policy_execution(self.execution(self.ordinary), binding)["tests_executed"], 241)
+        self.assertEqual(MODULE.source_policy_execution(self.execution(self.ordinary), binding)["tests_executed"], 245)
         with self.assertRaises(MODULE.Incomplete):
             MODULE.source_policy_execution(self.execution(self.docs), binding, doctests=True)
         both = self.execution(self.ordinary) + self.execution(self.docs)
-        self.assertEqual(MODULE.source_policy_execution(both, binding, doctests=True)["tests_executed"], 316)
+        self.assertEqual(MODULE.source_policy_execution(both, binding, doctests=True)["tests_executed"], 320)
         with self.assertRaises(MODULE.Incomplete):
             MODULE.source_policy_execution(self.execution(self.ordinary).replace("0 filtered out", "1 filtered out"), binding)
 
@@ -4331,7 +4633,7 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         self.assertTrue(self.finished)
         self.assertEqual([row[0] for row in self.commands], ["source-policy-baseline", "source-policy-doctests"])
         self.assertTrue(all("--features" not in row[1] and 0 < row[2] <= 300 for row in self.commands))
-        self.assertEqual(report["baseline_execution"]["tests_executed"], 241)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 245)
         self.assertEqual(report["doctest_execution"]["tests_executed"], 75)
         self.assertTrue(report["selected_lane_passed"])
         self.assertFalse(report["qualification_passed"])
@@ -4369,7 +4671,7 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         self.assertEqual(set(report["coverage"]), set(self.OWNERS))
         self.assertTrue(all(row["covered_lines"] == 90 and row["executable_lines"] == 100
                             and row["line_percent"] == 90 for row in report["coverage"].values()))
-        self.assertEqual(report["coverage_execution"]["tests_executed"], 241)
+        self.assertEqual(report["coverage_execution"]["tests_executed"], 245)
         label, command, timeout, options = self.commands[0]
         self.assertEqual(label, "coverage")
         self.assertNotIn("--features", command)
@@ -4669,8 +4971,8 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         self.write_policy()
 
     def test_development_ep1_admits_distinct_complete_graphs_before_session(self):
-        self.assertEqual(len(self.ordinary), 241)
-        self.assertEqual(len(self.ep1), 475)
+        self.assertEqual(len(self.ordinary), 245)
+        self.assertEqual(len(self.ep1), 479)
         self.assertEqual(len(set(self.ep1) - set(self.ordinary)), 234)
         self.reference_fixture()
         admitted = MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
@@ -4693,8 +4995,8 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                    if name != "nts_ke_experiment::synthetic_ep1_case_000"]
         substituted = [name if name != "nts_ke_experiment::synthetic_ep1_case_000"
                        else "nts_ke_experiment::foreign_same_count_case" for name in self.ep1]
-        self.assertEqual(len(missing), 474)
-        self.assertEqual(len(substituted), 475)
+        self.assertEqual(len(missing), 478)
+        self.assertEqual(len(substituted), 479)
         self.assertEqual(sum(name.startswith("nts_ke_experiment::") for name in substituted), 234)
         cases = (
             ("empty", "", "native block declaration or summary"),

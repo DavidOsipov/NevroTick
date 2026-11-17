@@ -424,7 +424,7 @@ jobs; deferral is never reported as successful SAST.
 | [Rust preparation](.github/security/prepare_rust.py) and [admission](.github/security/check_rust_policy.py) | The new product workflow uses the private pinned-toolchain preparation; the CodeQL admission/extraction path remains inactive. Product admission and isolated execution use `scripts/verify.py`. Rust extraction can execute build scripts/proc macros even with `build-mode: none`; retained CodeQL preparation is not an ordinary local setup command. |
 | [SARIF gate](.github/security/check_sarif.py) | Retained report-policy controls reject all findings, including suppressed/baseline findings, plus missing/malformed/oversized reports, failed invocations and empty source/line evidence. Its helper tests do not supply a CodeQL execution or application SAST result. |
 | [Workflow checker](.github/security/check_workflows.py) and [pins](.github/security/workflow-tool-pins.json) | actionlint 1.7.12, ShellCheck 0.11.0 with optional checks, and zizmor 1.30.1 in pedantic offline mode. All reported severities fail; ignores and user configuration are disabled. Acquisition verifies archive and executable SHA-256 and copies only a bounded regular archive member. |
-| [Gitleaks checker](.github/security/check_secrets.py) and [configuration](.gitleaks.toml) | Pinned executable, redaction, default detection rules, full retained-history and working-tree scans. No finding baseline or inline suppression bypass. Independently reviewed exceptions constrain the generic rule to exact paths and complete public ASVS/UI/OpenPGP prose, one historical source digest and one public wire-test constant. Controls require real tokens on the same or adjacent lines to remain blocking, and reject the exempted text at unrelated paths. |
+| [Gitleaks checker](.github/security/check_secrets.py) and [configuration](.gitleaks.toml) | Pinned executable, redaction, default detection rules, full retained-history and working-tree scans. No finding baseline or inline suppression bypass. Independently reviewed exceptions constrain the generic rule to exact paths and complete public ASVS/UI/OpenPGP prose, source-identity assignments and one public wire-test constant. The retained service-recovery assignment accepts only five literal identities; two complete Git preimages are recomputed, three retain historical manifest provenance. Controls require real tokens on the same or adjacent lines to remain blocking, reject unrelated paths/keys and unknown source identities. |
 
 Run the local configuration/control checks with:
 
@@ -1625,6 +1625,29 @@ Keep the existing per-file gates, ten mutation workers and finite resource bound
 five complete `--cohort-receipt` paths are required for its final `cohort-union`.
 Preparation and ordinary GREEN establish no unexecuted selected-gate pass.
 
+The additive [H02 preparation role](tasks/s1.3-source-selection-readiness.md#principalcombination-h02-preparation-and-discovery--17-november-2026)
+uses `verify-core-analysis.py --subject principal_combination`,
+`policy/principal-combination-analysis.json` and `--tool-admission-profile stable-core`.
+Its explicit `inventory`, `baseline`, `enumerate` and `coverage` lanes reuse the
+configured isolated Session and exact source/tool/vendor admission. Initial
+discovery alone accepts the explicitly empty pair of test rosters; all later
+lanes require the complete measured ordinary/doctest identities. Current
+preparation passes724 baseline and612 coverage cases, both90% per-file line
+gates, and complete228/231-variant listings. Main keeps both admission flags
+false; `contracts`, `all` and `cohort-union` stay closed. The private `mutation`
+branch additionally requires actual current baseline/coverage/enumeration and
+source-local compiler evidence, rechecked at the campaign effect. Its strictly
+admitted debug0 change appends only private dev/test debug-information settings
+through the existing sealed vendor-only configuration; it changes no assertions,
+overflow checks, Rust flags, ordinary/coverage or shipping profile. No other
+role, including KE, inherits that permission.
+The [completed H02 checkpoint](tasks/s1.3-source-selection-readiness.md#h02-final-selected-qualification--17-november-2026)
+records all459 variants and separate source-bound report-only adjudication of
+one exact equivalent. Original empty-E/native2 failure remains retained; E has
+zero kill credit. Both adjusted95% gates pass within that GNU fixture scope.
+The six-worker/zero-extra-token policy and512-per-file/1,024-listing bounds remain;
+fresh source/role admission is required before another campaign.
+
 The pure fixture core uses [verify-core-analysis.py](scripts/verify-core-analysis.py)
 and [time-core-analysis.json](policy/time-core-analysis.json). Its recorded
 six-owner checkpoint covers regression, residuals, normalization, history, runs
@@ -1957,6 +1980,28 @@ and current line results, if executed, retain their own identities and scope.
 The [existing Engine task](tasks/engine-transport-pilot.md#five-owner-kod-qualification-admission--15-november-2026)
 owns actual disposition, first failures, cumulative budget and remaining exits.
 
+**Current KE Request admission, 17 November 2026:** the existing
+`--profile ke_association` reader now requires479 complete ordinary identities,
+including234 KE cases;75 doctests retain their separate roster. The
+[admission record](tasks/engine-transport-pilot.md#ke-request-profile-admission-complete--17-november-2026)
+binds605-input `a35b710d…`, all48 role inputs and633 reviewed descriptor identities,
+with a fresh exact Request6 source listing. Main campaigns remain false and E
+empty. Use the maintained subject-specific coverage/mutation lanes under a
+separate admitted lease; no H02 debug0 setting or historical metric transfers.
+The owned launcher must expose the installed hash-pinned analysis extensions in
+its explicit PATH; installed bytes alone do not establish process discovery.
+Strict resource sampling, original failures and cumulative costs remain recorded.
+The [selected Request metric exit](tasks/engine-transport-pilot.md#request-final-selected-gnu-qualification--17-november-2026)
+now records96% line coverage and3/3 viable generated variants caught (6 total,
+3 compiler-unviable, E0), with a complete479+75 baseline. The first observer
+freshness failure is retained. The admitted keeper recipe isolates bulk tool
+admission/execution/analysis in a same-cgroup child and accepts only bounded compact
+results after actual reaping; strict2-second observation and all resource caps
+remain. This changes no product runtime, shipping profile or native authority.
+The unchanged Fault owner still has18 Windows-inactive GNU survivors; do not
+repeat that GNU mutation cohort without a concrete changed hypothesis or turn
+the inactive code into equivalences. Existing native owners retain that exit.
+
 **Historical EP1/EP2 initial source analysis, 11 November 2026:** the same
 [Engine verifier](scripts/verify-engine-analysis.py) has the exact
 `--profile ke_association` [role](policy/engine-ke-association-analysis.json).
@@ -2234,6 +2279,19 @@ with an independently reviewed, bounded JSON prediction bound to the complete
 current product, runner/helper hashes, MSVC target and explicit KE feature. The
 full sorted library/KE lists, selected KE list and exact code-owned held cases
 are frozen with the build; native discovery cannot supply its own expected list.
+The explicit `--default-cohort` on both lanes selects a separate closed
+guard/lifecycle child with empty Engine features (`--no-default-features`). Its
+strict independent roster uses `selected_default_tests` instead of KE fields,
+contains the complete Windows library names and must select all eleven exact
+code-owned cases. The existing KE/facade selections remain separate. Each
+default case executes once with its exact name, one pass and every other library
+case filtered; the fixed eighteen observations retain the existing four-process
+bound and actual job/stream/handle/event cleanup requirements. The
+[17 November default exit](tasks/engine-transport-pilot.md#current-default-windows-guardlifecycle-exit--17-november-2026)
+records 66 portable controls, 17 build checks, actual 219-name discovery and
+eleven passed native cases on its exact candidate/host, with the original cleanup
+window failure and bounded continuation preserved. It grants no whole-library,
+healthy provider/transport, Core-production or release qualification.
 It links the Engine KE
 library tests with unchanged v3 flags, plus three baseline-x64 test diagnostics
 with the release profile. The native lane requires that build's

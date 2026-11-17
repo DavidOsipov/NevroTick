@@ -18,13 +18,39 @@ beside four healthy controls. Selected replies refused by final Stop/invalidatio
 or managed-policy failure retain their rejection charge; unsent and committed
 neighbors retain their existing meaning. The public session counter assertion was
 corrected from the documented contract, with other lifecycle observations preserved.
-Fresh 90% line/95% per-critical-file mutation qualification is still open. The
+The [current five-owner results](../tasks/engine-transport-pilot.md#selected-reply-accounting--current-five-owner-results--17-november-2026)
+pass all five 90% line and 95% generated-mutation gates: 704 variants reconcile
+as 382 meaningful catches, 317 compiler-unviable and five reviewed equivalents,
+with no timeout or unexpected survivor. Independent integrated review accepts
+this bounded GNU checkpoint. The
 preceding [address-round repair](../tasks/engine-transport-pilot.md#address-round-typed-error-controls-and-requalification--16-november-2026)
 retains its B83 development, sensitivity and partial cohort results; none supplies
 a new-candidate score. Failed attempts and resource stops remain recorded.
-Main campaigns stay closed. The new source/roster/equivalence rebind is an
-unexecuted external draft, excluded from this source checkpoint. H02 remains an
-external draft until the current Engine five-owner qualification ends.
+Main campaigns stay closed. The current source/roster/equivalence rebind passes
+350 helper controls and current metric prerequisites. The default Windows
+runner extension passes 66 portable controls and the
+[current Windows child](../tasks/engine-transport-pilot.md#current-default-windows-guardlifecycle-exit--17-november-2026):
+17 build checks, all 219 predicted discovery names and eleven actual selected
+cases across 18 supervision observations. The original 120-second staging
+cleanup window failed; exact owned cleanup completed under a recorded 360-second
+continuation. Its verified three-file amendment is adopted in the main checkout.
+H02's [two-owner preparation](../tasks/s1.3-source-selection-readiness.md#principalcombination-h02-preparation-and-discovery--17-november-2026)
+now completes its [selected GNU fixture qualification](../tasks/s1.3-source-selection-readiness.md#h02-final-selected-qualification--17-november-2026)
+on `a35b710d…`: 362 Python controls, 612 ordinary cases/112 doctests and 612
+instrumented cases pass. Both files exceed90% line coverage. All459 variants
+reconcile as285 catches,173 compiler refusals and one independently justified
+equivalent; both adjusted95% mutation gates pass through separate report-only
+adjudication. The original empty-E execution remains incomplete/native2; its raw
+miss and failed wrapper are preserved, with zero E kill credit. Four healthy/four
+fault controls establish actual raw-validation sensitivity. Main stays closed.
+The [selected KE Request checkpoint](../tasks/engine-transport-pilot.md#request-final-selected-gnu-qualification--17-november-2026)
+now passes on `a35b710d…`:479 instrumented cases,48/50 executable lines (96%),
+and all six variants reconciled as3 catches/3 compiler-unviable/zero survivors
+or timeouts. The viable generated-mutation score is100%, with no exclusions or
+compiler kill credit; the baseline contains479 ordinary cases/75 doctests.
+All633 descriptor identities remain bound with public campaigns closed and E
+empty. Next reconcile remaining KE owners; Fault's18 Windows-only survivors
+remain a separate native gate. H02's debug0 permission does not extend to KE.
 Production/Core, native, hosted, release and post-V1 formal exits remain separate.
 Updated skill tools remain in separate owned environments documented in TOOLING.md.
 **Retained C2 KoD qualification — 16 November 2026:**

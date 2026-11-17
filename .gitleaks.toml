@@ -69,3 +69,14 @@ condition = "AND"
 regexTarget = "line"
 paths = ['''(?:^|/)policy/slint-linux-sdk\.json$''']
 regexes = ['''^\n?    "usr/include/freetype2/freetype/ftmodapi\.h": "3b05e210b4705017d68e00def6820749fd0fca2f185ab2bb5df06d71928e29eb",$''']
+
+# Reviewed source-identity assignments in retained service recovery receipts.
+# Two digests have complete local Git preimages; three retain historical repair-
+# manifest provenance only. This does not claim those old source bytes recovered.
+# Keep the generic rule, direct JSON path and complete assignment conjunctive.
+[[rules.allowlists]]
+description = "Five reviewed native-token Rust source identities in retained recovery JSON receipts"
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|/)artifacts/windows-services/recovery-20261107-v1/[A-Za-z0-9][A-Za-z0-9._-]*\.json$''']
+regexes = ['''^\n?    "tools/windows-service-fixture/src/native_token\.rs": "(?:00315280b8f6a696b52d0735764c8146f091ed530de59f3216c66e9e7c893ebf|4a8a5c4280cfccdcb470960b5cff55d083c1f278f9c5d4c835b52f8ca435e1c5|56a1d575473ba85d40632ddf0c1a3b1dac1270a780040a991f0bb1a132c33791|5e5edf89b420358a174b1eed4962b694e498c61e1fc7b720e4b8976e1e170ea7|fe9d5ff3f32a28e0c5251db033456c54df50288b1e8bfa12b87e479867c7571b)",?$''']

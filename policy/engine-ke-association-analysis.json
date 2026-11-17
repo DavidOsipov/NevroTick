@@ -1,531 +1,12 @@
 {
-  "schema_version": 1,
-  "package": "nevrotick-engine",
   "admission_status": "admitted-engine-ke-source-analysis",
-  "subjects": {
-    "ke_core": "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs",
-    "ke_association": "crates/nevrotick-engine/src/nts_ke_experiment/association.rs",
-    "ke_process": "crates/nevrotick-engine/src/nts_ke_experiment/process.rs",
-    "ke_handoff": "crates/nevrotick-engine/src/nts_ke_experiment/handoff.rs",
-    "ke_request": "crates/nevrotick-engine/src/nts_ke_experiment/request.rs",
-    "ke_fault": "crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs",
-    "ke_ledger": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
-    "ke_retirement": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/retirement.rs",
-    "ke_response": "crates/nevrotick-engine/src/nts_ke_experiment/response.rs",
-    "ke_datagram": "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs",
-    "ke_recovery": "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs",
-    "ke_job": "crates/nevrotick-engine/src/nts_ke_experiment/job.rs"
-  },
-  "critical_files": [
-    "crates/nevrotick-engine/src/lib.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/association.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/process.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/handoff.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/request.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/retirement.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/response.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/job.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
-    "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"
-  ],
-  "features": [
-    "ke-association-prototype"
-  ],
-  "test_workspace": false,
-  "tool_admission_profile": "stable-core",
-  "coverage_minimum_line_percent": 90,
-  "mutation_minimum_viable_killed_percent": 95,
-  "maximum_mutants": 512,
-  "maximum_listed_per_file": 512,
-  "maximum_listed_total": 3072,
   "baseline_wall_seconds": 300,
-  "coverage_wall_seconds": 300,
-  "enumeration_wall_seconds": 240,
-  "mutation_wall_seconds": 1200,
-  "mutation_build_seconds": 90,
-  "mutation_test_seconds": 60,
-  "jobs": 6,
-  "test_threads": 1,
-  "coverage_test_threads": 1,
-  "mutation_jobs": 6,
-  "mutation_jobserver_tasks": 0,
-  "mutation_process_limit": 512,
-  "mutation_message_format": "json",
-  "minimum_free_bytes": 7516192768,
-  "stop_free_bytes": 4294967296,
-  "owned_output_maximum_allocated_bytes": 3221225472,
-  "owned_output_maximum_entries": 32768,
-  "mutation_equivalences": [
-    {
-      "id": "KE-RETURN-POOL-CAPACITY-OR",
-      "candidate_sha256": "0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d",
-      "source_sha256": "e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a",
-      "mutant": {
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:774:17: replace || with && in AssociationOwner<'a>::return_unused",
-        "package": "nevrotick-engine",
-        "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
-        "function": {
-          "function_name": "AssociationOwner<'a>::return_unused",
-          "return_type": "-> Result<(), Failure>",
-          "span": {
-            "start": {
-              "line": 737,
-              "column": 5
-            },
-            "end": {
-              "line": 787,
-              "column": 6
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 774,
-            "column": 17
-          },
-          "end": {
-            "line": 774,
-            "column": 19
-          }
-        },
-        "replacement": "&&",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27",
-      "rationale": "The complete admitted return domain includes genuine Reserved, Preparing and Prepared tickets, failed preparation, exact pool-byte equality, cancellation and expiry; it does not assume successful encoding. After the unchanged guards, reservation has removed one exact pool entry and no admitted writer can shrink or replace that pool before return. Its remaining length is at most seven and its capacity still exceeds that length; its reserved-plus-available byte sum remains within 131072. The changed connector combines only false predicates. Both forms preserve the same returned allocation, any retired UID, spent attempts, original deadline and error paths.",
-      "proof": {
-        "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409",
-        "section": "KE-RETURN-POOL-CAPACITY-OR",
-        "reviewer": "/root; /root/kod_owner_source_design; /root/v10_execution_admission_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    },
-    {
-      "id": "KE-RETURN-POOL-BYTES-OR",
-      "candidate_sha256": "0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d",
-      "source_sha256": "e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a",
-      "mutant": {
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:773:17: replace || with && in AssociationOwner<'a>::return_unused",
-        "package": "nevrotick-engine",
-        "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
-        "function": {
-          "function_name": "AssociationOwner<'a>::return_unused",
-          "return_type": "-> Result<(), Failure>",
-          "span": {
-            "start": {
-              "line": 737,
-              "column": 5
-            },
-            "end": {
-              "line": 787,
-              "column": 6
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 773,
-            "column": 17
-          },
-          "end": {
-            "line": 773,
-            "column": 19
-          }
-        },
-        "replacement": "&&",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27",
-      "rationale": "After the unchanged ticket, Published-control and pre-invocation phase checks, the exact reserved cookie was removed from a checked pool of at most eight entries. No admitted operation changes that pool while the slot remains reserved. Available count is therefore at most seven, available-plus-reserved payload remains at most 131072 bytes, and removal preserves an allocated slot beyond the current length. All three rejection predicates are false, including strict byte excess at exact equality. Both operator forms move back the same cookie without copying, exposing it, refunding work or renewing its original expiry. Earlier refusal paths are unchanged.",
-      "proof": {
-        "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409",
-        "section": "KE-RETURN-POOL-BYTES-OR",
-        "reviewer": "/root; /root/kod_owner_source_design; /root/v10_execution_admission_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    },
-    {
-      "id": "KE-SEND-PREDECESSOR-VALUE-OR",
-      "candidate_sha256": "0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d",
-      "source_sha256": "e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a",
-      "mutant": {
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:854:17: replace || with && in AssociationOwner<'a>::invoke_sender",
-        "package": "nevrotick-engine",
-        "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
-        "function": {
-          "function_name": "AssociationOwner<'a>::invoke_sender",
-          "return_type": "-> Result<(), Failure>",
-          "span": {
-            "start": {
-              "line": 813,
-              "column": 5
-            },
-            "end": {
-              "line": 907,
-              "column": 6
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 854,
-            "column": 17
-          },
-          "end": {
-            "line": 854,
-            "column": 19
-          }
-        },
-        "replacement": "&&",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27",
-      "rationale": "The stored predecessor set is filtered before reservation selects the exact cookie. It is immutable thereafter; install_previous requires the untouched reservation allowance and cannot replace it once any ticket has been issued. Consequently the selected Prepared cookie is not a member of the stored predecessor, whether that set is empty, arbitrary or complete. Local count, capacity, encoded-byte and local-membership predicates are also false. Replacing the final connector with AND therefore changes no error, archive move, callback, no-reuse or lifecycle outcome. This argument does not certify completeness or provenance of the predecessor set; actual consuming retirement and checked projection enforce that separate producer contract.",
-      "proof": {
-        "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409",
-        "section": "KE-SEND-PREDECESSOR-VALUE-OR",
-        "reviewer": "/root; /root/kod_owner_source_design; /root/v10_execution_admission_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    },
-    {
-      "id": "KE-SEND-ARCHIVE-VALUE-OR",
-      "candidate_sha256": "0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d",
-      "source_sha256": "e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a",
-      "mutant": {
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:853:17: replace || with && in AssociationOwner<'a>::invoke_sender",
-        "package": "nevrotick-engine",
-        "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
-        "function": {
-          "function_name": "AssociationOwner<'a>::invoke_sender",
-          "return_type": "-> Result<(), Failure>",
-          "span": {
-            "start": {
-              "line": 813,
-              "column": 5
-            },
-            "end": {
-              "line": 907,
-              "column": 6
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 853,
-            "column": 17
-          },
-          "end": {
-            "line": 853,
-            "column": 19
-          }
-        },
-        "replacement": "&&",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27",
-      "rationale": "Reservation filters every value in the current local used archive before moving its selected cookie into the single occupied slot. No other invocation can append a local archive entry while that ticket owns the slot, and pre-send return consumes the ticket without refunding its checkout. Thus the local membership predicate is false at the unchanged Prepared/currentness guard. Count, capacity, encoded-byte and predecessor predicates are also false in that domain. Changing this connector only changes pure bounded reads; both forms archive the same cookie before callback exposure and preserve all errors, receipt absence, budgets and completion custody.",
-      "proof": {
-        "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409",
-        "section": "KE-SEND-ARCHIVE-VALUE-OR",
-        "reviewer": "/root; /root/kod_owner_source_design; /root/v10_execution_admission_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    },
-    {
-      "id": "KE-SEND-ARCHIVE-CAPACITY-OR",
-      "candidate_sha256": "0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d",
-      "source_sha256": "e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a",
-      "mutant": {
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:852:17: replace || with && in AssociationOwner<'a>::invoke_sender",
-        "package": "nevrotick-engine",
-        "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
-        "function": {
-          "function_name": "AssociationOwner<'a>::invoke_sender",
-          "return_type": "-> Result<(), Failure>",
-          "span": {
-            "start": {
-              "line": 813,
-              "column": 5
-            },
-            "end": {
-              "line": 907,
-              "column": 6
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 852,
-            "column": 17
-          },
-          "end": {
-            "line": 852,
-            "column": 19
-          }
-        },
-        "replacement": "&&",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27",
-      "rationale": "On the whole admitted Prepared-ticket domain, including the last checkout, local archive capacity is at least 32 and pre-push length is at most 31. Return and failure never refund a reservation or shrink this archive. The encoded-byte ceiling makes excess false; reservation and immutable predecessor installation make both membership predicates false. The changed connector therefore joins false conditions only. Neither form changes the moved cookie, Invoked transition, callback arguments, unknown-completion custody or subsequent original-control checks. This is a local-context argument: predecessor history remains a separate bounded owner, not extra entries in the local Vec.",
-      "proof": {
-        "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409",
-        "section": "KE-SEND-ARCHIVE-CAPACITY-OR",
-        "reviewer": "/root; /root/kod_owner_source_design; /root/v10_execution_admission_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    },
-    {
-      "id": "KE-SEND-ARCHIVE-BYTES-OR",
-      "candidate_sha256": "0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d",
-      "source_sha256": "e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a",
-      "mutant": {
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:851:17: replace || with && in AssociationOwner<'a>::invoke_sender",
-        "package": "nevrotick-engine",
-        "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
-        "function": {
-          "function_name": "AssociationOwner<'a>::invoke_sender",
-          "return_type": "-> Result<(), Failure>",
-          "span": {
-            "start": {
-              "line": 813,
-              "column": 5
-            },
-            "end": {
-              "line": 907,
-              "column": 6
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 851,
-            "column": 17
-          },
-          "end": {
-            "line": 851,
-            "column": 19
-          }
-        },
-        "replacement": "&&",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27",
-      "rationale": "Only a checked same-owner Prepared packet reaches the archive predicate. The current checkout is one of at most 32 irreversible local reservations and is not archived yet, so existing local length is at most 31 and capacity is at least 32. Every sendable cookie fits the 4096-byte algorithm-15 packet after at least 128 bytes of header, UID, cookie header and authenticator overhead, hence each is at most 3968 bytes and the post-push local total is at most 126976, strictly below 131072. Reservation excludes both local and stored-predecessor members. All five local/predecessor rejection predicates are false. Both variants archive before the same callback and preserve every completion, failure, cancellation and no-reuse disposition.",
-      "proof": {
-        "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409",
-        "section": "KE-SEND-ARCHIVE-BYTES-OR",
-        "reviewer": "/root; /root/kod_owner_source_design; /root/v10_execution_admission_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    },
-    {
-      "id": "KE-SEND-ARCHIVE-BYTES-EQUALITY",
-      "candidate_sha256": "0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d",
-      "source_sha256": "e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a",
-      "mutant": {
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:851:26: replace > with == in AssociationOwner<'a>::invoke_sender",
-        "package": "nevrotick-engine",
-        "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
-        "function": {
-          "function_name": "AssociationOwner<'a>::invoke_sender",
-          "return_type": "-> Result<(), Failure>",
-          "span": {
-            "start": {
-              "line": 813,
-              "column": 5
-            },
-            "end": {
-              "line": 907,
-              "column": 6
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 851,
-            "column": 26
-          },
-          "end": {
-            "line": 851,
-            "column": 27
-          }
-        },
-        "replacement": "==",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27",
-      "rationale": "The unchanged checked packet formatter admits at most 3968 cookie bytes per actual prepared send and at most 32 such cookies enter one local archive. Its checked post-push sum is at most 126976, so both sum > 131072 and sum == 131072 are false without overflow. Earlier ticket, phase, expiry and preparation refusals remain unchanged. The mutation supplies no permission to narrow the raw history-bounds checker or return-pool domain: those independently admit exact 131072-byte data and retain their own negative and healthy controls.",
-      "proof": {
-        "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409",
-        "section": "KE-SEND-ARCHIVE-BYTES-EQUALITY",
-        "reviewer": "/root; /root/kod_owner_source_design; /root/v10_execution_admission_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    },
-    {
-      "id": "KE-SEND-ARCHIVE-BYTES-INCLUSIVE",
-      "candidate_sha256": "0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d",
-      "source_sha256": "e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a",
-      "mutant": {
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:851:26: replace > with >= in AssociationOwner<'a>::invoke_sender",
-        "package": "nevrotick-engine",
-        "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
-        "function": {
-          "function_name": "AssociationOwner<'a>::invoke_sender",
-          "return_type": "-> Result<(), Failure>",
-          "span": {
-            "start": {
-              "line": 813,
-              "column": 5
-            },
-            "end": {
-              "line": 907,
-              "column": 6
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 851,
-            "column": 26
-          },
-          "end": {
-            "line": 851,
-            "column": 27
-          }
-        },
-        "replacement": ">=",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27",
-      "rationale": "For every admitted Prepared invocation, including the 32nd local reservation, the packet/attempt bounds give a post-push local archive maximum of 126976 bytes. Both sum > 131072 and sum >= 131072 are therefore false. The same cookie and packet reach the same callback after one archive move; no error, budget, expiry, cancellation or completion disposition differs. The bound concerns only this formatter-produced local archive, not arbitrary bounded data, total predecessor-plus-current memory, TLS traffic, native allocations or a wider future profile.",
-      "proof": {
-        "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409",
-        "section": "KE-SEND-ARCHIVE-BYTES-INCLUSIVE",
-        "reviewer": "/root; /root/kod_owner_source_design; /root/v10_execution_admission_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    },
-    {
-      "id": "KE-RECEIVE-STABLE-SLOT-OR",
-      "candidate_sha256": "0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d",
-      "source_sha256": "e6625bb2f5e4acefd21f2e488ea7160e03087cb6b42fe130fb062258bb33d08a",
-      "mutant": {
-        "name": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs:1084:40: replace || with && in AssociationOwner<'a>::receive_reply",
-        "package": "nevrotick-engine",
-        "file": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
-        "function": {
-          "function_name": "AssociationOwner<'a>::receive_reply",
-          "return_type": "-> Result<Receipt, Failure>",
-          "span": {
-            "start": {
-              "line": 1003,
-              "column": 5
-            },
-            "end": {
-              "line": 1107,
-              "column": 6
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 1084,
-            "column": 40
-          },
-          "end": {
-            "line": 1084,
-            "column": 42
-          }
-        },
-        "replacement": "&&",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "REQ-8/BND-2; AC-04; CHECK-6/8/9/17/21/25/26/27",
-      "rationale": "The complete receive_reply input domain is guarded at the actual charged receiver. Its initial Published guard requires Pending and captures that active serial, UID, wire token, allowance and send observation before charging. Successful stage_current_reply and stage_replacement only immutably borrow the owner, use its own keys and checked issued-UID prefix, and expose no effectful publisher, await or owner-mutating callback. Staging errors may retire work but exit before the final comparison. The final fresh Published guard rejects stop or expiry before entering the inline publication closure. Whenever the changed expression executes, the actual serial and Pending phase still match the captured values, so both mismatch predicates are false. Both variants atomically publish the same cookies/receipt once; physical timing and native completion are not established.",
-      "proof": {
-        "path": "tasks/engine-ke-association-equivalences.md",
-        "sha256": "6163769960cf33bf366e78fc16b5888f6a301224a11fa05f93f0eaaad6a10409",
-        "section": "KE-RECEIVE-STABLE-SLOT-OR",
-        "reviewer": "/root; /root/kod_owner_source_design; /root/v10_execution_admission_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    }
-  ],
-  "campaigns_admitted": false,
-  "mutation_inventories": {
-    "ke_core": {
-      "count": 99,
-      "sha256": "0ac1c13c79e109cd5f310097db6a52b3d2b17d3d59f70a905b402590149ab385"
-    },
-    "ke_association": {
-      "count": 35,
-      "sha256": "be3d5344b3945bb851142c65e5cdcb1cde113c2df5579785c8209b4d0efe6775"
-    },
-    "ke_process": {
-      "count": 3,
-      "sha256": "ee2260e37180be4c4e22d7511f2377502ab24c318c531a1a57b26dd8a6d8c929"
-    },
-    "ke_handoff": {
-      "count": 9,
-      "sha256": "b516429e6ed3865e792f28b51546ac1bbaf76ac2e4490f011bdc12d46b2cf533"
-    },
-    "ke_request": {
-      "count": 6,
-      "sha256": "873305ce2e5581f99cb4db5e3a53ce4e9294520512f49a3df6a3486f8c321cb5"
-    },
-    "ke_fault": {
-      "count": 27,
-      "sha256": "eec22bdf43a791c01218db07684021e1085c84ccfe3e115717eddd7d4d940866"
-    },
-    "ke_ledger": {
-      "count": 166,
-      "sha256": "b6079ec570a39e791d4cd2fa551ffcc7063971c0952fe119d2d1e77b25d86ca4"
-    },
-    "ke_retirement": {
-      "count": 53,
-      "sha256": "4f175b1d70a8a7b1e9fb7fd8b634b565263b1c6e8acd79945a8c0ee1857ef602"
-    },
-    "ke_response": {
-      "count": 45,
-      "sha256": "398967059802ea42cd06243da0a0f0d0ad648449a439a106c833afc12dd95021"
-    },
-    "ke_datagram": {
-      "count": 45,
-      "sha256": "a0d64c7d12449b67f6655f0490cdaf0a6461388eeb112ba67a55fcab69668064"
-    },
-    "ke_recovery": {
-      "count": 118,
-      "sha256": "2135ff79da4500db94c8ff7a8582b67be5d271d8ca3ce927be488bca6fb4fdee"
-    },
-    "ke_job": {
-      "count": 27,
-      "sha256": "e555393f84b9281cb00065986abcebc1b93a651065af3bcb9df7850587efaa58"
-    }
-  },
   "binding": {
-    "candidate_sha256": "0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d",
-    "source_file_count": 603,
+    "candidate_sha256": "a35b710d8d5b32faf5e1f080867f14e4becedfffd3ad967be45fd5adc1db0fc3",
     "inputs_sha256": {
-      "scripts/verify-engine-analysis.py": "2fb17d59147def1ec63ade69d5a7cda594df9617f90105c67bc0e0e61d9b80ff",
-      "scripts/tests/test_verify_engine_analysis.py": "a2a215aedd852f840f7525075b3f48aeffd2358ddb8d9cbca118c709ea482245",
-      "crates/nevrotick-engine/src/lib.rs": "3878f8999b835157e35c2fd5206b8e0eceab43507cdedadf104e6d5862d9a66b",
+      "scripts/verify-engine-analysis.py": "bcb31c07c61067b7cd785a7c62697e5f37a0b4719697b60a33c3d465aa863ff2",
+      "scripts/tests/test_verify_engine_analysis.py": "f8bb853207a607634b2b69d47aac2ba0f4552377ae7d2b591c2120bffe934157",
+      "crates/nevrotick-engine/src/lib.rs": "0208e64e08e5979bce17da715a664242dd53c429dbc17639789feed508a0afb4",
       "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs": "fda1bb48ac9751bb70a31f9501f7f8cca04de82b4481c1beab9c5e456c173287",
       "crates/nevrotick-engine/src/nts_ke_experiment/association.rs": "7fc8d5d2a880c811a8250414fd4e31365721757634b3f49364fb4f0eb38a0078",
       "crates/nevrotick-engine/src/nts_ke_experiment/process.rs": "c29e5407153b23afa914c4376a2248dc932666b841a9daa87de4122c40eda032",
@@ -555,14 +36,14 @@
       "crates/nevrotick-engine/src/nts_ke_experiment/recovery/worker_tests.rs": "eda3ac1cb5a148dc4dbb985e573f89a13266c50e6f9924a0a613b2abb35149e9",
       "crates/nevrotick-engine/src/nts_ke_experiment/recovery/numerics_tests.rs": "f830a9a37a40c37e84cd611d34bde2d087b8ab44f5f8965d2757cc878bb4f69b",
       "crates/nevrotick-engine/src/nts_ke_experiment/job_tests.rs": "fbea38662a14fbc5fd5bd88156773b277be5c586e5b5e4d720a6ce4297df1a6d",
-      "scripts/portable-analysis.py": "b551388a200ef14f197442a8ce32c87c68324dea8bf2bd8ea985368082a04d6a",
-      "scripts/tests/test_portable_analysis.py": "6c275a5df3a10048ff02c17f99f90c58857dd6eaa3ff2664b6eccbb05ef5429c",
+      "scripts/portable-analysis.py": "c9a6547b6d26908e47cff3c33328522b68a76c93e29645a2700b4610f770e4e4",
+      "scripts/tests/test_portable_analysis.py": "170d34a54e2488e208629ec02dd79312e62b34bbd83c430e862ef964eea6de59",
       "scripts/analysis-runtime.py": "0de6d23b2e52fea78ee81f038d216c962ef87511df53443984bb6e6aacb79dc9",
       "scripts/check-analysis.py": "39a3f1dcbdbc495c767753d43260207a5fb9aff6221410a3fbb27fc1ee199c2f",
       "scripts/analysis-controls.py": "f39eb0123e279331e38b48addc5bdc61d29dcbb3e26e8c18ec99512b0affe1a0",
       "scripts/prepare-product.py": "e4d3b33d82ab5b8049065a0eb29e380e84c559002127d452aeb492fd5bb3b29f",
       "policy/analysis-tools.json": "be49c57c0262415314daeb41ff06b65283a221ab2b68b3f7edf372449f152f53",
-      "policy/verification-manifest.toml": "3e5cae0dd5096f7e6d91e8cfbff3f35ae6b439ffe7239e2492f845b5b1d45f39",
+      "policy/verification-manifest.toml": "50700c30e906e1596f5be967ee4c8b7d0632694533e5cde9601eb4db23e6c736",
       "policy/tool-manifest.json": "8a156a5573626d7aebb868f257436306c79c2ff64fa3ee3b9357482363ac007d",
       "policy/ui-m0-dependencies.json": "30c5b238af6a94d379348b71341e4d6422a32f82fd458d7821fb3a2603d3aac4",
       ".cargo/mutants.toml": "af0e3b1d7774464fb6d3b8566b61472a853ce2e6b0ba26a1c4fbe82f676b5f5b",
@@ -572,6 +53,16 @@
       "tools/crypto-cng-lifecycle/Cargo.toml": "ffd149d4b3982586913ed75618537a0e04f85df194251c3eca5817c957b8971e",
       "tools/crypto-cng-lifecycle/Cargo.lock": "86bd5f239d7260a25482935936ab1cb14ad5a90e40868f0509a55adaa45afe48"
     },
+    "ordinary_evidence": {
+      "path": "/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/current-owner-cohorts-v1/repair-1/address-repair-v2/reply-accounting-repair-1/observer-v4/development-4/verification.json",
+      "sha256": "cdacaa3ec9c460f57083097946949b548de7086c369a0d8b7a9b67af389f00d2"
+    },
+    "root_graph_evidence": {
+      "path": "/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/engine-ke-request-execution-20261117-v1/discovery-2/verification.json",
+      "sha256": "92a09bbb4dcb3973da9b17b56e699d97c5d83c5d0a5406fdec2a33b40c1e3582"
+    },
+    "source_context_sha256": "53854ebcd2eabae4a2a27c6b6b5d4f248cb1acc7e5e568a9520000575f200e1f",
+    "source_file_count": 605,
     "test_inventory": [
       "absent_measurement_refuses_quality_with_actual_valid_neighbor",
       "actual_quality_limits_refuse_without_rewriting_completion_or_age",
@@ -876,6 +367,8 @@
       "processing_guard_tests::measurement_refusal_consumes_the_correlated_request_once",
       "processing_guard_tests::observed_measurement_prerequisites_keep_broad_date_and_model_boundaries",
       "processing_guard_tests::owned_timers_deliver_immediate_actions_and_cancel_future_actions",
+      "processing_guard_tests::pilot_final_guard_invalidation_rejects_selected_reply_once",
+      "processing_guard_tests::pilot_final_guard_stop_rejects_selected_reply_once",
       "processing_guard_tests::processing_uses_fresh_deadline_and_current_control",
       "processing_guard_tests::public_execute_relative_view_retains_actual_common_run_and_refusals",
       "processing_guard_tests::read_classification_keeps_platform_oversize_and_native_errors_distinct",
@@ -902,6 +395,7 @@
       "quality::tests::refusal_families_keep_bounded_diagnostics_and_typed_sources",
       "quality::tests::signed_server_interval_and_unsigned_root_words_are_retained",
       "quality::tests::zero_raw_rtt_uses_combined_precision_floor",
+      "quality_process::semantic_evidence_accepts_only_exact_named_admitted_sites",
       "relative::tests::duration_nanoseconds_admits_full_u64_and_rejects_next_tick",
       "relative::tests::midpoint_bounds_preserve_half_nanoseconds_and_integer_endpoints",
       "relative::tests::midpoint_publication_enforces_raw_association_and_garde_rule",
@@ -934,6 +428,9 @@
       "series::address_round::tests::injected_writable_io_keeps_its_actual_cause_and_continues_to_the_real_reply",
       "series::address_round::tests::ipv4_blackhole_yields_ipv6_reply_without_third_send",
       "series::address_round::tests::ipv6_blackhole_yields_ipv4_reply_without_third_send",
+      "series::address_round::tests::managed_round_postterminal_reenable_keeps_the_actual_live_policy_cause",
+      "series::address_round::tests::managed_round_receiving_rejects_downgraded_and_foreign_bindings_before_send",
+      "series::address_round::tests::managed_round_reclassifies_restriction_after_actual_setup_contention",
       "series::address_round::tests::owned_timers_are_reaped_before_the_live_runtime_is_dropped",
       "series::address_round::tests::preexisting_stop_and_invalidation_prevent_every_send",
       "series::address_round::tests::previous_socket_is_closed_before_the_next_actual_setup",
@@ -959,6 +456,9 @@
       "series::tests::post_commit_control_preserves_header_and_measurement_refusal",
       "series::tests::raw_config_and_tokens_have_mandatory_bounded_admission",
       "series::tests::receiver_rejects_duplicate_foreign_and_reused_identity_atomically",
+      "series::tests::reply_final_guard_invalidation_keeps_its_actual_receiving_checkpoint",
+      "series::tests::reply_final_guard_stop_keeps_its_actual_receiving_checkpoint",
+      "series::tests::reply_postcommit_stop_preserves_the_historical_receiving_checkpoint",
       "series::tests::selected_native_datagram_after_retirement_is_charged_without_publication",
       "series::tests::series_process::semantic_evidence_accepts_only_exact_named_admitted_sites",
       "series::tests::setup_and_registration_failures_preserve_actual_prior_completion",
@@ -966,6 +466,8 @@
       "series::tests::single_slot_driver_enforces_send_cap_with_valid_boundary_neighbor",
       "series::tests::synchronous_counter_boundaries_do_not_panic_and_preserve_exact_effects",
       "series::tests::transfer_control_and_irreversible_retirement_are_distinct",
+      "series::tests::writable_final_guard_invalidation_keeps_its_actual_receiving_checkpoint",
+      "series::tests::writable_final_guard_stop_keeps_its_actual_receiving_checkpoint",
       "series_process::semantic_evidence_accepts_only_exact_named_admitted_sites",
       "session::tests::completion_classification_covers_all_end_and_failure_combinations",
       "session::tests::entered_runtime_refusals_preserve_prepare_rollback_and_retire_consumed_execution",
@@ -974,6 +476,7 @@
       "session::tests::private_busy_and_retired_states_reject_before_driver_preparation",
       "session::tests::private_drop_contradictions_retire_without_entering_execution",
       "session::tests::private_plan_state_chart_and_missing_inner_contradictions_retire",
+      "session::tests::public_session_receiving_checkpoint_races_keep_reuse_and_retirement",
       "session::tests::reference_refusal_diagnostics_and_exact_typed_sources_are_fixed",
       "session::tests::series_coherence_debug_contains_only_fixed_scalar_causes",
       "session::tests::session_debug_and_driver_error_sources_are_fixed_and_typed",
@@ -981,22 +484,177 @@
       "session::tests::synthetic_execution_unwind_retires_and_releases_prepared_resources",
       "session::tests::synthetic_started_guard_drop_retires_without_reopening_capacity",
       "session::tests::unused_plan_drop_releases_capacity_without_replacing_the_chart",
+      "session_process::semantic_evidence_accepts_only_exact_named_admitted_sites",
       "session_reference_refusals_preserve_original_causes_and_checked_positions",
+      "source_policy::tests::actual_old_reply_cannot_reenter_after_both_correlation_epochs_advance",
+      "source_policy::tests::actual_poisoned_policy_refuses_public_session_prepare_without_udp_or_state_change",
+      "source_policy::tests::actual_recognized_replay_cannot_apply_rate_or_publish_facts_twice",
+      "source_policy::tests::actual_repeated_unknown_controls_spend_the_original_receive_allowance",
+      "source_policy::tests::actual_send_rechecks_a_late_future_floor_without_retirement_or_an_attempt",
+      "source_policy::tests::actual_unknown_control_retains_pending_budget_and_accepts_reply_before_send_floor",
+      "source_policy::tests::admitted_managed_plan_rechecks_restriction_before_series_socket_setup",
+      "source_policy::tests::arithmetic_exhaustion_is_sticky_and_does_not_refund_or_charge_a_healthy_record",
+      "source_policy::tests::canonical_mapped_ipv4_alias_shares_one_exact_remote_endpoint",
+      "source_policy::tests::contended_wait_is_registered_before_lock_and_observes_release_before_poll",
+      "source_policy::tests::direct_refusal_changes_a_and_e_without_transitive_alias_propagation",
+      "source_policy::tests::final_commit_leaf_guards_preserve_nonzero_receive_accounting_and_original_expiry",
+      "source_policy::tests::final_commit_poisoned_policy_counts_the_selected_reply_once",
+      "source_policy::tests::final_commit_reenabled_policy_counts_the_selected_reply_once",
+      "source_policy::tests::final_commit_rejects_each_one_hot_policy_stamp_transfer_without_refund",
+      "source_policy::tests::fixed_catalogue_and_endpoint_capacity_never_evict_existing_bindings",
+      "source_policy::tests::foreign_or_unmanaged_policy_proposal_cannot_bypass_or_close_healthy_managed_pending",
+      "source_policy::tests::held_setup_contention_expires_or_stops_without_inventing_a_socket_record",
+      "source_policy::tests::laboratory_bounds_require_positive_capacity_and_ordered_intervals",
+      "source_policy::tests::managed_release_disarm_cancels_registered_waker_without_a_spurious_wake",
+      "source_policy::tests::managed_round_batch_binding_is_atomic_and_reuses_canonical_capacity",
+      "source_policy::tests::modeled_contended_send_and_commit_leave_deferred_observations_unread",
+      "source_policy::tests::modeled_final_commit_read_equality_and_original_deadline_preserve_history",
+      "source_policy::tests::modeled_observation_scripts_are_deferred_coherent_and_bounded",
+      "source_policy::tests::modeled_refresh_floor_neighbors_preserve_records_and_deferred_read_counts",
+      "source_policy::tests::modeled_send_floor_neighbors_keep_one_datagram_debit_and_coherent_captures",
+      "source_policy::tests::modeled_would_block_keeps_both_real_kernel_reservation_debits",
+      "source_policy::tests::new_managed_sessions_and_series_cannot_reset_a_retained_refusal",
+      "source_policy::tests::old_pending_cannot_become_current_after_refusal_and_targeted_reenable",
+      "source_policy::tests::process_root_cannot_be_reinstalled_after_authority_and_session_drop",
+      "source_policy::tests::public_managed_round_exhausts_64_actual_setup_hints_without_a_send_or_refund",
+      "source_policy::tests::public_managed_round_live_endpoint_refusal_preserves_history_and_later_source_use",
+      "source_policy::tests::public_managed_round_restrictions_skip_only_the_endpoint_and_preserve_absent_tail",
+      "source_policy::tests::public_managed_round_three_candidates_preserve_actual_fallback_in_both_families",
+      "source_policy::tests::public_managed_series_continues_after_observed_setup_contention_release",
+      "source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund",
+      "source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted",
+      "source_policy::tests::public_reenable_96_distinct_current_targets_preserves_all_record_facts",
+      "source_policy::tests::public_reenable_97_genuine_target_clones_refuses_before_actual_policy_lock",
+      "source_policy::tests::public_reenable_empty_selection_refuses_before_actual_policy_lock",
+      "source_policy::tests::rate_at_cap_continues_probes_and_success_never_resets_retained_state",
+      "source_policy::tests::rate_doubles_each_own_record_and_does_not_copy_an_effective_interval",
+      "source_policy::tests::read_only_floor_observations_do_not_wake_their_own_future_floor_wait",
+      "source_policy::tests::receiving_rejects_each_genuine_identity_mismatch_without_spending",
+      "source_policy::tests::receiving_rejects_either_individually_reenabled_epoch_without_spending",
+      "source_policy::tests::repeated_actual_live_contention_waits_for_each_release_before_a_healthy_send",
+      "source_policy::tests::required_ipv6_zone_and_remote_port_remain_distinct",
+      "source_policy::tests::setup_contention_release_hint_allows_fresh_healthy_admission",
+      "source_policy::tests::stop_or_restriction_after_readiness_prevents_the_concrete_managed_send",
+      "source_policy::tests::targeted_reenable_is_atomic_for_stale_foreign_duplicate_and_partial_selections",
+      "source_policy::tests::unknown_controls_and_recognized_replay_cannot_consume_or_apply_twice",
       "stale_execution_retires_owner_without_refreshing_retained_facts",
       "stop_preserves_first_completion_and_marks_third_not_started",
       "three_real_requests_retain_distinct_identity_and_one_exact_origin",
       "total_deadline_preserves_first_completion_and_prevents_third_send",
       "two_requested_series_share_chart_keep_distinct_runs_and_old_handles_isolated",
       "unavailable_measurements_still_consume_once_after_rejected_neighbors"
-    ],
-    "source_context_sha256": "53854ebcd2eabae4a2a27c6b6b5d4f248cb1acc7e5e568a9520000575f200e1f",
-    "ordinary_evidence": {
-      "path": "/home/david_osipov/.local/share/nevrotick/rust1100-20261113-v1/receiver-forwarding-v1/verification.json",
-      "sha256": "3b3de9938dbb528759ad06d6db4a13e3d84411f14b0501336544e6e44f17fdaa"
+    ]
+  },
+  "campaigns_admitted": false,
+  "coverage_minimum_line_percent": 90,
+  "coverage_test_threads": 1,
+  "coverage_wall_seconds": 300,
+  "critical_files": [
+    "crates/nevrotick-engine/src/lib.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/association.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/process.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/handoff.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/request.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/retirement.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/response.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/job.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
+    "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"
+  ],
+  "enumeration_wall_seconds": 240,
+  "features": [
+    "ke-association-prototype"
+  ],
+  "jobs": 6,
+  "maximum_listed_per_file": 512,
+  "maximum_listed_total": 3072,
+  "maximum_mutants": 512,
+  "minimum_free_bytes": 7516192768,
+  "mutation_build_seconds": 90,
+  "mutation_equivalences": [],
+  "mutation_inventories": {
+    "ke_core": {
+      "count": 99,
+      "sha256": "0ac1c13c79e109cd5f310097db6a52b3d2b17d3d59f70a905b402590149ab385"
     },
-    "root_graph_evidence": {
-      "path": "/home/david_osipov/.local/share/nevrotick/rust1100-20261113-v1/dependencies-candidatee631-engine-ke-association.json",
-      "sha256": "88c87e0e79ae486557ce60f1e7e9d5570214cfcb1c30f1ffdfdc0b7420e647bf"
+    "ke_association": {
+      "count": 35,
+      "sha256": "be3d5344b3945bb851142c65e5cdcb1cde113c2df5579785c8209b4d0efe6775"
+    },
+    "ke_process": {
+      "count": 3,
+      "sha256": "ee2260e37180be4c4e22d7511f2377502ab24c318c531a1a57b26dd8a6d8c929"
+    },
+    "ke_handoff": {
+      "count": 9,
+      "sha256": "b516429e6ed3865e792f28b51546ac1bbaf76ac2e4490f011bdc12d46b2cf533"
+    },
+    "ke_request": {
+      "count": 6,
+      "sha256": "873305ce2e5581f99cb4db5e3a53ce4e9294520512f49a3df6a3486f8c321cb5"
+    },
+    "ke_fault": {
+      "count": 27,
+      "sha256": "eec22bdf43a791c01218db07684021e1085c84ccfe3e115717eddd7d4d940866"
+    },
+    "ke_ledger": {
+      "count": 166,
+      "sha256": "b6079ec570a39e791d4cd2fa551ffcc7063971c0952fe119d2d1e77b25d86ca4"
+    },
+    "ke_retirement": {
+      "count": 53,
+      "sha256": "4f175b1d70a8a7b1e9fb7fd8b634b565263b1c6e8acd79945a8c0ee1857ef602"
+    },
+    "ke_response": {
+      "count": 45,
+      "sha256": "398967059802ea42cd06243da0a0f0d0ad648449a439a106c833afc12dd95021"
+    },
+    "ke_datagram": {
+      "count": 45,
+      "sha256": "a0d64c7d12449b67f6655f0490cdaf0a6461388eeb112ba67a55fcab69668064"
+    },
+    "ke_recovery": {
+      "count": 118,
+      "sha256": "2135ff79da4500db94c8ff7a8582b67be5d271d8ca3ce927be488bca6fb4fdee"
+    },
+    "ke_job": {
+      "count": 27,
+      "sha256": "e555393f84b9281cb00065986abcebc1b93a651065af3bcb9df7850587efaa58"
     }
-  }
+  },
+  "mutation_jobs": 6,
+  "mutation_jobserver_tasks": 0,
+  "mutation_message_format": "json",
+  "mutation_minimum_viable_killed_percent": 95,
+  "mutation_process_limit": 512,
+  "mutation_test_seconds": 60,
+  "mutation_wall_seconds": 1200,
+  "owned_output_maximum_allocated_bytes": 3221225472,
+  "owned_output_maximum_entries": 32768,
+  "package": "nevrotick-engine",
+  "schema_version": 1,
+  "stop_free_bytes": 4294967296,
+  "subjects": {
+    "ke_association": "crates/nevrotick-engine/src/nts_ke_experiment/association.rs",
+    "ke_core": "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs",
+    "ke_datagram": "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs",
+    "ke_fault": "crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs",
+    "ke_handoff": "crates/nevrotick-engine/src/nts_ke_experiment/handoff.rs",
+    "ke_job": "crates/nevrotick-engine/src/nts_ke_experiment/job.rs",
+    "ke_ledger": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs",
+    "ke_process": "crates/nevrotick-engine/src/nts_ke_experiment/process.rs",
+    "ke_recovery": "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs",
+    "ke_request": "crates/nevrotick-engine/src/nts_ke_experiment/request.rs",
+    "ke_response": "crates/nevrotick-engine/src/nts_ke_experiment/response.rs",
+    "ke_retirement": "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/retirement.rs"
+  },
+  "test_threads": 1,
+  "test_workspace": false,
+  "tool_admission_profile": "stable-core"
 }

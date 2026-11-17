@@ -21410,3 +21410,475 @@ skill is adopted for subsequent work; no new CodeQL execution or current metric
 pass follows. This publication includes the verified repair and existing B83
 address-round checkpoint records. The proposed current-role five-file rebind and
 fresh qualification runner remain out of tree, unapplied and unexecuted.
+
+### Current helper admission, inventory and line gates — 17 November 2026
+
+The post-publication source-role rebind is now applied on runtime product
+`4703646b…`, with the independently reviewed current 179-helper map `b90aed99…`.
+It updates exact source/proof and 245/479/75 roster identities while retaining
+all refusal logic, 90%/95% thresholds and MAIN's closed campaign flags.
+`fresh-qualification-preparation/metadata-2/verification.json` (`132f0a37…`)
+passes all 350 unchanged Python cases and the real boundary control. The first
+metadata attempt (`84700ac9…`) ran all 350 cases with 345 passes and five setup
+errors: Python admission saw the Rust vendor mapping in its Cargo home. Only
+that Python process's private empty homes were corrected. The real guard and
+readonly Rust vendor mapping remain unchanged; the failed evidence is retained.
+
+`metrics-1/verification.json` (`5060ea28…`) records a fresh 245-case/75-doctest
+baseline (`413c8576…`), complete enumeration (`27fe9d11…`) and all 245 coverage
+cases (`5df61a41…`). Line coverage is source policy 971/1017, library 943/989,
+session 242/242, series 730/762 and address round 574/600. Branch counts are zero;
+no branch qualification follows. All five unchanged 90% line gates pass.
+The complete inventory has 704 variants: 170 source-policy, 240 library,
+45 session, 164 series and 85 address-round. Independent review (`48d8b7d…`)
+checks every typed span/rendered replacement, the exact five equivalences and
+required generation gaps; (`fe3fab00…`) accepts the actual metric prerequisites.
+No generated outcome or old B83 score is transferred. The five current 95%
+mutation cohorts have now executed; their results are reconciled below. MAIN
+remains false with empty inventories;
+original elapsed cost, 412696 prior mutation-case charges and 10725 nonmutation
+charges remain carried forward. Native, production and release exits stay separate.
+
+### Selected-reply accounting — current five-owner results — 17 November 2026
+
+All five current GNU/default cohorts finish on the same 605-input runtime
+`4703646bd205102d61d73b6a46712f1d2910d8d370b7847f7f291513e5534646`
+and frozen 179-helper map `b90aed99…`. Each executes its own complete 245-case /
+75-doctest baseline. These are current executions, not transferred B83 outcomes.
+The configured reader reports all five unchanged 95% gates passed. Independent
+Address-round review (`6ee444dc…`) and integrated five-owner review
+(`0985e13e…`) accept the same candidate. The data-only union
+`cohorts-v1/current-owner-union.json` hashes to
+`45b9bcf6405a5068947cfdae78bcf7d39bfbf1b8aa48add325737c9e8b50c810`.
+This completes the selected five-owner GNU qualification checkpoint.
+
+| Current owner | Generated | Meaningfully caught | Compiler-unviable | Exact equivalents among raw survivors | Adjusted mutation score | Executable lines |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Source policy | 170 | 117 | 53 | 0 | 100% | 971/1017 |
+| Library | 240 | 112 | 125 | 3 | 100% | 943/989 |
+| Session | 45 | 14 | 31 | 0 | 100% | 242/242 |
+| Series | 164 | 102 | 60 | 2 | 100% | 730/762 |
+| Address round | 85 | 37 | 48 | 0 | 100% | 574/600 |
+
+The complete 704-variant inventory reconciles as 382 caught, 317 compiler-unviable
+and five exact independently justified equivalents. There are no mutation
+timeouts or unexpected survivors. Equivalents contribute no kills; library and
+series retain their raw Cargo mutation exit 2 and original survivor rows. Their
+raw scores are respectively 112/115 and 102/104, before the reviewed exclusions.
+Every line gate exceeds 90%; branch counts remain zero, without branch
+qualification. All twelve new counter-operator variants are meaningfully caught;
+the additional whole-helper replacement is compiler-unviable and earns no kill.
+
+Retained supervisor receipts live below
+`~/.local/share/nevrotick/continuation-20261116-tools-v1/current-owner-cohorts-v1/repair-1/address-repair-v2/reply-accounting-repair-1/fresh-qualification-preparation/cohorts-v1/`:
+
+| Owner | `supervision/<owner>/1/verification.json` SHA-256 |
+| --- | --- |
+| Source policy | `32759451d52d63cc0b35f64a593d70ecb62e8a87fd909d16e1007d218bce0d11` |
+| Library | `78ac9e3002648de6441ba1a786190c26499cfc1c73c43b53ba89e5ef3d6ef5e7` |
+| Session | `759c8f1c467a3d3ea32552299658b393a7760ac9e79061e6c2723f89c090aa4d` |
+| Series | `adcbca60064cf949241e3bc8b3979d56ea6e1c13fce569807ab17365cc6626a6` |
+| Address round | `2863914475b21daa4da6512873dca47dd6cd854984de69707d3259e513d813f8` |
+
+Each actual resource stream satisfies the existing 4-GiB sampled reader gate
+inside its separately enforced 6-GiB cgroup, two-second observation-gap bound,
+memory/disk/task limits and terminal custody. Independent review checks all
+1453 raw files and 2407 samples; maximum sampled memory is 4051898368 bytes
+and maximum sample gap is 1.605154112 seconds. OOM/PID-limit events are zero;
+monitors join, owned jobs exit and open derived descriptors are empty. Completed
+target/tmp artifacts are removed after kernel termination; raw logs, diffs,
+source and receipts remain. Original start/cost and all failed attempts remain
+charged: 639576 is the cumulative mutation-case ceiling, not an executed-test
+count. No original timer or failed workload charge is reset.
+
+The generation-review attribution erratum (`656416e2…`) preserves the original
+review and corrects its labels: the six new production increments are library
+1634/1637, series 958/961 and source policy 1691/1736. Current enumeration and
+actual outcomes cover their twelve `-=`/`*=` variants. Existing source-policy
+1674/1687 increments are historical, not new repair sites. Generation-gap bridges
+retain their exact source/function scope and receive no generated kill credit.
+
+The default Windows child below passes all 66 portable native-runner controls,
+17 actual build checks and eleven selected native cases. Its exact three-file
+helper amendment is now adopted in the main checkout after independent review.
+H02's rebased two-owner qualification preparation remains external and unexecuted. Production mapping/quality issuers,
+positive Engine-to-Core admission, optional KE metrics, healthy native providers,
+hosted checks, services, clock effects and release remain separate exits;
+post-V1 formal deferral and unrelated holds remain intact.
+
+### Current default Windows guard/lifecycle exit — 17 November 2026
+
+David authorizes ordinary bounded Core/Engine tests on his main Windows host.
+The maintained runner now has an explicit `--default-cohort` on both build and
+native lanes. It retains the original KE/facade routes and their process,
+token, image, gate and cleanup guards. Default means actual empty Engine
+features with `--no-default-features`, not an all-features substitution.
+The launcher owns eleven exact case names and arguments; the manifest cannot
+select arbitrary cases or process limits.
+
+The exact proposed three-file amendment first passes 66 portable Python
+controls (`portable-check-1/verification.json`, `03c7492f…`). Independent source
+review derives 219 Windows library names from the actual module/cfg tree,
+including the eleven guard/lifecycle cases. It does not use the GNU 245-case
+roster as its oracle. The configured cross-build then passes all 17 format,
+Clippy, compiler, link, boundary/helper and PE-inspection steps. All four actual
+PE/PDB bundles are hash-bound; Engine retains the required v3 product flags.
+The diagnostic images retain their separately admitted baseline-x64 role.
+
+The separate native lane passes all 18 fixed observations: five gate/exit/
+timeout controls, CPU/OS admission, complete discovery and eleven exact tests.
+Discovery equals all 219 predicted names. Each selected case actually executes
+once with one pass, zero failures/ignores and 218 filtered cases. The selected
+cases cover pilot/series Stop and invalidation rejection accounting, writable
+guards, postcommit historical completion, poisoned/re-enabled managed policy
+and public-session reuse/retirement. They use real loopback UDP fixtures; no
+public-network provider or production source is adopted.
+
+Actual host: Windows x64 `10.0.26300.0`, PowerShell `5.1.26100.9818` and CLR
+`4.0.30319.42000`. Every observation retains ordinary matching supervisor/
+launcher tokens, the closed four-process lifetime bound, final empty owned
+job, released streams/process handles, joined event reader and closed event
+port. Some observations still have one bounded console helper before handle
+release; final kill-on-close cleanup yields zero active processes afterward.
+This is final cleanup evidence, not a claim that processes had already exited
+before handle release. Registry writes remain false and runtime/image inputs
+remain unchanged. No host protection, trust, service or clock setting changes.
+
+Records are under
+`~/.local/share/nevrotick/continuation-20261116-tools-v1/native-default-preparation-v1/`:
+
+| Record | SHA-256 |
+| --- | --- |
+| `native-check-1/native-build-v1/verification.json` | `fecdae417e9040c14c3d2b17005503a2c66cdc3725c824632be78dda267efc83` |
+| `native-check-1/native-execution-v1/verification.json` | `37146b8e6736d467283ecb4b58cf9c4f1a01b4b7a98088cc326357aefdb413e1` |
+| `native-check-1/native-sequence.json` | `f0a3a51ae931aedcb0ed842abc3182da85adf536281d70d0c97821c609076bd1` |
+| `native-check-1/windows-staging-cleanup.json` | `eac1748b18623967824b91318918b2e34b576bae28d7913669a8bc646f924c4d` |
+| `draft/native-execution-independent-review.json` | `54a49f53fcab78d78fd402a59095733e5358a95f9b15e8467a4e6c5862b4aafd` |
+
+The executed sequence takes 233.165 seconds. Its 230 WSL samples peak at
+990547968 bytes, with zero resource-limit events, unchanged source/index and
+joined monitoring. Real ROOT Git custody stays separate from the exact 788-file
+build input copy; no fake `.git` is used. Independent review checks source,
+actual compiler features, PE/PDB, Windows outputs, token/job and cleanup facts.
+
+**Retained cleanup failure:** the proposed 120-second staging cleanup window
+was exceeded. Two ROOT pre-deletion checks refused an undeclared generated
+adapter DLL and randomized launcher aliases; no staging deletion occurred
+before complete classification. A recorded bounded continuation admits 360
+seconds from the same terminal timestamp, without resetting time, rerunning
+tests or refunding prior work. Cleanup finishes at 256.378 seconds under that
+amendment; the original 120-second criterion remains failed. All 72 raw files,
+including eighteen hash-bound adapters, are archived. Only the exact owned
+Windows staging directory is removed: 36 duplicate images / 77481472 bytes.
+The 267-file WSL target / 220966912 allocated bytes is also removed after
+kernel termination. Current exported PE/PDB, source, logs and receipts remain;
+no compression occurs. Native execution plus cleanup totals 489.543 seconds,
+inside the unchanged original 3600-second phase and 48000-second aggregate
+clock. Prior 639576 mutation-case charges remain intact.
+
+The reviewed native amendment is applied byte-for-byte to the main checkout
+after these results. The GNU five-owner receipt retains its original 179-helper
+map; these separate native helper changes do not relabel it. This exit qualifies
+eleven selected cases on the observed host, not all 219 runtime cases, whole
+Core/Engine, optional KE/provider behavior, the two-family Windows support matrix,
+effective process mitigation or release. Next integrate H02's separate closed
+two-owner preparation and admit its actual Core rosters/inventories/controls.
+Positive Engine-to-Core mapping and quality suppliers remain separately open.
+
+### Final source-identity secret-gate correction — 17 November 2026
+
+The first staged closeout passes the pinned scanner's detection controls and
+full retained-history scan, but its working-tree scan refuses 66 matches in
+65 ignored service-recovery receipts. None is in the twelve staged files.
+Independent triage identifies complete Rust source-identity assignments for
+the service fixture's native OS-token observer, rather than API credentials.
+Two complete source preimages are recomputed from Git; three identities retain
+historical repair-manifest provenance without recovered whole-source preimages.
+This distinction remains explicit. Retention review finds useful primary,
+transitive, authored and first-failure records; they are preserved.
+
+The smallest repair adds one existing-rule disposition requiring all three:
+the generic detector, a direct JSON child of the historical recovery directory,
+and the complete anchored assignment containing one of five literal identities.
+It accepts no arbitrary hash, whole-file/path skip, finding baseline or inline
+suppression. The existing checker gains forty controls over those five values,
+including real tokens on the same/adjacent line, unrelated paths/keys and
+one-digit unknown identities. Existing controls and both full scans remain.
+The configured pinned scanner passes the complete controls, retained history
+and entire working tree after the repair. The original refusal remains recorded.
+
+Raw records and independent disposition are in the existing continuation root:
+`staged-engine-native-20261117-v1/secrets-invocation.json` and
+`secret-source-digest-repair-v1/`. This is a bounded verification-tool correction,
+not a new product/runtime, native, proof or release result. Both modified files
+are outside the qualified Engine 605-source/179-helper and native 788-input
+closures; those earlier receipts retain their exact scopes.
+
+### KE Request current-profile admission — 17 November 2026
+
+Continue the existing post-V18 remaining-owner route under REQ-8/BND-2, AC-04
+and CHECK-6/8/9/17/19/20/21/25/26/27, after the completed H02 fixture checkpoint.
+HEAD remains `dc7938a269a2ea709cdd303c4095c0aafe6e885d`; the existing14-file
+staging/tree `49d9aa53943580cfc9ed7cd18001277d62c3f764` is preserved. Runtime
+candidate is605-input `a35b710d…`; this child changes no Rust or Cargo graph.
+
+The existing KE reader still fixes415 ordinary cases despite retained later
+479-case/75-doctest development evidence. The bounded reviewed correction admits
+479 actual ordinary identities, retaining234 KE identities and the required
+send-after regression. Independent synthetic controls use245+234 and a478
+neighbor; historical410/409 controls retain their true181+229/228 payloads.
+Metadata test IDs remain unchanged. This is source preparation; old execution
+counts and hashes are not rebound into new passing receipts.
+
+ROOT next runs the166 affected Engine reader controls in the existing isolated
+Python environment, then fresh Product/profile/tool/vendor admission and actual
+ordinary/doctest listings. The reviewed479 reader must be installed in the frozen
+owned discovery source before its import and inventory validation. Zero-test,
+default-only, incomplete, duplicate, failed and filtered output must still fail.
+Current48 protected inputs and the complete actual rosters precede policy
+promotion. Public admission remains closed. Request gets no historical E9;
+qualified Association/Ledger/Process/Handoff results retain their own scopes.
+The expected six Request descriptors require a fresh complete listing and a
+source/generator/graph-bound bridge for the remaining catalogue; no mutation
+campaign is authorized by this preparation.
+
+The new3600-second admission stage carries the completed Core costs and the
+interstage interval, reserves300 seconds for closeout, allows at most512 Python
+cases and two300-second Rust listing commands, and executes zero Rust test bodies.
+ROOT owns execution/deletion/Git; independent workers prepare recipes, review
+catalogue provenance and identify exact obsolete materializations. Actual disk,
+RAM, output and cumulative accounting are checked before heavy work. H02 debug0
+is not transferred. All first failures, per-file90%/95%, native/provider and
+positive Engine-to-Core prerequisites, other holds and post-V1 formal deferral
+remain. Current receipt/source paths are recorded in
+`~/.local/share/nevrotick/continuation-20261116-tools-v1/engine-ke-request-execution-20261117-v1/`.
+
+### KE Request profile admission complete — 17 November 2026
+
+REQ-8/BND-2, AC-04; CHECK-6/8/9/17/19/20/21/25/26/27 continue the same
+post-V18 owner chain. No product Rust, dependency, compiler or target changes.
+HEAD remains `dc7938a269a2ea709cdd303c4095c0aafe6e885d`; the existing14-file
+index/tree `49d9aa53943580cfc9ed7cd18001277d62c3f764` remains unchanged.
+Runtime605-input candidate is `a35b710d8d5b32faf5e1f080867f14e4becedfffd3ad967be45fd5adc1db0fc3`.
+
+The479-case reader repair is now exercised. First metadata execution ran166
+cases and failed one method's three doctest subcases because its synthetic
+479+one-doctest expectation still used416. The smallest fixture repair changes
+that expectation to480. The second complete166-case selection passes with no
+errors, failures, skips or expected failures; historical410/409 fixture domains
+remain unchanged. Both166-case attempts stay charged. A preceding missing-input
+prelaunch refusal is retained separately and ran no cases.
+
+Fresh Product/EP1 profile, admitted Rust1.100.0 tools and sealed vendor discovery
+lists all479 ordinary identities, including234 KE cases, and75 doctests exactly.
+Both list commands in the first discovery exited0, but its complete-sample gap
+of2.116737 seconds exceeded the unchanged2-second limit: that receipt remains
+incomplete. Sampling start cadence0.25 seconds replaces1 second, retaining both
+2-second scan/observation gates and every resource cap. Discovery2 passes with
+maximum gap1.504007 seconds. All four harness listing invocations stay charged;
+none executes Rust test bodies.
+
+The maintained `--profile ke_association --lane enumerate --subject ke_request
+--tool-admission-profile stable-core` then lists exactly six complete typed
+descriptors and rendered diffs, equal to the reviewed historical Request map
+(`873305ce…`). The first wrapper stopped before any source-list command because
+its service PATH omitted the installed `cargo-mutants` extension. The causal
+repair binds PATH and verifies the existing `f985f265…` binary; no acquisition or
+tool-policy change. Wrapper2 executes the one aggregate source-list command,
+native exit0, in46.491 seconds. Maximum complete observation gap1.610179 seconds
+passes; memory/PID events remain zero, observer joins and the owned unit terminates
+with no remaining process group. Its outer receipt is authoritative; the inner
+direct-call analysis dictionary retains its initialized `incomplete` status and
+must not be rewritten or described as a full qualification pass.
+
+Evidence is under the preceding `engine-ke-request-execution-20261117-v1/` path:
+
+- `metadata-2/verification.json`, SHA `edc33551…`, with independent review
+  `metadata-independent-review` (`ac7885a9…`).
+- `discovery-2/verification.json`, SHA `92a09bbb…`, with independent review
+  `discovery-independent-review` (`f1be9a50…`).
+- `request-enumeration-2/verification.json`, SHA `8c39e487…`; inner raw analysis
+  `e24bc366…`, terminal record `4babe82b…`, independent review `7439e6fe…`.
+- `catalogue-bridge-review` (`cacd7172…`) verifies all12 unchanged owner files,
+  the complete633 descriptor identities/diffs and generator/graph compatibility.
+  Only627 non-Request identities are reused; Request6 is freshly enumerated.
+- `compiler-supplier-bridge-review` (`c7ea8769…`) rechecks retained43+6 source-local
+  controls:10 healthy compilations and39 intended refusals, including exact
+  specimen/primary-diagnostic closure. This supplies no new compiler execution,
+  provider/native result or metric score.
+
+The closed KE policy now binds605/A35, the actual479 roster/all48 role inputs
+and all12/633 reviewed inventory identities. E remains empty and campaigns false.
+Its ordinary reference remains full4's historical470 candidate, bridged only
+because the sole current605 delta is a private Core test outside the Engine graph;
+the current discovery receipt supplies profile/vendor/tool admission. Historical
+source-context labels, Association/Ledger/Process/Handoff metrics and E9 retain
+their exact original scopes. The legacy595-input external-contract role remains
+untouched; it is not a Request prerequisite.
+
+The original3600-second start1794895384 and300-second closeout reserve remain
+recorded. Two explicit600-second continuations preserve the same absolute start
+and fully charge preparation and the pre-command PATH failure, giving4800 total.
+The second continuation explicitly supersedes the earlier local no-further-extension
+clause only for the completed PATH repair; no timer is restarted. Final allowance
+`8b748777…` admits wrapper2,150-second outer phase and one120-second source-list
+maximum. Total new execution is332 Python cases, four Rust harness list commands
+and one source-enumeration command; zero Rust test bodies or mutation campaigns.
+All first failures, time refusals and native exits remain in the same chain.
+Terminal duplicate captures/build outputs were deleted with exact restoration
+maps and canonical source copies retained; raw receipts were preserved. No compression.
+
+Next freeze the separate bounded Request metric lease, keeping whole-file90%
+line and95% per-critical-file generated-mutation gates. The generation-gap review
+`254abaf5…` maps all six variants and independent real consumers; constructor,
+key wiping, entropy split, error mapping and focused direction faults are not
+silently counted as generated kills. Generic `open_response` has one whole-body
+variant, not focused coverage of every S2C/consumer/wipe obligation. The direct
+7-success/8-refusal test proposal remains unapplied; existing consumers are
+source-predicted to distinguish the operator variants, with actual outcomes pending.
+No Request metric, complete KE/native/provider, positive production Core, hosted,
+release or formal qualification follows. H02 debug0 remains unavailable to KE.
+
+### Request selected metric execution — 17 November 2026
+
+Continue the same REQ-8/BND-2, AC-04 and CHECK-6/8/9/17/19/20/21/25/26/27
+owner; the admission result above is a prerequisite, not a generated-mutation
+score. The next selected scope is only `request.rs`, using the maintained
+`ke_association` coverage and mutation lanes, unchanged original-debug configuration,
+six workers/zero extra jobserver tokens and all six exact descriptors. Public
+policy `fe4c1528…` remains closed with E empty; mutation requires a separate
+source-bound lease changing only the owned private policy Boolean.
+
+The V18 keeper/observer recipes are adapted in
+`~/.local/share/nevrotick/continuation-20261116-tools-v1/engine-ke-request-metrics-preparation-v1/`.
+The finite1800-second stage reserves300 seconds for closeout. One absolute1200-second
+work allowance begins before coverage setup and is reused unchanged for mutation.
+The4357-case upper reservation is479 instrumented ordinary cases plus a mandatory
+554-case mutation baseline and at most six further554-case mutant executions.
+Expected baseline identities are the actual479 ordinary and75 doctest roster,
+including compile-only annotations; count554 alone cannot qualify it. No extra
+baseline lane, new Python suite, new Rust test or automatic retry is selected.
+All preceding stages, failed attempts and measured interstage time remain charged.
+
+Independent pre-run review tightened two receiving/resource boundaries in these
+external recipes: mutation must consume successful pinned coverage launcher,
+worker and keeper evidence with actual child0/zero resource events/absent cgroup;
+receipt publication reserves the actual serialized bytes and entries before writing
+and rechecks complete allocation afterwards. Neither repair changes product source
+or the90%/95% criteria. Every generated outcome still needs independent native-phase
+classification; compilation refusal is not a kill. Existing real-consumer and
+known-answer controls remain the behavioral oracle, with generation gaps explicit.
+
+Startup requires actual7GiB free disk and7.5GiB available RAM, including a fresh
+post-capture disk check. Retain6GiB/512MiB/512-task limits,4GiB disk/1GiB RAM stop
+floors, whole-owned3GiB/32768-entry caps and strict2-second complete observations
+at0.25-second cadence. Terminal coverage builds are retired before mutation with
+source/raw custody preserved. Old duplicate tool/source copies were deleted with
+exact restoration maps; installed tools, canonical source and raw receipts remain.
+This is bounded GNU fixture work; native/provider, other KE owners, production
+Engine-to-Core suppliers, hosted/release gates and post-V1 formal work stay separate.
+
+### Request final selected GNU qualification — 17 November 2026
+
+The selected `request.rs` whole-file90% executable-line and95% per-file generated-
+mutation gates now pass under REQ-8/BND-2, AC-04 and the preceding CHECK owners.
+Runtime605-input candidate remains `a35b710d…`, Rust1.100.0 and the admitted Root
+EP1 graph. No product Rust or dependency changes were needed. Captured public
+policy`fe4c1528…` is closed with E empty and all12/633 catalogue identities bound;
+the later test-only helper-pin rebind is recorded in the publication correction.
+
+| Selected observation | Actual result |
+| --- | --- |
+| Instrumented ordinary roster |479 complete cases, including234 KE |
+| Request executable lines |48/50=96.0%; gate90% |
+| Mutation baseline |479 ordinary+75 doctests=554;60 explicitly compile-only |
+| Full exact Request inventory |6;3 Caught,3 compiler-Unviable,0 Missed,0 Timeout,E0 |
+| Viable generated score |3/(6−3)=100%; gate95%; no compiler/equivalence kill credit |
+| Actual native result records |1913 mutation records=554 baseline+3×453;2871 including both479-case coverage attempts |
+| Retained reservation |4836 result instances; no unused/failed allowance refunded |
+
+All three unviable whole-body replacements have actual Build101/no Test and
+changed-site E0277: two borrowed `NtsClientRequest` defaults and one unconstrained
+generic `R` default. The three operator variants build successfully and fail real
+tests: `==` and`>=` reject legitimate seven-placeholder ledger preparation;
+`<` changes the direct count-zero capacity refusal from the expected formatter
+error to `Limits(InvalidLimits)`. These are owned behavioral failures, not setup
+or resource kills. Each caught variant enters453 cases; later integration/doctest
+execution is not invented after Cargo stops at the failing library harness.
+The seven-placeholder witness exits at its first healthy preparation; later
+assertions in that helper are not claimed reached.
+
+The first coverage command itself returned0/all479/96%, but the threaded resource
+observer took2.180512 seconds with2.489485-second age, exceeding its2-second limit.
+That original outer/worker17/keeper-child-failed result stays incomplete, with479
+cases charged and no mutation permission. Memory/PID limit events were zero;
+the underlying GIL/I/O/CPU/VM cause of that particular stall remains unproved.
+A bounded two-control probe demonstrates the architectural coupling only: the
+same real fd-owning scan takes0.028373 seconds when the test call releases the GIL
+and2.219084 seconds when it holds it. Both scans complete and threads join.
+
+The causal recipe change moves bulk admission/execution/full analysis into a
+fixed same-cgroup child. The observer parent reads only a bounded16KiB compact
+result after actual waitpid, with a physically reserved8MiB raw result and the
+existing whole-owned allocation checks. The passing coverage retry's maximum
+scan/age are0.190147/0.252125 seconds; the mutation's are0.252037/0.655932 seconds.
+All hard2-second,6GiB/512MiB/512-task,3GiB/32768-entry,4GiB disk/1GiB RAM and
+six-worker/one-inner-compiler guards remain. Mutation keeper peak is3,289,665,536B,
+118 tasks; sampled allocation peaks1,950,593,024B. Both positive executors/workers
+are actually reaped and their cgroups removed; limit events remain zero. Original
+debug2 is observed; no H02 debug0 permission transfers.
+
+Raw evidence remains under the preceding `engine-ke-request-metrics-preparation-v1/`:
+
+- Passing coverage: `retry-1/coverage/verification.json` (`af71ee8a…`), actual
+  worker`818ae644…`, kernel`1e6e6bec…`, independent semantic/resource reviews
+  `ea6db98d…`/`5f80fd08…`. Its own admission is`de3bc725…`.
+- Passing mutation: `retry-2/mutation/verification.json` (`c8883242…`), worker
+  `3982d365…`, kernel`fcdd350f…`, full outcomes`d9cbd41b…`; independent semantic/
+  resource reviews`7d0dbea2…`/`897dc6ce…`. Mutation-only amendment`2ac53447…`
+  and lease`4a5c8d7a…` bind that earlier coverage to its actual admission.
+- The original failed coverage and controlled GIL probe remain beside them.
+  `checkpoint-closeout.json` (`7f486797…`) records original starts and every
+  consumed allowance. No new coverage/control execution occurs in mutation-only
+  continuation;958 ordinary coverage records and the two diagnostic cases stay charged.
+
+The initial1800/1200-second stage/work allowances continue on their original
+start through explicit same-clock amendments to3600/3240 seconds, retaining the
+300-second reserve. Native work and keeper cleanup finish within those bounds.
+Coordinator bookkeeping misses the original3600-second closeout by495.343 seconds;
+that time failure remains explicit. One1200-second data-only finalization ends
+at original start+4800, with no Rust/control/metric rerun, score or source change.
+Publication checks/signing are a separate authorized operation, not a restarted
+campaign. Terminal builds and duplicate source/tool copies are deleted without
+compression; complete raw outcomes and canonical source/restoration maps remain.
+
+The generation-gap review`254abaf5…` and existing real-consumer/known-answer tests
+remain part of this bounded exit. Direct count-eight and unfocused constructor,
+key-wipe/direction, entropy, error and lifetime faults do not become generated
+kills or native qualification. The source-only49 compiler bridge retains its
+original scope. This completes the selected GNU generated/line checkpoint, not
+all KE owners, TLS/CNG/UDP, production Core eligibility, branch or release gates.
+
+Next reconcile remaining owners with retained source evidence. The unchanged
+Fault source`b62672b9…` already records27=2 Caught/7 Unviable/18 Missed (10%);
+all18 survivors are Windows-only production arms. Current GNU cfg cannot reach
+them. Preserve that failed gate and native owner; do not rerun the same GNU
+campaign or invent equivalences. A bounded source-only preparation is retained
+in `engine-ke-fault-preparation-v1/`; it admits no native or mutation execution.
+Continue another ready owner after its actual prerequisites are reconciled.
+
+### Publication current-policy fixture correction — 17 November 2026
+
+The complete staged-candidate check runs244 portable Python cases with one
+failure: the current KE policy test still expects nine historical equivalences
+after the accepted current policy selected E[]. The runtime and95% threshold
+remain correct. The smallest test repair requires the current list to be exactly
+empty, and moves the historical healthy9/wrong-candidate refusal onto a fixed
+inert literal from the retained `fa5a5d37…` policy. Thus current-policy growth
+cannot silently delete or misdirect the historical negative control. Test IDs,
+479/75 rosters, inventories, denominators and production validators do not change.
+Only the two test-helper pins are rebound. The previous qualified Rust605/A35,
+tool/consumer/validator source remains unchanged; raw metric48-input receipts
+retain the prior test-helper bytes, which their lanes hash but never execute.
+Fresh complete staged metadata checks are required before publication. Original
+244-case RED and bootstrap namespace refusals remain in the publication record.

@@ -509,11 +509,11 @@ ENGINE_SOURCE_POLICY_EQUIVALENCE_IDS = frozenset({
 })
 ENGINE_SOURCE_POLICY_EQUIVALENCE_PROOF = "tasks/engine-source-policy-equivalences.md"
 ENGINE_SOURCE_POLICY_EQUIVALENCE_REQUIREMENT = "CHECK-10/CHECK-19/CHECK-21/CHECK-25/CHECK-27"
-ENGINE_SOURCE_POLICY_EQUIVALENCE_CANDIDATE = 'b83d0421901fd650a85f9858fc01262c19d1c63f34cb1e3a20d57292fd5a22e0'
-ENGINE_SOURCE_POLICY_EQUIVALENCE_PROOF_SHA256 = '95c8f82cd85f2a72bdafd93c9cdd7ad14c6cfc7ad7e19c84f992321c43e2fe0a'
-ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWERS = 'root/kod_metric_plan_judge; coordinator source review'
+ENGINE_SOURCE_POLICY_EQUIVALENCE_CANDIDATE = '4703646bd205102d61d73b6a46712f1d2910d8d370b7847f7f291513e5534646'
+ENGINE_SOURCE_POLICY_EQUIVALENCE_PROOF_SHA256 = '7d1912920cea46ec3c876d68987b52ce572a5a6472d5ea1365634e6f96b32a04'
+ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWERS = 'root/kod_retry_recipe_prepare/current_e5_semantics'
 # ID -> (source SHA, complete typed descriptor SHA, rendered diff SHA, rationale).
-ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWS = {'KOD-COMMIT-DURATION-NONE-MUL': ('0865faa12a992a7fa791cd106b590d421dc6498616ca486c2bce6b7b9b4174e4',
+ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWS = {'KOD-COMMIT-DURATION-NONE-MUL': ('0208e64e08e5979bce17da715a664242dd53c429dbc17639789feed508a0afb4',
                                   'd9686e9a54564256326fa9796748eb5ce8aa88e6f549822e6788ec51dfb1ba1a',
                                   'f5d66d9f49f42f2997c67b45f5c0de7ff3c8f520b181694dd5d47b9ce3fe1394',
                                   'Every execution reaching this fallback has passed the '
@@ -528,7 +528,7 @@ ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWS = {'KOD-COMMIT-DURATION-NONE-MUL': ('08
                                   'resource-lifecycle paths remain identical. No raw invalid '
                                   'Instant representation or forged caller-domain narrowing is '
                                   'assumed.'),
- 'KOD-COMMIT-DURATION-NONE-SUB': ('0865faa12a992a7fa791cd106b590d421dc6498616ca486c2bce6b7b9b4174e4',
+ 'KOD-COMMIT-DURATION-NONE-SUB': ('0208e64e08e5979bce17da715a664242dd53c429dbc17639789feed508a0afb4',
                                   '12144958ae1f108ba41f2d4ef1414eb35fd6260f13c20966857198204201a567',
                                   '63c17820a1fb3263cd62a54d4f9da5f0aca181e396485a187abbe678d4e0bca5',
                                   'The helper itself rejects processing < '
@@ -545,7 +545,7 @@ ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWS = {'KOD-COMMIT-DURATION-NONE-MUL': ('08
                                   'increment, errors, later allocation/refcounts and cleanup '
                                   'remain identical. Subtraction is not claimed equivalent to '
                                   'increment on a reachable branch.'),
- 'KOD-DEFAULT-KE-FACADE-ABSENT': ('0865faa12a992a7fa791cd106b590d421dc6498616ca486c2bce6b7b9b4174e4',
+ 'KOD-DEFAULT-KE-FACADE-ABSENT': ('0208e64e08e5979bce17da715a664242dd53c429dbc17639789feed508a0afb4',
                                   '59dbc9773a52ad40e7fdbe44d51d6d93821a6a504d88474961056d07b36f8d28',
                                   '0e4020df2d623a45c5398ec58b2e73905d9431366b93cd627255506699ca210d',
                                   'Only the exact source-policy GNU default graph is proposed: '
@@ -562,7 +562,7 @@ ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWS = {'KOD-COMMIT-DURATION-NONE-MUL': ('08
                                   'the item is outside this E scope and triggers refusal/review. '
                                   'Keep raw inventory and actual Missed; E remains held until '
                                   'independent exact configuration-domain review.'),
- 'KOD-SERIES-UNAVAILABLE-ADMITTED-ZERO': ('c832ba7273ae77bdf75aa26002c2243febe15d06fff8fa2948af742af0448615',
+ 'KOD-SERIES-UNAVAILABLE-ADMITTED-ZERO': ('8f152376f92bc3c8ae782924f07e9eadc802a0ec758ae231a6ecf527b08e56a5',
                                           'd8d76eb0a2d6ac7b8dee229ad69d86add41752d7983fe144334916c1d1eb4118',
                                           'f1c0cc8a6708c4cfac0f0cfda66abc91d1f1140be86b12de6ddf26c0ad64b0cf',
                                           'For every valid SeriesReport, StatisticalAdmission is '
@@ -576,7 +576,7 @@ ENGINE_SOURCE_POLICY_EQUIVALENCE_REVIEWS = {'KOD-COMMIT-DURATION-NONE-MUL': ('08
                                           'are outside the safe typed domain. Reopen review if '
                                           'admission representation, constructor/mutation paths, '
                                           'getter body, cfg, signature or effects change.'),
- 'KOD-SERIES-UNAVAILABLE-ELIGIBLE-ZERO': ('c832ba7273ae77bdf75aa26002c2243febe15d06fff8fa2948af742af0448615',
+ 'KOD-SERIES-UNAVAILABLE-ELIGIBLE-ZERO': ('8f152376f92bc3c8ae782924f07e9eadc802a0ec758ae231a6ecf527b08e56a5',
                                           'c316f39ef4eea0536a2daa23f8416aebdc75d41cd66d30a2c3ba83b1c7d50bf0',
                                           'cffc44d585452f3e47c5454fe7d9c291dd1fe0d23754b75a2caeb5354da5e4e3',
                                           'The complete valid receiver domain contains only '
@@ -1252,6 +1252,11 @@ def mutation_jobserver_tasks(scope: Scope, policy: dict, *, workers: int) -> int
     This is not a Windows jobserver profile or an observed concurrency result.
     """
     mutation_jobs({"mutation_jobs": workers})
+    if _core_h02_role(scope, policy):
+        require_core_h02_role(scope, policy)
+        if workers != mutation_jobs(policy):
+            raise Incomplete("H02 mutation workers differ from the exact role.")
+        return policy["mutation_jobserver_tasks"]
     if scope.policy == "policy/phase-step-analysis.json" or scope.subjects == PHASE_STEP_SUBJECTS:
         require_phase_step_role(scope, policy)
         if workers != mutation_jobs(policy):
@@ -1511,6 +1516,17 @@ def mutation_campaign_command(scope: Scope, tools: Path, subject: str, command: 
     """Reject command substitution before a mutation subprocess may be launched."""
     jobs = mutation_jobs({"mutation_jobs": expected_jobs})
     message_format = mutation_message_format({"mutation_message_format": expected_message_format})
+    if _core_h02_role(scope, {} if policy is None else policy):
+        if policy is None:
+            raise Incomplete("H02 requires its exact closed role policy.")
+        require_core_h02_role(scope, policy)
+        if not policy["campaigns_admitted"]:
+            raise Incomplete("H02 campaigns remain closed pending current compiler/source/metric evidence.")
+        if jobs != mutation_jobs(policy) or message_format != mutation_message_format(policy):
+            raise Incomplete("H02 campaign parameters differ from its actual private role.")
+        if not callable(_CORE_H02_CAMPAIGN_ADMISSION):
+            raise Incomplete("H02 requires its code-owned current evidence reader at the campaign effect.")
+        _CORE_H02_CAMPAIGN_ADMISSION(ROOT, policy)
     filename = scope.select(subject)[subject]
     if scope.policy == "policy/phase-step-analysis.json" or scope.subjects == PHASE_STEP_SUBJECTS:
         if policy is None:
@@ -2794,6 +2810,98 @@ def _phase_step_campaign_metadata(policy):
         raise Incomplete("Phase-step campaign requires the complete ordinary roster and source-classified doctests.")
 
 
+# Additive H02 preparation only; historical roles and their receipts are unchanged.
+CORE_H02_POLICY = "policy/principal-combination-analysis.json"
+CORE_H02_STRUCTURAL_CONTROL_SHA256 = "1d832b03af1027f1c61f0deea975ade54529305ddd25e59d218ea0f78a7889cf"
+_CORE_H02_CAMPAIGN_ADMISSION = None
+CORE_H02_SUBJECTS = (
+    ("principal", "crates/time-core/src/principal.rs"),
+    ("combination_lifecycle", "crates/time-core/src/combination/lifecycle.rs"),
+)
+
+
+def core_h02_role_facts() -> dict:
+    """Freeze the two-owner preparation role; no campaign or compiler claim yet."""
+    return {
+        "schema_version": 1, "package": "time-core",
+        "critical_files": list(dict(CORE_H02_SUBJECTS).values()),
+        "tool_admission_profile": "stable-core",
+        "coverage_minimum_line_percent": 90,
+        "mutation_minimum_viable_killed_percent": 95,
+        "baseline_wall_seconds": 300, "coverage_wall_seconds": 300,
+        "enumeration_wall_seconds": 240, "contracts_wall_seconds": 300,
+        "mutation_wall_seconds": 1200, "mutation_build_seconds": 90,
+        "mutation_debug_info": 0,
+        "mutation_test_seconds": 60, "jobs": 6, "test_threads": 1,
+        "coverage_test_threads": 1, "mutation_jobs": 6,
+        "mutation_jobserver_tasks": 0, "mutation_process_limit": 512,
+        "mutation_message_format": "json", "mutation_minimum_free_bytes": 7 * 1024 ** 3,
+        "maximum_mutants": 512, "maximum_listed_per_file": 512,
+        "maximum_listed_total": 1024,
+        "campaigns_admitted": False, "contracts_admitted": False,
+        "mutation_equivalences": [],
+    }
+
+
+def _core_h02_role(scope: Scope, policy: dict) -> bool:
+    """Catch renamed/partial attempts without capturing historical overlapping owners."""
+    return (scope.policy == CORE_H02_POLICY or scope.subjects == CORE_H02_SUBJECTS
+            or policy.get("critical_files") == list(dict(CORE_H02_SUBJECTS).values()))
+
+
+def require_core_h02_role(scope: Scope, policy: dict) -> None:
+    """Admit exact H02 metadata; private mutation also needs actual effect evidence."""
+    facts = core_h02_role_facts()
+    extra = {"source_file_count", "candidate_sha256", "inputs_sha256",
+             "mutation_inventories", "test_inventories", "scope"}
+    if type(policy) is dict and policy.get("campaigns_admitted") is True:
+        extra.add("campaign_admission")
+    if (type(scope) is not Scope or scope.package != "time-core"
+            or scope.policy != CORE_H02_POLICY or scope.subjects != CORE_H02_SUBJECTS
+            or type(policy) is not dict or set(policy) != set(facts) | extra
+            or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                   for key, value in facts.items() if key != "campaigns_admitted")
+            or type(policy.get("campaigns_admitted")) is not bool
+            or type(policy.get("source_file_count")) is not int
+            or not 0 < policy["source_file_count"] <= 4096
+            or type(policy.get("candidate_sha256")) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", policy["candidate_sha256"]) is None
+            or type(policy.get("inputs_sha256")) is not dict
+            or not policy["inputs_sha256"]
+            or type(policy.get("scope")) is not str or not 0 < len(policy["scope"]) <= 2048):
+        raise Incomplete("H02 requires its exact closed current two-owner preparation role.")
+    rows = policy["mutation_inventories"]
+    if type(rows) is not dict or rows and set(rows) != set(dict(CORE_H02_SUBJECTS)):
+        raise Incomplete("H02 needs no inventory before discovery or both exact reviewed owners.")
+    for row in rows.values():
+        if (type(row) is not dict or set(row) != {"count", "sha256"}
+                or type(row["count"]) is not int or not 0 < row["count"] <= 512
+                or type(row["sha256"]) is not str
+                or re.fullmatch(r"[a-f0-9]{64}", row["sha256"]) is None):
+            raise Incomplete("H02 inventory needs bounded counts and complete descriptor digests.")
+
+
+    if policy["campaigns_admitted"]:
+        _core_h02_campaign_metadata(policy)
+
+
+def _core_h02_campaign_metadata(policy):
+    """Require complete private metadata; the Core reader checks actual evidence."""
+    refs = policy.get("campaign_admission")
+    if (type(refs) is not dict or set(refs) != {"compiler_controls", "baseline", "coverage", "enumeration"}
+            or set(policy["mutation_inventories"]) != set(dict(CORE_H02_SUBJECTS))
+            or sum(row["count"] for row in policy["mutation_inventories"].values()) > 512):
+        raise Incomplete("H02 needs its complete current two-owner campaign evidence, never a flag alone.")
+    for ref in refs.values():
+        if (type(ref) is not dict or set(ref) != {"path", "sha256"}
+                or type(ref["path"]) is not str or not 0 < len(ref["path"]) <= 4096
+                or not Path(ref["path"]).is_absolute() or "\n" in ref["path"]
+                or type(ref["sha256"]) is not str or re.fullmatch(r"[a-f0-9]{64}", ref["sha256"]) is None):
+            raise Incomplete("H02 campaign evidence needs bounded physical record identities.")
+    if refs["compiler_controls"]["sha256"] != CORE_H02_STRUCTURAL_CONTROL_SHA256:
+        raise Incomplete("H02 structural reuse must name its reviewed eleven-Core-row receipt.")
+
+
 def admission_profile(args, scope, policy):
     """Require an exact stable role before narrowing analysis-tool custody."""
     profile = getattr(args, "tool_admission_profile", "full")
@@ -2801,6 +2909,11 @@ def admission_profile(args, scope, policy):
         raise Incomplete("Unknown analysis admission profile.")
     if policy.get("tool_admission_profile", "full") != profile:
         raise Incomplete("Analysis admission profile differs from the current policy.")
+    if _core_h02_role(scope, policy):
+        require_core_h02_role(scope, policy)
+        if profile != "stable-core" or args.lane not in {"contracts", "coverage", "mutation"}:
+            raise Incomplete("H02 requires its fixed stable preparation lanes.")
+        return profile
     if _engine_source_policy_role(scope, policy):
         require_engine_source_policy_role(scope, policy)
         if profile != "stable-core" or args.lane not in {"baseline", "coverage", "mutation", "all"}:

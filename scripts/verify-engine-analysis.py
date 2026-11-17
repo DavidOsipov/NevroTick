@@ -5290,7 +5290,7 @@ def _admit_engine_ke_debug_retirement(policy: dict, report: dict) -> None:
             or type(execution.get("ke_tests_executed")) is not int
             or execution["ke_tests_executed"] != ENGINE_KE_CASE_COUNT
             or execution.get("inventory_sha256") != COMMON.canonical_sha256(names)):
-        raise Incomplete("Debug retirement requires the exact validated 415-test/234-KE baseline roster and digest.")
+        raise Incomplete("Debug retirement requires the exact validated 479-test/234-KE baseline roster and digest.")
     lanes, samples = report.get("lanes"), report.get("storage_samples")
     if (type(lanes) is not list or len(lanes) < 2
             or any(type(row) is not dict for row in lanes)
@@ -5624,7 +5624,7 @@ def execute_address_profile(args, report: dict) -> None:
 ENGINE_KE_POLICY = COMMON.ENGINE_KE_POLICY
 ENGINE_KE_HOST_SUBJECTS = dict(COMMON.ENGINE_KE_SUBJECTS)
 ENGINE_KE_SCOPE = COMMON.Scope("nevrotick-engine", COMMON.ENGINE_KE_SUBJECTS, ENGINE_KE_POLICY)
-ENGINE_KE_ORDINARY_COUNT = 415
+ENGINE_KE_ORDINARY_COUNT = 479
 ENGINE_KE_CASE_COUNT = 234
 ENGINE_KE_SEND_AFTER_TEST = (
     "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
@@ -5832,7 +5832,7 @@ def validate_engine_ke_inventory(names: object) -> list[str]:
             or names != sorted(set(names))
             or sum(name.startswith("nts_ke_experiment::") for name in names) != ENGINE_KE_CASE_COUNT
             or ENGINE_KE_SEND_AFTER_TEST not in names):
-        raise Incomplete("Engine KE requires all 415 actual Engine tests including its 234 KE cases and send-after regression.")
+        raise Incomplete("Engine KE requires all 479 actual Engine tests including its 234 KE cases and send-after regression.")
     return names
 
 
@@ -6545,16 +6545,16 @@ SOURCE_POLICY_POLICY = COMMON.ENGINE_SOURCE_POLICY_POLICY
 SOURCE_POLICY_SUBJECTS = dict(COMMON.ENGINE_SOURCE_POLICY_SUBJECTS)
 SOURCE_POLICY_SCOPE = COMMON.Scope(
     "nevrotick-engine", COMMON.ENGINE_SOURCE_POLICY_SUBJECTS, SOURCE_POLICY_POLICY)
-SOURCE_POLICY_ORDINARY_COUNT = 241
+SOURCE_POLICY_ORDINARY_COUNT = 245
 SOURCE_POLICY_DOCTEST_COUNT = 75
-# Independent inspection of managed-round development revision 8 established
+# Independent inspection of complete reply-accounting development attempt 4 established
 # these complete sorted identities. They identify a roster, not current execution.
-SOURCE_POLICY_ORDINARY_DIGEST = '08441dafc351661d628de1a6da48f601b11f8d360fda536c47a73c6edaa2ad7a'
-SOURCE_POLICY_DOCTEST_DIGEST = 'cd5fcc0a29e43c2262202a07a9b85b2e7373b42f2d79b18964e441f3e8eb8abf'
+SOURCE_POLICY_ORDINARY_DIGEST = '27b53caf8970365b18641b8e98d537ed161ce41c48d69f78e37acd06660003a8'
+SOURCE_POLICY_DOCTEST_DIGEST = 'd6e6a59ceeb7b783ac4e71d3d2233197b81078334150cd3ab0f896eff7cb67c2'
 # The same independently inspected receipt contains the complete optional
 # profile in both modes: its default roster plus these 234 KE identities.
 SOURCE_POLICY_EP1_EXTRA_COUNT = 234
-SOURCE_POLICY_EP1_DIGEST = 'b82faa91464b0e0773ae18da34ba1c2fc3f2bd622dee87aa80dff6d1483c82a1'
+SOURCE_POLICY_EP1_DIGEST = 'e68a9d783f078995e225fdfd0905d67f6caf79b4ca7bb19952c0b63dc80e7602'
 SOURCE_POLICY_BOUND_INPUTS = tuple(dict.fromkeys((
     WRAPPER, TESTS, *SOURCE_POLICY_SUBJECTS.values(),
     "crates/nevrotick-engine/tests/private/source_policy.rs",
@@ -6594,16 +6594,16 @@ def source_policy_test_inventory(binding: dict) -> tuple[list[str], list[str]]:
         if (type(names) is not list or len(names) != count
                 or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
                 or names != sorted(set(names)) or COMMON.canonical_sha256(names) != digest):
-            raise Incomplete("Source-policy qualification requires its complete 241/75 default roster.")
+            raise Incomplete("Source-policy qualification requires its complete 245/75 default roster.")
     selected = [name for name in ordinary if name.startswith("source_policy::tests::")]
     kod_docs = [name for name in docs if name.startswith(
         "crates/nevrotick-engine/src/source_policy.rs - ")]
-    if (len(selected) != 49
+    if (len(selected) != 51
             or "source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted" not in ordinary
             or "source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund" not in ordinary
             or any(name.startswith("nts_ke_experiment::") for name in ordinary)
             or len(kod_docs) != 4 or sum(name.endswith(" - compile fail") for name in kod_docs) != 3):
-        raise Incomplete("Source-policy roster must retain all 49 controls, public diagnostics, the setup budget and four compiler examples.")
+        raise Incomplete("Source-policy roster must retain all 51 controls, public diagnostics, the setup budget and four compiler examples.")
     return ordinary, docs
 
 

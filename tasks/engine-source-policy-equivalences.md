@@ -4,7 +4,7 @@ Status: **historical C2 arguments retained; repaired 582a source/data reconcilia
 Prepared 16 November 2026 for the existing Engine transport task, CHECK-10/19/21/25/27.
 This is a source-review dossier, not a formal/compiler/solver proof job or another roadmap.
 
-Current registry-data candidate: `b83d0421901fd650a85f9858fc01262c19d1c63f34cb1e3a20d57292fd5a22e0` (605 product inputs).
+Current registry-data candidate: `4703646bd205102d61d73b6a46712f1d2910d8d370b7847f7f291513e5534646` (605 product inputs).
 The current-source notes below update exact identities without rewriting the historical
 C2 records. The preceding e807 source-only update initially left E empty. Its later
 physical admission selected the five exact rows while public campaigns remained
@@ -898,3 +898,49 @@ producer/std/tool/configuration domains above control receiving admission;
 no E rationale, descriptor, difference, ID, domain, threshold or effect changes.
 Both address survivors remain non-equivalent. New development, lifecycle,
 metadata/metric and generated-cohort evidence remains unclaimed by this update.
+
+
+## Current reply-accounting candidate receiving review -- 17 November 2026
+
+This addendum supersedes earlier uses of "current" for this candidate only. All
+historical source receipts, raw outcomes and failed attempts above retain their
+exact scopes. The current product is `4703646bd205102d61d73b6a46712f1d2910d8d370b7847f7f291513e5534646`
+(605 inputs). Its actual complete full4 development receipt is
+`/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/current-owner-cohorts-v1/repair-1/address-repair-v2/reply-accounting-repair-1/observer-v4/development-4/verification.json`, SHA-256
+`cdacaa3ec9c460f57083097946949b548de7086c369a0d8b7a9b67af389f00d2`: 245 default/479 EP1 in each mode and 75 doctests
+per graph. Development supplies no current generated-mutation credit.
+
+Independent source-domain review: `/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/current-owner-cohorts-v1/repair-1/address-repair-v2/reply-accounting-repair-1/fresh-qualification-preparation/e5-current-source-review.json`, SHA-256
+`38465cc0841e5c191df2bee1dc5671586b4f0074d962b95034a4276fb7743484`, reviewer
+`root/kod_retry_recipe_prepare/current_e5_semantics`. It supports the five
+arguments under the declared default configuration and pinned Instant premises.
+It performs no new inventory/tool admission and grants no campaign pass.
+
+Current producer bindings:
+
+- `crates/nevrotick-engine/src/lib.rs`: `0208e64e08e5979bce17da715a664242dd53c429dbc17639789feed508a0afb4`.
+- `crates/nevrotick-engine/src/series.rs`: `8f152376f92bc3c8ae782924f07e9eadc802a0ec758ae231a6ecf527b08e56a5`.
+
+All five targeted complete function regions and typed spans match the retained
+B83 regions exactly. The two `commit_reply` None-fallback faults still target
+1508:23--25 in function span 1479:1--1518:2, after the helper-local raw predecessor
+guard on the same immutable Instant operands. The six actual rejection-counter
+repairs are outside this fallback and do not make it reachable. Both fallback E
+arguments continue to require the pinned GNU/Windows Instant implementation
+premises; changed operands, guards, backends or overflow behavior reopen review.
+
+The facade E still applies only to features=[]: the exact item remains gated by
+`ke-association-prototype` and the manifest declares no default enabling feature.
+No EP1 or available-facade equivalence is inferred. The two SeriesReport getter
+E arguments still use the single fieldless StatisticalAdmission::Unavailable,
+its unchanged sole producer and pure zero-return matches at 565/572. No positive
+eligibility, forged discriminant, new variant, destructor or side effect is admitted.
+
+The exact five IDs, typed descriptor fingerprints and semantic rationales are
+retained. Their current producer and dossier hashes are newly bound. Every
+configured use must re-admit the actual candidate/configuration/tool/std files;
+fresh enumeration must reproduce each exact emitted descriptor and rendered
+diff before a current inventory or campaign can be admitted. All unreviewed
+survivors/timeouts remain open, E supplies zero kills, and 95% per critical file
+and 90% line gates remain unchanged. MAIN campaigns stay false with an empty
+reviewed-inventory map until a separately reviewed private-shadow admission.
