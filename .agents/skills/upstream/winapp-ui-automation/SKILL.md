@@ -457,7 +457,7 @@ These upstream workflows neither bundled nor required by Win32 UIA skill:
 
 - [winapp-sandbox](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winapp-sandbox/SKILL.md) describes optional Sandbox automation.
 - [winapp-setup](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winapp-setup/SKILL.md) describes optional SDK setup.
-- [winapp-package](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winapp-package/SKILL.md) describes MSIX packaging, outside NevroTick's selected complete-MSI lifecycle.
+- [winapp-package](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winapp-package/SKILL.md) describes optional MSIX tooling. NevroTick's [selected complete-MSIX lifecycle](../../../../docs/plans/windows-msix-store.md) governs; this reference adopts no tool or package exception.
 
 ## Troubleshooting
 | Error | Cause | Solution |

@@ -2285,3 +2285,94 @@ changes; no product, parser, runtime, harness or checker behavior changes. This
 does not mark any product fuzz obligation N/A or waive an execution hold. Checker
 regression tests are unnecessary because the checker and its covered contracts
 are unchanged. Review date uses the selected Asia/Tbilisi client date.
+
+## Whole development lifecycle and Codex delegation — 19 November 2026
+
+David requested documentation updates and a revised V1 agent goal after the QA
+skill review and official Codex subagent research. He explicitly corrected a
+QA-centered interpretation: the workflow must cover development stages and their
+skill owners. Reviewed base: `f36d50a7175555067a499774fc07e273fadde506`.
+The accepted P0–P7/complete hardened MSIX scope, current product queue, execution
+holds, formal-after-V1 deferral and exact-candidate release authority remain.
+
+The [lifecycle map](../../docs/plans/development-plan.md#development-lifecycle-and-skill-ownership)
+now separates recurring development stages from product phases. Planning owns
+scope, architecture/threat/contracts, dependencies/environments, implementation,
+diagnosis/refactoring, measured optimization, integration, package preparation
+and continuity; QA owns verification within that work. The
+[delegation method](../skills/planning/references/testable-slices.md#development-delegation)
+assigns concrete worker outputs, settled interfaces, exclusive writes/resources,
+finite budgets and combined-candidate acceptance. Entry routers, workstation
+isolation, Codex operation and QA handoff agree with those owners. P0/S0.5 and P5
+explicitly route Slint implementation; P6 routes metadata preparation; conditional
+CPU dispatch and authorized host maintenance have explicit skill owners.
+
+Three additional readers inspected all 27 non-QA entrypoints: four planning,
+nine implementation, seven security, three environment and four upstream
+specialists. Relevant contracts and triggered references were read selectively;
+the previous full 39-entry QA review remains applicable to unchanged guidance.
+The leaves already supplied substantive development procedures, so changes focus
+on orchestration and discovery. A stale imported UI-automation packaging sentence
+was corrected to the existing MSIX authority; its original source pins/hashes and
+MIT notice remain, with only the two changed installed-file hashes refreshed.
+Official sources and adoption limits are in the
+[planning register](../skills/planning/SOURCES.md#codex-development-delegation--19-november-2026).
+No fixed swarm, model/configuration change, new approval loop or duplicated
+campaign is adopted. Agent capacity remains distinct from build/test workers.
+
+### Fresh semantic review
+
+Reviewer `lifecycle_fresh_review` used `fork_turns: "none"` and completed a
+read-only review of all 16 changed instruction/provenance files and the goal.
+It inspected the affected owners and relevant current decisions, not the whole
+product or every historical receipt. Frozen diff SHA-256:
+`3c233411990abc0acde642d36a9ece57404284592f39f81ddb48fa94cb460544`.
+Goal SHA-256: `89f60517b48f0a1f108d33c208b0b1c089b8b17535509906f842e7efadf1c6f4`.
+These identities exclude this subsequent verification bookkeeping. The required
+comprehension paragraphs are retained verbatim, attributed to that reviewer:
+
+> The proposal makes the development coordinator responsible for the entire change: investigation and planning, architecture and contracts, dependency and environment preparation, implementation and refactoring, diagnosis, measured optimization, integration, packaging, verification, and continuity. It maps those activities to the existing skill families and makes development delegation concrete through bounded deliverables, exclusive writable scopes, shared-interface ownership, resource accounting, and verification of the combined candidate. The reusable goal expresses the same lifecycle and preserves comprehensive QA within it.
+
+> The repository already has a seven-member Rust workspace and separate owners for the UI, protocol, numerical Core, acquisition, and Windows platform work. Its development plan still treats P0–P7 as open: selected components have bounded historical qualification, while production integration, native enforcement, the complete hardened MSIX, and release qualification remain incomplete. Accepted decisions require continued ordinary development, retain the scoped execution holds, defer formal work until after V1, and reserve submission and exact-candidate release authority to David. These conclusions are supported by `Cargo.toml`, `AGENTS.md`, development-plan §§1, 5 and P6/P7, and owner decisions OD-05 and OD-10; this review did not independently requalify product behavior.
+
+Verdict: **ready for the documentation/goal semantic-review stage**, no material
+must-fix findings. LC-N01 is a nonblocking size observation: `AGENTS.md` is
+32,714 UTF-8 bytes, 54 below the strict 32,768 ceiling; keep the existing size
+check on future changes. Imported-source provenance continuity and all five
+installed UI-automation hashes were independently checked. No native/product or
+workflow-performance conclusion follows from this review.
+
+### Application and validation record
+
+| Stage / skills | Concrete application and status |
+| --- | --- |
+| Planning / `plan-code-change`, architecture/implementation/security/environment and specialist readers | Completed the full-lifecycle routing audit and reconciled missing stage/phase owners against current leaf instructions. Reused the existing task and accepted decisions. |
+| Documentation implementation / planning-owned delegation, `qa-subagent-dispatch`, `qa-context-checkpoint` | Coordinator edited canonical routers and integrated two QA-owned patches from a separate worktree; inspected returned diffs and retained exclusive file/resource ownership. |
+| Review / `plan-independent-review`, `qa-independent-review`, fresh-review reference | Completed fresh semantic review above; no material finding. Independent review is not product qualification. |
+| Instruction-use exercise / `qa-skill-evaluations` | Completed one fresh-context development planning case plus an understood small-edit control. It assigned contract/Rust/Slint/metadata work, reconciled incompatible A/B candidates, retained an interrupted subprocess's ownership and the not-run review gate, and kept the small edit local. Coordinator grading passed the bounded planning criteria; no source implementation or product execution was requested or demonstrated. |
+| Structural verification / testing contract, package checker | Executed: 66-skill check, 150 added/changed local links, 31 anchors, 105 shortcut references and whitespace checks pass on the reviewed instruction candidate. Root documentation checksum manifest is absent; changed files are outside archived checksummed bundles. |
+| Goal preservation / caveman-compress | Expanded-to-compact goal check passes with no errors; path warnings are slash-separated prose. The real plan path, numeric thresholds and operative requirements are retained. The earlier AGENTS old-to-new preservation comparison rejected the two intentional added link destinations and noted a five-byte increase; no protected destination was lost. This is an authorized workflow amendment, not a pure-compression pass; the actual links and byte limit pass. |
+| Commit preparation / `qa-pre-commit`, `qa-final-qualification` | Executed complete 2,130-entry staged-candidate materialization with exact bytes/executable modes, 66-skill validation, 153 changed local links/34 anchors, 105 shortcut references and whitespace checks. No active hook, external Git filter, tracked attribute transform or submodule was found. Final publication must bind the updated record, preserve concurrent remote work and advance only the checked candidate. |
+
+The instruction-use agent `lifecycle_plan_use` used `fork_turns: "none"` with
+task SHA-256 `ff9040f0fb6d0d0cb289d7b92cbf2239f1650cbb324220cedc5fedb4a0cd043f`.
+It received the request and source/skill inputs, without grader material or
+author conclusions. Its read inventory reports nine full planning/evolution/
+metadata/continuity skill entrypoints and selected canonical/source sections;
+future implementer skills were assigned explicitly, not claimed executed.
+The coordinator checked its material source correction: architecture assigns
+`StatusSnapshot` publication to the broker; the requested Engine input supplies
+observations, and the existing Slint host still uses `FixtureStatusPort` with
+unavailable live-adapter behavior. It did not invent an `ipc-contract` crate or
+accept worker contract B merely because it was newer. It proposed future budgets
+as proposals, kept all native/formal/authority limits, and accepted no combined
+feature from the supplied handoff. No grader/author-note exposure was reported.
+This is one instruction-use planning result with a small-change control, not an
+old/new comparison, actual implementation result or general reliability claim.
+
+Product/Rust/native/fuzz/formal execution is inapplicable to this documentation
+and metadata-only change; no product source, harness, dependency, tool setting or
+checker behavior changes. All applicable product obligations remain in their
+existing task/phase records. The unchanged checker contracts need no new checker
+regression suite. A planning exercise cannot establish implementation quality,
+native behavior, general workflow reliability or a measured efficiency uplift.

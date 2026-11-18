@@ -15,6 +15,14 @@ completion. Read [the testing contract](testing/CONTRACT.md) before selecting ch
 WSL host maintenance uses the requested storage scope and preservation checks;
 product acceptance IDs and native qualification gates do not apply to that work.
 
+For the whole development workflow, use the
+[lifecycle skill map](../../docs/plans/development-plan.md#development-lifecycle-and-skill-ownership)
+and [development delegation](planning/references/testable-slices.md#development-delegation).
+Select skills by lifecycle stage, product phase and changed guarantee. Planning
+coordinates decisions, implementation and delivery; testing coordinates the
+verification portion. Each applicable owner supplies its concrete work product
+and evidence, with shared decisions and integration reconciled centrally.
+
 | Task | Start with |
 | --- | --- |
 | Implement Rust ownership, errors, concurrency or Windows adapters | [implement-rust](implementation/implement-rust/SKILL.md) |

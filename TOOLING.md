@@ -132,6 +132,29 @@ healthy control. Jobs, output and wall time are bounded. Resource limits are
 per-process/namespace, **not cumulative cgroup quotas**; this lane admits the
 fixed trusted fixture, not arbitrary dependency build scripts.
 
+## Codex subagent operation
+
+Use the [development delegation workflow](.agents/skills/planning/references/testable-slices.md#development-delegation)
+across the development lifecycle. Inspect the actual client/tool
+schema, available agent capacity, context mode, working directory and permitted
+effects before dispatch. Follow exposed status/result controls; a launched or
+timed-out worker supplies no completed evidence. Use a sequential fallback if
+delegation is unavailable. Do not infer current capabilities from historical
+setup, another Codex surface or an API example.
+
+Verify [writer isolation](docs/windows-time-development-hardening.md#33-agent-workstation-and-sandbox-rules)
+explicitly; a spawned child may share the checkout and host resources. For required
+independent review, select the supported fresh-context mode and follow
+[review completion accounting](.agents/skills/planning/references/review-and-handoff.md#freeze-review-inputs-and-account-for-completion).
+Instructions do not replace effective sandbox permissions or authorize new effects.
+
+Agent slots are distinct from the Cargo/compiler/test workers below. Keep each
+admitted lane's settings and bound aggregate resource use across agents and their
+subprocesses; fewer agents may be needed for a heavy lane. This guidance changes
+no model, global configuration, feature flag or worker limit. Current official
+sources and adaptation limits are in the
+[planning source register](.agents/skills/planning/SOURCES.md#codex-development-delegation--19-november-2026).
+
 ## Development CPU budget
 
 David requested **12 parallel workers** on 30 October 2026. The repository

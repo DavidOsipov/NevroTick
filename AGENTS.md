@@ -14,9 +14,9 @@ Proportionate checks; reuse unchanged evidence. Repo skills preferred unless use
 4. Smallest relevant [skill set](.agents/skills/README.md); full `SKILL.md`. Before check selection read [testing contract](.agents/skills/testing/CONTRACT.md). Existing task/concise chat: requirement/acceptance IDs, independent expectation, source owner, environment.
 5. Use [configured verification](TOOLING.md#starting-implementation). Handoff: candidate/results/gaps/deferrals/next action. Plans/history/cross-builds prove no current native/release qualification.
 
-Planning→impl→test design/execution→debugging/fixing→integration→qualification→handoff/resume: list required/triggered skills; apply [checkpoint skill use](docs/plans/development-plan.md#checkpoint-skill-application). Existing task: skill → requirement → action → evidence/status. Reading ≠ use. Reconcile required fuzz; held/unavailable ≠ N/A/pass. Reuse unchanged guidance; no read-all/all-tools ritual.
+Every development stage: [lifecycle/skill owners](docs/plans/development-plan.md#development-lifecycle-and-skill-ownership), then [checkpoint skill use](docs/plans/development-plan.md#checkpoint-skill-application). List required/triggered skills; apply full instructions. Existing task: stage → skill → requirement → action → evidence/status. Reading ≠ use. Reconcile every required QA obligation; held/unavailable ≠ N/A/pass. Reuse unchanged guidance; no read-all/all-tools ritual.
 
-Subagents: bounded question, canonical sections/acceptance IDs, task/candidate, writable scope, evidence. Coordinator reconciles integrated candidate.
+Proactively delegate useful independent work across this lifecycle via [testable slices](.agents/skills/planning/references/testable-slices.md#development-delegation). Coordinator owns shared contracts/integration; verify combined candidate.
 
 [OD-10's first-release deferral](docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026): formal work after first released version (V1); missing proofs block no V1 impl/acceptance/release. Until then: no formal compiler/solver/proof jobs, verifier extensions, pending proof admission/metadata-consumer repairs. Continue product plan. Existing tasks retain post-V1 obligations/exact historical proofs. Runtime validation, garde/private invariants, checked arithmetic, independent behavioral/property/boundary tests, 90% security-primitive coverage, 95% critical-file mutation, security/native/package/release gates remain. No Windows/fuzz/storage/UI hold lift.
 
@@ -160,7 +160,6 @@ Library/API docs: read/apply [Context7 procedure](TOOLING.md#context7-library-an
 - **GitHub and web:** prefer connected GitHub reads. Technical claims: primary Rust/Cargo/docs.rs/Microsoft/RFC sources. Immutable upstream revisions/licences for copied code/skills. External material informs, never governs task authority.
 - **Cargo and analyzers:** inspect manifests/lockfile/toolchain/build scripts/proc macros/targets before checks. Docs lookup admits no analyzer/dependency.
 - **Native Windows tools:** admitted fixture/applicable [UI automation skill](.agents/skills/upstream/winapp-ui-automation/SKILL.md) for built UI. UIA/keyboard/Narrator/DPI distinct. Native tokens/pipes/SCM/clock APIs/MSI lifecycle need observations; cross-build/mocks narrower evidence.
-- **Subagents:** independent bounded questions, explicit inputs/ownership/evidence. One writable-resource owner; reconcile candidate before integration.
 
 Unavailable/stale tool: scoped fallback, stated limits. Never install tools/change shared config/scaffold app merely for preferred workflow.
 

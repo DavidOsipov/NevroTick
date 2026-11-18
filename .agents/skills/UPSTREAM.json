@@ -89,8 +89,8 @@
       "local_changes": "upstream/winapp-ui-automation/LOCAL-CHANGES.md",
       "files": {
         "upstream/winapp-ui-automation/LICENSE": "c421b2a5e0ee627bb1c5d859bbca37d7654c02f63d626e753644484a9054c2d1",
-        "upstream/winapp-ui-automation/LOCAL-CHANGES.md": "9bd3e8da985f45cdad11d162612346fc7ca7201c2951569a60178afbefb2c478",
-        "upstream/winapp-ui-automation/SKILL.md": "f8b1d24d1882fece619cdcff74b15c282e248fffaa18443d718c3663c1e0e248",
+        "upstream/winapp-ui-automation/LOCAL-CHANGES.md": "2746ee45979d1549c1adc3d98aa6ca113c3396d3814e9b212dfbd588b4a7309f",
+        "upstream/winapp-ui-automation/SKILL.md": "514520db9f59fd143b1e65eaf10f0b2f8100743b1461f728a3e81c2fb8182d9a",
         "upstream/winapp-ui-automation/agents/openai.yaml": "0b8046330a64fdddcfc7e74c854cfb019e2de65b9f7b8d0b663f4293710db14d",
         "upstream/winapp-ui-automation/references/ui-json-envelope.md": "898d2092c6d4abe077ae998ac29db74a90f5b550022f86ae94d958f4d4b08dd7"
       }

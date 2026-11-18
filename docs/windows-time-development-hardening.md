@@ -169,7 +169,17 @@ The execution boundary must provide an allowlisted environment, unprivileged ide
 
 No signing/publishing token, cloud credential, privileged OIDC grant, SSH agent, production trust-store access or unrelated checkout belongs in a build/analyzer sandbox. If a hosted integration requires a status-upload token, confine it to a separate minimal data-only upload stage. It must not execute scripts from the report artifact.
 
-Use separate worktrees/output directories for parallel agents and one owner for `Cargo.lock`, shared contracts, tool policy and native lab state. A worktree does not isolate service names, registry keys, the VM clock or machine-wide settings. Do not schedule concurrent mutable-state experiments on the same guest.
+Parallel writing agents use separate worktrees and owned output directories,
+with one owner for each changed file, `Cargo.lock`, shared contract, tool policy
+and native lab state. Read-only agents may share a checkout with a frozen or
+explicitly reconciled source identity. Spawning a subagent alone establishes no
+worktree or execution isolation; verify its actual paths and permissions. If
+required isolation is unavailable, serialize writes; always serialize overlapping
+edits and shared-contract changes. A worktree does not isolate service names,
+registry keys, the VM clock or machine-wide settings. Do not schedule concurrent
+mutable-state experiments on the same guest. Coordinate aggregate resources and
+combined-candidate acceptance through the
+[development delegation workflow](../.agents/skills/planning/references/testable-slices.md#development-delegation).
 
 ### 3.4 Mandatory contracts for agent-written code
 

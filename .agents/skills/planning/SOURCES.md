@@ -35,3 +35,29 @@ reconciliation and document/source differences. Local changes preserve current
 decision authority, stage-scoped readiness and proportional evidence; no automatic
 risk acceptance, extra approval sequence or full-product specification gate.
 This is an instruction adaptation, not a measured review-quality or product result.
+
+## Codex development delegation — 19 November 2026
+
+Official OpenAI guidance was inspected for the owner's request to use subagents
+during development. The local method lives in
+[testable slices](references/testable-slices.md#development-delegation), with
+runtime checks in [TOOLING.md](../../../TOOLING.md#codex-subagent-operation).
+
+| Primary source | Adaptation and limit |
+| --- | --- |
+| [Codex subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents) | Delegate bounded implementation or exploration, provide concise task-local context and collect actual results. Inspect the active client's capabilities; do not import another surface's configuration or concurrency defaults. |
+| [Prompting GPT-6.2 in Codex](https://learn.chatgpt.com/guides/prompting-gpt-6-2-astra) | State useful delegation in applicable instructions, keep recurring guidance concise and account for shared machine resources and cleanup. No model selection or performance claim follows. |
+| [Git worktrees](https://learn.chatgpt.com/docs/environments/git-worktrees) | Explicit worktrees separate working files. Spawning alone does not establish that arrangement or isolate native resources. NevroTick retains one owner per write/resource surface. |
+| [Codex best practices](https://learn.chatgpt.com/guides/best-practices) | Give goal, context, constraints and observable completion; review changes and verify the integrated result. Existing acceptance gates and owner decisions remain authoritative. |
+
+The owner's accepted adaptation covers useful independent work across the whole
+development lifecycle: planning, architecture/threat/contracts, environment and
+dependencies, implementation, debugging/refactoring, measured optimization,
+integration, packaging, verification and handoff. Coordinator dependency/shared
+decision/integration ownership and nonoverlapping work continue during
+delegation. The lifecycle skill map is separate from product phases P0–P7.
+Preserve the existing fresh-review protocol, all phase QA,
+coverage/mutation thresholds, execution holds and release authority. No fixed
+swarm count, extra approval loop, automatic configuration change or duplicated
+campaign is adopted. This is workflow guidance, not product qualification or
+measured subagent efficiency.

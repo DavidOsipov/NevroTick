@@ -65,3 +65,10 @@ on the selected Windows test machine before relying on those commands.
 
 Later local change: compressed instructional prose; preserved code, metadata,
 headings, links, technical conditions and licence texts. Upstream sources/pins unchanged.
+
+19 November 2026: corrected the remaining related-skills sentence that treated
+MSIX as outside a selected MSI lifecycle. It now routes optional upstream
+packaging tooling to the current complete hardened MSIX plan, without adopting
+the tool or changing execution authority. The earlier bullet records its
+historical adaptation only. Original source hashes, immutable pin and MIT notice
+remain unchanged; the installed-file inventory records these local bytes.

@@ -204,10 +204,31 @@ integration, not read-only source analysis or independent pure work.
 | UI owner | Coherent admitted snapshot → presentation; user intent → independently authorized receiver | Normal user, no direct clock/service-policy writes; UI checks convey no authority. |
 | Lifecycle/release owner | Approved complete package + protected journal → install/maintenance/restoration | One complete MSIX, both machine services, UI and narrow helper; supported provisioning and recovery, no separate engine prerequisite. |
 
+### Development delegation
+
+Proactively delegate useful independent work across the development lifecycle
+under the [development delegation workflow](../../.agents/skills/planning/references/testable-slices.md#development-delegation).
+Use the available capacity selectively; small or tightly coupled work may remain
+local. No fixed swarm quota. The coordinator owns dependency order, shared
+contracts and final integration. Workers may investigate, design, implement,
+debug, optimize, integrate, prepare packages or verify bounded slices. Use the
+[lifecycle skill map](#development-lifecycle-and-skill-ownership) to assign the
+required method and concrete deliverable; QA orchestration owns verification
+within this development workflow.
+
 One worker owns each shared schema, `Cargo.lock`, mutable Windows fixture,
-installer identity and evidence output. Delegations name canonical sections,
-acceptance IDs, candidate, writable paths, expected observations and stop bounds.
-The coordinator verifies the integrated candidate, not only worker summaries.
+installer identity and evidence output. Freeze interfaces/source identity and
+assign exclusive write/resource scopes before dispatch. Parallel writers follow
+[workstation isolation](../windows-time-development-hardening.md#33-agent-workstation-and-sandbox-rules);
+serialize overlap and shared-contract changes. Preserve the existing aggregate
+resource budgets, admitted per-lane limits and execution holds.
+
+Advance unassigned nonoverlapping work while workers run; do not repeat delegated
+work. Inspect returned patches and requirement-linked evidence, reconcile
+incomplete workers, then verify the combined candidate and cross-worker seams.
+Each worker applies its stage/phase/guarantee skills; all section 5 status
+rules and prescribed review/qualification exits remain. Worker success does not
+establish a phase pass. Keep assignments/results in the existing task chain.
 
 ## 3. Mandatory explicit contracts during implementation
 
@@ -476,24 +497,39 @@ reading alone, establish quality. Prefer these repository skills over overlappin
 plugins. Read full `SKILL.md` files and their triggered references, not only names
 or summaries. Reuse already-read unchanged guidance within a continuing task.
 
+### Development lifecycle and skill ownership
+
+The lifecycle below repeats within the product phases P0–P7; it is not another
+product roadmap or a compulsory sequence for every small edit. Select the
+required stage, phase and changed-guarantee skills together. Architecture,
+security, dependencies and integration can recur after P0. The development
+coordinator owns the whole change; [qa-test-orchestrator] coordinates its
+verification portion. Each stage produces actual decisions, source, artifacts
+or evidence before the corresponding acceptance claim.
+
+| Lifecycle stage and skill owners | Required work and useful delegation |
+| --- | --- |
+| Scope, investigation and planning — [plan-code-change]; [plan-architecture] for uncertain ownership | Reconcile the request, current source/task, accepted decisions, dependencies and next bounded outcome. Parallel read-only investigations may map separate owners or upstream evidence; the coordinator selects the executable stage and integrates their findings into one plan. |
+| Architecture, threat model and contracts — [plan-architecture], [plan-threat-model], [implement-rust-contracts], affected security skills; [plan-independent-review] at its trigger | Trace producer → state → consumer/effect; settle interfaces, units, invariants, error/effect/lifecycle contracts and attacker paths/control owners. Independent design/security proposals may run in parallel; one owner reconciles shared decisions before dependent implementation. Review substantial plans and use NV-DEC-001 for material unresolved choices. |
+| Dependency and environment preparation — [dependency-updates]; [manage-windows-sandbox] or [wsl-cleanup] only within their triggered, authorized scope | Establish the exact dependency/features/licence/toolchain cohort and actual execution/resource prerequisites. Prepare only admitted graphs and owned environments, preserving dependency-age policy and all holds. Assign one writer to lockfiles, tool policy and each mutable lab; independent source/licence research may proceed alongside it. |
+| Implementation and refactoring — [implement-rust], [implement-rust-contracts], changed-boundary security skills; [implement-windows-service], [implement-native-ui] + [implement-slint], or [evolve-data-contracts] as applicable | Implement bounded real producer/consumer paths with checked private invariants, explicit types, safe error/resource ownership and current effect guards. Characterize behavior before a behavior-preserving refactor; handle intentional contract changes explicitly. Delegate independent components behind settled interfaces, with separate write/output scopes and their own relevant checks. |
+| Diagnosis and repair — [implement-rust], [qa-failure-triage]; [rust-compiler-errors], [rust-borrow-semantics], [rust-send-sync] for actual diagnostic mechanisms | Reproduce the symptom, trace the first failing boundary, distinguish product/oracle/fixture/environment causes and make the smallest causal repair. Independent investigations may test separate hypotheses; serialize competing edits to the same owner. Retain failure and healthy controls, then verify affected consumers. |
+| Measured optimization and CPU dispatch — [optimize-rust-performance], [implement-cpu-dispatch] when baseline admission or dispatch changes; [qa-performance-resources] | Measure a real workload and dominant cost before changing code or concurrency. Preserve correctness, numerical meaning, resource bounds and the x86-64-v3 policy. Delegate independent profiling or optimization slices; serialize contending measurements and compare equivalent baseline/candidate conditions. |
+| Integration and compatibility migration — [evolve-data-contracts], affected Rust/service/UI/security owners and [qa-integration-tests]/[qa-contract-tests] | Connect actual producers, adapters and consumers; implement the agreed version/state/lifecycle transition and recovery/rollback behavior. Assign every cross-worker seam, inspect combined source/artifacts and exercise affected integrated paths. Component results retain their scope until the combined candidate is verified. |
+| Build, package and release preparation — [maintain-windows-metadata], [security-build-deployment], affected dependency/service/security owners and [qa-package-artifacts] | Prepare the complete hardened MSIX, service/helper provisioning, metadata, shipped/signing inventory and install/update/recovery behavior under the existing delivery decisions. Independent source/metadata/package work can proceed when interfaces are settled; one owner controls each package/signing output. Preserve source, submitted and delivered identities, actual trust/lifecycle gates and David's submission/public-release authority. |
+| Verification, independent review and qualification — phase-required/triggered QA leaves, [qa-test-planning], [qa-regression-selection], [qa-test-orchestrator] when needed, [qa-independent-review]/[qa-final-qualification] at prescribed exits | Design and execute complementary positive/negative/boundary, property/model, mutation, fuzz, security and other required strategies from the matrix below. Tie independent expectations to actual consumers and effects. Reconcile every obligation on the integrated candidate; reviews and test counts do not substitute for implementation or missing evidence. |
+| Documentation, handoff and resume — [plan-code-change], [qa-context-checkpoint]; [qa-pre-commit] for authorized commit preparation | Update existing canonical/task records with actual decisions, implemented artifacts, source/patch identity, results, incomplete work, live effects, budgets and next action. Reconcile worker completion and integration before reassignment. Resume the next ready dependency under existing authorization, retaining required review, signing and release boundaries. |
+
 ### Checkpoint skill application
 
 At milestone entry and each meaningful stage transition, explicitly list the
-required common, phase-specific and triggered skills **before affected work**.
-Apply their procedures; naming or reading a skill proves no application. Route:
-
-- Planning: [plan-code-change], [qa-test-planning], [qa-environment-preflight],
-  [qa-regression-selection]; architecture/threat/plan review at their triggers.
-- Implementation: required implementation/security leaves; contract/static QA.
-- Case design/testing: positive, negative, boundary and phase-required test leaves.
-- Debugging/fixing: [qa-failure-triage], causal repair and affected regressions;
-  [qa-system-stabilization] only for bounded coupled failures.
-- Integration: actual joined consumers and applicable native/product test leaves.
-- Qualification: [qa-final-qualification] each executable slice; full phase exits
-  also [qa-independent-review]. Authorized commit: [qa-pre-commit].
-- Delegation/handoff/resume: [plan-code-change] for development resume;
-  [qa-subagent-dispatch]/[qa-context-checkpoint] as triggered. Reconcile actual
-  candidate, owners, live work and spent budgets.
+required lifecycle, common, product-phase and triggered skills **before affected
+work**. Apply their full procedures and triggered references; naming or reading
+a skill proves no application. Each delegated owner returns its stage deliverable
+and evidence. The coordinator reconciles actual candidate, interfaces,
+write/resource owners, patch/integration status, live work and spent budgets
+before dependent work. Use [development delegation](#development-delegation),
+[qa-subagent-dispatch] and [qa-context-checkpoint] where triggered.
 
 Keep one compact record in the **existing task**, using:
 `stage | skill/path + requirement/trigger | concrete action | evidence/status | gap owner/next condition`.
@@ -524,11 +560,15 @@ or waive gates through renamed scope. Preserve existing evidence/acceptance rule
 
 ### Common requirements for every phase
 
-- The phase coordinator reads [plan-code-change], [qa-environment-preflight],
+- The development coordinator reads [plan-code-change], maps lifecycle/phase
+  work and assigns the applicable architecture, implementation, security and
+  environment owners before selecting checks. Apply [qa-environment-preflight],
   [qa-test-planning], [qa-regression-selection] and the
-  [testing contract](../../.agents/skills/testing/CONTRACT.md) before selecting work
-  and checks. Use [qa-test-orchestrator] when coordinating the phase's multiple
-  evidence layers. Each worker reads the skills for its own changed guarantee.
+  [testing contract](../../.agents/skills/testing/CONTRACT.md) to verification.
+  Use [qa-test-orchestrator] when coordinating the phase's multiple
+  evidence layers. Each worker reads and applies the skills for its own changed
+  guarantee, returning requirement-linked evidence; the coordinator reconciles
+  all due obligations and combined-candidate acceptance.
 - Every Rust implementer reads the two implementation skills and contract
   reference in section 3, plus [qa-contract-tests] and [qa-static-checks]. Before tests, read [qa-positive-paths],
   [qa-negative-paths] and [qa-boundary-edge-cases] to establish useful accepted
@@ -559,13 +599,13 @@ and again at closeout when relevant evidence has changed.
 
 | Phase | Before implementation or investigation | Required testing skills for its exits |
 | --- | --- | --- |
-| **P0 — foundations** | [plan-architecture], [plan-threat-model]; S0.1: [dependency-updates], [security-build-deployment], [security-crypto-secrets]; S0.2/4: [security-windows-privileges] and [implement-windows-service] for SCM/lifecycle; S0.3: [security-local-ipc]; S0.5: [implement-native-ui], [security-native-ui]; S0.6: [security-build-deployment]; S0.7: affected security owner. | [qa-static-checks] for graph/tool gates; [qa-security-boundaries], [qa-integration-tests], [qa-state-concurrency-lifecycle], [qa-fault-recovery] for native experiments; [qa-performance-resources] for baseline budgets; S0.5 [qa-accessibility]/[qa-visual-dpi]; S0.6 [qa-package-artifacts]. Review source-only S0.1 as source evidence, not a native pass. |
+| **P0 — foundations** | [plan-architecture], [plan-threat-model]; S0.1: [dependency-updates], [security-build-deployment], [security-crypto-secrets]; S0.2/4: [security-windows-privileges] and [implement-windows-service] for SCM/lifecycle; S0.3: [security-local-ipc]; S0.5: [implement-native-ui], [implement-slint], [security-native-ui]; S0.6: [security-build-deployment]; S0.7: affected security owner. | [qa-static-checks] for graph/tool gates; [qa-security-boundaries], [qa-integration-tests], [qa-state-concurrency-lifecycle], [qa-fault-recovery] for native experiments; [qa-performance-resources] for baseline budgets; S0.5 [qa-accessibility]/[qa-visual-dpi]; S0.6 [qa-package-artifacts]. Review source-only S0.1 as source evidence, not a native pass. |
 | **P1 — deterministic core** | [security-protocol-inputs], [security-build-deployment]; [dependency-updates] for new graph; Chrony port/simulator and numerical/protocol references. [plan-architecture] fixes domain/state owners; section 3 contracts apply throughout. | [qa-unit-tests], [qa-component-tests], [qa-contract-tests], [qa-property-based-testing], [qa-golden-fixture-parity], [qa-adversarial-inputs], [qa-structured-fuzzing], [qa-static-checks], [qa-coverage-gap-analysis], [qa-mutation-testing]; [qa-model-based-testing] for abstract discipline/holdover transitions. Apply numerical/resource measurements to actual core workloads. |
 | **P2 — NTP/NTS acquisition** | [security-protocol-inputs], [security-crypto-secrets], [security-privacy-logging], [dependency-updates]; [plan-threat-model] for destinations/trust/recovery; [security-windows-privileges] for service/native retrieval owners; Rust/Windows boundary reference for native jobs. | [qa-component-tests], [qa-contract-tests], [qa-integration-tests], [qa-security-boundaries], [qa-adversarial-inputs], [qa-structured-fuzzing], [qa-golden-fixture-parity] for protocol/crypto vectors, [qa-state-concurrency-lifecycle], [qa-fault-recovery], [qa-performance-resources], [qa-static-checks]. Preserve critical-file coverage/mutation gates. |
 | **P3 — services, IPC, persistence** | [implement-windows-service], [security-windows-privileges], [security-local-ipc], [security-protocol-inputs], [security-privacy-logging], [evolve-data-contracts]; service adapter, strict boundary and Windows-memory references. | [qa-contract-tests], [qa-integration-tests], [qa-security-boundaries], [qa-state-concurrency-lifecycle], [qa-fault-recovery], [qa-adversarial-inputs], [qa-performance-resources], [qa-static-checks]; [qa-structured-fuzzing] for actual framing/decoding. |
 | **P4 — real Windows discipline** | [security-windows-privileges], [security-local-ipc], [security-protocol-inputs], [security-privacy-logging], [security-build-deployment] for takeover/restoration; [security-crypto-secrets] for newly connected recovery/cache paths; service adapter, Chrony accounting, Windows evidence and Windows-memory references. | [qa-integration-tests], [qa-contract-tests], [qa-state-concurrency-lifecycle], [qa-fault-recovery], [qa-security-boundaries], [qa-model-based-testing], [qa-e2e-tests], [qa-performance-resources]. Use [qa-package-artifacts] for installed handover/lifecycle effects. |
-| **P5 — production UI** | [implement-native-ui], [security-native-ui], [security-local-ipc], [security-privacy-logging]; [security-windows-privileges] for helper flows; [evolve-data-contracts] for live snapshot/settings compatibility; design/brand references and D1–D3 re-entry rules. | [qa-component-tests], [qa-contract-tests], [qa-integration-tests], [qa-e2e-tests], [qa-accessibility], [qa-visual-dpi], [qa-i18n-localization], [qa-performance-resources], [qa-security-boundaries]. Restore full requirements at their triggers; none are retroactive UI-M0 blockers. |
-| **P6 — hardened complete package** | [security-build-deployment], [security-windows-privileges], [security-local-ipc], [security-crypto-secrets], [dependency-updates], [evolve-data-contracts] for version/migration/rollback; [security-privacy-logging] for packaged event resources; signing and mitigation authorities. | [qa-package-artifacts], [qa-security-boundaries], [qa-integration-tests], [qa-e2e-tests], [qa-fault-recovery], [qa-state-concurrency-lifecycle], [qa-static-checks], [qa-performance-resources], [qa-black-box-acceptance]. |
+| **P5 — production UI** | [implement-native-ui], [implement-slint], [security-native-ui], [security-local-ipc], [security-privacy-logging]; [security-windows-privileges] for helper flows; [evolve-data-contracts] for live snapshot/settings compatibility; design/brand references and D1–D3 re-entry rules. | [qa-component-tests], [qa-contract-tests], [qa-integration-tests], [qa-e2e-tests], [qa-accessibility], [qa-visual-dpi], [qa-i18n-localization], [qa-performance-resources], [qa-security-boundaries]. Restore full requirements at their triggers; none are retroactive UI-M0 blockers. |
+| **P6 — hardened complete package** | [maintain-windows-metadata], [security-build-deployment], [security-windows-privileges], [security-local-ipc], [security-crypto-secrets], [dependency-updates], [evolve-data-contracts] for version/migration/rollback; [security-privacy-logging] for packaged event resources; signing and mitigation authorities. | [qa-package-artifacts], [qa-security-boundaries], [qa-integration-tests], [qa-e2e-tests], [qa-fault-recovery], [qa-state-concurrency-lifecycle], [qa-static-checks], [qa-performance-resources], [qa-black-box-acceptance]. |
 | **P7 — exact release candidate** | [security-build-deployment] and the affected security owners; [qa-test-orchestrator] reconciles the full matrix. Re-read changed contracts/decisions, not the whole pack indiscriminately. | [qa-coverage-gap-analysis], [qa-regression-selection], [qa-mutation-testing], [qa-static-checks], [qa-e2e-tests], [qa-package-artifacts], [qa-performance-resources], [qa-accessibility], [qa-visual-dpi], [qa-i18n-localization], [qa-black-box-acceptance], [qa-independent-review], [qa-final-qualification]. Reuse unchanged qualified evidence with an explicit identity argument. |
 
 UI-M0 history stays on its existing task; the selected Slint migration uses the
@@ -584,14 +624,17 @@ tool on every change.
 | Trigger | Read and apply |
 | --- | --- |
 | Measured bottleneck or explicit optimization | [optimize-rust-performance] with [qa-performance-resources]; benchmark/profiler measurement reference. |
+| CPU baseline admission or runtime feature dispatch | [implement-cpu-dispatch]; [optimize-rust-performance] for measured path selection. Preserve x86-64-v3 and qualify actual process/OS admission. |
 | Unknown producer-to-consumer/effect path | [qa-data-flow-analysis]; its CodeQL reference when the source path cannot otherwise be established. Tool extraction coverage limits remain explicit. |
 | A failure, regression or disputed result | [qa-failure-triage]; [qa-system-stabilization] only for a bounded multi-defect convergence effort. Preserve first failure and healthy control. |
-| Multiple delegated owners or interrupted work | [qa-subagent-dispatch], [qa-context-checkpoint]; one record and exclusive mutable ownership. |
+| Useful independent development slices, multiple delegated owners or interrupted work | [plan-code-change] and [development delegation](#development-delegation); [qa-subagent-dispatch]/[qa-context-checkpoint] as triggered. One record, exclusive mutable ownership and integrated acceptance. |
 | Wire/persistence/version/units/validation acceptance changes | [evolve-data-contracts] with [qa-contract-tests], including old/new consumer and interrupted-migration cases. |
+| Windows product/package/Store metadata, manifests or generated resources | [maintain-windows-metadata], affected build/deployment owners and [qa-package-artifacts]. Resolve canonical fields and generated projections before signing or artifact claims. |
 | More state transitions/interleavings than ordinary examples cover | [qa-model-based-testing], [qa-state-concurrency-lifecycle]; choose Loom/Kani only for a named feasible model/proof obligation. |
 | Concrete compiler diagnostic, borrow/drop issue, or Send/Sync problem | Respectively [rust-compiler-errors], [rust-borrow-semantics], [rust-send-sync]. Do not change architecture just to silence the compiler. |
 | Available admitted native Windows UI automation | [winapp-ui-automation]; automation supplements actual keyboard/Narrator observations. Do not install a tool just to follow a preferred path. |
 | Owned Windows Sandbox configuration or Windows/WSL-to-guest control | [manage-windows-sandbox](../../.agents/skills/environment/manage-windows-sandbox/SKILL.md). Check the incident and task holds before any Windows command, including preflight or launch. The skill does not clear a hold, admit a blocked artifact or qualify guest/product recovery. |
+| Requested WSL storage analysis or authorized cleanup | [wsl-cleanup]; preserve active work, receipts and owned caches. Host maintenance is conditional and supplies no product acceptance or execution-hold waiver. |
 | SCM service creation, management, hardening, logging or optimization | [implement-windows-service] and relevant [service adapter details](../../.agents/skills/implementation/implement-rust/references/windows-service-adapters.md), [Rust/Windows boundaries](../../.agents/skills/implementation/implement-rust/references/rust-windows.md), [Windows memory diagnostics](../../.agents/skills/testing/references/windows-memory.md). |
 | Other native handles, callbacks, FFI or cancellation | [Rust/Windows boundaries](../../.agents/skills/implementation/implement-rust/references/rust-windows.md) and relevant [Windows memory diagnostics](../../.agents/skills/testing/references/windows-memory.md); service mechanics apply only when that owner is reached. |
 | Optional NTS/DNS persistence, root protection or fallback | [Protected-storage plan](windows-protected-storage.md), [upstream lessons](windows-protected-storage-upstream-lessons.md), [security-crypto-secrets], [security-windows-privileges], [security-privacy-logging] and [evolve-data-contracts]; apply [qa-contract-tests], [qa-security-boundaries], [qa-state-concurrency-lifecycle] and [qa-fault-recovery] at the stage-specific exits in section 8.4. Native memory/resource and package checks join when those environments are admitted. |
@@ -4185,7 +4228,12 @@ this documentation-only change.
 [dependency-updates]: ../../.agents/skills/environment/dependency-updates/SKILL.md
 [evolve-data-contracts]: ../../.agents/skills/implementation/evolve-data-contracts/SKILL.md
 [implement-native-ui]: ../../.agents/skills/implementation/implement-native-ui/SKILL.md
+[implement-cpu-dispatch]: ../../.agents/skills/implementation/implement-cpu-dispatch/SKILL.md
 [implement-rust]: ../../.agents/skills/implementation/implement-rust/SKILL.md
+[implement-slint]: ../../.agents/skills/implementation/implement-slint/SKILL.md
+[maintain-windows-metadata]: ../../.agents/skills/implementation/maintain-windows-metadata/SKILL.md
+[manage-windows-sandbox]: ../../.agents/skills/environment/manage-windows-sandbox/SKILL.md
+[wsl-cleanup]: ../../.agents/skills/environment/wsl-cleanup/SKILL.md
 [implement-rust-contracts]: ../../.agents/skills/implementation/implement-rust-contracts/SKILL.md
 [implement-windows-service]: ../../.agents/skills/implementation/implement-windows-service/SKILL.md
 [optimize-rust-performance]: ../../.agents/skills/implementation/optimize-rust-performance/SKILL.md

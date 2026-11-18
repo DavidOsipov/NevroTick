@@ -5,6 +5,7 @@ Use existing request/authorization. Start [plan-code-change](plan-code-change/SK
 | Question | Owner |
 | --- | --- |
 | What bounded stage can be implemented next? | [plan-code-change](plan-code-change/SKILL.md) |
+| Which lifecycle skills and independent workers should do the development work? | [Lifecycle skill map](../../../docs/plans/development-plan.md#development-lifecycle-and-skill-ownership) and [development delegation](references/testable-slices.md#development-delegation); planning owns the whole change. |
 | Who owns a rule, state, interface or effect? | [plan-architecture](plan-architecture/SKILL.md) |
 | What attacker path or failure changes protection? | [plan-threat-model](plan-threat-model/SKILL.md) |
 | Is the named plan stage ready? | [plan-independent-review](plan-independent-review/SKILL.md) |

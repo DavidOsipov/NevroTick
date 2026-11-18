@@ -11,6 +11,8 @@ For multi-worker/multi-phase/interrupted work keep one discoverable coordinator 
 
 Record requirements/acceptance set, source/dirty/configuration/fixture/candidate identities, admitted effects, resource owners, exact completed commands/results, raw evidence paths, first failures/retries, unresolved findings, live processes/tasks and consumed time/attempt/case budgets. State the next concrete action.
 
+For delegated work, retain assignments/interface dependencies, exclusive writable scopes/resources, actual context/completion status, returned patch/candidate identity, integration disposition and affected checks still due. Follow [development delegation](../../planning/references/testable-slices.md#development-delegation) for implementation workers. Keep worker completion distinct from integrated acceptance; blocked, interrupted or missing returns remain explicit.
+
 For repeated review findings, use the shared
 [finding lifecycle](../../planning/references/review-and-handoff.md#preserve-finding-identity-and-resolution-evidence)
 in this record: stable issue IDs, raw-result links, disposition, verification and
@@ -26,7 +28,7 @@ contradictions and invalidation. Follow
 one into repository guidance. Pattern matches do not prove a rule; automatic
 memory writes or changed acceptance policy require their own authorization.
 
-On resume reconcile actual files/index/running jobs/machine/service/clock state/ownership/artifacts before continuing. Revalidate only changed prerequisites; old reports prove no unchanged candidate bytes. Preserve aggregate budget consumption/pending cleanup.
+On resume reconcile actual files/index/running jobs/machine/service/clock state/ownership/artifacts before continuing. Reconcile worker writes and dependency/interface changes before reassigning scopes or integrating patches; do not restart work still running elsewhere. Revalidate only changed prerequisites; old reports prove no unchanged candidate bytes. Preserve aggregate budget consumption/pending cleanup.
 
 Keep unfinished recovery state/evidence available. Coordinator may remove only registered disposable coordination notes after accepted handoff/closeout and required-result retention. No deleting user receipts/forced compaction/restarting completed work merely at phase end.
 

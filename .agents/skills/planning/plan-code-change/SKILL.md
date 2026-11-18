@@ -9,6 +9,13 @@ Produce concrete next action within existing request. Planning-only requests end
 
 Read applicable `AGENTS.md`, `docs/README.md`, canonical architecture and affected source/checks. Inspect dirty state before writes; untracked docs/tooling may be sole implementation context. Read [the testing contract](../../testing/CONTRACT.md) before selecting checks.
 
+Own the whole development change through the
+[lifecycle skill map](../../../../docs/plans/development-plan.md#development-lifecycle-and-skill-ownership):
+select stage/phase/guarantee owners and concrete decisions, source or artifacts
+before assigning verification. Architecture/security/dependency work can recur
+within any phase; QA orchestration owns the verification portion. Small changes
+need only applicable stages, not a mandatory full lifecycle ritual.
+
 For known local owner, unchanged trust/data/lifecycle contract and known focused check, record only: requested behavior, owner/files/callers, expected observation/check, unknowns, next action. Label correction needs no plan file or specialist review.
 
 Choose one bounded milestone with an observable exit and finite verification
@@ -44,7 +51,7 @@ For multiple stages, uncertain impact, security-sensitive work or migration:
    [contract enforcement](../../implementation/implement-rust-contracts/references/contract-enforcement.md);
    include direct-call/bypass and transformed-result checks in the next stage.
 3. Use [plan-architecture](../plan-architecture/SKILL.md) only for changed/uncertain ownership, interfaces, dependency direction, data meaning or lifecycle. Use [plan-threat-model](../plan-threat-model/SKILL.md) for material/unknown protection change; otherwise record examined unchanged surfaces.
-4. Give [qa-test-planning](../../testing/qa-test-planning/SKILL.md) requirements/independent expectations. Expand next stage: inputs, action, valid/invalid controls, environment, cleanup, exit. Read [testable slices](../references/testable-slices.md) for cross-process/delegated work.
+4. Give [qa-test-planning](../../testing/qa-test-planning/SKILL.md) requirements/independent expectations. Expand next stage: inputs, action, valid/invalid controls, environment, cleanup, exit. Read [testable slices](../references/testable-slices.md) for cross-process/delegated work. Proactively delegate useful independent work across the lifecycle through its [development workflow](../references/testable-slices.md#development-delegation); keep dependency and integration ownership explicit.
 5. Obtain [independent plan review](../plan-independent-review/SKILL.md) for substantial plans; resolve material findings, recheck affected sections. Later stages may remain explicitly deferred; do not delay ready P0 experiment to invent full product.
 
 Before a substantial revision or handoff, apply
