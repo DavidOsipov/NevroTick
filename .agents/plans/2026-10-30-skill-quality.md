@@ -2072,3 +2072,41 @@ Source comparison confirms the example types, selected toolchain, existing lint
 denials and current §7 owner. No checker/inventory implementation changed, so no
 checker regression campaign or product build is required. This slice executes no
 Rust, native, fuzz, metric or formal job and changes no runtime/configuration bytes.
+
+## Hardening review reconciliation — 18 November 2026
+
+David authorized useful documentation/skill updates after the bounded hardening
+review. Before editing, clean `main` advanced from `346432f` to
+`5b3adb56c0953a07a0e4ecacd4fa206d9f4e03f1`. The earlier judge's next-child statement
+retains its original snapshot. Current [development §7](../../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+and the [Engine task](../../tasks/engine-transport-pilot.md#checked-application-capture-span--18-november-2026)
+now record bounded installed numeric-source configuration/currentness, source-owned
+KE Preview/protected leases, joined DENY custody and checked application capture.
+Do not reopen those as unstarted assignments. Genuine physical validity/error and
+invalidation suppliers remain necessary before positive Engine-to-Core admission;
+the recorded fixture checkpoints grant no production, native-provider or release
+qualification.
+
+Focused documentation/skill deduplication retains the existing owners:
+
+- [Windows integration](../../tasks/windows11-integration.md) owns installed
+  privilege/IPC and unattended-resume qualification; architecture §§5, 10 and 17
+  retain uncertain outcomes, real completion and cumulative authority/resource
+  accounting. Their acceptance cases need no parallel hardening workstream.
+- [Shared-verifier case identities](../../tasks/build-optimization.md#shared-verifier-case-identity-follow-up--18-november-2026)
+  already assign missing/duplicate/substituted-result controls. The current
+  generic consumer gap establishes no omitted actual test or invalid receipt.
+- [Current-source CodeQL pilots](../../tasks/codeql-cloud-handoff.md#current-source-pilot-order)
+  already select real input propagation and one security property with independent
+  controls. H10 and conditional H15 keep their existing
+  [GUI/recovery triggers](../../tasks/engine-transport-pilot.md#explicit-contract-prevention-follow-up--14-november-2026).
+
+The [independent-review entry](../skills/testing/qa-independent-review/SKILL.md)
+now makes source inspection, attributed task results, inspected raw artifacts and
+current reruns explicit. It requires effective policy/scope inspection and actual
+contract/test evidence before deriving guarantees or missing coverage from counts
+or framework names. The documentation guide adds navigation to this reconciliation
+and the existing verifier task. No new skill, checker, dependency or product
+requirement follows. Current development ordering, candidate-specific evidence,
+execution holds and post-V1 formal deferral remain unchanged. This documentation
+slice runs no product/compiler/analyzer/native/fuzz/formal job.

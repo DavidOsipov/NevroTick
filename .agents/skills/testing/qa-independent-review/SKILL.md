@@ -20,7 +20,19 @@ review slice integration, not just local verdicts. Check reuse against callers,
 callee contracts, configuration/evidence identity. Ledger proves no correctness
 and adds no approval gate.
 
-Separate source reasoning, proposed tests, host execution, native observations.
+For material conclusions, distinguish inspected source, attributed task results,
+raw artifacts actually inspected and checks rerun on the selected candidate;
+retain planned checks and host/native scope separately. Unavailable raw artifacts
+leave independent verification open; preserve recorded results and their exact
+scope. Inspect effective generated policy, target/features and exceptions before
+describing enforcement; name first-party, generated and dependency scope.
+
+Text/regex counts and framework-name searches locate questions. Establish claimed
+guarantees or missing coverage from actual declarations, callers, test inputs,
+reached effects and independent expectations. Deterministic tests can cover a
+property without the named framework. Reconcile recommendations with current
+source and existing task owners before adding work.
+
 Challenge zero selection, setup-as-RED, shared-oracle round trips, mocks-as-authority,
 stale identity and omitted cleanup/retries.
 
