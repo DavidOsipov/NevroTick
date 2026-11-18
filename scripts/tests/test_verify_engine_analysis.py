@@ -2106,11 +2106,36 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         "session::tests::mixed_series_capture_refusal_precedes_retained_healthy_facts_if_profiled",
     )
 
+    RECEIVE_CAPTURE_CASES = (
+        "source_policy::tests::managed_plain_receive_cutoff_charges_once_before_policy_effect",
+        "source_policy::tests::managed_plain_reversed_receive_before_cutoff_keeps_header_history",
+        "nts_ke_experiment::datagram::tests::managed_retired_deny_refuses_receive_capture_at_cutoff",
+    )
+
+    RECEIVE_CHRONOLOGY_CASES = (
+        "source_policy::tests::managed_plain_reversed_receive_leaves_control_pending_until_ordered_reply",
+        "nts_ke_experiment::datagram::tests::managed_retired_deny_refuses_reversed_receive_capture",
+        "nts_ke_experiment::datagram::tests::managed_retired_deny_refuses_future_receive_tail",
+    )
+
+    ORDINARY_PROTECTED_RECEIVE_CASE = (
+        "nts_ke_experiment::datagram::tests::ordinary_protected_reversed_receive_bracket_cannot_commit")
+    HEADER_AGE_CASE = (
+        "source_policy::tests::managed_header_writes_receive_to_commit_age_only_for_ordered_capture")
+    KNOWN_RECEIVE_DEBIT_CASE = (
+        "nts_ke_experiment::datagram::tests::known_protected_datagram_with_invalid_capture_charges_frame_and_bytes")
+
+    PROTECTED_RECEIVE_EFFECT_CASES = (
+        "nts_ke_experiment::datagram::tests::retired_completion_commit_respects_acceptance_and_expiry",
+        "nts_ke_experiment::datagram::tests::recovery_tests::reversed_final_zero_cookie_capture_cannot_schedule_replacement",
+        "nts_ke_experiment::datagram::tests::recovery_tests::final_zero_cookie_capture_at_cutoff_cannot_schedule_replacement",
+    )
+
     class SessionReached(Exception):
         """A healthy admission reached Session; stop before any execution."""
 
     def policy_fixture(self):
-        """Independent limits; synthetic 548/268 ordinary and 90 annotated Rustdoc names."""
+        """Independent limits; synthetic 560/276 ordinary and 90 annotated Rustdoc names."""
         critical = ["crates/nevrotick-engine/src/lib.rs", *self.HOST.values(),
             "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
             "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
@@ -2124,7 +2149,9 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                         *self.MANAGED_PROTECTED_CASES, *self.MANAGED_SUCCESSOR_CASES,
                         *self.MANAGED_DENY_CASES, *self.MANAGED_WORKER_BOUNDARY_CASES,
                         *self.MANAGED_WAIT_AND_RATE_CASES, *self.FINAL_REPLY_CUTOFF_CASES,
-                        *self.PLAIN_CAPTURE_CASES])
+                        *self.PLAIN_CAPTURE_CASES, *self.RECEIVE_CAPTURE_CASES, *self.RECEIVE_CHRONOLOGY_CASES,
+                        self.KNOWN_RECEIVE_DEBIT_CASE, self.HEADER_AGE_CASE, self.ORDINARY_PROTECTED_RECEIVE_CASE,
+                        *self.PROTECTED_RECEIVE_EFFECT_CASES])
         docs = sorted([f"src/lib.rs - Fixture::entered_{index:02} (line 100)" for index in range(87)]
                       + ["src/lib.rs - Example::checked (line 10)",
                          "src/lib.rs - Example::private (line 20) - compile fail",
@@ -2869,14 +2896,14 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
     def test_entered_blocks_require_all_current_cases_and_ke_neighbors(self):
         binding = self.policy["binding"]; names = binding["test_inventory"]
         healthy = self.execution(names)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 548)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 268)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 560)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 276)
         missing = [name for name in names if name != "nts_ke_experiment::fixture_case_00"]
         old = [name for name in names if not name.startswith("nts_ke_experiment::")]
         variants = [self.execution([]), self.execution(old), self.execution(missing),
             self.execution([*names, names[0]]), healthy.replace(" ... ok", " ... FAILED", 1),
-            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 548", "running 547"),
-            healthy.replace("test result: ok. 548 passed", "test result: ok. 547 passed"),
+            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 560", "running 559"),
+            healthy.replace("test result: ok. 560 passed", "test result: ok. 559 passed"),
             "\n".join(line for line in healthy.splitlines() if not line.startswith("running "))]
         for text in variants:
             with self.subTest(sample=text[-120:]), self.assertRaises(MODULE.Incomplete):
@@ -2889,7 +2916,13 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         required = ("nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
                     "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted")
         current = self.policy["binding"]["test_inventory"]
-        before_capture = [name for name in current if name not in self.PLAIN_CAPTURE_CASES]
+        before_effect = [name for name in current if name not in self.PROTECTED_RECEIVE_EFFECT_CASES]
+        before_order = [name for name in before_effect if name != self.ORDINARY_PROTECTED_RECEIVE_CASE]
+        before_age = [name for name in before_order if name != self.HEADER_AGE_CASE]
+        before_debit = [name for name in before_age if name != self.KNOWN_RECEIVE_DEBIT_CASE]
+        before_chronology = [name for name in before_debit if name not in self.RECEIVE_CHRONOLOGY_CASES]
+        before_receive_capture = [name for name in before_chronology if name not in self.RECEIVE_CAPTURE_CASES]
+        before_capture = [name for name in before_receive_capture if name not in self.PLAIN_CAPTURE_CASES]
         before_wait_and_rate = [name for name in before_capture if name not in self.MANAGED_WAIT_AND_RATE_CASES]
         before_reply_cutoff = [name for name in before_wait_and_rate if name not in self.FINAL_REPLY_CUTOFF_CASES]
         return {
@@ -2916,6 +2949,23 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             "historical_538_264": before_reply_cutoff,
             "historical_540_264": before_wait_and_rate,
             "historical_544_268": before_capture,
+            "historical_548_268": before_receive_capture,
+            "historical_551_269": before_chronology,
+            "historical_554_271": before_debit,
+            "historical_555_272": before_age,
+            "historical_556_272": before_order,
+            "historical_557_273": before_effect,
+            "same_counts_missing_protected_receive": sorted(
+                [name for name in current if name != self.ORDINARY_PROTECTED_RECEIVE_CASE]
+                + ["nts_ke_experiment::other_order_case"]),
+            "same_counts_missing_header_age": sorted(
+                [name for name in current if name != self.HEADER_AGE_CASE] + ["ordinary_other_header_age"]),
+            **{f"same_counts_missing_{omitted.rsplit('::', 1)[-1]}": sorted(
+                [name for name in current if name != omitted] + [
+                    "nts_ke_experiment::other_receive_case" if omitted.startswith("nts_ke_experiment::")
+                    else "ordinary_other_receive_case"])
+                for omitted in (*self.RECEIVE_CAPTURE_CASES, *self.RECEIVE_CHRONOLOGY_CASES,
+                                self.KNOWN_RECEIVE_DEBIT_CASE, *self.PROTECTED_RECEIVE_EFFECT_CASES)},
             "current_missing_forwarding": [name for name in current if name != required],
             "same_counts_missing_forwarding": sorted(
                 [name for name in current if name != required] + ["nts_ke_experiment::other_case"]),
@@ -2993,8 +3043,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.assertEqual(MODULE.validate_engine_ke_current_doctests(rustdoc, binding)["test_names"], docs)
         combined = MODULE.validate_engine_ke_execution(ordinary + rustdoc, binding, include_doctests=True)
         self.assertEqual(combined["additional_doctests"], docs)
-        self.assertEqual(combined["tests_executed"], 638)
-        self.assertEqual(combined["ke_tests_executed"], 268)
+        self.assertEqual(combined["tests_executed"], 650)
+        self.assertEqual(combined["ke_tests_executed"], 276)
         self.assertEqual(MODULE.validate_engine_ke_execution(ordinary, binding)["test_names"], names)
         with self.assertRaises(MODULE.Incomplete):
             MODULE.validate_engine_ke_execution(ordinary + rustdoc, binding)
@@ -3274,8 +3324,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             self.assertIn("--all-targets", argv)
             self.assertNotIn("build", argv)
             self.assertNotIn("run", argv)
-        self.assertEqual(report["baseline_execution"]["tests_executed"], 548)
-        self.assertEqual(report["release_execution"]["ke_tests_executed"], 268)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 560)
+        self.assertEqual(report["release_execution"]["ke_tests_executed"], 276)
         self.assertEqual(report["doctest_execution"]["compilation_only"],
                          ["src/lib.rs - Example::prepared (line 30) - compile",
                           "src/lib.rs - Example::private (line 20) - compile fail"])
@@ -5822,6 +5872,314 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         self.assertTrue(self.finished)
         self.assertTrue(report["selected_lane_passed"])
         self.assertFalse(report["qualification_passed"])
+
+    def test_capture_development_requires_independent_ordinary_and_rustdoc_graphs(self):
+        default = sorted([*self.ordinary, "source_policy::tests::capture_refused",
+                          "source_policy::tests::capture_preserved"])
+        ep1 = sorted([*default, "ke_preview_target::tests::typed_peer",
+                      "source_policy::tests::configuration::withdrawing_ke_preview"])
+        ep1_docs = sorted([*self.docs, "crates/nevrotick-engine/src/ke_preview_target.rs - "
+                           "ke_preview_target::KePreviewTarget (line 33) - compile fail"])
+        specs = {key: (len(names), independent_digest(names)) for key, names in (
+            ("default-ordinary", default), ("ep1-ordinary", ep1),
+            ("default-doctests", self.docs), ("ep1-doctests", ep1_docs))}
+        binding = {**self.policy["binding"], "candidate_sha256": MODULE.SOURCE_POLICY_CAPTURE_CANDIDATE,
+                   "test_inventory": default}
+        with patch.object(MODULE, "SOURCE_POLICY_CAPTURE_ROSTER", specs):
+            self.assertEqual(MODULE.source_policy_execution(self.execution(default), binding)["test_names"], default)
+            self.assertEqual(MODULE.source_policy_ep1_execution(self.execution(ep1), binding)["test_names"], ep1)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.source_policy_ep1_execution(
+                    self.execution([name.replace("typed_peer", "foreign_peer") for name in ep1]), binding)
+            for lane, names in (("default-doctests", self.docs), ("ep1-doctests", ep1_docs)):
+                facts = MODULE.source_policy_development_doctests(self.execution(names), binding, lane)
+                self.assertEqual(facts["test_names"], names)
+            for lane, names in (("default-doctests", ep1_docs), ("ep1-doctests", self.docs),
+                                ("ep1-doctests", [name.replace("(line 33)", "(line 34)")
+                                                  if "ke_preview_target.rs" in name else name for name in ep1_docs])):
+                with self.subTest(lane=lane, count=len(names)), self.assertRaises(MODULE.Incomplete):
+                    MODULE.source_policy_development_doctests(self.execution(names), binding, lane)
+
+    def test_capture_development_requires_effective_sandbox_and_selected_core_block(self):
+        expected = {"label": "core-library-ordinary", "kind": "core",
+                    "command": ["cargo", "test", "--package", "time-core", "--lib", "--", "--exact", "known"],
+                    "expected": [["unittests src/lib.rs", "known"]]}
+        prefix = ["/usr/bin/bwrap", "--unshare-all"]
+        output = ("     Running unittests src/lib.rs (/work/target/debug/core-tests)\n"
+                  + self.execution(["known"]).replace("0 filtered out", "249 filtered out"))
+        raw = {"command": expected["command"], "sandbox_command": [*prefix, "--", *expected["command"]],
+               "output": output, "exit_code": 0, "failure": None}
+        row = {"exit_code": 0, "failure": None, "cases": ["known"], "tests_executed": 1}
+        binding = self.policy["binding"]
+        MODULE.validate_source_policy_capture_lane(row, expected, raw, binding, prefix)
+        for candidate, message in (
+                ({**raw, "sandbox_command": []}, "effective sandbox"),
+                ({**raw, "sandbox_command": ["--", *expected["command"]]}, "effective sandbox"),
+                ({**raw, "sandbox_command": [*prefix, "--", "cargo", "test", "--features",
+                                              "ke-association-prototype"]}, "effective sandbox"),
+                ({**raw, "output": ""}, "missing, truncated or extra native blocks"),
+                ({**raw, "output": output.replace("test known", "test foreign")}, "Core identities"),
+                ({**raw, "output": output.replace("unittests src/lib.rs", "tests/phase_plan.rs")}, "Core identities"),
+                ({**raw, "output": output.replace("running 1 tests", "running 2 tests")}, "Core identities")):
+            with self.subTest(message=message), self.assertRaisesRegex(MODULE.Incomplete, message):
+                MODULE.validate_source_policy_capture_lane(row, expected, candidate, binding, prefix)
+        with self.assertRaisesRegex(MODULE.Incomplete, "Core identities"):
+            MODULE.validate_source_policy_capture_lane({**row, "cases": []}, expected, raw, binding, prefix)
+
+        boundary = {"label": "boundary-control", "kind": "boundary",
+                    "command": ["/usr/bin/python3", "-c", "<isolated boundary probe>"]}
+        command = ["/usr/bin/python3", "-c", "captured test-namespace probe"]
+        raw = {"command": command, "sandbox_command": [*prefix, "--", *command],
+               "output": "ANALYSIS_BOUNDARY_OK\n", "exit_code": 0, "failure": None}
+        digest = independent_digest(raw)
+        row = {"sha256": digest, "exit_code": 0, "failure": None}
+        with patch.object(MODULE, "SOURCE_POLICY_CAPTURE_BOUNDARY", digest):
+            MODULE.validate_source_policy_capture_lane(row, boundary, raw, binding, prefix)
+            altered = [*command[:2], 'print("ANALYSIS_BOUNDARY_OK")']
+            raw = {**raw, "command": altered, "sandbox_command": [*prefix, "--", *altered]}
+            with self.assertRaisesRegex(MODULE.Incomplete, "namespace boundary control"):
+                MODULE.validate_source_policy_capture_lane(
+                    {**row, "sha256": independent_digest(raw)}, boundary, raw, binding, prefix)
+
+    def test_capture_development_refuses_stale_binding_and_no_legacy_receipt_fallback(self):
+        self.reference_fixture()
+        binding = self.policy["binding"]
+        candidate = binding["candidate_sha256"]
+        legacy = Path(binding["development_evidence"]["path"]).read_bytes()
+        directory = self.base / "capture" / "reports" / "run-01"
+        directory.mkdir(parents=True)
+        raw_manifest = json.dumps({"candidate_sha256": candidate}).encode()
+        (directory.parents[1] / "candidate.json").write_bytes(raw_manifest)
+        path = directory / "verification.json"
+        path.write_bytes(legacy)
+        current = {**binding, "development_evidence": {
+            "path": str(path), "sha256": hashlib.sha256(legacy).hexdigest()}}
+        with patch.multiple(MODULE, SOURCE_POLICY_CAPTURE_CANDIDATE=candidate,
+                            SOURCE_POLICY_CAPTURE_MANIFEST=hashlib.sha256(raw_manifest).hexdigest()), \
+                patch.object(MODULE, "admit_source_policy_observer") as legacy_reader:
+            with self.assertRaisesRegex(MODULE.Incomplete, "candidate binding differs"):
+                MODULE.admit_source_policy_development(current, {})
+            with self.assertRaisesRegex(MODULE.Incomplete, "passing terminal custody"):
+                MODULE.admit_source_policy_development(current, self.identity)
+        legacy_reader.assert_not_called()
+
+    def test_receive_combined_roster_preserves_the_distinct_historical_graph(self):
+        old = sorted([*self.ordinary, "source_policy::tests::historical_one",
+                      "source_policy::tests::historical_two"])
+        new = sorted([*old, "source_policy::tests::receive_cutoff", "source_policy::tests::receive_order"])
+        ep1 = sorted([*new, "nts_ke_experiment::datagram::tests::receive_cutoff"])
+        chronology = sorted([*new, "source_policy::tests::chronology"])
+        chronology_ep1 = sorted([*ep1, "source_policy::tests::chronology",
+                                 "nts_ke_experiment::datagram::tests::chronology_reversed",
+                                 "nts_ke_experiment::datagram::tests::chronology_future"])
+        debit_case = "nts_ke_experiment::datagram::tests::known_protected_datagram_with_invalid_capture_charges_frame_and_bytes"
+        debit_ep1 = sorted([*chronology_ep1, debit_case])
+        docs = sorted([*self.docs, "crates/nevrotick-engine/src/ke_preview_target.rs - "
+                       "ke_preview_target::KePreviewTarget (line 33) - compile fail"])
+        def specs(default, optional):
+            return {key: (len(names), independent_digest(names)) for key, names in (
+                ("default-ordinary", default), ("ep1-ordinary", optional),
+                ("default-doctests", self.docs), ("ep1-doctests", docs))}
+
+        historical = {**self.policy["binding"], "candidate_sha256": MODULE.SOURCE_POLICY_CAPTURE_CANDIDATE,
+                      "test_inventory": old}
+        current = {**historical, "candidate_sha256": MODULE.SOURCE_POLICY_RECEIVE_CANDIDATE,
+                   "test_inventory": new}
+        next_binding = {**current, "candidate_sha256": MODULE.SOURCE_POLICY_CHRONOLOGY_CANDIDATE,
+                        "test_inventory": chronology}
+        debit_binding = {**next_binding, "candidate_sha256": MODULE.SOURCE_POLICY_DEBIT_CANDIDATE}
+        with patch.multiple(MODULE, SOURCE_POLICY_CAPTURE_ROSTER=specs(old, old),
+                            SOURCE_POLICY_RECEIVE_ROSTER=specs(new, ep1),
+                            SOURCE_POLICY_CHRONOLOGY_ROSTER=specs(chronology, chronology_ep1),
+                            SOURCE_POLICY_DEBIT_ROSTER=specs(chronology, debit_ep1)):
+            MODULE.source_policy_execution(self.execution(old), historical)
+            MODULE.source_policy_execution(self.execution(new), current)
+            MODULE.source_policy_ep1_execution(self.execution(ep1), current)
+            MODULE.source_policy_development_doctests(self.execution(docs), current, "ep1-doctests")
+            MODULE.source_policy_execution(self.execution(chronology), next_binding)
+            MODULE.source_policy_ep1_execution(self.execution(chronology_ep1), next_binding)
+            MODULE.source_policy_execution(self.execution(chronology), debit_binding)
+            MODULE.source_policy_ep1_execution(self.execution(debit_ep1), debit_binding)
+            for incompatible in (chronology_ep1, [name if name != debit_case else
+                                                   "nts_ke_experiment::wrong_debit" for name in debit_ep1]):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.source_policy_ep1_execution(self.execution(incompatible), debit_binding)
+            for binding, roster in ((current, old), (historical, new), (next_binding, new), (current, chronology)):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.source_policy_execution(self.execution(roster), binding)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.source_policy_ep1_execution(self.execution(new), current)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.source_policy_ep1_execution(
+                    self.execution([name.replace("::receive_cutoff", "::foreign_cutoff") for name in ep1]), current)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.source_policy_development_doctests(
+                    self.execution([name.replace("(line 33)", "(line 34)") for name in docs]), current, "ep1-doctests")
+
+    def test_header_age_combined_requires_both_rosters_and_current_rustdoc_annotation(self):
+        old_default = sorted([*self.ordinary] + [
+            f"source_policy::tests::additional_age_neighbor_{index}" for index in range(5)])
+        case = "source_policy::tests::managed_header_writes_receive_to_commit_age_only_for_ordered_capture"
+        default = sorted([*old_default, case])
+        extra = "nts_ke_experiment::datagram::tests::age_role_ke_neighbor"
+        ep1 = sorted([*default, extra])
+        old_anchor = "crates/nevrotick-engine/src/lib.rs - ControlSchedule::new (line 1905)"
+        new_anchor = old_anchor.replace("1905", "1922")
+        old_docs = sorted([*self.docs, old_anchor])
+        docs = sorted([*self.docs, new_anchor])
+        ep1_docs = sorted([*docs, "crates/nevrotick-engine/src/ke_preview_target.rs - "
+                           "ke_preview_target::KePreviewTarget (line 33) - compile fail"])
+        binding = {**self.policy["binding"], "candidate_sha256": MODULE.SOURCE_POLICY_HEADER_AGE_CANDIDATE,
+                   "test_inventory": default, "doctest_inventory": docs}
+        names = {"default-ordinary": default, "ep1-ordinary": ep1,
+                 "default-doctests": docs, "ep1-doctests": ep1_docs}
+        specs = {lane: (len(roster), independent_digest(roster)) for lane, roster in names.items()}
+        with patch.object(MODULE, "SOURCE_POLICY_HEADER_AGE_ROSTER", specs):
+            MODULE.source_policy_execution(self.execution(default), binding)
+            MODULE.source_policy_ep1_execution(self.execution(ep1), binding)
+            MODULE.source_policy_development_doctests(self.execution(docs), binding, "default-doctests")
+            MODULE.source_policy_development_doctests(self.execution(ep1_docs), binding, "ep1-doctests")
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.source_policy_execution(self.execution(old_default), binding)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.source_policy_ep1_execution(self.execution(sorted([*old_default, extra])), binding)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.source_policy_development_doctests(self.execution(old_docs), binding, "default-doctests")
+
+    def test_protected_order_ke_addition_keeps_the_current_default_and_compiler_examples(self):
+        ordinary = sorted([*self.ordinary] + [
+            f"source_policy::tests::age_neighbor_{index}" for index in range(6)])
+        case = "nts_ke_experiment::datagram::tests::ordinary_protected_reversed_receive_bracket_cannot_commit"
+        ep1 = sorted([*ordinary, "nts_ke_experiment::previous_case", case])
+        docs = sorted([*self.docs])
+        binding = {**self.policy["binding"], "candidate_sha256": MODULE.SOURCE_POLICY_PROTECTED_ORDER_CANDIDATE,
+                   "test_inventory": ordinary, "doctest_inventory": docs}
+        specs = {name: (len(names), independent_digest(names)) for name, names in (
+            ("default-ordinary", ordinary), ("default-doctests", docs), ("ep1-ordinary", ep1),
+            ("ep1-doctests", docs))}
+        with patch.object(MODULE, "SOURCE_POLICY_PROTECTED_ORDER_ROSTER", specs):
+            MODULE.source_policy_execution(self.execution(ordinary), binding)
+            MODULE.source_policy_ep1_execution(self.execution(ep1), binding)
+            MODULE.source_policy_development_doctests(self.execution(docs), binding, "default-doctests")
+            for wrong in ([name for name in ep1 if name != case],
+                          sorted(name if name != case else "nts_ke_experiment::other_order_case" for name in ep1)):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.source_policy_ep1_execution(self.execution(wrong), binding)
+
+    def test_application_placement_keeps_ordinary_names_and_checks_both_shifted_doc_graphs(self):
+        ordinary = sorted([*self.ordinary] + [
+            f"source_policy::tests::placement_neighbor_{index}" for index in range(6)])
+        ep1 = sorted([*ordinary, "nts_ke_experiment::placement_neighbor"])
+        before = "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 702) - compile fail"
+        after = before.replace("702", "719")
+        docs = sorted([*self.docs, after])
+        ep1_docs = sorted([*docs, "crates/nevrotick-engine/src/ke_preview_target.rs - "
+                           "ke_preview_target::KePreviewTarget (line 33) - compile fail"])
+        binding = {**self.policy["binding"], "candidate_sha256": MODULE.SOURCE_POLICY_APPLICATION_PLACEMENT_CANDIDATE,
+                   "test_inventory": ordinary, "doctest_inventory": docs}
+        specs = {name: (len(names), independent_digest(names)) for name, names in (
+            ("default-ordinary", ordinary), ("ep1-ordinary", ep1),
+            ("default-doctests", docs), ("ep1-doctests", ep1_docs))}
+        with patch.object(MODULE, "SOURCE_POLICY_APPLICATION_PLACEMENT_ROSTER", specs):
+            MODULE.source_policy_execution(self.execution(ordinary), binding)
+            MODULE.source_policy_ep1_execution(self.execution(ep1), binding)
+            for graph, names in (("default-doctests", docs), ("ep1-doctests", ep1_docs)):
+                MODULE.source_policy_development_doctests(self.execution(names), binding, graph)
+                stale = sorted(before if name == after else name for name in names)
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.source_policy_development_doctests(self.execution(stale), binding, graph)
+
+    def test_receive_effect_guards_requires_each_current_ep1_case(self):
+        ordinary = sorted([*self.ordinary] + [
+            f"source_policy::tests::guard_neighbor_{index}" for index in range(6)])
+        required = EngineKeAnalysisRoleTests.PROTECTED_RECEIVE_EFFECT_CASES
+        ep1 = sorted([*ordinary, *required])
+        binding = {**self.policy["binding"],
+                   "candidate_sha256": MODULE.SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_CANDIDATE,
+                   "test_inventory": ordinary}
+        docs = binding["doctest_inventory"]
+        old = MODULE.SOURCE_POLICY_APPLICATION_PLACEMENT_ROSTER
+        current = MODULE.SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_ROSTER
+        for graph in ("default-ordinary", "default-doctests", "ep1-doctests"):
+            self.assertEqual(current[graph], old[graph])
+        specs = {"default-ordinary": (len(ordinary), independent_digest(ordinary)),
+                 "default-doctests": (len(docs), independent_digest(docs)),
+                 "ep1-ordinary": (len(ep1), independent_digest(ep1))}
+        with patch.object(MODULE, "SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_ROSTER", specs):
+            MODULE.source_policy_execution(self.execution(ordinary), binding)
+            MODULE.source_policy_ep1_execution(self.execution(ep1), binding)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.source_policy_ep1_execution(self.execution(ordinary), binding)
+            for omitted in required:
+                wrong = sorted("nts_ke_experiment::other_guard_case" if case == omitted else case
+                               for case in ep1)
+                with self.subTest(omitted=omitted), self.assertRaises(MODULE.Incomplete):
+                    MODULE.source_policy_ep1_execution(self.execution(wrong), binding)
+
+    def test_chronology_focused_lineage_rehashes_every_pinned_evidence_file(self):
+        files = {}
+        for index in range(74):
+            path = self.base / f"chronology-{index}.json"
+            path.write_text(str(index), encoding="utf-8")
+            files[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
+        digest = independent_digest(files)
+        reference = {"focused_evidence": files, "focused_evidence_index_sha256": digest,
+                     "invocation_id": "1" * 32}
+        with patch.object(MODULE, "SOURCE_POLICY_CHRONOLOGY_FOCUSED", digest):
+            self.assertEqual(MODULE.admit_source_policy_chronology_focus(reference), files)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_source_policy_chronology_focus({**reference, "invocation_id": "not-hex"})
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_source_policy_chronology_focus(
+                    {**reference, "focused_evidence_index_sha256": "2" * 64})
+            path.write_text("changed", encoding="utf-8")
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_source_policy_chronology_focus(reference)
+
+    def test_receive_focused_lineage_requires_all_physical_raw_receipts(self):
+        def write(path, data):
+            raw = json.dumps(data).encode()
+            path.write_bytes(raw)
+            return {"path": str(path), "sha256": hashlib.sha256(raw).hexdigest()}
+
+        capture_path = self.base / "candidate.json"
+        fixture = {"prior_plain_failed_development": [], "combined_development_reference": {"sha256": "b" * 64}}
+        raw_index = {"plain": [], "protected": []}
+        expected = {}
+        for owner, index, status, mode, key in (
+                ("plain", 0, "incomplete", "green", "expected_plain_candidate_sha256"),
+                ("plain", 1, "passed", "green", "expected_plain_candidate_sha256"),
+                ("protected", 0, "passed", "red", "expected_protected_red_candidate_sha256"),
+                ("protected", 1, "passed", "green", "expected_protected_candidate_sha256")):
+            directory = self.base / f"{owner}-{index}"
+            directory.mkdir()
+            candidate = fixture.setdefault(key, independent_digest(key))
+            lane = write(directory / "cutoff.json", {"exit_code": 101 if mode == "red" else 0, "failure": None})
+            report = write(directory / "verification.json", {
+                "status": status, "mode": mode, "candidate_sha256": candidate,
+                "baseline_report_sha256": "b" * 64, "temporary_work_removed": True,
+                "lanes": [{"lane": "cutoff", "sha256": lane["sha256"],
+                           "exit_code": 101 if mode == "red" else 0, "failure": None}],
+            })
+            raw_index[owner].append(report)
+            expected.update({ref["path"]: ref["sha256"] for ref in (report, lane)})
+        fixture["plain_red_focused"] = write(self.base / "plain-red.json", {"status": "passed"})
+        index = write(self.base / "focused-index.json", raw_index)
+        for ref in (fixture["plain_red_focused"], index):
+            expected[ref["path"]] = ref["sha256"]
+        reference = {"invocation_id": "a" * 32, "focused_evidence_index_sha256": index["sha256"],
+                     "focused_evidence": expected}
+        missing = str(self.base / "protected-1/cutoff.json")
+        with patch.object(MODULE, "SOURCE_POLICY_RECEIVE_FOCUSED", index["sha256"]):
+            self.assertEqual(MODULE.admit_source_policy_receive_focus(capture_path, fixture, reference), expected)
+            for tampered in ({**reference, "focused_evidence_index_sha256": "1" * 64},
+                             {**reference, "invocation_id": True},
+                             {**reference, "focused_evidence": {p: h for p, h in expected.items() if p != missing}}):
+                with self.assertRaisesRegex(MODULE.Incomplete, "focused"):
+                    MODULE.admit_source_policy_receive_focus(capture_path, fixture, tampered)
+            Path(missing).write_bytes(b"{}")
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_source_policy_receive_focus(capture_path, fixture, reference)
 
     def test_each_development_monitor_format_requires_rustdoc_before_session(self):
         for current in (False, True):

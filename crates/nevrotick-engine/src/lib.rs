@@ -715,6 +715,17 @@ impl TransportFacts {
     pub fn processing(&self) -> Instant {
         self.processing
     }
+    /// Measure from the retained receive bracket's trailing reading to its original commit.
+    ///
+    /// Reversed readings or unavailable subtraction leave the interval unknown.
+    fn receive_to_commit_age(&self) -> Option<Duration> {
+        let trailing: Instant = self.read_return.mono_after;
+        if self.read_return.mono > trailing || trailing > self.processing {
+            return None;
+        }
+        self.processing.checked_duration_since(trailing)
+    }
+
     /// Return the exact peer T2 bits without era/eligibility interpretation.
     #[must_use]
     pub fn peer_receive_bits(&self) -> u64 {
@@ -844,6 +855,10 @@ impl SlotReport {
     /// The CLI delegates directly to this writer. Tests can compare these exact
     /// bytes with this same report's retained captures, independently of the
     /// measurement calculation. No raw header, token or native error is formatted.
+    /// An unavailable measurement includes the original receive-to-commit
+    /// interval when the retained local readings support it.
+    /// Both elapsed bounds between the original application wall reads are
+    /// included when the full capture order is valid.
     /// Non-header outcomes write nothing; a record is always below 1,024 bytes.
     /// The borrowed report remains unchanged, including on partial output failure.
     ///
@@ -859,7 +874,7 @@ impl SlotReport {
                 let [t1, t2, t3, t4] = value.coordinates();
                 let [r1, r4] = value.local_fractional_remainders();
                 let arithmetic = value.arithmetic();
-                writeln!(
+                write!(
                     output,
                     "event=measurement slot={slot} status=nominal_software authentication=none eligible=0 mapping=declared_experimental_observed_consistent capture=software_bracketed wire_error=unknown phase_q33={} rtt_q32={} t1_q32={} t2_q32={} t3_q32={} t4_q32={} local_r1={r1} local_r4={r4} residual_denominator=1000000000 declared_limit_ns={} observed_residual_ns={} age_ns={}",
                     arithmetic.offset().numerator(),
@@ -871,7 +886,7 @@ impl SlotReport {
                     value.declared_limit_ns(),
                     value.observed_residual_ns(),
                     value.acquisition_age().as_nanos(),
-                )
+                )?;
             }
             Err(reason) => {
                 let mapping = if reason == MeasurementRefusal::Unavailable {
@@ -879,13 +894,23 @@ impl SlotReport {
                 } else {
                     "declared_experimental"
                 };
-                writeln!(
+                write!(
                     output,
                     "event=measurement slot={slot} status=unavailable reason={} authentication=none eligible=0 capture=software_bracketed mapping={mapping} wire_error=unknown",
                     reason.as_str(),
-                )
+                )?;
+                if let Some(age) = facts.receive_to_commit_age() {
+                    write!(output, " receive_to_commit_ns={}", age.as_nanos())?;
+                }
             }
         }
+        if let Ok([minimum, maximum]) = measurement::application_elapsed_bounds(facts) {
+            write!(
+                output,
+                " app_wall_elapsed_min_ns={minimum} app_wall_elapsed_max_ns={maximum}"
+            )?;
+        }
+        writeln!(output)
     }
 
     /// Return the fixed request index: 0..2 for a pilot or 0..3 for a series.
@@ -1573,8 +1598,8 @@ struct ReadDatagram<'a> {
 
 /// Commit checked packet facts only after the caller's fresh owner guards.
 /// The final processing observation is sampled under the caller's control guard.
-/// A late selected datagram is charged once. An impossible local read order
-/// leaves the pending slot and prior rejection cause intact.
+/// Either original receive reading or fresh processing can reach the cutoff.
+/// Reject late input once before policy admission. Earlier processing leaves it pending.
 fn commit_reply(
     slot: &mut LiveSlot,
     candidate: &StagedReply,
@@ -1590,7 +1615,7 @@ fn commit_reply(
     {
         return;
     }
-    if processing >= deadline {
+    if processing >= deadline || candidate.read.reaches_cutoff(deadline) {
         slot.rejected += 1;
         slot.expire();
         return;

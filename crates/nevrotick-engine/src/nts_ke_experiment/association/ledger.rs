@@ -26,6 +26,7 @@ use super::super::response::{
 };
 use super::super::response::{ReplyError, ReplyFields, StagedReply, stage_reply};
 use super::{AssociationOwner, COOKIE_BYTES_LIMIT, COOKIE_LIMIT, Control, Failure};
+use crate::SoftwareClock;
 use crate::nts_ke_experiment::DatagramAuthorityGuard;
 use crate::source_policy::{ProtectedEndpoint, ProtectedSendStamp};
 
@@ -413,6 +414,41 @@ struct Active<'a> {
     submission: Option<SubmissionOrigin>,
 }
 
+/// The unvalidated readings of one actual receive-return bracket.
+/// Copying them carries no current authority.
+#[derive(Clone, Copy)]
+struct ReceiveSpan {
+    /// Reading before the original wall-clock capture.
+    leading: Instant,
+    /// Reading after the original wall-clock capture.
+    trailing: Instant,
+}
+
+impl ReceiveSpan {
+    /// Check the original bracket against the send, processing and exclusive cutoff.
+    /// The caller checks current Control and its processing deadline separately.
+    /// # Errors
+    /// Preserve the leading time refusal before trailing cutoff and ordering refusals.
+    fn check(self, sent_at: Instant, now: Instant, expiry: Instant) -> Result<(), Failure> {
+        check_receive_times(sent_at, self.leading, now)?;
+        if self.trailing >= expiry {
+            return Err(Failure::Deadline);
+        }
+        if self.trailing < self.leading || self.trailing > now {
+            return Err(refused(LedgerError::Time));
+        }
+        Ok(())
+    }
+
+    /// Preserve both readings without sampling or repairing their order.
+    fn from_read(read: &SoftwareClock) -> Self {
+        Self {
+            leading: read.monotonic(),
+            trailing: read.monotonic_after(),
+        }
+    }
+}
+
 /// Coordinates captured from the same Pending slot as its receive-work debit.
 struct ChargedReply {
     /// Exact still-outstanding reservation ordinal.
@@ -450,8 +486,10 @@ pub(in super::super) struct StagedProtectedControl<'control> {
     backend: Arc<()>,
     /// Original monotonic send/archive observation.
     sent_at: Instant,
-    /// Actual selected receive observation, never refreshed by retirement.
+    /// Leading reading of the original selected receive bracket.
     arrival: Instant,
+    /// Trailing reading of that same bracket, never refreshed by retirement.
+    read_after: Instant,
 }
 
 /// The protected control already published through both original owners.
@@ -560,8 +598,8 @@ enum ExhaustedResponse {
     Cookies {
         /// Original monotonic observation taken before invoking the sender.
         sent_at: Instant,
-        /// Supplied receive observation, rechecked by consuming retirement.
-        arrival: Instant,
+        /// Original receive bracket, rechecked by consuming retirement.
+        span: ReceiveSpan,
     },
 }
 
@@ -1400,6 +1438,20 @@ impl<'a> AssociationOwner<'a> {
         })
     }
 
+    /// Charge the known extent of a datagram that was consumed and discarded.
+    /// Reuse the ordinary Pending debit and retire the exhausted allowance.
+    /// # Errors
+    /// Preserve original Control, outstanding request and receive-budget refusals.
+    pub(in super::super) fn charge_discarded_reply(
+        &mut self,
+        length: usize,
+        backend: &Arc<()>,
+    ) -> Result<(), Failure> {
+        self.charge_reply(length, Some(backend))?;
+        self.retire_exhausted();
+        Ok(())
+    }
+
     /// Charge and authenticate the concrete datagram once and retain its history.
     ///
     /// The original submission and replacement remain private until retired commit.
@@ -1409,14 +1461,14 @@ impl<'a> AssociationOwner<'a> {
         &mut self,
         raw: &[u8],
         remote: SocketAddr,
-        arrival: Instant,
+        read: &SoftwareClock,
         backend: &Arc<()>,
     ) -> Result<(Receipt, CookieReplacement, PendingSubmission), Failure> {
         let (receipt, replacement, submission): (Receipt, CookieReplacement, SubmissionOrigin) =
             self.receive_reply_with(
                 raw,
                 remote,
-                arrival,
+                ReceiveSpan::from_read(read),
                 Some(backend),
                 |_, receipt, replacement, submission| (receipt, replacement, submission),
             )?;
@@ -1437,13 +1489,15 @@ impl<'a> AssociationOwner<'a> {
         control: &'control Control,
         raw: &[u8],
         remote: SocketAddr,
-        arrival: Instant,
+        read: &SoftwareClock,
         backend: &Arc<()>,
     ) -> Result<StagedProtectedSuccessor<'control>, Failure> {
         if !std::ptr::eq(control, self.material.control) {
             return Err(Failure::Control);
         }
         let charged: ChargedReply = self.charge_reply(raw.len(), Some(backend))?;
+        let span: ReceiveSpan = ReceiveSpan::from_read(read);
+        let arrival: Instant = span.leading;
         let response: StagedSuccessorResponse = (|| {
             self.check_charged_datagram(&charged, raw.len(), remote)?;
             let uid: &[u8; 32] = self.issued_uid(charged.uid_index)?;
@@ -1456,13 +1510,13 @@ impl<'a> AssociationOwner<'a> {
             )
             .map_err(|error: ReplyError| refused(LedgerError::Reply(error)))
         })()
-        .inspect_err(|&error: &Failure| self.reject_staging(error, charged.sent_at, arrival))?;
+        .inspect_err(|&error: &Failure| self.reject_staging(error, charged.sent_at, span))?;
         match response {
             StagedSuccessorResponse::Ordinary(reply) => {
                 let staged: StagedReplacement =
                     self.stage_replacement(reply)
                         .inspect_err(|&error: &Failure| {
-                            self.reject_staging(error, charged.sent_at, arrival);
+                            self.reject_staging(error, charged.sent_at, span);
                         })?;
                 let (receipt, replacement, submission): (
                     Receipt,
@@ -1471,7 +1525,7 @@ impl<'a> AssociationOwner<'a> {
                 ) = self.consume_staged_reply(
                     &charged,
                     staged,
-                    arrival,
+                    span,
                     |_, receipt, replacement, submission| (receipt, replacement, submission),
                 )?;
                 match submission {
@@ -1491,6 +1545,7 @@ impl<'a> AssociationOwner<'a> {
                     backend: Arc::clone(backend),
                     sent_at: charged.sent_at,
                     arrival,
+                    read_after: read.monotonic_after(),
                 };
                 self.check_protected_control_current(&candidate)
                     .inspect_err(|_| self.retire_exhausted())?;
@@ -1569,8 +1624,10 @@ impl<'a> AssociationOwner<'a> {
     /// Consume one actually retired request under the original Control and policy.
     /// No caller can open this effect with a merely staged ticket.
     /// # Errors
-    /// Preserve original authority, binding, identity and time refusals before
-    /// either record is updated or the outstanding request is consumed.
+    /// Preserve original authority, binding and identity refusals before any
+    /// mutation. The original receive bracket must be ordered, fully observed
+    /// by processing time, and before cutoff. Refusal preserves the charged
+    /// outstanding request and both policy records.
     #[cfg(test)]
     pub(in super::super) fn commit_retired_protected_control(
         &mut self,
@@ -1588,6 +1645,12 @@ impl<'a> AssociationOwner<'a> {
         let submissions: ControlSubmissions<'_> = self.control_submissions(&candidate)?;
         let now: Instant = Instant::now();
         check_receive_times(candidate.sent_at, candidate.arrival, now)?;
+        if candidate.read_after >= candidate.control.expiry || now >= candidate.control.expiry {
+            return Err(Failure::Deadline);
+        }
+        if candidate.read_after < candidate.arrival || candidate.read_after > now {
+            return Err(refused(LedgerError::Time));
+        }
         let applied: AppliedProtectedControl = AppliedProtectedControl {
             kind: candidate.kind,
             configuration,
@@ -1624,7 +1687,10 @@ impl<'a> AssociationOwner<'a> {
         let (receipt, retired): (Receipt, [CookiePool; 2]) = self.receive_reply_with(
             raw,
             remote,
-            arrival,
+            ReceiveSpan {
+                leading: arrival,
+                trailing: arrival,
+            },
             None,
             |owner, receipt, replacement, _submission| {
                 (receipt, owner.apply_replacement(replacement))
@@ -1693,7 +1759,7 @@ impl<'a> AssociationOwner<'a> {
         &mut self,
         raw: &[u8],
         remote: SocketAddr,
-        arrival: Instant,
+        span: ReceiveSpan,
         backend: Option<&Arc<()>>,
         admit: impl FnOnce(&mut Self, Receipt, CookieReplacement, SubmissionOrigin) -> T,
     ) -> Result<T, Failure> {
@@ -1707,8 +1773,10 @@ impl<'a> AssociationOwner<'a> {
                 charged.maximum_cookies,
             )
         })()
-        .inspect_err(|&error: &Failure| self.reject_staging(error, charged.sent_at, arrival))?;
-        self.consume_staged_reply(&charged, staged, arrival, admit)
+        .inspect_err(|&error: &Failure| {
+            self.reject_staging(error, charged.sent_at, span);
+        })?;
+        self.consume_staged_reply(&charged, staged, span, admit)
     }
 
     /// Check the extent and submitter of a datagram after its exact ledger debit.
@@ -1733,9 +1801,9 @@ impl<'a> AssociationOwner<'a> {
     }
 
     /// Keep the semantic cause of a final count refusal and enforce original exhaustion.
-    fn reject_staging(&mut self, error: Failure, sent_at: Instant, arrival: Instant) {
+    fn reject_staging(&mut self, error: Failure, sent_at: Instant, span: ReceiveSpan) {
         if error == refused(LedgerError::Reply(ReplyError::Cookies)) && self.ledger.frames == 0 {
-            self.ledger.exhausted_response = Some(ExhaustedResponse::Cookies { sent_at, arrival });
+            self.ledger.exhausted_response = Some(ExhaustedResponse::Cookies { sent_at, span });
         }
         self.retire_exhausted();
     }
@@ -1743,11 +1811,13 @@ impl<'a> AssociationOwner<'a> {
     /// Consume the exact charged ordinary request only under the original Control.
     /// # Errors
     /// Refuse expired, stopped or replaced Pending custody before moving any state.
+    /// Both original receive readings must be ordered and observed by processing
+    /// time inside the original exclusive cutoff. Work already charged stays spent.
     fn consume_staged_reply<T>(
         &mut self,
         charged: &ChargedReply,
         staged: StagedReplacement,
-        arrival: Instant,
+        span: ReceiveSpan,
         admit: impl FnOnce(&mut Self, Receipt, CookieReplacement, SubmissionOrigin) -> T,
     ) -> Result<T, Failure> {
         let control: &Control = self.material.control;
@@ -1769,7 +1839,7 @@ impl<'a> AssociationOwner<'a> {
             if active.serial != charged.serial || active.phase != RequestPhase::Pending {
                 return Err(refused(LedgerError::Ticket));
             }
-            check_receive_times(charged.sent_at, arrival, now)?;
+            span.check(charged.sent_at, now, control.expiry)?;
             let receipt: Receipt = Receipt {
                 serial: charged.serial,
                 local_t1: charged.local_t1,
@@ -1843,13 +1913,16 @@ impl<'a> AssociationOwner<'a> {
     /// The receipt's serial is the charged reservation ordinal, not a new identity.
     /// No later charged attempt may follow it, including a failed or returned one.
     /// Only this admitted transfer installs replacement cookies in the live pool.
+    /// The observer only samples the processing clock under the original guards.
     /// # Errors
     /// Refuse foreign/stale context, an active slot, or a noncurrent receipt/ordinal
-    /// or deadline without changing the pool, work spent or historical receipt.
+    /// or processing time outside the accepted receipt and original cutoff.
+    /// Refusal preserves the pool, work spent and historical receipt.
     pub(in super::super) fn commit_retired_reply(
         &mut self,
         reply: RetiredReply<'_>,
         disposition: RetiredCommit,
+        observe_now: impl FnOnce() -> Instant,
     ) -> Result<Arc<()>, Failure> {
         let (control, receipt, replacement, submission): RetiredReplyParts<'_> = reply.into_parts();
         if !std::ptr::eq(control, self.material.control) {
@@ -1860,20 +1933,28 @@ impl<'a> AssociationOwner<'a> {
             DatagramAuthorityGuard::lock(control, lease.as_ref())?;
         self.check_completed_receipt(&receipt)?;
         guard.receiving(submission.policy_provenance())?;
+        #[cfg(test)]
+        if matches!(disposition, RetiredCommit::FirstRequest(_))
+            && (lease.is_none()
+                || receipt.serial != 1
+                || self.ledger.prior_authentication.is_some())
+        {
+            return Err(Failure::Control);
+        }
+        let now: Instant = observe_now();
+        if now < receipt.accepted_at() {
+            // Preserve current Control and original deadline refusal precedence.
+            guard.control.published(now)?;
+            return Err(refused(LedgerError::Time));
+        }
         let identity: Arc<()> = match disposition {
             RetiredCommit::Terminal => {
-                guard.control.commit(Instant::now())?;
+                guard.control.commit(now)?;
                 submission.identity
             }
             #[cfg(test)]
             RetiredCommit::FirstRequest(attempts) => {
-                if lease.is_none()
-                    || receipt.serial != 1
-                    || self.ledger.prior_authentication.is_some()
-                {
-                    return Err(Failure::Control);
-                }
-                guard.control.published(Instant::now())?;
+                guard.control.published(now)?;
                 let identity: Arc<()> = Arc::clone(&submission.identity);
                 self.ledger.prior_authentication = Some(PriorAuthentication {
                     receipt,

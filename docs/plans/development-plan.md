@@ -1217,8 +1217,91 @@ passes its 21/21 active-target scope on the same product. The failed 21/23
 GNU score and earlier stopped runs remain recorded.
 The [plain capture chronology child](../../tasks/engine-transport-pilot.md#plain-pre-send-capture-chronology--w11-w01)
 passes full development and closed KE re-admission on its new candidate.
-Fresh per-file mutation and Windows runtime qualification remain open. Genuine
-TLS/CNG/UDP, date, scale, trust and quality suppliers retain their gates.
+The [same product's source-policy metrics](../../tasks/engine-transport-pilot.md#capture-order-source-policy-metrics--18-november-2026)
+bind 856 generated descriptors and all 276 default GNU test identities.
+All five line gates pass at 95.54% or higher. Both public mutation
+campaigns stay closed. Current KE metrics, independent source-policy
+mutation qualification and Windows runtime qualification remain open.
+Genuine TLS/CNG/UDP, date, scale, trust and quality suppliers retain their gates.
+
+The [original receive bracket cutoff](../../tasks/engine-transport-pilot.md#original-receive-brackets-and-final-cutoff--w11-w01)
+now covers plain reply decisions and guarded retired protected controls. Both
+causal failures and their healthy controls were observed. Integrated
+`27026b88` passed 19 development lanes and 1,853 named executions. Its
+[fresh GNU metrics](../../tasks/engine-transport-pilot.md#original-receive-bracket-gnu-metrics--18-november-2026)
+pass all five source-policy and 13 KE line gates. The catalogues retain
+857 and 749 generated descriptors, respectively. The [current datagram
+mutation](../../tasks/engine-transport-pilot.md#original-receive-bracket-datagram-mutation--18-november-2026)
+passes at 21/21 on the active target after fresh MSVC compile refusals for the
+two Windows-only replacements. The raw GNU failure at 21/23 remains recorded.
+The [Library trial](../../tasks/engine-transport-pilot.md#original-receive-bracket-library-mutation-interruption--18-november-2026)
+passed its 367-case baseline, then stopped after six variant timeouts under
+reclaim pressure. It retains the partial results and the consumed budget.
+Other per-file mutation outcomes and native qualification remain open.
+Preserve the exact historical results and both closed campaigns.
+
+The [managed KoD receive chronology](../../tasks/engine-transport-pilot.md#managed-kod-receive-chronology--18-november-2026)
+now prevents a reversed original bracket from changing plain managed policy.
+The private protected successor also refuses a reversed or future trailing
+reading before policy publication. The exact integrated `703fb8c4` product
+passed 19 development lanes and 1,861 named executions. Fresh GNU metrics
+execute 279 default and 554 EP1 cases, clear all 18 line-coverage gates, and
+bind 862 default and 749 KE descriptors. Current per-file mutation and Windows
+runtime qualification are open. Earlier metric outcomes retain their own
+candidate and scope.
+
+The [protected receive debit](../../tasks/engine-transport-pilot.md#protected-known-receive-debit--focused-continuation)
+charges a current, consumed datagram rejected for capture order through the
+original Pending budget. Final credit retires the request and coalesces
+recovery at the original cutoff. Candidate `43abe808` passed all 19 combined
+development lanes and 1,863 named executions. Both closed roles admitted its
+actual source and receipts. Fresh metrics and Windows runtime qualification
+have their own exits.
+
+The [historical receive-to-commit age diagnostic](../../tasks/engine-transport-pilot.md#historical-receive-to-commit-age-diagnostic--focused-continuation)
+on `f3c9a305` passed focused writer and CLI controls. The unavailable measurement
+can carry the interval between the original ordered receive bracket and
+commit. All 19 combined Core and Engine development lanes passed with
+1,867 named executions. Both closed roles admitted the actual source, helpers
+and receipts. Fresh metrics and Windows runtime qualification remain open.
+
+The [ordinary protected receive bracket](../../tasks/engine-transport-pilot.md#ordinary-protected-receive-bracket--w11-w01)
+now retains both original readings through the charged, authenticated receipt
+decision. Expired or unordered captures cannot publish a receipt or install
+replacement cookies. The exact `e8ef1377` product passed the focused controls
+and all 19 combined lanes with 1,869 named executions. Both role bindings
+remain closed. Fresh GNU coverage passed all 18 selected line gates, and
+the inventories contain 871 default and 759 KE descriptors. The per-file
+95% mutation and Windows runtime gates remain open.
+
+The [application capture placement diagnostic](../../tasks/engine-transport-pilot.md#application-capture-placement-diagnostics--w11-w01)
+records bounded elapsed placement in both plaintext measurement branches
+when all original capture readings through commit are ordered. It preserves
+the separate receive-to-commit age and the existing measurement decision.
+The exact `978691a8` product passed the focused controls and all 19 combined
+lanes with 1,869 named executions. Both role bindings remain closed.
+The [plain Windows writer tests](../../tasks/engine-transport-pilot.md#plain-capture-placement-windows-writer-tests--w11-w01)
+passed both bounded loopback cases after exact 254-name discovery on the
+observed ordinary-user host. Native CLI, calibrated mapping and current
+coverage and mutation gates remain open.
+
+The [Engine receive-effect chronology checkpoint](../../tasks/engine-transport-pilot.md#engine-receive-chronology-at-policy-commit-and-recovery-boundaries)
+binds managed plain KoD effects to the reserved send, protected cookie
+publication to the accepted receipt, and count-refusal recovery to the full
+original receive bracket. Candidate `555a6a07` passed six focused cases
+and all 19 combined lanes with 1,875 named executions. Both closed roles
+admitted the physical results. The [current GNU metrics](../../tasks/engine-transport-pilot.md#engine-receive-chronology--gnu-metrics-and-retirement-mutation)
+pass all 18 selected 90% line gates and the retirement file's 95% mutation
+gate at 45/45 viable catches, with eight compiler refusals. The current
+inventory has 875 default and 765 EP1 descriptors. The [datagram and scripted
+Windows checkpoint](../../tasks/engine-transport-pilot.md#engine-receive-chronology--datagram-mutation-and-scripted-windows-ep1)
+closes the datagram file's active-target gate at 21/21 viable catches. It
+retains the raw 91.30% GNU result and two exact MSVC compiler refusals.
+Native Windows discovery matched 537 names and all 279 scripted KE cases
+passed. The [Windows default checkpoint](../../tasks/engine-transport-pilot.md#engine-receive-chronology--scripted-windows-default)
+matched 254 names and passed all twelve exact cases, including the plain
+KoD chronology control. Live providers, remaining per-file mutation checks
+and genuine Engine-to-Core acquisition remain open.
 
 **Published preceding product child — 17 November 2026:**
 [Managed restriction visibility](../../tasks/engine-transport-pilot.md#consumer-boundary-reinforcement--17-november-2026)

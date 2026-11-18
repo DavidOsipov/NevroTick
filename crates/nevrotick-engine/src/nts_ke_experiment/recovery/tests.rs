@@ -851,6 +851,30 @@ struct ProtectedWitness {
     identity: Weak<()>,
 }
 
+/// Substitute only the trailing reading of the final original-context datagram.
+#[derive(Clone, Copy)]
+enum FinalReceiveTail {
+    /// Before the original Control's origin and therefore before the real read.
+    Reversed,
+    /// Exactly at the original Control's exclusive receive cutoff.
+    AtCutoff,
+}
+
+impl FinalReceiveTail {
+    /// Substitute only the named final reading from the actual fixture Control.
+    /// # Errors
+    /// Preserve an unrepresentable pre-origin observation as a fixture failure.
+    fn reading(self, control: &Control) -> Result<Instant, Failure> {
+        match self {
+            Self::Reversed => control
+                .origin
+                .checked_sub(Duration::from_nanos(1))
+                .ok_or(Failure::Control),
+            Self::AtCutoff => Ok(control.expiry),
+        }
+    }
+}
+
 /// Replace external KE/entropy facts only; admission and the receiving owner stay real.
 pub(in crate::nts_ke_experiment) struct ScriptProducer<'fixture> {
     config: &'fixture Config,
@@ -882,6 +906,8 @@ pub(in crate::nts_ke_experiment) struct ScriptProducer<'fixture> {
     draw_delay: Duration,
     /// Actual Script resource lifetime, distinct from retained historical socket identity.
     backend_lifetime: Option<Weak<()>>,
+    /// Optional raw-tail substitution for the final original-context read.
+    final_receive_tail: Option<FinalReceiveTail>,
     last_exchange: Option<ExchangeObservation>,
     /// Last genuine retired exchange, observed before its final commit may refuse.
     last_protected: Option<ProtectedWitness>,
@@ -929,6 +955,7 @@ impl<'fixture> ScriptProducer<'fixture> {
             draw_bounds: Vec::new(),
             draw_delay: Duration::ZERO,
             backend_lifetime: None,
+            final_receive_tail: None,
             last_exchange: None,
             last_protected: None,
             successor: None,
@@ -1112,6 +1139,7 @@ impl Producer for ScriptProducer<'_> {
         let mut lifetime = None;
         let mut entropy_calls = 0;
         let protected_gate = self.protected_gate.take();
+        let final_receive_tail: Option<FinalReceiveTail> = self.final_receive_tail.take();
         let result = exchange_with(
             association,
             control,
@@ -1148,7 +1176,10 @@ impl Producer for ScriptProducer<'_> {
                 } else {
                     ScriptSend::Full
                 };
-                let script = Script::new(send, reads);
+                let mut script: Script = Script::new(send, reads);
+                script.read_after_final = final_receive_tail
+                    .map(|tail: FinalReceiveTail| tail.reading(control))
+                    .transpose()?;
                 lifetime = Some(Arc::downgrade(&script.lifetime));
                 Ok(backend(remote, script))
             },
@@ -3251,6 +3282,112 @@ fn receive_work_exhaustion_defers_replacement_without_renewing_context() -> Resu
 /// Preserve both mandatory checked limit constructors.
 fn replacement_limits() -> Result<Limits, Failure> {
     experiment(4, 8, 16)?.with_context_lifetime(Duration::from_secs(1))
+}
+
+/// Exercise an invalid trailing reading on the 32nd authenticated count refusal.
+/// # Errors
+/// Preserve fixture construction and actual charge/retirement observations.
+/// # Panics
+/// Fail if exhaustion opens replacement, refunds work or changes failure custody.
+fn assert_invalid_final_receive_tail(
+    tail: FinalReceiveTail,
+    retirement_cause: Failure,
+) -> Result<(), Failure> {
+    let primary: Failure = Failure::Ledger(LedgerError::Reply(super::ReplyError::Cookies));
+    let end: End = End::Context(ContextStage::Retire, retirement_cause);
+    with_fixture(
+        &ExchangeMode::ProtectedDatagram,
+        Some(replacement_limits()?),
+        vec![Ok(()), Ok(())],
+        ExchangeCase::ZeroCookies,
+        |invocation, _provider, producer| {
+            let original: Snapshot = invocation.snapshot();
+            let expiry: Instant = original
+                .origin
+                .checked_add(Duration::from_secs(1))
+                .ok_or(Failure::Deadline)?;
+            assert!(
+                expiry.saturating_duration_since(Instant::now()) >= Duration::from_millis(750),
+                "the fixture lost headroom before the original exchange"
+            );
+            producer.final_receive_tail = Some(tail);
+            let result: Result<Step, Failed> = step_with(invocation, producer);
+            assert_spent_original_context(producer, expiry, original.cutoff)?;
+            let disposition: &str = match &result {
+                Err(_) => "failed",
+                Ok(Step::Deferred(_)) => "deferred",
+                Ok(Step::Complete(_)) => "complete",
+                Ok(Step::Closed(_)) => "closed",
+            };
+            assert_eq!(
+                disposition, "failed",
+                "invalid trailing capture on the final zero-cookie refusal must not authorize replacement"
+            );
+            let failure: Failed = failed_step(&result)?;
+            assert_failure(&failure, primary, None, None);
+            assert_failure(
+                invocation.last_failure().ok_or(Failure::Control)?,
+                primary,
+                None,
+                None,
+            );
+            let closed: Snapshot = invocation.snapshot();
+            assert_eq!(closed.end, Some(end));
+            assert_eq!(
+                (closed.origin, closed.cutoff),
+                (original.origin, original.cutoff)
+            );
+            assert_eq!(
+                (closed.not_before, closed.base),
+                (original.not_before, None)
+            );
+            assert!(closed.intent_not_before.is_none() && !closed.has_previous);
+            assert_eq!(
+                (
+                    closed.transactions,
+                    closed.refusals,
+                    closed.observations,
+                    closed.contexts
+                ),
+                (1, 0, 2, 1)
+            );
+            assert!(
+                matches!(step_with(invocation, producer), Ok(Step::Closed(cause)) if cause == end)
+            );
+            assert_eq!(invocation.snapshot(), closed);
+            assert_eq!(
+                (
+                    producer.establish_calls,
+                    producer.exchange_calls,
+                    producer.preview_calls
+                ),
+                (1, 1, 0)
+            );
+            assert_eq!(producer.entropy_calls, 1);
+            let expected_draws: [Duration; 0] = [];
+            assert_eq!(producer.draw_bounds, expected_draws);
+            Ok(())
+        },
+    )
+}
+
+/// A reversed original receive bracket grants no replacement context.
+/// # Errors
+/// Preserve fixture setup and actual retirement evidence.
+#[test]
+fn reversed_final_zero_cookie_capture_cannot_schedule_replacement() -> Result<(), Failure> {
+    assert_invalid_final_receive_tail(
+        FinalReceiveTail::Reversed,
+        Failure::Ledger(LedgerError::Time),
+    )
+}
+
+/// Equality with the original cutoff grants no replacement context.
+/// # Errors
+/// Preserve fixture setup and actual retirement evidence.
+#[test]
+fn final_zero_cookie_capture_at_cutoff_cannot_schedule_replacement() -> Result<(), Failure> {
+    assert_invalid_final_receive_tail(FinalReceiveTail::AtCutoff, Failure::Deadline)
 }
 
 /// Invoke the actual first operation and observe its retained, genuine exhaustion.

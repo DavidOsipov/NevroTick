@@ -249,8 +249,9 @@ mod reached {
                 }
                 #[cfg(test)]
                 Io::Script(script) => {
-                    let result = script.receive(buffer);
-                    (result, SoftwareClock::capture())
+                    let result: Read = script.receive(buffer);
+                    let observed: SoftwareClock = SoftwareClock::capture();
+                    (result, script.observe_read_return(observed))
                 }
             }
         }
@@ -911,7 +912,7 @@ mod reached {
                 attempts,
             }: RetiredOperation<'_> = self.into_retired();
             association
-                .commit_retired_reply(reply, RetiredCommit::FirstRequest(attempts))
+                .commit_retired_reply(reply, RetiredCommit::FirstRequest(attempts), Instant::now)
                 .map(drop)
         }
 
@@ -926,6 +927,19 @@ mod reached {
             self,
             association: &mut AssociationOwner<'_>,
         ) -> Result<CommittedProtected<'control>, Failure> {
+            self.commit_observing(association, Instant::now)
+        }
+
+        /// Sample the final processing clock through the actual guarded commit.
+        ///
+        /// The observer only supplies one clock reading and performs no other work.
+        /// # Errors
+        /// Preserve currentness and all refusals of the original retired commit.
+        pub(super) fn commit_observing(
+            self,
+            association: &mut AssociationOwner<'_>,
+            observe_now: impl FnOnce() -> Instant,
+        ) -> Result<CommittedProtected<'control>, Failure> {
             let RetiredOperation {
                 history,
                 reply,
@@ -938,7 +952,7 @@ mod reached {
                 .transpose()?
                 .cloned();
             let identity: Arc<()> =
-                association.commit_retired_reply(reply, RetiredCommit::Terminal)?;
+                association.commit_retired_reply(reply, RetiredCommit::Terminal, observe_now)?;
             Ok(CommittedProtected {
                 operation: history,
                 identity,
@@ -1182,14 +1196,13 @@ mod reached {
         reply: &ObservedReply<'_>,
         mode: ReceiveMode,
     ) -> Result<SelectedOperation<'control>, Failure> {
-        let arrival: Instant = reply.read_return.monotonic();
         let identity: &Arc<()> = &reply.backend.identity;
         let (receipt, replacement, submission): (Receipt, CookieReplacement, PendingSubmission) =
             match mode {
                 ReceiveMode::Ordinary => association.stage_observed_reply(
                     reply.packet,
                     reply.remote,
-                    arrival,
+                    &reply.read_return,
                     identity,
                 )?,
                 #[cfg(test)]
@@ -1197,7 +1210,7 @@ mod reached {
                     control,
                     reply.packet,
                     reply.remote,
-                    arrival,
+                    &reply.read_return,
                     identity,
                 )? {
                     StagedProtectedSuccessor::Ordinary(receipt, replacement, submission) => {
@@ -1318,7 +1331,12 @@ mod reached {
                     return Err(failed(DatagramError::Capture));
                 }
                 Read::Datagram(length, remote) => {
-                    check_capture_order(send_after.monotonic_after(), observed.monotonic())?;
+                    if let Err(error) =
+                        check_capture_order(send_after.monotonic_after(), observed.monotonic())
+                    {
+                        association.charge_discarded_reply(length, &backend.identity)?;
+                        return Err(error);
+                    }
                     let packet = buffer.get(..length).ok_or(failed(DatagramError::Capture))?;
                     let reply: ObservedReply<'_> = ObservedReply {
                         packet,

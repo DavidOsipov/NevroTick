@@ -2358,17 +2358,30 @@ are frozen with the build; native discovery cannot supply its own expected list.
 The explicit `--default-cohort` on both lanes selects a separate closed
 guard/lifecycle child with empty Engine features (`--no-default-features`). Its
 strict independent roster uses `selected_default_tests` instead of KE fields,
-contains the complete Windows library names and must select all eleven exact
-code-owned cases. The existing KE/facade selections remain separate. Each
-default case executes once with its exact name, one pass and every other library
-case filtered; the fixed eighteen observations retain the existing four-process
-bound and actual job/stream/handle/event cleanup requirements. The
+contains the complete Windows library names and must select all twelve exact
+code-owned cases. The KE and facade selections stay separate. Each default
+case executes once with its exact name and all other library cases filtered.
+The fixed nineteen observations retain the four-process bound and the
+job, stream, handle and event cleanup requirements. The
+[18 November default exit](tasks/engine-transport-pilot.md#engine-receive-chronology--scripted-windows-default)
+records all twelve passes, including the plain KoD receive chronology case,
+after exact 254-name Windows discovery. The
 [17 November default exit](tasks/engine-transport-pilot.md#current-default-windows-guardlifecycle-exit--17-november-2026)
 records 66 portable controls, 17 build checks, actual 219-name discovery and
 eleven passed native cases on its exact candidate/host, with the original cleanup
 window failure and bounded continuation preserved. It grants no whole-library,
 healthy provider/transport, Core-production or release qualification.
-It links the Engine KE
+The separate `--placement-cohort` on both lanes selects the two fixed plain
+application-placement writer cases with empty Engine features. The independent
+roster identifies every MSVC library test and the exact pair in
+`selected_placement_tests`. Native discovery must match that roster before
+each writer case can report one exact success with all other cases filtered.
+The same four images, flat process cap, and native cleanup checks apply.
+The [placement writer exit](tasks/engine-transport-pilot.md#plain-capture-placement-windows-writer-tests--w11-w01)
+records 254 discovered names and both writer successes on the observed host.
+The separate CLI integration journey retains its own execution scope.
+
+The KE cohort links the Engine KE
 library tests with unchanged v3 flags, plus three baseline-x64 test diagnostics
 with the release profile. The native lane requires that build's
 `--build-receipt`, a fresh `--native-dir` below the current workspace's Windows

@@ -20,7 +20,7 @@ use time_domain::{
     UtcCoordinateQ32, exchange_arithmetic, unfold_ntp,
 };
 
-use super::SoftwareClock;
+use super::{SoftwareClock, TransportFacts};
 
 /// Exact scale of an NTP fractional second.
 const Q32_SCALE: i128 = 1_i128 << 32;
@@ -418,6 +418,23 @@ impl ApplicationCaptureSpan {
         };
         u64::try_from(gap).map_err(|_| MeasurementRefusal::Arithmetic)
     }
+}
+
+/// Return inclusive elapsed bounds between the original application wall reads.
+/// The final commit participates in the chronology check. The retained captures
+/// supply the interval regardless of the conditional measurement outcome.
+/// # Errors
+/// Preserve a capture-order or elapsed-arithmetic refusal.
+pub(super) fn application_elapsed_bounds(
+    facts: &TransportFacts,
+) -> Result<[i128; 2], MeasurementRefusal> {
+    check_capture_order(
+        facts.send_before,
+        facts.send_after,
+        facts.read_return,
+        facts.processing,
+    )?
+    .elapsed_bounds()
 }
 
 /// Stage a fixed-size conditional measurement, without effects or clock reads.

@@ -1032,6 +1032,15 @@ async fn query(fixture: &mut IoFixture) -> Check<[u8; RECEIVE_BYTES]> {
     }
     fixture.slots[0].socket.writable().await?;
     crate::attempt_send(&mut fixture.slots[0], fixture.deadline, &fixture.control);
+    read_emitted_query(fixture).await
+}
+
+/// Observe the actual complete query from either capture path.
+/// # Errors
+/// Preserve native receive and bounded-timeout failures.
+/// # Panics
+/// Fail if the actual send/pending state, source, length or packet differs.
+async fn read_emitted_query(fixture: &IoFixture) -> Check<[u8; RECEIVE_BYTES]> {
     assert!(fixture.slots[0].sent);
     assert!(matches!(fixture.slots[0].phase, Phase::Pending(_)));
     let mut packet = [0_u8; RECEIVE_BYTES];
@@ -1057,6 +1066,21 @@ async fn reply(
     stratum: u8,
     code: u32,
 ) -> Check<()> {
+    reply_observing(fixture, query, stratum, code, std::convert::identity).await
+}
+
+/// Model only the receive capture while keeping actual packet, charge and commit.
+/// # Errors
+/// Preserve native send/receive, bounded-timeout and frame-limit failures.
+/// # Panics
+/// Fail if the literal reply is not submitted as one complete datagram.
+async fn reply_observing(
+    fixture: &mut IoFixture,
+    query: &[u8; RECEIVE_BYTES],
+    stratum: u8,
+    code: u32,
+    observe: impl FnOnce(SoftwareClock) -> SoftwareClock,
+) -> Check<()> {
     let mut packet = [0_u8; PACKET_BYTES];
     packet[0] = 0x24;
     packet[1] = stratum;
@@ -1075,7 +1099,7 @@ async fn reply(
         fixture.slots[0].socket.recv_from(&mut buffers[0]).await
     })
     .await??;
-    let read = SoftwareClock::capture();
+    let read: SoftwareClock = observe(SoftwareClock::capture());
     let result =
         crate::classify_read_result(NativeDatagramPlatform::current(), Ok((length, source)));
     let mut control_open = true;
@@ -1092,6 +1116,411 @@ async fn reply(
         ntp_wire::FrameLimits::new(PACKET_BYTES, 0).map_err(|_| "fixture frame limit refused")?,
         fixture.deadline,
     );
+    Ok(())
+}
+
+/// Original or modeled coordinate placement at the same receive boundary.
+#[derive(Clone, Copy)]
+enum ReceiveCutoffCapture {
+    /// Use the actual healthy bracket.
+    Original,
+    /// Model a reversed bracket whose first reading is exactly at cutoff.
+    FirstAt,
+    /// Model a reversed bracket whose first reading is one nanosecond over.
+    FirstOver,
+    /// Model an ordered bracket whose last reading is exactly at cutoff.
+    LastAt,
+}
+
+/// The original receive cutoff dominates publication and policy effect.
+/// # Errors
+/// Preserve actual socket, control, policy snapshot and cutoff fixture failures.
+/// # Panics
+/// Fail on incorrect terminal precedence, repeated accounting or policy change.
+#[test]
+fn managed_plain_receive_cutoff_charges_once_before_policy_effect() -> Check<()> {
+    runtime()?.block_on(async {
+        use ReceiveCutoffCapture::{FirstAt, FirstOver, LastAt, Original};
+
+        let stop: Control = Control {
+            stop: true,
+            epoch: 0,
+        };
+        let stale: Control = Control {
+            stop: false,
+            epoch: 1,
+        };
+        let cases: [(&str, ReceiveCutoffCapture, Option<Control>, Status); 6] = [
+            ("healthy", Original, None, Status::Control),
+            ("first equals cutoff", FirstAt, None, Status::Timeout),
+            ("first exceeds cutoff", FirstOver, None, Status::Timeout),
+            ("last equals cutoff", LastAt, None, Status::Timeout),
+            (
+                "stop before late reply",
+                FirstAt,
+                Some(stop),
+                Status::Stopped,
+            ),
+            (
+                "invalidation before late reply",
+                FirstAt,
+                Some(stale),
+                Status::Stale,
+            ),
+        ];
+        for (name, capture, current, expected) in cases {
+            let mut fixture: IoFixture = io_fixture()?;
+            let packet: [u8; RECEIVE_BYTES] = query(&mut fixture).await?;
+            let before: [RecordFacts; 2] = facts(&fixture.binding)?;
+            assert!(before.iter().all(|record: &RecordFacts| !record.2));
+            let deadline: Instant = fixture.deadline;
+            let after_deadline: Instant = deadline
+                .checked_add(Duration::from_nanos(1))
+                .ok_or("one-nanosecond cutoff neighbor is unavailable")?;
+            if let Some(current) = current {
+                let _previous: Control = fixture.control_owner.send_replace(current);
+            }
+            reply_observing(&mut fixture, &packet, 0, DENY, |read: SoftwareClock| {
+                assert!(read.mono <= read.mono_after && read.mono_after < deadline);
+                match capture {
+                    Original => read,
+                    FirstAt => SoftwareClock {
+                        mono: deadline,
+                        ..read
+                    },
+                    FirstOver => SoftwareClock {
+                        mono: after_deadline,
+                        ..read
+                    },
+                    LastAt => SoftwareClock {
+                        mono_after: deadline,
+                        ..read
+                    },
+                }
+            })
+            .await?;
+            assert!(
+                Instant::now() < deadline,
+                "fixture processing reached native cutoff"
+            );
+            let [slot, _neighbor]: [LiveSlot; 2] = fixture.slots;
+            assert_eq!(
+                slot.terminal().map(TerminalOutcome::status),
+                Some(expected),
+                "receive capture cutoff disposition differs for {name}"
+            );
+            let report: SlotReport = slot.into_report(0)?;
+            assert_eq!(
+                (report.received(), report.rejected()),
+                (1, u16::from(expected != Status::Control)),
+                "receive capture cutoff charge differs for {name}"
+            );
+            assert!(report.facts().is_none());
+            let after: [RecordFacts; 2] = facts(&fixture.binding)?;
+            if expected == Status::Control {
+                assert!(after.iter().all(|record: &RecordFacts| record.2));
+            } else {
+                assert_eq!(
+                    after, before,
+                    "late receive changed managed policy for {name}"
+                );
+            }
+        }
+        Ok(())
+    })
+}
+
+/// A reversed bracket wholly before cutoff retains the original numerical refusal.
+/// # Errors
+/// Preserve actual socket, profile, cutoff and historical report failures.
+/// # Panics
+/// Fail if receipt accounting or original capture-order data changes.
+#[test]
+fn managed_plain_reversed_receive_before_cutoff_keeps_header_history() -> Check<()> {
+    runtime()?.block_on(async {
+        let mut fixture: IoFixture = io_fixture()?;
+        fixture.slots[0].profile = Some(crate::ExperimentalProfile::new(
+            2_272_060_800,
+            6_311_433_599,
+            30_000_000_000,
+        )?);
+        let packet: [u8; RECEIVE_BYTES] = query(&mut fixture).await?;
+        let before: [RecordFacts; 2] = facts(&fixture.binding)?;
+        let deadline: Instant = fixture.deadline;
+        let lower: Instant = deadline
+            .checked_sub(Duration::from_nanos(1))
+            .ok_or("one-nanosecond pre-cutoff neighbor is unavailable")?;
+        reply_observing(&mut fixture, &packet, 2, 0, |read: SoftwareClock| {
+            assert!(read.mono_after < lower && lower < deadline);
+            SoftwareClock {
+                mono: lower,
+                ..read
+            }
+        })
+        .await?;
+        assert!(
+            Instant::now() < deadline,
+            "fixture processing reached native cutoff"
+        );
+        let [slot, _neighbor]: [LiveSlot; 2] = fixture.slots;
+        let report: SlotReport = slot.into_report(0)?;
+        assert_eq!(report.status(), Status::Header);
+        assert_eq!((report.received(), report.rejected()), (1, 0));
+        let historical: &crate::TransportFacts = report
+            .facts()
+            .ok_or("pre-cutoff header lost its original facts")?;
+        assert_eq!(historical.read_return().monotonic(), lower);
+        assert!(historical.read_return().monotonic_after() < lower);
+        assert!(matches!(
+            historical.measurement(),
+            Err(crate::MeasurementRefusal::CaptureOrder)
+        ));
+        assert_eq!(facts(&fixture.binding)?, before);
+        Ok(())
+    })
+}
+
+/// Check the writer against the original committed readings with no mapping profile.
+/// # Errors
+/// Preserve actual socket, capture-neighbor, retained report and writer failures.
+/// # Panics
+/// Fail if the original readings, numerical refusal or exact report bytes differ.
+#[test]
+fn managed_header_writes_receive_to_commit_age_only_for_ordered_capture() -> Check<()> {
+    use std::fmt::Write as _;
+
+    const PREFIX: &str = "event=measurement slot=0 status=unavailable reason=mapping_unavailable authentication=none eligible=0 capture=software_bracketed mapping=absent wire_error=unknown";
+
+    runtime()?.block_on(async {
+        for case in ["ordered", "receive-reversed", "send-return-reversed"] {
+            let receive_reversed: bool = case == "receive-reversed";
+            let send_return_reversed: bool = case == "send-return-reversed";
+            let mut fixture: IoFixture = io_fixture()?;
+            assert!(fixture.slots[0].profile.is_none());
+            let packet: [u8; RECEIVE_BYTES] = query(&mut fixture).await?;
+            let Phase::Pending(sent) = &mut fixture.slots[0].phase else {
+                return Err("actual send is not pending".into());
+            };
+            let earlier: Instant = sent.after.mono_after;
+            let later: Instant = earlier
+                .checked_add(Duration::from_nanos(1))
+                .ok_or("one-nanosecond receive capture neighbor is unavailable")?;
+            let (leading, trailing): (Instant, Instant) = if receive_reversed {
+                (later, earlier)
+            } else if send_return_reversed {
+                // Reverse only the middle bracket after the real send returned.
+                sent.after.mono = later;
+                (later, later)
+            } else {
+                (earlier, later)
+            };
+            reply_observing(&mut fixture, &packet, 2, 0, |read: SoftwareClock| {
+                assert!(later < read.mono && read.mono <= read.mono_after);
+                SoftwareClock {
+                    mono: leading,
+                    mono_after: trailing,
+                    ..read
+                }
+            })
+            .await?;
+
+            let [slot, _neighbor]: [LiveSlot; 2] = fixture.slots;
+            let report: SlotReport = slot.into_report(0)?;
+            assert_eq!(report.status(), Status::Header);
+            assert_eq!((report.received(), report.rejected()), (1, 0));
+            let historical: &crate::TransportFacts = report
+                .facts()
+                .ok_or("committed header lost its original facts")?;
+            let read: SoftwareClock = historical.read_return();
+            let committed: Instant = historical.processing();
+            assert_eq!(
+                (read.monotonic(), read.monotonic_after()),
+                (leading, trailing)
+            );
+            assert!(later < committed);
+            assert!(matches!(
+                historical.measurement(),
+                Err(crate::MeasurementRefusal::Unavailable)
+            ));
+
+            let mut expected: String = String::from(PREFIX);
+            if !receive_reversed {
+                let elapsed_ns: u128 = (committed - trailing).as_nanos();
+                write!(expected, " receive_to_commit_ns={elapsed_ns}")?;
+            }
+            if case == "ordered" {
+                let first: SoftwareClock = historical.send_before();
+                let lower_ns: u128 = (leading - first.monotonic_after()).as_nanos();
+                let upper_ns: u128 = (trailing - first.monotonic()).as_nanos();
+                write!(
+                    expected,
+                    " app_wall_elapsed_min_ns={lower_ns} app_wall_elapsed_max_ns={upper_ns}"
+                )?;
+            }
+            expected.push('\n');
+            let mut written: Vec<u8> = Vec::new();
+            report.write_measurement(&mut written)?;
+            assert_eq!(std::str::from_utf8(&written)?, expected, "case={case}");
+        }
+        Ok(())
+    })
+}
+
+/// Reject reversed or pre-send receive readings before a managed control changes policy.
+/// # Errors
+/// Preserve actual socket, control and policy-observation failures.
+/// # Panics
+/// Fail if chronology refusal changes the pending request, accounting or policy,
+/// or if an ordered reply cannot complete the original request.
+#[test]
+fn managed_plain_reversed_receive_leaves_control_pending_until_ordered_reply() -> Check<()> {
+    let runtime: tokio::runtime::Runtime = runtime()?;
+    let reversed_bracket: Check<()> = runtime.block_on(async {
+        let mut fixture: IoFixture = io_fixture()?;
+        let packet: [u8; RECEIVE_BYTES] = query(&mut fixture).await?;
+        let deadline: Instant = fixture.deadline;
+        let Phase::Pending(sent) = &fixture.slots[0].phase else {
+            return Err("actual send is not pending".into());
+        };
+        let send_span: (Instant, Instant) = (sent.before.mono, sent.after.mono_after);
+        let before: [RecordFacts; 2] = facts(&fixture.binding)?;
+        assert!(
+            before
+                .iter()
+                .all(|record: &RecordFacts| record.1.is_some() && !record.2)
+        );
+
+        reply_observing(&mut fixture, &packet, 0, DENY, |read: SoftwareClock| {
+            assert!(send_span.1 < read.mono && read.mono <= read.mono_after);
+            assert!(read.mono_after < deadline);
+            SoftwareClock {
+                mono_after: send_span.1,
+                ..read
+            }
+        })
+        .await?;
+
+        let pending: &LiveSlot = &fixture.slots[0];
+        assert_eq!(
+            pending.terminal().map(TerminalOutcome::status),
+            None,
+            "reversed receive capture must leave the original control request pending"
+        );
+        assert!(matches!(&pending.phase, Phase::Pending(saved)
+            if (saved.before.mono, saved.after.mono_after) == send_span));
+        assert_eq!(pending.packet[40..48], packet[40..48]);
+        assert_eq!(
+            (pending.send_attempts, pending.received, pending.rejected),
+            (1, 1, 1)
+        );
+        assert_eq!(fixture.deadline, deadline);
+        assert_eq!(facts(&fixture.binding)?, before);
+
+        reply(&mut fixture, &packet, 0, DENY).await?;
+        let [slot, _neighbor]: [LiveSlot; 2] = fixture.slots;
+        assert_eq!(slot.send_attempts, 1);
+        let report: SlotReport = slot.into_report(0)?;
+        assert_eq!(
+            (report.status(), report.control_code()),
+            (Status::Control, Some(DENY))
+        );
+        assert_eq!((report.received(), report.rejected()), (2, 1));
+        assert!(report.facts().is_none());
+        let after: [RecordFacts; 2] = facts(&fixture.binding)?;
+        for (prior, denied) in before.iter().zip(&after) {
+            assert_eq!((denied.1, denied.2), (prior.1, true));
+        }
+        Ok(())
+    });
+    reversed_bracket?;
+    runtime.block_on(managed_plain_receive_start_boundary())
+}
+
+/// Compare the original reserved send with the receive start under actual policy custody.
+/// # Errors
+/// Preserve socket, control, checked capture arithmetic and policy-observation failures.
+/// # Panics
+/// Fail if a receive that starts before the send changes Pending, work or policy,
+/// or if exact equality cannot complete the original request.
+async fn managed_plain_receive_start_boundary() -> Check<()> {
+    let mut fixture: IoFixture = io_fixture()?;
+    fixture.slots[0].socket.writable().await?;
+    let deadline: Instant = fixture.deadline;
+    let sent_at: Instant = Instant::now();
+    let send: SoftwareClock = SoftwareClock {
+        mono: sent_at,
+        utc: std::time::SystemTime::UNIX_EPOCH,
+        mono_after: sent_at,
+    };
+    let early: Instant = sent_at
+        .checked_sub(Duration::from_micros(100))
+        .ok_or("modeled receive start underflow")?;
+    let regressed_return: SoftwareClock = SoftwareClock {
+        mono: early,
+        mono_after: early,
+        ..send
+    };
+    let initial: [RecordFacts; 2] = facts(&fixture.binding)?;
+    let (captures, count): (observations::SendReads, observations::ReadCount) =
+        observations::SendReads::fixed_raw(send, regressed_return);
+    let current = fixture.control.borrow();
+    let effect: ManagedEffect =
+        attempt_managed_send_observing(&mut fixture.slots[0], deadline, captures);
+    drop(current);
+    assert!(matches!(effect, ManagedEffect::Handled));
+    assert_eq!(count.reads(), 2);
+    let packet: [u8; RECEIVE_BYTES] = read_emitted_query(&fixture).await?;
+    assert_modeled_send_custody(&mut fixture, send, regressed_return, initial)?;
+    let retained: [RecordFacts; 2] = facts(&fixture.binding)?;
+
+    reply_observing(&mut fixture, &packet, 0, DENY, |read: SoftwareClock| {
+        assert!(early < send.mono_after && send.mono_after <= read.mono);
+        assert!(read.mono_after < deadline);
+        SoftwareClock {
+            mono: early,
+            mono_after: send.mono_after,
+            ..read
+        }
+    })
+    .await?;
+
+    let pending: &LiveSlot = &fixture.slots[0];
+    assert_eq!(
+        pending.terminal().map(TerminalOutcome::status),
+        None,
+        "receive started before the reserved send and must leave the original control pending"
+    );
+    assert!(matches!(&pending.phase, Phase::Pending(saved)
+        if saved.before.mono_after == send.mono_after && saved.after.mono_after == early));
+    assert_eq!(pending.packet[40..48], packet[40..48]);
+    assert_eq!(
+        (pending.send_attempts, pending.received, pending.rejected),
+        (1, 1, 1)
+    );
+    assert_eq!(fixture.deadline, deadline);
+    assert_eq!(facts(&fixture.binding)?, retained);
+
+    reply_observing(&mut fixture, &packet, 0, DENY, |read: SoftwareClock| {
+        SoftwareClock {
+            mono: send.mono_after,
+            mono_after: send.mono_after,
+            ..read
+        }
+    })
+    .await?;
+    let [slot, _neighbor]: [LiveSlot; 2] = fixture.slots;
+    assert_eq!(slot.send_attempts, 1);
+    let report: SlotReport = slot.into_report(0)?;
+    assert_eq!(
+        (report.status(), report.control_code()),
+        (Status::Control, Some(DENY))
+    );
+    assert_eq!((report.received(), report.rejected()), (2, 1));
+    assert!(report.facts().is_none());
+    let denied: [RecordFacts; 2] = facts(&fixture.binding)?;
+    for (before, after) in retained.iter().zip(&denied) {
+        assert_eq!((after.1, after.2), (before.1, true));
+    }
     Ok(())
 }
 

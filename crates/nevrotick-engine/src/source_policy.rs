@@ -3169,6 +3169,13 @@ fn commit_managed_reply_observing(
             return Err(SourcePolicyError::Stale);
         }
         if let Some(kind) = control {
+            // Policy effects require the whole original receive bracket at or after send.
+            if candidate.read.mono < stamp.sent_at
+                || candidate.read.mono > candidate.read.mono_after
+            {
+                slot.rejected += 1;
+                return Ok(false);
+            }
             state.control(&binding, *kind, now)?;
         }
         Ok(true)

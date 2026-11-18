@@ -166,6 +166,12 @@ enum DefaultCase {
     PolicyReenable,
     /// Execute only the fixed session-checkpoints control.
     SessionCheckpoints,
+    /// Require reverse receive chronology to leave the same request pending.
+    PolicyReceiveChronology,
+    /// Observe the managed writer's exact placement fields and chronology refusals.
+    PlacementManagedWriter,
+    /// Observe the nominal writer's exact fields and independent arithmetic.
+    PlacementNominalWriter,
 }
 
 impl DefaultCase {
@@ -185,6 +191,9 @@ impl DefaultCase {
             Some("default-policy-poison") => Ok(Self::PolicyPoison),
             Some("default-policy-reenable") => Ok(Self::PolicyReenable),
             Some("default-session-checkpoints") => Ok(Self::SessionCheckpoints),
+            Some("default-policy-receive-chronology") => Ok(Self::PolicyReceiveChronology),
+            Some("placement-managed-writer") => Ok(Self::PlacementManagedWriter),
+            Some("placement-nominal-writer") => Ok(Self::PlacementNominalWriter),
             _ => Err(io::Error::other("Unadmitted launcher mode.")),
         }
     }
@@ -245,6 +254,21 @@ impl DefaultCase {
             Self::SessionCheckpoints => &[
                 "--exact",
                 "session::tests::public_session_receiving_checkpoint_races_keep_reuse_and_retirement",
+                "--test-threads=1",
+            ],
+            Self::PolicyReceiveChronology => &[
+                "--exact",
+                "source_policy::tests::managed_plain_reversed_receive_leaves_control_pending_until_ordered_reply",
+                "--test-threads=1",
+            ],
+            Self::PlacementManagedWriter => &[
+                "--exact",
+                "source_policy::tests::managed_header_writes_receive_to_commit_age_only_for_ordered_capture",
+                "--test-threads=1",
+            ],
+            Self::PlacementNominalWriter => &[
+                "--exact",
+                "processing_guard_tests::real_udp_measurement_matches_independent_captured_coordinates",
                 "--test-threads=1",
             ],
         }

@@ -1145,14 +1145,28 @@ class DefaultEngineCohortAdmission(unittest.TestCase):
         ke = TestRosterAdmission().roster()
         with self.assertRaises(NATIVE.Incomplete): self.admit(ke)
 
+    def test_default_chronology_must_be_in_both_exact_rosters(self):
+        mode = "default-policy-receive-chronology"
+        name = "source_policy::tests::managed_plain_reversed_receive_leaves_control_pending_until_ordered_reply"
+        self.assertEqual(len(NATIVE.DEFAULT_COHORT_CASES), 12)
+        self.assertEqual(NATIVE.DEFAULT_COHORT_CASES[mode], name)
+        value = self.roster()
+        self.assertIs(self.admit(value), value)
+        for key in ("selected_default_tests", "tests"):
+            omitted = dict(value, **{key: [item for item in value[key] if item != name]})
+            with self.subTest(roster=key), self.assertRaises(NATIVE.Incomplete):
+                self.admit(omitted)
+
     def test_default_result_requires_one_exact_success_and_full_filtered_count(self):
         value = self.roster()
+        filtered = len(value["tests"]) - 1
         for mode, name in NATIVE.DEFAULT_COHORT_CASES.items():
             output = (f"running 1 test\ntest {name} ... ok\n\n"
-                      f"test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; {len(value['tests']) - 1} filtered out; finished in 0.01s\n")
+                      f"test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; {filtered} filtered out; finished in 0.01s\n")
             self.assertEqual(NATIVE.validate_default_execution(output, value, mode), name)
             for bad in (output.replace(name, "same_count::substitute"), output.replace("1 passed", "0 passed"),
-                        output.replace("0 ignored", "1 ignored"), output.replace("11 filtered", "10 filtered")):
+                        output.replace("0 ignored", "1 ignored"),
+                        output.replace(f"{filtered} filtered", f"{filtered - 1} filtered")):
                 with self.subTest(mode=mode, bad=bad), self.assertRaises(NATIVE.Incomplete):
                     NATIVE.validate_default_execution(bad, value, mode)
         with self.assertRaises(NATIVE.Incomplete):
@@ -1190,13 +1204,240 @@ class DefaultEngineCohortAdmission(unittest.TestCase):
         body = source.split("impl DefaultCase {", 1)[1].split("/// Closed selection", 1)[0]
         actual = re.findall(r'"([^"\n]*)"', body.split("fn arguments", 1)[1])
         expected = []
-        for name in NATIVE.DEFAULT_COHORT_CASES.values():
+        for name in (*NATIVE.DEFAULT_COHORT_CASES.values(), *PlacementEngineCohortAdmission.CASES.values()):
             expected += ["--exact", name, "--test-threads=1"]
         self.assertEqual(actual, expected)
+        routes = dict(re.findall(r'Some\("(default-[^"]+)"\) => Ok\(Self::(\w+)\)', body))
+        self.assertEqual(routes.keys(), NATIVE.DEFAULT_COHORT_CASES.keys())
         supervisor = NATIVE.native_supervisor()
-        for mode in NATIVE.DEFAULT_COHORT_CASES:
-            self.assertIn("'" + mode + "'", supervisor)
-            self.assertIn('case "' + mode + '":', supervisor)
+        admitted = supervisor.split("$request.mode -cnotin @(", 1)[1].split(") -or", 1)[0]
+        test_images = supervisor.split("elseif ($request.mode -cin @(", 1)[1].split(")) { 'engine-tests.exe' }", 1)[0]
+        flat = supervisor.split('case "cpu": case "list": case "ke":', 1)[1].split("return 4;", 1)[0]
+        for mode, name in NATIVE.DEFAULT_COHORT_CASES.items():
+            with self.subTest(mode=mode):
+                arguments = body.split(f"Self::{routes[mode]} => &[", 1)[1].split("],", 1)[0]
+                self.assertEqual(re.findall(r'"([^"\n]*)"', arguments), ["--exact", name, "--test-threads=1"])
+                self.assertIn("'" + mode + "'", admitted)
+                self.assertIn("'" + mode + "'", test_images)
+                self.assertIn('case "' + mode + '":', flat)
+        self.assertNotIn("-EncodedCommand", supervisor)
+
+
+class PlacementEngineCohortAdmission(unittest.TestCase):
+    """Host controls for the two fixed Windows plaintext measurement writers."""
+
+    CASES = {
+        "placement-managed-writer":
+            "source_policy::tests::managed_header_writes_receive_to_commit_age_only_for_ordered_capture",
+        "placement-nominal-writer":
+            "processing_guard_tests::real_udp_measurement_matches_independent_captured_coordinates",
+    }
+    NEIGHBOR = "source_policy::tests::unselected_same_count_neighbor"
+
+    def roster(self, candidate=HASH):
+        selected = sorted(self.CASES.values())
+        return {"schema_version": 1, "package": "nevrotick-engine", "target": "x86_64-pc-windows-msvc",
+                "features": [], "candidate_sha256": candidate,
+                "extra_inputs_sha256": {name: HASH for name in NATIVE.EXTRAS},
+                "tests": sorted([self.NEIGHBOR, *selected]), "selected_placement_tests": selected}
+
+    def test_roster_requires_its_exact_two_cases_feature_and_candidate(self):
+        value = self.roster()
+        extras = value["extra_inputs_sha256"]
+        selected = value["selected_placement_tests"]
+        self.assertEqual(NATIVE.PLACEMENT_COHORT_CASES, self.CASES)
+        self.assertIs(NATIVE.validate_test_roster(value, HASH, extras, placement_cohort=True), value)
+        faults = (
+            {"features": ["ke-association-prototype"]}, {"target": "x86_64-unknown-linux-gnu"},
+            {"candidate_sha256": "b" * 64}, {"extra_inputs_sha256": {}},
+            {"selected_placement_tests": selected[:-1]}, {"selected_placement_tests": [selected[0]] * 2},
+            {"selected_placement_tests": sorted([selected[0], self.NEIGHBOR])},
+            {"tests": sorted([name if name != selected[1] else "foreign::cohort" for name in value["tests"]])},
+            {"selected_default_tests": selected}, {"selected_ke_tests": selected},
+            {"arbitrary_filter": "source_policy"},
+        )
+        for fault in faults:
+            with self.subTest(fault=fault), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_test_roster(dict(value, **fault), HASH, extras, placement_cohort=True)
+        for wrong in (DefaultEngineCohortAdmission().roster(), TestRosterAdmission().roster()):
+            with self.subTest(wrong=wrong.keys()), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_test_roster(wrong, HASH, extras, placement_cohort=True)
+        with self.assertRaises(NATIVE.Incomplete):
+            NATIVE.validate_test_roster(value, HASH, extras, default_cohort=True)
+        with self.assertRaises(NATIVE.Incomplete):
+            NATIVE.validate_test_roster(value, HASH, extras)
+
+    def test_exact_result_requires_the_selected_name_and_every_other_case_filtered(self):
+        roster = self.roster()
+        selected = roster["selected_placement_tests"]
+        for mode, expected in self.CASES.items():
+            output = (f"running 1 test\r\ntest {expected} ... ok\r\n\r\n"
+                      "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; "
+                      "2 filtered out; finished in 0.01s\r\n")
+            self.assertEqual(NATIVE.validate_default_execution(output, roster, mode, placement_cohort=True),
+                             expected)
+            other, = (name for name in selected if name != expected)
+            for bad in (output.replace(expected, other), output.replace(expected, self.NEIGHBOR),
+                        output.replace("2 filtered", "1 filtered"), output.replace("0 ignored", "1 ignored"),
+                        output.replace("1 passed", "0 passed"), output + output):
+                with self.subTest(mode=mode, bad=bad), self.assertRaises(NATIVE.Incomplete):
+                    NATIVE.validate_default_execution(bad, roster, mode, placement_cohort=True)
+            with self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_default_execution(output, roster, mode)
+        for wrong in ("placement-arbitrary", "default-pilot-healthy", "ke"):
+            with self.subTest(wrong=wrong), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.validate_default_execution(output, roster, wrong, placement_cohort=True)
+
+    def test_placement_build_exports_the_exact_empty_feature_artifact(self):
+        names = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "policy/tool-manifest.json")
+        source = {name: NATIVE.PRODUCT.sha256(ROOT / name) for name in names}
+        roster = self.roster(NATIVE.ALLOCATION.canonical_digest(source))
+        roster["extra_inputs_sha256"] = {name: NATIVE.PRODUCT.sha256(ROOT / name) for name in NATIVE.EXTRAS}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output, vendor, toolchain, sdk = (root / name for name in ("output", "vendor", "toolchain", "sdk"))
+            for directory in (output, vendor, toolchain, sdk):
+                directory.mkdir()
+            config, inventory, test_roster = (root / name for name in ("sdk.toml", "sdk.json", "roster.json"))
+            for path in (config, inventory):
+                path.write_text("{}")
+            test_roster.write_text(json.dumps(roster))
+            stable = {"stable": toolchain, "inventories": [], "readonly_roots": [toolchain],
+                      "policy_sha256": HASH, "installation_pointer_sha256": HASH}
+            artifact = f"/work/target/{NATIVE.TARGET}/debug/deps/nevrotick_engine-{'b' * 16}.exe"
+
+            def observe(argv, **_kwargs):
+                text = ""
+                if argv[0] == "cargo":
+                    self.assertIn("--no-default-features", argv)
+                    self.assertNotIn("--features", argv)
+                    text = json.dumps({"reason": "compiler-artifact",
+                        "package_id": "path+file:///work/fixture/crates/nevrotick-engine#0.0.0",
+                        "manifest_path": "/work/fixture/crates/nevrotick-engine/Cargo.toml",
+                        "target": {"name": "nevrotick_engine", "kind": ["lib"], "crate_types": ["lib"]},
+                        "profile": {"test": True, "opt_level": "0", "debug_assertions": True,
+                                    "overflow_checks": True},
+                        "features": [], "executable": artifact, "filenames": [artifact]})
+                    emitted = output / "work" / artifact.removeprefix("/work/")
+                elif "-o" in argv:
+                    emitted = output / "work" / argv[argv.index("-o") + 1].removeprefix("/work/")
+                else:
+                    emitted = None
+                if emitted is not None:
+                    emitted.parent.mkdir(parents=True, exist_ok=True)
+                    emitted.write_bytes(b"synthetic emitted artifact")
+                    if emitted.suffix == ".exe":
+                        emitted.with_suffix(".pdb").write_bytes(b"synthetic emitted PDB")
+                return {"command": argv, "exit_code": 0, "failure": None, "output": text}
+
+            args = NATIVE.argparse.Namespace(output_dir=output, vendor_dir=vendor, toolchain_dir=toolchain,
+                xwin_config=config, xwin_inventory=inventory, test_roster=test_roster, placement_cohort=True,
+                default_cohort=False, facade_consumer=False, jobs=6)
+            space = type("DiskUsage", (), {"free": 4 * 1024**3})()
+            report = {"lane": "build"}
+            with (patch.object(NATIVE.shutil, "disk_usage", return_value=space),
+                  patch.object(NATIVE.PRODUCT, "admit_product", return_value=({}, source)),
+                  patch.object(NATIVE.PRODUCT, "admit_vendor", return_value={}),
+                  patch.object(NATIVE.PRODUCT, "admit_tools", return_value={}),
+                  patch.object(NATIVE.PRODUCT, "windows_libraries", return_value=(sdk, {})),
+                  patch.object(NATIVE.PRODUCT, "library_inventory", return_value={}),
+                  patch.object(NATIVE.PRODUCT, "sandbox", side_effect=lambda _tool, _work, _source, _vendor, argv, *_rest: argv),
+                  patch.object(NATIVE.PRODUCT, "boundary_control"),
+                  patch.object(NATIVE.ANALYSIS, "admit", return_value=stable),
+                  patch.object(NATIVE.ENV, "require_admitted_compiler"),
+                  patch.object(NATIVE.ENV, "run", side_effect=observe),
+                  patch.object(NATIVE.PE, "pe_readback", return_value={"synthetic": True})):
+                NATIVE.build(args, report)
+            self.assertEqual(report["status"], "passed")
+            self.assertIs(report["placement_cohort"], True)
+            self.assertEqual(report["test_features"], [])
+            self.assertTrue(report["bookends_passed"])
+            self.assertEqual((output / "engine-tests.exe").read_bytes(), b"synthetic emitted artifact")
+
+    def test_native_refuses_mismatched_build_or_hash_valid_foreign_roster_before_staging(self):
+        source = {"placement-source": HASH}
+        candidate = NATIVE.ALLOCATION.canonical_digest(source)
+        roster = self.roster(candidate)
+        extras = roster["extra_inputs_sha256"]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            roster_path = root / NATIVE.TEST_ROSTER_NAME
+            raw = json.dumps(roster).encode()
+            roster_path.write_bytes(raw)
+            self.assertEqual(NATIVE.read_test_roster(roster_path, candidate, extras, placement_cohort=True),
+                             (roster, raw))
+            receipt = {"status": "passed", "lane": "build", "product_source_sha256": source,
+                       "candidate_sha256": candidate, "extra_inputs_sha256": extras, "placement_cohort": True,
+                       "default_cohort": False, "facade_consumer": False, "test_features": [],
+                       "bookends_passed": True, "product_target_flags": NATIVE.ENV.MSVC_FLAGS,
+                       "test_roster": {"path": str(roster_path), "sha256": hashlib.sha256(raw).hexdigest()}}
+            args = type("Arguments", (), {"build_receipt": root / "verification.json",
+                                         "native_dir": root / "never-created", "placement_cohort": True})()
+            foreign = dict(roster, selected_placement_tests=sorted([self.NEIGHBOR, self.CASES["placement-nominal-writer"]]))
+            foreign_raw = json.dumps(foreign).encode()
+            roster_path.write_bytes(foreign_raw)
+            cases = (
+                (dict(receipt, placement_cohort=False), "Native placement selection differs from the exact build profile"),
+                (dict(receipt, placement_cohort=1), "Native placement selection differs from the exact build profile"),
+                (dict(receipt, test_roster={"path": str(roster_path), "sha256": hashlib.sha256(foreign_raw).hexdigest()}),
+                 "Placement cohort requires both fixed writer cases and no KE feature"),
+            )
+            for build, message in cases:
+                with (self.subTest(message=message, build=build["placement_cohort"]),
+                      patch.object(NATIVE, "read_record", return_value=build),
+                      patch.object(NATIVE.PRODUCT, "admit_product", return_value=({}, source)),
+                      patch.object(NATIVE.PRODUCT, "sha256", return_value=HASH),
+                      patch.object(NATIVE, "native_directory") as staging):
+                    with self.assertRaisesRegex(NATIVE.Incomplete, message):
+                        NATIVE.native(args, {})
+                    staging.assert_not_called()
+            self.assertFalse(args.native_dir.exists())
+
+    def test_flag_refuses_facade_default_and_fault_preparation_before_output(self):
+        argv = ["verify-engine-native", "--placement-cohort", "--output-dir", "/tmp/uncreated-placement"]
+        cases = (["--lane", "build", "--facade-consumer"],
+                 ["--lane", "native", "--default-cohort"],
+                 ["--lane", "prepare-facade-faults"])
+        for flags in cases:
+            with (self.subTest(flags=flags), patch.object(NATIVE.sys, "argv", argv + flags),
+                  patch.object(NATIVE.ALLOCATION, "new_output") as output,
+                  patch.object(NATIVE, "build") as build, patch.object(NATIVE, "native") as native,
+                  patch.object(NATIVE, "prepare_facade_faults") as prepare,
+                  contextlib.redirect_stdout(io.StringIO()) as result):
+                self.assertEqual(NATIVE.main(), 1)
+                self.assertEqual(json.loads(result.getvalue())["status"], "incomplete")
+                for effect in (output, build, native, prepare):
+                    effect.assert_not_called()
+
+    def test_exact_modes_keep_flat_process_and_supervisor_contract(self):
+        launcher = (ROOT / NATIVE.LAUNCHER).read_text()
+        body = launcher.split("impl DefaultCase {", 1)[1].split("/// Closed selection", 1)[0]
+        routes = dict(re.findall(r'Some\("(placement-[^"]+)"\) => Ok\(Self::(\w+)\)', body))
+        self.assertEqual(routes.keys(), self.CASES.keys())
+        supervisor = NATIVE.native_supervisor()
+        for mode, selected in self.CASES.items():
+            request = dict(REQUEST, mode=mode)
+            with self.subTest(mode=mode):
+                arguments = body.split(f"Self::{routes[mode]} => &[", 1)[1].split("],", 1)[0]
+                self.assertEqual(re.findall(r'"([^"\n]*)"', arguments),
+                                 ["--exact", selected, "--test-threads=1"])
+                self.assertEqual(NATIVE.mode_profile(mode), (4, 2, "engine-tests.exe"))
+                self.assertIn("'" + mode + "'", supervisor)
+                self.assertIn('case "' + mode + '":', supervisor)
+                current = observation()
+                child, = (event for event in current["execution"]["job_events"]
+                          if event["kind"] == 6 and event["pid"] == 13)
+                child["basename"] = "engine-tests.exe"
+                NATIVE.validate_console(current, request, HASH, HASH)
+                with self.assertRaises(NATIVE.Incomplete):
+                    NATIVE.validate_console(nested_observation(mode), request, HASH, HASH, expected_processes=3)
+                with self.assertRaises(NATIVE.Incomplete):
+                    NATIVE.validate_console(current, dict(request, process_limit=6), HASH, HASH)
+                child["basename"] = "gate-control.exe"
+                with self.assertRaises(NATIVE.Incomplete):
+                    NATIVE.validate_console(current, request, HASH, HASH)
+        with self.assertRaises(NATIVE.Incomplete):
+            NATIVE.mode_profile("placement-arbitrary")
         self.assertNotIn("-EncodedCommand", supervisor)
 
 

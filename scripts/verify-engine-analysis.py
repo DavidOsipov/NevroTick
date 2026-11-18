@@ -5634,8 +5634,8 @@ def execute_address_profile(args, report: dict) -> None:
 ENGINE_KE_POLICY = COMMON.ENGINE_KE_POLICY
 ENGINE_KE_HOST_SUBJECTS = dict(COMMON.ENGINE_KE_SUBJECTS)
 ENGINE_KE_SCOPE = COMMON.Scope("nevrotick-engine", COMMON.ENGINE_KE_SUBJECTS, ENGINE_KE_POLICY)
-ENGINE_KE_ORDINARY_COUNT = 548
-ENGINE_KE_CASE_COUNT = 268
+ENGINE_KE_ORDINARY_COUNT = 560
+ENGINE_KE_CASE_COUNT = 276
 ENGINE_KE_DOCTEST_COUNT = 90
 ENGINE_KE_DOCTEST_NAME = re.compile(
     r"[^\r\n]+[.]rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile(?: fail)?)?"
@@ -5677,6 +5677,27 @@ ENGINE_PLAIN_CAPTURE_TESTS = frozenset((
     "source_policy::tests::managed_send_cutoff_uses_both_clock_readings",
     "source_policy::tests::managed_inverted_pre_send_capture_refuses_before_reservation",
     "session::tests::mixed_series_capture_refusal_precedes_retained_healthy_facts_if_profiled",
+))
+ENGINE_RECEIVE_CAPTURE_TESTS = frozenset((
+    "source_policy::tests::managed_plain_receive_cutoff_charges_once_before_policy_effect",
+    "source_policy::tests::managed_plain_reversed_receive_before_cutoff_keeps_header_history",
+    "nts_ke_experiment::datagram::tests::managed_retired_deny_refuses_receive_capture_at_cutoff",
+))
+ENGINE_RECEIVE_CHRONOLOGY_TESTS = frozenset((
+    "source_policy::tests::managed_plain_reversed_receive_leaves_control_pending_until_ordered_reply",
+    "nts_ke_experiment::datagram::tests::managed_retired_deny_refuses_reversed_receive_capture",
+    "nts_ke_experiment::datagram::tests::managed_retired_deny_refuses_future_receive_tail",
+))
+ENGINE_KNOWN_RECEIVE_DEBIT_TEST = (
+    "nts_ke_experiment::datagram::tests::known_protected_datagram_with_invalid_capture_charges_frame_and_bytes")
+ENGINE_HEADER_AGE_TEST = (
+    "source_policy::tests::managed_header_writes_receive_to_commit_age_only_for_ordered_capture")
+ENGINE_ORDINARY_PROTECTED_RECEIVE_TEST = (
+    "nts_ke_experiment::datagram::tests::ordinary_protected_reversed_receive_bracket_cannot_commit")
+ENGINE_PROTECTED_RECEIVE_EFFECT_TESTS = frozenset((
+    "nts_ke_experiment::datagram::tests::retired_completion_commit_respects_acceptance_and_expiry",
+    "nts_ke_experiment::datagram::tests::recovery_tests::reversed_final_zero_cookie_capture_cannot_schedule_replacement",
+    "nts_ke_experiment::datagram::tests::recovery_tests::final_zero_cookie_capture_at_cutoff_cannot_schedule_replacement",
 ))
 ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/tests.rs",
@@ -5888,10 +5909,16 @@ def validate_engine_ke_inventory(names: object) -> list[str]:
             or ENGINE_KE_SEND_AFTER_TEST not in names
             or not ENGINE_KE_MANAGED_PROTECTED_TESTS.issubset(names)
             or not ENGINE_FINAL_REPLY_CUTOFF_TESTS.issubset(names)
-            or not ENGINE_PLAIN_CAPTURE_TESTS.issubset(names)):
+            or not ENGINE_PLAIN_CAPTURE_TESTS.issubset(names)
+            or not ENGINE_RECEIVE_CAPTURE_TESTS.issubset(names)
+            or not ENGINE_RECEIVE_CHRONOLOGY_TESTS.issubset(names)
+            or ENGINE_KNOWN_RECEIVE_DEBIT_TEST not in names
+            or ENGINE_HEADER_AGE_TEST not in names
+            or ENGINE_ORDINARY_PROTECTED_RECEIVE_TEST not in names
+            or not ENGINE_PROTECTED_RECEIVE_EFFECT_TESTS.issubset(names)):
         raise Incomplete(
             f"Engine KE requires all {ENGINE_KE_ORDINARY_COUNT} actual Engine tests including its "
-            f"{ENGINE_KE_CASE_COUNT} KE cases, send-after, managed protected, final reply cutoff and plain capture regressions.")
+            f"{ENGINE_KE_CASE_COUNT} KE cases and all required send, cutoff, chronology, receive debit, header age, ordinary protected receipt and final-effect regressions.")
     return names
 
 
@@ -6681,6 +6708,89 @@ SOURCE_POLICY_DOCTEST_DIGEST = '5f737f32c7949073c5738f61d95b62b847ba1eb4680a58c5
 # profile in both modes: its default roster plus these 234 KE identities.
 SOURCE_POLICY_EP1_EXTRA_COUNT = 234
 SOURCE_POLICY_EP1_DIGEST = 'f0de16de547951830fa06c1d49fa103ecce0d968ac20e68f0e538711d8f8a1a9'
+SOURCE_POLICY_CAPTURE_CANDIDATE = "8019957465542f8586cd7d7635398dcb589e8813cf374c3615f4dea2b2ab5e80"
+SOURCE_POLICY_CAPTURE_MANIFEST = "6cff4b71635c3243fa98fd962adf7075ef47b51b3fd1c48a51e3b6ae5fc208a2"
+SOURCE_POLICY_CAPTURE_BOUNDARY = "f8e7451c343908a9c42abe6472317c2a40c56f3fc08b13585392e2c492d90ced"
+SOURCE_POLICY_CAPTURE_ROSTER = {
+    "default-ordinary": (276, "c06a3de85145150811788d80899f7581ef16e33aae63833dbf9d568b6e5ea505"),
+    "default-doctests": (89, "57e7889097c2d6cae7592301d4ac009d9392d674aed73b6b2bb93eb69c466f2d"),
+    "ep1-ordinary": (548, "3b0bce2e2af7f2a134d096e4191c645d5721866a39f539cb6bb88603ddee681f"),
+    "ep1-doctests": (90, "27fda4fdb03c642627fa63e22d54d6c89ce0d4cd06a39af8d838821a356f576b"),
+}
+SOURCE_POLICY_RECEIVE_CANDIDATE = "27026b88695e648c1d5e0ea5ba34ed984a68a91b3ea0a34c2499d936b34c49d2"
+SOURCE_POLICY_RECEIVE_MANIFEST = "26c4b874ec042cd29c3dffb3a75431c265d438c8be32ba240f121cf86d702c4b"
+SOURCE_POLICY_RECEIVE_BOUNDARY = "2d631683e435fa46ad18c30f3e572bf3937385bb8ed5d8852fe4fcdbd92c0a32"
+SOURCE_POLICY_RECEIVE_FOCUSED = "c3662299a084db3362065157df191f7e06f709aeecdf0548ecba895d93dcfc2c"
+SOURCE_POLICY_RECEIVE_ROSTER = {
+    "default-ordinary": (278, "a75cbee4454317189176d031906ca8b7aacfa331c73c0ebdcb39c2d0f227ea38"),
+    "default-doctests": (89, "57e7889097c2d6cae7592301d4ac009d9392d674aed73b6b2bb93eb69c466f2d"),
+    "ep1-ordinary": (551, "ff2942ea9cd28e65d99191407c65833fddd6a076d7707eb3f389539352f8ce8c"),
+    "ep1-doctests": (90, "27fda4fdb03c642627fa63e22d54d6c89ce0d4cd06a39af8d838821a356f576b"),
+}
+SOURCE_POLICY_CHRONOLOGY_CANDIDATE = "703fb8c4c4fb402754bdad7adde7dfc651800eb57e9e9328f1ac5a5c5d5b3b09"
+SOURCE_POLICY_CHRONOLOGY_MANIFEST = "95b241c00a64448c998159be536be99011c056388c188976a7ab2d71a8652748"
+SOURCE_POLICY_CHRONOLOGY_FOCUSED = "85e597637c322ba091cca6e8f81770f18f7ead38c121f5c20dbd3ff72b75aaf1"
+SOURCE_POLICY_CHRONOLOGY_PARTIAL = "0176c77dc50b9ccfae5c9545464fe3c70c47c79d43cb758be524795fce1a5130"
+SOURCE_POLICY_CHRONOLOGY_BOUNDARY = "ac49edd2d1356df8d456c70d67a3349f41fa61edf40045443827a38ea423c01d"
+SOURCE_POLICY_CHRONOLOGY_ROSTER = {
+    "default-ordinary": (279, "fec56b9f68471d141456074a08d0f054a1ecbac0852fb11717558e5874f93151"),
+    "default-doctests": (89, "57e7889097c2d6cae7592301d4ac009d9392d674aed73b6b2bb93eb69c466f2d"),
+    "ep1-ordinary": (554, "1148532ddb9b532f65f328e93817ad43f24330691553ec6966beb636508f0128"),
+    "ep1-doctests": (90, "27fda4fdb03c642627fa63e22d54d6c89ce0d4cd06a39af8d838821a356f576b"),
+}
+SOURCE_POLICY_DEBIT_CANDIDATE = "43abe8085314d61c793a7ec8fc2c19475a4bb4f15adffae2e10f658a65e752a5"
+SOURCE_POLICY_DEBIT_MANIFEST = "c3f116dd7734d6b436b973c5ec38df1acda57c87237e722bc827a8cc9a25e0ec"
+SOURCE_POLICY_DEBIT_BOUNDARY = "fc6420f30fabe729f4cf1b0c52d03d296a218803fc707bbca120327f9bb38008"
+SOURCE_POLICY_DEBIT_FOCUSED = "e47376dccd5e24479cd1dacd1d5a368d7a282dc2a97e3230f7d9d67c5f8d9f76"
+SOURCE_POLICY_DEBIT_FOCUSED_FAILURE = "692f2767c2f3bccc1832a7329268af7e8ff31f5bd705d5fe8b6cb42469dce4c4"
+SOURCE_POLICY_DEBIT_FOCUSED_COUNT = 46
+SOURCE_POLICY_DEBIT_ROSTER = {
+    **SOURCE_POLICY_CHRONOLOGY_ROSTER,
+    "ep1-ordinary": (555, "0b6ff42c270b6c308be24b1f6567a9eaa12ed743579ded375343ffa10a26964b"),
+}
+SOURCE_POLICY_HEADER_AGE_CANDIDATE = "f3c9a30558aa22eaa029d85a91adcc76c5d9b17df8e6aee454803cfc4d8a5709"
+SOURCE_POLICY_HEADER_AGE_MANIFEST = "1c287d0910566cdfee3c251050a839e071015893e66d3931b520386f711a3b49"
+SOURCE_POLICY_HEADER_AGE_BOUNDARY = "65bf0209d98f169a0dd78a792b07959d97bcc6ad27f7526045deb47107b8cd6c"
+SOURCE_POLICY_HEADER_AGE_FOCUSED = "c9dd7e50f753b4f543b94c385127fed88654428b7e2f266249caaad83e89ee68"
+SOURCE_POLICY_HEADER_AGE_FOCUSED_COUNT = 40
+SOURCE_POLICY_HEADER_AGE_FOCUSED_FAILURE = None
+SOURCE_POLICY_HEADER_AGE_ROSTER = {
+    "default-ordinary": (280, "be73133484648bf1d02673a8c2eeb79a86f2acffb353deea8a8cf3b9ca27f1d4"),
+    "default-doctests": (89, "dcc13ef92a10f8d4e15d4084dffe43b219eb7635c1a243e88320a18a8e926f06"),
+    "ep1-ordinary": (556, "7fc2c14e28d3154b0e56f70b5e117d201ffadeedeee26b757a7f191ac9ac78cf"),
+    "ep1-doctests": (90, "3181186a0c48e132f6ff5d1a834c0988ce6c36b34a95ee5972f179f2d635f7af"),
+}
+SOURCE_POLICY_PROTECTED_ORDER_CANDIDATE = "e8ef1377d9bcfa089eda65d0f5092f67f9e753d440a5092499593453f6a4c1fa"
+SOURCE_POLICY_PROTECTED_ORDER_MANIFEST = "d9e8c0d6a6813a1b2f4c80b8224df27a0f790b82ae92210046b99a2602e6fa18"
+SOURCE_POLICY_PROTECTED_ORDER_BOUNDARY = "e4d2034e187dc1fb03e140e84fe23266f81339df3cd300debf242d0636bb2f3c"
+SOURCE_POLICY_PROTECTED_ORDER_FOCUSED = "cd929a5de7b1cc3be277920f4514820e7b4a2bd7b3d0c5ddcf8f427f8f1431d4"
+SOURCE_POLICY_PROTECTED_ORDER_FOCUSED_COUNT = 54
+SOURCE_POLICY_PROTECTED_ORDER_FOCUSED_FAILURE = "a773a8aa5fc4c9fdc63bdd0894dad05d3f36bc82539cc54c5c04ed3138b74b60"
+SOURCE_POLICY_PROTECTED_ORDER_EARLIER_TREE = "fa58f28089d7e75ab21830617bfcebab01c8c586"
+SOURCE_POLICY_PROTECTED_ORDER_ROSTER = {
+    **SOURCE_POLICY_HEADER_AGE_ROSTER,
+    "ep1-ordinary": (557, "bcd55a3e51d142761a2d6cee33aa6ae0fe768272f6bbadfd7ef8736c7d9766a7"),
+}
+SOURCE_POLICY_APPLICATION_PLACEMENT_CANDIDATE = "978691a8c54da5e9f9000dc00a13fc4c067dd7689fcf5c63e6145aaf98ca2461"
+SOURCE_POLICY_APPLICATION_PLACEMENT_MANIFEST = "140d8cbfb1be00e790d0c6058f67b35326e34242019f83f67caca3398b79d5e6"
+SOURCE_POLICY_APPLICATION_PLACEMENT_BOUNDARY = "085f4d313dd2df71559155f4f3c4262fc13d7eb9755ff2f6622e9cdb68ed172a"
+SOURCE_POLICY_APPLICATION_PLACEMENT_FOCUSED = "fce5527574a3cdce921e0f87a35c8af3b4ee9d76e4f81aa406f752fc1a8da301"
+SOURCE_POLICY_APPLICATION_PLACEMENT_FOCUSED_COUNT = 57
+SOURCE_POLICY_APPLICATION_PLACEMENT_ROSTER = {
+    **SOURCE_POLICY_PROTECTED_ORDER_ROSTER,
+    "default-doctests": (89, "96a1e6a857c89bf32d753e1a9facb4cc70d504878e65059e3f9f3b816206d128"),
+    "ep1-doctests": (90, "288546d3441c3e3ca074a8984a2d07fd5d5500259013e70429696162d3d46d86"),
+}
+SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_CANDIDATE = "555a6a076d567a173e5f5c6f728115d5cfff4a0b05da2959ebd77b137dc76ec0"
+SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_MANIFEST = "11122157011c0e7e026c34e726f00a1679278bce8e709be02dfe4897d4e3fff0"
+SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_BOUNDARY = "2234b175fb39c0c31012057487209015b709cbd4e36b0915ed6ebf9d65457d11"
+SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_FOCUSED = "bcd20cab305b1dd60094d1694ae660420e754a4065d7ae95466a4463e8956203"
+SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_FOCUSED_COUNT = 105
+SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_PREVIOUS_FULL_FAILURE = 'f0e1386f57be0e92cd5a315ab45b044cefbb0a2c80168f8403a7b35c30fec1a7'
+SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_ROSTER = {
+    **SOURCE_POLICY_APPLICATION_PLACEMENT_ROSTER,
+    "ep1-ordinary": (560, "c401b5b1f770c4a7b187fedcf9326e20ce485a09cbac1f49e97bafccdfbd3a3b"),
+}
 SOURCE_POLICY_SNAPSHOT_TESTS = frozenset(
     "source_policy::tests::policy_snapshot_" + name for name in (
         "canonical_aliases_and_unknown_reads_do_not_allocate",
@@ -6774,20 +6884,45 @@ SOURCE_POLICY_BOUND_INPUTS = tuple(dict.fromkeys((
 )))
 
 
+def source_policy_combined_roster(candidate: object) -> tuple[dict, int] | None:
+    """Select the roster and private-case count for the exact combined product."""
+    if candidate == SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_CANDIDATE:
+        return SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_ROSTER, 74
+    if candidate == SOURCE_POLICY_APPLICATION_PLACEMENT_CANDIDATE:
+        return SOURCE_POLICY_APPLICATION_PLACEMENT_ROSTER, 74
+    if candidate == SOURCE_POLICY_PROTECTED_ORDER_CANDIDATE:
+        return SOURCE_POLICY_PROTECTED_ORDER_ROSTER, 74
+    if candidate == SOURCE_POLICY_HEADER_AGE_CANDIDATE:
+        return SOURCE_POLICY_HEADER_AGE_ROSTER, 74
+    if candidate == SOURCE_POLICY_DEBIT_CANDIDATE:
+        return SOURCE_POLICY_DEBIT_ROSTER, 73
+    if candidate == SOURCE_POLICY_CHRONOLOGY_CANDIDATE:
+        return SOURCE_POLICY_CHRONOLOGY_ROSTER, 73
+    if candidate == SOURCE_POLICY_RECEIVE_CANDIDATE:
+        return SOURCE_POLICY_RECEIVE_ROSTER, 72
+    if candidate == SOURCE_POLICY_CAPTURE_CANDIDATE:
+        return SOURCE_POLICY_CAPTURE_ROSTER, 70
+    return None
+
+
 def source_policy_test_inventory(binding: dict) -> tuple[list[str], list[str]]:
     """Require complete independent default identities, not a same-count substitute."""
     ordinary, docs = binding.get("test_inventory"), binding.get("doctest_inventory")
-    for names, count, digest in (
-            (ordinary, SOURCE_POLICY_ORDINARY_COUNT, SOURCE_POLICY_ORDINARY_DIGEST),
-            (docs, SOURCE_POLICY_DOCTEST_COUNT, SOURCE_POLICY_DOCTEST_DIGEST)):
+    combined = source_policy_combined_roster(binding.get("candidate_sha256"))
+    default_ordinary = (combined[0]["default-ordinary"] if combined else
+                        (SOURCE_POLICY_ORDINARY_COUNT, SOURCE_POLICY_ORDINARY_DIGEST))
+    default_doctests = (combined[0]["default-doctests"] if combined else
+                        (SOURCE_POLICY_DOCTEST_COUNT, SOURCE_POLICY_DOCTEST_DIGEST))
+    for names, (count, digest) in ((ordinary, default_ordinary), (docs, default_doctests)):
         if (type(names) is not list or len(names) != count
                 or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
                 or names != sorted(set(names)) or COMMON.canonical_sha256(names) != digest):
-            raise Incomplete("Source-policy qualification requires its complete 267/89 default roster.")
+            raise Incomplete(f"Source-policy qualification requires its complete "
+                             f"{default_ordinary[0]}/{default_doctests[0]} default roster.")
     selected = [name for name in ordinary if name.startswith("source_policy::tests::")]
     kod_docs = [name for name in docs if name.startswith(
         "crates/nevrotick-engine/src/source_policy.rs - ")]
-    if (len(selected) != 68
+    if (len(selected) != (combined[1] if combined else 68)
             or "source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted" not in ordinary
             or "source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund" not in ordinary
             or any(name.startswith("nts_ke_experiment::") for name in ordinary)
@@ -6795,7 +6930,8 @@ def source_policy_test_inventory(binding: dict) -> tuple[list[str], list[str]]:
             or not SOURCE_POLICY_PROVENANCE_TESTS <= set(ordinary)
             or not SOURCE_POLICY_CONFIGURATION_TESTS <= set(ordinary)
             or len(kod_docs) != 18 or sum(name.endswith(" - compile fail") for name in kod_docs) != 13):
-        raise Incomplete("Source-policy roster must retain all 68 controls, public diagnostics, the setup budget, snapshots, source provenance, configuration cases and eighteen compiler examples.")
+        raise Incomplete("Source-policy roster must retain all controls, public diagnostics, the setup budget, "
+                         "snapshots, source provenance, configuration cases and eighteen compiler examples.")
     return ordinary, docs
 
 
@@ -6868,16 +7004,35 @@ def source_policy_ep1_execution(text: str, binding: dict) -> dict:
     ordinary, _docs = source_policy_test_inventory(binding)
     names = read_successful_address_records(text)
     default_names = set(ordinary)
-    extras = [name for name in names if name not in default_names]
     digest = COMMON.canonical_sha256(sorted(names))
-    if (len(names) != len(ordinary) + SOURCE_POLICY_EP1_EXTRA_COUNT
-            or not default_names <= set(names)
-            or len(extras) != SOURCE_POLICY_EP1_EXTRA_COUNT
-            or any(not name.startswith("nts_ke_experiment::") for name in extras)
-            or digest != SOURCE_POLICY_EP1_DIGEST):
+    combined = source_policy_combined_roster(binding.get("candidate_sha256"))
+    if combined:
+        count, expected_digest = combined[0]["ep1-ordinary"]
+    else:
+        count = len(ordinary) + SOURCE_POLICY_EP1_EXTRA_COUNT
+        expected_digest = SOURCE_POLICY_EP1_DIGEST
+        extras = [name for name in names if name not in default_names]
+        if (len(extras) != SOURCE_POLICY_EP1_EXTRA_COUNT
+                or any(not name.startswith("nts_ke_experiment::") for name in extras)):
+            raise Incomplete("Source-policy EP1 execution omitted or substituted an admitted case.")
+    if len(names) != count or not default_names <= set(names) or digest != expected_digest:
         raise Incomplete("Source-policy EP1 execution omitted or substituted an admitted case.")
     return {"tests_executed": len(names), "test_names": names,
             "inventory_sha256": digest}
+
+
+def source_policy_development_doctests(text: str, binding: dict, lane: str) -> dict:
+    """Validate the complete annotated Rustdoc identities for the selected graph."""
+    facts = validate_engine_ke_doctests(text)
+    names = sorted(facts["test_names"])
+    combined = source_policy_combined_roster(binding.get("candidate_sha256"))
+    if lane == "ep1-doctests" and combined:
+        count, digest = combined[0][lane]
+        if len(names) != count or COMMON.canonical_sha256(names) != digest:
+            raise Incomplete("Source-policy EP1 development compiler examples differ.")
+    elif lane not in {"default-doctests", "ep1-doctests"} or names != binding["doctest_inventory"]:
+        raise Incomplete("Source-policy development compiler examples differ.")
+    return facts
 
 
 def admit_source_policy_resource_samples(raw: bytes, result: dict, *, gap_control: bool = False) -> None:
@@ -7614,6 +7769,276 @@ def admit_source_policy_observer(reference: dict, path: Path) -> dict:
     return {str(filename): digest for filename, digest in inputs.items()}
 
 
+def source_policy_combined_evidence(candidate: str) -> tuple[str, str]:
+    """Select the pinned manifest and raw boundary for this combined candidate."""
+    if candidate == SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_CANDIDATE:
+        return SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_MANIFEST, SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_BOUNDARY
+    if candidate == SOURCE_POLICY_APPLICATION_PLACEMENT_CANDIDATE:
+        return SOURCE_POLICY_APPLICATION_PLACEMENT_MANIFEST, SOURCE_POLICY_APPLICATION_PLACEMENT_BOUNDARY
+    if candidate == SOURCE_POLICY_PROTECTED_ORDER_CANDIDATE:
+        return SOURCE_POLICY_PROTECTED_ORDER_MANIFEST, SOURCE_POLICY_PROTECTED_ORDER_BOUNDARY
+    if candidate == SOURCE_POLICY_HEADER_AGE_CANDIDATE:
+        return SOURCE_POLICY_HEADER_AGE_MANIFEST, SOURCE_POLICY_HEADER_AGE_BOUNDARY
+    if candidate == SOURCE_POLICY_DEBIT_CANDIDATE:
+        return SOURCE_POLICY_DEBIT_MANIFEST, SOURCE_POLICY_DEBIT_BOUNDARY
+    if candidate == SOURCE_POLICY_CHRONOLOGY_CANDIDATE:
+        return SOURCE_POLICY_CHRONOLOGY_MANIFEST, SOURCE_POLICY_CHRONOLOGY_BOUNDARY
+    if candidate == SOURCE_POLICY_RECEIVE_CANDIDATE:
+        return SOURCE_POLICY_RECEIVE_MANIFEST, SOURCE_POLICY_RECEIVE_BOUNDARY
+    return SOURCE_POLICY_CAPTURE_MANIFEST, SOURCE_POLICY_CAPTURE_BOUNDARY
+
+
+def validate_source_policy_capture_lane(row: dict, selected: dict, raw: dict, binding: dict,
+                                        sandbox_prefix: list[str]) -> None:
+    """Match the observed invocation and complete test blocks to its captured lane."""
+    lane = selected["label"]
+    command = raw.get("command")
+    output = raw.get("output")
+    if (type(row.get("exit_code")) is not int or row["exit_code"] != 0
+            or "failure" not in row or row["failure"] is not None
+            or type(raw.get("exit_code")) is not int or raw["exit_code"] != 0
+            or "failure" not in raw or raw["failure"] is not None
+            or type(output) is not str or type(command) is not list
+            or type(raw.get("sandbox_command")) is not list):
+        raise Incomplete("Source-policy capture development raw lane is failed or incomplete.")
+    if not command or raw["sandbox_command"] != [*sandbox_prefix, "--", *command]:
+        raise Incomplete("Source-policy capture development effective sandbox command differs.")
+    if lane == "boundary-control":
+        _, boundary = source_policy_combined_evidence(binding["candidate_sha256"])
+        if (row["sha256"] != boundary
+                or len(command) != 3 or command[:2] != selected["command"][:2]
+                or output.splitlines().count("ANALYSIS_BOUNDARY_OK") != 1):
+            raise Incomplete("Source-policy capture development lacks its actual namespace boundary control.")
+    elif command != selected["command"]:
+        raise Incomplete("Source-policy capture development raw lane changes its captured command.")
+    if lane in {"default-ordinary", "default-optimized", "ep1-ordinary", "ep1-optimized"}:
+        validate = source_policy_execution if lane.startswith("default-") else source_policy_ep1_execution
+        facts = validate(output, binding)
+        cases = engine_ke_development_ordinary_cases(output)
+        if (Counter((case["binary"], case["name"]) for case in cases)
+                != Counter(map(tuple, selected["expected"]))
+                or cases != row.get("cases") or facts["tests_executed"] != row.get("tests_executed")):
+            raise Incomplete("Source-policy capture development ordinary identities differ by binary.")
+    elif lane in {"default-doctests", "ep1-doctests"}:
+        facts = source_policy_development_doctests(output, binding, lane)
+        if (sorted(facts["test_names"]) != sorted(selected["expected"])
+                or facts["test_names"] != row.get("cases") or facts["tests_executed"] != row.get("tests_executed")):
+            raise Incomplete("Source-policy capture development Rustdoc identities differ.")
+    elif selected["kind"] == "core":
+        blocks = session_execution_blocks(output)
+        if len(blocks) != 1:
+            raise Incomplete("Source-policy capture development needs one selected Core test block.")
+        running, block, status, passed, failed, ignored, measured, _filtered = blocks[0].groups()
+        names = re.findall(r"(?m)^test ([^\r\n]+?) \.\.\. ok$", block)
+        test_rows = [line for line in output.splitlines()
+                     if line.startswith("test ") and not line.startswith("test result:")]
+        cases = engine_ke_development_ordinary_cases(output)
+        if (status != "ok" or any(map(int, (failed, ignored, measured)))
+                or int(running) != len(names) or int(passed) != len(names)
+                or test_rows != [f"test {name} ... ok" for name in names]
+                or [case["name"] for case in cases] != names
+                or Counter((case["binary"], case["name"]) for case in cases)
+                != Counter(map(tuple, selected["expected"]))
+                or names != row.get("cases") or len(names) != row.get("tests_executed")):
+            raise Incomplete("Source-policy capture development Core identities differ by binary.")
+
+
+def admit_source_policy_receive_focus(capture_path: Path, capture: dict, reference: dict) -> dict:
+    """Reconstruct the focused path registry from pinned receipts and read every referenced lane."""
+    focus_path = capture_path.with_name("focused-index.json")
+    focus = read_json(focus_path, maximum=1024**2, expected_sha256=SOURCE_POLICY_RECEIVE_FOCUSED,
+                      owned_evidence=True)
+    invocation = reference.get("invocation_id")
+    if (reference.get("focused_evidence_index_sha256") != SOURCE_POLICY_RECEIVE_FOCUSED
+            or type(invocation) is not str or re.fullmatch(r"[a-f0-9]{32}", invocation) is None
+            or type(focus) is not dict or set(focus) != {"plain", "protected"}
+            or any(type(refs) is not list or len(refs) != 2 for refs in focus.values())):
+        raise Incomplete("Source-policy receive development lacks its exact focused lineage.")
+    admitted = {str(focus_path): SOURCE_POLICY_RECEIVE_FOCUSED}
+    for prior in (*capture["prior_plain_failed_development"], capture["plain_red_focused"]):
+        path = Path(prior["path"])
+        read_json(path, maximum=4 * 1024**2, expected_sha256=prior["sha256"], owned_evidence=True)
+        admitted[str(path)] = prior["sha256"]
+    expected = (
+        (focus["plain"][0], "incomplete", "green", capture["expected_plain_candidate_sha256"]),
+        (focus["plain"][1], "passed", "green", capture["expected_plain_candidate_sha256"]),
+        (focus["protected"][0], "passed", "red", capture["expected_protected_red_candidate_sha256"]),
+        (focus["protected"][1], "passed", "green", capture["expected_protected_candidate_sha256"]),
+    )
+    for record, status, mode, candidate in expected:
+        path = Path(record["path"])
+        stamp = record["sha256"]
+        report = read_json(path, maximum=4 * 1024**2, expected_sha256=stamp, owned_evidence=True)
+        if (report.get("status") != status or report.get("mode") != mode
+                or report.get("candidate_sha256") != candidate
+                or report.get("baseline_report_sha256") != capture["combined_development_reference"]["sha256"]
+                or (status == "passed" and report.get("temporary_work_removed") is not True)):
+            raise Incomplete("Source-policy receive focused terminal identity differs.")
+        admitted[str(path)] = stamp
+        for row in report["lanes"]:
+            if type(row.get("lane")) is not str or re.fullmatch(r"[a-z0-9-]+", row["lane"]) is None:
+                raise Incomplete("Source-policy receive focused lane leaves its receipt directory.")
+            lane = path.with_name(row["lane"] + ".json")
+            raw = read_json(lane, maximum=4 * 1024**2, expected_sha256=row["sha256"], owned_evidence=True)
+            if (type(row.get("exit_code")) is not int or type(raw.get("exit_code")) is not int
+                    or raw["exit_code"] != row["exit_code"] or raw.get("failure") != row.get("failure")):
+                raise Incomplete("Source-policy receive focused lane summary differs from its raw result.")
+            admitted[str(lane)] = row["sha256"]
+    if reference.get("focused_evidence") != admitted:
+        raise Incomplete("Source-policy receive focused path registry differs.")
+    return admitted
+
+
+def admit_source_policy_exact_focus(reference: dict, expected_count: int, expected_digest: str) -> dict:
+    """Rehash every file in the exact focused evidence registry."""
+    focused = reference.get("focused_evidence")
+    invocation = reference.get("invocation_id")
+    if (type(focused) is not dict or len(focused) != expected_count
+            or type(invocation) is not str or re.fullmatch(r"[a-f0-9]{32}", invocation) is None
+            or reference.get("focused_evidence_index_sha256") != expected_digest
+            or COMMON.canonical_sha256(focused) != expected_digest):
+        raise Incomplete("Source-policy exact focused evidence or invocation differs.")
+    for name, digest in focused.items():
+        raw = COMMON.read_analysis_bytes(Path(name), maximum=8 * 1024**2)
+        if hashlib.sha256(raw).hexdigest() != digest:
+            raise Incomplete("Source-policy exact focused evidence bytes differ.")
+    return focused
+
+
+def admit_source_policy_chronology_focus(reference: dict) -> dict:
+    """Verify the pinned focused chronology history."""
+    return admit_source_policy_exact_focus(reference, 74, SOURCE_POLICY_CHRONOLOGY_FOCUSED)
+
+
+def admit_source_policy_capture_development(binding: dict, identity: dict, path: Path) -> dict:
+    """Admit the exact combined capture producer and physical lane receipts."""
+    evidence_sha = binding["development_evidence"]["sha256"]
+    candidate = binding["candidate_sha256"]
+    receive = candidate == SOURCE_POLICY_RECEIVE_CANDIDATE
+    chronology = candidate == SOURCE_POLICY_CHRONOLOGY_CANDIDATE
+    debit = candidate == SOURCE_POLICY_DEBIT_CANDIDATE
+    header_age = candidate == SOURCE_POLICY_HEADER_AGE_CANDIDATE
+    protected_order = candidate == SOURCE_POLICY_PROTECTED_ORDER_CANDIDATE
+    application_placement = candidate == SOURCE_POLICY_APPLICATION_PLACEMENT_CANDIDATE
+    receive_effect_guards = candidate == SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_CANDIDATE
+    full_capture = header_age or protected_order or application_placement or receive_effect_guards
+    report_directory = "full-reports" if full_capture else "reports"
+    if len(path.parents) < 3 or path.name != "verification.json" or path.parents[1].name != report_directory:
+        raise Incomplete("Source-policy capture development must bind a combined terminal receipt.")
+    capture_filename = "candidate-retry-v1.json" if chronology else "candidate.json"
+    if full_capture:
+        capture_filename = "full-candidate.json"
+    capture_path = path.parents[2] / capture_filename
+    manifest, boundary_sha = source_policy_combined_evidence(candidate)
+    capture = read_json(capture_path, maximum=1024**2, expected_sha256=manifest,
+                        owned_evidence=True)
+    reference = read_json(path, maximum=8 * 1024**2, expected_sha256=evidence_sha, owned_evidence=True)
+    elapsed = reference.get("elapsed_seconds")
+    peak = reference.get("peak_memory_bytes")
+    memory_events = reference.get("memory_events", {})
+    if (capture["candidate_sha256"] != candidate
+            or reference.get("status") != "passed" or reference.get("mode") != "combined"
+            or reference.get("candidate_sha256") != candidate
+            or reference.get("capture_sha256") != manifest
+            or reference.get("inputs") != identity or capture["inputs"] != identity
+            or reference.get("protected") != capture["protected"]
+            or reference.get("main_admission") != {
+                "posture": "verified-staged-capture-base", "head": capture["head"],
+                "index_sha256": capture["index_sha256"], "tree": capture["staged_tree"]}
+            or reference.get("compiler") != capture["compiler"]
+            or reference.get("tool_inventories") != capture["tool_inventories"]
+            or COMMON.canonical_sha256(reference.get("vendor_identity")) != capture["vendor_identity_sha256"]
+            or reference.get("cargo_home_config_sha256") != capture["cargo_home_config_sha256"]
+            or reference.get("reference_sha256") != capture["combined_development_reference"]["sha256"]
+            or reference.get("prior_failed_development_sha256", "") != (
+                SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_PREVIOUS_FULL_FAILURE if receive_effect_guards else
+                None if application_placement else
+                SOURCE_POLICY_PROTECTED_ORDER_FOCUSED_FAILURE if protected_order else
+                SOURCE_POLICY_HEADER_AGE_FOCUSED_FAILURE if header_age else
+                SOURCE_POLICY_DEBIT_FOCUSED_FAILURE if debit else
+                SOURCE_POLICY_CHRONOLOGY_PARTIAL if chronology else capture["previous_focused_failure"]["sha256"])
+            or reference.get("repair_patch_sha256") != capture["patches"][-1]["sha256"]
+            or reference.get("native_windows_execution") != "not performed"
+            or reference.get("metrics") != "not performed"
+            or reference.get("resource_observer_joined") is not True
+            or reference.get("owned_work_allocated") is not True or reference.get("owned_work_retired") is not True
+            or reference.get("tasks_events") != "max 0"
+            or type(memory_events) is not dict
+            or any(memory_events.get(key) != "0" for key in ("max", "oom", "oom_kill", "oom_group_kill"))
+            or type(elapsed) not in (int, float) or not 0 < elapsed <= 2400
+            or type(peak) is not int or not 0 < peak <= 6 * 1024**3
+            or "active_lane" in reference or "error" in reference):
+        raise Incomplete("Source-policy capture development lacks exact passing terminal custody.")
+
+    if chronology and (
+            reference.get("first_full_failure") != capture["previous_full_failure"]
+            or reference.get("focus_borrow_only") != capture["focus_borrow_only"]
+            or reference.get("focused_observation_candidate_sha256") != capture["original_candidate_sha256"]
+            or capture["focus_borrow_only"]["focused_rerun_claimed"] is not False
+            or not 0 < elapsed <= capture["wall_seconds"] == 2377):
+        raise Incomplete("Source-policy chronology borrow-only retry custody differs.")
+    if debit and reference.get("focused_reference_tree") != capture["focused_reference_tree"]:
+        raise Incomplete("Source-policy protected receive debit focused stage differs.")
+    if protected_order and (
+            reference.get("focused_earlier_tree") != SOURCE_POLICY_PROTECTED_ORDER_EARLIER_TREE
+            or reference.get("focused_red_preimage_bridge") != capture["focused_red_preimage_bridge"]):
+        raise Incomplete("Source-policy ordinary protected receive focused predecessor differs.")
+
+    if application_placement and (reference.get("focused_earlier_tree") != capture["staged_tree"]
+            or reference.get("focused_red_preimage_bridge") != capture["focused_red_preimage_bridge"]
+            or reference.get("rustdoc_line_changes") != capture["rustdoc_line_changes"]):
+        raise Incomplete("Source-policy application placement source anchors differ.")
+
+    if receive_effect_guards and (
+            reference.get("focused_earlier_tree") != capture["staged_tree"]
+            or reference.get("focused_references") != capture["focused"]
+            or reference.get("focused_red_preimage_bridge") != capture["focused_red_preimage_bridge"]
+            or reference.get("rustdoc_line_changes") != capture["rustdoc_line_changes"]):
+        raise Incomplete("Source-policy receive effect guards focused lineage differs.")
+
+    lanes = reference.get("lanes")
+    recipe = capture["lanes"]
+    if (type(lanes) is not list or len(lanes) != 19 or len(recipe) != 19
+            or any(type(row) is not dict for row in lanes)
+            or [row.get("lane") for row in lanes] != [row["label"] for row in recipe]
+            or reference.get("cache_retirement") != [row["label"] for row in recipe if row["retire"]]):
+        raise Incomplete("Source-policy capture development requires all 19 physical lanes.")
+    boundary = read_json(path.with_name("boundary-control.json"), maximum=4 * 1024**2,
+                         expected_sha256=boundary_sha, owned_evidence=True)
+    sandbox_prefix = boundary["sandbox_command"][:-len(boundary["command"])-1]
+    admitted = {str(path): evidence_sha, str(capture_path): manifest}
+    if chronology:
+        admitted.update(admit_source_policy_chronology_focus(reference))
+    elif debit:
+        admitted.update(admit_source_policy_exact_focus(
+            reference, SOURCE_POLICY_DEBIT_FOCUSED_COUNT, SOURCE_POLICY_DEBIT_FOCUSED))
+    elif header_age:
+        admitted.update(admit_source_policy_exact_focus(
+            reference, SOURCE_POLICY_HEADER_AGE_FOCUSED_COUNT, SOURCE_POLICY_HEADER_AGE_FOCUSED))
+    elif receive_effect_guards:
+        admitted.update(admit_source_policy_exact_focus(
+            reference, SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_FOCUSED_COUNT,
+            SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_FOCUSED))
+    elif application_placement:
+        admitted.update(admit_source_policy_exact_focus(
+            reference, SOURCE_POLICY_APPLICATION_PLACEMENT_FOCUSED_COUNT, SOURCE_POLICY_APPLICATION_PLACEMENT_FOCUSED))
+    elif protected_order:
+        admitted.update(admit_source_policy_exact_focus(
+            reference, SOURCE_POLICY_PROTECTED_ORDER_FOCUSED_COUNT, SOURCE_POLICY_PROTECTED_ORDER_FOCUSED))
+    elif receive:
+        admitted.update(admit_source_policy_receive_focus(capture_path, capture, reference))
+    for row, selected in zip(lanes, recipe, strict=True):
+        lane = selected["label"]
+        digest = row.get("sha256")
+        if type(digest) is not str or re.fullmatch(r"[a-f0-9]{64}", digest) is None:
+            raise Incomplete("Source-policy capture development lane lacks its physical receipt hash.")
+        raw_path = path.with_name(lane + ".json")
+        raw = read_json(raw_path, maximum=4 * 1024**2, expected_sha256=digest, owned_evidence=True)
+        validate_source_policy_capture_lane(row, selected, raw, binding, sandbox_prefix)
+        admitted[str(raw_path)] = digest
+    return admitted
+
+
 def admit_source_policy_development(binding: dict, identity: dict) -> dict:
     """Retain prior-source development evidence without transferring a candidate pass.
 
@@ -7623,11 +8048,16 @@ def admit_source_policy_development(binding: dict, identity: dict) -> dict:
     """
     evidence = binding["development_evidence"]
     path = Path(evidence["path"])
+    actual_candidate = COMMON.canonical_sha256(identity)
+    if (source_policy_combined_roster(actual_candidate) is not None
+            or source_policy_combined_roster(binding["candidate_sha256"]) is not None):
+        if binding["candidate_sha256"] != actual_candidate:
+            raise Incomplete("Source-policy capture development candidate binding differs.")
+        return admit_source_policy_capture_development(binding, identity, path)
     reference = read_json(path, maximum=4 * 1024**2, expected_sha256=evidence["sha256"])
     if (PRODUCT.sha256(path) != evidence["sha256"] or reference.get("status") != "workload-passed"
             or reference.get("custody_unchanged") is not True):
         raise Incomplete("Source-policy development evidence lacks passing terminal custody.")
-    actual_candidate = COMMON.canonical_sha256(identity)
     managed_candidate = SOURCE_POLICY_MANAGED_DEVELOPMENT["candidate_sha256"]
     receiver = SOURCE_POLICY_RECEIVER_DEVELOPMENT
     receiver_candidates = {receiver["candidate_sha256"], receiver["incomplete_candidate_sha256"]}
@@ -7678,9 +8108,7 @@ def admit_source_policy_development(binding: dict, identity: dict) -> dict:
         elif row["lane"] in {"ep1-ordinary", "ep1-optimized"}:
             source_policy_ep1_execution(raw["output"], binding)
         elif row["lane"] in {"default-doctests", "ep1-doctests"}:
-            docs = validate_engine_ke_doctests(raw["output"])["test_names"]
-            if sorted(docs) != binding["doctest_inventory"]:
-                raise Incomplete("Source-policy development compiler examples differ.")
+            source_policy_development_doctests(raw["output"], binding, row["lane"])
     return {**admitted, **observer_inputs}
 
 

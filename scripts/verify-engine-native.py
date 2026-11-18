@@ -79,6 +79,15 @@ DEFAULT_COHORT_CASES = {
     'default-policy-poison': 'source_policy::tests::final_commit_poisoned_policy_counts_the_selected_reply_once',
     'default-policy-reenable': 'source_policy::tests::final_commit_reenabled_policy_counts_the_selected_reply_once',
     'default-session-checkpoints': 'session::tests::public_session_receiving_checkpoint_races_keep_reuse_and_retirement',
+    'default-policy-receive-chronology':
+        'source_policy::tests::managed_plain_reversed_receive_leaves_control_pending_until_ordered_reply',
+}
+
+
+# This separate plain selection exercises the writer without a CLI subprocess.
+PLACEMENT_COHORT_CASES = {
+    "placement-managed-writer": "source_policy::tests::managed_header_writes_receive_to_commit_age_only_for_ordered_capture",
+    "placement-nominal-writer": "processing_guard_tests::real_udp_measurement_matches_independent_captured_coordinates",
 }
 
 
@@ -87,6 +96,15 @@ def default_cohort_requested(args):
     selected = getattr(args, "default_cohort", False)
     require(type(selected) is bool and not (selected and getattr(args, "facade_consumer", False)),
             "Default cohort and facade consumer are distinct closed selections.")
+    return selected
+
+
+def placement_cohort_requested(args):
+    """Admit only the independent plain application placement selection."""
+    selected = getattr(args, "placement_cohort", False)
+    require(type(selected) is bool, "Placement cohort selection must be Boolean.")
+    require(not (selected and (getattr(args, "default_cohort", False) or getattr(args, "facade_consumer", False))),
+            "Placement cohort excludes default and facade selections.")
     return selected
 
 
@@ -103,7 +121,7 @@ def engine_test_command(jobs, *, default_cohort=False):
 
 def mode_profile(mode):
     """Own the finite test topology; requests cannot supply counts, images or arguments."""
-    if type(mode) is str and mode in DEFAULT_COHORT_CASES:
+    if type(mode) is str and (mode in DEFAULT_COHORT_CASES or mode in PLACEMENT_COHORT_CASES):
         return 4, 2, "engine-tests.exe"
     if type(mode) is str and mode in NESTED_TEST_MODES:
         return 6, 3, "engine-tests.exe"
@@ -526,17 +544,23 @@ def read_healthy_facade_build(receipt_path: Path, expected: dict) -> dict:
     return {"receipt": record, "receipt_sha256": hashlib.sha256(raw).hexdigest(), "custody_inputs": custody}
 
 
-def validate_test_roster(value, candidate, extras, *, default_cohort=False):
+def validate_test_roster(value, candidate, extras, *, default_cohort=False, placement_cohort=False):
     """Admit the complete Windows library prediction and one closed selection."""
     keys = {"schema_version", "package", "target", "features", "candidate_sha256",
             "extra_inputs_sha256", "tests"}
     require(type(default_cohort) is bool, "Default roster selection must be Boolean.")
-    keys |= ({"selected_default_tests"} if default_cohort
-             else {"ke_tests", "selected_ke_tests", "held_ke_tests"})
+    require(type(placement_cohort) is bool and not (default_cohort and placement_cohort),
+            "Placement roster selection must be Boolean and exclude the default cohort.")
+    if placement_cohort:
+        keys.add("selected_placement_tests")
+    elif default_cohort:
+        keys.add("selected_default_tests")
+    else:
+        keys.update(("ke_tests", "selected_ke_tests", "held_ke_tests"))
     require(type(value) is dict and set(value) == keys
             and type(value["schema_version"]) is int and value["schema_version"] == 1
             and value["package"] == "nevrotick-engine" and value["target"] == TARGET
-            and value["features"] == ([] if default_cohort else ["ke-association-prototype"])
+            and value["features"] == ([] if default_cohort or placement_cohort else ["ke-association-prototype"])
             and value["candidate_sha256"] == candidate
             and type(value["extra_inputs_sha256"]) is dict
             and value["extra_inputs_sha256"] == extras,
@@ -548,6 +572,13 @@ def validate_test_roster(value, candidate, extras, *, default_cohort=False):
                     for name in names)
             and names == sorted(set(names)),
             "Windows test roster must contain bounded exact sorted unique library identities.")
+    if placement_cohort:
+        expected = sorted(PLACEMENT_COHORT_CASES.values())
+        require(not any(name.startswith("nts_ke_experiment::") for name in names)
+                and value["selected_placement_tests"] == expected
+                and all(name in names for name in expected),
+                "Placement cohort requires both fixed writer cases and no KE feature.")
+        return value
     if default_cohort:
         expected = sorted(DEFAULT_COHORT_CASES.values())
         require(not any(name.startswith("nts_ke_experiment::") for name in names)
@@ -567,11 +598,11 @@ def validate_test_roster(value, candidate, extras, *, default_cohort=False):
     return value
 
 
-def read_test_roster(path, candidate, extras, *, default_cohort=False):
+def read_test_roster(path, candidate, extras, *, default_cohort=False, placement_cohort=False):
     """Read one bounded nonlinked manifest once; discovery cannot supply its oracle."""
     raw = PE.Q.C.read_analysis_bytes(path, maximum=MAX_TEST_ROSTER_BYTES)
     return validate_test_roster(ALLOCATION.decode(raw), candidate, extras,
-                                default_cohort=default_cohort), raw
+                                default_cohort=default_cohort, placement_cohort=placement_cohort), raw
 
 
 def validate_test_listing(output, roster):
@@ -611,13 +642,21 @@ def validate_nested_execution(output, roster, mode):
             "inner_completion_scope": "Actual test parent requires isolated child exit 86; not an external exit-code observation."}
 
 
-def validate_default_execution(output, roster, mode):
-    """Require one exact code-owned default success and every other test filtered."""
-    require(type(mode) is str and mode in DEFAULT_COHORT_CASES,
-            "Unadmitted exact default test mode.")
-    name = DEFAULT_COHORT_CASES[mode]
-    require(name in roster["selected_default_tests"] and name in roster["tests"],
-            "Default test is outside its frozen independent roster.")
+def validate_default_execution(output, roster, mode, *, placement_cohort=False):
+    """Require one exact code-owned plain library success and all other tests filtered."""
+    require(type(placement_cohort) is bool, "Placement cohort selection must be Boolean.")
+    if placement_cohort:
+        require(type(mode) is str and mode in PLACEMENT_COHORT_CASES,
+                "Unadmitted exact placement test mode.")
+        name = PLACEMENT_COHORT_CASES[mode]
+        require(name in roster["selected_placement_tests"] and name in roster["tests"],
+                "Placement test is outside its frozen independent roster.")
+    else:
+        require(type(mode) is str and mode in DEFAULT_COHORT_CASES,
+                "Unadmitted exact default test mode.")
+        name = DEFAULT_COHORT_CASES[mode]
+        require(name in roster["selected_default_tests"] and name in roster["tests"],
+                "Default test is outside its frozen independent roster.")
     validate_ke_execution(output, {"tests": roster["tests"], "selected_ke_tests": [name]})
     return name
 
@@ -807,6 +846,8 @@ def build(args, report):
     facade = getattr(args, "facade_consumer", False)
     require(type(facade) is bool, "Facade profile must be an explicit Boolean.")
     default = default_cohort_requested(args)
+    placement = placement_cohort_requested(args)
+    test_features = () if default or placement else ("ke-association-prototype",)
     fault_id = getattr(args, "facade_fault", None)
     fault_flags = (fault_id, getattr(args, "prepared_faults", None), getattr(args, "healthy_build_receipt", None))
     require(not any(value is not None for value in fault_flags)
@@ -825,7 +866,7 @@ def build(args, report):
     roster_raw = None
     if not facade:
         _, roster_raw = read_test_roster(args.test_roster.absolute(), ALLOCATION.canonical_digest(inputs), extras,
-                                         default_cohort=default)
+                                         default_cohort=default, placement_cohort=placement)
         roster_path = args.output_dir / TEST_ROSTER_NAME
         roster_path.write_bytes(roster_raw)
     vendor, toolchain = args.vendor_dir.resolve(strict=True), args.toolchain_dir.resolve(strict=True)
@@ -842,7 +883,9 @@ def build(args, report):
                   xwin_inventory=str(args.xwin_inventory.resolve(strict=True)), profile="debug",
                   diagnostic_profile="release", build_jobs=args.jobs, lanes=[],
                   facade_consumer=facade, default_cohort=default,
-                  test_features=[] if default else ["ke-association-prototype"])
+                  test_features=list(test_features))
+    if placement:
+        report["placement_cohort"] = True
     if roster_raw is not None:
         report["test_roster"] = {"path": str(roster_path), "sha256": hashlib.sha256(roster_raw).hexdigest()}
     source, work = args.output_dir / "source", args.output_dir / "work"
@@ -914,7 +957,7 @@ def build(args, report):
         ENV.require_admitted_compiler(policy=json.loads((ROOT / "policy/tool-manifest.json").read_text()),
                                       channel=tomllib.loads((source / "rust-toolchain.toml").read_text())["toolchain"]["channel"],
                                       compiler_info=version)
-        cargo = engine_test_command(args.jobs, default_cohort=default)
+        cargo = engine_test_command(args.jobs, default_cohort=not test_features)
         workspace = tomllib.loads((source / "Cargo.toml").read_text())
         flags = list(ENV.MSVC_FLAGS)
         flags[flags.index("target-cpu=x86-64-v3")] = "target-cpu=x86-64"
@@ -966,7 +1009,7 @@ def build(args, report):
             report["facade_target_flags"] = ENV.MSVC_FLAGS
         else:
             images["engine-tests"] = engine_artifact(run("engine-libtest-link", cargo), work,
-                                                       features=() if default else ("ke-association-prototype",))
+                                                       features=test_features)
         report["artifacts"] = {}
         inspector = "/toolchain/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-readobj"
         for name, image in images.items():
@@ -1002,9 +1045,11 @@ def build(args, report):
         if not facade:
             checks.extend([
                 ("original_roster", lambda: read_test_roster(args.test_roster.absolute(), report["candidate_sha256"], extras,
-                                                            default_cohort=default)[1] == roster_raw),
+                                                            default_cohort=default,
+                                                            placement_cohort=placement)[1] == roster_raw),
                 ("copied_roster", lambda: read_test_roster(roster_path, report["candidate_sha256"], extras,
-                                                          default_cohort=default)[1] == roster_raw),
+                                                          default_cohort=default,
+                                                          placement_cohort=placement)[1] == roster_raw),
             ])
         if prepared_fault is not None:
             checks.append(("fault_inputs", lambda: all(hashlib.sha256(PE.Q.C.read_analysis_bytes(
@@ -1070,6 +1115,9 @@ NATIVE_JOB_OBSERVER = r"""
             case "default-policy-poison":
             case "default-policy-reenable":
             case "default-session-checkpoints":
+            case "default-policy-receive-chronology":
+            case "placement-managed-writer":
+            case "placement-nominal-writer":
             case "facade-arguments": case "facade-entered-runtime":
             case "control-healthy": case "control-fail": case "control-wait": return 4;
             default: throw new InvalidDataException();
@@ -1310,6 +1358,8 @@ def native_supervisor():
             'default-policy-poison',
             'default-policy-reenable',
             'default-session-checkpoints',
+            'default-policy-receive-chronology',
+            'placement-managed-writer','placement-nominal-writer',
             'job-native-foreign','provider-native-once','provider-native-foreign',
             'control-nested-healthy','control-nested-fail','control-nested-wait',
             'facade-arguments','facade-entered-runtime') -or
@@ -1319,7 +1369,9 @@ def native_supervisor():
             'default-pilot-stop','default-pilot-invalidate','default-pilot-healthy',
             'default-series-stop','default-series-invalidate','default-series-healthy',
             'default-writable-stop','default-writable-invalidate',
-            'default-policy-poison','default-policy-reenable','default-session-checkpoints')) { 'engine-tests.exe' }
+            'default-policy-poison','default-policy-reenable','default-session-checkpoints',
+            'default-policy-receive-chronology',
+            'placement-managed-writer','placement-nominal-writer')) { 'engine-tests.exe' }
         elseif ($request.mode -cin @('facade-arguments','facade-entered-runtime')) { 'engine-facade-consumer.exe' }
         else { 'gate-control.exe' }
     $child = Get-Item -LiteralPath (Join-Path $destination $childName)
@@ -1580,6 +1632,10 @@ def native(args, report):
     require(type(facade) is bool and build.get("facade_consumer", False) is facade,
             "Native facade selection differs from the exact build profile.")
     default = default_cohort_requested(args)
+    placement = placement_cohort_requested(args)
+    require(type(build.get("placement_cohort", False)) is bool
+            and build.get("placement_cohort", False) is placement,
+            "Native placement selection differs from the exact build profile.")
     require(type(build.get("default_cohort", False)) is bool
             and build.get("default_cohort", False) is default,
             "Native default selection differs from the exact build profile.")
@@ -1587,6 +1643,10 @@ def native(args, report):
         require(build.get("test_features") == [] and build.get("bookends_passed") is True
                 and build.get("product_target_flags") == ENV.MSVC_FLAGS,
                 "Default build lacks exact empty features, custody or product v3 flags.")
+    if placement:
+        require(build.get("test_features") == [] and build.get("bookends_passed") is True
+                and build.get("product_target_flags") == ENV.MSVC_FLAGS,
+                "Placement build lacks exact empty features, custody or product v3 flags.")
     if (build.get("status") != "passed" or build.get("lane") != "build"
             or build.get("product_source_sha256") != source_before
             or build.get("extra_inputs_sha256") != extras_before
@@ -1603,7 +1663,7 @@ def native(args, report):
                 and roster_record["path"] == str(roster_path),
                 "Native build lacks its frozen independent test roster.")
         roster, roster_raw = read_test_roster(roster_path, ALLOCATION.canonical_digest(source_before), extras_before,
-                                              default_cohort=default)
+                                              default_cohort=default, placement_cohort=placement)
         require(hashlib.sha256(roster_raw).hexdigest() == roster_record["sha256"],
                 "Native independent test roster differs from the build binding.")
     artifacts = build.get("artifacts", {})
@@ -1634,13 +1694,16 @@ def native(args, report):
                   test_roster=roster_record,
                   full_native_ke_qualification=False,
                   scripted_ke_roster_complete=False, completed_nested_tests=[],
-                  required_held_tests=[] if facade or default else roster["held_ke_tests"],
-                  selected_ke_tests=[] if facade or default else roster["selected_ke_tests"],
+                  required_held_tests=[] if facade or default or placement else roster["held_ke_tests"],
+                  selected_ke_tests=[] if facade or default or placement else roster["selected_ke_tests"],
                   default_cohort=default, default_cohort_complete=False, completed_default_tests=[],
                   selected_default_tests=roster["selected_default_tests"] if default else [],
                   facade_consumer=facade, facade_refusal_cases_complete=False,
                   token_scope="Supervisor and launcher directly observed; fixed child inherits primary token.",
                   scope="Scripted KE component tests with three separately checked nested-child cases. No real TLS, CNG, UDP, service or clock effects.")
+    if placement:
+        report.update(placement_cohort=True, placement_cohort_complete=False, completed_placement_tests=[],
+                      selected_placement_tests=roster["selected_placement_tests"])
     script = native_supervisor()
     supervisor_hash = hashlib.sha256(script.encode()).hexdigest()
     cases = (
@@ -1658,11 +1721,16 @@ def native(args, report):
             ("native-job-foreign", "job-native-foreign", "good", 0, 3),
             ("native-provider-once", "provider-native-once", "good", 0, 3),
             ("native-provider-foreign", "provider-native-foreign", "good", 0, 3))
-    if default:
+    if default or placement:
+        plain_cases = PLACEMENT_COHORT_CASES if placement else DEFAULT_COHORT_CASES
         cases = (*cases[:5], ("cpu", "cpu", "good", 0, 2), ("list", "list", "good", 0, 2),
-                 *((mode, mode, "good", 0, 2) for mode in DEFAULT_COHORT_CASES))
-        report["scope"] = ("Selected default Engine reply-guard cohort with real loopback UDP fixtures; "
-                           "no public network, provider adoption, service, clock or whole Core/Engine qualification.")
+                 *((mode, mode, "good", 0, 2) for mode in plain_cases))
+        if placement:
+            report["scope"] = ("Plain application placement and report writer with real loopback UDP fixtures; "
+                               "no physical clock calibration or actual CLI process qualification.")
+        else:
+            report["scope"] = ("Selected default Engine reply-guard cohort with real loopback UDP fixtures; "
+                               "no public network, provider adoption, service, clock or whole Core/Engine qualification.")
     if facade:
         cases = (*cases[:5], ("cpu", "cpu", "good", 0, 2),
                  *((mode, mode, "good", facts[0], 2) for mode, facts in FACADE_CASES.items()))
@@ -1724,6 +1792,9 @@ def native(args, report):
         if mode in DEFAULT_COHORT_CASES:
             record["exact_default_test"] = validate_default_execution(output, roster, mode)
             report["completed_default_tests"].append(record["exact_default_test"])
+        if mode in PLACEMENT_COHORT_CASES:
+            record["exact_placement_test"] = validate_default_execution(output, roster, mode, placement_cohort=True)
+            report["completed_placement_tests"].append(record["exact_placement_test"])
         if mode in NESTED_TEST_MODES:
             record["exact_test"] = validate_nested_execution(output, roster, mode)
             report["completed_nested_tests"].append(NESTED_TEST_MODES[mode])
@@ -1735,11 +1806,15 @@ def native(args, report):
             or PRODUCT.sha256(build_path) != report["build_receipt_sha256"]
             or PRODUCT.sha256(Path(powershell)) != ps_before
             or (not facade and read_test_roster(roster_path, build["candidate_sha256"], extras_before,
-                                                default_cohort=default)[1] != roster_raw)
+                                                default_cohort=default, placement_cohort=placement)[1] != roster_raw)
             or any(PRODUCT.sha256(Path(item["path"])) != item["sha256"] for item in artifacts.values())):
         raise Incomplete("Native source, images, receipt, supervisor recipe or PowerShell drifted.")
     if facade:
         report["facade_refusal_cases_complete"] = True
+    elif placement:
+        require(report["completed_placement_tests"] == list(PLACEMENT_COHORT_CASES.values()),
+                "Not both fixed placement writer cases completed.")
+        report["placement_cohort_complete"] = True
     elif default:
         require(report["completed_default_tests"] == list(DEFAULT_COHORT_CASES.values()),
                 "Not every fixed default reply-guard case completed.")
@@ -1757,6 +1832,8 @@ def main():
                         help="Read only the exact retained V19 outcomes for source-only facade preparation.")
     parser.add_argument("--default-cohort", action="store_true",
                         help="Select only the fixed default-profile reply-guard cohort; no complete-library claim.")
+    parser.add_argument("--placement-cohort", action="store_true",
+                        help="Select only two fixed plain application placement writer cases.")
     parser.add_argument("--facade-consumer", action="store_true",
                         help="Select two fixed provider-free production facade refusal cases; no mutation scoring.")
     parser.add_argument("--facade-fault", choices=tuple(row[0] for row in FACADE_FAULTS),
@@ -1775,6 +1852,9 @@ def main():
                 "Default cohort requires build/native and excludes facade selections.")
         if args.default_cohort:
             report["scope"] = "Selected default Windows Engine reply-guard cohort; native execution remains separate."
+        if placement_cohort_requested(args):
+            require(args.lane in ("build", "native"), "Placement cohort requires build/native.")
+            report["scope"] = "Selected plain application placement writers; native execution remains separate."
         fault_options = (args.facade_fault, args.prepared_faults, args.healthy_build_receipt)
         require(not any(value is not None for value in fault_options)
                 or (args.lane == "build" and args.facade_consumer and all(value is not None for value in fault_options)),

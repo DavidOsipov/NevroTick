@@ -24215,7 +24215,7 @@ refusal and causal RED controls remain recorded.
 
 The closed KE verification role admits the current physical 548/268/90
 rosters. The signed Core Phase/Step policy and the earlier datagram
-metrics retain their scoped candidates. Fresh product metrics, Windows
+metrics retain their scoped candidates. Fresh KE metrics, Windows
 runtime qualification, calibrated mapping and positive Engine-to-Core
 admission remain open. No public mutation campaign is enabled.
 
@@ -24223,3 +24223,734 @@ Full development receipt SHA-256 `f5be0c7ab321519f5d8b30c94db687cb13db90b51782d5
 Physical KE admission SHA-256 `91fc66462a68489cb9d10fde51ebed9af5ecd4635c7bfb843e56de4e79449092`.
 Focused GNU Clippy refusal receipt SHA-256
 `85de9efd80bd684093273a7a52c935a0c133e8527d375eec5df1b28ea5848fd8`.
+
+###### Capture-order source-policy metrics — 18 November 2026
+
+The closed source-policy role now admits the exact `80199574…` product and
+its 47 protected role inputs. It verifies the full development receipt
+against 276 default and 548 EP1 ordinary identities per build mode and
+the separate 89 and 90 Rustdoc rosters. The shared reader and test changes
+also rebind the closed KE helper pins. All 88 focused reader controls
+passed. The signed Core Phase/Step policy retains its original binding.
+
+The configured `source_policy` action selected all five owners on the
+default GNU graph. Its two retained analyzer receipts bind the same 620
+source and helper inputs. The five enumeration subprocesses exited zero
+and retained 856 named descriptors. The coverage subprocess executed all
+276 default cases and passed each file's 90% executable-line gate.
+
+| Owner | Descriptors | Executed lines | Executable lines | Line coverage |
+| --- | ---: | ---: | ---: | ---: |
+| Source policy | 299 | 1,412 | 1,457 | 96.91% |
+| Library | 268 | 992 | 1,035 | 95.85% |
+| Session | 47 | 257 | 257 | 100.00% |
+| Series | 162 | 748 | 779 | 96.02% |
+| Address round | 80 | 578 | 605 | 95.54% |
+
+The first supervisor ended incomplete after the successful enumeration.
+Its terminal reader compared the stable-core tool policy hash to the
+source-policy role hash. The data-only readback verified both hashes under
+their actual owners and retained the first terminal and the raw listing.
+Coverage ran once under the original 1,800-second allowance with its
+300-second closeout reserve. Both workers drained, the raw evidence was
+retained, and the coverage work directory was retired.
+
+The retained evidence is in
+`engine-capture-source-policy-metrics-20261118.biJNrVn1` under the local
+NevroTick evidence directory.
+
+| Receipt | SHA-256 |
+| --- | --- |
+| `run-01/enumerate/raw/verification.json` | `7e47185d9eb10ddb552493d42f1a2265c0c4320b45b9523462c2dfa6aa931519` |
+| `run-01/terminal.json` | `ae6be5bf20bbdb3cf229bccf20fe5e036e88a859acf8a02e8373e9dbd747e6ed` |
+| `coverage-continuation-01/coverage/raw/verification.json` | `c507105fbc2e660b87ca774a0417be3a44fce9c9934a41e19fcc4e623380b226` |
+| `coverage-continuation-01/coverage/raw/work/coverage.json` | `6d152dae7dbd3a8cf64a9354cf64059abe7f4e66305d0e28f06ded6187903231` |
+| `coverage-continuation-01/terminal.json` | `7c00360b97405dff1e75b79debf78ef85ee8d604d539df93cb990337a987088d` |
+
+Both public campaigns stay closed with empty reviewed inventories and
+equivalence exclusions at this checkpoint. Independent generation-gap
+review and per-owner adjudication remain required for the unchanged 95%
+mutation gate. The 856 descriptors exceed the 512-descriptor campaign
+limit. Current KE metrics and native Windows, measured time provenance,
+Engine-to-Core, service and release qualification retain their open scope.
+
+
+###### Original receive brackets and final cutoff — W11-W01
+
+The plain pilot and series now check both original receive readings and the
+fresh processing observation against the exclusive request cutoff. An expired
+selected reply spends its one receive charge and cannot update managed source
+or endpoint policy. Stop and stale dispositions retain precedence. A reversal
+wholly before cutoff still records the original header and its numerical
+`CaptureOrder` refusal.
+
+The retired protected control carries both readings from the authenticated
+reply. Its final owner refuses a bracket reaching cutoff before issuing policy
+authority. In the modeled DENY case, the real first exchange and exactly one
+successor receive debit survive. The refusal preserves the pending request,
+receipt, cookie population, and both policy records. The ordinary protected
+successor retains its separate historical transport and cookie contract.
+
+The plain tests-only candidate reached the wrong `Control` disposition at
+exact cutoff. Its pre-cutoff historical neighbor passed. The protected
+tests-only candidate reached the intended `None` versus `Some(Deadline)`
+assertion after three healthy controls. The respective repairs passed focused
+checks. Two plain optimized attempts under the 90-second bootstrap CPU limit
+reported compiler SIGKILL before test entry. The fresh attempt had zero
+cgroup memory limit and OOM events. Both optimized cases passed under the
+already qualified 240-second Engine limit, along with GNU default/EP1 and
+MSVC-target EP1 Clippy.
+
+Integrated product `27026b88695e648c1d5e0ea5ba34ed984a68a91b3ea0a34c2499d936b34c49d2`
+passed 19 development lanes with 1,853 named executions. Both GNU build modes
+ran 278 default, 551 EP1 and eight selected Core cases. The 89 default and
+90 EP1 annotated Rustdoc identities remained exact. GNU and MSVC-target
+compiler and Clippy checks, GNU rustdoc, format and isolation passed. The
+observer joined and the build workspace was retired without cgroup memory
+or task-limit events.
+
+The integrated development receipt under
+`engine-integrated-receive-full-development-20261118.YvZ9nwgo/reports/run-01`
+has SHA-256 `c52cd02db2603866c229c7a8fb48981dfc8b655fb9047d3d99c120b0f2b875f5`.
+The plain RED, two incomplete attempts, and corrected final focus receipt are
+retained in `engine-plain-receive-cutoff-20261118.JLB5YZ7S`. Protected RED and
+GREEN receipts remain in `engine-protected-control-receive-cutoff-20261118.rMJRwFQo`.
+
+Both Engine campaign gates remain closed. The earlier 856-descriptor catalogue
+and five line gates cover their exact `80199574` source. Current metrics,
+Windows runtime qualification, and positive production timestamp admission
+remain open.
+
+
+###### Original receive bracket GNU metrics — 18 November 2026
+
+The staged `27026b88` product passed the configured GNU enumeration and
+coverage routes on the five-owner default source-policy graph and the
+13-owner EP1 KE graph. Each role rechecked the same source and helper hashes
+before and after execution. The instrumented output admitted all named cases,
+including 269 KE cases in the EP1 run. The two roles ran sequentially under the
+shared execution lease. Both workers drained, and their build work was retired.
+
+| Role | Owners passing 90% line gate | Coverage cases entered | Generated descriptors | Lowest line coverage |
+| --- | ---: | ---: | ---: | ---: |
+| Source policy | 5 | 278 | 857 | 95.54% |
+| KE association | 13 | 551 | 749 | 91.01% |
+
+| Directly affected owner | Current descriptors | Executed / executable lines | Line coverage |
+| --- | ---: | ---: | ---: |
+| Engine library | 269 | 992 / 1035 | 95.85% |
+| Protected request ledger | 202 | 1047 / 1083 | 96.68% |
+| Protected datagram | 60 | 663 / 682 | 97.21% |
+
+The default library catalogue adds the exact `commit_reply` descriptor
+`lib.rs:1593:31: replace || with &&`. The four other source-policy catalogues
+retain all earlier rows. Eleven KE owner catalogues retain their earlier
+rows. The ledger and datagram files retain their descriptor counts, with
+changed spans and rendered context. Keep the raw `80199574` and `cdc1a498`
+results on their original candidates.
+
+The protected successor forwarding and cutoff guard are in test-only code.
+No current generated descriptor isolates the trailing reading or final cutoff
+there. The earlier targeted RED and GREEN cover the final cutoff decision.
+An isolated current-product field substitution used the leading receive
+reading in place of the trailing one. The exact-cutoff protected DENY
+assertion failed with `None` versus `Some(Deadline)` under that substitution.
+The in-window DENY and ordinary successor both passed against the same
+fault. The shared source remained intact, and the private workspace was
+retired. This requirement-specific check carries zero generated-mutation
+credit. Its receipt in `engine-ke-rx-forwarding-fault-20261118.ET9KVpMg/run-01`
+has SHA-256 `72c0bb76b5bd9e1e6e2066c3ff9a161c71a35326756b13ea3b3e27a981bbf361`.
+
+The two Windows-only datagram `Default` replacements are still
+listed. The [current active-target result](#original-receive-bracket-datagram-mutation--18-november-2026)
+records their fresh GNU and MSVC outcomes.
+
+The independent readback under `engine-integrated-receive-metrics-20261118.kzMXvuBB`
+has SHA-256 `e3ad604f01a5fca663518448ca426cc73e6f4d9077e11f4c859cde811e2cab83`.
+It binds the raw catalogues, the actual libtest identities and LLVM line
+totals, and both supervisor terminals. Per-file 95% mutation qualification,
+Windows runtime qualification, and physically calibrated timestamp admission
+remain open. The reviewed inventories and both campaign flags remain closed.
+
+###### Original receive bracket datagram mutation — 18 November 2026
+
+CHECK-6/9/11/21/25/27 and W11-W01 TQ-01/TQ-09 retain the protected receive
+cutoff and mutation obligations on product
+`27026b88695e648c1d5e0ea5ba34ed984a68a91b3ea0a34c2499d936b34c49d2`.
+The four-worker GNU run on staged tree `ad394c243dafc548e1cdb2c7350850638691d592`
+passed its 641-case EP1 baseline and finished all 60 generated datagram
+variants. It caught 21, refused 37 at compile time, missed two and timed out on
+none. The GNU result failed the 95% gate at 21/23 (91.30%), with exit 2 from
+cargo-mutants and exit 1 from the enclosing verifier. The raw result stands.
+
+The two actual misses replace the Windows-only `Backend::bind` and `exchange`
+bodies with `Ok(Default::default())`. Fresh compilation for
+`x86_64-pc-windows-msvc` rejected each exact replacement with `E0277` at its
+replacement expression. `Backend` and `ProtectedCompletion<'_>` lack the
+required `Default` implementations. The boundary control and the healthy and
+restored builds passed. Independent readback verified the original diffs,
+primary diagnostics and unchanged inputs. The separate active-target
+accounting has 39 compiler-unviable variants and 21/21 viable behavioral
+catches (100%), with no exclusions or unresolved survivors. Its numerator is
+unchanged. This closes the selected active-target datagram file gate.
+
+The GNU worker drained and its temporary backing was retired after 545.435
+seconds. The MSVC controls ran for 53.847 seconds under their own lease; the
+worker joined and its temporary build output was retired. The protected
+receive-bracket field substitution above carries zero generated credit.
+Remaining owners, branch evidence, Windows runtime and calibrated timing
+retain their separate qualification scope. No public campaign was opened.
+
+Retained `engine-integrated-receive-ke-datagram-admission-20261118-v1`
+receipts and independent GNU readback:
+
+| Evidence | SHA-256 |
+| --- | --- |
+| `run-01/terminal.json` | `4f36947409f1c2701db85079ec4d13769d41713208032d0e807aa68ff9deb15c` |
+| `msvc-controls/run-01/verification.json` | `a8d58a51f3e0de2616579f91edcd7ed55760d464a267ee33b2e4bdc37e9f9d9d` |
+| `engine-ke-current-datagram-independent-review-20261118.o4t_8tah/gnu-run-01-readback.json` | `3262e0be15848d099ba86f300d8bb70be2cbf2d0666e1b1c5966b41cf98d4bfc` |
+
+###### Original receive bracket library mutation interruption — 18 November 2026
+
+The selected source-policy Library trial used the same `27026b88` product,
+all 269 generated Library descriptors, six workers, zero extra jobserver
+tokens and the unchanged 90-second build and 60-second test limits. Its
+367-case GNU default and Rustdoc baseline passed. The coordinator stopped the
+trial after 222.187 seconds of the 1,200-second allowance. The worker drained,
+676 raw files were retained and the owned RAM workspace was retired.
+
+The partial raw outcomes contain ten observed compiler refusals, five build
+timeouts, one test-phase timeout and 253 unpublished variants. No behavioral
+catch or survivor was recorded. The runner exhausted its 512 MiB swap
+allowance amid sustained `memory.high` reclaim. Disk and host RAM reserves
+held, and no hard memory, OOM or task limit fired. The observed timeouts
+carry no kill credit. The Library gate remains open. Any continuation must
+account for these charges and change the demonstrated resource contention.
+
+The incomplete terminal at
+`engine-integrated-receive-source-policy-library-20261118-v1/run-01/terminal.json`
+has SHA-256 `48f5ba0d7655607d463d14462acd04e0b1845217077ccebd2ce7d188a3554134`.
+The independently inspected partial outcomes have SHA-256
+`ff88c993e894f7e490896d86d67ceeffe4333e856a4107059c26eb5840afa95e`.
+
+###### Managed KoD receive chronology — 18 November 2026
+
+W11-W01 TQ-01/TQ-09 and CHECK-6/9/11/21/25/27 require the real policy
+owner to validate original receive chronology before either record changes.
+The actual plain loopback receiver accepted a correlated DENY with an
+in-window reversed bracket. The tests-only case reached `Some(Control)`
+where the original request should have remained Pending. The existing
+ordinary-header case still passed with its numerical `CaptureOrder` refusal.
+
+The managed control check now runs after the live request and policy stamps
+are matched, under the same guard as the effect. A reversed bracket charges
+one rejection and preserves the original deadline, request, and policy.
+The ordered neighbor on the same query token then completes the original
+request, with one send, two received datagrams and one rejection. Both
+source and endpoint are restricted and retain their earlier send floors.
+The repair passed eight focused executions in GNU default and EP1 ordinary
+and optimized profiles, and three GNU/MSVC-target Clippy lanes.
+
+The private scripted protected successor also admitted two invalid trailing
+readings after actual backend retirement. One preceded the leading reading.
+The other followed processing and remained inside expiry. Both tests-only
+cases reached success instead of `Ledger(Time)`, beside four passing
+neighbors. The final retired ledger now rejects both under its actual Control
+and policy guards. The original expiry and final processing cutoff still
+precede the new tail refusal. It retains the charged pending ledger, receipt,
+cookies and exact policy records. A combined invalid tail and newly changed
+policy epoch may report the chronology error before stamp revalidation.
+An ordered stale request keeps its existing refusal. This check covers the
+private scripted successor.
+
+All six ordinary EP1 cases passed after that repair. The first tests-only
+attempt stopped on formatting before compilation, and the corrected tests
+then reproduced both faults. The first optimized repair attempt reported
+compiler SIGKILL under the 90-second bootstrap limit before any test ran.
+Those attempts remain recorded. The first integrated build stopped at
+MSVC Clippy because the private fixture selector was passed by value. The
+retry borrows that selector with the same chronology cases and charges 23
+seconds for the first attempt's 22.017 seconds.
+
+Exact combined product `703fb8c4c4fb402754bdad7adde7dfc651800eb57e9e9328f1ac5a5c5d5b3b09`
+passed all 19 development lanes in 425.976 seconds. The run executed 279
+default and 554 EP1 cases per build mode, including 271 KE cases in EP1,
+89/90 annotated Rustdoc cases and 16 selected Core executions. All three
+new cases ran in each applicable build mode. Independent readback mapped the
+1,861 named executions to the actual commands and raw outputs. The resource
+observer joined and the build workspace was retired. Fresh mutation, line
+coverage and native Windows runtime qualification retain their own exits.
+
+Focused receipts under `engine-managed-kod-receive-chronology-20261118-v1`:
+
+| Evidence | SHA-256 |
+| --- | --- |
+| `red-run-01/verification.json` | `7161606f26115c20e09c28928386ce5f83b8e907581d85d879fb71727c4e990e` |
+| `green-run-01/verification.json` | `a53d5716606583aedcd9241569210d74c5104dd31f8139318f5459be69beebf6` |
+| `protected-red-run-01/verification.json` | `e12237c1d070cbf0bf98112622e6827241fc59bcd7a622c6674b020e5b09b6fa` |
+| `protected-red-run-02/verification.json` | `bbf0a67bbd62b072b9c8973c9f14ff34aa4c3fab69b5b7668acbe6b0eaa435ab` |
+| `protected-green-run-01/verification.json` | `547352f09a3f513f019715d0493c9fc17a70034d3a6eaeb01585438e8d0578b9` |
+
+Integrated receipts in `engine-managed-kod-chronology-full-development-20261118-v1`:
+
+| Evidence | SHA-256 |
+| --- | --- |
+| `reports/run-01/verification.json` | `0176c77dc50b9ccfae5c9545464fe3c70c47c79d43cb758be524795fce1a5130` |
+| `reports/run-02/verification.json` | `42421fada6107d0ca65f0e9d2572c7b564e36931c8826e46b8e08ea6c9032d83` |
+
+The existing closed Engine roles bind the current product and exact executed
+rosters. Source-policy re-read the 19 raw lanes and their retained focus
+history through the maintained reader with 47 bound role inputs. KE
+independently re-read the exact ordinary and Rustdoc projection with 57
+bound role inputs. Both closed flags and 90%/95% thresholds remain in force.
+Physical admission receipts under `engine-managed-kod-chronology-readmission-20261118-v1/bound-01`:
+
+| Evidence | SHA-256 |
+| --- | --- |
+| `source-policy/physical-source-policy-admission.json` | `0ea05b21af19cfd3d505c7f161edd6604d68ff8547d903d3ce028d5b0b38221a` |
+| `ke/physical-admission.json` | `2806c6da0da90036725034b08b41b7a4e937ad53cd4f2c0b93ff7448f61edb83` |
+
+The current GNU metrics used the exact 609-input `703fb8c4` product from
+staged tree `85774e5`. The default graph executed all 279 registered cases
+and cleared all five 90% line gates. EP1 executed all 554 registered cases,
+including 271 KE cases, and cleared all 13 line gates. The minima were 95.54%
+for default and 91.01% for EP1. Key owners recorded 1,416/1,461 lines for
+source policy, 1,050/1,086 for the protected ledger, 663/682 for datagram,
+and 992/1,035 for Library.
+
+Independent readback reconciled all 862 default and 749 KE descriptors. The
+source-policy chronology and rejection debit added five descriptors to its
+owner. In the KE ledger, 45 of 202 descriptors shifted four lines with the
+same diff body. The new test-only protected chronology guard produced no
+new descriptor. Both workspaces retired after zero-exit lanes. The current
+95% mutation exits and Windows runtime qualification are open. The earlier
+interrupted Library campaign retains its charged time and partial outcomes.
+The ext4 retry needs the configured 7 GiB startup reserve, about 2.1 GB more
+than the observed capacity at review.
+
+| Metrics terminal | SHA-256 |
+| --- | --- |
+| `engine-managed-kod-chronology-source-policy-metrics-20261118-v1/run-01/terminal.json` | `45ef8854e3366d6c80f38060c4cb5a02add3d3086ff838aa2fefbb4172287c19` |
+| `engine-managed-kod-chronology-ke-metrics-20261118-v1/run-01/verification.json` | `cd382fb111133aa869abffc5e4353dbcf6644c8fb9cef9e74780472bea4b0210` |
+
+###### Protected known receive debit — focused continuation
+
+CHECK-6/9/11/25/27 now traces a separate path through the shared protected
+receiver. A known-length datagram with an invalid send-to-receive capture
+order returned `Capture` and retired the backend before entering the ledger.
+The actual fixture retained `(31, 130932)` instead of spending one frame and
+124 bytes to reach `(30, 130808)`. The three existing neighbors passed. The
+first two attempts stopped at formatting and a non-const queue read in the
+fixture. The corrected test reproduced the debit fault before repair.
+
+The isolated repair on `43abe808` charges the complete discarded datagram
+through the existing Pending ledger and retains the original capture refusal
+when that debit succeeds. The normal currentness and budget refusals still
+apply. The two test scenarios retain the original receipt, cookie state,
+cutoff and single send-floor reservation. The final-frame case retires
+Pending and emits exactly one ReceiveWork intent at the original cutoff; the
+queued healthy neighbor stays unread. Format, all four selected EP1 tests,
+and GNU and MSVC-target Clippy passed.
+
+The exact `43abe8085314d61c793a7ec8fc2c19475a4bb4f15adffae2e10f658a65e752a5`
+product then passed all 19 combined Engine and Core development lanes in
+368.267 seconds on staged base `58981fe`. Independent readback traced 1,863
+named executions to raw tool output, including 279 default and 555 EP1 cases
+per build mode, 272 KE cases within EP1, 89/90 annotated Rustdoc cases and
+16 Core executions. The new regression ran in both EP1 modes. The resource
+observer joined and the owned build workspace retired.
+
+The existing roles re-admitted the exact candidate and rosters with 47
+source-policy and 57 KE input pins. The first emitter double-counted the
+manifest shared by its physical and focused registries. The corrected
+emitter checked all 66 unique paths and the identical shared manifest hash.
+Both campaign flags are closed. Current coverage, per-file mutation, and
+Windows runtime qualification are open for the new candidate.
+
+| Evidence under `engine-protected-known-receive-debit-20261118.qwfwi32u` | SHA-256 |
+| --- | --- |
+| `protected-red-run-03/verification.json` | `12c6fa1b1b084480ad19b659e9e7859fd6617060c84ebd013c527671af5f7e66` |
+| `protected-green-run-01/verification.json` | `a60aa4e3fb7557506509543e746f6e1c7a0eadd3000907f5ba847876d778dca7` |
+| `protected-known-receive-debit-repair.patch` | `9b91ca85d80532728fb4c19bcaabb33107d01a524705d2b089fd3a18bf958e09` |
+
+| Bound combined evidence | SHA-256 |
+| --- | --- |
+| `engine-protected-receive-debit-full-development-20261118-v1/reports/run-01/verification.json` | `0e1e2c0dac6318d5edadd880dd45c3177bb364b3de87abff6b45a91750a2f092` |
+| `engine-protected-known-receive-debit-readmission-20261118-v1/bound-02/source-policy/physical-source-policy-admission.json` | `fdff8ab55143f1b24037b1f87293fadcf3a3183b124a12905c1f0f57f7254b9a` |
+| `engine-protected-known-receive-debit-readmission-20261118-v1/bound-02/ke/physical-admission.json` | `861334ede7d5cc7b8cfa3feca40e4cf679976d51a5722badd689ab82efdd21bc` |
+
+###### Historical receive-to-commit age diagnostic — focused continuation
+
+[W11-W01 TQ-01/08/09](windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
+and CHECK-6/11/14/25/27 cover the local age printed with an unavailable
+numerical measurement. The existing header had already committed, but the
+writer omitted the interval from the retained receive bracket’s trailing
+reading to the original commit. The independent writer fixture and actual CLI
+field contract reproduced that omission. The reversed-bracket neighbor passed.
+
+On `f3c9a305` the writer emits `receive_to_commit_ns` when the stored receive
+readings and original commit are ordered. Reversed readings leave the field
+absent. The unavailable status, refusal reason, unauthenticated and ineligible
+labels, and unknown wire error remain explicit. The ordered and reversed
+writer cases, the independent reversed-bracket neighbor, and the controlled
+IPv4/IPv6 CLI contract passed the focused repair run.
+
+The combined 609-input product passed all 19 configured lanes with 1,867
+named executions. Default and EP1 each passed both ordinary and optimized
+selections, with 280 and 556 cases per mode respectively. EP1 included 272
+KE cases. The GNU Rustdoc counts were 89 and 90. The 16 Core executions,
+GNU and MSVC-target checks and Clippy also passed. Both closed roles
+readmitted the physical receipts and exact source and helper bytes with
+47 source-policy inputs and 57 KE inputs. Current line coverage, per-file
+mutation and Windows runtime qualification remain open.
+
+| Focused evidence under `engine-header-diagnostic-age-20261118-v1` | SHA-256 |
+| --- | --- |
+| `age-red-run-01/verification.json` | `2067a9f5c124219783040cc6c1c2fb2bf673127f15d0d5c8d76ba030332340e2` |
+| `age-green-run-01/verification.json` | `b27aca36c68b12516c416442c336286de5eee399a9744c15f7a79ebfc727bd37` |
+| `header-diagnostic-age-repair.patch` | `db793377547f3af313935fd319389a2b53dee0c86fb900243854ce1174793e19` |
+
+| Combined evidence under `engine-header-diagnostic-age-20261118-v1` | SHA-256 |
+| --- | --- |
+| `full-reports/run-01/verification.json` | `b76fa7e48b701dbfe5004709058654f294372dbb9debf198fc8ed8a9176c3001` |
+| `readmission/bound-01/source-policy/physical-source-policy-admission.json` | `61dddd8290c75ead4580df9459a794b075441f37ef7344a457f76a3ba668f254` |
+| `readmission/bound-01/ke/physical-admission.json` | `3e9e8d1dd882dfdf75c54e7159d9d0bb63822131e726e272a57db5e3a15a3736` |
+
+###### Ordinary protected receive bracket — W11-W01
+
+[W11-W01 TQ-01/08/09](windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
+and CHECK-6/9/11/25/27 require original capture placement at guarded
+publication. The ordinary protected path retained the captured report but
+passed only the leading receive reading into the charged receipt decision.
+In the controlled authenticated exchange, a reversed trailing reading
+still let the receiver record a receipt before retiring the backend and
+install one 12-byte replacement cookie afterward. The ordered neighbor passed.
+
+Both ordinary receive paths now pass the original bracket into the
+same ledger transaction. After charging and checking current Pending
+under the original Control, the transaction refuses a trailing reading at
+the original cutoff as Deadline. Unordered or future in-window readings
+refuse as Time before recording the receipt or consuming Pending. Tests
+observe the bounded following read and no replacement on retryable refusal,
+an unread following scripted read on cutoff refusal, the spent debit and backend
+retirement for both, and the unchanged ordered success. The retired
+protected control path and original post-retirement replacement checks
+remain separate.
+
+The first repair passed all six focused EP1 cases and stopped at two
+Clippy diagnostics. The corrected candidate passed the six cases, including
+the paired reversal, cutoff and future branches, plus format and GNU/MSVC-
+target Clippy. Its exact 609 product inputs then passed all 19 combined
+development lanes with 1,869 named executions. Default used 280 cases
+and EP1 557 per ordinary/optimized selection, including 273 KE cases in
+EP1. The GNU Rustdoc counts were 89 and 90, with 16 independent Core
+executions. Both closed roles admitted the current source, helpers and
+physical evidence. Coverage, per-file mutation and Windows runtime
+qualification remain open.
+
+| Evidence under `engine-ordinary-protected-receive-order-20261118-v1` | SHA-256 |
+| --- | --- |
+| `ordinary-protected-red-run-01/verification.json` | `0b3c2497599b54b6b531ebe5b3909817fd618f1d0da543efb58fc43cf5c8403d` |
+| `ordinary-protected-green-run-01/verification.json` | `a773a8aa5fc4c9fdc63bdd0894dad05d3f36bc82539cc54c5c04ed3138b74b60` |
+| `ordinary-protected-green-run-02/verification.json` | `a77cb9c0b58951452dd57163c18f79c2a6b3b87cabf6d46f4e2dbe64a61afc32` |
+| `ordinary-protected-receive-order-candidate.patch` | `0deb7678ed98c24f77e9f87010a3823df992f2920389ea45bbffd590fac097af` |
+| `full-reports/run-01/verification.json` | `e4002f6e7cd8f3d29737c0c602bf5547d38fa31f8a7e47cefdfe0d14b4700ad6` |
+| `readmission/bound-01/source-policy/physical-source-policy-admission.json` | `a37daf314ef2492745b5a969c7a8c6b35e29d72874b404c529fca4ce85accbe8` |
+| `readmission/bound-01/ke/physical-admission.json` | `adf48a854cbfb5bfe837bd8a2a931add8fed880342e90878298df034be7644cf` |
+
+###### Ordinary protected receive bracket — GNU line coverage and inventories
+
+The same `e8ef1377` product passed all 18 selected 90% executable-line
+gates on frozen staged tree `ad8c6e15`. The default source-policy selection
+executed all 280 registered cases and passed five gates at 95.54% or higher.
+EP1 executed all 557 registered cases, including 273 KE cases, and passed
+13 gates at 91.01% or higher. Enumeration admitted 871 default and 759
+KE mutation descriptors. Both workspaces retired after the execution
+bookends. The per-file 95% mutation and Windows runtime gates remain open.
+
+| Metric evidence under `engine-ordinary-protected-receive-order-20261118-v1/metrics` | SHA-256 |
+| --- | --- |
+| `ke-run-01/verification.json` | `815af0d3f8988c7c2438e5d8c7ce674733b1b15c078ff6a1784638f499b7e55b` |
+| `source-policy-run-01/terminal.json` | `61c6f1c0f572269567c71aa1f0e206768431d7e78ba0f18ea312d7a3bf603b10` |
+
+###### Application capture placement diagnostics — W11-W01
+
+[W11-W01 TQ-01/08/09](windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
+and CHECK-6/7/11/14/25/27 cover the original application capture placement
+in the plaintext measurement record. Both test-only laps reproduced the
+missing elapsed bounds in the no-profile writer, nominal writer and real
+CLI. The independent receive-to-commit age control passed in both laps.
+The second RED repeated the three failures after a fixture import change.
+
+The nominal and unavailable branches now emit the inclusive application
+wall-read elapsed bounds when the original send-before, send-return,
+receive-return and commit readings form a nondecreasing chain. The lower
+bound uses receive leading minus send-before trailing. The upper bound uses
+receive trailing minus send-before leading. Both use checked durations and
+retain the original captures. A reversed send-return bracket omits these
+bounds while preserving valid receive-to-commit age. A reversed receive
+bracket omits both. The measurement result and capture-refusal precedence
+are unchanged, and the fields confer no UTC mapping, wire-error bound,
+authentication, or sample eligibility.
+
+The exact `978691a8` product passed four focused GNU controls, format and
+GNU/MSVC-target Clippy. All 19 combined development lanes passed with
+1,869 named executions, including 280 default and 557 EP1 per build mode,
+273 KE cases per EP1 mode, 89/90 Rustdoc cases and 16 Core executions.
+Both closed roles admitted the new product and physical evidence with
+47 source-policy and 57 KE input pins. Fresh metrics and Windows runtime
+qualification remain open.
+
+| Evidence under `engine-application-capture-placement-20261118-v1` | SHA-256 |
+| --- | --- |
+| `placement-red-run-01/verification.json` | `2541207a1c8c4788d4a859d686582d3630e6b41dc47867e82bc5a802cc70487b` |
+| `placement-red-run-02/verification.json` | `5fc063baf594d9fa57ce92bed7f2ae3b70ca68f9ac55c9079812a5d506df4b4d` |
+| `placement-green-run-01/verification.json` | `85dd87fcdb3a5cf9c375f3ef05def2a145a21d8ddd07f1035ae1b36d1b413d1f` |
+| `app-capture-placement-candidate.patch` | `0ea9224cc9e9b24353f87c41ef67ca00bc31e5b10862556789c1437c95711d41` |
+| `full-reports/run-01/verification.json` | `bf968a5b328df4aca7c25769fbeeafbdafb8bca9f0ef7b9c14b4877dd2ea2bc1` |
+| `readmission/bound-01/source-policy/physical-source-policy-admission.json` | `8559b96e2b2cb7828a30a7b2bc1809f7c7c405a925ab37462344dec1b065a7eb` |
+| `readmission/bound-01/ke/physical-admission.json` | `e597a7828fba64e21a34fb1f153cc952982a805dd8d3402c6355b71dfbe128e3` |
+
+###### Plain capture-placement Windows writer tests — W11-W01
+
+The bounded ordinary-user host test permission covers the two existing
+plain IPv4 loopback writer fixtures under TQ-01/08/09 and CHECK-6/11/14/21/25/27.
+The runner adds a separate `--placement-cohort` for the managed no-profile and
+nominal writer cases. Both use the existing four images and four-process cap.
+One empty Engine feature selection drives Cargo, the build receipt, and
+artifact attribution. The portable regression reproduced the earlier
+artifact refusal when attribution expected KE, and all 72 runner checks
+passed after the correction.
+
+On exact product `978691a8`, all 17 MSVC cross-build checks passed. The
+placement receipt binds 609 product inputs, 15 runner inputs, and the
+independently source-derived 254-name library roster. On the ordinary-user
+Windows host at build `10.0.26300.0`, all nine observations passed. Actual
+libtest discovery matched all 254 names. The managed no-profile and nominal
+writer invocations each reported one exact success and 253 filtered tests.
+
+Both writer invocations observed the launcher and fixed child plus two
+admitted console helpers. Each job had zero active members after cleanup,
+released its process handle and streams, joined the event reader, and closed
+the event port. The Windows staging directory and Linux compilation scratch
+were retired after copying the original requests, supervisor records and
+adapter images. The compiled test images and all raw receipts were retained.
+
+This closes the selected plain Windows writer tests on the observed host.
+Native CLI execution, physical calibration, protected KE/provider and
+service qualification, production Engine-to-Core admission, and current
+coverage and mutation gates retain separate exits.
+
+| Evidence under `engine-application-capture-placement-20261118-v1/native` | SHA-256 |
+| --- | --- |
+| Portable artifact RED, `portable-placement-artifact-red.log` | `163072e97e4c1dca8228c413d96c8aceb7ee4900c1748fb188c7db6884011a5d` |
+| Portable runner checks, `portable-placement-v2.log` | `4eec1220ba8f8ea3b8e5c5befbfb7b75111298862c512b3536cf8a95de6d869c` |
+| Independent Windows roster, `windows-placement-independent-roster-v2.json` | `0f219eec14286825432e31b38abfb3f4d6c0a7207e19719e4f5d55090bda9f88` |
+| MSVC cross-build, `cross-build/verification.json` | `410285876e620447a1bd3aaa2df1aa485cf4afd3ab18a9e3ee5c886bb88ecc52` |
+| Windows writer observations, `native-observations/verification.json` | `03e1b55ca3ee2ee4b020acf928056112f504bc06485018a6b6bd784729d6828f` |
+| Owned workspace retirement, `owned-workspace-retirement.json` | `6de356d69ca74e0a181c53437b3edd6a576423c265123c124f8923a99b7b5550` |
+
+###### Engine receive chronology at policy, commit and recovery boundaries
+
+This W11-W01/S2.2 continuation addresses TQ-01/09, REQ-8, BND-2, AC-04 and
+CHECK-6/8/9/11/21/25/27. It starts from staged tree `b07eb782603fd7eafbd821c24c80603b2947bb32`
+and product `978691a8`. The staged source and unchanged dependency configuration
+carry the original clocks, ownership and deadlines into the three owners.
+
+- **Managed plain KoD.** The policy owner checks the actual reserved send
+  observation against the start of the original receive bracket before either
+  restriction record changes. A selected reply whose receive starts before
+  the reserved send charges one rejection and leaves the same request pending.
+  The same query can accept at exact send/arrival equality. The request deadline,
+  source and endpoint binding, and admitted floors retain their original meaning.
+- **Retired ordinary protected commit.** Under current Control and source
+  policy, the final observation cannot precede the authenticated receipt's
+  acceptance reading. It remains strictly before the original expiry. The
+  guard covers terminal cookie publication and the private first-request
+  continuation. Refusal retains the original charged work and historical
+  receipt and leaves the cookie pools intact. Stop, currentness and deadline
+  retain their existing precedence; a committed result keeps its history.
+- **Final authenticated count refusal.** Recovery retirement checks both
+  original receive readings with the same span check used by ordinary
+  admission. A reversed bracket gives the retirement cause `Time`; an upper
+  reading at the original cutoff gives `Deadline`. Both preserve the
+  initiating `Cookies` failure and the original debit, retire the actual
+  backend, and grant no retry draw or successor. Ordered exhaustion can
+  still defer one bounded replacement, and a healthy final packet can commit
+  in the original context.
+
+Four focused cases reached their intended assertions on the final paired RED
+(exit 101) and two healthy controls passed (exit 0). All six passed on
+`555a6a076d567a173e5f5c6f728115d5cfff4a0b05da2959ebd77b137dc76ec0`, with format, boundary checks and strict
+GNU/MSVC-target Clippy. The initial format stop and both Clippy stops are
+retained. The final focused runs retired their temporary work. Independent
+review traced the actual policy, retired commit and recovery consumers.
+
+The exact current Rust 1.100.0 product passed all 19 combined development
+lanes, covering 280 default and 560 EP1 names per ordinary and optimized mode
+(including 276 KE), 89 default and 90 EP1 Rustdoc cases, and 16 Core controls.
+The combined total is 1,875 named executions. Windows-target compiler and
+Clippy checks ran from WSL. Both closed roles read the physical evidence and
+retain their 47 and 57 input pins. Current per-file coverage and mutation
+qualification, native execution for these changes, genuine mapping and
+Engine-to-Core eligibility retain their separate exits. The existing 90% and
+95% thresholds, original failed evidence and post-V1 formal deferral carry
+forward.
+
+| Evidence under `engine-receive-effect-guards-20261118-v1` | Relative path | SHA-256 |
+| --- | --- | --- |
+| Focused format refusal | `receive-guards-red-run-01/verification.json` | `31adcf82a5b5b192f2bf21a6ad47ef3a411097bc65c3d4f8aaf14f5bad3bb092` |
+| First focused behavioral RED | `receive-guards-red-run-02/verification.json` | `1710cf2f77ab95b7d4231cb1a20dd14c8b74e32b3607f97f88d43229df48747b` |
+| First GNU Clippy refusal | `receive-guards-green-run-01/verification.json` | `ab5c38f599ada5df8092b7f52fc3a461007f35ac4815f1105218f155094d56f9` |
+| Focused RED after fixture cleanup | `receive-guards-red-run-03/verification.json` | `447d3b83d41787b2562446d9637a71057e4b2ae6f40065541347ada8f4343c64` |
+| Second GNU Clippy refusal | `receive-guards-green-run-02/verification.json` | `f0e1386f57be0e92cd5a315ab45b044cefbb0a2c80168f8403a7b35c30fec1a7` |
+| Final paired behavioral RED | `receive-guards-red-run-04/verification.json` | `f3d2b4566a7a425517422743ccfc968d9e3e787ce6f9b6c6791b374773537b30` |
+| Six GREEN cases and both Clippy checks | `receive-guards-green-run-03/verification.json` | `d9b36236640b502b9f37f4b4f457d5d8015ed0ab17f8813bd294e36554c8aa26` |
+| Combined development | `full-adapter/full-reports/run-01/verification.json` | `9c59082b532e272c5d26e5edd68fcfaec8079f3b217d3192df9424df87b1be18` |
+| Closed source-policy role | `readmission/bound-01/source-policy/physical-source-policy-admission.json` | `4482f692187ce4312b22d5d5241f14d3252d58b8aafb3643f77ab0caae75aa78` |
+| Closed KE role | `readmission/bound-01/ke/physical-admission.json` | `6f6181b64ed922693eb0aa946fa288f54e3310fb0965bb6ba855fd177beef3f2` |
+
+###### Engine receive chronology — GNU metrics and retirement mutation
+
+On staged tree `2342cfbfa90ef9dba2d178db36127a03b51dac6b`, the exact
+`555a6a07` product passes the 18 selected GNU executable-line gates at the
+existing 90% threshold. Both independent readbacks reconcile the entered
+test names, exact inputs, LLVM totals, and every raw inventory descriptor.
+
+| Graph | Entered tests | Files passed | Minimum line coverage | Inventoried descriptors |
+| --- | ---: | ---: | ---: | ---: |
+| Default | 280 | 5 | 578/605 (95.54%), address round | 875 |
+| EP1 | 560, including 276 KE | 13 | 638/701 (91.01%), KE core | 765 |
+
+The complete current `ke_retirement` mutation cohort passed the per-file
+95% gate on GNU. The 650-case baseline executed 560 ordinary cases and 90
+Rustdoc cases. Four workers completed all 53 generated variants within the
+existing 1,200-second allowance and original 90-second build and 60-second
+test limits. There were 45 behavioral catches, eight primary compiler
+refusals, zero survivors, zero timeouts and zero exclusions. The viable
+score is 45/45 (100%). The independent outcome review rechecked all 741
+retained files, the named test failures, and the compiler causes. The worker
+and its temporary mutation workspace retired. Both repository roles remain
+closed.
+
+The invocation of `span.check` in retirement has no direct generated
+variant. The original reversed-tail and exact-cutoff regressions cover
+that decision through the actual recovery owner, with ordered exhaustion
+and healthy last-reply controls. Those paired regressions carry zero
+generated mutation credit. The LLVM evidence establishes line coverage.
+Branch, remaining critical-file mutation, Windows runtime and production
+Engine-to-Core admission remain open.
+
+For the next protected datagram cohort the current catalogue contains 61
+descriptors and the same 650 baseline cases. The previous two GNU survivors
+were Windows-only bodies. Current classification requires actual GNU
+outcomes and matching active MSVC compilation controls. The predicted
+Windows EP1 roster contains 537 library names and 279 KE cases, including
+the new retirement and recovery controls. Fresh linking, discovery and
+ordinary-user runtime observation remain pending. The plain KoD chronology
+case still needs a fixed native launcher selection.
+
+| Evidence under `engine-receive-effect-guards-20261118-v1` | Relative path | SHA-256 |
+| --- | --- | --- |
+| Default metrics | `metrics/source-policy-run-01/terminal.json` | `42859ed65f7dbf4af0f05e2faedbb4b7dcc11a1ba0234223d46354d338e65db1` |
+| EP1 metrics | `metrics/ke-run-01/verification.json` | `9bcdf0e3f96a1d9e8985f4fc5053e259bd63441bed86ec0ae61a87a26eff584e` |
+| Default independent readback | `metrics/independent-default-check.json` | `c161d14a3ef3c196a44892ee360123f519e6013ec3c92f592305535b39a274d6` |
+| EP1 independent readback | `metrics/independent-ke-check-v2.json` | `4879a1dd95cab91f732681346f337c6d0523c646baa04a7de4b882297296e85f` |
+| Retirement catalogue review | `ke-retirement-mutation/retirement-catalogue-review.json` | `c925f247b088be1fb4bc090ddb1e496c85f2842d497001618d027c9d3e47fb2a` |
+| Retirement GNU terminal | `ke-retirement-mutation/run-01/terminal.json` | `8cc040bdfd71ac9238aaa9b2df2a13e04313e19bd1b4e402b376574e379bdf4d` |
+| Retirement independent outcomes | `ke-retirement-mutation/run-01/independent-outcome-review.json` | `76cf22c5fc1befdd063eae4e58952ec0b1b5423fd83965b6dec0d55c7f459bc4` |
+| Datagram data preparation | `ke-datagram-data-recipe.json` | `152cf7e73843747e64c9cb04c04c1ce52d13b2936d67ebf6bef15ae70bd819ad` |
+| Windows EP1 predicted roster | `native-ep1-preparation/windows-ke-independent-roster.json` | `22744a3df48ccc8125f9efce25f947e4555a5c5aa3b3e69d66685fd2964d957c` |
+
+###### Engine receive chronology — datagram mutation and scripted Windows EP1
+
+On staged tree `1e81bd785ae5eeafdd26944e952e4eb15f74ada7`, the exact
+`555a6a07` product entered all 650 baseline cases and all 61 protected
+datagram variants. The four-worker GNU cohort ended with 21 behavioral
+catches, 38 compiler refusals, two survivors, no timeouts and no exclusions.
+The raw 21/23 score (91.30%) is retained with cargo-mutants exit 2 and
+verifier exit 1. Independent review traced each catch to a named datagram
+assertion. The new `commit_observing` replacement is compiler-unviable
+under GNU at its primary `CommittedProtected<'_>: Default` diagnostic.
+
+Both remaining GNU survivors were the Windows-only `Backend::bind` and
+`exchange` body replacements. Fresh active MSVC compilation rejected
+both exact spans with `E0277`. Boundary, healthy and restored controls
+passed. Separate active-target accounting reaches the existing 95% file
+gate at 21/21 viable catches (100%) with 40 compiler-unviable variants.
+The compiler controls add zero behavioral credit. The GNU outcome and
+original resource records retain their exact scope.
+
+All 17 Windows cross-build steps and four PE/PDB image bookends passed.
+Under a fresh same-host resource check, the ordinary-user supervisor
+matched all 537 independently predicted discovery names against the
+current actual binary. All 276 flat and three separately admitted nested
+KE cases passed, including the protected chronology and recovery cases
+and their healthy controls. The 14 independent observations reconciled
+image hashes, token, job membership, expected gate failures and cleanup.
+Flat jobs used at most four lifetime processes, nested jobs at most
+five, and every job shed all active processes. The initial resource probe
+misdecoded an output separator. The corrected UTF-8 check passed again
+immediately before executing on Windows.
+
+This scripted EP1 scope includes the bounded Windows IPv4 loopback
+bind, refusal and retirement control. The plain KoD chronology case was
+listed at discovery and still needs fixed native execution. Healthy
+provider networking, calibrated time, genuine Engine-to-Core acquisition
+and the other critical-file mutation gates retain their separate exits.
+The raw Windows requests, supervision results and adapters were copied
+and rehashed before the owned staging directory was removed. The four
+qualified image pairs and all raw receipts remain retained. Linux build
+work and the private source snapshot were retired.
+
+| Evidence under `engine-receive-effect-guards-20261118-v1` | Relative path | SHA-256 |
+| --- | --- | --- |
+| Datagram GNU terminal | `ke-datagram-mutation/run-01/terminal.json` | `18e57106c5010d8f1fd857cf5e7ffbb21c3962eef673a82cbac7394647c373bb` |
+| Datagram GNU outcome review | `ke-datagram-mutation/run-01/independent-outcome-review.json` | `0ce575ff6d4a39ed01ba7199333b7b8c8b8d678ed5511a69ed2233be06cf4bce` |
+| Active MSVC compiler controls | `ke-datagram-msvc/run-01/verification.json` | `203ee0e47dc521493c239f41a0621de7a2da4f96010632d1a4338b1d1681d97f` |
+| Datagram active-target accounting | `ke-datagram-msvc/run-01/combined-accounting.json` | `2498404057586e1db599b3498c221154722b96582590c28fc9abd6b8acee3af0` |
+| EP1 cross-build | `native-ep1-preparation/cross-build/verification.json` | `e3055a8944153e737e94bf0566bbfe43ed39b9a1b856675eb0059c4ab9243895` |
+| EP1 build readback | `native-ep1-preparation/independent-build-readback.json` | `6cbc9adb144c8949620653731868cf8aabf1a88911df167849a63adae836d519` |
+| Fresh Windows resource check | `native-ep1-preparation/host-preflight-03.json` | `772ea2aebf90688ff5ff853bed5cd66a7e319f1a3bbd85664692beef20595a36` |
+| EP1 Windows execution | `native-ep1-preparation/native-observations/verification.json` | `d1702f20b4a43c20bfa7e6657603de3233d97dbde74a7dd43edf7591bea5b4ae` |
+| EP1 Windows readback | `native-ep1-preparation/independent-native-readback.json` | `617fa3fae0673f7841db08074b8d41376d93ec1f83bec8ca78ddf7a07f3f71e8` |
+| Owned workspace retirement | `native-ep1-preparation/owned-workspace-retirement.json` | `0053c57afa2fd89d0b02238940b3a7f772d5f8a77f40c1e684ad88f92178810f` |
+
+###### Engine receive chronology — scripted Windows default
+
+The twelve-case default cohort passed on product `555a6a07` with empty
+Engine features on `x86_64-pc-windows-msvc`. The source snapshot used staged
+tree `a216be6e674fc136541eeea20d8217f682524025` and a three-file native
+runner, launcher and verifier-test overlay. The 609 product inputs match
+the GNU evidence. The Windows receipts include the actual 15 helper inputs.
+
+The fixed selection now reaches the managed plain KoD chronology test. A
+reversed bracket and a receive starting before the reserved send each leave
+the original request pending with one charged rejection, the same deadline
+and the same restriction state. In the healthy neighbors, an ordered
+receive and a receive starting exactly at the reserved send complete the
+original request and apply DENY. These are application capture and policy
+observations through bounded loopback with controlled clock inputs.
+
+The portable roster control failed on the prior eleven-case selection and
+all 73 Python controls passed with the overlay. All 17 cross-build checks
+and four image-pair bookends passed. Windows discovery matched all 254
+independently predicted names. Each of the 12 fixed tests passed once with
+253 filtered cases. The 19 observations include the four expected
+refusals. The ordinary-user supervisor verified a four-process lifetime
+cap and zero active job processes at cleanup. The native and build
+workspace retirement retained 58 raw Windows files and the four image
+pairs. The previous EP1 Windows run retains its separately bound helper
+identity. Live providers, physical timing provenance, Engine-to-Core
+admission and remaining per-file mutation gates stay open.
+
+| Evidence under `engine-receive-effect-guards-20261118-v1` | Relative path | SHA-256 |
+| --- | --- | --- |
+| Portable omission control | `native-default-chronology-portable/red.log` | `3eae87192bb29eafa80b2adcc8dcb726e1531475a9c0851884ae50c499a0741a` |
+| Portable control suite | `native-default-chronology-portable/green.log` | `ce07aa81973b63455b8f1d0e174640e7308317118804fb02a694a8d8e6ef3889` |
+| Windows cross-build | `native-default-preparation/cross-build/verification.json` | `c395be6a86d2c1469de79bccb76eddddd1f0b8516554a98d13573198708b2f90` |
+| Independent Windows roster | `native-default-preparation/windows-default-independent-roster.json` | `7ac91edcf48db779d77360efccdf60d5514797726fdfc424560a65b3de64db8c` |
+| Fresh host preflight | `native-default-preparation/host-preflight-03.json` | `0222c8c4f4d25b3023f4444b90caecede966a4379765f2e0714ba464e1655320` |
+| Windows observations | `native-default-preparation/native-observations/verification.json` | `c5736f13567870ec0329639bbe8944ea4af168825d37a6c17f5c8d4bcfaa4b3a` |
+| Independent Windows readback | `native-default-preparation/independent-native-readback.json` | `cab274298694ef69f76f9f70cd66abd87f093f494f4c0256f1d698b45f1eb4e7` |
+| Owned workspace retirement | `native-default-preparation/owned-workspace-retirement.json` | `316eb894ae72efcc5d79c4b71e4b67034da1807f5a849da71dddeb7ebaa0a3f8` |

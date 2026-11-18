@@ -675,6 +675,8 @@ const MEASUREMENT_FIELDS: &[&str] = &[
     "declared_limit_ns",
     "observed_residual_ns",
     "age_ns",
+    "app_wall_elapsed_min_ns",
+    "app_wall_elapsed_max_ns",
 ];
 
 /// Verify exact conditional arithmetic and retained uncertainty on a Header result.
@@ -699,9 +701,17 @@ fn measurement_record(line: &str, case: CliCase, slot: usize) -> Check<()> {
                 "capture",
                 "mapping",
                 "wire_error",
+                "receive_to_commit_ns",
+                "app_wall_elapsed_min_ns",
+                "app_wall_elapsed_max_ns",
             ],
             1024,
         )?;
+        let deadline_ns: u128 = if case == CliCase::Stop {
+            1_500_000_000
+        } else {
+            700_000_000
+        };
         check(
             values["event"] == "measurement"
                 && integer(&values, "slot")? == u128::try_from(slot)?
@@ -713,6 +723,13 @@ fn measurement_record(line: &str, case: CliCase, slot: usize) -> Check<()> {
                 && values["mapping"] == "absent"
                 && values["wire_error"] == "unknown",
             "CLI unavailable measurement differs from independent refusal contract",
+        )?;
+        check(
+            integer(&values, "receive_to_commit_ns")? < deadline_ns
+                && integer(&values, "app_wall_elapsed_min_ns")?
+                    <= integer(&values, "app_wall_elapsed_max_ns")?
+                && integer(&values, "app_wall_elapsed_max_ns")? < deadline_ns,
+            "CLI application elapsed placement or age exceeds the original request lifetime",
         )?;
         return Ok(());
     }
@@ -727,6 +744,12 @@ fn measurement_record(line: &str, case: CliCase, slot: usize) -> Check<()> {
             && values["capture"] == "software_bracketed"
             && values["wire_error"] == "unknown",
         "CLI nominal measurement qualifiers differ",
+    )?;
+    check(
+        integer(&values, "app_wall_elapsed_min_ns")?
+            <= integer(&values, "app_wall_elapsed_max_ns")?
+            && integer(&values, "app_wall_elapsed_max_ns")? < 700_000_000,
+        "CLI nominal application elapsed placement exceeds the original request lifetime",
     )?;
     measurement_arithmetic(&values)
 }

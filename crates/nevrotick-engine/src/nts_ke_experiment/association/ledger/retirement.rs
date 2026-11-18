@@ -10,10 +10,7 @@ use std::time::Instant;
 
 use zeroize::Zeroizing;
 
-use super::{
-    ATTEMPTS, ExhaustedResponse, LedgerError, RecoveryIntent, check_receive_times, refused,
-    was_used,
-};
+use super::{ATTEMPTS, ExhaustedResponse, LedgerError, RecoveryIntent, refused, was_used};
 use crate::nts_ke_experiment::association::AssociationOwner;
 use crate::nts_ke_experiment::process::ProviderScope;
 use crate::nts_ke_experiment::{COOKIE_BYTES_LIMIT, Config, Control, ExchangeMode, Failure};
@@ -151,12 +148,11 @@ impl<'a> AssociationOwner<'a> {
             if self.ledger.recovery.is_none() {
                 return Err(refused(LedgerError::Phase));
             }
-            let Some(ExhaustedResponse::Cookies { sent_at, arrival }) =
-                self.ledger.exhausted_response
+            let Some(ExhaustedResponse::Cookies { sent_at, span }) = self.ledger.exhausted_response
             else {
                 return Err(refused(LedgerError::Phase));
             };
-            check_receive_times(sent_at, arrival, now)
+            span.check(sent_at, now, control.expiry)
         })?;
         let intent = self
             .ledger

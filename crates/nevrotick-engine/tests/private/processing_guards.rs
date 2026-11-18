@@ -3779,7 +3779,7 @@ fn check_observed_measurement(facts: &TransportFacts) -> Result<(), Box<dyn Erro
     Ok(())
 }
 
-/// Decode exactly twenty fields from one bounded printable measurement record.
+/// Decode exactly twenty-two fields from one bounded printable measurement record.
 ///
 /// # Errors
 /// Reject noncanonical framing, duplicate/empty fields or any aggregate excess.
@@ -3801,7 +3801,7 @@ fn measurement_record_fields(record: &str) -> Result<BTreeMap<&str, &str>, Box<d
         let (key, value) = field
             .split_once('=')
             .ok_or_else(|| io::Error::other("measurement field has no separator"))?;
-        if fields.len() >= 20
+        if fields.len() >= 22
             || key.is_empty()
             || value.is_empty()
             || fields.insert(key, value).is_some()
@@ -3809,7 +3809,7 @@ fn measurement_record_fields(record: &str) -> Result<BTreeMap<&str, &str>, Box<d
             return Err(io::Error::other("measurement field set is not unique and bounded").into());
         }
     }
-    if fields.len() != 20 {
+    if fields.len() != 22 {
         return Err(io::Error::other("measurement record has an unexpected field count").into());
     }
     Ok(fields)
@@ -3853,6 +3853,14 @@ fn check_actual_measurement_record(
             i128::from(observed_capture_gap(facts)?),
         ),
         ("age_ns", i128::try_from(age.as_nanos())?),
+        (
+            "app_wall_elapsed_min_ns",
+            i128::try_from((facts.read_return.mono - facts.send_before.mono_after).as_nanos())?,
+        ),
+        (
+            "app_wall_elapsed_max_ns",
+            i128::try_from((facts.read_return.mono_after - facts.send_before.mono).as_nanos())?,
+        ),
     ];
     for (key, value) in numbers {
         if fields.get(key).copied() != Some(value.to_string().as_str()) {
@@ -3942,6 +3950,11 @@ fn check_shared_measurement_writer(report: &SlotReport) -> Result<(), Box<dyn Er
     assert!(check_actual_measurement_record(report, &coherent).is_err());
     let changed_age = changed_measurement_record(record, &[("age_ns", numeric("age_ns")? + 1)])?;
     assert!(check_actual_measurement_record(report, &changed_age).is_err());
+    for key in ["app_wall_elapsed_min_ns", "app_wall_elapsed_max_ns"] {
+        let changed_elapsed: String =
+            changed_measurement_record(record, &[(key, numeric(key)? + 1)])?;
+        assert!(check_actual_measurement_record(report, &changed_elapsed).is_err());
+    }
     let residual = numeric("observed_residual_ns")? + 1;
     if residual > numeric("declared_limit_ns")? {
         return Err(
