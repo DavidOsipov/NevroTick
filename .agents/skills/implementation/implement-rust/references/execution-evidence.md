@@ -75,6 +75,14 @@ Before edits, verify each reported requirement/defect against actual owner, call
 supported configurations and current architecture. Verify reviewer claims and
 implementer rationales. Check existing behavior's purpose/dependent consumers.
 
+Treat compiler/Clippy fixes and edition rewrites as proposed source changes.
+Review the complete diff against affected contracts, including evaluation effects,
+ownership/drop timing and deliberate exhaustive patterns; successful compilation
+does not establish semantic equivalence. Verify affected admitted target/feature/
+profile rows under the matrix rules above. Keep paths excluded by `cfg`/features
+outside that fix run's examination claim. Normal admission and execution rules
+still apply.
+
 For substantial feedback, mark each item accepted, rejected with technical evidence,
 or unresolved with missing observation. Unverified claims are not rejections.
 Resolve unclear dependencies before changing their behavior; continue independent

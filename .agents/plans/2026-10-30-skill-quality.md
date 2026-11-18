@@ -2110,3 +2110,96 @@ and the existing verifier task. No new skill, checker, dependency or product
 requirement follows. Current development ordering, candidate-specific evidence,
 execution holds and post-V1 formal deferral remain unchanged. This documentation
 slice runs no product/compiler/analyzer/native/fuzz/formal job.
+
+## ANSSI secure Rust guidance review — 19 November 2026
+
+David requested review of ANSSI's checklist and full guide against repository
+skills, with several specialists and an independent judge deciding what belongs
+where. Standing authorization covers useful skill/documentation changes and
+publication to `main`. The reviewed base is clean
+`2dd3f880a3ffb3c878b586cdbad6c0a8e88e9632`. Source attribution, upstream revision
+and primary-documentation qualifications are in the existing
+[implementation source register](../skills/implementation/SOURCES.md#anssi-secure-rust-guidance--19-november-2026).
+
+Three completed read-only specialist reviews cover all **60 checklist IDs**:
+development/dependencies (12), language/standard-library traits (15), and
+unsafe/memory/FFI (33). They read the full assigned published chapters; the unsafe
+review included the associated examples. The separate judge independently read
+the current owners, overlapping instructions, proposed deltas and contrary
+source cases. The guide excludes async Rust; unpublished type-system, macro and
+test/fuzz TODO files supply no additional recommendations. Coverage here describes
+instruction review, not current product compliance or an executed security audit.
+
+| Candidate / ANSSI rule | Judge disposition and existing destination |
+| --- | --- |
+| J1: toolchain drift, `DENV-STABLE` | **Accept:** [build-security skill](../skills/security/security-build-deployment/SKILL.md) replaces stale shipping Rust 1.99.1 with links to the selected toolchain and admitted manifest. Separate analysis pins and historical/native-host records retain their own meaning. |
+| J2: automatic fixes, `DENV-AUTOFIX` | **Accept:** [execution evidence / review feedback](../skills/implementation/implement-rust/references/execution-evidence.md#handle-review-feedback) requires full semantic diff review and affected admitted configuration checks. A fix run supplies no examination of excluded paths. |
+| J3: safe-wrapper soundness, `LANG-UNSAFE-ENCP` | **Accept:** [unsafe and handle ownership](../skills/implementation/implement-rust/references/rust-windows.md#unsafe-and-handle-ownership) explicitly requires safety under every permitted safe interaction, including forgetting a returned guard. Resource limits, cleanup and `mem_forget` denial remain separate. |
+| J4: foreign validity, `FFI-CTYPE` / `FFI-TCONS` / reference, callback and discriminant rules | **Accept:** the same unsafe-boundary section requires exact ABI/owner evidence and valid representation before constructing Rust values or references. Null checks, nullable wrappers and post-construction checks supply no missing lifetime/initialization/aliasing guarantee. |
+| J5: comparison laws, `LANG-CMP-INV` / `LANG-CMP-DEFAULTS` | **Accept:** [domain equivalence and trait contracts](../skills/implementation/implement-rust-contracts/references/contract-enforcement.md#domain-equivalence-and-trait-contracts) gains partial-relation laws and default-method guidance. Preserve domain incomparability, intentional trait absence, legitimate manual comparisons and existing hash/key obligations. |
+
+The judge retains the following existing owners without new normative sections:
+
+- Environment selection, lockfiles, profile/flag protection, formatting and lints:
+  [configured tooling](../skills/testing/references/configured-tooling.md).
+  Direct/transitive vetting, update discovery and advisory evidence:
+  [dependency updates](../skills/environment/dependency-updates/SKILL.md).
+- Naming, checked arithmetic/conversion, checked extraction and explicit domain
+  contracts: [Rust implementation](../skills/implementation/implement-rust/SKILL.md)
+  and its contract references. Typed errors, panic boundaries and fallible cleanup:
+  [error handling](../skills/implementation/implement-rust/references/error-handling.md).
+- Initialization/provenance/raw ownership: [modern Rust](../skills/implementation/implement-rust/references/modern-rust.md).
+  Actual callback custody and release: [service adapters](../skills/implementation/implement-rust/references/windows-service-adapters.md).
+  Ownership cycles and measured retention: [Windows memory QA](../skills/testing/references/windows-memory.md).
+  Independent `Send`/`Sync` controls remain with the existing contract/QA owners.
+
+**Reject literal imports:** Tier 1 as a stable Rust ABI/performance/certification
+promise; a new certified-compiler requirement; blanket flag/environment bans
+that conflict with admitted analysis profiles; mandatory `cargo-outdated` or
+another advisory consumer over existing policy. Preserve controlled graph updates
+and accepted tooling rather than selecting tools from guide names alone.
+
+Also reject universal derives, invented reverse/cross-type comparison impls,
+blanket recursive-reference-counted/interior-mutability bans, generic raw-pointer
+or `Drop` prohibitions, universal raw-ownership pairing recipes and pointer
+validation detached from its actual allocation owner. Strong ownership cycles
+remain a retention concern. Required finite-value admission is distinct from Rust
+floating-point validity. Comparison-law failures are logic errors; unsafe
+consumers still owe memory safety. Existing native callback and panic policies
+are more precise than the upstream examples and remain authoritative.
+
+**Conditional only:** extra analyzers, binding generators, certified environments,
+foreign-export APIs and alternative panic strategies need a concrete applicable
+requirement at their existing owner. This review selects none. It adds no skill,
+dependency, checker, global gate or product/configuration change. Current
+development ordering, execution holds and post-V1 formal deferral remain intact.
+
+The coordinator's package checker passes **66 skills**; scoped added-link/anchor
+checks and `git diff --check` pass. The judge independently verified the original
+six-file diff (`c702634f51618cdd3c087c086663e52b6a16aa39ace3c47d1f97bdfa27b3250c`,
+SHA-256) and accepted its wording after source-only contrary-case review: forgotten
+callback guard versus operation-owned context; pre-construction discriminant
+validation and API-specific booleans; nullable versus owner-backed references;
+partial comparisons/intentional missing impls; excluded automatic-fix paths.
+These are instruction-use judgments, not executed product cases or a measured
+agent-performance experiment.
+
+Before publication, `main` advanced to
+`b4659996d01900874501fe46b7f3ac60919e7201`, updating only `AGENTS.md`, `TOOLING.md`
+and the development plan. The coordinator read the incoming instructions and
+preserved that commit by fast-forward; it overlaps none of the six edited files.
+The five normative changes retain the judge-reviewed bytes. The incoming
+[checkpoint procedure](../../docs/plans/development-plan.md#checkpoint-skill-application)
+is applied here:
+
+| Stage / skill and trigger | Concrete application | Evidence/status and next condition |
+| --- | --- | --- |
+| Guidance review / `qa-independent-review` | Compare each proposal with existing owners and primary Rust contracts; challenge safe-guard, FFI, partial-relation and configuration counterexamples. | Executed: separate judge accepts the five bounded changes; no product-vulnerability or compliance claim. |
+| Documentation verification / package checker and testing contract | Check metadata, inventory, local links/anchors, canonical consistency and whitespace for the six Markdown paths. | Executed with passing results above; reconcile final staged bytes before publication. No checker contract changed. |
+| Authorized commit / [qa-pre-commit](../skills/testing/qa-pre-commit/SKILL.md) | Stage only the six intended paths, freeze the complete index, verify the materialized candidate and preserve incoming work/signing/hooks. | Coordinator owns final candidate checks and guarded fast-forward publication; a changed remote head requires reconciliation. |
+
+Rust/product/native/fuzz/formal execution is inapplicable to this six-Markdown-file
+instruction change; no product, parser, runtime, harness or checker behavior is
+modified. This does not mark any existing product fuzz obligation N/A or waive
+an execution hold. No checker-regression campaign is required for this prose-only
+slice. Review dates use the explicitly selected Asia/Tbilisi client date.

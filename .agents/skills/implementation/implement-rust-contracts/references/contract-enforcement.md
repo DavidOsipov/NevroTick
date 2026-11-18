@@ -224,6 +224,11 @@ contract. Sorting is not a universal repair.
 
 For implemented traits, preserve documented laws:
 
+- `PartialEq` requires symmetry and transitivity wherever the relevant comparison
+  implementations exist; `Eq` additionally requires self-equality. For
+  `PartialOrd`, preserve equality agreement, reversed-comparison duality and
+  transitivity, including domain-permitted incomparability. Do not add reverse or
+  cross-type implementations merely to satisfy these laws.
 - Equal values must hash equally from the same hasher initial state. Unequal
   values may share hashes; collisions permitted.
 - `Ord::cmp` returning `Ordering::Equal` must agree with equality;
@@ -232,6 +237,12 @@ For implemented traits, preserve documented laws:
   comparison where that is the actual contract.
 - Keep equality, hash and ordering behavior stable while a value is a collection
   key. Review manual and derived implementations together when fields change.
+
+Prefer provided comparison methods; justified overrides must preserve their
+documented results. When implementing `Ord`, ordinarily keep comparison logic
+there and delegate `partial_cmp` to `Some(self.cmp(other))`. Violating these
+safe-trait laws is a logic error; unsafe consumers must not rely on their
+correctness for memory safety.
 
 Apply equivalence at its owning semantic layer. Do not normalize opaque tokens,
 authentication-covered bytes or ordered histories merely to remove alternatives.
@@ -245,6 +256,8 @@ Use [contract tests](../../../testing/qa-contract-tests/SKILL.md) with equivalen
 inputs and distinct controls at affected consumers. Standard-library hash output
 is no stable serialization format or fixed test oracle; verify relevant
 equality/hash/ordering relationships and collection behavior instead.
+For changed manual comparisons, select independent related pairs and triples,
+including incomparable and comparable controls where the domain permits them.
 
 Preserve deliberate trait absence where the actual owner requires it, including
 numerical equality, ordering and hashing on

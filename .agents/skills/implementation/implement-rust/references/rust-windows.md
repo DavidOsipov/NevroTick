@@ -24,6 +24,25 @@ thread/apartment, aliasing, ownership and lifetime obligations. Check selected A
 success/error convention: Win32 errors are not uniformly HRESULT or `GetLastError`.
 Capture last-error only where API defines it.
 
+A safe wrapper must preserve memory safety under every interaction its safe API
+permits, including safe mutation and forgetting a returned owner or guard. Encode
+or enforce memory-safety obligations; documentation cannot impose unchecked ones
+on safe callers. Unavoidable caller obligations at an admitted native boundary
+require an explicitly unsafe API with a documented `# Safety` contract. Soundness
+cannot depend on the caller running `Drop`. Preserve the separate `mem_forget`,
+resource-retention, cleanup and zeroization requirements.
+
+Verify complete signatures, callback ABIs and nested layouts against the selected
+SDK/projection. `repr(C)`, matching size/alignment and passing FFI lints do not
+establish complete ABI compatibility or Rust validity. Keep ABI-correct raw values
+until the actual API/owner establishes the required validity. Convert foreign
+discriminants and boolean representations according to that API's contract before
+constructing Rust enums or `bool`. Null checks, `Option<&T>`, `as_ref` and `as_mut`
+do not establish initialized extent, allocation lifetime, provenance or aliasing.
+Establish those obligations before creating a reference or slice and bind its
+lifetime to the actual owner; validation after constructing an invalid value is
+too late.
+
 For native error mapping, uncertain effects, cleanup failures or panic boundaries,
 apply [error handling and safe diagnostics](error-handling.md). Capture the
 documented status before intervening work; formatted OS errors are not safe fields.

@@ -5,6 +5,63 @@ conditional reference, not whole file. Repository architecture outranks external
 examples. Documentation adaptation performed no Cargo graph, Rust build, parser
 experiment or Windows UI execution.
 
+## ANSSI secure Rust guidance — 19 November 2026
+
+Locally adapted selected recommendations from ANSSI's
+[Secure Rust Guidelines](https://github.com/ANSSI-FR/rust-guide/tree/3f9e2e28095d0eeb35ed61e212a82be12fde4884/src/en),
+upstream revision `3f9e2e28095d0eeb35ed61e212a82be12fde4884`, updated
+18 May 2026 and reviewed 19 November 2026. ANSSI supplies the guide under
+[Open Licence 2.0 / Licence Ouverte 2.0](https://github.com/ANSSI-FR/rust-guide/blob/3f9e2e28095d0eeb35ed61e212a82be12fde4884/LICENSE.md).
+This attribution implies no ANSSI endorsement or certification of NevroTick.
+
+The [published checklist](https://anssi-fr.github.io/rust-guide/checklist.html)
+and full chapters listed in the
+[pinned contents](https://github.com/ANSSI-FR/rust-guide/blob/3f9e2e28095d0eeb35ed61e212a82be12fde4884/src/en/SUMMARY.md)
+were compared with NevroTick `2dd3f880a3ffb3c878b586cdbad6c0a8e88e9632`.
+Three specialist reviews covered development/dependencies, language/traits and
+unsafe/memory/FFI; a separate judge checked the proposed changes and overlaps.
+The guide explicitly excludes async Rust. Its type-system, macro and test/fuzz
+files are unpublished TODO stubs, not substantive guidance for those areas.
+
+Accepted adaptations refine [automatic-fix review](implement-rust/references/execution-evidence.md#handle-review-feedback),
+[safe-wrapper soundness and foreign-value validity](implement-rust/references/rust-windows.md#unsafe-and-handle-ownership),
+and [comparison laws](implement-rust-contracts/references/contract-enforcement.md#domain-equivalence-and-trait-contracts).
+The [build-security skill](../security/security-build-deployment/SKILL.md) also
+replaces a stale shipping-version literal with canonical toolchain/policy links.
+Existing admitted environments, dependency review, typed errors, resource
+ownership and verification procedures remain their respective authorities.
+
+Current primary Rust documentation resolves material limits in the guide:
+
+- [Cargo fix](https://doc.rust-lang.org/cargo/commands/cargo-fix.html) analyzes
+  included configurations; edition migration requires a separate manifest edit.
+  `--edition-idioms` applies current-edition style suggestions.
+- [Soundness and value validity](https://doc.rust-lang.org/reference/behavior-considered-undefined.html)
+  and [`mem::forget`](https://doc.rust-lang.org/std/mem/fn.forget.html) require
+  unsafe implementations to tolerate safe clients, including forgotten guards.
+  A safe-trait logic error or a domain-rejected NaN is not itself permission for
+  undefined behavior. Required finite-value checks remain domain invariants.
+- [Layout](https://doc.rust-lang.org/reference/type-layout.html) and
+  [external ABIs](https://doc.rust-lang.org/reference/items/external-blocks.html)
+  distinguish representation, call compatibility and value validity. Nullable
+  helpers do not validate arbitrary addresses; use the actual foreign contract.
+- [`PartialEq`](https://doc.rust-lang.org/std/cmp/trait.PartialEq.html),
+  [`Eq`](https://doc.rust-lang.org/std/cmp/trait.Eq.html) and
+  [`PartialOrd`](https://doc.rust-lang.org/std/cmp/trait.PartialOrd.html) qualify
+  relation laws, default methods and optional cross-type implementations.
+- [Target tiers](https://doc.rust-lang.org/rustc/platform-support.html) describe
+  support/testing, not stable native Rust ABI, performance or certification.
+  [Cargo profiles](https://doc.rust-lang.org/cargo/reference/profiles.html) have
+  dev overflow checks enabled; preserve NevroTick's actual stronger release policy.
+
+The reviewed standard-library pages identify Rust 1.100.0, compiler
+`0ef1bc386059596dada8fb65b50425aab2ea637a`; the specialists also checked pinned
+[`core::cmp`](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/cmp.rs)
+and [`core::mem`](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/mem/mod.rs).
+The [judge and verification record](../../plans/2026-10-30-skill-quality.md#anssi-secure-rust-guidance-review--19-november-2026)
+retains covered/rejected/conditional decisions. Source review establishes neither
+product compliance nor measured defect reduction and runs no qualification job.
+
 ## Rust 1.100 contract guidance — 13 November 2026
 
 The [1.100 feature contracts](implement-rust/references/rust-1.100-contracts.md)

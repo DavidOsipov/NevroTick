@@ -97,8 +97,10 @@ Treat retained hosted Rust preparation as a separate runner lane, not local setu
 
 For a changed analysis or dependency-review guarantee, select Miri/fuzz/Loom/
 Kani/Lockbud/cargo-vet through the guarded analysis entry point in the configured
-guide. Preserve exact separate analysis-compiler pins and shipping Rust 1.99.1;
-fixture controls do not qualify a product graph. Cargo-vet missing audits block:
+guide. Preserve exact separate analysis-compiler pins and the shipping toolchain
+selected by [rust-toolchain.toml](../../../../rust-toolchain.toml) and admitted in
+[policy/tool-manifest.json](../../../../policy/tool-manifest.json); fixture controls
+do not qualify a product graph. Cargo-vet missing audits block:
 never fabricate reviews/imports/exemptions or widen features to obtain success.
 
 At artifact inventory time, use that guide's existing `scripts/generate-sbom.py`
