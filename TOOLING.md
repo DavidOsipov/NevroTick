@@ -2751,6 +2751,58 @@ until language-server startup is deliberately admitted. Changing configuration
 does not stop an already-running server.
 
 
+The workstation restriction above governs activation; apply the following
+procedures only within the currently admitted scope.
+
+### Serena: exact Rust symbols and safe symbol edits
+
+Once Rust source exists: definitions, implementations, references, diagnostics,
+symbol-aware edits. Call `initial_instructions` first, then `activate_project`:
+`project` = absolute checkout; `session` = returned **Serena session ID**, not
+MCP/client ID. Use symbol overview, definition/body, referencing-symbol queries
+as needed. Retrieve body before replacement; inspect affected callers.
+`.serena/project.yml` selects Rust; restart Serena connection after project
+configuration changes. Empty application symbol graph before source expected.
+
+### SocratiCode: discover owners and retrieve architectural context
+
+Semantic search for unclear owner/terminology; relationship queries for cross-file
+impact. Pass absolute `projectPath`; check `codebase_status`, wait for completed
+indexing before semantic code search. List `codebase_context`, then
+`codebase_context_search` with actual `artifactName` from
+[.socraticodecontextartifacts.json](.socraticodecontextartifacts.json).
+Read canonical file directly if unregistered/unindexed. Respect configured watcher
+mode; `codebase_update` for necessary immediate catch-up. Confirm consequential
+results in current files/callers; index locates evidence.
+
+### Probe: fast source search without persistent indexing
+
+Use `search_code` for Rust keywords, identifiers, syntax-aware discovery; then
+`extract_code` for complete definitions with absolute project/file paths.
+Enable `allowTests: true` for test extraction; default excludes tests. Keep
+gitignore filtering enabled to exclude generated Cargo output. Documentation/
+configuration literals: Probe `grep` or `rg`.
+
+### Context-mode: large reads, output processing and retrieval
+
+Bulk docs/logs/diffs/build/test output: `ctx_execute`, `ctx_execute_file` or
+`ctx_batch_execute`. Process data; return relevant sections/counts/observations,
+not complete-file dumps. Use absolute paths; non-shell execution may start in
+sandbox directory despite `cwd`. Label indexed sources specifically; scope
+`ctx_search` with `source`. Confirm current bytes before relying on retained
+excerpts. Check summaries preserve exit codes, selected/executed counts, first
+failures, raw-evidence locations. Use code tools for symbol analysis.
+
+### Context7: library and API documentation
+
+Current crate/library/SDK APIs, configuration, migration: `resolve_library_id`
+first, then `query_docs` with returned ID. Skip resolution only for user-supplied
+exact `/org/project[/version]` ID. Match requested/pinned version when available;
+reconcile examples with actual Cargo feature graph/platform. Focus queries;
+respect current call limits. Never send credentials/private code/sensitive data.
+Missing coverage/version evidence: use official docs/pinned upstream source;
+state remaining gap.
+
 ## Fixture semantic-state guidance
 
 The standalone `tools/state-guidance/` lane uses LibAFL/bolts 0.16.1 and the

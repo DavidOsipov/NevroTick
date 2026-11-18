@@ -476,6 +476,52 @@ reading alone, establish quality. Prefer these repository skills over overlappin
 plugins. Read full `SKILL.md` files and their triggered references, not only names
 or summaries. Reuse already-read unchanged guidance within a continuing task.
 
+### Checkpoint skill application
+
+At milestone entry and each meaningful stage transition, explicitly list the
+required common, phase-specific and triggered skills **before affected work**.
+Apply their procedures; naming or reading a skill proves no application. Route:
+
+- Planning: [plan-code-change], [qa-test-planning], [qa-environment-preflight],
+  [qa-regression-selection]; architecture/threat/plan review at their triggers.
+- Implementation: required implementation/security leaves; contract/static QA.
+- Case design/testing: positive, negative, boundary and phase-required test leaves.
+- Debugging/fixing: [qa-failure-triage], causal repair and affected regressions;
+  [qa-system-stabilization] only for bounded coupled failures.
+- Integration: actual joined consumers and applicable native/product test leaves.
+- Qualification: [qa-final-qualification] each executable slice; full phase exits
+  also [qa-independent-review]. Authorized commit: [qa-pre-commit].
+- Delegation/handoff/resume: [plan-code-change] for development resume;
+  [qa-subagent-dispatch]/[qa-context-checkpoint] as triggered. Reconcile actual
+  candidate, owners, live work and spent budgets.
+
+Keep one compact record in the **existing task**, using:
+`stage | skill/path + requirement/trigger | concrete action | evidence/status | gap owner/next condition`.
+Before work, state intended action/evidence; afterward record actual application
+and result. Small understood edits need a short entry, no extra report tree.
+Reuse unchanged guidance and valid evidence; re-read/recheck affected changes.
+
+Account for every due obligation: **planned**, **executed with result**,
+**qualified evidence reused**, **blocked/incomplete**, **N/A with applicability
+evidence**, or **deferred by cited accepted decision**. Missing implementation,
+tools, environment or permission is not N/A for an applicable requirement.
+Required failures/skips/holds stay open; continue independent authorized work.
+Full-phase review checks omitted required methods and underlying evidence.
+
+Explicitly reconcile [qa-structured-fuzzing] at P1/P2 and P3 framing/decoding
+seams, plus architecture-required conversion/migration/error targets. Record
+actual consumer/invariant, admitted target/harness, independent oracle,
+accepted seed/fault controls, finite resources and result/replay evidence.
+Use [state-guided fuzzing](../../.agents/skills/testing/qa-state-guided-fuzzing/SKILL.md)
+only for its concrete state/history search gap. Preserve the scoped AES fuzz
+no-retry hold and wire-target admission restrictions in section 7/`TOOLING.md`;
+neither grants a blanket fuzz exemption or permits another runner/agent bypass.
+
+Keep one bounded milestone and fixed exit. Focused repair checks precede frozen
+expensive qualification; full gates remain at their declared exits. Do not impose
+a full campaign on every edit, repeat blocked attempts without changed cause,
+or waive gates through renamed scope. Preserve existing evidence/acceptance rules.
+
 ### Common requirements for every phase
 
 - The phase coordinator reads [plan-code-change], [qa-environment-preflight],
