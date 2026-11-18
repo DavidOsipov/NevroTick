@@ -1,22 +1,31 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Original-context cookie, request and receive-work custody.
 //!
-//! The sole normal issuer is the parent association's actual KE receiver. These
-//! synchronous component boundaries perform no UDP/native operation. A future
-//! native adapter must independently establish actual completion and custody.
+//! The sole normal issuer is the parent association's actual KE receiver. This
+//! ledger owns archive and reply custody. The closed datagram owner alone
+//! performs the synchronous send and retains its actual return observations.
 
 use std::io;
 use std::net::SocketAddr;
 use std::num::NonZeroU64;
+use std::sync::Arc;
 use std::time::Instant;
 
 use ntp_wire::{FrameError, NtpTimestamp, NtsRequestEncodeError, RawHeader, decode_fixed_header};
 use zeroize::Zeroizing;
 
+#[cfg(test)]
+use super::super::datagram::{Attempts, RetiredProtectedDeny};
+#[cfg(any(windows, test))]
+use super::super::datagram::{GuardedSender, RetiredReply, RetiredReplyParts};
 use super::super::handoff::{self, PreparedRequest};
 use super::super::request::{DirectionalKeys, RequestError};
 use super::super::response::{ReplyError, ReplyFields, StagedReply, stage_reply};
+#[cfg(test)]
+use super::super::response::{StagedSuccessorResponse, stage_successor_response};
 use super::{AssociationOwner, COOKIE_BYTES_LIMIT, COOKIE_LIMIT, Control, Failure};
+use crate::nts_ke_experiment::DatagramAuthorityGuard;
+use crate::source_policy::{ProtectedEndpoint, ProtectedSendStamp};
 
 pub(in super::super) mod retirement;
 
@@ -28,6 +37,9 @@ const FRAMES: usize = 32;
 const RECEIVE_BYTES: usize = 131_072;
 /// One bounded private request and one current datagram.
 const PACKET_BYTES: usize = 4096;
+
+/// Owned opaque cookie entries with zeroization on retirement.
+type CookiePool = Vec<Zeroizing<Vec<u8>>>;
 
 /// Closed redacted ledger refusals; no variant owns packet or secret bytes.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -54,7 +66,8 @@ pub(in super::super) enum LedgerError {
     ShortSend,
     /// Preserve the adapter's bounded original error category.
     Send(io::ErrorKind),
-    /// Physical completion is unknown; the occupied slot remains unavailable.
+    /// A component reports no completion; its occupied slot remains unavailable.
+    #[cfg(test)]
     Unknown,
     /// The original aggregate receive allowance is exhausted.
     ReceiveWork,
@@ -106,7 +119,8 @@ pub(in super::super) enum SendOutcome {
     Completed(usize),
     /// The synchronous adapter returned this original bounded error.
     Failed(io::ErrorKind),
-    /// No completion fact exists; custody and Busy remain sticky.
+    /// A component reports no completion; custody and Busy remain sticky.
+    #[cfg(test)]
     Unknown,
 }
 
@@ -167,7 +181,7 @@ impl RecoveryIntent {
 }
 
 /// Historical packet admission only; no time-sample or freshness authority.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub(in super::super) struct Receipt {
     /// Original finite request identity.
     serial: usize,
@@ -175,11 +189,11 @@ pub(in super::super) struct Receipt {
     local_t1: Option<NtpTimestamp>,
     /// Authenticated inert header fields from the maintained consumer.
     fields: ReplyFields,
-    /// Fresh original-context processing observation at atomic publication.
+    /// Fresh original-context processing observation at packet admission.
     accepted_at: Instant,
     /// Number of encrypted Cookie fields, including unusable repeated values.
     received_cookies: usize,
-    /// Retained cookie entries excluding used values; duplicates count separately.
+    /// Incoming entries eligible when admitted, excluding used values.
     retained_cookies: usize,
 }
 
@@ -267,14 +281,110 @@ enum ReadyPacket<'a> {
 struct StagedReplacement {
     /// Authenticated raw coordinates from the maintained response consumer.
     fields: ReplyFields,
-    /// Complete owned incoming population, wiped on every ordinary refusal.
-    cookies: Vec<Zeroizing<Vec<u8>>>,
-    /// Empty destination with room for the complete next bounded pool.
-    next: Vec<Zeroizing<Vec<u8>>>,
+    /// Bounded replacement withheld from the live pool.
+    replacement: CookieReplacement,
     /// All encrypted Cookie fields, including known-used values.
     received_cookies: usize,
     /// Never-used incoming values counted under the original archive.
     retained: usize,
+}
+
+/// Checked cookie transfer from the original selected reply, with no send authority.
+pub(in super::super) struct CookieReplacement {
+    /// Complete owned incoming population, wiped on every ordinary refusal.
+    cookies: CookiePool,
+    /// Empty destination with room for the complete next bounded pool.
+    next: CookiePool,
+    /// Checked retention of each original pool entry.
+    retain_existing: [bool; COOKIE_LIMIT],
+    /// Checked retention of each incoming entry in packet order.
+    retain_incoming: [bool; COOKIE_LIMIT],
+    /// Checked resulting entry count and aggregate opaque byte length.
+    population: (usize, usize),
+}
+
+impl CookieReplacement {
+    /// The checked counts describe the resulting pool if this plan commits.
+    pub(in super::super) const fn population(&self) -> (usize, usize) {
+        self.population
+    }
+}
+
+/// Original adapter custody transferred only by a genuinely submitted request.
+#[must_use = "the retired reply must retain the original submission"]
+pub(in super::super) struct PendingSubmission {
+    /// The allocation owned by the actual socket or Script backend.
+    identity: Arc<()>,
+    /// Present only when the same sender charged managed source and endpoint floors.
+    stamp: Option<ProtectedSendStamp>,
+}
+
+/// Select how a genuine retired reply completes its original Control.
+#[cfg_attr(not(test), derive(Clone, Copy))]
+pub(in super::super) enum RetiredCommit {
+    /// The ordinary one-shot reply is also terminal for the invocation.
+    Terminal,
+    /// The private two-request fixture keeps the same invocation alive.
+    #[cfg(test)]
+    FirstRequest(Attempts),
+}
+
+/// First authenticated request committed on this exact managed association.
+#[cfg(test)]
+struct PriorAuthentication {
+    /// Exact original packet receipt and charged ordinal.
+    receipt: Receipt,
+    /// The first request's exact backend identity and policy epochs.
+    submission: PendingSubmission,
+    /// Original driver allowance, consumed once before entering the successor.
+    attempts: Option<Attempts>,
+}
+
+/// Concrete submissions and the diagnostic callback are mutually exclusive.
+enum SubmissionOrigin {
+    /// The concrete backend's identity and its managed policy stamp, if required.
+    Adapter(PendingSubmission),
+    /// The component ledger's diagnostic path has no concrete backend.
+    #[cfg(test)]
+    Component,
+}
+
+impl SubmissionOrigin {
+    /// A receive observation belongs only to the adapter that submitted this request.
+    fn matches(&self, observed: Option<&Arc<()>>) -> bool {
+        match (self, observed) {
+            (Self::Adapter(submission), Some(backend)) => {
+                Arc::ptr_eq(&submission.identity, backend)
+            }
+            #[cfg(test)]
+            (Self::Component, None) => true,
+            _ => false,
+        }
+    }
+
+    /// Borrow the original pair for the current managed receive guard.
+    fn policy_provenance(&self) -> Option<(&ProtectedSendStamp, &Arc<()>)> {
+        match self {
+            Self::Adapter(submission) => submission.policy_provenance(),
+            #[cfg(test)]
+            Self::Component => None,
+        }
+    }
+}
+
+impl PendingSubmission {
+    /// Borrow the exact issued stamp and its original identity as one pairing.
+    fn policy_provenance(&self) -> Option<(&ProtectedSendStamp, &Arc<()>)> {
+        self.stamp
+            .as_ref()
+            .map(|stamp: &ProtectedSendStamp| (stamp, &self.identity))
+    }
+
+    /// Observe the identity through the sole owning submission before commit.
+    #[cfg(test)]
+    pub(in super::super) const fn identity(&self) -> &Arc<()> {
+        &self.identity
+    }
 }
 
 /// One occupied reservation. It remains in the ledger when a ticket is dropped.
@@ -297,6 +407,132 @@ struct Active<'a> {
     maximum_cookies: usize,
     /// Fresh final invocation observation; no peer-delivery claim follows.
     sent_at: Option<Instant>,
+    /// Actual submission attached only when the full result makes this request Pending.
+    submission: Option<SubmissionOrigin>,
+}
+
+/// Coordinates captured from the same Pending slot as its receive-work debit.
+struct ChargedReply {
+    /// Exact still-outstanding reservation ordinal.
+    serial: usize,
+    /// Position of the original issued UID.
+    uid_index: usize,
+    /// Exact previous wire transmit token.
+    wire: NonZeroU64,
+    /// Declared T1 for the diagnostic component path.
+    local_t1: Option<NtpTimestamp>,
+    /// Original monotonic sender observation.
+    sent_at: Instant,
+    /// Request-bound response cookie limit.
+    maximum_cookies: usize,
+    /// The receiving backend is the exact former submitting backend.
+    matches_submission: bool,
+}
+
+/// One charged, authenticated DENY from the exact still-outstanding successor.
+/// The transfer itself cannot change policy or consume the Pending slot.
+#[cfg(test)]
+#[must_use = "retain the exact DENY ticket through backend retirement"]
+pub(in super::super) struct StagedProtectedDeny<'control> {
+    /// Actual original invocation the packet reached.
+    control: &'control Control,
+    /// Exact successor reservation ordinal.
+    serial: usize,
+    /// Original outstanding Unique Identifier archive position.
+    uid_index: usize,
+    /// Exact outstanding request origin token.
+    wire: NonZeroU64,
+    /// Adapter allocation that submitted this original Pending request.
+    backend: Arc<()>,
+    /// Original monotonic send/archive observation.
+    sent_at: Instant,
+    /// Actual selected receive observation, never refreshed by retirement.
+    arrival: Instant,
+}
+
+/// The protected denial already published through both original owners.
+#[cfg(test)]
+#[must_use = "retain the applied control as a historical observation"]
+pub(in super::super) struct AppliedProtectedDeny {
+    /// Original fully admitted managed definition, detached before the effect.
+    configuration: Box<crate::SourceConfigurationSnapshot>,
+    /// Exact negotiated wire destination of the consumed successor.
+    remote: SocketAddr,
+    /// Exact successor ordinal consumed by the effect.
+    serial: usize,
+    /// Original currentness observation used for the committed decision.
+    decided_at: Instant,
+}
+
+#[cfg(test)]
+impl AppliedProtectedDeny {
+    /// Borrow the original source definition without reopening policy.
+    pub(in super::super) fn configuration(&self) -> &crate::SourceConfigurationSnapshot {
+        &self.configuration
+    }
+
+    /// Read the original wire destination without granting a source binding.
+    pub(in super::super) const fn remote(&self) -> SocketAddr {
+        self.remote
+    }
+
+    /// Observe the committed ordinal without opening a new request.
+    pub(in super::super) const fn serial(&self) -> usize {
+        self.serial
+    }
+
+    /// Observe the exact historical decision independently of future policy.
+    pub(in super::super) const fn decided_at(&self) -> Instant {
+        self.decided_at
+    }
+}
+
+/// The actual distinct historical and outstanding protected send proofs.
+#[cfg(test)]
+struct DenySubmissions<'a> {
+    /// Send evidence retained by the previously authenticated request.
+    prior: (&'a ProtectedSendStamp, &'a Arc<()>),
+    /// Exact current outstanding successor submission.
+    pending: (&'a ProtectedSendStamp, &'a Arc<()>),
+}
+
+/// One ledger-verified retired DENY for its original authority transaction.
+/// Only the retired receiver can mint it; current policy is checked at consumption.
+#[cfg(test)]
+pub(crate) struct VerifiedRetiredDeny<'a> {
+    /// Original invocation matched when the retired ticket was consumed.
+    control: &'a Control,
+    /// Both exact send proofs from the same association.
+    submissions: DenySubmissions<'a>,
+    /// Original monotonic decision observation checked against receive time.
+    decided_at: Instant,
+}
+
+#[cfg(test)]
+impl<'a> VerifiedRetiredDeny<'a> {
+    /// Match the actual original invocation without transferring its authority.
+    pub(in super::super) fn matches_control(&self, control: &Control) -> bool {
+        std::ptr::eq(self.control, control)
+    }
+
+    /// Return the same checked decision observation to both authority guards.
+    pub(crate) const fn decided_at(&self) -> Instant {
+        self.decided_at
+    }
+
+    /// Consume the authorization and expose the original prior and Pending stamps.
+    pub(crate) fn into_submissions(self) -> [(&'a ProtectedSendStamp, &'a Arc<()>); 2] {
+        [self.submissions.prior, self.submissions.pending]
+    }
+}
+
+/// The exact charged successor admitted by the shared protected receiver.
+#[cfg(test)]
+pub(in super::super) enum StagedProtectedSuccessor<'control> {
+    /// The ordinary reply has consumed its Pending submission and produced history.
+    Ordinary(Receipt, CookieReplacement, PendingSubmission),
+    /// The DENY still requires the original owner's final currentness transaction.
+    Deny(StagedProtectedDeny<'control>),
 }
 
 /// Actual final authenticated count refusal, still requiring current-time admission.
@@ -329,6 +565,9 @@ pub(in super::super) struct LedgerState<'a> {
     uid_count: usize,
     /// Last accepted receipt; failed attempts never replace it.
     last: Option<Receipt>,
+    /// Only the private first-request retired commit can create this witness.
+    #[cfg(test)]
+    prior_authentication: Option<PriorAuthentication>,
     /// The first coalesced intent, available for one explicit take.
     recovery: Option<RecoveryIntent>,
     /// Sticky even after the intent is taken; repeated calls cannot mint more.
@@ -358,6 +597,8 @@ impl LedgerState<'_> {
             uids: Zeroizing::new([[0; 32]; ATTEMPTS]),
             uid_count: 0,
             last: None,
+            #[cfg(test)]
+            prior_authentication: None,
             recovery: None,
             recovery_issued: false,
             previous: None,
@@ -507,7 +748,22 @@ impl<'a> AssociationOwner<'a> {
     /// # Errors
     /// Preserve currentness, Busy, spent budgets and empty fresh inventory.
     pub(in super::super) fn reserve(&mut self, input: RequestInput) -> Result<Ticket<'a>, Failure> {
-        let control = self.material.control;
+        match (&self.material.config.mode, input) {
+            (super::super::ExchangeMode::ManagedPreview(_), _)
+            | (
+                super::super::ExchangeMode::ManagedProtected(_),
+                RequestInput::Preview | RequestInput::Packet { .. },
+            ) => Err(Failure::Control),
+            _ => self.reserve_inner(input),
+        }
+    }
+
+    /// Share actual reservation accounting only inside the association ledger.
+    /// Managed Preview reaches this kernel only after its owner charged its allowance.
+    /// # Errors
+    /// Preserve published-state, slot, work and cookie refusals without refunding scans.
+    fn reserve_inner(&mut self, input: RequestInput) -> Result<Ticket<'a>, Failure> {
+        let control: &Control = self.material.control;
         control.with_published(|_| {
             if self.ledger.active.is_some() {
                 return Err(refused(LedgerError::Busy));
@@ -520,15 +776,15 @@ impl<'a> AssociationOwner<'a> {
             if self.ledger.frames == 0 || self.ledger.bytes == 0 {
                 return Err(refused(LedgerError::ReceiveWork));
             }
-            let ledger = &self.ledger;
+            let ledger: &LedgerState<'a> = &self.ledger;
             self.material
                 .cookies
                 .retain(|body| !ledger.cookie_was_used(body));
             if self.material.cookies.is_empty() {
                 return Err(refused(LedgerError::Cookies));
             }
-            let cookie = self.material.cookies.remove(0);
-            let serial = ATTEMPTS - self.ledger.attempts;
+            let cookie: Zeroizing<Vec<u8>> = self.material.cookies.remove(0);
+            let serial: usize = ATTEMPTS - self.ledger.attempts;
             self.ledger.active = Some(Active {
                 serial,
                 input,
@@ -539,6 +795,7 @@ impl<'a> AssociationOwner<'a> {
                 ready: None,
                 maximum_cookies: 0,
                 sent_at: None,
+                submission: None,
             });
             Ok(Ticket { control, serial })
         })
@@ -563,7 +820,11 @@ impl<'a> AssociationOwner<'a> {
         if !std::ptr::eq(control, self.material.control) {
             return Err(Failure::Control);
         }
-        control.with_published(|_| Ok(self.material.udp))
+        let guard: DatagramAuthorityGuard<'_> =
+            DatagramAuthorityGuard::lock(control, self.protected_endpoint()?)?;
+        let peer: SocketAddr = self.material.udp;
+        guard.endpoint(peer)?;
+        Ok(peer)
     }
 
     /// Spend one preparation attempt only for the selected request representation.
@@ -791,13 +1052,14 @@ impl<'a> AssociationOwner<'a> {
     /// Only the original opaque handoff value leaves; packet bytes stay private.
     /// # Errors
     /// Preserve actual reservation, entropy, codec and explicit-return refusal.
-    pub(in super::super) fn ledger_preview(
+    pub(super) fn ledger_preview(
         &mut self,
         fill: impl FnOnce(&mut [u8; 48]) -> Result<(), Failure>,
-    ) -> Result<PreparedRequest<'_>, Failure> {
-        let ticket = self.reserve(RequestInput::Preview)?;
+    ) -> Result<PreparedRequest<'a>, Failure> {
+        let owner: super::PreviewOwner<'a> = self.preview_owner()?;
+        let ticket: Ticket<'a> = self.reserve_inner(RequestInput::Preview)?;
         self.prepare(&ticket, fill)?;
-        let ready = self
+        let ready: ReadyPacket<'a> = self
             .ledger
             .active
             .as_mut()
@@ -807,16 +1069,58 @@ impl<'a> AssociationOwner<'a> {
             return Err(refused(LedgerError::Preview));
         };
         self.return_unused(ticket)?;
-        Ok(preview)
+        preview.bind_owner(owner)
     }
 
-    /// Archive before exposing packet bytes to the selected synchronous adapter.
-    ///
-    /// A panic or Unknown return leaves Invoked and packet custody occupied.
-    /// Known synchronous returns never reissue the archived cookie. No native
-    /// completion claim follows from these component callback outcomes.
+    /// Match the exact current ticket and original Control without touching either.
     /// # Errors
-    /// Preserve guards, preview refusal, short/error/unknown and late controls.
+    /// Refuse foreign or retired request authority before any adapter work.
+    pub(in super::super) fn check_send_owner(
+        &self,
+        ticket: &Ticket<'_>,
+        control: &Control,
+    ) -> Result<(), Failure> {
+        self.check_ticket(ticket)?;
+        if !std::ptr::eq(self.material.control, control) {
+            return Err(Failure::Control);
+        }
+        Ok(())
+    }
+
+    /// Archive under the single concrete sender's actual held Control.
+    /// A refusal after archive retains Invoked custody and the original cause.
+    /// # Errors
+    /// Preserve actual request, currentness, archive and adapter refusals.
+    #[cfg(any(windows, test))]
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "consuming the non-Clone ticket prevents return or repeated invocation after submission"
+    )]
+    pub(in super::super) fn invoke_guarded(
+        &mut self,
+        ticket: Ticket<'_>,
+        sender: GuardedSender<'_, '_>,
+    ) -> Result<(), Failure> {
+        self.check_send_owner(&ticket, sender.control())?;
+        let at: Instant = sender.archive_entry()?;
+        let identity: Arc<()> = Arc::clone(sender.request_identity());
+        let remote: SocketAddr = self.material.udp;
+        let packet: &[u8] = self.archive_request(at)?;
+        let expected: usize = packet.len();
+        let (outcome, stamp): (SendOutcome, Option<ProtectedSendStamp>) =
+            sender.submit(packet, remote)?;
+        self.finish_submission(
+            outcome,
+            expected,
+            SubmissionOrigin::Adapter(PendingSubmission { identity, stamp }),
+        )
+    }
+
+    /// Exercise component callback outcomes without making them a production sender.
+    /// A panic or Unknown return leaves Invoked and packet custody occupied.
+    /// # Errors
+    /// Preserve the same original archive and outcome rules as the concrete path.
+    #[cfg(test)]
     #[expect(
         clippy::needless_pass_by_value,
         reason = "consuming the non-Clone ticket prevents return or repeated invocation after submission"
@@ -826,59 +1130,83 @@ impl<'a> AssociationOwner<'a> {
         ticket: Ticket<'_>,
         send: impl FnOnce(&[u8], SocketAddr) -> SendOutcome,
     ) -> Result<(), Failure> {
+        if self.protected_endpoint()?.is_some() {
+            return Err(Failure::Control);
+        }
         self.check_ticket(&ticket)?;
-        let control = self.material.control;
-        control.with_published(|now| {
-            let active = self
-                .ledger
-                .active
-                .as_mut()
-                .ok_or(refused(LedgerError::Ticket))?;
-            if active.phase != RequestPhase::Prepared {
-                return Err(refused(LedgerError::Phase));
-            }
-            if !matches!(active.ready, Some(ReadyPacket::Packet { .. })) {
-                return Err(refused(LedgerError::Preview));
-            }
-            let cookie = active.cookie.as_ref().ok_or(refused(LedgerError::Phase))?;
-            let bytes = self
-                .ledger
-                .used
-                .iter()
-                .try_fold(cookie.len(), |total, body| total.checked_add(body.len()))
-                .ok_or(refused(LedgerError::Capacity))?;
-            if self.ledger.used.len() >= ATTEMPTS
-                || bytes > COOKIE_BYTES_LIMIT
-                || self.ledger.used.capacity() <= self.ledger.used.len()
-                || was_used(&self.ledger.used, cookie)
-                || self
-                    .ledger
-                    .previous
-                    .as_ref()
-                    .is_some_and(|past| past.cookie_was_used(cookie))
-            {
-                return Err(refused(LedgerError::Capacity));
-            }
-            let cookie = active.cookie.take().ok_or(refused(LedgerError::Phase))?;
-            self.ledger.used.push(cookie);
-            active.phase = RequestPhase::Invoked;
-            active.sent_at = Some(now);
-            Ok(())
-        })?;
-        let active = self
+        let control: &Control = self.material.control;
+        let remote: SocketAddr = self.material.udp;
+        let guard: super::super::ControlGuard<'_, '_> = control.guard()?;
+        let at: Instant = Instant::now();
+        guard.published(at)?;
+        let packet: &[u8] = self.archive_request(at)?;
+        let expected: usize = packet.len();
+        drop(guard);
+        let outcome: SendOutcome = send(packet, remote);
+        self.finish_submission(outcome, expected, SubmissionOrigin::Component)
+    }
+
+    /// Archive the exact current Prepared ticket under the checked held Control.
+    /// The caller has already checked original authority and ticket ownership.
+    /// No packet view leaves until its cookie is unavailable for return or reuse.
+    /// # Errors
+    /// Refuse missing state, an unsendable preview or an invalid archive/packet.
+    #[cfg(any(windows, test))]
+    fn archive_request(&mut self, at: Instant) -> Result<&[u8], Failure> {
+        let active: &mut Active<'_> = self
             .ledger
             .active
-            .as_ref()
+            .as_mut()
             .ok_or(refused(LedgerError::Ticket))?;
-        let Some(ReadyPacket::Packet { storage, length }) = active.ready.as_ref() else {
+        if active.phase != RequestPhase::Prepared {
             return Err(refused(LedgerError::Phase));
+        }
+        let Some(ReadyPacket::Packet { storage, length }) = active.ready.as_ref() else {
+            return Err(refused(LedgerError::Preview));
         };
-        let packet = storage
-            .get(..*length)
+        let cookie: &Zeroizing<Vec<u8>> =
+            active.cookie.as_ref().ok_or(refused(LedgerError::Phase))?;
+        let bytes: usize = self
+            .ledger
+            .used
+            .iter()
+            .try_fold(cookie.len(), |total: usize, body: &Zeroizing<Vec<u8>>| {
+                total.checked_add(body.len())
+            })
             .ok_or(refused(LedgerError::Capacity))?;
-        let expected = packet.len();
-        let outcome = send(packet, self.material.udp);
+        if self.ledger.used.len() >= ATTEMPTS
+            || bytes > COOKIE_BYTES_LIMIT
+            || self.ledger.used.capacity() <= self.ledger.used.len()
+            || was_used(&self.ledger.used, cookie)
+            || self
+                .ledger
+                .previous
+                .as_ref()
+                .is_some_and(|past| past.cookie_was_used(cookie))
+        {
+            return Err(refused(LedgerError::Capacity));
+        }
+        let cookie: Zeroizing<Vec<u8>> = active.cookie.take().ok_or(refused(LedgerError::Phase))?;
+        self.ledger.used.push(cookie);
+        active.phase = RequestPhase::Invoked;
+        active.sent_at = Some(at);
+        storage.get(..*length).ok_or(refused(LedgerError::Capacity))
+    }
+
+    /// Apply the original synchronous disposition after the adapter guard dropped.
+    /// Full length admits Pending only after a fresh original-Control check.
+    /// # Errors
+    /// Preserve short, failed, unknown and late-stop outcomes without reuse.
+    #[cfg(any(windows, test))]
+    fn finish_submission(
+        &mut self,
+        outcome: SendOutcome,
+        expected: usize,
+        submission: SubmissionOrigin,
+    ) -> Result<(), Failure> {
+        let control: &Control = self.material.control;
         match outcome {
+            #[cfg(test)]
             SendOutcome::Unknown => Err(refused(LedgerError::Unknown)),
             SendOutcome::Failed(kind) => {
                 self.ledger.active = None;
@@ -889,15 +1217,20 @@ impl<'a> AssociationOwner<'a> {
                 Err(refused(LedgerError::ShortSend))
             }
             SendOutcome::Completed(_) => {
-                let result = control.with_published(|_| {
-                    let active = self
+                let result: Result<(), Failure> = (|| {
+                    let guard: DatagramAuthorityGuard<'_> =
+                        DatagramAuthorityGuard::lock(control, self.protected_endpoint.as_ref())?;
+                    guard.receiving(submission.policy_provenance())?;
+                    guard.control.published(Instant::now())?;
+                    let active: &mut Active<'_> = self
                         .ledger
                         .active
                         .as_mut()
                         .ok_or(refused(LedgerError::Ticket))?;
                     active.phase = RequestPhase::Pending;
+                    active.submission = Some(submission);
                     Ok(())
-                });
+                })();
                 if result.is_err() {
                     self.ledger.active = None;
                 }
@@ -924,15 +1257,22 @@ impl<'a> AssociationOwner<'a> {
         if raw.len() > PACKET_BYTES {
             return Err(refused(LedgerError::Capacity));
         }
-        let uid = self
-            .ledger
+        let uid: &[u8; 32] = self.issued_uid(uid_index)?;
+        let reply: StagedReply =
+            stage_reply(&self.material.keys, raw, uid, wire.get(), maximum_cookies)
+                .map_err(|error: ReplyError| refused(LedgerError::Reply(error)))?;
+        self.stage_replacement(reply)
+    }
+
+    /// Borrow a UID only from the original context's already-issued history.
+    /// # Errors
+    /// Refuse a position outside the actually issued prefix.
+    fn issued_uid(&self, uid_index: usize) -> Result<&[u8; 32], Failure> {
+        self.ledger
             .uids
             .get(..self.ledger.uid_count)
-            .and_then(|issued| issued.get(uid_index))
-            .ok_or(refused(LedgerError::Capacity))?;
-        let reply = stage_reply(&self.material.keys, raw, uid, wire.get(), maximum_cookies)
-            .map_err(|error| refused(LedgerError::Reply(error)))?;
-        self.stage_replacement(reply)
+            .and_then(|issued: &[[u8; 32]]| issued.get(uid_index))
+            .ok_or(refused(LedgerError::Capacity))
     }
 
     /// Preallocate a complete bounded replacement without changing live custody.
@@ -943,35 +1283,77 @@ impl<'a> AssociationOwner<'a> {
     /// # Errors
     /// Preserve allocation or aggregate-capacity refusal with the old pool intact.
     fn stage_replacement(&self, reply: StagedReply) -> Result<StagedReplacement, Failure> {
-        let received_cookies = reply.cookie_count();
-        let (fields, cookies) = reply.into_parts();
-        let mut next = Vec::new();
+        let received_cookies: usize = reply.cookie_count();
+        let (fields, cookies): (ReplyFields, CookiePool) = reply.into_parts();
+        if self.material.cookies.len() > COOKIE_LIMIT || cookies.len() > COOKIE_LIMIT {
+            return Err(refused(LedgerError::Capacity));
+        }
+        let mut next: CookiePool = Vec::new();
         next.try_reserve_exact(COOKIE_LIMIT)
             .map_err(|_| Failure::Allocation)?;
-        let retained = cookies
-            .iter()
-            .filter(|body| !self.ledger.cookie_was_used(body))
-            .count();
-        let (count, bytes) = self
+        let mut retain_existing: [bool; COOKIE_LIMIT] = [false; COOKIE_LIMIT];
+        let mut retain_incoming: [bool; COOKIE_LIMIT] = [false; COOKIE_LIMIT];
+        let (count, bytes): (usize, usize) = self
             .material
             .cookies
             .iter()
-            .chain(cookies.iter())
-            .filter(|body| !self.ledger.cookie_was_used(body))
-            .try_fold((0_usize, 0_usize), |(count, bytes), body| {
-                Some((count.checked_add(1)?, bytes.checked_add(body.len())?))
-            })
+            .zip(&mut retain_existing)
+            .chain(cookies.iter().zip(&mut retain_incoming))
+            .try_fold(
+                (0_usize, 0_usize),
+                |(count, bytes): (usize, usize),
+                 (body, retain): (&Zeroizing<Vec<u8>>, &mut bool)| {
+                    if self.ledger.cookie_was_used(body) {
+                        return Some((count, bytes));
+                    }
+                    *retain = true;
+                    Some((count.checked_add(1)?, bytes.checked_add(body.len())?))
+                },
+            )
             .ok_or(refused(LedgerError::Capacity))?;
         if count > COOKIE_LIMIT || bytes > COOKIE_BYTES_LIMIT {
             return Err(refused(LedgerError::Capacity));
         }
         Ok(StagedReplacement {
             fields,
-            cookies,
-            next,
+            replacement: CookieReplacement {
+                cookies,
+                next,
+                retain_existing,
+                retain_incoming,
+                population: (count, bytes),
+            },
             received_cookies,
-            retained,
+            retained: retain_incoming
+                .into_iter()
+                .filter(|retain: &bool| *retain)
+                .count(),
         })
+    }
+
+    /// Apply a prepared pool after confirming no newer ledger work changed its inputs.
+    /// Only move selected entries into already reserved storage. The caller
+    /// releases both old buffers and all rejected values outside Control custody.
+    fn apply_replacement(&mut self, replacement: CookieReplacement) -> [CookiePool; 2] {
+        let CookieReplacement {
+            mut cookies,
+            mut next,
+            retain_existing,
+            retain_incoming,
+            ..
+        }: CookieReplacement = replacement;
+        for (body, retain) in self
+            .material
+            .cookies
+            .iter_mut()
+            .zip(retain_existing)
+            .chain(cookies.iter_mut().zip(retain_incoming))
+        {
+            if retain {
+                next.push(std::mem::replace(body, Zeroizing::new(Vec::new())));
+            }
+        }
+        [std::mem::replace(&mut self.material.cookies, next), cookies]
     }
 
     /// Charge a consumed datagram whose original extent cannot be established.
@@ -1000,109 +1382,389 @@ impl<'a> AssociationOwner<'a> {
         })
     }
 
-    /// Charge one complete raw component datagram before parse or decryption.
+    /// Charge and authenticate the concrete datagram once and retain its history.
     ///
-    /// Rejection preserves the original pending deadline and decreased work.
-    /// Last-allowance success may commit; rejection at exhaustion retires it.
+    /// The original submission and replacement remain private until retired commit.
     /// # Errors
     /// Preserve admission, original budgets, endpoint/time, AEAD and shape errors.
+    pub(in super::super) fn stage_observed_reply(
+        &mut self,
+        raw: &[u8],
+        remote: SocketAddr,
+        arrival: Instant,
+        backend: &Arc<()>,
+    ) -> Result<(Receipt, CookieReplacement, PendingSubmission), Failure> {
+        let (receipt, replacement, submission): (Receipt, CookieReplacement, SubmissionOrigin) =
+            self.receive_reply_with(
+                raw,
+                remote,
+                arrival,
+                Some(backend),
+                |_, receipt, replacement, submission| (receipt, replacement, submission),
+            )?;
+        match submission {
+            SubmissionOrigin::Adapter(submission) => Ok((receipt, replacement, submission)),
+            #[cfg(test)]
+            SubmissionOrigin::Component => Err(refused(LedgerError::Ticket)),
+        }
+    }
+
+    /// Charge once before selecting an ordinary response or the narrow protected DENY.
+    /// Ordinary admission consumes the request; DENY preserves it for the later owner.
+    /// # Errors
+    /// Preserve byte/frame, peer, backend, UID, S2C, time and policy refusals.
+    #[cfg(test)]
+    pub(in super::super) fn stage_protected_successor<'control>(
+        &mut self,
+        control: &'control Control,
+        raw: &[u8],
+        remote: SocketAddr,
+        arrival: Instant,
+        backend: &Arc<()>,
+    ) -> Result<StagedProtectedSuccessor<'control>, Failure> {
+        if !std::ptr::eq(control, self.material.control) {
+            return Err(Failure::Control);
+        }
+        let charged: ChargedReply = self.charge_reply(raw.len(), Some(backend))?;
+        let response: StagedSuccessorResponse = (|| {
+            self.check_charged_datagram(&charged, raw.len(), remote)?;
+            let uid: &[u8; 32] = self.issued_uid(charged.uid_index)?;
+            stage_successor_response(
+                &self.material.keys,
+                raw,
+                uid,
+                charged.wire.get(),
+                charged.maximum_cookies,
+            )
+            .map_err(|error: ReplyError| refused(LedgerError::Reply(error)))
+        })()
+        .inspect_err(|&error: &Failure| self.reject_staging(error, charged.sent_at, arrival))?;
+        match response {
+            StagedSuccessorResponse::Ordinary(reply) => {
+                let staged: StagedReplacement =
+                    self.stage_replacement(reply)
+                        .inspect_err(|&error: &Failure| {
+                            self.reject_staging(error, charged.sent_at, arrival);
+                        })?;
+                let (receipt, replacement, submission): (
+                    Receipt,
+                    CookieReplacement,
+                    SubmissionOrigin,
+                ) = self.consume_staged_reply(
+                    &charged,
+                    staged,
+                    arrival,
+                    |_, receipt, replacement, submission| (receipt, replacement, submission),
+                )?;
+                match submission {
+                    SubmissionOrigin::Adapter(submission) => Ok(
+                        StagedProtectedSuccessor::Ordinary(receipt, replacement, submission),
+                    ),
+                    SubmissionOrigin::Component => Err(refused(LedgerError::Ticket)),
+                }
+            }
+            StagedSuccessorResponse::Deny => {
+                let deny: StagedProtectedDeny<'control> = StagedProtectedDeny {
+                    control,
+                    serial: charged.serial,
+                    uid_index: charged.uid_index,
+                    wire: charged.wire,
+                    backend: Arc::clone(backend),
+                    sent_at: charged.sent_at,
+                    arrival,
+                };
+                self.check_protected_deny_current(&deny)
+                    .inspect_err(|_| self.retire_exhausted())?;
+                Ok(StagedProtectedSuccessor::Deny(deny))
+            }
+        }
+    }
+
+    /// Inspect one staged or retired ticket without consuming it or changing policy.
+    /// # Errors
+    /// Refuse a foreign or superseded request, late Stop, expiry or stale policy.
+    #[cfg(test)]
+    pub(in super::super) fn check_protected_deny_current(
+        &self,
+        deny: &StagedProtectedDeny<'_>,
+    ) -> Result<(), Failure> {
+        if !std::ptr::eq(deny.control, self.material.control) {
+            return Err(Failure::Control);
+        }
+        let lease: &ProtectedEndpoint = self.protected_endpoint()?.ok_or(Failure::Control)?;
+        let guard: DatagramAuthorityGuard<'_> =
+            DatagramAuthorityGuard::lock(deny.control, Some(lease))?;
+        let submissions: DenySubmissions<'_> = self.deny_submissions(deny)?;
+        guard.receiving(Some(submissions.prior))?;
+        guard.receiving(Some(submissions.pending))?;
+        let now: Instant = Instant::now();
+        guard.control.published(now)?;
+        check_receive_times(deny.sent_at, deny.arrival, now)
+    }
+
+    /// Match the exact prior receipt and active successor under the original locks.
+    /// # Errors
+    /// Refuse missing or replaced request history, submission or managed stamps.
+    #[cfg(test)]
+    fn deny_submissions(
+        &self,
+        deny: &StagedProtectedDeny<'_>,
+    ) -> Result<DenySubmissions<'_>, Failure> {
+        let prior: &PriorAuthentication = self
+            .ledger
+            .prior_authentication
+            .as_ref()
+            .ok_or(Failure::Control)?;
+        let active: &Active<'_> = self
+            .ledger
+            .active
+            .as_ref()
+            .ok_or(refused(LedgerError::Phase))?;
+        if prior.attempts.is_some()
+            || self.ledger.last.as_ref() != Some(&prior.receipt)
+            || prior.receipt.serial.checked_add(1) != Some(deny.serial)
+            || active.phase != RequestPhase::Pending
+            || active.serial != deny.serial
+            || active.uid != Some(deny.uid_index)
+            || active.observed_wire != Some(deny.wire)
+            || active.sent_at != Some(deny.sent_at)
+        {
+            return Err(refused(LedgerError::Ticket));
+        }
+        let submission: &SubmissionOrigin = active
+            .submission
+            .as_ref()
+            .ok_or(refused(LedgerError::Ticket))?;
+        if !submission.matches(Some(&deny.backend)) {
+            return Err(refused(LedgerError::Ticket));
+        }
+        Ok(DenySubmissions {
+            prior: prior
+                .submission
+                .policy_provenance()
+                .ok_or(Failure::Control)?,
+            pending: submission.policy_provenance().ok_or(Failure::Control)?,
+        })
+    }
+
+    /// Consume one actually retired request under the original Control and policy.
+    /// No caller can open this effect with a merely staged ticket.
+    /// # Errors
+    /// Preserve original authority, binding, identity and time refusals before
+    /// either record is restricted or the outstanding request is consumed.
+    #[cfg(test)]
+    pub(in super::super) fn commit_retired_protected_deny(
+        &mut self,
+        retired: RetiredProtectedDeny<'_>,
+    ) -> Result<AppliedProtectedDeny, Failure> {
+        let deny: StagedProtectedDeny<'_> = retired.into_staged();
+        if !std::ptr::eq(deny.control, self.material.control) {
+            return Err(Failure::Control);
+        }
+        let lease: ProtectedEndpoint = self.protected_endpoint()?.ok_or(Failure::Control)?.clone();
+        let configuration: Box<crate::SourceConfigurationSnapshot> =
+            Box::new(lease.configuration().ok_or(Failure::Control)?.clone());
+        let mut guard: DatagramAuthorityGuard<'_> =
+            DatagramAuthorityGuard::lock(deny.control, Some(&lease))?;
+        let submissions: DenySubmissions<'_> = self.deny_submissions(&deny)?;
+        let now: Instant = Instant::now();
+        check_receive_times(deny.sent_at, deny.arrival, now)?;
+        let applied: AppliedProtectedDeny = AppliedProtectedDeny {
+            configuration,
+            remote: self.material.udp,
+            serial: deny.serial,
+            decided_at: now,
+        };
+        let authorization: VerifiedRetiredDeny<'_> = VerifiedRetiredDeny {
+            control: deny.control,
+            submissions,
+            decided_at: now,
+        };
+        guard.commit_protected_deny(authorization)?;
+        let request: Option<Active<'_>> = self.ledger.active.take();
+        drop(guard);
+        drop(request);
+        Ok(applied)
+    }
+
+    /// Component-only receiver without a concrete socket or runtime to retire.
+    /// # Errors
+    /// Preserve the same admission and work accounting as the concrete receiver.
+    #[cfg(test)]
     pub(in super::super) fn receive_reply(
         &mut self,
         raw: &[u8],
         remote: SocketAddr,
         arrival: Instant,
     ) -> Result<Receipt, Failure> {
-        let control = self.material.control;
-        let (serial, uid_index, wire, local_t1, sent_at, maximum_cookies) = control
-            .with_published(|_| {
-                let active = self
-                    .ledger
-                    .active
-                    .as_ref()
-                    .ok_or(refused(LedgerError::Phase))?;
-                if active.phase != RequestPhase::Pending {
-                    return Err(refused(LedgerError::Phase));
-                }
-                let (wire, local_t1) = match active.input {
-                    RequestInput::Packet { wire, local_t1 } => (wire, Some(local_t1)),
-                    RequestInput::Observed => (
-                        active.observed_wire.ok_or(refused(LedgerError::Phase))?,
-                        None,
-                    ),
-                    RequestInput::Preview => return Err(refused(LedgerError::Preview)),
-                };
-                let uid = active.uid.ok_or(refused(LedgerError::Phase))?;
-                let sent_at = active.sent_at.ok_or(refused(LedgerError::Phase))?;
-                if self.ledger.frames == 0 || raw.len() > self.ledger.bytes {
-                    self.ledger.frames = self.ledger.frames.saturating_sub(1);
-                    self.ledger.bytes = 0;
-                    self.retire_exhausted();
-                    return Err(refused(LedgerError::ReceiveWork));
-                }
-                self.ledger.frames -= 1;
-                self.ledger.bytes -= raw.len();
-                Ok((
-                    active.serial,
-                    uid,
-                    wire,
-                    local_t1,
-                    sent_at,
-                    active.maximum_cookies,
-                ))
-            })?;
-        let staged = (|| {
-            if raw.len() > PACKET_BYTES {
-                return Err(refused(LedgerError::Capacity));
-            }
-            if remote != self.material.udp {
-                return Err(refused(LedgerError::Endpoint));
-            }
-            self.stage_current_reply(raw, uid_index, wire, maximum_cookies)
-        })()
-        .inspect_err(|&error| {
-            // Only the actual staging call returns this authenticated count cause.
-            if error == refused(LedgerError::Reply(ReplyError::Cookies)) && self.ledger.frames == 0
-            {
-                self.ledger.exhausted_response =
-                    Some(ExhaustedResponse::Cookies { sent_at, arrival });
-            }
-            self.retire_exhausted();
-        })?;
-        let StagedReplacement {
-            fields,
-            cookies,
-            mut next,
-            received_cookies,
-            retained,
-        } = staged;
-        let result = control.with_published(|now| {
-            let active = self
+        if self.protected_endpoint()?.is_some() {
+            return Err(Failure::Control);
+        }
+        let (receipt, retired): (Receipt, [CookiePool; 2]) = self.receive_reply_with(
+            raw,
+            remote,
+            arrival,
+            None,
+            |owner, receipt, replacement, _submission| {
+                (receipt, owner.apply_replacement(replacement))
+            },
+        )?;
+        drop(retired);
+        Ok(receipt)
+    }
+
+    /// Charge the actual datagram and sample its current Pending coordinates.
+    /// # Errors
+    /// Preserve original control, phase and aggregate budget refusals.
+    fn charge_reply(
+        &mut self,
+        length: usize,
+        backend: Option<&Arc<()>>,
+    ) -> Result<ChargedReply, Failure> {
+        let control: &Control = self.material.control;
+        control.with_published(|_| {
+            let active: &Active<'_> = self
                 .ledger
                 .active
                 .as_ref()
                 .ok_or(refused(LedgerError::Phase))?;
-            if active.serial != serial || active.phase != RequestPhase::Pending {
+            if active.phase != RequestPhase::Pending {
+                return Err(refused(LedgerError::Phase));
+            }
+            let (wire, local_t1): (NonZeroU64, Option<NtpTimestamp>) = match active.input {
+                RequestInput::Packet { wire, local_t1 } => (wire, Some(local_t1)),
+                RequestInput::Observed => (
+                    active.observed_wire.ok_or(refused(LedgerError::Phase))?,
+                    None,
+                ),
+                RequestInput::Preview => return Err(refused(LedgerError::Preview)),
+            };
+            let uid_index: usize = active.uid.ok_or(refused(LedgerError::Phase))?;
+            let sent_at: Instant = active.sent_at.ok_or(refused(LedgerError::Phase))?;
+            if self.ledger.frames == 0 || length > self.ledger.bytes {
+                self.ledger.frames = self.ledger.frames.saturating_sub(1);
+                self.ledger.bytes = 0;
+                self.retire_exhausted();
+                return Err(refused(LedgerError::ReceiveWork));
+            }
+            self.ledger.frames -= 1;
+            self.ledger.bytes -= length;
+            Ok(ChargedReply {
+                serial: active.serial,
+                uid_index,
+                wire,
+                local_t1,
+                sent_at,
+                maximum_cookies: active.maximum_cookies,
+                matches_submission: active
+                    .submission
+                    .as_ref()
+                    .is_some_and(|submission: &SubmissionOrigin| submission.matches(backend)),
+            })
+        })
+    }
+
+    /// Charge before parsing or opening, then consume the exact original Pending submission.
+    /// Rejection retains the original deadline and reduces the remaining allowance.
+    /// # Errors
+    /// Preserve admission, budget, backend/endpoint/time, AEAD and shape errors.
+    fn receive_reply_with<T>(
+        &mut self,
+        raw: &[u8],
+        remote: SocketAddr,
+        arrival: Instant,
+        backend: Option<&Arc<()>>,
+        admit: impl FnOnce(&mut Self, Receipt, CookieReplacement, SubmissionOrigin) -> T,
+    ) -> Result<T, Failure> {
+        let charged: ChargedReply = self.charge_reply(raw.len(), backend)?;
+        let staged: StagedReplacement = (|| {
+            self.check_charged_datagram(&charged, raw.len(), remote)?;
+            self.stage_current_reply(
+                raw,
+                charged.uid_index,
+                charged.wire,
+                charged.maximum_cookies,
+            )
+        })()
+        .inspect_err(|&error: &Failure| self.reject_staging(error, charged.sent_at, arrival))?;
+        self.consume_staged_reply(&charged, staged, arrival, admit)
+    }
+
+    /// Check the extent and submitter of a datagram after its exact ledger debit.
+    /// # Errors
+    /// Refuse an oversized datagram, foreign peer or different submission backend.
+    fn check_charged_datagram(
+        &self,
+        charged: &ChargedReply,
+        length: usize,
+        remote: SocketAddr,
+    ) -> Result<(), Failure> {
+        if length > PACKET_BYTES {
+            return Err(refused(LedgerError::Capacity));
+        }
+        if remote != self.material.udp {
+            return Err(refused(LedgerError::Endpoint));
+        }
+        if !charged.matches_submission {
+            return Err(refused(LedgerError::Ticket));
+        }
+        Ok(())
+    }
+
+    /// Keep the semantic cause of a final count refusal and enforce original exhaustion.
+    fn reject_staging(&mut self, error: Failure, sent_at: Instant, arrival: Instant) {
+        if error == refused(LedgerError::Reply(ReplyError::Cookies)) && self.ledger.frames == 0 {
+            self.ledger.exhausted_response = Some(ExhaustedResponse::Cookies { sent_at, arrival });
+        }
+        self.retire_exhausted();
+    }
+
+    /// Consume the exact charged ordinary request only under the original Control.
+    /// # Errors
+    /// Refuse expired, stopped or replaced Pending custody before moving any state.
+    fn consume_staged_reply<T>(
+        &mut self,
+        charged: &ChargedReply,
+        staged: StagedReplacement,
+        arrival: Instant,
+        admit: impl FnOnce(&mut Self, Receipt, CookieReplacement, SubmissionOrigin) -> T,
+    ) -> Result<T, Failure> {
+        let control: &Control = self.material.control;
+        let StagedReplacement {
+            fields,
+            replacement,
+            received_cookies,
+            retained,
+        }: StagedReplacement = staged;
+        let result: Result<T, Failure> = (|| {
+            let guard: super::super::ControlGuard<'_, '_> = control.guard()?;
+            let now: Instant = Instant::now();
+            guard.published(now)?;
+            let active: &mut Active<'_> = self
+                .ledger
+                .active
+                .as_mut()
+                .ok_or(refused(LedgerError::Phase))?;
+            if active.serial != charged.serial || active.phase != RequestPhase::Pending {
                 return Err(refused(LedgerError::Ticket));
             }
-            check_receive_times(sent_at, arrival, now)?;
-            for body in self.material.cookies.drain(..).chain(cookies) {
-                if !self.ledger.cookie_was_used(&body) {
-                    next.push(body);
-                }
-            }
-            self.material.cookies = next;
-            let receipt = Receipt {
-                serial,
-                local_t1,
+            check_receive_times(charged.sent_at, arrival, now)?;
+            let receipt: Receipt = Receipt {
+                serial: charged.serial,
+                local_t1: charged.local_t1,
                 fields,
                 accepted_at: now,
                 received_cookies,
                 retained_cookies: retained,
             };
+            let submission: SubmissionOrigin = active
+                .submission
+                .take()
+                .ok_or(refused(LedgerError::Ticket))?;
             self.ledger.active = None;
             self.ledger.last = Some(receipt);
-            Ok(receipt)
-        });
+            Ok(admit(self, receipt, replacement, submission))
+        })();
         result.inspect_err(|_| self.retire_exhausted())
     }
 
@@ -1155,16 +1817,102 @@ impl<'a> AssociationOwner<'a> {
         self.ledger.recovery.take()
     }
 
-    /// Check an opaque completion against this actual, still-published owner.
+    /// Consume the actual retired reply under one original Control transaction.
     ///
     /// The receipt's serial is the charged reservation ordinal, not a new identity.
     /// No later charged attempt may follow it, including a failed or returned one.
-    /// This check grants no committed fact and performs no final Control commit.
-    /// The consuming caller retains exclusive owner borrowing through that commit.
+    /// Only this admitted transfer installs replacement cookies in the live pool.
     /// # Errors
     /// Refuse foreign/stale context, an active slot, or a noncurrent receipt/ordinal
-    /// without changing request state, budgets, history or either Control.
-    #[cfg(any(windows, test))]
+    /// or deadline without changing the pool, work spent or historical receipt.
+    pub(in super::super) fn commit_retired_reply(
+        &mut self,
+        reply: RetiredReply<'_>,
+        disposition: RetiredCommit,
+    ) -> Result<Arc<()>, Failure> {
+        let (control, receipt, replacement, submission): RetiredReplyParts<'_> = reply.into_parts();
+        if !std::ptr::eq(control, self.material.control) {
+            return Err(Failure::Control);
+        }
+        let lease: Option<ProtectedEndpoint> = self.protected_endpoint()?.cloned();
+        let mut guard: DatagramAuthorityGuard<'_> =
+            DatagramAuthorityGuard::lock(control, lease.as_ref())?;
+        self.check_completed_receipt(&receipt)?;
+        guard.receiving(submission.policy_provenance())?;
+        let identity: Arc<()> = match disposition {
+            RetiredCommit::Terminal => {
+                guard.control.commit(Instant::now())?;
+                submission.identity
+            }
+            #[cfg(test)]
+            RetiredCommit::FirstRequest(attempts) => {
+                if lease.is_none()
+                    || receipt.serial != 1
+                    || self.ledger.prior_authentication.is_some()
+                {
+                    return Err(Failure::Control);
+                }
+                guard.control.published(Instant::now())?;
+                let identity: Arc<()> = Arc::clone(&submission.identity);
+                self.ledger.prior_authentication = Some(PriorAuthentication {
+                    receipt,
+                    submission,
+                    attempts: Some(attempts),
+                });
+                identity
+            }
+        };
+        let retired: [CookiePool; 2] = self.apply_replacement(replacement);
+        drop(guard);
+        drop(retired);
+        Ok(identity)
+    }
+
+    /// After a private first commit, only the original remaining driver can run.
+    /// # Errors
+    /// Refuse a fresh allowance on an association that already earned a successor.
+    #[cfg(test)]
+    pub(in super::super) fn check_fresh_exchange(&self) -> Result<(), Failure> {
+        if self.ledger.prior_authentication.is_some() {
+            return Err(Failure::Control);
+        }
+        Ok(())
+    }
+
+    /// Spend the one continuation before entering a second backend or entropy.
+    /// # Errors
+    /// Refuse missing, foreign, stale, already spent or expired authority.
+    #[cfg(test)]
+    pub(in super::super) fn take_authenticated_successor(
+        &mut self,
+        control: &Control,
+    ) -> Result<Attempts, Failure> {
+        if !std::ptr::eq(control, self.material.control) {
+            return Err(Failure::Control);
+        }
+        let lease: ProtectedEndpoint = self.protected_endpoint()?.ok_or(Failure::Control)?.clone();
+        let guard: DatagramAuthorityGuard<'_> =
+            DatagramAuthorityGuard::lock(control, Some(&lease))?;
+        let prior: &mut PriorAuthentication = self
+            .ledger
+            .prior_authentication
+            .as_mut()
+            .ok_or(Failure::Control)?;
+        if self.ledger.active.is_some()
+            || self.ledger.last.as_ref() != Some(&prior.receipt)
+            || ATTEMPTS.checked_sub(self.ledger.attempts) != Some(prior.receipt.serial)
+        {
+            return Err(refused(LedgerError::Ticket));
+        }
+        guard.receiving(prior.submission.policy_provenance())?;
+        guard.control.published(Instant::now())?;
+        prior.attempts.take().ok_or(refused(LedgerError::Ticket))
+    }
+
+    /// Exercise the receipt check without granting a retired reply or a commit.
+    /// # Errors
+    /// Preserve foreign, expired or stale receipt refusal.
+    #[cfg(test)]
     pub(in super::super) fn check_completed(
         &self,
         control: &Control,
@@ -1173,15 +1921,20 @@ impl<'a> AssociationOwner<'a> {
         if !std::ptr::eq(control, self.material.control) {
             return Err(Failure::Control);
         }
-        control.with_published(|_| {
-            if self.ledger.active.is_some()
-                || self.ledger.last.map(|last| last.serial) != Some(receipt.serial)
-                || ATTEMPTS.checked_sub(self.ledger.attempts) != Some(receipt.serial)
-            {
-                return Err(refused(LedgerError::Ticket));
-            }
-            Ok(())
-        })
+        control.with_published(|_| self.check_completed_receipt(receipt))
+    }
+
+    /// Require the exact original completed ordinal with no subsequent work.
+    /// # Errors
+    /// A missing receipt or newer charged slot makes this result stale.
+    fn check_completed_receipt(&self, receipt: &Receipt) -> Result<(), Failure> {
+        if self.ledger.active.is_some()
+            || self.ledger.last.as_ref() != Some(receipt)
+            || ATTEMPTS.checked_sub(self.ledger.attempts) != Some(receipt.serial)
+        {
+            return Err(refused(LedgerError::Ticket));
+        }
+        Ok(())
     }
 }
 

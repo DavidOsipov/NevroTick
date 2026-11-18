@@ -1992,7 +1992,7 @@ was exercised; it is not a hard3 GiB guarantee or proof that cache caused the
 earlier peak. Preserve actual sampler admission, failed attempts and original
 clocks rather than substituting the outer limit or automatically copying a lease.
 
-**Current KE Request admission, 17 November 2026:** the existing
+**Historical KE Request admission, 17 November 2026:** the existing
 `--profile ke_association` reader now requires479 complete ordinary identities,
 including234 KE cases;75 doctests retain their separate roster. The
 [admission record](tasks/engine-transport-pilot.md#ke-request-profile-admission-complete--17-november-2026)
@@ -2013,6 +2013,57 @@ remain. This changes no product runtime, shipping profile or native authority.
 The unchanged Fault owner still has18 Windows-inactive GNU survivors; do not
 repeat that GNU mutation cohort without a concrete changed hypothesis or turn
 the inactive code into equivalences. Existing native owners retain that exit.
+
+**Current GNU KE source role — 18 November 2026.** The
+[joined DENY checkpoint](tasks/engine-transport-pilot.md#joined-protected-deny-and-datagram-observation--18-november-2026)
+binds `70ae31df…`, 54 role inputs, 538 GNU EP1 cases and 90 doctests.
+All 376 readers and 13 line gates pass. Enumeration is complete, campaigns
+remain closed and the same product completed 267 scripted Windows cases.
+
+**Preceding retired DENY role — 18 November 2026.** The
+[retired DENY checkpoint](tasks/engine-transport-pilot.md#retired-protected-deny-decision--18-november-2026)
+binds `9ffd1276…`, 54 role inputs, 535 GNU EP1 cases and 90 doctests.
+The role requires the five mixed-receive and exact-effect cases. All 376
+readers and 13 line gates pass, and enumeration contains 746
+descriptors. Campaigns remain closed. The same product completed 264
+scripted Windows cases.
+
+**Preceding same-association role — 18 November 2026.** The
+[same-association successor](tasks/engine-transport-pilot.md#same-association-authenticated-successor--18-november-2026)
+binds `76025b08…`, 54 role inputs, 530 GNU EP1 ordinary cases,
+and 90 doctests. The closed role requires the two new exact successor
+cases and the earlier managed controls. All 376 readers and 13 line
+gates pass. Complete enumeration contains 735 descriptors.
+The current campaign remains closed. All 259 selected scripted Windows
+cases passed on the same product.
+
+**Preceding pending-request role — 18 November 2026.** The
+[pending ownership checkpoint](tasks/engine-transport-pilot.md#protected-pending-request-ownership--18-november-2026)
+binds `e0da4ede…`, 54 role input digests, 528 EP1 ordinary cases,
+90 doctests and all eight managed protected case identities.
+All 376 reader checks and 13 selected GNU line gates pass. The current
+catalogue contains 730 descriptors. Main campaigns and equivalences
+remain closed pending descriptor-specific qualification. All 256 selected
+scripted Windows KE cases passed on this same product.
+
+**Preceding managed protected role — 18 November 2026.** The
+[managed protected checkpoint](tasks/engine-transport-pilot.md#managed-protected-endpoint-lease--development-and-line-checkpoint--18-november-2026)
+binds `d07d01b8…`, 54 role inputs, all 528 EP1 ordinary and 90
+Rustdoc identities, including eight managed protected cases. The actual
+376-reader selection and 13 selected GNU line gates pass. The catalogue
+contains 722 descriptors. Main campaigns and equivalences
+remain closed pending current descriptor-specific qualification. The
+[scripted Windows child](tasks/engine-transport-pilot.md#scripted-windows-ke-child--18-november-2026)
+records 66 runner controls, an exact 17-step MSVC build and
+256 scripted Windows KE cases. Genuine provider qualification remains open.
+
+**Preceding selected GNU ledger role — 18 November 2026.** The
+[selected GNU ledger checkpoint](tasks/engine-transport-pilot.md#selected-gnu-ledger-mutation-qualification--18-november-2026) binds `fc7e4dea…`,
+54 protected role inputs, 520 EP1 ordinary and 90 doctest identities.
+The 376-reader selection and 13 GNU line gates pass. The current
+692-descriptor catalogue includes the completed selected ledger run.
+The current exact ledger exclusion set retains the raw native exit and
+only adjusts the denominator. Public mutation admission stays closed.
 
 **Historical EP1/EP2 initial source analysis, 11 November 2026:** the same
 [Engine verifier](scripts/verify-engine-analysis.py) has the exact

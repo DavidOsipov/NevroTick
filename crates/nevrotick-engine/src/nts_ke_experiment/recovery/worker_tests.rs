@@ -14,13 +14,18 @@ use super::{
     Instant, Ordering, ProcessAdmission, ProviderScope, Receiver, ScriptProducer, StopDisposition,
     StopHandle, SyncSender, Weak, failed, runtime, sync_channel,
 };
+use crate::nts_ke_experiment::association::ledger::AppliedProtectedDeny;
+use crate::nts_ke_experiment::datagram::{
+    ReceivedInvocation, receive_joined, tests::managed_attempt_config,
+};
 use crate::nts_ke_experiment::job::{
-    CollectError, Hooks, JoinedOutcome, Observation, PreparedInvocation, SubmitError, Termination,
-    WorkerSlot,
+    CollectError, Hooks, JoinedOutcome, Observation, Operation, PreparedInvocation, SubmitError,
+    Termination, WorkerSlot,
 };
 use crate::nts_ke_experiment::process::ProcessClaim;
 use crate::nts_ke_experiment::{
-    InvocationCompletion, RunFailed, drive_invocation_with, output, run_synchronously_with,
+    InvocationCompletion, RunFailed, Summary, drive_invocation_with, output, run_joined_with,
+    run_synchronously_with,
 };
 
 /// Finite component-handshake allowance, not a product/native-operation deadline.
@@ -51,15 +56,16 @@ struct Input {
 /// Admit fixed loopback arguments through the real constructor before job preparation.
 /// # Errors
 /// Preserve actual argument/Control admission failure.
-fn input(mode: ExchangeMode) -> Result<Input, Failure> {
-    let mut arguments = vec!["127.0.0.1:4460".into(), "Time.Example".into()];
-    if mode == ExchangeMode::ProtectedDatagram {
+fn input(mode: &ExchangeMode) -> Result<Input, Failure> {
+    let mut arguments: Vec<std::ffi::OsString> =
+        vec!["127.0.0.1:4460".into(), "Time.Example".into()];
+    if matches!(mode, ExchangeMode::ProtectedDatagram) {
         arguments.push("--protected-datagram".into());
     }
-    let config = Config::from_arguments(arguments.into_iter())?;
-    let config_lifetime = Arc::downgrade(&config.lifetime);
-    let (prepared, stop) =
-        PreparedInvocation::prepare(config).map_err(|failure| failure.primary)?;
+    let config: Config = Config::from_arguments(arguments.into_iter())?;
+    let config_lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
+    let (prepared, stop): (PreparedInvocation, StopHandle) =
+        PreparedInvocation::prepare(config).map_err(|failure: Failed| failure.primary)?;
     Ok(Input {
         prepared,
         stop,
@@ -198,7 +204,7 @@ fn whole_job_prestart_stop_preserves_original_control_and_no_producer() -> Resul
         prepared,
         stop,
         config_lifetime,
-    } = input(ExchangeMode::Preview)?;
+    } = input(&ExchangeMode::Preview)?;
     let original = prepared.original_times();
     let entered_producer = Arc::new(AtomicBool::new(false));
     let entered = Arc::clone(&entered_producer);
@@ -294,7 +300,7 @@ fn whole_job_callback_abandonment_keeps_custody_and_failure_facts() -> Result<()
         prepared,
         stop,
         config_lifetime,
-    } = input(ExchangeMode::Preview)?;
+    } = input(&ExchangeMode::Preview)?;
     let original = prepared.original_times();
     let primary = Failed {
         primary: Failure::Connect(std::io::ErrorKind::TimedOut),
@@ -336,7 +342,7 @@ fn whole_job_callback_abandonment_keeps_custody_and_failure_facts() -> Result<()
     let entered_refusal = runtime()?.block_on(async { SLOT.collect() });
     let stopped = stop.request_stop()?;
     let still_running = SLOT.observer().poll_until(Instant::now() + WAIT);
-    let second = input(ExchangeMode::Preview)?;
+    let second: Input = input(&ExchangeMode::Preview)?;
     let refused = SLOT.submit_fixture(
         second.prepared,
         &ADMISSION,
@@ -379,7 +385,7 @@ fn whole_job_protected_commit_waits_for_actual_outer_retirement() -> Result<(), 
         prepared,
         stop,
         config_lifetime,
-    } = input(ExchangeMode::ProtectedDatagram)?;
+    } = input(&ExchangeMode::ProtectedDatagram)?;
     let original = prepared.original_times();
     let provider_witness = Arc::new(OnceLock::<Weak<()>>::new());
     let observed_provider = Arc::clone(&provider_witness);
@@ -447,7 +453,7 @@ fn whole_job_protected_commit_waits_for_actual_outer_retirement() -> Result<(), 
         .operation
         .ok_or(Failure::Control)?
         .map_err(|failure| failure.primary)?;
-    let summary = completion.summary();
+    let summary: &Summary = completion.summary().ok_or(Failure::Control)?;
     assert!(summary.transmitted && summary.packet_bytes > 48);
     assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
     assert!(outcome.retired && ordered.load(Ordering::Acquire));
@@ -467,7 +473,7 @@ fn whole_job_protected_commit_waits_for_actual_outer_retirement() -> Result<(), 
 fn whole_job_stop_before_protected_commit_cannot_publish() -> Result<(), Failure> {
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    let Input { prepared, stop, .. } = input(ExchangeMode::ProtectedDatagram)?;
+    let Input { prepared, stop, .. } = input(&ExchangeMode::ProtectedDatagram)?;
     let (hold, gate) = producer_gate();
     SLOT.submit_fixture(
         prepared,
@@ -522,7 +528,7 @@ fn whole_job_prespawn_refusal_is_not_completion_or_process_use() -> Result<(), F
         prepared,
         config_lifetime,
         ..
-    } = input(ExchangeMode::Preview)?;
+    } = input(&ExchangeMode::Preview)?;
     let entered = Arc::new(AtomicBool::new(false));
     let observed = Arc::clone(&entered);
     let mut hooks = Hooks::none();
@@ -583,7 +589,7 @@ fn whole_job_panic_before_result_seals_payload_without_completion() -> Result<()
         prepared,
         config_lifetime,
         ..
-    } = input(ExchangeMode::Preview)?;
+    } = input(&ExchangeMode::Preview)?;
     SLOT.submit_fixture(
         prepared,
         &ADMISSION,
@@ -624,7 +630,7 @@ fn whole_job_retirement_panic_preserves_recorded_primary_and_secondaries() -> Re
         prepared,
         config_lifetime,
         ..
-    } = input(ExchangeMode::Preview)?;
+    } = input(&ExchangeMode::Preview)?;
     let primary = Failed {
         primary: Failure::Handshake(std::io::ErrorKind::ConnectionReset),
         cleanup: Some(Failure::Shutdown(std::io::ErrorKind::BrokenPipe)),
@@ -703,7 +709,7 @@ fn whole_job_retirement_panic_preserves_recorded_primary_and_secondaries() -> Re
 fn whole_job_self_join_refuses_without_moving_the_actual_handle() -> Result<(), Failure> {
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    let Input { prepared, .. } = input(ExchangeMode::Preview)?;
+    let Input { prepared, .. } = input(&ExchangeMode::Preview)?;
     let (start, gate) = owner_gate();
     let mut hooks = Hooks::none();
     hooks.before_start = Some(start);
@@ -732,7 +738,9 @@ fn whole_job_self_join_refuses_without_moving_the_actual_handle() -> Result<(), 
     assert_eq!(refused, Err(CollectError::SelfJoin));
     assert_eq!(outcome.termination, Termination::Returned);
     assert!(outcome.retired);
-    assert!(matches!(outcome.operation, Some(Ok(completion)) if !completion.summary().transmitted));
+    assert!(
+        matches!(outcome.operation, Some(Ok(completion)) if completion.summary().is_some_and(|summary: &Summary| !summary.transmitted))
+    );
     assert!(matches!(ADMISSION.claim(), Err(Failure::ProcessUsed)));
     Ok(())
 }
@@ -798,7 +806,7 @@ fn whole_job_actual_join_waits_for_thread_local_destruction() -> Result<(), Fail
         prepared,
         config_lifetime,
         ..
-    } = input(ExchangeMode::Preview)?;
+    } = input(&ExchangeMode::Preview)?;
     let finished = Arc::new(AtomicBool::new(false));
     let watchdog_failed = Arc::new(AtomicBool::new(false));
     std::thread::scope(|threads| -> Result<(), Failure> {
@@ -888,7 +896,7 @@ fn whole_job_actual_join_waits_for_thread_local_destruction() -> Result<(), Fail
         assert_eq!(outcome.termination, Termination::Returned);
         assert!(outcome.retired);
         assert!(
-            matches!(outcome.operation, Some(Ok(completion)) if !completion.summary().transmitted)
+            matches!(outcome.operation, Some(Ok(completion)) if completion.summary().is_some_and(|summary: &Summary| !summary.transmitted))
         );
         assert!(matches!(
             SLOT.take_fixture_result(),
@@ -1009,7 +1017,7 @@ fn synchronous_facade_refuses_entered_context_before_submission_then_same_slot_s
     // Keep cleanup explicit if a faulty facade returns before its actual job joins.
     drain_facade_observation(&SLOT, after_completion)?;
     let completion = completed.map_err(|_| Failure::Control)?;
-    let summary = completion.summary();
+    let summary: &Summary = completion.summary();
     assert!(summary.transmitted);
     assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
     assert_eq!(submissions.load(Ordering::Acquire), 1);
@@ -1025,6 +1033,239 @@ fn synchronous_facade_refuses_entered_context_before_submission_then_same_slot_s
 enum HistoryRetirement {
     Ordinary,
     Panics,
+}
+
+/// Drive one actual establishment and the selected same-association managed step.
+/// # Errors
+/// Preserve the existing invocation owner's operation and cleanup facts.
+/// # Panics
+/// Fail if the scripted managed step enters another establishment or a preview.
+fn scripted_managed_deny_operation<'scope>(
+    config: &'scope Config,
+    provider: &'scope ProviderScope<'scope>,
+    control: Control,
+) -> Operation {
+    let original_expiry: Instant = control.expiry;
+    let mut producer: ScriptProducer<'_> =
+        ScriptProducer::new(config, provider, vec![Ok(())], ExchangeCase::Healthy);
+    producer.managed_deny = true;
+    let result: Operation = drive_invocation_with(config, provider, control, &mut producer);
+    assert_eq!(
+        (
+            producer.establish_calls,
+            producer.exchange_calls,
+            producer.preview_calls
+        ),
+        (1, 1, 0)
+    );
+    assert!(matches!(
+        producer.controls.as_slice(),
+        [observed] if observed.expiry == original_expiry
+    ));
+    result
+}
+
+/// Exercise the actual managed two-request step through submission and joined receiving.
+/// # Errors
+/// Preserve source, assertion fixture, worker or receiving refusal.
+/// # Panics
+/// Fail if the real retired denial loses its history or enters the wrong result path.
+fn run_managed_deny_history(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+    retirement: HistoryRetirement,
+) -> Result<(), Failure> {
+    use std::net::SocketAddr;
+
+    use crate::{
+        SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority, SourcePolicySnapshot,
+    };
+
+    let earlier: Instant = Instant::now()
+        .checked_sub(Duration::from_millis(20))
+        .ok_or(Failure::Deadline)?;
+    let (config, source, _authority): (Config, SourceHandle, SourcePolicyAuthority) =
+        managed_attempt_config(earlier, Duration::from_millis(4), Duration::from_millis(8))?;
+    let definition: SourceConfigurationSnapshot = source
+        .configuration_snapshot()
+        .map_err(Failure::SourcePolicy)?
+        .ok_or(Failure::Control)?;
+    let remote: SocketAddr = SocketAddr::new(config.peer.ip(), 123);
+    let before: SourcePolicySnapshot = source
+        .policy_snapshot(remote)
+        .map_err(Failure::SourcePolicy)?;
+    let config_lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
+    let mut hooks: Hooks = Hooks::none();
+    if matches!(retirement, HistoryRetirement::Panics) {
+        hooks.before_retire = Some(Box::new(|| {
+            std::panic::resume_unwind(Box::new(()));
+        }));
+    }
+    let started: Instant = Instant::now();
+    let result: Result<ReceivedInvocation, RunFailed> = run_joined_with(
+        config,
+        slot,
+        None,
+        |slot: &'static WorkerSlot, prepared: PreparedInvocation| {
+            slot.submit_fixture(
+                prepared,
+                admission,
+                component_provider,
+                scripted_managed_deny_operation,
+                hooks,
+            )
+        },
+    );
+    let history: AppliedProtectedDeny = match (retirement, result) {
+        (HistoryRetirement::Ordinary, Ok(ReceivedInvocation::ProtectedDeny(joined))) => {
+            joined.into_history()
+        }
+        (HistoryRetirement::Panics, Err(RunFailed::Abnormal(joined))) => {
+            assert_eq!(joined.termination, Termination::Panicked);
+            assert!(!joined.retired);
+            assert_eq!(slot.sealed_count().map_err(|_| Failure::Control)?, 1);
+            let completion: InvocationCompletion = joined
+                .operation
+                .ok_or(Failure::Control)?
+                .map_err(|failure: Failed| failure.primary)?;
+            assert!(completion.summary().is_none());
+            let InvocationCompletion::ManagedProtectedDeny(history) = completion else {
+                return Err(Failure::Control);
+            };
+            history
+        }
+        _ => return Err(Failure::Control),
+    };
+    assert!(history.configuration().same_configuration(&definition));
+    assert_eq!(history.remote(), remote);
+    assert_eq!(history.serial(), 2);
+    assert!((started..=Instant::now()).contains(&history.decided_at()));
+    let after: SourcePolicySnapshot = source
+        .policy_snapshot(remote)
+        .map_err(Failure::SourcePolicy)?;
+    assert!(after.source().refused() && after.endpoint().refused());
+    assert_eq!(
+        after
+            .source()
+            .revision()
+            .checked_sub(before.source().revision()),
+        Some(3)
+    );
+    assert_eq!(
+        after
+            .endpoint()
+            .revision()
+            .checked_sub(before.endpoint().revision()),
+        Some(3)
+    );
+    assert_eq!(config_lifetime.strong_count(), 0);
+    let inspect_until: Instant = Instant::now().checked_add(WAIT).ok_or(Failure::Deadline)?;
+    assert_eq!(
+        slot.observer().poll_until(inspect_until),
+        Observation::Taken
+    );
+    Ok(())
+}
+
+/// Preserve exact applied denial history through normal and post-record unwind joins.
+/// # Errors
+/// Preserve any failure from the real joined component worker.
+#[test]
+fn managed_deny_worker_retains_exact_history_without_numerical_projection() -> Result<(), Failure> {
+    static NORMAL: WorkerSlot = WorkerSlot::new();
+    static ABNORMAL: WorkerSlot = WorkerSlot::new();
+    static NORMAL_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    static ABNORMAL_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    run_managed_deny_history(&NORMAL, &NORMAL_ADMISSION, HistoryRetirement::Ordinary)?;
+    run_managed_deny_history(&ABNORMAL, &ABNORMAL_ADMISSION, HistoryRetirement::Panics)
+}
+
+/// A Stop after the recorded effect cannot undo it or expose it before actual join.
+/// # Errors
+/// Preserve source setup, real worker, Stop and receiving refusal.
+/// # Panics
+/// Fail if a held or already-taken slot exposes a result, or the late Stop erases
+/// the historical denial or changes the policy already applied by that denial.
+#[test]
+fn managed_deny_worker_post_record_stop_preserves_only_once_joined_history() -> Result<(), Failure>
+{
+    use std::net::SocketAddr;
+
+    use crate::nts_ke_experiment::job::ReceivingOutcome;
+    use crate::{
+        ExperimentalProfile, SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority,
+        SourcePolicySnapshot,
+    };
+
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let earlier: Instant = Instant::now()
+        .checked_sub(Duration::from_millis(20))
+        .ok_or(Failure::Deadline)?;
+    let (config, source, _authority): (Config, SourceHandle, SourcePolicyAuthority) =
+        managed_attempt_config(earlier, Duration::from_millis(4), Duration::from_millis(8))?;
+    let definition: SourceConfigurationSnapshot = source
+        .configuration_snapshot()
+        .map_err(Failure::SourcePolicy)?
+        .ok_or(Failure::Control)?;
+    let remote: SocketAddr = SocketAddr::new(config.peer.ip(), 123);
+    let config_lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
+    let (prepared, stop): (PreparedInvocation, StopHandle) =
+        PreparedInvocation::prepare(config).map_err(|failure: Failed| failure.primary)?;
+    let (hold, gate): (Box<dyn FnOnce() + Send>, Gate) = owner_gate();
+    let mut hooks: Hooks = Hooks::none();
+    hooks.before_retire = Some(hold);
+    SLOT.submit_fixture(
+        prepared,
+        &ADMISSION,
+        component_provider,
+        scripted_managed_deny_operation,
+        hooks,
+    )
+    .map_err(|_| Failure::Control)?;
+    gate.wait(&SLOT)?;
+    assert_eq!(config_lifetime.strong_count(), 1);
+    assert!(matches!(
+        SLOT.take_for_receiving(),
+        Err(CollectError::NotReady)
+    ));
+    let recorded: SourcePolicySnapshot = source
+        .policy_snapshot(remote)
+        .map_err(Failure::SourcePolicy)?;
+    assert!(recorded.source().refused() && recorded.endpoint().refused());
+    assert_eq!(stop.request_stop()?, StopDisposition::Latched);
+    gate.release()?;
+    collect_available(&SLOT).map_err(|_| Failure::Control)?;
+    assert_eq!(
+        SLOT.observer().poll_until(Instant::now() + WAIT),
+        Observation::Joined
+    );
+    let joined: ReceivingOutcome = SLOT.take_for_receiving().map_err(|_| Failure::Control)?;
+    let profile: ExperimentalProfile =
+        ExperimentalProfile::new(0, u64::from(u32::MAX), 0).map_err(|_| Failure::Control)?;
+    let ReceivedInvocation::ProtectedDeny(received) =
+        receive_joined(joined, Some(profile)).map_err(|_| Failure::Control)?
+    else {
+        return Err(Failure::Control);
+    };
+    let history: &AppliedProtectedDeny = received.history();
+    assert!(history.configuration().same_configuration(&definition));
+    assert_eq!(history.remote(), remote);
+    assert_eq!(history.serial(), 2);
+    assert!(history.decided_at() <= recorded.captured_at());
+    let after: SourcePolicySnapshot = source
+        .policy_snapshot(remote)
+        .map_err(Failure::SourcePolicy)?;
+    assert!(after.source().refused() && after.endpoint().refused());
+    assert_eq!(after.source().revision(), recorded.source().revision());
+    assert_eq!(after.endpoint().revision(), recorded.endpoint().revision());
+    assert_eq!(config_lifetime.strong_count(), 0);
+    assert!(matches!(
+        SLOT.take_for_receiving(),
+        Err(CollectError::NotReady)
+    ));
+    assert_eq!(SLOT.collect(), Err(CollectError::NotReady));
+    Ok(())
 }
 
 /// Compare the actual retained payload with its pre-record observation and literals.
@@ -1123,7 +1364,7 @@ fn check_joined_protected_history(
         prepared,
         config_lifetime,
         ..
-    } = input(ExchangeMode::ProtectedDatagram)?;
+    } = input(&ExchangeMode::ProtectedDatagram)?;
     let original_origin = prepared.original_times().0;
     let witness = Arc::new(OnceLock::<super::ProtectedWitness>::new());
     let observed = Arc::clone(&witness);
@@ -1187,7 +1428,7 @@ fn check_joined_protected_history(
         peer_times,
     );
     assert_retired_resources(&config_lifetime, provider.get(), resource.get());
-    let summary = completion.summary();
+    let summary: &Summary = completion.summary().ok_or(Failure::Control)?;
     assert!(summary.transmitted && summary.packet_bytes > 48);
     assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
     match retirement {
@@ -1415,7 +1656,7 @@ fn facade_actual_retirement_panic_retains_owning_protected_history() -> Result<(
         ),
         (0x2233_4455_6677_8899, 0x3344_5566_7788_99aa)
     );
-    assert!(completion.summary().transmitted);
+    assert!(completion.summary().ok_or(Failure::Control)?.transmitted);
     assert_eq!(lifetime.strong_count(), 0);
     assert_eq!(SLOT.sealed_count().map_err(|_| Failure::Control)?, 1);
     assert_eq!(DROPS.load(Ordering::Acquire), 0);

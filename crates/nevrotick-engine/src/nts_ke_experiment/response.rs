@@ -6,9 +6,11 @@
 //! Its only normal key supplier is the private same-connection association owner.
 
 use nevrotick_s115_aes_siv_fixture::staged::StagedDecryptError;
+#[cfg(test)]
+use ntp_wire::{ExtensionFields, RawExtension};
 use ntp_wire::{
-    FrameError, FrameLimits, NtpTimestamp, NtsAuthenticatorError, NtsPlaintextLimits, RawHeader,
-    RawNtsPlaintext, frame_no_legacy_mac_datagram, read_nts_authenticator_parts,
+    FrameError, FrameLimits, NtpTimestamp, NtsAuthenticatorError, NtsAuthenticatorParts,
+    NtsPlaintextLimits, RawDatagram, RawHeader, RawNtsPlaintext, frame_no_legacy_mac_datagram,
 };
 use zeroize::Zeroizing;
 
@@ -37,7 +39,7 @@ pub(super) enum ReplyError {
     Envelope(NtsAuthenticatorError),
     /// Selected algorithm 15 requires at least one nonce octet.
     Nonce,
-    /// Version, mode, leap state or stratum cannot represent ordinary time data.
+    /// The header cannot represent the selected reply or supported control.
     Header,
     /// The origin differs from the saved wire token, not the separate real T1.
     Origin,
@@ -149,12 +151,39 @@ pub(super) fn stage_reply(
     wire_transmit: u64,
     maximum_cookies: usize,
 ) -> Result<StagedReply, ReplyError> {
+    let datagram: RawDatagram<'_> = frame_reply(raw, maximum_cookies)?;
+    stage_framed_reply(
+        keys,
+        &datagram,
+        expected_uid,
+        wire_transmit,
+        maximum_cookies,
+    )
+}
+
+/// Check the recorded cookie limit before framing the complete selected datagram.
+/// # Errors
+/// Refuse an invalid request allowance or the bounded outer framing.
+fn frame_reply(raw: &[u8], maximum_cookies: usize) -> Result<RawDatagram<'_>, ReplyError> {
     if !(1..=COOKIE_LIMIT).contains(&maximum_cookies) {
         return Err(ReplyError::Limits);
     }
-    let limits = FrameLimits::new(PACKET_LIMIT, FIELD_LIMIT).map_err(ReplyError::Frame)?;
-    let datagram = frame_no_legacy_mac_datagram(raw, limits).map_err(ReplyError::Frame)?;
-    let header = datagram.header();
+    let limits: FrameLimits =
+        FrameLimits::new(PACKET_LIMIT, FIELD_LIMIT).map_err(ReplyError::Frame)?;
+    frame_no_legacy_mac_datagram(raw, limits).map_err(ReplyError::Frame)
+}
+
+/// Stage ordinary timing and replacement fields from one admitted outer frame.
+/// # Errors
+/// Preserve header, correlation, field-placement, authenticated and cookie refusals.
+fn stage_framed_reply(
+    keys: &DirectionalKeys,
+    datagram: &RawDatagram<'_>,
+    expected_uid: &[u8; 32],
+    wire_transmit: u64,
+    maximum_cookies: usize,
+) -> Result<StagedReply, ReplyError> {
+    let header: &RawHeader = datagram.header();
     if header.version() != 4
         || header.mode() != 4
         || header.leap_indicator() == 3
@@ -182,18 +211,108 @@ pub(super) fn stage_reply(
     if !uid_seen {
         return Err(ReplyError::UniqueIdentifier);
     }
-    let fields = ReplyFields { header: *header };
-    let parts = read_nts_authenticator_parts(raw, limits).map_err(ReplyError::Envelope)?;
+    let fields: ReplyFields = ReplyFields { header: *header };
+    open_framed_response(keys, datagram, |frame| {
+        stage_cookies(&frame, fields, maximum_cookies)
+    })
+}
+
+/// Open the authenticator belonging to the same fully framed bytes as dispatch.
+/// # Errors
+/// Preserve authenticator projection, AEAD, inner framing and consumer refusals.
+fn open_framed_response<T>(
+    keys: &DirectionalKeys,
+    datagram: &RawDatagram<'_>,
+    consume: impl for<'a> FnOnce(RawNtsPlaintext<'a>) -> Result<T, ReplyError>,
+) -> Result<T, ReplyError> {
+    let parts: NtsAuthenticatorParts<'_> = datagram
+        .nts_authenticator_parts()
+        .map_err(ReplyError::Envelope)?;
     if parts.nonce().is_empty() {
         return Err(ReplyError::Nonce);
     }
-    let plaintext_limits = NtsPlaintextLimits::new(PACKET_LIMIT, FIELD_LIMIT)
-        .map_err(|error| ReplyError::Open(StagedDecryptError::Plaintext(error)))?;
-    let mut scratch = [0_u8; PACKET_LIMIT];
-    keys.open_response(&parts, &mut scratch, plaintext_limits, |frame| {
-        stage_cookies(&frame, fields, maximum_cookies)
+    let plaintext_limits: NtsPlaintextLimits =
+        NtsPlaintextLimits::new(PACKET_LIMIT, FIELD_LIMIT)
+            .map_err(|error| ReplyError::Open(StagedDecryptError::Plaintext(error)))?;
+    let mut scratch: [u8; PACKET_LIMIT] = [0; PACKET_LIMIT];
+    keys.open_response(&parts, &mut scratch, plaintext_limits, consume)
+        .map_err(ReplyError::Open)?
+}
+
+/// Authenticated payload disposition without ledger or policy authority.
+#[cfg(test)]
+pub(super) enum StagedSuccessorResponse {
+    /// The ordinary timing and replacement path.
+    Ordinary(StagedReply),
+    /// The selected exact literal control, with no timing or cookie data.
+    Deny,
+}
+
+/// Frame once and select the admitted ordinary or scripted control path.
+/// # Errors
+/// Reject unknown controls, malformed inputs, correlation or authentication failure.
+#[cfg(test)]
+pub(super) fn stage_successor_response(
+    keys: &DirectionalKeys,
+    raw: &[u8],
+    expected_uid: &[u8; 32],
+    wire_transmit: u64,
+    maximum_cookies: usize,
+) -> Result<StagedSuccessorResponse, ReplyError> {
+    let datagram: RawDatagram<'_> = frame_reply(raw, maximum_cookies)?;
+    if datagram.header().stratum() == 0 {
+        check_protected_deny(keys, &datagram, expected_uid, wire_transmit)?;
+        return Ok(StagedSuccessorResponse::Deny);
+    }
+    stage_framed_reply(
+        keys,
+        &datagram,
+        expected_uid,
+        wire_transmit,
+        maximum_cookies,
+    )
+    .map(StagedSuccessorResponse::Ordinary)
+}
+
+/// Check the private scripted DENY envelope with this association's S2C key.
+///
+/// This fixture admits exactly the outstanding UID followed by one authenticator
+/// with empty protected plaintext. Server time and poll fields have no authority.
+/// # Errors
+/// Refuse malformed framing, wrong request coordinates or unauthenticated content.
+#[cfg(test)]
+fn check_protected_deny(
+    keys: &DirectionalKeys,
+    datagram: &RawDatagram<'_>,
+    expected_uid: &[u8; 32],
+    wire_transmit: u64,
+) -> Result<(), ReplyError> {
+    let header: &RawHeader = datagram.header();
+    if header.version() != 4
+        || header.mode() != 4
+        || header.stratum() != 0
+        || header.reference_id() != u32::from_be_bytes(*b"DENY")
+    {
+        return Err(ReplyError::Header);
+    }
+    if header.origin_timestamp().bits() != wire_transmit {
+        return Err(ReplyError::Origin);
+    }
+    let mut fields: ExtensionFields<'_> = datagram.extensions();
+    let uid: RawExtension<'_> = fields.next().ok_or(ReplyError::UniqueIdentifier)?;
+    if uid.field_type() != 0x0104 || uid.body() != expected_uid {
+        return Err(ReplyError::UniqueIdentifier);
+    }
+    let authenticator: RawExtension<'_> = fields.next().ok_or(ReplyError::Placement)?;
+    if authenticator.field_type() != 0x0404 || datagram.extension_count() != 2 {
+        return Err(ReplyError::Placement);
+    }
+    open_framed_response(keys, datagram, |frame| {
+        if frame.fields().next().is_some() {
+            return Err(ReplyError::Placement);
+        }
+        Ok(())
     })
-    .map_err(ReplyError::Open)?
 }
 
 /// Admit the full authenticated field sequence before allocating exact copies.

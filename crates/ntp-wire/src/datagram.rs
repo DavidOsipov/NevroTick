@@ -113,9 +113,10 @@ impl FrameLimits {
 
 /// A completely framed immutable datagram; success conveys no protocol trust.
 ///
-/// The fixed header is an owned copy, while every field borrows the original
-/// input. Private construction after complete admission preserves all tail
-/// boundaries and the count. No packet-bearing `Debug` implementation is exposed.
+/// The fixed header is an owned copy. This view retains the complete original
+/// input, including the header bytes used by structural prefix projections.
+/// Private construction after complete admission preserves all tail boundaries
+/// and the count. No packet-bearing `Debug` implementation is exposed.
 ///
 /// ```
 /// use ntp_wire::{FrameError, FrameLimits, frame_no_legacy_mac_datagram};
@@ -133,7 +134,7 @@ impl FrameLimits {
 /// use ntp_wire::{HeaderError, RawDatagram, decode_fixed_header};
 /// # fn main() -> Result<(), HeaderError> {
 /// let header = decode_fixed_header(&[0; 48])?;
-/// let _datagram = RawDatagram { header, tail: &[], count: 0 };
+/// let _datagram = RawDatagram { header, input: &[], count: 0 };
 /// # Ok(())
 /// # }
 /// ```
@@ -178,9 +179,9 @@ impl FrameLimits {
 pub struct RawDatagram<'a> {
     /// Owned exact fixed-header snapshot, independently decoded by its owner.
     header: RawHeader,
-    /// Fully admitted immutable complete extension chain from the input.
-    tail: &'a [u8],
-    /// Exact number of fields in `tail`, within the admitted count ceiling.
+    /// Fully admitted original input, including at least the 48-byte header.
+    input: &'a [u8],
+    /// Exact number of fields after the header, within the admitted count ceiling.
     count: usize,
 }
 
@@ -200,9 +201,15 @@ impl<'a> RawDatagram<'a> {
     /// Start fresh, allocation-free iteration over the complete immutable tail.
     #[must_use]
     pub const fn extensions(&self) -> ExtensionFields<'a> {
-        ExtensionFields {
-            remaining: self.tail,
-        }
+        // Complete admission guarantees that the original input contains the header.
+        let (_, tail): (&[u8], &[u8]) = self.input.split_at(FIXED_HEADER_LEN);
+        ExtensionFields { remaining: tail }
+    }
+
+    /// Borrow the exact original prefix of the requested length, if it fits.
+    /// The returned bytes carry only the enclosing frame's structural admission.
+    pub(crate) fn input_prefix(&self, length: usize) -> Option<&'a [u8]> {
+        self.input.get(..length)
     }
 }
 
@@ -332,7 +339,7 @@ pub fn frame_no_legacy_mac_datagram(
     }
     Ok(RawDatagram {
         header,
-        tail,
+        input,
         count,
     })
 }

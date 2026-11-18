@@ -436,6 +436,8 @@ class FacadeFaultPreparation(unittest.TestCase):
     """Source-only faults have independent literal bodies, never a kill oracle."""
 
     FILE = "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs"
+    # Exact historical FILE bytes from 9cbdc249e8cf43aa5399386a8a491d183f3d650d.
+    FIXTURE = ROOT / "scripts/tests/fixtures/engine-facade-fault-v19.rs.txt"
     SOURCE_SHA = "fda1bb48ac9751bb70a31f9501f7f8cca04de82b4481c1beab9c5e456c173287"
     # Retained cargo-mutants hunk: stdlib SequenceMatcher can align the identical
     # final braces differently even when the complete mutated source is exact.
@@ -486,7 +488,7 @@ class FacadeFaultPreparation(unittest.TestCase):
     )
 
     def facts(self):
-        source = (ROOT / self.FILE).read_bytes()
+        source = self.FIXTURE.read_bytes()
         self.assertEqual(hashlib.sha256(source).hexdigest(), self.SOURCE_SHA)
         records, expected = [], []
         for identifier, function, returns, first, last, start, end, column, replacement, diff_sha, old in self.SPECS:
@@ -680,8 +682,9 @@ class PreparedFacadeFaultAdmission(unittest.TestCase):
 
     def test_reader_requires_all_four_exact_physical_faults_and_current_maps(self):
         with tempfile.TemporaryDirectory() as temporary:
-            _, receipt, expected, inputs, extras, digest = self.prepared(temporary)
-            with patch.object(NATIVE, "FACADE_FAULT_OUTCOMES_SHA256", digest):
+            root, receipt, expected, inputs, extras, digest = self.prepared(temporary)
+            with (patch.object(NATIVE, "ROOT", root),
+                  patch.object(NATIVE, "FACADE_FAULT_OUTCOMES_SHA256", digest)):
                 for row in expected:
                     actual = NATIVE.read_prepared_facade_fault(receipt, row["id"], inputs, extras)
                     self.assertEqual(actual["id"], row["id"])
@@ -696,11 +699,11 @@ class PreparedFacadeFaultAdmission(unittest.TestCase):
 
     def test_reader_refuses_poisoned_receipts_manifests_files_and_redirects(self):
         faults = ("status", "lane", "custody", "error", "count", "manifest-hash", "candidate", "extra-field",
-                  "missing-fault", "duplicate-fault", "mutant", "source-bytes", "diff-bytes", "receipt-link",
-                  "manifest-link", "source-link", "source-parent-link", "inputs", "extras")
+                  "missing-fault", "duplicate-fault", "mutant", "source-bytes", "diff-bytes", "original-source-bytes",
+                  "receipt-link", "manifest-link", "source-link", "source-parent-link", "inputs", "extras")
         for fault in faults:
             with self.subTest(fault=fault), tempfile.TemporaryDirectory() as temporary:
-                _, receipt, expected, inputs, extras, digest = self.prepared(temporary)
+                root, receipt, expected, inputs, extras, digest = self.prepared(temporary)
                 record = json.loads(receipt.read_text()); manifest_path = receipt.parent / "facade-faults.json"
                 manifest = json.loads(manifest_path.read_text()); row = manifest["faults"][0]
                 if fault == "status": record["status"] = "passed"
@@ -716,6 +719,9 @@ class PreparedFacadeFaultAdmission(unittest.TestCase):
                 elif fault == "mutant": row["mutant"]["replacement"] = "Ok(())"
                 elif fault == "source-bytes": (receipt.parent / row["source_path"]).write_bytes(b"foreign source")
                 elif fault == "diff-bytes": (receipt.parent / row["diff_path"]).write_bytes(b"foreign diff")
+                elif fault == "original-source-bytes":
+                    source = root / FacadeFaultPreparation.FILE
+                    source.write_bytes(source.read_bytes() + b"\n")
                 elif fault == "inputs": inputs[FacadeFaultPreparation.FILE] = "f" * 64
                 elif fault == "extras": extras[NATIVE.SELF] = "f" * 64
                 manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
@@ -729,7 +735,10 @@ class PreparedFacadeFaultAdmission(unittest.TestCase):
                 physical = fault in ("receipt-link", "manifest-link", "source-link", "source-parent-link")
                 refusal = (self.assertRaisesRegex(NATIVE.PE.Incomplete, "violates file custody") if physical
                            else self.assertRaises(NATIVE.Incomplete))
-                with patch.object(NATIVE, "FACADE_FAULT_OUTCOMES_SHA256", digest), refusal:
+                if fault == "original-source-bytes":
+                    refusal = self.assertRaisesRegex(NATIVE.Incomplete, "exact unchanged Engine module")
+                with (patch.object(NATIVE, "ROOT", root),
+                      patch.object(NATIVE, "FACADE_FAULT_OUTCOMES_SHA256", digest), refusal):
                     NATIVE.read_prepared_facade_fault(receipt, expected[0]["id"], inputs, extras)
 
     def test_fault_record_cannot_become_native_baseline_by_relabeling_status(self):

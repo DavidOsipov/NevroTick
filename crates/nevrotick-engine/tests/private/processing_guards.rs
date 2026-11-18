@@ -2,6 +2,7 @@
 //! Private current-context and terminal-outcome checks; no sample or AFD qualification.
 
 use super::*;
+use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fs::{self, File, OpenOptions};
@@ -240,6 +241,137 @@ async fn send_query(
     .await??)
 }
 
+/// Drive the actual unmanaged send with a fixed pre-send bracket and a real peer.
+/// The lower reading stays before the deadline in every case. The completion
+/// reading stays after it, so a legal send must retain that late historical fact.
+///
+/// # Errors
+/// Preserve fixture socket, readiness, checked coordinate and receive failures.
+///
+/// # Panics
+/// Fail if emission, retained captures, accounting or the checkpoint differ.
+fn check_unmanaged_send_cutoff(upper_position: Ordering) -> Result<(), Box<dyn Error>> {
+    use crate::source_policy::observations::{ReadCount, SendReads};
+
+    let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .build()?;
+    runtime.block_on(async {
+        let Fixture {
+            prepared: [prepared, _],
+            peers: [peer, _],
+        } = fixture()?;
+        let mut slot: LiveSlot = live_slot(prepared)?;
+        let (_owner, control): (watch::Sender<Control>, watch::Receiver<Control>) =
+            watch::channel(Control {
+                stop: false,
+                epoch: 0,
+            });
+        tokio::time::timeout(IO_LIMIT, slot.socket.writable()).await??;
+
+        let tick: Duration = Duration::from_nanos(100);
+        let lower: Instant = Instant::now();
+        let deadline: Instant = lower
+            .checked_add(tick * 2)
+            .ok_or_else(|| io::Error::other("fixture send cutoff unavailable"))?;
+        let upper: Instant = match upper_position {
+            Ordering::Less => deadline.checked_sub(tick),
+            Ordering::Equal => Some(deadline),
+            Ordering::Greater => deadline.checked_add(tick),
+        }
+        .ok_or_else(|| io::Error::other("fixture pre-send upper coordinate unavailable"))?;
+        let returned: Instant = deadline
+            .checked_add(tick * 4)
+            .ok_or_else(|| io::Error::other("fixture send return coordinate unavailable"))?;
+        let before: SoftwareClock = SoftwareClock {
+            mono: lower,
+            utc: SystemTime::UNIX_EPOCH,
+            mono_after: upper,
+        };
+        let after: SoftwareClock = SoftwareClock {
+            mono: returned,
+            utc: before
+                .utc
+                .checked_add(tick * 4)
+                .ok_or_else(|| io::Error::other("fixture send return wall reading unavailable"))?,
+            mono_after: returned,
+        };
+        let (captures, read_count): (SendReads, ReadCount) = SendReads::fixed(before, after);
+        let checkpoint: Control = attempt_send_observing(&mut slot, deadline, &control, captures);
+        assert!(!checkpoint.stop);
+        assert_eq!(checkpoint.epoch, 0);
+        assert_eq!(
+            (slot.send_attempts, slot.received, slot.rejected),
+            (1, 0, 0)
+        );
+
+        let mut packet: [u8; RECEIVE_BYTES] = [0; RECEIVE_BYTES];
+        if upper_position == Ordering::Less {
+            let peer: UdpSocket = UdpSocket::from_std(peer)?;
+            let (length, source): (usize, SocketAddr) =
+                tokio::time::timeout(IO_LIMIT, peer.recv_from(&mut packet)).await??;
+            assert!(slot.sent);
+            assert_eq!(read_count.reads(), 2);
+            assert_eq!(length, 48);
+            assert_eq!(source, slot.local);
+            assert_eq!(packet[..length], slot.packet);
+            let Phase::Pending(bracket) = &slot.phase else {
+                return Err(io::Error::other("successful send lost its pending bracket").into());
+            };
+            assert_eq!(bracket.before.mono, lower);
+            assert_eq!(bracket.before.mono_after, upper);
+            assert_eq!(bracket.before.utc, before.utc);
+            assert_eq!(bracket.after.mono, returned);
+            assert_eq!(bracket.after.mono_after, returned);
+            assert_eq!(bracket.after.utc, after.utc);
+            assert!(bracket.after.mono > deadline);
+        } else {
+            let received: io::Result<(usize, SocketAddr)> = peer.recv_from(&mut packet);
+            if let Ok((length, origin)) = &received {
+                assert_eq!(*length, 48);
+                assert_eq!(*origin, slot.local);
+                assert_eq!(packet[..*length], slot.packet);
+            }
+            assert!(
+                matches!(&received, Err(error) if error.kind() == io::ErrorKind::WouldBlock),
+                "closed send cutoff allowed a loopback payload: {received:?}"
+            );
+            assert!(!slot.sent);
+            assert_eq!(read_count.reads(), 1);
+            assert!(matches!(slot.terminal(), Some(TerminalOutcome::Timeout)));
+        }
+        Ok(())
+    })
+}
+
+/// Preserve the original capture and later return of an admitted UDP send.
+///
+/// # Errors
+/// Preserve fixture setup, timing-coordinate and loopback I/O failures.
+#[test]
+fn unmanaged_send_bracket_before_deadline_retains_late_return() -> Result<(), Box<dyn Error>> {
+    check_unmanaged_send_cutoff(Ordering::Less)
+}
+
+/// Refuse at the inclusive cutoff before any UDP emission.
+///
+/// # Errors
+/// Preserve fixture setup, timing-coordinate and loopback I/O failures.
+#[test]
+fn unmanaged_send_bracket_at_deadline_refuses_without_emission() -> Result<(), Box<dyn Error>> {
+    check_unmanaged_send_cutoff(Ordering::Equal)
+}
+
+/// Refuse when the completed pre-send capture is beyond the cutoff.
+///
+/// # Errors
+/// Preserve fixture setup, timing-coordinate and loopback I/O failures.
+#[test]
+fn unmanaged_send_bracket_after_deadline_refuses_without_emission() -> Result<(), Box<dyn Error>> {
+    check_unmanaged_send_cutoff(Ordering::Greater)
+}
+
 /// Send a literal peer response and retain observations from its actual native read.
 /// `request` is the previously observed immutable query; no new query is sent.
 ///
@@ -420,7 +552,7 @@ fn snapshot_facts(slot: &LiveSlot) -> Result<TransportFacts, Box<dyn Error>> {
         .and_then(TerminalOutcome::facts)
         .ok_or_else(|| io::Error::other("neighbor facts absent"))?;
     Ok(TransportFacts {
-        source_identity: facts.source_identity.clone(),
+        source_context: facts.source_context.clone(),
         send_before: facts.send_before,
         send_after: facts.send_after,
         read_return: facts.read_return,

@@ -5213,3 +5213,6 @@ fn policy_snapshot_status_is_bounded_payload_free_and_preserves_sink_errors() ->
     assert_eq!(facts(&binding)?, retained);
     Ok(())
 }
+
+#[path = "source_configuration.rs"]
+mod configuration;

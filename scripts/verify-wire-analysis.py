@@ -201,7 +201,7 @@ def contract_examples() -> dict[str, tuple[str, str | None]]:
             "E0451"),
         "raw_datagram_construction": (
             'fn main() { let Ok(header) = ntp_wire::decode_fixed_header(&[0; 48]) else { return; }; '
-            'let _ = ntp_wire::RawDatagram { header, tail: &[], count: 0 }; }', "E0451"),
+            'let _ = ntp_wire::RawDatagram { header, input: &[], count: 0 }; }', "E0451"),
         "raw_extension_construction": (
             'fn main() { let _ = ntp_wire::RawExtension { bytes: &[0; 28] }; }', "E0451"),
         "extension_fields_construction": (

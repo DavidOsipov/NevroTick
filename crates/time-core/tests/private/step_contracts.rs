@@ -2,16 +2,19 @@
 //! Matched-step refusal and terminal custody over the parent's genuine source owner.
 //! All limits, readings and completions are explicit inert fixture inputs.
 
-use std::io;
+use std::{io, num::NonZeroU64};
+
+use time_core::FixturePhaseBlocked;
 
 use super::{
-    ActiveAwakeNs, FixtureChartFrames, FixturePhaseError, FixturePhasePlanOwner,
-    FixturePhaseProvenance, FixturePhaseResidualPermission, FixturePhaseSettlement,
-    FixtureRateClockContext, FixtureRateCursorStatus, FixtureRateSettlement,
-    FixtureRateSettlementCursor, FixtureStepCompletion, FixtureStepDirections, FixtureStepError,
-    FixtureStepFeedback, FixtureStepLimits, FixtureStepSettlement, MonotonicNs, SECOND, TestResult,
-    clocks, cursor_snapshot, interval, label, now, product_ok, step_limits, step_receipt,
-    with_step_owner, with_step_owner_policy,
+    ActiveAwakeNs, FixtureChartFrames, FixturePhaseError, FixturePhaseNow, FixturePhasePlanOwner,
+    FixturePhaseProvenance, FixturePhaseResidualPermission, FixturePhaseRetirement,
+    FixturePhaseSettlement, FixtureRateClockContext, FixtureRateCursorStatus,
+    FixtureRateDeliveryError, FixtureRateSettlement, FixtureRateSettlementCursor,
+    FixtureStepCompletion, FixtureStepDirections, FixtureStepError, FixtureStepFeedback,
+    FixtureStepLimits, FixtureStepSettlement, MonotonicNs, SECOND, TestResult, clocks,
+    cursor_snapshot, interval, label, no_effect, now, product_ok, rejected, settle_interval,
+    step_limits, step_receipt, with_step_owner, with_step_owner_policy,
 };
 
 /// Preserve an unchanged actual owner only through its typed outer-refusal branch.
@@ -687,6 +690,229 @@ fn matched_step_unknown_blocks_without_inventing_delivery() -> TestResult {
         );
         Ok(())
     })
+}
+
+/// Operation kind selected independently for each position in a mixed history.
+#[derive(Clone, Copy)]
+enum FeedbackOperation {
+    /// An ordinary finite rate correction.
+    Phase,
+    /// A matched finite step.
+    Step,
+}
+
+/// Issue one operation, then deliver an Unknown for its consumed predecessor.
+/// # Errors
+/// Preserve issuance, missing predecessor or unexpected receiver ownership failures.
+/// # Panics
+/// Detect stale feedback consuming or replacing the outstanding operation.
+fn issue_and_replay<'producer, 'chart>(
+    mut owner: FixturePhasePlanOwner<'producer, 'chart>,
+    operation: FeedbackOperation,
+    ordinal: u64,
+    current: FixturePhaseNow,
+) -> TestResult<FixturePhasePlanOwner<'producer, 'chart>> {
+    let expected: NonZeroU64 = label(ordinal)?;
+    let predecessor: u64 = ordinal
+        .checked_sub(1)
+        .ok_or_else(|| io::Error::other("no predecessor for the model replay"))?;
+    let stale: NonZeroU64 = label(predecessor)?;
+    let before: super::CursorSnapshot = cursor_snapshot(owner.cursor());
+    let allowed: FixturePhaseResidualPermission = FixturePhaseResidualPermission::Allow;
+    let context: FixtureRateClockContext = clocks()?;
+    match operation {
+        FeedbackOperation::Phase => {
+            assert_eq!(
+                product_ok(owner.issue(current, allowed))?.ordinal(),
+                expected
+            );
+            owner = rejected(
+                owner.settle(
+                    FixtureRateSettlement::Unknown {
+                        context,
+                        ordinal: stale,
+                    },
+                    None,
+                    current,
+                ),
+                &FixturePhaseError::Delivery {
+                    source: FixtureRateDeliveryError::OrdinalMismatch,
+                },
+            )?;
+            assert_eq!(
+                owner.proposal().map(|proposal| proposal.ordinal()),
+                Some(expected)
+            );
+        }
+        FeedbackOperation::Step => {
+            let limits: FixtureStepLimits = step_limits(FixtureStepDirections::Both)?;
+            assert_eq!(
+                product_ok(owner.issue_step(current, allowed, limits))?.ordinal(),
+                expected
+            );
+            let (returned, error): (FixturePhasePlanOwner<'_, '_>, FixtureStepError) =
+                outer_owner(owner.settle_step(
+                    FixtureStepFeedback::Unknown {
+                        context,
+                        ordinal: stale,
+                    },
+                    current,
+                ))?;
+            assert!(matches!(error, FixtureStepError::Receipt));
+            owner = returned;
+            assert_eq!(
+                owner.step_proposal().map(|proposal| proposal.ordinal()),
+                Some(expected)
+            );
+        }
+    }
+    assert_eq!(cursor_snapshot(owner.cursor()), before);
+    Ok(owner)
+}
+
+/// Settle one admitted no-effect command without creating an applied interval.
+/// # Errors
+/// Preserve an unexpected terminal branch from the real owner.
+fn settle_mixed_no_effect<'producer, 'chart>(
+    owner: FixturePhasePlanOwner<'producer, 'chart>,
+    operation: FeedbackOperation,
+    ordinal: u64,
+    current: FixturePhaseNow,
+) -> TestResult<FixturePhasePlanOwner<'producer, 'chart>> {
+    match operation {
+        FeedbackOperation::Phase => no_effect(owner, ordinal, current),
+        FeedbackOperation::Step => match owner.settle_step(
+            FixtureStepFeedback::ProvenNoEffect {
+                context: clocks()?,
+                ordinal: label(ordinal)?,
+            },
+            current,
+        ) {
+            FixtureStepSettlement::ProvenNoEffect(returned) => Ok(returned),
+            _ => Err(io::Error::other("current step did not settle as ProvenNoEffect").into()),
+        },
+    }
+}
+
+/// Consume a current Unknown through the selected actual receiver.
+/// # Errors
+/// Preserve an unexpected terminal branch from the real owner.
+fn settle_mixed_unknown<'producer>(
+    owner: FixturePhasePlanOwner<'producer, '_>,
+    operation: FeedbackOperation,
+    current: FixturePhaseNow,
+) -> TestResult<FixturePhaseBlocked<'producer>> {
+    let ordinal: NonZeroU64 = label(4)?;
+    let context: FixtureRateClockContext = clocks()?;
+    match operation {
+        FeedbackOperation::Phase => match owner.settle(
+            FixtureRateSettlement::Unknown { context, ordinal },
+            None,
+            current,
+        ) {
+            FixturePhaseSettlement::Unknown(blocked) => Ok(blocked),
+            _ => Err(io::Error::other("current phase did not settle as Unknown").into()),
+        },
+        FeedbackOperation::Step => {
+            match owner.settle_step(FixtureStepFeedback::Unknown { context, ordinal }, current) {
+                FixtureStepSettlement::Unknown(blocked) => Ok(blocked),
+                _ => Err(io::Error::other("current step did not settle as Unknown").into()),
+            }
+        }
+    }
+}
+
+/// Exercise Known, two no-effect settlements and current Unknown on one leased owner.
+/// # Errors
+/// Preserve genuine reference, interval, continuation and terminal failures.
+/// # Panics
+/// Reject invented endpoints, refunded ordinals or loss of known signed debt.
+fn check_mixed_feedback_history(sign: i8, history: [FeedbackOperation; 3]) -> TestResult {
+    with_step_owner(sign, |mut owner| {
+        let signed: f64 = f64::from(sign);
+        let allowed: FixturePhaseResidualPermission = FixturePhaseResidualPermission::Allow;
+        let proposal: super::FixturePhaseProposal<'_> =
+            product_ok(owner.issue(now(0, 4 * SECOND)?, allowed))?;
+        assert_eq!(proposal.ordinal(), label(1)?);
+        let mut retired: FixturePhaseRetirement<'_> = settle_interval(
+            owner,
+            1,
+            ((0, 2 * SECOND), (4 * SECOND, 7 * SECOND)),
+            signed * 5.0 / 128.0,
+            (31, 37),
+            false,
+            signed / 32.0,
+        )?;
+        // The fixture starts with signed 1/8 debt. Two active seconds at
+        // aggregate 5/128 with baseline 4/128 deliver signed 1/64.
+        let debt: Option<u64> = Some((signed * 7.0 / 64.0).to_bits());
+        assert_eq!(retired.remaining_phase_seconds().map(f64::to_bits), debt);
+        let error: Option<u64> = retired.remaining_phase_error_seconds().map(f64::to_bits);
+        assert!(error.is_some());
+        let mut owner: FixturePhasePlanOwner<'_, '_> =
+            product_ok(retired.resume(now(2 * SECOND, 7 * SECOND)?, allowed))?;
+        for (operation, ordinal, readings) in [
+            (history[0], 2, (2 * SECOND, 7 * SECOND)),
+            (history[1], 3, (3 * SECOND, 8 * SECOND + SECOND / 2)),
+        ] {
+            let current: FixturePhaseNow = now(readings.0, readings.1)?;
+            owner = issue_and_replay(owner, operation, ordinal, current)?;
+            owner = settle_mixed_no_effect(owner, operation, ordinal, current)?;
+            assert_eq!(
+                cursor_snapshot(owner.cursor()),
+                (
+                    FixtureRateCursorStatus::Pending,
+                    Some(label(ordinal + 1)?),
+                    Some(ActiveAwakeNs::new(2 * SECOND)),
+                    Some(MonotonicNs::new(7 * SECOND)),
+                )
+            );
+            assert_eq!(owner.remaining_phase_seconds().map(f64::to_bits), debt);
+            assert_eq!(
+                owner.remaining_phase_error_seconds().map(f64::to_bits),
+                error
+            );
+        }
+        let current: FixturePhaseNow = now(4 * SECOND, 10 * SECOND)?;
+        let owner: FixturePhasePlanOwner<'_, '_> = issue_and_replay(owner, history[2], 4, current)?;
+        let blocked: FixturePhaseBlocked<'_> = settle_mixed_unknown(owner, history[2], current)?;
+        assert_eq!(
+            cursor_snapshot(blocked.cursor()),
+            (
+                FixtureRateCursorStatus::Unresolved,
+                None,
+                Some(ActiveAwakeNs::new(2 * SECOND)),
+                Some(MonotonicNs::new(7 * SECOND)),
+            )
+        );
+        assert!(
+            matches!(blocked.event(), FixtureRateSettlement::Unknown { ordinal, .. } if *ordinal == label(4)?)
+        );
+        assert_eq!(blocked.last_known_phase_seconds().map(f64::to_bits), debt);
+        assert_eq!(
+            blocked.last_known_phase_error_seconds().map(f64::to_bits),
+            error
+        );
+        Ok(())
+    })
+}
+
+/// Cross both signs and every two-command continuation with both Unknown receivers.
+/// # Errors
+/// Preserve any failure from the sixteen actual command histories.
+#[test]
+fn mixed_phase_and_step_feedback_keeps_the_last_known_interval() -> TestResult {
+    let operations: [FeedbackOperation; 2] = [FeedbackOperation::Phase, FeedbackOperation::Step];
+    for sign in [-1_i8, 1] {
+        for first in operations {
+            for second in operations {
+                for terminal in operations {
+                    check_mixed_feedback_history(sign, [first, second, terminal])?;
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Actual forbidden direction, magnitude and overshoot remain acknowledged facts.

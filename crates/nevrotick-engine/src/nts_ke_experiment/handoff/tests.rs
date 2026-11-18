@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use ntp_wire::NtsRequestEncodeError;
 use zeroize::Zeroizing;
 
-use super::{DirectionalKeys, PreparedRequest, prepare};
+use super::{DirectionalKeys, PreparedRequest, PreviewOrigin, prepare as prepare_unbound};
 use crate::nts_ke_experiment::{CancelOutcome, Control, Failure, Phase, request::RequestError};
 
 /// Independent complete packet, generated before this receiver existed.
@@ -15,6 +15,21 @@ const PACKET: &[u8; 140] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../tools/crypto-aes-siv-witness/tests/fixtures/sealing-zero.bin"
 ));
+
+/// Keep standalone component packet controls explicit about their test-only origin.
+/// Production callers must attach the actual opaque association owner instead.
+/// # Errors
+/// Preserve the real raw preparation refusal before installing a component label.
+fn prepare<'a>(
+    control: &'a Control,
+    keys: &DirectionalKeys,
+    cookies: &[Zeroizing<Vec<u8>>],
+    fill: impl FnOnce(&mut [u8; 48]) -> Result<(), Failure>,
+) -> Result<PreparedRequest<'a>, Failure> {
+    let mut prepared: PreparedRequest<'a> = prepare_unbound(control, keys, cookies, fill)?;
+    prepared.origin = PreviewOrigin::Diagnostic;
+    Ok(prepared)
+}
 
 /// Explicit component-only publication; it establishes no actual KE evidence.
 /// # Errors

@@ -3686,6 +3686,17 @@ clock mapping, calibrated error, authentication or Core eligibility. The settled
 supplier contract and its other missing production/native exits remain in force.
 Use development §7 for current implementation and execution routing.
 
+**Installed configuration continuation — 17 November:** the
+[numeric-source configuration child](engine-transport-pilot.md#installed-numeric-source-configuration--implementation-contract--17-november-2026)
+now issues a checked revision at the real managed source. The final send and
+reply guards enforce it. Series and address-round receivers retain the original
+revision with completed facts. Replacement invalidates dependent pending work
+and preserves admitted KoD restrictions and committed history. The current
+`0910c474…` candidate passes the
+[selected GNU checkpoint](engine-transport-pilot.md#installed-configuration--final-selected-gnu-checkpoint-18-november-2026).
+The earlier external compiler controls retain their exact scope. Clock mapping, association and
+key-lifetime binding, and production and native admission remain separate.
+
 **8 November receiving checkpoint:** the
 [report-owned session reference](engine-transport-pilot.md#report-owned-reference-final-qualification--8-november-2026)
 now has bounded Linux qualification on 424-input `e931838b...`. Genuine reports

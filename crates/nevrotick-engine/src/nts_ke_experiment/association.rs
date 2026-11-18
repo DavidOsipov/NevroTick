@@ -12,7 +12,7 @@ use super::handoff::PreparedRequest;
 use super::process::ProviderScope;
 use super::profile::StrictProfile;
 use super::request::DirectionalKeys;
-use super::{COOKIE_BYTES_LIMIT, COOKIE_LIMIT, Config, Control, Failure, IoPhase};
+use super::{COOKIE_BYTES_LIMIT, COOKIE_LIMIT, Config, Control, Failure};
 
 pub(super) mod ledger;
 
@@ -82,10 +82,58 @@ impl CheckedPopulation {
 pub(super) struct AssociationOwner<'a> {
     /// Complete immutable custody from the genuine consuming transfer.
     material: AssociationCandidate<'a>,
+    /// Exact source-issued negotiated UDP lease, present only for managed protection.
+    protected_endpoint: Option<crate::source_policy::ProtectedEndpoint>,
     /// Charged before entropy; rejection/drop never replenishes this allowance.
     preview_spent: bool,
     /// One same-context request owner and its nonrenewable aggregate budgets.
     ledger: ledger::LedgerState<'a>,
+}
+
+/// Original Preview custody projected only by an actual published association.
+/// Fields remain private so a caller cannot supply an unrelated context or endpoint.
+pub(super) struct PreviewOwner<'a> {
+    /// Original immutable connection and closed operation selection.
+    config: &'a Config,
+    /// Actual same-invocation cancellation and phase owner.
+    control: &'a Control,
+    /// Actual admitted endpoint received with this same association.
+    udp: std::net::SocketAddr,
+    /// Genuine checked population captured before this Preview spends its cookie.
+    population: CheckedPopulation,
+}
+
+impl PreviewOwner<'_> {
+    /// Check exact packet Control before attaching this actual owner's origin.
+    pub(super) fn matches_control(&self, control: &Control) -> bool {
+        std::ptr::eq(self.control, control)
+    }
+
+    /// Distinguish the sealed source-owned selection from both diagnostic modes.
+    pub(super) fn is_managed(&self) -> bool {
+        matches!(&self.config.mode, super::ExchangeMode::ManagedPreview(_))
+    }
+
+    /// Commit only the original packet/control and return its historical definition.
+    /// Clone the immutable observation before acquiring combined current custody.
+    /// # Errors
+    /// Refuse diagnostic/foreign packets, replacement, restrictions, stop or expiry.
+    pub(super) fn commit(
+        self,
+        packet_control: &Control,
+    ) -> Result<(crate::SourceConfigurationSnapshot, CheckedPopulation), Failure> {
+        if !std::ptr::eq(self.control, packet_control) {
+            return Err(Failure::Control);
+        }
+        let super::ExchangeMode::ManagedPreview(context) = &self.config.mode else {
+            return Err(Failure::Control);
+        };
+        let original: crate::SourceConfigurationSnapshot = context.snapshot().clone();
+        self.config
+            .guard(self.control, Some(self.udp))?
+            .commit(Instant::now())?;
+        Ok((original, self.population))
+    }
 }
 
 impl<'a> AssociationOwner<'a> {
@@ -106,25 +154,79 @@ impl<'a> AssociationOwner<'a> {
         {
             return Err(Failure::Control);
         }
-        if candidate.udp.ip() != config.peer.ip() || candidate.udp.port() == 0 {
+        if candidate.udp.ip() != config.peer.ip() || !crate::lab_peer_is_valid(candidate.udp) {
             return Err(Failure::Endpoint);
         }
         if candidate.cookies.is_empty() || candidate.cookies.len() > COOKIE_LIMIT {
             return Err(Failure::Cookies);
         }
-        let bytes = candidate.cookies.iter().try_fold(0_usize, |total, body| {
-            total.checked_add(body.len()).ok_or(Failure::Cookies)
-        })?;
+        let bytes: usize = candidate.cookies.iter().try_fold(
+            0_usize,
+            |total: usize, body: &Zeroizing<Vec<u8>>| {
+                total.checked_add(body.len()).ok_or(Failure::Cookies)
+            },
+        )?;
         if bytes > COOKIE_BYTES_LIMIT {
             return Err(Failure::Cookies);
         }
-        let ledger = ledger::LedgerState::new()?;
-        control.publish_ke()?;
+        let ledger: ledger::LedgerState<'a> = ledger::LedgerState::new()?;
+        let protected_endpoint: Option<crate::source_policy::ProtectedEndpoint> =
+            config.publish_ke(control, candidate.udp)?;
         Ok(Self {
             material: candidate,
+            protected_endpoint,
             preview_spent: false,
             ledger,
         })
+    }
+
+    /// Check the closed operation selection and borrow its original negotiated lease.
+    /// # Errors
+    /// Refuse Preview's no-send selection and any detached mode or destination.
+    pub(super) fn protected_endpoint(
+        &self,
+    ) -> Result<Option<&crate::source_policy::ProtectedEndpoint>, Failure> {
+        match (&self.material.config.mode, &self.protected_endpoint) {
+            (super::ExchangeMode::ManagedProtected(_), Some(endpoint)) => Ok(Some(endpoint)),
+            (super::ExchangeMode::Preview | super::ExchangeMode::ProtectedDatagram, None) => {
+                Ok(None)
+            }
+            _ => Err(Failure::Control),
+        }
+    }
+
+    /// Mint a same-owner final-Preview binding without copying keys or current authority.
+    /// # Errors
+    /// Refuse protected authority or inconsistent original population.
+    fn preview_owner(&self) -> Result<PreviewOwner<'a>, Failure> {
+        self.check_preview_mode()?;
+        Ok(PreviewOwner {
+            config: self.material.config,
+            control: self.material.control,
+            udp: self.material.udp,
+            population: self.receiving_population(self.material.control)?,
+        })
+    }
+
+    /// Managed protected custody is valid only for the ordinary protected path.
+    /// # Errors
+    /// Refuse conversion into a weaker Preview completion.
+    fn check_preview_mode(&self) -> Result<(), Failure> {
+        if matches!(
+            &self.material.config.mode,
+            super::ExchangeMode::ManagedProtected(_)
+        ) {
+            return Err(Failure::Control);
+        }
+        Ok(())
+    }
+
+    /// Reach the same private token issuer only for duplicate-binding controls.
+    /// # Errors
+    /// Preserve the real same-owner population refusal without a replacement token.
+    #[cfg(test)]
+    pub(super) fn preview_owner_for_test(&self) -> Result<PreviewOwner<'a>, Failure> {
+        self.preview_owner()
     }
 
     /// Capture this same actual association's checked pre-operation population.
@@ -172,12 +274,19 @@ impl<'a> AssociationOwner<'a> {
     pub(super) fn prepare_preview(
         &mut self,
         fill: impl FnOnce(&mut [u8; 48]) -> Result<(), Failure>,
-    ) -> Result<PreparedRequest<'_>, Failure> {
-        self.material.control.remaining(IoPhase::Exchange)?;
-        if self.preview_spent {
-            return Err(Failure::PreviewSpent);
+    ) -> Result<PreparedRequest<'a>, Failure> {
+        self.check_preview_mode()?;
+        {
+            let guard: super::ConfigurationGuard<'_> = self
+                .material
+                .config
+                .guard(self.material.control, Some(self.material.udp))?;
+            guard.control.published(Instant::now())?;
+            if self.preview_spent {
+                return Err(Failure::PreviewSpent);
+            }
+            self.preview_spent = true;
         }
-        self.preview_spent = true;
         self.ledger_preview(fill)
     }
 }

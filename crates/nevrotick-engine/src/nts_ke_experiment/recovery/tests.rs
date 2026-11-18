@@ -22,7 +22,7 @@ use crate::nts_ke_experiment::recovery::{
     Backoff, ContextStage, End, Invocation, Limits, Plan, Producer, Snapshot, Step, step_with,
 };
 use crate::nts_ke_experiment::{
-    EXCHANGE_TIME, ExchangeMode, Failed, HANDSHAKE_TIME, InvocationCompletion,
+    EXCHANGE_TIME, ExchangeMode, Failed, HANDSHAKE_TIME, InvocationCompletion, Summary,
 };
 use crate::nts_ke_experiment::{StopDisposition, StopHandle};
 
@@ -34,9 +34,10 @@ mod worker_tests;
 /// Refuse a count-only/preview substitute or changed successful cookie counts.
 fn assert_protected_counts(completion: &InvocationCompletion) {
     assert!(matches!(completion, InvocationCompletion::Protected(_)));
-    let summary = completion.summary();
-    assert!(summary.transmitted);
-    assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
+    assert!(matches!(
+        completion.summary(),
+        Some(summary) if summary.transmitted && (summary.cookies, summary.cookie_bytes) == (1, 12)
+    ));
 }
 
 /// Invocation stop closes the actual first admission without spending work.
@@ -47,7 +48,7 @@ fn assert_protected_counts(completion: &InvocationCompletion) {
 #[test]
 fn invocation_stop_before_first_admission_preserves_unspent_state() -> Result<(), Failure> {
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         None,
         vec![Ok(())],
         ExchangeCase::Healthy,
@@ -111,7 +112,7 @@ fn invocation_stop_before_first_admission_preserves_unspent_state() -> Result<()
 fn invocation_stop_during_backoff_preserves_primary_and_charges() -> Result<(), Failure> {
     let cause = Failure::Connect(io::ErrorKind::TimedOut);
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(experiment(4, 8, 16)?),
         vec![Err(failed(cause)), Ok(())],
         ExchangeCase::Healthy,
@@ -173,7 +174,7 @@ fn invocation_stop_during_backoff_preserves_primary_and_charges() -> Result<(), 
 #[test]
 fn invocation_stop_after_exhaustion_keeps_history_without_successor() -> Result<(), Failure> {
     with_fixture(
-        ExchangeMode::ProtectedDatagram,
+        &ExchangeMode::ProtectedDatagram,
         Some(replacement_limits()?),
         vec![Ok(()), Ok(())],
         ExchangeCase::ZeroCookies,
@@ -370,7 +371,7 @@ fn assert_stopped_successor(
 #[test]
 fn invocation_stop_during_successor_establishment_keeps_history() -> Result<(), Failure> {
     with_fixture(
-        ExchangeMode::ProtectedDatagram,
+        &ExchangeMode::ProtectedDatagram,
         Some(replacement_limits()?),
         vec![Ok(()), Ok(()), Ok(())],
         ExchangeCase::ZeroCookies,
@@ -420,7 +421,7 @@ fn invocation_stop_during_successor_establishment_keeps_history() -> Result<(), 
 #[test]
 fn invocation_stop_during_preview_entropy_keeps_charges() -> Result<(), Failure> {
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         None,
         vec![Ok(()), Ok(())],
         ExchangeCase::Healthy,
@@ -492,7 +493,7 @@ fn invocation_stop_during_preview_entropy_keeps_charges() -> Result<(), Failure>
 fn invocation_stop_during_held_producer_preserves_actual_return_boundary() -> Result<(), Failure> {
     let cause = Failure::Connect(io::ErrorKind::TimedOut);
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(experiment(4, 8, 16)?),
         vec![Err(failed(cause)), Ok(())],
         ExchangeCase::Healthy,
@@ -554,7 +555,7 @@ fn invocation_stop_during_held_producer_preserves_actual_return_boundary() -> Re
 fn invocation_stop_during_admitted_draw_cannot_publish_deferred() -> Result<(), Failure> {
     let cause = Failure::Connect(io::ErrorKind::TimedOut);
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(experiment(4, 8, 16)?),
         vec![Err(failed(cause)), Ok(())],
         ExchangeCase::Healthy,
@@ -619,7 +620,7 @@ fn poisoned_invocation_scope_preserves_prior_failure_and_unspent_state() -> Resu
     let cause = Failure::Connect(io::ErrorKind::TimedOut);
     for prior in [false, true] {
         with_fixture(
-            ExchangeMode::Preview,
+            &ExchangeMode::Preview,
             Some(experiment(4, 8, 16)?),
             vec![Err(failed(cause)), Ok(())],
             ExchangeCase::Healthy,
@@ -687,7 +688,7 @@ fn poisoned_invocation_scope_preserves_prior_failure_and_unspent_state() -> Resu
 #[test]
 fn local_cleanup_allows_successor_and_late_stop_preserves_completion() -> Result<(), Failure> {
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(experiment(4, 8, 16)?),
         vec![
             Err(failed(Failure::Connect(io::ErrorKind::TimedOut))),
@@ -698,7 +699,7 @@ fn local_cleanup_allows_successor_and_late_stop_preserves_completion() -> Result
             let boundary = deferred(&step_with(invocation, producer))?;
             park_until(boundary)?;
             assert!(
-                matches!(step_with(invocation, producer), Ok(Step::Complete(completion)) if !completion.summary().transmitted)
+                matches!(step_with(invocation, producer), Ok(Step::Complete(completion)) if completion.summary().is_some_and(|summary: &Summary| !summary.transmitted))
             );
             assert_eq!((producer.establish_calls, producer.preview_calls), (2, 1));
             let completed = invocation.snapshot();
@@ -726,7 +727,7 @@ fn local_cleanup_allows_successor_and_late_stop_preserves_completion() -> Result
 fn late_invocation_stop_preserves_terminal_failure() -> Result<(), Failure> {
     let cause = Failure::Endpoint;
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(experiment(4, 8, 16)?),
         vec![Err(failed(cause)), Ok(())],
         ExchangeCase::Healthy,
@@ -856,6 +857,8 @@ pub(in crate::nts_ke_experiment) struct ScriptProducer<'fixture> {
     provider: &'fixture ProviderScope<'fixture>,
     establishment: VecDeque<Result<(), Failed>>,
     exchange_case: ExchangeCase,
+    /// Select the managed script's same-association continuation in the actual step.
+    managed_deny: bool,
     /// Select a checked two-cookie initial fixture before the first establishment.
     spare_initial_cookie: bool,
     establish_calls: usize,
@@ -909,6 +912,7 @@ impl<'fixture> ScriptProducer<'fixture> {
             provider,
             establishment: establishment.into(),
             exchange_case,
+            managed_deny: false,
             spare_initial_cookie: false,
             establish_calls: 0,
             exchange_calls: 0,
@@ -998,6 +1002,10 @@ fn script_reads(
 }
 
 impl Producer for ScriptProducer<'_> {
+    fn use_scripted_managed_deny(&self) -> bool {
+        self.managed_deny
+    }
+
     fn establish<'tx>(
         &mut self,
         config: &'tx Config,
@@ -1052,8 +1060,17 @@ impl Producer for ScriptProducer<'_> {
                     Zeroizing::new(vec![0x11; 12]),
                     Zeroizing::new(vec![0x22; 12]),
                 ],
+                Some(SuccessorCase::StaleReturned) => vec![
+                    Zeroizing::new(vec![0x22; 12]),
+                    Zeroizing::new(vec![0x77; 7]),
+                ],
                 _ => vec![Zeroizing::new(vec![0x22; 12])],
             }
+        } else if matches!(self.exchange_case, ExchangeCase::StaleReturned) {
+            vec![
+                Zeroizing::new(vec![0x11; 12]),
+                Zeroizing::new(vec![0x77; 7]),
+            ]
         } else if self.spare_initial_cookie {
             vec![
                 Zeroizing::new(vec![0x77; 12]),
@@ -1161,13 +1178,15 @@ impl Producer for ScriptProducer<'_> {
             population: (history.cookies, history.cookie_bytes),
             captures: [history.send_before, history.send_after, history.read_return],
             endpoints: (history.local, history.remote),
-            identity: Arc::downgrade(&history.identity),
+            identity: Arc::downgrade(completion.identity()),
         });
         if matches!(selected, ExchangeCase::StaleReturned)
             || matches!(successor, Some(SuccessorCase::StaleReturned))
         {
+            assert_eq!(association.cookie_population()?, (1, 7));
             let ticket = association.reserve(RequestInput::Observed)?;
             association.return_unused(ticket)?;
+            assert_eq!(association.cookie_population()?, (1, 7));
         }
         Ok(completion)
     }
@@ -1237,7 +1256,7 @@ fn experiment(transactions: u8, refusals: u8, observations: u8) -> Result<Limits
 /// # Panics
 /// Fail if component retirement permits a second process claim.
 pub(in crate::nts_ke_experiment) fn with_fixture(
-    mode: ExchangeMode,
+    mode: &ExchangeMode,
     limits: Option<Limits>,
     establishment: Vec<Result<(), Failed>>,
     exchange_case: ExchangeCase,
@@ -1247,21 +1266,22 @@ pub(in crate::nts_ke_experiment) fn with_fixture(
         &mut ScriptProducer<'_>,
     ) -> Result<(), Failure>,
 ) -> Result<(), Failure> {
-    let mut arguments = vec!["127.0.0.1:4460".into(), "Time.Example".into()];
+    let mut arguments: Vec<std::ffi::OsString> =
+        vec!["127.0.0.1:4460".into(), "Time.Example".into()];
     if matches!(mode, ExchangeMode::ProtectedDatagram) {
         arguments.push("--protected-datagram".into());
     }
-    let config = Config::from_arguments(arguments.into_iter())?;
-    let original_control = if limits.is_none() {
+    let config: Config = Config::from_arguments(arguments.into_iter())?;
+    let original_control: Option<Control> = if limits.is_none() {
         Some(Control::new(Instant::now())?)
     } else {
         None
     };
-    let admission = ProcessAdmission::new();
-    let claim = admission.claim()?;
+    let admission: ProcessAdmission = ProcessAdmission::new();
+    let claim: crate::nts_ke_experiment::process::ProcessClaim<'_> = admission.claim()?;
     {
-        let provider = ProviderScope::component(claim);
-        let mut invocation = match limits {
+        let provider: ProviderScope<'_> = ProviderScope::component(claim);
+        let mut invocation: Invocation<'_> = match limits {
             Some(limits) => Invocation::experimental(&config, &provider, limits)?,
             None => Invocation::one_shot(
                 &config,
@@ -1269,7 +1289,8 @@ pub(in crate::nts_ke_experiment) fn with_fixture(
                 original_control.ok_or(Failure::Control)?,
             )?,
         };
-        let mut producer = ScriptProducer::new(&config, &provider, establishment, exchange_case);
+        let mut producer: ScriptProducer<'_> =
+            ScriptProducer::new(&config, &provider, establishment, exchange_case);
         exercise(&mut invocation, &provider, &mut producer)?;
     }
     assert!(matches!(admission.claim(), Err(Failure::ProcessUsed)));
@@ -1378,7 +1399,7 @@ fn defer_final_time_refuses_cutoff_with_live_boundary_neighbor() -> Result<(), F
     let cause = Failure::Connect(io::ErrorKind::TimedOut);
     for expired in [false, true] {
         with_fixture(
-            ExchangeMode::Preview,
+            &ExchangeMode::Preview,
             Some(limits),
             vec![Err(failed(cause))],
             ExchangeCase::Healthy,
@@ -1440,7 +1461,7 @@ fn retry_boundary_refuses_full_delay_before_current_cutoff() -> Result<(), Failu
     let cause = Failure::Connect(io::ErrorKind::TimedOut);
     for draw in [Duration::ZERO, upper] {
         with_fixture(
-            ExchangeMode::Preview,
+            &ExchangeMode::Preview,
             Some(limits),
             vec![Err(failed(cause))],
             ExchangeCase::Healthy,
@@ -1490,7 +1511,7 @@ fn retry_boundary_refuses_full_delay_before_current_cutoff() -> Result<(), Failu
 fn exhausted_refuses_actual_previous_history_before_successor_install() -> Result<(), Failure> {
     let cause = Failure::Ledger(LedgerError::Reply(super::ReplyError::Cookies));
     with_fixture(
-        ExchangeMode::ProtectedDatagram,
+        &ExchangeMode::ProtectedDatagram,
         Some(replacement_limits()?),
         vec![Ok(()), Ok(())],
         ExchangeCase::ZeroCookies,
@@ -1670,7 +1691,7 @@ fn pure_backoff_growth_headroom_and_overflow_are_independent() -> Result<(), Fai
 fn one_shot_preserves_first_origins_and_stops_before_retry_draw() -> Result<(), Failure> {
     let cause = Failure::Connect(io::ErrorKind::ConnectionReset);
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         None,
         vec![Err(failed(cause))],
         ExchangeCase::Healthy,
@@ -1727,7 +1748,7 @@ fn establishment_stage_and_native_kind_table_reaches_the_real_step() -> Result<(
             Failure::Response(kind),
         ] {
             with_fixture(
-                ExchangeMode::Preview,
+                &ExchangeMode::Preview,
                 Some(experiment(4, 8, 16)?),
                 vec![Err(failed(cause))],
                 ExchangeCase::Healthy,
@@ -1768,7 +1789,7 @@ fn cancelled_establishment_failure_cannot_admit_recovery() -> Result<(), Failure
     let cause = Failure::Connect(io::ErrorKind::TimedOut);
     for cancelled in [false, true] {
         with_fixture(
-            ExchangeMode::Preview,
+            &ExchangeMode::Preview,
             Some(experiment(4, 8, 16)?),
             vec![Err(failed(cause)), Ok(())],
             ExchangeCase::Healthy,
@@ -1822,7 +1843,7 @@ fn cancelled_establishment_failure_cannot_admit_recovery() -> Result<(), Failure
                     else {
                         return Err(Failure::Control);
                     };
-                    let summary = completion.summary();
+                    let summary: &Summary = completion.summary().ok_or(Failure::Control)?;
                     assert!(!summary.transmitted);
                     assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
                     let completed = invocation.snapshot();
@@ -1879,7 +1900,7 @@ fn unmapped_or_wrong_stage_establishment_causes_are_terminal() -> Result<(), Fai
         )),
     ] {
         with_fixture(
-            ExchangeMode::Preview,
+            &ExchangeMode::Preview,
             Some(experiment(4, 8, 16)?),
             vec![Err(failed(cause))],
             ExchangeCase::Healthy,
@@ -1932,7 +1953,7 @@ fn cleanup_facts_are_preserved_and_forbid_establishment_reprobe() -> Result<(), 
             admission_cleanup: admission,
         };
         with_fixture(
-            ExchangeMode::Preview,
+            &ExchangeMode::Preview,
             Some(experiment(4, 8, 16)?),
             vec![Err(injected)],
             ExchangeCase::Healthy,
@@ -1974,7 +1995,7 @@ fn cleanup_facts_are_preserved_and_forbid_establishment_reprobe() -> Result<(), 
 #[test]
 fn pure_plan_and_independent_earliest_boundaries_never_mint_admission() -> Result<(), Failure> {
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(experiment(4, 8, 16)?),
         vec![Ok(())],
         ExchangeCase::Healthy,
@@ -2043,7 +2064,7 @@ fn pure_plan_and_independent_earliest_boundaries_never_mint_admission() -> Resul
 #[test]
 fn eight_refusals_close_without_extra_observation_or_producer_work() -> Result<(), Failure> {
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(experiment(4, 8, 16)?),
         vec![Ok(())],
         ExchangeCase::Healthy,
@@ -2090,7 +2111,7 @@ fn four_submissions_preserve_growth_cutoff_and_irreversible_charges() -> Result<
     let cause = Failure::Connect(io::ErrorKind::ConnectionRefused);
     let failures = (0..4).map(|_| Err(failed(cause))).collect();
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(experiment(4, 8, 16)?),
         failures,
         ExchangeCase::Healthy,
@@ -2146,7 +2167,7 @@ fn four_submissions_preserve_growth_cutoff_and_irreversible_charges() -> Result<
 fn insufficient_observation_pair_closes_without_partial_new_charges() -> Result<(), Failure> {
     let cause = Failure::Handshake(io::ErrorKind::TimedOut);
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(experiment(4, 8, 3)?),
         vec![Err(failed(cause)), Ok(())],
         ExchangeCase::Healthy,
@@ -2171,7 +2192,7 @@ fn insufficient_observation_pair_closes_without_partial_new_charges() -> Result<
         },
     )?;
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(experiment(4, 8, 4)?),
         vec![Err(failed(cause)), Ok(())],
         ExchangeCase::Healthy,
@@ -2199,7 +2220,7 @@ fn insufficient_observation_pair_closes_without_partial_new_charges() -> Result<
             else {
                 return Err(Failure::Control);
             };
-            let summary = completion.summary();
+            let summary: &Summary = completion.summary().ok_or(Failure::Control)?;
             assert!(!summary.transmitted);
             assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
             let completed = invocation.snapshot();
@@ -2244,7 +2265,7 @@ fn insufficient_observation_pair_closes_without_partial_new_charges() -> Result<
 fn current_protected_success_resets_only_terminal_route_backoff() -> Result<(), Failure> {
     let cause = Failure::Request(io::ErrorKind::ConnectionAborted);
     with_fixture(
-        ExchangeMode::ProtectedDatagram,
+        &ExchangeMode::ProtectedDatagram,
         Some(experiment(4, 8, 16)?),
         vec![Err(failed(cause)), Ok(()), Ok(())],
         ExchangeCase::Healthy,
@@ -2257,7 +2278,7 @@ fn current_protected_success_resets_only_terminal_route_backoff() -> Result<(), 
             let Step::Complete(completion) = result else {
                 return Err(Failure::Control);
             };
-            let summary = completion.summary();
+            let summary: &Summary = completion.summary().ok_or(Failure::Control)?;
             assert!(summary.transmitted);
             assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
             let completed = invocation.snapshot();
@@ -2312,7 +2333,7 @@ fn preview_result_is_terminal_without_protected_backoff_reset() -> Result<(), Fa
     let cause = Failure::Connect(io::ErrorKind::ConnectionReset);
     for entropy_fails in [false, true] {
         with_fixture(
-            ExchangeMode::Preview,
+            &ExchangeMode::Preview,
             Some(experiment(4, 8, 16)?),
             vec![Err(failed(cause)), Ok(()), Ok(())],
             ExchangeCase::Healthy,
@@ -2330,7 +2351,7 @@ fn preview_result_is_terminal_without_protected_backoff_reset() -> Result<(), Fa
                     else {
                         return Err(Failure::Control);
                     };
-                    let summary = completion.summary();
+                    let summary: &Summary = completion.summary().ok_or(Failure::Control)?;
                     assert!(!summary.transmitted);
                     assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
                     End::Completed
@@ -2377,7 +2398,7 @@ fn protected_failure_and_stale_history_preserve_route_and_original_intent() -> R
         ),
     ] {
         with_fixture(
-            ExchangeMode::ProtectedDatagram,
+            &ExchangeMode::ProtectedDatagram,
             Some(experiment(4, 8, 16)?),
             vec![
                 Err(failed(Failure::Connect(io::ErrorKind::ConnectionReset))),
@@ -2431,7 +2452,7 @@ fn protected_failure_and_stale_history_preserve_route_and_original_intent() -> R
 fn early_probes_do_not_redraw_or_replenish_route_state() -> Result<(), Failure> {
     let cause = Failure::Response(io::ErrorKind::ConnectionReset);
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(experiment(4, 8, 16)?),
         vec![Err(failed(cause)), Ok(())],
         ExchangeCase::Healthy,
@@ -2482,7 +2503,7 @@ fn real_cutoff_refuses_without_producer_or_partial_accounting() -> Result<(), Fa
     )?;
     let limits = Limits::new(Duration::from_millis(200), 4, 8, 16, backoff)?;
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(limits),
         vec![Ok(())],
         ExchangeCase::Healthy,
@@ -2543,7 +2564,7 @@ fn retry_cutoff_checks_cover_before_draw_and_after_draw() -> Result<(), Failure>
         )?;
         let limits = Limits::new(Duration::from_millis(200), 4, 8, 16, policy)?;
         with_fixture(
-            ExchangeMode::Preview,
+            &ExchangeMode::Preview,
             Some(limits),
             vec![Err(failed(cause)), Ok(())],
             ExchangeCase::Healthy,
@@ -2597,7 +2618,7 @@ fn draw_return_rechecks_actual_time_and_preserves_original_failure() -> Result<(
     )?;
     let limits = Limits::new(Duration::from_millis(200), 4, 8, 16, policy)?;
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(limits),
         vec![Err(failed(cause))],
         ExchangeCase::Healthy,
@@ -2639,7 +2660,7 @@ fn jitter_failure_and_excess_draw_keep_original_ke_cause() -> Result<(), Failure
     let cause = Failure::Connect(io::ErrorKind::ConnectionReset);
     for draw_fails in [true, false] {
         with_fixture(
-            ExchangeMode::Preview,
+            &ExchangeMode::Preview,
             Some(experiment(4, 8, 16)?),
             vec![Err(failed(cause)), Ok(())],
             ExchangeCase::Healthy,
@@ -2860,7 +2881,7 @@ fn admission_refusal_preserves_prior_failure_and_has_no_prior_neighbor() -> Resu
             admission_cleanup: None,
         };
         with_fixture(
-            ExchangeMode::Preview,
+            &ExchangeMode::Preview,
             Some(experiment(4, 8, 16)?),
             vec![Err(actual), Ok(())],
             ExchangeCase::Healthy,
@@ -2919,7 +2940,7 @@ fn admission_refusal_preserves_prior_failure_and_has_no_prior_neighbor() -> Resu
         )?;
     }
     with_fixture(
-        ExchangeMode::Preview,
+        &ExchangeMode::Preview,
         Some(experiment(4, 8, 16)?),
         vec![Ok(())],
         ExchangeCase::Healthy,
@@ -2962,7 +2983,7 @@ fn last_allowance_healthy_reply_stays_in_original_context() -> Result<(), Failur
     let context_lifetime = Duration::from_secs(1);
     let limits = experiment(4, 8, 16)?.with_context_lifetime(context_lifetime)?;
     with_fixture(
-        ExchangeMode::ProtectedDatagram,
+        &ExchangeMode::ProtectedDatagram,
         Some(limits),
         vec![Ok(()), Ok(())],
         ExchangeCase::LastAllowanceHealthy,
@@ -3131,7 +3152,7 @@ fn receive_work_exhaustion_defers_replacement_without_renewing_context() -> Resu
     let limits = experiment(4, 8, 16)?.with_context_lifetime(context_lifetime)?;
     let cause = Failure::Ledger(LedgerError::Reply(super::ReplyError::Cookies));
     with_fixture(
-        ExchangeMode::ProtectedDatagram,
+        &ExchangeMode::ProtectedDatagram,
         Some(limits),
         vec![Ok(()), Ok(())],
         ExchangeCase::ZeroCookies,
@@ -3305,7 +3326,7 @@ fn exhausted_context_replacement_commits_once_at_the_exact_observation_limit() -
 {
     let limits = experiment(4, 8, 4)?.with_context_lifetime(Duration::from_secs(1))?;
     with_fixture(
-        ExchangeMode::ProtectedDatagram,
+        &ExchangeMode::ProtectedDatagram,
         Some(limits),
         vec![Ok(()), Ok(()), Ok(())],
         ExchangeCase::ZeroCookies,
@@ -3318,7 +3339,7 @@ fn exhausted_context_replacement_commits_once_at_the_exact_observation_limit() -
             else {
                 return Err(Failure::Control);
             };
-            let summary = completion.summary();
+            let summary: &Summary = completion.summary().ok_or(Failure::Control)?;
             assert!(summary.transmitted);
             let complete = invocation.snapshot();
             assert_eq!(
@@ -3384,7 +3405,7 @@ fn replacement_protected_history_retains_original_chart_and_actual_observations(
     let limits = experiment(4, 8, 4)?.with_context_lifetime(Duration::from_secs(1))?;
     let mut retained = None;
     with_fixture(
-        ExchangeMode::ProtectedDatagram,
+        &ExchangeMode::ProtectedDatagram,
         Some(limits),
         vec![Ok(()), Ok(())],
         ExchangeCase::ZeroCookies,
@@ -3472,7 +3493,7 @@ fn replacement_protected_history_retains_original_chart_and_actual_observations(
 #[test]
 fn mixed_rejections_and_final_authenticated_excess_count_can_retire() -> Result<(), Failure> {
     with_fixture(
-        ExchangeMode::ProtectedDatagram,
+        &ExchangeMode::ProtectedDatagram,
         Some(replacement_limits()?),
         vec![Ok(())],
         ExchangeCase::MixedCountRefusal,
@@ -3506,7 +3527,7 @@ fn predecessor_history_survives_failed_ke_and_preserves_latest_attach_primary()
 -> Result<(), Failure> {
     let cause = Failure::Connect(io::ErrorKind::ConnectionReset);
     with_fixture(
-        ExchangeMode::ProtectedDatagram,
+        &ExchangeMode::ProtectedDatagram,
         Some(replacement_limits()?),
         vec![Ok(()), Err(failed(cause)), Ok(())],
         ExchangeCase::ZeroCookies,
@@ -3617,7 +3638,7 @@ fn assert_successor_outcome(
             else {
                 return Err(Failure::Control);
             };
-            let summary = completion.summary();
+            let summary: &Summary = completion.summary().ok_or(Failure::Control)?;
             assert!(summary.transmitted);
             assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
             assert_eq!(observed.before.available, 1);
@@ -3688,7 +3709,7 @@ fn successor_history_and_old_key_or_stale_results_have_fresh_neighbors() -> Resu
         SuccessorCase::ZeroCookies,
     ] {
         with_fixture(
-            ExchangeMode::ProtectedDatagram,
+            &ExchangeMode::ProtectedDatagram,
             Some(replacement_limits()?),
             vec![Ok(()), Ok(()), Ok(())],
             ExchangeCase::ZeroCookies,
@@ -3749,7 +3770,7 @@ fn successor_history_and_old_key_or_stale_results_have_fresh_neighbors() -> Resu
 #[test]
 fn source_global_and_refusal_guards_keep_exhausted_context_history() -> Result<(), Failure> {
     with_fixture(
-        ExchangeMode::ProtectedDatagram,
+        &ExchangeMode::ProtectedDatagram,
         Some(replacement_limits()?),
         vec![Ok(())],
         ExchangeCase::ZeroCookies,
@@ -3826,7 +3847,7 @@ fn replacement_allowances_and_outer_cutoff_close_without_refund() -> Result<(), 
     ] {
         let limits = experiment(transactions, 8, observations)?.with_context_lifetime(lifetime)?;
         with_fixture(
-            ExchangeMode::ProtectedDatagram,
+            &ExchangeMode::ProtectedDatagram,
             Some(limits),
             vec![Ok(()), Ok(())],
             ExchangeCase::ZeroCookies,
@@ -3883,7 +3904,7 @@ fn cancelled_retirement_and_unsafe_mode_errors_never_open_recovery() -> Result<(
         ExchangeCase::EntropyFailure,
     ] {
         with_fixture(
-            ExchangeMode::ProtectedDatagram,
+            &ExchangeMode::ProtectedDatagram,
             Some(replacement_limits()?),
             vec![Ok(()), Ok(())],
             selected,
@@ -3983,7 +4004,7 @@ fn cancelled_or_failed_replacement_cleanup_cannot_reopen_history() -> Result<(),
             admission_cleanup: admission,
         };
         with_fixture(
-            ExchangeMode::ProtectedDatagram,
+            &ExchangeMode::ProtectedDatagram,
             Some(replacement_limits()?),
             vec![Ok(()), Err(injected), Ok(())],
             ExchangeCase::ZeroCookies,

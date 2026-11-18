@@ -4497,6 +4497,56 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
                 ENGINE_KE_EQUIVALENCE_PROOF_SHA256=self.proof_sha, ENGINE_KE_EQUIVALENCE_REVIEWS=self.catalog):
             yield
 
+    def test_current_ke_registration_preserves_selected_and_full_critical_owners(self):
+        expected_subjects = (
+            ("ke_core", "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs"),
+            ("ke_association", "crates/nevrotick-engine/src/nts_ke_experiment/association.rs"),
+            ("ke_process", "crates/nevrotick-engine/src/nts_ke_experiment/process.rs"),
+            ("ke_handoff", "crates/nevrotick-engine/src/nts_ke_experiment/handoff.rs"),
+            ("ke_request", "crates/nevrotick-engine/src/nts_ke_experiment/request.rs"),
+            ("ke_fault", "crates/nevrotick-engine/src/nts_ke_experiment/transport_fault.rs"),
+            ("ke_ledger", "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger.rs"),
+            ("ke_retirement", "crates/nevrotick-engine/src/nts_ke_experiment/association/ledger/retirement.rs"),
+            ("ke_response", "crates/nevrotick-engine/src/nts_ke_experiment/response.rs"),
+            ("ke_datagram", "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs"),
+            ("ke_recovery", "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs"),
+            ("ke_job", "crates/nevrotick-engine/src/nts_ke_experiment/job.rs"),
+            ("ke_preview_target", "crates/nevrotick-engine/src/ke_preview_target.rs"),
+        )
+        expected_critical = (
+            "crates/nevrotick-engine/src/lib.rs",
+            *(path for _name, path in expected_subjects),
+            "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
+            "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
+            "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs",
+            "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs",
+            "crates/nevrotick-engine/src/source_policy.rs",
+        )
+        self.assertEqual(MODULE.ENGINE_KE_SUBJECTS, expected_subjects)
+        self.assertEqual(MODULE.ENGINE_KE_CRITICAL, expected_critical)
+        self.assertEqual(len(expected_subjects), 13)
+        self.assertEqual(len(set(expected_critical)), 19)
+        self.assertEqual(self.scope.select("ke_preview_target"), dict(expected_subjects[-1:]))
+        policy = {**self.policy, "mutation_equivalences": []}
+        MODULE.require_engine_ke_role(self.scope, policy)
+        self.assertFalse(policy["campaigns_admitted"])
+        self.assertEqual(policy["mutation_inventories"], {})
+        for unsupported in ("ke_managed_preview", "source_policy", *expected_critical[-2:]):
+            with self.subTest(unmeasured_subject=unsupported), self.assertRaises(MODULE.Incomplete):
+                self.scope.select(unsupported)
+        for subjects in (expected_subjects[:-1], expected_subjects[1:],
+                         tuple(reversed(expected_subjects)),
+                         (*expected_subjects[:-1], ("ke_preview_target", expected_critical[-2])),
+                         (*expected_subjects, expected_subjects[-1])):
+            changed = MODULE.Scope(self.scope.package, subjects, self.scope.policy)
+            forged = {**policy, "subjects": dict(subjects)}
+            with self.subTest(changed_scope=subjects), self.assertRaises(MODULE.Incomplete):
+                MODULE.require_engine_ke_role(changed, forged)
+        for critical in (expected_critical[:-1], expected_critical[:-2] + expected_critical[-1:],
+                         tuple(reversed(expected_critical)), (*expected_critical, expected_critical[-1])):
+            with self.subTest(changed_critical=critical), self.assertRaises(MODULE.Incomplete):
+                MODULE.require_engine_ke_role(self.scope, {**policy, "critical_files": list(critical)})
+
     def test_preparatory_catalog_refuses_nonempty_and_preserves_empty_default(self):
         self.assertFalse(MODULE.engine_ke_equivalences_valid(self.policy))
         empty = copy.deepcopy(self.policy)
@@ -4708,6 +4758,126 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
             ):
                 with self.subTest(scope=scope), self.assertRaises(MODULE.Incomplete):
                     MODULE.admit_mutation_equivalences(self.root, scope, self.policy)
+
+
+    def test_equivalence_receiver_refuses_noncanonical_source_paths(self):
+        with self.reviewed(), patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, self.identity)):
+            self.assertEqual(MODULE.admit_mutation_equivalences(self.root, self.scope, self.policy),
+                             self.policy["mutation_equivalences"])
+            source = Path(self.filename)
+            for spelling in ("./" + self.filename, self.filename.replace("/", "//", 1),
+                             (source.parent / ".." / source.parent.name / source.name).as_posix(),
+                             str(self.root / source), ""):
+                entry = copy.deepcopy(self.policy["mutation_equivalences"][0])
+                entry["mutant"]["file"] = spelling
+                scope = MODULE.Scope(self.scope.package, (("alias", spelling),), "policy/foreign.json")
+                policy = {**self.policy, "mutation_equivalences": [entry]}
+                with self.subTest(spelling=spelling), self.assertRaisesRegex(
+                        MODULE.Incomplete, r"^Equivalence source must use its exact canonical relative path\.$"):
+                    MODULE.admit_mutation_equivalences(self.root, scope, policy)
+
+    def exact_eight_policy(self):
+        """Use the ten captured native shapes to challenge the exact new branch."""
+        descriptors = (
+            ('KE-RECEIVE-STABLE-SLOT-OR', 'receive_reply_with', '-> Result<T, Failure>', 1178, 1278, 1261, 40, 42, '&&', 'replace || with &&'),
+            ('KE-REFILL-PER-VECTOR-BOUND-OR', 'stage_replacement', '-> Result<StagedReplacement, Failure>', 1037, 1091, 1047, 55, 57, '&&', 'replace || with &&'),
+            ('KE-RETURN-POOL-BYTES-OR', 'return_unused', '-> Result<(), Failure>', 783, 833, 819, 17, 19, '&&', 'replace || with &&'),
+            ('KE-RETURN-POOL-CAPACITY-OR', 'return_unused', '-> Result<(), Failure>', 783, 833, 820, 17, 19, '&&', 'replace || with &&'),
+            ('KE-SEND-ARCHIVE-BYTES-EQUALITY', 'archive_request', '-> Result<&[u8], Failure>', 925, 970, 954, 22, 23, '==', 'replace > with =='),
+            ('KE-SEND-ARCHIVE-BYTES-INCLUSIVE', 'archive_request', '-> Result<&[u8], Failure>', 925, 970, 954, 22, 23, '>=', 'replace > with >='),
+            ('KE-SEND-ARCHIVE-BYTES-OR', 'archive_request', '-> Result<&[u8], Failure>', 925, 970, 954, 13, 15, '&&', 'replace || with &&'),
+            ('KE-SEND-ARCHIVE-CAPACITY-OR', 'archive_request', '-> Result<&[u8], Failure>', 925, 970, 955, 13, 15, '&&', 'replace || with &&'),
+            ('KE-SEND-ARCHIVE-VALUE-OR', 'archive_request', '-> Result<&[u8], Failure>', 925, 970, 956, 13, 15, '&&', 'replace || with &&'),
+            ('KE-SEND-PREDECESSOR-VALUE-OR', 'archive_request', '-> Result<&[u8], Failure>', 925, 970, 957, 13, 15, '&&', 'replace || with &&'),
+        )
+
+        def span(line, column, end_line, end_column):
+            return {"start": {"line": line, "column": column},
+                    "end": {"line": end_line, "column": end_column}}
+
+        entries = []
+        for identifier, name, return_type, start, end, line, column, last, replacement, title in descriptors:
+            function = "AssociationOwner<'a>::" + name
+            mutant = {
+                "name": f"{self.filename}:{line}:{column}: {title} in {function}",
+                "package": "nevrotick-engine", "file": self.filename, "genre": "BinaryOperator",
+                "function": {"function_name": function, "return_type": return_type,
+                             "span": span(start, 5, end, 6)},
+                "span": span(line, column, line, last), "replacement": replacement,
+            }
+            source, descriptor, rationale = MODULE.ENGINE_KE_EXACT_EIGHT_REVIEWS[identifier]
+            self.assertEqual(MODULE.canonical_sha256(mutant), descriptor)
+            entries.append({
+                "id": identifier, "source_sha256": source,
+                "candidate_sha256": MODULE.ENGINE_KE_EXACT_EIGHT_CANDIDATE,
+                "requirement": MODULE.ENGINE_KE_EQUIVALENCE_REQUIREMENT,
+                "rationale": rationale, "mutant": mutant,
+                "proof": {"path": MODULE.ENGINE_KE_EXACT_EIGHT_PROOF,
+                    "sha256": MODULE.ENGINE_KE_EXACT_EIGHT_PROOF_SHA256, "section": identifier,
+                    "reviewer": MODULE.ENGINE_KE_EXACT_EIGHT_REVIEWERS,
+                    "verdict": "independently-justified-equivalent"},
+            })
+        return {**self.policy, "binding": {"candidate_sha256": MODULE.ENGINE_KE_EXACT_EIGHT_CANDIDATE},
+                "mutation_equivalences": entries}
+
+    def test_exact_eight_direct_registry_rejects_partial_mixed_and_altered_rows(self):
+        policy = self.exact_eight_policy()
+        self.assertEqual(policy["binding"]["candidate_sha256"],
+                         "fc7e4deadffe4c5e71839506b8a671e4802e71a219380e9b11fe9c18493060c1")
+        self.assertEqual(len(policy["mutation_equivalences"]), 10)
+        self.assertTrue(MODULE.engine_ke_equivalences_valid(policy))
+        MODULE.require_engine_ke_role(self.scope, policy)
+        empty = {**policy, "mutation_equivalences": []}
+        self.assertTrue(MODULE.engine_ke_equivalences_valid(empty))
+        for edit in (
+            lambda p: p["binding"].update(candidate_sha256="f" * 64),
+            lambda p: p["binding"].update(candidate_sha256=MODULE.ENGINE_KE_EQUIVALENCE_CANDIDATE),
+            lambda p: p["mutation_equivalences"].pop(),
+            lambda p: p["mutation_equivalences"].__setitem__(0, self.policy["mutation_equivalences"][0]),
+            lambda p: p["mutation_equivalences"][0].update(source_sha256="f" * 64),
+            lambda p: p["mutation_equivalences"][0].update(rationale="Caller-supplied rationale"),
+            lambda p: p["mutation_equivalences"][0]["mutant"]["span"]["start"].update(column=55),
+            lambda p: p["mutation_equivalences"][0]["proof"].update(path=MODULE.ENGINE_KE_EQUIVALENCE_PROOF),
+            lambda p: p["mutation_equivalences"][0]["proof"].update(sha256="f" * 64),
+            lambda p: p["mutation_equivalences"][0]["proof"].update(reviewer="self-approved"),
+        ):
+            bad = copy.deepcopy(policy)
+            edit(bad)
+            with self.subTest(edit=edit), self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_mutation_equivalences(self.root, self.scope, bad)
+
+    def test_exact_eight_direct_receiver_rechecks_physical_source_candidate_and_proof(self):
+        policy = self.exact_eight_policy()
+        proof = self.root / MODULE.ENGINE_KE_EXACT_EIGHT_PROOF
+        proof_body = "Synthetic exact-eight review.\n" + "".join(
+            "## " + entry["id"] + "\n" for entry in policy["mutation_equivalences"])
+        proof.write_text(proof_body)
+        proof_sha = MODULE.PRODUCT.sha256(proof)
+        source_sha = self.identity[self.filename]
+        catalog = {identifier: (source_sha, descriptor, rationale)
+                   for identifier, (_, descriptor, rationale) in MODULE.ENGINE_KE_EXACT_EIGHT_REVIEWS.items()}
+        policy["binding"]["candidate_sha256"] = self.candidate
+        for entry in policy["mutation_equivalences"]:
+            entry.update(candidate_sha256=self.candidate, source_sha256=source_sha)
+            entry["proof"]["sha256"] = proof_sha
+
+        with patch.multiple(MODULE, ENGINE_KE_EXACT_EIGHT_CANDIDATE=self.candidate,
+                ENGINE_KE_EXACT_EIGHT_PROOF_SHA256=proof_sha, ENGINE_KE_EXACT_EIGHT_REVIEWS=catalog):
+            with patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, self.identity)):
+                self.assertEqual(MODULE.admit_mutation_equivalences(self.root, self.scope, policy),
+                                 policy["mutation_equivalences"])
+                for path in (self.root / self.filename, proof):
+                    original = path.read_bytes()
+                    path.write_bytes(original + b"changed\n")
+                    with self.subTest(path=path), self.assertRaises(MODULE.Incomplete):
+                        MODULE.admit_mutation_equivalences(self.root, self.scope, policy)
+                    path.write_bytes(original)
+                aliased = MODULE.Scope(self.scope.package, (("alias", self.filename),), "policy/foreign.json")
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_mutation_equivalences(self.root, aliased, policy)
+            changed = {**self.identity, "another-invariant-owner": "b" * 64}
+            with patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, changed)), self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_mutation_equivalences(self.root, self.scope, policy)
 
 
 class EngineSourcePolicyEquivalenceTests(unittest.TestCase):

@@ -276,9 +276,9 @@ struct Observed {
 /// Admit the unchanged closed loopback configuration through its real constructor.
 /// # Errors
 /// Preserve actual argument admission refusal.
-fn config(mode: ExchangeMode) -> Result<Config, Failure> {
-    let mut arguments = vec!["127.0.0.1:4460".into(), SECRET_NAME.into()];
-    if mode == ExchangeMode::ProtectedDatagram {
+fn config(mode: &ExchangeMode) -> Result<Config, Failure> {
+    let mut arguments: Vec<std::ffi::OsString> = vec!["127.0.0.1:4460".into(), SECRET_NAME.into()];
+    if matches!(mode, ExchangeMode::ProtectedDatagram) {
         arguments.push("--protected-datagram".into());
     }
     Config::from_arguments(arguments.into_iter())
@@ -353,7 +353,7 @@ fn protected_case(
     case: ExchangeCase,
     profile: Option<ExperimentalProfile>,
 ) -> Result<Observed, Failure> {
-    let config = config(ExchangeMode::ProtectedDatagram)?;
+    let config: Config = config(&ExchangeMode::ProtectedDatagram)?;
     let lifetime = Arc::downgrade(&config.lifetime);
     let before = Arc::new(OnceLock::new());
     let observed = Arc::clone(&before);
@@ -672,7 +672,7 @@ fn facade_protected_numerics_authentic_zero_bits_keep_distinct_refusals() -> Res
 fn facade_protected_numerics_waits_for_join_and_keeps_original_age() -> Result<(), Failure> {
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    let config = config(ExchangeMode::ProtectedDatagram)?;
+    let config: Config = config(&ExchangeMode::ProtectedDatagram)?;
     let lifetime = Arc::downgrade(&config.lifetime);
     let before = Arc::new(OnceLock::new());
     let observed_before = Arc::clone(&before);
@@ -796,7 +796,7 @@ fn assert_preview_output(
 ) -> Result<(), Failure> {
     let unused = Arc::new(OnceLock::new());
     let preview = run_synchronously_with(
-        config(ExchangeMode::Preview)?,
+        config(&ExchangeMode::Preview)?,
         slot,
         Some(profile),
         |slot, prepared| {
@@ -840,7 +840,7 @@ fn facade_protected_numerics_bypasses_preview_failure_and_retirement_panic() -> 
         admission_cleanup: Some(Failure::Control),
     };
     let failure = run_synchronously_with(
-        config(ExchangeMode::ProtectedDatagram)?,
+        config(&ExchangeMode::ProtectedDatagram)?,
         &SLOTS[1],
         Some(profile),
         |slot, prepared| {
@@ -872,7 +872,7 @@ fn facade_protected_numerics_bypasses_preview_failure_and_retirement_panic() -> 
         std::panic::resume_unwind(Box::new(Payload { drops: &DROPS }))
     }));
     let abnormal = run_synchronously_with(
-        config(ExchangeMode::ProtectedDatagram)?,
+        config(&ExchangeMode::ProtectedDatagram)?,
         &SLOTS[2],
         Some(profile),
         |slot, prepared| {

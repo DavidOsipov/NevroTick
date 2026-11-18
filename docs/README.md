@@ -30,7 +30,71 @@ levels and required routing. The plan binds schema, writers, Windows delivery,
 temporary collection and UI/export to their existing owners and checks. This is
 planning evidence; current Core/Engine priority and execution holds remain.
 
-**Managed logical-source provenance — 17 November 2026:** the
+**Joined protected DENY — 18 November 2026.** The
+[Engine task](../tasks/engine-transport-pilot.md#joined-protected-deny-and-datagram-observation--18-november-2026)
+records the sealed worker result, late Stop and abnormal retirement,
+and the portable tests for native endpoint and error decisions.
+
+**Retired protected DENY — 18 November 2026.** The
+[Engine task](../tasks/engine-transport-pilot.md#retired-protected-deny-decision--18-november-2026)
+records shared receive accounting, exact policy scope, ordinary reply
+compatibility and the completed scripted checks. Joined worker custody
+and current mutation qualification remain open.
+
+**Same-association successor — 18 November 2026.** The
+[integrated Engine and Core checkpoint](../tasks/engine-transport-pilot.md#same-association-authenticated-successor--18-november-2026)
+records the private two-request allowance, the real local IPv4 bind and
+the selected mixed-feedback histories. The worker control decision and
+current cross-target mutation gate remain open.
+
+**Protected pending request ownership — 18 November 2026.** The
+[Engine checkpoint](../tasks/engine-transport-pilot.md#protected-pending-request-ownership--18-november-2026)
+records actual backend identity transfer, receive charging, delayed cookie
+publication and the selected GNU and scripted Windows checks. The
+[association campaign](../tasks/engine-transport-pilot.md#selected-gnu-association-mutation--18-november-2026)
+passes on its exact predecessor. Current mutation and production gates
+remain open.
+
+**Managed protected endpoint lease — 18 November 2026.** The
+[Engine checkpoint](../tasks/engine-transport-pilot.md#managed-protected-endpoint-lease--development-and-line-checkpoint--18-november-2026)
+records configured development and selected GNU line verification for
+the issued source, negotiated endpoint, both send floors and final retired
+reply guards. The [Core Known Step control](../tasks/s1.3-source-selection-readiness.md#known-step-noninteger-active-interval-control--18-november-2026)
+checks rounding through actual settlement at a noninteger active span.
+Current mutation and native/production gates remain open.
+
+**Source-owned KE Preview — 18 November 2026.** The
+[development checkpoint](../tasks/engine-transport-pilot.md#source-owned-ke-preview--development-checkpoint--18-november-2026)
+binds the TLS target and allowed UDP endpoints to one issued configuration.
+It preserves the committed revision through actual normal worker join and
+keeps the managed Preview out of the protected sender. All 14 development
+lanes passed, including 267 default and 514 EP1 cases in each test mode and the
+64 generated issuer histories. The selected per-file metrics and native
+TLS/CNG qualification remain open.
+
+The [W11-W01 cutoff correction](../tasks/engine-transport-pilot.md#unmanaged-send-cutoff--w11-w01-boundary-verification)
+preserves the original T1 while using the completed pre-send clock bracket for
+unmanaged UDP admission. The real loopback regressions cover timely, exact and
+late brackets. Combined Engine development checks passed in both profiles.
+
+**Installed numeric-source configuration — development verified, 17 November 2026:**
+the [current bounded Engine child](../tasks/engine-transport-pilot.md#installed-numeric-source-configuration--implementation-contract--17-november-2026)
+adds explicit checked endpoint-set installation/replacement, final currentness
+guards and sealed historical configuration in actual managed acquisition paths.
+All13 development lanes pass on `23c91549…`:267 default/501 KE cases per
+ordinary/optimized mode,89 doctests per graph, GNU/MSVC compiler/Clippy checks
+and GNU rustdoc. All five external compiler checks and all five line coverage
+gates pass. The 267-test instrumented run reached 95.31% to 100% line coverage.
+The [final selected GNU checkpoint](../tasks/engine-transport-pilot.md#installed-configuration--final-selected-gnu-checkpoint-18-november-2026)
+passes all 13 development lanes, five line gates and five per-file mutation
+gates on `0910c474…`. Its 797-descriptor reconciliation includes 419 retained
+causal witnesses, four current fault executions, 368 compiler-unviable variants
+and six equivalents. Earlier failed raw campaigns remain recorded. Named-source,
+trust, mapping and association suppliers retain their production prerequisites.
+The current source-role adoption now passes179 reader controls, real819-input
+physical evidence admission and bootstrap strict policy; campaigns stay closed.
+
+**Published managed logical-source provenance — 17 November 2026, `238b9ae`:** the
 [current Engine checkpoint](../tasks/engine-transport-pilot.md#managed-source-provenance--development-results--17-november-2026)
 now retains the actual managed source through transport commit and independent
 series/address-round reception. Same endpoints cannot substitute for source
@@ -42,7 +106,8 @@ line gates pass. All four changed-owner95% mutation gates pass independent
 adjudication with zero unresolved survivors/timeouts. Session reuse retains its
 historical scope. This completes the selected GNU source checkpoint.
 Remote `428bf9a` logging/service/notification documentation is adopted; all605 runtime/configuration
-inputs still match this product's `744f6ea2…` evidence. Identity grants neither
+inputs matched that published product's `744f6ea2…` evidence. Later configuration
+changes above require their own affected checks. Identity grants neither
 mapping, authentication, independent votes nor production sample eligibility.
 
 **Managed restriction visibility — 17 November 2026:** the

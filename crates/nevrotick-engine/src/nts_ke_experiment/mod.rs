@@ -12,6 +12,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
+#[cfg(test)]
 use garde::Validate;
 use ntp_wire::{
     NtsKeAccumulator, NtsKeAccumulatorError, NtsKeExporterContext, NtsKeExporterDirection,
@@ -34,6 +35,8 @@ mod recovery;
 use association::AssociationCandidate;
 #[cfg(any(windows, test))]
 use association::AssociationOwner;
+#[cfg(test)]
+pub(crate) use association::ledger::VerifiedRetiredDeny;
 #[cfg(any(windows, test))]
 use process::ProcessAdmission;
 #[cfg(any(windows, test))]
@@ -48,6 +51,10 @@ static PROCESS_ADMISSION: ProcessAdmission = ProcessAdmission::new();
 static PROCESS_WORKER: job::WorkerSlot = job::WorkerSlot::new();
 
 mod handoff;
+#[cfg(any(windows, test))]
+pub(super) mod managed_preview;
+#[cfg(test)]
+mod managed_preview_tests;
 mod request;
 mod response;
 #[cfg(test)]
@@ -88,6 +95,9 @@ enum Failure {
     ProcessUsed,
     /// The invocation already spent its sole never-send preview allowance.
     PreviewSpent,
+    /// The actual managed source or installed Preview definition refused admission.
+    #[cfg(any(windows, test))]
+    SourcePolicy(crate::SourcePolicyError),
     /// Closed request-custody or protected-response refusal; no secret payload.
     Ledger(association::ledger::LedgerError),
     /// Closed protected-datagram adapter failure, without packet or endpoint text.
@@ -156,13 +166,62 @@ struct Config {
 }
 
 /// Closed experimental operation selection, never a production acquisition mode.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum ExchangeMode {
     /// Default: seal the laboratory preview and expose no packet to a sender.
     Preview,
     /// Explicit request for one bounded protected loopback datagram operation.
     ProtectedDatagram,
+    /// A genuine installed definition permits only the never-send Preview path.
+    #[cfg(any(windows, test))]
+    ManagedPreview(crate::source_policy::ConfiguredKePreview),
+    /// An explicit same-process source authority permits one managed protected operation.
+    ManagedProtected(crate::source_policy::ProtectedKeSource),
 }
+
+impl ExchangeMode {
+    /// Borrow checked shared TLS/UDP inputs while preserving each closed operation selection.
+    fn source_definition(&self) -> Option<&crate::source_policy::ConfiguredKePreview> {
+        match self {
+            Self::ManagedPreview(definition) => Some(definition),
+            Self::ManagedProtected(source) => Some(source.definition()),
+            Self::Preview | Self::ProtectedDatagram => None,
+        }
+    }
+}
+
+impl std::fmt::Debug for ExchangeMode {
+    /// Keep managed configuration, endpoint and verification-name payloads redacted.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(match self {
+            Self::Preview => "Preview",
+            Self::ProtectedDatagram => "ProtectedDatagram",
+            #[cfg(any(windows, test))]
+            Self::ManagedPreview(_) => "ManagedPreview { .. }",
+            Self::ManagedProtected(_) => "ManagedProtected { .. }",
+        })
+    }
+}
+
+impl PartialEq for ExchangeMode {
+    /// A managed mode compares its actual issued immutable configuration identity.
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Preview, Self::Preview) | (Self::ProtectedDatagram, Self::ProtectedDatagram) => {
+                true
+            }
+            (Self::ManagedPreview(left), Self::ManagedPreview(right)) => {
+                left.snapshot().same_configuration(right.snapshot())
+            }
+            (Self::ManagedProtected(left), Self::ManagedProtected(right)) => left
+                .definition()
+                .snapshot()
+                .same_configuration(right.definition().snapshot()),
+            _ => false,
+        }
+    }
+}
+
+impl Eq for ExchangeMode {}
 
 impl Config {
     /// Admit two required arguments and at most one exact operation flag.
@@ -195,31 +254,55 @@ impl Config {
         if peer.len() > 128 || identity.len() > 253 {
             return Err(Failure::Arguments);
         }
-        let peer = peer.into_string().map_err(|_| Failure::Arguments)?;
+        let peer: String = peer.into_string().map_err(|_| Failure::Arguments)?;
         if peer.contains('%') {
             return Err(Failure::Arguments);
         }
         let peer: SocketAddr = peer.parse().map_err(|_| Failure::Arguments)?;
-        let identity = identity.into_string().map_err(|_| Failure::Arguments)?;
-        ConfigCandidate {
-            values: (peer, &identity),
-        }
-        .validate()
-        .map_err(|_| Failure::Arguments)?;
-        let server_name = ServerName::try_from(identity.clone()).map_err(|_| Failure::Arguments)?;
+        let identity: String = identity.into_string().map_err(|_| Failure::Arguments)?;
+        let target: crate::KePreviewTarget =
+            crate::KePreviewTarget::new(peer, &identity).map_err(|_| Failure::Arguments)?;
         Ok(Self {
-            peer,
-            identity,
-            server_name,
+            peer: target.peer(),
+            identity: target.identity().to_owned(),
+            server_name: target.server_name().clone(),
             mode: ExchangeMode::Preview,
             #[cfg(test)]
             lifetime: Arc::new(()),
         })
     }
+
+    /// Derive every connection input from the actual source-issued Preview definition.
+    /// Allocation is bounded by the already checked verification-name envelope.
+    #[cfg(any(windows, test))]
+    fn from_managed_preview(context: crate::source_policy::ConfiguredKePreview) -> Self {
+        let target: crate::KePreviewTarget = context.target().clone();
+        Self::from_managed_target(&target, ExchangeMode::ManagedPreview(context))
+    }
+
+    /// Derive the TLS target exclusively from the separately authorized protected selection.
+    fn from_managed_protected(source: crate::source_policy::ProtectedKeSource) -> Self {
+        let target: crate::KePreviewTarget = source.definition().target().clone();
+        Self::from_managed_target(&target, ExchangeMode::ManagedProtected(source))
+    }
+
+    /// Keep a single checked TLS-input projection. Each managed guard verifies
+    /// these fields against its own originally issued definition before use.
+    fn from_managed_target(target: &crate::KePreviewTarget, mode: ExchangeMode) -> Self {
+        Self {
+            peer: target.peer(),
+            identity: target.identity().to_owned(),
+            server_name: target.server_name().clone(),
+            mode,
+            #[cfg(test)]
+            lifetime: Arc::new(()),
+        }
+    }
 }
 
 /// One maintained structured-input rule runs inside the private constructor.
 #[derive(Validate)]
+#[cfg(test)]
 struct ConfigCandidate<'a> {
     /// Parsed endpoint and exact bounded verification identity; no effects occur.
     #[garde(custom(config_rule))]
@@ -233,19 +316,13 @@ struct ConfigCandidate<'a> {
     clippy::trivially_copy_pass_by_ref,
     reason = "Garde custom rules borrow fields and their unit context"
 )]
+#[cfg(test)]
 fn config_rule(values: &(SocketAddr, &str), (): &()) -> garde::Result {
-    let (peer, identity) = *values;
-    let scoped = matches!(peer, SocketAddr::V6(address) if address.scope_id() != 0 || address.flowinfo() != 0);
-    if !peer.ip().is_loopback()
-        || peer.port() == 0
-        || scoped
-        || identity.is_empty()
-        || identity.len() > 253
-        || !identity.is_ascii()
-    {
-        return Err(garde::Error::new("invalid loopback KE configuration"));
+    let (peer, identity): (SocketAddr, &str) = *values;
+    match crate::KePreviewTarget::new(peer, identity) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(garde::Error::new("invalid loopback KE configuration")),
     }
-    Ok(())
 }
 
 /// Socket phase chooses a deadline, never a fresh relative timeout budget.
@@ -466,6 +543,205 @@ impl ControlGuard<'_, '_> {
     }
 }
 
+/// Hold the actual scope/phase before nonblocking source-policy custody.
+/// Declaration order releases Control first, including check refusal and unwind.
+#[cfg(any(windows, test))]
+struct ConfigurationGuard<'a> {
+    /// Actual cancellation and phase owner, released before policy notifications.
+    control: ControlGuard<'a, 'a>,
+    /// Present only for source-issued modes that require a current definition.
+    policy: Option<crate::source_policy::KePreviewPolicyGuard<'a>>,
+}
+
+#[cfg(any(windows, test))]
+impl ConfigurationGuard<'_> {
+    /// Observe the unchanged original deadline under every applicable owner.
+    /// # Errors
+    /// Preserve stopped, consumed or expired Control refusal.
+    fn remaining(&self, phase: IoPhase, now: Instant) -> Result<Duration, Failure> {
+        self.control.remaining(phase, now)
+    }
+
+    /// Publish the same candidate while its original source definition is current.
+    /// # Errors
+    /// Preserve actual phase, stop and original expiry refusal without publication.
+    fn publish_ke(&mut self, now: Instant) -> Result<(), Failure> {
+        self.control.publish_ke(now)
+    }
+
+    /// Seal one historical result without a callback or allocation under custody.
+    /// # Errors
+    /// Preserve original published/stop/deadline refusal without a completion.
+    fn commit(&mut self, now: Instant) -> Result<(), Failure> {
+        self.control.commit(now)
+    }
+}
+
+#[cfg(any(windows, test))]
+impl Config {
+    /// Acquire scope, phase, then the source policy and check the actual selected endpoint.
+    /// No provider, entropy, callback, allocation, retirement or join occurs here.
+    /// # Errors
+    /// Preserve source/revision/endpoint refusal and reject detached connection inputs.
+    fn guard<'a>(
+        &'a self,
+        control: &'a Control,
+        endpoint: Option<SocketAddr>,
+    ) -> Result<ConfigurationGuard<'a>, Failure> {
+        self.bind_guard(control.guard()?, endpoint)
+    }
+
+    /// Use the invocation's already-held original scope without recursive locking.
+    /// # Errors
+    /// Preserve original scope/phase and source-currentness refusal before producer work.
+    fn guard_in<'a>(
+        &'a self,
+        control: &'a Control,
+        scope: ScopeGuard<'a>,
+        endpoint: Option<SocketAddr>,
+    ) -> Result<ConfigurationGuard<'a>, Failure> {
+        self.bind_guard(control.guard_in(scope)?, endpoint)
+    }
+
+    /// Couple an actual Control guard to the context owned by this closed mode.
+    /// # Errors
+    /// Refuse detached connection fields or current source/endpoint admission.
+    fn bind_guard<'a>(
+        &'a self,
+        control: ControlGuard<'a, 'a>,
+        endpoint: Option<SocketAddr>,
+    ) -> Result<ConfigurationGuard<'a>, Failure> {
+        let policy: Option<crate::source_policy::KePreviewPolicyGuard<'a>> =
+            if let Some(context) = self.mode.source_definition() {
+                let target: &crate::KePreviewTarget = context.target();
+                if self.peer != target.peer()
+                    || self.identity != target.identity()
+                    || &self.server_name != target.server_name()
+                {
+                    return Err(Failure::Control);
+                }
+                Some(context.lock().map_err(Failure::SourcePolicy)?)
+            } else {
+                None
+            };
+        let guard: ConfigurationGuard<'a> = ConfigurationGuard { control, policy };
+        if let Some(policy) = &guard.policy {
+            policy.check(endpoint).map_err(Failure::SourcePolicy)?;
+        }
+        Ok(guard)
+    }
+
+    /// Publish only the actual same-owner UDP selection after complete preparation.
+    /// # Errors
+    /// Preserve current source/configuration and original Control refusal atomically.
+    fn publish_ke(
+        &self,
+        control: &Control,
+        endpoint: SocketAddr,
+    ) -> Result<Option<crate::source_policy::ProtectedEndpoint>, Failure> {
+        let mut guard: ConfigurationGuard<'_> = self.guard(control, Some(endpoint))?;
+        if let ExchangeMode::ManagedProtected(source) = &self.mode {
+            let policy: &mut crate::source_policy::KePreviewPolicyGuard<'_> =
+                guard.policy.as_mut().ok_or(Failure::Control)?;
+            let staged: crate::source_policy::PreparedProtectedEndpoint<'_> = source
+                .prepare_endpoint(policy, endpoint)
+                .map_err(Failure::SourcePolicy)?;
+            guard.control.publish_ke(Instant::now())?;
+            return Ok(Some(staged.publish()));
+        }
+        guard.publish_ke(Instant::now())?;
+        Ok(None)
+    }
+}
+
+/// Both original Control gates are released before the source lock publishes wakes.
+struct DatagramAuthorityGuard<'a> {
+    /// Original `StopScope` followed by its invocation `Control`.
+    control: ControlGuard<'a, 'a>,
+    /// Present only with an actual issued endpoint lease, released last.
+    policy: Option<crate::source_policy::ProtectedEndpointGuard<'a>>,
+}
+
+impl<'a> DatagramAuthorityGuard<'a> {
+    /// Obtain currentness custody in order without waiting for policy.
+    /// # Errors
+    /// Preserve original Control or policy custody refusal.
+    fn lock(
+        control: &'a Control,
+        endpoint: Option<&'a crate::source_policy::ProtectedEndpoint>,
+    ) -> Result<Self, Failure> {
+        let control: ControlGuard<'_, '_> = control.published_guard()?;
+        let policy: Option<crate::source_policy::ProtectedEndpointGuard<'_>> = endpoint
+            .map(crate::source_policy::ProtectedEndpoint::lock)
+            .transpose()
+            .map_err(Failure::SourcePolicy)?;
+        Ok(Self { control, policy })
+    }
+
+    /// Bind the original association destination before using it at an effect.
+    /// # Errors
+    /// Preserve destination, configuration or retained restriction refusal.
+    fn endpoint(&self, peer: SocketAddr) -> Result<(), Failure> {
+        self.policy.as_ref().map_or(Ok(()), |policy| {
+            policy.check(peer).map_err(Failure::SourcePolicy)
+        })
+    }
+
+    /// Charge managed source and endpoint floors at the actual send boundary.
+    /// # Errors
+    /// Preserve a disabled, stale, premature or unavailable managed send refusal.
+    fn reserve(
+        &mut self,
+        peer: SocketAddr,
+        request: &Arc<()>,
+        now: Instant,
+    ) -> Result<Option<crate::source_policy::ProtectedSendStamp>, Failure> {
+        self.policy
+            .as_mut()
+            .map(|policy| policy.reserve(peer, request, now))
+            .transpose()
+            .map_err(Failure::SourcePolicy)
+    }
+
+    /// Publish one verified DENY while the original Control and policy remain held.
+    /// Consume the authorization issued by the exact retired receiving ledger.
+    /// # Errors
+    /// Preserve Stop, deadline, binding and stamp refusals before any restriction.
+    #[cfg(test)]
+    fn commit_protected_deny(
+        &mut self,
+        authorization: VerifiedRetiredDeny<'_>,
+    ) -> Result<(), Failure> {
+        if !authorization.matches_control(self.control.control) {
+            return Err(Failure::Control);
+        }
+        self.control.published(authorization.decided_at())?;
+        self.policy
+            .as_mut()
+            .ok_or(Failure::Control)?
+            .apply_deny(authorization)
+            .map_err(Failure::SourcePolicy)?;
+        *self.control.phase = Phase::Committed;
+        Ok(())
+    }
+
+    /// Check the same concrete request at Pending publication and final consumption.
+    /// # Errors
+    /// Refuse missing/mismatched authority, obsolete definition or policy epochs.
+    fn receiving(
+        &self,
+        provenance: Option<(&crate::source_policy::ProtectedSendStamp, &Arc<()>)>,
+    ) -> Result<(), Failure> {
+        match (&self.policy, provenance) {
+            (Some(policy), Some((stamp, request))) => policy
+                .receiving(stamp, request)
+                .map_err(Failure::SourcePolicy),
+            (None, None) => Ok(()),
+            _ => Err(Failure::Control),
+        }
+    }
+}
+
 impl Control {
     /// Establish both finite deadlines once; arithmetic failure creates no job.
     ///
@@ -609,6 +885,7 @@ impl Control {
     /// Consume one genuine KE completion under both still-live actual guards.
     /// # Errors
     /// Refuse stop, expiry, duplicate publication or unavailable control.
+    #[cfg(test)]
     fn publish_ke(&self) -> Result<(), Failure> {
         self.publish_ke_observing(Instant::now)
     }
@@ -616,6 +893,7 @@ impl Control {
     /// Sample publication time only within the held actual scope and phase.
     /// # Errors
     /// Preserve currentness/duplicate refusal without partial publication.
+    #[cfg(test)]
     fn publish_ke_observing(&self, observe: impl FnOnce() -> Instant) -> Result<(), Failure> {
         let mut guard = self.guard()?;
         guard.publish_ke(observe())
@@ -808,17 +1086,27 @@ struct Summary {
 enum InvocationCompletion {
     /// Preparation completed without a protected send or authenticated observation.
     Preview(Summary),
+    /// Same never-send result with its actual source definition retained after commit.
+    ManagedPreview(Box<handoff::ManagedPreviewHistory>),
     /// One genuine committed exchange, detached from all live native/secret owners.
     Protected(Box<datagram::ProtectedHistory>),
+    /// The actual managed protected result and its original committed source revision.
+    ManagedProtected(Box<datagram::ManagedProtectedHistory>),
+    /// A committed, control-only historical effect from the private scripted worker.
+    #[cfg(test)]
+    ManagedProtectedDeny(association::ledger::AppliedProtectedDeny),
 }
 
 #[cfg(test)]
 impl InvocationCompletion {
     /// Borrow only the existing bounded CLI counts without exposing or copying history.
-    fn summary(&self) -> &Summary {
+    fn summary(&self) -> Option<&Summary> {
         match self {
-            Self::Preview(summary) => summary,
-            Self::Protected(history) => history.summary(),
+            Self::Preview(summary) => Some(summary),
+            Self::ManagedPreview(history) => Some(history.summary()),
+            Self::Protected(history) => Some(history.summary()),
+            Self::ManagedProtected(history) => Some(history.summary()),
+            Self::ManagedProtectedDeny(_) => None,
         }
     }
 }
@@ -916,6 +1204,28 @@ fn run_synchronously_with(
         job::PreparedInvocation,
     ) -> Result<(), job::SubmitError>,
 ) -> Result<datagram::ReceivedCompletion, RunFailed> {
+    match run_joined_with(config, slot, profile, submit)? {
+        datagram::ReceivedInvocation::Probe(completion) => Ok(completion),
+        #[cfg(test)]
+        datagram::ReceivedInvocation::ProtectedDeny(_) => {
+            Err(RunFailed::Operation(Failure::Control.into()))
+        }
+    }
+}
+
+/// Share actual preparation, collect, and sealed take with the private control fixture.
+/// # Errors
+/// Preserve caller-context, submission, collection, operation or abnormal retirement failure.
+#[cfg(any(windows, test))]
+fn run_joined_with(
+    config: Config,
+    slot: &'static job::WorkerSlot,
+    profile: Option<crate::ExperimentalProfile>,
+    submit: impl FnOnce(
+        &'static job::WorkerSlot,
+        job::PreparedInvocation,
+    ) -> Result<(), job::SubmitError>,
+) -> Result<datagram::ReceivedInvocation, RunFailed> {
     if tokio::runtime::Handle::try_current().is_ok() {
         return Err(RunFailed::CallerContext);
     }
@@ -968,6 +1278,20 @@ fn preview_once(
     Ok(summary)
 }
 
+/// Preserve the original definition and population through the actual unsendable seal.
+/// # Errors
+/// Preserve charged work, source/endpoint/stop refusal and normal packet destruction.
+#[cfg(any(windows, test))]
+fn managed_preview_once(
+    association: &mut AssociationOwner<'_>,
+    fill: impl FnOnce(&mut [u8; 48]) -> Result<(), Failure>,
+) -> Result<Box<handoff::ManagedPreviewHistory>, Failure> {
+    association
+        .prepare_preview(fill)?
+        .finish_managed()
+        .map(Box::new)
+}
+
 /// Receive only a retired opaque operation before committing/projecting its facts.
 /// The private producer is called once before either final guard; no callback or
 /// await occurs between association validation and the final Control commit.
@@ -1018,6 +1342,7 @@ fn failure_labels(failure: Failure) -> (&'static str, &'static str) {
         Failure::Control => ("currentness", "control"),
         Failure::ProcessUsed => ("admission", "process-used"),
         Failure::PreviewSpent => ("resources", "preview-spent"),
+        Failure::SourcePolicy(_) => ("source-policy", "refused"),
         Failure::Ledger(_) => ("protected-request", "refused"),
         Failure::Datagram(_) => ("protected-datagram", "refused"),
         Failure::Offer(_) | Failure::Limits => ("request", "parameters"),

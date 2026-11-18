@@ -2,7 +2,7 @@
 #![forbid(unsafe_code)]
 
 use ntp_wire::{
-    FrameError, FrameLimits, NtsAuthenticatorError, NtsAuthenticatorParts,
+    FrameError, FrameLimits, NtsAuthenticatorError, NtsAuthenticatorParts, RawDatagram,
     frame_no_legacy_mac_datagram, read_nts_authenticator_parts,
 };
 
@@ -65,12 +65,12 @@ fn nts_authenticator_literal_control_frames_existing_owner() -> Result<(), Strin
 /// # Errors
 /// Preserve actual reader rejection, including the intended rejecting-stub RED.
 /// # Panics
-/// Require original-pointer identity, independent payloads and view-drop survival.
+/// Require original-pointer identity and view-drop survival for two framed inputs.
 #[test]
 fn nts_authenticator_literal_parts_preserve_original_storage() -> Result<(), String> {
-    let packet = literal();
-    let (aad, nonce, ciphertext) = {
-        let view = parts(&packet)?;
+    let packet: Vec<u8> = literal();
+    let (aad, nonce, ciphertext): (&[u8], &[u8], &[u8]) = {
+        let view: NtsAuthenticatorParts<'_> = parts(&packet)?;
         (view.associated_data(), view.nonce(), view.ciphertext())
     };
     assert_eq!(aad.len(), 64, "independent original associated-data prefix");
@@ -81,6 +81,26 @@ fn nts_authenticator_literal_parts_preserve_original_storage() -> Result<(), Str
     assert_eq!(aad.as_ptr(), packet.as_ptr());
     assert_eq!(nonce.as_ptr(), packet[72..].as_ptr());
     assert_eq!(ciphertext.as_ptr(), packet[76..].as_ptr());
+
+    let mut other: Vec<u8> = literal();
+    other[0] = 0x24;
+    other[52] = 0xf1;
+    other[72] = 0x31;
+    other[76..79].copy_from_slice(&[0x41, 0x42, 0x43]);
+    let (other_aad, other_nonce, other_ciphertext): (&[u8], &[u8], &[u8]) = {
+        let raw: RawDatagram<'_> = frame_no_legacy_mac_datagram(&other, limits()?)
+            .map_err(|error| format!("frame: {error:?}"))?;
+        let view: NtsAuthenticatorParts<'_> = raw
+            .nts_authenticator_parts()
+            .map_err(|error| format!("envelope: {error:?}"))?;
+        (view.associated_data(), view.nonce(), view.ciphertext())
+    };
+    assert_eq!(other_aad, &other[..64]);
+    assert_eq!(other_aad.as_ptr(), other.as_ptr());
+    assert_eq!(other_nonce, &[0x31]);
+    assert_eq!(other_nonce.as_ptr(), other[72..].as_ptr());
+    assert_eq!(other_ciphertext, &[0x41, 0x42, 0x43]);
+    assert_eq!(other_ciphertext.as_ptr(), other[76..].as_ptr());
     Ok(())
 }
 

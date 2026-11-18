@@ -51,17 +51,23 @@ mod reached {
 
     use super::DatagramError;
     use crate::nts_ke_experiment::association::AssociationOwner;
+    #[cfg(test)]
     use crate::nts_ke_experiment::association::ledger::{
-        Receipt, RequestInput, RequestPhase, SendOutcome,
+        AppliedProtectedDeny, StagedProtectedDeny, StagedProtectedSuccessor,
+    };
+    use crate::nts_ke_experiment::association::ledger::{
+        CookieReplacement, PendingSubmission, Receipt, RequestInput, RequestPhase, RetiredCommit,
+        SendOutcome, Ticket,
     };
     use crate::nts_ke_experiment::job::ReceivingOutcome;
     use crate::nts_ke_experiment::recovery::BoundProtectedReceiver;
     use crate::nts_ke_experiment::{
-        Control, Failure, InvocationCompletion, IoPhase, RunFailed, Summary,
+        Control, DatagramAuthorityGuard, Failure, InvocationCompletion, IoPhase, RunFailed, Summary,
     };
+    use crate::source_policy::{ProtectedEndpoint, ProtectedSendStamp};
     use crate::{
         ExperimentalMeasurement, ExperimentalProfile, MeasurementRefusal, RunClockContext,
-        SoftwareClock,
+        SoftwareClock, SourceConfigurationSnapshot,
     };
 
     /// One counter covers readiness waits and nonblocking receive attempts.
@@ -75,7 +81,7 @@ mod reached {
     }
 
     /// No reset is possible after a wake, refusal or received packet.
-    pub(super) struct Attempts(usize);
+    pub(in super::super) struct Attempts(usize);
 
     impl Attempts {
         /// Consume before the bounded operation, including a spurious wake.
@@ -87,6 +93,12 @@ mod reached {
                 .checked_sub(1)
                 .ok_or(failed(DatagramError::Attempts))?;
             Ok(())
+        }
+
+        /// Inspect the exact unused original driver credits in component controls.
+        #[cfg(test)]
+        const fn remaining(&self) -> usize {
+            self.0
         }
     }
 
@@ -135,6 +147,17 @@ mod reached {
         pub(super) send: Option<(SoftwareClock, SoftwareClock, usize)>,
     }
 
+    /// Check the actual bound endpoint and selected peer before registration.
+    /// # Errors
+    /// Refuse a non-loopback local or remote address or a zero bound port.
+    #[cfg(any(windows, test))]
+    fn check_bound_endpoints(local: SocketAddr, remote: SocketAddr) -> Result<(), Failure> {
+        if !local.ip().is_loopback() || local.port() == 0 || !remote.ip().is_loopback() {
+            return Err(Failure::Endpoint);
+        }
+        Ok(())
+    }
+
     impl Backend {
         /// Bind and register exactly one actual same-family loopback socket.
         /// # Errors
@@ -152,12 +175,10 @@ mod reached {
             socket
                 .set_nonblocking(true)
                 .map_err(|error| failed(DatagramError::Nonblocking(error.kind())))?;
-            let local = socket
+            let local: SocketAddr = socket
                 .local_addr()
                 .map_err(|error| failed(DatagramError::Local(error.kind())))?;
-            if !local.ip().is_loopback() || local.port() == 0 || !remote.ip().is_loopback() {
-                return Err(Failure::Endpoint);
-            }
+            check_bound_endpoints(local, remote)?;
             let socket = UdpSocket::from_std(socket)
                 .map_err(|error| failed(DatagramError::Registration(error.kind())))?;
             Ok(Self {
@@ -186,61 +207,31 @@ mod reached {
             }
         }
 
-        /// Serialize actual cancellation acknowledgement with one concrete send.
-        ///
-        /// No arbitrary callback, allocation, formatter, crypto or await runs
-        /// under this guard. The closed test branch returns predeclared facts.
+        /// Route one prepared ledger request to this concrete synchronous backend.
         /// # Errors
-        /// Refuse stale authority before the syscall and retain the original cause.
-        pub(super) fn send_guarded(
+        /// Preserve the ledger, actual authority and adapter refusals.
+        pub(super) fn send_prepared(
             &mut self,
+            association: &mut AssociationOwner<'_>,
+            ticket: Ticket<'_>,
             control: &Control,
-            packet: &[u8],
-            remote: SocketAddr,
-        ) -> Result<SendOutcome, Failure> {
-            if remote != self.remote || self.send.is_some() {
-                return Err(Failure::Endpoint);
-            }
+        ) -> Result<(), Failure> {
+            #[cfg(test)]
+            association.check_send_owner(&ticket, control)?;
             #[cfg(test)]
             match &mut self.io {
                 #[cfg(windows)]
                 Io::Native(_) => {}
                 Io::Script(script) => script.before_guard(control)?,
             }
-            let guard = control.published_guard()?;
-            let before = SoftwareClock::capture();
-            guard.remaining(IoPhase::Exchange, before.monotonic_after())?;
-            let (outcome, cancel_after) = match &mut self.io {
-                #[cfg(windows)]
-                Io::Native(socket) => (
-                    match socket.try_send_to(packet, remote) {
-                        Ok(length) => SendOutcome::Completed(length),
-                        Err(error) => SendOutcome::Failed(error.kind()),
-                    },
-                    false,
-                ),
-                #[cfg(test)]
-                Io::Script(script) => script.send(packet),
+            let lease: Option<ProtectedEndpoint> = association.protected_endpoint()?.cloned();
+            let guard: DatagramAuthorityGuard<'_> =
+                DatagramAuthorityGuard::lock(control, lease.as_ref())?;
+            let sender: GuardedSender<'_, '_> = GuardedSender {
+                backend: self,
+                guard,
             };
-            let after = SoftwareClock::capture();
-            drop(guard);
-            self.send = Some((before, after, packet.len()));
-            // The closed fixture may inject a synthetic wall step only after the
-            // actual return and guard release. Keep completed-send custody even
-            // if its checked fixture transformation fails; never touch host clocks.
-            #[cfg(test)]
-            match &self.io {
-                #[cfg(windows)]
-                Io::Native(_) => {}
-                Io::Script(script) => {
-                    let after = script.observe_send_after(after)?;
-                    self.send = Some((before, after, packet.len()));
-                }
-            }
-            if cancel_after {
-                control.cancel()?;
-            }
-            Ok(outcome)
+            association.invoke_guarded(ticket, sender)
         }
 
         /// Observe one synchronous return before interpreting any packet bytes.
@@ -261,27 +252,113 @@ mod reached {
         }
     }
 
-    /// Translate only the compiled platform's consumed-oversize code.
+    /// Actual backend and scope-then-phase custody for one consuming send.
+    /// Only the concrete datagram backend constructs this value.
+    pub(in super::super) struct GuardedSender<'backend, 'control> {
+        /// Exclusive original socket owner, including any retained send capture.
+        backend: &'backend mut Backend,
+        /// The same actual gates remain held through archive, send and return capture.
+        guard: DatagramAuthorityGuard<'control>,
+    }
+
+    impl GuardedSender<'_, '_> {
+        /// Borrow the actual Control for the ledger's same-owner check.
+        #[must_use]
+        pub(in super::super) const fn control(&self) -> &Control {
+            self.guard.control.control
+        }
+
+        /// Borrow the actual socket instance for Pending correlation.
+        pub(in super::super) const fn request_identity(&self) -> &Arc<()> {
+            &self.backend.identity
+        }
+
+        /// Check the actual original authority at a fresh archive observation.
+        /// # Errors
+        /// Preserve stopped, non-Published and expired authority refusal.
+        pub(in super::super) fn archive_entry(&self) -> Result<Instant, Failure> {
+            let now: Instant = Instant::now();
+            self.guard.control.published(now)?;
+            self.guard.endpoint(self.backend.remote)?;
+            Ok(now)
+        }
+
+        /// Consume this admitted adapter once after the owning ledger archives.
+        ///
+        /// No arbitrary callback, allocation, formatter, crypto or await runs
+        /// under this guard. The closed test branch returns predeclared facts.
+        /// # Errors
+        /// Preserve endpoint, repeat, capture and original-deadline refusal
+        /// before the syscall, without reversing the ledger's earlier archive.
+        pub(in super::super) fn submit(
+            self,
+            packet: &[u8],
+            remote: SocketAddr,
+        ) -> Result<(SendOutcome, Option<ProtectedSendStamp>), Failure> {
+            let Self { backend, mut guard } = self;
+            if remote != backend.remote || backend.send.is_some() {
+                return Err(Failure::Endpoint);
+            }
+            let before: SoftwareClock = SoftwareClock::capture();
+            #[cfg(test)]
+            let before: SoftwareClock = match &backend.io {
+                #[cfg(windows)]
+                Io::Native(_) => before,
+                Io::Script(script) => script.observe_send_before(before),
+            };
+            check_capture_order(before.monotonic(), before.monotonic_after())?;
+            guard.control.published(before.monotonic_after())?;
+            let stamp: Option<ProtectedSendStamp> =
+                guard.reserve(remote, &backend.identity, before.monotonic_after())?;
+            let (outcome, cancel_after): (SendOutcome, bool) = match &mut backend.io {
+                #[cfg(windows)]
+                Io::Native(socket) => (
+                    match socket.try_send_to(packet, remote) {
+                        Ok(length) => SendOutcome::Completed(length),
+                        Err(error) => SendOutcome::Failed(error.kind()),
+                    },
+                    false,
+                ),
+                #[cfg(test)]
+                Io::Script(script) => script.send(packet, guard.control.control),
+            };
+            let after: SoftwareClock = SoftwareClock::capture();
+            let control: &Control = guard.control.control;
+            drop(guard);
+            backend.send = Some((before, after, packet.len()));
+            // Preserve completed-send custody before any fixture refusal or Stop.
+            #[cfg(test)]
+            match &backend.io {
+                #[cfg(windows)]
+                Io::Native(_) => {}
+                Io::Script(script) => {
+                    let after: SoftwareClock = script.observe_send_after(after)?;
+                    backend.send = Some((before, after, packet.len()));
+                }
+            }
+            if cancel_after {
+                control.cancel()?;
+            }
+            Ok((outcome, stamp))
+        }
+    }
+
+    /// Translate a native Windows receive return without observing the socket.
+    /// Synthetic returns can exercise the same decision on other test hosts.
     pub(super) fn classify_read(result: io::Result<(usize, SocketAddr)>) -> Read {
         match result {
             Ok((RECEIVE_BYTES, _)) => Read::ConsumedUnknown,
             Ok((length, source)) => Read::Datagram(length, source),
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => Read::WouldBlock,
-            Err(error)
-                if (cfg!(windows) && error.raw_os_error() == Some(10040))
-                    || (cfg!(target_os = "linux") && error.raw_os_error() == Some(90)) =>
-            {
-                Read::ConsumedUnknown
-            }
+            Err(error) if error.raw_os_error() == Some(10040) => Read::ConsumedUnknown,
             Err(error) => Read::Failed(error.kind()),
         }
     }
 
     /// Check inclusive ordering of two already captured monotonic coordinates.
     ///
-    /// This pure helper grants no clock provenance or current authority. Its
-    /// callers supply the actual send-end/send-return or send-return/read-return
-    /// captures and retain their separate original-deadline/control checks.
+    /// Callers check the pre-send bracket and the gaps between send and read
+    /// captures. They separately enforce the original deadline and Control.
     /// # Errors
     /// Refuse reversed observations; equal coordinates remain a valid neighbor.
     pub(super) fn check_capture_order(
@@ -294,8 +371,8 @@ mod reached {
         Ok(())
     }
 
-    /// Historical operation result; no final-commit API exists on this raw value.
-    pub(super) struct OperationCompletion<'control> {
+    /// Original packet admission and captures, with no cookie-transfer authority.
+    pub(super) struct OperationHistory<'control> {
         /// Same live control checked against the association before any packet work.
         control: &'control Control,
         /// Genuine once-consumed authenticated receipt, without eligibility authority.
@@ -310,14 +387,22 @@ mod reached {
         pub(super) local: SocketAddr,
         /// Same immutable association endpoint that received the submitted packet.
         pub(super) remote: SocketAddr,
-        /// Same socket instance as the operation, not inferred from numeric endpoints.
-        pub(super) identity: Arc<()>,
         /// Actual complete protected request extent, never a fixed 48-byte assumption.
         pub(super) packet_bytes: usize,
-        /// Post-admission pool entries retained under the original context's budgets.
+        /// Checked resulting pool entries for this reply's replacement.
         pub(super) cookies: usize,
         /// Corresponding checked aggregate opaque pool payload, without copying bytes.
         pub(super) cookie_bytes: usize,
+    }
+
+    /// Raw operation result. Only the retiring wrapper can issue a protected completion.
+    pub(super) struct OperationCompletion<'control> {
+        /// Original packet admission, even if final acceptance later fails.
+        pub(super) history: OperationHistory<'control>,
+        /// Private preallocated pool transfer, unavailable to a raw history observer.
+        replacement: CookieReplacement,
+        /// Original Pending submission, surviving socket/runtime retirement.
+        submission: PendingSubmission,
     }
 
     /// Opaque receiving input, constructed only after backend/runtime retirement.
@@ -325,13 +410,110 @@ mod reached {
     pub(in super::super) struct ProtectedCompletion<'control> {
         /// Same genuine operation, with its original context and complete history.
         operation: OperationCompletion<'control>,
+        /// Driver credits left by the original runtime; only the fixture can continue.
+        #[cfg(test)]
+        attempts: Attempts,
+    }
+
+    /// The actual scripted DENY transfer after both receive resources retired.
+    /// Pending remains with the ledger until its guarded final commit.
+    #[cfg(test)]
+    #[must_use = "observe the retired DENY through its original owner"]
+    pub(in super::super) struct RetiredProtectedDeny<'control>(StagedProtectedDeny<'control>);
+
+    /// Either private successor result, after the shared driver and backend retire.
+    #[cfg(test)]
+    #[expect(
+        clippy::large_enum_variant,
+        reason = "keep the bounded returned history and cookie transfer inline after retirement"
+    )]
+    pub(in super::super) enum RetiredProtectedSuccessor<'control> {
+        /// A complete ordinary reply with the existing final commit boundary.
+        Ordinary(ProtectedCompletion<'control>),
+        /// An exact control with its Pending request still held.
+        Deny(RetiredProtectedDeny<'control>),
+    }
+
+    #[cfg(test)]
+    impl<'control> RetiredProtectedDeny<'control> {
+        /// Transfer the exact already-retired request to its receiving ledger.
+        pub(in super::super) fn into_staged(self) -> StagedProtectedDeny<'control> {
+            self.0
+        }
+
+        /// Publish the exact protected denial through its original receiving owner.
+        /// # Errors
+        /// Preserve any currentness, endpoint or final guarded policy refusal.
+        pub(super) fn commit(
+            self,
+            association: &mut AssociationOwner<'_>,
+        ) -> Result<AppliedProtectedDeny, Failure> {
+            association.commit_retired_protected_deny(self)
+        }
+
+        /// Recheck this exact retired ticket without publishing any control effects.
+        /// # Errors
+        /// Preserve wrong-owner, stale-currentness, Stop and expiry refusals.
+        pub(super) fn check_current(
+            &self,
+            association: &AssociationOwner<'_>,
+        ) -> Result<(), Failure> {
+            association.check_protected_deny_current(&self.0)
+        }
+    }
+
+    /// Keep detached facts and the exact ledger transfer within the retired owner.
+    struct RetiredOperation<'control> {
+        /// Historical records have no authority to install the replacement.
+        history: OperationHistory<'control>,
+        /// The actual consumed request and its guarded transfer.
+        reply: RetiredReply<'control>,
+        /// The original driver's unused allowance.
+        #[cfg(test)]
+        attempts: Attempts,
+    }
+
+    /// One ledger transfer obtainable only from a genuinely retired operation.
+    pub(in super::super) struct RetiredReply<'control> {
+        /// Original invocation authority kept through the retired transfer.
+        control: &'control Control,
+        /// Exact original packet-admission history and spent request ordinal.
+        receipt: Receipt,
+        /// Prepared cookie installation held until final guarded commit.
+        replacement: CookieReplacement,
+        /// Original matched submission and its managed policy correlation, if issued.
+        submission: PendingSubmission,
+    }
+
+    /// The components of one exclusively consumed retired reply.
+    pub(in super::super) type RetiredReplyParts<'control> = (
+        &'control Control,
+        Receipt,
+        CookieReplacement,
+        PendingSubmission,
+    );
+
+    impl<'control> RetiredReply<'control> {
+        /// Move the sole transfer into the ledger's original-owner transaction.
+        pub(in super::super) fn into_parts(self) -> RetiredReplyParts<'control> {
+            (
+                self.control,
+                self.receipt,
+                self.replacement,
+                self.submission,
+            )
+        }
     }
 
     /// One committed protected exchange, not live permission or Core eligibility.
     /// No Clone/Copy or public raw constructor can duplicate this fact.
     pub(in super::super) struct CommittedProtected<'control> {
         /// Actual history survives until its one consuming receiver projection.
-        operation: OperationCompletion<'control>,
+        operation: OperationHistory<'control>,
+        /// Original submitted socket identity, taken from the guarded ledger transfer.
+        identity: Arc<()>,
+        /// Historical managed configuration, checked at both original effects.
+        configuration: Option<SourceConfigurationSnapshot>,
     }
 
     /// Owned historical protected exchange; only consuming genuine commit creates it.
@@ -367,11 +549,68 @@ mod reached {
         run_context: Arc<RunClockContext>,
     }
 
+    /// Keep the exact committed managed revision with its packet history in one allocation.
+    pub(in super::super) struct ManagedProtectedHistory {
+        /// Same genuine packet history as the unmanaged protected result.
+        history: ProtectedHistory,
+        /// Immutable revision checked by both the sender and final reply consumer.
+        configuration: SourceConfigurationSnapshot,
+    }
+
+    impl ManagedProtectedHistory {
+        /// Borrow the already committed revision, without deriving current authority.
+        pub(in super::super) const fn configuration(&self) -> &SourceConfigurationSnapshot {
+            &self.configuration
+        }
+
+        /// Keep the same bounded pre-operation counts and observed submission.
+        #[cfg(test)]
+        pub(in super::super) const fn summary(&self) -> &Summary {
+            self.history.summary()
+        }
+    }
+
     /// One normally joined result; numerical refusal is retained data, never a retry.
     /// Its private representation prevents promoting caller-supplied summaries.
     pub(in super::super) struct ReceivedCompletion {
         /// Exactly one original state admitted by the normal-join guard.
         inner: ReceivedState,
+    }
+
+    /// A protected denial obtained solely through normal joined custody.
+    #[cfg(test)]
+    pub(in super::super) struct ReceivedProtectedDeny {
+        /// Already applied effect, detached from every live authority owner.
+        history: AppliedProtectedDeny,
+    }
+
+    #[cfg(test)]
+    impl ReceivedProtectedDeny {
+        /// Borrow the retained historical effect without deriving permission.
+        pub(in super::super) const fn history(&self) -> &AppliedProtectedDeny {
+            &self.history
+        }
+
+        /// Recover the detached history without its normal-join witness.
+        pub(in super::super) fn into_history(self) -> AppliedProtectedDeny {
+            self.history
+        }
+    }
+
+    /// One normally joined operation, with a distinct control-only case.
+    #[cfg_attr(
+        test,
+        expect(
+            clippy::large_enum_variant,
+            reason = "the existing fixed-size numerical probe remains inline across joined receiving"
+        )
+    )]
+    pub(in super::super) enum ReceivedInvocation {
+        /// Existing preview and ordinary protected result modes.
+        Probe(ReceivedCompletion),
+        /// Historical denial with no numerical or summary projection.
+        #[cfg(test)]
+        ProtectedDeny(ReceivedProtectedDeny),
     }
 
     /// Private mode-specific state issued only after the normal-join guard.
@@ -382,6 +621,8 @@ mod reached {
     enum ReceivedState {
         /// The actual never-send operation supplied no protected history to adapt.
         Preview(Summary),
+        /// The same never-send result retains its genuine original source definition.
+        ManagedPreview(Box<crate::nts_ke_experiment::handoff::ManagedPreviewHistory>),
         /// Original owning history coupled to its exact optional model and result.
         Protected(ReceivedProtectedNumerics),
     }
@@ -391,7 +632,8 @@ mod reached {
         pub(in super::super) const fn summary(&self) -> &Summary {
             match &self.inner {
                 ReceivedState::Preview(summary) => summary,
-                ReceivedState::Protected(received) => received.history.summary(),
+                ReceivedState::ManagedPreview(history) => history.summary(),
+                ReceivedState::Protected(received) => received.history.observation().summary(),
             }
         }
 
@@ -400,12 +642,62 @@ mod reached {
             CompletionProjection { completion: self }
         }
 
+        /// Consume exactly the managed result; diagnostic counts cannot substitute.
+        /// # Errors
+        /// Refuse another completed operation selection without manufacturing history.
+        pub(in super::super) fn into_managed_preview(
+            self,
+        ) -> Result<Box<crate::nts_ke_experiment::handoff::ManagedPreviewHistory>, Failure>
+        {
+            match self.inner {
+                ReceivedState::ManagedPreview(history) => Ok(history),
+                ReceivedState::Preview(_) | ReceivedState::Protected(_) => Err(Failure::Control),
+            }
+        }
+
+        /// Project only a genuine joined source-owned protected result.
+        /// # Errors
+        /// Refuse an unmanaged or no-send result.
+        pub(in super::super) fn into_managed_protected(
+            self,
+        ) -> Result<(SourceConfigurationSnapshot, Summary), Failure> {
+            let ReceivedState::Protected(received) = self.inner else {
+                return Err(Failure::Control);
+            };
+            let JoinedProtectedHistory::Managed(managed) = received.history else {
+                return Err(Failure::Control);
+            };
+            let ManagedProtectedHistory {
+                history,
+                configuration,
+            }: ManagedProtectedHistory = *managed;
+            Ok((configuration, *history.summary()))
+        }
+
         /// Borrow only genuine protected history for actual-owner component controls.
         #[cfg(test)]
         pub(in super::super) const fn protected(&self) -> Option<&ReceivedProtectedNumerics> {
             match &self.inner {
-                ReceivedState::Preview(_) => None,
+                ReceivedState::Preview(_) | ReceivedState::ManagedPreview(_) => None,
                 ReceivedState::Protected(received) => Some(received),
+            }
+        }
+    }
+
+    /// Move the one original operation allocation through normal receiving.
+    enum JoinedProtectedHistory {
+        /// Original diagnostic protected operation.
+        Diagnostic(Box<ProtectedHistory>),
+        /// Explicit source-issued operation with an exact committed revision.
+        Managed(Box<ManagedProtectedHistory>),
+    }
+
+    impl JoinedProtectedHistory {
+        /// Borrow the original captures and packet facts for either protected mode.
+        const fn observation(&self) -> &ProtectedHistory {
+            match self {
+                Self::Diagnostic(history) => history,
+                Self::Managed(managed) => &managed.history,
             }
         }
     }
@@ -426,7 +718,7 @@ mod reached {
         /// Select only the finite state of the retained original numerical result.
         pub(in super::super) const fn numerical(&self) -> &'static str {
             match &self.completion.inner {
-                ReceivedState::Preview(_) => "not_attempted",
+                ReceivedState::Preview(_) | ReceivedState::ManagedPreview(_) => "not_attempted",
                 ReceivedState::Protected(received) => match &received.measurement {
                     Ok(_) => "nominal_software",
                     Err(_) => "unavailable",
@@ -437,7 +729,7 @@ mod reached {
         /// Return only an existing allowlisted refusal code, without error formatting.
         pub(in super::super) const fn numerical_reason(&self) -> &'static str {
             match &self.completion.inner {
-                ReceivedState::Preview(_) => "none",
+                ReceivedState::Preview(_) | ReceivedState::ManagedPreview(_) => "none",
                 ReceivedState::Protected(received) => match &received.measurement {
                     Ok(_) => "none",
                     Err(reason) => reason.as_str(),
@@ -450,7 +742,7 @@ mod reached {
     /// This retains no native owner and supplies no current freshness or eligibility.
     pub(in super::super) struct ReceivedProtectedNumerics {
         /// Same complete history moved from the actual retired worker result.
-        history: Box<ProtectedHistory>,
+        history: JoinedProtectedHistory,
         /// Exact checked declaration; no missing declaration is inferred or replaced.
         #[cfg_attr(
             not(test),
@@ -468,7 +760,7 @@ mod reached {
     impl ReceivedProtectedNumerics {
         /// Borrow unchanged genuine history; never split off or rebind its provenance.
         pub(in super::super) const fn history(&self) -> &ProtectedHistory {
-            &self.history
+            self.history.observation()
         }
 
         /// Borrow only the original optional checked declaration.
@@ -493,33 +785,50 @@ mod reached {
     pub(in super::super) fn receive_joined(
         joined: ReceivingOutcome,
         profile: Option<ExperimentalProfile>,
-    ) -> Result<ReceivedCompletion, RunFailed> {
-        match joined
+    ) -> Result<ReceivedInvocation, RunFailed> {
+        let history: JoinedProtectedHistory = match joined
             .into_normal()
             .map_err(RunFailed::Abnormal)?
             .map_err(RunFailed::Operation)?
         {
-            InvocationCompletion::Preview(summary) => Ok(ReceivedCompletion {
-                inner: ReceivedState::Preview(summary),
-            }),
-            InvocationCompletion::Protected(history) => {
-                let measurement = crate::measurement::measure(
-                    profile,
-                    history.send_before,
-                    history.send_after,
-                    history.read_return,
-                    history.receipt.accepted_at(),
-                    history.receipt.fields().header(),
-                );
-                Ok(ReceivedCompletion {
-                    inner: ReceivedState::Protected(ReceivedProtectedNumerics {
-                        history,
-                        profile,
-                        measurement,
-                    }),
-                })
+            InvocationCompletion::Preview(summary) => {
+                return Ok(ReceivedInvocation::Probe(ReceivedCompletion {
+                    inner: ReceivedState::Preview(summary),
+                }));
             }
-        }
+            InvocationCompletion::ManagedPreview(history) => {
+                return Ok(ReceivedInvocation::Probe(ReceivedCompletion {
+                    inner: ReceivedState::ManagedPreview(history),
+                }));
+            }
+            InvocationCompletion::Protected(history) => JoinedProtectedHistory::Diagnostic(history),
+            InvocationCompletion::ManagedProtected(history) => {
+                JoinedProtectedHistory::Managed(history)
+            }
+            #[cfg(test)]
+            InvocationCompletion::ManagedProtectedDeny(history) => {
+                return Ok(ReceivedInvocation::ProtectedDeny(ReceivedProtectedDeny {
+                    history,
+                }));
+            }
+        };
+        let original: &ProtectedHistory = history.observation();
+        let measurement: Result<ExperimentalMeasurement, MeasurementRefusal> =
+            crate::measurement::measure(
+                profile,
+                original.send_before,
+                original.send_after,
+                original.read_return,
+                original.receipt.accepted_at(),
+                original.receipt.fields().header(),
+            );
+        Ok(ReceivedInvocation::Probe(ReceivedCompletion {
+            inner: ReceivedState::Protected(ReceivedProtectedNumerics {
+                history,
+                profile,
+                measurement,
+            }),
+        }))
     }
 
     impl ProtectedHistory {
@@ -568,15 +877,44 @@ mod reached {
     impl<'control> ProtectedCompletion<'control> {
         /// Inspect historical component facts without duplicating commit custody.
         #[cfg(test)]
-        pub(super) const fn history(&self) -> &OperationCompletion<'control> {
-            &self.operation
+        pub(super) const fn history(&self) -> &OperationHistory<'control> {
+            &self.operation.history
+        }
+
+        /// Borrow the exact backend identity retained by the submission.
+        #[cfg(test)]
+        pub(super) const fn identity(&self) -> &Arc<()> {
+            self.operation.submission.identity()
+        }
+
+        /// Observe the existing budget without letting the fixture replace it.
+        #[cfg(test)]
+        pub(super) const fn remaining_attempts(&self) -> usize {
+            self.attempts.remaining()
+        }
+
+        /// Commit the first genuine retired protected request for a private successor.
+        /// # Errors
+        /// Preserve the shared final receipt and currentness refusals.
+        #[cfg(test)]
+        pub(in super::super) fn commit_for_successor(
+            self,
+            association: &mut AssociationOwner<'_>,
+        ) -> Result<(), Failure> {
+            let RetiredOperation {
+                history: _,
+                reply,
+                attempts,
+            }: RetiredOperation<'_> = self.into_retired();
+            association
+                .commit_retired_reply(reply, RetiredCommit::FirstRequest(attempts))
+                .map(drop)
         }
 
         /// Consume this retired operation at its actual current receiving owner.
         ///
-        /// Exclusive owner borrowing spans validation and the final commit. There
-        /// is no callback, await or retained lock between the two fresh guards.
-        /// A late stop/expiry still wins the existing final Control decision.
+        /// The original Control serializes final validation and cookie transfer.
+        /// A stop or expiry before the decision leaves the live pool intact.
         /// # Errors
         /// Refuse foreign/stale owner, later charged work, stop or expiry. Refusal
         /// creates no fact and restores no request, cookie, deadline or work credit.
@@ -584,11 +922,44 @@ mod reached {
             self,
             association: &mut AssociationOwner<'_>,
         ) -> Result<CommittedProtected<'control>, Failure> {
-            association.check_completed(self.operation.control, &self.operation.receipt)?;
-            self.operation.control.commit()?;
+            let RetiredOperation {
+                history,
+                reply,
+                #[cfg(test)]
+                    attempts: _,
+            }: RetiredOperation<'control> = self.into_retired();
+            let configuration: Option<SourceConfigurationSnapshot> = association
+                .protected_endpoint()?
+                .map(|lease: &ProtectedEndpoint| lease.configuration().ok_or(Failure::Control))
+                .transpose()?
+                .cloned();
+            let identity: Arc<()> =
+                association.commit_retired_reply(reply, RetiredCommit::Terminal)?;
             Ok(CommittedProtected {
-                operation: self.operation,
+                operation: history,
+                identity,
+                configuration,
             })
+        }
+        /// Only completed socket/runtime retirement permits making the ledger transfer.
+        fn into_retired(self) -> RetiredOperation<'control> {
+            let OperationCompletion {
+                history,
+                replacement,
+                submission,
+            }: OperationCompletion<'control> = self.operation;
+            let reply: RetiredReply<'control> = RetiredReply {
+                control: history.control,
+                receipt: history.receipt,
+                replacement,
+                submission,
+            };
+            RetiredOperation {
+                history,
+                reply,
+                #[cfg(test)]
+                attempts: self.attempts,
+            }
         }
     }
 
@@ -598,7 +969,7 @@ mod reached {
         /// check follows commit, and later stop cannot rewrite history.
         #[cfg(test)]
         pub(in super::super) fn into_summary(self) -> Summary {
-            let OperationCompletion {
+            let OperationHistory {
                 control,
                 receipt,
                 send_before,
@@ -606,7 +977,6 @@ mod reached {
                 read_return,
                 local,
                 remote,
-                identity,
                 packet_bytes,
                 cookies,
                 cookie_bytes,
@@ -627,7 +997,7 @@ mod reached {
                 read_return,
                 local,
                 remote,
-                identity,
+                self.identity,
             ));
             summary
         }
@@ -642,9 +1012,9 @@ mod reached {
         pub(in super::super) fn into_history(
             self,
             receiving: &BoundProtectedReceiver<'_, '_, '_, '_>,
-        ) -> Result<ProtectedHistory, Failure> {
+        ) -> Result<InvocationCompletion, Failure> {
             let (run_context, population) = receiving.historical_context(self.operation.control)?;
-            let OperationCompletion {
+            let OperationHistory {
                 control: _,
                 receipt,
                 send_before,
@@ -652,13 +1022,12 @@ mod reached {
                 read_return,
                 local,
                 remote,
-                identity,
                 packet_bytes,
                 cookies,
                 cookie_bytes,
             } = self.operation;
             let (initial_cookies, initial_cookie_bytes) = population.counts();
-            Ok(ProtectedHistory {
+            let history: ProtectedHistory = ProtectedHistory {
                 summary: Summary {
                     cookies: initial_cookies,
                     cookie_bytes: initial_cookie_bytes,
@@ -672,8 +1041,17 @@ mod reached {
                 read_return,
                 local,
                 remote,
-                identity,
+                identity: self.identity,
                 run_context,
+            };
+            Ok(match self.configuration {
+                Some(configuration) => {
+                    InvocationCompletion::ManagedProtected(Box::new(ManagedProtectedHistory {
+                        history,
+                        configuration,
+                    }))
+                }
+                None => InvocationCompletion::Protected(Box::new(history)),
             })
         }
     }
@@ -710,47 +1088,184 @@ mod reached {
         }
     }
 
-    /// Drive the same bounded packet owner with either concrete backend.
+    /// Exercise the ordinary fresh driver allowance in direct component tests.
     /// # Errors
-    /// Retain original adapter, currentness and packet refusals; never retry a send.
+    /// Preserve actual request, adapter and receive refusals.
+    #[cfg(test)]
     pub(super) async fn operation<'control>(
         association: &mut AssociationOwner<'_>,
         control: &'control Control,
         fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
         backend: &mut Backend,
     ) -> Result<OperationCompletion<'control>, Failure> {
+        association.check_fresh_exchange()?;
+        let mut attempts: Attempts = Attempts(ATTEMPTS);
+        operation_with_attempts(
+            association,
+            control,
+            fill,
+            backend,
+            &mut attempts,
+            ReceiveMode::Ordinary,
+        )
+        .await
+        .and_then(SelectedOperation::into_ordinary)
+    }
+
+    /// One actual datagram and its original adapter/capture observations.
+    struct ObservedReply<'a> {
+        /// Original selected bytes, excluding unused buffer capacity.
+        packet: &'a [u8],
+        /// Peer returned by the actual selector.
+        remote: SocketAddr,
+        /// Exact concrete socket/back-end identity.
+        backend: &'a Backend,
+        /// Capture preceding the actual synchronous send.
+        send_before: SoftwareClock,
+        /// Capture following the same synchronous send.
+        send_after: SoftwareClock,
+        /// Capture before any interpretation of the selected packet.
+        read_return: SoftwareClock,
+        /// Local packet extent, independent of either received length or peer fields.
+        packet_bytes: usize,
+    }
+
+    /// The caller selects whether the already-authenticated scripted leg can return a control.
+    #[derive(Clone, Copy)]
+    enum ReceiveMode {
+        /// Existing ordinary one-shot and component paths.
+        Ordinary,
+        /// The closed scripted successor permits both admitted dispositions.
+        #[cfg(test)]
+        ProtectedSuccessor,
+    }
+
+    /// One concrete async driver result shared by both receive modes.
+    #[cfg_attr(
+        test,
+        expect(
+            clippy::large_enum_variant,
+            reason = "keep the bounded selected reply and transfer inline before resource retirement"
+        )
+    )]
+    enum SelectedOperation<'control> {
+        /// Ordinary timing and replacement obtained through the original ledger.
+        Ordinary(OperationCompletion<'control>),
+        /// The charged control evidence cannot produce ordinary reply history.
+        #[cfg(test)]
+        Deny(StagedProtectedDeny<'control>),
+    }
+
+    #[cfg(test)]
+    impl<'control> SelectedOperation<'control> {
+        /// Preserve the existing ordinary result type at its callers.
+        /// # Errors
+        /// Refuse a closed control disposition if an ordinary caller receives one.
+        fn into_ordinary(self) -> Result<OperationCompletion<'control>, Failure> {
+            match self {
+                Self::Ordinary(operation) => Ok(operation),
+                Self::Deny(_) => Err(Failure::Control),
+            }
+        }
+    }
+
+    /// Admit one charged disposition through the selected path in the same ledger.
+    /// # Errors
+    /// Preserve original endpoint, identity, budget, time and authentication refusals.
+    fn stage_observed_reply<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        reply: &ObservedReply<'_>,
+        mode: ReceiveMode,
+    ) -> Result<SelectedOperation<'control>, Failure> {
+        let arrival: Instant = reply.read_return.monotonic();
+        let identity: &Arc<()> = &reply.backend.identity;
+        let (receipt, replacement, submission): (Receipt, CookieReplacement, PendingSubmission) =
+            match mode {
+                ReceiveMode::Ordinary => association.stage_observed_reply(
+                    reply.packet,
+                    reply.remote,
+                    arrival,
+                    identity,
+                )?,
+                #[cfg(test)]
+                ReceiveMode::ProtectedSuccessor => match association.stage_protected_successor(
+                    control,
+                    reply.packet,
+                    reply.remote,
+                    arrival,
+                    identity,
+                )? {
+                    StagedProtectedSuccessor::Ordinary(receipt, replacement, submission) => {
+                        (receipt, replacement, submission)
+                    }
+                    StagedProtectedSuccessor::Deny(staged) => {
+                        return Ok(SelectedOperation::Deny(staged));
+                    }
+                },
+            };
+        let (cookies, cookie_bytes): (usize, usize) = replacement.population();
+        Ok(SelectedOperation::Ordinary(OperationCompletion {
+            history: OperationHistory {
+                control,
+                receipt,
+                send_before: reply.send_before,
+                send_after: reply.send_after,
+                read_return: reply.read_return,
+                local: reply.backend.local,
+                remote: reply.backend.remote,
+                packet_bytes: reply.packet_bytes,
+                cookies,
+                cookie_bytes,
+            },
+            replacement,
+            submission,
+        }))
+    }
+
+    /// Drive the same bounded packet owner with either concrete backend.
+    /// # Errors
+    /// Retain original adapter, currentness and packet refusals; never retry a send.
+    async fn operation_with_attempts<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+        backend: &mut Backend,
+        attempts: &mut Attempts,
+        mode: ReceiveMode,
+    ) -> Result<SelectedOperation<'control>, Failure> {
         if association.check_context(control)? != backend.remote {
             return Err(Failure::Endpoint);
         }
-        let ticket = association.reserve(RequestInput::Observed)?;
+        let ticket: Ticket<'_> = association.reserve(RequestInput::Observed)?;
         association.prepare_observed(&ticket, fill)?;
-        let mut attempts = Attempts(ATTEMPTS);
-        wait(backend, control, Interest::Write, &mut attempts).await?;
-        let mut submission_failure = None;
-        let submitted = association.invoke_sender(ticket, |packet, remote| {
-            match backend.send_guarded(control, packet, remote) {
-                Ok(outcome) => outcome,
-                Err(error) => {
-                    submission_failure = Some(error);
-                    SendOutcome::Unknown
-                }
-            }
-        });
-        if let Some(error) = submission_failure {
-            return Err(error);
-        }
-        submitted?;
+        drive_prepared(association, control, backend, attempts, ticket, mode).await
+    }
+
+    /// Send once and run the same concrete readiness/receive future in both modes.
+    /// # Errors
+    /// Retain original readiness, capture, completion and selected packet refusals.
+    async fn drive_prepared<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        backend: &mut Backend,
+        attempts: &mut Attempts,
+        ticket: Ticket<'_>,
+        mode: ReceiveMode,
+    ) -> Result<SelectedOperation<'control>, Failure> {
+        wait(backend, control, Interest::Write, attempts).await?;
+        backend.send_prepared(association, ticket, control)?;
         let (send_before, send_after, packet_bytes) =
             backend.send.ok_or(failed(DatagramError::Capture))?;
         check_capture_order(send_before.monotonic_after(), send_after.monotonic())?;
         let mut buffer = Zeroizing::new([0; RECEIVE_BYTES]);
-        wait(backend, control, Interest::Read, &mut attempts).await?;
+        wait(backend, control, Interest::Read, attempts).await?;
         loop {
             attempts.spend()?;
             drop(control.published_guard()?);
             let (read, observed) = backend.receive(&mut buffer);
             match read {
-                Read::WouldBlock => wait(backend, control, Interest::Read, &mut attempts).await?,
+                Read::WouldBlock => wait(backend, control, Interest::Read, attempts).await?,
                 Read::Failed(kind) => return Err(failed(DatagramError::Receive(kind))),
                 Read::ConsumedUnknown => {
                     association.charge_consumed_unknown()?;
@@ -759,30 +1274,27 @@ mod reached {
                 Read::Datagram(length, remote) => {
                     check_capture_order(send_after.monotonic_after(), observed.monotonic())?;
                     let packet = buffer.get(..length).ok_or(failed(DatagramError::Capture))?;
-                    match association.receive_reply(packet, remote, observed.monotonic()) {
-                        Ok(receipt) => {
-                            let (cookies, cookie_bytes) = association.cookie_population()?;
-                            return Ok(OperationCompletion {
-                                control,
-                                receipt,
-                                send_before,
-                                send_after,
-                                read_return: observed,
-                                local: backend.local,
-                                remote: backend.remote,
-                                identity: Arc::clone(&backend.identity),
-                                packet_bytes,
-                                cookies,
-                                cookie_bytes,
-                            });
-                        }
+                    let reply: ObservedReply<'_> = ObservedReply {
+                        packet,
+                        remote,
+                        backend,
+                        send_before,
+                        send_after,
+                        read_return: observed,
+                        packet_bytes,
+                    };
+                    match stage_observed_reply(association, control, &reply, mode) {
+                        Ok(selected) => return Ok(selected),
                         Err(error) => {
                             if !matches!(association.status().phase, RequestPhase::Pending) {
                                 return Err(error);
                             }
                             if matches!(
                                 error,
-                                Failure::Cancelled | Failure::Deadline | Failure::Control
+                                Failure::Cancelled
+                                    | Failure::Deadline
+                                    | Failure::Control
+                                    | Failure::SourcePolicy(_)
                             ) {
                                 return Err(error);
                             }
@@ -820,6 +1332,97 @@ mod reached {
         fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
         make_backend: impl FnOnce(SocketAddr) -> Result<Backend, Failure>,
     ) -> Result<ProtectedCompletion<'control>, Failure> {
+        #[cfg(test)]
+        association.check_fresh_exchange()?;
+        exchange_with_attempts(association, control, fill, make_backend, Attempts(ATTEMPTS))
+    }
+
+    /// Exercise a second genuine retired request under the original association.
+    /// # Errors
+    /// Refuse missing or stale authentication before any new backend or entropy.
+    #[cfg(test)]
+    pub(super) fn exchange_successor_with<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+        make_backend: impl FnOnce(SocketAddr) -> Result<Backend, Failure>,
+    ) -> Result<ProtectedCompletion<'control>, Failure> {
+        let attempts: Attempts = association.take_authenticated_successor(control)?;
+        exchange_with_attempts(association, control, fill, make_backend, attempts)
+    }
+
+    /// Retire both resources while retaining only the completed packet and its credits.
+    /// # Errors
+    /// Preserve nested driver, context, setup and request refusal.
+    fn exchange_with_attempts<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+        make_backend: impl FnOnce(SocketAddr) -> Result<Backend, Failure>,
+        mut attempts: Attempts,
+    ) -> Result<ProtectedCompletion<'control>, Failure> {
+        let selected: SelectedOperation<'control> = retire_operation(
+            association,
+            control,
+            fill,
+            make_backend,
+            &mut attempts,
+            ReceiveMode::Ordinary,
+        )?;
+        #[cfg(test)]
+        let operation: OperationCompletion<'control> = selected.into_ordinary()?;
+        #[cfg(not(test))]
+        let SelectedOperation::Ordinary(operation) = selected;
+        Ok(ProtectedCompletion {
+            operation,
+            #[cfg(test)]
+            attempts,
+        })
+    }
+
+    /// Drive only the closed Script backend for either private successor disposition.
+    /// # Errors
+    /// Preserve original continuation, adapter, charged receive and policy refusals.
+    #[cfg(test)]
+    pub(super) fn exchange_successor_mixed<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+        make_script: impl FnOnce(SocketAddr) -> Script,
+    ) -> Result<RetiredProtectedSuccessor<'control>, Failure> {
+        let mut attempts: Attempts = association.take_authenticated_successor(control)?;
+        let selected: SelectedOperation<'control> = retire_operation(
+            association,
+            control,
+            fill,
+            |remote: SocketAddr| Ok(super::tests::backend(remote, make_script(remote))),
+            &mut attempts,
+            ReceiveMode::ProtectedSuccessor,
+        )?;
+        match selected {
+            SelectedOperation::Ordinary(operation) => {
+                Ok(RetiredProtectedSuccessor::Ordinary(ProtectedCompletion {
+                    operation,
+                    attempts,
+                }))
+            }
+            SelectedOperation::Deny(staged) => Ok(RetiredProtectedSuccessor::Deny(
+                RetiredProtectedDeny(staged),
+            )),
+        }
+    }
+
+    /// Own the actual adapter/runtime until this selected outcome can detach.
+    /// # Errors
+    /// Refuse nested runtime, invalid association, setup, send or receive work.
+    fn retire_operation<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+        make_backend: impl FnOnce(SocketAddr) -> Result<Backend, Failure>,
+        attempts: &mut Attempts,
+        mode: ReceiveMode,
+    ) -> Result<SelectedOperation<'control>, Failure> {
         if tokio::runtime::Handle::try_current().is_ok() {
             return Err(failed(DatagramError::EnteredRuntime));
         }
@@ -832,12 +1435,94 @@ mod reached {
             .map_err(|error| failed(DatagramError::Runtime(error.kind())))?;
         let result = runtime.block_on(async {
             let mut backend = make_backend(remote)?;
-            let completion = operation(association, control, fill, &mut backend).await;
+            let completion: Result<SelectedOperation<'control>, Failure> =
+                operation_with_attempts(association, control, fill, &mut backend, attempts, mode)
+                    .await;
             drop(backend);
             completion
         });
         drop(runtime);
-        result.map(|operation| ProtectedCompletion { operation })
+        result
+    }
+
+    /// Cover each bound-address refusal independently for both address families.
+    /// # Panics
+    /// Fail if any single invalid coordinate is accepted or the valid pair is refused.
+    #[cfg(test)]
+    #[test]
+    fn bound_endpoint_check_refuses_each_invalid_coordinate() {
+        use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+
+        for (loopback, foreign) in [
+            (
+                IpAddr::V4(Ipv4Addr::LOCALHOST),
+                IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1)),
+            ),
+            (
+                IpAddr::V6(Ipv6Addr::LOCALHOST),
+                IpAddr::V6(Ipv6Addr::new(0x2001, 0x0db8, 0, 0, 0, 0, 0, 1)),
+            ),
+        ] {
+            let local: SocketAddr = SocketAddr::new(loopback, 49000);
+            let remote: SocketAddr = SocketAddr::new(loopback, 4460);
+            assert_eq!(check_bound_endpoints(local, remote), Ok(()));
+            assert_eq!(
+                check_bound_endpoints(SocketAddr::new(foreign, local.port()), remote),
+                Err(Failure::Endpoint),
+            );
+            assert_eq!(
+                check_bound_endpoints(SocketAddr::new(loopback, 0), remote),
+                Err(Failure::Endpoint),
+            );
+            assert_eq!(
+                check_bound_endpoints(local, SocketAddr::new(foreign, remote.port())),
+                Err(Failure::Endpoint),
+            );
+        }
+    }
+
+    /// Exercise the actual IPv4 loopback binding, registration and backend drop.
+    /// # Errors
+    /// Preserve runtime setup, native binding, endpoint observation and readiness failures.
+    /// # Panics
+    /// Fail if the live socket and backend disagree, the raw remote is admitted,
+    /// or the backend's identity is retained after its owner is dropped.
+    #[cfg(all(test, windows))]
+    #[test]
+    fn native_ipv4_loopback_bind_refuses_foreign_remote_and_retires_owner() -> Result<(), Failure> {
+        use std::sync::Weak;
+        use std::time::Duration;
+
+        let loopback: SocketAddr = SocketAddr::from(([127, 0, 0, 1], 4460));
+        let foreign: SocketAddr = SocketAddr::from(([0, 0, 0, 0], 4460));
+        let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_io()
+            .enable_time()
+            .build()
+            .map_err(|error| failed(DatagramError::Runtime(error.kind())))?;
+        runtime.block_on(async {
+            let backend: Backend = Backend::bind(loopback)?;
+            let Io::Native(socket) = &backend.io else {
+                return Err(Failure::Control);
+            };
+            let registered: SocketAddr = socket
+                .local_addr()
+                .map_err(|error| failed(DatagramError::Local(error.kind())))?;
+            assert_eq!(registered.ip(), loopback.ip());
+            assert_ne!(registered.port(), 0);
+            assert_eq!((backend.local, backend.remote), (registered, loopback));
+            tokio::time::timeout(Duration::from_secs(2), socket.writable())
+                .await
+                .map_err(|_| Failure::Deadline)?
+                .map_err(|error| failed(DatagramError::Readiness(error.kind())))?;
+            assert!(backend.send.is_none());
+            assert!(matches!(Backend::bind(foreign), Err(Failure::Endpoint)));
+            let identity: Weak<()> = Arc::downgrade(&backend.identity);
+            assert_eq!(identity.strong_count(), 1);
+            drop(backend);
+            assert_eq!(identity.strong_count(), 0);
+            Ok(())
+        })
     }
 
     #[cfg(test)]
@@ -847,10 +1532,14 @@ mod reached {
 #[cfg(windows)]
 pub(super) use reached::exchange;
 
+#[cfg(test)]
+pub(super) use reached::{Attempts, RetiredProtectedDeny, RetiredProtectedSuccessor};
+
 #[cfg(any(windows, test))]
 pub(super) use reached::{
-    CommittedProtected, CompletionProjection, ProtectedCompletion, ProtectedHistory,
-    ReceivedCompletion, receive_joined,
+    CommittedProtected, CompletionProjection, GuardedSender, ManagedProtectedHistory,
+    ProtectedCompletion, ProtectedHistory, ReceivedCompletion, ReceivedInvocation, RetiredReply,
+    RetiredReplyParts, receive_joined,
 };
 
 #[cfg(test)]

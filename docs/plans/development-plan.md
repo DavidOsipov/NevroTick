@@ -40,16 +40,17 @@ records what remains and how each guarantee closes. Completed helpers and green
 tooling do not complete their parent algorithm; this amendment schedules no
 pre-V1 formal work and changes no current product acceptance gate.
 
-**Immediate priority:** continue the seven-owner changed-source Core qualification
-in [section 7](#7-next-executable-task-for-a-development-agent), preserving the
-implemented invocation stop/completion and checked-receiver contracts. David
-authorizes the required resources and bounded main-Windows tests. The existing
-[Engine nested-worker child](../../tasks/engine-transport-pilot.md#nested-worker-native-custody-child--14-november-2026)
-now passes all 235 scripted KE cases, including the three formerly held tests,
-with exact process custody and completed cleanup. Real TLS/CNG/UDP, Core-positive
-production suppliers and broader native qualification remain separate. Other
-workstreams retain their owners and prerequisites; production defaults and
-formal/fuzz/storage/UI holds remain unchanged.
+**Immediate priority:** continue the source-owned KE Preview contract in
+[section 7](#7-next-executable-task-for-a-development-agent) after the completed
+five-file GNU qualification of the installed numeric-source configuration.
+Preserve the installed revision at the final guards and original completion
+receivers. The earlier seven-owner Core fixture checkpoint retains its scoped
+result. David authorizes the required resources and bounded main-Windows tests.
+The [Engine nested-worker child](../../tasks/engine-transport-pilot.md#nested-worker-native-custody-child--14-november-2026)
+passes 235 scripted KE cases with process custody and completed cleanup on its
+recorded candidate. Real TLS/CNG/UDP, production Core suppliers and broader
+native qualification remain open. Other workstreams retain their owners and
+prerequisites, including the formal, fuzz, storage and UI holds.
 
 **Earlier completed Core checkpoint:** the [frequency-request/achieved-baseline completion ledger](../../TOOLING.md#baseline-feedback-final-qualification) records 557 ordinary/557 optimized tests, 103 doctests, selected contracts and all five line gates. Its complete 1,145-variant union contains 701 caught, 435 compiler-unviable and nine reviewed equivalent misses, with no timeout or unresolved survivor and no added kills for equivalents. The [existing Core task](../../tasks/s1.3-source-selection-readiness.md#baseline-feedback-qualification-completion-routing--10-november-2026) retains frozen routing and source-specific evidence. These selected Linux fixture gates are complete; full S1.4/P1 and production/native qualification remain open.
 
@@ -1074,7 +1075,7 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
-**Qualified source child — 17 November 2026:**
+**Published qualified source child — 17 November 2026, `238b9ae`:**
 [Managed logical-source provenance](../../tasks/engine-transport-pilot.md#managed-logical-source-provenance--implementation-contract--17-november-2026)
 continues S2.1/W11-W01 from signed `72b4ae5`. The mapping supplier contract is
 settled; a genuine finite-error/invalidation issuer is still absent. Preserve
@@ -1105,16 +1106,103 @@ logging owner and future delivery exits; it does not reschedule this Core/Engine
 checkpoint. Metric preparation uses the separately bounded, reviewed v2 child;
 the earlier unarmed preparation clock and incomplete disposition remain recorded.
 
-**Next bounded product child:** freeze the actual managed configuration/association
-revision supplier contract in the existing S2.1 Engine task, CHECK-6/11/21/27.
-Identify its genuine install/replace owner and current revision before acquisition,
-carry that relationship to final send/reply guards and independent receiving,
-and preserve valid parallel address candidates. Replacement must retain historical
-completed facts, charged work and all applicable KoD restrictions/floors. Source
-identity and restriction epochs supply different facts. Implement only the settled
-bounded owner contract; do not invent a clock-error/date/trust supplier or add
-another generic clock wrapper. Genuine mapping/calibration/invalidation and
-positive production Core admission remain separate prerequisites.
+**Current bounded product child:** the [installed numeric-source configuration
+contract](../../tasks/engine-transport-pilot.md#installed-numeric-source-configuration--implementation-contract--17-november-2026)
+is frozen under S2.1/W11-W01, CHECK-6/11/21/27. Source implementation adds explicit
+authority-owned install/expected-snapshot replacement of a checked, complete
+three-endpoint laboratory definition. Actual managed producers capture its revision;
+final guarded effects and original receiving owners enforce that relationship.
+Parallel sessions and reordered/subset address rounds share it. Replacement
+preserves committed history, charged work and all KoD records/floors. Source,
+configuration and restriction revisions remain distinct. These new bytes have
+no inherited `744f6ea2…` metric pass. The first development
+attempt stopped before compilation at the post-snapshot disk floor, with zero
+lanes executed and clean observer closure. Reclaim obsolete artifacts before retry;
+retain the original clock and failure. Public metric campaigns stay closed.
+Named-source/trust/calendar and genuine association/key-generation integration,
+mapping/calibration/invalidation and positive production Core admission remain
+separate prerequisites; this laboratory definition replaces none of them.
+
+**Development closeout:** the integrated606-input product `23c91549…` now passes
+all13 lanes:267 default/501 EP1 cases in each ordinary/optimized mode,89 doctests
+per graph, GNU/MSVC compiler/Clippy checks and GNU rustdoc. The ten focused
+controls also passed on their earlier pre-lint candidate. Actual current full
+selections include all ten. Original disk, import and lint failures remain
+recorded. A separately reviewed900-second cumulative extension kept the original
+clock, thresholds and resource guards; the original3600-second allowance remains
+incomplete. The extension's full attempt4 passed with joined observer/custody.
+The existing source-policy role now admits the complete47-helper closure,
+267/501/89 raw identities and actual producer/budget lineage:179 reader controls,
+real819-input physical admission and bootstrap strict policy pass. A demonstrated
+current-source legacy-format downgrade was repaired through behavioral RED and
+GREEN; exact clock arithmetic remains strict and the original closeout metadata
+is retained alongside its coherent derived record. Current external compiler
+checks pass all five cases. All 267 instrumented tests ran and the five line
+gates passed (95.31% to 100%). Independent review reconciled all 797 generated
+descriptors. [All five cohorts completed](../../tasks/engine-transport-pilot.md#current-configuration-mutation--session-gate-passed).
+Session and address round passed. Source policy, Library and Series retain their
+raw failures. Independent review identified six supported equivalence candidates
+and three source-policy test gaps. The [setup receiver regression](../../tasks/engine-transport-pilot.md#setup-receiver-regression--18-november-2026)
+caught the three survivors and the previously caught guard variant. The
+[final selected GNU checkpoint](../../tasks/engine-transport-pilot.md#installed-configuration--final-selected-gnu-checkpoint-18-november-2026)
+on `0910c474…` passes all 13 development lanes, current reader admission,
+five 90% line gates and five 95% mutation gates. The mutation reconciliation
+uses 419 retained causal witnesses and four current fault executions, with
+368 compiler-unviable variants and six equivalents. Keep original raw failure
+receipts and closed public campaign admission. The
+[source-owned KE Preview development checkpoint](../../tasks/engine-transport-pilot.md#source-owned-ke-preview--development-checkpoint--18-november-2026)
+now passes its 14 selected GNU/MSVC compiler, lint and host test lanes, including
+the 64-history issuer model and actual worker lifecycle checks. The independent
+[W11-W01 cutoff correction](../../tasks/engine-transport-pilot.md#unmanaged-send-cutoff--w11-w01-boundary-verification)
+withholds the real unmanaged send when the completed software bracket reaches
+its deadline. The earlier lower T1 and late return facts remain historical.
+The combined source passes all 14 selected lanes with 270 default and 517 EP1
+cases per mode. The next [protected-send and Preview boundary checkpoint](../../tasks/engine-transport-pilot.md#protected-send-capture-and-preview-boundary-qualification--18-november-2026)
+preserves that source behavior and rejects a diagnosed reversed protected-send
+bracket before the adapter. Current EP1 re-admission binds 519 ordinary cases
+and 90 doctests. Thirteen GNU line gates and the selected Preview-target
+mutation gate pass for that source. The
+[one-guard protected send checkpoint](../../tasks/engine-transport-pilot.md#protected-send-under-one-control-guard--18-november-2026)
+now shares the original Control guard across cookie archive and actual send.
+All 14 development lanes and 13 GNU line gates pass on the newer candidate.
+Reconcile current per-file mutation owners against the 680-descriptor
+catalogue and prepare the explicit source issuer and current endpoint lease.
+Platform timestamp suppliers and native/production gates remain open.
+The [expanded Core and Engine verification checkpoint](../../tasks/engine-transport-pilot.md#core-properties-and-engine-guard-sensitivity--18-november-2026)
+also retains exact adaptive/Step properties, a scripted guard sensitivity
+control and 373 reader cases. The
+[retired protected reply child](../../tasks/engine-transport-pilot.md#retired-protected-reply-cookie-commit--18-november-2026)
+now retains replacement custody through runtime/socket retirement and checks
+the original receipt and current authority before publishing the pool.
+Continue selected-owner mutation work and the explicit managed source issuer
+and endpoint lease. Keep the platform/native and production boundaries.
+
+The [exact-eight ledger controls](../../tasks/engine-transport-pilot.md#exact-eight-cookie-boundary-controls--18-november-2026) drive the two capacity
+bounds identified by the first complete 183-variant cohort. Re-execute
+the selected ledger campaign under its exact current candidate. The
+[selected GNU ledger checkpoint](../../tasks/engine-transport-pilot.md#selected-gnu-ledger-mutation-qualification--18-november-2026) now catches all four
+exact-eight variants. Exact admission of the other ten as equivalent
+passes the 95% selected ledger gate while retaining both raw failures.
+The [managed protected endpoint lease](../../tasks/engine-transport-pilot.md#managed-protected-endpoint-lease--development-and-line-checkpoint--18-november-2026)
+now passes the combined development lane and selected GNU line checkpoint.
+The issued revision and exact negotiated endpoint bound the send and the
+retired cookie commit, including Stop and independent epoch changes.
+The [Known Step interval control](../../tasks/s1.3-source-selection-readiness.md#known-step-noninteger-active-interval-control--18-november-2026)
+exercises exact rounding through the same checked Core owner.
+The [GNU association campaign](../../tasks/engine-transport-pilot.md#selected-gnu-association-mutation--18-november-2026)
+passes its selected gate on the managed-lease predecessor. The
+[pending-request ownership successor](../../tasks/engine-transport-pilot.md#protected-pending-request-ownership--18-november-2026)
+binds the actual sender to the outstanding reply and passes Engine development,
+fresh line gates and scripted Windows verification. Continue current mutation
+owners and the [retired first-request successor](../../tasks/engine-transport-pilot.md#same-association-authenticated-successor--18-november-2026).
+The scripted request-level commit earns prior-authentication evidence
+and carries one original allowance. The [retired DENY decision](../../tasks/engine-transport-pilot.md#retired-protected-deny-decision--18-november-2026)
+charges each receive, preserves ordinary reply handling and commits exact
+source and endpoint restrictions under the original Control. The
+[joined worker fixture](../../tasks/engine-transport-pilot.md#joined-protected-deny-and-datagram-observation--18-november-2026)
+preserves the historical decision through later Stop, normal join and
+abnormal retirement. Refresh datagram mutation qualification. Genuine
+TLS/CNG/UDP, date, scale, trust and quality suppliers retain their gates.
 
 **Published preceding product child — 17 November 2026:**
 [Managed restriction visibility](../../tasks/engine-transport-pilot.md#consumer-boundary-reinforcement--17-november-2026)
@@ -1130,12 +1218,11 @@ and47-session cohorts now pass unchanged95% gates with independent classificatio
 The other three owners reuse their original resolved gates through the exact
 489-descriptor source/caller/span bridge; no current all-five E0 gate is claimed.
 Preserve all old failures and scores, closed public campaigns,
-native/production prerequisites and the post-V1 formal deferral. This is the
-current source child; published `305a855` remains its baseline until publication.
-Next complete its staged-tree/signing publication, then resume the existing
-S2.1/W11-W01 capture and mapping-issuer contract for actual Engine-to-Core
-integration. Genuine date/scale/trust/quality suppliers remain necessary for
-positive production admission; retain the separate remaining KE/native gates.
+native/production prerequisites and the post-V1 formal deferral. This child
+was published as `72b4ae5` after `305a855`. Its successor is the managed
+provenance and installed configuration work above. Genuine date, scale, trust
+and quality suppliers remain necessary for production Engine-to-Core admission.
+The separate KE and native gates remain open.
 
 **Active Engine continuation — 17 November 2026:**
 [Selected-reply rejection accounting](../../tasks/engine-transport-pilot.md#selected-reply-rejection-accounting--17-november-2026)

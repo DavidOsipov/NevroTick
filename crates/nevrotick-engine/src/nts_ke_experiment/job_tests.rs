@@ -1297,3 +1297,92 @@ fn synchronous_facade_collection_contention_retains_unconfirmed_actual_job() -> 
     assert!(matches!(ADMISSION.claim(), Err(Failure::ProcessUsed)));
     Ok(())
 }
+
+/// S2.2 CHECK-6/9/21/25/27: replace genuine issuance after preparation, before startup.
+/// The real worker must retire the stale Config without entering either effect factory
+/// or spending its process claim. This sequential seam exercises no native provider.
+/// # Errors
+/// Preserve actual issuer, preparation, submission, join and healthy claim failures.
+/// # Panics
+/// Reject wrong failure identity, lost retirement or provider/producer/admission effects.
+#[test]
+fn job_managed_preview_replacement_before_startup_preserves_unused_admission() -> Result<(), Failure>
+{
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    static PROVIDERS: AtomicUsize = AtomicUsize::new(0);
+    static PRODUCERS: AtomicUsize = AtomicUsize::new(0);
+
+    /// Observe unexpected factory entry while keeping any accepted work inert.
+    /// # Errors
+    /// Preserve the existing component factory's actual fallible signature.
+    fn observed_provider(claim: ProcessClaim<'_>) -> Result<ProviderScope<'_>, Failure> {
+        PROVIDERS.fetch_add(1, Ordering::AcqRel);
+        component_provider(claim)
+    }
+
+    let limits: crate::SourcePolicyLimits =
+        crate::SourcePolicyLimits::new(1, 1, Duration::from_millis(1), Duration::from_millis(4))
+            .map_err(Failure::SourcePolicy)?;
+    let mut authority: crate::SourcePolicyAuthority =
+        crate::source_policy::isolated_authority(limits).map_err(Failure::SourcePolicy)?;
+    let source: crate::SourceHandle = authority.source(0).map_err(Failure::SourcePolicy)?;
+    let peer: std::net::SocketAddr = std::net::SocketAddr::from(([127, 0, 0, 1], 123));
+    let target: crate::KePreviewTarget = crate::KePreviewTarget::new(
+        std::net::SocketAddr::from(([127, 0, 0, 1], 4460)),
+        "localhost",
+    )
+    .map_err(|_: crate::KePreviewTargetError| Failure::Arguments)?;
+    let addresses: crate::SourceAddressSet =
+        crate::SourceAddressSet::new(&[peer]).map_err(Failure::SourcePolicy)?;
+    let original: crate::SourceConfigurationSnapshot = authority
+        .install_ke_preview_configuration(&source, addresses.clone(), target.clone())
+        .map_err(Failure::SourcePolicy)?;
+    let config: Config =
+        Config::from_managed_preview(source.capture_ke_preview().map_err(Failure::SourcePolicy)?);
+    let lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
+    let (invocation, _stop): (PreparedInvocation, crate::nts_ke_experiment::StopHandle) =
+        PreparedInvocation::prepare(config).map_err(|failure: Failed| failure.primary)?;
+    let replacement: crate::SourceConfigurationSnapshot = authority
+        .replace_ke_preview_configuration(&original, addresses, target)
+        .map_err(Failure::SourcePolicy)?;
+    assert!(!replacement.same_configuration(&original));
+
+    SLOT.submit_fixture(
+        invocation,
+        &ADMISSION,
+        observed_provider,
+        |config: &Config, provider: &ProviderScope<'_>, control: Control| {
+            PRODUCERS.fetch_add(1, Ordering::AcqRel);
+            component_failure(config, provider, control)
+        },
+        Hooks::none(),
+    )
+    .map_err(|_: SubmitError| Failure::Control)?;
+    SLOT.collect().map_err(|_: CollectError| Failure::Control)?;
+    let outcome: super::JoinedOutcome = SLOT
+        .take_fixture_result()
+        .map_err(|_: CollectError| Failure::Control)?;
+    let expected: Failed = Failed::from(Failure::SourcePolicy(
+        crate::SourcePolicyError::ConfigurationChanged,
+    ));
+    assert!(matches!(outcome.operation, Some(Err(failure)) if failure == expected));
+    assert_eq!(outcome.termination, Termination::Returned);
+    assert!(outcome.retired);
+    assert_eq!(lifetime.strong_count(), 0);
+    assert_eq!(PROVIDERS.load(Ordering::Acquire), 0);
+    assert_eq!(PRODUCERS.load(Ordering::Acquire), 0);
+    assert_eq!(
+        SLOT.observer().poll_until(Instant::now() + WAIT),
+        Observation::Taken
+    );
+
+    // The neighboring legitimate claim succeeds only if stale startup spent nothing.
+    let claim: ProcessClaim<'_> = ADMISSION.claim()?;
+    let provider: ProviderScope<'_> = ProviderScope::component(claim);
+    let provider_lifetime: Weak<()> = provider.retirement_witness();
+    drop(provider);
+    assert_eq!(provider_lifetime.strong_count(), 0);
+    assert!(matches!(ADMISSION.claim(), Err(Failure::ProcessUsed)));
+    Ok(())
+}

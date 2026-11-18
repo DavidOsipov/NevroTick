@@ -42,8 +42,659 @@ const RSTR: u32 = u32::from_be_bytes(*b"RSTR");
 /// Retains the one successful process installation even with no live facade.
 static PROCESS_POLICY: OnceLock<Arc<PolicyCell>> = OnceLock::new();
 
+pub(crate) use configuration::SourceContext;
+pub use configuration::{SourceAddressSet, SourceConfigurationSnapshot};
+
+/// Sealed configuration construction and issuance within the actual policy owner.
+mod configuration {
+    use std::{fmt, num::NonZeroU64, sync::Arc};
+
+    use garde::Validate;
+
+    use super::{
+        EndpointKey, PolicyGuard, RecordKey, SocketAddr, SourceHandle, SourceIdentity,
+        SourcePolicyAuthority, SourcePolicyError,
+    };
+
+    /// Checked, complete allowed endpoints for one numeric laboratory source.
+    /// Operation order, deadlines and experimental declarations are separate.
+    /// Construction validates at most three loopback addresses before retaining
+    /// canonical keys; failure retains no caller data or partial accepted set.
+    ///
+    /// ```
+    /// use nevrotick_engine::SourceAddressSet;
+    /// let peer = "127.0.0.1:123".parse()?;
+    /// let set = SourceAddressSet::new(&[peer])?;
+    /// assert!(set.allows(peer));
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
+    ///
+    /// Raw construction cannot bypass the complete checked-set constructor.
+    /// ```compile_fail,E0451
+    /// use nevrotick_engine::SourceAddressSet;
+    /// let _set = SourceAddressSet { keys: [None; 3] };
+    /// ```
+    ///
+    /// No default silently supplies an accepted empty definition.
+    /// ```compile_fail,E0277
+    /// use nevrotick_engine::SourceAddressSet;
+    /// let _set: SourceAddressSet = Default::default();
+    /// ```
+    #[derive(Clone)]
+    #[must_use = "an address set must be installed or explicitly discarded"]
+    pub struct SourceAddressSet {
+        /// Only successful checked construction populates this bounded array.
+        keys: [Option<EndpointKey>; 3],
+    }
+
+    /// Raw address slice admitted by the mandatory complete-set Garde rule.
+    #[derive(Validate)]
+    struct AddressCandidate<'a> {
+        /// One shared rule owns raw count, adapter admission and canonical uniqueness.
+        #[garde(custom(address_rule))]
+        values: &'a [SocketAddr],
+    }
+
+    /// Classify bounded raw input without allocation, effects or partial publication.
+    fn address_issue(peers: &[SocketAddr]) -> Option<SourcePolicyError> {
+        if peers.is_empty() || peers.len() > 3 {
+            return Some(SourcePolicyError::InvalidSelection);
+        }
+        let mut keys = [None; 3];
+        for (position, peer) in peers.iter().copied().enumerate() {
+            if !crate::lab_peer_is_valid(peer) {
+                return Some(SourcePolicyError::InvalidEndpoint);
+            }
+            let Ok(key) = EndpointKey::new(peer) else {
+                return Some(SourcePolicyError::InvalidEndpoint);
+            };
+            if keys.contains(&Some(key)) {
+                return Some(SourcePolicyError::InvalidSelection);
+            }
+            keys[position] = Some(key);
+        }
+        None
+    }
+
+    /// Adapt the sole mandatory address rule to Garde without exposing raw input.
+    /// # Errors
+    /// Reject invalid count, endpoint or canonical duplicate with fixed text.
+    #[expect(
+        clippy::trivially_copy_pass_by_ref,
+        reason = "Garde custom rules borrow raw fields and their unit context"
+    )]
+    fn address_rule(peers: &&[SocketAddr], (): &()) -> garde::Result {
+        if address_issue(peers).is_none() {
+            Ok(())
+        } else {
+            Err(garde::Error::new("invalid source configuration addresses"))
+        }
+    }
+
+    impl SourceAddressSet {
+        /// Validate the entire raw set before retaining any canonical endpoint.
+        /// Invalid Garde reports may allocate temporarily; success retains only
+        /// the fixed array and performs no network or policy operation.
+        /// # Errors
+        /// Preserve count/duplicate versus endpoint refusal; no accepted value
+        /// or permanent endpoint record is published on rejection.
+        pub fn new(peers: &[SocketAddr]) -> Result<Self, SourcePolicyError> {
+            AddressCandidate { values: peers }
+                .validate()
+                .map_err(|_| address_issue(peers).unwrap_or(SourcePolicyError::InvalidSelection))?;
+            let mut keys = [None; 3];
+            for (slot, peer) in keys.iter_mut().zip(peers) {
+                *slot = Some(EndpointKey::new(*peer)?);
+            }
+            Ok(Self { keys })
+        }
+
+        /// Return the checked set's finite endpoint count.
+        #[must_use]
+        pub fn len(&self) -> usize {
+            self.keys.iter().flatten().count()
+        }
+
+        /// Observe emptiness; supported construction always retains at least one key.
+        #[must_use]
+        pub fn is_empty(&self) -> bool {
+            self.keys.iter().all(Option::is_none)
+        }
+
+        /// Compare canonical membership only; this historical query supplies no
+        /// adapter admission, current configuration or send permission.
+        #[must_use]
+        pub fn allows(&self, peer: SocketAddr) -> bool {
+            EndpointKey::new(peer).is_ok_and(|key| self.contains(key))
+        }
+
+        /// Test an already canonical key without interpreting it as current authority.
+        fn contains(&self, key: EndpointKey) -> bool {
+            self.keys.contains(&Some(key))
+        }
+    }
+
+    impl fmt::Debug for SourceAddressSet {
+        /// Redact endpoints, cardinality and caller configuration.
+        fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            formatter.write_str("SourceAddressSet { .. }")
+        }
+    }
+
+    /// Historical source-bound installed configuration; only the issuer constructs it.
+    /// Cloning retains immutable data and the separate identity allocation, never
+    /// a mutable policy cell, channel, socket or current permission.
+    ///
+    /// A consumer may retain and inspect genuine issued history.
+    /// ```
+    /// use nevrotick_engine::SourceConfigurationSnapshot;
+    /// fn inspect(snapshot: &SourceConfigurationSnapshot) {
+    ///     assert!(!snapshot.addresses().is_empty());
+    ///     assert!(snapshot.same_configuration(&snapshot.clone()));
+    /// }
+    /// ```
+    ///
+    /// A consumer cannot retag a snapshot with a fabricated revision.
+    /// ```compile_fail,E0616
+    /// use nevrotick_engine::SourceConfigurationSnapshot;
+    /// fn retag(snapshot: &mut SourceConfigurationSnapshot) {
+    ///     snapshot.revision = std::num::NonZeroU64::MIN;
+    /// }
+    /// ```
+    ///
+    /// A checked address set alone is not an issuer-bound configuration.
+    /// ```compile_fail,E0277
+    /// use nevrotick_engine::{SourceAddressSet, SourceConfigurationSnapshot};
+    /// fn forge(set: SourceAddressSet) -> SourceConfigurationSnapshot { set.into() }
+    /// ```
+    #[derive(Clone)]
+    #[must_use = "configuration history must not be mistaken for current permission"]
+    pub struct SourceConfigurationSnapshot {
+        /// Genuine original catalogue source.
+        source: SourceIdentity,
+        /// Nonzero, checked, never-recycled configuration revision.
+        revision: NonZeroU64,
+        /// Immutable definition coupled to this source/revision by the sole issuer.
+        addresses: SourceAddressSet,
+        /// Optional immutable KE target, issued in the same revision as the UDP set.
+        /// Numeric-only installation/replacement deliberately supplies None.
+        #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+        preview_target: Option<crate::KePreviewTarget>,
+    }
+
+    impl SourceConfigurationSnapshot {
+        /// Borrow original source identity without reading current policy.
+        #[must_use]
+        pub const fn source_identity(&self) -> &SourceIdentity {
+            &self.source
+        }
+
+        /// Borrow original accepted addresses, without current admission.
+        #[must_use]
+        pub const fn addresses(&self) -> &SourceAddressSet {
+            &self.addresses
+        }
+
+        /// Compare actual source/revision identity, not endpoint-set value equality.
+        #[must_use]
+        pub fn same_configuration(&self, other: &Self) -> bool {
+            // The private issuer binds addresses and any KE target immutably to
+            // source/revision. They are excluded from this identity comparison.
+            let Self {
+                source,
+                revision,
+                addresses: _,
+                #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+                    preview_target: _,
+            } = self;
+            let Self {
+                source: other_source,
+                revision: other_revision,
+                addresses: _,
+                #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+                    preview_target: _,
+            } = other;
+            source.same_source(other_source) && revision == other_revision
+        }
+    }
+
+    impl fmt::Debug for SourceConfigurationSnapshot {
+        /// Redact addresses and all correlatable source/revision values.
+        fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            formatter.write_str("SourceConfigurationSnapshot { .. }")
+        }
+    }
+
+    /// One sealed source plus optional actually installed configuration context.
+    #[derive(Clone)]
+    pub(crate) struct SourceContext {
+        /// Actual stable catalogue source, including for explicitly unconfigured work.
+        source: SourceIdentity,
+        /// None denotes genuine historical lack of an installed configuration.
+        configuration: Option<SourceConfigurationSnapshot>,
+    }
+
+    impl SourceContext {
+        /// Borrow original source identity without observing later state.
+        pub(crate) const fn identity(&self) -> &SourceIdentity {
+            &self.source
+        }
+
+        /// Borrow only the original issuer-supplied configuration.
+        pub(crate) const fn configuration(&self) -> Option<&SourceConfigurationSnapshot> {
+            self.configuration.as_ref()
+        }
+
+        /// Compare the complete original managed/unmanaged receiving context.
+        pub(crate) fn same_optional(left: Option<&Self>, right: Option<&Self>) -> bool {
+            match (left, right) {
+                (None, None) => true,
+                (Some(left), Some(right)) => {
+                    let Self {
+                        source,
+                        configuration,
+                    } = left;
+                    let Self {
+                        source: other_source,
+                        configuration: other_configuration,
+                    } = right;
+                    source.same_source(other_source)
+                        && match (configuration, other_configuration) {
+                            (None, None) => true,
+                            (Some(a), Some(b)) => a.same_configuration(b),
+                            (None, Some(_)) | (Some(_), None) => false,
+                        }
+                }
+                (None, Some(_)) | (Some(_), None) => false,
+            }
+        }
+
+        /// Derive context from the actual source and its same-cell mutex custody.
+        /// # Errors
+        /// Refuse foreign custody, exhausted configuration or any selected key
+        /// outside the installed definition before endpoint publication.
+        pub(super) fn capture(
+            source: &SourceHandle,
+            guard: &PolicyGuard<'_>,
+            keys: &[Option<EndpointKey>; 3],
+        ) -> Result<Self, SourcePolicyError> {
+            if !std::ptr::eq(guard.cell, source.cell.as_ref()) {
+                return Err(SourcePolicyError::Foreign);
+            }
+            let state = guard.state()?;
+            state.record(RecordKey::Source(source.index))?;
+            let configuration = state
+                .configurations
+                .get(source.index)
+                .ok_or(SourcePolicyError::UnknownSource)?;
+            let identity = source.identity();
+            if !configuration.source.same_source(&identity) {
+                return Err(SourcePolicyError::Foreign);
+            }
+            let snapshot = configuration.snapshot()?;
+            if snapshot.as_ref().is_some_and(|value| {
+                keys.iter()
+                    .flatten()
+                    .any(|key| !value.addresses.contains(*key))
+            }) {
+                return Err(SourcePolicyError::Foreign);
+            }
+            Ok(Self {
+                source: identity,
+                configuration: snapshot,
+            })
+        }
+    }
+
+    /// Actual per-source canonical state, private to the configuration issuer.
+    pub(super) struct ConfigState {
+        /// Genuine identity established with the real bounded catalogue.
+        source: SourceIdentity,
+        /// Current installed snapshot; absence never supplies a positive witness.
+        current: Option<SourceConfigurationSnapshot>,
+        /// Sticky checked-revision exhaustion, independent of every `KoD` field.
+        exhausted: bool,
+    }
+
+    impl ConfigState {
+        /// Initialize actual catalogue ownership without installing configuration.
+        pub(super) const fn new(source: SourceIdentity) -> Self {
+            Self {
+                source,
+                current: None,
+                exhausted: false,
+            }
+        }
+
+        /// Observe installed history without making exhausted state look unconfigured.
+        /// # Errors
+        /// Preserve sticky configuration unavailability.
+        pub(super) fn snapshot(
+            &self,
+        ) -> Result<Option<SourceConfigurationSnapshot>, SourcePolicyError> {
+            if self.exhausted {
+                Err(SourcePolicyError::ConfigurationUnavailable)
+            } else {
+                Ok(self.current.clone())
+            }
+        }
+
+        /// Recheck the complete original context against this actual current source.
+        /// # Errors
+        /// Refuse foreign source, exhausted/stale configuration or an outside peer.
+        pub(super) fn check(
+            &self,
+            context: &SourceContext,
+            key: EndpointKey,
+        ) -> Result<(), SourcePolicyError> {
+            if !self.source.same_source(&context.source) {
+                return Err(SourcePolicyError::Foreign);
+            }
+            let current = self.snapshot()?;
+            match (current.as_ref(), context.configuration.as_ref()) {
+                (None, None) => Ok(()),
+                (Some(actual), Some(original)) if actual.same_configuration(original) => {
+                    if actual.addresses.contains(key) {
+                        Ok(())
+                    } else {
+                        Err(SourcePolicyError::Foreign)
+                    }
+                }
+                _ => Err(SourcePolicyError::ConfigurationChanged),
+            }
+        }
+    }
+
+    /// Complete staged definition; accepted input types own their checked invariants.
+    /// The target already owns checked shared data; cloning allocates nothing.
+    struct Definition {
+        /// The complete original allowed UDP endpoints.
+        addresses: SourceAddressSet,
+        /// None withdraws KE without changing the numeric source definition.
+        #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+        preview_target: Option<crate::KePreviewTarget>,
+    }
+
+    /// The actual owner of installation or the genuine expected replacement revision.
+    enum ConfigurationUpdate<'a> {
+        /// Initial publication for an actual same-root catalogue source.
+        Install(&'a SourceHandle),
+        /// Replacement targets only the source named by this issuer-bound snapshot.
+        Replace(&'a SourceConfigurationSnapshot),
+    }
+
+    /// Publish every numeric/KE definition through the same checked revision kernel.
+    /// # Errors
+    /// Foreign, unknown, installed or stale targets refuse without publication.
+    /// Revision exhaustion withdraws issuance, retaining every `KoD` field and floor.
+    fn publish(
+        authority: &mut SourcePolicyAuthority,
+        update: &ConfigurationUpdate<'_>,
+        definition: Definition,
+    ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
+        let (index, expected): (usize, Option<&SourceConfigurationSnapshot>) = match update {
+            ConfigurationUpdate::Install(source) => {
+                if !Arc::ptr_eq(&authority.cell, &source.cell) {
+                    return Err(SourcePolicyError::Foreign);
+                }
+                (source.index, None)
+            }
+            ConfigurationUpdate::Replace(snapshot) => {
+                if !Arc::ptr_eq(&authority.cell.identity_domain, &snapshot.source.domain) {
+                    return Err(SourcePolicyError::Foreign);
+                }
+                (snapshot.source.index, Some(snapshot))
+            }
+        };
+        let mut guard: PolicyGuard<'_> = authority.cell.lock()?;
+        let state: &mut super::PolicyState = guard.state_mut()?;
+        let config: &mut ConfigState = state
+            .configurations
+            .get_mut(index)
+            .ok_or(SourcePolicyError::UnknownSource)?;
+        let record: &mut super::Record = state
+            .sources
+            .get_mut(index)
+            .ok_or(SourcePolicyError::UnknownSource)?;
+        if config.exhausted {
+            return Err(SourcePolicyError::ConfigurationUnavailable);
+        }
+        let revision: NonZeroU64 = match (expected, config.current.as_ref()) {
+            (None, None) => NonZeroU64::MIN,
+            (Some(expected), Some(current)) if current.same_configuration(expected) => {
+                let successor: Option<NonZeroU64> = current
+                    .revision
+                    .get()
+                    .checked_add(1_u64)
+                    .and_then(NonZeroU64::new);
+                let Some(revision): Option<NonZeroU64> = successor else {
+                    config.current = None;
+                    config.exhausted = true;
+                    record.changed = true;
+                    return Err(SourcePolicyError::ConfigurationUnavailable);
+                };
+                revision
+            }
+            _ => return Err(SourcePolicyError::ConfigurationChanged),
+        };
+        let snapshot: SourceConfigurationSnapshot = SourceConfigurationSnapshot {
+            source: config.source.clone(),
+            revision,
+            addresses: definition.addresses,
+            #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+            preview_target: definition.preview_target,
+        };
+        config.current = Some(snapshot.clone());
+        record.changed = true;
+        Ok(snapshot)
+    }
+
+    /// Install checked numeric endpoints while explicitly leaving KE unavailable.
+    /// # Errors
+    /// Preserve the shared publication kernel's unchanged refusal semantics.
+    pub(super) fn install(
+        authority: &mut SourcePolicyAuthority,
+        source: &SourceHandle,
+        addresses: SourceAddressSet,
+    ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
+        let definition: Definition = Definition {
+            addresses,
+            #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+            preview_target: None,
+        };
+        publish(authority, &ConfigurationUpdate::Install(source), definition)
+    }
+
+    /// Numeric replacement withdraws any prior KE target in the same new revision.
+    /// # Errors
+    /// Preserve current-revision refusal and sticky checked exhaustion.
+    pub(super) fn replace(
+        authority: &mut SourcePolicyAuthority,
+        expected: &SourceConfigurationSnapshot,
+        addresses: SourceAddressSet,
+    ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
+        let definition: Definition = Definition {
+            addresses,
+            #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+            preview_target: None,
+        };
+        publish(
+            authority,
+            &ConfigurationUpdate::Replace(expected),
+            definition,
+        )
+    }
+
+    /// Stage checked immutable TLS inputs before installing their actual source revision.
+    /// # Errors
+    /// The shared kernel refuses foreign, installed, unavailable or unknown sources.
+    #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+    pub(super) fn install_preview(
+        authority: &mut SourcePolicyAuthority,
+        source: &SourceHandle,
+        addresses: SourceAddressSet,
+        target: crate::KePreviewTarget,
+    ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
+        let definition: Definition = Definition {
+            addresses,
+            preview_target: Some(target),
+        };
+        publish(authority, &ConfigurationUpdate::Install(source), definition)
+    }
+
+    /// Replace one actual current definition with checked TLS/UDP inputs atomically.
+    /// # Errors
+    /// Preserve the same stale, foreign and exhaustion rules as numeric replacement.
+    #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+    pub(super) fn replace_preview(
+        authority: &mut SourcePolicyAuthority,
+        expected: &SourceConfigurationSnapshot,
+        addresses: SourceAddressSet,
+        target: crate::KePreviewTarget,
+    ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
+        let definition: Definition = Definition {
+            addresses,
+            preview_target: Some(target),
+        };
+        publish(
+            authority,
+            &ConfigurationUpdate::Replace(expected),
+            definition,
+        )
+    }
+
+    /// Capture only an actual installed KE definition, never independently tagged parts.
+    /// # Errors
+    /// Missing/numeric-only definitions refuse; current source restriction,
+    /// exhausted configuration and unavailable custody remain explicit failures.
+    #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+    pub(super) fn capture_preview(
+        source: &SourceHandle,
+    ) -> Result<super::ConfiguredKePreview, SourcePolicyError> {
+        let guard: PolicyGuard<'_> = source.cell.lock()?;
+        let state: &super::PolicyState = guard.state()?;
+        let config: &ConfigState = state
+            .configurations
+            .get(source.index)
+            .ok_or(SourcePolicyError::UnknownSource)?;
+        let snapshot: SourceConfigurationSnapshot = config
+            .snapshot()?
+            .ok_or(SourcePolicyError::ConfigurationChanged)?;
+        let target: crate::KePreviewTarget = snapshot
+            .preview_target
+            .clone()
+            .ok_or(SourcePolicyError::ConfigurationChanged)?;
+        let captured: super::ConfiguredKePreview = super::ConfiguredKePreview {
+            source: source.clone(),
+            snapshot,
+            target,
+        };
+        check_preview(&captured, &guard, None)?;
+        Ok(captured)
+    }
+
+    /// Inspect actual custody and original definition without allocation or mutation.
+    /// # Errors
+    /// Refuse foreign/stale/unavailable issuance, a restricted source or selected
+    /// endpoint, and an endpoint outside the original still-current allowed set.
+    #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+    pub(super) fn check_preview(
+        original: &super::ConfiguredKePreview,
+        guard: &PolicyGuard<'_>,
+        peer: Option<SocketAddr>,
+    ) -> Result<(), SourcePolicyError> {
+        if !std::ptr::eq(guard.cell, original.source.cell.as_ref())
+            || !Arc::ptr_eq(
+                &original.source.cell.identity_domain,
+                &original.snapshot.source.domain,
+            )
+            || original.source.index != original.snapshot.source.index
+        {
+            return Err(SourcePolicyError::Foreign);
+        }
+        let state: &super::PolicyState = guard.state()?;
+        let source_record: &super::Record =
+            state.record(RecordKey::Source(original.source.index))?;
+        let config: &ConfigState = state
+            .configurations
+            .get(original.source.index)
+            .ok_or(SourcePolicyError::UnknownSource)?;
+        if !config.source.same_source(&original.snapshot.source) {
+            return Err(SourcePolicyError::Foreign);
+        }
+        if config.exhausted {
+            return Err(SourcePolicyError::ConfigurationUnavailable);
+        }
+        let current: &SourceConfigurationSnapshot = config
+            .current
+            .as_ref()
+            .ok_or(SourcePolicyError::ConfigurationChanged)?;
+        if !current.same_configuration(&original.snapshot) {
+            return Err(SourcePolicyError::ConfigurationChanged);
+        }
+        // Actual private issuance binds the immutable target to this exact
+        // revision. Numeric replacement advances revision and withdraws it.
+        if current.preview_target.is_none() {
+            return Err(SourcePolicyError::ConfigurationChanged);
+        }
+        source_record.available()?;
+        if let Some(peer) = peer {
+            if !crate::lab_peer_is_valid(peer) {
+                return Err(SourcePolicyError::InvalidEndpoint);
+            }
+            let key: EndpointKey = EndpointKey::new(peer)?;
+            if !original.snapshot.addresses.contains(key) || !current.addresses.contains(key) {
+                return Err(SourcePolicyError::Foreign);
+            }
+            if let Some(endpoint) = state.endpoints.iter().find(|entry| entry.key == Some(key)) {
+                endpoint.record.available()?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Force the genuine installed revision to its last valid value for a boundary test.
+    /// # Errors
+    /// Refuse unknown, absent or already exhausted configuration.
+    #[cfg(test)]
+    pub(super) fn force_max(
+        source: &SourceHandle,
+    ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
+        let mut guard = source.cell.lock()?;
+        let state = guard.state_mut()?;
+        let config = state
+            .configurations
+            .get_mut(source.index)
+            .ok_or(SourcePolicyError::UnknownSource)?;
+        let record = state
+            .sources
+            .get_mut(source.index)
+            .ok_or(SourcePolicyError::UnknownSource)?;
+        if config.exhausted {
+            return Err(SourcePolicyError::ConfigurationUnavailable);
+        }
+        let current = config
+            .current
+            .as_mut()
+            .ok_or(SourcePolicyError::ConfigurationChanged)?;
+        current.revision = NonZeroU64::MAX;
+        record.changed = true;
+        Ok(current.clone())
+    }
+}
+
+/// Test only the actual installed owner's final representable revision.
+/// # Errors
+/// Preserve actual custody and absent/exhausted configuration failures.
+#[cfg(test)]
+fn force_configuration_revision_max_for_test(
+    source: &SourceHandle,
+) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
+    configuration::force_max(source)
+}
+
 /// Sealed read capabilities preserve the real guarded observation positions.
-mod observations {
+pub(super) mod observations {
     use super::{Instant, SoftwareClock};
 
     /// A single deferred owner-clock read; construction samples nothing.
@@ -95,7 +746,7 @@ mod observations {
     }
 
     /// Two deferred captures surrounding the one actual synchronous send.
-    pub(super) struct SendReads {
+    pub(in super::super) struct SendReads {
         /// Private hardware/test selection, never an arbitrary callback.
         source: SendSource,
     }
@@ -118,7 +769,7 @@ mod observations {
 
     impl SendReads {
         /// Construct an unsampled production capture capability.
-        pub(super) fn hardware() -> Self {
+        pub(in super::super) fn hardware() -> Self {
             Self {
                 source: SendSource::Hardware,
             }
@@ -127,7 +778,7 @@ mod observations {
         /// Capture at the current original guard/effect position.
         /// # Panics
         /// A test fixture reading beyond its two declared captures fails clearly.
-        pub(super) fn capture(&mut self) -> SoftwareClock {
+        pub(in super::super) fn capture(&mut self) -> SoftwareClock {
             match &mut self.source {
                 SendSource::Hardware => SoftwareClock::capture(),
                 #[cfg(test)]
@@ -153,7 +804,10 @@ mod observations {
         /// # Panics
         /// Reject an inverted individual bracket or cross-capture monotonic order.
         #[cfg(test)]
-        pub(super) fn fixed(before: SoftwareClock, after: SoftwareClock) -> (Self, ReadCount) {
+        pub(in super::super) fn fixed(
+            before: SoftwareClock,
+            after: SoftwareClock,
+        ) -> (Self, ReadCount) {
             assert!(
                 before.mono <= before.mono_after
                     && before.mono_after <= after.mono
@@ -176,7 +830,7 @@ mod observations {
 
     /// Test-only inert observation of actual capability consumption.
     #[cfg(test)]
-    pub(super) struct ReadCount {
+    pub(in super::super) struct ReadCount {
         /// Private counter; callers can observe but cannot manufacture a count.
         count: std::rc::Rc<std::cell::Cell<usize>>,
     }
@@ -184,7 +838,7 @@ mod observations {
     #[cfg(test)]
     impl ReadCount {
         /// Return the number of actual reads through the issued capability.
-        pub(super) fn reads(&self) -> usize {
+        pub(in super::super) fn reads(&self) -> usize {
             self.count.get()
         }
     }
@@ -215,9 +869,13 @@ pub enum SourcePolicyError {
     Foreign,
     /// A record revision, outstanding request or correlation epoch is stale.
     Stale,
+    /// The original optional configuration is no longer current.
+    ConfigurationChanged,
+    /// Configuration identity exhausted and cannot be issued again.
+    ConfigurationUnavailable,
     /// A re-enable selection contains the same record more than once.
     Duplicate,
-    /// A re-enable selection is empty or exceeds its fixed bound.
+    /// A bounded selection has invalid length or duplicate configuration addresses.
     InvalidSelection,
     /// An applicable record retains a server refusal.
     Disabled,
@@ -244,6 +902,8 @@ impl fmt::Display for SourcePolicyError {
             Self::Poisoned => "source policy poisoned",
             Self::Foreign => "foreign source policy owner",
             Self::Stale => "stale source policy identity",
+            Self::ConfigurationChanged => "source configuration changed",
+            Self::ConfigurationUnavailable => "source configuration unavailable",
             Self::Duplicate => "duplicate source policy target",
             Self::InvalidSelection => "invalid source policy selection",
             Self::Disabled => "source policy refused",
@@ -691,6 +1351,8 @@ struct PolicyState {
     limits: SourcePolicyLimits,
     /// Fixed source catalogue.
     sources: Vec<Record>,
+    /// Separate checked configuration revisions, never `KoD` restriction state.
+    configurations: Vec<configuration::ConfigState>,
     /// Fixed endpoint storage, preallocated before root publication.
     endpoints: Vec<EndpointRecord>,
 }
@@ -743,9 +1405,14 @@ impl PolicyState {
 
     /// Validate both actual binding positions before any transition.
     /// # Errors
-    /// Refuse an unknown source or a canonical endpoint that differs from its slot.
+    /// Refuse an unknown source, changed configuration or a canonical endpoint
+    /// that differs from its permanently retained slot.
     fn binding(&self, binding: &SourceBinding) -> Result<(), SourcePolicyError> {
         self.record(RecordKey::Source(binding.source.index))?;
+        self.configurations
+            .get(binding.source.index)
+            .ok_or(SourcePolicyError::UnknownSource)?
+            .check(&binding.context, binding.key)?;
         if self
             .endpoints
             .get(binding.endpoint)
@@ -901,8 +1568,19 @@ impl PolicyState {
                 Some(update)
             });
         }
-        for (key, plan) in keys.into_iter().zip(plans) {
-            let record = self.record_mut(key)?;
+        // Resolve both destinations before the first mutation. Source and endpoint
+        // storage are separate collections, so both checked borrows coexist.
+        let source: &mut Record = self
+            .sources
+            .get_mut(binding.source.index)
+            .ok_or(SourcePolicyError::UnknownSource)?;
+        let endpoint: &mut Record = self
+            .endpoints
+            .get_mut(binding.endpoint)
+            .filter(|record| record.key.is_some())
+            .map(|record| &mut record.record)
+            .ok_or(SourcePolicyError::UnknownEndpoint)?;
+        for (record, plan) in [source, endpoint].into_iter().zip(plans) {
             if let Some(update) = plan {
                 record.apply(update);
             } else {
@@ -931,16 +1609,25 @@ impl PolicyCell {
     /// # Errors
     /// Refuse bounded source or endpoint vector reservation without publishing a root.
     fn new(limits: SourcePolicyLimits) -> Result<Arc<Self>, SourcePolicyError> {
+        let identity_domain = Arc::new(());
         let mut sources = Vec::new();
         sources
+            .try_reserve_exact(limits.source_count)
+            .map_err(|_| SourcePolicyError::Allocation)?;
+        let mut configurations = Vec::new();
+        configurations
             .try_reserve_exact(limits.source_count)
             .map_err(|_| SourcePolicyError::Allocation)?;
         let mut endpoints = Vec::new();
         endpoints
             .try_reserve_exact(limits.endpoint_capacity)
             .map_err(|_| SourcePolicyError::Allocation)?;
-        for _ in 0..limits.source_count {
+        for index in 0..limits.source_count {
             sources.push(Record::new(limits.initial_interval));
+            configurations.push(configuration::ConfigState::new(SourceIdentity {
+                domain: Arc::clone(&identity_domain),
+                index,
+            }));
         }
         for _ in 0..limits.endpoint_capacity {
             endpoints.push(EndpointRecord {
@@ -949,10 +1636,11 @@ impl PolicyCell {
             });
         }
         Ok(Arc::new(Self {
-            identity_domain: Arc::new(()),
+            identity_domain,
             state: Mutex::new(PolicyState {
                 limits,
                 sources,
+                configurations,
                 endpoints,
             }),
             released: Arc::new(Notify::new()),
@@ -1072,6 +1760,89 @@ impl SourcePolicyAuthority {
             cell: Arc::clone(&self.cell),
             index,
         })
+    }
+
+    /// Install the first explicit numeric definition for this actual source.
+    /// This changes no RATE/refusal, floor, `KoD` revision, endpoint or request epoch.
+    /// # Errors
+    /// Reject a foreign handle, unavailable custody, an existing configuration
+    /// or exhausted configuration identity without publishing a replacement.
+    pub fn install_source_configuration(
+        &mut self,
+        source: &SourceHandle,
+        addresses: SourceAddressSet,
+    ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
+        configuration::install(self, source, addresses)
+    }
+
+    /// Atomically replace exactly the source identified by an actual current snapshot.
+    /// A successful replacement issues a fresh configuration revision, including
+    /// for equal address values. Existing `KoD` restrictions and targets remain intact.
+    /// # Errors
+    /// Reject foreign/stale input unchanged. Revision exhaustion withdraws
+    /// configuration and wakes the source without resetting its restrictions.
+    pub fn replace_source_configuration(
+        &mut self,
+        expected: &SourceConfigurationSnapshot,
+        addresses: SourceAddressSet,
+    ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
+        configuration::replace(self, expected, addresses)
+    }
+
+    /// Install checked KE and UDP inputs together for this actual catalogue source.
+    /// The existing checked target supplies syntax, bounds and verification-name
+    /// invariants; installation supplies source/revision identity, not TLS success.
+    /// Existing restrictions, floors and endpoint records remain unchanged.
+    /// # Errors
+    /// Preserve foreign/unknown source, existing installation, sticky exhaustion
+    /// and nonblocking policy-custody failures without partial publication.
+    #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+    pub fn install_ke_preview_configuration(
+        &mut self,
+        source: &SourceHandle,
+        addresses: SourceAddressSet,
+        target: crate::KePreviewTarget,
+    ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
+        configuration::install_preview(self, source, addresses, target)
+    }
+
+    /// Replace exactly the actual current source definition with checked KE/UDP inputs.
+    /// Equal input values still receive a fresh revision. This grants neither
+    /// protected-datagram permission nor a reset of retained source/endpoint policy.
+    /// # Errors
+    /// Refuse foreign/stale input unchanged; checked revision exhaustion withdraws
+    /// configuration while retaining every applicable restriction and floor.
+    #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+    pub fn replace_ke_preview_configuration(
+        &mut self,
+        expected: &SourceConfigurationSnapshot,
+        addresses: SourceAddressSet,
+        target: crate::KePreviewTarget,
+    ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
+        configuration::replace_preview(self, expected, addresses, target)
+    }
+
+    /// Issue one explicit protected invocation for this authority's current revision.
+    /// # Errors
+    /// Refuse a different root or obsolete, missing or restricted KE definition.
+    #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+    pub(super) fn authorize_protected_ke(
+        &self,
+        expected: &SourceConfigurationSnapshot,
+    ) -> Result<ProtectedKeSource, SourcePolicyError> {
+        let identity: &SourceIdentity = expected.source_identity();
+        if !Arc::ptr_eq(&self.cell.identity_domain, &identity.domain) {
+            return Err(SourcePolicyError::Foreign);
+        }
+        let source: SourceHandle = SourceHandle {
+            cell: Arc::clone(&self.cell),
+            index: identity.index,
+        };
+        let definition: ConfiguredKePreview = configuration::capture_preview(&source)?;
+        if !definition.snapshot().same_configuration(expected) {
+            return Err(SourcePolicyError::ConfigurationChanged);
+        }
+        Ok(ProtectedKeSource { definition })
     }
 
     /// Issue a current source-revision target from this actual authority only.
@@ -1236,6 +2007,30 @@ impl SourceHandle {
         }
     }
 
+    /// Read actual installed configuration history without creating endpoint state.
+    /// None means genuinely unconfigured; it is not a current capability.
+    /// # Errors
+    /// Preserve contention, poisoning and sticky configuration exhaustion rather
+    /// than manufacturing an unconfigured fallback.
+    pub fn configuration_snapshot(
+        &self,
+    ) -> Result<Option<SourceConfigurationSnapshot>, SourcePolicyError> {
+        let guard = self.cell.lock()?;
+        let context = SourceContext::capture(self, &guard, &[None; 3])?;
+        Ok(context.configuration().cloned())
+    }
+
+    /// Capture the real installed Preview definition and its current source owner.
+    /// The result retains original immutable inputs, not permission across a later
+    /// replacement or restriction. Each receiving effect must recheck actual custody.
+    /// # Errors
+    /// Refuse missing/numeric-only, changed or exhausted configuration, a disabled
+    /// source and unavailable policy custody without creating endpoint state.
+    #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+    pub(super) fn capture_ke_preview(&self) -> Result<ConfiguredKePreview, SourcePolicyError> {
+        configuration::capture_preview(self)
+    }
+
     /// Observe this source and one already-bound canonical endpoint atomically.
     ///
     /// Refusal and unavailability remain visible data. This bounded read creates
@@ -1276,6 +2071,7 @@ impl SourceHandle {
             *key = Some(EndpointKey::new(*peer)?);
         }
         let mut guard = self.cell.lock()?;
+        let context = SourceContext::capture(self, &guard, &keys)?;
         let state = guard.state_mut()?;
         let source_changes = state.record(RecordKey::Source(self.index))?.changes.clone();
         let mut positions = [None; 3];
@@ -1316,6 +2112,7 @@ impl SourceHandle {
             let endpoint = positions[position].ok_or(SourcePolicyError::Capacity)?;
             *binding = Some(SourceBinding {
                 source: self.clone(),
+                context: context.clone(),
                 endpoint,
                 key: keys[position].ok_or(SourcePolicyError::InvalidEndpoint)?,
                 source_changes: source_changes.clone(),
@@ -1356,6 +2153,7 @@ impl SourceHandle {
     pub(super) fn bind(&self, peer: SocketAddr) -> Result<SourceBinding, SourcePolicyError> {
         let key = EndpointKey::new(peer)?;
         let mut guard = self.cell.lock()?;
+        let context = SourceContext::capture(self, &guard, &[Some(key), None, None])?;
         let state = guard.state_mut()?;
         let source_changes = state.record(RecordKey::Source(self.index))?.changes.clone();
         let endpoint = if let Some(index) = state
@@ -1380,6 +2178,7 @@ impl SourceHandle {
         let endpoint_changes = state.record(RecordKey::Endpoint(endpoint))?.changes.clone();
         Ok(SourceBinding {
             source: self.clone(),
+            context,
             endpoint,
             key,
             source_changes,
@@ -1477,16 +2276,6 @@ impl SourceIdentity {
         } = other;
         Arc::ptr_eq(domain, other_domain) && index == other_index
     }
-
-    /// Compare complete managed/unmanaged provenance at the receiving owner.
-    /// Managed absence is never interchangeable with an issued identity.
-    pub(super) fn same_optional(left: Option<&Self>, right: Option<&Self>) -> bool {
-        match (left, right) {
-            (None, None) => true,
-            (Some(left), Some(right)) => left.same_source(right),
-            (None, Some(_)) | (Some(_), None) => false,
-        }
-    }
 }
 
 impl fmt::Debug for SourceIdentity {
@@ -1496,11 +2285,291 @@ impl fmt::Debug for SourceIdentity {
     }
 }
 
+/// Original KE inputs issued only from an actual installed catalogue configuration.
+/// This live invocation context retains its source owner; the returned historical
+/// snapshot alone retains no mutable policy, native resource or current permission.
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+#[must_use = "a captured Preview definition must be consumed through current owner checks"]
+pub(super) struct ConfiguredKePreview {
+    /// Actual owner whose current state every admission must inspect.
+    source: SourceHandle,
+    /// Original jointly installed source/revision/UDP definition.
+    snapshot: SourceConfigurationSnapshot,
+    /// Cheap immutable clone of the original snapshot's issued target.
+    target: crate::KePreviewTarget,
+}
+
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+impl ConfiguredKePreview {
+    /// Borrow the actual originally installed checked target without reinterpreting it.
+    #[must_use]
+    pub(super) fn target(&self) -> &crate::KePreviewTarget {
+        &self.target
+    }
+
+    /// Borrow original configuration history, without reading or granting live policy.
+    #[must_use]
+    pub(super) const fn snapshot(&self) -> &SourceConfigurationSnapshot {
+        &self.snapshot
+    }
+
+    /// Acquire actual nonblocking policy custody before performing any checks.
+    /// The receiving owner must retain this guard through its decision and release
+    /// Control custody before this value drops and publishes policy-release wakes.
+    /// # Errors
+    /// Preserve contention/poisoning; no missing or stale definition becomes a
+    /// successful snapshot check merely by obtaining the lock.
+    pub(super) fn lock(&self) -> Result<KePreviewPolicyGuard<'_>, SourcePolicyError> {
+        let guard: PolicyGuard<'_> = self.source.cell.lock()?;
+        Ok(KePreviewPolicyGuard {
+            guard,
+            original: self,
+        })
+    }
+}
+
+/// Actual policy custody tied to the original issued KE definition.
+/// Its Drop may notify waiters after releasing policy; combined owners must drop
+/// their Control gates first on success, refusal and unwind alike.
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+#[must_use = "retain policy custody through the actual serialized Preview decision"]
+pub(super) struct KePreviewPolicyGuard<'a> {
+    /// The actual same-cell mutex owner, not a currentness Boolean.
+    guard: PolicyGuard<'a>,
+    /// The same originally captured source and complete installed definition.
+    original: &'a ConfiguredKePreview,
+}
+
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+impl KePreviewPolicyGuard<'_> {
+    /// Check current definition and availability while retaining actual custody.
+    /// None checks the source before a returned UDP endpoint is known; Some also
+    /// checks that endpoint's original membership and any existing restriction.
+    /// No endpoint slot, channel, polling-floor debit or permission is created.
+    /// # Errors
+    /// Preserve foreign/stale/unavailable definition, source/endpoint refusal,
+    /// and invalid/outside selected endpoint without allocation or state change.
+    pub(super) fn check(&self, peer: Option<SocketAddr>) -> Result<(), SourcePolicyError> {
+        configuration::check_preview(self.original, &self.guard, peer)
+    }
+}
+
+/// Explicit single-invocation authorization from the actual catalogue authority.
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+pub(super) struct ProtectedKeSource {
+    /// Reuse the checked immutable inputs shared with the no-send branch.
+    definition: ConfiguredKePreview,
+}
+
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+impl ProtectedKeSource {
+    /// Borrow the originally issued definition without granting an endpoint.
+    pub(super) const fn definition(&self) -> &ConfiguredKePreview {
+        &self.definition
+    }
+
+    /// Stage the exact negotiated destination under the already held installation guard.
+    /// # Errors
+    /// Refuse foreign/stale configuration, a restricted/disallowed peer or full endpoint custody.
+    pub(super) fn prepare_endpoint<'a>(
+        &self,
+        policy: &'a mut KePreviewPolicyGuard<'_>,
+        peer: SocketAddr,
+    ) -> Result<PreparedProtectedEndpoint<'a>, SourcePolicyError> {
+        if !std::ptr::eq(policy.original, &raw const self.definition) {
+            return Err(SourcePolicyError::Foreign);
+        }
+        policy.check(Some(peer))?;
+        let source: &SourceHandle = &self.definition.source;
+        let key: EndpointKey = EndpointKey::new(peer)?;
+        let context: SourceContext =
+            SourceContext::capture(source, &policy.guard, &[Some(key), None, None])?;
+        let state: &mut PolicyState = policy.guard.state_mut()?;
+        let source_changes: watch::Sender<()> = state
+            .record(RecordKey::Source(source.index))?
+            .changes
+            .clone();
+        let endpoint: usize = state
+            .endpoints
+            .iter()
+            .position(|entry: &EndpointRecord| entry.key == Some(key))
+            .or_else(|| {
+                state
+                    .endpoints
+                    .iter()
+                    .position(|entry: &EndpointRecord| entry.key.is_none())
+            })
+            .ok_or(SourcePolicyError::Capacity)?;
+        let record: &mut EndpointRecord = state
+            .endpoints
+            .get_mut(endpoint)
+            .ok_or(SourcePolicyError::Capacity)?;
+        let binding: SourceBinding = SourceBinding {
+            source: source.clone(),
+            context,
+            endpoint,
+            key,
+            source_changes,
+            endpoint_changes: record.record.changes.clone(),
+        };
+        Ok(PreparedProtectedEndpoint {
+            slot: &mut record.key,
+            endpoint: ProtectedEndpoint { binding, peer },
+        })
+    }
+}
+
+/// A still-unpublished exact endpoint, coupled to its guarded canonical slot.
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+pub(super) struct PreparedProtectedEndpoint<'a> {
+    /// Its exact canonical slot remains borrowed from current policy custody.
+    slot: &'a mut Option<EndpointKey>,
+    /// Complete same-source outcome prepared without publishing any state.
+    endpoint: ProtectedEndpoint,
+}
+
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+impl PreparedProtectedEndpoint<'_> {
+    /// Publish infallibly after the original KE Control admits the same association.
+    pub(super) fn publish(self) -> ProtectedEndpoint {
+        *self.slot = Some(self.endpoint.binding.key);
+        self.endpoint
+    }
+}
+
+/// Exact negotiated UDP destination and independently canonical allowance identity.
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+#[derive(Clone)]
+pub(super) struct ProtectedEndpoint {
+    /// Retained canonical allowance owner and original source revision.
+    binding: SourceBinding,
+    /// Exact negotiated socket address, also required by wire correlation.
+    peer: SocketAddr,
+}
+
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+impl ProtectedEndpoint {
+    /// Preserve the original authority-owned definition in committed history.
+    pub(super) const fn configuration(&self) -> Option<&SourceConfigurationSnapshot> {
+        self.binding.context.configuration()
+    }
+
+    /// Observe the retained floor for the selected scripted successor's readiness.
+    /// This observation grants no send capability and does not reserve a floor.
+    /// # Errors
+    /// Preserve unavailable custody, changed bindings or missing prior send work.
+    #[cfg(test)]
+    pub(super) fn scripted_successor_floor(&self) -> Result<Instant, SourcePolicyError> {
+        self.lock()?
+            .guard
+            .state()?
+            .earliest(&self.binding)?
+            .ok_or(SourcePolicyError::Unavailable)
+    }
+
+    /// Acquire the actual endpoint's policy custody without registering a waiter.
+    /// # Errors
+    /// Preserve contention and poison without granting another route.
+    pub(super) fn lock(&self) -> Result<ProtectedEndpointGuard<'_>, SourcePolicyError> {
+        let guard: PolicyGuard<'_> = self.binding.source.cell.lock()?;
+        Ok(ProtectedEndpointGuard {
+            guard,
+            original: self,
+        })
+    }
+}
+
+/// Policy custody for the actual protected transaction. Release Control before this guard.
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+pub(super) struct ProtectedEndpointGuard<'a> {
+    /// Actual nonblocking policy custody used for every protected effect check.
+    guard: PolicyGuard<'a>,
+    /// The original exact negotiated endpoint and source revision.
+    original: &'a ProtectedEndpoint,
+}
+
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+impl ProtectedEndpointGuard<'_> {
+    /// Check the actual destination, configuration and both records.
+    /// # Errors
+    /// Refuse a different wire destination, obsolete lease or restricted record.
+    pub(super) fn check(&self, peer: SocketAddr) -> Result<(), SourcePolicyError> {
+        if peer != self.original.peer {
+            return Err(SourcePolicyError::Foreign);
+        }
+        self.guard.state()?.earliest(&self.original.binding)?;
+        Ok(())
+    }
+
+    /// Charge both source and shared endpoint immediately before actual invocation.
+    /// # Errors
+    /// Refuse an invalid lease, early observation, or unavailable policy without a send.
+    pub(super) fn reserve(
+        &mut self,
+        peer: SocketAddr,
+        request: &Arc<()>,
+        observed: Instant,
+    ) -> Result<ProtectedSendStamp, SourcePolicyError> {
+        if peer != self.original.peer {
+            return Err(SourcePolicyError::Foreign);
+        }
+        let (correlation, _): (Correlation, Instant) =
+            self.guard
+                .state_mut()?
+                .reserve(&self.original.binding, request, observed)?;
+        Ok(ProtectedSendStamp { correlation })
+    }
+
+    /// Match the actual sent request without applying its already advanced send floors.
+    /// # Errors
+    /// Refuse a foreign request, changed configuration, refusal or changed restriction epoch.
+    pub(super) fn receiving(
+        &self,
+        stamp: &ProtectedSendStamp,
+        request: &Arc<()>,
+    ) -> Result<(), SourcePolicyError> {
+        self.guard
+            .state()?
+            .receiving(&self.original.binding, &stamp.correlation, request)
+    }
+
+    /// Apply the verified DENY to the exact managed source and endpoint.
+    /// The retired receiver supplies a consume-once authorization under the live Control.
+    /// # Errors
+    /// Reject reused/foreign request identities, invalidated policy or missing
+    /// state before publishing either direct restriction record.
+    #[cfg(test)]
+    pub(super) fn apply_deny(
+        &mut self,
+        authorization: crate::nts_ke_experiment::VerifiedRetiredDeny<'_>,
+    ) -> Result<(), SourcePolicyError> {
+        let now: Instant = authorization.decided_at();
+        let [prior, pending]: [(&ProtectedSendStamp, &Arc<()>); 2] =
+            authorization.into_submissions();
+        if Arc::ptr_eq(prior.1, pending.1) {
+            return Err(SourcePolicyError::Foreign);
+        }
+        let state: &mut PolicyState = self.guard.state_mut()?;
+        state.receiving(&self.original.binding, &prior.0.correlation, prior.1)?;
+        state.receiving(&self.original.binding, &pending.0.correlation, pending.1)?;
+        state.control(&self.original.binding, ControlKind::Deny, now)
+    }
+}
+
+/// Provenance of one attempted protected send, usable only with the live original owner.
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+pub(super) struct ProtectedSendStamp {
+    /// Same-cell source/endpoint epochs, actual request allocation and send observation.
+    correlation: Correlation,
+}
+
 /// Mandatory immutable source/endpoint custody passed down the prepared chain.
 #[derive(Clone)]
 pub(super) struct SourceBinding {
     /// Stable source identity retained independently of this endpoint.
     source: SourceHandle,
+    /// Actual optional installed configuration captured with the same policy guard.
+    context: SourceContext,
     /// Permanently bound endpoint position in the same actual cell.
     endpoint: usize,
     /// Canonical key checked against each concrete native destination.
@@ -1533,12 +2602,12 @@ pub(super) enum SourceMode {
 }
 
 impl SourceMode {
-    /// Derive historical source identity from the actual prepared policy owner.
+    /// Derive original source/configuration context from the prepared policy owner.
     /// Unmanaged laboratory work makes no managed-source claim.
-    pub(super) fn source_identity(&self) -> Option<SourceIdentity> {
+    pub(super) fn source_context(&self) -> Option<SourceContext> {
         match self {
             Self::UnmanagedLab => None,
-            Self::Managed(binding) => Some(binding.source.identity()),
+            Self::Managed(binding) => Some(binding.context.clone()),
         }
     }
 
@@ -1749,10 +2818,10 @@ impl LivePolicy {
     ///
     /// This immutable observation changes no policy, reads no clock and grants
     /// no permission. The final guarded commit alone attaches it to facts.
-    pub(super) fn source_identity(&self) -> Option<SourceIdentity> {
+    pub(super) fn source_context(&self) -> Option<SourceContext> {
         match &self.mode {
             LiveMode::UnmanagedLab => None,
-            LiveMode::Managed(live) => Some(live.binding.source.identity()),
+            LiveMode::Managed(live) => Some(live.binding.context.clone()),
         }
     }
 
@@ -1766,6 +2835,10 @@ impl LivePolicy {
                     && live.binding.source.index == binding.source.index
                     && live.binding.endpoint == binding.endpoint
                     && live.binding.key == binding.key
+                    && SourceContext::same_optional(
+                        Some(&live.binding.context),
+                        Some(&binding.context),
+                    )
             }
             _ => false,
         }

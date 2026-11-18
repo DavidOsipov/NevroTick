@@ -54,6 +54,75 @@ fn adaptive_duration_ceiling_preserves_fractional_nanoseconds_at_large_seconds()
     Ok(())
 }
 
+/// Identify the selected integer by lower/upper comparisons in exact scaled units.
+/// # Panics
+/// Fail if an endpoint plateau or an interior upward result is incorrect.
+fn check_dyadic_ceiling_clamp(numerator: u128, denominator: u128, bounds: (u64, u64), actual: u64) {
+    let (minimum, maximum): (u64, u64) = bounds;
+    assert!(
+        (minimum..=maximum).contains(&actual),
+        "{numerator}/{denominator}ns with {bounds:?}: {actual}"
+    );
+    if actual != minimum {
+        assert!(
+            numerator > u128::from(actual - 1) * denominator,
+            "{numerator}/{denominator}ns with {bounds:?}: selected too high {actual}"
+        );
+    }
+    if actual != maximum {
+        assert!(
+            numerator <= u128::from(actual) * denominator,
+            "{numerator}/{denominator}ns with {bounds:?}: selected too low {actual}"
+        );
+    }
+}
+
+/// Exact dyadic inputs reach both clamp plateaus and the unclamped integer ceiling.
+/// The integral anchor and adjacent dyadics are jointly generated at four scales.
+/// # Errors
+/// Preserve checked debt, area, profile and duration failures.
+/// # Panics
+/// Detect upward conversion or endpoint errors without a floating-point tolerance.
+#[test]
+fn adaptive_dyadic_horizon_obeys_exact_ceiling_and_clamp() -> TestResult {
+    for (whole, shift) in [(0_u32, 30_u32), (1, 30), (4_194_304, 30), (8_388_608, 29)] {
+        let divisor: u32 = 1_u32 << shift;
+        // One billion has exactly nine factors of two. At this offset the
+        // scaled fraction is integral; the adjacent inputs lie on either side.
+        let exact: u32 = 1_u32 << (shift - 9);
+        for offset in [5_u32, 10, 11, 12, exact - 1, exact, exact + 1] {
+            // Every selected component and their sum are exact binary64 dyadics.
+            let seconds: f64 = f64::from(whole) + f64::from(offset) / f64::from(divisor);
+            let area: super::AdaptiveArea = product_ok(super::AdaptiveArea::new(seconds))?;
+            let denominator: u128 = u128::from(divisor);
+            let numerator: u128 =
+                (u128::from(whole) * denominator + u128::from(offset)) * u128::from(SECOND);
+            // This quotient places legal endpoints around the fixture. The
+            // oracle below uses comparisons, independently of product division.
+            let anchor: u64 = u64::try_from(numerator / denominator)?;
+            for bounds in [
+                (anchor - 2, anchor + 2),
+                (anchor + 2, anchor + 4),
+                (anchor - 3, anchor - 2),
+            ] {
+                let limits: super::FixtureAdaptiveHorizonProfile =
+                    product_ok(super::FixtureAdaptiveHorizonProfile::new(
+                        1.0,
+                        product_ok(super::adaptive_duration(bounds.0))?,
+                        product_ok(super::adaptive_duration(bounds.1))?,
+                        0.0,
+                    ))?;
+                for point in [-1.0_f64, 1.0] {
+                    let debt: super::PhaseDebt = product_ok(super::PhaseDebt::new(point, 0.0))?;
+                    let actual: u64 = product_ok(area.horizon(limits, debt))?.nanoseconds();
+                    check_dyadic_ceiling_clamp(numerator, denominator, bounds, actual);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Literal policy math checks no source eligibility, physical SD or nonlinear bound.
 /// # Errors
 /// Preserve checked profile, duration, area, debt and proposal construction.

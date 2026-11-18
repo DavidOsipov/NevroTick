@@ -22469,3 +22469,1428 @@ chain, preserving legitimate parallel candidates and all KoD records/floors.
 Source identity alone grants no configuration revision, uninterrupted mapping,
 calibrated error, authentication, independence, sample eligibility or clock
 authority. Production/native, hosted, Core/P1 and release exits remain separate.
+
+#### Installed numeric-source configuration — implementation contract — 17 November 2026
+
+**Current child:** S2.1/W11-W01, CHECK-6/11/21/27 and affected CHECK-7/25, on clean
+published `238b9aed6c832d5d5be4a306357c52510395f144`. The preceding provenance
+checkpoint is signed/pushed. This child implements a genuine current configuration
+owner through the actual managed acquisition paths; it does not replace the
+missing production named-service, authentication, calendar, mapping or association
+suppliers with labels. Rust1.100.0, graph/lockfile, targets and execution holds stay.
+
+**Meaning and owner.** The current numeric laboratory configuration is the complete
+allowed endpoint set for one actual catalogue source, bounded by the existing
+three-candidate profile. Raw count/peer/duplicate input is bounded and validated
+inside private checked construction using the shared loopback endpoint rule.
+Canonical endpoint identity retains existing IP/UDP-port/required-zone semantics.
+Per-run request/total durations, candidate order/subsets and experimental declarations
+are operation inputs, not source configuration. DNS refresh, a new control handle,
+session or KE association is not an implicit configuration replacement.
+
+The existing non-clonable `SourcePolicyAuthority` owns explicit first installation
+and expected-current-snapshot replacement. It validates the actual source/root
+before mutation and retains current configuration state outside individual sessions.
+No session/handle/facade drop clears it. A private snapshot binds actual
+`SourceIdentity`, a checked nonzero configuration revision and the immutable
+accepted endpoint set. It retains no mutable policy cell, channel, socket or
+current permission. A source can remain explicitly unconfigured for the existing
+laboratory API; that absence is not an installed configuration witness.
+
+**Issuance and currentness.** Both `SourceHandle::session` and
+`SourceHandle::prepare_address_round` derive configuration provenance in their
+shared binding transactions. Once configuration exists, each selected endpoint
+must belong to it before any permanent endpoint publication or native work.
+Parallel sessions/candidates under the same installed set share one revision.
+Bindings issued before first installation cannot bypass the new configuration.
+No public producer can opt out of the check or supply its own revision.
+
+Explicit replacement advances the checked revision even for the same endpoint
+set. Under the existing `PolicyGuard`, publish the new set/revision and source-only
+wake atomically; keep every source/endpoint KoD interval, floor, refusal,
+restriction revision/epoch, permanent slot and target capability unchanged.
+Invalid values and stale/foreign expected snapshots fail without changing either
+configuration or restrictions. Exhaustion never wraps: a valid current replacement
+that cannot issue a successor makes only configuration issuance unavailable,
+withdraws old dependent work and preserves history/restrictions. This intentional
+fail-closed transition differs from ordinary rejected-input failure atomicity.
+
+The existing final managed send/reply transactions recheck actual configuration
+under the same custody as their effect/commit. Preserve counters, original
+deadline, receive work, pending correlation and actual completion. A configuration
+refusal has its own typed source-policy cause; it must not manufacture invocation
+`Status::Stale` under a quiet control snapshot or recreate report-loss/InternalState.
+No await/callback/unlock splits the current check and effect.
+
+**Historical receiving.** Carry one sealed managed provenance value, binding the
+actual source and its optional issued configuration together, through facts and
+the original series/address receiving owners. Do not make future callers remember
+two independent tag-selection/check calls. Receiving rejects foreign, omitted or
+jointly substituted original context before advancing state/cursor. After a real
+commit, compare the original expected context; never reread global current
+configuration to rewrite the historical result, timestamps or age. Configuration
+identity and equality are distinct from endpoint-set value equivalence.
+
+**Association boundary.** Preserve actual socket/request identities and exclusive
+session custody. Session-chart and invocation allocations are not NTS association
+or key generations. The default-off KE `AssociationOwner` remains a separate real
+owner. Its source/configuration/key-lifetime integration and the complete production
+source definition remain later supplier work; this child claims only the real
+installed numeric configuration and its reached consumers.
+
+**Independent expected observations:**
+
+1. SourceA with E/F permits same-revision E/F sessions and an F/E round; candidate
+   order/subset, per-run bounds/profile and a new control do not replace it.
+2. Wrong/outside peers and malformed/oversized/duplicate sets reject without
+   publishing endpoints or changing prior configuration/restrictions. Legitimate
+   neighbors remain usable through both actual public managed producers.
+3. First installation and equal-endpoint replacement invalidate old prepared and
+   pending A work at final guards. B/E stays current; endpoint allowance is still
+   shared. No forbidden send/commit, refund, renewed deadline or InternalState follows.
+4. A selected reply refused by the final configuration guard remains received1/
+   rejected1; quiet invocation control is preserved in the real series report.
+5. Post-commit replacement preserves the original configuration/source/facts/age
+   and once-only transfer. Foreign/missing context refuses without closing the
+   valid receiver; its matching neighbor still transfers once.
+6. DENY/RSTR, RATE state, admitted earliest floors, endpoint capacity and unrelated
+   source restrictions survive replacement. Old KoD targets retain their original
+   record-revision semantics; replacement itself reenables nothing.
+7. Stale/foreign replacement expectations are failure-atomic. Revision exhaustion
+   has no wrap or identity reuse, remains configuration-unavailable, and preserves
+   independent source/endpoint restrictions and historical snapshots.
+8. Intended external construction/mutation/default/conversion refusals and legal
+   consumer compile controls reach actual public types. New checked fields and
+   manual comparisons force deliberate structural review.
+
+Use WSL configured development runners first; native ordinary Core/Engine checks
+retain their separately authorized scope. Freeze this complete owner-to-consumer
+slice before current reader/roster/source admission and per-owner90%/95% metrics.
+Reuse the existing recipes and original first failures; do not add another
+verification framework or a source-text-only positive capability. Initial source
+implementation/development is bounded to3600 seconds including preparation,3300
+work/300 cleanup, at most three focused and three complete development attempts;
+metric admission/execution gets its own explicit changed-candidate checkpoint,
+carrying all preceding costs and holds. Planning/contract review records no
+implementation, test or qualification pass.
+
+#### Installed numeric-source configuration — development results — 17 November 2026
+
+S2.1/W11-W01, CHECK-6/11/21/27 and affected CHECK-7/25. Baseline remains signed
+`238b9aed6c832d5d5be4a306357c52510395f144`; current source/configuration product
+has606 inputs, SHA-256
+`23c91549b893b1319ef8dd3337977ae18b23fe54766c045ff8733fdc4f4e9d1e`.
+The development capture has786 inputs. Cargo graph, Rust1.100.0 and targets are
+unchanged; Cargo.lock retains
+`2ccabde33a800b745c42b4fe96dc4a6c300b1961ac87e149d313cae41fde5f2e`.
+
+Implemented the contract above through actual authority install/expected-snapshot
+replacement, mandatory checked bounded endpoint construction, shared binding and
+final effect guards, and sealed original source/configuration reception. Equal
+endpoint replacement advances identity. Source-only exhaustion is sticky; it
+cannot wrap or reset any KoD record/floor/target. Original completed history
+remains valid after replacement. Individually valid newer same-source contexts
+are rejected in series facts, owner and joint substitutions, and in address
+receiving, before progress adoption. Matching original history still transfers.
+Independent source review found no concrete defect and resolved its earlier
+same-source-revision control gap in the integrated additions.
+
+Actual configured development passes all13 lanes on this product:267 default
+and501 EP1 cases in each ordinary/optimized mode,89 doctests per graph, GNU/MSVC
+check and Clippy, GNU rustdoc, format and sandbox boundary. All ten new named
+configuration cases execute in both full graphs. An earlier focused selection
+passed10 cases before documentation/lint/helper refinements; only the final full
+selections qualify those refinements. The six added doctests comprise two legal
+and four compiler-negative examples. Exact primary-diagnostic classification and
+an actual issuer legal program remain for the existing external compiler child;
+do not claim those controls from rustdoc pass labels alone.
+
+First outcomes remain retained: focused1 and full2 stopped at the post-capture
+7GiB disk floor before any lane; focused2 found a missing test import; full1
+reached GNU check then refused the new Clippy issues. Full3 was refused before
+its output directory/workload because insufficient original work time remained.
+The original3600-second allowance is INCOMPLETE. The independently reviewed
+single900-second extension retained origin1794936238.3363535, cumulative4500 total/
+4200 work/300 cleanup and all resource/selection gates, and admitted only full4.
+Full4 passed in319.139293466 seconds with true final custody and joined sampler.
+Actual named results total1724 (1714 final full +10 earlier focused), versus the
+retained6886 upper charge; no unused allowance or old failure is a test pass.
+
+Evidence under
+`/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/source-config-revisions-20261117-v1/`:
+`full-4/verification.json` SHA-256
+`c0b612def73fb20eeb78b99710b98201f38d51ff60a27f4c2c2861fdeb16157c`;
+`implementation-review.json`, `extension-v1/resource-replan-review.json`,
+`full-3-pre-admission-refusal.json` and `source-development-closeout.json` retain
+scope, exact source hashes, bounded replan and first outcomes. Cleanup deleted
+obsolete source/tool/download copies and completed compiler targets, with raw
+receipts retained and differing old source bytes preserved as plain preimages.
+Installed tools, live MCPs and current physical sources remain intact.
+
+**Next:** rebind the real `policy/engine-source-policy-analysis.json` owner,
+complete47-helper closure (new configuration test owner included), current raw
+267/501/89 rosters and actual producer/budget lineage; adapt independent reader
+fixtures without changing refusal semantics. Then exercise the existing external
+compiler child and prepare fresh five-owner coverage/catalogues. Session source
+is unchanged but reached configuration/report callees changed: inspect actual
+current behavior and prefer its fresh cohort over an unproved historical bridge.
+Keep public campaigns closed until exact current admission; preserve per-owner
+90% executable-line and95% viable mutation gates, first failures and cumulative
+charges. This closes development only. Mapping/calibration/invalidation, named
+source/trust/date/association suppliers, native TLS/CNG/UDP, production Core
+admission, services/clock/package/release and post-V1 proof work remain separate.
+
+##### Current configuration qualification adoption contract
+
+Use the existing five-owner role and CHECK-7/25 chain. Preserve the final606-input
+Rust/graph/configuration bytes and the successful full4 development receipt.
+Writable scope is the existing reader, its contract fixtures and the source-policy
+JSON role; shared manifests, dependencies and product Rust are frozen. Rebind
+actual47 helper inputs, independently reconciled267/501/89 raw identities and the
+new ten required configuration cases. Keep all old source/provenance controls,
+strict count/boolean/path/role refusal, EP1 zero/default-only/omission controls,
+13 real lanes, coverage/mutation thresholds and closed campaign flags.
+
+Current producer admission must check the real full4 extension recipe/budget,
+original3600 allowance and original clock, explicit900 extension/6886 upper
+charge, immutable source budget, final raw monitor/custody and physical786-source
+capture. Do not rename it full2 or transfer prior metrics. Existing sampler
+healthy/gap controls need fresh evidence for the actual new monitor, under a
+separate finite clock. That control clock may begin after positively observed
+source-development closure, even before its allocated4500-second window ends:
+bind the exact joined full4 receipt and source-development closeout, require the
+closeout after its final sample and before4200 work expiry, and reject any control
+clock preceding that closure. Preserve the old historical source rules separately
+where applicable. This replaces an unnecessary idle wait with actual terminal
+custody, not another development allowance. Retain all earlier failures and
+charges. Compare this acceptance change against238b9ae through the real reader:
+pre-closure control clock must refuse; a genuine post-closure neighbor may admit.
+
+Before execution, independently review those exact code/configuration criteria
+and pair harmful criterion changes with healthy fixtures. Then use the configured
+Python reader controls and existing private compiler/coverage/enumeration recipe.
+Four intended new external diagnostic refusals plus a genuine issuer legal
+neighbor provide no generated mutation credit. Prepare all five fresh catalogues;
+unchanged session text does not waive changed-callee review. No new framework,
+proof/native job or open mutation campaign follows. Preparation is independently
+bounded from the conservative18:20:03 origin in qualification-preparation-start,
+3600 total/3300 work/300 cleanup, maximum3 reader and3 preparation attempts, with
+all preceding source costs and source failures retained.
+
+##### Current configuration reader adoption — completed 17 November 2026
+
+Current product23c91549/606 inputs and all Rust/graph bytes remain unchanged.
+The47-helper role now binds actual267/501/89 rosters and the real full4/source/
+extension/control lineage. Actual physical admission passes819 inputs; campaign
+flags remainFalse, catalogues{} and exact equivalences[]. Current final reader
+SHA950b2ae9deffcf99b0b89a47758cc484fc37d10e61445aa4f5df9edb76d57feb,
+fixtures2f8478ff5ed5595ed0b3fae4e5ceb1cc950f2adb04683e4c9b99fa4ad0846a62,
+role9dfad4427871e783c09a81147939876f782fad5c430a31612bec416f15ecc113.
+
+Independent receiving review found a P2 tooling downgrade: removing all managed
+receipt markers and changing only the evidence path/hash admitted a current
+flat-legacy reference, skipping new lineage checks. Actual focused RED reached
+its healthy819-input neighbor and failed at `Incomplete not raised`. The smallest
+repair selects required managed admission from actual/current binding identity,
+independently of receipt markers, and refuses mixed current/foreign bindings.
+Historical generic admission remains separately scoped. The current candidate
+still requires explicit re-admission after future runtime changes.
+
+All179 Python reader cases pass after that repair, including both mixed-binding
+arms and the legitimate historical runtime-map neighbor. The final path/pin-only
+metadata refinement passes the same179 again. Initial actual physical admission
+refused an incoherent closeout: separate clock reads differed by2.384185791015625e-7
+seconds. Original `source-development-closeout.json` e5d2f0ef stays immutable.
+`source-development-closeout-coherent.json`
+f35ca498d803206f2fae37e077b4681bc1fc5689cb5b6d4ed271082a9d855e77 derives only
+elapsed time from the original observed close timestamp. Original later/larger
+charge, first refusal and raw full4/sampler times remain retained. Strict equality
+and all timing/resource gates are unchanged; no execution result was invented.
+
+Fresh sampler controls use the identical195230d3 source, separate control clock
+after actual source closure and20-second owned-unit bounds: healthy stopped0;
+expected gap failed observer2, parent0, both joined. One incorrect launcher path
+failed before sampler start and remains separate. Bootstrap strict initially
+found missing rustup on the user-unit PATH; the corrected explicit PATH passes,
+without installing anything. It retains bootstrap scope, not workspace/native
+qualification. Final179-case run45.678 seconds; actual physical admission receipt
+`qualification-admission/actual-physical-admission-v2.json` SHA
+09f80a696d95644da86c47504e466b75e3c5694cef7570a7de04217901e226bd.
+Reader adoption closeout3ac7e467472ba7fe4d9556982de3074f00dbcceabb3ef186ecdd7210e0523380
+retains final helper identities and explicit false metric/native claims.
+
+**Resume:** source-helper/development admission is complete. Actual external
+compiler diagnostics, coverage and all five fresh catalogues have not run.
+Use the existing private `metrics-preparation-v2/prep.py` pattern referenced in
+qualification-preparation-notes; freeze/review its current candidate and finite
+execution/accounting before running. Retain the original18:20:03 preparation
+clock, consumed reader attempts and every earlier source cost/failure. Its3300
+work/300 cleanup window is closing: any genuinely subsequent preparation stage
+needs an explicit reviewed bounded continuation with all preceding costs; do not
+restart an unchanged failed campaign or reinterpret unused allowance as results.
+Source/reader independence,90% line/95% viable mutation gates and closed public
+campaigns remain. No new mutation, formal, native Windows, package or release
+qualification occurred. Keep current work uncommitted until its required
+qualification/publication checkpoint; preserve user-owned staging if it changes.
+
+##### Current configuration compiler, coverage and inventory run
+
+Continue S2.1/W11-W01 and CHECK-7/25 from the admitted `23c91549…` product and
+47-input helper closure. Reader adoption closed with all three reader attempts
+recorded and no compiler/coverage/inventory workload started. The next stage
+uses the existing private preparation runner with 1,800 seconds from its
+19:17 UTC preflight and 300 seconds reserved for cleanup. The earlier source
+and reader elapsed times, resource stops and result charges stay in the
+existing coordinator record.
+
+Require one successful external program through the real issuer, four exact
+compiler refusals for the new configuration types, the complete 267-test
+instrumented default corpus, and complete mutation inventories for all five
+owners. Preserve the 90% executable-line and 95% per-file viable mutation gates.
+The three preparation lanes produce no mutation executions or score. Review
+the inventories and generation gaps before running the existing isolated
+single-owner mutation workflow.
+
+The first external construction specimen produced both the intended E0451
+and an uncoded private element-type diagnostic. The classifier correctly
+refused that result. The retry first built a legal address set, then challenged
+external construction with struct update syntax. Its raw compiler receipt
+records E0451, E0277, E0616 and E0277 at their intended primary spans, and the
+issuer program exited successfully. `metrics-preparation/attempt-2/source-configuration-contracts/verification.json`
+has SHA-256 `da25e8f344f8cbc67dde8d98530c52de1d4b1064d9c9e0161a4613573fd10423`.
+The attempt stopped at the next session's startup disk floor after that
+compiler child joined and its inputs were rechecked. Both parent attempts
+retain their incomplete outcomes and did not start enumeration or coverage.
+The continuation carries the closed compiler child, the original time window
+and both reserved compiler charges into the remaining two lanes. Cleanup of
+duplicate acquisition data and terminal compiler binaries freed 437,620,736
+allocated bytes while retaining actual diagnostics and source snapshots.
+
+The metrics-only continuation completed with native exit 0 and a clean joined
+monitor at 993.058 seconds on the original stage clock. Under
+`metrics-preparation/attempt-3`, the parent receipt is `d408e363…`, coverage
+`d9463212…` and enumeration `63ea94c7…`. The compiler child was revalidated
+from its actual diagnostics and issuer execution without another compiler run.
+
+| Default GNU owner | Covered / executable lines | Line coverage | Generated mutants |
+| --- | ---: | ---: | ---: |
+| `source_policy.rs` | 1,381 / 1,439 | 95.97% | 256 |
+| `lib.rs` | 956 / 1,003 | 95.31% | 252 |
+| `session.rs` | 249 / 249 | 100.00% | 47 |
+| `series.rs` | 747 / 779 | 95.89% | 162 |
+| `address_round.rs` | 578 / 605 | 95.54% | 80 |
+
+The instrumented run executed all 267 admitted tests. Independent review
+reconciled 797 generated descriptors against their source and raw diffs across
+all five files. Missing generation sites retain separate behavioral controls.
+
+##### Current configuration mutation — Session gate passed
+
+The frozen default GNU cohort uses six workers and one owner at a time. Its
+private admission binds the 786 product and helper inputs, the current 267-test
+and 89-doctest rosters, and the full five-file inventory. The public campaign
+role stays closed. Freeze `d6d0355b…`, budget `878a088d…` and admission
+`906ee651…` retain the prior charges and the current execution window.
+
+Session's fresh cohort executed its full 356-case baseline and classified all
+47 variants: 14 behavioral catches, 33 compiler-unviable, zero survivors and
+zero timeouts. The independent reviewer rechecked all raw diffs, failure
+diagnostics and behavioral witnesses. The 14/14 viable score passes the 95%
+file gate with zero exclusions. The native launcher and campaign both exited
+zero, with joined observation and no terminal resource or descriptor failures.
+Receipt `mutation-cohorts/supervision/session/1/verification.json` has SHA-256
+`d01d1daaea6c2a49e032e4184727cf18d92b5ed33e6724e56782482b0d7bc5d9`.
+All five cohorts finished and joined on `23c91549…`, with these raw results.
+
+| GNU owner | Generated | Caught | Compiler-unviable | Survivors | Raw gate |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Source policy | 256 | 153 | 99 | 4 | Failed |
+| Library | 252 | 119 | 130 | 3 | Failed |
+| Session | 47 | 14 | 33 | 0 | Passed |
+| Series | 162 | 101 | 59 | 2 | Failed |
+| Address round | 80 | 33 | 47 | 0 | Passed |
+
+No variants timed out. Independent Library and Series reviews confirm their
+five exact equivalence arguments within the default GNU configuration.
+Their raw failures remain on record, with zero extra kills and no exclusions
+adopted in the public policy. Address round's independent review confirms all
+33 catches and the 33/33 viable pass. The three additional supervisor receipts
+are Library `0a59e0e5…`, Series `2d4caffe…` and address round `2482fff3…`.
+
+**Source-policy attempt 1:** all 256 variants completed. The raw record has
+153 catches, 99 compiler-unviable variants, four survivors and no timeouts.
+The raw 153/157 score is 97.45%, and the gate failed because survivors remained
+unresolved. Native exit 2 and CLI exit 1 remain on the original receipt
+`mutation-cohorts/supervision/source_policy/1/verification.json`, SHA-256
+`acc7d1b1405d6cfe0e23c86cf8568cc19edfaf0dd0d5812853199a639e1223f5`.
+The monitor joined with unchanged source and no resource failures. Independent
+review `postreview-source-policy-1.json` (`5f647bfa…`) rechecked all descriptors
+and raw outcomes. One survivor replaces `SourceAddressSet::is_empty` with
+`false`, as enforced by its private nonempty construction. It remains an
+equivalence candidate. The other three replace conjunctions in
+`LivePolicy::belongs_to` with disjunctions. Each accepts a genuine setup slot
+issued for a replacement configuration when the receive plan holds the prior
+revision. The original guard refuses it. The existing foreign-source case
+misses that relationship.
+
+##### Setup receiver regression — 18 November 2026
+
+The existing address-round test now supplies real Ready slots for a different
+allowed endpoint and for an equal-endpoint replacement revision. It requires
+`SourcePolicy(Foreign)` at the actual setup receiver. It also verifies socket
+release, no query or polling-floor debit, and preservation of the original
+cursor claim. The earlier unmanaged and foreign-source cases and the healthy
+public exchange remain intact.
+
+The detached `20cd2fae…` candidate executed the healthy test and caught all
+four exact `LivePolicy::belongs_to` faults at the expected assertions. This
+includes the previously caught source-owner fault and the three earlier
+survivors. Attempt 4 exited zero in 67.695 seconds with joined custody.
+`receiver-guard-sensitivity-v1/run-attempt-4/verification.json` has SHA-256
+`9f86159ab1af0bd4eafb82e29b7f65e614caa12aa247edec861a768da818756a`.
+The preceding attempts stopped at the user-unit bus, missing output parent and
+retained observer path, before any test ran. Their original receipts remain.
+
+Remote `dda3f49` was fast-forwarded and four overlapping documents were
+reconciled. All 786 captured source and helper inputs matched before applying
+the single tested fixture delta. The incoming [TQ-01–10 timestamp matrix](windows11-integration.md#timestamp-qualification-matrix--18-november-2026)
+defines checks for the still-missing supplier.
+
+##### Installed configuration — final selected GNU checkpoint, 18 November 2026
+
+GNU Clippy refused the first full run because the test helper took its case
+selector by value. That run ended after format, boundary checks and GNU check.
+The repair borrows the selector. Its exact current `0910c474…` candidate
+passes the healthy receiver and all four generated fault controls again.
+The focused receipt is `511a05a6…`, and the original lint failure is `6c7e84e8…`.
+Both early development setup refusals remain recorded before any cases ran.
+
+The full retry passes all 13 lanes in 321.256 seconds on the original
+application clock. It executed 267 default and 501 KE cases in each of
+ordinary and optimized modes, plus 89 doctests per graph. GNU and MSVC
+checks and Clippy, formatting and GNU rustdoc passed. Full receipt
+`917e021d…` records 1,714 named results and joined observer custody.
+The current source-role reader passed 181 Python controls and admits 1,660
+evidence files for the 606-input product and 47 protected inputs.
+
+Fresh coverage `c17026b8…` executed all 267 cases and passed the five 90%
+line gates at 95.31–100%. Fresh catalogue `1166405a…` matches all 797
+earlier descriptors and rendered diffs. The independent
+`integrated-current-source-review.json` (`ab8f2e3b…`) accepts this
+reconciliation of the exact outcomes.
+
+| GNU owner | Caught | Compiler-unviable | Reviewed equivalent | Adjusted viable score |
+| --- | ---: | ---: | ---: | ---: |
+| Source policy | 156 | 99 | 1 | 156/156 |
+| Library | 119 | 130 | 3 | 119/119 |
+| Session | 14 | 33 | 0 | 14/14 |
+| Series | 101 | 59 | 2 | 101/101 |
+| Address round | 33 | 47 | 0 | 33/33 |
+
+The 423 catches comprise 419 retained unchanged witnesses and four current
+fault executions. Equivalents add zero kills. All five 95% file gates pass
+with zero unresolved outcomes or timeouts. Earlier failed raw campaign
+receipts remain intact. Public campaign admission stays closed. Native
+TLS/CNG/UDP, branch coverage, production suppliers and release qualification
+remain open.
+
+Remote main advanced to `32e56be` with the explicit-type and assumption
+guidance. The two overlapping documents were reconciled and all 617 current
+metric inputs matched. Apply the updated guidance to subsequent handwritten
+source changes, starting with the source-owned KE Preview below. The retained
+qualification identifies the already-tested bytes exactly.
+
+##### Source-owned KE Preview — design continuation
+
+After the installed-configuration checkpoint, continue S2.2 under
+CHECK-6/9/21/25/27. The current installed definition owns UDP endpoints. The
+separate KE caller supplies its TLS peer and verification name. A source-bound
+Preview needs one checked definition issued by the actual source authority,
+with explicit TLS peer, verified-name input and allowed UDP endpoints under
+one revision. A numeric-only replacement withdraws the KE definition. Freeze
+the definition and receiving API before implementing this child.
+
+Route the issued definition through the existing one-shot worker. Recheck
+currentness at preparation, worker admission, association publication and final
+Preview commit. At publication, require the returned UDP endpoint to belong to
+the original still-current set. Review the existing stop-scope and KE phase
+lock order before adding the nonblocking source-policy check. Release both
+Control guards before releasing policy custody, whose drop wakes waiters.
+Keep TLS, native completion, entropy, callbacks and join outside combined custody. Replacement
+during native work blocks positive publication while preserving actual join,
+original deadlines and spent work. After commit, retain historical success with
+its original revision.
+
+Exercise a matching installed definition and real worker receiving path next to
+missing, foreign, replaced and exhausted definitions, outside UDP endpoints,
+and replacement immediately before each commit. Verify joined custody and
+unchanged history after replacement following commit. Keep this child
+Preview-only. Protected datagrams, authenticated-server history for NTS KoD,
+the finite clock-mapping issuer and Core eligibility have separate prerequisites.
+
+###### Source-owned KE Preview — implementation slice
+
+Continue from staged tree `53df6031…` on `32e56be`. Keep that staged
+checkpoint available for signing. Apply the current explicit-type and
+assumption guidance to this new source slice.
+
+Fast-forwarded to `346432f` before integrated checks. Its 12 guidance and
+documentation changes preserve all 606 staged development product inputs.
+The merged documentation guide preserves both workstreams in staged tree
+`f8b7c255…`. Apply the revised outcome-handling guidance and reconcile actual
+package, test binary and case identities in the selected Engine test runs.
+
+- Under the existing KE feature, the checked `KePreviewTarget` owns a numeric
+  loopback TLS peer, original bounded name and checked TLS verification name.
+  Reuse that admission for the existing diagnostic configuration. The real
+  catalogue authority installs or replaces a target and checked UDP set in
+  its existing revision transaction. Numeric-only replacement withdraws the
+  KE definition. Existing restriction records, floors, wake ownership and
+  revision-exhaustion behavior apply.
+- A source handle captures the immutable installed Preview context before
+  preparation. The existing prepared invocation and worker consume that
+  context through a closed Preview selection. Recheck it before worker
+  admission and at the real owner after TLS. Source refusal blocks new work.
+  Negotiated UDP endpoints must satisfy the existing loopback/IP contract and
+  the issued set, including any retained endpoint refusal. Endpoint observation
+  creates no slot and consumes no UDP allowance.
+- Association publication and final seal commit use the same original context
+  and actual selected endpoint. Take stop-scope, KE phase and nonblocking
+  source-policy custody in that order. Store the combined guards so Control
+  drops before policy wakes, including refusal and unwind. Keep I/O, allocation,
+  entropy, callbacks, retirement and join outside the combined transaction.
+  A committed historical completion arrives through the existing joined
+  receiver with its original configuration. Preserve actual primary and
+  cleanup outcomes.
+- The portable acceptance pair uses the real worker, association publisher,
+  sealing path and joined receiver with admitted component material. The legal
+  issued definition completes with the original revision and no UDP effects.
+  Replace it inside the entropy seam and require typed refusal at final commit,
+  retained charged work and normal retirement. Add outside-endpoint, source
+  refusal and postcommit replacement controls. Use actual Native configuration
+  for a later Windows qualification of TLS/provider behavior.
+
+The owner requests complementary testing of existing Core/Engine and the new
+path using the repository's property, model, boundary and regression methods.
+Use the existing admitted test graphs. For the new issuer, compare bounded
+install, replace, withdraw and stale-handle histories with an independent
+revision model, through the actual owner. For the earlier Core code, select a
+retained numerical or lifecycle oracle and exercise its actual product
+contract. Record reached cases and preserve the first outcome. Keep the
+portable schedule observations separate from native Windows qualification.
+
+Existing-code controls passed in the dedicated selections. On staged tree
+`f8b7c255…`, admitted GNU Nextest discovered and executed all 21 selected Core
+cases, including 17 history comparisons, the closed-interval permutation
+check and three phase boundary checks. The first discovery wrapper attempt failed before
+execution on mixed Cargo diagnostics and JSON. The corrected run reconciles
+actual package, binary and case identities. Its receipt is `b16deee6…` under
+the managed Preview development evidence. Core source is unchanged here.
+
+The admitted Python 3.12.3 and Hypothesis 6.170.15 selection accessed the actual
+Engine source-policy result reader 152 times across published `346432f` and
+staged `f8b7c255…`. It accepted 100 valid captures and refused 52 invalid ones
+across all eight selected refusal partitions. The positive generator sampled
+one, two, four and five nonempty blocks. The first namespace-control attempt
+stopped before reader calls on a `PWD` assumption and was corrected without
+changing repository policy. Receipt `0a51a7aa…` retains exact historical-log
+hashes, generated examples and cleanup. Neither selection qualifies changed
+Preview source or native behavior.
+
+###### Source-owned KE Preview — development checkpoint — 18 November 2026
+
+The Windows KE feature now provides a source-owned one-shot Preview. The real
+catalogue authority issues the checked TLS peer and verification name with the
+allowed UDP set under one revision. The diagnostic caller shares checked target
+construction. The configured worker uses the original definition at startup,
+association publication and final packet commit. A numeric replacement
+withdraws KE issuance while retaining restriction and polling-floor history.
+
+Only the actual association ledger can bind the Preview packet for completion.
+An unbound packet cannot finalize, and the bound managed packet cannot use
+diagnostic completion. The real protected adapter and direct ledger entries
+refuse the managed mode before backend creation or request spending. A joined
+report retains the committed configuration and original counts. Later
+replacement does not alter that history. Primary, cleanup and abnormal worker
+facts remain available to the result owner. No UDP datagram is emitted by
+Preview and no Core observation is produced.
+
+Product `dc06e067a5833f5f0744104a5d0028416e7479f1f81c064726c89c0ba277703b`
+binds 609 product inputs and the protected 614-path closure. Its actual
+development receipt `4a3071e7cf8af1a0faecbdce791e74ceb52baf8d7b9e0bfe6347897fe715f132`
+is under `managed-preview-development.FGFZVi/candidate.STd2IH` in the current
+Engine evidence root. All 14 selected lanes passed on Rust 1.100.0. Both GNU
+default modes ran 267 cases each and both EP1 modes ran 514 each. Default and
+EP1 ran 89 and 90 doctests respectively, for 1,741 results. GNU and MSVC
+target checks, GNU default and EP1 Clippy, MSVC EP1 Clippy, format and GNU
+rustdoc completed. The 13 new cases reached the selected Engine library
+binary. They exercise the real worker, startup and final replacement, outside
+endpoints, restrictions, historical retention, direct mode refusals and 64
+independent model histories with 192 actual configuration actions.
+
+The first integrated attempts stopped on format and conditional usage or lint
+diagnostics. After correction, the first passing run used a duplicated
+verification inventory row. Each new critical file now has one security owner,
+and older registered owners retain their single rows. The final run repeated
+all 14 lanes using verified derived build outputs from the inventory-only
+predecessor. No Rust, Cargo graph or compiler bytes changed between those runs.
+The independent source review covered the actual producer, binding, receiver,
+failure and retirement paths. Both direct-handler findings were closed before
+execution of the final candidate.
+
+The corrected frozen candidate passes strict workspace policy for all seven
+members and all 181 Engine evidence-reader unit tests. The registration check
+confirmed single critical and security membership for the 16 existing KE
+subjects and two new Preview owners. The first reader run reached its actual
+seven-GiB scratch floor and reported five failures and four errors. The same
+selection passed in adequately sized private scratch with unchanged source and
+thresholds. The final reader receipt is `0abd7b33…` and the first result stays
+in the same tooling record.
+
+The exact generated-history case passed in its isolated healthy run. Omitting
+only revision equality in the receiving guard made the same case fail at the
+original grant after `[Observe, Observe, ReplaceCurrent]`. The fault returned
+`Ok(())` where the independent model required `ConfigurationChanged`. Issuer
+CAS and the other source bytes stayed intact. Receipt `426db38d…` in the
+managed Preview model sensitivity record identifies the native exits 0 and 101
+and verified cleanup. This is targeted sensitivity evidence and earns no
+generated mutation credit.
+
+This is the selected development checkpoint. Re-admit the current EP1 source,
+helpers and actual rosters before the applicable 90% line and 95% per-file
+mutation work. Windows TLS/CNG and actual native retirement, production
+timestamp suppliers and the later protected source path retain their separate
+exits. Independent W11-W01 preparation found that unmanaged UDP send admission
+uses the lower edge of its immediate clock bracket. A detached regression is
+ready to check the equality and just-late cases through the real loopback owner
+while preserving the accepted lower-edge T1 and historical send completion.
+
+###### Unmanaged send cutoff — W11-W01 boundary verification
+
+Start from staged tree `36accf65…` on `346432f`. Preserve the staged Preview
+checkpoint and its applicable metric obligations. This independent S2.1 child
+covers application capture placement and send custody under TQ-01/TQ-09 and
+CHECK-6/7/11/21/25/27 at the existing unmanaged transport owner.
+
+The pre-send software bracket closes at its upper monotonic reading. The
+unmanaged handler currently compares the earlier reading with the deadline;
+the managed UDP and protected NTS handlers compare the upper reading. A bracket
+whose lower reading is timely and whose upper reading reaches the deadline must
+refuse the native send, retaining the existing attempt charge and exact Control
+checkpoint. The lower reading remains the original T1 for an admitted send.
+After an admitted actual call, retain the return bracket even if it crosses the
+deadline. This check does not supply physical calibration or freshness.
+
+Use the closed two-capture seam and the real loopback socket in the existing
+processing-guard tests. Keep the lower reading fixed before the deadline and
+place the upper reading 100 ns before, at, and 100 ns after. Positive admission
+must deliver the original 48-byte request and retain its late return observation.
+Both refusals must yield Timeout, observe one software capture, and leave the
+peer without a packet. Run the detached test-only seam with the original guard
+first, retain any actual behavioral RED, then change only the admission edge if
+confirmed. Reuse the same positive and refusal controls across source variants.
+
+The detached GNU default RED candidate `20bdfb3b…` compiled successfully and
+executed all three selected Engine library cases. At and after the deadline,
+the real loopback peer received the original 48-byte request. The assertions
+matched the actual source socket and request bytes before reporting the
+unexpected emission. The before-deadline neighbor passed with its original T1
+and late return intact. Cargo exited 101 on the two intended failures. The
+classifier and owned unit exited normally. The first receipt is `9605f9c9…`.
+
+The causal correction uses `before.mono_after` for unmanaged send admission.
+The pre-send lower reading still belongs to the admitted application T1. A
+closed observation seam shares the same actual software capture and syscall
+path as the normal entry point. The other two Engine UDP send owners already
+admit on the bracket's upper reading. The bounded variant search found no
+second lower-edge cutoff at those send sites.
+
+All three cases passed under the ordinary GNU default and EP1 profiles on
+the final detached source `dd140363…`. The prior refusal cases each observed
+Timeout, one capture and an empty peer. The accepted case preserved the
+original bytes, source socket, lower T1 and late return. All-target GNU Clippy,
+format and the isolation control also passed. Receipt `63797b6e…` retains the
+six actual results. The detached receipts preserve the earlier resource, lint
+and format stops separately. The exact passing patch is now in the main
+working tree for the complete affected Engine verification selection.
+
+Integrated product `dd1403631a4c8ba69bae629a9a896c1219b1577981431c6961bb11d4d5fc6591`
+matches all 609 inputs from the final detached verification. All 14 development
+lanes passed. Each default test mode executed 270 cases and each EP1 mode
+executed 517, with 89 default and 90 EP1 doctests. The 1,753 results include
+all three cutoff cases in both ordinary and optimized modes, preserving the
+existing Preview selection. GNU/MSVC target checks and Clippy, format,
+GNU rustdoc and the isolation control passed. Receipt `2179c0b9…` is under
+`unmanaged-send-cutoff-development.v1/candidate.7vZSB1`. Independent review
+matched the actual callers, Control custody, request identity, no-payload
+refusals and historical lower T1/late return. The Linux loopback and selected
+software coordinates leave native Windows and calibrated timing open.
+
+###### KE release cache retirement — exact execution admission
+
+For CHECK-19/20/25/26/27, release-cache retirement now requires the same exact
+ordinary names, counts and digest as debug retirement. The prior release
+consumer accepted truthy malformed execution evidence. In the detached RED,
+seven malformed records each deleted the owned synthetic release cache.
+Missing execution already refused. The same nine focused controls pass with
+the repair. Invalid records preserve the cache, debug sentinel and raw log.
+A correctly validated release run removes only its owned release cache.
+
+The integrated isolated Python run passed all 183 named Engine reader methods
+on receipt `cde0daff…`. The first host run exposed a fixture-path assumption
+when `/dev/shm` was passed directly as `TMPDIR`. The corrected run mounts
+adequate private scratch at the configured `/tmp` namespace path. The printed
+method names reconcile with successful completion, including verbose
+docstrings and the existing synthetic dispatch output. The earlier
+formatting, storage and receipt checks retain their criteria. All 609 Rust
+product inputs still match `dd140363…`. The existing KE campaigns remain
+closed. Re-admission must bind the exact current ordinary and annotated
+Rustdoc rosters before the next selected coverage or mutation work.
+
+###### KE current-role re-admission — Preview and send cutoff
+
+Continue REQ-8/BND-2, AC-04 and CHECK-6/8/9/17/19/20/21/25/26/27 from staged
+tree `111e5ca6…` on `346432f`. Runtime source remains the 609-input
+`dd140363…` development candidate. Use its actual 517 EP1 ordinary identities,
+243 KE-prefixed cases and 90 annotated Rustdoc identities. Require the exact
+current execution receipt and raw log checks before using those inputs in
+the KE analysis role. Preserve the compiled-only and compile-fail suffixes.
+Ordinary and coverage lanes require the ordinary roster. Rustdoc and the
+combined mutation baseline require their exact additional roster, including
+failure on omitted or same-count substituted examples.
+
+The current inventory retains the previous 12 GNU subjects and adds the
+reachable checked Preview target. Full critical ownership includes the new
+Windows Preview facade and the source-policy issuer. Those two owners retain
+separate native or profile-specific evidence gaps. The old 633 descriptors
+and scores remain with their historical candidates. Reset reviewed current
+inventories to empty and keep campaigns closed until fresh enumeration and
+review. Retain the 90% line and 95% per-file mutation thresholds, finite
+6-worker settings, 7 GiB startup and 4 GiB stop reserves and existing output
+limits. The next actual checks are live role admission, source-bound inventory
+enumeration and selected line coverage. A fresh passing development workload
+is available and needs no standalone repeat to recover the present roster.
+
+The live reader admitted all 54 current role inputs, the pinned development
+receipt and both actual EP1 logs. The graph-only predecessor retains its scope
+and 27 unchanged dependency and tool graph inputs. The combined mutation
+baseline now requires all 607 exact ordinary and annotated Rustdoc identities.
+Standalone Rustdoc checks the same 90 identities. The old reader accepted both
+zero doctests and an unrelated single doctest beside a complete ordinary set.
+The current reader refuses those shapes and rechecks the physical evidence at
+the final session bookend.
+
+Independent review matched all 609 product inputs, all 54 role inputs, both
+physical logs and all 19 exact critical registrations. The isolated suites
+passed all 187 Engine and 185 portable-analysis methods. The first portable
+attempt hit the runner's file-size limit before three sparse oversize fixtures
+could reach the reader. The same controls passed with the fixture limit set to
+admit their intentionally oversized sparse file lengths. The product analyzer
+limits are unchanged. Final Python receipt `f9431ed0…` retains both outcomes.
+Hypothesis passed 63 actual reader calls covering valid orderings, empty and
+omitted selections, same-count substitutions and each annotated result kind.
+Receipt `92424da3…` records 30 accepted and 33 refused captures.
+
+The configured stable-core `ke_association` enumeration completed all 13
+listing commands and recorded 672 current descriptors. Receipt `40d3d921…`
+retains the complete actual inventories and unchanged campaign hold. Five
+source-identical owners retain 134 exact descriptor identities. The other
+eight owners account for 538 current descriptors requiring current disposition.
+This comparison supplies no automatic transfer of kills, equivalents or scores.
+
+The configured GNU EP1 line lane executed all 517 ordinary cases, including
+243 KE cases. All 13 selected per-file 90% line gates passed. Results range
+from 90.85% to 100%. The new Preview target reached 62 of 65 executable lines
+and has 18 enumerated descriptors. Receipt `fb6736fe…` and the enumeration
+receipt are under `ke-current-role-readmission-v1/metrics`. Branch, mutation,
+remaining critical-file and native qualification are open. The next bounded
+mutation selection is the new target owner after independent catalogue and
+generation-gap review. Keep the public role closed and preserve the original
+95% per-file criterion and earlier failed scopes.
+
+
+###### Protected send capture and Preview boundary qualification — 18 November 2026
+
+W11-W01 TQ-01/TQ-09 and CHECK-6/11/21/25/27 now cover the protected sender's
+completed pre-send software bracket. The final sender holds the same Control
+guard and rejects reversed coordinates before comparing the upper coordinate
+with the original expiry and calling the selected adapter. A diagnosed
+reversal returns Capture. An ordered bracket at the cutoff returns Deadline.
+Healthy ordered and equal brackets retain the exact original capture. A
+capture or deadline refusal retains its archived cookie and Invoked custody.
+Socket send, socket receive and receive-work charging stay untouched.
+
+The isolated GNU regression used a closed scripted capture in the real
+protected operation. The first attempt stopped on fixture qualification
+warnings. The corrected pre-fix test observed one synchronous send entry
+and one receive entry with a reversed bracket (native exit 101). The
+source repair passed six ordinary and six optimized exact cases, including
+unchanged short/unknown, cancellation and historical-capture neighbors.
+Evidence under `ke-next-focused-controls.arSQqW` retains the original
+failure, `red-run-2/verification.json` `a367efa3…` and
+`green-run-1/verification.json` `a0167691…`. The fixture observes the
+shared sender logic. Native Windows clock and UDP evidence remain open.
+
+Eight independent DENY/RSTR histories exercise the actual Preview commit with
+both endpoints and both sides of the commit. A just-arrived restriction from
+an alias denies the shared endpoint under the same installed revision. The
+independent endpoint still completes. A postcommit restriction preserves the
+original historical result. The test observes charged work, retained floors
+and the absence of an independent endpoint record. The isolated control omitting only the
+final endpoint check fails at this assertion; its healthy neighbor passes.
+This is separate from generated mutation accounting.
+
+Final product `23d9108d8e68766774b6de0041e22e69a6ed3a0e0b46edfdfc13bd99db653513` passes all 14 development lanes.
+Actual selection is 270 default and 519 EP1 cases in each ordinary and
+optimized mode, 89 and 90 doctests, and GNU/MSVC check and Clippy plus GNU
+rustdoc. The original EP1 lint failure and the unchanged test-observation
+extraction remain recorded. The closed role admits 54 protected role inputs,
+the two exact EP1 logs and all 372 named Python reader tests. Current GNU EP1
+coverage executes 519 ordinary cases and passes all 13 per-file 90% gates
+(90.85%–100.00%). The reviewed inventory contains 672 descriptors.
+
+The four target attempts preserve their individual outcomes. The first
+watchdog stopped after a 2.47-second scan. The isolated watcher let the
+second complete all 18 outcomes with five timeouts and observed reclaim at
+the 3 GiB soft limit. Moving the soft limit to 4 GiB retained the 6 GiB hard
+cap, six workers, zero added jobserver tokens and original 90/60 phase
+limits. The third run had zero timeouts and two survivors in the raw
+verification-name envelope (9/11 viable caught). The previous public
+fixtures still rejected at TLS parsing. The amended test observes actual
+Garde admission with a legal 253-byte name and rejects empty, non-ASCII
+and 254-byte names before conversion.
+
+The fourth run passes the selected Preview-target 95% gate with 11 of 11
+viable generated checks caught. All 18 descriptors reconcile with seven
+compiler-unviable, zero survivors, zero timeouts and zero exclusions; the
+607-case earlier baseline stays historical. The current exact baseline is
+609 cases (519 ordinary and 90 doctests). Both previous survivors now fail
+at the raw validator assertion. The original 1,380-second cumulative
+allowance charged 904.435 seconds across four attempts. The 46,170-case
+figure is the reserved ceiling. The other KE mutation owners retain their
+individual status. Public campaigns remain closed.
+
+The receipts are under `ke-next-focused-controls.arSQqW`.
+
+- `combined-lint-repair.7EyMXt/verification.json` `80f0eaf1350ff7fd51b171c32b22b2ed1160e5510339297212e67873892a3e1b`.
+- `readmission/qa/verification.json` `52ed60db4f0f6e9965f81eafbdaaeae0198572585757138da63c2928fc2c305d`.
+- `readmission/enumeration/verification.json` `9720643ace1ae55a79c16e1304c4c2ad81da499f87dddfe3cb4e6673cf2f4274`.
+- `readmission/coverage/verification.json` `d145055bd676d4c079a1b46c66da98ab59f863796d5640b13295785d77878ee0`.
+- `readmission/cohort-v4/campaign/verification.json` `eade62d1fbdbda9c8e692a46986e00b4845c2728af8d5e256394aaeaa937b9c9`.
+
+Continue S2.2 by freezing the actual ledger-to-concrete protected send
+transaction. Keep Preview a never-send selection. Preserve the existing
+stop/phase lock order, irreversible cookie archive, exact pre-send bracket
+and post-return accounting. The next source-owned protected authorization
+will require one explicit source issuer and a current endpoint lease through
+send and final reply publication. Native provider, clock-mapping, and
+positive Core admission retain their existing prerequisites.
+
+
+###### Protected send under one Control guard — 18 November 2026
+
+S2.2 and W11-W01 TQ-01/TQ-09, CHECK-6/9/11/21/25/27. The real protected
+worker now checks the ticket and original invocation Control before it
+archives the cookie, then retains one scope-then-phase guard across the
+irreversible archive, exact pre-send software bracket, nonblocking send and
+return capture. A refusal before the guard leaves the already prepared
+request occupied and its work spent. A refusal after archive preserves
+Invoked custody and the exact cause. A Stop after actual completion can
+refuse Pending while preserving the original send capture and spent cookie.
+Preview continues to withhold the send adapter.
+
+The test backend observes both actual guard locks at adapter entry. The
+detached foreign-owner control exposed a fixture-side cancellation before
+ownership refusal (one expected failure, one passing neighbor, native exit
+101). After the ownership check, legitimate and foreign Control/ticket
+paths run through the same guarded ledger in ordinary and optimized modes.
+Independent transition review ran seven old and fifteen new bounded model
+histories, plus a refused Stop transition while the modeled gates are held.
+The model compares archive, capture and logical publication rules. Its
+results are separate from the actual ordinary and optimized test logs.
+
+Product `289c88635f7eb6db031373ee979726a071173c1b3d7a625cd2c8d46aa4ab08ac` passed all 14 development lanes. Each mode executed
+270 default and 520 EP1 cases. Default and EP1 doctests executed 89 and 90.
+GNU and MSVC check and Clippy, format, GNU rustdoc and the isolated boundary
+control passed. The rebound closed role validates 54 exact role inputs and
+372 isolated reader cases. Current GNU EP1 coverage ran 520 cases including
+246 KE cases. All 13 selected line gates passed (90.85%–100.00%).
+The previous coverage launch refused below its seven-GiB start floor.
+Reclaiming a reproducible source copy restored admission for the passing
+retry. Coverage profiles and the raw coverage export remain available.
+
+Current enumeration lists 680 descriptors with 172 ledger and 49 datagram
+descriptors. The previous Preview-target mutation receipt retains its prior
+candidate identity. Current per-file mutation execution and branch and
+native qualification remain open. Public mutation admission stays closed.
+
+Evidence under `protected-one-guard.EzWLxM`:
+
+- `verification.json` `e3913e20d1f9a1fc1bad10c6f2ec5a2abe0a6b7a670156253c7b0021cafc0838`.
+- `focused-red-run/verification.json` `84eaebf0b0694437b23ca204d59004400e60d52e5e3a447a7cddf02dce6c4989`.
+- `readmission/qa/verification.json` `651b3e79c0d87987046b82ee11c97b287004c1d2d6df4f407954ec5630b3b7d7`.
+- `readmission/enumeration/verification.json` `acbef7a7e37624e733f53a73d6c76bb90b442e3fd0713ef25e02d464fee5c749`.
+- `readmission/coverage/verification.json` `434f8478b5047d8815f92ec3ea37702012ae166cbfeb23c4b6c1570bdf2138ba`.
+- Independent old/new model `one-guard-model-review.paIqkY/results.json` `4c781ea2f446d849a40287275737abc025cb301f1d2c1145e04d106715b2f121`.
+
+Continue the existing S2.2 qualification using the two changed production
+owners and exact classified inventories. The next protected authorization
+slice requires an explicit source issuer and current endpoint lease at send
+and reply publication. Native provider and clock-mapping prerequisites,
+positive Core admission and post-V1 formal work retain their current scope.
+
+
+###### Core properties and Engine guard sensitivity — 18 November 2026
+
+The combined source checkpoint adds two deterministic Core property tests
+and one Engine evidence-reader test. The protected datagram test's comment
+now describes its actual Stop placement. The Engine production behavior and
+the selected KE case roster carry through this test-only slice.
+
+The isolated early-release sensitivity control changes only the scripted test
+branch before adapter entry. It reaches the real protected operation and
+fails the Stop-scope lock observation (native exit 101). Early Stop and
+foreign-owner neighbors pass in the same run. The supported candidate's
+matching ordinary and optimized case passes. This is a targeted behavioral
+control. It adds no generated mutation kills.
+Receipt `protected-guard-entry-sensitivity.L6tbhx/release-before-guard-attempt/verification.json`
+`7d0a2eef1521d5e85e35f68e1f861639949ca9dd87f17f219e3d894fd5d6be18`. The derived source and build were retired after execution.
+
+The additional evidence-reader case runs twelve malformed native-metadata
+partitions across EP1 ordinary and doctest roles. Each has consistent
+physical hashes, checks its exact rejection before Session creation and
+preserves the input bytes. Two healthy admissions bracket those partitions.
+The integrated reader runs 188 Engine and 185 portable methods. Independent
+review found no weakened admission, selection, threshold or accounting.
+
+Product `5e203f7babf52f58e8a8b66eaefedafc4de161c3255fb21180b060fb7db9273f` passes the exact 14-lane selection and closed
+54-input KE role. Actual execution has 270 default and 520 EP1 cases per
+ordinary and optimized mode, 89 and 90 doctests, and GNU/MSVC compile and
+Clippy checks. The 680-descriptor catalogue remains a listing. Current GNU
+coverage runs 520 cases and passes all 13 line gates (90.85%–100.00%).
+Ledger and datagram retain 172 and 49 descriptors. The current mutation and
+native exits remain open. Prior GNU datagram failures include Windows-only
+paths that the GNU runner cannot distinguish. Keep evidence for those owners
+under the Windows-specific task and the exact admitted profile.
+
+Evidence under `core-engine-generated-neighbors.aizzv52h`:
+
+- `verification.json` `37ac7e7c64bfca8633ead92340693a6803af130e16a8705c58c484c898b7280c`.
+- `readmission/qa/verification.json` `5e7c7a0273ec7ac4959edf7aa39e0f1d6cfbb771d9c066eeea985603eb2a8313`.
+- `readmission/enumeration/verification.json` `2d5a8b0f4e8def89ba374977b32a8b00769cfa1fdc122dd626715e91bb8d6608`.
+- `readmission/coverage/verification.json` `46e185336b4a3d1f632c847a6c2fb04c7853555e0d7e5e7b836051e38594aa8f`.
+
+For the next S2.2 slice, keep ordinary reply authentication and bounded
+staging outside the StopScope and policy guards. The existing ledger replaces
+cookies before the retired operation's final Control commit. A current
+source endpoint check solely at that final commit would come too late to
+govern cookie publication. Preserve the intermediate authenticated receipt
+at its original processing time. Carry the prepared cookie replacement
+through actual retirement to the final guarded consumer, with the original
+request correlation and spent work intact. Preserve Preview's no-send role.
+
+
+###### Retired protected reply cookie commit — 18 November 2026
+
+S2.2, W11-W01 TQ-01/TQ-09 and CHECK-6/9/11/21/25/27. The protected
+worker records the authenticated intermediate receipt at its original
+packet-admission time and preserves charged receive work. Checked replacement
+entries travel through the opaque operation after actual socket and runtime
+retirement. The final ledger transaction checks original Control and the
+exact current authenticated receipt, idle slot and unchanged charged ordinal.
+It then commits under the same gates and installs the replacement once from
+preallocated storage. Guard release precedes wiping and deallocating the
+discarded cookie buffers. No cryptographic opening or allocation enters the final
+guard. Final refusal preserves the pool, intermediate history and original
+deadline and work charges. Preview remains a no-send path.
+
+The old candidate actually reports one 12-byte replacement immediately
+after retirement. The proposed-boundary assertion fails there with native
+exit 101 and the early-Stop control passes. The changed source passes 19
+focused GNU controls. The legal commit installs the one replacement once.
+Late Stop, expiry, drop and foreign or later charged work preserve the
+prior pool. Existing stale-reservation fixtures now have an original
+spare cookie with legal wire length. The direct component fixtures reuse
+the same staging kernel. Independent review found two escaped fixture
+assumptions and the intermediate wipe order, all corrected before execution.
+
+Final product `06be5ecc492679fa89da85c15223d4ceb6071cb019547c609ce790019294eada` passes 14 development lanes with 270
+default and 520 EP1 cases in each ordinary and optimized mode, 89/90
+doctests, GNU/MSVC check and Clippy, format, GNU rustdoc and isolation.
+The closed KE role binds 54 exact role inputs and the reader executes 373
+cases. All 13 GNU line gates pass with 520 executed cases. Current exact
+enumeration lists 692 descriptors (183 ledger, 50
+datagram). Enumeration carries no mutation results. Current per-file
+mutation and native execution exits remain open.
+
+Evidence under `ke-retired-reply-new-control.bvzdpljd`:
+
+- `verification.json` `1401fa1da932d2a5e27f285090f560ea7419eaffc1283cdecb5cef4e8311c2e1`.
+- `focused-reply-attempt-1/verification.json` `e8b7aad1e674f59727d25f7931a912db3d26c0ddde6adffd0730228a77010767`.
+- `readmission/qa/verification.json` `906aa70cda631dea30e8adbac0a0332232f7b66b264ec1e15cf56be6c794e404`.
+- `readmission/enumeration/verification.json` `663be52c9672d025c95f26cc8b26661c380c6d1187ab004c125c13e1a962e276`.
+- `readmission/coverage/verification.json` `4e9c4b0217976680d03f245fb8ae4bd84f4f5f86d64b70bd11745c3362943eea`.
+- Old behavior `ke-retired-reply-old-control.2drdkwmg/old-cookie-publication-attempt/verification.json`
+  `d9d42f1aaa7ffd44063309b90b64cab0cb042b79c7933b72646d01f27a936df3`.
+
+The next managed protected source child still needs the explicit source
+issuer and negotiated endpoint lease through send and this final reply
+transaction. Selected-owner mutation work requires the exact current
+inventory and admitted resource profile. Native TLS/UDP, prior-authenticated
+server ownership for positive NTS KoD, platform clock mapping and Core
+eligibility retain their existing gates.
+
+
+###### Exact-eight cookie boundary controls — 18 November 2026
+
+The 183-descriptor GNU ledger run on `06be5ecc…` executed the exact
+610-case baseline. Native cargo-mutants exit 2 retained 116 catches,
+53 compiler-unviable cases, 14 survivors, zero timeouts and zero exclusions.
+Raw 116/130 (89.23%) failed the existing gate. The worker joined and
+custody stayed exact after 1164.787 seconds of the 1350-second attempt.
+Independent review identified four reached boundary-test gaps, two for
+each exact-eight operand. The other ten actual misses are equivalence
+candidates pending exact admission. None earns generated kill credit.
+Raw and terminal receipts remain under `ledger-mutation-06be-v1` with terminal
+SHA-256 `360022f011d145da67c9a086bb68a842a52b76be0fe45cfaf902a94eab25e9d9`.
+
+The existing ledger test now observes an actual archive and authenticated
+receipt that fill the existing pool to eight. Staging a genuinely opened
+already-used cookie preserves all eight eligible entries and the original
+pool, receipt and work. A distinct pending request refuses nine authenticated
+incoming fields, then accepts eight at the same original budget/deadline.
+The fixture distinguishes incoming field count, total pool bytes and
+distinct usable values. Both cases use the maintained staging/receive
+kernel. The focused test and two existing neighbors pass. A first Clippy
+refusal caught the predicate-style empty-vector assertion. The correction
+compares an explicit entry count and keeps cookie values out of diagnostics.
+
+Exact test-only product `fc7e4deadffe4c5e71839506b8a671e4802e71a219380e9b11fe9c18493060c1` passes 14 development lanes,
+373 reader cases and all 13 GNU line gates. The closed role binds the
+same 520 EP1 ordinary and 90 doctest cases. Enumeration retains all 692
+precise owner descriptors and 183 in this ledger file. The initial
+failed mutation receipt retains its previous source identity. Qualify the
+four changed witnesses through a fresh exact selected run, then admit
+only independently established equivalences from its actual results.
+Public mutation permission stays closed.
+
+Receipts under `ke-ledger-exact-eight-controls.k28suoxy` include development
+`03214cde69bfdfbd4750725dcf4ed6fece9ed2ff18fc8f54522f9fa4249855f8`, reader
+`bad900334891d5a1876c429ff40ffec9923afc55f5ebcc3173fb254cabfb7d0f`, coverage
+`0a537cb72471eadaf2d180bb6b92241115c46807e134cca41a831d068ca96613` and enumeration
+`ba70532b05e7721d574ddc96158c7895d862ebd2c8f9d27054a74bcae20f9d9d`.
+
+
+###### Selected GNU ledger mutation qualification — 18 November 2026
+
+The exact-eight candidate `fc7e4deadffe4c5e71839506b8a671e4802e71a219380e9b11fe9c18493060c1` completes the selected 183-variant
+GNU ledger campaign with the full 610-case baseline. All four exact-eight
+variants now fail their dedicated behavioral assertions. The actual raw
+outcomes record 120 caught, 53 compiler-unviable,
+10 surviving and 0 timed out. Native cargo-mutants
+exit 2 and raw 120/130 (92.31%)
+retain their failing outcome. This run used 1158.136/1350 seconds
+with the existing six workers and phase limits. The first run on the
+earlier candidate incurred 1164.787 seconds under its own bounded attempt.
+
+The ten actual remaining misses match the independently reviewed exact
+source/candidate/descriptor and proof identities. The current role validates
+all ten through the direct receiver and rejects noncanonical source
+spellings before physical admission. The separate data-only receipt
+reconciles the original complete native roster, rendered diffs and baseline.
+It excludes only those ten equivalent cases. The resulting selected gate is
+120/120 (100.00%)
+at the unchanged 95% threshold with zero unresolved survivors. The original
+native exit and raw outcome remain available and no equivalence adds a kill.
+
+The closed role and exact 376-method reader selection passed. The refreshed
+catalogue records 692 current descriptors and all 13 selected GNU line
+gates passed. The [current review proof](engine-ke-ledger-exact-eight-equivalences.md)
+is a source-bound caller argument. The selected GNU ledger scope retains its
+own result. The datagram Windows-arm gate, other mutation owners, managed
+endpoint lease integration, native provider and Core eligibility stay open.
+
+- Current native terminal `ledger-mutation-fc7e-v1/terminal.json`
+  `d97d40541a0eddf0e56ca931e1de4393e9a11b794453cb685d02ee52150311c9`.
+- Data-only derived selected gate `exact-ledger-adoption-current-fixture.ersl0zpb/derived-ledger-gate.json`
+  `312f8cd21405f98b3870f8831ec7858bc009ddc0c159637b8f4f4c60019a213d`.
+- Reader, line and enumeration receipts in the same external directory.
+  Their SHA-256 values are `e785fbd85b6e81eba747355ae67415747a690b5fbf424a4caf9b071d56c69dfb`,
+  `f1c5ee5dea69097d85a8e5a194f1925b0efcbe51a23945f7b2e93eb192f17792` and
+  `93f0b4169354ba6aa7296dd49205b5b200759f2fddf6d61d2694d6e7f519ce4d` respectively.
+
+###### Managed protected endpoint lease — development and line checkpoint — 18 November 2026
+
+Under CHECK-19/24/25, the explicitly selected Windows KE laboratory facade
+`SourcePolicyAuthority::probe_nts_protected` consumes the issued source
+configuration and the negotiated peer. The lease retains the exact wire
+address and canonical endpoint for their distinct checks. The send guard
+checks original control, current source, exact negotiated peer and both
+restrictions before it publishes the archive and debits the two send floors.
+An entered short, failed or indeterminate send retains the debit and cookie
+custody. Stop before entry spends no new floor. The final retired reply
+consumes the exact original receipt, request and policy epochs before it
+installs replacement cookies. It preserves spent receive work and prior
+history on refusal. Preview remains on its existing never-send route.
+
+The new tests exercise eight named managed EP1 cases. These cover exact shared
+floor timing, configuration replacement at readiness and final reply commit,
+normal and abnormal worker join, and refusal to downgrade into Preview. The
+scripted send histories distinguish a full reply, short send, would-block,
+permission refusal, unknown outcome and Stop before and after entry.
+At retired commit, advancing the sending source or its canonical endpoint
+refuses publication. Advancing a different source or port permits it.
+The mismatched mapped wire peer spends receive work before the correct
+second packet can be accepted.
+
+Exact product `d07d01b87b442b7b2ddf35286be572826c195e186a51f13c9918708fc450028f` (609 inputs)
+passes 19 configured development lanes. There are 270 default and 528 EP1
+cases in each ordinary and optimized mode, 89 and 90 doctests, seven
+selected old/new Core cases in each mode, GNU/MSVC check and Clippy, Rustfmt,
+GNU Rustdoc and isolation. All 376 reader methods pass. The physical
+KE role binds 54 inputs and all eight new managed names. Fixture-only disk
+observations let four synthetic Session controls reach their intended checks
+while the real seven-GiB guard retains its exact boundaries. A separate
+low-space read stopped two other fixture controls early; retirement of the
+terminated development cache restored the capacity before the exact rerun.
+
+The single omitted retired-policy check in a separate scripted build caused
+the intended stale-epoch assertion to fail (GNU Cargo exit 101). Both
+selected healthy neighbors passed. This was a targeted sensitivity control.
+The freshly enumerated catalogue contains 722 descriptors.
+All 13 selected GNU line gates pass at 90.91% or higher.
+The active role has empty inventories and equivalences, with mutation
+campaigns closed. The earlier ledger result stays bound to `fc7e4dea…`.
+Current mutation and real provider/UDP qualification remain open. The scripted
+Windows child below records its exact outcome. Production time admission and positive protected KoD
+remain with their existing supplier and authority gates.
+
+Evidence root `ke-managed-protected-development.QBTV3k42`:
+`lint-fixed/verification.json` `007dc0fc7afa1710eb03bc0ef028d9b6043224cb2b85b850ced73202921f499c`,
+`sensitivity/verification.json` `407190c0608ac6c40794ce412a20f4f4ed3c163952bf17f12abecf17921b0aa3`,
+`readmission/qa/verification.json` `42a9c79b9e41c9a2461fea8bca0e1df4df51680eaf93b8c1d435cfe40182bb98`,
+`readmission/enumeration/verification.json` `982089d05ef54ec99868a04332a7fec600e69ab76593c52d7dc0dc790ef4ed77`
+and `readmission/coverage/verification.json` `fe0f5c49ad4db7d2e0a008a00aeec8c3b05e9fc070d4eea8eef9219e3c17ad98`.
+
+###### Scripted Windows KE child — 18 November 2026
+
+The first cross-build stopped before Rust compilation. Fifteen of the 66
+reader methods produced 48 setup failures because the V19 facade fault
+fixture used the changing live Engine module. The reader now receives the
+exact historical module from `9cbdc249…` as an inert hash-bound test input.
+Both prepared-output readers inspect their fixture-local roots. A changed
+original-source input reaches the real pinned rejection. The production
+V19 descriptor, source and raw-diff bindings retain their original values.
+
+On product `d07d01b87b442b7b2ddf35286be572826c195e186a51f13c9918708fc450028f`,
+all 66 reader controls pass in the configured namespace and the
+17-step MSVC build completes. The independently obtained Windows roster
+retains all eight managed protected cases and binds all native helper inputs.
+Actual Windows/MSVC discovery matched all 504 predicted library names.
+The fixed runner executed 253 serial scripted KE cases and three separate
+nested cases. All 14 supervisor observations reached their expected terminal
+results with job, event and stream cleanup. The owned Windows staging was
+retired after its raw records were preserved. Healthy real TLS/CNG/UDP
+and full native provider qualification remain open.
+
+The external `ke-managed-protected-development.QBTV3k42/native/retry`
+records build SHA-256 `dbc22c89f0ab832aa185b350e7b18ef45f24f4de8e264e91834d3b749b86fc7a`, native SHA-256
+`ff7a2a53b926902c5a13fab5639f11d1075670ca489687b8ec65ded43681d389` and fixture-readmission SHA-256
+`84080125c856bf41a7554605e1ee134c6fdd74a0a808b83289e7be58178efe0f`. The original 48-failure
+cross-build is retained alongside the retry.
+
+###### Selected GNU association mutation — 18 November 2026
+
+On `d07d01b87b442b7b2ddf35286be572826c195e186a51f13c9918708fc450028f`, all 47
+generated association descriptors and rendered diffs match the frozen
+inventory. All 618 unmodified baseline cases passed. The GNU campaign caught
+35 of 35 viable variants and rejected 12 at compilation. Each caught
+variant failed a named test after compiling. There were zero survivors,
+timeouts or exclusions. The 95% gate passes for this file on this product.
+The joined worker retained exact input custody within 421.902 seconds.
+
+Independent review confirmed coverage of the changed lease-selection and
+Preview-refusal branches. The generated constant replacements for the
+Preview Control check could not compile. A separate direct receiver test
+now checks foreign attachment alongside a distinct same-Control success
+using the current owner. For this test, deliberately bypassing the identity
+check triggered the expected actual assertion failure while its healthy
+neighbor passed. It adds zero generated kill credit. Exact scope, remaining
+generation gaps and the unchanged threshold remain part of CHECK-19/25.
+
+The `ke-managed-protected-development.QBTV3k42/association-cohort-v1` terminal SHA-256 is
+`c068ea34e4039fd018e1c339805c6a28ad71092e25afe6ccee7357c265831c25`.
+The targeted Preview receipt is `945545bbcfaee9a3d02e1d200aac1161b3b5c38073f5d37827685998d4e914b5`.
+
+###### Protected pending request ownership — 18 November 2026
+
+After a complete guarded send, the real ledger now retains the submitting
+backend identity and its managed policy stamp in the outstanding request.
+A datagram associated with a different backend spends receive budget before
+refusal, even with identical addresses. The matching reply moves the original
+submission into retirement. The final cookie commit still requires the
+original Control, exact receipt, ordinal, configuration and policy epochs.
+This keeps the bounded one-shot facade and adds no prior-authentication
+authority, first-packet freshness or positive KoD effect. The nonterminal
+request-level commit needed to earn and consume a prior-authentication witness
+remains the next S2.2 owner step under NV-DEC-001 §6.5.
+
+Candidate `e0da4ede4c4ef92c23471b625ce5b561b00e41e2b04f5f64c2049f59f42cd92e` passes 14
+Engine development lanes and 1,775 cases, including its unchanged 270 default
+and 528 EP1 ordinary/optimized rosters and 89/90 doctests. The new receiver
+control spends one datagram on a wrong backend, retains Pending and its budget,
+then accepts the genuine backend. Removing the check in an isolated build
+causes the intended assertion to fail while the healthy diagnostic case
+passes. An independent owner/retirement review confirms the original
+late Stop, expiry, failure and configuration boundaries.
+
+All 376 reader checks and 13 selected GNU 90% line gates pass, with a
+minimum of 90.91%. Fresh complete enumeration contains 730 descriptors.
+The 17-step x86-64 MSVC build and all 66 runner controls pass. The actual
+Windows run matches 504 predicted test names and passes all 256 selected
+scripted KE cases across 14 supervisor observations. Owned staging was
+retired after retaining the raw records. Real TLS/CNG/UDP and current per-file
+mutation gates remain separate. The prior association result retains
+exact scope. Main mutation permission and equivalences stay closed.
+
+The development, identity sensitivity and native execution receipts under
+`ke-managed-protected-development.QBTV3k42` have SHA-256 values
+`6e37f6245a7e865b717783af579c098a927ca2956c53dcf2a9c2202cd2ad8fe1`,
+`46b6d7b0b31d9c5322aba0f87ada5117133018dccf328b172d48e07643a34f54` and
+`56d90ae031d08d3dd52d18891f063a497dc41c1c0b3b6860b1eda3924ce96df6`.
+
+###### Independent reader and datagram checks — 18 November 2026
+
+On staged product `e0da4ede4c4ef92c23471b625ce5b561b00e41e2b04f5f64c2049f59f42cd92e`,
+the isolated Hypothesis pilot runs the real KE evidence reader with physical
+synthetic receipts. Across the two required EP1 lanes, all 24 generated and 16
+explicit malformed receipts reach their intended refusal before Session
+creation. The real reader also accepts 82 healthy or restored reads. Omitting
+only the report-to-raw case comparison produces the expected assertion
+failure, and the unchanged replay passes. The initial optional fault attempt
+stopped before testing because a transitive fixture import was absent. The
+restored actual reader result is `dac13d258dfd0de20a1919489bed1e9321b2a8e774378e5ab53f8b11abb3c3cc` in
+`ke-managed-protected-development.QBTV3k42/ke-reader-hypothesis`. The pilot
+adds no product mutation or native qualification.
+
+The complete GNU datagram catalogue runs all 55 variants on the same staged
+product using six workers. All 618 original baseline cases pass. There are
+16 caught, 31 compiler-unviable, 8
+missed, and 0 timed out, with no exclusions. The result retains
+cargo-mutants exit 2, verifier exit 1, and 16/24 viable caught
+(66.67%) under the unchanged
+95% requirement. Exact descriptor and receipt custody passes after
+401.610 seconds. The terminal receipt
+`344d6ea46dfe6c707b990b498f4c7c3bb58c5b11a6cc71a49f121d973c1e9e86` and raw result
+`b6a3ba2521e896b014dacbb1aab69d433ac373ba88ec1c725c9fb31f39db2fe7` remain in
+`ke-managed-protected-development.QBTV3k42/datagram-cohort-v1`.
+
+The eight target-specific misses comprise six Windows bind variants, one
+Windows exchange and the inactive GNU operand of the Windows 10040
+classifier. The healthy Windows roster includes the real classifier with
+synthetic platform errors. This has no generated kill credit. The bounded native fixture below
+exercises the actual same-family bind through the configured Windows runner. The two body replacements require exact active-target
+compiler classification. Any remaining domain equivalence needs separate
+evidence and review. All eight misses are in this Windows-dependent scope.
+The per-file campaign remains open
+and separate from the pending private prior-authentication transaction. Main
+policy remains closed with no equivalences.
+
+The detached Windows fixture candidate `c4f0ddd35457a59681b9eabd3dd4b2976e162189cb8c7b92eaa9979e6eb7f29c`
+passes 17 build steps, lists all 505 expected tests and completes 254
+ordinary scripted KE cases plus three nested cases. The new IPv4 test
+reaches the real backend's private bind and Tokio registration, compares
+the registered local address with the retained owner, observes bounded
+writable readiness, rejects a non-loopback remote, and checks owner identity
+release while the driver remains live. It sends no packets. IPv6 and native
+kernel-handle retirement remain separate. All 14 Windows observations match
+the configured runner and its owned scratch retired. The build and Windows
+execution receipt hashes are `52fd6d95c2f6aba13e5a7cf5ba063eea9a0cc2a68119bf503fe08b3eecb51551` and `a496ef2b56b1f45ffd036e5023490f925d9bd0b22f3c70dac653fba61c1aa8a0`
+in `ke-managed-protected-development.QBTV3k42/native-bind-lap-v1`.
+
+A separate MSVC compiler check on the exact two Windows body replacements
+observes E0277 for `Backend: Default` and `ProtectedCompletion: Default`.
+Both unchanged compiler neighbors pass. These target-specific results
+identify the exact changed bodies. They do not edit the raw GNU denominator
+or supply behavioral kills. The compiler receipt is `2f6fced2b9ee2157753d041ebd269960f2eaa22e1dae2264f0304eb74fa2feab`.
+
+The test-only overlay remains available for the next coherent source and
+policy readmission. Exact faulty Windows runs and the final cross-target
+mutation disposition remain open. The current staged product and the GNU
+campaign retain their original identities.
+
+###### Same-association authenticated successor — 18 November 2026
+
+The two-request fixture consumes a genuine retired first authenticated reply
+under its original Control and managed source policy. It retains the first
+receipt and exact checked submission while installing the earned replacement
+cookies. A successor takes the remaining driver budget once from the same
+association. Failed successor setup spends that continuation, and fresh
+fixture entry cannot reset it. KE alone, an uncommitted or dropped reply, a
+foreign Control, Stop, and changed configuration or policy epochs cannot
+earn or use it. The original one-shot entry keeps its terminal commit.
+
+The first request's scripted readiness and receive history leaves exactly
+three operations for a valid successor. The second exact response uses the
+same association and S2C key with a new UID and request stamp. Its budget
+reaches zero. On the independently tested predecessor, replacing the carried
+budget with a fresh 64 fails the intended assertion while the older
+neighbors pass. A missing panic note in that predecessor's test helper was
+corrected before final integrated verification.
+
+Candidate `76025b087c66d62452abe3b224a230dc74bc4f823031ed7d9afc83292fcac067` includes that
+fixture, the real IPv4 bind test and selected Core feedback histories. All
+19 development lanes pass with 1,795 named cases, including 530 EP1 cases
+per GNU build mode and the selected Core Phase and Step histories. Both
+Clippy targets pass. All 376 independent reader methods and 13 selected
+GNU line gates pass, with a minimum of 90.91%. Enumeration identifies
+735 descriptors on this candidate. Campaigns and
+equivalences remain closed. The prior GNU datagram 66.67% result retains its
+own candidate, and current cross-target mutation qualification stays open.
+
+The 17-step Windows build and the complete exact roster of 507 names pass.
+Actual scripted Windows execution completes 256 ordinary KE cases and the
+same three nested cases. All 14 observations pass under the configured
+supervisor and owned staging retires. The real local bind fixture sends no
+packet. No positive protected KoD or live worker path is selected by this
+checkpoint. Next, carry the exact charged Pending and prior authenticated
+evidence through backend and runtime retirement to the policy decision and
+actual worker join. Real provider, numerical authority and production
+qualification remain separate.
+
+The development and Windows execution receipt hashes are `f72c9494cea9e647c878134d8604ac6011c8a4bab755521cc785e0e0ae7a18dd`
+and `8fdb8716f0fa818637cbd16e15a129658fc5de6658c3c785208e83cb32658014`. The current private
+receipt directories are
+`ke-managed-protected-development.QBTV3k42/next-integrated-development-v2`
+and `ke-managed-protected-development.QBTV3k42/next-integrated-native-v2`.
+
+###### Retired protected DENY decision — 18 November 2026
+
+The scripted two-request path shares one bounded send and receive driver.
+Each receive charges the original allowance once before peer, framing and
+authentication checks. One immutable frame supplies the UID and exact
+authenticated prefix. Ordinary replies preserve the existing retired cookie
+commit. An authenticated, exactly correlated DENY retires its transport and
+runtime while the original successor remains Pending for the final decision.
+
+The ledger consumes the retired DENY, checks the original Control, previous
+authenticated receipt, outstanding submission and receive times, then issues
+a private move-only authorization. The policy owner rechecks both submissions
+and resolves both records before either write. The guarded decision restricts
+only the logical source and exact remote endpoint, preserves admitted floors,
+commits Control and consumes Pending. Stale authority refuses without a further
+record write, and receipt and cookie history survive the effect.
+
+The independent final-frame pair uses 31 successor datagrams after the healthy
+first request. A valid final DENY leaves Pending current. A bad tag retires with
+the original authentication error and one ReceiveWork intent at the original
+expiry. Both retain 127,088 bytes, zero frames and a matching-key reply still
+unread. A separate control tests the exact admitted shape and rejects an extra
+well-framed outer field. A deterministic independent wire oracle exercised
+112 valid shapes and 13 refusals and caught six modeled provenance substitutions.
+The wire-only product `b5723b31…` passes 119 ordinary and 119
+optimized cases, 86 doctests and 116 external compiler specimens. The initial
+wrapper counted specimens as total commands. Its recorded failure remains;
+the actual 118 configured commands include the library and legal executable.
+
+Product `9ffd1276957f8de1f7341dac1256d585f678305ccbaceb6b3f69c4e94fff7937` passes 19 development lanes with 1,805
+cases, including 535 EP1 cases in each GNU mode and both GNU and MSVC Clippy.
+All 376 reader methods and 13 selected line gates pass, with a minimum of
+90.98%. Enumeration identifies 746 descriptors.
+The 95% mutation gate remains open under the unchanged criteria. Enumeration
+and the prior association and datagram results retain their specific scopes.
+The 17-step cross-build and the 512-name Windows roster match. On Windows,
+261 flat scripted cases and three nested cases passed with all 14 supervisor
+observations and actual cleanup.
+
+The current effect entry remains a private scripted fixture. Next, carry its
+historical decision through the actual WorkerSlot join, including later Stop and
+abnormal retirement. Preserve the one-shot path, original control and provider
+gates. Genuine provider, date, time mapping, quality and production/native
+qualification remain separate.
+
+The exact development and Windows receipt SHA-256 values are
+`68aeb413f6e1d8d6749dd78da181d8ea4315bae61f14994f161c5be8a8d396cc` and
+`56a03f8666eda8d447c71d7dfd5aa8cf83d2ad85b350f0e35f959f8920ecce60`.
+Owned records are under `next-deny-integrated-development-v2`,
+`next-deny-integrated-native` and `next-deny-integrated-preparation` in
+`ke-managed-protected-development.QBTV3k42`.
+
+###### Joined protected DENY and datagram observation — 18 November 2026
+
+The private managed worker now carries the original configured source,
+endpoint, request ordinal and applied DENY decision through its owning
+invocation result and actual worker retirement. The normal receiving path
+issues a sealed historical value only after actual join. A post-record Stop
+preserves that decision and the two committed restrictions. The receiver
+refuses a premature or repeated take. An abnormal post-record panic retains
+the applied fact without granting normal receipt or retirement. The scripted
+successor uses the original allowance, expiry and current source/endpoint
+floor. No denied result is projected as a measurement or probe summary.
+
+The native bind calls the shared exact endpoint validity check after
+`local_addr` and before registration. The portable test exercises good
+IPv4 and IPv6 observations and each isolated refusal. The real Windows
+IPv4 no-send fixture retains actual registration and retirement checks.
+The same Windows socket error translator now exercises literal 10040,
+a distinct raw code, WouldBlock and the oversize sentinel on both test hosts.
+Native provider observation still occurs in the Windows receive arm.
+
+The preceding product `9ffd1276…` completed all 60 GNU
+datagram variants, with a 625-case baseline, 17 caught, 35 compiler-unviable,
+eight missed and zero timeouts. Raw 17/25 (68%) fails the unchanged 95% gate.
+All eight GNU misses touch the Windows bind, receive classifier or exchange
+arm. Both exact body replacements independently produced the intended
+E0277 on active MSVC, with healthy and restored controls. The raw GNU result
+and its denominator stay intact. The endpoint/receive change makes six of
+those decisions testable on GNU; it changes the descriptor inventory and earns
+no earlier mutation outcome. Re-run the exact current catalogue before any
+cross-target file result.
+
+Product `70ae31df35a17ceed0f098a4454c64b91404935b866eaee683e8a51dbce88a50` passes 19 development lanes and 1,811
+cases, including 538 in each GNU EP1 mode. All 376 reader methods and 13
+selected line gates pass, with a minimum of 91.01%. Enumeration covers
+746 descriptors. The first Windows preflight closed before test execution with 663 MiB
+available. After owned scratch retirement and a 2,352 MiB measurement, its
+unchanged cross-built images were admitted again. The 17-step build and
+515-name roster matched. Actual Windows execution passes 264 flat scripted
+cases, three nested cases and all 14 supervisor observations. Owned
+Windows staging and derived test targets retired.
+
+The source remains a bounded scripted acquisition fixture. Refresh the
+selected datagram campaign and the two active-target compiler controls for
+this candidate. Keep the 95% per-file requirement and the actual native
+provider, timing, numerical and production acceptance gates. This child
+grants no Core sample, clock or release authority.
+
+Development receipt SHA-256 `467d3849c1924502290ae19b3a0ab8e2934ebe2d3f2dc1535de34829cd29cf94`.
+Windows receipt SHA-256 `11bd19edefa1ec15717f1c0cbfabffe2eb5f96efb3e40bd59386374d9c034556`.
+Owning records are under `next-worker-boundary-development`,
+`next-worker-boundary-native` and `next-worker-datagram-boundaries` in
+`ke-managed-protected-development.QBTV3k42`.
+
+###### Datagram active-target mutation review — 18 November 2026
+
+On exact product `70ae31df35a17ceed0f098a4454c64b91404935b866eaee683e8a51dbce88a50`, the staged
+datagram cohort executed its 628-case baseline and all 57 generated variants.
+The raw GNU analyzer caught 19 of 21 viable variants
+(90.48%), with 36 compiler-unviable,
+2 missed and 0 timed out. That raw result
+fails the existing 95% requirement. Its exit, denominator and
+empty equivalence set remain as recorded.
+
+The two Windows-only body replacements were replayed independently on active
+MSVC and reached the exact missing-`Default` E0277 diagnostics. Their healthy
+and restored neighbors compile. The data-only file reconciliation verifies
+each rendered descriptor and source postimage, retains the raw outcomes, and
+classifies these two exact replacements as unviable on their active target.
+It awards no additional kill. In that separately scoped file result,
+19/19 viable variants were caught
+(100.00%) with 0
+unresolved survivors. The reconciled result passes the unchanged 95%
+threshold. Public campaign settings and other file, native and production
+qualification exits retain their separate scopes.
+
+GNU terminal SHA-256 `9e6fdb55970ef12c3cbe10b7e0750644bb8bc29c3219b217e7e68fe6e359e88a`, MSVC controls SHA-256 `8c6482a4f5b28a11f97a403f7e31abc8cfacd17a3bbd2d0f9800cbef4106d920`,
+and cross-target readback SHA-256 `f3342b178912f58edfd61241152ef3a271d18b35b7fd5b2e6dc6fcb6706fc959`. Raw evidence is under
+`next-worker-boundary-datagram-mutation` and `next-worker-datagram-boundaries`.

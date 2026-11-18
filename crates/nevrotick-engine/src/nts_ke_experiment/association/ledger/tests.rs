@@ -321,7 +321,95 @@ fn refill_staging_domain_controls() -> Result<(), Failure> {
         ];
         assert_refill_staging_domain(population, extra == 0)?;
     }
-    Ok(())
+    assert_exact_existing_refill_staging()?;
+    assert_exact_incoming_refill_admission()
+}
+
+/// Open an already-used cookie while all eight existing entries remain eligible.
+/// # Errors
+/// Preserve checked owner construction and genuine send, reply and staging failures.
+/// # Panics
+/// Fail if exact capacity refuses an inert refill or changes original custody.
+fn assert_exact_existing_refill_staging() -> Result<(), Failure> {
+    let mut population: Vec<Zeroizing<Vec<u8>>> = vec![Zeroizing::new(REFILL.to_vec())];
+    population.extend((0..7_u8).map(|index: u8| Zeroizing::new(vec![0x30 + index; 12])));
+    with_owner(population, |owner, control| {
+        pending(owner)?;
+        // The authenticated empty Cookie field counts once and has zero payload.
+        let receipt: Receipt =
+            owner.receive_reply(fixtures::EMPTY_COOKIE, owner.material.udp, Instant::now())?;
+        assert_eq!(receipt.cookie_counts(), (1, 1));
+        let before: super::Status = owner.status();
+        assert_eq!((before.available, before.used), (8, 1));
+        assert_eq!(owner.cookie_population()?, (8, 84));
+        let vector: *const Zeroizing<Vec<u8>> = owner.material.cookies.as_ptr();
+        let bodies: Vec<(*const u8, usize)> = owner
+            .material
+            .cookies
+            .iter()
+            .map(|body: &Zeroizing<Vec<u8>>| (body.as_ptr(), body.len()))
+            .collect();
+        let reply: super::StagedReply =
+            stage_reply(&owner.material.keys, fixtures::HEALTHY, &C2S, WIRE, 1)
+                .map_err(|error| refused(LedgerError::Reply(error)))?;
+        let staged: Result<super::StagedReplacement, Failure> = owner.stage_replacement(reply);
+        assert!(
+            staged.is_ok(),
+            "eight eligible existing entries accept an authenticated used-only reply"
+        );
+        let staged: super::StagedReplacement = staged?;
+        assert_eq!((staged.received_cookies, staged.retained), (1, 0));
+        assert_eq!(staged.replacement.population(), (8, 84));
+        assert_eq!(staged.replacement.retain_existing, [true; 8]);
+        assert_eq!(staged.replacement.retain_incoming, [false; 8]);
+        let staged_entries: usize = staged.replacement.next.len();
+        assert_eq!(staged_entries, 0);
+        assert!(staged.replacement.next.capacity() >= 8);
+        assert_eq!(owner.status(), before);
+        assert_eq!(owner.material.cookies.as_ptr(), vector);
+        assert_eq!(owner.material.cookies.len(), bodies.len());
+        for (body, (address, length)) in owner.material.cookies.iter().zip(bodies) {
+            assert_eq!(body.as_ptr(), address);
+            assert_eq!(body.len(), length);
+        }
+        assert!(owner.last_receipt() == Some(receipt));
+        assert!(matches!(
+            *control.phase.lock().map_err(|_| Failure::Control)?,
+            Phase::Published
+        ));
+        Ok(())
+    })
+}
+
+/// Accept eight authenticated incoming fields through the actual pending receiver.
+/// # Errors
+/// Preserve checked owner construction, original send and actual receive failures.
+/// # Panics
+/// Fail if equality is refused or authenticated duplicates alter pool accounting.
+fn assert_exact_incoming_refill_admission() -> Result<(), Failure> {
+    with_owner(cookies(), |owner, _| {
+        pending(owner)?;
+        assert_eq!(owner.cookie_population()?, (0, 0));
+        assert!(matches!(
+            owner.receive_reply(fixtures::NINE_COOKIES, owner.material.udp, Instant::now()),
+            Err(Failure::Ledger(LedgerError::Reply(ReplyError::Cookies)))
+        ));
+        assert_eq!(owner.cookie_population()?, (0, 0));
+        assert!(owner.last_receipt().is_none());
+        let receipt: Result<Receipt, Failure> =
+            owner.receive_reply(fixtures::EIGHT_COOKIES, owner.material.udp, Instant::now());
+        assert!(
+            receipt.is_ok(),
+            "eight authenticated incoming cookies fit an empty live pool"
+        );
+        let receipt: Receipt = receipt?;
+        assert_eq!(receipt.cookie_counts(), (8, 8));
+        assert_eq!(owner.cookie_population()?, (8, 96));
+        let after: super::Status = owner.status();
+        assert_eq!((after.available, after.used, after.frames), (1, 1, 30));
+        assert!(owner.last_receipt() == Some(receipt));
+        Ok(())
+    })
 }
 
 /// Keep authenticated staging inert at the helper's aggregate contract boundary.
@@ -349,11 +437,11 @@ fn assert_refill_staging_domain(
             let staged = staged?;
             assert_eq!(staged.received_cookies, 1);
             assert_eq!(staged.retained, 1);
-            assert_eq!(staged.cookies[0].as_slice(), REFILL);
+            assert_eq!(staged.replacement.cookies[0].as_slice(), REFILL);
             // Project metadata before an assertion can format any cookie body.
-            let staged_entries = staged.next.len();
+            let staged_entries = staged.replacement.next.len();
             assert_eq!(staged_entries, 0);
-            assert!(staged.next.capacity() >= 8);
+            assert!(staged.replacement.next.capacity() >= 8);
         } else {
             assert!(matches!(
                 staged,

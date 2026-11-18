@@ -6,7 +6,7 @@
 //! cookie, or sample authority. Correlated NTS NAK/KoD handling is a separate
 //! control-only path; absence of this envelope is not a product-wide rejection.
 
-use crate::{FIXED_HEADER_LEN, FrameError, FrameLimits, frame_no_legacy_mac_datagram};
+use crate::{FIXED_HEADER_LEN, FrameError, FrameLimits, RawDatagram, frame_no_legacy_mac_datagram};
 
 /// Fixed redacted structural errors without packet, cookie, or key material.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -21,8 +21,8 @@ pub enum NtsAuthenticatorError {
 
 /// Immutable original-input slices from one structurally admitted envelope.
 ///
-/// Only [`read_nts_authenticator_parts`] constructs this value. The exact prefix
-/// is candidate AEAD associated data, not evidence of successful authentication.
+/// [`RawDatagram::nts_authenticator_parts`] constructs this value from its
+/// complete frame. The exact prefix is candidate AEAD associated data.
 /// Nonce and ciphertext exclude their alignment padding. No suffix is exposed.
 /// All slices remain tied to the immutable input, independently of this view.
 ///
@@ -143,46 +143,66 @@ pub fn read_nts_authenticator_parts(
     input: &[u8],
     limits: FrameLimits,
 ) -> Result<NtsAuthenticatorParts<'_>, NtsAuthenticatorError> {
-    let datagram =
+    let datagram: RawDatagram<'_> =
         frame_no_legacy_mac_datagram(input, limits).map_err(NtsAuthenticatorError::Frame)?;
-    let mut offset = FIXED_HEADER_LEN;
-    for field in datagram.extensions() {
-        if field.field_type() == 0x0404 {
-            let body = field.body();
-            let lengths = body
-                .first_chunk::<4>()
+    datagram.nts_authenticator_parts()
+}
+
+impl<'a> RawDatagram<'a> {
+    /// Partition the first type-0x0404 authenticator in this complete frame.
+    ///
+    /// The associated-data candidate, nonce and ciphertext borrow the exact
+    /// original input independently of this view's lifetime. This walks at most
+    /// the admitted 64 fields and ignores well-framed fields after the first
+    /// authenticator. Nonce and ciphertext exclude alignment padding. The
+    /// result supplies structural ranges for later protocol and AEAD checks.
+    ///
+    /// # Errors
+    /// Returns [`NtsAuthenticatorError::MissingAuthenticator`] when none is
+    /// present or [`NtsAuthenticatorError::InvalidAuthenticatorLength`] when its
+    /// rounded component ranges extend beyond the completely framed body.
+    pub fn nts_authenticator_parts(
+        &self,
+    ) -> Result<NtsAuthenticatorParts<'a>, NtsAuthenticatorError> {
+        let mut offset: usize = FIXED_HEADER_LEN;
+        for field in self.extensions() {
+            if field.field_type() == 0x0404 {
+                let body: &'a [u8] = field.body();
+                let lengths: &[u8; 4] = body
+                    .first_chunk::<4>()
+                    .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
+                let nonce_len: u16 = u16::from_be_bytes([lengths[0], lengths[1]]);
+                let ciphertext_len: u16 = u16::from_be_bytes([lengths[2], lengths[3]]);
+                let components: &'a [u8] = body
+                    .get(4..)
+                    .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
+                let (nonce_block, remaining): (&[u8], &[u8]) = components
+                    .split_at_checked(padded_span(nonce_len)?)
+                    .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
+                let (ciphertext_block, _padding): (&[u8], &[u8]) = remaining
+                    .split_at_checked(padded_span(ciphertext_len)?)
+                    .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
+                let nonce: &'a [u8] = nonce_block
+                    .get(..usize::from(nonce_len))
+                    .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
+                let ciphertext: &'a [u8] = ciphertext_block
+                    .get(..usize::from(ciphertext_len))
+                    .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
+                let associated_data: &'a [u8] = self
+                    .input_prefix(offset)
+                    .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
+                return Ok(NtsAuthenticatorParts {
+                    associated_data,
+                    nonce,
+                    ciphertext,
+                });
+            }
+            offset = offset
+                .checked_add(field.bytes().len())
                 .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
-            let nonce_len = u16::from_be_bytes([lengths[0], lengths[1]]);
-            let ciphertext_len = u16::from_be_bytes([lengths[2], lengths[3]]);
-            let components = body
-                .get(4..)
-                .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
-            let (nonce_block, remaining) = components
-                .split_at_checked(padded_span(nonce_len)?)
-                .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
-            let (ciphertext_block, _padding) = remaining
-                .split_at_checked(padded_span(ciphertext_len)?)
-                .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
-            let nonce = nonce_block
-                .get(..usize::from(nonce_len))
-                .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
-            let ciphertext = ciphertext_block
-                .get(..usize::from(ciphertext_len))
-                .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
-            let associated_data = input
-                .get(..offset)
-                .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
-            return Ok(NtsAuthenticatorParts {
-                associated_data,
-                nonce,
-                ciphertext,
-            });
         }
-        offset = offset
-            .checked_add(field.bytes().len())
-            .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
+        Err(NtsAuthenticatorError::MissingAuthenticator)
     }
-    Err(NtsAuthenticatorError::MissingAuthenticator)
 }
 
 /// Round an unsigned wire length up to a four-octet span with checked arithmetic.

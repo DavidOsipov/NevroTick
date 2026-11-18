@@ -48,12 +48,7 @@ struct ConfigCandidate {
 
 /// Classify the complete fixed laboratory configuration without effects.
 fn config_issue((peer, request, series): (SocketAddr, Duration, Duration)) -> Option<PilotError> {
-    if !peer.ip().is_loopback() || peer.port() == 0 {
-        return Some(PilotError::InvalidPeer);
-    }
-    if let SocketAddr::V6(address) = peer
-        && (address.scope_id() != 0 || address.flowinfo() != 0)
-    {
+    if !super::lab_peer_is_valid(peer) {
         return Some(PilotError::InvalidPeer);
     }
     if request.is_zero() || series.is_zero() || request > series || series > MAX_TIMEOUT {
@@ -584,8 +579,8 @@ impl fmt::Debug for SeriesReport {
 
 /// Actual request/socket association copied only from the exclusive live owner.
 struct RequestOwner {
-    /// Original actual managed source, distinct from request/session identity.
-    source_identity: Option<super::SourceIdentity>,
+    /// Original actual managed source and its jointly issued configuration.
+    source_context: Option<super::source_policy::SourceContext>,
     /// Fixed original series position.
     index: u8,
     /// Actual socket/request identity, distinct from its numeric endpoint.
@@ -604,7 +599,7 @@ impl RequestOwner {
     /// Borrow the actual live request's identity/context without cloning its socket.
     fn from_slot(index: u8, slot: &LiveSlot) -> Self {
         Self {
-            source_identity: slot.policy.source_identity(),
+            source_context: slot.policy.source_context(),
             index,
             identity: Arc::clone(&slot.identity),
             context: Arc::clone(&slot.run_context),
@@ -617,7 +612,7 @@ impl RequestOwner {
     /// Compare complete actual request association; equal endpoints alone never pass.
     fn same_request(&self, other: &Self) -> bool {
         let Self {
-            source_identity,
+            source_context,
             index,
             identity,
             context,
@@ -626,7 +621,7 @@ impl RequestOwner {
             profile,
         } = self;
         let Self {
-            source_identity: other_source,
+            source_context: other_source,
             index: other_index,
             identity: other_identity,
             context: other_context,
@@ -634,8 +629,10 @@ impl RequestOwner {
             local: other_local,
             profile: other_profile,
         } = other;
-        super::SourceIdentity::same_optional(source_identity.as_ref(), other_source.as_ref())
-            && index == other_index
+        super::source_policy::SourceContext::same_optional(
+            source_context.as_ref(),
+            other_source.as_ref(),
+        ) && index == other_index
             && Arc::ptr_eq(identity, other_identity)
             && Arc::ptr_eq(context, other_context)
             && peer == other_peer
@@ -654,8 +651,8 @@ struct Completion {
 
 /// Sole receiving transaction owner; prior positions cannot be overwritten.
 struct SeriesReceiver {
-    /// Original prepared source; returned owner/facts cannot redefine it together.
-    source_identity: Option<super::SourceIdentity>,
+    /// Original prepared source/configuration, never defined by returned data.
+    source_context: Option<super::source_policy::SourceContext>,
     /// Actual shared series context created during this execution.
     context: Arc<RunClockContext>,
     /// Immutable configured source endpoint.
@@ -679,7 +676,7 @@ impl SeriesReceiver {
         source_policy: &super::source_policy::SourceMode,
     ) -> Self {
         Self {
-            source_identity: source_policy.source_identity(),
+            source_context: source_policy.source_context(),
             context,
             peer,
             profile,
@@ -703,9 +700,9 @@ impl SeriesReceiver {
             || !Arc::ptr_eq(&owner.context, &self.context)
             || owner.peer != self.peer
             || owner.profile != self.profile
-            || !super::SourceIdentity::same_optional(
-                owner.source_identity.as_ref(),
-                self.source_identity.as_ref(),
+            || !super::source_policy::SourceContext::same_optional(
+                owner.source_context.as_ref(),
+                self.source_context.as_ref(),
             )
             || self.attempts.iter().any(|attempt| {
                 attempt
@@ -739,9 +736,9 @@ impl SeriesReceiver {
                 && facts.peer == completion.owner.peer
                 && facts.local == completion.owner.local
                 && facts.profile == completion.owner.profile
-                && super::SourceIdentity::same_optional(
-                    facts.source_identity(),
-                    completion.owner.source_identity.as_ref(),
+                && super::source_policy::SourceContext::same_optional(
+                    facts.source_context.as_ref(),
+                    completion.owner.source_context.as_ref(),
                 )
         });
         if !expected.same_request(&completion.owner)

@@ -773,10 +773,11 @@ impl<'scope> Invocation<'scope> {
                 Err(failure) => return Err(self.admission_failed(failure, End::Arithmetic)),
             },
         };
-        let guard = match control.guard_in(scope_guard) {
-            Ok(guard) => guard,
-            Err(failure) => return Err(self.admission_failed(failure, End::Control)),
-        };
+        let guard: super::ConfigurationGuard<'_> =
+            match self.config.guard_in(&control, scope_guard, None) {
+                Ok(guard) => guard,
+                Err(failure) => return Err(self.admission_failed(failure, End::Control)),
+            };
         if let Err(failure) = guard.remaining(super::IoPhase::Handshake, Instant::now()) {
             return Err(self.admission_failed(failure, End::Window));
         }
@@ -977,6 +978,12 @@ pub(super) trait Producer {
         control: &'tx Control,
     ) -> Result<ProtectedCompletion<'tx>, Failure>;
 
+    /// Select the fixed two-request managed control fixture in component builds.
+    #[cfg(test)]
+    fn use_scripted_managed_deny(&self) -> bool {
+        false
+    }
+
     /// Fill only the existing fixed-shape never-send preview entropy batch.
     /// # Errors
     /// Refuse the actual entropy operation without an alternative draw.
@@ -1027,8 +1034,7 @@ impl BoundProtectedReceiver<'_, '_, '_, '_> {
     /// # Errors
     /// Reject a foreign actual Control without resetting route state.
     fn accept(self, committed: CommittedProtected<'_>) -> Result<InvocationCompletion, Failure> {
-        let history = committed.into_history(&self)?;
-        let completion = InvocationCompletion::Protected(Box::new(history));
+        let completion: InvocationCompletion = committed.into_history(&self)?;
         self.receiver.invocation.base = None;
         self.receiver.invocation.route_not_before = self.receiver.invocation.origin;
         self.receiver.invocation.plan = Plan::Closed(End::Completed);
@@ -1067,6 +1073,53 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
         super::protected_receiving(association, exchange, |committed| {
             receiving.accept(committed)
         })
+    }
+
+    /// Consume the first retired reply before selecting one private successor.
+    /// # Errors
+    /// Preserve genuine first-leg commit, carried credit, subsequent receive
+    /// or final authority refusals without changing association ownership.
+    #[cfg(test)]
+    fn receive_scripted_managed_deny<P: Producer>(
+        &mut self,
+        association: &mut AssociationOwner<'control>,
+        producer: &mut P,
+    ) -> Result<InvocationCompletion, Failure> {
+        use super::datagram::{RetiredProtectedSuccessor, tests::scripted_managed_successor};
+
+        let control: &'control Control = self.control;
+        let first: ProtectedCompletion<'control> = producer.exchange(association, control)?;
+        first.commit_for_successor(association)?;
+        let receiving: BoundProtectedReceiver<'_, '_, '_, '_> =
+            self.bind_association(association)?;
+        match scripted_managed_successor(association, control)? {
+            RetiredProtectedSuccessor::Ordinary(completion) => {
+                receiving.accept(completion.commit(association)?)
+            }
+            RetiredProtectedSuccessor::Deny(retired) => association
+                .commit_retired_protected_deny(retired)
+                .map(InvocationCompletion::ManagedProtectedDeny),
+        }
+    }
+
+    /// Select the existing one-shot or the private managed successor within the same step.
+    /// # Errors
+    /// Preserve the chosen protected operation's refusal and already spent work.
+    fn receive_selected_protected<P: Producer>(
+        &mut self,
+        association: &mut AssociationOwner<'control>,
+        producer: &mut P,
+    ) -> Result<InvocationCompletion, Failure> {
+        let control: &'control Control = self.control;
+        #[cfg(test)]
+        if matches!(
+            self.invocation.config.mode,
+            ExchangeMode::ManagedProtected(_)
+        ) && producer.use_scripted_managed_deny()
+        {
+            return self.receive_scripted_managed_deny(association, producer);
+        }
+        self.receive_protected(association, |owner| producer.exchange(owner, control))
     }
 
     /// Consume only a genuine association's constraint; it cannot enable KE here.
@@ -1340,13 +1393,17 @@ pub(super) fn step_with<P: Producer>(
             Err(cause) => return Err(receiver.context_failed(ContextStage::Attach, cause)),
         };
     }
-    let result = match config.mode {
+    let result: Result<InvocationCompletion, Failure> = match &config.mode {
         ExchangeMode::Preview => {
             super::preview_once(&mut association, |output| producer.preview_entropy(output))
                 .map(InvocationCompletion::Preview)
         }
-        ExchangeMode::ProtectedDatagram => {
-            receiver.receive_protected(&mut association, |owner| producer.exchange(owner, &control))
+        ExchangeMode::ProtectedDatagram | ExchangeMode::ManagedProtected(_) => {
+            receiver.receive_selected_protected(&mut association, producer)
+        }
+        ExchangeMode::ManagedPreview(_) => {
+            super::managed_preview_once(&mut association, |output| producer.preview_entropy(output))
+                .map(InvocationCompletion::ManagedPreview)
         }
     };
     match result {
@@ -1358,6 +1415,7 @@ pub(super) fn step_with<P: Producer>(
         Err(failure)
             if receiver.invocation.limits.context_lifetime.is_some()
                 && receiver.invocation.contexts == 1
+                && config.mode == ExchangeMode::ProtectedDatagram
                 && matches!(
                     failure,
                     Failure::Ledger(super::association::ledger::LedgerError::Reply(

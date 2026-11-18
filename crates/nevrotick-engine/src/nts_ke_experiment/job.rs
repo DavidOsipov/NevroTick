@@ -47,8 +47,15 @@ impl PreparedInvocation {
     /// # Errors
     /// Refuse deadline arithmetic without creating a submitted job.
     pub(super) fn prepare(config: Config) -> Result<(Self, StopHandle), Failed> {
-        let control = Control::new(Instant::now()).map_err(Failed::from)?;
-        let stop = StopHandle {
+        let control: Control = Control::new(Instant::now()).map_err(Failed::from)?;
+        {
+            let guard: super::ConfigurationGuard<'_> =
+                config.guard(&control, None).map_err(Failed::from)?;
+            guard
+                .remaining(IoPhase::Handshake, Instant::now())
+                .map_err(Failed::from)?;
+        }
+        let stop: StopHandle = StopHandle {
             scope: std::sync::Arc::clone(&control.stop_scope),
         };
         Ok((Self { config, control }, stop))
@@ -619,8 +626,8 @@ where
         start();
     }
     let PreparedInvocation { config, control } = prepared;
-    let admitted = (|| {
-        let guard = control.guard()?;
+    let admitted: Result<ProcessClaim<'_>, Failure> = (|| {
+        let guard: super::ConfigurationGuard<'_> = config.guard(&control, None)?;
         guard.remaining(IoPhase::Handshake, Instant::now())?;
         admission.claim()
     })();

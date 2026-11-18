@@ -78,12 +78,7 @@ fn config_issue(
         return Some(AddressRoundConfigError::Count);
     }
     for (position, peer) in peers.iter().enumerate() {
-        if !peer.ip().is_loopback() || peer.port() == 0 {
-            return Some(AddressRoundConfigError::InvalidPeer);
-        }
-        if let SocketAddr::V6(address) = peer
-            && (address.scope_id() != 0 || address.flowinfo() != 0)
-        {
+        if !crate::lab_peer_is_valid(*peer) {
             return Some(AddressRoundConfigError::InvalidPeer);
         }
         if peers
@@ -842,9 +837,9 @@ where
     let (index, peer, _) = claim.parts();
     let completed = slot.into_report(index)?;
     if completed.facts().is_some_and(|facts| {
-        !crate::SourceIdentity::same_optional(
-            facts.source_identity(),
-            plan.mode.source_identity().as_ref(),
+        !crate::source_policy::SourceContext::same_optional(
+            facts.source_context.as_ref(),
+            plan.mode.source_context().as_ref(),
         )
     }) {
         return Err(PilotError::InternalState);

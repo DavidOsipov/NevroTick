@@ -317,11 +317,15 @@ def finite_number(value: str) -> float:
     return number
 
 
-def read_json(path: Path, *, maximum: int = 524288, expected_sha256: str | None = None) -> dict:
-    """Read bounded regular, nonlinked JSON; reject duplicates and nonfinite values."""
-    if path != path.resolve(strict=True):
-        raise Incomplete("Engine JSON input cannot use a linked path.")
-    data = COMMON.ANALYSIS.read_once(path, maximum=maximum)
+def read_json(path: Path, *, maximum: int = 524288, expected_sha256: str | None = None,
+              owned_evidence: bool = False) -> dict:
+    """Read bounded JSON with the selected file custody; reject duplicates and nonfinite values."""
+    if owned_evidence:
+        data = COMMON.read_analysis_bytes(path, maximum=maximum)
+    else:
+        if path != path.resolve(strict=True):
+            raise Incomplete("Engine JSON input cannot use a linked path.")
+        data = COMMON.ANALYSIS.read_once(path, maximum=maximum)
     if expected_sha256 is not None and (
             type(expected_sha256) is not str
             or re.fullmatch(r"[a-f0-9]{64}", expected_sha256) is None
@@ -5276,11 +5280,11 @@ def address_storage_checkpoint(session, policy: dict, report: dict, label: str, 
         raise Incomplete("Address-round four-GiB available reserve reached.")
 
 
-def _admit_engine_ke_debug_retirement(policy: dict, report: dict) -> None:
-    """Require complete debug execution and Clippy custody before removing their cache."""
+def _admit_engine_ke_retirement_execution(policy: dict, execution: object) -> None:
+    """Require exact ordinary execution evidence before retiring either cache."""
     binding = policy.get("binding")
-    execution = report.get("baseline_execution")
     names = validate_engine_ke_inventory(binding.get("test_inventory") if type(binding) is dict else None)
+    validate_engine_ke_doctest_inventory(binding.get("doctest_inventory"))
     records = execution.get("test_names") if type(execution) is dict else None
     if (type(records) is not list or len(records) != ENGINE_KE_ORDINARY_COUNT
             or any(type(name) is not str for name in records)
@@ -5290,7 +5294,12 @@ def _admit_engine_ke_debug_retirement(policy: dict, report: dict) -> None:
             or type(execution.get("ke_tests_executed")) is not int
             or execution["ke_tests_executed"] != ENGINE_KE_CASE_COUNT
             or execution.get("inventory_sha256") != COMMON.canonical_sha256(names)):
-        raise Incomplete("Debug retirement requires the exact validated 479-test/234-KE baseline roster and digest.")
+        raise Incomplete("Engine KE target retirement requires the exact ordinary execution roster and digest.")
+
+
+def _admit_engine_ke_debug_retirement(policy: dict, report: dict) -> None:
+    """Require complete debug execution and Clippy custody before removing their cache."""
+    _admit_engine_ke_retirement_execution(policy, report.get("baseline_execution"))
     lanes, samples = report.get("lanes"), report.get("storage_samples")
     if (type(lanes) is not list or len(lanes) < 2
             or any(type(row) is not dict for row in lanes)
@@ -5339,11 +5348,12 @@ def _retire_engine_ke_target(session, policy: dict, report: dict, profile: str) 
         if (not lanes or lanes[-1].get("lane") != "ke-release"
                 or lanes[-1].get("exit_code") != 0 or lanes[-1].get("failure") is not None
                 or sum(row.get("lane") == "ke-release" for row in lanes) != 1
-                or not report.get("release_execution") or not samples
+                or not samples
                 or samples[-1].get("lane") != "ke-release" or samples[-1].get("phase") != "after"
                 or samples[-1]["allocated_bytes"] >= policy["owned_output_maximum_allocated_bytes"]
                 or samples[-1]["available_bytes"] < policy["stop_free_bytes"]):
             raise Incomplete("Release retirement requires completed validation and a passed post-lane storage sample.")
+        _admit_engine_ke_retirement_execution(policy, report.get("release_execution"))
     output, work = session.output, session.work
     target, cache = work / "target", work / "target" / profile
     if work != output / "work" or not getattr(shutil.rmtree, "avoids_symlink_attacks", False):
@@ -5624,12 +5634,36 @@ def execute_address_profile(args, report: dict) -> None:
 ENGINE_KE_POLICY = COMMON.ENGINE_KE_POLICY
 ENGINE_KE_HOST_SUBJECTS = dict(COMMON.ENGINE_KE_SUBJECTS)
 ENGINE_KE_SCOPE = COMMON.Scope("nevrotick-engine", COMMON.ENGINE_KE_SUBJECTS, ENGINE_KE_POLICY)
-ENGINE_KE_ORDINARY_COUNT = 479
-ENGINE_KE_CASE_COUNT = 234
+ENGINE_KE_ORDINARY_COUNT = 538
+ENGINE_KE_CASE_COUNT = 264
+ENGINE_KE_DOCTEST_COUNT = 90
+ENGINE_KE_DOCTEST_NAME = re.compile(
+    r"[^\r\n]+[.]rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile(?: fail)?)?"
+)
 ENGINE_KE_SEND_AFTER_TEST = (
     "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
     "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted"
 )
+ENGINE_KE_MANAGED_PROTECTED_TESTS = frozenset((
+    "nts_ke_experiment::datagram::tests::managed_protected_attempts_keep_floors_after_failure_and_stop",
+    "nts_ke_experiment::datagram::tests::managed_protected_rechecks_definition_after_readiness",
+    "nts_ke_experiment::datagram::tests::managed_protected_reply_distinguishes_wire_peer_and_policy_epochs",
+    "nts_ke_experiment::datagram::tests::managed_protected_send_uses_the_exact_shared_floor",
+    "nts_ke_experiment::datagram::tests::managed_retired_first_request_allows_one_same_association_successor",
+    "nts_ke_experiment::datagram::tests::managed_retired_authentication_refuses_uncommitted_and_invalidated_history",
+    "nts_ke_experiment::managed_preview_tests::managed_protected_abnormal_join_preserves_sealed_configuration",
+    "nts_ke_experiment::managed_preview_tests::managed_protected_refuses_preview_downgrade_before_charging",
+    "nts_ke_experiment::managed_preview_tests::managed_protected_worker_preserves_committed_definition_through_join",
+    "nts_ke_experiment::managed_preview_tests::managed_protected_worker_refuses_replacement_at_both_effects",
+    "nts_ke_experiment::datagram::tests::managed_protected_deny_retires_only_the_exact_authenticated_successor",
+    "nts_ke_experiment::datagram::tests::managed_protected_ordinary_follows_rejected_controls_without_renewal",
+    "nts_ke_experiment::datagram::tests::managed_retired_deny_commits_only_its_source_and_exact_endpoint",
+    "nts_ke_experiment::datagram::tests::managed_mixed_receive_admits_deny_on_final_frame",
+    "nts_ke_experiment::datagram::tests::managed_mixed_receive_exhausts_on_invalid_final_frame",
+    "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::managed_deny_worker_retains_exact_history_without_numerical_projection",
+    "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::managed_deny_worker_post_record_stop_preserves_only_once_joined_history",
+    "nts_ke_experiment::datagram::reached::bound_endpoint_check_refuses_each_invalid_coordinate",
+))
 ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/association/tests.rs",
@@ -5645,6 +5679,9 @@ ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/recovery/worker_tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/recovery/numerics_tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/job_tests.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview_tests.rs",
+    "crates/nevrotick-engine/tests/private/source_configuration.rs",
+    "crates/nevrotick-engine/tests/private/processing_guards.rs",
 )
 ENGINE_KE_BOUND_INPUTS = tuple(dict.fromkeys((
     WRAPPER, TESTS, *COMMON.ENGINE_KE_CRITICAL, *ENGINE_KE_TEST_SOURCES,
@@ -5821,27 +5858,40 @@ def execute_engine_ke_fixtures(args, report: dict) -> None:
 
 
 def validate_engine_ke_inventory(names: object) -> list[str]:
-    """Require the complete fixed roster, including its forwarding regression.
+    """Require the complete fixed roster, including forwarding and managed protected regressions.
 
     Reuse this admission at policy, execution and completed-cache retirement;
-    a historical roster or same-count substitution cannot omit the new case.
+    a historical roster or same-count substitution cannot omit a required case.
     This checks declared identity, never whether a test body actually executed.
     """
     if (type(names) is not list or len(names) != ENGINE_KE_ORDINARY_COUNT
             or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
             or names != sorted(set(names))
             or sum(name.startswith("nts_ke_experiment::") for name in names) != ENGINE_KE_CASE_COUNT
-            or ENGINE_KE_SEND_AFTER_TEST not in names):
-        raise Incomplete("Engine KE requires all 479 actual Engine tests including its 234 KE cases and send-after regression.")
+            or ENGINE_KE_SEND_AFTER_TEST not in names
+            or not ENGINE_KE_MANAGED_PROTECTED_TESTS.issubset(names)):
+        raise Incomplete(
+            f"Engine KE requires all {ENGINE_KE_ORDINARY_COUNT} actual Engine tests including its "
+            f"{ENGINE_KE_CASE_COUNT} KE cases, send-after regression and managed protected regressions.")
+    return names
+
+
+def validate_engine_ke_doctest_inventory(names: object) -> list[str]:
+    """Require the live roster with its exact source lines and execution annotations."""
+    if (type(names) is not list or len(names) != ENGINE_KE_DOCTEST_COUNT
+            or any(type(name) is not str or len(name) > 4096 or ENGINE_KE_DOCTEST_NAME.fullmatch(name) is None
+                   for name in names)
+            or names != sorted(set(names))):
+        raise Incomplete("Engine KE requires its complete exact annotated Rustdoc inventory.")
     return names
 
 
 def validate_engine_ke_policy(policy: dict, *, campaign: bool = False) -> dict:
-    """Bind the exact current source/helper set and all actual ordinary test identities."""
+    """Bind the exact current source/helper set, ordinary tests and Rustdoc names."""
     COMMON.require_engine_ke_role(ENGINE_KE_SCOPE, policy)
     binding = policy["binding"]
     fields = {"candidate_sha256", "source_file_count", "inputs_sha256", "test_inventory",
-              "source_context_sha256", "ordinary_evidence", "root_graph_evidence"}
+              "doctest_inventory", "source_context_sha256", "ordinary_evidence", "root_graph_evidence"}
     if type(binding) is not dict or set(binding) != fields:
         raise Incomplete("Engine KE source/evidence binding is incomplete.")
     for field in ("candidate_sha256", "source_context_sha256"):
@@ -5853,6 +5903,7 @@ def validate_engine_ke_policy(policy: dict, *, campaign: bool = False) -> dict:
             or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None for value in pins.values())):
         raise Incomplete("Engine KE source/helper inputs differ from the exact fixed set.")
     validate_engine_ke_inventory(binding["test_inventory"])
+    validate_engine_ke_doctest_inventory(binding["doctest_inventory"])
     for key in ("ordinary_evidence", "root_graph_evidence"):
         evidence = binding[key]
         if (type(evidence) is not dict or set(evidence) != {"path", "sha256"}
@@ -5866,42 +5917,98 @@ def validate_engine_ke_policy(policy: dict, *, campaign: bool = False) -> dict:
 
 
 def validate_engine_ke_execution(text: str, binding: dict, *, include_doctests: bool = False) -> dict:
-    """Use real entered libtest blocks, not metadata-only names or borrowed counts."""
+    """Verify exact ordinary execution, including the complete Rustdoc roster for mutation."""
     ordinary = validate_engine_ke_inventory(binding["test_inventory"])
+    docs = validate_engine_ke_doctest_inventory(binding.get("doctest_inventory")) if include_doctests else []
     records = read_successful_address_records(text)
-    extra = set(records) - set(ordinary)
-    if (not set(ordinary) <= set(records)
-            or (extra and not include_doctests)
-            or any(re.fullmatch(r"[^\r\n]+[.]rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile(?: fail)?)?", name) is None
-                   for name in extra)):
-        raise Incomplete("Engine KE did not execute every current actual library/integration case.")
+    if sorted(records) != sorted([*ordinary, *docs]):
+        raise Incomplete("Engine KE execution differs from the exact admitted ordinary and selected Rustdoc identities.")
     result = {"tests_executed": len(records), "ke_tests_executed": ENGINE_KE_CASE_COUNT,
               "test_names": records, "inventory_sha256": COMMON.canonical_sha256(sorted(records))}
     if include_doctests:
-        result["additional_doctests"] = sorted(extra)
+        result["additional_doctests"] = docs
     return result
 
 
 def validate_engine_ke_doctests(text: str) -> dict:
-    """Keep complete Rustdoc observations separate from ordinary tests and native work."""
+    """Keep Rustdoc shape and compilation-only observations for all receipt readers."""
     records = read_successful_address_records(text)
-    if any(re.fullmatch(r"[^\r\n]+[.]rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile(?: fail)?)?", name) is None
-           for name in records):
+    if any(ENGINE_KE_DOCTEST_NAME.fullmatch(name) is None for name in records):
         raise Incomplete("Engine KE doctest lane contains an unknown non-Rustdoc case.")
     return {"tests_executed": len(records), "test_names": records,
             "compilation_only": [name for name in records if name.endswith((" - compile", " - compile fail"))]}
 
 
+def validate_engine_ke_current_doctests(text: str, binding: dict) -> dict:
+    """Require actual Rustdoc observations for every exact live annotated identity."""
+    executed = validate_engine_ke_doctests(text)
+    if sorted(executed["test_names"]) != validate_engine_ke_doctest_inventory(binding.get("doctest_inventory")):
+        raise Incomplete("Engine KE Rustdoc execution differs from the exact admitted roster.")
+    return executed
+
+
+def engine_ke_development_ordinary_cases(text: str) -> list[dict[str, str]]:
+    """Recover the development producer's package, actual binary and case coordinates."""
+    cases = []
+    binary = None
+    for line in text.splitlines():
+        runnable = re.fullmatch(r"\s+Running (.+?) \(/work/target/[^()]+\)", line)
+        if runnable is not None:
+            binary = runnable[1]
+        elif (entered := re.fullmatch(r"test (.+?) \.\.\. ok", line)) is not None:
+            if binary is None:
+                raise Incomplete("Engine KE development case has no actual Cargo test binary.")
+            cases.append({"package": "nevrotick-engine", "binary": binary, "name": entered[1]})
+    return cases
+
 
 def admit_engine_ke_evidence(binding: dict) -> dict:
-    """Bound and recheck the same exact reference bytes before and after jobs."""
-    result = {}
-    for key in ("ordinary_evidence", "root_graph_evidence"):
-        evidence = binding[key]
-        raw = COMMON.read_analysis_bytes(Path(evidence["path"]), maximum=COMMON.ANALYSIS_JSON_MAX_BYTES)
-        result[key] = hashlib.sha256(raw).hexdigest()
-        if result[key] != evidence["sha256"]:
-            raise Incomplete("Engine KE prior evidence bytes changed.")
+    """Readmit the current development receipt and its two fixed EP1 logs on both bookends."""
+    evidence = binding["ordinary_evidence"]
+    path = Path(evidence["path"])
+    receipt = read_json(path, maximum=8 * 1024**2, expected_sha256=evidence["sha256"],
+                        owned_evidence=True)
+    identity = receipt.get("inputs")
+    lanes = receipt.get("lanes")
+    if (receipt.get("status") != "passed" or receipt.get("mode") != "combined"
+            or receipt.get("candidate_sha256") != binding["candidate_sha256"]
+            or type(identity) is not dict or len(identity) != binding["source_file_count"]
+            or COMMON.canonical_sha256(identity) != binding["candidate_sha256"]
+            or type(lanes) is not list or any(type(row) is not dict for row in lanes)):
+        raise Incomplete("Engine KE development reference differs from the actual admitted candidate or receipt.")
+    result = {"ordinary_evidence": evidence["sha256"]}
+    cargo = ["cargo", "test", "--package", "nevrotick-engine", "--frozen", "--jobs", "6",
+             "--features", "ke-association-prototype"]
+    for lane, selectors, validate in (
+        ("ep1-ordinary", ["--lib", "--tests"], validate_engine_ke_execution),
+        ("ep1-doctests", ["--doc"], validate_engine_ke_current_doctests),
+    ):
+        rows = [row for row in lanes if row.get("lane") == lane]
+        if len(rows) != 1:
+            raise Incomplete("Engine KE development reference requires one physical row per selected EP1 lane.")
+        row = rows[0]
+        if (set(row) != {"lane", "sha256", "exit_code", "failure", "tests_executed", "cases"}
+                or type(row["exit_code"]) is not int or row["exit_code"] != 0
+                or row["failure"] is not None or type(row["tests_executed"]) is not int
+                or type(row["sha256"]) is not str or re.fullmatch(r"[a-f0-9]{64}", row["sha256"]) is None):
+            raise Incomplete("Engine KE development EP1 lane lacks complete successful execution identity.")
+        raw = read_json(path.with_name(lane + ".json"), maximum=COMMON.ANALYSIS_JSON_MAX_BYTES,
+                        expected_sha256=row["sha256"], owned_evidence=True)
+        command = [*cargo, *selectors, "--", "--test-threads=1"]
+        if (raw.get("command") != command or type(raw.get("exit_code")) is not int or raw["exit_code"] != 0
+                or "failure" not in raw or raw["failure"] is not None or type(raw.get("output")) is not str):
+            raise Incomplete("Engine KE development raw lane differs from its fixed successful EP1 command.")
+        execution = validate(raw["output"], binding)
+        cases = (engine_ke_development_ordinary_cases(raw["output"]) if lane == "ep1-ordinary"
+                 else execution["test_names"])
+        if row["tests_executed"] != execution["tests_executed"] or row["cases"] != cases:
+            raise Incomplete("Engine KE development EP1 row differs from the physical executed identities.")
+        result[lane] = row["sha256"]
+    graph = binding["root_graph_evidence"]
+    raw = COMMON.read_analysis_bytes(Path(graph["path"]), maximum=COMMON.ANALYSIS_JSON_MAX_BYTES)
+    result["root_graph_evidence"] = hashlib.sha256(raw).hexdigest()
+    if result["root_graph_evidence"] != graph["sha256"]:
+        raise Incomplete("Engine KE root graph reference bytes changed.")
     return result
 
 
@@ -6426,12 +6533,12 @@ def execute_engine_ke_profile(args, report: dict) -> None:
         selected.lane = "mutation"
     report.update(profile="ke_association", subjects=subjects, qualification_passed=False,
                   full_critical_files=list(COMMON.ENGINE_KE_CRITICAL),
-                  scope="Twelve registered GNU KE owners; actual selected subjects recorded; four remaining owners and Windows arms stay open",
+                  scope="Selected registered GNU KE owners; remaining file and Windows-arm evidence stays open",
                   source_context_sha256=binding["source_context_sha256"],
                   source_context_scope="Historical Tool preparation reference; current Root identity is candidate_sha256/source_sha256",
                   candidate_sha256=binding["candidate_sha256"],
                   ordinary_reference=binding["ordinary_evidence"],
-                  ordinary_reference_scope="Historical predecessor only; its actual source, lock and result scope remain in the referenced receipt. Later source/test deltas require separate reconciliation; no current Root graph or metric credit transferred.",
+                  ordinary_reference_scope="Exact current development receipt and physical EP1 ordinary/Rustdoc rosters; metrics require their own actual execution.",
                   pending_metric_owners=[name for name in COMMON.ENGINE_KE_CRITICAL if name not in ENGINE_KE_HOST_SUBJECTS.values()],
                   pending_windows="StrictProfile::capture, transport, provider shutdown and Windows-only control/error arms",
                   generation_gap_policy="Reconcile every constructor, generic helper, Garde expansion and atomic guard against actual descriptors; no manual-control kill credit.")
@@ -6496,7 +6603,7 @@ def execute_engine_ke_profile(args, report: dict) -> None:
             raw = run("ke-doctests", ["cargo", "test", "--package", "nevrotick-engine",
                 "--features", "ke-association-prototype", "--frozen", "--jobs", "6", "--doc",
                 "--", "--test-threads=1"], policy["baseline_wall_seconds"])
-            report["doctest_execution"] = validate_engine_ke_doctests(raw)
+            report["doctest_execution"] = validate_engine_ke_current_doctests(raw, binding)
             run("ke-windows-clippy", ["cargo", "clippy", "--package", "nevrotick-engine",
                 "--features", "ke-association-prototype", "--all-targets", "--target", "x86_64-pc-windows-msvc",
                 "--frozen", "--jobs", "6", "--", "-D", "warnings"], policy["baseline_wall_seconds"])
@@ -6545,16 +6652,16 @@ SOURCE_POLICY_POLICY = COMMON.ENGINE_SOURCE_POLICY_POLICY
 SOURCE_POLICY_SUBJECTS = dict(COMMON.ENGINE_SOURCE_POLICY_SUBJECTS)
 SOURCE_POLICY_SCOPE = COMMON.Scope(
     "nevrotick-engine", COMMON.ENGINE_SOURCE_POLICY_SUBJECTS, SOURCE_POLICY_POLICY)
-SOURCE_POLICY_ORDINARY_COUNT = 257
-SOURCE_POLICY_DOCTEST_COUNT = 83
-# Independent inspection of actual managed-source provenance full-2 established
+SOURCE_POLICY_ORDINARY_COUNT = 267
+SOURCE_POLICY_DOCTEST_COUNT = 89
+# Independent inspection of actual installed-configuration full-4 established
 # these complete sorted identities. They identify a roster, not current execution.
-SOURCE_POLICY_ORDINARY_DIGEST = '9f44f2e217a867f466966c23d476db023a94f22ab8c0dfb3208c47eca8337e25'
-SOURCE_POLICY_DOCTEST_DIGEST = '5f681e846081d9cf9035db68369346ad78e79b129719609fb81bef41359e210c'
+SOURCE_POLICY_ORDINARY_DIGEST = '8ed080ae310ed733a87f58922edcf10880a1d0ec249b88673224e49efa9bc0f3'
+SOURCE_POLICY_DOCTEST_DIGEST = '5f737f32c7949073c5738f61d95b62b847ba1eb4680a58c5ca2a02d8dd9f6483'
 # The same independently inspected receipt contains the complete optional
 # profile in both modes: its default roster plus these 234 KE identities.
 SOURCE_POLICY_EP1_EXTRA_COUNT = 234
-SOURCE_POLICY_EP1_DIGEST = '73949e5128abb78574e8972f44380dc7eb9f42c1a4e835d196af5bb512cc0365'
+SOURCE_POLICY_EP1_DIGEST = 'f0de16de547951830fa06c1d49fa103ecce0d968ac20e68f0e538711d8f8a1a9'
 SOURCE_POLICY_SNAPSHOT_TESTS = frozenset(
     "source_policy::tests::policy_snapshot_" + name for name in (
         "canonical_aliases_and_unknown_reads_do_not_allocate",
@@ -6572,33 +6679,55 @@ SOURCE_POLICY_PROVENANCE_TESTS = frozenset((
     "series::tests::managed_source_provenance_receiving_rejects_absent_and_foreign_owners",
     "series::address_round::tests::managed_source_provenance_address_transfer_binds_the_original_candidate",
 ))
+SOURCE_POLICY_CONFIGURATION_TESTS = frozenset((
+    'source_policy::tests::configuration::source_configuration_address_set_bounds_and_canonical_membership',
+    'source_policy::tests::configuration::source_configuration_install_and_expected_snapshot_replacement_are_atomic',
+    'source_policy::tests::configuration::source_configuration_parallel_public_sessions_and_reordered_round_share_revision',
+    'source_policy::tests::configuration::source_configuration_outside_peers_cannot_publish_endpoint_capacity',
+    'source_policy::tests::configuration::source_configuration_first_install_and_equal_replace_retire_old_prepared_plans',
+    'source_policy::tests::configuration::source_configuration_replacement_preserves_kod_records_floors_and_targets',
+    'source_policy::tests::configuration::source_configuration_revision_exhaustion_is_sticky_and_source_local',
+    'series::tests::source_configuration_final_reply_replacement_preserves_report',
+    'series::tests::source_configuration_final_send_replacement_prevents_send',
+    'series::tests::source_configuration_postcommit_replacement_preserves_history',
+))
 # One actual full development receipt, independently inspected before reader adoption.
 # These pins admit historical execution bytes, never a reporter-selected replacement.
 SOURCE_POLICY_MANAGED_DEVELOPMENT = {
-    "candidate_sha256": "744f6ea2c6775f221eea686c35a0a9eb6aa0f45a3643977425f6ad3ee545bf50",
-    "captured_inputs_sha256": "0328aa0b9086bc651f7da9ceb2de421f12d81473f6ca802e14f6997a0ac4b556",
-    "recipe_sha256": "1490bc0f50effc3f59a4a5e69137a49b82ee34cecca673a3caef944183a15866",
-    "budget_sha256": "28eb54c9e27a2197a85c68f960f81de528f19cd5bf38781bf073fb370cd6b880",
-    "monitor_sha256": "7eab5a56d7f8c52541e4c144b781e19578a43287272c1f22be4bc980873906d2"
+    "candidate_sha256": "23c91549b893b1319ef8dd3337977ae18b23fe54766c045ff8733fdc4f4e9d1e",
+    "recipe_sha256": "90a72882e4f3ef8f1eca513dc14d0aa6af58c759da18876ad513221b32c81b28",
+    "budget_sha256": "a10983778a8b8a4f82112f58cc06866448a037ab72055271e74c5cdf90d1d88b",
+    "source_budget_sha256": "15db3989c53eee4b62cc408eafadb58f12c5f80a6c8f9d316b2bd83f04cfb89b",
+    "captured_inputs_sha256": "df68d9563eae9a6ade4ac479da9d21dcc5ad60cd5a0402d154513e905584e8ff",
+    "monitor_sha256": "195230d35949351788eba7b027fd66d73e033a580c3693f195d5f7f14c793e23"
 }
-# These controls have their own later finite clock. They did not produce full-2
+SOURCE_POLICY_CONFIGURATION_LINEAGE = {
+    "original_development_budget_sha256": "be5a791bf90643e493a6a7df5aa2f905169eb790c2444625c5bb63255fed575d",
+    "original_recipe_sha256": "55478c7df9e4c32e5a969b4775c39171c3cfeba3bb89611e0d51dfc714ab8445",
+    "original_monitor_sha256": "af339c40cb1e9b93913c3a2f724c7fa29a5b677995fcba27a1525ff1652ed03f",
+    "replan_review_sha256": "7e578d5bd4022d0aeb2f9e0d924f564b6604518aac44d62b59a51dc1333ca814",
+    "closeout_sha256": "f35ca498d803206f2fae37e077b4681bc1fc5689cb5b6d4ed271082a9d855e77"
+}
+# These controls have their own later finite clock. They did not produce full-4
 # and cannot replace or restart its original development allowance.
 SOURCE_POLICY_MANAGED_CONTROL_BUDGET = {
-    "sha256": "736856824579b9ecd71963a9f45e6e6b0b2f8a53f762560dab8faf30863dad06",
-    "start_unix": 1794926017.8365803,
+    "sha256": "3a561e24c98dff8e1105dd46dddacaf11e426f4bcbe3cc7d19ffab086e1ce24d",
+    "start_unix": 1794939988.4403768,
 }
 # Actual healthy and deliberate stale-observer controls; the latter is no product pass.
 SOURCE_POLICY_MANAGED_MONITOR_CONTROLS = {
-    "healthy/control.json": "1d517b5b235878005fb0391471653500506d69843d18c11e178b578a389198f2",
-    "healthy/monitor-result.json": "d243cbd836fd858efa857671cd987a13d7dd4821ca48a6e177ea6d696b16fef6",
-    "healthy/resources.jsonl": "2f9367719f88cfeb6bc1303c08a43e7b511a9c5474e4d108cbda9c6fe750e45d",
-    "gap/control.json": "c3bd4cc8791d172ebb98a4c1a4b7b957b8d07a6aafcc37910ca129f5a650799d",
-    "gap/monitor-result.json": "64cb2167e5514d0ef3963220e70ea0df96c1821887a1d1a17c317df912762bb6",
-    "gap/resources.jsonl": "a9dc7f9aaf4d958e3b9955157102ae7117ad0da58f76e32b0267cb319bb857e1"
+    "healthy/control.json": "43ee2568409398f2a6224f0a93e4ba76821f4207b60a980bc2fcc85eb66cebfd",
+    "healthy/monitor-result.json": "78925aeaff58297cab02516e7179f345d2d84fae69f1cf879fa6433c1ab20b90",
+    "healthy/resources.jsonl": "a553c43da422b150eaf4f756e2832dd5ae8aaa0f6dd45768b89286f90bdb0d99",
+    "gap/control.json": "08919608b6195e41ba5bd964711467237a6c1c0bba00de48c6eb63530830af1b",
+    "gap/monitor-result.json": "3ba802dee07a2e8ebfad8e1d4fd48186b3d53fd10a815d18ef1061f9892c40e4",
+    "gap/resources.jsonl": "5069a2eb2afc5538f35b4d2b6304b779c8ad80a48e5c0d949051c9b9a178356c"
 }
+
 SOURCE_POLICY_BOUND_INPUTS = tuple(dict.fromkeys((
     WRAPPER, TESTS, *SOURCE_POLICY_SUBJECTS.values(),
     "crates/nevrotick-engine/tests/private/source_policy.rs",
+    "crates/nevrotick-engine/tests/private/source_configuration.rs",
     "crates/nevrotick-engine/tests/private/session.rs",
     "crates/nevrotick-engine/tests/private/series.rs",
     "crates/nevrotick-engine/tests/private/series_process.rs",
@@ -6635,18 +6764,19 @@ def source_policy_test_inventory(binding: dict) -> tuple[list[str], list[str]]:
         if (type(names) is not list or len(names) != count
                 or any(type(name) is not str or not 0 < len(name) <= 4096 for name in names)
                 or names != sorted(set(names)) or COMMON.canonical_sha256(names) != digest):
-            raise Incomplete("Source-policy qualification requires its complete 257/83 default roster.")
+            raise Incomplete("Source-policy qualification requires its complete 267/89 default roster.")
     selected = [name for name in ordinary if name.startswith("source_policy::tests::")]
     kod_docs = [name for name in docs if name.startswith(
         "crates/nevrotick-engine/src/source_policy.rs - ")]
-    if (len(selected) != 61
+    if (len(selected) != 68
             or "source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted" not in ordinary
             or "source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund" not in ordinary
             or any(name.startswith("nts_ke_experiment::") for name in ordinary)
             or not SOURCE_POLICY_SNAPSHOT_TESTS <= set(selected)
             or not SOURCE_POLICY_PROVENANCE_TESTS <= set(ordinary)
-            or len(kod_docs) != 12 or sum(name.endswith(" - compile fail") for name in kod_docs) != 9):
-        raise Incomplete("Source-policy roster must retain all 61 controls, public diagnostics, the setup budget, snapshots, source provenance and twelve compiler examples.")
+            or not SOURCE_POLICY_CONFIGURATION_TESTS <= set(ordinary)
+            or len(kod_docs) != 18 or sum(name.endswith(" - compile fail") for name in kod_docs) != 13):
+        raise Incomplete("Source-policy roster must retain all 68 controls, public diagnostics, the setup budget, snapshots, source provenance, configuration cases and eighteen compiler examples.")
     return ordinary, docs
 
 
@@ -6805,27 +6935,351 @@ def admit_source_policy_monitor_control(directory: Path, role: str, recipe: str,
     admit_source_policy_resource_samples(raw[samples_path], terminal, gap_control=gap)
 
 
+# Detached draft: the full2 receipt pin names actual completed development only.
+SOURCE_POLICY_RECEIVER_DEVELOPMENT = {
+    "candidate_sha256": "0910c474424d5b8c37410d757d0cfe147f3ce60b3b2b00395263c24acf588762",
+    "incomplete_candidate_sha256": "20cd2fae9a8745e870d332002137feea936cb184557ff5ba453632c3b38a3f21",
+    "test_path": "crates/nevrotick-engine/tests/private/address_round.rs",
+    "test_sha256": "c6ebb3b16cc874a3a0b2b0c780df063a681ee7dc95bd0d0f13d3425166d44991",
+    "prior_path": "/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/source-config-revisions-20261117-v1/full-4/verification.json",
+    "prior_sha256": "c0b612def73fb20eeb78b99710b98201f38d51ff60a27f4c2c2861fdeb16157c",
+    "recipe_sha256": "6435d63975170b7ec75ecfcad195db07d816770697f55a683a23b46f5915b6e7",
+    "monitor_sha256": "df8dc68e68c34ba8a3b67a0fa3e67586cdcc13cc0dfa4d29505ba781c4e44276",
+    "source_application_sha256": "dbae27c8d59437d5215c76e41c3e1220844f7ff18f869295f9ad650c19673089",
+    "lint_repair_sha256": "ef592c90504e4c5ff51cce7d12492f5077a895b44b236c788584fe30644cf23e",
+    "incomplete_full1_sha256": "6c7e84e81ff3969751b64b28de765733e83b1dc1898358802163e989c96a6d4f",
+    "initial_recipe_sha256": "55b9a83b6cb56f4846a44342b852e0baaeb197024c8972d68be0c5dd27410a2c",
+    "initial_budget_sha256": "24d1d607bb6f05fc5e0b4f2c68358286bafb7ec5a32de42a8f38ba87f9dc5ab5",
+    "initial_parent_sha256": "8bb5b3b77e04a3c9f2d8d576618de78252bcfc01d487760aaa93e478f8df935f",
+    "current_witness_sha256": "511a05a664f63d0e94c39d06702858a115fd20d9be8b93758e9a11ebf83aef2c",
+    "preimage_cleanup_sha256": "3a325e9b1342d7b8dc51240db7c1128dd9bfc2650003fb26f7f9016bc3fa027f",
+    "readmission_plan_sha256": "76cda92c724d120b49eea79a79e58a79e9d0f709a182c62e6112de1b3c51cc91",
+    "reference_sha256": "917e021da12d6e3e223e5f90934cdbe91baa68d6d79dd79e47cbec78a5063fae",
+    "budget_sha256": "7691e12f35b1079d05bd928bde8e1653c17bebd0f0461484aa6ae650e349a15c",
+    "continuation_parent_budget_sha256": "e1ca3656280edf24d904905b12a5e50f6d5b31ada62463e0152a6c819cf584d2",
+    "captured_inputs_sha256": "d642c9f052606ecc760ad16755b176d361adb8b275ac6f78fcf5fb3fedb21c8d",
+    "protected_inputs_digest": "0631e9ae361e6d4949ff8415060f75937768faa253c473b052f3fe8f4f8648b7",
+    "captured_file_count": 786,
+    "monitor_control_inputs": {
+        "healthy/control.json": "16a5f4941e7a497960a7e3b1299a4db9192d796efe69a90e25235dea2e560898",
+        "healthy/monitor-result.json": "c819dc3a0d4286ff47425326ee64c9ac00ea35f60528011aa998b0e39ec49796",
+        "healthy/resources.jsonl": "9dfb028648f06efb7cf825c57a6c75fa195bceb18b0c2ea7126afbb1abf1c53e",
+        "gap/control.json": "503ddd44d66a7dceae3338c90c4e2275955c3d399c6920e7b264e0f781d0e0f4",
+        "gap/monitor-result.json": "4ce893d7659cb317b1bee31d501af33afda139a0e1cf91a12f647755bc5db9dc",
+        "gap/resources.jsonl": "ff457f097d40e240ade44e949db79fa52db8dc4b4172b184a696b28a1f866e6a",
+    },
+}
+
+
+def admit_source_policy_receiver_observer(reference: dict, path: Path, binding: dict,
+                                         identity: dict) -> dict:
+    """Admit only the fixed existing-test repair; keep the historical profile intact."""
+    pins = SOURCE_POLICY_RECEIVER_DEVELOPMENT
+    hashes = ("prior_sha256", "recipe_sha256", "monitor_sha256", "source_application_sha256",
+              "readmission_plan_sha256", "reference_sha256", "budget_sha256",
+              "continuation_parent_budget_sha256", "captured_inputs_sha256", "protected_inputs_digest",
+              "lint_repair_sha256", "incomplete_full1_sha256", "initial_recipe_sha256", "initial_budget_sha256",
+              "initial_parent_sha256", "current_witness_sha256", "preimage_cleanup_sha256")
+    controls = pins["monitor_control_inputs"]
+    control_names = {role + "/" + leaf for role in ("healthy", "gap")
+                     for leaf in ("control.json", "monitor-result.json", "resources.jsonl")}
+    if (any(type(pins.get(key)) is not str or re.fullmatch(r"[a-f0-9]{64}", pins[key]) is None for key in hashes)
+            or type(pins["captured_file_count"]) is not int or not 606 <= pins["captured_file_count"] <= 4096
+            or type(controls) is not dict or set(controls) != control_names
+            or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None for value in controls.values())):
+        raise Incomplete("Receiver-guard development pins remain unbound.")
+    if (path.name != "verification.json" or path.parent.name != "full-2"
+            or path.parent.parent.name != "receiver-guard-development-v1"
+            or PRODUCT.sha256(path) != pins["reference_sha256"]):
+        raise Incomplete("Receiver-guard development leaves its exact fixed producer.")
+    base = path.parent.parent
+    inputs = {path: pins["reference_sha256"]}
+
+    def physical(filename, digest, maximum=4 * 1024**2):
+        raw = COMMON.read_analysis_bytes(filename, maximum=maximum)
+        if type(digest) is not str or re.fullmatch(r"[a-f0-9]{64}", digest) is None or hashlib.sha256(raw).hexdigest() != digest:
+            raise Incomplete("Receiver-guard physical evidence changed.")
+        inputs[filename] = digest
+        return raw
+
+    def document(filename, digest):
+        physical(filename, digest)
+        return read_json(filename, maximum=4 * 1024**2, expected_sha256=digest)
+
+    prior_path = Path(pins["prior_path"])
+    prior = document(prior_path, pins["prior_sha256"])
+    old_binding = {**binding, "candidate_sha256": SOURCE_POLICY_MANAGED_DEVELOPMENT["candidate_sha256"],
+                   "source_file_count": 606,
+                   "development_evidence": {"path": str(prior_path), "sha256": pins["prior_sha256"]}}
+    # This recursive call selects the unchanged historical23c profile, including
+    # actual old lanes, physical capture, original failures/clocks and controls.
+    inputs.update({Path(name): digest for name, digest in
+                   admit_source_policy_development(old_binding, prior["source_sha256"]).items()})
+    expected = dict(prior["source_sha256"])
+    expected[pins["test_path"]] = pins["test_sha256"]
+    if (len(expected) != 606 or identity != expected or reference.get("source_sha256") != expected
+            or COMMON.canonical_sha256(expected) != pins["candidate_sha256"]
+            or binding["candidate_sha256"] != pins["candidate_sha256"]):
+        raise Incomplete("Receiver-guard development requires exactly its single test delta.")
+    fields = {"HEAD", "actual_named_results", "application_start_unix", "attempt", "budget_sha256", "candidate_sha256",
+        "captured_inputs", "cargo_home_config_sha256", "cleanup_deadline_unix", "compiler", "continuation_parent_budget_sha256",
+        "cumulative_charged_case_ceiling", "custody_unchanged", "durable_monitor", "effective_work_deadline_unix", "elapsed_seconds",
+        "generated_mutation_credit", "independent_monitor", "index_sha256", "lanes", "maximum_new_Rust_result_instances",
+        "monitor_control_inputs", "monitor_sha256", "ordered_witness", "phase", "prior_charged_case_ceiling",
+        "prior_development_reference", "protected_inputs_digest", "protected_inputs_sha256", "public_campaigns_admitted",
+        "qualification_passed", "readmission_plan_sha256", "recipe_sha256", "scope", "source_application_sha256", "source_sha256",
+        "status", "terminal_resource_failures", "tools", "vendor_identity", "work_completed_unix",
+        "prior_incomplete_development", "lint_repair_source_sha256", "this_attempt_case_ceiling",
+        "current_ordered_witness", "ordered_witness_reuse_scope"}
+    if (set(reference) != fields or reference["status"] != "workload-passed" or reference["phase"] != "full"
+            or type(reference["attempt"]) is not int or reference["attempt"] != 2
+            or reference["custody_unchanged"] is not True or reference["terminal_resource_failures"] != []
+            or any(reference[key] is not False for key in ("generated_mutation_credit", "qualification_passed", "public_campaigns_admitted"))
+            or any(type(reference[key]) is not int or reference[key] != value for key, value in (
+                ("actual_named_results", 1714), ("maximum_new_Rust_result_instances", 3428), ("this_attempt_case_ceiling", 1714)))
+            or any(reference[key] != pins[key] for key in ("recipe_sha256", "budget_sha256", "monitor_sha256",
+                   "source_application_sha256", "readmission_plan_sha256", "continuation_parent_budget_sha256", "protected_inputs_digest"))
+            or reference["prior_development_reference"] != {"path": str(prior_path), "sha256": pins["prior_sha256"]}
+            or any(reference[key] != prior[key] for key in ("tools", "compiler", "vendor_identity", "cargo_home_config_sha256"))):
+        raise Incomplete("Receiver-guard development format, producer or limits differ.")
+    budget = document(base / "development-budget-retry.json", pins["budget_sha256"])
+    parent = document(base / "continuation-parent-budget-retry.json", pins["continuation_parent_budget_sha256"])
+    first_budget = document(base / "development-budget.json", pins["initial_budget_sha256"])
+    first_parent = document(base / "continuation-parent-budget.json", pins["initial_parent_sha256"])
+    application = document(base / "source-application.json", pins["source_application_sha256"])
+    repair = document(base / "lint-repair-source.json", pins["lint_repair_sha256"])
+    first_path = base / "full-1/verification.json"
+    first = document(first_path, pins["incomplete_full1_sha256"])
+    physical(base / "development.py", pins["initial_recipe_sha256"])
+    physical(base / "development-retry-canonical.py", pins["recipe_sha256"])
+    physical(base / "monitor.py", pins["monitor_sha256"])
+    physical(base / "readmission-plan.json", pins["readmission_plan_sha256"])
+    if (budget.get("admitted") is not True or budget.get("mutations_admitted") is not False
+            or budget.get("public_campaigns_admitted") is not False
+            or any(type(budget.get(key)) is not int or budget[key] != value for key, value in (
+                ("schema_version", 1), ("budget_seconds", 1800), ("work_seconds", 1500), ("reserve_seconds", 300),
+                ("maximum_full_attempts", 2), ("maximum_focused_attempts", 0), ("maximum_new_Rust_result_instances", 3428), ("source_file_count", 606)))
+            or budget.get("retry_authorized") is not True
+            or budget.get("prior_incomplete_development_sha256") != pins["incomplete_full1_sha256"]
+            or budget.get("lint_repair_source_sha256") != pins["lint_repair_sha256"]
+            or budget.get("new_test_names") != [] or budget.get("new_doctest_roles") != []
+            or budget.get("source_files") != {pins["test_path"]: pins["test_sha256"]}
+            or any(budget.get(key) != reference[key] for key in ("recipe_sha256", "monitor_sha256", "readmission_plan_sha256",
+                "candidate_sha256", "protected_inputs_sha256", "protected_inputs_digest", "captured_inputs", "monitor_control_inputs",
+                "prior_charged_case_ceiling", "cumulative_charged_case_ceiling", "ordered_witness", "current_ordered_witness", "continuation_parent_budget_sha256"))
+            or budget.get("captured_inputs_sha256") != pins["captured_inputs_sha256"]
+            or budget.get("baseline") != reference["HEAD"] or budget.get("index_sha256") != reference["index_sha256"]):
+        raise Incomplete("Receiver-guard child allowance differs from its exact one-attempt contract.")
+    if (parent.get("admitted") is not True or parent.get("separate_subsequent_parent") is not True
+            or parent.get("all_prior_costs_and_failures_retained") is not True
+            or type(parent.get("budget_seconds")) is not int or parent["budget_seconds"] != 3000
+            or type(parent.get("cleanup_reserve_seconds")) is not int or parent["cleanup_reserve_seconds"] != 300
+            or type(parent.get("maximum_new_Rust_result_instances")) is not int or parent["maximum_new_Rust_result_instances"] != 3700
+            or parent.get("source_application_sha256") != pins["source_application_sha256"]
+            or parent.get("prior_parent_budget_sha256") != pins["initial_parent_sha256"]
+            or any(type(parent.get(key)) is not int or parent[key] != value for key, value in (
+                ("additional_retry_case_ceiling", 1714), ("additional_current_witness_case_ceiling", 5)))
+            or type(first_parent.get("maximum_new_Rust_result_instances")) is not int
+            or first_parent["maximum_new_Rust_result_instances"] + 1714 + 5 != parent["maximum_new_Rust_result_instances"]):
+        raise Incomplete("Receiver-guard requires its separately admitted retained-cost parent.")
+    origin = application["source_application_start_unix"]
+    times = [origin, application["source_application_end_unix"], parent.get("start_unix"),
+             *(budget.get(key) for key in ("start_unix", "preparation_started_unix", "application_start_unix", "shared_parent_start_unix",
+               "shared_parent_work_deadline_unix", "shared_parent_total_deadline_unix")),
+             *(reference[key] for key in ("application_start_unix", "effective_work_deadline_unix", "cleanup_deadline_unix", "work_completed_unix", "elapsed_seconds"))]
+    if (any(type(value) not in {int, float} or not 0 < value <= sys.float_info.max or not math.isfinite(value) for value in times)
+            or any(budget[key] != origin for key in ("start_unix", "preparation_started_unix", "application_start_unix", "shared_parent_start_unix"))
+            or parent["start_unix"] != origin or reference["application_start_unix"] != origin
+            or application["source_application_end_unix"] < origin
+            or application["candidate_sha256"] != pins["incomplete_candidate_sha256"]
+            or application["head"] != reference["HEAD"] or application["index_sha256"] != reference["index_sha256"]
+            or budget["shared_parent_work_deadline_unix"] != origin + 2700 or budget["shared_parent_total_deadline_unix"] != origin + 3000
+            or reference["effective_work_deadline_unix"] != origin + 1500 or reference["cleanup_deadline_unix"] != origin + 1800
+            or not application["source_application_end_unix"] <= reference["work_completed_unix"] < origin + 1500
+            or not reference["elapsed_seconds"] < 1800):
+        raise Incomplete("Receiver-guard cannot reset, precede or exceed its actual application clock.")
+    if (first.get("status") != "incomplete" or first.get("candidate_sha256") != pins["incomplete_candidate_sha256"]
+            or type(first.get("attempt")) is not int or first["attempt"] != 1
+            or first.get("recipe_sha256") != pins["initial_recipe_sha256"] or first.get("budget_sha256") != pins["initial_budget_sha256"]
+            or first.get("continuation_parent_budget_sha256") != pins["initial_parent_sha256"]
+            or first.get("application_start_unix") != origin or first_budget.get("start_unix") != origin or first_parent.get("start_unix") != origin
+            or first.get("terminal_resource_failures") != [] or first.get("independent_monitor", {}).get("joined") is not True
+            or reference["prior_incomplete_development"] != {"path": str(first_path), "sha256": pins["incomplete_full1_sha256"]}
+            or reference["lint_repair_source_sha256"] != pins["lint_repair_sha256"]
+            or repair.get("prior_development_sha256") != pins["incomplete_full1_sha256"]
+            or repair.get("application_start_unix") != origin or repair.get("prior_candidate_sha256") != pins["incomplete_candidate_sha256"]
+            or repair.get("candidate_sha256") != pins["candidate_sha256"] or repair.get("source_sha256") != pins["test_sha256"]
+            or repair.get("previous_test_sha256") != application["source_sha256"] or repair.get("path") != pins["test_path"]
+            or type(repair.get("repair_observed_unix")) not in {int, float} or not math.isfinite(repair["repair_observed_unix"])
+            or not application["source_application_end_unix"] <= repair["repair_observed_unix"] <= reference["work_completed_unix"]):
+        raise Incomplete("Receiver-guard must retain its genuine first failure and same-clock lint repair.")
+    first_source = dict(prior["source_sha256"])
+    first_source[pins["test_path"]] = application["source_sha256"]
+    if first.get("source_sha256") != first_source or COMMON.canonical_sha256(first_source) != pins["incomplete_candidate_sha256"]:
+        raise Incomplete("Receiver-guard first failure source identity differs.")
+    first_rows = first.get("lanes")
+    if (type(first_rows) is not list or any(type(row) is not dict or type(row.get("exit_code")) is not int for row in first_rows)
+            or [(row.get("lane"), row.get("exit_code"), row.get("failure")) for row in first_rows] != [
+            ("boundary-control", 0, None), ("format", 0, None), ("gnu-check", 0, None), ("gnu-clippy", 101, None)]):
+        raise Incomplete("Receiver-guard first failure status was rewritten.")
+    for row in first_rows:
+        filename = Path(row["path"])
+        if filename.parent != first_path.parent:
+            raise Incomplete("Receiver-guard first failure lane escapes its directory.")
+        raw_lane = document(filename, row["sha256"])
+        if type(raw_lane.get("exit_code")) is not int or raw_lane["exit_code"] != row["exit_code"] or raw_lane.get("failure") is not None:
+            raise Incomplete("Receiver-guard first failure raw status differs.")
+    cleanup_path = first_path.parent / "duplicate-cleanup.json"
+    cleanup = document(cleanup_path, pins["preimage_cleanup_sha256"])
+    canonical_preimage = base.parent / "receiver-guard-sensitivity-v1/run-attempt-2/candidate"
+    if (cleanup.get("snapshot_duplicate_removed") != str(first_path.parent / "source")
+            or cleanup.get("canonical_snapshot") != str(canonical_preimage)
+            or cleanup.get("retained_receipts", {}).get(str(first_path)) != pins["incomplete_full1_sha256"]):
+        raise Incomplete("Receiver-guard first-source reconstruction bridge differs.")
+    original_test = physical(canonical_preimage / pins["test_path"], application["source_sha256"])
+    before_parameter = b"fn managed_setup_binding_mismatch(case: SetupBindingMismatch)"
+    before_call = b"managed_setup_binding_mismatch(mismatch)?;"
+    if original_test.count(before_parameter) != 1 or original_test.count(before_call) != 1:
+        raise Incomplete("Receiver-guard lint repair preimage differs.")
+    repaired_test = original_test.replace(before_parameter, b"fn managed_setup_binding_mismatch(case: &SetupBindingMismatch)").replace(
+        before_call, b"managed_setup_binding_mismatch(&mismatch)?;")
+    if hashlib.sha256(repaired_test).hexdigest() != pins["test_sha256"]:
+        raise Incomplete("Receiver-guard retry contains more than its two borrowed-argument tokens.")
+    preceding = budget.get("preceding_operation_inputs")
+    parent_inputs = parent.get("prior_cost_and_failure_inputs")
+    if (type(preceding) is not dict or not preceding or type(parent_inputs) is not dict
+            or preceding != {**parent_inputs, str(base / "continuation-parent-budget.json"): pins["initial_parent_sha256"],
+                             str(base / "development.py"): pins["initial_recipe_sha256"],
+                             str(cleanup_path): pins["preimage_cleanup_sha256"]}):
+        raise Incomplete("Receiver-guard preceding costs/failures are not preserved.")
+    for name, digest in preceding.items():
+        declared = Path(name)
+        if not declared.is_absolute() or ".." in declared.parts:
+            raise Incomplete("Receiver-guard preceding material leaves its canonical scope.")
+        physical(declared, digest)
+    witness_ref = reference["current_ordered_witness"]
+    if type(witness_ref) is not dict or set(witness_ref) != {"path", "sha256"} or preceding.get(witness_ref["path"]) != witness_ref["sha256"]:
+        raise Incomplete("Receiver-guard preceding ordered witness is missing.")
+    witness = document(Path(witness_ref["path"]), witness_ref["sha256"])
+    ledger_path = base.parent / "mutation-cohorts/cohort-ledger.json"
+    ledger = document(ledger_path, preceding.get(str(ledger_path)))
+    old_witness_ref = reference["ordered_witness"]
+    if type(old_witness_ref) is not dict or old_witness_ref != first.get("ordered_witness") or preceding.get(old_witness_ref["path"]) != old_witness_ref["sha256"]:
+        raise Incomplete("Receiver-guard original ordered witness lineage differs.")
+    old_witness = document(Path(old_witness_ref["path"]), old_witness_ref["sha256"])
+    if (ledger.get("active") is not None or witness_ref["sha256"] != pins["current_witness_sha256"]
+            or witness.get("status") != "focused-generated-sensitivity-observed-independent-review-pending"
+            or witness.get("detached_candidate_sha256") != pins["candidate_sha256"]
+            or old_witness.get("status") != "focused-generated-sensitivity-observed-independent-review-pending"
+            or old_witness.get("detached_candidate_sha256") != pins["incomplete_candidate_sha256"]
+            or witness.get("original_custody_unchanged") is not True or witness.get("terminal_resource_failures") != []
+            or any(item.get("qualification_passed") is not False or item.get("generated_mutation_credit") is not False
+                   or item.get("independent_monitor", {}).get("ok") is not True or item.get("independent_monitor", {}).get("joined") is not True
+                   or type(item.get("healthy_exact_executions")) is not int or item["healthy_exact_executions"] != 1
+                   or type(item.get("caught_exact_executions")) is not int or item["caught_exact_executions"] != 4 for item in (old_witness, witness))
+            or type(witness.get("maximum_test_executions")) is not int or witness["maximum_test_executions"] != 5
+            or type(ledger.get("cumulative_charged_case_ceiling")) is not int
+            or type(reference["prior_charged_case_ceiling"]) is not int
+            or any(type(item.get("maximum_test_executions")) is not int or item["maximum_test_executions"] != 5 for item in (old_witness, witness))
+            or type(first_budget.get("prior_charged_case_ceiling")) is not int
+            or first_budget["prior_charged_case_ceiling"] != ledger["cumulative_charged_case_ceiling"] + 5
+            or type(first_budget.get("cumulative_charged_case_ceiling")) is not int
+            or first_budget["cumulative_charged_case_ceiling"] != first_budget["prior_charged_case_ceiling"] + 1714
+            or reference["prior_charged_case_ceiling"] != first_budget["cumulative_charged_case_ceiling"] + 5
+            or type(reference["cumulative_charged_case_ceiling"]) is not int
+            or reference["cumulative_charged_case_ceiling"] != reference["prior_charged_case_ceiling"] + 1714
+            or reference["cumulative_charged_case_ceiling"] > first_budget["prior_charged_case_ceiling"] + parent["maximum_new_Rust_result_instances"]):
+        raise Incomplete("Receiver-guard original history or cumulative charges changed.")
+    captured, protected = reference["captured_inputs"], reference["protected_inputs_sha256"]
+    if (type(captured) is not dict or len(captured) != pins["captured_file_count"]
+            or any(type(name) is not str or not 0 < len(name) <= 512 or Path(name).is_absolute() or ".." in Path(name).parts
+                   or Path(name).as_posix() != name or any(char in name for char in ("\\", "\0", "\n", "\r"))
+                   or type(digest) is not str or re.fullmatch(r"[a-f0-9]{64}", digest) is None for name, digest in captured.items())
+            or COMMON.canonical_sha256(captured) != pins["captured_inputs_sha256"]
+            or any(captured.get(name) != digest for name, digest in expected.items())
+            or type(protected) is not dict or set(protected) != set(SOURCE_POLICY_BOUND_INPUTS)
+            or COMMON.canonical_sha256(protected) != pins["protected_inputs_digest"]
+            or any(captured.get(name) != digest for name, digest in protected.items())
+            or reference["monitor_control_inputs"] != controls):
+        raise Incomplete("Receiver-guard frozen source/protected closure differs.")
+    for name, digest in captured.items():
+        physical(path.parent / "source" / name, digest, COMMON.ANALYSIS_JSON_MAX_BYTES)
+    monitor = reference["independent_monitor"]
+    result = monitor.get("result") if type(monitor) is dict else None
+    if (type(monitor) is not dict or set(monitor) != {"ok", "errors", "result", "exit_code", "joined", "result_sha256", "resource_samples_sha256"}
+            or monitor["ok"] is not True or monitor["joined"] is not True or monitor["errors"] != []
+            or type(monitor["exit_code"]) is not int or monitor["exit_code"] != 0 or type(result) is not dict
+            or set(result) != {"status", "parent_pid", "parent_start", "observer_pid", "role", "recipe_sha256", "samples", "maximum_gap_seconds", "finished_monotonic", "recipe_final_sha256"}
+            or result["status"] != "stopped" or result["role"] != "development"
+            or result["recipe_sha256"] != pins["monitor_sha256"] or result["recipe_final_sha256"] != pins["monitor_sha256"]
+            or any(type(result[key]) is not int or result[key] <= 0 for key in ("samples", "parent_pid", "parent_start", "observer_pid"))
+            or result["parent_pid"] == result["observer_pid"]
+            or any(type(result[key]) not in {int, float} or not 0 <= result[key] <= sys.float_info.max or not math.isfinite(result[key])
+                   for key in ("maximum_gap_seconds", "finished_monotonic"))
+            or result["maximum_gap_seconds"] > 2 or result["finished_monotonic"] <= 0):
+        raise Incomplete("Receiver-guard observer lacks joined actual custody.")
+    directory = path.parent / "resource-monitor"
+    if reference["durable_monitor"] != str(directory):
+        raise Incomplete("Receiver-guard observer leaves its fixed durable directory.")
+    terminal = document(directory / "monitor-result.json", monitor["result_sha256"])
+    samples_raw = physical(directory / "resources.jsonl", monitor["resource_samples_sha256"])
+    if terminal != result:
+        raise Incomplete("Receiver-guard physical observer differs.")
+    admit_source_policy_resource_samples(samples_raw, result)
+    samples = [json.loads(line) for line in samples_raw.decode().splitlines()]
+    previous_elapsed = None
+    for sample in samples:
+        elapsed = sample.get("elapsed_seconds")
+        if (type(elapsed) not in {int, float} or not math.isfinite(elapsed) or not 0 <= elapsed < 1500
+                or (previous_elapsed is not None and elapsed < previous_elapsed)):
+            raise Incomplete("Receiver-guard samples escaped the original application work clock.")
+        previous_elapsed = elapsed
+    final = samples[-1]
+    terminal_unix = origin + final["elapsed_seconds"] + result["finished_monotonic"] - final["monotonic_seconds"]
+    if not reference["work_completed_unix"] <= terminal_unix <= reference["cleanup_deadline_unix"]:
+        raise Incomplete("Receiver-guard actual join escaped its original cleanup clock.")
+    raw_controls = {}
+    for name, digest in controls.items():
+        filename = base / "monitor-controls" / name
+        raw_controls[filename] = physical(filename, digest)
+    for role in ("healthy", "gap"):
+        admit_source_policy_monitor_control(base / "monitor-controls" / role, role, pins["monitor_sha256"], inputs, raw_controls)
+        control_result = read_json(base / "monitor-controls" / role / "monitor-result.json", expected_sha256=controls[role + "/monitor-result.json"])
+        control_samples = [json.loads(line) for line in raw_controls[base / "monitor-controls" / role / "resources.jsonl"].decode().splitlines()]
+        previous_elapsed = None
+        for sample in control_samples:
+            elapsed = sample.get("elapsed_seconds")
+            if (type(elapsed) not in {int, float} or not math.isfinite(elapsed) or not 0 <= elapsed < 1500
+                    or (previous_elapsed is not None and elapsed < previous_elapsed)):
+                raise Incomplete("Receiver-guard controls reset or exceed the actual application clock.")
+            previous_elapsed = elapsed
+        if control_result["finished_monotonic"] > samples[0]["monotonic_seconds"]:
+            raise Incomplete("Receiver-guard controls did not precede the actual workload observer.")
+    return {str(filename): digest for filename, digest in inputs.items()}
+
+
 def admit_source_policy_managed_observer(reference: dict, path: Path) -> dict:
     """Bind the fixed managed-observation producer, capture and actual monitor controls."""
     pins = SOURCE_POLICY_MANAGED_DEVELOPMENT
     fields = {"status", "phase", "attempt", "lanes", "scope", "generated_mutation_credit",
-              "budget_sha256", "recipe_sha256", "HEAD", "index_sha256", "source_sha256",
+              "budget_sha256", "recipe_sha256", "source_budget_sha256", "HEAD", "index_sha256", "source_sha256",
               "captured_inputs", "candidate_sha256", "tools", "compiler", "vendor_identity",
               "cargo_home_config_sha256", "custody_unchanged", "durable_monitor",
               "terminal_resource_failures", "independent_monitor", "elapsed_seconds"}
     if (set(reference) != fields or reference["status"] != "workload-passed"
             or reference["phase"] != "full" or type(reference["attempt"]) is not int
-            or reference["attempt"] != 2 or reference["custody_unchanged"] is not True
+            or reference["attempt"] != 4 or reference["custody_unchanged"] is not True
             or reference["generated_mutation_credit"] is not False
             or reference["terminal_resource_failures"] != []
             or type(reference["elapsed_seconds"]) not in {int, float}
-            or not 0 < reference["elapsed_seconds"] < 2100
+            or not 0 < reference["elapsed_seconds"] < 4200
             or reference["candidate_sha256"] != pins["candidate_sha256"]
             or reference["recipe_sha256"] != pins["recipe_sha256"]
-            or reference["budget_sha256"] != pins["budget_sha256"]):
+            or reference["budget_sha256"] != pins["budget_sha256"]
+            or reference["source_budget_sha256"] != pins["source_budget_sha256"]):
         raise Incomplete("Source-policy managed development format or fixed producer differs.")
     source, captured = reference["source_sha256"], reference["captured_inputs"]
-    for inventory, count in ((source, 605), (captured, 785)):
+    for inventory, count in ((source, 606), (captured, 786)):
         if (type(inventory) is not dict or len(inventory) != count
                 or any(type(name) is not str or not 0 < len(name) <= 512
                        or Path(name).is_absolute() or ".." in Path(name).parts
@@ -6839,21 +7293,39 @@ def admit_source_policy_managed_observer(reference: dict, path: Path) -> dict:
             or any(captured.get(name) != digest for name, digest in source.items())):
         raise Incomplete("Source-policy managed capture differs from its complete reviewed closure.")
     base = path.parent.parent
-    budget_path = base / "development-budget.json"
-    inputs = {budget_path: pins["budget_sha256"], base / "development.py": pins["recipe_sha256"],
-              base / "monitor.py": pins["monitor_sha256"]}
+    producer = base / "extension-v1"
+    budget_path = producer / "development-budget.json"
+    lineage = SOURCE_POLICY_CONFIGURATION_LINEAGE
+    inputs = {
+        budget_path: pins["budget_sha256"], producer / "development.py": pins["recipe_sha256"],
+        producer / "monitor.py": pins["monitor_sha256"],
+        base / "source-development-budget.json": pins["source_budget_sha256"],
+        base / "development-budget.json": lineage["original_development_budget_sha256"],
+        base / "development.py": lineage["original_recipe_sha256"],
+        base / "monitor.py": lineage["original_monitor_sha256"],
+        producer / "resource-replan-review.json": lineage["replan_review_sha256"],
+        base / "source-development-closeout-coherent.json": lineage["closeout_sha256"],
+    }
     budget = read_json(budget_path, maximum=262144, expected_sha256=pins["budget_sha256"])
     if (budget.get("admitted") is not True
-            or type(budget.get("budget_seconds")) is not int or budget["budget_seconds"] != 2400
-            or type(budget.get("reserve_seconds")) is not int or budget["reserve_seconds"] != 300
-            or type(budget.get("maximum_attempts_per_phase")) is not int
-            or budget["maximum_attempts_per_phase"] != 3 or budget.get("mutations_admitted") is not False
+            or any(type(budget.get(key)) is not int or budget[key] != expected for key, expected in (
+                ("budget_seconds", 4500), ("work_seconds", 4200), ("reserve_seconds", 300),
+                ("maximum_attempts_per_phase", 4), ("maximum_focused_attempts", 3),
+                ("maximum_full_attempts", 4), ("additional_full_attempts", 1),
+                ("extension_seconds", 900), ("maximum_new_Rust_result_instances", 6886)))
+            or budget.get("mutations_admitted") is not False
             or budget.get("recipe_sha256") != pins["recipe_sha256"]
-            or budget.get("monitor_sha256") != pins["monitor_sha256"]
+            or budget.get("source_budget_sha256") != pins["source_budget_sha256"]
+            or budget.get("prior_development_budget_sha256") != lineage["original_development_budget_sha256"]
+            or budget.get("prior_recipe_sha256") != lineage["original_recipe_sha256"]
+            or budget.get("prior_monitor_sha256") != lineage["original_monitor_sha256"]
+            or budget.get("coordinator_review_sha256") != lineage["replan_review_sha256"]
+            or budget.get("candidate_sha256") != pins["candidate_sha256"]
+            or budget.get("original_budget_disposition") != "incomplete; no original failure or clock reset"
             or type(budget.get("new_test_names")) is not list
-            or len(budget["new_test_names"]) != len(SOURCE_POLICY_PROVENANCE_TESTS)
+            or len(budget["new_test_names"]) != len(SOURCE_POLICY_CONFIGURATION_TESTS)
             or any(type(name) is not str for name in budget["new_test_names"])
-            or set(budget["new_test_names"]) != SOURCE_POLICY_PROVENANCE_TESTS
+            or set(budget["new_test_names"]) != SOURCE_POLICY_CONFIGURATION_TESTS
             or any(type(budget.get(key)) not in {int, float}
                    or not 0 < budget[key] <= sys.float_info.max or not math.isfinite(budget[key])
                    for key in ("start_unix", "preparation_started_unix"))
@@ -6864,6 +7336,80 @@ def admit_source_policy_managed_observer(reference: dict, path: Path) -> dict:
             or reference["HEAD"] != budget.get("baseline")
             or reference["index_sha256"] != budget.get("index_sha256")):
         raise Incomplete("Source-policy managed development allowance or original custody differs.")
+    source_budget = read_json(base / "source-development-budget.json", maximum=262144,
+                              expected_sha256=pins["source_budget_sha256"])
+    original = read_json(base / "development-budget.json", maximum=262144,
+                         expected_sha256=lineage["original_development_budget_sha256"])
+    if (source_budget.get("admitted") is not True
+            or source_budget.get("baseline") != reference["HEAD"]
+            or type(source_budget.get("preparation_start_unix")) not in {int, float}
+            or source_budget["preparation_start_unix"] != budget["start_unix"]
+            or any(type(source_budget.get(key)) is not int or source_budget[key] != expected
+                   for key, expected in (("budget_seconds", 3600), ("work_seconds", 3300),
+                       ("cleanup_seconds", 300), ("max_focused_attempts", 3),
+                       ("max_full_development_attempts", 3)))
+            or source_budget.get("no_mutations_admitted") is not True
+            or source_budget.get("public_campaigns_admitted") is not False
+            or source_budget.get("all_prior_source_qualification_clocks_and_charges_retained") is not True
+            or source_budget.get("dependency_or_toolchain_changes_allowed") is not False
+            or original.get("admitted") is not True
+            or original.get("mutations_admitted") is not False
+            or any(type(original.get(key)) is not int or original[key] != expected
+                   for key, expected in (("budget_seconds", 3600), ("reserve_seconds", 300),
+                       ("maximum_attempts_per_phase", 3), ("maximum_new_Rust_result_instances", 5172)))
+            or any(type(original.get(key)) not in {int, float} or original[key] != budget["start_unix"]
+                   for key in ("start_unix", "preparation_started_unix"))
+            or original.get("source_budget_sha256") != pins["source_budget_sha256"]
+            or original.get("recipe_sha256") != lineage["original_recipe_sha256"]
+            or original.get("baseline") != reference["HEAD"]
+            or original.get("index_sha256") != reference["index_sha256"]):
+        raise Incomplete("Source-policy original source allowance or retained extension lineage differs.")
+    review = read_json(producer / "resource-replan-review.json", maximum=262144,
+                       expected_sha256=lineage["replan_review_sha256"])
+    reviewed = review.get("reviewed_extension")
+    if (review.get("verdict") != "READY" or review.get("completion") != "completed"
+            or type(reviewed) is not dict
+            or any(type(reviewed.get(key)) is not int or reviewed[key] != expected
+                   for key, expected in (("original_total_seconds", 3600), ("original_work_seconds", 3300),
+                       ("extension_seconds", 900), ("cumulative_total_seconds", 4500),
+                       ("cumulative_work_seconds", 4200), ("cleanup_seconds", 300),
+                       ("maximum_focused_attempts", 3), ("maximum_full_attempts", 4),
+                       ("original_result_upper_charge", 5172), ("additional_result_upper_charge", 1714),
+                       ("cumulative_result_upper_charge", 6886), ("product_inputs", 606),
+                       ("complete_lanes", 13), ("default_cases_per_mode", 267),
+                       ("ep1_cases_per_mode", 501), ("doctests_per_graph", 89)))
+            or type(reviewed.get("original_start_unix")) not in {int, float}
+            or reviewed["original_start_unix"] != budget["start_unix"]
+            or reviewed.get("candidate_sha256") != pins["candidate_sha256"]):
+        raise Incomplete("Source-policy extension requires its independent original-clock review.")
+    closeout = read_json(base / "source-development-closeout-coherent.json", maximum=262144,
+                         expected_sha256=lineage["closeout_sha256"])
+    closeout_fields = {"status", "baseline", "product", "product_inputs", "captured_inputs",
+        "source_origin_unix", "closed_unix", "cumulative_elapsed_seconds", "original3600_disposition",
+        "extension4500_disposition", "verification_sha256", "implementation_review_sha256",
+        "reviewed_source_unchanged", "executed_named_results", "prior_focused_results",
+        "actual_result_total", "cumulative_result_upper_charge", "metric_admission",
+        "public_campaigns", "native_qualification"}
+    if (type(closeout) is not dict or set(closeout) != closeout_fields
+            or closeout["status"] != "source-development-passed-qualification-not-admitted"
+            or closeout["baseline"] != reference["HEAD"] or closeout["product"] != pins["candidate_sha256"]
+            or closeout["verification_sha256"] != PRODUCT.sha256(path)
+            or closeout["original3600_disposition"] != "incomplete; original first failures retained"
+            or closeout["extension4500_disposition"] != "all13 development lanes passed within4200work; observer joined"
+            or type(closeout["implementation_review_sha256"]) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", closeout["implementation_review_sha256"]) is None
+            or closeout["reviewed_source_unchanged"] is not True
+            or any(closeout[key] is not False for key in ("metric_admission", "public_campaigns", "native_qualification"))
+            or any(type(closeout[key]) is not int or closeout[key] != expected for key, expected in (
+                ("product_inputs", 606), ("captured_inputs", 786), ("executed_named_results", 1714),
+                ("prior_focused_results", 10), ("actual_result_total", 1724), ("cumulative_result_upper_charge", 6886)))
+            or any(type(closeout[key]) not in {int, float} or not 0 < closeout[key] <= sys.float_info.max
+                   or not math.isfinite(closeout[key])
+                   for key in ("source_origin_unix", "closed_unix", "cumulative_elapsed_seconds"))
+            or closeout["source_origin_unix"] != budget["start_unix"]
+            or closeout["closed_unix"] - closeout["source_origin_unix"] != closeout["cumulative_elapsed_seconds"]
+            or not 0 < closeout["cumulative_elapsed_seconds"] < 4200):
+        raise Incomplete("Source-policy development closeout lacks actual source/clock/terminal custody.")
     control_base = base / "qualification-admission"
     control_budget_path = control_base / "development-budget.json"
     control_pin = SOURCE_POLICY_MANAGED_CONTROL_BUDGET
@@ -6886,13 +7432,13 @@ def admit_source_policy_managed_observer(reference: dict, path: Path) -> dict:
                                        "budget_seconds", "reserve_seconds", "monitor_sha256", "resource_profile"}
             or control_budget["admitted"] is not True
             or any(type(control_budget[key]) is not int or control_budget[key] != expected
-                   for key, expected in (("budget_seconds", 2400), ("reserve_seconds", 300)))
+                   for key, expected in (("budget_seconds", 4500), ("reserve_seconds", 300)))
             or any(type(control_budget[key]) not in {int, float}
                    or not 0 < control_budget[key] <= sys.float_info.max
                    or not math.isfinite(control_budget[key])
                    or control_budget[key] != control_pin["start_unix"]
                    for key in ("start_unix", "preparation_started_unix"))
-            or control_budget["start_unix"] < budget["start_unix"] + budget["budget_seconds"]
+            or control_budget["start_unix"] < closeout["closed_unix"]
             or control_budget["monitor_sha256"] != pins["monitor_sha256"]
             or type(control_budget["resource_profile"]) is not dict
             or set(control_budget["resource_profile"]) != set(resource_profile)
@@ -6946,6 +7492,23 @@ def admit_source_policy_managed_observer(reference: dict, path: Path) -> dict:
     if COMMON.canonical_sha256(terminal) != COMMON.canonical_sha256(result):
         raise Incomplete("Source-policy managed physical monitor terminal differs.")
     admit_source_policy_resource_samples(raw[directory / "resources.jsonl"], result)
+    # The later controls need actual joined source closure, not expiry of its
+    # allocated allowance. Resource elapsed coordinates retain the original
+    # source clock; observer monotonic coordinates locate its final join gap.
+    samples = [json.loads(line) for line in raw[directory / "resources.jsonl"].decode("utf-8").splitlines()]
+    previous_elapsed = None
+    for sample in samples:
+        elapsed = sample.get("elapsed_seconds")
+        if (type(elapsed) not in {int, float} or not 0 <= elapsed < 4200
+                or not math.isfinite(elapsed)
+                or (previous_elapsed is not None and elapsed < previous_elapsed)):
+            raise Incomplete("Source-policy development samples exceed the original extended work clock.")
+        previous_elapsed = elapsed
+    final_sample = samples[-1]
+    terminal_unix = (budget["start_unix"] + final_sample["elapsed_seconds"]
+                     + (result["finished_monotonic"] - final_sample["monotonic_seconds"]))
+    if closeout["closed_unix"] < terminal_unix:
+        raise Incomplete("Source-policy development closeout precedes its actual joined monitor terminal.")
     for role in ("healthy", "gap"):
         admit_source_policy_monitor_control(control_base / "monitor-controls" / role, role,
                                             pins["monitor_sha256"], inputs, raw)
@@ -7045,7 +7608,24 @@ def admit_source_policy_development(binding: dict, identity: dict) -> dict:
     if (PRODUCT.sha256(path) != evidence["sha256"] or reference.get("status") != "workload-passed"
             or reference.get("custody_unchanged") is not True):
         raise Incomplete("Source-policy development evidence lacks passing terminal custody.")
-    observer_inputs = admit_source_policy_observer(reference, path)
+    actual_candidate = COMMON.canonical_sha256(identity)
+    managed_candidate = SOURCE_POLICY_MANAGED_DEVELOPMENT["candidate_sha256"]
+    receiver = SOURCE_POLICY_RECEIVER_DEVELOPMENT
+    receiver_candidates = {receiver["candidate_sha256"], receiver["incomplete_candidate_sha256"]}
+    if actual_candidate in receiver_candidates or binding["candidate_sha256"] in receiver_candidates:
+        if binding["candidate_sha256"] != actual_candidate:
+            raise Incomplete("Source-policy receiver development candidate binding differs.")
+        if actual_candidate == receiver["incomplete_candidate_sha256"]:
+            raise Incomplete("Receiver-guard initial development remains incomplete; retain full1 failure.")
+        observer_inputs = admit_source_policy_receiver_observer(reference, path, binding, identity)
+    elif actual_candidate == managed_candidate or binding["candidate_sha256"] == managed_candidate:
+        if binding["candidate_sha256"] != actual_candidate:
+            raise Incomplete("Source-policy current development candidate binding differs.")
+        # Current source selects its required producer contract. Receipt fields
+        # cannot downgrade that contract by omitting the managed markers.
+        observer_inputs = admit_source_policy_managed_observer(reference, path)
+    else:
+        observer_inputs = admit_source_policy_observer(reference, path)
     previous = reference.get("source_sha256")
     if type(previous) is not dict:
         raise Incomplete("Source-policy development source identity is missing.")

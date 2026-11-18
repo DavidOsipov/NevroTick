@@ -50,7 +50,7 @@ fn context() -> Arc<RunClockContext> {
 /// Copy an actual request descriptor for a replay/substitution fault control.
 fn copy_owner(owner: &RequestOwner) -> RequestOwner {
     RequestOwner {
-        source_identity: owner.source_identity.clone(),
+        source_context: owner.source_context.clone(),
         index: owner.index,
         identity: Arc::clone(&owner.identity),
         context: Arc::clone(&owner.context),
@@ -140,7 +140,7 @@ fn duplicate_header(original: &Completion) -> Result<Completion, PilotError> {
             outcome: TerminalOutcome::Header {
                 stratum: *stratum,
                 facts: Box::new(crate::TransportFacts {
-                    source_identity: facts.source_identity.clone(),
+                    source_context: facts.source_context.clone(),
                     send_before: facts.send_before,
                     send_after: facts.send_after,
                     read_return: facts.read_return,
@@ -183,11 +183,24 @@ async fn queued_native_reply() -> Result<(LiveSlot, Instant), Box<dyn Error>> {
 async fn queued_native_reply_for_source(
     source: Option<&crate::SourceHandle>,
 ) -> Result<(LiveSlot, Instant), Box<dyn Error>> {
+    queued_native_reply_configuring(source, |_| Ok(())).await
+}
+
+/// Install an actual source definition after peer allocation but before binding.
+/// # Errors
+/// Preserve checked installation and all original native fixture failures.
+/// # Panics
+/// Retain the same independent query/send observations as the ordinary fixture.
+async fn queued_native_reply_configuring(
+    source: Option<&crate::SourceHandle>,
+    install: impl FnOnce(SocketAddr) -> Result<(), Box<dyn Error>>,
+) -> Result<(LiveSlot, Instant), Box<dyn Error>> {
     let lifetime = Duration::from_secs(2);
     let remote = crate::StdSocket::bind(SocketAddr::from((Ipv4Addr::LOCALHOST, 0)))?;
     remote.set_read_timeout(Some(lifetime))?;
     remote.set_write_timeout(Some(lifetime))?;
     let destination = remote.local_addr()?;
+    install(destination)?;
     let mut packet = [0; PACKET_BYTES];
     packet[0] = 0x23;
     packet[40..48].copy_from_slice(&[7; 8]);
@@ -293,7 +306,7 @@ fn unmanaged_receiver(
 fn reject_source_provenance_issues(
     receiver: &mut SeriesReceiver,
     owner: &RequestOwner,
-    replacements: &[Option<crate::SourceIdentity>; 3],
+    replacements: &[Option<crate::source_policy::SourceContext>; 3],
     managed: bool,
 ) {
     for replacement in replacements {
@@ -301,7 +314,7 @@ fn reject_source_provenance_issues(
             continue;
         }
         let mut wrong = copy_owner(owner);
-        wrong.source_identity.clone_from(replacement);
+        wrong.source_context.clone_from(replacement);
         assert!(matches!(
             receiver.issue(wrong),
             Err(PilotError::InternalState)
@@ -326,7 +339,7 @@ fn reject_source_provenance_completions(
     receiver: &mut SeriesReceiver,
     completed: &Completion,
     observed: Control,
-    replacements: &[Option<crate::SourceIdentity>; 3],
+    replacements: &[Option<crate::source_policy::SourceContext>; 3],
     managed: bool,
 ) -> Result<(), Box<dyn Error>> {
     for replacement in replacements {
@@ -336,13 +349,13 @@ fn reject_source_provenance_completions(
         for fields in 0..3 {
             let mut wrong = duplicate_header(completed)?;
             if fields != 0 {
-                wrong.owner.source_identity.clone_from(replacement);
+                wrong.owner.source_context.clone_from(replacement);
             }
             if fields != 1 {
                 let TerminalOutcome::Header { facts, .. } = &mut wrong.report.outcome else {
                     return Err(PilotError::InternalState.into());
                 };
-                facts.source_identity.clone_from(replacement);
+                facts.source_context.clone_from(replacement);
             }
             assert!(matches!(
                 receiver.receive(wrong, observed),
@@ -373,7 +386,7 @@ fn reject_source_provenance_completions(
 /// Require atomic refusal, original accounting and once-only history after Stop.
 async fn source_provenance_receiving_case(
     source: &crate::SourceHandle,
-    foreign: &[crate::SourceIdentity; 2],
+    foreign: &[crate::SourceHandle; 2],
     managed: bool,
 ) -> Result<(), Box<dyn Error>> {
     let (mut slot, deadline) = queued_native_reply_for_source(managed.then_some(source)).await?;
@@ -389,7 +402,11 @@ async fn source_provenance_receiving_case(
         &mode,
     );
     let owner = RequestOwner::from_slot(0, &slot);
-    let replacements = [None, Some(foreign[0].clone()), Some(foreign[1].clone())];
+    let replacements = [
+        None,
+        crate::source_policy::SourceMode::Managed(foreign[0].bind(slot.peer)?).source_context(),
+        crate::source_policy::SourceMode::Managed(foreign[1].bind(slot.peer)?).source_context(),
+    ];
     reject_source_provenance_issues(&mut receiver, &owner, &replacements, managed);
     receiver.issue(copy_owner(&owner))?;
     let quiet = Control {
@@ -472,10 +489,7 @@ fn managed_source_provenance_receiving_rejects_absent_and_foreign_owners()
     let authority = crate::source_policy::isolated_authority(limits)?;
     let foreign_authority = crate::source_policy::isolated_authority(limits)?;
     let source = authority.source(0)?;
-    let foreign = [
-        authority.source(1)?.identity(),
-        foreign_authority.source(0)?.identity(),
-    ];
+    let foreign = [authority.source(1)?, foreign_authority.source(0)?];
     runtime()?.block_on(async {
         for managed in [false, true] {
             source_provenance_receiving_case(&source, &foreign, managed).await?;
@@ -3309,4 +3323,264 @@ fn reply_postcommit_stop_preserves_the_historical_receiving_checkpoint()
         );
         Ok(())
     })
+}
+
+/// Prepare genuine managed work with installation preceding binding and send.
+/// # Errors
+/// Preserve checked configuration, runtime, native receive and staging failures.
+/// # Panics
+/// Require the selected real datagram to be charged exactly once.
+async fn source_configuration_fixture(
+    path: FinalGuardPath,
+    authority: &mut crate::SourcePolicyAuthority,
+    source: &crate::SourceHandle,
+) -> Result<FinalGuardFixture, Box<dyn Error>> {
+    match path {
+        FinalGuardPath::Reply => {
+            let (mut slot, deadline) = queued_native_reply_configuring(Some(source), |peer| {
+                let _installed = authority
+                    .install_source_configuration(source, crate::SourceAddressSet::new(&[peer])?)?;
+                Ok(())
+            })
+            .await?;
+            let mut buffer = [0; RECEIVE_BYTES];
+            let length =
+                tokio::time::timeout(Duration::from_secs(2), slot.socket.recv_from(&mut buffer))
+                    .await??;
+            let read = SoftwareClock::capture();
+            let native = classify_read_result(NativeDatagramPlatform::current(), Ok(length));
+            assert!(charge_selected_datagram(&mut slot, &native));
+            let NativeReadOutcome::Datagram {
+                length,
+                source: peer,
+            } = native
+            else {
+                return Err(PilotError::InternalState.into());
+            };
+            let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
+            let staged = stage_reply(&slot, &buffer[..length], peer, read, limits)
+                .map_err(|_| PilotError::InternalState)?;
+            Ok(FinalGuardFixture {
+                slot,
+                staged: Some(staged),
+                remote: None,
+                deadline,
+            })
+        }
+        FinalGuardPath::Writable => {
+            let mut fixture = final_guard_fixture(path).await?;
+            let _installed = authority.install_source_configuration(
+                source,
+                crate::SourceAddressSet::new(&[fixture.slot.peer])?,
+            )?;
+            fixture.slot.policy = crate::source_policy::LivePolicy::from_mode(
+                crate::source_policy::SourceMode::Managed(source.bind(fixture.slot.peer)?),
+            );
+            Ok(fixture)
+        }
+    }
+}
+
+/// Refuse all same-source revision substitutions without consuming the original.
+/// # Errors
+/// Preserve absence of the genuine header payload.
+/// # Panics
+/// Reject owner-only, facts-only and joint replacement before cursor advancement.
+fn reject_replaced_configuration(
+    receiver: &mut SeriesReceiver,
+    completed: &Completion,
+    observed: Control,
+    substituted: Option<&crate::source_policy::SourceContext>,
+) -> Result<(), PilotError> {
+    for fields in 0..3 {
+        let mut wrong = duplicate_header(completed)?;
+        if fields != 0 {
+            wrong.owner.source_context = substituted.cloned();
+        }
+        if fields != 1 {
+            let TerminalOutcome::Header { facts, .. } = &mut wrong.report.outcome else {
+                return Err(PilotError::InternalState);
+            };
+            facts.source_context = substituted.cloned();
+        }
+        assert!(matches!(
+            receiver.receive(wrong, observed),
+            Err(PilotError::InternalState)
+        ));
+        assert_eq!(receiver.next, 0);
+        assert!(
+            receiver
+                .issued
+                .as_ref()
+                .is_some_and(|issued| issued.same_request(&completed.owner))
+        );
+    }
+    Ok(())
+}
+
+/// Observe original history and exactly-once accounting independently of transfer.
+/// # Errors
+/// Preserve unexpectedly missing historical facts or issuer configuration.
+/// # Panics
+/// Require the actual final-guard refusal or the untouched committed neighbor.
+fn check_configuration_report(
+    report: &SlotReport,
+    original: &crate::SourceConfigurationSnapshot,
+    path: FinalGuardPath,
+    after_commit: bool,
+) -> Result<(), PilotError> {
+    assert_eq!(
+        report.status(),
+        if after_commit {
+            Status::Header
+        } else {
+            Status::SourcePolicy
+        }
+    );
+    if after_commit {
+        assert_eq!((report.received(), report.rejected()), (1, 0));
+        let facts = report.facts().ok_or(PilotError::InternalState)?;
+        assert!(
+            facts
+                .source_configuration()
+                .ok_or(PilotError::InternalState)?
+                .same_configuration(original)
+        );
+    } else {
+        assert_eq!(
+            report.source_policy_refusal(),
+            Some(crate::SourcePolicyError::ConfigurationChanged)
+        );
+        assert_eq!(
+            (report.received(), report.rejected()),
+            match path {
+                FinalGuardPath::Reply => (1, 1),
+                FinalGuardPath::Writable => (0, 0),
+            }
+        );
+    }
+    Ok(())
+}
+
+/// Replace the real installed definition exactly at a managed final guard.
+/// # Errors
+/// Preserve native setup, configuration issuance and original report transfer.
+/// # Panics
+/// Require refusal before effect, exact receive accounting and quiet control.
+fn source_configuration_guard_case(
+    path: FinalGuardPath,
+    after_commit: bool,
+) -> Result<(), Box<dyn Error>> {
+    runtime()?.block_on(async {
+        let mut authority = crate::source_policy::isolated_authority(
+            crate::SourcePolicyLimits::new(1, 1, Duration::from_millis(1), Duration::from_secs(1))?,
+        )?;
+        let source = authority.source(0)?;
+        let mut fixture = source_configuration_fixture(path, &mut authority, &source).await?;
+        let original = source
+            .configuration_snapshot()?
+            .ok_or(PilotError::InternalState)?;
+        let quiet = Control {
+            stop: false,
+            epoch: 0,
+        };
+        let (_sender, mut control) = watch::channel(quiet);
+        let mode = crate::source_policy::SourceMode::Managed(source.bind(fixture.slot.peer)?);
+        let mut receiver = SeriesReceiver::new(
+            Arc::clone(&fixture.slot.run_context),
+            fixture.slot.peer,
+            fixture.slot.profile,
+            &mode,
+        );
+        receiver.issue(RequestOwner::from_slot(0, &fixture.slot))?;
+        let mut replacement = None;
+        let change = || {
+            replacement = Some(
+                authority.replace_source_configuration(&original, original.addresses().clone()),
+            );
+        };
+        let observed = match path {
+            FinalGuardPath::Reply => {
+                let staged = Ok(fixture.staged.take().ok_or(PilotError::InternalState)?);
+                if after_commit {
+                    publish_series_reply_observing(
+                        &mut fixture.slot,
+                        &mut control,
+                        staged,
+                        fixture.deadline,
+                        || {},
+                        change,
+                    )
+                } else {
+                    publish_series_reply_observing(
+                        &mut fixture.slot,
+                        &mut control,
+                        staged,
+                        fixture.deadline,
+                        change,
+                        || {},
+                    )
+                }
+            }
+            FinalGuardPath::Writable => handle_series_writable_observing(
+                &mut fixture.slot,
+                &mut control,
+                Ok(()),
+                fixture.deadline,
+                quiet,
+                change,
+                || {},
+            ),
+        };
+        let current = replacement.ok_or(PilotError::InternalState)??;
+        assert!(!original.same_configuration(&current));
+        assert!(!observed.stop && observed.epoch == 0);
+        if !after_commit {
+            check_final_guard_retirement(&fixture, path, Status::SourcePolicy)?;
+        }
+        let owner = RequestOwner::from_slot(0, &fixture.slot);
+        let report = fixture.slot.into_report(0)?;
+        check_configuration_report(&report, &original, path, after_commit)?;
+        let completed = Completion { owner, report };
+        if after_commit {
+            let substituted =
+                crate::source_policy::SourceMode::Managed(source.bind(receiver.peer)?)
+                    .source_context();
+            reject_replaced_configuration(
+                &mut receiver,
+                &completed,
+                observed,
+                substituted.as_ref(),
+            )?;
+        }
+        // Receiver compares original issuance, never the replacement's live state.
+        receiver.receive(completed, observed)?;
+        assert_eq!(receiver.next, 1);
+        assert!(receiver.issued.is_none());
+        Ok(())
+    })
+}
+
+/// Selected reply refusal preserves its real terminal report and spent budget.
+/// # Errors
+/// Preserve actual fixture and report-transfer failures.
+#[test]
+fn source_configuration_final_reply_replacement_preserves_report() -> Result<(), Box<dyn Error>> {
+    source_configuration_guard_case(FinalGuardPath::Reply, false)
+}
+
+/// Replacement between readiness and final custody prevents native sender entry.
+/// # Errors
+/// Preserve actual fixture and report-transfer failures.
+#[test]
+fn source_configuration_final_send_replacement_prevents_send() -> Result<(), Box<dyn Error>> {
+    source_configuration_guard_case(FinalGuardPath::Writable, false)
+}
+
+/// Later replacement cannot erase committed facts or substitute their revision.
+/// # Errors
+/// Preserve actual fixture and report-transfer failures.
+#[test]
+fn source_configuration_postcommit_replacement_preserves_history() -> Result<(), Box<dyn Error>> {
+    source_configuration_guard_case(FinalGuardPath::Reply, true)
 }

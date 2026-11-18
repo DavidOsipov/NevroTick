@@ -2055,21 +2055,60 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         "ke_datagram": "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs",
         "ke_recovery": "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs",
         "ke_job": "crates/nevrotick-engine/src/nts_ke_experiment/job.rs",
+        "ke_preview_target": "crates/nevrotick-engine/src/ke_preview_target.rs",
     }
+    PROBE_CALLER = "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"
+    MANAGED_PROTECTED_CASES = (
+        "nts_ke_experiment::datagram::tests::managed_protected_attempts_keep_floors_after_failure_and_stop",
+        "nts_ke_experiment::datagram::tests::managed_protected_rechecks_definition_after_readiness",
+        "nts_ke_experiment::datagram::tests::managed_protected_reply_distinguishes_wire_peer_and_policy_epochs",
+        "nts_ke_experiment::datagram::tests::managed_protected_send_uses_the_exact_shared_floor",
+        "nts_ke_experiment::managed_preview_tests::managed_protected_abnormal_join_preserves_sealed_configuration",
+        "nts_ke_experiment::managed_preview_tests::managed_protected_refuses_preview_downgrade_before_charging",
+        "nts_ke_experiment::managed_preview_tests::managed_protected_worker_preserves_committed_definition_through_join",
+        "nts_ke_experiment::managed_preview_tests::managed_protected_worker_refuses_replacement_at_both_effects",
+    )
+
+    MANAGED_SUCCESSOR_CASES = (
+        "nts_ke_experiment::datagram::tests::managed_retired_first_request_allows_one_same_association_successor",
+        "nts_ke_experiment::datagram::tests::managed_retired_authentication_refuses_uncommitted_and_invalidated_history",
+    )
+
+    MANAGED_DENY_CASES = (
+        "nts_ke_experiment::datagram::tests::managed_protected_deny_retires_only_the_exact_authenticated_successor",
+        "nts_ke_experiment::datagram::tests::managed_protected_ordinary_follows_rejected_controls_without_renewal",
+        "nts_ke_experiment::datagram::tests::managed_retired_deny_commits_only_its_source_and_exact_endpoint",
+        "nts_ke_experiment::datagram::tests::managed_mixed_receive_admits_deny_on_final_frame",
+        "nts_ke_experiment::datagram::tests::managed_mixed_receive_exhausts_on_invalid_final_frame",
+    )
+
+    MANAGED_WORKER_BOUNDARY_CASES = (
+        "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::managed_deny_worker_retains_exact_history_without_numerical_projection",
+        "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::managed_deny_worker_post_record_stop_preserves_only_once_joined_history",
+        "nts_ke_experiment::datagram::reached::bound_endpoint_check_refuses_each_invalid_coordinate",
+    )
 
     class SessionReached(Exception):
         """A healthy admission reached Session; stop before any execution."""
 
     def policy_fixture(self):
-        """Independent limits; synthetic 479/234 roster with one real required name."""
+        """Independent limits; synthetic 538/264 ordinary and 90 annotated Rustdoc names."""
         critical = ["crates/nevrotick-engine/src/lib.rs", *self.HOST.values(),
             "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
             "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
-            "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"]
-        names = sorted([f"ordinary_fixture_{index:03}" for index in range(245)] +
-                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(233)] +
+            self.PROBE_CALLER,
+            "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs",
+            "crates/nevrotick-engine/src/source_policy.rs"]
+        names = sorted([f"ordinary_fixture_{index:03}" for index in range(274)] +
+                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(245)] +
                        ["nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
-                        "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted"])
+                        "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted",
+                        *self.MANAGED_PROTECTED_CASES, *self.MANAGED_SUCCESSOR_CASES,
+                        *self.MANAGED_DENY_CASES, *self.MANAGED_WORKER_BOUNDARY_CASES])
+        docs = sorted([f"src/lib.rs - Fixture::entered_{index:02} (line 100)" for index in range(87)]
+                      + ["src/lib.rs - Example::checked (line 10)",
+                         "src/lib.rs - Example::private (line 20) - compile fail",
+                         "src/lib.rs - Example::prepared (line 30) - compile"])
         return {
             "schema_version": 1, "package": "nevrotick-engine",
             "admission_status": "admitted-engine-ke-source-analysis",
@@ -2090,7 +2129,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             "campaigns_admitted": False, "mutation_inventories": {},
             "binding": {"candidate_sha256": "a" * 64, "source_file_count": 2,
                 "inputs_sha256": {name: "b" * 64 for name in MODULE.ENGINE_KE_BOUND_INPUTS},
-                "test_inventory": names, "source_context_sha256": "c" * 64,
+                "test_inventory": names, "doctest_inventory": docs, "source_context_sha256": "c" * 64,
                 "ordinary_evidence": {"path": "/synthetic/ordinary.json", "sha256": "d" * 64},
                 "root_graph_evidence": {"path": "/synthetic/graph.json", "sha256": "e" * 64}},
         }
@@ -2107,9 +2146,10 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("Synthetic admitted source marker; never compiled.\n")
         critical = self.policy["critical_files"]
+        engine = [name for name in critical if name != self.PROBE_CALLER]
         manifest = ("critical_files = " + json.dumps(critical) + "\nsecurity_modules = [\n" +
-            '{package="nevrotick-engine",files=' + json.dumps(critical[:-1]) + '},\n' +
-            '{package="nevrotick-crypto-cng-lifecycle",files=' + json.dumps(critical[-1:]) + '},\n]\n')
+            '{package="nevrotick-engine",files=' + json.dumps(engine) + '},\n' +
+            '{package="nevrotick-crypto-cng-lifecycle",files=' + json.dumps([self.PROBE_CALLER]) + '},\n]\n')
         (self.root / "policy/verification-manifest.toml").write_text(manifest)
         self.identity = {name: MODULE.PRODUCT.sha256(self.root / name)
                          for name in ("Cargo.lock", "crates/nevrotick-engine/Cargo.toml")}
@@ -2117,12 +2157,39 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         binding["candidate_sha256"] = independent_digest(self.identity)
         binding["inputs_sha256"] = {name: MODULE.PRODUCT.sha256(self.root / name)
                                     for name in MODULE.ENGINE_KE_BOUND_INPUTS}
-        for field in ("ordinary_evidence", "root_graph_evidence"):
-            path = self.base / (field + ".json")
-            path.write_text('{"scope":"synthetic reference; no product evidence"}\n')
-            binding[field] = {"path": str(path), "sha256": MODULE.PRODUCT.sha256(path)}
+        graph = self.base / "root_graph_evidence.json"
+        graph.write_text('{"scope":"synthetic graph; no product evidence"}\n')
+        binding["root_graph_evidence"] = {"path": str(graph), "sha256": MODULE.PRODUCT.sha256(graph)}
+        self.write_ep1_reference()
         self.args = SimpleNamespace(profile="ke_association", lane="baseline", subject="all",
             tool_admission_profile="stable-core", output_dir=self.base / "new-output", vendor_dir=self.base / "vendor")
+
+    def write_ep1_reference(self):
+        """Provide independently named, explicitly synthetic successful lane documents."""
+        binding = self.policy["binding"]
+        path = self.base / "ordinary_evidence.json"
+        prefix = ["cargo", "test", "--package", "nevrotick-engine", "--frozen", "--jobs", "6",
+                  "--features", "ke-association-prototype"]
+        lanes = []
+        for lane, selectors, names in (
+            ("ep1-ordinary", ["--lib", "--tests"], binding["test_inventory"]),
+            ("ep1-doctests", ["--doc"], binding["doctest_inventory"]),
+        ):
+            raw = path.with_name(lane + ".json")
+            output = self.execution(names)
+            cases = names
+            if lane == "ep1-ordinary":
+                binary = "unittests src/lib.rs"
+                output = f"     Running {binary} (/work/target/debug/synthetic-engine)\n" + output
+                cases = [{"package": "nevrotick-engine", "binary": binary, "name": name} for name in names]
+            raw.write_text(json.dumps({"command": [*prefix, *selectors, "--", "--test-threads=1"],
+                                       "exit_code": 0, "failure": None, "output": output}))
+            lanes.append({"lane": lane, "sha256": MODULE.PRODUCT.sha256(raw),
+                          "exit_code": 0, "failure": None, "tests_executed": len(names), "cases": cases})
+        receipt = {"status": "passed", "mode": "combined", "inputs": self.identity,
+                   "candidate_sha256": independent_digest(self.identity), "lanes": lanes}
+        path.write_text(json.dumps(receipt))
+        binding["ordinary_evidence"] = {"path": str(path), "sha256": MODULE.PRODUCT.sha256(path)}
 
     def invoke(self, *, accepted=False, free=7 * 1024**3):
         """Exercise real pre-Session guards with assumed prior product admission."""
@@ -2237,13 +2304,15 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.assertIs(type(policy["owned_output_maximum_allocated_bytes"]), int)
         self.assertEqual(policy["owned_output_maximum_allocated_bytes"], 3221225472)
         self.assertEqual(policy["stop_free_bytes"], 4294967296)
-        self.assertEqual(set(policy["mutation_inventories"]), set(self.HOST))
-        self.assertEqual(sum(row["count"] for row in policy["mutation_inventories"].values()), 633)
+        self.assertEqual(policy["mutation_inventories"], {})
         self.assertIs(policy["campaigns_admitted"], False)
         self.assertEqual(policy["mutation_equivalences"], [])
         self.assertTrue(MODULE.COMMON.engine_ke_equivalences_valid(policy))
-        # Fixed historical E9 validator fixture from policy fa5a5d37; no
-        # current campaign/score claim and no dependence on current E[].
+        self.assertEqual(
+            MODULE.COMMON.admit_mutation_equivalences(ROOT, MODULE.ENGINE_KE_SCOPE, policy),
+            [],
+        )
+        # The historical E9 fixture retains its original binding and proof.
         historical = {'binding': {'candidate_sha256': '0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d'},
          'mutation_equivalences': [{'id': 'KE-RETURN-POOL-CAPACITY-OR',
                                     'candidate_sha256': '0b7be101405f7cceae21f6ded612699bbe4bab3e9772da02adc90740cc1dbf8d',
@@ -2635,6 +2704,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                 finished.append(True)
         with patch.object(MODULE, "ROOT", self.root), \
                 patch.object(MODULE.PRODUCT, "admit_product", return_value=({"engine_ke_association": {"rows": {}}}, self.identity)), \
+                patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=7 * 1024**3)), \
                 patch.object(MODULE.COMMON, "Session", Session), \
                 patch.object(MODULE, "engine_ke_provider_contracts") as contracts:
             MODULE.execute_engine_ke_profile(self.args, report)
@@ -2665,6 +2735,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             evidence = [{}, {"changed": True}] if failure == "reference" else [{}, {}]
             with self.subTest(failure=failure), patch.object(MODULE, "ROOT", self.root), \
                     patch.object(MODULE.PRODUCT, "admit_product", return_value=({"engine_ke_association": {"rows": {}}}, self.identity)), \
+                    patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=7 * 1024**3)), \
                     patch.object(MODULE.COMMON, "Session", Session), \
                     patch.object(MODULE, "admit_engine_ke_evidence", side_effect=evidence), \
                     patch.object(MODULE, "engine_ke_provider_contracts") as provider, \
@@ -2767,17 +2838,17 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         return (f"running {len(names)} tests\n" + "".join(f"test {name} ... ok\n" for name in names) +
                 f"test result: ok. {len(names)} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n")
 
-    def test_entered_blocks_require_all_415_cases_and_234_ke_neighbors(self):
+    def test_entered_blocks_require_all_current_cases_and_ke_neighbors(self):
         binding = self.policy["binding"]; names = binding["test_inventory"]
         healthy = self.execution(names)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 479)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 234)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 538)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 264)
         missing = [name for name in names if name != "nts_ke_experiment::fixture_case_00"]
         old = [name for name in names if not name.startswith("nts_ke_experiment::")]
         variants = [self.execution([]), self.execution(old), self.execution(missing),
             self.execution([*names, names[0]]), healthy.replace(" ... ok", " ... FAILED", 1),
-            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 479", "running 478"),
-            healthy.replace("test result: ok. 479 passed", "test result: ok. 478 passed"),
+            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 538", "running 537"),
+            healthy.replace("test result: ok. 538 passed", "test result: ok. 537 passed"),
             "\n".join(line for line in healthy.splitlines() if not line.startswith("running "))]
         for text in variants:
             with self.subTest(sample=text[-120:]), self.assertRaises(MODULE.Incomplete):
@@ -2785,7 +2856,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         altered = copy.deepcopy(binding); altered["test_inventory"][0] = "nts_ke_experiment::unexecuted_other_case"
         with self.assertRaises(MODULE.Incomplete): MODULE.validate_engine_ke_execution(healthy, altered)
 
-    def stale_receiving_inventories(self):
+    def stale_engine_ke_inventories(self):
         """Historical and substituted synthetic rosters, independently constructed."""
         required = ("nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
                     "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted")
@@ -2800,14 +2871,29 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             "historical_409_228": sorted(
                 [f"ordinary_fixture_{index:03}" for index in range(181)] +
                 [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(228)]),
-            "pre_forwarding_414_233": [name for name in current if name != required],
+            "historical_479_234": sorted(
+                [f"ordinary_fixture_{index:03}" for index in range(245)] +
+                [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(233)] + [required]),
+            "historical_520_246": [name for name in current if name not in (
+                *self.MANAGED_PROTECTED_CASES, *self.MANAGED_SUCCESSOR_CASES, *self.MANAGED_DENY_CASES,
+                *self.MANAGED_WORKER_BOUNDARY_CASES)],
+            "historical_528_254": [name for name in current if name not in (
+                *self.MANAGED_SUCCESSOR_CASES, *self.MANAGED_DENY_CASES, *self.MANAGED_WORKER_BOUNDARY_CASES)],
+            "historical_530_256": [name for name in current if name not in (
+                *self.MANAGED_DENY_CASES, *self.MANAGED_WORKER_BOUNDARY_CASES)],
+            "historical_535_261": [name for name in current if name not in self.MANAGED_WORKER_BOUNDARY_CASES],
+            "current_missing_forwarding": [name for name in current if name != required],
             "same_counts_missing_forwarding": sorted(
                 [name for name in current if name != required] + ["nts_ke_experiment::other_case"]),
+            **{f"same_counts_missing_{omitted.rsplit('::', 1)[-1]}": sorted(
+                [name for name in current if name != omitted] + ["nts_ke_experiment::other_case"])
+                for omitted in (*self.MANAGED_PROTECTED_CASES, *self.MANAGED_SUCCESSOR_CASES,
+                                *self.MANAGED_DENY_CASES, *self.MANAGED_WORKER_BOUNDARY_CASES)},
         }
 
     def test_old_or_substituted_roster_refuses_policy_and_execution(self):
         MODULE.validate_engine_ke_policy(self.policy)
-        for label, names in self.stale_receiving_inventories().items():
+        for label, names in self.stale_engine_ke_inventories().items():
             bad = copy.deepcopy(self.policy); bad["binding"]["test_inventory"] = names
             with self.subTest(roster=label, owner="policy"), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_engine_ke_policy(bad)
@@ -2849,29 +2935,194 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         with self.assertRaises(MODULE.Incomplete):
             MODULE.validate_engine_ke_policy(bad)
 
-    def test_doctest_forms_require_opt_in_and_preserve_the_complete_ordinary_inventory(self):
-        binding = self.policy["binding"]; names = binding["test_inventory"]
+    def test_complete_annotated_doctests_are_exact_in_both_execution_lanes(self):
+        binding = self.policy["binding"]
+        names = binding["test_inventory"]
+        docs = binding["doctest_inventory"]
         ordinary = self.execution(names)
-        # Rustdoc no_run success is compilation-only evidence, not execution of its body.
-        doc_forms = ["src/lib.rs - Example::checked (line 10)",
-                     "src/lib.rs - Example::private (line 20) - compile fail",
-                     "src/lib.rs - Example::prepared (line 30) - compile"]
-        for doc in doc_forms:
-            text = ordinary + self.execution([doc])
-            with self.subTest(doctest=doc):
-                result = MODULE.validate_engine_ke_execution(text, binding, include_doctests=True)
-                self.assertEqual(result["additional_doctests"], [doc])
-                self.assertEqual(result["tests_executed"], 480)
-                self.assertEqual(result["ke_tests_executed"], 234)
-                with self.assertRaises(MODULE.Incomplete):
-                    MODULE.validate_engine_ke_execution(text, binding)
-        invalid = [self.execution(names[1:]) + self.execution([doc_forms[0]]),
-                   ordinary + self.execution([doc_forms[0] + " - execute"]),
-                   ordinary + self.execution([doc_forms[2], doc_forms[2]]),
-                   ordinary + self.execution([doc_forms[1]]) + self.execution([doc_forms[1]])]
-        for text in invalid:
-            with self.subTest(sample=text[-160:]), self.assertRaises(MODULE.Incomplete):
-                MODULE.validate_engine_ke_execution(text, binding, include_doctests=True)
+        rustdoc = self.execution(docs)
+        self.assertEqual(MODULE.validate_engine_ke_current_doctests(rustdoc, binding)["test_names"], docs)
+        combined = MODULE.validate_engine_ke_execution(ordinary + rustdoc, binding, include_doctests=True)
+        self.assertEqual(combined["additional_doctests"], docs)
+        self.assertEqual(combined["tests_executed"], 628)
+        self.assertEqual(combined["ke_tests_executed"], 264)
+        self.assertEqual(MODULE.validate_engine_ke_execution(ordinary, binding)["test_names"], names)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.validate_engine_ke_execution(ordinary + rustdoc, binding)
+
+        compile_fail = next(name for name in docs if name.endswith(" - compile fail"))
+        suffix = [name.removesuffix(" - compile fail") if name == compile_fail else name for name in docs]
+        wrong_line = [name.replace("line 20", "line 21") if name == compile_fail else name for name in docs]
+        problems = {
+            "zero": self.execution([]),
+            "partial": self.execution(docs[1:]),
+            "same-count-name": self.execution([*docs[:-1], "src/lib.rs - Substituted::checked (line 10)"]),
+            "same-count-suffix": self.execution(suffix),
+            "same-count-line": self.execution(wrong_line),
+            "duplicate": rustdoc + self.execution([docs[0]]),
+            "failed": rustdoc.replace(" ... ok", " ... FAILED", 1),
+            "ignored": rustdoc.replace(" ... ok", " ... ignored", 1),
+            "filtered": rustdoc.replace("0 filtered out", "1 filtered out"),
+            "truncated": rustdoc.rpartition("test result:")[0],
+        }
+        for name, text in problems.items():
+            with self.subTest(problem=name, lane="combined"), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_execution(ordinary + text, binding, include_doctests=True)
+            with self.subTest(problem=name, lane="standalone"), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_current_doctests(text, binding)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.validate_engine_ke_execution(self.execution(names[1:]) + rustdoc, binding, include_doctests=True)
+
+    def test_live_policy_rejects_missing_or_malformed_doctest_inventory(self):
+        valid = self.policy["binding"]["doctest_inventory"]
+        for bad_roster in (None, (), [], valid[1:], valid[::-1], [*valid[:-1], valid[0]], [*valid[:-1], True],
+                           [*valid[:-1], "src/lib.rs - Stub (line 0)"], [*valid[:-1], valid[-1] + " - run"]):
+            policy = copy.deepcopy(self.policy)
+            policy["binding"]["doctest_inventory"] = bad_roster
+            with self.subTest(roster=repr(bad_roster)[:90]), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_engine_ke_policy(policy)
+        policy = copy.deepcopy(self.policy)
+        policy["binding"].pop("doctest_inventory")
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.validate_engine_ke_policy(policy)
+        self.invoke(accepted=True)
+
+    def test_ep1_evidence_rejects_candidate_lane_and_physical_log_drift_before_session(self):
+        binding = self.policy["binding"]
+        receipt = Path(binding["ordinary_evidence"]["path"])
+        ordinary = receipt.with_name("ep1-ordinary.json")
+        rustdoc = receipt.with_name("ep1-doctests.json")
+        self.invoke(accepted=True)
+        for case in ("candidate", "identity", "receipt-mode", "row-duplicate", "row-failed", "row-cases",
+                     "ordinary-bytes", "rustdoc-bytes", "wrong-command", "same-count-raw",
+                     "wrong-package", "wrong-binary"):
+            with self.subTest(case=case):
+                self.write_ep1_reference()
+                report = json.loads(receipt.read_bytes())
+                doc_row = next(row for row in report["lanes"] if row["lane"] == "ep1-doctests")
+                if case == "candidate":
+                    report["candidate_sha256"] = "f" * 64
+                elif case == "identity":
+                    report["inputs"]["Cargo.lock"] = "f" * 64
+                elif case == "receipt-mode":
+                    report["mode"] = "compile"
+                elif case == "row-duplicate":
+                    report["lanes"].append(doc_row.copy())
+                elif case == "row-failed":
+                    doc_row["exit_code"] = 1
+                elif case == "row-cases":
+                    doc_row["cases"].pop()
+                elif case in {"wrong-package", "wrong-binary"}:
+                    first = next(row for row in report["lanes"] if row["lane"] == "ep1-ordinary")["cases"][0]
+                    first["package" if case == "wrong-package" else "binary"] = "foreign"
+                elif case in {"ordinary-bytes", "rustdoc-bytes"}:
+                    raw = ordinary if case == "ordinary-bytes" else rustdoc
+                    raw.write_bytes(raw.read_bytes() + b" ")
+                else:
+                    raw = json.loads(rustdoc.read_bytes())
+                    if case == "wrong-command":
+                        raw["command"].remove("ke-association-prototype")
+                    else:
+                        raw["output"] = raw["output"].replace(" - compile fail", " - compile", 1)
+                        doc_row["cases"] = [name.removesuffix(" fail") if name.endswith(" - compile fail") else name
+                                            for name in doc_row["cases"]]
+                    rustdoc.write_text(json.dumps(raw))
+                    doc_row["sha256"] = MODULE.PRODUCT.sha256(rustdoc)
+                receipt.write_text(json.dumps(report))
+                binding["ordinary_evidence"]["sha256"] = MODULE.PRODUCT.sha256(receipt)
+                self.invoke()
+        self.write_ep1_reference()
+        previous = binding["doctest_inventory"]
+        changed = [name.removesuffix(" fail") if name.endswith(" - compile fail") else name for name in previous]
+        binding["doctest_inventory"] = sorted(changed)
+        self.invoke()
+        binding["doctest_inventory"] = previous
+        self.invoke(accepted=True)
+
+    def test_ep1_typed_native_observations_refuse_before_session(self):
+        """Numeric equality cannot replace literal native status/count types."""
+        self.invoke(accepted=True)
+        binding = self.policy["binding"]
+        receipt = Path(binding["ordinary_evidence"]["path"])
+        faults = ("row-bool-exit", "row-float-exit", "row-float-count",
+                  "raw-bool-exit", "raw-float-exit", "missing-raw-failure")
+        for lane in ("ep1-ordinary", "ep1-doctests"):
+            for fault in faults:
+                with self.subTest(lane=lane, fault=fault):
+                    self.write_ep1_reference()
+                    report = json.loads(receipt.read_bytes())
+                    row = next(item for item in report["lanes"] if item["lane"] == lane)
+                    raw_path = receipt.with_name(lane + ".json")
+                    raw = json.loads(raw_path.read_bytes())
+                    if fault == "row-bool-exit":
+                        row["exit_code"] = False
+                    elif fault == "row-float-exit":
+                        row["exit_code"] = 0.0
+                    elif fault == "row-float-count":
+                        row["tests_executed"] = float(row["tests_executed"])
+                    elif fault == "raw-bool-exit":
+                        raw["exit_code"] = False
+                    elif fault == "raw-float-exit":
+                        raw["exit_code"] = 0.0
+                    else:
+                        raw.pop("failure")
+                    raw_path.write_text(json.dumps(raw))
+                    row["sha256"] = MODULE.PRODUCT.sha256(raw_path)
+                    receipt.write_text(json.dumps(report))
+                    binding["ordinary_evidence"]["sha256"] = MODULE.PRODUCT.sha256(receipt)
+                    before = (receipt.read_bytes(), raw_path.read_bytes())
+                    reason = ("EP1 lane lacks complete successful execution identity"
+                              if fault.startswith("row-")
+                              else "raw lane differs from its fixed successful EP1 command")
+                    with self.assertRaisesRegex(MODULE.Incomplete, reason):
+                        MODULE.admit_engine_ke_evidence(binding)
+                    self.invoke()
+                    self.assertFalse(self.args.output_dir.exists())
+                    self.assertEqual((receipt.read_bytes(), raw_path.read_bytes()), before)
+        self.write_ep1_reference()
+        self.invoke(accepted=True)
+
+    def test_ep1_evidence_refuses_linked_copies_even_with_exact_bytes(self):
+        path = self.base / "ep1-doctests.json"
+        contents = path.read_bytes()
+        other = self.base / "other-current-docs.json"
+        other.write_bytes(contents)
+        for link in (path.symlink_to, path.hardlink_to):
+            path.unlink()
+            link(other)
+            self.invoke()
+        path.unlink()
+        path.write_bytes(contents)
+        self.invoke(accepted=True)
+
+    def test_physical_doc_log_drift_after_session_finish_refuses_qualification(self):
+        self.args.lane, self.args.subject = "contracts", "ke_job"
+        (self.root / MODULE.ENGINE_KE_POLICY).write_text(json.dumps(self.policy))
+        support = self
+        report = {}
+        finished = []
+
+        class Session:
+            def __init__(self, root, *_arguments):
+                self.source, self.product_identity = root, support.identity
+
+            def finish(self):
+                path = support.base / "ep1-doctests.json"
+                path.write_bytes(path.read_bytes() + b" ")
+                finished.append(True)
+
+        with patch.object(MODULE, "ROOT", self.root), \
+                patch.object(MODULE.PRODUCT, "admit_product",
+                             return_value=({"engine_ke_association": {"rows": {}}}, self.identity)), \
+                patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=7 * 1024**3)), \
+                patch.object(MODULE.COMMON, "Session", Session), \
+                patch.object(MODULE, "engine_ke_history_contracts") as history, \
+                self.assertRaisesRegex(MODULE.Incomplete, "exact binding"):
+            MODULE.execute_engine_ke_profile(self.args, report)
+        history.assert_called_once()
+        self.assertEqual(finished, [True])
+        self.assertFalse(report["protected_history_contracts_passed"])
+        self.assertFalse(report.get("selected_lane_passed", False))
 
     def test_reviewed_descriptors_must_match_actual_listing_not_only_count(self):
         inventories = {name: {name + " synthetic fault": {"name": name + " synthetic fault",
@@ -2955,13 +3206,14 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                 if label in {"ke-baseline", "ke-release"}:
                     return outer.execution(outer.policy["binding"]["test_inventory"])
                 if label == "ke-doctests":
-                    return outer.execution(["src/lib.rs - Example::no_run (line 1) - compile"])
+                    return outer.execution(outer.policy["binding"]["doctest_inventory"])
                 return "Synthetic compiler result only; no product execution.\n"
             def finish(self):
                 calls.append(("finish", [], 0))
         report = {}
         with patch.object(MODULE, "ROOT", self.root), \
                 patch.object(MODULE.PRODUCT, "admit_product", return_value=({"engine_ke_association": {"rows": {}}}, self.identity)), \
+                patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=7 * 1024**3)), \
                 patch.object(MODULE.COMMON, "Session", Session):
             MODULE.execute_engine_ke_profile(self.args, report)
         self.assertEqual([row[0] for row in calls], ["ke-format", "ke-windows-check", "ke-baseline", "ke-clippy",
@@ -2973,10 +3225,11 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             self.assertIn("--all-targets", argv)
             self.assertNotIn("build", argv)
             self.assertNotIn("run", argv)
-        self.assertEqual(report["baseline_execution"]["tests_executed"], 479)
-        self.assertEqual(report["release_execution"]["ke_tests_executed"], 234)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 538)
+        self.assertEqual(report["release_execution"]["ke_tests_executed"], 264)
         self.assertEqual(report["doctest_execution"]["compilation_only"],
-                         ["src/lib.rs - Example::no_run (line 1) - compile"])
+                         ["src/lib.rs - Example::prepared (line 30) - compile",
+                          "src/lib.rs - Example::private (line 20) - compile fail"])
         retired = report["release_target_retirement"]
         self.assertEqual((retired["path"], retired["completed_lane"], retired["removed"]),
                          ("work/target/release", "ke-release", True))
@@ -3030,7 +3283,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                           if row["lane"] == "ke-debug-target-retirement"], ["before", "after"])
 
     def test_debug_retirement_rejects_old_or_substituted_roster_without_deleting_cache(self):
-        for label, names in self.stale_receiving_inventories().items():
+        for label, names in self.stale_engine_ke_inventories().items():
             session, report, debug, kept = self.debug_retirement_fixture()
             bad = copy.deepcopy(self.policy); bad["binding"]["test_inventory"] = names
             report["baseline_execution"] = {
@@ -3136,12 +3389,60 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         target = work / "target"; target.mkdir(mode=0o700)
         release = target / "release"; release.mkdir(mode=0o700)
         (release / "artifact").write_bytes(b"owned release artifact")
+        debug = target / "debug"; debug.mkdir(mode=0o700)
+        (debug / "keep").write_bytes(b"retained debug sentinel")
         (output / "raw.log").write_text("retained raw child output")
         session = SimpleNamespace(output=output, work=work)
+        binding = self.policy["binding"]
         report = {"lanes": [{"lane": "ke-release", "exit_code": 0, "failure": None}],
-                  "release_execution": {"tests_executed": 479, "ke_tests_executed": 234}}
+                  "release_execution": MODULE.validate_engine_ke_execution(
+                      self.execution(binding["test_inventory"]), binding)}
         MODULE.address_storage_checkpoint(session, self.policy, report, "ke-release", "after")
         return session, report, release
+
+    def test_release_retirement_removes_only_exact_validated_cache(self):
+        session, report, release = self.release_retirement_fixture()
+        MODULE.retire_engine_ke_release_target(session, self.policy, report)
+        self.assertFalse(release.exists())
+        self.assertTrue(report["release_target_retirement"]["removed"])
+        self.assertEqual((session.output / "raw.log").read_text(), "retained raw child output")
+        self.assertEqual((release.parent / "debug/keep").read_bytes(), b"retained debug sentinel")
+
+    def test_release_retirement_rejects_unverified_execution_without_deleting_cache(self):
+        for case in ("missing-execution", "counts-only", "wrong-type", "partial-roster",
+                     "same-count-substitution", "wrong-count", "wrong-ke-count", "wrong-digest"):
+            with self.subTest(case=case):
+                session, report, release = self.release_retirement_fixture()
+                execution = report["release_execution"]
+                if case == "missing-execution":
+                    report.pop("release_execution")
+                elif case == "counts-only":
+                    execution.pop("test_names")
+                    execution.pop("inventory_sha256")
+                elif case == "wrong-type":
+                    report["release_execution"] = True
+                elif case == "partial-roster":
+                    execution["test_names"].pop()
+                elif case == "same-count-substitution":
+                    execution["test_names"][0] = "ordinary_unexecuted_substitute"
+                    execution["inventory_sha256"] = independent_digest(sorted(execution["test_names"]))
+                elif case == "wrong-count":
+                    execution["tests_executed"] -= 1
+                elif case == "wrong-ke-count":
+                    execution["ke_tests_executed"] -= 1
+                else:
+                    execution["inventory_sha256"] = "f" * 64
+
+                refused = False
+                try:
+                    MODULE.retire_engine_ke_release_target(session, self.policy, report)
+                except MODULE.Incomplete:
+                    refused = True
+                self.assertEqual((session.output / "raw.log").read_text(), "retained raw child output")
+                self.assertEqual((release.parent / "debug/keep").read_bytes(), b"retained debug sentinel")
+                self.assertEqual((refused, release.is_dir(), "release_target_retirement" in report),
+                                 (True, True, False))
+                self.assertEqual((release / "artifact").read_bytes(), b"owned release artifact")
 
     def test_release_retirement_refuses_links_special_and_noncanonical_or_public_parents(self):
         for case in ("release-link", "child-link", "fifo", "target-link", "noncanonical", "public-work"):
@@ -3213,6 +3514,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                     return usage
                 with patch.object(MODULE, "ROOT", self.root), \
                         patch.object(MODULE.PRODUCT, "admit_product", return_value=({"engine_ke_association": {"rows": {}}}, self.identity)), \
+                        patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=7 * 1024**3)), \
                         patch.object(MODULE.COMMON, "Session", Session), \
                         patch.object(MODULE, "address_storage_usage", side_effect=measured_usage):
                     with self.assertRaises(MODULE.Incomplete):
@@ -4195,6 +4497,26 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         "series::tests::managed_source_provenance_receiving_rejects_absent_and_foreign_owners",
         "series::address_round::tests::managed_source_provenance_address_transfer_binds_the_original_candidate",
     ]
+    CONFIGURATION_TESTS = [
+        "source_policy::tests::configuration::source_configuration_address_set_bounds_and_canonical_membership",
+        "source_policy::tests::configuration::source_configuration_install_and_expected_snapshot_replacement_are_atomic",
+        "source_policy::tests::configuration::source_configuration_parallel_public_sessions_and_reordered_round_share_revision",
+        "source_policy::tests::configuration::source_configuration_outside_peers_cannot_publish_endpoint_capacity",
+        "source_policy::tests::configuration::source_configuration_first_install_and_equal_replace_retire_old_prepared_plans",
+        "source_policy::tests::configuration::source_configuration_replacement_preserves_kod_records_floors_and_targets",
+        "source_policy::tests::configuration::source_configuration_revision_exhaustion_is_sticky_and_source_local",
+        "series::tests::source_configuration_final_reply_replacement_preserves_report",
+        "series::tests::source_configuration_final_send_replacement_prevents_send",
+        "series::tests::source_configuration_postcommit_replacement_preserves_history",
+    ]
+    CONFIGURATION_DOCS = [
+        "crates/nevrotick-engine/src/source_policy.rs - source_policy::configuration::SourceAddressSet (line 4001)",
+        "crates/nevrotick-engine/src/source_policy.rs - source_policy::configuration::SourceAddressSet (line 4002) - compile fail",
+        "crates/nevrotick-engine/src/source_policy.rs - source_policy::configuration::SourceAddressSet (line 4003) - compile fail",
+        "crates/nevrotick-engine/src/source_policy.rs - source_policy::configuration::SourceConfigurationSnapshot (line 4004)",
+        "crates/nevrotick-engine/src/source_policy.rs - source_policy::configuration::SourceConfigurationSnapshot (line 4005) - compile fail",
+        "crates/nevrotick-engine/src/source_policy.rs - source_policy::configuration::SourceConfigurationSnapshot (line 4006) - compile fail",
+    ]
     PROVENANCE_DOCS = [
         "crates/nevrotick-engine/src/source_policy.rs - source_policy::SourceIdentity (line 1431) - compile fail",
         "crates/nevrotick-engine/src/source_policy.rs - source_policy::SourceIdentity (line 1437) - compile fail",
@@ -4242,7 +4564,7 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                                + [f"source_policy::tests::synthetic_case_{index:02}" for index in range(49)]
                                + ["source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted",
                                   "source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund"]
-                               + self.SNAPSHOT_TESTS + self.PROVENANCE_TESTS)
+                               + self.SNAPSHOT_TESTS + self.PROVENANCE_TESTS + self.CONFIGURATION_TESTS)
         # Independently declared full optional-profile identity. The reader under
         # test supplies neither these names nor their expected digest.
         self.ep1 = sorted(self.ordinary
@@ -4253,7 +4575,7 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                            + [f"crates/nevrotick-engine/src/source_policy.rs - synthetic_doc (line {index}) - compile fail"
                               for index in range(1, 6)]
                            + [f"crates/nevrotick-engine/src/source_policy.rs - synthetic_doc (line {index})"
-                              for index in (6, 7)] + self.PROVENANCE_DOCS)
+                              for index in (6, 7)] + self.PROVENANCE_DOCS + self.CONFIGURATION_DOCS)
         self.policy = {
             "schema_version": 1, "package": "nevrotick-engine",
             "admission_status": "admitted-engine-source-policy-analysis",
@@ -4518,13 +4840,15 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
 
     @contextmanager
     def managed_reference_fixture(self):
-        """Physical fixed605/785 fixture; only code-owned identity data is substituted."""
+        """Physical fixed606/786 fixture; all producer lineage is declared synthetic."""
         self.reference_fixture(independent_monitor=True)
         old_path = Path(self.policy["binding"]["development_evidence"]["path"])
         old = json.loads(old_path.read_text())
         base = self.base / "managed-development"
-        directory = base / "full-2"
+        directory = base / "full-4"
+        extension = base / "extension-v1"
         directory.mkdir(parents=True)
+        extension.mkdir()
         identity = {name: hashlib.sha256((self.root / name).read_bytes()).hexdigest()
                     for name in self.OWNERS.values()}
         graph = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo/config.toml",
@@ -4536,7 +4860,7 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
             if not path.exists():
                 path.write_text("Independent synthetic graph input: " + name + "\n")
             identity[name] = hashlib.sha256(path.read_bytes()).hexdigest()
-        for index in range(605 - len(identity)):
+        for index in range(606 - len(identity)):
             name = f"synthetic/product_{index:03}.rs"
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -4545,12 +4869,12 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         captured = dict(identity)
         for name in MODULE.SOURCE_POLICY_BOUND_INPUTS:
             captured[name] = hashlib.sha256((self.root / name).read_bytes()).hexdigest()
-        for index in range(785 - len(captured)):
+        for index in range(786 - len(captured)):
             name = f"synthetic/helper_{index:03}.py"
             path = self.root / name
             path.write_text(f"# Fixed independent capture specimen {index}.\n")
             captured[name] = hashlib.sha256(path.read_bytes()).hexdigest()
-        self.assertEqual((len(identity), len(captured)), (605, 785))
+        self.assertEqual((len(identity), len(captured)), (606, 786))
         for name in captured:
             destination = directory / "source" / name
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -4561,53 +4885,96 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
             destination = directory / original.name
             destination.write_bytes(original.read_bytes())
             lane.update(path=str(destination), sha256=hashlib.sha256(destination.read_bytes()).hexdigest())
-        (base / "monitor.py").write_bytes((old_path.parent.parent / "monitor.py").read_bytes())
-        (base / "development.py").write_text("# Independent inert development recipe specimen.\n")
-        monitor_sha = hashlib.sha256((base / "monitor.py").read_bytes()).hexdigest()
-        recipe_sha = hashlib.sha256((base / "development.py").read_bytes()).hexdigest()
-        budget = {"admitted": True, "budget_seconds": 2400, "reserve_seconds": 300,
-                  "maximum_attempts_per_phase": 3, "mutations_admitted": False,
-                  "recipe_sha256": recipe_sha, "monitor_sha256": monitor_sha,
-                  "new_test_names": self.PROVENANCE_TESTS.copy(), "baseline": "e" * 40,
-                  "index_sha256": "f" * 64, "start_unix": 1000.0,
-                  "preparation_started_unix": 1000.0,
-                  "source_files": {self.OWNERS["library"]: identity[self.OWNERS["library"]]}}
-        (base / "development-budget.json").write_text(json.dumps(budget))
-        budget_sha = hashlib.sha256((base / "development-budget.json").read_bytes()).hexdigest()
+        original_recipe = base / "development.py"
+        original_monitor = base / "monitor.py"
+        original_recipe.write_text("# Independent inert original development recipe.\n")
+        original_monitor.write_text("# Independent inert original monitor recipe.\n")
+        (extension / "monitor.py").write_bytes((old_path.parent.parent / "monitor.py").read_bytes())
+        (extension / "development.py").write_text("# Independent inert extension recipe.\n")
+        digest = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+        monitor_sha = digest(extension / "monitor.py")
+        recipe_sha = digest(extension / "development.py")
+        source_budget = {"admitted": True, "scope": "Synthetic source authority only.",
+            "baseline": "e" * 40, "preparation_start_unix": 1000.0,
+            "conservative_origin_includes_entire_gap_and_all_current_planning": True,
+            "budget_seconds": 3600, "work_seconds": 3300, "cleanup_seconds": 300,
+            "max_focused_attempts": 3, "max_full_development_attempts": 3,
+            "no_mutations_admitted": True, "public_campaigns_admitted": False,
+            "all_prior_source_qualification_clocks_and_charges_retained": True,
+            "dependency_or_toolchain_changes_allowed": False}
+        source_budget_path = base / "source-development-budget.json"
+        source_budget_path.write_text(json.dumps(source_budget))
+        source_budget_sha = digest(source_budget_path)
+        original_budget = {"admitted": True, "budget_seconds": 3600, "reserve_seconds": 300,
+            "maximum_attempts_per_phase": 3, "mutations_admitted": False,
+            "recipe_sha256": digest(original_recipe), "source_budget_sha256": source_budget_sha,
+            "new_test_names": self.CONFIGURATION_TESTS.copy(), "baseline": "e" * 40,
+            "index_sha256": "f" * 64, "start_unix": 1000.0, "preparation_started_unix": 1000.0,
+            "source_files": {self.OWNERS["library"]: identity[self.OWNERS["library"]]},
+            "maximum_new_Rust_result_instances": 5172}
+        original_budget_path = base / "development-budget.json"
+        original_budget_path.write_text(json.dumps(original_budget))
+        replan = {"completion": "completed", "verdict": "READY", "findings": [],
+            "reviewed_extension": {"original_start_unix": 1000.0, "original_total_seconds": 3600,
+                "original_work_seconds": 3300, "extension_seconds": 900,
+                "cumulative_total_seconds": 4500, "cumulative_work_seconds": 4200,
+                "cleanup_seconds": 300, "maximum_focused_attempts": 3, "maximum_full_attempts": 4,
+                "additional_attempt": "full 4 only", "original_result_upper_charge": 5172,
+                "additional_result_upper_charge": 1714, "cumulative_result_upper_charge": 6886,
+                "candidate_sha256": independent_digest(identity), "product_inputs": 606,
+                "complete_lanes": 13, "default_cases_per_mode": 267, "ep1_cases_per_mode": 501,
+                "doctests_per_graph": 89}}
+        replan_path = extension / "resource-replan-review.json"
+        replan_path.write_text(json.dumps(replan))
+        budget = {**original_budget, "budget_seconds": 4500, "work_seconds": 4200,
+            "maximum_attempts_per_phase": 4, "maximum_focused_attempts": 3,
+            "maximum_full_attempts": 4, "additional_full_attempts": 1, "extension_seconds": 900,
+            "maximum_new_Rust_result_instances": 6886, "recipe_sha256": recipe_sha,
+            "prior_development_budget_sha256": digest(original_budget_path),
+            "prior_recipe_sha256": digest(original_recipe), "prior_monitor_sha256": digest(original_monitor),
+            "coordinator_review_sha256": digest(replan_path),
+            "original_budget_disposition": "incomplete; no original failure or clock reset",
+            "candidate_sha256": independent_digest(identity)}
+        (extension / "development-budget.json").write_text(json.dumps(budget))
+        budget_sha = digest(extension / "development-budget.json")
         control_base = base / "qualification-admission"
         control_base.mkdir()
-        (control_base / "monitor.py").write_bytes((base / "monitor.py").read_bytes())
-        control_budget = {"admitted": True, "start_unix": 4000.0,
-            "preparation_started_unix": 4000.0, "budget_seconds": 2400, "reserve_seconds": 300,
+        (control_base / "monitor.py").write_bytes((extension / "monitor.py").read_bytes())
+        control_budget = {"admitted": True, "start_unix": 4100.0,
+            "preparation_started_unix": 4100.0, "budget_seconds": 4500, "reserve_seconds": 300,
             "monitor_sha256": monitor_sha, "resource_profile": {
                 "memory_max": 6 * 1024**3, "swap_max": 512 * 1024**2, "tasks_max": 512,
                 "startup_free_disk": 7 * 1024**3, "startup_available_ram": 15 * 1024**3 // 2,
                 "running_free_disk": 4 * 1024**3, "running_available_ram": 1024**3,
                 "observation_max_gap_seconds": 2}}
         (control_base / "development-budget.json").write_text(json.dumps(control_budget))
-        control_pins = {"sha256": hashlib.sha256((control_base / "development-budget.json").read_bytes()).hexdigest(),
-                        "start_unix": 4000.0}
+        control_pins = {"sha256": digest(control_base / "development-budget.json"), "start_unix": 4100.0}
         observer = directory / "resource-monitor"
         observer.mkdir()
         monitor = copy.deepcopy(old["independent_monitor"])
         monitor["result"]["role"] = "development"
         (observer / "monitor-result.json").write_text(json.dumps(monitor["result"]))
-        (observer / "resources.jsonl").write_bytes((old_path.parent / "observer/resources.jsonl").read_bytes())
-        monitor["result_sha256"] = hashlib.sha256((observer / "monitor-result.json").read_bytes()).hexdigest()
-        monitor["resource_samples_sha256"] = hashlib.sha256((observer / "resources.jsonl").read_bytes()).hexdigest()
+        samples = [json.loads(row) for row in (old_path.parent / "observer/resources.jsonl").read_text().splitlines()]
+        for row, elapsed in zip(samples, (3000.0, 3001.0), strict=True):
+            row["elapsed_seconds"] = elapsed
+        (observer / "resources.jsonl").write_text("".join(json.dumps(row) + "\n" for row in samples))
+        monitor["result_sha256"] = digest(observer / "monitor-result.json")
+        monitor["resource_samples_sha256"] = digest(observer / "resources.jsonl")
         controls = {}
         for role in ("healthy", "gap"):
             for leaf in ("control.json", "monitor-result.json", "resources.jsonl"):
                 destination = control_base / "monitor-controls" / role / leaf
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_bytes((old_path.parent / "monitor-controls" / role / leaf).read_bytes())
-                controls[role + "/" + leaf] = hashlib.sha256(destination.read_bytes()).hexdigest()
+                controls[role + "/" + leaf] = digest(destination)
         pins = {"candidate_sha256": independent_digest(identity),
                 "captured_inputs_sha256": independent_digest(captured),
-                "recipe_sha256": recipe_sha, "budget_sha256": budget_sha, "monitor_sha256": monitor_sha}
-        reference = {"status": "workload-passed", "phase": "full", "attempt": 2, "lanes": lanes,
+                "recipe_sha256": recipe_sha, "budget_sha256": budget_sha,
+                "monitor_sha256": monitor_sha, "source_budget_sha256": source_budget_sha}
+        reference = {"status": "workload-passed", "phase": "full", "attempt": 4, "lanes": lanes,
             "scope": "Synthetic receiving control only; no Rust/monitor execution claimed.",
             "generated_mutation_credit": False, "budget_sha256": budget_sha, "recipe_sha256": recipe_sha,
+            "source_budget_sha256": source_budget_sha,
             "HEAD": budget["baseline"], "index_sha256": budget["index_sha256"],
             "source_sha256": identity, "captured_inputs": captured,
             "candidate_sha256": pins["candidate_sha256"],
@@ -4616,15 +4983,34 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
             "cargo_home_config_sha256": "b" * 64, "custody_unchanged": True,
             "durable_monitor": str(observer), "terminal_resource_failures": [],
             "independent_monitor": monitor, "elapsed_seconds": 1.5}
+        path = directory / "verification.json"
+        path.write_text(json.dumps(reference))
+        closeout = {"status": "source-development-passed-qualification-not-admitted",
+            "baseline": budget["baseline"], "product": pins["candidate_sha256"],
+            "product_inputs": 606, "captured_inputs": 786, "source_origin_unix": 1000.0,
+            "closed_unix": 4100.0, "cumulative_elapsed_seconds": 3100.0,
+            "original3600_disposition": "incomplete; original first failures retained",
+            "extension4500_disposition": "all13 development lanes passed within4200work; observer joined",
+            "verification_sha256": digest(path), "implementation_review_sha256": "a" * 64,
+            "reviewed_source_unchanged": True, "executed_named_results": 1714,
+            "prior_focused_results": 10, "actual_result_total": 1724,
+            "cumulative_result_upper_charge": 6886, "metric_admission": False,
+            "public_campaigns": False, "native_qualification": False}
+        closeout_path = base / "source-development-closeout-coherent.json"
+        closeout_path.write_text(json.dumps(closeout))
+        lineage_pins = {"original_development_budget_sha256": digest(original_budget_path),
+            "original_recipe_sha256": digest(original_recipe), "original_monitor_sha256": digest(original_monitor),
+            "replan_review_sha256": digest(replan_path), "closeout_sha256": digest(closeout_path)}
         binding = copy.deepcopy(self.policy["binding"])
-        binding.update(candidate_sha256=pins["candidate_sha256"], source_file_count=605)
-        fixture = SimpleNamespace(base=base, path=directory / "verification.json", reference=reference,
-                                  binding=binding, identity=identity, pins=pins, controls=controls,
-                                  control_pins=control_pins)
+        binding.update(candidate_sha256=pins["candidate_sha256"], source_file_count=606)
+        fixture = SimpleNamespace(base=base, extension=extension, path=path, reference=reference,
+            binding=binding, identity=identity, pins=pins, controls=controls, control_pins=control_pins,
+            lineage_pins=lineage_pins, closeout=closeout, closeout_path=closeout_path)
         self.write_managed_reference(fixture, reference)
-        # Real reader functions remain untouched. These constants bind only
-        # independent temporary fixture bytes rather than live checkout evidence.
+        # Real readers/refusal mechanisms remain untouched; only independently
+        # declared fixture identities replace machine-local historical pins.
         with patch.object(MODULE, "SOURCE_POLICY_MANAGED_DEVELOPMENT", pins), \
+             patch.object(MODULE, "SOURCE_POLICY_CONFIGURATION_LINEAGE", lineage_pins), \
              patch.object(MODULE, "SOURCE_POLICY_MANAGED_MONITOR_CONTROLS", controls), \
              patch.object(MODULE, "SOURCE_POLICY_MANAGED_CONTROL_BUDGET", control_pins):
             yield fixture
@@ -4632,31 +5018,229 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
     def write_managed_reference(self, fixture, reference):
         """Rebind only the physical reference after a deliberate semantic challenge."""
         fixture.path.write_text(json.dumps(reference))
-        fixture.binding["development_evidence"] = {
-            "path": str(fixture.path), "sha256": hashlib.sha256(fixture.path.read_bytes()).hexdigest()}
+        reference_sha = hashlib.sha256(fixture.path.read_bytes()).hexdigest()
+        fixture.binding["development_evidence"] = {"path": str(fixture.path), "sha256": reference_sha}
+        if hasattr(fixture, "closeout"):
+            fixture.closeout["verification_sha256"] = reference_sha
+            fixture.closeout_path.write_text(json.dumps(fixture.closeout))
+            fixture.lineage_pins["closeout_sha256"] = hashlib.sha256(fixture.closeout_path.read_bytes()).hexdigest()
+
+    def rebind_managed_lineage(self, fixture):
+        """Reconcile authored fixture bytes so a real semantic lineage guard decides."""
+        digest = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+        source_path = fixture.base / "source-development-budget.json"
+        original_path = fixture.base / "development-budget.json"
+        review_path = fixture.extension / "resource-replan-review.json"
+        fixture.pins["source_budget_sha256"] = digest(source_path)
+        original = json.loads(original_path.read_text())
+        original["source_budget_sha256"] = fixture.pins["source_budget_sha256"]
+        original_path.write_text(json.dumps(original))
+        fixture.lineage_pins["original_development_budget_sha256"] = digest(original_path)
+        fixture.lineage_pins["replan_review_sha256"] = digest(review_path)
+        budget_path = fixture.extension / "development-budget.json"
+        budget = json.loads(budget_path.read_text())
+        budget.update(source_budget_sha256=fixture.pins["source_budget_sha256"],
+            prior_development_budget_sha256=fixture.lineage_pins["original_development_budget_sha256"],
+            coordinator_review_sha256=fixture.lineage_pins["replan_review_sha256"])
+        budget_path.write_text(json.dumps(budget))
+        fixture.pins["budget_sha256"] = digest(budget_path)
+        reference = {**fixture.reference, "budget_sha256": fixture.pins["budget_sha256"],
+                     "source_budget_sha256": fixture.pins["source_budget_sha256"]}
+        self.write_managed_reference(fixture, reference)
+
+    def test_managed_configuration_lineage_rejects_restarted_or_weakened_allowances(self):
+        with self.managed_reference_fixture() as fixture:
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
+            source_path = fixture.base / "source-development-budget.json"
+            original_path = fixture.base / "development-budget.json"
+            review_path = fixture.extension / "resource-replan-review.json"
+            budget_path = fixture.extension / "development-budget.json"
+            originals = {path: path.read_bytes() for path in
+                         (source_path, original_path, review_path, budget_path)}
+            pins, lineage = fixture.pins.copy(), fixture.lineage_pins.copy()
+            cases = [
+                (source_path, ("admitted",), False),
+                (source_path, ("budget_seconds",), 3601),
+                (source_path, ("work_seconds",), True),
+                (source_path, ("cleanup_seconds",), 299),
+                (source_path, ("max_focused_attempts",), True),
+                (source_path, ("preparation_start_unix",), 1001.0),
+                (source_path, ("no_mutations_admitted",), False),
+                (source_path, ("public_campaigns_admitted",), True),
+                (source_path, ("all_prior_source_qualification_clocks_and_charges_retained",), False),
+                (source_path, ("dependency_or_toolchain_changes_allowed",), True),
+                (original_path, ("admitted",), False),
+                (original_path, ("budget_seconds",), 4500),
+                (original_path, ("maximum_attempts_per_phase",), True),
+                (original_path, ("start_unix",), 1001.0),
+                (original_path, ("maximum_new_Rust_result_instances",), 5171),
+                (original_path, ("recipe_sha256",), "a" * 64),
+                (review_path, ("verdict",), "NOT_READY"),
+                (review_path, ("completion",), "incomplete"),
+                (review_path, ("reviewed_extension", "maximum_full_attempts"), 5),
+                (review_path, ("reviewed_extension", "original_start_unix"), True),
+                (review_path, ("reviewed_extension", "cumulative_result_upper_charge"), 6885),
+            ]
+            for path, keys, value in cases:
+                with self.subTest(path=path.relative_to(fixture.base), field=keys):
+                    try:
+                        changed = json.loads(originals[path])
+                        target = changed
+                        for key in keys[:-1]:
+                            target = target[key]
+                        target[keys[-1]] = value
+                        path.write_text(json.dumps(changed))
+                        self.rebind_managed_lineage(fixture)
+                        with self.assertRaisesRegex(MODULE.Incomplete, "retained extension lineage|original-clock review"):
+                            MODULE.admit_source_policy_development(fixture.binding, fixture.identity)
+                    finally:
+                        for stored_path, raw in originals.items():
+                            stored_path.write_bytes(raw)
+                        fixture.pins.clear()
+                        fixture.pins.update(pins)
+                        fixture.lineage_pins.clear()
+                        fixture.lineage_pins.update(lineage)
+                        self.write_managed_reference(fixture, fixture.reference)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
+
+    def test_managed_configuration_closeout_requires_real_join_and_original_work_clock(self):
+        with self.managed_reference_fixture() as fixture:
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
+            proposals = [
+                {"status": "workload-passed"}, {"baseline": "a" * 40},
+                {"product": "a" * 64}, {"product_inputs": True}, {"captured_inputs": 785},
+                {"source_origin_unix": 1001.0}, {"closed_unix": True},
+                {"cumulative_elapsed_seconds": 3100.001},
+                {"closed_unix": 5200.0, "cumulative_elapsed_seconds": 4200.0},
+                {"closed_unix": 4001.499, "cumulative_elapsed_seconds": 4001.499 - 1000.0},
+                {"verification_sha256": "a" * 64}, {"implementation_review_sha256": "invalid"},
+                {"original3600_disposition": "passed"},
+                {"extension4500_disposition": "passed"},
+                {"reviewed_source_unchanged": False}, {"executed_named_results": True},
+                {"prior_focused_results": 0}, {"actual_result_total": 1714},
+                {"cumulative_result_upper_charge": 6885}, {"metric_admission": True},
+                {"public_campaigns": True}, {"native_qualification": True}, {"extra_poison": True},
+            ]
+            for replacement in proposals:
+                with self.subTest(replacement=replacement):
+                    fixture.closeout_path.write_text(json.dumps({**fixture.closeout, **replacement}))
+                    fixture.lineage_pins["closeout_sha256"] = hashlib.sha256(fixture.closeout_path.read_bytes()).hexdigest()
+                    with self.assertRaisesRegex(MODULE.Incomplete, "closeout"):
+                        MODULE.admit_source_policy_development(fixture.binding, fixture.identity)
+            # The terminal is at source-origin1000 + elapsed3001 + join-gap0.5.
+            # Equality supplies custody; the just-before proposal above does not.
+            fixture.closeout_path.write_text(json.dumps({**fixture.closeout,
+                "closed_unix": 4001.5, "cumulative_elapsed_seconds": 3001.5}))
+            fixture.lineage_pins["closeout_sha256"] = hashlib.sha256(fixture.closeout_path.read_bytes()).hexdigest()
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
+            self.write_managed_reference(fixture, fixture.reference)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
+
+    def test_receiver_guard_actual_candidate_cannot_downgrade_valid_historical_receipt(self):
+        """Select the current contract from actual bytes even with old valid metadata."""
+        with self.managed_reference_fixture() as fixture:
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
+            actual = copy.deepcopy(fixture.identity)
+            name = next(name for name in actual if name.endswith(".rs"))
+            source = self.root / name
+            original = source.read_bytes()
+            try:
+                source.write_bytes(original + b"// Independent current dispatch specimen.\n")
+                actual[name] = hashlib.sha256(source.read_bytes()).hexdigest()
+                candidate = hashlib.sha256(json.dumps(actual, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+                current = {**MODULE.SOURCE_POLICY_RECEIVER_DEVELOPMENT, "candidate_sha256": candidate,
+                           "reference_sha256": None}
+                binding = {**fixture.binding, "candidate_sha256": candidate}
+                with patch.object(MODULE, "SOURCE_POLICY_RECEIVER_DEVELOPMENT", current):
+                    with self.assertRaisesRegex(MODULE.Incomplete, "Receiver-guard development pins remain unbound"):
+                        MODULE.admit_source_policy_development(binding, actual)
+                    # Current markers are absent from the independently valid
+                    # historical receipt; that cannot select legacy acceptance.
+            finally:
+                source.write_bytes(original)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
+
+    def test_receiver_guard_claimed_and_actual_candidate_mismatch_cannot_fall_back(self):
+        """Either actual or claimed current identity selects the strict receiving gate."""
+        with self.managed_reference_fixture() as fixture:
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
+            actual = copy.deepcopy(fixture.identity)
+            name = next(name for name in actual if name.endswith(".rs"))
+            source = self.root / name
+            original = source.read_bytes()
+            changed = original + b"// Independent alternate admitted-byte identity.\n"
+            actual[name] = hashlib.sha256(changed).hexdigest()
+            candidate = hashlib.sha256(json.dumps(actual, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+            current = {**MODULE.SOURCE_POLICY_RECEIVER_DEVELOPMENT, "candidate_sha256": candidate}
+            try:
+                with patch.object(MODULE, "SOURCE_POLICY_RECEIVER_DEVELOPMENT", current):
+                    proposals = (({**fixture.binding, "candidate_sha256": candidate}, fixture.identity, original),
+                                 (fixture.binding, actual, changed))
+                    for binding, identity, content in proposals:
+                        source.write_bytes(content)
+                        self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), identity[name])
+                        with self.subTest(claim=binding["candidate_sha256"], actual=identity == actual):
+                            with self.assertRaisesRegex(MODULE.Incomplete, "receiver development candidate binding differs"):
+                                MODULE.admit_source_policy_development(binding, identity)
+            finally:
+                source.write_bytes(original)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
 
     def test_managed_development_receipt_admits_complete_physical_capture(self):
         with self.managed_reference_fixture() as fixture:
             admitted = MODULE.admit_source_policy_development(fixture.binding, fixture.identity)
-            self.assertEqual(len(admitted), 812)
+            self.assertEqual(len(admitted), 819)
             self.assertEqual(admitted, {name: hashlib.sha256(Path(name).read_bytes()).hexdigest()
                                         for name in admitted})
-            self.assertEqual(len(fixture.reference["source_sha256"]), 605)
-            self.assertEqual(len(fixture.reference["captured_inputs"]), 785)
-            self.assertEqual((len(self.ordinary), len(self.ep1), len(self.docs)), (257, 491, 83))
-            self.assertEqual(sum(name.startswith("source_policy::tests::") for name in self.ordinary), 61)
+            self.assertEqual(len(fixture.reference["source_sha256"]), 606)
+            self.assertEqual(len(fixture.reference["captured_inputs"]), 786)
+            self.assertEqual((len(self.ordinary), len(self.ep1), len(self.docs)), (267, 501, 89))
+            self.assertEqual(sum(name.startswith("source_policy::tests::") for name in self.ordinary), 68)
             self.assertEqual(sum(name.startswith("crates/nevrotick-engine/src/source_policy.rs - ")
-                                 for name in self.docs), 12)
+                                 for name in self.docs), 18)
             self.assertEqual(sum(name.startswith("crates/nevrotick-engine/src/source_policy.rs - ")
-                                 and name.endswith(" - compile fail") for name in self.docs), 9)
+                                 and name.endswith(" - compile fail") for name in self.docs), 13)
             with patch.object(MODULE, "SOURCE_POLICY_MANAGED_MONITOR_CONTROLS", {}):
                 with self.assertRaisesRegex(MODULE.Incomplete, "not been independently pinned"):
                     MODULE.admit_source_policy_development(fixture.binding, fixture.identity)
 
+    def test_current_configuration_cannot_downgrade_to_legacy_reference(self):
+        with self.managed_reference_fixture() as fixture:
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
+            # Keep the actual current synthetic identity and all thirteen healthy
+            # raw lanes. Only the reference format/custody declaration changes;
+            # no managed discriminator or independent-monitor marker remains.
+            legacy = {key: copy.deepcopy(fixture.reference[key]) for key in
+                      ("status", "custody_unchanged", "source_sha256", "lanes")}
+            legacy.update(resource_observer_joined=True, terminal_resource_failures=[])
+            self.assertFalse({"phase", "attempt", "captured_inputs", "durable_monitor",
+                              "source_revision", "monitor_sha256", "monitor_control_inputs"} & set(legacy))
+            path = fixture.path.parent / "legacy-reference.json"
+            path.write_text(json.dumps(legacy))
+            binding = copy.deepcopy(fixture.binding)
+            binding["development_evidence"] = {"path": str(path),
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+            with self.assertRaisesRegex(MODULE.Incomplete, "managed|producer"):
+                MODULE.admit_source_policy_development(binding, fixture.identity)
+            foreign_identity = {**fixture.identity, self.OWNERS["library"]: "b" * 64}
+            foreign_binding = copy.deepcopy(binding)
+            foreign_binding["candidate_sha256"] = independent_digest(foreign_identity)
+            for label, selected_binding, actual in (
+                    ("current-source-foreign-binding", foreign_binding, fixture.identity),
+                    ("foreign-source-current-binding", binding, foreign_identity)):
+                with self.subTest(candidate_pair=label):
+                    with self.assertRaisesRegex(MODULE.Incomplete, "current development candidate binding differs"):
+                        MODULE.admit_source_policy_development(selected_binding, actual)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
+
     def test_managed_development_receipt_refuses_missing_or_changed_physical_inputs(self):
         with self.managed_reference_fixture() as fixture:
-            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
             paths = [fixture.base / name for name in ("monitor.py", "development.py", "development-budget.json")]
+            paths += [fixture.extension / name for name in
+                      ("monitor.py", "development.py", "development-budget.json", "resource-replan-review.json")]
+            paths += [fixture.base / name for name in
+                      ("source-development-budget.json", "source-development-closeout-coherent.json")]
             paths += [fixture.path.parent / "resource-monitor" / name
                       for name in ("monitor-result.json", "resources.jsonl")]
             paths += [fixture.base / "qualification-admission/monitor-controls/gap/control.json",
@@ -4676,16 +5260,17 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                                 MODULE.admit_source_policy_development(fixture.binding, fixture.identity)
                         finally:
                             path.write_bytes(original)
-                self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
+                self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
 
     def test_managed_development_receipt_refuses_semantic_custody_and_stale_gap(self):
         with self.managed_reference_fixture() as fixture:
-            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
             faults = ((("phase",), "focused"), (("attempt",), True),
                       (("custody_unchanged",), False), (("terminal_resource_failures",), ["resource failure"]),
-                      (("generated_mutation_credit",), True), (("elapsed_seconds",), 2100),
+                      (("generated_mutation_credit",), True), (("elapsed_seconds",), 4200),
                       (("attempt",), 1), (("elapsed_seconds",), True),
-                      (("elapsed_seconds",), 0), (("elapsed_seconds",), 2400),
+                      (("elapsed_seconds",), 0), (("elapsed_seconds",), 4500),
+                      (("source_budget_sha256",), "a" * 64),
                       (("HEAD",), "a" * 40), (("durable_monitor",), str(fixture.base / "wrong")),
                       (("independent_monitor", "joined"), False),
                       (("independent_monitor", "exit_code"), 1),
@@ -4707,24 +5292,28 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                         MODULE.admit_source_policy_development(fixture.binding, fixture.identity)
             terminal.write_text(json.dumps(fixture.reference["independent_monitor"]["result"]))
             self.write_managed_reference(fixture, fixture.reference)
-            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
-            for removed in ("phase", "attempt", "captured_inputs", "durable_monitor"):
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
+            for removed in ("phase", "attempt", "captured_inputs", "durable_monitor", "source_budget_sha256"):
                 with self.subTest(missing_discriminator=removed):
                     changed = copy.deepcopy(fixture.reference)
                     del changed[removed]
                     self.write_managed_reference(fixture, changed)
                     with self.assertRaises(MODULE.Incomplete):
                         MODULE.admit_source_policy_development(fixture.binding, fixture.identity)
-            budget_path = fixture.base / "development-budget.json"
+            budget_path = fixture.extension / "development-budget.json"
             original_budget = budget_path.read_bytes()
             budget = json.loads(original_budget)
             for key, value in (("admitted", False), ("reserve_seconds", 299),
-                               ("budget_seconds", 2399), ("budget_seconds", 2401),
+                               ("budget_seconds", 4499), ("budget_seconds", 4501),
                                ("budget_seconds", True), ("maximum_attempts_per_phase", True),
+                               ("work_seconds", True), ("work_seconds", 4199),
+                               ("maximum_focused_attempts", 4), ("maximum_full_attempts", 5),
+                               ("additional_full_attempts", True), ("additional_full_attempts", 2),
+                               ("extension_seconds", 901), ("maximum_new_Rust_result_instances", 6885),
                                ("start_unix", True), ("preparation_started_unix", 1001.0),
                                ("source_files", {}),
                                ("source_files", {self.OWNERS["library"]: "a" * 64}),
-                               ("mutations_admitted", True), ("new_test_names", self.PROVENANCE_TESTS[:-1])):
+                               ("mutations_admitted", True), ("new_test_names", self.CONFIGURATION_TESTS[:-1])):
                 with self.subTest(budget_field=key):
                     changed_budget = {**budget, key: value}
                     budget_path.write_text(json.dumps(changed_budget))
@@ -4737,25 +5326,25 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
             budget_path.write_bytes(original_budget)
             fixture.pins["budget_sha256"] = hashlib.sha256(original_budget).hexdigest()
             self.write_managed_reference(fixture, fixture.reference)
-            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
 
     def test_managed_development_work_and_fresh_control_budgets_keep_distinct_clocks(self):
         with self.managed_reference_fixture() as fixture:
             changed = {**fixture.reference, "elapsed_seconds": 2099.999}
             self.write_managed_reference(fixture, changed)
-            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
             self.write_managed_reference(fixture, fixture.reference)
             path = fixture.base / "qualification-admission/development-budget.json"
             original = path.read_bytes()
             budget = json.loads(original)
             original_pins = fixture.control_pins.copy()
-            proposals = [({"admitted": False}, None), ({"budget_seconds": 2399}, None),
-                         ({"budget_seconds": 2401}, None), ({"budget_seconds": True}, None),
+            proposals = [({"admitted": False}, None), ({"budget_seconds": 4499}, None),
+                         ({"budget_seconds": 4501}, None), ({"budget_seconds": True}, None),
                          ({"reserve_seconds": 299}, None), ({"monitor_sha256": "a" * 64}, None),
-                         ({"preparation_started_unix": 4001.0}, None),
-                         ({"extra_allowance": 2400}, None),
+                         ({"preparation_started_unix": 4101.0}, None),
+                         ({"extra_allowance": 4500}, None),
                          ({"start_unix": 1000.0, "preparation_started_unix": 1000.0}, 1000.0),
-                         ({"start_unix": 3399.999, "preparation_started_unix": 3399.999}, 3399.999)]
+                         ({"start_unix": 4099.999, "preparation_started_unix": 4099.999}, 4099.999)]
             for name, value in budget["resource_profile"].items():
                 proposals.append(({"resource_profile": {**budget["resource_profile"], name: value + 1}}, None))
             proposals.append(({"resource_profile": {**budget["resource_profile"], "tasks_max": True}}, None))
@@ -4766,19 +5355,26 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                         start_unix=original_pins["start_unix"] if clock_pin is None else clock_pin)
                     with self.assertRaisesRegex(MODULE.Incomplete, "cannot replace or restart"):
                         MODULE.admit_source_policy_development(fixture.binding, fixture.identity)
-            # Equality with the original development clock's full allowance is
-            # legal; one tick before it was refused with both clock pins equal.
-            for clock in (3400.0, 3400.001):
+            # Actual source closure is sufficient before allocated allowance
+            # expiry5500; one tick before closure4100 was refused above.
+            for clock in (4100.0, 4100.001):
                 path.write_text(json.dumps({**budget, "start_unix": clock, "preparation_started_unix": clock}))
                 fixture.control_pins.update(sha256=hashlib.sha256(path.read_bytes()).hexdigest(), start_unix=clock)
-                self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
+                self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
             path.write_bytes(original)
             fixture.control_pins.update(original_pins)
-            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
 
     def test_managed_development_receipt_retains_source_and_ep1_receiving_guards(self):
+        # The separate historical format still reaches its runtime-map guard;
+        # the current managed source now has a stronger candidate-pair guard.
+        self.reference_fixture()
+        self.assertEqual(len(MODULE.admit_source_policy_development(self.policy["binding"], self.identity)), 14)
+        historical_other = {**self.identity, self.OWNERS["library"]: "b" * 64}
+        with self.assertRaisesRegex(MODULE.Incomplete, "runtime/graph/configuration differs"):
+            MODULE.admit_source_policy_development(self.policy["binding"], historical_other)
         with self.managed_reference_fixture() as fixture:
-            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
             altered = copy.deepcopy(fixture.reference)
             name = self.OWNERS["library"]
             altered["captured_inputs"][name] = "a" * 64
@@ -4789,7 +5385,7 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
             fixture.pins["captured_inputs_sha256"] = independent_digest(fixture.reference["captured_inputs"])
             self.write_managed_reference(fixture, fixture.reference)
             other_identity = {**fixture.identity, name: "b" * 64}
-            with self.assertRaisesRegex(MODULE.Incomplete, "runtime/graph/configuration differs"):
+            with self.assertRaisesRegex(MODULE.Incomplete, "current development candidate binding differs"):
                 MODULE.admit_source_policy_development(fixture.binding, other_identity)
             for lane, output, exit_code, reason in (
                 ("ep1-ordinary", self.execution([]), 0, "native block declaration or summary"),
@@ -4810,11 +5406,11 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                     finally:
                         raw_path.write_bytes(original)
             self.write_managed_reference(fixture, fixture.reference)
-            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
 
     def test_managed_development_requires_successful_rustdoc_lane(self):
         with self.managed_reference_fixture() as fixture:
-            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
             for fault in ("missing", "duplicate", "failed", "boolean-exit", "failure"):
                 with self.subTest(fault=fault):
                     changed = copy.deepcopy(fixture.reference)
@@ -4840,18 +5436,18 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                     finally:
                         path.write_bytes(original)
             self.write_managed_reference(fixture, fixture.reference)
-            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
 
     def test_managed_development_rejects_each_missing_or_substituted_provenance_control(self):
         with self.managed_reference_fixture() as fixture:
-            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
             for lane, expected, mandatory in (
-                ("default-ordinary", self.ordinary, self.PROVENANCE_TESTS),
-                ("default-optimized", self.ordinary, self.PROVENANCE_TESTS),
-                ("ep1-ordinary", self.ep1, self.PROVENANCE_TESTS),
-                ("ep1-optimized", self.ep1, self.PROVENANCE_TESTS),
-                ("default-doctests", self.docs, self.PROVENANCE_DOCS),
-                ("ep1-doctests", self.docs, self.PROVENANCE_DOCS),
+                ("default-ordinary", self.ordinary, self.PROVENANCE_TESTS + self.CONFIGURATION_TESTS),
+                ("default-optimized", self.ordinary, self.PROVENANCE_TESTS + self.CONFIGURATION_TESTS),
+                ("ep1-ordinary", self.ep1, self.PROVENANCE_TESTS + self.CONFIGURATION_TESTS),
+                ("ep1-optimized", self.ep1, self.PROVENANCE_TESTS + self.CONFIGURATION_TESTS),
+                ("default-doctests", self.docs, self.PROVENANCE_DOCS + self.CONFIGURATION_DOCS),
+                ("ep1-doctests", self.docs, self.PROVENANCE_DOCS + self.CONFIGURATION_DOCS),
             ):
                 for name in mandatory:
                     for alteration in ("omit", "same-count"):
@@ -4859,7 +5455,7 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                             names = [item for item in expected if item != name]
                             self.assertEqual(len(names), len(expected) - 1)
                             if alteration == "same-count":
-                                replacement = (name.replace("source_policy::SourceIdentity", "source_policy::SyntheticSourceIdentity")
+                                replacement = (name.replace("source_policy::", "synthetic_source_policy::", 1)
                                     if lane.endswith("doctests")
                                     else "synthetic_independent_same_count_provenance_substitute")
                                 names.append(replacement)
@@ -4880,7 +5476,7 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                             finally:
                                 path.write_bytes(original)
             self.write_managed_reference(fixture, fixture.reference)
-            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 812)
+            self.assertEqual(len(MODULE.admit_source_policy_development(fixture.binding, fixture.identity)), 819)
 
     def test_real_reader_admits_declared_fixture_without_live_checkout_identity(self):
         policy, binding, identity = MODULE.read_source_policy_policy(self.root)
@@ -4989,8 +5585,8 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         names.remove("source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund")
         names.append("source_policy::tests::synthetic_budget_substitute")
         names.sort()
-        self.assertEqual(len(names), 257)
-        self.assertEqual(sum(name.startswith("source_policy::tests::") for name in names), 61)
+        self.assertEqual(len(names), 267)
+        self.assertEqual(sum(name.startswith("source_policy::tests::") for name in names), 68)
         # Reconcile this independent synthetic digest so the real named-case
         # guard supplies refusal, rather than an earlier count or stale hash.
         with patch.object(MODULE, "SOURCE_POLICY_ORDINARY_DIGEST", independent_digest(names)):
@@ -5007,12 +5603,30 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                 names.remove(name)
                 names.append(name.rsplit("::", 1)[0] + "::synthetic_same_count_source_substitute")
                 names.sort()
-                self.assertEqual(len(names), 257)
-                self.assertEqual(sum(item.startswith("source_policy::tests::") for item in names), 61)
+                self.assertEqual(len(names), 267)
+                self.assertEqual(sum(item.startswith("source_policy::tests::") for item in names), 68)
                 # The independent identity and counts are consistent. The named
                 # requirement, rather than stale bytes, must reject the change.
                 with patch.object(MODULE, "SOURCE_POLICY_ORDINARY_DIGEST", independent_digest(names)):
                     with self.assertRaisesRegex(MODULE.Incomplete, "provenance"):
+                        MODULE.validate_source_policy_policy(bad)
+        MODULE.validate_source_policy_policy(self.policy)
+
+    def test_each_same_count_configuration_substitution_reaches_the_mandatory_guard(self):
+        MODULE.validate_source_policy_policy(self.policy)
+        for name in self.CONFIGURATION_TESTS:
+            with self.subTest(name=name):
+                bad = copy.deepcopy(self.policy)
+                names = bad["binding"]["test_inventory"]
+                names.remove(name)
+                names.append(name.rsplit("::", 1)[0] + "::synthetic_same_count_configuration_substitute")
+                names.sort()
+                self.assertEqual(len(names), 267)
+                self.assertEqual(sum(item.startswith("source_policy::tests::") for item in names), 68)
+                # Counts and independently calculated identity are healthy; the
+                # actual named configuration requirement must supply refusal.
+                with patch.object(MODULE, "SOURCE_POLICY_ORDINARY_DIGEST", independent_digest(names)):
+                    with self.assertRaisesRegex(MODULE.Incomplete, "configuration"):
                         MODULE.validate_source_policy_policy(bad)
         MODULE.validate_source_policy_policy(self.policy)
 
@@ -5026,11 +5640,11 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
 
     def test_full_blocks_are_required_and_doctests_remain_a_separate_union(self):
         binding = self.policy["binding"]
-        self.assertEqual(MODULE.source_policy_execution(self.execution(self.ordinary), binding)["tests_executed"], 257)
+        self.assertEqual(MODULE.source_policy_execution(self.execution(self.ordinary), binding)["tests_executed"], 267)
         with self.assertRaises(MODULE.Incomplete):
             MODULE.source_policy_execution(self.execution(self.docs), binding, doctests=True)
         both = self.execution(self.ordinary) + self.execution(self.docs)
-        self.assertEqual(MODULE.source_policy_execution(both, binding, doctests=True)["tests_executed"], 340)
+        self.assertEqual(MODULE.source_policy_execution(both, binding, doctests=True)["tests_executed"], 356)
         with self.assertRaises(MODULE.Incomplete):
             MODULE.source_policy_execution(self.execution(self.ordinary).replace("0 filtered out", "1 filtered out"), binding)
 
@@ -5042,8 +5656,8 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         self.assertTrue(self.finished)
         self.assertEqual([row[0] for row in self.commands], ["source-policy-baseline", "source-policy-doctests"])
         self.assertTrue(all("--features" not in row[1] and 0 < row[2] <= 300 for row in self.commands))
-        self.assertEqual(report["baseline_execution"]["tests_executed"], 257)
-        self.assertEqual(report["doctest_execution"]["tests_executed"], 83)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 267)
+        self.assertEqual(report["doctest_execution"]["tests_executed"], 89)
         self.assertTrue(report["selected_lane_passed"])
         self.assertFalse(report["qualification_passed"])
 
@@ -5080,7 +5694,7 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         self.assertEqual(set(report["coverage"]), set(self.OWNERS))
         self.assertTrue(all(row["covered_lines"] == 90 and row["executable_lines"] == 100
                             and row["line_percent"] == 90 for row in report["coverage"].values()))
-        self.assertEqual(report["coverage_execution"]["tests_executed"], 257)
+        self.assertEqual(report["coverage_execution"]["tests_executed"], 267)
         label, command, timeout, options = self.commands[0]
         self.assertEqual(label, "coverage")
         self.assertNotIn("--features", command)
@@ -5408,8 +6022,8 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
         self.write_policy()
 
     def test_development_ep1_admits_distinct_complete_graphs_before_session(self):
-        self.assertEqual(len(self.ordinary), 257)
-        self.assertEqual(len(self.ep1), 491)
+        self.assertEqual(len(self.ordinary), 267)
+        self.assertEqual(len(self.ep1), 501)
         self.assertEqual(len(set(self.ep1) - set(self.ordinary)), 234)
         self.reference_fixture()
         admitted = MODULE.admit_source_policy_development(self.policy["binding"], self.identity)
@@ -5432,8 +6046,8 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                    if name != "nts_ke_experiment::synthetic_ep1_case_000"]
         substituted = [name if name != "nts_ke_experiment::synthetic_ep1_case_000"
                        else "nts_ke_experiment::foreign_same_count_case" for name in self.ep1]
-        self.assertEqual(len(missing), 490)
-        self.assertEqual(len(substituted), 491)
+        self.assertEqual(len(missing), 500)
+        self.assertEqual(len(substituted), 501)
         self.assertEqual(sum(name.startswith("nts_ke_experiment::") for name in substituted), 234)
         cases = (
             ("empty", "", "native block declaration or summary"),

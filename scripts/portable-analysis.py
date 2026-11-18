@@ -355,6 +355,7 @@ ENGINE_KE_SUBJECTS = (
     ("ke_datagram", "crates/nevrotick-engine/src/nts_ke_experiment/datagram.rs"),
     ("ke_recovery", "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs"),
     ("ke_job", "crates/nevrotick-engine/src/nts_ke_experiment/job.rs"),
+    ("ke_preview_target", "crates/nevrotick-engine/src/ke_preview_target.rs"),
 )
 ENGINE_KE_CRITICAL = (
     "crates/nevrotick-engine/src/lib.rs",
@@ -362,6 +363,8 @@ ENGINE_KE_CRITICAL = (
     "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
     "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs",
+    "crates/nevrotick-engine/src/source_policy.rs",
 )
 
 # Exact current source, complete typed descriptors and independently challenged
@@ -395,8 +398,49 @@ ENGINE_KE_EQUIVALENCE_REVIEWS = {
 }
 
 
+# Exact domain review for the separately identified test-only product.
+ENGINE_KE_EXACT_EIGHT_CANDIDATE = 'fc7e4deadffe4c5e71839506b8a671e4802e71a219380e9b11fe9c18493060c1'
+ENGINE_KE_EXACT_EIGHT_PROOF = 'tasks/engine-ke-ledger-exact-eight-equivalences.md'
+ENGINE_KE_EXACT_EIGHT_PROOF_SHA256 = '75510ce35ec6d64e2e2410013b52555ab75f8e1e40f13f5b2fe49e6e9dd50d2b'
+ENGINE_KE_EXACT_EIGHT_REVIEWERS = '/root; /root/current_ledger_mutation_route; /root/retired_cookie_review'
+ENGINE_KE_EXACT_EIGHT_SOURCE_SHA256 = '88d1d9d9a9e97d43457a5d89c911248890009767acddbb6dec5566835b99e410'
+ENGINE_KE_EXACT_EIGHT_IDS = ENGINE_KE_EQUIVALENCE_IDS | {"KE-REFILL-PER-VECTOR-BOUND-OR"}
+ENGINE_KE_EXACT_EIGHT_REVIEWS = {
+    'KE-RECEIVE-STABLE-SLOT-OR': (ENGINE_KE_EXACT_EIGHT_SOURCE_SHA256,
+        '724a4c462993290c79b36f3669c9b2ba7f8a308d7496d910eaeaf9bd8db3c7b4',
+        'The initial charged Published guard captures the actual Pending serial and phase. Synchronous authenticated staging immutably borrows the owner. Staging errors exit before the second guard. Fresh Control refuses stop or expiry before the changed expression. A still-admitted slot cannot change under the same exclusive owner borrow, so both mismatch predicates are false. Both forms preserve the same spent work, receipt, private staging and final retired-commit boundary.'),
+    'KE-REFILL-PER-VECTOR-BOUND-OR': (ENGINE_KE_EXACT_EIGHT_SOURCE_SHA256,
+        'c147940d63303d3cd4bd05c1f007b40f9ca16b65bd7f3a1061bcf4ecf471ee21',
+        'The checked owner admits at most eight live entries and every writer preserves that limit. Predecessor and reservation paths only remove entries. Returning a cookie requires room. The prechecked replacement contains at most eight entries. The only producer of opaque StagedReply bounds the immutable authenticated field count before copying those same entries. Both vectors are at most eight, including legal exact equality. Both greater-than predicates are therefore false. The changed short circuit skips or performs a pure Vec length read, preserving aggregate count and byte refusals, staging and guarded installation.'),
+    'KE-RETURN-POOL-BYTES-OR': (ENGINE_KE_EXACT_EIGHT_SOURCE_SHA256,
+        '9ea61aaa8478646adc923b99186b371c6b0182b61e09a7c1f81a0954b9444f8f',
+        'After authentic ticket, phase and Published Control checks, the exact reserved cookie was moved from a checked pool. No admitted writer grows or replaces the pool while this pre-invocation slot is occupied. At most seven entries remain, capacity stays above length, and adding the reserved body back cannot exceed the checked original 131072 bytes, including exact equality. All rejection terms are false and both connectors restore the same allocation with no work or expiry refund.'),
+    'KE-RETURN-POOL-CAPACITY-OR': (ENGINE_KE_EXACT_EIGHT_SOURCE_SHA256,
+        '8eace70aead085f37cc85ad8197fbc8e029a81c1ae99e1388ef306f5cc82b9cc',
+        'The sole pre-invocation slot holds an exact cookie removed from the checked pool. Vec removal leaves an allocated slot beyond the remaining length, no admitted writer shrinks or replaces that pool during the reservation, and count is at most seven with reserved-plus-live bytes at most 131072. The changed connector joins only false terms after the checked sum. Both forms restore custody and preserve all earlier return refusals, work and expiry.'),
+    'KE-SEND-ARCHIVE-BYTES-EQUALITY': (ENGINE_KE_EXACT_EIGHT_SOURCE_SHA256,
+        'b4c7d05cc1193430222399d827d09013ec6f5beaf074d6a535e64293df45dd41',
+        'Each sendable Prepared cookie fits the checked 4096-byte packet with at least 128 bytes of fixed and framing overhead. At most 32 irreversible local attempts append at most 3968 bytes each, so the checked post-append total cannot exceed 126976 bytes. Both strict excess and equality at 131072 are false. The actual archive move, send boundary and error custody stay intact. Raw retirement and return bounds remain separately inclusive.'),
+    'KE-SEND-ARCHIVE-BYTES-INCLUSIVE': (ENGINE_KE_EXACT_EIGHT_SOURCE_SHA256,
+        '8dafd8aea2ed5ecb0866ebd8705aadfc8023148e619160a5f64f2668850860ac',
+        'Actual sendable Prepared packets bound every archived body to 3968 bytes and the irreversible local attempt count bounds the archive to 32. The checked post-append total is at most 126976, strictly below 131072, so neither strict nor inclusive excess holds. Both forms archive the same value once before exposure and preserve actual outcome, budgets and original authority.'),
+    'KE-SEND-ARCHIVE-BYTES-OR': (ENGINE_KE_EXACT_EIGHT_SOURCE_SHA256,
+        'fbf5d210fde58cf221800e2fcfc0dae5c69de3d8e6b30b23f20cf26ec8edc63a',
+        'A checked Prepared request contributes one of at most 32 local cookie bodies, each at most 3968 bytes under the 4096-byte formatter with at least 128 bytes of overhead. The checked post-append total is at most 126976, the current archive has at most 31 entries in capacity for 32, and the exact selected value is absent from both unchanged used histories. All rejection terms are false. The connector changes neither archive nor effects.'),
+    'KE-SEND-ARCHIVE-CAPACITY-OR': (ENGINE_KE_EXACT_EIGHT_SOURCE_SHA256,
+        '4f564efa12ea627c2814422212ddbe83673e639fe36d0f32d0230eff88a48b9c',
+        'The local used Vec reserves at least 32 entries before association publication. Each prior append spends a distinct nonrefundable reservation and the current Prepared slot has not appended yet, so length is at most 31. No admitted operation shrinks or resets the archive. The checked encoded-byte bound and earlier exact filters make the remaining rejection terms false. Changing this connector preserves the exact archive move and all outcomes.'),
+    'KE-SEND-ARCHIVE-VALUE-OR': (ENGINE_KE_EXACT_EIGHT_SOURCE_SHA256,
+        '9657a96b7667a13354418b784cc0daa9ce2d229412a2331d89a92188b801e3ce',
+        'The checked reservation filters all locally used values before moving its cookie into the only occupied slot. No competing append can occur before that slot is invoked. Count, capacity, packet-derived byte bound and immutable predecessor membership also make their rejection predicates false. The altered pure comparison sequence leaves the same archive, send, unknown-completion and recovery custody.'),
+    'KE-SEND-PREDECESSOR-VALUE-OR': (ENGINE_KE_EXACT_EIGHT_SOURCE_SHA256,
+        '7473d066769a60cfa4aa3271c950fbc028f3e8322c044947c756e214349b48bb',
+        'The reservation filters the actual immutable predecessor before selecting the exact cookie. The predecessor cannot be installed or replaced after a charged reservation. Local count, capacity, encoded-byte and current-used membership checks are false on the same Prepared domain. Both connectors preserve all observable state and outcomes, without making a claim about the separate predecessor producer or unexercised native behavior.'),
+}
+
+
 def engine_ke_equivalences_valid(policy: dict) -> bool:
-    """Allow no E, or all nine exact independently reviewed caller identities.
+    """Allow no E, or the complete exact review for one pinned product.
 
     Full current product/source/proof admission remains mandatory in
     admit_mutation_equivalences. No checked-caller argument narrows another
@@ -407,11 +451,24 @@ def engine_ke_equivalences_valid(policy: dict) -> bool:
     entries = policy["mutation_equivalences"]
     if not entries:
         return True
-    if (len(entries) != 9 or set(ENGINE_KE_EQUIVALENCE_REVIEWS) != ENGINE_KE_EQUIVALENCE_IDS
-            or re.fullmatch(r"[a-f0-9]{64}", ENGINE_KE_EQUIVALENCE_CANDIDATE) is None
-            or re.fullmatch(r"[a-f0-9]{64}", ENGINE_KE_EQUIVALENCE_PROOF_SHA256) is None
-            or type(policy.get("binding")) is not dict
-            or policy["binding"].get("candidate_sha256") != ENGINE_KE_EQUIVALENCE_CANDIDATE):
+    binding = policy.get("binding")
+    if type(binding) is not dict:
+        return False
+    candidate = binding.get("candidate_sha256")
+    if type(candidate) is not str or re.fullmatch(r"[a-f0-9]{64}", candidate) is None:
+        return False
+    if candidate == ENGINE_KE_EQUIVALENCE_CANDIDATE:
+        identifiers, reviews = ENGINE_KE_EQUIVALENCE_IDS, ENGINE_KE_EQUIVALENCE_REVIEWS
+        proof_path, proof_sha256 = ENGINE_KE_EQUIVALENCE_PROOF, ENGINE_KE_EQUIVALENCE_PROOF_SHA256
+        reviewers = ENGINE_KE_EQUIVALENCE_REVIEWERS
+    elif candidate == ENGINE_KE_EXACT_EIGHT_CANDIDATE:
+        identifiers, reviews = ENGINE_KE_EXACT_EIGHT_IDS, ENGINE_KE_EXACT_EIGHT_REVIEWS
+        proof_path, proof_sha256 = ENGINE_KE_EXACT_EIGHT_PROOF, ENGINE_KE_EXACT_EIGHT_PROOF_SHA256
+        reviewers = ENGINE_KE_EXACT_EIGHT_REVIEWERS
+    else:
+        return False
+    if (len(entries) != len(identifiers) or set(reviews) != identifiers
+            or re.fullmatch(r"[a-f0-9]{64}", proof_sha256) is None):
         return False
     fields = {"id", "candidate_sha256", "source_sha256", "mutant", "requirement", "rationale", "proof"}
     seen = set()
@@ -419,15 +476,15 @@ def engine_ke_equivalences_valid(policy: dict) -> bool:
         if type(entry) is not dict or set(entry) != fields:
             return False
         identifier = entry["id"]
-        if type(identifier) is not str or identifier not in ENGINE_KE_EQUIVALENCE_IDS or identifier in seen:
+        if type(identifier) is not str or identifier not in identifiers or identifier in seen:
             return False
-        review = ENGINE_KE_EQUIVALENCE_REVIEWS[identifier]
+        review = reviews[identifier]
         if (type(review) is not tuple or len(review) != 3
                 or any(type(value) is not str for value in review)
                 or any(re.fullmatch(r"[a-f0-9]{64}", value) is None for value in review[:2])):
             return False
         source, descriptor, rationale = review
-        if (entry["candidate_sha256"] != ENGINE_KE_EQUIVALENCE_CANDIDATE or entry["source_sha256"] != source
+        if (entry["candidate_sha256"] != candidate or entry["source_sha256"] != source
                 or entry["requirement"] != ENGINE_KE_EQUIVALENCE_REQUIREMENT or entry["rationale"] != rationale
                 or type(entry["mutant"]) is not dict):
             return False
@@ -436,12 +493,12 @@ def engine_ke_equivalences_valid(policy: dict) -> bool:
                 return False
         except (TypeError, ValueError):
             return False
-        if entry["proof"] != {"path": ENGINE_KE_EQUIVALENCE_PROOF,
-                "sha256": ENGINE_KE_EQUIVALENCE_PROOF_SHA256, "section": identifier,
-                "reviewer": ENGINE_KE_EQUIVALENCE_REVIEWERS, "verdict": "independently-justified-equivalent"}:
+        if entry["proof"] != {"path": proof_path,
+                "sha256": proof_sha256, "section": identifier,
+                "reviewer": reviewers, "verdict": "independently-justified-equivalent"}:
             return False
         seen.add(identifier)
-    return seen == ENGINE_KE_EQUIVALENCE_IDS
+    return seen == identifiers
 
 
 def engine_ke_features(scope: Scope) -> tuple[str, ...]:
@@ -1069,7 +1126,9 @@ def admit_mutation_equivalences(root: Path, scope: Scope, policy: dict) -> list[
                 or (not mutant["replacement"] and mutant["genre"] != "UnaryOperator")):
             raise Incomplete("Equivalence lacks its full typed frozen mutant source identity.")
         filename = scope.selected_file(mutant["file"])
-        if mutant["file"] != filename:
+        relative_source = Path(filename)
+        if (mutant["file"] != filename or not relative_source.parts or relative_source.is_absolute()
+                or ".." in relative_source.parts or relative_source.as_posix() != filename):
             raise Incomplete("Equivalence source must use its exact canonical relative path.")
         for key in ("candidate_sha256", "source_sha256"):
             if not isinstance(entry[key], str) or not re.fullmatch(r"[a-f0-9]{64}", entry[key]):

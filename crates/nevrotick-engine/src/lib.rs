@@ -18,8 +18,19 @@ mod series;
 mod session;
 mod source_policy;
 
+#[cfg(feature = "ke-association-prototype")]
+mod ke_preview_target;
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 mod nts_ke_experiment;
+
+#[cfg(feature = "ke-association-prototype")]
+pub use ke_preview_target::{KePreviewTarget, KePreviewTargetError};
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+pub use nts_ke_experiment::managed_preview::{SourceKePreviewFailure, SourceKePreviewReport};
+#[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+pub use nts_ke_experiment::managed_preview::{
+    SourceProtectedProbeFailure, SourceProtectedProbeReport,
+};
 
 /// Run the explicitly selected, controlled-loopback KE association prototype.
 ///
@@ -78,8 +89,9 @@ pub use session::{
     AcquisitionSession, CoherenceUnavailable, PreparedAcquisition, SeriesCoherence,
 };
 pub use source_policy::{
-    SourceHandle, SourceIdentity, SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits,
-    SourcePolicySnapshot, SourcePolicyTarget, SourceRestrictionSnapshot,
+    SourceAddressSet, SourceConfigurationSnapshot, SourceHandle, SourceIdentity,
+    SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits, SourcePolicySnapshot,
+    SourcePolicyTarget, SourceRestrictionSnapshot,
 };
 
 use ntp_wire::{FrameLimits, RawHeader, frame_no_legacy_mac_datagram};
@@ -270,12 +282,7 @@ impl Config {
     /// ```
     pub fn new(peers: [SocketAddr; 2], timeout: Duration) -> Result<Self, PilotError> {
         for peer in peers {
-            if !peer.ip().is_loopback() || peer.port() == 0 {
-                return Err(PilotError::InvalidPeer);
-            }
-            if let SocketAddr::V6(address) = peer
-                && (address.scope_id() != 0 || address.flowinfo() != 0)
-            {
+            if !lab_peer_is_valid(peer) {
                 return Err(PilotError::InvalidPeer);
             }
         }
@@ -299,6 +306,17 @@ impl Config {
         self.experimental_profile = Some(profile);
         self
     }
+}
+
+/// One shared exact endpoint rule for every laboratory admission path.
+/// Unscoped numeric loopback with a nonzero port grants no production authority.
+fn lab_peer_is_valid(peer: SocketAddr) -> bool {
+    peer.ip().is_loopback()
+        && peer.port() != 0
+        && match peer {
+            SocketAddr::V4(_) => true,
+            SocketAddr::V6(address) => address.scope_id() == 0 && address.flowinfo() == 0,
+        }
 }
 
 /// Pilot-local aggregate generation. Production config/association/clock owners
@@ -565,8 +583,8 @@ struct RunClockContext {
 /// Read-only transport observations and explicitly conditional nominal arithmetic.
 /// Neither raw header retention nor a measurement grants sample/trust authority.
 pub struct TransportFacts {
-    /// Actual managed logical source; absent only for unmanaged laboratory work.
-    source_identity: Option<SourceIdentity>,
+    /// One sealed original source/configuration context, absent for unmanaged work.
+    source_context: Option<source_policy::SourceContext>,
     /// Local readings immediately before the successful `try_send_to` call.
     send_before: SoftwareClock,
     /// Local readings immediately after that synchronous call returned.
@@ -602,7 +620,22 @@ impl TransportFacts {
     /// Unmanaged laboratory acquisitions explicitly return `None`.
     #[must_use]
     pub const fn source_identity(&self) -> Option<&SourceIdentity> {
-        self.source_identity.as_ref()
+        match &self.source_context {
+            Some(context) => Some(context.identity()),
+            None => None,
+        }
+    }
+
+    /// Borrow the actual configuration issued before this acquisition.
+    ///
+    /// Absent for unmanaged or explicitly unconfigured laboratory sources.
+    /// Replacement cannot rewrite this historical value or grant current use.
+    #[must_use]
+    pub const fn source_configuration(&self) -> Option<&SourceConfigurationSnapshot> {
+        match &self.source_context {
+            Some(context) => context.configuration(),
+            None => None,
+        }
     }
 
     /// Return the original declared scope/model, never a window inferred from results.
@@ -1132,6 +1165,23 @@ fn attempt_send(
     deadline: Instant,
     control: &watch::Receiver<Control>,
 ) -> Control {
+    attempt_send_observing(
+        slot,
+        deadline,
+        control,
+        source_policy::observations::SendReads::hardware(),
+    )
+}
+
+/// Run the original send checkpoint with closed, deferred software observations.
+/// Managed sends retain their own capture owner. The laboratory branch uses these
+/// observations at its actual pre-send check and after the synchronous return.
+fn attempt_send_observing(
+    slot: &mut LiveSlot,
+    deadline: Instant,
+    control: &watch::Receiver<Control>,
+    mut observations: source_policy::observations::SendReads,
+) -> Control {
     // Keep the actual invocation's read custody through the concrete synchronous
     // sender. Stop/invalidation linearizes before this guard or after the effect.
     let state = control.borrow();
@@ -1157,13 +1207,13 @@ fn attempt_send(
         return *state;
     }
     slot.send_attempts += 1;
-    let before = SoftwareClock::capture();
-    if before.mono >= deadline {
+    let before: SoftwareClock = observations.capture();
+    if before.mono_after >= deadline {
         slot.expire();
         return *state;
     }
-    let result = slot.socket.try_send_to(&slot.packet, slot.peer);
-    let after = SoftwareClock::capture();
+    let result: io::Result<usize> = slot.socket.try_send_to(&slot.packet, slot.peer);
+    let after: SoftwareClock = observations.capture();
     complete_send(slot, result, SendBracket { before, after });
     *state
 }
@@ -1557,7 +1607,7 @@ fn finish_valid_reply_with_age(
         slot.finish(TerminalOutcome::Header {
             stratum: candidate.stratum,
             facts: Box::new(TransportFacts {
-                source_identity: slot.policy.source_identity(),
+                source_context: slot.policy.source_context(),
                 send_before: candidate.sent.before,
                 send_after: candidate.sent.after,
                 read_return: candidate.read,

@@ -92,7 +92,7 @@ fn burn_first_cookie(association: &mut AssociationOwner<'_>) -> Result<(), Failu
 fn consuming_history_rejects_foreign_receiver_context_and_population() -> Result<(), Failure> {
     for through_accept in [false, true] {
         with_fixture(
-            ExchangeMode::ProtectedDatagram,
+            &ExchangeMode::ProtectedDatagram,
             None,
             vec![Ok(())],
             ExchangeCase::Healthy,
@@ -162,7 +162,7 @@ fn consuming_history_rejects_foreign_receiver_context_and_population() -> Result
 fn consuming_history_preserves_committed_facts_after_late_cancel_and_stop() -> Result<(), Failure> {
     for stop_scope in [false, true] {
         with_fixture(
-            ExchangeMode::ProtectedDatagram,
+            &ExchangeMode::ProtectedDatagram,
             None,
             vec![Ok(())],
             ExchangeCase::MultipleCookies,
@@ -232,7 +232,7 @@ fn consuming_history_preserves_committed_facts_after_late_cancel_and_stop() -> R
 fn bound_history_preserves_preoperation_population_after_prior_burn_and_refill()
 -> Result<(), Failure> {
     with_fixture(
-        ExchangeMode::ProtectedDatagram,
+        &ExchangeMode::ProtectedDatagram,
         None,
         vec![Ok(())],
         ExchangeCase::Healthy,
@@ -286,7 +286,7 @@ fn bound_history_preserves_preoperation_population_after_prior_burn_and_refill()
 #[test]
 fn bound_history_empty_population_preserves_actual_producer_refusal() -> Result<(), Failure> {
     with_fixture(
-        ExchangeMode::ProtectedDatagram,
+        &ExchangeMode::ProtectedDatagram,
         None,
         vec![Ok(())],
         ExchangeCase::Healthy,

@@ -132,7 +132,8 @@ Incomplete = ENV.Incomplete
 EXTRAS = (SELF, LAUNCHER, CPU, FACADE_CONSUMER, "scripts/verify-time-domain-windows-allocation.py",
           "scripts/cross-link-service-fixture.py", "tools/windows-service-fixture/qualification.py",
           "scripts/portable-analysis.py", "scripts/prepare-product.py", "scripts/check-analysis.py", "scripts/analysis-runtime.py",
-          "scripts/analysis-controls.py", "policy/analysis-tools.json", "scripts/tests/test_engine_native.py")
+          "scripts/analysis-controls.py", "policy/analysis-tools.json", "scripts/tests/test_engine_native.py",
+          "scripts/tests/fixtures/engine-facade-fault-v19.rs.txt")
 CONTROL_SOURCE = '''//! Fixed healthy, failing and waiting native-supervisor controls.
 use std::{
     env,

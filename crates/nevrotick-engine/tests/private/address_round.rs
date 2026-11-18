@@ -2674,6 +2674,148 @@ fn managed_round_postterminal_reenable_keeps_the_actual_live_policy_cause() -> C
     assert_postterminal_policy_history(&report, &a_report, &b, e, &quiet)
 }
 
+/// Distinct independently valid policy relationships offered to the real receiver.
+enum SetupBindingMismatch {
+    /// Same source/configuration, with another genuinely bound endpoint.
+    Endpoint,
+    /// Same source/endpoint, with a genuinely replaced installed revision.
+    ReplacedConfiguration,
+}
+
+/// Observe the exact receiving refusal and release even an incorrectly admitted slot.
+/// # Errors
+/// Preserve genuine native producer failures and socket release/rebind failures.
+/// # Panics
+/// Reject missing custody refusal or a query before original candidate admission.
+fn require_setup_binding_refusal(
+    received: Result<SetupOutcome, PilotError>,
+    local: Option<SocketAddr>,
+    peers: [&UdpSocket; 2],
+) -> Check<()> {
+    let refused = matches!(
+        &received,
+        Err(PilotError::SourcePolicy(crate::SourcePolicyError::Foreign))
+    );
+    match received {
+        Err(PilotError::SourcePolicy(crate::SourcePolicyError::Foreign)) => {}
+        Err(error) => return Err(error.into()),
+        Ok(outcome) => drop(outcome),
+    }
+    let local = local.ok_or("fixture never produced its genuine Ready socket")?;
+    // An accepted faulty slot is released before the negative assertion as well.
+    let rebound = UdpSocket::bind(local);
+    assert!(
+        refused,
+        "actual setup receiver accepted mismatched source configuration/endpoint custody"
+    );
+    drop(rebound?);
+    for peer in peers {
+        assert_eq!(observe_queries(peer)?.0, 0);
+    }
+    Ok(())
+}
+
+/// Reject a genuine native setup that does not belong to its original candidate.
+/// # Errors
+/// Preserve real setup/receiver failures, retained native socket and cleanup errors.
+/// # Panics
+/// Reject accepted misplaced custody, renewed cutoffs, debits or a retained socket.
+fn managed_setup_binding_mismatch(case: &SetupBindingMismatch) -> Check<()> {
+    let mut authority = crate::source_policy::isolated_authority(crate::SourcePolicyLimits::new(
+        1,
+        2,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let source = authority.source(0)?;
+    let expected_socket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let alternative_socket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
+    let peers = [
+        expected_socket.local_addr()?,
+        alternative_socket.local_addr()?,
+    ];
+    let original =
+        authority.install_source_configuration(&source, crate::SourceAddressSet::new(&peers)?)?;
+    let (mut prepared, control) = source.prepare_address_round(AddressRoundConfig::new(
+        &peers[..1],
+        Duration::from_secs(2),
+        Duration::from_secs(4),
+    )?)?;
+    let runtime = runtime()?;
+    let origin = Instant::now();
+    let deadline = origin
+        .checked_add(prepared.config.round_timeout)
+        .ok_or(PilotError::DeadlineOverflow)?;
+    let context = Arc::new(RunClockContext { origin });
+    let mut cursor = Progress::new(&prepared.config, deadline);
+    let claim = cursor
+        .claim_next(origin)?
+        .ok_or("valid setup fixture lost its original claim")?;
+    let plan = checked_candidate_setup(&prepared, &claim, &context, deadline)?;
+    // Preparation precedes replacement; this is a deterministic context mismatch.
+    let (actual_peer, actual_configuration) = match case {
+        SetupBindingMismatch::Endpoint => (peers[1], original.clone()),
+        SetupBindingMismatch::ReplacedConfiguration => (
+            peers[0],
+            authority.replace_source_configuration(&original, original.addresses().clone())?,
+        ),
+    };
+    let actual_mode = SourceMode::Managed(source.bind(actual_peer)?);
+    let mut returned_local = None;
+    let received = runtime.block_on(setup_candidate(
+        &plan,
+        &mut prepared.control,
+        &mut |_, packet, observed_context, receiver, request_end, round_end| {
+            assert_eq!(packet, plan.packet);
+            assert!(Arc::ptr_eq(&observed_context, &plan.context));
+            assert_eq!((request_end, round_end), (plan.request_end, plan.round_end));
+            // The actual peer matches the genuine offered binding, not the plan.
+            let outcome = setup_address_request_bound(
+                actual_peer,
+                packet,
+                observed_context,
+                receiver,
+                request_end,
+                round_end,
+                actual_mode.clone(),
+            )?;
+            if let SetupOutcome::Ready(slot) = &outcome {
+                assert_eq!(slot.peer, actual_peer);
+                assert!(!slot.sent);
+                assert_eq!((slot.received, slot.rejected), (0, 0));
+                let observed = slot
+                    .policy
+                    .source_context()
+                    .ok_or(PilotError::InternalState)?;
+                assert!(observed.identity().same_source(&source.identity()));
+                assert!(
+                    observed
+                        .configuration()
+                        .is_some_and(|value| value.same_configuration(&actual_configuration))
+                );
+                returned_local = Some(slot.local);
+            }
+            Ok(outcome)
+        },
+    ));
+    require_setup_binding_refusal(
+        received,
+        returned_local,
+        [&expected_socket, &alternative_socket],
+    )?;
+    for peer in [peers[0], actual_peer] {
+        let retained = source.policy_snapshot(peer)?;
+        assert!(retained.source().floor().is_none() && retained.endpoint().floor().is_none());
+    }
+    // Claim has no Drop: last use above releases its borrow without acknowledging it.
+    assert!(matches!(
+        cursor.claim_next(origin),
+        Err(PilotError::InternalState)
+    ));
+    drop(control);
+    Ok(())
+}
+
 /// Reject a genuine but wrong setup owner before driving any native query.
 /// # Errors
 /// Preserve genuine allocator, runtime, public preparation and joined peer errors.
@@ -2729,6 +2871,12 @@ fn managed_round_receiving_rejects_downgraded_and_foreign_bindings_before_send()
         assert!(report.attempts().is_empty() && report.policy_refusals().is_empty());
         assert_eq!(observe_queries(&socket)?.0, 0);
     }
+    for mismatch in [
+        SetupBindingMismatch::Endpoint,
+        SetupBindingMismatch::ReplacedConfiguration,
+    ] {
+        managed_setup_binding_mismatch(&mismatch)?;
+    }
     let (prepared, control) = source.prepare_address_round(checked_config(&[peer])?)?;
     let responder = ReplyPeer::spawn(socket, ReplyKind::Ordinary)?;
     let result = execute_address_round(prepared, &ControlSchedule::new(None, None)?);
@@ -2746,6 +2894,10 @@ fn managed_round_receiving_rejects_downgraded_and_foreign_bindings_before_send()
 enum SourceTransferProposal {
     /// Preserve the genuine final commit's original managed identity.
     Original,
+    /// Preserve original history despite a later configuration replacement.
+    OriginalAfterReplacement,
+    /// Substitute a genuine newer configuration from the same source.
+    ReplacedConfiguration,
     /// Replace only historical provenance with another valid catalogue source.
     Foreign,
     /// Remove only the managed provenance, without changing its actual header.
@@ -2820,23 +2972,74 @@ fn assert_source_transfer_history(
     }));
 }
 
+/// Challenge historical receiving context after one genuine, joined native result.
+/// # Errors
+/// Preserve actual configuration replacement and bound source/endpoint failures.
+/// # Panics
+/// Reject missing original provenance or a replacement that reuses its identity.
+fn propose_source_transfer_history(
+    facts: &mut crate::TransportFacts,
+    proposal: SourceTransferProposal,
+    authority: &mut crate::SourcePolicyAuthority,
+    original_configuration: &crate::SourceConfigurationSnapshot,
+    source: &crate::SourceHandle,
+    foreign: &crate::SourceHandle,
+    peer: SocketAddr,
+) -> Check<()> {
+    assert!(
+        facts
+            .source_identity()
+            .is_some_and(|identity| identity.same_source(&source.identity()))
+    );
+    assert!(
+        facts
+            .source_configuration()
+            .is_some_and(|value| value.same_configuration(original_configuration))
+    );
+    if matches!(
+        proposal,
+        SourceTransferProposal::OriginalAfterReplacement
+            | SourceTransferProposal::ReplacedConfiguration
+    ) {
+        let replacement = authority.replace_source_configuration(
+            original_configuration,
+            original_configuration.addresses().clone(),
+        )?;
+        assert!(!replacement.same_configuration(original_configuration));
+    }
+    // These are synthetic transfer inputs, not different native acquisitions.
+    match proposal {
+        SourceTransferProposal::Original | SourceTransferProposal::OriginalAfterReplacement => {}
+        SourceTransferProposal::ReplacedConfiguration => {
+            facts.source_context = SourceMode::Managed(source.bind(peer)?).source_context();
+        }
+        SourceTransferProposal::Foreign => {
+            facts.source_context = SourceMode::Managed(foreign.bind(peer)?).source_context();
+        }
+        SourceTransferProposal::Missing => facts.source_context = None,
+    }
+    Ok(())
+}
+
 /// Transfer one real completed request through its original round claim.
 /// # Errors
 /// Preserve allocation, setup, native I/O, runtime and joined peer failures.
 /// # Panics
 /// Refuse misplaced provenance before adopting history or acknowledging progress.
 fn source_transfer_case(proposal: SourceTransferProposal) -> Check<()> {
-    let authority = crate::source_policy::isolated_authority(crate::SourcePolicyLimits::new(
+    let mut authority = crate::source_policy::isolated_authority(crate::SourcePolicyLimits::new(
         2,
         2,
         Duration::from_millis(1),
         Duration::from_millis(4),
     )?)?;
     let source = authority.source(0)?;
-    let foreign = authority.source(1)?.identity();
+    let foreign = authority.source(1)?;
     let socket = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
     let quiet = bind_peer(IpAddr::V4(Ipv4Addr::LOCALHOST))?;
     let peers = [socket.local_addr()?, quiet.local_addr()?];
+    let original_configuration =
+        authority.install_source_configuration(&source, crate::SourceAddressSet::new(&peers)?)?;
     let config = checked_config(&peers)?;
     let bindings = source.bind_round(&peers)?;
     let (mut prepared, control) = prepare_with_policy(config, Some(bindings), |bytes| {
@@ -2876,17 +3079,15 @@ fn source_transfer_case(proposal: SourceTransferProposal) -> Check<()> {
     let crate::Phase::Done(TerminalOutcome::Header { facts, .. }) = &mut slot.phase else {
         return Err("genuine ordinary terminal result lost its facts".into());
     };
-    assert!(
-        facts
-            .source_identity()
-            .is_some_and(|identity| identity.same_source(&source.identity()))
-    );
-    // These are synthetic transfer inputs, not different native acquisitions.
-    match proposal {
-        SourceTransferProposal::Original => {}
-        SourceTransferProposal::Foreign => facts.source_identity = Some(foreign),
-        SourceTransferProposal::Missing => facts.source_identity = None,
-    }
+    propose_source_transfer_history(
+        facts,
+        proposal,
+        &mut authority,
+        &original_configuration,
+        &source,
+        &foreign,
+        peers[0],
+    )?;
     let mut report = AddressRoundReport::empty();
     let mut observed = 0_u8;
     let transferred = transfer_candidate_report(
@@ -2898,11 +3099,13 @@ fn source_transfer_case(proposal: SourceTransferProposal) -> Check<()> {
         &mut |_, _| observed += 1,
     );
     match proposal {
-        SourceTransferProposal::Original => {
+        SourceTransferProposal::Original | SourceTransferProposal::OriginalAfterReplacement => {
             assert_eq!(transferred?, Some(AddressRoundEnd::Reply));
             assert_source_transfer_history(&report, &source, peers[0], observed);
         }
-        SourceTransferProposal::Foreign | SourceTransferProposal::Missing => {
+        SourceTransferProposal::Foreign
+        | SourceTransferProposal::Missing
+        | SourceTransferProposal::ReplacedConfiguration => {
             assert!(matches!(transferred, Err(PilotError::InternalState)));
             assert_eq!(observed, 0);
             assert!(report.attempts().is_empty() && report.policy_refusals().is_empty());
@@ -2929,6 +3132,8 @@ fn source_transfer_case(proposal: SourceTransferProposal) -> Check<()> {
 fn managed_source_provenance_address_transfer_binds_the_original_candidate() -> Check<()> {
     for proposal in [
         SourceTransferProposal::Original,
+        SourceTransferProposal::OriginalAfterReplacement,
+        SourceTransferProposal::ReplacedConfiguration,
         SourceTransferProposal::Foreign,
         SourceTransferProposal::Missing,
     ] {

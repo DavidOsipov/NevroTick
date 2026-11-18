@@ -24,8 +24,8 @@ use time_core::{
     FixtureRateDeliveryError, FixtureRateSettlement, FixtureRateSettlementCursor, FixtureRateSpan,
     FixtureReferenceInputError, FixtureReferenceInputState, FixtureSettledRateInterval,
     FixtureStepCompletion, FixtureStepDirections, FixtureStepError, FixtureStepFeedback,
-    FixtureStepLimits, FixtureStepSettlement, enclose_fixture_chart_projection,
-    enclose_fixture_projection,
+    FixtureStepLimits, FixtureStepProposal, FixtureStepSettlement,
+    enclose_fixture_chart_projection, enclose_fixture_projection,
 };
 use time_domain::{ActiveAwakeNs, MonotonicNs, UtcCoordinateQ32, exchange_arithmetic};
 
@@ -252,6 +252,277 @@ fn matched_step_accounts_unexpected_actual_rate_before_refusing_continuation() -
             Some(label(2)?)
         );
         assert!(retired.resume_fresh(now(2 * SECOND, 8 * SECOND)?).is_err());
+        Ok(())
+    })
+}
+
+/// Vary actual rate and duration inversely while holding delivered phase fixed.
+/// # Errors
+/// Preserve genuine reference, request, receipt and take-once transfer failures.
+/// # Panics
+/// Detect monotonic-for-active substitution, requested-as-delivered accounting,
+/// changed original endpoints or authority restored after a known refusal.
+#[test]
+fn matched_step_preserves_equal_debt_across_distinct_known_deliveries() -> TestResult {
+    for sign in [-1_i8, 1] {
+        for (active, monotonic) in [(1_u32, 1_u32), (2, 3), (4, 5)] {
+            for (mixed, at_expiry) in [(true, false), (false, false), (false, true)] {
+                check_step_delivery_partition(sign, active, monotonic, mixed, at_expiry)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Check one literal delivery, with no result sourced from another product run.
+/// # Errors
+/// Preserve checked fixture, actual settlement and original recovery failures.
+/// # Panics
+/// Fail if copied acknowledgement data, debt or cursor differs from fixture truth.
+fn check_step_delivery_partition(
+    sign: i8,
+    active: u32,
+    monotonic: u32,
+    mixed: bool,
+    at_expiry: bool,
+) -> TestResult {
+    with_step_owner(sign, |mut owner| {
+        let signed: f64 = f64::from(sign);
+        let request: FixtureStepProposal<'_> = product_ok(owner.issue_step(
+            now(0, 4 * SECOND)?,
+            FixturePhaseResidualPermission::Allow,
+            step_limits(FixtureStepDirections::Both)?,
+        ))?;
+        assert_eq!(request.ordinal(), label(1)?);
+        assert_eq!(request.requested_phase_seconds(), signed / 8.0);
+
+        // The mixed interval contributes signed 2/64 relative to the original
+        // baseline, then the step contributes signed 1/64. The healthy neighbor
+        // delivers nothing above baseline and supplies all signed 3/64 as a step.
+        let aggregate: f64 = if mixed {
+            signed / 32.0 + signed / (32.0 * f64::from(active))
+        } else {
+            signed / 32.0
+        };
+        let achieved: f64 = if mixed {
+            signed / 64.0
+        } else {
+            signed * 3.0 / 64.0
+        };
+        let active_end: u64 = u64::from(active) * SECOND;
+        let monotonic_end: u64 = (4 + u64::from(monotonic)) * SECOND;
+        let delivery: FixtureSettledRateInterval = interval(
+            owner.chart(),
+            clocks()?,
+            1,
+            (0, active_end),
+            (4 * SECOND, monotonic_end),
+            aggregate,
+            (31, 37),
+        )?;
+        let actual: FixtureStepCompletion = product_ok(FixtureStepCompletion::new(
+            delivery,
+            achieved,
+            FixtureChartFrames::new(label(31)?, label(37)?, label(41)?, label(43)?)?,
+        ))?;
+        let observed: FixturePhaseNow = now(
+            active_end,
+            if at_expiry {
+                20 * SECOND
+            } else {
+                monotonic_end
+            },
+        )?;
+        let FixtureStepSettlement::Known(mut retired) =
+            owner.settle_step(FixtureStepFeedback::Known(actual), observed)
+        else {
+            return Err(io::Error::other("matched delivery must remain a Known step").into());
+        };
+        assert_eq!(retired.achieved_step_seconds(), achieved);
+        assert_eq!(retired.requested_phase_seconds(), signed / 8.0);
+        assert_eq!(
+            retired.pre_step_phase_seconds(),
+            Some(if mixed {
+                signed * 3.0 / 32.0
+            } else {
+                signed / 8.0
+            })
+        );
+        assert_eq!(retired.remaining_phase_seconds(), Some(signed * 5.0 / 64.0));
+        assert!(retired.feedback_error().is_none());
+        assert!(retired.debt_error().is_none());
+        let cursor: &FixtureRateSettlementCursor = retired
+            .cursor()
+            .ok_or_else(|| io::Error::other("known delivery lost cursor custody"))?;
+        assert_eq!(cursor.next_ordinal(), Some(label(2)?));
+        assert_eq!(
+            cursor.last_active_end(),
+            Some(ActiveAwakeNs::new(active_end))
+        );
+        assert_eq!(
+            cursor.last_monotonic_end(),
+            Some(MonotonicNs::new(monotonic_end))
+        );
+        assert_eq!(retired.replacement()?.frames().target_frame(), label(41)?);
+        assert_eq!(
+            retired.replacement()?.frames().target_generation(),
+            label(43)?
+        );
+        if mixed || at_expiry {
+            let source: FixturePhaseError = if mixed {
+                FixturePhaseError::BaselineChanged
+            } else {
+                FixturePhaseError::Expired
+            };
+            assert_eq!(
+                retired.continuation_error(),
+                Some(&FixtureStepError::Phase { source })
+            );
+            assert!(retired.resume_fresh(observed).is_err());
+            assert!(retired.cursor().is_some());
+        } else {
+            assert!(retired.continuation_error().is_none());
+            let fresh: FixturePhasePlanOwner<'_, '_> = product_ok(retired.resume_fresh(observed))?;
+            assert_eq!(fresh.remaining_phase_seconds(), None);
+            assert_eq!(fresh.cursor().next_ordinal(), Some(label(2)?));
+            assert!(retired.resume_fresh(observed).is_err());
+        }
+        Ok(())
+    })
+}
+
+/// Public Known settlement preserves the separately rounded rate/debt operation
+/// before subtracting the actual step on a nonintegral active interval.
+/// # Errors
+/// Preserve real reference, checked receipt and known settlement access failures.
+/// # Panics
+/// Detect reordered arithmetic, wrong elapsed clock or loss of Known custody.
+#[test]
+fn matched_step_rounds_noninteger_rate_delivery_before_actual_step() -> TestResult {
+    // Exact inputs are D=1/8, B=1/32, S=3/64 and T=999999999/1000000000.
+    // The five words give RN pre-step debt, RN final debt, RN chart displacement,
+    // and least binary64 upper bounds on the latter two points' exact errors.
+    // In the mixed case, regrouping A-B produces final bits 0x3f90_0000_0112_e0c0.
+    // Subtracting the step first gives 0x3f90_0000_0112_e0bd.
+    let cases: [(u32, [u64; 5]); 2] = [
+        (
+            1,
+            [
+                0x3fc0_0000_0000_0000,
+                0x3fb4_0000_0000_0000,
+                0x3fb3_ffff_ffdd_a3e8,
+                0,
+                0x3c47_d929_6b4d_19d3,
+            ],
+        ),
+        (
+            3,
+            [
+                0x3fb0_0000_0044_b82f,
+                0x3f90_0000_0112_e0bc,
+                0x3fc1_ffff_ffcc_75dc,
+                0x3c64_136b_4a59_7317,
+                0x3c61_e2df_1079_d35f,
+            ],
+        ),
+    ];
+    for sign in [-1_i8, 1] {
+        for (rate_numerator, expected) in cases {
+            check_noninteger_step_rounding(sign, rate_numerator, expected)?;
+        }
+    }
+    Ok(())
+}
+
+/// Execute one genuine Known step with an independently computed point and bounds.
+/// # Errors
+/// Preserve real issuance, checked receipt and Known settlement access failures.
+/// # Panics
+/// Detect reordered arithmetic, wrong elapsed clock or lost cursor custody.
+fn check_noninteger_step_rounding(
+    sign: i8,
+    rate_numerator: u32,
+    [pre, post, chart_point, debt_error, chart_error]: [u64; 5],
+) -> TestResult {
+    let active_end: u64 = 999_999_999;
+    let monotonic_end: u64 = 6 * SECOND;
+    with_step_owner(sign, |mut owner| {
+        let signed: f64 = f64::from(sign);
+        let request: FixtureStepProposal<'_> = product_ok(owner.issue_step(
+            now(0, 4 * SECOND)?,
+            FixturePhaseResidualPermission::Allow,
+            step_limits(FixtureStepDirections::Both)?,
+        ))?;
+        assert_eq!(request.ordinal(), label(1)?);
+        assert_eq!(request.requested_phase_seconds(), signed / 8.0);
+        let rate: f64 = signed * f64::from(rate_numerator) / 32.0;
+        let actual_step: f64 = signed * 3.0 / 64.0;
+        let delivery: FixtureSettledRateInterval = interval(
+            owner.chart(),
+            clocks()?,
+            1,
+            (0, active_end),
+            (4 * SECOND, monotonic_end),
+            rate,
+            (31, 37),
+        )?;
+        let actual: FixtureStepCompletion = product_ok(FixtureStepCompletion::new(
+            delivery,
+            actual_step,
+            FixtureChartFrames::new(label(31)?, label(37)?, label(41)?, label(43)?)?,
+        ))?;
+        let observed: FixturePhaseNow = now(active_end, monotonic_end)?;
+        let FixtureStepSettlement::Known(mut retired) =
+            owner.settle_step(FixtureStepFeedback::Known(actual), observed)
+        else {
+            return Err(io::Error::other("ordered settlement must preserve Known custody").into());
+        };
+        assert_eq!(retired.achieved_step_seconds(), actual_step);
+        assert_eq!(
+            retired.pre_step_phase_seconds(),
+            Some(signed * f64::from_bits(pre))
+        );
+        assert_eq!(
+            retired.remaining_phase_seconds(),
+            Some(signed * f64::from_bits(post))
+        );
+        assert!(
+            retired
+                .remaining_phase_error_seconds()
+                .is_some_and(|error: f64| {
+                    error.is_finite() && error >= f64::from_bits(debt_error)
+                })
+        );
+        let replacement: &FixtureAffineChart = retired.replacement()?;
+        assert_eq!(
+            replacement.phase_at_reference_seconds(),
+            signed * f64::from_bits(chart_point)
+        );
+        assert!(replacement.phase_coefficient_roundoff_seconds() >= f64::from_bits(chart_error));
+        assert!(retired.feedback_error().is_none());
+        assert!(retired.debt_error().is_none());
+        assert_eq!(
+            retired.cursor().map(cursor_snapshot),
+            Some((
+                FixtureRateCursorStatus::Pending,
+                Some(label(2)?),
+                Some(ActiveAwakeNs::new(active_end)),
+                Some(MonotonicNs::new(monotonic_end)),
+            ))
+        );
+        if rate_numerator == 1 {
+            assert!(retired.continuation_error().is_none());
+            let fresh: FixturePhasePlanOwner<'_, '_> = product_ok(retired.resume_fresh(observed))?;
+            assert_eq!(fresh.remaining_phase_seconds(), None);
+        } else {
+            assert!(matches!(
+                retired.continuation_error(),
+                Some(FixtureStepError::Phase {
+                    source: FixturePhaseError::BaselineChanged
+                })
+            ));
+            assert!(retired.resume_fresh(observed).is_err());
+        }
         Ok(())
     })
 }
