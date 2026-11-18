@@ -15,14 +15,16 @@ use ntp_wire::{FrameError, NtpTimestamp, NtsRequestEncodeError, RawHeader, decod
 use zeroize::Zeroizing;
 
 #[cfg(test)]
-use super::super::datagram::{Attempts, RetiredProtectedDeny};
+use super::super::datagram::{Attempts, RetiredProtectedControl};
 #[cfg(any(windows, test))]
 use super::super::datagram::{GuardedSender, RetiredReply, RetiredReplyParts};
 use super::super::handoff::{self, PreparedRequest};
 use super::super::request::{DirectionalKeys, RequestError};
-use super::super::response::{ReplyError, ReplyFields, StagedReply, stage_reply};
 #[cfg(test)]
-use super::super::response::{StagedSuccessorResponse, stage_successor_response};
+use super::super::response::{
+    ProtectedControlKind, StagedSuccessorResponse, stage_successor_response,
+};
+use super::super::response::{ReplyError, ReplyFields, StagedReply, stage_reply};
 use super::{AssociationOwner, COOKIE_BYTES_LIMIT, COOKIE_LIMIT, Control, Failure};
 use crate::nts_ke_experiment::DatagramAuthorityGuard;
 use crate::source_policy::{ProtectedEndpoint, ProtectedSendStamp};
@@ -429,11 +431,13 @@ struct ChargedReply {
     matches_submission: bool,
 }
 
-/// One charged, authenticated DENY from the exact still-outstanding successor.
+/// One charged, authenticated control from the exact still-outstanding successor.
 /// The transfer itself cannot change policy or consume the Pending slot.
 #[cfg(test)]
-#[must_use = "retain the exact DENY ticket through backend retirement"]
-pub(in super::super) struct StagedProtectedDeny<'control> {
+#[must_use = "retain the exact control ticket through backend retirement"]
+pub(in super::super) struct StagedProtectedControl<'control> {
+    /// Exact authenticated wire code.
+    kind: ProtectedControlKind,
     /// Actual original invocation the packet reached.
     control: &'control Control,
     /// Exact successor reservation ordinal.
@@ -450,10 +454,12 @@ pub(in super::super) struct StagedProtectedDeny<'control> {
     arrival: Instant,
 }
 
-/// The protected denial already published through both original owners.
+/// The protected control already published through both original owners.
 #[cfg(test)]
 #[must_use = "retain the applied control as a historical observation"]
-pub(in super::super) struct AppliedProtectedDeny {
+pub(in super::super) struct AppliedProtectedControl {
+    /// Exact authenticated control already applied to the managed source and endpoint.
+    kind: ProtectedControlKind,
     /// Original fully admitted managed definition, detached before the effect.
     configuration: Box<crate::SourceConfigurationSnapshot>,
     /// Exact negotiated wire destination of the consumed successor.
@@ -465,7 +471,12 @@ pub(in super::super) struct AppliedProtectedDeny {
 }
 
 #[cfg(test)]
-impl AppliedProtectedDeny {
+impl AppliedProtectedControl {
+    /// Observe the original control without interpreting it as time or permission.
+    pub(in super::super) const fn kind(&self) -> ProtectedControlKind {
+        self.kind
+    }
+
     /// Borrow the original source definition without reopening policy.
     pub(in super::super) fn configuration(&self) -> &crate::SourceConfigurationSnapshot {
         &self.configuration
@@ -489,27 +500,34 @@ impl AppliedProtectedDeny {
 
 /// The actual distinct historical and outstanding protected send proofs.
 #[cfg(test)]
-struct DenySubmissions<'a> {
+struct ControlSubmissions<'a> {
     /// Send evidence retained by the previously authenticated request.
     prior: (&'a ProtectedSendStamp, &'a Arc<()>),
     /// Exact current outstanding successor submission.
     pending: (&'a ProtectedSendStamp, &'a Arc<()>),
 }
 
-/// One ledger-verified retired DENY for its original authority transaction.
+/// One ledger-verified retired control for its original authority transaction.
 /// Only the retired receiver can mint it; current policy is checked at consumption.
 #[cfg(test)]
-pub(crate) struct VerifiedRetiredDeny<'a> {
+pub(crate) struct VerifiedRetiredControl<'a> {
+    /// Exact authenticated wire control owned by the retired request.
+    kind: ProtectedControlKind,
     /// Original invocation matched when the retired ticket was consumed.
     control: &'a Control,
     /// Both exact send proofs from the same association.
-    submissions: DenySubmissions<'a>,
+    submissions: ControlSubmissions<'a>,
     /// Original monotonic decision observation checked against receive time.
     decided_at: Instant,
 }
 
 #[cfg(test)]
-impl<'a> VerifiedRetiredDeny<'a> {
+impl<'a> VerifiedRetiredControl<'a> {
+    /// Read the authenticated control kind carried by this move-only authorization.
+    pub(crate) const fn kind(&self) -> ProtectedControlKind {
+        self.kind
+    }
+
     /// Match the actual original invocation without transferring its authority.
     pub(in super::super) fn matches_control(&self, control: &Control) -> bool {
         std::ptr::eq(self.control, control)
@@ -531,8 +549,8 @@ impl<'a> VerifiedRetiredDeny<'a> {
 pub(in super::super) enum StagedProtectedSuccessor<'control> {
     /// The ordinary reply has consumed its Pending submission and produced history.
     Ordinary(Receipt, CookieReplacement, PendingSubmission),
-    /// The DENY still requires the original owner's final currentness transaction.
-    Deny(StagedProtectedDeny<'control>),
+    /// The control still requires the original owner's final currentness transaction.
+    Control(StagedProtectedControl<'control>),
 }
 
 /// Actual final authenticated count refusal, still requiring current-time admission.
@@ -1409,8 +1427,8 @@ impl<'a> AssociationOwner<'a> {
         }
     }
 
-    /// Charge once before selecting an ordinary response or the narrow protected DENY.
-    /// Ordinary admission consumes the request; DENY preserves it for the later owner.
+    /// Charge once before selecting an ordinary response or a narrow protected control.
+    /// Ordinary admission consumes the request; control staging preserves it for the later owner.
     /// # Errors
     /// Preserve byte/frame, peer, backend, UID, S2C, time and policy refusals.
     #[cfg(test)]
@@ -1463,8 +1481,9 @@ impl<'a> AssociationOwner<'a> {
                     SubmissionOrigin::Component => Err(refused(LedgerError::Ticket)),
                 }
             }
-            StagedSuccessorResponse::Deny => {
-                let deny: StagedProtectedDeny<'control> = StagedProtectedDeny {
+            StagedSuccessorResponse::Control(kind) => {
+                let candidate: StagedProtectedControl<'control> = StagedProtectedControl {
+                    kind,
                     control,
                     serial: charged.serial,
                     uid_index: charged.uid_index,
@@ -1473,9 +1492,9 @@ impl<'a> AssociationOwner<'a> {
                     sent_at: charged.sent_at,
                     arrival,
                 };
-                self.check_protected_deny_current(&deny)
+                self.check_protected_control_current(&candidate)
                     .inspect_err(|_| self.retire_exhausted())?;
-                Ok(StagedProtectedSuccessor::Deny(deny))
+                Ok(StagedProtectedSuccessor::Control(candidate))
             }
         }
     }
@@ -1484,32 +1503,32 @@ impl<'a> AssociationOwner<'a> {
     /// # Errors
     /// Refuse a foreign or superseded request, late Stop, expiry or stale policy.
     #[cfg(test)]
-    pub(in super::super) fn check_protected_deny_current(
+    pub(in super::super) fn check_protected_control_current(
         &self,
-        deny: &StagedProtectedDeny<'_>,
+        candidate: &StagedProtectedControl<'_>,
     ) -> Result<(), Failure> {
-        if !std::ptr::eq(deny.control, self.material.control) {
+        if !std::ptr::eq(candidate.control, self.material.control) {
             return Err(Failure::Control);
         }
         let lease: &ProtectedEndpoint = self.protected_endpoint()?.ok_or(Failure::Control)?;
         let guard: DatagramAuthorityGuard<'_> =
-            DatagramAuthorityGuard::lock(deny.control, Some(lease))?;
-        let submissions: DenySubmissions<'_> = self.deny_submissions(deny)?;
+            DatagramAuthorityGuard::lock(candidate.control, Some(lease))?;
+        let submissions: ControlSubmissions<'_> = self.control_submissions(candidate)?;
         guard.receiving(Some(submissions.prior))?;
         guard.receiving(Some(submissions.pending))?;
         let now: Instant = Instant::now();
         guard.control.published(now)?;
-        check_receive_times(deny.sent_at, deny.arrival, now)
+        check_receive_times(candidate.sent_at, candidate.arrival, now)
     }
 
     /// Match the exact prior receipt and active successor under the original locks.
     /// # Errors
     /// Refuse missing or replaced request history, submission or managed stamps.
     #[cfg(test)]
-    fn deny_submissions(
+    fn control_submissions(
         &self,
-        deny: &StagedProtectedDeny<'_>,
-    ) -> Result<DenySubmissions<'_>, Failure> {
+        candidate: &StagedProtectedControl<'_>,
+    ) -> Result<ControlSubmissions<'_>, Failure> {
         let prior: &PriorAuthentication = self
             .ledger
             .prior_authentication
@@ -1522,12 +1541,12 @@ impl<'a> AssociationOwner<'a> {
             .ok_or(refused(LedgerError::Phase))?;
         if prior.attempts.is_some()
             || self.ledger.last.as_ref() != Some(&prior.receipt)
-            || prior.receipt.serial.checked_add(1) != Some(deny.serial)
+            || prior.receipt.serial.checked_add(1) != Some(candidate.serial)
             || active.phase != RequestPhase::Pending
-            || active.serial != deny.serial
-            || active.uid != Some(deny.uid_index)
-            || active.observed_wire != Some(deny.wire)
-            || active.sent_at != Some(deny.sent_at)
+            || active.serial != candidate.serial
+            || active.uid != Some(candidate.uid_index)
+            || active.observed_wire != Some(candidate.wire)
+            || active.sent_at != Some(candidate.sent_at)
         {
             return Err(refused(LedgerError::Ticket));
         }
@@ -1535,10 +1554,10 @@ impl<'a> AssociationOwner<'a> {
             .submission
             .as_ref()
             .ok_or(refused(LedgerError::Ticket))?;
-        if !submission.matches(Some(&deny.backend)) {
+        if !submission.matches(Some(&candidate.backend)) {
             return Err(refused(LedgerError::Ticket));
         }
-        Ok(DenySubmissions {
+        Ok(ControlSubmissions {
             prior: prior
                 .submission
                 .policy_provenance()
@@ -1551,36 +1570,38 @@ impl<'a> AssociationOwner<'a> {
     /// No caller can open this effect with a merely staged ticket.
     /// # Errors
     /// Preserve original authority, binding, identity and time refusals before
-    /// either record is restricted or the outstanding request is consumed.
+    /// either record is updated or the outstanding request is consumed.
     #[cfg(test)]
-    pub(in super::super) fn commit_retired_protected_deny(
+    pub(in super::super) fn commit_retired_protected_control(
         &mut self,
-        retired: RetiredProtectedDeny<'_>,
-    ) -> Result<AppliedProtectedDeny, Failure> {
-        let deny: StagedProtectedDeny<'_> = retired.into_staged();
-        if !std::ptr::eq(deny.control, self.material.control) {
+        retired: RetiredProtectedControl<'_>,
+    ) -> Result<AppliedProtectedControl, Failure> {
+        let candidate: StagedProtectedControl<'_> = retired.into_staged();
+        if !std::ptr::eq(candidate.control, self.material.control) {
             return Err(Failure::Control);
         }
         let lease: ProtectedEndpoint = self.protected_endpoint()?.ok_or(Failure::Control)?.clone();
         let configuration: Box<crate::SourceConfigurationSnapshot> =
             Box::new(lease.configuration().ok_or(Failure::Control)?.clone());
         let mut guard: DatagramAuthorityGuard<'_> =
-            DatagramAuthorityGuard::lock(deny.control, Some(&lease))?;
-        let submissions: DenySubmissions<'_> = self.deny_submissions(&deny)?;
+            DatagramAuthorityGuard::lock(candidate.control, Some(&lease))?;
+        let submissions: ControlSubmissions<'_> = self.control_submissions(&candidate)?;
         let now: Instant = Instant::now();
-        check_receive_times(deny.sent_at, deny.arrival, now)?;
-        let applied: AppliedProtectedDeny = AppliedProtectedDeny {
+        check_receive_times(candidate.sent_at, candidate.arrival, now)?;
+        let applied: AppliedProtectedControl = AppliedProtectedControl {
+            kind: candidate.kind,
             configuration,
             remote: self.material.udp,
-            serial: deny.serial,
+            serial: candidate.serial,
             decided_at: now,
         };
-        let authorization: VerifiedRetiredDeny<'_> = VerifiedRetiredDeny {
-            control: deny.control,
+        let authorization: VerifiedRetiredControl<'_> = VerifiedRetiredControl {
+            kind: candidate.kind,
+            control: candidate.control,
             submissions,
             decided_at: now,
         };
-        guard.commit_protected_deny(authorization)?;
+        guard.commit_protected_control(authorization)?;
         let request: Option<Active<'_>> = self.ledger.active.take();
         drop(guard);
         drop(request);

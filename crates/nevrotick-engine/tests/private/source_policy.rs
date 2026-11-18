@@ -3695,6 +3695,90 @@ fn modeled_send_floor_neighbors_keep_one_datagram_debit_and_coherent_captures() 
     })
 }
 
+/// Drive a real managed request with a reversed bracket at a known cutoff distance.
+/// # Errors
+/// Preserve the actual runtime, socket, policy and modeled time failures.
+/// # Panics
+/// Fail if a payload, post-send read, debit, floor change or wrong outcome occurs.
+fn check_managed_reversed_send_capture(
+    lower_before_cutoff: Duration,
+    expected_status: Status,
+    expected_capture: Option<crate::MeasurementRefusal>,
+) -> Check<()> {
+    runtime()?.block_on(async {
+        let mut fixture: IoFixture =
+            io_fixture_with_intervals(Duration::from_secs(1), Duration::from_secs(4))?;
+        let request: Arc<()> = Arc::new(());
+        let _reserved: FixtureRequest = fixture_send(&fixture.binding, &request, Instant::now())?;
+        let retained: [RecordFacts; 2] = facts(&fixture.binding)?;
+        let deadline: Instant = fixture.deadline;
+        let lower: Instant = deadline
+            .checked_sub(lower_before_cutoff)
+            .ok_or("fixture cutoff predecessor unavailable")?;
+        let earlier: Instant = lower
+            .checked_sub(Duration::from_nanos(1))
+            .ok_or("fixture reversed capture predecessor unavailable")?;
+        assert!(retained.iter().all(|record: &RecordFacts| {
+            record.1.is_some_and(|floor: Instant| floor < earlier)
+        }));
+        let before: SoftwareClock = SoftwareClock {
+            mono: lower,
+            utc: std::time::SystemTime::UNIX_EPOCH,
+            mono_after: earlier,
+        };
+        let after: SoftwareClock = SoftwareClock { mono_after: lower, ..before };
+        let (captures, count): (observations::SendReads, observations::ReadCount) =
+            observations::SendReads::fixed_raw(before, after);
+        tokio::time::timeout(Duration::from_secs(2), fixture.slots[0].socket.writable()).await??;
+
+        let current: watch::Ref<'_, Control> = fixture.control.borrow();
+        let effect: ManagedEffect =
+            attempt_managed_send_observing(&mut fixture.slots[0], deadline, captures);
+        assert!(!current.stop);
+        assert_eq!(current.epoch, 0);
+        drop(current);
+        let [peer, _]: [UdpSocket; 2] = fixture.peers;
+        let native_peer: std::net::UdpSocket = peer.into_std()?;
+        let mut bytes: [u8; RECEIVE_BYTES] = [0; RECEIVE_BYTES];
+        assert!(
+            matches!(native_peer.recv_from(&mut bytes), Err(error) if error.kind() == io::ErrorKind::WouldBlock),
+            "a reversed pre-send capture allowed a managed loopback packet"
+        );
+        assert!(matches!(effect, ManagedEffect::Handled));
+        assert_eq!(count.reads(), 1);
+        let [slot, _]: [LiveSlot; 2] = fixture.slots;
+        assert_eq!(slot.send_attempts, 0);
+        let report: SlotReport = slot.into_report(0)?;
+        assert!(!report.sent());
+        assert_eq!((report.received(), report.rejected()), (0, 0));
+        assert_eq!(report.status(), expected_status);
+        assert_eq!(report.capture_refusal(), expected_capture);
+        assert!(report.io_cause().is_none() && report.facts().is_none());
+        assert_eq!(facts(&fixture.binding)?, retained);
+        Ok(())
+    })
+}
+
+/// A reversed bracket whose lower reading reaches expiry preserves Timeout.
+/// # Errors
+/// Preserve the managed sender fixture's actual setup and custody failures.
+#[test]
+fn managed_send_cutoff_uses_both_clock_readings() -> Check<()> {
+    check_managed_reversed_send_capture(Duration::ZERO, Status::Timeout, None)
+}
+
+/// An inversion wholly before expiry refuses without a managed reservation.
+/// # Errors
+/// Preserve the managed sender fixture's actual setup and custody failures.
+#[test]
+fn managed_inverted_pre_send_capture_refuses_before_reservation() -> Check<()> {
+    check_managed_reversed_send_capture(
+        Duration::from_nanos(1),
+        Status::Io,
+        Some(crate::MeasurementRefusal::CaptureOrder),
+    )
+}
+
 /// One independent final-commit boundary, never a production trusted-clock input.
 #[derive(Clone, Copy)]
 enum ModeledCommitBoundary {

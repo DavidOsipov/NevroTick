@@ -239,13 +239,25 @@ fn open_framed_response<T>(
         .map_err(ReplyError::Open)?
 }
 
+/// The exact wire controls that can enter the protected policy owner.
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ProtectedControlKind {
+    /// Literal RATE.
+    Rate,
+    /// Literal DENY.
+    Deny,
+    /// Literal RSTR.
+    Restrict,
+}
+
 /// Authenticated payload disposition without ledger or policy authority.
 #[cfg(test)]
 pub(super) enum StagedSuccessorResponse {
     /// The ordinary timing and replacement path.
     Ordinary(StagedReply),
     /// The selected exact literal control, with no timing or cookie data.
-    Deny,
+    Control(ProtectedControlKind),
 }
 
 /// Frame once and select the admitted ordinary or scripted control path.
@@ -261,8 +273,9 @@ pub(super) fn stage_successor_response(
 ) -> Result<StagedSuccessorResponse, ReplyError> {
     let datagram: RawDatagram<'_> = frame_reply(raw, maximum_cookies)?;
     if datagram.header().stratum() == 0 {
-        check_protected_deny(keys, &datagram, expected_uid, wire_transmit)?;
-        return Ok(StagedSuccessorResponse::Deny);
+        let kind: ProtectedControlKind =
+            stage_protected_control(keys, &datagram, expected_uid, wire_transmit)?;
+        return Ok(StagedSuccessorResponse::Control(kind));
     }
     stage_framed_reply(
         keys,
@@ -274,27 +287,29 @@ pub(super) fn stage_successor_response(
     .map(StagedSuccessorResponse::Ordinary)
 }
 
-/// Check the private scripted DENY envelope with this association's S2C key.
+/// Admit the exact scripted control kind only after this association's S2C check.
 ///
 /// This fixture admits exactly the outstanding UID followed by one authenticator
 /// with empty protected plaintext. Server time and poll fields have no authority.
 /// # Errors
 /// Refuse malformed framing, wrong request coordinates or unauthenticated content.
 #[cfg(test)]
-fn check_protected_deny(
+fn stage_protected_control(
     keys: &DirectionalKeys,
     datagram: &RawDatagram<'_>,
     expected_uid: &[u8; 32],
     wire_transmit: u64,
-) -> Result<(), ReplyError> {
+) -> Result<ProtectedControlKind, ReplyError> {
     let header: &RawHeader = datagram.header();
-    if header.version() != 4
-        || header.mode() != 4
-        || header.stratum() != 0
-        || header.reference_id() != u32::from_be_bytes(*b"DENY")
-    {
+    if header.version() != 4 || header.mode() != 4 || header.stratum() != 0 {
         return Err(ReplyError::Header);
     }
+    let kind: ProtectedControlKind = match &header.reference_id().to_be_bytes() {
+        b"RATE" => ProtectedControlKind::Rate,
+        b"DENY" => ProtectedControlKind::Deny,
+        b"RSTR" => ProtectedControlKind::Restrict,
+        _ => return Err(ReplyError::Header),
+    };
     if header.origin_timestamp().bits() != wire_transmit {
         return Err(ReplyError::Origin);
     }
@@ -311,7 +326,7 @@ fn check_protected_deny(
         if frame.fields().next().is_some() {
             return Err(ReplyError::Placement);
         }
-        Ok(())
+        Ok(kind)
     })
 }
 

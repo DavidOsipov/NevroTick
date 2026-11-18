@@ -745,6 +745,74 @@ fn completion_classification_covers_all_end_and_failure_combinations() {
     }
 }
 
+/// A consumed local capture refusal vetoes assessment despite another actual header.
+/// # Errors
+/// Preserve fixture clock, endpoint, and original receive/transfer failures.
+/// # Panics
+/// Require the typed refusal, prior retained facts and original profile precedence.
+#[test]
+fn mixed_series_capture_refusal_precedes_retained_healthy_facts_if_profiled() -> Check<()> {
+    let profile: ExperimentalProfile =
+        ExperimentalProfile::new(3_000_000_000, 4_500_000_000, 30_000_000_000)?;
+    for declared in [Some(profile), None] {
+        let series: SeriesReport = crate::series::mixed_capture_report(declared)?;
+        let [first, second, third] = series.attempts();
+        let healthy: &TransportFacts = first
+            .report()
+            .and_then(SlotReport::facts)
+            .ok_or("actual prior reply absent")?;
+        let report: &SlotReport = second.report().ok_or("capture-refused slot absent")?;
+        assert_eq!(healthy.experimental_profile(), declared);
+        assert_eq!(
+            capture_coherence(
+                profile,
+                &[
+                    Some([
+                        healthy.send_before(),
+                        healthy.send_after(),
+                        healthy.read_return()
+                    ]),
+                    None,
+                    None
+                ]
+            ),
+            SeriesCoherence::ObservedCompatible,
+            "the retained header alone must not veto the original assessment"
+        );
+        assert_eq!(
+            report.capture_refusal(),
+            Some(MeasurementRefusal::CaptureOrder)
+        );
+        assert!(report.facts().is_none());
+        assert!(third.report().is_none());
+        let coherence: SeriesCoherence = series_coherence(declared, &series);
+        let (expected, state): (SeriesCoherence, SessionState) = match declared {
+            Some(_) => (
+                SeriesCoherence::Unavailable(CoherenceUnavailable::Capture(
+                    MeasurementRefusal::CaptureOrder,
+                )),
+                SessionState::Retired,
+            ),
+            None => (
+                SeriesCoherence::Unavailable(CoherenceUnavailable::NoProfile),
+                SessionState::Idle,
+            ),
+        };
+        assert_eq!(coherence, expected);
+        assert_eq!(series.end(), SeriesEnd::Stopped);
+        assert_eq!(
+            completion_state(series.end(), false, false, false, coherence),
+            state
+        );
+        let retained: &TransportFacts = first
+            .report()
+            .and_then(SlotReport::facts)
+            .ok_or("assessed reply lost its facts")?;
+        assert!(std::ptr::eq(healthy, retained));
+    }
+    Ok(())
+}
+
 /// Metadata diagnostics contain only the declared fixed scalar status/cause names.
 /// These are synthetic enum values, not observed contradictory-clock execution.
 /// # Panics

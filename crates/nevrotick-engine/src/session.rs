@@ -444,9 +444,10 @@ pub enum SeriesCoherence {
 ///
 /// Missing profile precedes facts. The fixed three-position shape prevents silent
 /// omission if the plan size changes. At most nine captures are assessed without
-/// allocation, clock reads or measurement/header/date revalidation. Complete raw
-/// chronology and checked arithmetic precede threshold classification. Refusal
-/// changes no original report, result, capture, age or session state.
+/// allocation, clock reads or measurement/header/date revalidation. A terminal
+/// local capture refusal precedes comparison of any other retained facts.
+/// Complete chronology and arithmetic precede threshold classification. The
+/// assessment changes no original report, result, capture, age or session state.
 fn series_coherence(
     profile: Option<ExperimentalProfile>,
     series: &SeriesReport,
@@ -455,12 +456,22 @@ fn series_coherence(
         return SeriesCoherence::Unavailable(CoherenceUnavailable::NoProfile);
     };
     let [first, second, third] = series.attempts();
-    let captures = [first, second, third].map(|attempt| {
-        attempt
-            .report()
-            .and_then(SlotReport::facts)
-            .map(|facts| [facts.send_before(), facts.send_after(), facts.read_return()])
-    });
+    let reports: [Option<&SlotReport>; 3] = [first, second, third].map(SeriesAttempt::report);
+    if let Some(reason) = reports
+        .into_iter()
+        .flatten()
+        .find_map(SlotReport::capture_refusal)
+    {
+        return SeriesCoherence::Unavailable(CoherenceUnavailable::Capture(reason));
+    }
+    let captures: [Option<[super::SoftwareClock; 3]>; 3] =
+        reports.map(|report: Option<&SlotReport>| {
+            report
+                .and_then(SlotReport::facts)
+                .map(|facts: &TransportFacts| {
+                    [facts.send_before(), facts.send_after(), facts.read_return()]
+                })
+        });
     capture_coherence(profile, &captures)
 }
 

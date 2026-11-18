@@ -755,7 +755,7 @@ pub(super) mod observations {
     enum SendSource {
         /// Capture actual software brackets at each original effect position.
         Hardware,
-        /// Complete coherent test brackets and their bounded next-read index.
+        /// Fixed test captures and their bounded next-read index.
         #[cfg(test)]
         Fixed {
             /// Original before/after captures, copied only when consumed.
@@ -814,7 +814,18 @@ pub(super) mod observations {
                     && after.mono <= after.mono_after,
                 "fixed sender captures must have coherent monotonic brackets"
             );
-            let count = std::rc::Rc::new(std::cell::Cell::new(0));
+            Self::fixed_raw(before, after)
+        }
+
+        /// Issue exactly two unvalidated captures for a sender-boundary refusal test.
+        /// Construction consumes neither value and does not grant send authority.
+        #[cfg(test)]
+        pub(in super::super) fn fixed_raw(
+            before: SoftwareClock,
+            after: SoftwareClock,
+        ) -> (Self, ReadCount) {
+            let count: std::rc::Rc<std::cell::Cell<usize>> =
+                std::rc::Rc::new(std::cell::Cell::new(0));
             (
                 Self {
                     source: SendSource::Fixed {
@@ -2454,17 +2465,10 @@ impl ProtectedEndpoint {
         self.binding.context.configuration()
     }
 
-    /// Observe the retained floor for the selected scripted successor's readiness.
-    /// This observation grants no send capability and does not reserve a floor.
-    /// # Errors
-    /// Preserve unavailable custody, changed bindings or missing prior send work.
-    #[cfg(test)]
-    pub(super) fn scripted_successor_floor(&self) -> Result<Instant, SourcePolicyError> {
-        self.lock()?
-            .guard
-            .state()?
-            .earliest(&self.binding)?
-            .ok_or(SourcePolicyError::Unavailable)
+    /// Observe pre-send eligibility through the same source and endpoint subscriptions.
+    /// This pre-send observer owns no Pending stamp and grants no send authority.
+    pub(super) fn observe_send_eligibility(&self) -> LivePolicy {
+        LivePolicy::from_mode(SourceMode::Managed(self.binding.clone()))
     }
 
     /// Acquire the actual endpoint's policy custody without registering a waiter.
@@ -2533,17 +2537,24 @@ impl ProtectedEndpointGuard<'_> {
             .receiving(&self.original.binding, &stamp.correlation, request)
     }
 
-    /// Apply the verified DENY to the exact managed source and endpoint.
+    /// Apply the verified control to the exact managed source and endpoint.
     /// The retired receiver supplies a consume-once authorization under the live Control.
     /// # Errors
     /// Reject reused/foreign request identities, invalidated policy or missing
     /// state before publishing either direct restriction record.
     #[cfg(test)]
-    pub(super) fn apply_deny(
+    pub(super) fn apply_control(
         &mut self,
-        authorization: crate::nts_ke_experiment::VerifiedRetiredDeny<'_>,
+        authorization: crate::nts_ke_experiment::VerifiedRetiredControl<'_>,
     ) -> Result<(), SourcePolicyError> {
+        use crate::nts_ke_experiment::ProtectedControlKind;
+
         let now: Instant = authorization.decided_at();
+        let kind: ControlKind = match authorization.kind() {
+            ProtectedControlKind::Rate => ControlKind::Rate,
+            ProtectedControlKind::Deny => ControlKind::Deny,
+            ProtectedControlKind::Restrict => ControlKind::Restrict,
+        };
         let [prior, pending]: [(&ProtectedSendStamp, &Arc<()>); 2] =
             authorization.into_submissions();
         if Arc::ptr_eq(prior.1, pending.1) {
@@ -2552,7 +2563,7 @@ impl ProtectedEndpointGuard<'_> {
         let state: &mut PolicyState = self.guard.state_mut()?;
         state.receiving(&self.original.binding, &prior.0.correlation, prior.1)?;
         state.receiving(&self.original.binding, &pending.0.correlation, pending.1)?;
-        state.control(&self.original.binding, ControlKind::Deny, now)
+        state.control(&self.original.binding, kind, now)
     }
 }
 
@@ -3028,9 +3039,8 @@ fn attempt_managed_send_observing(
         slot.finish(TerminalOutcome::SourcePolicy(SourcePolicyError::Foreign));
         return ManagedEffect::Handled;
     }
-    let before = observations.capture();
-    if before.mono_after >= deadline {
-        slot.expire();
+    let before: SoftwareClock = observations.capture();
+    if !slot.admit_send_capture(&before, deadline) {
         return ManagedEffect::Handled;
     }
     let state = match guard.state_mut() {

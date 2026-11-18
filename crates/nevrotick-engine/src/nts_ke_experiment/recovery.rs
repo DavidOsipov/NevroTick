@@ -17,6 +17,8 @@ use super::association::ledger::retirement::{PastRequests, RetiredContext};
 use super::association::{AssociationOwner, CheckedPopulation};
 use super::datagram::{CommittedProtected, ProtectedCompletion};
 use super::process::ProviderScope;
+#[cfg(test)]
+use super::response::ProtectedControlKind;
 use super::{
     CancelOutcome, Config, Control, EXCHANGE_TIME, ExchangeMode, Failed, Failure,
     InvocationCompletion, StopHandle, StopScope,
@@ -980,8 +982,8 @@ pub(super) trait Producer {
 
     /// Select the fixed two-request managed control fixture in component builds.
     #[cfg(test)]
-    fn use_scripted_managed_deny(&self) -> bool {
-        false
+    fn scripted_managed_control(&self) -> Option<ProtectedControlKind> {
+        None
     }
 
     /// Fill only the existing fixed-shape never-send preview entropy batch.
@@ -1080,10 +1082,11 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
     /// Preserve genuine first-leg commit, carried credit, subsequent receive
     /// or final authority refusals without changing association ownership.
     #[cfg(test)]
-    fn receive_scripted_managed_deny<P: Producer>(
+    fn receive_scripted_managed_control<P: Producer>(
         &mut self,
         association: &mut AssociationOwner<'control>,
         producer: &mut P,
+        kind: ProtectedControlKind,
     ) -> Result<InvocationCompletion, Failure> {
         use super::datagram::{RetiredProtectedSuccessor, tests::scripted_managed_successor};
 
@@ -1092,13 +1095,13 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
         first.commit_for_successor(association)?;
         let receiving: BoundProtectedReceiver<'_, '_, '_, '_> =
             self.bind_association(association)?;
-        match scripted_managed_successor(association, control)? {
+        match scripted_managed_successor(association, control, kind)? {
             RetiredProtectedSuccessor::Ordinary(completion) => {
                 receiving.accept(completion.commit(association)?)
             }
-            RetiredProtectedSuccessor::Deny(retired) => association
-                .commit_retired_protected_deny(retired)
-                .map(InvocationCompletion::ManagedProtectedDeny),
+            RetiredProtectedSuccessor::Control(retired) => association
+                .commit_retired_protected_control(retired)
+                .map(InvocationCompletion::ManagedProtectedControl),
         }
     }
 
@@ -1115,9 +1118,9 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
         if matches!(
             self.invocation.config.mode,
             ExchangeMode::ManagedProtected(_)
-        ) && producer.use_scripted_managed_deny()
+        ) && let Some(kind) = producer.scripted_managed_control()
         {
-            return self.receive_scripted_managed_deny(association, producer);
+            return self.receive_scripted_managed_control(association, producer, kind);
         }
         self.receive_protected(association, |owner| producer.exchange(owner, control))
     }

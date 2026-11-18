@@ -858,7 +858,7 @@ pub(in crate::nts_ke_experiment) struct ScriptProducer<'fixture> {
     establishment: VecDeque<Result<(), Failed>>,
     exchange_case: ExchangeCase,
     /// Select the managed script's same-association continuation in the actual step.
-    managed_deny: bool,
+    managed_control: Option<super::ProtectedControlKind>,
     /// Select a checked two-cookie initial fixture before the first establishment.
     spare_initial_cookie: bool,
     establish_calls: usize,
@@ -912,7 +912,7 @@ impl<'fixture> ScriptProducer<'fixture> {
             provider,
             establishment: establishment.into(),
             exchange_case,
-            managed_deny: false,
+            managed_control: None,
             spare_initial_cookie: false,
             establish_calls: 0,
             exchange_calls: 0,
@@ -1002,8 +1002,8 @@ fn script_reads(
 }
 
 impl Producer for ScriptProducer<'_> {
-    fn use_scripted_managed_deny(&self) -> bool {
-        self.managed_deny
+    fn scripted_managed_control(&self) -> Option<super::ProtectedControlKind> {
+        self.managed_control
     }
 
     fn establish<'tx>(

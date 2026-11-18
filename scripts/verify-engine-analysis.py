@@ -5634,8 +5634,8 @@ def execute_address_profile(args, report: dict) -> None:
 ENGINE_KE_POLICY = COMMON.ENGINE_KE_POLICY
 ENGINE_KE_HOST_SUBJECTS = dict(COMMON.ENGINE_KE_SUBJECTS)
 ENGINE_KE_SCOPE = COMMON.Scope("nevrotick-engine", COMMON.ENGINE_KE_SUBJECTS, ENGINE_KE_POLICY)
-ENGINE_KE_ORDINARY_COUNT = 540
-ENGINE_KE_CASE_COUNT = 264
+ENGINE_KE_ORDINARY_COUNT = 548
+ENGINE_KE_CASE_COUNT = 268
 ENGINE_KE_DOCTEST_COUNT = 90
 ENGINE_KE_DOCTEST_NAME = re.compile(
     r"[^\r\n]+[.]rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile(?: fail)?)?"
@@ -5662,11 +5662,21 @@ ENGINE_KE_MANAGED_PROTECTED_TESTS = frozenset((
     "nts_ke_experiment::datagram::tests::managed_mixed_receive_exhausts_on_invalid_final_frame",
     "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::managed_deny_worker_retains_exact_history_without_numerical_projection",
     "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::managed_deny_worker_post_record_stop_preserves_only_once_joined_history",
+    "nts_ke_experiment::datagram::tests::managed_retired_rate_preserves_independent_intervals_and_exact_next_send",
+    "nts_ke_experiment::datagram::tests::managed_protected_policy_wait_checks_out_cookie_only_when_due",
+    "nts_ke_experiment::datagram::tests::managed_protected_policy_wait_refuses_before_cookie_checkout",
+    "nts_ke_experiment::datagram::tests::managed_protected_policy_wait_last_credit_refuses_before_cookie_checkout",
     "nts_ke_experiment::datagram::reached::bound_endpoint_check_refuses_each_invalid_coordinate",
 ))
 ENGINE_FINAL_REPLY_CUTOFF_TESTS = frozenset((
     "processing_guard_tests::pilot_final_guard_time_cutoff_rejects_selected_reply_once",
     "series::tests::reply_final_guard_time_cutoff_keeps_its_actual_receiving_checkpoint",
+))
+ENGINE_PLAIN_CAPTURE_TESTS = frozenset((
+    "processing_guard_tests::unmanaged_send_cutoff_uses_both_clock_readings",
+    "source_policy::tests::managed_send_cutoff_uses_both_clock_readings",
+    "source_policy::tests::managed_inverted_pre_send_capture_refuses_before_reservation",
+    "session::tests::mixed_series_capture_refusal_precedes_retained_healthy_facts_if_profiled",
 ))
 ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/tests.rs",
@@ -5687,6 +5697,8 @@ ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/tests/private/source_configuration.rs",
     "crates/nevrotick-engine/tests/private/processing_guards.rs",
     "crates/nevrotick-engine/tests/private/series.rs",
+    "crates/nevrotick-engine/tests/private/session.rs",
+    "crates/nevrotick-engine/tests/private/source_policy.rs",
 )
 ENGINE_KE_BOUND_INPUTS = tuple(dict.fromkeys((
     WRAPPER, TESTS, *COMMON.ENGINE_KE_CRITICAL, *ENGINE_KE_TEST_SOURCES,
@@ -5863,7 +5875,7 @@ def execute_engine_ke_fixtures(args, report: dict) -> None:
 
 
 def validate_engine_ke_inventory(names: object) -> list[str]:
-    """Require the fixed roster including forwarding, protected and final-cutoff regressions.
+    """Require the fixed roster, including forwarding, cutoff and capture regressions.
 
     Reuse this admission at policy, execution and completed-cache retirement;
     a historical roster or same-count substitution cannot omit a required case.
@@ -5875,10 +5887,11 @@ def validate_engine_ke_inventory(names: object) -> list[str]:
             or sum(name.startswith("nts_ke_experiment::") for name in names) != ENGINE_KE_CASE_COUNT
             or ENGINE_KE_SEND_AFTER_TEST not in names
             or not ENGINE_KE_MANAGED_PROTECTED_TESTS.issubset(names)
-            or not ENGINE_FINAL_REPLY_CUTOFF_TESTS.issubset(names)):
+            or not ENGINE_FINAL_REPLY_CUTOFF_TESTS.issubset(names)
+            or not ENGINE_PLAIN_CAPTURE_TESTS.issubset(names)):
         raise Incomplete(
             f"Engine KE requires all {ENGINE_KE_ORDINARY_COUNT} actual Engine tests including its "
-            f"{ENGINE_KE_CASE_COUNT} KE cases, send-after, managed protected and final reply cutoff regressions.")
+            f"{ENGINE_KE_CASE_COUNT} KE cases, send-after, managed protected, final reply cutoff and plain capture regressions.")
     return names
 
 

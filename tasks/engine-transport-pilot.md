@@ -23977,3 +23977,249 @@ calibrated mapping, platform invalidation and positive Core admission.
 Test-only failure receipt SHA-256 `90708fc61bc011844977513b80037dfeeeec2c872655d0200b9584e6f57c15ec`.
 Integrated development receipt SHA-256 `1485a7f57bbdf763cdd6e17f6f58fb819287781b6be6f1b705ad8a1a8e1df177`.
 Closed-role reader receipt SHA-256 `8fb79922fd13822ea9cc98672a99766143ef514368f4b27e69b05f2441b93e8c`.
+
+
+###### Protected RSTR scripted successor — 18 November 2026
+
+S2.2 uses the accepted source and endpoint stop policy for the RSTR
+sibling of the existing scripted protected DENY path. Under REQ-8,
+BND-2 and CHECK-6/8/9/17/21/27, the decoder carries the exact control
+code from the authenticated envelope to the retired request authorization
+and through the actual worker's normal join. The same-association prior
+ordinary reply, outstanding UID and origin, original request and control
+deadline, source and negotiated endpoint authority, and actual retirement
+remain required. The guarded source-policy owner updates the two direct
+restrictions. The joined history retains the observed code and contributes
+zero numerical admission. Main-host Windows and general NTS control
+qualification remain open.
+
+The existing whole-worker control now enters the normal join for both
+DENY and RSTR with independently checked fixtures. It verifies the exact
+historical code and the two restriction revisions. The selection
+retains the DENY unwind and stop custody controls and the ordinary reply
+after rejected controls on its original request. The separate
+RATE child retains its own implementation and evidence scope.
+
+On product `7e863b5fd67e93d3d43e58d28619b0c10831648b35a86946e96bc094862a1352`,
+the configured GNU boundary control, all-target check and strict Clippy
+pass with pinned Rust 1.100.0. The exact EP1 library selection executes four
+cases and reports 510 filtered. The first run's product lanes exited zero.
+Its external readout rejected Cargo's observed 1.100 executable layout.
+The repaired readout admits the exact package and executable stamp with
+the preserved record and rejects four wrong-layout or wrong-count
+controls. The second execution passes and retires its private build scratch.
+The first aggregate result stays incomplete. This GNU scope does not close
+broader metric, runtime or native gates.
+
+Passed receipt SHA-256 `e4be4ff3e4f7e1b96e9436bcf9996c452944ef821f60000f204fde3f9bb19915`.
+First aggregate receipt SHA-256 `6dbd54122a3296ff390938c2e7278eccd5132413b80438aa03beefc47bc7c712`.
+Reader layout controls SHA-256 `7f0226c620a3d8cbf5aeedfa201504a2060b2053f201920469bb2edb8d397849`.
+The raw receipts are retained in `engine-protected-rstr-evidence`.
+
+
+###### Protected RATE scripted successor — 18 November 2026
+
+In the same S2.2 private fixture, a verified RATE reaches the existing
+bound source-policy owner after actual retirement. The same closed
+reported result retains exact RATE, DENY or RSTR history after a normal
+join. The RATE control consumes its original outstanding UID once. The
+actor applies the logical-source and exact-endpoint interval updates
+independently, ignores the peer poll, preserves each applicable prior
+earliest-send floor, and publishes no cookie replacement or numerical
+result. A fresh protected send still uses the original after-readiness
+policy guard.
+
+The current join test covers all three controls. A separate test first
+uses an alias to establish reachable 4 ms source and 8 ms endpoint
+intervals, then requires 8 ms and the checked 10 ms cap on the actual
+retired control. The test exercises a charged invalid tag, replay
+without another policy write, and no replacement or re-credit after the
+second send spends its cookie. The original receipt remains intact. The
+actual next-send guard refuses 1 ns early and sends exactly at eligibility.
+A bounded same-owner send fixture establishes a later shared floor that
+must survive the control.
+
+The exact 609-input product
+`35f9b916b7357c0fa51d2236a92e4b79fb528918dfbfe923cf119e944cb674c9`
+passes configured GNU sandbox admission, all-target compilation, strict
+Clippy and five selected EP1 library cases under Rust 1.100.0. The
+complete observed library summary reports 510 filtered. The runner
+retired its private scratch. Covered decision IDs remain REQ-8, BND-2
+and CHECK-6/8/9/17/21/25/27. General NTS control admission, full metrics,
+native/provider qualification and positive Core eligibility remain open.
+
+Receipt SHA-256 `3d97870aa37fee6b76b8b05bd0b48b20d5aee174e1bc986a88b91468fb69dc2e`.
+Raw receipts are retained in `engine-protected-rate-evidence`.
+
+
+###### Managed protected send eligibility — 18 November 2026
+
+The managed protected driver keeps its original synchronous setup checks.
+After admission it observes the existing source and endpoint policy before
+checking out a cookie. A future floor waits on actual policy changes or its
+timer. Live lock contention waits on release. Every park uses the original
+shared driver allowance. A wake rechecks the original Control and both
+applicable records. The last wait credit cannot trigger preparation if no
+write-readiness credit remains.
+
+The final guarded sender still makes the attempt debit and actual send
+decision. An eligibility hint grants no permission to bypass that guard.
+The operation retains its original cutoff and one-send limit.
+
+The exact 609-input candidate
+`9c4c7019f977fcf3b6c8be497261044f5ae403e6c8fe428fdac8d8ab9fb56c04`
+passes the GNU isolation control and nine selected Rust 1.100.0 EP1 tests.
+The controls reach the parked driver, move the alias floor, and observe a
+single eligible send. They cover Stop, configuration replacement and
+expiry before checkout, a latched Stop at the expiry wake, exhaustion
+on the last parking credit, and the existing final floor guard. The first
+compile was refused because a test discarded the required configuration
+snapshot. The repaired test checks the new revision and retains the
+original failure receipt. The retry reports 509 filtered cases.
+
+Passed receipt SHA-256 `fae258e5d6706e5909121c8cba5eab3a7dd31b25c18a9899cf0a0c1d3139adff`.
+The complete current EP1 development selection and native observation remain
+separate. The raw focused receipts are retained in
+`engine-protected-wait-evidence-v3`.
+
+###### Combined Core and Engine development — 18 November 2026
+
+The signed Core Phase/Step tree and managed protected eligibility source pass
+19 configured development lanes on the exact 609-input candidate
+`cdc1a498c6718a153781ac7dd9a5d8a8a5226a0bab1d19842a865a24ca3f0186`. The 1,827 named executions
+include 544 EP1 and 272 default cases in each GNU build mode, 90 EP1 and 89
+default doctests, and eight selected Core cases per mode. GNU and MSVC target
+checks, Clippy, GNU rustdoc and the sandbox boundary control passed. The
+temporary build work was retired.
+
+The first controller refused a reserved work mount before compilation. The
+next isolated candidate passed the boundary, format and MSVC target checks,
+then failed MSVC Clippy on three diagnostics in Engine test helpers. The
+repaired candidate changes only that test file relative to that attempt.
+The earlier failure remains recorded.
+
+The closed KE role now admits the exact physical EP1 ordinary and Rustdoc
+rosters, including all four new cases. The signed Phase/Step policies retain
+their exact scoped Core candidate. Calibrated mapping, native TLS/CNG/UDP and
+positive production Core admission remain open.
+
+Development receipt SHA-256 `0e66605fa3e8e83f382ba9a72301b0a845f4ebfff5116ae9a14c1c1899dab33d`.
+Physical KE admission SHA-256 `33045024f30804daf699003e6516b05b2e99d827e1c1ce7cd3c60317f77eee03`.
+Incomplete MSVC Clippy predecessor receipt SHA-256
+`c5a4c378a39f02705930bc190332c0fcd801d9270bef9ffdf85375a83824190b`.
+
+###### Protected RATE and send eligibility line coverage — 18 November 2026
+
+For S2.2 and CHECK-19/25/27, the configured stable-core verifier executed
+the exact 544-case EP1 roster on `cdc1a498…`. All 13 GNU executable-line gates
+passed at the unchanged 90% minimum. The lowest result was 638/701 (91.01%)
+in the KE facade. The ledger reached 1042/1078 (96.66%), datagram reached
+662/681 (97.21%), recovery reached 722/781 (92.45%), and response reached
+186/192 (96.88%). Branch and Windows-specific evidence remain open.
+
+Separate enumeration listed 749 generated descriptors across the 13 GNU
+subjects. Review the current descriptor inventory and generation gaps before
+selecting the next per-file mutation cohort at the unchanged 95% threshold.
+The public policy stays closed. The source-policy file has its own selection
+and is outside the GNU KE coverage result.
+
+The run used a private Linux tmpfs mount with the existing 7 GiB startup and
+4 GiB live reserves. The owned build trees were removed after the raw selected
+artifacts and receipts were copied and checked. Durable evidence is in
+`engine-ke-rate-metrics-20261118-v1/run-01`. Coverage receipt SHA-256
+`256524641c9b6d26c815f14cf79f03ad8414f08f85ed6c314fbadc30b39c139c`.
+Enumeration receipt SHA-256
+`b2fba417c7248acad7b0fee8e7c22cc5234d2213397578f5da27de2989ddc3f1`.
+
+###### Datagram active-target controls and resource diagnosis — 18 November 2026
+
+On the same `cdc1a498…` product, both exact Windows-only `Default` body
+replacements failed compilation under the active MSVC target at their intended
+`E0277` spans. The untouched and restored sources compiled. These controls
+establish the compiler outcome for the two replacements and award no kills.
+Their durable receipt in `engine-ke-datagram-admission-20261118-v1/current-msvc-controls`
+has SHA-256 `897a1bb060df195e733bdbd54e3b919c3e495add255265d91e17157d110d7990`.
+
+The six-worker GNU tmpfs attempts each passed the 634-case baseline before
+memory reclaim and saturated swap coincided with repeated 90-second build
+timeouts. The first stopped after 11 build timeouts and one compiler-unviable
+variant. The second changed the soft reclaim threshold from 4 GiB to 5 GiB
+under the same 6 GiB hard cap, then stopped after eight build timeouts, 15
+compiler-unviable variants and one catch. Both owned workers drained. The
+retained attempts consumed 623.107 seconds combined. The current 95% gate and
+public campaign hold remain in force. Review lower worker concurrency with
+the same full roster and per-variant limits before a further tmpfs attempt.
+
+The first and second supervisor receipts in
+`engine-ke-datagram-admission-20261118-v1/tmpfs-run-01` and `tmpfs-run-02`
+have SHA-256 `d4dcad3c8446fe969834c5d4c7874aea16892b948ee31ef9daccb0e230222c83`
+and `b206376075bf8ca024e5eeb8412f45e13d5597f4044f68866072823f3b04b23a`.
+Both are incomplete. The data-only reader refused the partial second cohort
+without a score. Its raw baseline and variants remain available.
+
+###### Four-worker protected datagram mutation review — 18 November 2026
+
+On the exact 609-input product `cdc1a498c6718a153781ac7dd9a5d8a8a5226a0bab1d19842a865a24ca3f0186`, the
+four-worker datagram cohort completed all 60 variants with 21 catches,
+37 compiler-unviable outcomes, two GNU misses and zero timeouts. The raw
+GNU gate failed at 21/23 viable variants (91.30%). Active MSVC target
+compiler receipts classify the same two Windows-only misses as unviable
+at their intended diagnostics, giving 21/21 viable catches (100%) and
+no unresolved survivors in the separate active-target readback. The
+compiler outcomes add no kills. The six-worker attempts and their raw
+failures remain retained.
+
+The generated `Attempts::after_one` constant bodies `Ok(0)` and `Ok(1)`
+were behavioral catches. The generated `wait_for_send_eligibility` body
+`Ok(())` was compiler-unviable on denied unused variables. That variant
+contributes compiler evidence only. The result covers this datagram
+file and its reviewed variants on the original product. Branch, other
+mutation owners and Windows runtime observations retain their open scope.
+
+Active-target readback SHA-256 `2d27efe5ef72390c51d8a675f70cb609cc75c57262693e53012a9978ebd132de`.
+
+###### Plain pre-send capture chronology — W11-W01
+
+A separate source candidate checks both original monotonic readings before a
+plain send. A reading at the exclusive cutoff preserves the existing timeout.
+A reversed bracket wholly before cutoff instead records a typed local capture
+refusal before socket submission or managed reservation. An experimental
+session retains this refusal alongside earlier healthy reply facts and applies
+its existing capture-order retirement rule. Absent profiles retain `NoProfile`
+precedence. The CLI includes a fixed `reason=capture_order` only for the new
+local refusal. No native error cause, receive rejection or sample authority is
+created by the refusal.
+
+The two modeled fault controls emitted a real loopback packet when the sender
+order check was bypassed. The mixed-session fault control exposed the lost
+retirement veto when the report consumer ignored the typed refusal. Healthy
+controls remained legal. The repaired `80199574…` candidate passed 18 focused
+default and EP1 tests, GNU and MSVC Clippy, format and sandbox isolation after
+correcting a missing panic note in one test helper.
+
+In `engine-plain-capture-inversion-20261118.ilqjf2l0`, the two fault-control
+receipts have SHA-256 `fed2d81aaee0a9332b84eedaefba83f6dbef81510e23052884e8577246e34f77`
+and `f00ac86c8561654e291dd0bfc0aad36fdd52a02dac294eef93f61efc7b940170`.
+The repaired focused receipt has SHA-256
+`5ff129ae5a710bb60b634f2555da0fbd22ee691e3048db36f3dfe944920a68d8`.
+
+
+The exact integrated product `8019957465542f8586cd7d7635398dcb589e8813cf374c3615f4dea2b2ab5e80` passed all
+19 development lanes and 1,843 named executions. Both GNU build modes
+executed 548 EP1 and 276 default cases, including the four new cutoff and
+capture-order controls in both graphs. Actual Rustdoc retains 90 EP1 and
+89 default identities. Eight selected Core cases ran per mode. GNU and
+MSVC target checks and Clippy, format, GNU rustdoc and sandbox isolation
+passed. The build workspace was retired. The earlier focused GNU Clippy
+refusal and causal RED controls remain recorded.
+
+The closed KE verification role admits the current physical 548/268/90
+rosters. The signed Core Phase/Step policy and the earlier datagram
+metrics retain their scoped candidates. Fresh product metrics, Windows
+runtime qualification, calibrated mapping and positive Engine-to-Core
+admission remain open. No public mutation campaign is enabled.
+
+Full development receipt SHA-256 `f5be0c7ab321519f5d8b30c94db687cb13db90b51782d5f4646b1c8934515ae2`.
+Physical KE admission SHA-256 `91fc66462a68489cb9d10fde51ebed9af5ecd4635c7bfb843e56de4e79449092`.
+Focused GNU Clippy refusal receipt SHA-256
+`85de9efd80bd684093273a7a52c935a0c133e8527d375eec5df1b28ea5848fd8`.

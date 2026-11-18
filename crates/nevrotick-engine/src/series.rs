@@ -1428,3 +1428,5 @@ pub fn execute_series(
 #[cfg(test)]
 #[path = "../tests/private/series.rs"]
 mod tests;
+#[cfg(test)]
+pub(super) use tests::mixed_capture_report;

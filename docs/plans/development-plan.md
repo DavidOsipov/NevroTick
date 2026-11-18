@@ -1206,7 +1206,18 @@ now retains the original local placement and age provenance in the
 measurement path, with focused and full development checks. The [plain reply cutoff]
 (../../tasks/engine-transport-pilot.md#plain-reply-final-processing-cutoff--w11-w01) now uses the original
 deadline at the final pilot and series decision, with captured expiry and
-receive accounting regressions. Genuine
+receive accounting regressions. The
+[combined Core and Engine development checkpoint](../../tasks/engine-transport-pilot.md#combined-core-and-engine-development--18-november-2026)
+adds the protected RATE and pre-cookie eligibility controls, passes the
+19 configured development lanes, and re-admits the closed KE roster.
+The [current GNU line and inventory checkpoint](../../tasks/engine-transport-pilot.md#protected-rate-and-send-eligibility-line-coverage--18-november-2026)
+passes all 13 line gates at 91.01% or higher and lists 749 mutation descriptors.
+The [four-worker datagram readback](../../tasks/engine-transport-pilot.md#four-worker-protected-datagram-mutation-review--18-november-2026)
+passes its 21/21 active-target scope on the same product. The failed 21/23
+GNU score and earlier stopped runs remain recorded.
+The [plain capture chronology child](../../tasks/engine-transport-pilot.md#plain-pre-send-capture-chronology--w11-w01)
+passes full development and closed KE re-admission on its new candidate.
+Fresh per-file mutation and Windows runtime qualification remain open. Genuine
 TLS/CNG/UDP, date, scale, trust and quality suppliers retain their gates.
 
 **Published preceding product child — 17 November 2026:**

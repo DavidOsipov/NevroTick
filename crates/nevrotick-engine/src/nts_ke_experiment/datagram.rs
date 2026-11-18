@@ -53,7 +53,7 @@ mod reached {
     use crate::nts_ke_experiment::association::AssociationOwner;
     #[cfg(test)]
     use crate::nts_ke_experiment::association::ledger::{
-        AppliedProtectedDeny, StagedProtectedDeny, StagedProtectedSuccessor,
+        AppliedProtectedControl, StagedProtectedControl, StagedProtectedSuccessor,
     };
     use crate::nts_ke_experiment::association::ledger::{
         CookieReplacement, PendingSubmission, Receipt, RequestInput, RequestPhase, RetiredCommit,
@@ -64,13 +64,13 @@ mod reached {
     use crate::nts_ke_experiment::{
         Control, DatagramAuthorityGuard, Failure, InvocationCompletion, IoPhase, RunFailed, Summary,
     };
-    use crate::source_policy::{ProtectedEndpoint, ProtectedSendStamp};
+    use crate::source_policy::{LivePolicy, ProtectedEndpoint, ProtectedSendStamp};
     use crate::{
         ExperimentalMeasurement, ExperimentalProfile, MeasurementRefusal, RunClockContext,
         SoftwareClock, SourceConfigurationSnapshot,
     };
 
-    /// One counter covers readiness waits and nonblocking receive attempts.
+    /// One counter covers policy waits, readiness waits and nonblocking receive attempts.
     const ATTEMPTS: usize = 64;
     /// An extra octet detects every successful receive above the admitted limit.
     const RECEIVE_BYTES: usize = 4097;
@@ -88,11 +88,15 @@ mod reached {
         /// # Errors
         /// Refuse attempt 65 without performing it.
         pub(super) fn spend(&mut self) -> Result<(), Failure> {
-            self.0 = self
-                .0
-                .checked_sub(1)
-                .ok_or(failed(DatagramError::Attempts))?;
+            self.0 = self.after_one()?;
             Ok(())
+        }
+
+        /// Check that one operation can run without spending its credit.
+        /// # Errors
+        /// Refuse an exhausted original allowance.
+        fn after_one(&self) -> Result<usize, Failure> {
+            self.0.checked_sub(1).ok_or(failed(DatagramError::Attempts))
         }
 
         /// Inspect the exact unused original driver credits in component controls.
@@ -415,11 +419,11 @@ mod reached {
         attempts: Attempts,
     }
 
-    /// The actual scripted DENY transfer after both receive resources retired.
+    /// The actual scripted control transfer after both receive resources retired.
     /// Pending remains with the ledger until its guarded final commit.
     #[cfg(test)]
-    #[must_use = "observe the retired DENY through its original owner"]
-    pub(in super::super) struct RetiredProtectedDeny<'control>(StagedProtectedDeny<'control>);
+    #[must_use = "observe the retired control through its original owner"]
+    pub(in super::super) struct RetiredProtectedControl<'control>(StagedProtectedControl<'control>);
 
     /// Either private successor result, after the shared driver and backend retire.
     #[cfg(test)]
@@ -431,24 +435,24 @@ mod reached {
         /// A complete ordinary reply with the existing final commit boundary.
         Ordinary(ProtectedCompletion<'control>),
         /// An exact control with its Pending request still held.
-        Deny(RetiredProtectedDeny<'control>),
+        Control(RetiredProtectedControl<'control>),
     }
 
     #[cfg(test)]
-    impl<'control> RetiredProtectedDeny<'control> {
+    impl<'control> RetiredProtectedControl<'control> {
         /// Transfer the exact already-retired request to its receiving ledger.
-        pub(in super::super) fn into_staged(self) -> StagedProtectedDeny<'control> {
+        pub(in super::super) fn into_staged(self) -> StagedProtectedControl<'control> {
             self.0
         }
 
-        /// Publish the exact protected denial through its original receiving owner.
+        /// Publish the exact protected control through its original receiving owner.
         /// # Errors
         /// Preserve any currentness, endpoint or final guarded policy refusal.
         pub(super) fn commit(
             self,
             association: &mut AssociationOwner<'_>,
-        ) -> Result<AppliedProtectedDeny, Failure> {
-            association.commit_retired_protected_deny(self)
+        ) -> Result<AppliedProtectedControl, Failure> {
+            association.commit_retired_protected_control(self)
         }
 
         /// Recheck this exact retired ticket without publishing any control effects.
@@ -458,7 +462,7 @@ mod reached {
             &self,
             association: &AssociationOwner<'_>,
         ) -> Result<(), Failure> {
-            association.check_protected_deny_current(&self.0)
+            association.check_protected_control_current(&self.0)
         }
     }
 
@@ -577,22 +581,22 @@ mod reached {
         inner: ReceivedState,
     }
 
-    /// A protected denial obtained solely through normal joined custody.
+    /// A protected control obtained solely through normal joined custody.
     #[cfg(test)]
-    pub(in super::super) struct ReceivedProtectedDeny {
+    pub(in super::super) struct ReceivedProtectedControl {
         /// Already applied effect, detached from every live authority owner.
-        history: AppliedProtectedDeny,
+        history: AppliedProtectedControl,
     }
 
     #[cfg(test)]
-    impl ReceivedProtectedDeny {
+    impl ReceivedProtectedControl {
         /// Borrow the retained historical effect without deriving permission.
-        pub(in super::super) const fn history(&self) -> &AppliedProtectedDeny {
+        pub(in super::super) const fn history(&self) -> &AppliedProtectedControl {
             &self.history
         }
 
         /// Recover the detached history without its normal-join witness.
-        pub(in super::super) fn into_history(self) -> AppliedProtectedDeny {
+        pub(in super::super) fn into_history(self) -> AppliedProtectedControl {
             self.history
         }
     }
@@ -608,9 +612,9 @@ mod reached {
     pub(in super::super) enum ReceivedInvocation {
         /// Existing preview and ordinary protected result modes.
         Probe(ReceivedCompletion),
-        /// Historical denial with no numerical or summary projection.
+        /// Historical control with no numerical or summary projection.
         #[cfg(test)]
-        ProtectedDeny(ReceivedProtectedDeny),
+        ProtectedControl(ReceivedProtectedControl),
     }
 
     /// Private mode-specific state issued only after the normal-join guard.
@@ -806,10 +810,10 @@ mod reached {
                 JoinedProtectedHistory::Managed(history)
             }
             #[cfg(test)]
-            InvocationCompletion::ManagedProtectedDeny(history) => {
-                return Ok(ReceivedInvocation::ProtectedDeny(ReceivedProtectedDeny {
-                    history,
-                }));
+            InvocationCompletion::ManagedProtectedControl(history) => {
+                return Ok(ReceivedInvocation::ProtectedControl(
+                    ReceivedProtectedControl { history },
+                ));
             }
         };
         let original: &ProtectedHistory = history.observation();
@@ -1153,7 +1157,7 @@ mod reached {
         Ordinary(OperationCompletion<'control>),
         /// The charged control evidence cannot produce ordinary reply history.
         #[cfg(test)]
-        Deny(StagedProtectedDeny<'control>),
+        Control(StagedProtectedControl<'control>),
     }
 
     #[cfg(test)]
@@ -1164,7 +1168,7 @@ mod reached {
         fn into_ordinary(self) -> Result<OperationCompletion<'control>, Failure> {
             match self {
                 Self::Ordinary(operation) => Ok(operation),
-                Self::Deny(_) => Err(Failure::Control),
+                Self::Control(_) => Err(Failure::Control),
             }
         }
     }
@@ -1199,8 +1203,8 @@ mod reached {
                     StagedProtectedSuccessor::Ordinary(receipt, replacement, submission) => {
                         (receipt, replacement, submission)
                     }
-                    StagedProtectedSuccessor::Deny(staged) => {
-                        return Ok(SelectedOperation::Deny(staged));
+                    StagedProtectedSuccessor::Control(staged) => {
+                        return Ok(SelectedOperation::Control(staged));
                     }
                 },
             };
@@ -1223,6 +1227,44 @@ mod reached {
         }))
     }
 
+    /// Wait for the original managed floor before checking out a request cookie.
+    /// Charge each park to the original driver allowance. Eligibility is only
+    /// a readiness hint. The final sender rechecks the same records with the
+    /// original Control before it invokes the adapter.
+    /// # Errors
+    /// Preserve the original Stop, expiry, policy or shared work refusal.
+    async fn wait_for_send_eligibility(
+        control: &Control,
+        backend_identity: &Arc<()>,
+        mut policy: LivePolicy,
+        attempts: &mut Attempts,
+    ) -> Result<(), Failure> {
+        loop {
+            let cancelled = control.cancelled.notified();
+            tokio::pin!(cancelled);
+            cancelled.as_mut().enable();
+            drop(control.published_guard()?);
+            let refreshed: Result<(), Failure> = policy
+                .refresh(backend_identity)
+                .map_err(Failure::SourcePolicy);
+            drop(control.published_guard()?);
+            refreshed?;
+            if policy.wants_writable() {
+                // Checkout must leave a credit for the required write readiness wait.
+                return attempts.after_one().map(|_| ());
+            }
+            attempts.spend()?;
+            // A timer is only a wake. The original guard can observe an already
+            // latched Stop even before its notification reaches this task.
+            tokio::select! {
+                biased;
+                () = &mut cancelled => {},
+                () = tokio::time::sleep_until(tokio::time::Instant::from_std(control.expiry)) => {},
+                () = policy.wake() => {},
+            }
+        }
+    }
+
     /// Drive the same bounded packet owner with either concrete backend.
     /// # Errors
     /// Retain original adapter, currentness and packet refusals; never retry a send.
@@ -1236,6 +1278,10 @@ mod reached {
     ) -> Result<SelectedOperation<'control>, Failure> {
         if association.check_context(control)? != backend.remote {
             return Err(Failure::Endpoint);
+        }
+        if let Some(lease) = association.protected_endpoint()? {
+            let policy: LivePolicy = lease.observe_send_eligibility();
+            wait_for_send_eligibility(control, &backend.identity, policy, attempts).await?;
         }
         let ticket: Ticket<'_> = association.reserve(RequestInput::Observed)?;
         association.prepare_observed(&ticket, fill)?;
@@ -1406,8 +1452,8 @@ mod reached {
                     attempts,
                 }))
             }
-            SelectedOperation::Deny(staged) => Ok(RetiredProtectedSuccessor::Deny(
-                RetiredProtectedDeny(staged),
+            SelectedOperation::Control(staged) => Ok(RetiredProtectedSuccessor::Control(
+                RetiredProtectedControl(staged),
             )),
         }
     }
@@ -1533,7 +1579,7 @@ mod reached {
 pub(super) use reached::exchange;
 
 #[cfg(test)]
-pub(super) use reached::{Attempts, RetiredProtectedDeny, RetiredProtectedSuccessor};
+pub(super) use reached::{Attempts, RetiredProtectedControl, RetiredProtectedSuccessor};
 
 #[cfg(any(windows, test))]
 pub(super) use reached::{

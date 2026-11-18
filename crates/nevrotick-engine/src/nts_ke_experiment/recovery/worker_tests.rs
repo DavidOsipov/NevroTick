@@ -14,7 +14,7 @@ use super::{
     Instant, Ordering, ProcessAdmission, ProviderScope, Receiver, ScriptProducer, StopDisposition,
     StopHandle, SyncSender, Weak, failed, runtime, sync_channel,
 };
-use crate::nts_ke_experiment::association::ledger::AppliedProtectedDeny;
+use crate::nts_ke_experiment::association::ledger::AppliedProtectedControl;
 use crate::nts_ke_experiment::datagram::{
     ReceivedInvocation, receive_joined, tests::managed_attempt_config,
 };
@@ -24,8 +24,8 @@ use crate::nts_ke_experiment::job::{
 };
 use crate::nts_ke_experiment::process::ProcessClaim;
 use crate::nts_ke_experiment::{
-    InvocationCompletion, RunFailed, Summary, drive_invocation_with, output, run_joined_with,
-    run_synchronously_with,
+    InvocationCompletion, ProtectedControlKind, RunFailed, Summary, drive_invocation_with, output,
+    run_joined_with, run_synchronously_with,
 };
 
 /// Finite component-handshake allowance, not a product/native-operation deadline.
@@ -1040,15 +1040,16 @@ enum HistoryRetirement {
 /// Preserve the existing invocation owner's operation and cleanup facts.
 /// # Panics
 /// Fail if the scripted managed step enters another establishment or a preview.
-fn scripted_managed_deny_operation<'scope>(
+fn scripted_managed_control_operation<'scope>(
     config: &'scope Config,
     provider: &'scope ProviderScope<'scope>,
     control: Control,
+    kind: ProtectedControlKind,
 ) -> Operation {
     let original_expiry: Instant = control.expiry;
     let mut producer: ScriptProducer<'_> =
         ScriptProducer::new(config, provider, vec![Ok(())], ExchangeCase::Healthy);
-    producer.managed_deny = true;
+    producer.managed_control = Some(kind);
     let result: Operation = drive_invocation_with(config, provider, control, &mut producer);
     assert_eq!(
         (
@@ -1069,11 +1070,12 @@ fn scripted_managed_deny_operation<'scope>(
 /// # Errors
 /// Preserve source, assertion fixture, worker or receiving refusal.
 /// # Panics
-/// Fail if the real retired denial loses its history or enters the wrong result path.
-fn run_managed_deny_history(
+/// Fail if the real retired control loses its history or enters the wrong result path.
+fn run_managed_control_history(
     slot: &'static WorkerSlot,
     admission: &'static ProcessAdmission,
     retirement: HistoryRetirement,
+    expected_kind: ProtectedControlKind,
 ) -> Result<(), Failure> {
     use std::net::SocketAddr;
 
@@ -1111,13 +1113,15 @@ fn run_managed_deny_history(
                 prepared,
                 admission,
                 component_provider,
-                scripted_managed_deny_operation,
+                move |config, provider, control| {
+                    scripted_managed_control_operation(config, provider, control, expected_kind)
+                },
                 hooks,
             )
         },
     );
-    let history: AppliedProtectedDeny = match (retirement, result) {
-        (HistoryRetirement::Ordinary, Ok(ReceivedInvocation::ProtectedDeny(joined))) => {
+    let history: AppliedProtectedControl = match (retirement, result) {
+        (HistoryRetirement::Ordinary, Ok(ReceivedInvocation::ProtectedControl(joined))) => {
             joined.into_history()
         }
         (HistoryRetirement::Panics, Err(RunFailed::Abnormal(joined))) => {
@@ -1129,13 +1133,14 @@ fn run_managed_deny_history(
                 .ok_or(Failure::Control)?
                 .map_err(|failure: Failed| failure.primary)?;
             assert!(completion.summary().is_none());
-            let InvocationCompletion::ManagedProtectedDeny(history) = completion else {
+            let InvocationCompletion::ManagedProtectedControl(history) = completion else {
                 return Err(Failure::Control);
             };
             history
         }
         _ => return Err(Failure::Control),
     };
+    assert_eq!(history.kind(), expected_kind);
     assert!(history.configuration().same_configuration(&definition));
     assert_eq!(history.remote(), remote);
     assert_eq!(history.serial(), 2);
@@ -1143,7 +1148,11 @@ fn run_managed_deny_history(
     let after: SourcePolicySnapshot = source
         .policy_snapshot(remote)
         .map_err(Failure::SourcePolicy)?;
-    assert!(after.source().refused() && after.endpoint().refused());
+    let refused: bool = expected_kind != ProtectedControlKind::Rate;
+    assert_eq!(
+        (after.source().refused(), after.endpoint().refused()),
+        (refused, refused)
+    );
     assert_eq!(
         after
             .source()
@@ -1167,7 +1176,7 @@ fn run_managed_deny_history(
     Ok(())
 }
 
-/// Preserve exact applied denial history through normal and post-record unwind joins.
+/// Preserve the three exact control histories through normal joins and DENY during unwind.
 /// # Errors
 /// Preserve any failure from the real joined component worker.
 #[test]
@@ -1176,8 +1185,39 @@ fn managed_deny_worker_retains_exact_history_without_numerical_projection() -> R
     static ABNORMAL: WorkerSlot = WorkerSlot::new();
     static NORMAL_ADMISSION: ProcessAdmission = ProcessAdmission::new();
     static ABNORMAL_ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    run_managed_deny_history(&NORMAL, &NORMAL_ADMISSION, HistoryRetirement::Ordinary)?;
-    run_managed_deny_history(&ABNORMAL, &ABNORMAL_ADMISSION, HistoryRetirement::Panics)
+    static RESTRICTED: WorkerSlot = WorkerSlot::new();
+    static RESTRICTED_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    static THROTTLED: WorkerSlot = WorkerSlot::new();
+    static THROTTLED_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    for (slot, admission, retirement, kind) in [
+        (
+            &NORMAL,
+            &NORMAL_ADMISSION,
+            HistoryRetirement::Ordinary,
+            ProtectedControlKind::Deny,
+        ),
+        (
+            &ABNORMAL,
+            &ABNORMAL_ADMISSION,
+            HistoryRetirement::Panics,
+            ProtectedControlKind::Deny,
+        ),
+        (
+            &RESTRICTED,
+            &RESTRICTED_ADMISSION,
+            HistoryRetirement::Ordinary,
+            ProtectedControlKind::Restrict,
+        ),
+        (
+            &THROTTLED,
+            &THROTTLED_ADMISSION,
+            HistoryRetirement::Ordinary,
+            ProtectedControlKind::Rate,
+        ),
+    ] {
+        run_managed_control_history(slot, admission, retirement, kind)?;
+    }
+    Ok(())
 }
 
 /// A Stop after the recorded effect cannot undo it or expose it before actual join.
@@ -1219,7 +1259,14 @@ fn managed_deny_worker_post_record_stop_preserves_only_once_joined_history() -> 
         prepared,
         &ADMISSION,
         component_provider,
-        scripted_managed_deny_operation,
+        |config, provider, control| {
+            scripted_managed_control_operation(
+                config,
+                provider,
+                control,
+                ProtectedControlKind::Deny,
+            )
+        },
         hooks,
     )
     .map_err(|_| Failure::Control)?;
@@ -1243,12 +1290,13 @@ fn managed_deny_worker_post_record_stop_preserves_only_once_joined_history() -> 
     let joined: ReceivingOutcome = SLOT.take_for_receiving().map_err(|_| Failure::Control)?;
     let profile: ExperimentalProfile =
         ExperimentalProfile::new(0, u64::from(u32::MAX), 0).map_err(|_| Failure::Control)?;
-    let ReceivedInvocation::ProtectedDeny(received) =
+    let ReceivedInvocation::ProtectedControl(received) =
         receive_joined(joined, Some(profile)).map_err(|_| Failure::Control)?
     else {
         return Err(Failure::Control);
     };
-    let history: &AppliedProtectedDeny = received.history();
+    let history: &AppliedProtectedControl = received.history();
+    assert_eq!(history.kind(), ProtectedControlKind::Deny);
     assert!(history.configuration().same_configuration(&definition));
     assert_eq!(history.remote(), remote);
     assert_eq!(history.serial(), 2);

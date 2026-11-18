@@ -14,6 +14,7 @@ use std::time::{Duration, Instant, UNIX_EPOCH};
 use nevrotick_s115_aes_siv_fixture::staged::StagedDecryptError;
 use zeroize::Zeroizing;
 
+use super::super::ProtectedControlKind;
 use super::DatagramError;
 use super::reached::{
     Backend, Interest, Io, OperationCompletion, Read, RetiredProtectedSuccessor,
@@ -22,8 +23,8 @@ use super::reached::{
 };
 use crate::SoftwareClock;
 use crate::nts_ke_experiment::association::ledger::{
-    AppliedProtectedDeny, CookieReplacement, LedgerError, PendingSubmission, Receipt, RequestInput,
-    RequestPhase, SendOutcome, Status, Ticket,
+    AppliedProtectedControl, CookieReplacement, LedgerError, PendingSubmission, Receipt,
+    RequestInput, RequestPhase, SendOutcome, StagedProtectedSuccessor, Status, Ticket,
 };
 use crate::nts_ke_experiment::association::{AssociationCandidate, AssociationOwner};
 use crate::nts_ke_experiment::process::{ProcessAdmission, ProcessClaim, ProviderScope};
@@ -357,13 +358,26 @@ fn with_config_owner(
     exercise: impl FnOnce(&mut AssociationOwner<'_>, &Control, SocketAddr) -> Result<(), Failure>,
 ) -> Result<(), Failure> {
     let control: Control = Control::new(start)?;
+    with_config_control(config, &control, response_key, cookie_values, exercise)
+}
+
+/// Publish a component association with the caller's checked original cutoff.
+/// # Errors
+/// Retain actual provider, endpoint publication and operation refusals.
+fn with_config_control(
+    config: &Config,
+    control: &Control,
+    response_key: [u8; 32],
+    cookie_values: &[(u8, usize)],
+    exercise: impl FnOnce(&mut AssociationOwner<'_>, &Control, SocketAddr) -> Result<(), Failure>,
+) -> Result<(), Failure> {
     let admission: ProcessAdmission = ProcessAdmission::new();
     let claim: ProcessClaim<'_> = admission.claim()?;
     let provider: ProviderScope<'_> = ProviderScope::component(claim);
     let remote: SocketAddr = SocketAddr::new(config.peer.ip(), 123);
     let candidate: AssociationCandidate<'_> = AssociationCandidate::new(
         config,
-        &control,
+        control,
         &provider,
         remote,
         StrictProfile::component(),
@@ -374,8 +388,8 @@ fn with_config_owner(
             .collect::<Vec<Zeroizing<Vec<u8>>>>(),
     );
     let mut owner: AssociationOwner<'_> =
-        AssociationOwner::receive(config, &control, &provider, candidate)?;
-    exercise(&mut owner, &control, remote)
+        AssociationOwner::receive(config, control, &provider, candidate)?;
+    exercise(&mut owner, control, remote)
 }
 
 /// Keep script socket identity separate from the actual association identity.
@@ -908,7 +922,7 @@ fn check_mixed_last_frame(last: &LastMixedFrame) -> Result<(), Failure> {
             });
         let phase: RequestPhase = match last {
             LastMixedFrame::Deny => {
-                let RetiredProtectedSuccessor::Deny(retired) = selected? else {
+                let RetiredProtectedSuccessor::Control(retired) = selected? else {
                     return Err(Failure::Control);
                 };
                 retired.check_current(owner)?;
@@ -1262,6 +1276,389 @@ fn managed_protected_send_uses_the_exact_shared_floor() -> Result<(), Failure> {
     Ok(())
 }
 
+/// Let a separate alias debit the shared record at the first eligible observation.
+/// # Errors
+/// Preserve independent policy reservation or floor arithmetic refusal.
+async fn debit_alias_at_floor(
+    binding: &crate::source_policy::SourceBinding,
+    floor: Instant,
+    interval: Duration,
+) -> Result<Instant, Failure> {
+    use crate::source_policy::{FixtureRequest, fixture_send};
+
+    tokio::time::sleep_until(tokio::time::Instant::from_std(floor)).await;
+    let attempt: Instant = Instant::now();
+    let _request: FixtureRequest =
+        fixture_send(binding, &Arc::new(()), attempt).map_err(Failure::SourcePolicy)?;
+    attempt.checked_add(interval).ok_or(Failure::Deadline)
+}
+
+/// Park the real managed driver and recheck an independently extended endpoint floor.
+/// # Errors
+/// Preserve setup, original time, budget or packet-admission refusal.
+/// # Panics
+/// Fail if the test starts after its floor, the driver prepares before parking,
+/// or the resumed operation does not debit and invoke exactly once.
+#[test]
+fn managed_protected_policy_wait_checks_out_cookie_only_when_due() -> Result<(), Failure> {
+    use std::cell::Cell;
+    use std::future::Future;
+    use std::task::Poll;
+
+    use crate::source_policy::SourceBinding;
+    use crate::{SourceHandle, SourcePolicySnapshot};
+
+    let start: Instant = Instant::now();
+    let interval: Duration = Duration::from_millis(200);
+    let maximum: Duration = Duration::from_millis(400);
+    let (config, source, authority): (Config, SourceHandle, SourcePolicyAuthority) =
+        managed_attempt_config(start, interval, maximum)?;
+    with_config_owner(
+        &config,
+        start,
+        S2C,
+        &[(0x11, 12)],
+        |owner, control, remote| {
+            let before: SourcePolicySnapshot = source
+                .policy_snapshot(remote)
+                .map_err(Failure::SourcePolicy)?;
+            let floor: Instant = start.checked_add(maximum).ok_or(Failure::Deadline)?;
+            assert_eq!(before.endpoint().floor(), Some(floor));
+            assert_eq!(owner.cookie_population()?, (1, 12));
+            let alias: SourceHandle = authority.source(1).map_err(Failure::SourcePolicy)?;
+            let binding: SourceBinding = alias.bind(remote).map_err(Failure::SourcePolicy)?;
+            let next_floor: Cell<Instant> = Cell::new(floor);
+            let entropy_calls: Cell<usize> = Cell::new(0);
+            let mut backend: Backend = backend(
+                remote,
+                Script::new(
+                    ScriptSend::Full,
+                    vec![ScriptRead::Packet(fixtures::HEALTHY, remote)],
+                ),
+            );
+            runtime()?.block_on(async {
+                let pending = operation(
+                    owner,
+                    control,
+                    |output| {
+                        assert!(Instant::now() >= next_floor.get());
+                        entropy_calls.set(entropy_calls.get() + 1);
+                        entropy(output)
+                    },
+                    &mut backend,
+                );
+                tokio::pin!(pending);
+                std::future::poll_fn(|context| {
+                    assert!(Instant::now() < floor);
+                    assert!(pending.as_mut().poll(context).is_pending());
+                    assert_eq!(entropy_calls.get(), 0);
+                    Poll::Ready(())
+                })
+                .await;
+                next_floor.set(debit_alias_at_floor(&binding, floor, maximum).await?);
+                tokio::time::timeout(Duration::from_secs(2), pending)
+                    .await
+                    .map_err(|_| Failure::Control)??;
+                Ok::<(), Failure>(())
+            })?;
+            let after: SourcePolicySnapshot = source
+                .policy_snapshot(remote)
+                .map_err(Failure::SourcePolicy)?;
+            let adapter: &Script = script(&backend)?;
+            assert_eq!(
+                (
+                    entropy_calls.get(),
+                    adapter.send_calls,
+                    adapter.receive_calls
+                ),
+                (1, 1, 1)
+            );
+            assert_eq!(owner.status().used, 1);
+            assert_eq!(owner.cookie_population()?, (0, 0));
+            assert_eq!(
+                after
+                    .source()
+                    .revision()
+                    .checked_sub(before.source().revision()),
+                Some(1)
+            );
+            assert_eq!(
+                after
+                    .endpoint()
+                    .revision()
+                    .checked_sub(before.endpoint().revision()),
+                Some(2)
+            );
+            let (send_before, _, _): (SoftwareClock, SoftwareClock, usize) =
+                backend.send.ok_or(Failure::Control)?;
+            let sent: Instant = send_before.monotonic_after();
+            assert!(sent >= next_floor.get() && sent < control.expiry);
+            assert_eq!(after.source().floor(), sent.checked_add(interval));
+            assert_eq!(after.endpoint().floor(), sent.checked_add(maximum));
+            Ok(())
+        },
+    )
+}
+
+/// Actual events independent of the other's refusal and the future floor timer.
+#[derive(Clone, Copy)]
+enum ManagedWaitRefusal {
+    Stop,
+    ReplaceConfiguration,
+    Expiry,
+    StopLatchedBeforeExpiry,
+}
+
+/// Replace the original definition with equal values while the driver is parked.
+/// # Errors
+/// Preserve missing ownership or actual current revision refusal.
+/// # Panics
+/// Fail if replacement does not issue a different configuration revision.
+fn replace_policy_wait_configuration(
+    authority: &mut SourcePolicyAuthority,
+    original: &Config,
+) -> Result<(), Failure> {
+    let definition: &crate::source_policy::ConfiguredKePreview =
+        original.mode.source_definition().ok_or(Failure::Control)?;
+    let expected: &SourceConfigurationSnapshot = definition.snapshot();
+    let replacement: SourceConfigurationSnapshot = authority
+        .replace_ke_preview_configuration(
+            expected,
+            expected.addresses().clone(),
+            definition.target().clone(),
+        )
+        .map_err(Failure::SourcePolicy)?;
+    assert!(!replacement.same_configuration(expected));
+    Ok(())
+}
+
+/// Hold the Stop request between its actual latch write and its notification.
+/// # Errors
+/// Preserve original scope lock failure.
+/// # Panics
+/// Fail if the latch was already set before this fixture event.
+fn latch_wait_stop_without_wake(control: &Control) -> Result<(), Failure> {
+    let mut stopped = control
+        .stop_scope
+        .stopped
+        .lock()
+        .map_err(|_| Failure::Control)?;
+    assert!(!*stopped);
+    *stopped = true;
+    Ok(())
+}
+
+/// Compare policy records without comparing their time-dependent diagnostic wait.
+/// # Panics
+/// Fail if pre-send waiting or refusal changed either record.
+fn assert_policy_wait_kept_records(
+    before: &crate::SourcePolicySnapshot,
+    after: &crate::SourcePolicySnapshot,
+) {
+    for (old, current) in [
+        (before.source(), after.source()),
+        (before.endpoint(), after.endpoint()),
+    ] {
+        assert_eq!(
+            (current.floor(), current.interval(), current.revision()),
+            (old.floor(), old.interval(), old.revision())
+        );
+    }
+}
+
+/// Refuse at the actual pre-cookie await after a parked operation observes one event.
+/// # Errors
+/// Preserve setup, expiry arithmetic, event or watchdog refusal.
+/// # Panics
+/// Fail on an incorrect named reason, changed policy or any pre-eligibility work.
+fn check_managed_policy_wait_refusal(cause: ManagedWaitRefusal) -> Result<(), Failure> {
+    use std::cell::Cell;
+    use std::future::Future;
+    use std::task::Poll;
+
+    use crate::{SourceHandle, SourcePolicyError, SourcePolicySnapshot};
+
+    let start: Instant = Instant::now();
+    let (config, source, mut authority): (Config, SourceHandle, SourcePolicyAuthority) =
+        managed_attempt_config(start, Duration::from_secs(2), Duration::from_secs(4))?;
+    let cutoff: Duration = match cause {
+        ManagedWaitRefusal::Expiry | ManagedWaitRefusal::StopLatchedBeforeExpiry => {
+            Duration::from_millis(250)
+        }
+        ManagedWaitRefusal::Stop | ManagedWaitRefusal::ReplaceConfiguration => {
+            Duration::from_secs(6)
+        }
+    };
+    let expiry: Instant = start.checked_add(cutoff).ok_or(Failure::Deadline)?;
+    let control: Control = Control::clamped(start, expiry)?;
+    with_config_control(
+        &config,
+        &control,
+        S2C,
+        &[(0x11, 12)],
+        |owner, control, remote| {
+            let status: Status = owner.status();
+            let before: SourcePolicySnapshot = source
+                .policy_snapshot(remote)
+                .map_err(Failure::SourcePolicy)?;
+            let calls: Cell<usize> = Cell::new(0);
+            let mut backend: Backend = backend(remote, Script::new(ScriptSend::Full, Vec::new()));
+            let result: Result<OperationCompletion<'_>, Failure> = runtime()?.block_on(async {
+                let pending = operation(
+                    owner,
+                    control,
+                    |output| {
+                        calls.set(calls.get() + 1);
+                        entropy(output)
+                    },
+                    &mut backend,
+                );
+                tokio::pin!(pending);
+                std::future::poll_fn(|context| {
+                    assert!(pending.as_mut().poll(context).is_pending());
+                    assert_eq!(calls.get(), 0);
+                    Poll::Ready(())
+                })
+                .await;
+                match cause {
+                    ManagedWaitRefusal::Stop => {
+                        let stop: StopHandle = StopHandle {
+                            scope: Arc::clone(&control.stop_scope),
+                        };
+                        assert_eq!(stop.request_stop()?, StopDisposition::Latched);
+                    }
+                    ManagedWaitRefusal::ReplaceConfiguration => {
+                        replace_policy_wait_configuration(&mut authority, &config)?;
+                    }
+                    ManagedWaitRefusal::Expiry => {}
+                    ManagedWaitRefusal::StopLatchedBeforeExpiry => {
+                        latch_wait_stop_without_wake(control)?;
+                    }
+                }
+                tokio::time::timeout(Duration::from_secs(2), pending)
+                    .await
+                    .map_err(|_| Failure::Control)?
+            });
+            let expected: Failure = match cause {
+                ManagedWaitRefusal::Stop | ManagedWaitRefusal::StopLatchedBeforeExpiry => {
+                    Failure::Cancelled
+                }
+                ManagedWaitRefusal::ReplaceConfiguration => {
+                    Failure::SourcePolicy(SourcePolicyError::ConfigurationChanged)
+                }
+                ManagedWaitRefusal::Expiry => Failure::Deadline,
+            };
+            assert_eq!(result.err(), Some(expected));
+            if matches!(cause, ManagedWaitRefusal::StopLatchedBeforeExpiry) {
+                assert!(Instant::now() >= expiry);
+            }
+            assert_eq!(control.expiry, expiry);
+            assert_eq!(owner.status(), status);
+            assert_eq!(owner.cookie_population()?, (1, 12));
+            let adapter: &Script = script(&backend)?;
+            assert_eq!(
+                (calls.get(), adapter.send_calls, adapter.receive_calls),
+                (0, 0, 0)
+            );
+            let after: SourcePolicySnapshot = source
+                .policy_snapshot(remote)
+                .map_err(Failure::SourcePolicy)?;
+            assert_policy_wait_kept_records(&before, &after);
+            Ok(())
+        },
+    )
+}
+
+/// Check each independent terminal event after the original driver has parked.
+/// # Errors
+/// Preserve the first unexpected bounded refusal history.
+#[test]
+fn managed_protected_policy_wait_refuses_before_cookie_checkout() -> Result<(), Failure> {
+    for cause in [
+        ManagedWaitRefusal::Stop,
+        ManagedWaitRefusal::ReplaceConfiguration,
+        ManagedWaitRefusal::Expiry,
+        ManagedWaitRefusal::StopLatchedBeforeExpiry,
+    ] {
+        check_managed_policy_wait_refusal(cause)?;
+    }
+    Ok(())
+}
+
+/// Refuse when a real first exchange leaves only enough work for one policy park.
+/// # Errors
+/// Preserve ordinary reply, current association, clock or policy refusal.
+/// # Panics
+/// Fail if a park on the original send floor can reserve a cookie or enter entropy
+/// when the carried allowance can no longer reach the required write wait.
+#[test]
+fn managed_protected_policy_wait_last_credit_refuses_before_cookie_checkout() -> Result<(), Failure>
+{
+    use std::cell::Cell;
+
+    use crate::{SourceHandle, SourcePolicySnapshot};
+
+    let start: Instant = Instant::now()
+        .checked_sub(Duration::from_secs(2))
+        .ok_or(Failure::Deadline)?;
+    let (config, source, _authority): (Config, SourceHandle, SourcePolicyAuthority) =
+        managed_attempt_config(
+            start,
+            Duration::from_millis(250),
+            Duration::from_millis(500),
+        )?;
+    with_config_owner(
+        &config,
+        start,
+        S2C,
+        &[(0x11, 12)],
+        |owner, control, remote| {
+            let first: super::ProtectedCompletion<'_> =
+                exchange_with(owner, control, entropy, |peer: SocketAddr| {
+                    // Write, read, 30 WouldBlock/read-ready pairs and one valid datagram spend 63.
+                    let mut reads: Vec<ScriptRead> =
+                        (0..30).map(|_| ScriptRead::WouldBlock).collect();
+                    reads.push(ScriptRead::Packet(fixtures::HEALTHY, peer));
+                    Ok(backend(peer, Script::new(ScriptSend::Full, reads)))
+                })?;
+            assert_eq!(first.remaining_attempts(), 1);
+            first.commit_for_successor(owner)?;
+            let before: Status = owner.status();
+            let receipt: Option<Receipt> = owner.last_receipt();
+            let before_policy: SourcePolicySnapshot = source
+                .policy_snapshot(remote)
+                .map_err(Failure::SourcePolicy)?;
+            let floor: Instant = before_policy.endpoint().floor().ok_or(Failure::Control)?;
+            assert!(Instant::now() < floor && floor < control.expiry);
+            assert_eq!(owner.cookie_population()?, (1, 12));
+            let entropy_calls: Cell<usize> = Cell::new(0);
+            let result: Result<RetiredProtectedSuccessor<'_>, Failure> = exchange_successor_mixed(
+                owner,
+                control,
+                |output| {
+                    entropy_calls.set(entropy_calls.get() + 1);
+                    successor_entropy(output)
+                },
+                |_| Script::new(ScriptSend::Full, Vec::new()),
+            );
+            assert!(matches!(
+                result,
+                Err(Failure::Datagram(DatagramError::Attempts))
+            ));
+            assert!(Instant::now() >= floor);
+            assert_eq!(entropy_calls.get(), 0);
+            assert_eq!(owner.status(), before);
+            assert!(owner.last_receipt() == receipt);
+            assert_eq!(owner.cookie_population()?, (1, 12));
+            let after: SourcePolicySnapshot = source
+                .policy_snapshot(remote)
+                .map_err(Failure::SourcePolicy)?;
+            assert_policy_wait_kept_records(&before_policy, &after);
+            Ok(())
+        },
+    )
+}
+
 /// Retain both independently advanced managed floors across every attempted send.
 /// # Errors
 /// Preserve the first unsuccessful component history.
@@ -1328,7 +1725,7 @@ fn managed_protected_attempts_keep_floors_after_failure_and_stop() -> Result<(),
 pub(in crate::nts_ke_experiment) fn managed_attempt_config(
     earlier: Instant,
     interval: Duration,
-    doubled: Duration,
+    maximum: Duration,
 ) -> Result<(Config, crate::SourceHandle, SourcePolicyAuthority), Failure> {
     use crate::source_policy::{
         FixtureRequest, SourceBinding, fixture_control, fixture_send, isolated_authority,
@@ -1336,7 +1733,7 @@ pub(in crate::nts_ke_experiment) fn managed_attempt_config(
     use crate::{SourceAddressSet, SourceHandle, SourcePolicyLimits};
 
     let limits: SourcePolicyLimits =
-        SourcePolicyLimits::new(2, 2, interval, doubled).map_err(Failure::SourcePolicy)?;
+        SourcePolicyLimits::new(2, 2, interval, maximum).map_err(Failure::SourcePolicy)?;
     let mut authority: SourcePolicyAuthority =
         isolated_authority(limits).map_err(Failure::SourcePolicy)?;
     let source: SourceHandle = authority.source(0).map_err(Failure::SourcePolicy)?;
@@ -1836,33 +2233,31 @@ fn successor_entropy(output: &mut [u8; 56]) -> Result<(), Failure> {
     Ok(())
 }
 
-/// Submit the one closed DENY successor after the actual original send floor.
-/// The common readiness wait remains subject to the original Stop and expiry.
+/// Submit the chosen scripted control after the actual original send floor.
+/// The common driver owns eligibility, original Stop and expiry.
 /// # Errors
 /// Preserve floor, original time, actual adapter and mixed receive refusals.
 pub(in crate::nts_ke_experiment) fn scripted_managed_successor<'control>(
     association: &mut AssociationOwner<'_>,
     control: &'control Control,
+    kind: ProtectedControlKind,
 ) -> Result<RetiredProtectedSuccessor<'control>, Failure> {
-    let floor: Instant = association
-        .protected_endpoint()?
-        .ok_or(Failure::Control)?
-        .scripted_successor_floor()
-        .map_err(Failure::SourcePolicy)?;
-    if floor >= control.expiry {
-        return Err(Failure::Deadline);
-    }
     exchange_successor_mixed(
         association,
         control,
         successor_entropy,
         |peer: SocketAddr| {
-            let mut script: Script = Script::new(
-                ScriptSend::Full,
-                vec![ScriptRead::Packet(&PROTECTED_DENY, peer)],
-            );
-            script.ready.push_back(ScriptReady::After(floor));
-            script
+            let reads: Vec<ScriptRead> = match kind {
+                ProtectedControlKind::Rate => vec![
+                    ScriptRead::Packet(&RATE_BAD_TAG, peer),
+                    ScriptRead::Packet(&PROTECTED_RATE, peer),
+                ],
+                ProtectedControlKind::Deny => vec![ScriptRead::Packet(&PROTECTED_DENY, peer)],
+                ProtectedControlKind::Restrict => {
+                    vec![ScriptRead::Packet(&PROTECTED_RESTRICTION, peer)]
+                }
+            };
+            Script::new(ScriptSend::Full, reads)
         },
     )
 }
@@ -2082,6 +2477,25 @@ fn managed_retired_authentication_refuses_uncommitted_and_invalidated_history()
     Ok(())
 }
 
+/// Independently sealed RATE with the second request coordinates and an ignored poll of 127.
+const PROTECTED_RATE: [u8; 124] = [
+    0x24, 0x00, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x52, 0x41, 0x54, 0x45,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x01, 0x04, 0x00, 0x24, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b,
+    0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b,
+    0x3c, 0x3d, 0x3e, 0x3f, 0x04, 0x04, 0x00, 0x28, 0x00, 0x10, 0x00, 0x10, 0x70, 0x71, 0x72, 0x73,
+    0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f, 0xac, 0x79, 0x43, 0xfc,
+    0x61, 0x72, 0x4f, 0x12, 0xed, 0x43, 0xab, 0x1c, 0x36, 0x3a, 0xf2, 0x06,
+];
+
+/// A first RATE candidate with only one authenticator tag bit changed.
+const RATE_BAD_TAG: [u8; 124] = {
+    let mut packet: [u8; 124] = PROTECTED_RATE;
+    packet[123] ^= 1;
+    packet
+};
+
 /// Valid S2C tag, literal DENY and exact second request coordinates.
 const PROTECTED_DENY: [u8; 124] = [
     0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x44, 0x45, 0x4e, 0x59,
@@ -2092,6 +2506,18 @@ const PROTECTED_DENY: [u8; 124] = [
     0x3c, 0x3d, 0x3e, 0x3f, 0x04, 0x04, 0x00, 0x28, 0x00, 0x10, 0x00, 0x10, 0x70, 0x71, 0x72, 0x73,
     0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f, 0x88, 0xd3, 0xca, 0xb3,
     0x90, 0xfb, 0xc2, 0x47, 0x7a, 0xf9, 0x7e, 0xa4, 0x03, 0xbf, 0x73, 0xfc,
+];
+
+/// Independently sealed RSTR with the exact second request coordinates and public S2C key.
+const PROTECTED_RESTRICTION: [u8; 124] = [
+    0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x52, 0x53, 0x54, 0x52,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x01, 0x04, 0x00, 0x24, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b,
+    0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b,
+    0x3c, 0x3d, 0x3e, 0x3f, 0x04, 0x04, 0x00, 0x28, 0x00, 0x10, 0x00, 0x10, 0x70, 0x71, 0x72, 0x73,
+    0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f, 0x7c, 0x37, 0xbc, 0xdc,
+    0x4f, 0x80, 0x01, 0xb7, 0x0a, 0x7f, 0x10, 0xb0, 0x47, 0x2d, 0x7f, 0xc6,
 ];
 
 /// Valid S2C tag, exact second request coordinates and an unselected control code.
@@ -2211,7 +2637,7 @@ fn managed_protected_deny_retires_only_the_exact_authenticated_successor() -> Re
                 backend_lifetime = Some(Arc::downgrade(&script.lifetime));
                 script
             })?;
-        let RetiredProtectedSuccessor::Deny(retired) = selected else {
+        let RetiredProtectedSuccessor::Control(retired) = selected else {
             return Err(Failure::Control);
         };
         let lifetime: std::sync::Weak<()> = backend_lifetime.ok_or(Failure::Control)?;
@@ -2319,7 +2745,7 @@ fn managed_retired_deny_commits_only_its_source_and_exact_endpoint() -> Result<(
                     vec![ScriptRead::Packet(&PROTECTED_DENY, peer)],
                 )
             })?;
-        let RetiredProtectedSuccessor::Deny(retired) = selected else {
+        let RetiredProtectedSuccessor::Control(retired) = selected else {
             return Err(Failure::Control);
         };
         let pending: Status = owner.status();
@@ -2331,7 +2757,8 @@ fn managed_retired_deny_commits_only_its_source_and_exact_endpoint() -> Result<(
             .policy_snapshot(other_peer)
             .map_err(Failure::SourcePolicy)?;
         let earliest: Instant = Instant::now();
-        let applied: AppliedProtectedDeny = retired.commit(owner)?;
+        let applied: AppliedProtectedControl = retired.commit(owner)?;
+        assert_eq!(applied.kind(), ProtectedControlKind::Deny);
         assert_eq!(applied.serial(), 2);
         assert!((earliest..=Instant::now()).contains(&applied.decided_at()));
         assert!(applied.decided_at() < control.expiry);
@@ -2370,6 +2797,237 @@ fn managed_retired_deny_commits_only_its_source_and_exact_endpoint() -> Result<(
         }
         Ok(())
     })
+}
+
+/// Check interval, cap and the original send-debit floor at the actual policy owner.
+/// # Panics
+/// Fail if the record changes availability or the expected retained values differ.
+fn assert_protected_rate_record(
+    record: &SourceRestrictionSnapshot,
+    expected_ms: u64,
+    floor: Option<Instant>,
+    revision: u64,
+) {
+    assert!(!record.refused() && !record.unavailable());
+    assert_eq!(record.interval(), Duration::from_millis(expected_ms));
+    assert_eq!(record.maximum_interval(), Duration::from_millis(10));
+    assert_eq!(record.floor(), floor);
+    assert_eq!(record.revision(), revision);
+}
+
+/// Try independent observations just before and at the retained exact endpoint floor.
+/// The healthy attempt supplies a real ordinary protected reply after the send.
+/// # Errors
+/// Preserve checked association, observation or runtime refusal.
+/// # Panics
+/// Fail if a premature observation enters the adapter or an at-cap probe is withheld.
+fn check_protected_rate_send_floor(
+    config: &Config,
+    source: &crate::SourceHandle,
+    start: Instant,
+    floor: Instant,
+) -> Result<(), Failure> {
+    use crate::{SourcePolicyError, SourcePolicySnapshot};
+
+    let early: Instant = floor
+        .checked_sub(Duration::from_nanos(1))
+        .ok_or(Failure::Deadline)?;
+    for (at, should_send) in [(early, false), (floor, true)] {
+        with_config_owner(
+            config,
+            start,
+            S2C,
+            &[(0x11, 12)],
+            |owner, control, remote| {
+                let before: SourcePolicySnapshot = source
+                    .policy_snapshot(remote)
+                    .map_err(Failure::SourcePolicy)?;
+                let mut selected: Script = Script::new(
+                    ScriptSend::Full,
+                    vec![ScriptRead::Packet(fixtures::HEALTHY, remote)],
+                );
+                selected.ready.push_back(ScriptReady::After(floor));
+                selected.send_before = Some(SoftwareClock {
+                    mono: at,
+                    mono_after: at,
+                    utc: UNIX_EPOCH,
+                });
+                let mut backend: Backend = backend(remote, selected);
+                let outcome: Result<OperationCompletion<'_>, Failure> =
+                    runtime()?.block_on(operation(owner, control, entropy, &mut backend));
+                let observed: &Script = script(&backend)?;
+                let after: SourcePolicySnapshot = source
+                    .policy_snapshot(remote)
+                    .map_err(Failure::SourcePolicy)?;
+                if should_send {
+                    assert!(outcome.is_ok());
+                    assert_eq!((observed.send_calls, observed.receive_calls), (1, 1));
+                    assert_protected_rate_record(
+                        after.source(),
+                        8,
+                        at.checked_add(Duration::from_millis(8)),
+                        before.source().revision() + 1,
+                    );
+                    assert_protected_rate_record(
+                        after.endpoint(),
+                        10,
+                        at.checked_add(Duration::from_millis(10)),
+                        before.endpoint().revision() + 1,
+                    );
+                } else {
+                    assert!(matches!(
+                        outcome,
+                        Err(Failure::SourcePolicy(SourcePolicyError::NotDue))
+                    ));
+                    assert_eq!((observed.send_calls, observed.receive_calls), (0, 0));
+                    assert_protected_rate_record(
+                        after.source(),
+                        8,
+                        before.source().floor(),
+                        before.source().revision(),
+                    );
+                    assert_protected_rate_record(
+                        after.endpoint(),
+                        10,
+                        before.endpoint().floor(),
+                        before.endpoint().revision(),
+                    );
+                }
+                Ok(())
+            },
+        )?;
+    }
+    Ok(())
+}
+
+/// Submit the same bytes again at the actual closed receiver boundary.
+/// # Panics
+/// Fail if replay enters the consumed invocation or changes ledger accounting.
+fn assert_protected_rate_replay_refused(
+    owner: &mut AssociationOwner<'_>,
+    control: &Control,
+    remote: SocketAddr,
+) {
+    let settled: Status = owner.status();
+    let replay: Result<StagedProtectedSuccessor<'_>, Failure> = owner.stage_protected_successor(
+        control,
+        &PROTECTED_RATE,
+        remote,
+        Instant::now(),
+        &Arc::new(()),
+    );
+    assert!(matches!(replay, Err(Failure::Control)));
+    assert_eq!(owner.status(), settled);
+}
+
+/// Consume one correlated RATE under real policy, with a forged neighbor and replay.
+/// # Errors
+/// Preserve fixture, deadline, original receive and resulting send refusals.
+/// # Panics
+/// Fail if the authenticated control ignores exact authority, lowers an existing
+/// floor, publishes a time/cookie result, or prevents a later at-cap probe.
+#[test]
+fn managed_retired_rate_preserves_independent_intervals_and_exact_next_send() -> Result<(), Failure>
+{
+    use crate::source_policy::{FixtureRequest, SourceBinding, fixture_send};
+    use crate::{SourceHandle, SourcePolicySnapshot};
+
+    for keep_later_floor in [false, true] {
+        let start: Instant = Instant::now()
+            .checked_sub(Duration::from_millis(20))
+            .ok_or(Failure::Deadline)?;
+        let (config, source, authority): (Config, SourceHandle, SourcePolicyAuthority) =
+            managed_attempt_config(start, Duration::from_millis(4), Duration::from_millis(10))?;
+        with_config_owner(
+            &config,
+            start,
+            S2C,
+            &[(0x11, 12)],
+            |owner, control, remote| {
+                let first: super::ProtectedCompletion<'_> =
+                    first_managed_exchange(owner, control, 0)?;
+                let first_receipt: Receipt = first.history().receipt;
+                first.commit_for_successor(owner)?;
+                let before: Status = owner.status();
+                let selected: RetiredProtectedSuccessor<'_> =
+                    scripted_managed_successor(owner, control, ProtectedControlKind::Rate)?;
+                let RetiredProtectedSuccessor::Control(retired) = selected else {
+                    return Err(Failure::Control);
+                };
+                let pending: Status = owner.status();
+                assert_eq!(pending.phase, RequestPhase::Pending);
+                assert_eq!(pending.frames, before.frames - 2);
+                assert_eq!(pending.bytes, before.bytes - 2 * PROTECTED_RATE.len());
+
+                if keep_later_floor {
+                    // The separate alias uses the policy fixture clock to reserve a later
+                    // endpoint floor without waiting or directly modifying the record.
+                    let later: Instant = control
+                        .expiry
+                        .checked_sub(Duration::from_secs(5))
+                        .ok_or(Failure::Deadline)?;
+                    let alias: SourceHandle = authority.source(1).map_err(Failure::SourcePolicy)?;
+                    let binding: SourceBinding =
+                        alias.bind(remote).map_err(Failure::SourcePolicy)?;
+                    let _competing: FixtureRequest = fixture_send(&binding, &Arc::new(()), later)
+                        .map_err(Failure::SourcePolicy)?;
+                }
+                let original: SourcePolicySnapshot = source
+                    .policy_snapshot(remote)
+                    .map_err(Failure::SourcePolicy)?;
+                assert_eq!(original.source().interval(), Duration::from_millis(4));
+                assert_eq!(original.endpoint().interval(), Duration::from_millis(8));
+                let applied: AppliedProtectedControl = retired.commit(owner)?;
+                assert_eq!(applied.kind(), ProtectedControlKind::Rate);
+                assert_eq!(applied.serial(), 2);
+                assert_eq!(
+                    owner.status(),
+                    Status {
+                        phase: RequestPhase::Idle,
+                        ..pending
+                    }
+                );
+                assert!(owner.last_receipt() == Some(first_receipt));
+                assert_eq!(owner.cookie_population()?, (0, 0));
+
+                let source_floor: Option<Instant> =
+                    applied.decided_at().checked_add(Duration::from_millis(8));
+                let revised_endpoint: Instant = applied
+                    .decided_at()
+                    .checked_add(Duration::from_millis(10))
+                    .ok_or(Failure::Deadline)?;
+                let retained: Instant = original.endpoint().floor().ok_or(Failure::Control)?;
+                let endpoint_floor: Instant = if keep_later_floor {
+                    assert!(retained > revised_endpoint);
+                    retained
+                } else {
+                    assert!(retained < revised_endpoint);
+                    revised_endpoint
+                };
+                assert_protected_rate_replay_refused(owner, control, remote);
+                let after: SourcePolicySnapshot = source
+                    .policy_snapshot(remote)
+                    .map_err(Failure::SourcePolicy)?;
+                assert_protected_rate_record(
+                    after.source(),
+                    8,
+                    source_floor,
+                    original.source().revision() + 1,
+                );
+                assert_protected_rate_record(
+                    after.endpoint(),
+                    10,
+                    Some(endpoint_floor),
+                    original.endpoint().revision() + 1,
+                );
+                if !keep_later_floor {
+                    check_protected_rate_send_floor(&config, &source, start, endpoint_floor)?;
+                }
+                Ok(())
+            },
+        )?;
+    }
+    Ok(())
 }
 
 /// The mixed second receive keeps the original budgets and normal cookie commit.

@@ -514,7 +514,7 @@ pub enum Status {
     Stale,
     /// A laboratory work cap was exhausted; no extra query was sent.
     Budget,
-    /// Native I/O failed or returned an anomalous short send.
+    /// Native I/O failed, returned an anomalous short send, or was refused before submission.
     Io,
 }
 
@@ -555,6 +555,11 @@ impl SoftwareClock {
             mono_after: Instant::now(),
         }
     }
+    /// Whether either raw monotonic reading reaches the original exclusive cutoff.
+    fn reaches_cutoff(&self, deadline: Instant) -> bool {
+        self.mono >= deadline || self.mono_after >= deadline
+    }
+
     /// Return the captured local monotonic observation.
     #[must_use]
     pub fn monotonic(self) -> Instant {
@@ -722,12 +727,14 @@ impl TransportFacts {
     }
 }
 
-/// The sole terminal I/O distinction; neither variant retains formatted error text.
+/// The terminal I/O distinction, carrying only closed and payload-free causes.
 enum IoOutcome {
     /// An actual operation's captured category and optional raw platform code.
     Native(IoCause),
     /// A send returned an anomalous length, without an operating-system error.
     ShortSend,
+    /// The pre-send local capture reversed before either reading reached expiry.
+    PreSendCaptureOrder,
 }
 
 /// A terminal status and its matching payload form one indivisible owner value.
@@ -757,7 +764,7 @@ enum TerminalOutcome {
     Stale,
     /// A declared work budget was exhausted.
     Budget,
-    /// A captured native failure or an anomalous send length ended the slot.
+    /// A local capture refusal, native error or anomalous send length ended the slot.
     Io(IoOutcome),
 }
 impl TerminalOutcome {
@@ -796,7 +803,7 @@ impl TerminalOutcome {
         }
     }
     /// Preserve a captured cause even when that cause has no raw platform code.
-    /// An anomalous send length deliberately has no native cause.
+    /// A local refusal or anomalous send length has no native cause.
     fn io_cause(&self) -> Option<IoCause> {
         match self {
             Self::Io(IoOutcome::Native(cause)) => Some(*cause),
@@ -930,6 +937,18 @@ impl SlotReport {
     #[must_use]
     pub fn io_cause(&self) -> Option<IoCause> {
         self.outcome.io_cause()
+    }
+    /// Return a local pre-send capture refusal, if one ended the slot.
+    ///
+    /// The refusal preserves no native error or time observation.
+    #[must_use]
+    pub const fn capture_refusal(&self) -> Option<MeasurementRefusal> {
+        match &self.outcome {
+            TerminalOutcome::Io(IoOutcome::PreSendCaptureOrder) => {
+                Some(MeasurementRefusal::CaptureOrder)
+            }
+            _ => None,
+        }
     }
     /// Return a closed managed laboratory policy refusal; this is no authority to retry.
     #[must_use]
@@ -1082,6 +1101,20 @@ impl LiveSlot {
     fn can_receive(&self) -> bool {
         matches!(&self.phase, Phase::Pending(_)) && self.received < RECEIVE_CAP
     }
+    /// Admit the existing pre-send capture before the caller can reserve or send.
+    /// Either reading at the original cutoff keeps expiry precedence. An inverted
+    /// bracket wholly before it retires this slot with a local capture refusal.
+    fn admit_send_capture(&mut self, before: &SoftwareClock, deadline: Instant) -> bool {
+        if before.reaches_cutoff(deadline) {
+            self.expire();
+            return false;
+        }
+        if before.mono > before.mono_after {
+            self.finish(TerminalOutcome::Io(IoOutcome::PreSendCaptureOrder));
+            return false;
+        }
+        true
+    }
     /// Retire only from the trusted owner deadline; an exhausted read budget reports Budget.
     fn expire(&mut self) {
         self.finish(if self.received == RECEIVE_CAP {
@@ -1208,8 +1241,7 @@ fn attempt_send_observing(
     }
     slot.send_attempts += 1;
     let before: SoftwareClock = observations.capture();
-    if before.mono_after >= deadline {
-        slot.expire();
+    if !slot.admit_send_capture(&before, deadline) {
         return *state;
     }
     let result: io::Result<usize> = slot.socket.try_send_to(&slot.packet, slot.peer);

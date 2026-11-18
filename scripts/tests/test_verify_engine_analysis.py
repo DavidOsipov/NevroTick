@@ -2088,16 +2088,29 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         "nts_ke_experiment::datagram::reached::bound_endpoint_check_refuses_each_invalid_coordinate",
     )
 
+    MANAGED_WAIT_AND_RATE_CASES = (
+        "nts_ke_experiment::datagram::tests::managed_retired_rate_preserves_independent_intervals_and_exact_next_send",
+        "nts_ke_experiment::datagram::tests::managed_protected_policy_wait_checks_out_cookie_only_when_due",
+        "nts_ke_experiment::datagram::tests::managed_protected_policy_wait_refuses_before_cookie_checkout",
+        "nts_ke_experiment::datagram::tests::managed_protected_policy_wait_last_credit_refuses_before_cookie_checkout",
+    )
+
     FINAL_REPLY_CUTOFF_CASES = (
         "processing_guard_tests::pilot_final_guard_time_cutoff_rejects_selected_reply_once",
         "series::tests::reply_final_guard_time_cutoff_keeps_its_actual_receiving_checkpoint",
+    )
+    PLAIN_CAPTURE_CASES = (
+        "processing_guard_tests::unmanaged_send_cutoff_uses_both_clock_readings",
+        "source_policy::tests::managed_send_cutoff_uses_both_clock_readings",
+        "source_policy::tests::managed_inverted_pre_send_capture_refuses_before_reservation",
+        "session::tests::mixed_series_capture_refusal_precedes_retained_healthy_facts_if_profiled",
     )
 
     class SessionReached(Exception):
         """A healthy admission reached Session; stop before any execution."""
 
     def policy_fixture(self):
-        """Independent limits; synthetic 540/264 ordinary and 90 annotated Rustdoc names."""
+        """Independent limits; synthetic 548/268 ordinary and 90 annotated Rustdoc names."""
         critical = ["crates/nevrotick-engine/src/lib.rs", *self.HOST.values(),
             "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
             "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
@@ -2110,7 +2123,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                         "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted",
                         *self.MANAGED_PROTECTED_CASES, *self.MANAGED_SUCCESSOR_CASES,
                         *self.MANAGED_DENY_CASES, *self.MANAGED_WORKER_BOUNDARY_CASES,
-                        *self.FINAL_REPLY_CUTOFF_CASES])
+                        *self.MANAGED_WAIT_AND_RATE_CASES, *self.FINAL_REPLY_CUTOFF_CASES,
+                        *self.PLAIN_CAPTURE_CASES])
         docs = sorted([f"src/lib.rs - Fixture::entered_{index:02} (line 100)" for index in range(87)]
                       + ["src/lib.rs - Example::checked (line 10)",
                          "src/lib.rs - Example::private (line 20) - compile fail",
@@ -2855,14 +2869,14 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
     def test_entered_blocks_require_all_current_cases_and_ke_neighbors(self):
         binding = self.policy["binding"]; names = binding["test_inventory"]
         healthy = self.execution(names)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 540)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 264)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 548)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 268)
         missing = [name for name in names if name != "nts_ke_experiment::fixture_case_00"]
         old = [name for name in names if not name.startswith("nts_ke_experiment::")]
         variants = [self.execution([]), self.execution(old), self.execution(missing),
             self.execution([*names, names[0]]), healthy.replace(" ... ok", " ... FAILED", 1),
-            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 540", "running 539"),
-            healthy.replace("test result: ok. 540 passed", "test result: ok. 539 passed"),
+            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 548", "running 547"),
+            healthy.replace("test result: ok. 548 passed", "test result: ok. 547 passed"),
             "\n".join(line for line in healthy.splitlines() if not line.startswith("running "))]
         for text in variants:
             with self.subTest(sample=text[-120:]), self.assertRaises(MODULE.Incomplete):
@@ -2875,7 +2889,9 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         required = ("nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
                     "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted")
         current = self.policy["binding"]["test_inventory"]
-        before_reply_cutoff = [name for name in current if name not in self.FINAL_REPLY_CUTOFF_CASES]
+        before_capture = [name for name in current if name not in self.PLAIN_CAPTURE_CASES]
+        before_wait_and_rate = [name for name in before_capture if name not in self.MANAGED_WAIT_AND_RATE_CASES]
+        before_reply_cutoff = [name for name in before_wait_and_rate if name not in self.FINAL_REPLY_CUTOFF_CASES]
         return {
             "historical_400_222": sorted(
                 [f"ordinary_fixture_{index:03}" for index in range(178)] +
@@ -2898,16 +2914,19 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                 *self.MANAGED_DENY_CASES, *self.MANAGED_WORKER_BOUNDARY_CASES)],
             "historical_535_261": [name for name in before_reply_cutoff if name not in self.MANAGED_WORKER_BOUNDARY_CASES],
             "historical_538_264": before_reply_cutoff,
+            "historical_540_264": before_wait_and_rate,
+            "historical_544_268": before_capture,
             "current_missing_forwarding": [name for name in current if name != required],
             "same_counts_missing_forwarding": sorted(
                 [name for name in current if name != required] + ["nts_ke_experiment::other_case"]),
             **{f"same_counts_missing_{omitted.rsplit('::', 1)[-1]}": sorted(
                 [name for name in current if name != omitted] + ["nts_ke_experiment::other_case"])
                 for omitted in (*self.MANAGED_PROTECTED_CASES, *self.MANAGED_SUCCESSOR_CASES,
-                                *self.MANAGED_DENY_CASES, *self.MANAGED_WORKER_BOUNDARY_CASES)},
+                                *self.MANAGED_DENY_CASES, *self.MANAGED_WORKER_BOUNDARY_CASES,
+                                *self.MANAGED_WAIT_AND_RATE_CASES)},
             **{f"same_counts_missing_{omitted.rsplit('::', 1)[-1]}": sorted(
                 [name for name in current if name != omitted] + ["ordinary_other_case"])
-                for omitted in self.FINAL_REPLY_CUTOFF_CASES},
+                for omitted in (*self.FINAL_REPLY_CUTOFF_CASES, *self.PLAIN_CAPTURE_CASES)},
         }
 
     def test_old_or_substituted_roster_refuses_policy_and_execution(self):
@@ -2946,6 +2965,17 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.Incomplete, "source/helper inputs differ"):
             MODULE.validate_engine_ke_policy(bad)
 
+    def test_plain_capture_case_sources_require_exact_role_pins(self):
+        for path in ("crates/nevrotick-engine/tests/private/session.rs",
+                     "crates/nevrotick-engine/tests/private/source_policy.rs"):
+            with self.subTest(path=path):
+                self.assertEqual(MODULE.ENGINE_KE_TEST_SOURCES.count(path), 1)
+                self.assertEqual(MODULE.ENGINE_KE_BOUND_INPUTS.count(path), 1)
+                bad = copy.deepcopy(self.policy)
+                del bad["binding"]["inputs_sha256"][path]
+                with self.assertRaisesRegex(MODULE.Incomplete, "source/helper inputs differ"):
+                    MODULE.validate_engine_ke_policy(bad)
+
     def test_loaded_analysis_controls_is_in_exact_helper_closure(self):
         path = "scripts/analysis-controls.py"
         self.assertIn(path, MODULE.ENGINE_KE_BOUND_INPUTS)
@@ -2963,8 +2993,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.assertEqual(MODULE.validate_engine_ke_current_doctests(rustdoc, binding)["test_names"], docs)
         combined = MODULE.validate_engine_ke_execution(ordinary + rustdoc, binding, include_doctests=True)
         self.assertEqual(combined["additional_doctests"], docs)
-        self.assertEqual(combined["tests_executed"], 630)
-        self.assertEqual(combined["ke_tests_executed"], 264)
+        self.assertEqual(combined["tests_executed"], 638)
+        self.assertEqual(combined["ke_tests_executed"], 268)
         self.assertEqual(MODULE.validate_engine_ke_execution(ordinary, binding)["test_names"], names)
         with self.assertRaises(MODULE.Incomplete):
             MODULE.validate_engine_ke_execution(ordinary + rustdoc, binding)
@@ -3244,8 +3274,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             self.assertIn("--all-targets", argv)
             self.assertNotIn("build", argv)
             self.assertNotIn("run", argv)
-        self.assertEqual(report["baseline_execution"]["tests_executed"], 540)
-        self.assertEqual(report["release_execution"]["ke_tests_executed"], 264)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 548)
+        self.assertEqual(report["release_execution"]["ke_tests_executed"], 268)
         self.assertEqual(report["doctest_execution"]["compilation_only"],
                          ["src/lib.rs - Example::prepared (line 30) - compile",
                           "src/lib.rs - Example::private (line 20) - compile fail"])

@@ -183,7 +183,7 @@ async fn queued_native_reply() -> Result<(LiveSlot, Instant), Box<dyn Error>> {
 async fn queued_native_reply_for_source(
     source: Option<&crate::SourceHandle>,
 ) -> Result<(LiveSlot, Instant), Box<dyn Error>> {
-    queued_native_reply_configuring(source, |_| Ok(())).await
+    queued_native_reply_configuring(source, None, |_| Ok(())).await
 }
 
 /// Install an actual source definition after peer allocation but before binding.
@@ -193,6 +193,7 @@ async fn queued_native_reply_for_source(
 /// Retain the same independent query/send observations as the ordinary fixture.
 async fn queued_native_reply_configuring(
     source: Option<&crate::SourceHandle>,
+    profile: Option<ExperimentalProfile>,
     install: impl FnOnce(SocketAddr) -> Result<(), Box<dyn Error>>,
 ) -> Result<(LiveSlot, Instant), Box<dyn Error>> {
     let lifetime = Duration::from_secs(2);
@@ -212,6 +213,7 @@ async fn queued_native_reply_configuring(
         "bound loopback preparation rejected its local endpoint"
     );
     let mut prepared = prepared?;
+    prepared.profile = profile;
     if let Some(source) = source {
         prepared.source_policy =
             crate::source_policy::SourceMode::Managed(source.bind(destination)?);
@@ -514,7 +516,17 @@ struct SelectedReply {
 /// # Errors
 /// Preserve actual queueing/receive failures; no synthetic read is counted as native.
 async fn selected_native_reply() -> Result<SelectedReply, Box<dyn Error>> {
-    let (slot, deadline) = queued_native_reply().await?;
+    selected_native_reply_with_profile(None).await
+}
+
+/// Select the same native packet with an optional declaration bound before the send.
+/// # Errors
+/// Preserve actual setup and read failures.
+async fn selected_native_reply_with_profile(
+    profile: Option<ExperimentalProfile>,
+) -> Result<SelectedReply, Box<dyn Error>> {
+    let (slot, deadline): (LiveSlot, Instant) =
+        queued_native_reply_configuring(None, profile, |_| Ok(())).await?;
     let mut received = [0; RECEIVE_BYTES];
     let lifetime = Duration::from_secs(2);
     let result = tokio::time::timeout(lifetime, slot.socket.recv_from(&mut received)).await?;
@@ -525,6 +537,99 @@ async fn selected_native_reply() -> Result<SelectedReply, Box<dyn Error>> {
         selected: SeriesRead { result, read },
         buffer: received,
         deadline,
+    })
+}
+
+/// Transfer an actual header followed by a real pre-send refusal through one receiver.
+/// The first packet and its capture are genuine. The refused second bracket is modeled.
+/// # Errors
+/// Preserve actual sockets, receipt ownership and test coordinate failures.
+/// # Panics
+/// Fail unless the valid header and the second capture refusal both commit.
+pub(crate) fn mixed_capture_report(
+    profile: Option<ExperimentalProfile>,
+) -> Result<SeriesReport, Box<dyn Error>> {
+    use crate::source_policy::observations::{ReadCount, SendReads};
+
+    runtime()?.block_on(async {
+        let SelectedReply {
+            mut slot,
+            selected,
+            buffer,
+            deadline,
+        } = selected_native_reply_with_profile(profile).await?;
+        let context: Arc<RunClockContext> = Arc::clone(&slot.run_context);
+        let peer: SocketAddr = slot.peer;
+        let mut receiver: SeriesReceiver = unmanaged_receiver(Arc::clone(&context), peer, profile);
+        receiver.issue(RequestOwner::from_slot(0, &slot))?;
+        let initial: Control = Control {
+            stop: false,
+            epoch: 0,
+        };
+        let (sender, mut control): (watch::Sender<Control>, watch::Receiver<Control>) =
+            watch::channel(initial);
+        let limits: FrameLimits =
+            FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
+        let state: Control = handle_series_read(
+            &mut slot,
+            &mut control,
+            selected,
+            &buffer,
+            limits,
+            deadline,
+            initial,
+        );
+        let owner: RequestOwner = RequestOwner::from_slot(0, &slot);
+        let report: SlotReport = slot.into_report(0)?;
+        assert_eq!(report.status(), Status::Header);
+        receiver.receive(Completion { owner, report }, state)?;
+
+        let mut packet: [u8; PACKET_BYTES] = [0; PACKET_BYTES];
+        packet[0] = 0x23;
+        packet[40..48].fill(8);
+        let mut slot: LiveSlot = setup_request(RequestSetup {
+            source_policy: crate::source_policy::SourceMode::UnmanagedLab,
+            peer,
+            packet,
+            profile,
+            context,
+            test_final_guard_observer: None,
+        })?;
+        receiver.issue(RequestOwner::from_slot(1, &slot))?;
+        let lower: Instant = deadline
+            .checked_sub(Duration::from_nanos(1))
+            .ok_or(PilotError::DeadlineOverflow)?;
+        let earlier: Instant = lower
+            .checked_sub(Duration::from_nanos(1))
+            .ok_or(PilotError::DeadlineOverflow)?;
+        let before: SoftwareClock = SoftwareClock {
+            mono: lower,
+            utc: std::time::SystemTime::UNIX_EPOCH,
+            mono_after: earlier,
+        };
+        let after: SoftwareClock = SoftwareClock {
+            mono_after: lower,
+            ..before
+        };
+        let (captures, reads): (SendReads, ReadCount) = SendReads::fixed_raw(before, after);
+        tokio::time::timeout(Duration::from_secs(2), slot.socket.writable()).await??;
+        let state: Control = crate::attempt_send_observing(&mut slot, deadline, &control, captures);
+        assert_eq!(
+            reads.reads(),
+            1,
+            "second capture should retire before the send"
+        );
+        let owner: RequestOwner = RequestOwner::from_slot(1, &slot);
+        let report: SlotReport = slot.into_report(1)?;
+        assert_eq!(
+            report.capture_refusal(),
+            Some(crate::MeasurementRefusal::CaptureOrder)
+        );
+        receiver.receive(Completion { owner, report }, state)?;
+        ControlHandle { sender }.stop();
+        let end: SeriesEnd =
+            current_series_end(&mut control, deadline).ok_or(PilotError::InternalState)?;
+        Ok(receiver.finish(end, None))
     })
 }
 
@@ -3385,12 +3490,15 @@ async fn source_configuration_fixture(
 ) -> Result<FinalGuardFixture, Box<dyn Error>> {
     match path {
         FinalGuardPath::Reply => {
-            let (mut slot, deadline) = queued_native_reply_configuring(Some(source), |peer| {
-                let _installed = authority
-                    .install_source_configuration(source, crate::SourceAddressSet::new(&[peer])?)?;
-                Ok(())
-            })
-            .await?;
+            let (mut slot, deadline) =
+                queued_native_reply_configuring(Some(source), None, |peer| {
+                    let _installed = authority.install_source_configuration(
+                        source,
+                        crate::SourceAddressSet::new(&[peer])?,
+                    )?;
+                    Ok(())
+                })
+                .await?;
             let mut buffer = [0; RECEIVE_BYTES];
             let length =
                 tokio::time::timeout(Duration::from_secs(2), slot.socket.recv_from(&mut buffer))

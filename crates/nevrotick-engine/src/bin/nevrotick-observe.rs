@@ -198,8 +198,9 @@ fn milliseconds(value: &str) -> Result<Duration, CliError> {
 }
 
 /// Write two slot records, at most two measurement records and one completion record.
-/// Every finite measurement line is below 1,024 bytes even at integer extremes;
-/// raw packets, tokens, native error text and endpoint strings are never included.
+/// Every finite measurement line is below 1,024 bytes even at integer extremes.
+/// A pre-send capture refusal adds its fixed reason to its result line.
+/// Raw packets, tokens, native error text and endpoint strings are never included.
 ///
 /// # Errors
 /// Return a diagnostic-output failure if the sink rejects any record; earlier
@@ -218,6 +219,9 @@ fn write_report(report: &PilotReport, output: &mut impl Write) -> Result<(), Cli
         .map_err(|_| CliError::Output)?;
         if let Some(stratum) = slot.stratum() {
             write!(output, " stratum={stratum}").map_err(|_| CliError::Output)?;
+        }
+        if let Some(reason) = slot.capture_refusal() {
+            write!(output, " reason={}", reason.as_str()).map_err(|_| CliError::Output)?;
         }
         writeln!(output).map_err(|_| CliError::Output)?;
         slot.write_measurement(output)

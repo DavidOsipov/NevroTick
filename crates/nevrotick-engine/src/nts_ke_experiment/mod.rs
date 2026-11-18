@@ -36,11 +36,13 @@ use association::AssociationCandidate;
 #[cfg(any(windows, test))]
 use association::AssociationOwner;
 #[cfg(test)]
-pub(crate) use association::ledger::VerifiedRetiredDeny;
+pub(crate) use association::ledger::VerifiedRetiredControl;
 #[cfg(any(windows, test))]
 use process::ProcessAdmission;
 #[cfg(any(windows, test))]
 use process::ProviderScope;
+#[cfg(test)]
+pub(crate) use response::ProtectedControlKind;
 
 /// Process-wide one-shot admission; cached CNG providers cannot be reinitialized.
 #[cfg(any(windows, test))]
@@ -703,14 +705,14 @@ impl<'a> DatagramAuthorityGuard<'a> {
             .map_err(Failure::SourcePolicy)
     }
 
-    /// Publish one verified DENY while the original Control and policy remain held.
+    /// Publish one verified protected control while the original Control and policy remain held.
     /// Consume the authorization issued by the exact retired receiving ledger.
     /// # Errors
-    /// Preserve Stop, deadline, binding and stamp refusals before any restriction.
+    /// Preserve Stop, deadline, binding and stamp refusals before either policy record changes.
     #[cfg(test)]
-    fn commit_protected_deny(
+    fn commit_protected_control(
         &mut self,
-        authorization: VerifiedRetiredDeny<'_>,
+        authorization: VerifiedRetiredControl<'_>,
     ) -> Result<(), Failure> {
         if !authorization.matches_control(self.control.control) {
             return Err(Failure::Control);
@@ -719,7 +721,7 @@ impl<'a> DatagramAuthorityGuard<'a> {
         self.policy
             .as_mut()
             .ok_or(Failure::Control)?
-            .apply_deny(authorization)
+            .apply_control(authorization)
             .map_err(Failure::SourcePolicy)?;
         *self.control.phase = Phase::Committed;
         Ok(())
@@ -1094,7 +1096,7 @@ enum InvocationCompletion {
     ManagedProtected(Box<datagram::ManagedProtectedHistory>),
     /// A committed, control-only historical effect from the private scripted worker.
     #[cfg(test)]
-    ManagedProtectedDeny(association::ledger::AppliedProtectedDeny),
+    ManagedProtectedControl(association::ledger::AppliedProtectedControl),
 }
 
 #[cfg(test)]
@@ -1106,7 +1108,7 @@ impl InvocationCompletion {
             Self::ManagedPreview(history) => Some(history.summary()),
             Self::Protected(history) => Some(history.summary()),
             Self::ManagedProtected(history) => Some(history.summary()),
-            Self::ManagedProtectedDeny(_) => None,
+            Self::ManagedProtectedControl(_) => None,
         }
     }
 }
@@ -1207,7 +1209,7 @@ fn run_synchronously_with(
     match run_joined_with(config, slot, profile, submit)? {
         datagram::ReceivedInvocation::Probe(completion) => Ok(completion),
         #[cfg(test)]
-        datagram::ReceivedInvocation::ProtectedDeny(_) => {
+        datagram::ReceivedInvocation::ProtectedControl(_) => {
             Err(RunFailed::Operation(Failure::Control.into()))
         }
     }

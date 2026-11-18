@@ -372,6 +372,58 @@ fn unmanaged_send_bracket_after_deadline_refuses_without_emission() -> Result<()
     check_unmanaged_send_cutoff(Ordering::Greater)
 }
 
+/// A lower reading at the original cutoff refuses an actual unmanaged send even
+/// if the second reading regresses behind it.
+/// # Errors
+/// Preserve runtime, socket, readiness and modeled coordinate failure.
+/// # Panics
+/// Fail if the peer receives a payload, the sender reads past the refusal, or
+/// retirement and readiness accounting differ from the existing cutoff.
+#[test]
+fn unmanaged_send_cutoff_uses_both_clock_readings() -> Result<(), Box<dyn Error>> {
+    use crate::source_policy::observations::{ReadCount, SendReads};
+
+    let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .build()?;
+    runtime.block_on(async {
+        let Fixture {
+            prepared: [prepared, _],
+            peers: [peer, _],
+        } = fixture()?;
+        let mut slot: LiveSlot = live_slot(prepared)?;
+        let (_owner, control): (watch::Sender<Control>, watch::Receiver<Control>) =
+            watch::channel(Control { stop: false, epoch: 0 });
+        tokio::time::timeout(IO_LIMIT, slot.socket.writable()).await??;
+
+        let deadline: Instant = Instant::now();
+        let earlier: Instant = deadline
+            .checked_sub(Duration::from_nanos(1))
+            .ok_or_else(|| io::Error::other("fixture cutoff predecessor unavailable"))?;
+        let before: SoftwareClock = SoftwareClock {
+            mono: deadline,
+            utc: SystemTime::UNIX_EPOCH,
+            mono_after: earlier,
+        };
+        let after: SoftwareClock = SoftwareClock { mono_after: deadline, ..before };
+        let (captures, count): (SendReads, ReadCount) = SendReads::fixed_raw(before, after);
+        let checkpoint: Control = attempt_send_observing(&mut slot, deadline, &control, captures);
+        let mut bytes: [u8; RECEIVE_BYTES] = [0; RECEIVE_BYTES];
+        assert!(
+            matches!(peer.recv_from(&mut bytes), Err(error) if error.kind() == io::ErrorKind::WouldBlock),
+            "a pre-send reading at expiry allowed an unmanaged loopback packet"
+        );
+        assert!(!checkpoint.stop);
+        assert_eq!(checkpoint.epoch, 0);
+        assert_eq!(count.reads(), 1);
+        assert!(!slot.sent);
+        assert_eq!((slot.send_attempts, slot.received, slot.rejected), (1, 0, 0));
+        assert!(matches!(slot.terminal(), Some(TerminalOutcome::Timeout)));
+        Ok(())
+    })
+}
+
 /// Send a literal peer response and retain observations from its actual native read.
 /// `request` is the previously observed immutable query; no new query is sent.
 ///
@@ -1130,12 +1182,18 @@ enum IoCase {
     NativeWithoutCode,
     /// The private anomalous-length outcome deliberately has no native cause.
     AnomalousSend,
+    /// Reject a reversed modeled application bracket before the quiet sender.
+    PreSendCaptureOrder,
 }
 
 /// Inject only explicitly synthetic typed failures into genuine active slot inputs.
 ///
 /// # Errors
 /// Preserve real send/fixture failures; capture no localized error text in outcomes.
+///
+/// # Panics
+/// Fail if a reversed capture changes the control checkpoint, reaches the sender,
+/// produces an unexpected peer read result, or changes the readiness debit.
 async fn inject_io_case(
     slots: &mut [LiveSlot; 2],
     peer: &UdpSocket,
@@ -1184,6 +1242,44 @@ async fn inject_io_case(
             );
         }
         IoCase::AnomalousSend => slots[0].finish(TerminalOutcome::Io(IoOutcome::ShortSend)),
+        IoCase::PreSendCaptureOrder => {
+            use crate::source_policy::observations::{ReadCount, SendReads};
+
+            let lower: Instant =
+                deadline
+                    .checked_sub(Duration::from_nanos(1))
+                    .ok_or_else(|| {
+                        io::Error::other("fixture capture cutoff predecessor unavailable")
+                    })?;
+            let earlier: Instant = lower.checked_sub(Duration::from_nanos(1)).ok_or_else(|| {
+                io::Error::other("fixture reversed capture predecessor unavailable")
+            })?;
+            let before: SoftwareClock = SoftwareClock {
+                mono: lower,
+                utc: SystemTime::UNIX_EPOCH,
+                mono_after: earlier,
+            };
+            let after: SoftwareClock = SoftwareClock {
+                mono_after: lower,
+                ..before
+            };
+            let (captures, count): (SendReads, ReadCount) = SendReads::fixed_raw(before, after);
+            tokio::time::timeout(IO_LIMIT, slots[0].socket.writable()).await??;
+            let observed: Control =
+                attempt_send_observing(&mut slots[0], deadline, &receiver, captures);
+            assert!(!observed.stop && observed.epoch == 0);
+            let mut bytes: [u8; RECEIVE_BYTES] = [0; RECEIVE_BYTES];
+            assert!(
+                matches!(peer.try_recv_from(&mut bytes), Err(error) if error.kind() == io::ErrorKind::WouldBlock),
+                "wholly pre-cutoff inverted capture allowed an unmanaged packet"
+            );
+            assert_eq!(
+                count.reads(),
+                1,
+                "inverted capture entered the unmanaged sender"
+            );
+            assert_eq!(slots[0].send_attempts, 1);
+        }
     }
     Ok(expected_kind)
 }
@@ -1208,6 +1304,13 @@ fn check_io_report(
         report.stratum().is_none() && report.facts().is_none() && report.control_code().is_none()
     );
     assert!(report.last_rejection().is_none());
+    assert_eq!(
+        report.capture_refusal(),
+        match case {
+            IoCase::PreSendCaptureOrder => Some(MeasurementRefusal::CaptureOrder),
+            _ => None,
+        }
+    );
     match case {
         IoCase::NativeCode => {
             let captured_error = report
@@ -1223,7 +1326,7 @@ fn check_io_report(
             assert_eq!(captured_error.native_code(), None);
             assert_eq!(captured_error.kind(), io::ErrorKind::Other);
         }
-        IoCase::AnomalousSend => assert!(report.io_cause().is_none()),
+        IoCase::AnomalousSend | IoCase::PreSendCaptureOrder => assert!(report.io_cause().is_none()),
     }
     assert_eq!(neighbor.status(), Status::Stopped);
     assert!(!neighbor.sent());
@@ -1256,6 +1359,7 @@ fn terminal_io_causes_and_send_history_remain_distinct() -> Result<(), Box<dyn E
         IoCase::NativeCode,
         IoCase::NativeWithoutCode,
         IoCase::AnomalousSend,
+        IoCase::PreSendCaptureOrder,
     ] {
         let Fixture { prepared, peers } = fixture()?;
         runtime.block_on(async {
@@ -1275,6 +1379,8 @@ fn terminal_io_causes_and_send_history_remain_distinct() -> Result<(), Box<dyn E
                     matches!(outcome, TerminalOutcome::Io(IoOutcome::Native(_))),
                 IoCase::AnomalousSend =>
                     matches!(outcome, TerminalOutcome::Io(IoOutcome::ShortSend)),
+                IoCase::PreSendCaptureOrder =>
+                    matches!(outcome, TerminalOutcome::Io(IoOutcome::PreSendCaptureOrder)),
             });
             retire_for_control(
                 &mut slots,
