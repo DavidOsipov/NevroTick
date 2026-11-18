@@ -23894,3 +23894,39 @@ qualification exits retain their separate scopes.
 GNU terminal SHA-256 `9e6fdb55970ef12c3cbe10b7e0750644bb8bc29c3219b217e7e68fe6e359e88a`, MSVC controls SHA-256 `8c6482a4f5b28a11f97a403f7e31abc8cfacd17a3bbd2d0f9800cbef4106d920`,
 and cross-target readback SHA-256 `f3342b178912f58edfd61241152ef3a271d18b35b7fd5b2e6dc6fcb6706fc959`. Raw evidence is under
 `next-worker-boundary-datagram-mutation` and `next-worker-datagram-boundaries`.
+
+###### Checked application capture span — 18 November 2026
+
+For S2.1/W11-W01 TQ-01/TQ-08, the actual measurement consumer now uses
+a private checked span of the original first and last application wall
+read brackets. The complete exchange order, including processing time,
+is checked before wall conversion. The same bounds drive read coherence
+and the receive upper endpoint drives age. Independent pair callers still
+check their own brackets. This introduces no clock read, calibrated
+placement or mapping authority.
+
+The broad synthetic control reaches the same measurement consumer with
+an elapsed placement of 160–500 ms. At the nominal wall delta of 500 ms,
+zero model allowance admits the boundary. Moving the upper endpoint
+one nanosecond inward refuses. Ages of 0 ns, 1 ns and 200 ms preserve the
+same signed phase and round-trip arithmetic. The seeded wrong-endpoint
+variant reached the intended age assertion with 300 ms against 0 ns.
+That sensitivity control is separate from generated mutation outcomes.
+
+Product `242754b8b87092ac1954e7ebe38b7a566a84ece1498711ec267bb3a1505f418c` passes 19 development lanes with 1,811
+cases and GNU/MSVC all-target checks. All 376 actual reader methods pass.
+The separate stable-core EP1 instrumentation runs the complete 538-case
+selection and observes 371/379
+executable measurement lines (97.89%). Its measured scope
+is the one current GNU file. The legacy Session role remains bound to its
+historical candidate, and current measurement mutation and Windows runtime
+qualification remain open. Prior datagram results retain their exact
+`70ae31df…` product scope.
+
+The KE development binding is current and campaigns remain closed. Continue
+the physical validity/error and invalidation supplier work before any
+positive Engine-to-Core admission.
+
+Development receipt SHA-256 `4da9ef910e107306c34955e7cfbd3a62c1bd914953ccefbeaa4b60cf061e03ac`.
+Measurement line observation SHA-256 `18aeb566f40c8a7f400bfba1c5680b7443d3bc892b5005fb15d881e1bc03ed68`.
+Targeted sensitivity SHA-256 `01718d7d5a053380c0f7b571d4f81d429e2bcf080ffa5a23a56a0f34ad820f88`.

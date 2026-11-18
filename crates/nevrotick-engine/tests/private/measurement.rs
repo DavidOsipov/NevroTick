@@ -13,10 +13,10 @@ use time_domain::{
 use crate::relative::{RelativeMeasurementRefusal, phase_difference};
 
 use super::{
-    ExperimentalProfile, MAX_DECLARED_RESIDUAL_NS, MeasurementRefusal, NANOS_PER_SECOND,
-    NOMINAL_NUMERATOR_LIMIT, NTP_UNIX_OFFSET_SECONDS, NominalResultCandidate, Q32_SCALE,
-    SoftwareClock, coherence_residual, convert_wall, measure, nominal_arithmetic, require_in_scope,
-    series_coherence_residuals,
+    ApplicationCaptureSpan, ExperimentalMeasurement, ExperimentalProfile, MAX_DECLARED_RESIDUAL_NS,
+    MeasurementRefusal, NANOS_PER_SECOND, NOMINAL_NUMERATOR_LIMIT, NTP_UNIX_OFFSET_SECONDS,
+    NominalResultCandidate, Q32_SCALE, SoftwareClock, check_capture_order, coherence_residual,
+    convert_wall, measure, nominal_arithmetic, require_in_scope, series_coherence_residuals,
 };
 
 /// Assert an independently valid pure product result without formatting its cause.
@@ -1000,43 +1000,65 @@ fn reversed_brackets_and_processing_are_not_ages() -> Result<(), MeasurementRefu
 }
 
 /// Packet publication must follow the receive bracket's upper endpoint.
-/// These synthetic brackets test numerical admission, not genuine packet production.
+/// Synthetic first and last brackets retain a 160–500 ms elapsed placement.
 /// # Errors
 /// Preserve checked fixture/profile/header construction failures.
 /// # Panics
-/// Reject a premature age, changed refusal precedence or either legal neighbor.
+/// Reject premature age, a narrowed elapsed window or altered nominal arithmetic.
 #[test]
 fn publication_age_starts_at_receive_bracket_upper_endpoint() -> Result<(), MeasurementRefusal> {
-    let start = Instant::now();
-    let first = capture(start, 0, BASE, 0)?;
-    let mut read = capture(start, 100, BASE, 100)?;
+    let start: Instant = Instant::now();
+    let mut first: SoftwareClock = capture(start, 0, BASE, 0)?;
+    first.mono_after = start
+        .checked_add(Duration::from_millis(40))
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    let after: SoftwareClock = capture(start, 50_000_000, BASE, 50_000_000)?;
+    let mut read: SoftwareClock = capture(start, 200_000_000, BASE, 500_000_000)?;
     read.mono_after = start
-        .checked_add(Duration::from_nanos(200))
+        .checked_add(Duration::from_millis(500))
         .ok_or(MeasurementRefusal::Arithmetic)?;
-    let premature = start
-        .checked_add(Duration::from_nanos(199))
+    let span: ApplicationCaptureSpan = check_capture_order(first, after, read, read.mono_after)?;
+    assert_eq!(span.elapsed_bounds()?, [160_000_000, 500_000_000]);
+    let premature: Instant = read
+        .mono_after
+        .checked_sub(Duration::from_nanos(1))
         .ok_or(MeasurementRefusal::Arithmetic)?;
-    let profile = Some(ExperimentalProfile::new(BASE, BASE, 0)?);
-    let raw = header(BASE_BITS, BASE_BITS, 3)?;
+    let profile: Option<ExperimentalProfile> = Some(ExperimentalProfile::new(BASE, BASE + 1, 0)?);
+    let raw: RawHeader = header(BASE_BITS + (1 << 28), BASE_BITS + (1 << 29), 3)?;
     assert_eq!(
-        measure(profile, first, first, read, premature, raw),
+        measure(profile, first, after, read, premature, raw),
         Err(MeasurementRefusal::CaptureOrder),
         "KE-HIST-05-publication-before-upper-endpoint"
     );
-    for nanos in [0, 1] {
-        let processing = read
+    for nanos in [0, 1, 200_000_000] {
+        let processing: Instant = read
             .mono_after
             .checked_add(Duration::from_nanos(nanos))
             .ok_or(MeasurementRefusal::Arithmetic)?;
-        let measured = measure(profile, first, first, read, processing, raw)?;
+        let measured: ExperimentalMeasurement =
+            measure(profile, first, after, read, processing, raw)?;
+        assert_eq!(measured.observed_residual_ns(), 0);
+        assert_eq!(measured.arithmetic().offset().numerator(), -1_342_177_280);
+        assert_eq!(
+            measured.arithmetic().round_trip().numerator(),
+            1_879_048_192
+        );
         assert_eq!(measured.acquisition_age(), Duration::from_nanos(nanos));
     }
+    let shortened: SoftwareClock = SoftwareClock {
+        mono_after: premature,
+        ..read
+    };
     assert_eq!(
-        measure(None, first, first, read, premature, raw),
+        measure(profile, first, after, shortened, read.mono_after, raw),
+        Err(MeasurementRefusal::MappingDiscontinuity)
+    );
+    assert_eq!(
+        measure(None, first, after, read, premature, raw),
         Err(MeasurementRefusal::Unavailable)
     );
     assert_eq!(
-        measure(profile, first, first, read, premature, header(0, 0, 3)?),
+        measure(profile, first, after, read, premature, header(0, 0, 3)?),
         Err(MeasurementRefusal::Protocol)
     );
     Ok(())

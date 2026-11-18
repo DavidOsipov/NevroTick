@@ -362,6 +362,64 @@ struct ConvertedWall {
     remainder: u32,
 }
 
+/// Original ordered application wall-read brackets used for elapsed placement.
+/// The full possible local span runs from the first lower to the last upper
+/// endpoint of the application wall reads.
+struct ApplicationCaptureSpan {
+    /// Actual first wall-read bracket, with both monotonic endpoints preserved.
+    first: SoftwareClock,
+    /// Actual last wall-read bracket from the same observation sequence.
+    last: SoftwareClock,
+}
+
+impl ApplicationCaptureSpan {
+    /// Return the inclusive lower and upper elapsed placement in nanoseconds.
+    /// # Errors
+    /// Preserve unrepresentable duration or signed conversion refusal.
+    fn elapsed_bounds(&self) -> Result<[i128; 2], MeasurementRefusal> {
+        let lower: i128 = signed_nanoseconds(
+            self.last
+                .mono
+                .checked_duration_since(self.first.mono_after)
+                .ok_or(MeasurementRefusal::CaptureOrder)?,
+        )?;
+        let upper: i128 = signed_nanoseconds(
+            self.last
+                .mono_after
+                .checked_duration_since(self.first.mono)
+                .ok_or(MeasurementRefusal::CaptureOrder)?,
+        )?;
+        Ok([lower, upper])
+    }
+
+    /// Compare the paired converted wall readings to their original elapsed placement.
+    /// # Errors
+    /// Preserve checked duration, conversion or residual representability refusal.
+    fn coherence_residual(
+        &self,
+        first_wall: ConvertedWall,
+        last_wall: ConvertedWall,
+    ) -> Result<u64, MeasurementRefusal> {
+        let [lower, upper]: [i128; 2] = self.elapsed_bounds()?;
+        let wall_delta: i128 = last_wall
+            .nanoseconds
+            .checked_sub(first_wall.nanoseconds)
+            .ok_or(MeasurementRefusal::Arithmetic)?;
+        let gap: i128 = if wall_delta < lower {
+            lower
+                .checked_sub(wall_delta)
+                .ok_or(MeasurementRefusal::Arithmetic)?
+        } else if wall_delta > upper {
+            wall_delta
+                .checked_sub(upper)
+                .ok_or(MeasurementRefusal::Arithmetic)?
+        } else {
+            0
+        };
+        u64::try_from(gap).map_err(|_| MeasurementRefusal::Arithmetic)
+    }
+}
+
 /// Stage a fixed-size conditional measurement, without effects or clock reads.
 ///
 /// Header structure is checked again at this numerical consumer. Current source,
@@ -383,12 +441,13 @@ pub(crate) fn measure(
 ) -> Result<ExperimentalMeasurement, MeasurementRefusal> {
     let profile = profile.ok_or(MeasurementRefusal::Unavailable)?;
     require_time_reply(header)?;
-    check_capture_order(send_before, send_after, read, processing)?;
-    let t1 = convert_wall(send_before.utc)?;
+    let capture_span: ApplicationCaptureSpan =
+        check_capture_order(send_before, send_after, read, processing)?;
+    let t1 = convert_wall(capture_span.first.utc)?;
     let after = convert_wall(send_after.utc)?;
-    let t4 = convert_wall(read.utc)?;
-    let after_residual = coherence_residual(send_before, send_after, t1, after)?;
-    let read_residual = coherence_residual(send_before, read, t1, t4)?;
+    let t4 = convert_wall(capture_span.last.utc)?;
+    let after_residual = coherence_residual(capture_span.first, send_after, t1, after)?;
+    let read_residual: u64 = capture_span.coherence_residual(t1, t4)?;
     let observed_residual_ns = after_residual.max(read_residual);
     if observed_residual_ns > profile.maximum_residual_ns {
         return Err(MeasurementRefusal::MappingDiscontinuity);
@@ -422,7 +481,7 @@ pub(crate) fn measure(
     let software_window = EraWindow::new(earliest.ticks(), latest.ticks())
         .map_err(|_| MeasurementRefusal::Arithmetic)?;
     let acquisition_age = processing
-        .checked_duration_since(read.mono_after)
+        .checked_duration_since(capture_span.last.mono_after)
         .ok_or(MeasurementRefusal::CaptureOrder)?;
     Ok(ExperimentalMeasurement {
         coordinates: [t1.coordinate, t2, t3, t4.coordinate],
@@ -454,7 +513,7 @@ fn require_time_reply(header: RawHeader) -> Result<(), MeasurementRefusal> {
     Ok(())
 }
 
-/// Require ordered nonoverlapping captures through the supplied processing read.
+/// Retain the first and last brackets only after admitting the complete order.
 ///
 /// # Errors
 /// Rejects a reversed capture, send/receive sequence or processing-before-read.
@@ -463,7 +522,7 @@ fn check_capture_order(
     send_after: SoftwareClock,
     read: SoftwareClock,
     processing: Instant,
-) -> Result<(), MeasurementRefusal> {
+) -> Result<ApplicationCaptureSpan, MeasurementRefusal> {
     let ordered = [
         send_before.mono,
         send_before.mono_after,
@@ -479,7 +538,10 @@ fn check_capture_order(
     {
         return Err(MeasurementRefusal::CaptureOrder);
     }
-    Ok(())
+    Ok(ApplicationCaptureSpan {
+        first: send_before,
+        last: read,
+    })
 }
 
 /// Convert an actual supplied wall value, including pre-Unix values, without I/O.
@@ -539,34 +601,11 @@ fn coherence_residual(
     {
         return Err(MeasurementRefusal::CaptureOrder);
     }
-    let lower = signed_nanoseconds(
-        later
-            .mono
-            .checked_duration_since(base.mono_after)
-            .ok_or(MeasurementRefusal::CaptureOrder)?,
-    )?;
-    let upper = signed_nanoseconds(
-        later
-            .mono_after
-            .checked_duration_since(base.mono)
-            .ok_or(MeasurementRefusal::CaptureOrder)?,
-    )?;
-    let wall_delta = later_wall
-        .nanoseconds
-        .checked_sub(base_wall.nanoseconds)
-        .ok_or(MeasurementRefusal::Arithmetic)?;
-    let gap = if wall_delta < lower {
-        lower
-            .checked_sub(wall_delta)
-            .ok_or(MeasurementRefusal::Arithmetic)?
-    } else if wall_delta > upper {
-        wall_delta
-            .checked_sub(upper)
-            .ok_or(MeasurementRefusal::Arithmetic)?
-    } else {
-        0
-    };
-    u64::try_from(gap).map_err(|_| MeasurementRefusal::Arithmetic)
+    ApplicationCaptureSpan {
+        first: base,
+        last: later,
+    }
+    .coherence_residual(base_wall, later_wall)
 }
 
 /// Derive the largest fixed-baseline residual across one original bounded series.

@@ -2,7 +2,7 @@
   "admission_status": "admitted-engine-ke-source-analysis",
   "baseline_wall_seconds": 300,
   "binding": {
-    "candidate_sha256": "70ae31df35a17ceed0f098a4454c64b91404935b866eaee683e8a51dbce88a50",
+    "candidate_sha256": "242754b8b87092ac1954e7ebe38b7a566a84ece1498711ec267bb3a1505f418c",
     "doctest_inventory": [
       "crates/nevrotick-engine/src/address_round.rs - series::address_round::AddressPolicyRefusal (line 332) - compile fail",
       "crates/nevrotick-engine/src/address_round.rs - series::address_round::AddressRoundConfig (line 125) - compile fail",
@@ -24,16 +24,16 @@
       "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 126) - compile fail",
       "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 131) - compile fail",
       "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 94)",
-      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 655)",
-      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 663) - compile fail",
-      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 668) - compile fail",
-      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 676) - compile fail",
-      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 681) - compile fail",
-      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 725)",
-      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 733) - compile fail",
-      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 738) - compile fail",
-      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 746) - compile fail",
-      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 751) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 694)",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 702) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 707) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 715) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 720) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 764)",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 772) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 777) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 785) - compile fail",
+      "crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 790) - compile fail",
       "crates/nevrotick-engine/src/quality.rs - quality::ConditionalQuality (line 749) - compile fail",
       "crates/nevrotick-engine/src/quality.rs - quality::ConditionalQuality (line 755) - compile fail",
       "crates/nevrotick-engine/src/quality.rs - quality::ConditionalQuality (line 760) - compile fail",
@@ -152,8 +152,8 @@
       "tools/crypto-cng-lifecycle/Cargo.lock": "86bd5f239d7260a25482935936ab1cb14ad5a90e40868f0509a55adaa45afe48"
     },
     "ordinary_evidence": {
-      "path": "/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/source-config-revisions-20261117-v1/ke-managed-protected-development.QBTV3k42/next-worker-boundary-development/verification.json",
-      "sha256": "467d3849c1924502290ae19b3a0ab8e2934ebe2d3f2dc1535de34829cd29cf94"
+      "path": "/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/source-config-revisions-20261117-v1/ke-managed-protected-development.QBTV3k42/next-application-capture-development/verification.json",
+      "sha256": "4da9ef910e107306c34955e7cfbd3a62c1bd914953ccefbeaa4b60cf061e03ac"
     },
     "root_graph_evidence": {
       "path": "/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/engine-ke-request-execution-20261117-v1/discovery-2/verification.json",

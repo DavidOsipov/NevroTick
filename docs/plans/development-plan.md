@@ -1201,7 +1201,9 @@ charges each receive, preserves ordinary reply handling and commits exact
 source and endpoint restrictions under the original Control. The
 [joined worker fixture](../../tasks/engine-transport-pilot.md#joined-protected-deny-and-datagram-observation--18-november-2026)
 preserves the historical decision through later Stop, normal join and
-abnormal retirement. Refresh datagram mutation qualification. Genuine
+abnormal retirement. The [datagram active-target assessment](../../tasks/engine-transport-pilot.md#datagram-active-target-mutation-review--18-november-2026) passed on that exact predecessor. The [checked application span](../../tasks/engine-transport-pilot.md#checked-application-capture-span--18-november-2026)
+now retains the original local placement and age provenance in the
+measurement path, with focused and full development checks. Genuine
 TLS/CNG/UDP, date, scale, trust and quality suppliers retain their gates.
 
 **Published preceding product child — 17 November 2026:**
