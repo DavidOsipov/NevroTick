@@ -2203,3 +2203,85 @@ instruction change; no product, parser, runtime, harness or checker behavior is
 modified. This does not mark any existing product fuzz obligation N/A or waive
 an execution hold. No checker-regression campaign is required for this prose-only
 slice. Review dates use the explicitly selected Asia/Tbilisi client date.
+
+## Rust safety guides follow-up — 19 November 2026
+
+David requested another multi-agent read of the ANSSI and Safety-Critical Rust
+Coding Guidelines, with an independent judge selecting worthwhile additions.
+The clean reviewed base is `e81d48f67e933610185a4b4878830987a089106f`.
+Three fresh-context specialists covered the full published ANSSI material and
+split all 19 safety-critical chapter indices; a separate fresh-context judge
+independently checked proposed deltas against current owners and primary Rust
+semantics. Source pins, publication status and licence qualifications are in the
+[existing source register](../skills/implementation/SOURCES.md#rust-safety-guides-follow-up--19-november-2026).
+ANSSI's 60 IDs and eight included examples yield no additional change beyond the
+preceding review. The second guide supplies 25 published draft entries, including
+two bibliography demonstrations and six template-only macro entries; its 14
+empty chapter indices supply no requirements or completeness evidence.
+
+| Candidate | Judge decision, existing destination and source-based control |
+| --- | --- |
+| A: checked shifts | **Accept** in [exact arithmetic](../skills/implementation/implement-rust/references/modern-rust.md#keep-arithmetic-and-time-semantics-exact). `0x10u8.checked_shl(7)` returns `Some(0)`: success admits the count without preserving exact scaling. A representable result, deliberate bitfield truncation and specified right-shift rounding remain legitimate. No nightly exact-shift API is selected. |
+| B: inferred inline pointer targets | **Accept narrowly** in [source-visible types](../skills/implementation/implement-rust-contracts/references/contract-enforcement.md#make-types-and-assumptions-source-visible). A later consumer can infer a different pointee even when the original pointer has an explicit type. An immediately typed destination or declared generic/associated type suffices; prefer a safe field borrow where applicable. This grants no `as`, `transmute`, unsafe, layout or pointer-validity exception. |
+| C: macro semantics and item identity | **Accept as one paragraph** in [Rust implementation](../skills/implementation/implement-rust/SKILL.md#implement-rust). Review evaluation count, mutation/control flow and definition-chosen external item paths. Preserve justified syntax generation, lazy/repeated evaluation, expansion-local items/bindings and deliberate caller names. `$crate` preserves ordinary visibility. |
+
+The judge rejects duplicate general arithmetic/type/FFI rules, blanket recursion
+or macro/attribute bans, compulsory macro migrations, blanket pointer prohibitions
+and universal path qualification of every macro name. Existing resource limits,
+private checked construction, union access order, provenance, foreign-value
+validity, safe-wrapper soundness and dependency/macro execution ownership already
+provide the applicable controls. Empty chapters and rule titles do not justify a
+new concurrency, fuzzing, inline-assembly or certification workstream.
+
+Source qualifications from the specialists and the judge:
+
+- `gui_ADHABsmK9FXz` recommends pointer/integer `transmute`; current Rust documents
+  its unspecified aspects and discourages that substitution. Preserve the existing
+  provenance guidance and actual conversion restrictions.
+- `gui_dCquvqE1csI3`'s manual multiplication guard evaluates `i32::MIN / -1` for
+  the valid inputs `si_a = -1`, `si_b = 1`; that guard can panic. This is a
+  source-derived counterexample, not an executed test. Keep checked multiplication
+  and NevroTick's actual release overflow policy rather than copying the recipe.
+- The union draft `gui_0cuTYG8RVYjg` exposes raw tag/data fields while its safe
+  conversion reads the selected field. A valid tag alone does not establish valid
+  corresponding data. The iterative example in `gui_ot2Zt3dd6of1` allocates before
+  checking its stack bound and leaves output growth unbounded. Existing foreign
+  validity and pre-allocation resource contracts remain stronger.
+- The function-over-macro draft's general optimization claims supply no reliable
+  performance basis. Function preference here is conditional on preserving actual
+  behavior; no speed or code-size claim follows.
+- Excluded `.rst.inc` drafts include an incorrect uninitialized-integer claim and
+  a command-injection example whose first alleged compliant variant repeats the
+  unsafe shell construction. They supply no published rule or approved recipe.
+
+These are source-inspection and instruction-use judgments. No NevroTick product
+defect, product-compliance result or measured reduction in agent errors is claimed.
+The three accepted additions occupy existing owners; no new skill, checker,
+dependency, lint, compiler configuration or qualification gate is introduced.
+Preserve current development ordering, native/fuzz/storage execution holds and
+post-V1 formal deferral. Standing authorization covers the useful documentation
+changes and guarded publication to `main`.
+
+The judge accepts the five-file candidate without repair. The reviewed
+three normative files plus source register have diff SHA-256
+`99ea6bfb5cda805fb00ad2b83abcf7a1722217b52ced9b8eb759f8ff4474e8bc`;
+the three normative files alone have
+`f5a85c2afb131ba59fcb2eb131d76b1197cc23cc086196c5b5a459135931d274`.
+These identify the accepted instruction/source bytes separately from this
+verification bookkeeping. The coordinator's package checker passes all **66
+skills**; the scoped check passes **12 added local links / 8 anchors**, and
+`git diff --check` passes. No configured signing requirement, active hook or
+external Git filter was found; final publication preserves the reviewed scope.
+
+| Stage / skill and trigger | Concrete application | Evidence/status and next condition |
+| --- | --- | --- |
+| Source review / [qa-subagent-dispatch](../skills/testing/qa-subagent-dispatch/SKILL.md), [qa-independent-review](../skills/testing/qa-independent-review/SKILL.md) | Split independent readings, classify drafts/templates, compare the exact existing owners and challenge each candidate with healthy and contrary source cases. | Completed: three specialist reports; independent judge accepts A/B and narrowed C. The judge checked the candidate set, not every ANSSI chapter independently. |
+| Instruction edits / [plan-code-change](../skills/planning/plan-code-change/SKILL.md), implementation contract | Add three bounded refinements and provenance in the existing source/task owners. | Documentation only; coordinator owns final diff and scope reconciliation. |
+| Verification / testing contract, package checker | Check metadata/inventory, changed local links/anchors, canonical consistency and whitespace for the five Markdown paths. | Executed with passing results above; bind checks to the complete staged candidate before publication. No checker contract changed. |
+| Commit / [qa-pre-commit](../skills/testing/qa-pre-commit/SKILL.md) | Freeze only the five intended paths, verify the complete materialized index and preserve incoming work/signing/hooks. | Coordinator owns final custody checks and guarded publication; reconcile a changed remote head before advancing it. |
+
+Rust/product/native/fuzz/formal execution is inapplicable to these Markdown-only
+changes; no product, parser, runtime, harness or checker behavior changes. This
+does not mark any product fuzz obligation N/A or waive an execution hold. Checker
+regression tests are unnecessary because the checker and its covered contracts
+are unchanged. Review date uses the selected Asia/Tbilisi client date.

@@ -5,6 +5,57 @@ conditional reference, not whole file. Repository architecture outranks external
 examples. Documentation adaptation performed no Cargo graph, Rust build, parser
 experiment or Windows UI execution.
 
+## Rust safety guides follow-up — 19 November 2026
+
+Compared the [Safety-Critical Rust Coding Guidelines](https://coding-guidelines.arewesafetycriticalyet.org/coding-guidelines/index.html)
+with NevroTick `e81d48f67e933610185a4b4878830987a089106f` after the ANSSI review
+below. The inspected upstream
+[source snapshot](https://github.com/Safety-Critical-Rust-Consortium/safety-critical-rust-coding-guidelines/tree/924aa78c82f21dd037f5d9c61ec9ce1c3fbe3f1a)
+is `924aa78c82f21dd037f5d9c61ec9ce1c3fbe3f1a`, updated 18 November 2026 and
+reviewed 19 November 2026. Published pages were read separately; the exact deployed
+site revision was not established. ANSSI's upstream head remains
+`3f9e2e28095d0eeb35ed61e212a82be12fde4884`; a specialist reread of its 60 checklist
+IDs and eight included examples found no further instruction delta.
+
+The safety-critical guide's 19 chapter indices link 25 entries, all marked
+**draft**: two types/traits, eleven expressions, one associated-items, one
+attributes and ten macros. Fourteen chapter indices are empty. Two entries are
+bibliography demonstrations; six macro entries contain only template content.
+Other drafts also have unfinished metadata or examples. Category labels such as
+mandatory/required do not establish adopted NevroTick requirements. Unlisted
+`.rst.inc` proposals are not counted as published guidance.
+
+Original local refinements use these drafts as review prompts, qualified by
+primary Rust contracts:
+
+| Source / primary contract | Accepted existing owner |
+| --- | --- |
+| Shift drafts `gui_LvmzGKdsAgI5` and `gui_RHvQj8BHlz9b`; [primitive checked shifts](https://doc.rust-lang.org/std/primitive.u8.html#method.checked_shl) and [overflowing shifts](https://doc.rust-lang.org/std/primitive.u8.html#method.overflowing_shl) | [Exact arithmetic](implement-rust/references/modern-rust.md#keep-arithmetic-and-time-semantics-exact): distinguish shift-count admission from discarded bits, result range and rounding. |
+| [Pointer-target draft `gui_HDnAZ7EZ4z6G`](https://coding-guidelines.arewesafetycriticalyet.org/coding-guidelines/expressions/gui_HDnAZ7EZ4z6G.html); [pointer casts](https://doc.rust-lang.org/reference/expressions/operator-expr.html#pointer-to-pointer-cast) | [Source-visible types](implement-rust-contracts/references/contract-enforcement.md#make-types-and-assumptions-source-visible): pin the destination of an otherwise justified raw-pointer conversion, including inline uses. |
+| [Macro-function draft `gui_2jjWUoF1teOY`](https://coding-guidelines.arewesafetycriticalyet.org/coding-guidelines/macros/gui_2jjWUoF1teOY.html) and [macro-path draft `gui_SJMrWDYZ0dN4`](https://coding-guidelines.arewesafetycriticalyet.org/coding-guidelines/macros/gui_SJMrWDYZ0dN4.html); [Rust macro transcription and hygiene](https://doc.rust-lang.org/reference/macros-by-example.html) | [Rust implementation](implement-rust/SKILL.md#implement-rust): review evaluation/effects and anchor definition-chosen external item identities, preserving intended local and caller-provided names. |
+
+The reviewed standard library identifies Rust **1.100.0**, compiler
+`0ef1bc386059596dada8fb65b50425aab2ea637a`. Specialists also read pinned
+[unsigned](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/num/uint_macros.rs)
+and [signed](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/num/int_macros.rs)
+integer implementations and its
+[Reference revision](https://github.com/rust-lang/reference/tree/e24eecf97b0c9a6dbac67191098204dc8a190aaa).
+Exact-shift methods shown in those docs remain nightly-only; none is adopted.
+
+Credit: **The Coding Guidelines Subcommittee Contributors**. The inspected
+guideline files carry `SPDX-License-Identifier: MIT OR Apache-2.0`; the upstream
+[COPYRIGHT](https://github.com/Safety-Critical-Rust-Consortium/safety-critical-rust-coding-guidelines/blob/924aa78c82f21dd037f5d9c61ec9ce1c3fbe3f1a/COPYRIGHT)
+sets a CC-BY-4.0 documentation default subject to file-specific notices. Preserve
+that distinction. No upstream example code is copied. These local refinements
+imply no endorsement, safety certification or product-compliance finding.
+
+The [independent judge record](../../plans/2026-10-30-skill-quality.md#rust-safety-guides-follow-up--19-november-2026)
+retains covered/rejected cases and source defects, including unsafe pointer/integer
+`transmute` advice, a faulty manual multiplication guard and overbroad macro bans.
+Existing ownership, boundary validation, admitted tooling and execution holds
+remain authoritative; this source review establishes no measured agent-quality
+improvement or executed product qualification.
+
 ## ANSSI secure Rust guidance — 19 November 2026
 
 Locally adapted selected recommendations from ANSSI's

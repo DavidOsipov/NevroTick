@@ -86,6 +86,14 @@ Use [numerical kernels](numerical-kernels.md) and the actual unit/range/rounding
 contract before substituting arithmetic. Keep errors explicit at raw admission
 and preserve bounded transformed values.
 
+Primitive integer `checked_shl`/`checked_shr` validate the shift count; the
+`overflowing_shl`/`overflowing_shr` flag likewise reports an out-of-range count,
+not discarded bits or mathematical result range. When shifts implement numeric
+scaling, establish the required result range and rounding independently or use
+suitable checked arithmetic. Preserve deliberate bitfield truncation and
+specified right-shift rounding. See the
+[shift contracts](https://doc.rust-lang.org/std/primitive.u8.html#method.checked_shl).
+
 | Facility | Available since | Decision rule |
 | --- | --- | --- |
 | Integer `isqrt` / signed `checked_isqrt` | 1.84 | Prefer an integer result when integer square root is the actual operation. A signed unchecked-domain `isqrt` can panic for negative input; establish the domain or use the checked form. |

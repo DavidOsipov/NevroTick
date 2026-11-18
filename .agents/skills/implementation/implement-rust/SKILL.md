@@ -102,6 +102,14 @@ together when extraction would obscure relationships. Nesting and function lengt
 are review signals, not fixed limits; format and Clippy success do not establish
 comprehensibility.
 
+Prefer a typed function for ordinary computations when it preserves the required
+behavior. For new or changed project-owned macros, review argument evaluation
+count, mutation and control flow; retain intentional syntax generation and lazy
+or repeated evaluation. In `macro_rules!`, anchor references to helpers, types
+and macros outside the expansion whose identity is chosen by the definition,
+using appropriate absolute paths or `$crate::...`. Preserve local bindings/items
+and deliberate caller-provided names; `$crate` does not bypass visibility.
+
 Floating-point estimation, exact-to-floating seams or numerical admission
 thresholds: use [numerical kernels](references/numerical-kernels.md). Separate
 independent mathematical results from rounded execution controls; freeze the

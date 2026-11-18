@@ -90,6 +90,12 @@ destination in the binding or generic arguments. Keep relevant collection
 key/value, success/error and numeric width/sign choices visible; `_` alone does
 not state them. Pin literal/accumulator representation where it affects arithmetic.
 
+For a necessary raw-pointer reinterpretation, state the complete destination
+pointee type in the conversion's generic arguments or cast, or in an immediately
+typed result; do not leave it to a later consumer through `_` or inference.
+This prevents downstream type changes from silently selecting a different
+pointee, but establishes no validity, alignment, lifetime or aliasing guarantee.
+
 Use existing domain/role types in signatures, fields and intermediate values;
 retain units, clock/epoch, identity/generation and state meaning. A Rust type alias
 names the same underlying type; it does not prevent swapping meanings. Distinct
