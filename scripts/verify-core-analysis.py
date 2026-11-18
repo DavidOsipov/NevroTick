@@ -9988,22 +9988,44 @@ _BASELINE_PHASE_AUXILIARY_CASES = {
 }
 
 
-# One actual adaptive mutant has four supplementary overflow frames, never kills.
+# These two captured test sources give one exact mutant distinct overflow rosters.
 _PHASE_STEP_ADAPTIVE_AUXILIARY_SOURCE = (
     "crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs",
     "e530725ed2b122af12e11f3a01ade69f11fa92547c4a091fc5f86a7cb6544ba0")
-_PHASE_STEP_ADAPTIVE_AUXILIARY_CASE = (
+_PHASE_STEP_ADAPTIVE_AUXILIARY_FAULT = (
     "b2f387332cd3d53f202d274f70cff7548d313ab712370dd4fed5964a333347cd",
     "1b8bd42c1f14ef4aac51b51c7dfc6e1cd3bc9f25f30a1713ae44f831a5ddb3f9",
-    279, 25, "attempt to multiply with overflow",
-    tuple("reference_input::rate_delivery::phase_plan::adaptive::tests::" + name for name in (
-        "adaptive_clamps_keep_original_integer_limits_and_refuse_nonzero_underflow",
-        "adaptive_policy_uses_exact_selected_horizon_for_its_existing_rate_bound",
-        "adaptive_private_numeric_boundaries_keep_healthy_neighbors",
-        "adaptive_small_debt_threshold_equality_and_adjacent_bits_are_distinct")),
-    ("reference_input::rate_delivery::phase_plan::adaptive::tests::"
-     "adaptive_duration_ceiling_preserves_fractional_nanoseconds_at_large_seconds",
-     "crates/time-core/tests/private/adaptive_horizon.rs", 34, 13, "product_ok"))
+    279, 25, "attempt to multiply with overflow")
+_PHASE_STEP_ADAPTIVE_TEST_SOURCE = "crates/time-core/tests/private/adaptive_horizon.rs"
+_PHASE_STEP_ADAPTIVE_TEST_PREFIX = "reference_input::rate_delivery::phase_plan::adaptive::tests::"
+_PHASE_STEP_ADAPTIVE_LEGACY_OVERFLOWS = tuple(_PHASE_STEP_ADAPTIVE_TEST_PREFIX + name for name in (
+    "adaptive_clamps_keep_original_integer_limits_and_refuse_nonzero_underflow",
+    "adaptive_policy_uses_exact_selected_horizon_for_its_existing_rate_bound",
+    "adaptive_private_numeric_boundaries_keep_healthy_neighbors",
+    "adaptive_small_debt_threshold_equality_and_adjacent_bits_are_distinct"))
+_PHASE_STEP_ADAPTIVE_AUXILIARY_WITNESS = (
+    _PHASE_STEP_ADAPTIVE_TEST_PREFIX + "adaptive_duration_ceiling_preserves_fractional_nanoseconds_at_large_seconds",
+    _PHASE_STEP_ADAPTIVE_TEST_SOURCE, 34, 13, "product_ok")
+_PHASE_STEP_ADAPTIVE_AUXILIARY_CASES = {
+    "0e11036470d6c08a9e5de7e881829d587130c10109976b8c15678eb329cab81e": (
+        *_PHASE_STEP_ADAPTIVE_AUXILIARY_FAULT,
+        _PHASE_STEP_ADAPTIVE_LEGACY_OVERFLOWS, _PHASE_STEP_ADAPTIVE_AUXILIARY_WITNESS),
+    "40a2ef6e91b4fc546877f26d4db29e59d3712ea0689ed521a58671475b5370ab": (
+        *_PHASE_STEP_ADAPTIVE_AUXILIARY_FAULT,
+        (*_PHASE_STEP_ADAPTIVE_LEGACY_OVERFLOWS,
+         _PHASE_STEP_ADAPTIVE_TEST_PREFIX + "adaptive_dyadic_horizon_obeys_exact_ceiling_and_clamp"),
+        _PHASE_STEP_ADAPTIVE_AUXILIARY_WITNESS),
+}
+
+
+def _phase_step_adaptive_auxiliary_case(identity, mutant):
+    """Select the exact adaptive overflow roster from the captured test bytes and fault."""
+    test_sha = identity.get(_PHASE_STEP_ADAPTIVE_TEST_SOURCE)
+    if (type(test_sha) is not str or type(mutant) is not dict
+            or mutant.get("file") != _PHASE_STEP_ADAPTIVE_AUXILIARY_SOURCE[0]
+            or COMMON.canonical_sha256(mutant) != "3d7b8cefa055743424d769a21990b58b68abf5b452c4835f84c2c20d42415582"):
+        return None
+    return _PHASE_STEP_ADAPTIVE_AUXILIARY_CASES.get(test_sha)
 
 
 def _baseline_feedback_auxiliary_panic(body, test, source_root, identity, mutant, diff, role):
@@ -10020,17 +10042,15 @@ def _baseline_feedback_auxiliary_panic(body, test, source_root, identity, mutant
         return None
     manifest = "policy/tool-manifest.json"
     if phase_step:
-        binding = (_PHASE_STEP_ADAPTIVE_AUXILIARY_CASE if type(mutant) is dict
-            and COMMON.canonical_sha256(mutant) == "3d7b8cefa055743424d769a21990b58b68abf5b452c4835f84c2c20d42415582"
-            else None)
         owner = PHASE_STEP_SUBJECTS["adaptive_horizon"]
-        test_source = "crates/time-core/tests/private/adaptive_horizon.rs"
+        test_source = _PHASE_STEP_ADAPTIVE_TEST_SOURCE
         test_sha = identity.get(test_source)
         compiler = "8a156a5573626d7aebb868f257436306c79c2ff64fa3ee3b9357482363ac007d"
         if (type(test_sha) is not str or re.fullmatch(r"[a-f0-9]{64}", test_sha) is None
                 or _phase_step_private_test_target({"source": test_source, "test": test},
                     source_root, identity, role) != "--lib"):
             raise Incomplete("Adaptive auxiliary panic has no actual captured test/include owner.")
+        binding = _phase_step_adaptive_auxiliary_case(identity, mutant)
     else:
         if _frequency_analysis_role(role).selector != BASELINE_FEEDBACK_SUBJECT:
             raise Incomplete("Historical frequency roles admit no auxiliary panic exception.")
@@ -10120,7 +10140,9 @@ def _frequency_caught_text(text, source_root, identity, policy, *, mutant=None, 
             raise Incomplete("Frequency failed section contains a mixed infrastructure/compiler failure.")
         spans.append((header.start(), end))
     observations = []
-    if auxiliary:
+    if auxiliary_binding is None and _frequency_analysis_role(role).selector == PHASE_STEP_SUBJECT:
+        auxiliary_binding = _phase_step_adaptive_auxiliary_case(identity, mutant)
+    if auxiliary_binding is not None:
         if type(uncredited) is not list:
             raise Incomplete("Auxiliary panic observations must be retained explicitly.")
         names = [item["test"] for item in auxiliary]

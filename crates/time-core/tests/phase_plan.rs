@@ -333,9 +333,10 @@ fn check_step_delivery_partition(
                 monotonic_end
             },
         )?;
-        let FixtureStepSettlement::Known(mut retired) =
-            owner.settle_step(FixtureStepFeedback::Known(actual), observed)
-        else {
+        let settlement: FixtureStepSettlement<'_, '_> =
+            owner.settle_step(FixtureStepFeedback::Known(actual), observed);
+        assert!(matches!(&settlement, FixtureStepSettlement::Known(_)));
+        let FixtureStepSettlement::Known(mut retired) = settlement else {
             return Err(io::Error::other("matched delivery must remain a Known step").into());
         };
         assert_eq!(retired.achieved_step_seconds(), achieved);

@@ -61,18 +61,18 @@ fn check_dyadic_ceiling_clamp(numerator: u128, denominator: u128, bounds: (u64, 
     let (minimum, maximum): (u64, u64) = bounds;
     assert!(
         (minimum..=maximum).contains(&actual),
-        "{numerator}/{denominator}ns with {bounds:?}: {actual}"
+        "selected horizon outside {bounds:?} for {numerator}/{denominator}ns ({actual})"
     );
     if actual != minimum {
         assert!(
             numerator > u128::from(actual - 1) * denominator,
-            "{numerator}/{denominator}ns with {bounds:?}: selected too high {actual}"
+            "selected horizon too high for {numerator}/{denominator}ns in {bounds:?} ({actual})"
         );
     }
     if actual != maximum {
         assert!(
             numerator <= u128::from(actual) * denominator,
-            "{numerator}/{denominator}ns with {bounds:?}: selected too low {actual}"
+            "selected horizon too low for {numerator}/{denominator}ns in {bounds:?} ({actual})"
         );
     }
 }

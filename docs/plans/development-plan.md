@@ -1703,8 +1703,12 @@ with unchanged 90%/95% thresholds and separate native/production/release holds.
 The implemented [adaptive correction](../../tasks/s1.3-source-selection-readiness.md#adaptive-phase-correction--implementation-contract-13-november-2026)
 and [matched finite-step mechanism](../../tasks/s1.3-source-selection-readiness.md#matched-step-source-implementation-and-focused-checks--13-november-2026)
 share the actual reference/issue/settlement owner, explicit numerical profiles,
-original permission budgets and take-once recovery. Their selected seven-owner
-mutation gates now pass; preserve the 512-per-file/2,048-total inventory caps.
+original permission budgets and take-once recovery. The
+[current Phase/Step checkpoint](../../tasks/s1.3-source-selection-readiness.md#current-phasestep-seven-owner-qualification--18-november-2026)
+passes the selected GNU baseline, seven line gates, contracts, seven mutation
+cohorts and their raw union. Historical V6 results retain their original candidate.
+The 512-per-file/2,048-total listing caps remain in force. Native delivery,
+production mapping and positive Engine-to-Core admission remain open.
 Historical source checks and Rust-upgrade results retain their task scopes.
 
 The [main-host Engine child](../../tasks/engine-transport-pilot.md#nested-worker-native-custody-child--14-november-2026)

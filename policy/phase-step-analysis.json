@@ -44,8 +44,8 @@
     "test_executions": 21
   },
   "campaigns_admitted": false,
-  "source_file_count": 603,
-  "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+  "source_file_count": 609,
+  "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
   "inputs_sha256": {
     "Cargo.toml": "570bf74e4682b8931172fe066c999cfbca470d2026c5455d629c942d9adfd1eb",
     "Cargo.lock": "2ccabde33a800b745c42b4fe96dc4a6c300b1961ac87e149d313cae41fde5f2e",
@@ -59,13 +59,13 @@
     "crates/time-core/src/regression/chart/roundoff.rs": "38405a55e5a85a34a04bd751cc51ef08be5363f21681691e6a955a4b6983128e",
     "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs": "7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a",
     "crates/time-core/src/regression/chart/roundoff/phase_plan.rs": "e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6",
-    "crates/time-core/tests/phase_plan.rs": "7ec85ba7877c794f943e53da026921b9237296c96e06da737a7450a4ba1f5ab3",
+    "crates/time-core/tests/phase_plan.rs": "2008ec79c1af98fee04f7be563a95240f9a881c94bd14c53cce94b5826132dde",
     "crates/time-core/tests/private/phase_plan_numeric.rs": "693cba0f4671ed9b4cac39e36d4e86da51015ce836b203f39188214944663c60",
     "crates/time-core/tests/private/phase_plan_lifecycle.rs": "3e43d9a9b59607b5760303827ab23c39859099d0abfa39fd16bf1b61ccbb06f7",
     "crates/time-domain/src/clock.rs": "beca67da84fc7a4717dd6f35325ec1308d4a7e5b6c2ad30dfc65392f94bbde51",
-    "scripts/verify-core-analysis.py": "5b5036211f8e3ebf5b3447ad03b468e8b0c3932eada70f83274216fa353de240",
-    "scripts/portable-analysis.py": "654aaf3df9c12d9a604c1412f29a6aa9c8f7856813b97830248b1d721fd785d3",
-    "scripts/verify-time-domain-analysis.py": "e8d816d888b3882633beda88847a50e8497f45487a1bacd084e8457f22195d78",
+    "scripts/verify-core-analysis.py": "b890bc8e9bb302299fb9f2ceee538cb3c11190f12f79ea9ecbacac2fa3df2045",
+    "scripts/portable-analysis.py": "1e15818c9808e322e1f96279ec161ec58e9f36aa48c8d6e96995c240d2053b5b",
+    "scripts/verify-time-domain-analysis.py": "9d9fd6f24da6f0f2e9074206b994325c22e4bbd66b0359b44163ae962ac7de48",
     "scripts/core-selection-accounting.py": "d9cba324bcc60102e93ade48fdba0a2810e5f3bfd8cda034159a3debe7b2fa83",
     "scripts/core-selection-contracts.py": "9ad09971c5fe86cfbc0e89b0a3cb9222768ebad8828da17bdeafe0e855663882",
     "scripts/core-projection-accounting.py": "8edac190cc28913f4dbadefd80ac31af1a762537ef38d084fd69bb6ac7d17300",
@@ -80,37 +80,37 @@
     "scripts/core-chart-combination-accounting.py": "72872a365d443e9553a0abb944b5fb591edc47f5f2260ea59b016c8a669216f5",
     "scripts/core-chart-combination-contracts.py": "aa0e81fceddb824e82b0885932f6ab2b3ad07be67140fd4d3341745e0e2d2d50",
     "scripts/core-rate-delivery-accounting.py": "7fbb8f3c8553245c31c605a2f65f4e0775b3b39d23b0610aed1657760b5a1d0a",
-    "scripts/check-analysis.py": "1ba81cc58eb6e22b177746dc3197b65f7c83c182cc0cea86d61f89fcfa749196",
+    "scripts/check-analysis.py": "39a3f1dcbdbc495c767753d43260207a5fb9aff6221410a3fbb27fc1ee199c2f",
     "scripts/analysis-runtime.py": "0de6d23b2e52fea78ee81f038d216c962ef87511df53443984bb6e6aacb79dc9",
     "scripts/analysis-controls.py": "f39eb0123e279331e38b48addc5bdc61d29dcbb3e26e8c18ec99512b0affe1a0",
     "scripts/verify.py": "09beef5c97e0d601818d544a0640d415539eab58bbfd4c7d044ba1ab79c2e506",
     "scripts/prepare-product.py": "e4d3b33d82ab5b8049065a0eb29e380e84c559002127d452aeb492fd5bb3b29f",
     "scripts/check-environment.py": "df124d3c05865882fda7a18ff6b5c6e70d76e453a0196e777fa39ca0aa6a5b27",
-    "scripts/check-strict.py": "932da6ce71fd200b7fb2ff088b66e87e7414d8b74c47889df57edfab29634469",
+    "scripts/check-strict.py": "6779c6b97ef627be5aec6553c1b3f328bbe5adcccb3fb5dd62bbabb2ebfc8f81",
     "scripts/slint_dependency_profile.py": "b54ebe99adc3a19c5a256341f19875de86b65914afe009d9125ddd3164f7cb2e",
     "scripts/slint_linux_sdk.py": "fb093b629e52be3cc771dc7f5d59eec9f7e74e625c000cb553004fb995760a91",
     "scripts/tests/test_phase_plan_analysis.py": "26e9d8cc5a79f76688c3eb9b8edf4287e99445f0a8963e4dc11d8328f0bea527",
     "policy/analysis-tools.json": "be49c57c0262415314daeb41ff06b65283a221ab2b68b3f7edf372449f152f53",
-    "policy/verification-manifest.toml": "3e5cae0dd5096f7e6d91e8cfbff3f35ae6b439ffe7239e2492f845b5b1d45f39",
-    "tasks/s1.3-source-selection-readiness.md": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+    "policy/verification-manifest.toml": "c29ac39bab00a54d9c2f621e3dac8a4fe7480d733527274d5215234c77ab9973",
+    "tasks/s1.3-source-selection-readiness.md": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
     "tasks/s0.1-chrony-ledger.json": "062074e63412fdc3fa343acc7198d049d3809f2f006282daf16166d1fb4c8db5",
     "crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs": "0de5d97e268bc2833749b1ea0194014b250d51822e2febf00e33a5b8c04df811",
     "crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs": "e530725ed2b122af12e11f3a01ade69f11fa92547c4a091fc5f86a7cb6544ba0",
     "crates/time-core/src/regression/chart/roundoff/frequency_prior.rs": "c8af09a8f7eb5e1f05cc9aaeb92b3533a05a688c8dac2e2338007160e821fbf9",
     "crates/time-core/tests/rate_delivery.rs": "b26a75db1dd0203e29d0c31f644d3ba431f30e7672bba29314e5bf7df5813345",
     "crates/time-core/tests/private/reference_input_readiness.rs": "8dc34c4ac39c09302cd18d0633c0edc2a0aefb7d66cbf157110fbf0c17e3b58c",
-    "crates/time-core/tests/private/step_contracts.rs": "a9d7b000ed1adb7dd6b4a0e1a8937efb2bbdeefa99ae75c973c2b2b2cee450fa",
+    "crates/time-core/tests/private/step_contracts.rs": "b4dc9b1269dcd6f3ae0d650f89e15dd6567363068e5dc2e5b430011552cee6b2",
     "crates/time-core/tests/private/step_counter.rs": "56465eeebd228784ab86179606209d1c092d14f6b580e7cb8ba345deb5368f24",
     "crates/time-core/PROVENANCE.md": "39c7ccca8f697b2655006bdd0b7261f359152389d3579ea3ca4f5e5909bc0914",
     "crates/time-core/tests/private/step_qualification.rs": "777c33e070fa7d2c1bed84143a0586f602ae85b91c9a051142eb8640b886cdf9",
-    "crates/time-core/tests/private/adaptive_horizon.rs": "0e11036470d6c08a9e5de7e881829d587130c10109976b8c15678eb329cab81e",
+    "crates/time-core/tests/private/adaptive_horizon.rs": "40a2ef6e91b4fc546877f26d4db29e59d3712ea0689ed521a58671475b5370ab",
     "crates/time-core/tests/private/step_diagnostics.rs": "3c2d2269bc5f7d734c9abfced8c0239d8823f3fb0c9441c1cb31d0fc0fe3fef9",
     "crates/time-core/tests/frequency_prior.rs": "51a3d0fa5efd0f8aabceb2c6f17eeb387fc9c92c960dd1bc2363742705c3ff5b",
     "crates/time-core/tests/private/frequency_prior_numeric.rs": "1368714dad1a24de0f6d984f9a07cf62219422a3a2499fc2a0b0d118b1235a8d",
     "scripts/core-frequency-contracts.py": "819ecea2082c830746d4e4b6c3b07b357c21e6a7e1dfbc203d127dc627e43fa3",
     "scripts/tests/test_phase_step_contracts.py": "acf7de3dfebbe6eb69e7f8e8d944b184b998ea6ce745b273cbcdd8867856a81c",
-    "scripts/tests/test_phase_step_analysis.py": "c25993db007b5d28eff2c9ca320f270d8d34cb29591868efc56e5f3c166611be",
-    "scripts/tests/test_portable_analysis.py": "b8dc4ca2af7f06ff3e1c562ead4cba8d8dc495668ff1b1e9a531e8e29a8d681f"
+    "scripts/tests/test_phase_step_analysis.py": "4739fdc8278037e57ed7519b506167b9708bbd18c18853d6f10fc99b3cbee2e8",
+    "scripts/tests/test_portable_analysis.py": "07b71f5138848529c7cd5ac5a94a3340575d0d6f4d60ccb863beda39c6eb2b89"
   },
   "mutation_inventories": {
     "phase_plan": {
@@ -145,7 +145,7 @@
   "mutation_equivalences": [
     {
       "id": "PHASE-STEP-PROFILE-NORMAL-POSITIVE",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a",
       "mutant": {
         "name": "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs:228:42: replace > with >= in profile_valid",
@@ -182,7 +182,7 @@
       "rationale": "Normality excludes signed zeros, subnormals, infinities and every NaN before comparison. For every remaining positive or negative normal, >0 and >=0 agree; guards, order, validation, errors and effects are unchanged. This ordinary current-source review grants zero additional kills.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-PROFILE-NORMAL-POSITIVE",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -190,7 +190,7 @@
     },
     {
       "id": "PHASE-STEP-DURATION-MIN-EQUALITY",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a",
       "mutant": {
         "name": "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs:1378:49: replace < with <= in FixturePhasePlanOwner<'producer, 'chart>::issue",
@@ -227,7 +227,7 @@
       "rationale": "Only equal nanosecond counts choose different branches. ActiveAwakeDurationNs is Copy with one private u64 field, so either branch returns the identical value; requested duration, deadline, state and effects agree. The separate rate denominator is unchanged. Zero additional kills.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-DURATION-MIN-EQUALITY",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -235,7 +235,7 @@
     },
     {
       "id": "PHASE-STEP-CLOCK-ORDER-RECHECK",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "7604ff59b5d5247d7f884e797a97c279be9df6618034a1dedd081ca7bc466e8a",
       "mutant": {
         "name": "crates/time-core/src/reference_input/rate_delivery/phase_plan.rs:2220:13: replace || with && in ControllerClockRelation::observe",
@@ -272,7 +272,7 @@
       "rationale": "Context disagreement and both-backwards clocks still reject immediately. One backwards clock instead rejects through checked duration_since with the same Map error before numerical work or witness mutation. Neither-backwards paths agree; no allocation, panic, Drop or state effect changes. Existing worst-case work remains bounded; no timing equality or additional kill is claimed.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-CLOCK-ORDER-RECHECK",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -280,7 +280,7 @@
     },
     {
       "id": "PHASE-STEP-ANCHOR-ABS-SIGN",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "c8af09a8f7eb5e1f05cc9aaeb92b3533a05a688c8dac2e2338007160e821fbf9",
       "mutant": {
         "name": "crates/time-core/src/regression/chart/roundoff/frequency_prior.rs:980:64: delete - in FrequencyAnchor::rebase",
@@ -317,7 +317,7 @@
       "rationale": "Only the coefficient-bound operand's unary sign changes. The pinned parent takes right.abs() before every bound operation, producing identical operands, signed-zero behavior, errors and outputs. Actual phase subtraction and earlier admissions are unchanged. Zero additional kills.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-ANCHOR-ABS-SIGN",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -325,7 +325,7 @@
     },
     {
       "id": "PHASE-STEP-INTERVAL-ZERO-PRODUCT",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "c8af09a8f7eb5e1f05cc9aaeb92b3533a05a688c8dac2e2338007160e821fbf9",
       "mutant": {
         "name": "crates/time-core/src/regression/chart/roundoff/frequency_prior.rs:1551:27: replace || with && in Interval::multiply",
@@ -362,7 +362,7 @@
       "rationale": "Both-whole-zero and neither paths agree. With exactly one whole-zero interval, all four pairs hit the unchanged inner zero shortcut and return literal positive zeros; reduction returns canonical zero without multiplication or outward error. Signed-zero, subnormal and finite extremes, state, errors and the four-pair maximum agree. No timing equality or additional kill is claimed.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-INTERVAL-ZERO-PRODUCT",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -370,7 +370,7 @@
     },
     {
       "id": "PHASE-STEP-ISSUED-POSITIVE-DIRECTION",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "0de5d97e268bc2833749b1ea0194014b250d51822e2febf00e33a5b8c04df811",
       "mutant": {
         "name": "crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs:708:38: replace > with >= in operation_refusal",
@@ -407,7 +407,7 @@
       "rationale": "Private StepIssued is constructed only after mandatory checked request admission requires abs(D)>E>=0. Checked PhaseDebt and scalar admission exclude NaN, infinity and subnormal points and negative error; hence issued D is neither signed zero. Replacing the requested-debt sign comparison with its nonstrict form agrees for both admitted signs. The immutable request, actual-step/debt side conditions, branch order, errors and historical effects are unchanged. Invalid raw StepIssued fabrication is outside this admitted helper boundary. This ordinary current-source review grants zero additional kills.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-ISSUED-POSITIVE-DIRECTION",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -415,7 +415,7 @@
     },
     {
       "id": "PHASE-STEP-ISSUED-NEGATIVE-DIRECTION",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "0de5d97e268bc2833749b1ea0194014b250d51822e2febf00e33a5b8c04df811",
       "mutant": {
         "name": "crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs:709:38: replace < with <= in operation_refusal",
@@ -452,7 +452,7 @@
       "rationale": "Private StepIssued is constructed only after mandatory checked request admission requires abs(D)>E>=0. Checked PhaseDebt and scalar admission exclude NaN, infinity and subnormal points and negative error; hence issued D is neither signed zero. Replacing the requested-debt sign comparison with its nonstrict form agrees for both admitted signs. The immutable request, actual-step/debt side conditions, branch order, errors and historical effects are unchanged. Invalid raw StepIssued fabrication is outside this admitted helper boundary. This ordinary current-source review grants zero additional kills.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-ISSUED-NEGATIVE-DIRECTION",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -460,7 +460,7 @@
     },
     {
       "id": "PHASE-STEP-ISSUED-POSITIVE-OVERSHOOT",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "0de5d97e268bc2833749b1ea0194014b250d51822e2febf00e33a5b8c04df811",
       "mutant": {
         "name": "crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs:714:38: replace > with >= in operation_refusal",
@@ -497,7 +497,7 @@
       "rationale": "Private StepIssued is constructed only after mandatory checked request admission requires abs(D)>E>=0. Checked PhaseDebt and scalar admission exclude NaN, infinity and subnormal points and negative error; hence issued D is neither signed zero. Replacing the requested-debt sign comparison with its nonstrict form agrees for both admitted signs. The immutable request, actual-step/debt side conditions, branch order, errors and historical effects are unchanged. Invalid raw StepIssued fabrication is outside this admitted helper boundary. This ordinary current-source review grants zero additional kills.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-ISSUED-POSITIVE-OVERSHOOT",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -505,7 +505,7 @@
     },
     {
       "id": "PHASE-STEP-ISSUED-NEGATIVE-OVERSHOOT",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "0de5d97e268bc2833749b1ea0194014b250d51822e2febf00e33a5b8c04df811",
       "mutant": {
         "name": "crates/time-core/src/reference_input/rate_delivery/phase_plan/step.rs:715:42: replace < with <= in operation_refusal",
@@ -542,7 +542,7 @@
       "rationale": "Private StepIssued is constructed only after mandatory checked request admission requires abs(D)>E>=0. Checked PhaseDebt and scalar admission exclude NaN, infinity and subnormal points and negative error; hence issued D is neither signed zero. Replacing the requested-debt sign comparison with its nonstrict form agrees for both admitted signs. The immutable request, actual-step/debt side conditions, branch order, errors and historical effects are unchanged. Invalid raw StepIssued fabrication is outside this admitted helper boundary. This ordinary current-source review grants zero additional kills.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-ISSUED-NEGATIVE-OVERSHOOT",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -550,7 +550,7 @@
     },
     {
       "id": "PHASE-STEP-ADAPTIVE-NORMAL-POSITIVE",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "e530725ed2b122af12e11f3a01ade69f11fa92547c4a091fc5f86a7cb6544ba0",
       "mutant": {
         "name": "crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs:95:40: replace > with >= in adaptive_profile_valid",
@@ -587,7 +587,7 @@
       "rationale": "The unchanged is_normal check excludes both signed zeros, subnormals, infinities and NaNs before the ratio comparison. Every remaining positive normal satisfies both >0 and >=0, and every negative normal satisfies neither. All other raw profile admission, validation, errors and effects agree over the full private domain. Zero additional kills.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-ADAPTIVE-NORMAL-POSITIVE",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -595,7 +595,7 @@
     },
     {
       "id": "PHASE-STEP-ADAPTIVE-DISJOINT-MANTISSA",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "e530725ed2b122af12e11f3a01ade69f11fa92547c4a091fc5f86a7cb6544ba0",
       "mutant": {
         "name": "crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs:263:49: replace | with ^ in adaptive_ceil_nanoseconds",
@@ -632,7 +632,7 @@
       "rationale": "The fraction mask retains only bits 0 through 51, so its result and implicit significand bit 52 are disjoint for every 64-bit input pattern. OR and XOR produce identical integers before the same checked product, shifts, ceiling and admissions. No caller restriction, timing equality or additional kill is claimed.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-ADAPTIVE-DISJOINT-MANTISSA",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -640,7 +640,7 @@
     },
     {
       "id": "PHASE-STEP-ADAPTIVE-UNREACHABLE-CEILING",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "e530725ed2b122af12e11f3a01ade69f11fa92547c4a091fc5f86a7cb6544ba0",
       "mutant": {
         "name": "crates/time-core/src/reference_input/rate_delivery/phase_plan/adaptive.rs:285:32: replace > with >= in adaptive_ceil_nanoseconds",
@@ -677,7 +677,7 @@
       "rationale": "The comparison differs only at exact ceiling 2^53. Positive representable seconds would lie in ((2^53-1)/1e9,2^53/1e9]. Consecutive binary64 values 0x41612e0be826d694 and 0x41612e0be826d695 straddle that entire interval: scaled exact values are 2^53-341223/262144 and 2^53+588233/1048576. No finite normal input reaches equality; earlier invalid-input and checked-u128 refusals and every other result/effect agree. No upper-clamp assumption or additional kill is claimed.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-ADAPTIVE-UNREACHABLE-CEILING",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -685,7 +685,7 @@
     },
     {
       "id": "PHASE-STEP-SETTLED-BOUND-ABS-SIGN",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6",
       "mutant": {
         "name": "crates/time-core/src/regression/chart/roundoff/phase_plan.rs:446:13: delete - in PhaseDebt::settled",
@@ -722,7 +722,7 @@
       "rationale": "Only the bound-helper right operand loses its unary sign. Actual point subtraction and prior admission are unchanged. The pinned parent coefficient_addition_error immediately uses right.abs(), so both signs yield identical bound operands, signed-zero behavior, failure order and output bits over the admitted helper domain. This ordinary source review grants zero additional kills.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-SETTLED-BOUND-ABS-SIGN",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -730,7 +730,7 @@
     },
     {
       "id": "PHASE-STEP-STEPPED-BOUND-ABS-SIGN",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6",
       "mutant": {
         "name": "crates/time-core/src/regression/chart/roundoff/phase_plan.rs:483:13: delete - in PhaseDebt::stepped",
@@ -767,7 +767,7 @@
       "rationale": "Only the bound-helper right operand loses its unary sign. Actual point subtraction and prior admission are unchanged. The pinned parent coefficient_addition_error immediately uses right.abs(), so both signs yield identical bound operands, signed-zero behavior, failure order and output bits over the admitted helper domain. This ordinary source review grants zero additional kills.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-STEPPED-BOUND-ABS-SIGN",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -775,7 +775,7 @@
     },
     {
       "id": "PHASE-STEP-POSITIVE-CLAMP-EQUALITY",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6",
       "mutant": {
         "name": "crates/time-core/src/regression/chart/roundoff/phase_plan.rs:538:37: replace > with >= in PhaseDebt::proposal",
@@ -812,7 +812,7 @@
       "rationale": "Only equality with the finite strictly positive transient cap selects a different branch. The admitted quotient then has the identical nonzero positive-cap or negative-cap bits, so selecting the bound or the quotient returns the same point. Signed-zero ties are excluded by positive normal cap admission; later aggregate and error calculations, branch order and effects agree. Zero additional kills.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-POSITIVE-CLAMP-EQUALITY",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -820,7 +820,7 @@
     },
     {
       "id": "PHASE-STEP-NEGATIVE-CLAMP-EQUALITY",
-      "candidate_sha256": "7701e3b3d6b1d4c142cfa0d9c1980eb289341d859afc8ca31614f584035ed956",
+      "candidate_sha256": "790f22ecdc6ed4b5a847f37150f5e40d0352f105a3aa3369ef227fe246b1fb52",
       "source_sha256": "e17ae1f71891d7235355da9b9caf7506e12df7ac8e789a948d0948cc7d60fcf6",
       "mutant": {
         "name": "crates/time-core/src/regression/chart/roundoff/phase_plan.rs:540:28: replace < with <= in PhaseDebt::proposal",
@@ -857,7 +857,7 @@
       "rationale": "Only equality with the finite strictly positive transient cap selects a different branch. The admitted quotient then has the identical nonzero positive-cap or negative-cap bits, so selecting the bound or the quotient returns the same point. Signed-zero ties are excluded by positive normal cap admission; later aggregate and error calculations, branch order and effects agree. Zero additional kills.",
       "proof": {
         "path": "tasks/s1.3-source-selection-readiness.md",
-        "sha256": "e7f99db4a00edfcbf5042281f36a8d7b55c6aa3f2f7165e95dd67b96b24d6361",
+        "sha256": "5b25e12e88ad58fd0117f112d71608abe296570a9ea957cc25dcdc97dba58077",
         "section": "PHASE-STEP-NEGATIVE-CLAMP-EQUALITY",
         "reviewer": "/root; /root/next_product_core",
         "verdict": "independently-justified-equivalent"
@@ -1227,6 +1227,8 @@
       "matched_step_accounts_actual_effect_and_requires_fresh_evidence_for_both_signs",
       "matched_step_accounts_unexpected_actual_rate_before_refusing_continuation",
       "matched_step_after_stop_preserves_historical_effects_without_recovery",
+      "matched_step_preserves_equal_debt_across_distinct_known_deliveries",
+      "matched_step_rounds_noninteger_rate_delivery_before_actual_step",
       "maximum_and_one_over_counts_preserve_original_population",
       "maximum_combined_window_and_prefix_boundary",
       "maximum_population_exact_dyadic_line",
@@ -1282,6 +1284,10 @@
       "prepared_payload_owns_rows_and_same_frame_keeps_fresh_input_association",
       "principal::private_decision_guards::principal_equality_keeps_checked_bits_and_independently_seeded_sources",
       "principal::private_decision_guards::principal_private_decision_relations",
+      "principal::private_decision_guards::principal_raw_receiver_garde_rejects_foreign_frame",
+      "principal::private_decision_guards::principal_raw_reselect_garde_rejects_zero",
+      "principal::private_decision_guards::principal_raw_roster_garde_rejects_empty",
+      "principal::private_decision_guards::principal_raw_stratum_weight_garde_rejects_negative",
       "principal_cases::principal_agreement_loss_preserves_minimum_and_observation_identity",
       "principal_cases::principal_cached_absence_and_present_nonmember_keep_score_order",
       "principal_cases::principal_cardinality_zero_distance_and_stratum_weight_neighbors",
@@ -1329,6 +1335,7 @@
       "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_arithmetic_failure_preserves_original_typed_source",
       "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_clamps_keep_original_integer_limits_and_refuse_nonzero_underflow",
       "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_duration_ceiling_preserves_fractional_nanoseconds_at_large_seconds",
+      "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_dyadic_horizon_obeys_exact_ceiling_and_clamp",
       "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_near_minimum_quantizes_before_integer_clamping",
       "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_neutral_debt_preserves_baseline_without_overflowing_area_division",
       "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_policy_uses_exact_selected_horizon_for_its_existing_rate_bound",
@@ -1546,6 +1553,7 @@
       "step_contracts::matched_step_raw_limits_and_receipts_reject_bypasses_before_valid_issue",
       "step_contracts::matched_step_unknown_blocks_without_inventing_delivery",
       "step_contracts::matched_step_zero_full_and_overshoot_are_distinct_for_both_signs",
+      "step_contracts::mixed_phase_and_step_feedback_keeps_the_last_known_interval",
       "step_diagnostics::matched_step_constructor_diagnostics_are_opaque_and_preserve_checked_receipts",
       "step_diagnostics::matched_step_neutral_diagnostic_has_no_delegated_cause",
       "step_diagnostics::matched_step_request_diagnostics_keep_exact_refusals_and_pending_custody",
@@ -1837,6 +1845,8 @@
       "matched_step_accounts_actual_effect_and_requires_fresh_evidence_for_both_signs",
       "matched_step_accounts_unexpected_actual_rate_before_refusing_continuation",
       "matched_step_after_stop_preserves_historical_effects_without_recovery",
+      "matched_step_preserves_equal_debt_across_distinct_known_deliveries",
+      "matched_step_rounds_noninteger_rate_delivery_before_actual_step",
       "maximum_and_one_over_counts_preserve_original_population",
       "maximum_combined_window_and_prefix_boundary",
       "maximum_population_exact_dyadic_line",
@@ -1892,6 +1902,10 @@
       "prepared_payload_owns_rows_and_same_frame_keeps_fresh_input_association",
       "principal::private_decision_guards::principal_equality_keeps_checked_bits_and_independently_seeded_sources",
       "principal::private_decision_guards::principal_private_decision_relations",
+      "principal::private_decision_guards::principal_raw_receiver_garde_rejects_foreign_frame",
+      "principal::private_decision_guards::principal_raw_reselect_garde_rejects_zero",
+      "principal::private_decision_guards::principal_raw_roster_garde_rejects_empty",
+      "principal::private_decision_guards::principal_raw_stratum_weight_garde_rejects_negative",
       "principal_cases::principal_agreement_loss_preserves_minimum_and_observation_identity",
       "principal_cases::principal_cached_absence_and_present_nonmember_keep_score_order",
       "principal_cases::principal_cardinality_zero_distance_and_stratum_weight_neighbors",
@@ -1939,6 +1953,7 @@
       "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_arithmetic_failure_preserves_original_typed_source",
       "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_clamps_keep_original_integer_limits_and_refuse_nonzero_underflow",
       "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_duration_ceiling_preserves_fractional_nanoseconds_at_large_seconds",
+      "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_dyadic_horizon_obeys_exact_ceiling_and_clamp",
       "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_near_minimum_quantizes_before_integer_clamping",
       "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_neutral_debt_preserves_baseline_without_overflowing_area_division",
       "reference_input::rate_delivery::phase_plan::adaptive::tests::adaptive_policy_uses_exact_selected_horizon_for_its_existing_rate_bound",
@@ -2156,6 +2171,7 @@
       "step_contracts::matched_step_raw_limits_and_receipts_reject_bypasses_before_valid_issue",
       "step_contracts::matched_step_unknown_blocks_without_inventing_delivery",
       "step_contracts::matched_step_zero_full_and_overshoot_are_distinct_for_both_signs",
+      "step_contracts::mixed_phase_and_step_feedback_keeps_the_last_known_interval",
       "step_diagnostics::matched_step_constructor_diagnostics_are_opaque_and_preserve_checked_receipts",
       "step_diagnostics::matched_step_neutral_diagnostic_has_no_delegated_cause",
       "step_diagnostics::matched_step_request_diagnostics_keep_exact_refusals_and_pending_custody",
@@ -2198,6 +2214,6 @@
       "zero_prefix_preserves_legacy_selection"
     ]
   },
-  "scope": "Fresh V5 actual608ordinary/112doctest source and sixteen source-reviewed equivalents; current guarded helper calls and exact supplemental overflow reader. No V4 receipt/execution/kill adoption. Mainclosed10/0; private frozen qualification is separate.",
+  "scope": "Verified current GNU Phase/Step seven-owner fixture qualification. Public mutation campaigns remain closed.",
   "mutation_jobserver_tasks": 0
 }

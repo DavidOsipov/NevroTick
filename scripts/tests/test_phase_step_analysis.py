@@ -2257,9 +2257,31 @@ class PhaseStepCampaignReaderControls(unittest.TestCase):
                  "body": 'Error: Custom { kind: Other, error: "numeric failure cannot undo a Known step" }',
                  "section_sha256": "a" * 64}]
 
-    def adaptive_auxiliary_fixture(self, directory):
-        """Retain the actual sole adaptive edit and current owned test/include bytes."""
+    def adaptive_auxiliary_fixture(self, directory, *, expanded=False):
+        """Retain the exact historical or expanded adaptive test and mutant bytes."""
         root, identity = self.causal_fixture(directory)
+        test_source = "crates/time-core/tests/private/adaptive_horizon.rs"
+        test_path = root / test_source
+        tests = test_path.read_text()
+        if expanded:
+            for before, after in (
+                ("{numerator}/{denominator}ns with {bounds:?}: {actual}",
+                 "selected horizon outside {bounds:?} for {numerator}/{denominator}ns ({actual})"),
+                ("{numerator}/{denominator}ns with {bounds:?}: selected too high {actual}",
+                 "selected horizon too high for {numerator}/{denominator}ns in {bounds:?} ({actual})"),
+                ("{numerator}/{denominator}ns with {bounds:?}: selected too low {actual}",
+                 "selected horizon too low for {numerator}/{denominator}ns in {bounds:?} ({actual})"),
+            ):
+                tests = tests.replace(before, after)
+            expected = "40a2ef6e91b4fc546877f26d4db29e59d3712ea0689ed521a58671475b5370ab"
+        else:
+            first = tests.index("/// Identify the selected integer by lower/upper comparisons")
+            last = tests.index("/// Literal policy math checks no source eligibility", first)
+            tests = tests[:first] + tests[last:]
+            expected = "0e11036470d6c08a9e5de7e881829d587130c10109976b8c15678eb329cab81e"
+        self.assertEqual(hashlib.sha256(tests.encode()).hexdigest(), expected)
+        test_path.write_text(tests)
+        identity[test_source] = expected
         filename = OWNERS["adaptive_horizon"]
         mutant = {"name": filename + ":279:35: replace / with * in adaptive_ceil_nanoseconds",
             "package": "time-core", "file": filename, "function": {
@@ -2285,16 +2307,19 @@ class PhaseStepCampaignReaderControls(unittest.TestCase):
         identity[manifest] = hashlib.sha256(path.read_bytes()).hexdigest()
         return root, identity, mutant, diff
 
-    def adaptive_auxiliary_output(self, root, *, include_assertions=True, omit_auxiliary=False):
-        """Join four actual overflow frames with two independently owned healthy assertions."""
+    def adaptive_auxiliary_output(self, root, *, include_assertions=True, omit_auxiliary=False,
+                                  expanded=False, omit_witness=False, include_auxiliary=True):
+        """Join the selected overflow roster with independently owned assertions."""
         prefix = "reference_input::rate_delivery::phase_plan::adaptive::tests::"
         auxiliary = [prefix + name for name in (
             "adaptive_clamps_keep_original_integer_limits_and_refuse_nonzero_underflow",
             "adaptive_policy_uses_exact_selected_horizon_for_its_existing_rate_bound",
             "adaptive_private_numeric_boundaries_keep_healthy_neighbors",
             "adaptive_small_debt_threshold_equality_and_adjacent_bits_are_distinct")]
+        if expanded:
+            auxiliary.append(prefix + "adaptive_dyadic_horizon_obeys_exact_ceiling_and_clamp")
         bodies = {test: f"thread '{test}' panicked at {OWNERS['adaptive_horizon']}:279:25:\n"
-            "attempt to multiply with overflow\n" for test in auxiliary}
+            "attempt to multiply with overflow\n" for test in (auxiliary if include_auxiliary else ())}
         if omit_auxiliary:
             del bodies[auxiliary[-1]]
         if include_assertions:
@@ -2305,6 +2330,8 @@ class PhaseStepCampaignReaderControls(unittest.TestCase):
                  "product_ok(super::adaptive_ceil_nanoseconds(seconds))?"),
                 ("adaptive_near_minimum_quantizes_before_integer_clamping",
                  "product_ok(area.horizon(policy, debt))?")):
+                if omit_witness and name == "adaptive_duration_ceiling_preserves_fractional_nanoseconds_at_large_seconds":
+                    continue
                 start = next(i for i, line in enumerate(lines) if line.startswith("fn " + name + "("))
                 line = next(i for i in range(start + 1, len(lines)) if statement in lines[i])
                 column = lines[line].index("product_ok") + 1
@@ -2332,6 +2359,35 @@ class PhaseStepCampaignReaderControls(unittest.TestCase):
             self.assertEqual(len(observations), 4)
             self.assertTrue(all(row["kind"] == "auxiliary_arithmetic_panic"
                 and row["kill_credit"] == 0 and row["cargo_target"] == "--lib" for row in observations))
+
+    def test_expanded_adaptive_overflows_require_exact_source_roster_and_witness(self):
+        prefix = "reference_input::rate_delivery::phase_plan::adaptive::tests::"
+        new_test = prefix + "adaptive_dyadic_horizon_obeys_exact_ceiling_and_clamp"
+        with tempfile.TemporaryDirectory() as directory:
+            root, identity, mutant, diff = self.adaptive_auxiliary_fixture(directory, expanded=True)
+            output, policy = self.adaptive_auxiliary_output(root, expanded=True)
+            observations = []
+            _, causes = MODULE._frequency_caught_text(output, root, identity, policy,
+                mutant=mutant, mutant_diff=diff, role=ROLE, uncredited=observations)
+            self.assertEqual(len(observations), 5)
+            self.assertEqual(sum(row["test"] == new_test for row in observations), 1)
+            self.assertTrue(all(row["kill_credit"] == 0 for row in observations))
+            self.assertEqual(len(causes), 2)
+            self.assertNotIn(new_test, [cause["test"] for cause in causes])
+            for options in ({"omit_auxiliary": True}, {"include_auxiliary": False}, {"omit_witness": True}):
+                with self.subTest(options=options):
+                    output, policy = self.adaptive_auxiliary_output(root, expanded=True, **options)
+                    with self.assertRaisesRegex(MODULE.Incomplete, "roster or its exact separate direct assertion"):
+                        MODULE._frequency_caught_text(output, root, identity, policy,
+                            mutant=mutant, mutant_diff=diff, role=ROLE, uncredited=[])
+            test_source = "crates/time-core/tests/private/adaptive_horizon.rs"
+            test_path = root / test_source
+            test_path.write_bytes(test_path.read_bytes() + b"\n// foreign test bytes\n")
+            identity[test_source] = hashlib.sha256(test_path.read_bytes()).hexdigest()
+            output, policy = self.adaptive_auxiliary_output(root)
+            with self.assertRaisesRegex(MODULE.Incomplete, "no exact reviewed source/test/mutation binding"):
+                MODULE._frequency_caught_text(output, root, identity, policy,
+                    mutant=mutant, mutant_diff=diff, role=ROLE, uncredited=[])
 
     def test_adaptive_auxiliary_panics_require_complete_roster_and_independent_assertion(self):
         for assertions, omit, retained in ((False, False, True), (True, True, True), (True, False, False)):
