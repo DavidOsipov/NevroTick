@@ -2,7 +2,7 @@
   "admission_status": "admitted-engine-ke-source-analysis",
   "baseline_wall_seconds": 300,
   "binding": {
-    "candidate_sha256": "242754b8b87092ac1954e7ebe38b7a566a84ece1498711ec267bb3a1505f418c",
+    "candidate_sha256": "7e62ffe4dfbe0a9678994bb056c8fcc4de23cd638ef3221cf403009bd6048e55",
     "doctest_inventory": [
       "crates/nevrotick-engine/src/address_round.rs - series::address_round::AddressPolicyRefusal (line 332) - compile fail",
       "crates/nevrotick-engine/src/address_round.rs - series::address_round::AddressRoundConfig (line 125) - compile fail",
@@ -13,7 +13,7 @@
       "crates/nevrotick-engine/src/address_round.rs - series::address_round::crate::SourceHandle::prepare_address_round (line 234)",
       "crates/nevrotick-engine/src/ke_preview_target.rs - ke_preview_target::KePreviewTarget (line 33) - compile fail",
       "crates/nevrotick-engine/src/lib.rs - Config::new (line 264)",
-      "crates/nevrotick-engine/src/lib.rs - ControlSchedule::new (line 1871)",
+      "crates/nevrotick-engine/src/lib.rs - ControlSchedule::new (line 1873)",
       "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 216)",
       "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 222) - compile fail",
       "crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 229) - compile fail",
@@ -96,9 +96,9 @@
       "crates/nevrotick-engine/src/source_policy.rs - source_policy::configuration::SourceConfigurationSnapshot (line 206) - compile fail"
     ],
     "inputs_sha256": {
-      "scripts/verify-engine-analysis.py": "9bcaceaa7f8c114b904c0ed884e82e4c74f7185ea917f9fab5708ad085f1e138",
-      "scripts/tests/test_verify_engine_analysis.py": "4626350f7fef9e4055cdeaead472b9358325381608aeb1e936c09ff7a3948b58",
-      "crates/nevrotick-engine/src/lib.rs": "9f873c184b10f2a89ebec1b07d9d62ed8912693e23d155ab5c62b33399852769",
+      "scripts/verify-engine-analysis.py": "f47927202b1d7dbf546b3f4dc3c30516b62bc462676b455c3aa88c4faca254d9",
+      "scripts/tests/test_verify_engine_analysis.py": "ccc398338c09f409b031ab39792cdfadb3afc075da292354c43888c17ea4d320",
+      "crates/nevrotick-engine/src/lib.rs": "371d7d99f139819fe4799d981e92f6631d4db1f6afc5bcedba9d26d266ca56c7",
       "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs": "9c68e856ad6b904b86a36f79ef853a54ccd3aa1871a0db5e50106ae61d9bfc07",
       "crates/nevrotick-engine/src/nts_ke_experiment/association.rs": "d4c55979302d54e90d55e1ea5560fa29239cbd4591e7cd759379dc6614073e93",
       "crates/nevrotick-engine/src/nts_ke_experiment/process.rs": "c29e5407153b23afa914c4376a2248dc932666b841a9daa87de4122c40eda032",
@@ -133,7 +133,8 @@
       "crates/nevrotick-engine/src/nts_ke_experiment/job_tests.rs": "7e3b3a9c4e9bffe6c7f9a4803d3dd44a4423d6652b8510a520068484d8729794",
       "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview_tests.rs": "372a64d75d8502d3f33322cc38bc4f7ddcfa6e9b57460b73c7c12f1edaa6678b",
       "crates/nevrotick-engine/tests/private/source_configuration.rs": "a2514cfa150d6f7f0200fa01b8f985b4e75c7bc0fbdeb9b74e0c303da2a5318b",
-      "crates/nevrotick-engine/tests/private/processing_guards.rs": "91186c6a235ed5aa7caf0da1f516ece37c497348a5e673a1d411f37b1baa7378",
+      "crates/nevrotick-engine/tests/private/processing_guards.rs": "545f7aa61d35ca12c5497fbd89aaa8f50f9540ed840455b463e584165cee2866",
+      "crates/nevrotick-engine/tests/private/series.rs": "714db138b1833310cf87fb436e275b1dc593985d306f9ed6eaac6aa9ade1bb9a",
       "scripts/portable-analysis.py": "1e15818c9808e322e1f96279ec161ec58e9f36aa48c8d6e96995c240d2053b5b",
       "scripts/tests/test_portable_analysis.py": "07b71f5138848529c7cd5ac5a94a3340575d0d6f4d60ccb863beda39c6eb2b89",
       "scripts/analysis-runtime.py": "0de6d23b2e52fea78ee81f038d216c962ef87511df53443984bb6e6aacb79dc9",
@@ -152,8 +153,8 @@
       "tools/crypto-cng-lifecycle/Cargo.lock": "86bd5f239d7260a25482935936ab1cb14ad5a90e40868f0509a55adaa45afe48"
     },
     "ordinary_evidence": {
-      "path": "/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/source-config-revisions-20261117-v1/ke-managed-protected-development.QBTV3k42/next-application-capture-development/verification.json",
-      "sha256": "4da9ef910e107306c34955e7cfbd3a62c1bd914953ccefbeaa4b60cf061e03ac"
+      "path": "/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/source-config-revisions-20261117-v1/ke-managed-protected-development.QBTV3k42/next-plain-reply-cutoff/ordinary-evidence/verification.json",
+      "sha256": "3320c77d16c191a6a5808dd483512da505f62376e8f49e3f104621f1d85c5604"
     },
     "root_graph_evidence": {
       "path": "/home/david_osipov/.local/share/nevrotick/continuation-20261116-tools-v1/engine-ke-request-execution-20261117-v1/discovery-2/verification.json",
@@ -498,6 +499,7 @@
       "processing_guard_tests::owned_timers_deliver_immediate_actions_and_cancel_future_actions",
       "processing_guard_tests::pilot_final_guard_invalidation_rejects_selected_reply_once",
       "processing_guard_tests::pilot_final_guard_stop_rejects_selected_reply_once",
+      "processing_guard_tests::pilot_final_guard_time_cutoff_rejects_selected_reply_once",
       "processing_guard_tests::processing_uses_fresh_deadline_and_current_control",
       "processing_guard_tests::public_execute_relative_view_retains_actual_common_run_and_refusals",
       "processing_guard_tests::read_classification_keeps_platform_oversize_and_native_errors_distinct",
@@ -592,6 +594,7 @@
       "series::tests::receiver_rejects_duplicate_foreign_and_reused_identity_atomically",
       "series::tests::reply_final_guard_invalidation_keeps_its_actual_receiving_checkpoint",
       "series::tests::reply_final_guard_stop_keeps_its_actual_receiving_checkpoint",
+      "series::tests::reply_final_guard_time_cutoff_keeps_its_actual_receiving_checkpoint",
       "series::tests::reply_postcommit_stop_preserves_the_historical_receiving_checkpoint",
       "series::tests::selected_native_datagram_after_retirement_is_charged_without_publication",
       "series::tests::series_process::semantic_evidence_accepts_only_exact_named_admitted_sites",

@@ -1203,7 +1203,10 @@ source and endpoint restrictions under the original Control. The
 preserves the historical decision through later Stop, normal join and
 abnormal retirement. The [datagram active-target assessment](../../tasks/engine-transport-pilot.md#datagram-active-target-mutation-review--18-november-2026) passed on that exact predecessor. The [checked application span](../../tasks/engine-transport-pilot.md#checked-application-capture-span--18-november-2026)
 now retains the original local placement and age provenance in the
-measurement path, with focused and full development checks. Genuine
+measurement path, with focused and full development checks. The [plain reply cutoff]
+(../../tasks/engine-transport-pilot.md#plain-reply-final-processing-cutoff--w11-w01) now uses the original
+deadline at the final pilot and series decision, with captured expiry and
+receive accounting regressions. Genuine
 TLS/CNG/UDP, date, scale, trust and quality suppliers retain their gates.
 
 **Published preceding product child — 17 November 2026:**

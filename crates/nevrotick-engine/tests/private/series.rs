@@ -2969,13 +2969,15 @@ fn setup_and_registration_failures_preserve_actual_prior_completion() -> Result<
     Ok(())
 }
 
-/// Late invocation control delivered between the outer and final owner guards.
+/// Late invocation control or time cutoff between the outer and final owner guards.
 #[derive(Clone, Copy)]
 enum FinalGuardAction {
     /// The public handle stops the original invocation.
     Stop,
     /// The public handle advances the original invocation generation.
     Invalidate,
+    /// Observe only the original deadline crossing before final publication.
+    TimeCutoff,
 }
 
 /// Actual handler boundary challenged by a late public control delivery.
@@ -3049,12 +3051,13 @@ async fn final_guard_fixture(path: FinalGuardPath) -> Result<FinalGuardFixture, 
     }
 }
 
-/// Deliver a first valid change through the invocation's actual public handle.
+/// Deliver the selected public control or observe the original time cutoff.
 /// # Errors
-/// Preserve the public generation change's original checked failure.
+/// Preserve a failed generation change or an invalid cutoff observation.
 fn deliver_final_guard_action(
     handle: &ControlHandle,
     action: FinalGuardAction,
+    deadline: Instant,
 ) -> Result<(), PilotError> {
     match action {
         FinalGuardAction::Stop => {
@@ -3062,6 +3065,9 @@ fn deliver_final_guard_action(
             Ok(())
         }
         FinalGuardAction::Invalidate => handle.invalidate(),
+        FinalGuardAction::TimeCutoff => {
+            crate::processing_guard_tests::observe_final_reply_cutoff(deadline)
+        }
     }
 }
 
@@ -3078,7 +3084,8 @@ fn check_final_guard_retirement(
 ) -> Result<(), Box<dyn Error>> {
     assert_eq!(
         fixture.slot.terminal().map(TerminalOutcome::status),
-        Some(expected_status)
+        Some(expected_status),
+        "final series guard did not retire the selected reply as expected"
     );
     assert!(
         fixture
@@ -3131,27 +3138,31 @@ fn final_guard_transfer_case(
             fixture.slot.profile,
         );
         receiver.issue(RequestOwner::from_slot(0, &fixture.slot))?;
-        let mut delivery = Err(PilotError::InternalState);
+        let deadline: Instant = fixture.deadline;
+        let mut delivery: Result<(), PilotError> = Err(PilotError::InternalState);
         let observed = match path {
             FinalGuardPath::Reply => publish_series_reply_observing(
                 &mut fixture.slot,
                 &mut control,
                 Ok(fixture.staged.take().ok_or(PilotError::InternalState)?),
-                fixture.deadline,
-                || delivery = deliver_final_guard_action(&handle, action),
+                deadline,
+                || delivery = deliver_final_guard_action(&handle, action, deadline),
                 || {},
             ),
             FinalGuardPath::Writable => handle_series_writable_observing(
                 &mut fixture.slot,
                 &mut control,
                 Ok(()),
-                fixture.deadline,
+                deadline,
                 quiet,
-                || delivery = deliver_final_guard_action(&handle, action),
+                || delivery = deliver_final_guard_action(&handle, action, deadline),
                 || {},
             ),
         };
-        product_ok(delivery, "valid late public control delivery failed")?;
+        product_ok(
+            delivery,
+            "final series boundary was unavailable before the original cutoff",
+        )?;
         let (expected_status, expected_end, remaining_cause) = match action {
             FinalGuardAction::Stop => (
                 Status::Stopped,
@@ -3162,6 +3173,11 @@ fn final_guard_transfer_case(
                 Status::Stale,
                 SeriesEnd::Stale,
                 SeriesNotStartedCause::Stale,
+            ),
+            FinalGuardAction::TimeCutoff => (
+                Status::Timeout,
+                SeriesEnd::SeriesDeadline,
+                SeriesNotStartedCause::SeriesDeadline,
             ),
         };
         check_final_guard_retirement(&fixture, path, expected_status)?;
@@ -3181,42 +3197,63 @@ fn final_guard_transfer_case(
             observed.epoch,
             u64::from(matches!(action, FinalGuardAction::Invalidate))
         );
-        let end =
-            current_series_end(&mut control, fixture.deadline).ok_or(PilotError::InternalState)?;
+        let end = current_series_end(&mut control, deadline).ok_or(PilotError::InternalState)?;
         assert_eq!(end, expected_end);
-        let series = receiver.finish(end, None);
-        assert_eq!(series.end(), expected_end);
-        assert!(series.primary_failure().is_none());
-        assert!(series.stop_cleanup_failure().is_none());
-        assert!(series.invalidate_cleanup_failure().is_none());
-        assert_eq!(
-            series.attempts()[0]
-                .report()
-                .ok_or(PilotError::InternalState)?
-                .status(),
-            expected_status
-        );
-        let expected_counts = match path {
-            FinalGuardPath::Reply => (1, 1),
-            FinalGuardPath::Writable => (0, 0),
-        };
-        let first = series.attempts()[0]
-            .report()
-            .ok_or(PilotError::InternalState)?;
-        assert_eq!(
-            (first.received(), first.rejected()),
-            expected_counts,
-            "final-guard refusal must count each selected reply exactly once"
-        );
-        assert!(
-            series.attempts()[1..]
-                .iter()
-                .all(|attempt| attempt.not_started_cause() == Some(remaining_cause))
-        );
-        assert_eq!(series.admitted_sample_count(), 0);
-        assert_eq!(series.eligible_sample_count(), 0);
+        let series: SeriesReport = receiver.finish(end, None);
+        check_final_guard_summary(
+            &series,
+            path,
+            expected_status,
+            expected_end,
+            remaining_cause,
+        )?;
         Ok(())
     })
+}
+
+/// Check the receiving owner's finished summary of the original retirement.
+/// # Errors
+/// Preserve a missing report for the actual issued request.
+/// # Panics
+/// Require matching control, counts, remaining-cause and no numerical output.
+fn check_final_guard_summary(
+    series: &SeriesReport,
+    path: FinalGuardPath,
+    expected_status: Status,
+    expected_end: SeriesEnd,
+    remaining_cause: SeriesNotStartedCause,
+) -> Result<(), PilotError> {
+    assert_eq!(series.end(), expected_end);
+    assert!(series.primary_failure().is_none());
+    assert!(series.stop_cleanup_failure().is_none());
+    assert!(series.invalidate_cleanup_failure().is_none());
+    assert_eq!(
+        series.attempts()[0]
+            .report()
+            .ok_or(PilotError::InternalState)?
+            .status(),
+        expected_status
+    );
+    let expected_counts = match path {
+        FinalGuardPath::Reply => (1, 1),
+        FinalGuardPath::Writable => (0, 0),
+    };
+    let first = series.attempts()[0]
+        .report()
+        .ok_or(PilotError::InternalState)?;
+    assert_eq!(
+        (first.received(), first.rejected()),
+        expected_counts,
+        "final-guard refusal must count each selected reply exactly once"
+    );
+    assert!(
+        series.attempts()[1..]
+            .iter()
+            .all(|attempt| attempt.not_started_cause() == Some(remaining_cause))
+    );
+    assert_eq!(series.admitted_sample_count(), 0);
+    assert_eq!(series.eligible_sample_count(), 0);
+    Ok(())
 }
 
 /// A stop arriving only at the final reply guard retains a valid completion pair.
@@ -3238,6 +3275,17 @@ fn reply_final_guard_stop_keeps_its_actual_receiving_checkpoint() -> Result<(), 
 fn reply_final_guard_invalidation_keeps_its_actual_receiving_checkpoint()
 -> Result<(), Box<dyn Error>> {
     final_guard_transfer_case(FinalGuardPath::Reply, FinalGuardAction::Invalidate)
+}
+
+/// A time cutoff reached after staging keeps the original timeout checkpoint.
+/// # Errors
+/// Preserve the actual selected loopback and original receiving refusal.
+/// # Panics
+/// Require one charged timeout and a truthful original series deadline.
+#[test]
+fn reply_final_guard_time_cutoff_keeps_its_actual_receiving_checkpoint()
+-> Result<(), Box<dyn Error>> {
+    final_guard_transfer_case(FinalGuardPath::Reply, FinalGuardAction::TimeCutoff)
 }
 
 /// A stop arriving at the concrete sender's final guard remains a stopped completion.

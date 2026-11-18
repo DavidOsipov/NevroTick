@@ -5634,7 +5634,7 @@ def execute_address_profile(args, report: dict) -> None:
 ENGINE_KE_POLICY = COMMON.ENGINE_KE_POLICY
 ENGINE_KE_HOST_SUBJECTS = dict(COMMON.ENGINE_KE_SUBJECTS)
 ENGINE_KE_SCOPE = COMMON.Scope("nevrotick-engine", COMMON.ENGINE_KE_SUBJECTS, ENGINE_KE_POLICY)
-ENGINE_KE_ORDINARY_COUNT = 538
+ENGINE_KE_ORDINARY_COUNT = 540
 ENGINE_KE_CASE_COUNT = 264
 ENGINE_KE_DOCTEST_COUNT = 90
 ENGINE_KE_DOCTEST_NAME = re.compile(
@@ -5664,6 +5664,10 @@ ENGINE_KE_MANAGED_PROTECTED_TESTS = frozenset((
     "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::managed_deny_worker_post_record_stop_preserves_only_once_joined_history",
     "nts_ke_experiment::datagram::reached::bound_endpoint_check_refuses_each_invalid_coordinate",
 ))
+ENGINE_FINAL_REPLY_CUTOFF_TESTS = frozenset((
+    "processing_guard_tests::pilot_final_guard_time_cutoff_rejects_selected_reply_once",
+    "series::tests::reply_final_guard_time_cutoff_keeps_its_actual_receiving_checkpoint",
+))
 ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/tests.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/association/tests.rs",
@@ -5682,6 +5686,7 @@ ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview_tests.rs",
     "crates/nevrotick-engine/tests/private/source_configuration.rs",
     "crates/nevrotick-engine/tests/private/processing_guards.rs",
+    "crates/nevrotick-engine/tests/private/series.rs",
 )
 ENGINE_KE_BOUND_INPUTS = tuple(dict.fromkeys((
     WRAPPER, TESTS, *COMMON.ENGINE_KE_CRITICAL, *ENGINE_KE_TEST_SOURCES,
@@ -5858,7 +5863,7 @@ def execute_engine_ke_fixtures(args, report: dict) -> None:
 
 
 def validate_engine_ke_inventory(names: object) -> list[str]:
-    """Require the complete fixed roster, including forwarding and managed protected regressions.
+    """Require the fixed roster including forwarding, protected and final-cutoff regressions.
 
     Reuse this admission at policy, execution and completed-cache retirement;
     a historical roster or same-count substitution cannot omit a required case.
@@ -5869,10 +5874,11 @@ def validate_engine_ke_inventory(names: object) -> list[str]:
             or names != sorted(set(names))
             or sum(name.startswith("nts_ke_experiment::") for name in names) != ENGINE_KE_CASE_COUNT
             or ENGINE_KE_SEND_AFTER_TEST not in names
-            or not ENGINE_KE_MANAGED_PROTECTED_TESTS.issubset(names)):
+            or not ENGINE_KE_MANAGED_PROTECTED_TESTS.issubset(names)
+            or not ENGINE_FINAL_REPLY_CUTOFF_TESTS.issubset(names)):
         raise Incomplete(
             f"Engine KE requires all {ENGINE_KE_ORDINARY_COUNT} actual Engine tests including its "
-            f"{ENGINE_KE_CASE_COUNT} KE cases, send-after regression and managed protected regressions.")
+            f"{ENGINE_KE_CASE_COUNT} KE cases, send-after, managed protected and final reply cutoff regressions.")
     return names
 
 

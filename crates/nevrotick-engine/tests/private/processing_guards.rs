@@ -684,15 +684,36 @@ async fn check_guard(
     Ok(neighbor_snapshot)
 }
 
-/// A public control change delivered at one precise final reply boundary.
+/// The control or time observation selected at the final reply boundary.
 #[derive(Clone, Copy)]
 enum FinalReplyControl {
     /// Retire the selected reply only at the final watch guard.
     Stop,
     /// Invalidate the selected reply only at the final watch guard.
     Invalidate,
+    /// Observe only the original deadline crossing at the final guard.
+    TimeCutoff,
     /// Preserve a committed historical header after a later stop.
     PostcommitStop,
+}
+
+/// Observe the original absolute cutoff from the unguarded fixture handler.
+/// # Errors
+/// Refuse a fixture that reaches the observer late or outside its I/O bound.
+pub(super) fn observe_final_reply_cutoff(deadline: Instant) -> Result<(), PilotError> {
+    let mut observed: Instant = Instant::now();
+    if observed >= deadline {
+        return Err(PilotError::InternalState);
+    }
+    while observed < deadline {
+        let remaining: Duration = deadline
+            .checked_duration_since(observed)
+            .filter(|duration: &Duration| *duration <= IO_LIMIT)
+            .ok_or(PilotError::InternalState)?;
+        std::thread::park_timeout(remaining);
+        observed = Instant::now();
+    }
+    Ok(())
 }
 
 /// Challenge the original pilot kernel using one actual selected native reply.
@@ -719,6 +740,13 @@ async fn pilot_final_guard_case(
     });
     let control = ControlHandle { sender };
     let saved_neighbor = commit_neighbor(&mut slots, &peers[1], &mut receiver, deadline).await?;
+    let deadline: Instant = if matches!(action, FinalReplyControl::TimeCutoff) {
+        Instant::now()
+            .checked_add(Duration::from_millis(500))
+            .ok_or(PilotError::DeadlineOverflow)?
+    } else {
+        deadline
+    };
     let (datagram, _) = receive_reply(&mut slots[0], &peers[0], deadline, 15, false).await?;
     let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
     let selected = classify_read_result(
@@ -737,7 +765,11 @@ async fn pilot_final_guard_case(
         )
         .is_ok()
     );
-    let mut delivery = Ok(());
+    let mut delivery: Result<(), PilotError> = if matches!(action, FinalReplyControl::TimeCutoff) {
+        Err(PilotError::InternalState)
+    } else {
+        Ok(())
+    };
     process_reply_observing(
         &mut slots,
         &mut receiver,
@@ -753,6 +785,7 @@ async fn pilot_final_guard_case(
             || match action {
                 FinalReplyControl::Stop => control.stop(),
                 FinalReplyControl::Invalidate => delivery = control.invalidate(),
+                FinalReplyControl::TimeCutoff => delivery = observe_final_reply_cutoff(deadline),
                 FinalReplyControl::PostcommitStop => {}
             },
             || {
@@ -762,32 +795,18 @@ async fn pilot_final_guard_case(
             },
         ),
     );
-    product_ok(delivery, "valid final pilot control delivery failed")?;
+    product_ok(
+        delivery,
+        "final pilot boundary was unavailable before the original cutoff",
+    )?;
     let expected = match action {
         FinalReplyControl::Stop => Status::Stopped,
         FinalReplyControl::Invalidate => Status::Stale,
+        FinalReplyControl::TimeCutoff => Status::Timeout,
         FinalReplyControl::PostcommitStop => Status::Header,
     };
     let state = latest(&mut receiver);
-    assert_eq!(state.stop, !matches!(action, FinalReplyControl::Invalidate));
-    assert_eq!(
-        state.epoch,
-        u64::from(matches!(action, FinalReplyControl::Invalidate))
-    );
-    assert_eq!(
-        slots[0].terminal().map(TerminalOutcome::status),
-        Some(expected)
-    );
-    // This assertion is causal RED for both final refusals before the repair.
-    assert_eq!(
-        (slots[0].received, slots[0].rejected),
-        (
-            1,
-            u16::from(!matches!(action, FinalReplyControl::PostcommitStop))
-        ),
-        "final pilot guard must count each selected reply exactly once"
-    );
-    assert!(slots[0].last_rejection.is_none());
+    check_final_guard_slot(&slots[0], state, expected, action);
     // A subsequent whole-pilot control refresh must preserve both historical
     // outcomes and must not add another charge for this selected reply.
     refresh_owner(&mut slots, &mut receiver, deadline);
@@ -796,6 +815,63 @@ async fn pilot_final_guard_case(
     let neighbor = neighbor.into_report(1)?;
     check_final_reply_reports(&first, &neighbor, expected, action, &saved_neighbor)?;
     Ok(())
+}
+
+/// Check the selected terminal and control before the historical refresh.
+/// # Panics
+/// Require the expected final status and exact accounting for one native read.
+fn check_final_guard_slot(
+    slot: &LiveSlot,
+    state: Control,
+    expected: Status,
+    action: FinalReplyControl,
+) {
+    assert_eq!(
+        state.stop,
+        matches!(
+            action,
+            FinalReplyControl::Stop | FinalReplyControl::PostcommitStop
+        )
+    );
+    assert_eq!(
+        state.epoch,
+        u64::from(matches!(action, FinalReplyControl::Invalidate))
+    );
+    assert_eq!(
+        slot.terminal().map(TerminalOutcome::status),
+        Some(expected),
+        "final pilot guard used a processing time from before its original cutoff"
+    );
+    // A rejected selected reply retains its single original receive charge.
+    assert_eq!(
+        (slot.received, slot.rejected),
+        (
+            1,
+            u16::from(!matches!(action, FinalReplyControl::PostcommitStop))
+        ),
+        "final pilot guard must count each selected reply exactly once"
+    );
+    assert!(slot.last_rejection.is_none());
+}
+
+/// A reply staged before expiry can cross the cutoff before acquiring the final guard.
+/// # Errors
+/// Preserve the actual loopback, checked deadline and returned report failures.
+/// # Panics
+/// Require one received and rejected reply with unchanged committed neighbor facts.
+#[test]
+fn pilot_final_guard_time_cutoff_rejects_selected_reply_once() -> Result<(), Box<dyn Error>> {
+    let runtime: tokio::runtime::Runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .max_blocking_threads(2)
+        .build()?;
+    let Fixture { prepared, peers }: Fixture = fixture()?;
+    runtime.block_on(pilot_final_guard_case(
+        prepared,
+        peers,
+        FinalReplyControl::TimeCutoff,
+    ))
 }
 
 /// Check the original target/neighbor reports after their owner's control refresh.

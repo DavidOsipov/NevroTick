@@ -992,7 +992,7 @@ fn publish_series_reply_observing(
                 slot.rejected += 1;
                 slot.finish(TerminalOutcome::Stale);
             } else {
-                commit_reply(slot, &candidate, processing, deadline);
+                commit_reply(slot, &candidate, Instant::now(), deadline);
             }
         }
         after_final_guard();

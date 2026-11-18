@@ -1540,8 +1540,9 @@ struct ReadDatagram<'a> {
 }
 
 /// Commit checked packet facts only after the caller's fresh owner guards.
-/// No await or external effect intervenes; an impossible local read order rejects
-/// the datagram while preserving its pending slot and prior rejection cause.
+/// The final processing observation is sampled under the caller's control guard.
+/// A late selected datagram is charged once. An impossible local read order
+/// leaves the pending slot and prior rejection cause intact.
 fn commit_reply(
     slot: &mut LiveSlot,
     candidate: &StagedReply,
@@ -1558,6 +1559,7 @@ fn commit_reply(
         return;
     }
     if processing >= deadline {
+        slot.rejected += 1;
         slot.expire();
         return;
     }
@@ -1701,7 +1703,7 @@ fn process_reply_observing(
                 slots[index].rejected += 1;
                 slots[index].finish(TerminalOutcome::Stale);
             } else {
-                commit_reply(&mut slots[index], &candidate, processing, deadline);
+                commit_reply(&mut slots[index], &candidate, Instant::now(), deadline);
             }
         }
         after_final_guard();

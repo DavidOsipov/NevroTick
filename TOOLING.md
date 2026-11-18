@@ -2015,6 +2015,12 @@ repeat that GNU mutation cohort without a concrete changed hypothesis or turn
 the inactive code into equivalences. Existing native owners retain that exit.
 
 **Current GNU KE development binding — 18 November 2026.** The
+[plain reply cutoff checkpoint](tasks/engine-transport-pilot.md#plain-reply-final-processing-cutoff--w11-w01)
+binds `7e62ffe4…`, 540 EP1 cases per mode and 90 doctests.
+Its exact source passed development and the configured reader controls.
+The campaign remains closed.
+
+**Preceding capture-span development binding — 18 November 2026.** The
 [capture-span checkpoint](tasks/engine-transport-pilot.md#checked-application-capture-span--18-november-2026)
 binds `242754b8…`, the same 538 EP1 cases and 90 doctests. The
 current source passed development and the separate measurement line

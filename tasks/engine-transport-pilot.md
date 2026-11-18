@@ -23930,3 +23930,50 @@ positive Engine-to-Core admission.
 Development receipt SHA-256 `4da9ef910e107306c34955e7cfbd3a62c1bd914953ccefbeaa4b60cf061e03ac`.
 Measurement line observation SHA-256 `18aeb566f40c8a7f400bfba1c5680b7443d3bc892b5005fb15d881e1bc03ed68`.
 Targeted sensitivity SHA-256 `01718d7d5a053380c0f7b571d4f81d429e2bcf080ffa5a23a56a0f34ad820f88`.
+
+###### Plain reply final processing cutoff — W11-W01
+
+S2.1 TQ-01/TQ-09 and CHECK-6/7/11/21/25/27 use the original
+exclusive processing deadline at the final ordinary reply decision.
+The pilot and series now sample processing time while holding their final
+Control guard. Earlier observations still govern preliminary retirement.
+A valid selected packet that reaches this guard at or after its cutoff
+charges one rejection and retains the actual Timeout or receive Budget
+result without publishing a header or control result. Fresh Stop and
+epoch invalidation keep their existing priority. Admitted facts use
+the same final observation to account for processing age.
+
+The detached test-only predecessor published Header in both real loopback
+consumers after their original cutoff. Both assertions expected Timeout
+and Cargo exited 101 for each case. All six neighboring controls passed,
+covering cancellation, invalidation, committed history and read-order
+boundaries. The actual receiving owner retains the completed series report
+and one rejection after the repair. The existing protected ledger and
+managed-policy owner keep their independent final checks.
+A reached final cutoff retires the receive before policy-lock admission.
+
+Product `7e62ffe4dfbe0a9678994bb056c8fcc4de23cd638ef3221cf403009bd6048e55` passed all 19 development lanes. Both new
+regressions passed in ordinary and optimized GNU modes on both graphs.
+The 1,819 executed cases include 272 per default mode, 540 per EP1 mode,
+89/90 doctests and the existing Core selections. GNU/MSVC target checks
+and Clippy passed. The closed KE development binding passed 376 reader
+methods. The roster checker requires both new tests and retains every
+previously required case. The policy's inventory and effect settings remain closed.
+
+The first optimized compiler invocation was killed before its tests under
+the bootstrap 90-second CPU budget. The continuation retains exact passing
+lanes from that attempt and executes the remaining selections under the
+existing bounded analysis runtime. Its fresh control verified read-only
+source, private output and absent host loopback access. The intermediary
+controller and probe setup failures retain their original exits.
+The documentation and review-skill fast-forward to `62eb1c1` changes no
+tested product or verifier inputs. The current closed-role reader and
+stage checks use the adopted tree.
+
+This checkpoint covers the application cutoff and completed receive
+accounting. The current mutation and native claims remain open, as do
+calibrated mapping, platform invalidation and positive Core admission.
+
+Test-only failure receipt SHA-256 `90708fc61bc011844977513b80037dfeeeec2c872655d0200b9584e6f57c15ec`.
+Integrated development receipt SHA-256 `1485a7f57bbdf763cdd6e17f6f58fb819287781b6be6f1b705ad8a1a8e1df177`.
+Closed-role reader receipt SHA-256 `8fb79922fd13822ea9cc98672a99766143ef514368f4b27e69b05f2441b93e8c`.
