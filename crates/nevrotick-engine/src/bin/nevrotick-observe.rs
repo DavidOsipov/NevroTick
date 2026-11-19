@@ -43,7 +43,6 @@ enum CliError {
     #[cfg(windows)]
     ResumeRegistration,
     /// The callback was disarmed but native release failed. Keep an earlier failure.
-    #[cfg(windows)]
     ResumeUnregistration {
         /// Preserve the first bounded diagnostic, if observation also failed.
         primary: Option<&'static str>,
@@ -62,7 +61,6 @@ impl CliError {
             Self::AdjustmentUnavailable => "clock_adjustment_unavailable",
             #[cfg(windows)]
             Self::ResumeRegistration => "resume_registration_failed",
-            #[cfg(windows)]
             Self::ResumeUnregistration { primary } => {
                 primary.unwrap_or("resume_unregistration_failed")
             }
@@ -291,37 +289,26 @@ fn run() -> Result<(), CliError> {
     let observer: ResumeWatch =
         ResumeWatch::subscribe(move || control.invalidate().map_err(|_| ()))
             .map_err(|_| CliError::ResumeRegistration)?;
-    let result: Result<ObservedPilot, CliError> = observe(
+    #[cfg(windows)]
+    let close = || observer.close().map_err(|_| ());
+    #[cfg(not(windows))]
+    let close = || {
+        drop(control);
+        Ok(())
+    };
+    #[cfg(windows)]
+    let read = args.observe_adjustment.then_some(read_adjustment);
+    #[cfg(all(not(windows), test))]
+    let read: Option<fn() -> Result<adjustment_observation::AdjustmentState, u32>> = None;
+    observe(
         pilot,
         schedule,
-        #[cfg(windows)]
-        args.observe_adjustment,
-    );
-    #[cfg(windows)]
-    if observer.close().is_err() {
-        let primary: Option<&'static str> = result.err().map(|error| error.as_str());
-        return Err(CliError::ResumeUnregistration { primary });
-    }
-    #[cfg(not(windows))]
-    drop(control);
-    let completed: ObservedPilot = result?;
-    let mut output: io::StdoutLock<'static> = io::stdout().lock();
-    #[cfg(windows)]
-    if let Some(adjustment) = completed.adjustment {
-        adjustment
-            .write(&mut output)
-            .map_err(|_| CliError::Output)?;
-    }
-    write_report(&completed.report, &mut output)
-}
-
-/// The actual pilot result with its optional native observation from the same invocation.
-struct ObservedPilot {
-    /// The original result after the actual engine runtime returned.
-    report: PilotReport,
-    /// Two raw reads around that specific Windows invocation, when requested.
-    #[cfg(windows)]
-    adjustment: Option<adjustment_observation::AdjustmentObservation>,
+        |pilot: &PreparedPilot| write_bound(pilot, &mut io::stdout().lock()),
+        close,
+        || io::stdout().lock(),
+        #[cfg(any(windows, test))]
+        read,
+    )
 }
 
 /// Forward one native read into the CLI's bounded historical projection.
@@ -338,39 +325,71 @@ fn read_adjustment() -> Result<adjustment_observation::AdjustmentState, u32> {
     })
 }
 
-/// Publish the prepared endpoints before executing, under the invocation's control.
+/// Publish and flush the prepared endpoints before attempting execution.
 ///
 /// # Errors
-/// Preserve sink/setup and Engine errors, leaving teardown to the invocation owner.
-fn observe(
+/// Return a bounded sink failure without permitting execution.
+fn write_bound(pilot: &PreparedPilot, output: &mut impl Write) -> Result<(), CliError> {
+    for (slot, local) in pilot.local_endpoints().iter().enumerate() {
+        writeln!(output, "event=bound slot={slot} local={local}").map_err(|_| CliError::Output)?;
+    }
+    output.flush().map_err(|_| CliError::Output)
+}
+
+/// Execute under the invocation's control, close it, then attempt observed output.
+///
+/// Only admitted execution is bracketed. Opt-in historical reads survive an
+/// execution or teardown error. A refused sink prevents later output and cannot
+/// replace an earlier error. Execution or close failure prevents normal result
+/// and completion records.
+///
+/// # Errors
+/// Preserve binding, Engine, unregistration and output error precedence.
+fn observe<W: Write>(
     pilot: PreparedPilot,
     schedule: ControlSchedule,
-    #[cfg(windows)] include_adjustment: bool,
-) -> Result<ObservedPilot, CliError> {
-    {
-        let mut output: io::StdoutLock<'static> = io::stdout().lock();
-        for (slot, local) in pilot.local_endpoints().iter().enumerate() {
-            writeln!(output, "event=bound slot={slot} local={local}")
-                .map_err(|_| CliError::Output)?;
+    publish: impl FnOnce(&PreparedPilot) -> Result<(), CliError>,
+    close: impl FnOnce() -> Result<(), ()>,
+    output: impl FnOnce() -> W,
+    #[cfg(any(windows, test))] read: Option<
+        impl FnMut() -> Result<adjustment_observation::AdjustmentState, u32>,
+    >,
+) -> Result<(), CliError> {
+    let bound: Result<(), CliError> = publish(&pilot);
+    let operation = || execute(pilot, schedule).map_err(CliError::Pilot);
+    #[cfg(any(windows, test))]
+    let (result, adjustment): (
+        Result<PilotReport, CliError>,
+        Option<adjustment_observation::AdjustmentObservation>,
+    ) = match (bound, read) {
+        (Ok(()), Some(read)) => {
+            let (result, history) = adjustment_observation::observe(read, operation);
+            (result, Some(history))
         }
-        output.flush().map_err(|_| CliError::Output)?;
+        (bound, _) => (bound.and_then(|()| operation()), None),
+    };
+    #[cfg(not(any(windows, test)))]
+    let result: Result<PilotReport, CliError> = bound.and_then(|()| operation());
+
+    let completed: Result<PilotReport, CliError> = if close().is_err() {
+        Err(CliError::ResumeUnregistration {
+            primary: result.err().map(|error: CliError| error.as_str()),
+        })
+    } else {
+        result
+    };
+
+    #[cfg(any(windows, test))]
+    if let Some(adjustment) = adjustment {
+        let mut output: W = output();
+        let written: Result<(), CliError> =
+            adjustment.write(&mut output).map_err(|_| CliError::Output);
+        let report: PilotReport = completed?;
+        written?;
+        return write_report(&report, &mut output);
     }
-    #[cfg(windows)]
-    if include_adjustment {
-        let (report, reading): (
-            Result<PilotReport, PilotError>,
-            adjustment_observation::AdjustmentObservation,
-        ) = adjustment_observation::observe(read_adjustment, || execute(pilot, schedule));
-        return Ok(ObservedPilot {
-            report: report.map_err(CliError::Pilot)?,
-            adjustment: Some(reading),
-        });
-    }
-    Ok(ObservedPilot {
-        report: execute(pilot, schedule).map_err(CliError::Pilot)?,
-        #[cfg(windows)]
-        adjustment: None,
-    })
+    let report: PilotReport = completed?;
+    write_report(&report, &mut output())
 }
 
 /// Return through Rust's normal process teardown; never change host clock state.
@@ -380,7 +399,6 @@ fn main() -> ExitCode {
         Err(error) => {
             let mut stderr: io::StderrLock<'static> = io::stderr().lock();
             let result: io::Result<()> = writeln!(stderr, "error={}", error.as_str());
-            #[cfg(windows)]
             if let CliError::ResumeUnregistration { primary: Some(_) } = error {
                 let _cleanup_written: io::Result<()> =
                     writeln!(stderr, "cleanup=resume_unregistration_failed");

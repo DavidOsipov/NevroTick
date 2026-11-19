@@ -958,18 +958,21 @@ pub(super) struct Snapshot {
 }
 
 /// Optional fixture action after genuine socket retirement and before commit.
-#[cfg(all(test, target_os = "linux"))]
+#[cfg(all(test, any(windows, target_os = "linux")))]
 pub(super) type LoopbackBeforeCommit = Box<dyn FnOnce() -> Result<(), Failure> + Send>;
 
 /// Explicit selection for the private managed successor controls.
 #[cfg(test)]
-#[cfg_attr(not(target_os = "linux"), derive(Clone, Copy))]
+#[cfg_attr(not(any(windows, target_os = "linux")), derive(Clone, Copy))]
 pub(super) enum ManagedSuccessorFixture {
     /// The existing deterministic adapter supplies the named scripted response.
     Scripted(ProtectedControlKind),
     /// The same concrete socket adapter uses the separate software fixture peer.
-    #[cfg(target_os = "linux")]
+    #[cfg(any(windows, target_os = "linux"))]
     Loopback(Option<LoopbackBeforeCommit>),
+    /// The actual provider and configured fixture peer use a second native socket.
+    #[cfg(windows)]
+    NativeLoopback,
 }
 
 /// Private static adapter: native production and Script exercise one owner.
@@ -1096,6 +1099,8 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
     /// # Errors
     /// Preserve genuine first-leg commit, carried credit, subsequent receive
     /// or final authority refusals without changing association ownership.
+    /// # Panics
+    /// The native fixture fails if the guarded control leaves a request pending.
     #[cfg(test)]
     fn receive_managed_successor_fixture<P: Producer>(
         &mut self,
@@ -1110,11 +1115,13 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
         first.commit_for_successor(association)?;
         let receiving: BoundProtectedReceiver<'_, '_, '_, '_> =
             self.bind_association(association)?;
+        #[cfg(windows)]
+        let native_fixture: bool = matches!(&fixture, ManagedSuccessorFixture::NativeLoopback);
         let retired: RetiredProtectedSuccessor<'_> = match fixture {
             ManagedSuccessorFixture::Scripted(kind) => {
                 tests::scripted_managed_successor(association, control, kind)?
             }
-            #[cfg(target_os = "linux")]
+            #[cfg(any(windows, target_os = "linux"))]
             ManagedSuccessorFixture::Loopback(before_commit) => {
                 let retired: RetiredProtectedSuccessor<'_> =
                     tests::loopback_managed_successor(association, control)?;
@@ -1123,14 +1130,29 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
                 }
                 retired
             }
+            #[cfg(windows)]
+            ManagedSuccessorFixture::NativeLoopback => tests::loopback_native_managed_successor(
+                association,
+                control,
+                fill_native_request_entropy,
+            )?,
         };
         match retired {
             RetiredProtectedSuccessor::Ordinary(completion) => {
                 receiving.accept(completion.commit(association)?)
             }
-            RetiredProtectedSuccessor::Control(retired) => association
-                .commit_retired_protected_control(retired)
-                .map(InvocationCompletion::ManagedProtectedControl),
+            RetiredProtectedSuccessor::Control(retired) => {
+                let applied: super::association::ledger::AppliedProtectedControl =
+                    association.commit_retired_protected_control(retired)?;
+                #[cfg(windows)]
+                if native_fixture {
+                    assert_eq!(
+                        association.status().phase,
+                        super::association::ledger::RequestPhase::Idle
+                    );
+                }
+                Ok(InvocationCompletion::ManagedProtectedControl(applied))
+            }
         }
     }
 
@@ -1475,6 +1497,17 @@ pub(super) fn step_with<P: Producer>(
 #[cfg(windows)]
 pub(super) struct Native;
 
+/// Fill exactly one request's bounded UID/nonce/token batch with ordinary CNG.
+/// # Errors
+/// Retain entropy refusal without repeating the draw or selecting another provider.
+#[cfg(windows)]
+fn fill_native_request_entropy(output: &mut [u8; 56]) -> Result<(), Failure> {
+    use rustls::crypto::SecureRandom;
+    rustls_cng_crypto::SecureRandom
+        .fill(output)
+        .map_err(|_| Failure::Entropy)
+}
+
 #[cfg(windows)]
 impl Producer for Native {
     fn establish<'tx>(
@@ -1491,12 +1524,7 @@ impl Producer for Native {
         association: &mut AssociationOwner<'tx>,
         control: &'tx Control,
     ) -> Result<ProtectedCompletion<'tx>, Failure> {
-        super::datagram::exchange(association, control, |output| {
-            use rustls::crypto::SecureRandom;
-            rustls_cng_crypto::SecureRandom
-                .fill(output)
-                .map_err(|_| Failure::Entropy)
-        })
+        super::datagram::exchange(association, control, fill_native_request_entropy)
     }
 
     fn preview_entropy(&mut self, output: &mut [u8; 48]) -> Result<(), Failure> {
@@ -1508,6 +1536,45 @@ impl Producer for Native {
 
     fn jitter(&mut self, _upper: Duration) -> Result<Duration, Failure> {
         // Public one-shot admission terminates before asking for any retry draw.
+        Err(Failure::Control)
+    }
+}
+
+/// Test-only explicit native successor selector. Establishment and the first leg
+/// remain the ordinary adapter operations under the actual worker's provider.
+#[cfg(all(windows, test))]
+pub(super) struct NativeManagedSuccessor;
+
+#[cfg(all(windows, test))]
+impl Producer for NativeManagedSuccessor {
+    fn establish<'tx>(
+        &mut self,
+        config: &'tx Config,
+        control: &'tx Control,
+        provider: &'tx ProviderScope<'tx>,
+    ) -> Result<AssociationOwner<'tx>, Failed> {
+        let association: AssociationOwner<'tx> = Native.establish(config, control, provider)?;
+        assert_eq!(association.cookie_population()?, (1, 12));
+        Ok(association)
+    }
+
+    fn exchange<'tx>(
+        &mut self,
+        association: &mut AssociationOwner<'tx>,
+        control: &'tx Control,
+    ) -> Result<ProtectedCompletion<'tx>, Failure> {
+        Native.exchange(association, control)
+    }
+
+    fn managed_successor_fixture(&mut self) -> Option<ManagedSuccessorFixture> {
+        Some(ManagedSuccessorFixture::NativeLoopback)
+    }
+
+    fn preview_entropy(&mut self, _output: &mut [u8; 48]) -> Result<(), Failure> {
+        Err(Failure::Control)
+    }
+
+    fn jitter(&mut self, _upper: Duration) -> Result<Duration, Failure> {
         Err(Failure::Control)
     }
 }

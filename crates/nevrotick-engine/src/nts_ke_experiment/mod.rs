@@ -1195,14 +1195,23 @@ fn run_with_power_observer(config: Config) -> Result<ObservedInvocation, Observe
     run_observing(
         config,
         &PROCESS_WORKER,
-        |stop| {
-            let watch: ResumeWatch =
-                ResumeWatch::subscribe(move || stop.request_stop().map(|_| ()).map_err(|_| ()))
-                    .map_err(|_| ())?;
-            Ok(move || watch.close().map_err(ResumeUnregistrationError::code))
-        },
+        subscribe_power_observer,
         job::SubmissionReservation::try_submit,
     )
+}
+
+/// Subscribe the actual Windows observer to this invocation's original Stop scope.
+/// The returned consuming close reports the native unregistration result.
+/// # Errors
+/// Refuse an unavailable subscription before any worker is submitted.
+#[cfg(windows)]
+fn subscribe_power_observer(
+    stop: StopHandle,
+) -> Result<impl FnOnce() -> Result<(), NonZeroU32>, ()> {
+    let watch: ResumeWatch =
+        ResumeWatch::subscribe(move || stop.request_stop().map(|_| ()).map_err(|_| ()))
+            .map_err(|_| ())?;
+    Ok(move || watch.close().map_err(ResumeUnregistrationError::code))
 }
 
 /// Keep the joined or unconfirmed invocation separately from observer failures.

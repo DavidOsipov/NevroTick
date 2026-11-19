@@ -124,6 +124,8 @@ enum Mode {
     Ke,
     /// Use the same TLS session for a single protected loopback exchange.
     Protected,
+    /// Return a cookie on the first exchange and an authenticated DENY on its successor.
+    ProtectedSuccessorDeny,
 }
 
 /// Admitted mode and local path representations.
@@ -156,6 +158,9 @@ impl Config {
             None => Mode::Ke,
             Some(flag) if flag == "--protected-datagram" && arguments.next().is_none() => {
                 Mode::Protected
+            }
+            Some(flag) if flag == "--protected-successor-deny" && arguments.next().is_none() => {
+                Mode::ProtectedSuccessorDeny
             }
             Some(_) => return Err(Failure::Arguments),
         };
@@ -211,15 +216,18 @@ fn admit_offer(bytes: &[u8]) -> Result<(), Failure> {
     }
 }
 
-/// Serialize only a nonzero numeric port into at most eleven ASCII bytes.
+/// Serialize bounded nonzero readiness ports using closed ASCII field names.
 ///
 /// # Errors
 /// Refuse port zero.
-fn ready_line(port: u16) -> Result<String, Failure> {
+fn ready_line(port: u16, successor_port: Option<NonZeroU16>) -> Result<String, Failure> {
     if port == 0 {
         return Err(Failure::Arguments);
     }
-    Ok(format!("port={port}\n"))
+    Ok(match successor_port {
+        Some(udp) => format!("port={port} udp_port={udp}\n"),
+        None => format!("port={port}\n"),
+    })
 }
 
 /// Select one independent encrypted-I/O counter; no shared aggregate substitution.
@@ -333,6 +341,9 @@ fn completion_line(mode: Mode) -> &'static str {
         Mode::Protected => {
             "scope=laboratory-ke-peer-protected completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=1 udp_sent=1"
         }
+        Mode::ProtectedSuccessorDeny => {
+            "scope=laboratory-ke-peer-protected-successor-deny completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=2"
+        }
     }
 }
 
@@ -382,6 +393,7 @@ fn packet_label(cause: protected_packet::PacketFailure) -> &'static str {
         PacketFailure::Header => "header",
         PacketFailure::Shape => "shape",
         PacketFailure::Authentication => "authentication",
+        PacketFailure::Replay => "replay",
         PacketFailure::Seal => "seal",
     }
 }

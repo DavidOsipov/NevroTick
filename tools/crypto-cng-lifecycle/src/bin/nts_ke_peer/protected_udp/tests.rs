@@ -42,18 +42,29 @@ type TestResult<T = ()> = Result<T, &'static str>;
 /// # Errors
 /// Preserve a failure in fixture encoding, bounds or authentication setup.
 fn request() -> TestResult<[u8; 252]> {
+    request_with(TRANSMIT, &UID, &COOKIE, &[0x34; 16])
+}
+
+/// Use the actual client encoder for a second cookie and correlation.
+///
+/// # Errors
+/// Preserve fixture header, limits, sealing and output-extent refusals.
+fn request_with(
+    transmit: [u8; 8],
+    uid: &[u8; 32],
+    cookie: &[u8; 12],
+    nonce: &[u8; 16],
+) -> TestResult<[u8; 252]> {
     let mut header_bytes: [u8; 48] = [0; 48];
     header_bytes[0] = 0x23;
-    header_bytes[40..48].copy_from_slice(&TRANSMIT);
+    header_bytes[40..48].copy_from_slice(&transmit);
     let header: RawHeader = decode_fixed_header(&header_bytes).map_err(|_| "fixture-header")?;
     let limits: FrameLimits = FrameLimits::new(252, 10).map_err(|_| "fixture-limits")?;
     let mut storage: [u8; 252] = [0; 252];
     let prepared: PreparedAlgorithm15Request<'_> =
-        prepare_algorithm15_request(&header, &UID, &COOKIE, 7, &mut storage, limits)
+        prepare_algorithm15_request(&header, uid, cookie, 7, &mut storage, limits)
             .map_err(|_| "fixture-prepare")?;
-    let sealed: NtsClientRequest<'_> = prepared
-        .seal(&C2S, &[0x34; 16])
-        .map_err(|_| "fixture-seal")?;
+    let sealed: NtsClientRequest<'_> = prepared.seal(&C2S, nonce).map_err(|_| "fixture-seal")?;
     sealed
         .packet_bytes()
         .try_into()
@@ -104,7 +115,7 @@ fn assert_no_reply(client: &UdpSocket) {
 ///
 /// # Panics
 /// Panic if the reply fails to carry the original selection or replacement cookie.
-fn check_reply(reply: &[u8; 140]) -> TestResult {
+fn check_reply(reply: &[u8; 140]) -> TestResult<[u8; 12]> {
     assert_eq!(&reply[..2], &[0x24, 2]);
     assert_eq!(&reply[24..32], &TRANSMIT);
     assert_eq!(&reply[48..52], &[1, 4, 0, 36]);
@@ -127,7 +138,7 @@ fn check_reply(reply: &[u8; 140]) -> TestResult {
             2, 4, 0, 16, 0x83, 0x73, 0x63, 0x53, 0x43, 0x33, 0x23, 0x13, 0x91, 0x92, 0x93, 0x94
         ]
     );
-    Ok(())
+    body[4..].try_into().map_err(|_| "replacement-size")
 }
 
 /// The peer responds once from its advertised port and releases its socket.
@@ -174,7 +185,7 @@ fn protected_udp_replies_once_from_advertised_port() -> TestResult {
     assert_eq!(length, 140);
     assert_eq!(sender, SocketAddr::V4(endpoint));
     let reply: &[u8; 140] = buffer[..length].try_into().map_err(|_| "reply-size")?;
-    check_reply(reply)?;
+    let _replacement: [u8; 12] = check_reply(reply)?;
     assert_no_reply(&client);
 
     let recovered: UdpSocket = UdpSocket::bind(endpoint).map_err(|_| "socket-still-held")?;
@@ -299,5 +310,97 @@ fn protected_udp_refuses_replacement_deadline() -> TestResult {
     assert_eq!(result, Err(Failure::Deadline));
     assert!(!attempted_fill.get());
     assert_no_reply(&client);
+    Ok(())
+}
+
+/// A second client port uses the first reply's cookie and receives a bound DENY.
+///
+/// # Errors
+/// Preserve socket, scoped worker, packet and response-opening failures.
+/// # Panics
+/// Fail if the endpoint, correlation, envelope, response count or nonce use differs.
+#[test]
+fn protected_udp_successor_uses_issued_cookie_from_another_client_port() -> TestResult {
+    let now: Instant = Instant::now();
+    let mut budget: Budget = Budget::new(now).map_err(|_| "fixture-budget")?;
+    budget.deadline = now
+        .checked_add(Duration::from_secs(5))
+        .ok_or("fixture-deadline")?;
+    let server: ProtectedUdp = ProtectedUdp::bind(&budget).map_err(|_| "server-bind")?;
+    let endpoint: SocketAddrV4 = SocketAddrV4::new(Ipv4Addr::LOCALHOST, server.port().get());
+    let first_client: UdpSocket = client()?;
+    let successor_client: UdpSocket = client()?;
+    assert_ne!(
+        first_client.local_addr().map_err(|_| "first-address")?,
+        successor_client
+            .local_addr()
+            .map_err(|_| "successor-address")?
+    );
+    for client_socket in [&first_client, &successor_client] {
+        client_socket
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .map_err(|_| "client-timeout")?;
+    }
+    let fresh_origin: [u8; 8] = 0x1122_3344_eedd_ccbb_u64.to_be_bytes();
+    let fresh_uid: [u8; 32] = [0x23; 32];
+    let deny_nonce: [u8; 16] = [0x77; 16];
+    std::thread::scope(|scope| -> TestResult {
+        let peer: std::thread::ScopedJoinHandle<'_, TestResult> = scope.spawn(move || {
+            let mut nonces: std::array::IntoIter<[u8; 16], 2> =
+                [SERVER_NONCE, deny_nonce].into_iter();
+            let result: Result<(), Failure> =
+                server.exchange_successor_deny(&budget, &C2S, &S2C, |nonce: &mut [u8; 16]| {
+                    *nonce = nonces.next().ok_or(Failure::Entropy)?;
+                    Ok(())
+                });
+            result.map_err(|_| "peer-exchange")?;
+            if nonces.next().is_some() {
+                return Err("unspent-fixture-nonce");
+            }
+            Ok(())
+        });
+        send(&first_client, &request()?, endpoint)?;
+        let mut buffer: [u8; 141] = [0; 141];
+        let (length, sender): (usize, SocketAddr) = first_client
+            .recv_from(&mut buffer)
+            .map_err(|_| "first-receive")?;
+        assert_eq!((length, sender), (140, SocketAddr::V4(endpoint)));
+        let first_reply: &[u8; 140] = buffer[..length].try_into().map_err(|_| "reply-length")?;
+        let cookie: [u8; 12] = check_reply(first_reply)?;
+        assert_ne!(cookie, COOKIE);
+        let successor: [u8; 252] = request_with(fresh_origin, &fresh_uid, &cookie, &[0x69; 16])?;
+        send(&successor_client, &successor, endpoint)?;
+        let (length, sender): (usize, SocketAddr) = successor_client
+            .recv_from(&mut buffer)
+            .map_err(|_| "deny-receive")?;
+        assert_eq!((length, sender), (124, SocketAddr::V4(endpoint)));
+        let reply: &[u8] = &buffer[..length];
+        assert_eq!(&reply[..2], &[0x24, 0]);
+        assert_eq!(&reply[12..16], b"DENY");
+        assert_eq!(&reply[24..32], &fresh_origin);
+        assert_eq!(&reply[48..52], &[1, 4, 0, 36]);
+        assert_eq!(&reply[52..84], &fresh_uid);
+        assert_eq!(&reply[84..92], &[4, 4, 0, 40, 0, 16, 0, 16]);
+        assert_eq!(&reply[92..108], &deny_nonce);
+        let tag: &[u8; 16] = reply[108..124].try_into().map_err(|_| "deny-tag")?;
+        Aes128Siv::new((&S2C).into())
+            .decrypt_inout_detached(
+                [&reply[..84], &reply[92..108]],
+                (&mut [][..]).into(),
+                tag.into(),
+            )
+            .map_err(|_| "deny-authentication")?;
+        peer.join().map_err(|_| "peer-panic")??;
+        Ok(())
+    })?;
+
+    for client_socket in [&first_client, &successor_client] {
+        client_socket
+            .set_read_timeout(Some(Duration::from_millis(100)))
+            .map_err(|_| "client-timeout")?;
+        assert_no_reply(client_socket);
+    }
+    let recovered: UdpSocket = UdpSocket::bind(endpoint).map_err(|_| "socket-still-held")?;
+    drop(recovered);
     Ok(())
 }

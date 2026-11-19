@@ -1577,6 +1577,24 @@ exercises both UDP legs in the Linux test fixture. Actual join preserves
 the authenticated DENY or the stale-source refusal and the original
 debits. The integrated closed role passes nine development lanes
 with 576 cases per EP1 mode, 90 doctests and 199 reader controls.
+The [Windows successor checkpoint](../../tasks/engine-transport-pilot.md#managed-protected-successor-over-windows-loopback)
+passed both native cases on build 26100. It covers the actual two-leg IPv4
+UDP path, joined DENY and stale-source refusal with scripted establishment.
+The [native TLS/CNG successor](../../tasks/engine-transport-pilot.md#managed-protected-successor-with-native-tls-and-cng)
+passes a bounded offline Windows case with both legs under one KE, one
+replacement-cookie transfer, joined DENY and verified guest trust cleanup.
+This covers the exact test-only journey. Production source selection,
+installed-service trust, calibrated mapping and current metrics remain open.
+The [review follow-up](../../tasks/engine-transport-pilot.md#follow-up-to-the-0498765-implementation-review)
+retains the certificate-bearing Windows refusals, raw adjustment reporting
+through acquisition and cleanup failures, and joined leap/scale history.
+The exact GNU and Sandbox cases and eight targeted fault controls passed
+within their scopes. The [current Engine baseline](../../tasks/engine-transport-pilot.md#current-engine-development-baseline-and-closed-role-admission)
+passes all 19 lanes and rebinds both closed roles to the 619-input candidate.
+The selected GNU KE coverage lane passes all 14 line gates. The refreshed
+889-descriptor catalogue requires exact mutation reconciliation. Renew
+default-graph metrics and continue the bounded per-file work under their
+existing owners and admission requirements.
 The [guarded terminal timing](../../tasks/engine-transport-pilot.md#managed-protected-guarded-terminal-timing)
 now reaches the joined managed Protected report alongside the original
 packet-admission age. Nine renewed EP1 lanes and 199 reader controls
@@ -1620,7 +1638,9 @@ thirteen changed-context chronology counterparts and exact equivalence
 admission. Historical failures and cumulative allowances stay recorded.
 The [current four-row compiler readback](../../tasks/engine-transport-pilot.md#four-retained-ledger-compiler-refusals-reconciled)
 reconciles four retained structural refusals with the integrated source.
-The broad enumeration still needs the existing 7 GiB durable-space floor.
+The current GNU KE enumeration passed using an isolated work volume that
+met the 7 GiB startup floor. Durable evidence stayed above its separate
+4 GiB reserve. The ledger's current descriptor reconciliation remains open.
 The [managed Windows EOF case](../../tasks/engine-transport-pilot.md#managed-protected-stale-revision-and-windows-loopback-eof)
 now passes from stale source rejection through the current loopback
 ClientHello, EOF and actual Job cleanup. Healthy TLS, live UDP,

@@ -553,6 +553,26 @@ impl SubmissionReservation {
         )
     }
 
+    /// Submit the single controlled native successor through the original reservation.
+    /// # Errors
+    /// Preserve actual native worker submission refusal without a fallback.
+    #[cfg(all(windows, test))]
+    pub(super) fn submit_native_successor_fixture(self) -> Result<(), SubmitError> {
+        self.start_with(
+            &super::PROCESS_ADMISSION,
+            native_provider,
+            |config, provider, control| {
+                super::drive_invocation_with(
+                    config,
+                    provider,
+                    control,
+                    &mut super::recovery::NativeManagedSuccessor,
+                )
+            },
+            Hooks::none(),
+        )
+    }
+
     /// Spend this reservation in the actual Builder spawn/handle-install transaction.
     /// The selected provider and operation execute only on the one ordinary worker.
     /// # Errors

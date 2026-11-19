@@ -1,6 +1,7 @@
 //! Independent public literals and rejected-neighbor controls; no native effects.
 
 use std::ffi::OsString;
+use std::num::NonZeroU16;
 use std::time::{Duration, Instant};
 
 use super::{
@@ -159,8 +160,6 @@ fn literal_response_cookie_prepares_the_exact_preview_shape() -> Result<(), Stri
 /// Fail if the literal records, accepted port or cookie count differ.
 #[test]
 fn protected_response_advertises_exact_port_and_original_cookie() -> Result<(), String> {
-    use std::num::NonZeroU16;
-
     use ntp_wire::{
         NtsKeFrameLimits, NtsKeNtpv4Negotiation, NtsKeNtpv4Offer, RawNtsKeMessage,
         frame_nts_ke_message, negotiate_nts_ke_ntpv4, read_nts_ke_ntpv4_offer,
@@ -199,9 +198,28 @@ fn protected_response_advertises_exact_port_and_original_cookie() -> Result<(), 
 /// Fail if zero is admitted or either exact ASCII representation differs.
 #[test]
 fn readiness_port_is_bounded_and_has_no_optional_fields() -> Result<(), Failure> {
-    assert_eq!(ready_line(0), Err(Failure::Arguments));
-    assert_eq!(ready_line(1)?, "port=1\n");
-    assert_eq!(ready_line(u16::MAX)?, "port=65535\n");
+    assert_eq!(ready_line(0, None), Err(Failure::Arguments));
+    assert_eq!(ready_line(1, None)?, "port=1\n");
+    assert_eq!(ready_line(u16::MAX, None)?, "port=65535\n");
+    Ok(())
+}
+
+/// The successor mode's readiness names both independently bound endpoints.
+///
+/// # Errors
+/// Preserve a refusal to serialize the admitted control.
+/// # Panics
+/// Fail if either recorded value or the exact readiness grammar changes.
+#[test]
+fn successor_readiness_names_both_owned_endpoints() -> Result<(), Failure> {
+    assert_eq!(
+        ready_line(1, Some(NonZeroU16::MAX))?,
+        "port=1 udp_port=65535\n"
+    );
+    assert_eq!(
+        ready_line(0, Some(NonZeroU16::MAX)),
+        Err(Failure::Arguments)
+    );
     Ok(())
 }
 
@@ -241,6 +259,17 @@ fn cli_requires_paths_and_at_most_one_exact_final_mode() -> Result<(), Failure> 
         Config::parse(protected.into_iter()),
         Err(Failure::Arguments)
     ));
+    let mut successor: Vec<OsString> = arguments();
+    successor.push(OsString::from("--protected-successor-deny"));
+    assert_eq!(
+        Config::parse(successor.clone().into_iter())?.mode,
+        Mode::ProtectedSuccessorDeny
+    );
+    successor.push(OsString::from("--protected-datagram"));
+    assert!(matches!(
+        Config::parse(successor.into_iter()),
+        Err(Failure::Arguments)
+    ));
     for value in ["relative.der", "", "é", "nul\0path"] {
         let mut invalid = arguments();
         invalid[1] = OsString::from(value);
@@ -264,7 +293,7 @@ fn cli_requires_paths_and_at_most_one_exact_final_mode() -> Result<(), Failure> 
     Ok(())
 }
 
-/// Project the two completed outcomes with independent exact line contracts.
+/// Project the completed outcomes with independent exact line contracts.
 ///
 /// # Panics
 /// Fail on a changed default line or missing protected observation.
@@ -277,6 +306,10 @@ fn completion_keeps_default_exact_and_protected_distinct() {
     assert_eq!(
         completion_line(Mode::Protected),
         "scope=laboratory-ke-peer-protected completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=1 udp_sent=1"
+    );
+    assert_eq!(
+        completion_line(Mode::ProtectedSuccessorDeny),
+        "scope=laboratory-ke-peer-protected-successor-deny completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=2 udp_sent=2"
     );
 }
 

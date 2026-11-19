@@ -222,8 +222,8 @@ fn client_config(wall_time: LocalWallTime) -> Result<ClientConfig, Failure> {
 ///
 /// # Errors
 /// Preserve configuration or client-construction refusal.
-fn connection(config: &Config) -> Result<ClientConnection, Failure> {
-    let tls: ClientConfig = client_config(LocalWallTime::system())?;
+fn connection(config: &Config, wall_time: LocalWallTime) -> Result<ClientConnection, Failure> {
+    let tls: ClientConfig = client_config(wall_time)?;
     let mut connection: ClientConnection =
         ClientConnection::new(Arc::new(tls), config.server_name.clone())
             .map_err(|_| Failure::TlsSetup(SetupStage::ClientConnection))?;
@@ -362,6 +362,19 @@ pub(super) fn establish<'a>(
     control: &'a Control,
     provider: &'a ProviderScope<'a>,
 ) -> Result<AssociationOwner<'a>, Failed> {
+    establish_with_time(config, control, provider, LocalWallTime::system())
+}
+
+/// Use one local time provider through the same socket, verifier and retirement.
+///
+/// # Errors
+/// Preserve the original establishment and independently observed cleanup faults.
+fn establish_with_time<'a>(
+    config: &'a Config,
+    control: &'a Control,
+    provider: &'a ProviderScope<'a>,
+    wall_time: LocalWallTime,
+) -> Result<AssociationOwner<'a>, Failed> {
     let mut admission: TransportIo<'_> = TransportIo::new(config, control);
     let socket: TcpStream = admission.connect(|peer: SocketAddr, timeout: Duration| {
         TcpStream::connect_timeout(&peer, timeout)
@@ -375,7 +388,7 @@ pub(super) fn establish<'a>(
     admission.current(Failure::Handshake)?;
     let socket: DeadlineStream<'_> = DeadlineStream { socket, admission };
     let mut stream: StreamOwned<ClientConnection, DeadlineStream<'_>> =
-        StreamOwned::new(connection(config)?, socket);
+        StreamOwned::new(connection(config, wall_time)?, socket);
     let candidate: Result<InternalCandidate<'a>, Failure> = prepare(&mut stream, peer);
     let closed: Result<(), Failure> = close(&mut stream);
     drop(stream);
@@ -426,5 +439,89 @@ mod tests {
             assert_eq!(actual_seconds, expected_seconds);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod certificate_time_fixture {
+    use std::ffi::OsString;
+    use std::time::{Duration, Instant, SystemTime};
+
+    use super::super::{Config, Control, Failed, Failure, PROCESS_ADMISSION, Phase, ProviderScope};
+    use super::{LocalWallTime, establish_with_time};
+
+    /// Server identity of the admitted offline fixture's synthetic certificate.
+    const PEER_IDENTITY: &str = "ke-a7e40ec4eade477dbaba6ca9e9f975a4.invalid";
+
+    /// Observe the real refusal after the TLS stream and provider scope retire.
+    /// The external controller owns the peer and must run one case per client
+    /// process. The ordinary verifier runs without the synthetic root installed.
+    ///
+    /// # Errors
+    /// Preserve any fixture input, provider or control admission refusal.
+    /// # Panics
+    /// Fail for publication, a changed primary or a fabricated cleanup failure.
+    fn assert_refused_handshake(
+        wall_time: LocalWallTime,
+        case: &str,
+        expected: &str,
+    ) -> Result<(), Failure> {
+        let peer: OsString = std::env::var_os("NV_TLS_CLOCK_PEER").ok_or(Failure::Arguments)?;
+        let config: Config = Config::new(peer, OsString::from(PEER_IDENTITY))?;
+        let control: Control = Control::new(Instant::now())?;
+        let failure: Failed = {
+            let provider: ProviderScope<'_> = ProviderScope::new(PROCESS_ADMISSION.claim()?)?;
+            establish_with_time(&config, &control, &provider, wall_time)
+                .err()
+                .ok_or(Failure::Control)?
+        };
+
+        assert!(
+            matches!(*control.guard()?.phase, Phase::Open),
+            "refused TLS must leave association publication open"
+        );
+        let primary: String = format!("{:?}", failure.primary);
+        assert_eq!(primary, expected);
+        assert_eq!(
+            failure.cleanup, None,
+            "close must not repeat the cached TLS error"
+        );
+        assert!(failure.admission_cleanup.is_none());
+        println!(
+            "clock_case={case} primary={primary} cleanup={:?}",
+            failure.cleanup
+        );
+        Ok(())
+    }
+
+    /// The injected reading refuses a real certificate-bearing handshake.
+    ///
+    /// # Errors
+    /// Preserve fixture or native provider admission failure.
+    #[test]
+    #[ignore = "requires the owned offline Windows certificate-bearing NTS-KE peer"]
+    fn pre_epoch_certificate_handshake_preserves_local_clock_failure() -> Result<(), Failure> {
+        let wall_time: LocalWallTime = LocalWallTime {
+            fixture_time: Some(SystemTime::UNIX_EPOCH - Duration::from_nanos(100)),
+        };
+        assert_refused_handshake(
+            wall_time,
+            "pre-epoch",
+            "Tls(TlsFailure { stage: Handshake, cause: LocalClock })",
+        )
+    }
+
+    /// The ordinary local clock reaches the verifier and refuses the untrusted issuer.
+    ///
+    /// # Errors
+    /// Preserve fixture or native provider admission failure.
+    #[test]
+    #[ignore = "requires the owned offline Windows certificate-bearing NTS-KE peer"]
+    fn ordinary_certificate_handshake_preserves_certificate_failure() -> Result<(), Failure> {
+        assert_refused_handshake(
+            LocalWallTime::system(),
+            "ordinary",
+            "Tls(TlsFailure { stage: Handshake, cause: Certificate(Issuer) })",
+        )
     }
 }

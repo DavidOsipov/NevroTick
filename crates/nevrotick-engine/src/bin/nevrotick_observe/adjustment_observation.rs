@@ -27,10 +27,13 @@ struct BracketedRead {
 
 impl BracketedRead {
     /// Sample the bracket around exactly one bounded read.
-    fn capture(read: &mut impl FnMut() -> Result<AdjustmentState, u32>) -> Self {
-        let start: Instant = Instant::now();
+    fn capture(
+        read: &mut impl FnMut() -> Result<AdjustmentState, u32>,
+        now: &mut impl FnMut() -> Instant,
+    ) -> Self {
+        let start: Instant = now();
         let state: Result<AdjustmentState, u32> = read();
-        let end: Instant = Instant::now();
+        let end: Instant = now();
         Self { start, end, state }
     }
 
@@ -119,11 +122,24 @@ impl AdjustmentObservation {
 /// Read before and after the one operation, preserving the operation's original result.
 /// Read refusal cannot replace that result or make the operation eligible.
 pub(super) fn observe<T>(
-    mut read: impl FnMut() -> Result<AdjustmentState, u32>,
+    read: impl FnMut() -> Result<AdjustmentState, u32>,
     operation: impl FnOnce() -> T,
 ) -> (T, AdjustmentObservation) {
-    let before: BracketedRead = BracketedRead::capture(&mut read);
+    observe_with_clock(read, operation, Instant::now)
+}
+
+/// Consume time observations at each actual read boundary.
+fn observe_with_clock<T>(
+    mut read: impl FnMut() -> Result<AdjustmentState, u32>,
+    operation: impl FnOnce() -> T,
+    mut now: impl FnMut() -> Instant,
+) -> (T, AdjustmentObservation) {
+    let before: BracketedRead = BracketedRead::capture(&mut read, &mut now);
     let result: T = operation();
-    let after: BracketedRead = BracketedRead::capture(&mut read);
+    let after: BracketedRead = BracketedRead::capture(&mut read, &mut now);
     (result, AdjustmentObservation { before, after })
 }
+
+#[cfg(test)]
+#[path = "../../../tests/private/adjustment_observation_clock.rs"]
+mod clock_tests;

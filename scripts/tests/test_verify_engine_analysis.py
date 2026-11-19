@@ -3083,6 +3083,23 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             with self.subTest(kind=type(value).__name__), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_engine_ke_inventory(value)
 
+    def test_review_ke_exact_roster_and_terminal_reject_legacy_fallback(self):
+        legacy = self.policy["binding"]["test_inventory"]
+        names = sorted([*legacy, *(f"review_fixture_{index}" for index in range(7)),
+                        "nts_ke_experiment::review_fixture"])
+        candidate = MODULE.ENGINE_REVIEW_CANDIDATE
+        altered = sorted("different_fixture" if name == "review_fixture_0" else name for name in names)
+        roster = {"ep1-ordinary": (len(names), independent_digest(names))}
+        with patch.object(MODULE, "SOURCE_POLICY_ENGINE_REVIEW_ROSTER", roster):
+            self.assertEqual(MODULE.validate_engine_ke_inventory(legacy), legacy)
+            self.assertEqual(MODULE.validate_engine_ke_inventory(names, candidate=candidate), names)
+            for refused in (legacy, altered):
+                with self.assertRaisesRegex(MODULE.Incomplete, "584 actual Engine tests"):
+                    MODULE.validate_engine_ke_inventory(refused, candidate=candidate)
+        binding = self.policy["binding"] | {"candidate_sha256": candidate}
+        with self.assertRaisesRegex(MODULE.Incomplete, "exact combined terminal receipt"):
+            MODULE.admit_engine_ke_evidence(binding)
+
     def test_missing_numerics_helper_pin_refuses_admission(self):
         path = "crates/nevrotick-engine/src/nts_ke_experiment/recovery/numerics_tests.rs"
         self.assertIn(path, self.policy["binding"]["inputs_sha256"])
@@ -6475,6 +6492,44 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                     ({"lanes": report["lanes"][:-1]}, "19 physical lanes")):
                 with self.subTest(changed=list(changes)), self.assertRaisesRegex(MODULE.Incomplete, expected_error):
                     admit({**report, **changes})
+
+    def test_review_source_policy_refuses_legacy_producer_and_wrong_current_identity(self):
+        binding = self.policy["binding"]
+        current = independent_digest(self.identity)
+        with patch.object(MODULE, "ENGINE_REVIEW_CANDIDATE", current):
+            self.assertEqual(MODULE.source_policy_combined_roster(current)[0]["default-ordinary"][0], 287)
+            with self.assertRaisesRegex(MODULE.Incomplete, "candidate binding differs"):
+                MODULE.admit_source_policy_development(binding | {"candidate_sha256": "a" * 64}, self.identity)
+            with self.assertRaisesRegex(MODULE.Incomplete, "exact combined terminal receipt"):
+                MODULE.admit_source_policy_development(binding | {"candidate_sha256": current}, self.identity)
+
+    def test_review_graph_refuses_unlisted_source_delta_and_rebound_graph_pin(self):
+        old = {"Cargo.lock": "1" * 64}
+        current = old | {"crates/nevrotick-engine/src/lib.rs": "2" * 64}
+        prior_stamp, graph_stamp = independent_digest(old), "3" * 64
+        prior = {"status": "passed", "mode": "combined", "candidate_sha256": prior_stamp,
+                 "inputs": old, "tool_inventories": {}, "vendor_identity": {}}
+        focus = {"status": "passed-review-gnu-msvc-development", "candidate_sha256": MODULE.ENGINE_REVIEW_CANDIDATE,
+                 "inputs": current, "owned_scratch_retired": True, "tool_inventories": {},
+                 "vendor_sha256": independent_digest({})}
+        graph = {"status": "passed", "changed_tree_outputs": [], "product_input_sha256": old,
+                 "product_digest": prior_stamp, "lockfile_sha256": old["Cargo.lock"],
+                 "lanes": [None] * 45, "rows": [None] * 4, "selected_graph_test_only_delta": [None] * 4}
+        capture = {"combined_development_reference": {"path": "/prior.json", "sha256": "4" * 64},
+                   "focused_reference": {"path": "/focus.json", "sha256": "5" * 64},
+                   "predecessor_graph": {"path": "/graph.json", "sha256": graph_stamp},
+                   "tool_inventories": {}, "vendor_identity_sha256": independent_digest({})}
+        terminal = {"reference_sha256": "4" * 64, "focused_development_sha256": "5" * 64,
+                    "predecessor_graph": capture["predecessor_graph"]}
+        args = {"ENGINE_REVIEW_PRIOR": prior_stamp, "ENGINE_REVIEW_PRIOR_DELTA": independent_digest(
+                    ["crates/nevrotick-engine/src/lib.rs"]), "ENGINE_KE_SOURCE_SCALE_GRAPH_PREDECESSOR": prior_stamp}
+        for allowed_pin, delta in ((graph_stamp, independent_digest([])),
+                                   ("6" * 64, args["ENGINE_REVIEW_PRIOR_DELTA"])):
+            with self.subTest(pin=allowed_pin), patch.multiple(MODULE, **args,
+                    ENGINE_KE_SOURCE_SCALE_GRAPH_SHA256=allowed_pin, ENGINE_REVIEW_GRAPH_DELTA=delta), patch.object(
+                    MODULE, "read_json", side_effect=[prior, focus, graph]), self.assertRaisesRegex(
+                    MODULE.Incomplete, "unchanged-input reuse boundary"):
+                MODULE.admit_engine_review_lineage(capture, terminal, current)
 
     def test_source_scale_rejects_hash_valid_wrong_optimized_and_doctest_observations(self):
         binding, identity, report, path, pins, write_json = self.source_scale_combined_fixture()

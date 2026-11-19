@@ -1311,7 +1311,7 @@ fn observed_facade_late_event_preserves_joined_protected_result() -> Result<(), 
 /// Preserve the actual operation and cleanup outcome.
 /// # Panics
 /// Fail if the actual invocation initiates another KE, first leg or preview.
-#[cfg(target_os = "linux")]
+#[cfg(any(windows, target_os = "linux"))]
 fn loopback_control_operation<'scope>(
     config: &'scope Config,
     provider: &'scope ProviderScope<'scope>,
@@ -1345,7 +1345,7 @@ fn loopback_control_operation<'scope>(
 /// Preserve checked setup, peer I/O and unexpected worker operation refusals.
 /// # Panics
 /// Fail if sent work, committed history, or the exact policy effect is lost.
-#[cfg(target_os = "linux")]
+#[cfg(any(windows, target_os = "linux"))]
 fn run_managed_loopback_control(
     slot: &'static WorkerSlot,
     admission: &'static ProcessAdmission,
@@ -1459,7 +1459,7 @@ fn run_managed_loopback_control(
 /// Preserve readback failures from the actual original policy cell.
 /// # Panics
 /// Fail for missing attempt floors, a lost restriction or alias propagation.
-#[cfg(target_os = "linux")]
+#[cfg(any(windows, target_os = "linux"))]
 fn assert_loopback_policy(
     source: &crate::SourceHandle,
     alias: &crate::SourceHandle,
@@ -1490,7 +1490,7 @@ fn assert_loopback_policy(
 /// Preserve original unexpected operation failures and refuse the wrong disposition.
 /// # Panics
 /// Fail if history or the original refusal and its independent cleanup fields differ.
-#[cfg(target_os = "linux")]
+#[cfg(any(windows, target_os = "linux"))]
 fn assert_loopback_control_outcome(
     result: Result<ReceivedInvocation, RunFailed>,
     replace: bool,
@@ -1522,7 +1522,7 @@ fn assert_loopback_control_outcome(
 /// First protected reply earns one real-socket successor and joined exact DENY.
 /// # Errors
 /// Preserve fixture or actual worker failure.
-#[cfg(target_os = "linux")]
+#[cfg(any(windows, target_os = "linux"))]
 #[test]
 fn managed_loopback_successor_commits_exact_deny_after_normal_join() -> Result<(), Failure> {
     static SLOT: WorkerSlot = WorkerSlot::new();
@@ -1533,13 +1533,117 @@ fn managed_loopback_successor_commits_exact_deny_after_normal_join() -> Result<(
 /// Equal-value replacement after real retirement refuses the exact staged control.
 /// # Errors
 /// Preserve fixture failure or unexpected typed refusal.
-#[cfg(target_os = "linux")]
+#[cfg(any(windows, target_os = "linux"))]
 #[test]
 fn managed_loopback_successor_refuses_same_values_replacement_before_commit() -> Result<(), Failure>
 {
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
     run_managed_loopback_control(&SLOT, &ADMISSION, true)
+}
+
+/// Admit only the fixed owned fixture's numeric IPv4 loopback endpoint.
+/// # Errors
+/// Refuse missing, non-Unicode, oversized, nonloopback or zero-port input before a
+/// native observation/provider/worker can start.
+#[cfg(windows)]
+fn native_successor_endpoint(name: &str) -> Result<std::net::SocketAddr, Failure> {
+    use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
+
+    let value: std::ffi::OsString = std::env::var_os(name).ok_or(Failure::Arguments)?;
+    if value.len() > 32 {
+        return Err(Failure::Arguments);
+    }
+    let endpoint: SocketAddrV4 = value
+        .to_str()
+        .ok_or(Failure::Arguments)?
+        .parse()
+        .map_err(|_| Failure::Arguments)?;
+    if endpoint.ip() != &Ipv4Addr::LOCALHOST || endpoint.port() == 0 {
+        return Err(Failure::Endpoint);
+    }
+    Ok(SocketAddr::V4(endpoint))
+}
+
+/// Verify full native establishment, authenticated UDP continuation and joined DENY.
+/// The explicitly selected peer and trust fixture must already be owned by the
+/// disposable native test controller. No test clock or verifier is substituted.
+/// # Errors
+/// Preserve setup, normal worker operation and bounded output refusals.
+/// # Panics
+/// Fail if the worker or observer is not retired or the exact policy effect differs.
+#[cfg(windows)]
+#[test]
+#[ignore = "requires the owned offline Windows TLS and UDP successor peer"]
+fn native_provider_managed_loopback_successor_commits_exact_deny_after_normal_join()
+-> Result<(), Failure> {
+    use std::io::{self, Write};
+    use std::net::SocketAddr;
+
+    use crate::nts_ke_experiment::{report_run_failure, subscribe_power_observer};
+    use crate::{
+        KePreviewTarget, SourceAddressSet, SourceConfigurationSnapshot, SourceHandle,
+        SourcePolicyAuthority, SourcePolicyLimits,
+    };
+
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    let ke: SocketAddr = native_successor_endpoint("NV_NTS_SUCCESSOR_KE_PEER")?;
+    let udp: SocketAddr = native_successor_endpoint("NV_NTS_SUCCESSOR_UDP_PEER")?;
+    let target: KePreviewTarget =
+        KePreviewTarget::new(ke, "ke-a7e40ec4eade477dbaba6ca9e9f975a4.invalid")
+            .map_err(|_| Failure::Arguments)?;
+    let limits: SourcePolicyLimits =
+        SourcePolicyLimits::new(2, 2, Duration::from_millis(1), Duration::from_millis(4))
+            .map_err(Failure::SourcePolicy)?;
+    let mut authority: SourcePolicyAuthority =
+        crate::source_policy::isolated_authority(limits).map_err(Failure::SourcePolicy)?;
+    let source: SourceHandle = authority.source(0).map_err(Failure::SourcePolicy)?;
+    let alias: SourceHandle = authority.source(1).map_err(Failure::SourcePolicy)?;
+    let addresses: SourceAddressSet =
+        SourceAddressSet::new(&[udp]).map_err(Failure::SourcePolicy)?;
+    let expected: SourceConfigurationSnapshot = authority
+        .install_ke_preview_configuration(&source, addresses, target)
+        .map_err(Failure::SourcePolicy)?;
+    let config: Config = Config::from_managed_protected(
+        authority
+            .authorize_protected_ke(&expected)
+            .map_err(Failure::SourcePolicy)?,
+    );
+    let config_lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
+    let observed: ObservedInvocation = run_observing(
+        config,
+        &SLOT,
+        subscribe_power_observer,
+        SubmissionReservation::submit_native_successor_fixture,
+    )
+    .map_err(|error: ObserverStartError| {
+        let failure: RunFailed = match error {
+            ObserverStartError::Preparation(failure) => failure,
+            ObserverStartError::Registration => RunFailed::PowerRegistration,
+        };
+        let _reported: std::process::ExitCode = report_run_failure(&failure);
+        Failure::Control
+    })?;
+    if let Err(failure) = &observed.result {
+        let _reported: std::process::ExitCode = report_run_failure(failure);
+    }
+    assert_loopback_control_outcome(observed.result, false, udp, &expected)?;
+    assert_loopback_policy(&source, &alias, udp, false)?;
+    assert!(!observed.cleanup.stop_failed);
+    assert_eq!(observed.cleanup.unregistration_error, None);
+    assert_eq!(config_lifetime.strong_count(), 0);
+    let inspect_until: Instant = Instant::now().checked_add(WAIT).ok_or(Failure::Deadline)?;
+    assert_eq!(
+        SLOT.observer().poll_until(inspect_until),
+        Observation::Taken
+    );
+    assert_eq!(SLOT.sealed_count(), Ok(0));
+
+    writeln!(
+        io::stdout().lock(),
+        "scope=engine-ke-prototype eligible=0 fresh_sync=0 native_successor=deny requests=2 replies=2 retained_replacements=1 worker_joined=1"
+    )
+    .map_err(|_| Failure::Control)
 }
 
 /// Closed actual-owner retirement choices; neither simulates native cleanup.

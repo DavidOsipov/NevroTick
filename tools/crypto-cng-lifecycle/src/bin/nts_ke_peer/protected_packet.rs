@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Exact first-packet profile of the standalone loopback NTS peer.
+//! Exact protected packet profiles of the standalone loopback NTS peer.
 //!
-//! The caller owns one exchange and supplies the same-session directional
+//! The caller owns the bounded exchanges and supplies the same-session directional
 //! exporters. This codec supplies no socket, deadline, entropy or cookie store.
 
 use aes_siv::{KeyInit, siv::Aes128Siv};
@@ -15,7 +15,9 @@ use zeroize::Zeroizing;
 /// Client header, UID32, first cookie, seven placeholders and final authenticator.
 pub(super) const REQUEST_BYTES: usize = 252;
 /// Server header and UID32 followed by its sole final authenticator.
-const REPLY_BYTES: usize = 140;
+pub(super) const REPLY_BYTES: usize = 140;
+/// Server header, UID32 and final authenticator with no plaintext fields.
+pub(super) const DENY_BYTES: usize = 124;
 /// Exact NTS associated-data extent for the server header and UID field.
 const REPLY_PREFIX_BYTES: usize = 84;
 /// Public fixture cookie, distinct from the cookie sent in the KE response.
@@ -34,16 +36,27 @@ pub(super) enum PacketFailure {
     Shape,
     /// The bounded request did not authenticate with the original C2S exporter.
     Authentication,
+    /// An authenticated successor reused either initial correlation value.
+    Replay,
     /// The maintained provider refused to seal the reply.
     Seal,
+}
+
+/// Authenticated request correlation needed to reject a reused UID or transmit token.
+pub(super) struct Correlation {
+    /// The request's original nonzero wire transmit token.
+    wire_transmit: u64,
+    /// The sole request UID authenticated together with that token.
+    uid: [u8; 32],
 }
 
 /// Authenticate the fixed C2S request and seal one correlated S2C reply.
 ///
 /// On success the reply echoes the authenticated transmit token as origin and
 /// echoes the sole UID. The supplied response nonce is used unchanged. It is
-/// chosen and owned by the calling one-shot fixture. The fixture returns one
-/// synthetic replacement cookie, with no subsequent-request capability.
+/// chosen and owned by the calling fixture. The reply contains a synthetic
+/// replacement cookie. The original correlation is retained for the optional
+/// successor exchange.
 ///
 /// # Errors
 /// Refuse the exact packet-length, header, ordered-field or authentication
@@ -53,7 +66,38 @@ pub(super) fn admit_and_seal(
     c2s_key: &[u8; 32],
     s2c_key: &[u8; 32],
     response_nonce: &[u8; 16],
-) -> Result<Zeroizing<[u8; REPLY_BYTES]>, PacketFailure> {
+) -> Result<(Correlation, Zeroizing<[u8; REPLY_BYTES]>), PacketFailure> {
+    let cookie: &[u8] = super::RESPONSE.get(16..28).ok_or(PacketFailure::Shape)?;
+    let correlation: Correlation = authenticate(request, c2s_key, cookie)?;
+    let reply: Zeroizing<[u8; REPLY_BYTES]> = seal_reply(&correlation, s2c_key, response_nonce)?;
+    Ok((correlation, reply))
+}
+
+/// Admit the one successor using the issued cookie and fresh request correlation.
+///
+/// # Errors
+/// Refuse invalid framing, header, cookie, authentication or reused correlation.
+pub(super) fn admit_successor(
+    request: &[u8],
+    c2s_key: &[u8; 32],
+    initial: &Correlation,
+) -> Result<Correlation, PacketFailure> {
+    let successor: Correlation = authenticate(request, c2s_key, &REPLACEMENT_COOKIE)?;
+    if successor.wire_transmit == initial.wire_transmit || successor.uid == initial.uid {
+        return Err(PacketFailure::Replay);
+    }
+    Ok(successor)
+}
+
+/// Authenticate a complete fixed-profile request and own its correlation.
+///
+/// # Errors
+/// Refuse a length, framing, header, cookie, field order or authentication mismatch.
+fn authenticate(
+    request: &[u8],
+    c2s_key: &[u8; 32],
+    expected_cookie: &[u8],
+) -> Result<Correlation, PacketFailure> {
     if request.len() != REQUEST_BYTES {
         return Err(PacketFailure::Length);
     }
@@ -65,7 +109,7 @@ pub(super) fn admit_and_seal(
     if frame.header().version() != 4 || frame.header().mode() != 3 || wire_transmit == 0 {
         return Err(PacketFailure::Header);
     }
-    let uid: &[u8; 32] = request_uid(&frame)?;
+    let uid: &[u8; 32] = request_uid(&frame, expected_cookie)?;
     let parts: NtsAuthenticatorParts<'_> = frame
         .nts_authenticator_parts()
         .map_err(|_| PacketFailure::Shape)?;
@@ -83,14 +127,20 @@ pub(super) fn admit_and_seal(
         |_: RawNtsPlaintext<'_>| (),
     )
     .map_err(|_| PacketFailure::Authentication)?;
-    seal_reply(wire_transmit, uid, s2c_key, response_nonce)
+    Ok(Correlation {
+        wire_transmit,
+        uid: *uid,
+    })
 }
 
 /// Validate the complete ordered field sequence and borrow the exact UID body.
 ///
 /// # Errors
 /// Refuse absent, misplaced or unequal fields, including a trailing extension.
-fn request_uid<'a>(frame: &RawDatagram<'a>) -> Result<&'a [u8; 32], PacketFailure> {
+fn request_uid<'a>(
+    frame: &RawDatagram<'a>,
+    expected_cookie: &[u8],
+) -> Result<&'a [u8; 32], PacketFailure> {
     let mut fields: ExtensionFields<'a> = frame.extensions();
     let uid_field: RawExtension<'a> = fields
         .next()
@@ -100,9 +150,8 @@ fn request_uid<'a>(frame: &RawDatagram<'a>) -> Result<&'a [u8; 32], PacketFailur
         .body()
         .try_into()
         .map_err(|_| PacketFailure::Shape)?;
-    let initial_cookie: &[u8] = super::RESPONSE.get(16..28).ok_or(PacketFailure::Shape)?;
     if !fields.next().is_some_and(|field: RawExtension<'a>| {
-        field.field_type() == 0x0204 && field.body() == initial_cookie
+        field.field_type() == 0x0204 && field.body() == expected_cookie
     }) {
         return Err(PacketFailure::Shape);
     }
@@ -130,8 +179,7 @@ fn request_uid<'a>(frame: &RawDatagram<'a>) -> Result<&'a [u8; 32], PacketFailur
 /// # Errors
 /// A provider failure drops the entire candidate and publishes no reply bytes.
 fn seal_reply(
-    wire_transmit: u64,
-    uid: &[u8; 32],
+    correlation: &Correlation,
     s2c_key: &[u8; 32],
     nonce: &[u8; 16],
 ) -> Result<Zeroizing<[u8; REPLY_BYTES]>, PacketFailure> {
@@ -140,22 +188,58 @@ fn seal_reply(
     let (aad, authenticator): (&mut [u8], &mut [u8]) = bytes.split_at_mut(REPLY_PREFIX_BYTES);
     aad[..2].copy_from_slice(&[0x24, 2]);
     aad[16..24].copy_from_slice(&0x0123_4567_89ab_c000_u64.to_be_bytes());
-    aad[24..32].copy_from_slice(&wire_transmit.to_be_bytes());
+    aad[24..32].copy_from_slice(&correlation.wire_transmit.to_be_bytes());
     aad[32..40].copy_from_slice(&0x0123_4567_89ab_d000_u64.to_be_bytes());
     aad[40..48].copy_from_slice(&0x0123_4567_89ab_e000_u64.to_be_bytes());
     aad[48..52].copy_from_slice(&[1, 4, 0, 36]);
-    aad[52..84].copy_from_slice(uid);
+    aad[52..84].copy_from_slice(&correlation.uid);
 
     let (envelope, body): (&mut [u8], &mut [u8]) = authenticator.split_at_mut(40);
     envelope[..8].copy_from_slice(&[4, 4, 0, 56, 0, 16, 0, 32]);
-    envelope[8..24].copy_from_slice(nonce);
     body[..4].copy_from_slice(&[2, 4, 0, 16]);
     body[4..16].copy_from_slice(&REPLACEMENT_COOKIE);
+    seal_authenticator(aad, envelope, body, s2c_key, nonce)?;
+    Ok(reply)
+}
+
+/// Seal an authenticated DENY with the successor's correlation and no cookies.
+///
+/// # Errors
+/// Refuse a provider failure without returning reply bytes.
+pub(super) fn seal_deny(
+    correlation: &Correlation,
+    s2c_key: &[u8; 32],
+    nonce: &[u8; 16],
+) -> Result<Zeroizing<[u8; DENY_BYTES]>, PacketFailure> {
+    let mut reply: Zeroizing<[u8; DENY_BYTES]> = Zeroizing::new([0; DENY_BYTES]);
+    let (aad, envelope): (&mut [u8], &mut [u8]) = reply.as_mut().split_at_mut(REPLY_PREFIX_BYTES);
+    aad[0] = 0x24;
+    aad[12..16].copy_from_slice(b"DENY");
+    aad[24..32].copy_from_slice(&correlation.wire_transmit.to_be_bytes());
+    aad[48..52].copy_from_slice(&[1, 4, 0, 36]);
+    aad[52..84].copy_from_slice(&correlation.uid);
+    envelope[..8].copy_from_slice(&[4, 4, 0, 40, 0, 16, 0, 16]);
+    seal_authenticator(aad, envelope, &mut [], s2c_key, nonce)?;
+    Ok(reply)
+}
+
+/// Fill the fixed authenticator nonce and seal its body using the response direction.
+///
+/// # Errors
+/// Propagate a sealing failure so the caller cannot send a partial candidate.
+fn seal_authenticator(
+    aad: &[u8],
+    envelope: &mut [u8],
+    body: &mut [u8],
+    s2c_key: &[u8; 32],
+    nonce: &[u8; 16],
+) -> Result<(), PacketFailure> {
+    envelope[8..24].copy_from_slice(nonce);
     let tag: aes_siv::Tag = Aes128Siv::new(s2c_key.into())
-        .encrypt_inout_detached([&aad[..], nonce.as_slice()], body.into())
+        .encrypt_inout_detached([aad, nonce.as_slice()], body.into())
         .map_err(|_| PacketFailure::Seal)?;
     envelope[24..40].copy_from_slice(tag.as_slice());
-    Ok(reply)
+    Ok(())
 }
 
 #[cfg(test)]

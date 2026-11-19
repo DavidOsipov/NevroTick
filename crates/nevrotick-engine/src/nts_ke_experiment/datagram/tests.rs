@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Public-material component cases and Linux UDP loopback. No TLS or CNG evidence.
+//! Protected datagram component, loopback, and controlled native integration cases.
 
 #[path = "../recovery/tests.rs"]
 pub(in crate::nts_ke_experiment) mod recovery_tests;
@@ -451,12 +451,13 @@ pub(in crate::nts_ke_experiment) fn managed_component_keys() -> DirectionalKeys 
     DirectionalKeys::new(Zeroizing::new(C2S), Zeroizing::new(S2C))
 }
 
-/// Exercise the ordinary protected adapter and real runtime through retirement.
+/// Exercise the ordinary protected adapter with one reply and an optional preceding refusal.
 /// # Errors
 /// Preserve the actual owner, entropy or finite operation refusal.
 pub(in crate::nts_ke_experiment) fn managed_component_exchange<'a>(
     association: &mut AssociationOwner<'a>,
     control: &'a Control,
+    preceding: Option<&'static [u8]>,
     reply: &'static [u8],
     before_send: impl FnOnce() -> Result<(), Failure>,
 ) -> Result<super::ProtectedCompletion<'a>, Failure> {
@@ -468,8 +469,12 @@ pub(in crate::nts_ke_experiment) fn managed_component_exchange<'a>(
             entropy(output)
         },
         |peer: SocketAddr| {
-            let mut script: Script =
-                Script::new(ScriptSend::Full, vec![ScriptRead::Packet(reply, peer)]);
+            let reads: Vec<ScriptRead> = preceding
+                .into_iter()
+                .chain(std::iter::once(reply))
+                .map(|packet: &'static [u8]| ScriptRead::Packet(packet, peer))
+                .collect();
+            let mut script: Script = Script::new(ScriptSend::Full, reads);
             // Fixed era-zero date shared by the admitted and refused model cases.
             script.fixed_utc = Some(
                 UNIX_EPOCH
@@ -2417,7 +2422,7 @@ pub(in crate::nts_ke_experiment) fn scripted_managed_successor<'control>(
 /// Run the first ordinary leg through the actual socket and retirement.
 /// # Errors
 /// Preserve the original admission, socket, driver and receiving refusal.
-#[cfg(target_os = "linux")]
+#[cfg(any(windows, target_os = "linux"))]
 pub(in crate::nts_ke_experiment) fn loopback_managed_first<'control>(
     association: &mut AssociationOwner<'_>,
     control: &'control Control,
@@ -2428,7 +2433,7 @@ pub(in crate::nts_ke_experiment) fn loopback_managed_first<'control>(
 /// Run the admitted second leg through the exact same socket path.
 /// # Errors
 /// Preserve the continuation, adapter, budget and charged receive refusals.
-#[cfg(target_os = "linux")]
+#[cfg(any(windows, target_os = "linux"))]
 pub(in crate::nts_ke_experiment) fn loopback_managed_successor<'control>(
     association: &mut AssociationOwner<'_>,
     control: &'control Control,
@@ -2441,13 +2446,61 @@ pub(in crate::nts_ke_experiment) fn loopback_managed_successor<'control>(
     )
 }
 
+/// Inspect the two authenticated responses from the fixed native fixture peer.
+/// Both datagrams use the actual adapter, original association and carried work.
+/// # Errors
+/// Preserve missing first receipt, continuation, socket and receive refusals.
+/// # Panics
+/// Fail on a wrong packet disposition, lost custody or refunded packet work.
+#[cfg(windows)]
+pub(in crate::nts_ke_experiment) fn loopback_native_managed_successor<'control>(
+    association: &mut AssociationOwner<'_>,
+    control: &'control Control,
+    fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+) -> Result<RetiredProtectedSuccessor<'control>, Failure> {
+    let first: Receipt = association.last_receipt().ok_or(Failure::Control)?;
+    assert_eq!((first.serial(), first.cookie_counts()), (1, (1, 1)));
+    assert_eq!(association.cookie_population()?, (1, 12));
+    assert_eq!(
+        association.status(),
+        Status {
+            phase: RequestPhase::Idle,
+            attempts: 31,
+            frames: 31,
+            bytes: 130_932, // 131,072 original, less one 140-byte reply.
+            available: 1,
+            used: 1,
+            uids: 1,
+        }
+    );
+
+    let retired: RetiredProtectedSuccessor<'control> =
+        super::reached::exchange_successor_mixed_with(association, control, fill, Backend::bind)?;
+    assert!(matches!(&retired, RetiredProtectedSuccessor::Control(_)));
+    assert_eq!(
+        association.status(),
+        Status {
+            phase: RequestPhase::Pending,
+            attempts: 30,
+            frames: 30,
+            bytes: 130_808, // 124-byte control also charged to the original budget.
+            available: 0,
+            used: 2,
+            uids: 2,
+        }
+    );
+    assert!(association.last_receipt() == Some(first));
+    assert_eq!(association.cookie_population()?, (0, 0));
+    Ok(retired)
+}
+
 /// Receive and check an actual protected client packet against fixed wire facts.
 /// The peer owns its configured read timeout and accepts only its loopback client.
 /// # Errors
 /// Preserve the actual receive error or refuse a mismatched fixed request.
 /// # Panics
 /// Fail if an actual request is incomplete, plain or has the wrong correlation.
-#[cfg(target_os = "linux")]
+#[cfg(any(windows, target_os = "linux"))]
 fn loopback_request(
     peer: &std::net::UdpSocket,
     wire: u64,
@@ -2481,7 +2534,7 @@ fn loopback_request(
 /// Preserve the actual send error or refuse a short send.
 /// # Panics
 /// Fail if an actual send completes only part of the fixed vector.
-#[cfg(target_os = "linux")]
+#[cfg(any(windows, target_os = "linux"))]
 fn send_loopback_reply(
     peer: &std::net::UdpSocket,
     client: SocketAddr,
@@ -2497,7 +2550,7 @@ fn send_loopback_reply(
 /// Run the independent peer for exactly two requests under finite socket timeouts.
 /// # Errors
 /// Preserve either leg's peer I/O failure.
-#[cfg(target_os = "linux")]
+#[cfg(any(windows, target_os = "linux"))]
 pub(in crate::nts_ke_experiment) fn serve_managed_loopback(
     peer: &std::net::UdpSocket,
 ) -> Result<(), Failure> {

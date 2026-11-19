@@ -59,6 +59,21 @@ const LEAP_ANNOUNCED_REPLY: &[u8] = &[
     0x8d, 0x66, 0x67, 0x1a, 0x39, 0xa2, 0xaf, 0x21, 0xf4, 0x11, 0x64, 0x2b,
 ];
 
+/// Public LI=2 neighbor of HEALTHY, sealed with cryptography 41.0.7 AESSIV.
+/// Only the authenticated header's first byte and the ciphertext/tag change.
+/// The fixed plaintext is one 12-byte replacement cookie.
+const LEAP_DELETION_REPLY: &[u8] = &[
+    0xa4, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+    0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa,
+    0x01, 0x04, 0x00, 0x24, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
+    0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b,
+    0x1c, 0x1d, 0x1e, 0x1f, 0x04, 0x04, 0x00, 0x38, 0x00, 0x10, 0x00, 0x20, 0x10, 0x11, 0x12, 0x13,
+    0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x91, 0x14, 0xe1, 0x5a,
+    0x96, 0xb4, 0x1f, 0x85, 0x0f, 0x2a, 0x80, 0x73, 0x01, 0x64, 0x00, 0xcc, 0x15, 0xc8, 0x56, 0x5b,
+    0xb7, 0xbb, 0xda, 0x68, 0xc9, 0xfc, 0x66, 0x03, 0x7e, 0xa8, 0xd4, 0xb0,
+];
+
 /// Finite component observation only; it supplies no product operation deadline.
 const WAIT: Duration = Duration::from_secs(2);
 
@@ -67,6 +82,15 @@ const COMPONENT_UDP: SocketAddr = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::LOC
 
 /// Configured neighbor with no outstanding request or retained endpoint slot.
 const ALTERNATE_UDP: SocketAddr = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 124));
+
+/// Closed authenticated leap-claim sequences for one actual managed request.
+#[derive(Clone, Copy)]
+enum ProtectedLeapWarning {
+    /// Accept LI=1 before equal-value source replacement clears the old declaration.
+    Insertion,
+    /// Reject LI=3 for the same request, accept LI=2, then replace the source scale.
+    DeletionAfterUnsynchronized,
+}
 
 /// Select a fault in component work, never source identity or permission.
 #[derive(Clone, Copy)]
@@ -90,7 +114,7 @@ enum Scenario {
     /// Replace a protected source after commit, before joined reconstruction.
     ProtectedAfterCommit,
     /// Retain an authenticated nonzero peer leap claim through the same replacement.
-    ProtectedLeapWarningAfterCommit,
+    ProtectedLeapWarningAfterCommit(ProtectedLeapWarning),
 }
 
 impl Scenario {
@@ -101,7 +125,7 @@ impl Scenario {
             Self::ProtectedBeforeSend
                 | Self::ProtectedBeforeReplyCommit
                 | Self::ProtectedAfterCommit
-                | Self::ProtectedLeapWarningAfterCommit
+                | Self::ProtectedLeapWarningAfterCommit(_)
         )
     }
 }
@@ -148,7 +172,7 @@ fn issued(scenario: Scenario) -> Result<Issued, Failure> {
         .map_err(Failure::SourcePolicy)?;
     let configuration: SourceConfigurationSnapshot = if matches!(
         scenario,
-        Scenario::ProtectedAfterCommit | Scenario::ProtectedLeapWarningAfterCommit
+        Scenario::ProtectedAfterCommit | Scenario::ProtectedLeapWarningAfterCommit(_)
     ) {
         authority
             .replace_source_scale(&configuration, SourceScale::UnsmearedUtc)
@@ -605,20 +629,37 @@ impl Producer for PreviewProducer {
         if !self.scenario.protected() {
             return Err(Failure::Control);
         }
-        let reply: &'static [u8] =
-            if matches!(self.scenario, Scenario::ProtectedLeapWarningAfterCommit) {
-                LEAP_ANNOUNCED_REPLY
-            } else {
-                fixtures::HEALTHY
-            };
+        let (preceding, reply): (Option<&'static [u8]>, &'static [u8]) = match self.scenario {
+            Scenario::ProtectedLeapWarningAfterCommit(ProtectedLeapWarning::Insertion) => {
+                (None, LEAP_ANNOUNCED_REPLY)
+            }
+            Scenario::ProtectedLeapWarningAfterCommit(
+                ProtectedLeapWarning::DeletionAfterUnsynchronized,
+            ) => (Some(fixtures::UNSYNCHRONIZED), LEAP_DELETION_REPLY),
+            _ => (None, fixtures::HEALTHY),
+        };
         let completion: ProtectedCompletion<'tx> =
-            managed_component_exchange(association, control, reply, || {
+            managed_component_exchange(association, control, preceding, reply, || {
                 if matches!(self.scenario, Scenario::ProtectedBeforeSend) {
                     self.replace_definition()?;
                 }
                 Ok(())
             })?;
         assert_eq!(association.cookie_population()?, (0, 0));
+        if preceding.is_some() {
+            assert_eq!(
+                association.status(),
+                Status {
+                    phase: RequestPhase::Idle,
+                    attempts: 31,
+                    frames: 30,
+                    bytes: 130_792, // Both complete 140-byte replies consume work.
+                    available: 0,
+                    used: 1,
+                    uids: 1,
+                }
+            );
+        }
         if matches!(self.scenario, Scenario::ProtectedBeforeReplyCommit) {
             self.replacement = Some(
                 self.authority
@@ -790,14 +831,25 @@ fn component_operation<'scope>(
     let before: Snapshot = invocation.snapshot();
     let provider_lifetime: Weak<()> = provider.retirement_witness();
     let outcome: Result<Step, Failed> = step_with(&mut invocation, &mut producer);
-    if matches!(
-        producer.scenario,
-        Scenario::ReplaceAfterCommit
+    if matches!(&outcome, Ok(Step::Complete(_))) {
+        match producer.scenario {
+            Scenario::ProtectedLeapWarningAfterCommit(
+                ProtectedLeapWarning::DeletionAfterUnsynchronized,
+            ) => {
+                producer.replacement = Some(
+                    producer
+                        .authority
+                        .replace_source_scale(&producer.configuration, SourceScale::Smeared)
+                        .map_err(Failure::SourcePolicy)?,
+                );
+            }
+            Scenario::ReplaceAfterCommit
             | Scenario::ProtectedAfterCommit
-            | Scenario::ProtectedLeapWarningAfterCommit
-    ) && matches!(&outcome, Ok(Step::Complete(_)))
-    {
-        producer.replace_definition().map_err(Failed::from)?;
+            | Scenario::ProtectedLeapWarningAfterCommit(ProtectedLeapWarning::Insertion) => {
+                producer.replace_definition()?;
+            }
+            _ => {}
+        }
     }
     let after: Snapshot = invocation.snapshot();
     let last_failure: Option<Failed> = invocation.last_failure().copied();
@@ -1098,16 +1150,23 @@ fn managed_ke_preview_worker_healthy_preserves_issued_history() -> Result<(), Fa
     )
 }
 
-/// A protected source commits under its original definition, then retains that history.
+/// Observe the accepted raw LI and original scale across the actual worker join.
 /// # Errors
 /// Preserve actual issuer, worker, adapter or joined receiving refusal.
 /// # Panics
-/// Reject premature cookie installation, absent probing or postcommit relabelling.
-#[test]
-fn managed_protected_worker_preserves_committed_definition_through_join() -> Result<(), Failure> {
-    static SLOT: WorkerSlot = WorkerSlot::new();
-    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    let run: Run = run(&SLOT, &ADMISSION, Scenario::ProtectedLeapWarningAfterCommit)?;
+/// Reject missing probing, a changed LI or postcommit relabelling.
+fn assert_joined_protected_leap(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+    warning: ProtectedLeapWarning,
+    expected_li: u8,
+    replacement_scale: SourceScale,
+) -> Result<(), Failure> {
+    let run: Run = run(
+        slot,
+        admission,
+        Scenario::ProtectedLeapWarningAfterCommit(warning),
+    )?;
     let completion: ReceivedCompletion = run
         .outcome
         .map_err(|failure: RunFailed| operation_primary(&failure))?;
@@ -1119,7 +1178,7 @@ fn managed_protected_worker_preserves_committed_definition_through_join() -> Res
         report.configuration().declared_scale(),
         SourceScale::UnsmearedUtc
     );
-    assert_eq!(report.leap_indicator(), 1);
+    assert_eq!(report.leap_indicator(), expected_li);
     assert_eq!(report.measurement(), Err(MeasurementRefusal::Unavailable));
     assert_eq!(report.packet_bytes(), original_packet_bytes);
     assert_eq!(run.work.calls, [1, 0, 1, 0]);
@@ -1127,8 +1186,53 @@ fn managed_protected_worker_preserves_committed_definition_through_join() -> Res
     let newer: &SourceConfigurationSnapshot =
         run.work.replacement.as_ref().ok_or(Failure::Control)?;
     assert!(!newer.same_configuration(report.configuration()));
-    assert_eq!(newer.declared_scale(), SourceScale::Unknown);
+    assert!(
+        newer
+            .source_identity()
+            .same_source(report.configuration().source_identity())
+    );
+    assert_eq!(newer.declared_scale(), replacement_scale);
+    let current: SourceConfigurationSnapshot = run
+        .source
+        .configuration_snapshot()
+        .map_err(Failure::SourcePolicy)?
+        .ok_or(Failure::Control)?;
+    assert!(current.same_configuration(newer));
     Ok(())
+}
+
+/// An authenticated LI=1 reply remains historical after equal-value replacement.
+/// # Errors
+/// Preserve genuine fixture or worker refusal.
+#[test]
+fn managed_protected_worker_preserves_committed_definition_through_join() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    assert_joined_protected_leap(
+        &SLOT,
+        &ADMISSION,
+        ProtectedLeapWarning::Insertion,
+        1,
+        SourceScale::Unknown,
+    )
+}
+
+/// A valid-tag LI=3 reply is charged without consuming the pending request. The
+/// next LI=2 reply reaches the joined report with the old scale after cutover.
+/// # Errors
+/// Preserve genuine fixture or worker refusal.
+#[test]
+fn managed_protected_worker_refuses_li3_then_retains_li2_and_original_scale() -> Result<(), Failure>
+{
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    assert_joined_protected_leap(
+        &SLOT,
+        &ADMISSION,
+        ProtectedLeapWarning::DeletionAfterUnsynchronized,
+        2,
+        SourceScale::Smeared,
+    )
 }
 
 /// Delivery positions relative to an actual source-issued Protected result.

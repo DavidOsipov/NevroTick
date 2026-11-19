@@ -27141,3 +27141,271 @@ production date/mapping admission retain their existing exits.
 | `tls-certificate-cleanup-01/build-01/verification.json` | `c6e25d034dd57cb9144dc7baa980e75279406da3f2b8087f6e61617bcaa95e59` |
 | `tls-certificate-cleanup-01/native-01/verification.json` | `3f5799f893c105cea5faaf7857ab1b4e82951bf19092981e1dbdecf1fb77fb3d` |
 | `tls-certificate-cleanup-01/cleanup-neighbors-01/verification.json` | `aae7c5e3e6527e8f20a330463089fe3e651e294fc0b154e765956220e3a7874c` |
+
+###### Managed protected successor over Windows loopback
+
+S2.2, NV-DEC-001 §6.5 and CHECK-6/9/11/19/25/27. The Rust contract,
+integration, lifecycle, regression selection and Windows Sandbox skills
+govern this extension of the existing Linux fixture. The same two tests
+now select the native socket path on Windows. The 23 configuration edits
+reach the fixture declarations, producer dispatch and callers. The single
+callback remains owned by the loopback case. Production acquisition retains
+the established one-shot operation.
+
+With the scripted association and existing sealed response vectors, the
+actual Windows peer received the two 252-byte IPv4 loopback requests.
+The second used fresh correlation values and the first reply's replacement
+cookie. The worker joined with DENY at ordinal two and applied the exact
+logical-source and endpoint restrictions. The alias observed the endpoint
+restriction alone. Replacing the source with equal values at a new revision
+after retirement refused commit with `ConfigurationChanged`. Both send debits
+and floors remained, and DENY affected neither record. Both cases joined
+the peer and confirmed an empty nonblocking receive queue after retirement.
+
+The 618-input `fc04ed3b…` candidate based on `0498765` passed the
+configured isolation boundary, format, both exact GNU tests, GNU and
+MSVC Clippy and the MSVC test image link. Both named Windows cases then
+executed and passed on offline guest build 26100 with actual process exit
+zero, bounded completed streams and empty mappings. The initial native
+attempt stopped before process launch at 1,934 MiB available host memory.
+A fresh reading reached 2,648 MiB and the successful dispatch admitted
+2,708 MiB. The tested image, commands and earlier refusal remain bound to
+the retained records.
+
+This run exercises real Windows UDP and the joined policy/currentness
+effects. Its scripted establishment and fixed authentication material
+leave actual same-association TLS/CNG integration and the production
+selection open. The existing registered critical-file metrics retain their
+previous scopes. No wider native qualification follows from the fixture.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119/managed-successor-windows-01` | SHA-256 |
+| --- | --- |
+| `build-01/verification.json` | `aa76e41f27bced7213256261a5bfb337bd75075f66c80e85d579480d03a6e952` |
+| `native-01/verification.json` | `d6e1d65f9debd32fd48c243f5cc3f8c822d9a2a285d16967c20a4774a31aea11` |
+| `native-01/post-build-memory.json` | `c1ba0d687baa28a30d21feff6c4e1a6e20e3b6bfe714b50ed09eab9951689969` |
+| `native-02/verification.json` | `823cbb07e0c5f0a41f6c945b4458c09307b380f3e9ef4435ad0fd0405b346a13` |
+
+###### Managed protected successor with native TLS and CNG
+
+S2.2, W11-W01, CRYPTO-04, NV-DEC-001 §6.5 and CHECK-6/8/9/11/19/25/27.
+The Rust contracts, crypto, integration, lifecycle, regression selection
+and Windows Sandbox skills govern this companion to the scripted cases.
+The Windows-only ignored Engine case uses the actual reservation, power
+subscription, TLS verifier, CNG entropy, two UDP operations, final source
+guard and consuming worker join. The isolated peer advertises its actual
+owned UDP endpoint in KE and serves both legs with the original TLS
+exporters and deadline. Its second request must carry the first reply's
+replacement cookie and fresh UID and transmit values. Its authenticated
+DENY carries no replacement. Existing one-shot paths retain their scope.
+
+The Engine checks the 140-byte and 124-byte receive charges against the
+original allowance, the retained first receipt, and the empty final
+cookie pool. The success marker's replacement count describes the first
+receipt. The joined result retains DENY at ordinal two, the two send
+debits and floors, and the restriction of the exact source and endpoint.
+The alias receives only the endpoint restriction. The peer counts two
+performed receives and sends on its socket. The earlier scripted
+stale-revision case remains the corresponding refusal control.
+
+The 618-input Engine candidate `e7dcd2e8…` passed format, both GNU
+successor cases, GNU and MSVC Clippy, and the Windows libtest link. The
+final standalone overlay passed format, exact GNU and MSVC metadata
+comparisons, Clippy for both targets, the Windows release peer link and
+22 tests per GNU mode (ordinary and optimized). Early attempts retain the
+two lint refusals and the artifact reader's refusal of the package-qualified
+Cargo ID. The final reader checks that exact package ID and artifact
+provenance. The final peer overlay changes a portable test parameter
+relative to the earlier successful Engine build. All Engine input hashes
+match, so the earlier Engine lanes and pinned image were reused.
+
+The first offline build-26100 dispatch crossed its 60-second setup
+deadline during temporary guest-root confirmation. It started no child.
+The original physical stores were restored and the bounded scratch and
+mapped leaves were removed. A fresh dispatch with the same images, PKI,
+and limits completed the exact native case. The controller matched both
+listeners to the peer, reaped both children at exit zero, observed four
+stream EOFs, and verified the original physical CurrentUser Root and CA
+inventories. Host readback admitted all 16 expected files and ten
+progress records, confirmed scratch absence, and emptied both mappings.
+The result retains prototype ineligibility and unavailable measurement.
+Installed-service trust, production source selection, packet placement
+calibration, broader Windows lifecycle, and current per-file metrics
+retain their existing exits.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119/native-managed-successor-01` | SHA-256 |
+| --- | --- |
+| `build-01/verification.json` | `2467e7159787b8bb12cbc7b27087979a36053e632885550b61628b97d904fa65` |
+| `build-02/verification.json` | `e1367331348c535bc008acc03d1af027f747487bef4f75006881fe3808624015` |
+| `build-03/verification.json` | `1d14921fce3e0c2f9347ed8b6dcb888c58b72d94c05da986f28f77ae84013855` |
+| `build-04/verification.json` | `dd62a4f19da0c23160307fe3ffef70c1fec001eb0f1b7166109de0d05eb54038` |
+| `kesucc_2908d00177ce/verification.json` | `2193feb2fc485c19bc89dc0f02b74ffe266f26ad56a5bd3d6c5cc08e88e52d5d` |
+| `kesucc_d9273b46e1ec/verification.json` | `22cd385709b9230b7f24ac62c6bcd1bc439ddbc9142063c6dce43a123a3cc0b0` |
+
+###### Follow-up to the 0498765 implementation review
+
+W11-W01/TQ-07/08, S2.2, CRYPTO-04, OPEN-8 and CHECK-6/8/9/11/14/19/21/25/27.
+The Rust contract, CLI integration, crypto, regression-selection, inherited
+Windows Sandbox, and independent review skills apply. Three isolated
+patches based on `2145f7e7…` cover TLS, raw observation and provenance.
+The 619-input `eb046858…` candidate retains the existing Cargo graph.
+
+- **TLS regression retained.** The two named ignored cases in
+  `transport::certificate_time_fixture` use the real connection, verifier,
+  provider and close path in one linked Windows image. Each starts a fresh
+  process, pins the synthetic laboratory SAN, and accepts only a numeric
+  IPv4 loopback `NV_TLS_CLOCK_PEER`. The collector starts the pinned
+  standalone peer with the original leaf and key, verifies the listener
+  owner and selects one exact case with `--ignored --exact --nocapture
+  --test-threads=1`. The pre-epoch and ordinary cases retain
+  `Handshake/LocalClock` and `Handshake/Certificate(Issuer)` respectively,
+  with `cleanup=None` and no association publication. Both peer/client
+  pairs were reaped, eight streams reached EOF, and the physical stores
+  matched. [Rustls Writer's pinned contract](https://docs.rs/rustls/0.23.46/src/rustls/conn.rs.html#342-346)
+  confirms the removed operation only replayed a stored failure. The
+  [healthy two-leg predecessor](#managed-protected-successor-with-native-tls-and-cng)
+  and earlier alert-write, deadline and response-read neighbors retain
+  their image scopes. Actual native close-drain fault injections and a
+  deadline or generation change within that drain remain open.
+- **Raw adjustment contract.** After an attempted execution and observer
+  cleanup, the opt-in CLI attempts to emit any captured reads and their
+  summary. Acquisition and cleanup failures retain prior precedence
+  over a later sink refusal. A failed acquisition, cleanup or report
+  write prevents normal completion. Bound publication still precedes
+  execution. The deterministic clock cases cover all three inversions
+  and the equal-instant neighbor, including literal raw records without
+  offsets on inversion. The real composition exercises the entered-runtime
+  execution refusal, injected observer-close refusal, combined failures,
+  normal completion and sink refusal in each adjustment record. The
+  Windows release CLI also passed default and raw loopback invocations
+  with actual clock queries and native close. The raw result retained two
+  ordered equal reads and `mapping=unavailable`. Typed failure composition
+  and native healthy delivery have distinct evidence.
+- **Managed leap provenance.** A valid-tag LI=3 frame precedes an
+  independently sealed LI=2 frame on the same pending request. The
+  reply owner separately verifies the LI=3 header refusal. The joined
+  LI=2 result preserves two receive charges, one spent UID and cookie,
+  and its original `UnsmearedUtc` declaration after the same source changes
+  to `Smeared`. Existing LI=0 and LI=1 cases and the 64 issuer histories
+  retain their separate contracts. Five exact Windows libtest cases
+  passed. Their first host reader refused nonempty stderr. Readback
+  independently matched both expected bounded stale-source diagnostic
+  rows, the five names, actual exit zero and the retained image. That
+  readback retired the mappings without re-executing the cases.
+- **Fuzz and metrics.** The standalone peer composition remains outside
+  the existing fuzz selectors. Its held target needs separate admission
+  of the pure codec, a valid seed, independently authenticated structural
+  refusals and a direction/correlation oracle. Both Engine role bindings
+  initially identified the 615-input `5fc32aac…` product. The [current
+  baseline and role admission](#current-engine-development-baseline-and-closed-role-admission)
+  reconcile the changed inputs and exact 619-input roster. Public campaigns
+  remain closed. The 7 GiB floor applies to the verifier's work volume.
+  [W11-W02's scoped metrics](windows11-integration.md#w11-w02-scoped-metrics-on-the-integrated-source)
+  retain their recorded slot/adapter bytes, denominators and scope.
+  Physical power delivery, installed-service trust, calibrated timing
+  and broader lifecycle and release qualification remain open.
+
+GNU ran 11 observe and two CLI process cases in both ordinary and
+`verify-release`, and seven EP1 provenance cases in ordinary and
+`release`. The first EP1 `verify-release` compile received SIGKILL before
+tests. The completed lanes were reused from the same frozen candidate.
+The remaining lanes used the existing EP1 optimized ceiling and the
+`release` profile, which disables debug assertions. Format, GNU/MSVC
+Clippy, Windows Engine libtest and release CLI linking all passed.
+Eight targeted portable faults reached their intended assertions
+across ordering, writer errors, captured-read loss and precedence.
+The three healthy controls passed before and after source restoration.
+These are targeted controls with zero generated-mutation credit.
+Independent review matched the frozen inputs, named results, native
+exit and cleanup evidence. The 38 skill description edits at `51ffa7e`
+retain their prior bodies.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119/review-handoff-0498765-01` | SHA-256 |
+| --- | --- |
+| `build-01/verification.json` | `fbdc5048addc6cbb93c3dcef0138a454acb86c8d9f2315de42d6afde827884d2` |
+| `build-02/verification.json` | `fb7068fc443d0b9a78ff794211f8b0fe8bfc69326eac193aae945e300bd56907` |
+| `native-01/verification.json` | `fbb5bb5a04195bcf7aaed778338b014792e7413360a5c1f60b8eab0665007482` |
+| `observe-native-01/verification.json` | `96db1679eb8cad0c7bc904e62606c0e7b8cf628dd381623cf6207ee3feadb072` |
+| `sensitivity-01/verification.json` | `a3bcd1a802267ee1be8e1d83ec11b54d164a709dd64e1d6cf0c94f22dcdd168c` |
+| `provenance-native-01/verification.json` | `84ede57672ac785a089fadd044c25e71cc7e1caa09872f68e1d2558acffab03b` |
+| `provenance-native-readback-01/verification.json` | `eddb5094ced5efe89c21ae9ab11ddebde2d9705c9dd6cd75e818c71d2d0f0dc5` |
+
+###### Current Engine development baseline and closed-role admission
+
+CHECK-19/25/27, S2.2 and W11-W01. The staged-candidate,
+regression-selection and independent-review skills governed this
+continuation of the 0498765 review. The owned runner exported all 2,145
+files from stage `46b2100e20f41fc301a45186014fb507060bea57` at main
+`0498765c9d6d407e1772f98f6997da1afb616bd1`. The 619 product inputs
+produce digest `eb0468583ee1c6a08e045296beec8d7fdf181c7a5154fbb36868cc4665422195`.
+The exact index, source, tools, configurations and vendor matched at
+both bookends. The predecessor dependency graph receipt retains its
+45 successful commands and four projections. The current 22-path
+delta consists of 21 Rust files and the verification scope manifest.
+Manifests, lock, dependency policies and graph tooling remain unchanged.
+Graph reuse carries the original evidence scope.
+
+The designated Rust 1.100.0 baseline passed all 19 lanes. GNU default
+executed 287 ordinary and 287 optimized cases with 90 doctests. GNU
+EP1 executed 584 per mode, including 293 KE cases, with 91 doctests.
+Four GNU Core lanes executed four selected cases each. Format, Rustdoc,
+GNU and MSVC check/Clippy and the isolation boundary also passed.
+Independent readback matched all raw exits, lane hashes, exact binary
+and test rosters and the renewed tool and source custody. The scope
+ended without memory-limit or OOM events. The runner's work and its
+two outer temporary roots were retired after completion. The earlier
+EP1 compilation interruption retains its incomplete outcome.
+
+The two configured roles now read the current combined terminal and
+its actual 19 lanes. The scoped default and EP1 rosters, exact graph
+reuse and current protected helper identities apply to this candidate.
+Historical receipts retain their existing readers. The three new
+reader controls challenge wrong and substituted rosters, legacy fallback
+and changed graph prerequisites. All 209 reader controls passed
+against both the predecessor policy templates and the integrated
+bindings. Both roles refuse campaign admission. The 90%/95% criteria,
+threshold denominators and existing execution scopes remain in force.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119/review-combined-01` | SHA-256 |
+| --- | --- |
+| `admission.json` | `1cc89353a08cab0ca94d365ac65a5319709e4904a207122cc095e3aad19bfc35` |
+| `reports/run-01/verification.json` | `6459d484673913359fc69e58596c32ef113eca27363fa1ebc75ea14518ae31f7` |
+| `wrapper-cleanup.json` | `20aa05dc7aa0b552338049a144809e463cc63b8e7f7490ceee38f7f5bf559e1f` |
+| `closed-role-proposed-01/verification.json` | `19ec572ae560fe96c04f1abb81b7ac9d05d3fbc35c6f5a97563c11ce9c425af4` |
+
+###### Current GNU KE line coverage and descriptor inventory
+
+The closed stable-core role passed the 14-owner GNU coverage selection
+with 584 actual cases, including 293 KE cases. Each selected owner passed
+90% executable-line coverage. The minimum is 198/217 (91.24%) for the
+managed report owner. This is current line evidence for those owners.
+Independent readback matched each LLVM line summary. The export has no
+branch counters. Branch, default-graph, Windows-only and production scopes
+retain their separate requirements.
+
+The configured enumeration produced 889 descriptors. Compared with
+the 879-descriptor predecessor, recovery moves from 122 to 129, job from
+29 to 30, and managed preview from 83 to 85. The core, ledger and datagram
+counts are unchanged while their inventory hashes differ. Eight complete
+inventory hashes match the original predecessor. The later datagram
+checkpoint already has the exact 217-descriptor ledger inventory. The ten
+additions comprise seven Windows test-fixture descriptors, one Windows
+prototype entropy-helper descriptor and two portable leap-projection
+descriptors. Reconcile changed descriptors, target activity and caller
+evidence before using prior outcomes. The full list exceeds the 512-variant
+campaign cap. Enumeration gives no behavioral kill credit, so the per-file
+95% mutation qualification stays open. Public campaigns remain closed.
+
+Both lanes shared one execution owner and ran serially. The 7 GiB startup
+and 4 GiB live work floors applied to the isolated tmpfs work volume. The
+durable store retained its separate 4 GiB output reserve. The 3 GiB allocation
+ceiling, 32,768-entry cap, six Cargo jobs, one test thread and original lane
+limits applied. The owned unit exited zero and the scratch retired after
+raw results were retained and hash-checked. The follow-up retains the TLS
+close-drain, production supplier, protected codec fuzz and native
+qualification boundaries in the existing workstream.
+
+| Evidence under `~/.local/share/nevrotick/engine-ke-closed-46b2100e-preparation/run-01` | SHA-256 |
+| --- | --- |
+| `verification.json` | `2795bc8ed665a9d1a442847bd92b7c8a1fc51959635085e81a9114141b6fcfbd` |
+| `enumerate/verification.json` | `b59d6ca800b057e0508b9c26ae772b9a8029f049a7090553c777944fada5fc3e` |
+| `coverage/verification.json` | `b472bf746d2f6b09b92a264d55bef589cc6b902fbd63a55478579636e67f9247` |

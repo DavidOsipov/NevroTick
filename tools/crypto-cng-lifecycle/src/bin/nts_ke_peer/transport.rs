@@ -7,6 +7,7 @@
 use std::fs::{self, Metadata, OpenOptions};
 use std::io::{self, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, TcpListener, TcpStream};
+use std::num::NonZeroU16;
 use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
 use std::path::{Component, Path, Prefix};
 use std::sync::Arc;
@@ -115,9 +116,13 @@ fn read_der(path: &Path) -> Result<Zeroizing<Vec<u8>>, Failure> {
 ///
 /// # Errors
 /// Refuse unsafe paths, invalid ports, or failed publication or cleanup.
-fn publish_ready(path: &Path, port: u16) -> Result<(), Failure> {
+fn publish_ready(
+    path: &Path,
+    port: u16,
+    successor_port: Option<NonZeroU16>,
+) -> Result<(), Failure> {
     check_parent(path)?;
-    let contents = ready_line(port)?;
+    let contents: String = ready_line(port, successor_port)?;
     let mut name = path.file_name().ok_or(Failure::Input)?.to_os_string();
     name.push(".pending");
     let temporary = path.with_file_name(name);
@@ -396,10 +401,15 @@ fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
         .port();
     let udp: Option<ProtectedUdp> = match mode {
         Mode::Ke => None,
-        Mode::Protected => Some(ProtectedUdp::bind(&budget)?),
+        Mode::Protected | Mode::ProtectedSuccessorDeny => Some(ProtectedUdp::bind(&budget)?),
     };
     budget.poll(Instant::now())?;
-    publish_ready(&ready, port)?;
+    let successor_port: Option<NonZeroU16> = if mode == Mode::ProtectedSuccessorDeny {
+        Some(udp.as_ref().ok_or(Failure::Arguments)?.port())
+    } else {
+        None
+    };
+    publish_ready(&ready, port, successor_port)?;
     let (socket, peer) = loop {
         let pause = budget.poll(Instant::now())?;
         match listener.accept() {
@@ -439,17 +449,18 @@ fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
     {
         return Err(Failure::Tls.into());
     }
-    finish_exchange(StreamOwned::new(connection, socket), udp)
+    finish_exchange(StreamOwned::new(connection, socket), udp, mode)
 }
 
 /// Complete KE and TLS close under the original budget. Protected mode then
-/// uses these same-session exporters for one request on the advertised socket.
+/// uses these same-session exporters on the advertised socket.
 ///
 /// # Errors
 /// Preserve KE, close, provider, deadline and datagram refusals.
 fn finish_exchange(
     mut stream: StreamOwned<ServerConnection, BudgetIo>,
     udp: Option<ProtectedUdp>,
+    mode: Mode,
 ) -> Result<(), Failed> {
     let mut offer: [u8; OFFER.len()] = [0; OFFER.len()];
     let received: io::Result<()> = stream.read_exact(&mut offer);
@@ -486,11 +497,16 @@ fn finish_exchange(
                 fault: _,
             } = sock;
             drop((conn, tcp));
-            socket.exchange(&budget, &c2s, &s2c, |nonce: &mut [u8; 16]| {
+            let fill = |nonce: &mut [u8; 16]| {
                 rustls_cng_crypto::SecureRandom
                     .fill(nonce)
                     .map_err(|_| Failure::Entropy)
-            })?;
+            };
+            if mode == Mode::ProtectedSuccessorDeny {
+                socket.exchange_successor_deny(&budget, &c2s, &s2c, fill)?;
+            } else {
+                socket.exchange(&budget, &c2s, &s2c, fill)?;
+            }
             Ok(())
         }
     }

@@ -4,7 +4,7 @@
 use aes_siv::{KeyInit, Tag, siv::Aes128Siv};
 use zeroize::Zeroizing;
 
-use super::{PacketFailure, admit_and_seal};
+use super::{Correlation, PacketFailure, admit_and_seal, admit_successor};
 
 /// Public test-only inputs, distinct in every cryptographic role.
 const C2S: [u8; 32] = [0x3a; 32];
@@ -89,7 +89,7 @@ fn open_reply(reply: &[u8; 140], key: &[u8; 32]) -> Result<Zeroizing<[u8; 16]>, 
 #[test]
 fn authenticated_packet_returns_one_correlated_encrypted_cookie() -> Result<(), &'static str> {
     let input: [u8; 252] = request()?;
-    let reply: Zeroizing<[u8; 140]> =
+    let (_, reply): (Correlation, Zeroizing<[u8; 140]>) =
         admit_and_seal(&input, &C2S, &S2C, &SERVER_NONCE).map_err(|_| "valid-request")?;
     assert_eq!(&reply[..2], &[0x24, 2]);
     assert_eq!(&reply[2..16], &[0; 14]);
@@ -127,7 +127,7 @@ fn exact_authenticated_originals_bind_uid_origin_and_encrypted_cookie() -> Resul
     input[47] = 0x99;
     input[52] = 0x42;
     stamp(&mut input)?;
-    let reply: Zeroizing<[u8; 140]> =
+    let (_, reply): (Correlation, Zeroizing<[u8; 140]>) =
         admit_and_seal(&input, &C2S, &S2C, &SERVER_NONCE).map_err(|_| "valid-neighbor")?;
     assert_eq!(reply[31], 0x99);
     assert_eq!(reply[52], 0x42);
@@ -206,6 +206,46 @@ fn request_authentication_refuses_wrong_direction_and_tampering() -> Result<(), 
         assert_eq!(
             admit_and_seal(&invalid, &C2S, &S2C, &SERVER_NONCE).err(),
             Some(PacketFailure::Authentication)
+        );
+    }
+    Ok(())
+}
+
+/// A valid successor needs both a fresh UID and a fresh transmit token.
+///
+/// # Errors
+/// Preserve unexpected refusal to prepare or authenticate a healthy fixture.
+/// # Panics
+/// Fail if a reauthenticated old cookie or reused correlation is admitted.
+#[test]
+fn successor_requires_issued_cookie_and_both_fresh_coordinates() -> Result<(), &'static str> {
+    let mut successor: [u8; 252] = request()?;
+    let (initial, _reply): (Correlation, Zeroizing<[u8; 140]>) =
+        admit_and_seal(&successor, &C2S, &S2C, &SERVER_NONCE).map_err(|_| "initial")?;
+    successor[47] = 0x91;
+    successor[52] = 0x53;
+    stamp(&mut successor)?;
+    assert_eq!(
+        admit_successor(&successor, &C2S, &initial).err(),
+        Some(PacketFailure::Shape)
+    );
+    successor[88..100].copy_from_slice(&[
+        0x83, 0x73, 0x63, 0x53, 0x43, 0x33, 0x23, 0x13, 0x91, 0x92, 0x93, 0x94,
+    ]);
+    stamp(&mut successor)?;
+    let _current: Correlation =
+        admit_successor(&successor, &C2S, &initial).map_err(|_| "successor")?;
+    assert_eq!(
+        admit_successor(&successor, &S2C, &initial).err(),
+        Some(PacketFailure::Authentication)
+    );
+    for (index, old_value) in [(47, WIRE[7]), (52, UID[0])] {
+        let mut replay: [u8; 252] = successor;
+        replay[index] = old_value;
+        stamp(&mut replay)?;
+        assert_eq!(
+            admit_successor(&replay, &C2S, &initial).err(),
+            Some(PacketFailure::Replay)
         );
     }
     Ok(())

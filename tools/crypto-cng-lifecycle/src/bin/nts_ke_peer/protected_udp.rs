@@ -10,7 +10,10 @@ use zeroize::Zeroizing;
 
 use super::{
     Budget, Failure,
-    protected_packet::{PacketFailure, REQUEST_BYTES, admit_and_seal},
+    protected_packet::{
+        Correlation, DENY_BYTES, PacketFailure, REPLY_BYTES, REQUEST_BYTES, admit_and_seal,
+        admit_successor, seal_deny,
+    },
 };
 
 /// Windows reports an overlong UDP datagram as a receive error.
@@ -96,6 +99,82 @@ impl ProtectedUdp {
             return Err(Failure::Deadline);
         }
 
+        self.initial_exchange(budget, c2s, s2c, fill, &now)
+            .map(|_: Correlation| ())
+    }
+
+    /// Use one listener and the original exporters for an ordinary reply and a DENY.
+    ///
+    /// The second receive can come from a new ephemeral port. The full request
+    /// must authenticate with the issued cookie and distinct UID and transmit
+    /// token. Each leg reads at most one complete datagram and attempts at most
+    /// one send. A failure never opens another attempt or a renewed deadline.
+    ///
+    /// # Errors
+    /// Preserve the first deadline, I/O, entropy or packet refusal.
+    pub(super) fn exchange_successor_deny(
+        self,
+        budget: &Budget,
+        c2s: &[u8; 32],
+        s2c: &[u8; 32],
+        mut fill: impl FnMut(&mut [u8; 16]) -> Result<(), Failure>,
+    ) -> Result<(), Failure> {
+        if self.deadline != budget.deadline {
+            return Err(Failure::Deadline);
+        }
+        let initial: Correlation =
+            self.initial_exchange(budget, c2s, s2c, &mut fill, &Instant::now)?;
+        budget.poll(Instant::now())?;
+        self.socket
+            .set_nonblocking(false)
+            .map_err(|error| Failure::Io(error.kind()))?;
+        let (request, sender): (Zeroizing<[u8; REQUEST_BYTES + 1]>, SocketAddrV4) =
+            self.receive(budget, &Instant::now)?;
+        let successor: Correlation =
+            admit_successor(&request[..REQUEST_BYTES], c2s, &initial).map_err(Failure::Datagram)?;
+        let mut nonce: Zeroizing<[u8; 16]> = Zeroizing::new([0; 16]);
+        budget.poll(Instant::now())?;
+        fill(&mut nonce)?;
+        budget.poll(Instant::now())?;
+        let reply: Zeroizing<[u8; DENY_BYTES]> =
+            seal_deny(&successor, s2c, &nonce).map_err(Failure::Datagram)?;
+        self.send_reply(budget, &Instant::now, sender, &reply[..])
+    }
+
+    /// Authenticate the initial request, return its matching reply, and retain correlation.
+    ///
+    /// # Errors
+    /// Preserve dispatch, budget, entropy and packet refusals.
+    fn initial_exchange(
+        &self,
+        budget: &Budget,
+        c2s: &[u8; 32],
+        s2c: &[u8; 32],
+        fill: impl FnOnce(&mut [u8; 16]) -> Result<(), Failure>,
+        now: &impl Fn() -> Instant,
+    ) -> Result<Correlation, Failure> {
+        let (request, sender): (Zeroizing<[u8; REQUEST_BYTES + 1]>, SocketAddrV4) =
+            self.receive(budget, now)?;
+        let mut nonce: Zeroizing<[u8; 16]> = Zeroizing::new([0; 16]);
+        budget.poll(now())?;
+        fill(&mut nonce)?;
+        budget.poll(now())?;
+        let (initial, reply): (Correlation, Zeroizing<[u8; REPLY_BYTES]>) =
+            admit_and_seal(&request[..REQUEST_BYTES], c2s, s2c, &nonce)
+                .map_err(Failure::Datagram)?;
+        self.send_reply(budget, now, sender, &reply[..])?;
+        Ok(initial)
+    }
+
+    /// Consume one bounded datagram from this listener's IPv4 loopback.
+    ///
+    /// # Errors
+    /// Refuse a bad endpoint or extent, expired deadline or failed read.
+    fn receive(
+        &self,
+        budget: &Budget,
+        now: &impl Fn() -> Instant,
+    ) -> Result<(Zeroizing<[u8; REQUEST_BYTES + 1]>, SocketAddrV4), Failure> {
         // A one-byte sentinel distinguishes an overlong truncated datagram from
         // an exact frame on systems that return the truncated byte count.
         let mut request: Zeroizing<[u8; REQUEST_BYTES + 1]> =
@@ -129,21 +208,28 @@ impl ProtectedUdp {
             return Err(Failure::Datagram(PacketFailure::Length));
         }
 
-        let mut nonce: Zeroizing<[u8; 16]> = Zeroizing::new([0; 16]);
-        budget.poll(now())?;
-        fill(&mut nonce)?;
-        budget.poll(now())?;
-        let reply: Zeroizing<[u8; 140]> =
-            admit_and_seal(&request[..length], c2s, s2c, &nonce).map_err(Failure::Datagram)?;
-        budget.poll(now())?;
+        Ok((request, sender))
+    }
 
+    /// Attempt one nonblocking send to the endpoint that supplied this request.
+    ///
+    /// # Errors
+    /// Preserve an expired deadline, failed send, partial send or late outcome.
+    fn send_reply(
+        &self,
+        budget: &Budget,
+        now: &impl Fn() -> Instant,
+        sender: SocketAddrV4,
+        reply: &[u8],
+    ) -> Result<(), Failure> {
+        budget.poll(now())?;
         self.socket
             .set_nonblocking(true)
             .map_err(|error| Failure::Io(error.kind()))?;
         budget.poll(now())?;
         let sent: usize = self
             .socket
-            .send_to(&reply[..], sender)
+            .send_to(reply, sender)
             .map_err(|error| Failure::Io(error.kind()))?;
         if sent != reply.len() {
             return Err(Failure::Io(ErrorKind::WriteZero));

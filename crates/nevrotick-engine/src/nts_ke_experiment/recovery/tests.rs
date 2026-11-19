@@ -18,7 +18,7 @@ use super::{
 };
 use crate::nts_ke_experiment::association::ledger::{Receipt, RequestPhase, Status};
 use crate::nts_ke_experiment::datagram::ProtectedCompletion;
-#[cfg(target_os = "linux")]
+#[cfg(any(windows, target_os = "linux"))]
 use crate::nts_ke_experiment::recovery::LoopbackBeforeCommit;
 use crate::nts_ke_experiment::recovery::{
     Backoff, ContextStage, End, Invocation, Limits, ManagedSuccessorFixture, Plan, Producer,
@@ -887,10 +887,10 @@ pub(in crate::nts_ke_experiment) struct ScriptProducer<'fixture> {
     /// Select the managed script's same-association continuation in the actual step.
     managed_control: Option<super::ProtectedControlKind>,
     /// Exact peer owned by the separate real loopback integration control.
-    #[cfg(target_os = "linux")]
+    #[cfg(any(windows, target_os = "linux"))]
     managed_loopback: Option<SocketAddr>,
     /// Optional closed fixture transition after the second adapter actually retires.
-    #[cfg(target_os = "linux")]
+    #[cfg(any(windows, target_os = "linux"))]
     before_loopback_commit: Option<LoopbackBeforeCommit>,
     /// Select a checked two-cookie initial fixture before the first establishment.
     spare_initial_cookie: bool,
@@ -948,9 +948,9 @@ impl<'fixture> ScriptProducer<'fixture> {
             establishment: establishment.into(),
             exchange_case,
             managed_control: None,
-            #[cfg(target_os = "linux")]
+            #[cfg(any(windows, target_os = "linux"))]
             managed_loopback: None,
-            #[cfg(target_os = "linux")]
+            #[cfg(any(windows, target_os = "linux"))]
             before_loopback_commit: None,
             spare_initial_cookie: false,
             establish_calls: 0,
@@ -1043,7 +1043,7 @@ fn script_reads(
 
 impl Producer for ScriptProducer<'_> {
     fn managed_successor_fixture(&mut self) -> Option<ManagedSuccessorFixture> {
-        #[cfg(target_os = "linux")]
+        #[cfg(any(windows, target_os = "linux"))]
         if self.managed_loopback.is_some() {
             return Some(ManagedSuccessorFixture::Loopback(
                 self.before_loopback_commit.take(),
@@ -1126,7 +1126,7 @@ impl Producer for ScriptProducer<'_> {
             vec![Zeroizing::new(vec![0x11; 12])]
         };
         let remote: SocketAddr = SocketAddr::new(config.peer.ip(), 123);
-        #[cfg(target_os = "linux")]
+        #[cfg(any(windows, target_os = "linux"))]
         let remote: SocketAddr = self.managed_loopback.unwrap_or(remote);
         let candidate = AssociationCandidate::new(
             config,
@@ -1149,7 +1149,7 @@ impl Producer for ScriptProducer<'_> {
         control: &'tx Control,
     ) -> Result<ProtectedCompletion<'tx>, Failure> {
         self.exchange_calls += 1;
-        #[cfg(target_os = "linux")]
+        #[cfg(any(windows, target_os = "linux"))]
         if self.managed_loopback.is_some() {
             return super::loopback_managed_first(association, control);
         }
