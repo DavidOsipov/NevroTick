@@ -356,6 +356,7 @@ ENGINE_KE_SUBJECTS = (
     ("ke_recovery", "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs"),
     ("ke_job", "crates/nevrotick-engine/src/nts_ke_experiment/job.rs"),
     ("ke_preview_target", "crates/nevrotick-engine/src/ke_preview_target.rs"),
+    ("ke_managed_preview", "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs"),
 )
 ENGINE_KE_CRITICAL = (
     "crates/nevrotick-engine/src/lib.rs",
@@ -363,7 +364,6 @@ ENGINE_KE_CRITICAL = (
     "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
     "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
     "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs",
-    "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs",
     "crates/nevrotick-engine/src/source_policy.rs",
 )
 

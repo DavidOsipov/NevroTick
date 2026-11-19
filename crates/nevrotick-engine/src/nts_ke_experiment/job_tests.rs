@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Supplemental actual job-owner guards; fixed callback failures make no protocol claim.
 
+use std::cell::Cell;
+use std::num::NonZeroU32;
 use std::sync::OnceLock;
 use std::sync::atomic::AtomicUsize;
 use std::sync::mpsc::{Receiver, SyncSender, sync_channel};
@@ -12,8 +14,11 @@ use super::{
     InvocationCompletion, IoPhase, Observation, Operation, Ordering, Phase, PreparedInvocation,
     ProcessAdmission, ProcessClaim, ProviderScope, SubmitError, Termination, WorkerSlot,
 };
+use crate::SourceProtectedProbeReport;
 use crate::nts_ke_experiment::process::native_scope_with;
-use crate::nts_ke_experiment::{RunFailed, Summary, run_synchronously_with};
+use crate::nts_ke_experiment::{
+    ObservedInvocation, RunFailed, StopDisposition, StopHandle, Summary, run_observing,
+};
 
 /// Finite component watchdog, not a bound on a product/native operation or explicit join.
 const WAIT: Duration = Duration::from_secs(2);
@@ -1203,17 +1208,60 @@ fn job_actual_postjoin_poison_seals_panic_and_preserves_recorded_failure() -> Re
     })
 }
 
+/// Join released test work while preserving an already joined disposition.
+/// # Errors
+/// Refuse an observation without actual worker custody or a joined result.
+fn collect_released_facade(slot: &'static WorkerSlot) -> Result<(), CollectError> {
+    match slot.observer().poll_until(Instant::now() + WAIT) {
+        Observation::Running(_) => collect_available(slot),
+        Observation::Joined | Observation::Taken => Ok(()),
+        _ => Err(CollectError::Control),
+    }
+}
+
+/// Select the original Stop gate's condition after actual operation recording.
+#[derive(Clone, Copy)]
+enum StopGateCase {
+    /// The fallback Stop succeeds before observer close.
+    Healthy,
+    /// An actual caught unwind poisons that same gate before fallback Stop.
+    Poisoned,
+}
+
+/// Poison only the original Stop mutex without changing its stored latch value.
+/// # Errors
+/// Refuse a busy gate or an unwind that did not poison the actual mutex.
+fn poison_stop_gate(stop: &StopHandle) -> Result<(), Failure> {
+    let latch: &std::sync::Mutex<bool> = &stop.scope.stopped;
+    let caught: Result<Result<(), Failure>, Box<dyn std::any::Any + Send>> =
+        std::panic::catch_unwind(|| -> Result<(), Failure> {
+            let _guard: std::sync::MutexGuard<'_, bool> =
+                latch.try_lock().map_err(|_| Failure::Control)?;
+            std::panic::resume_unwind(Box::new(()));
+        });
+    match caught {
+        Err(payload) => {
+            drop(payload);
+            if latch.is_poisoned() {
+                Ok(())
+            } else {
+                Err(Failure::Control)
+            }
+        }
+        Ok(_) => Err(Failure::Control),
+    }
+}
+
 /// A genuine submitted facade job remains owned when real custody contention refuses collection.
 /// # Errors
 /// Preserve checked setup, actual retirement watchdog, release and joined-result failures.
 /// # Panics
 /// Release the actual guard/gate and join admitted work before behavioral assertions.
-#[test]
-fn synchronous_facade_collection_contention_retains_unconfirmed_actual_job() -> Result<(), Failure>
-{
-    static SLOT: LazyLock<WorkerSlot> = LazyLock::new(WorkerSlot::new);
-    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    let slot: &'static WorkerSlot = &SLOT;
+fn assert_collection_contention(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+    stop_case: StopGateCase,
+) -> Result<(), Failure> {
     let config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
     let config_lifetime = Arc::downgrade(&config.lifetime);
     let (second, _) = prepared()?;
@@ -1225,30 +1273,53 @@ fn synchronous_facade_collection_contention_retains_unconfirmed_actual_job() -> 
     hooks.before_retire = Some(hold);
     let mut custody_guard = None;
     let mut setup = Ok(());
-    let facade = run_synchronously_with(config, slot, None, |actual_slot, prepared| {
-        actual_slot.submit_with(
-            prepared,
-            &ADMISSION,
-            component_provider,
-            move |config, provider, control| {
-                observed_provider
-                    .set(provider.retirement_witness())
-                    .map_err(|_| Failed::from(Failure::Control))?;
-                component_failure(config, provider, control)
-            },
-            hooks,
-        )?;
-        // Submission already succeeded. Subsequent fixture failures are retained as
-        // setup facts; they must not be misreported as a NotSubmitted disposition.
-        setup = gate.wait();
-        if setup.is_ok() {
-            match actual_slot.custody.try_lock() {
-                Ok(guard) => custody_guard = Some(guard),
-                Err(_) => setup = Err(Failure::Control),
+    let stop_at_close: Cell<Option<Result<StopDisposition, Failure>>> = Cell::new(None);
+    let observed_stop: &Cell<Option<Result<StopDisposition, Failure>>> = &stop_at_close;
+    let stop_to_poison: Cell<Option<StopHandle>> = Cell::new(None);
+    let facade = run_observing(
+        config,
+        slot,
+        |stop: StopHandle| {
+            if matches!(stop_case, StopGateCase::Poisoned) {
+                stop_to_poison.set(Some(stop.clone()));
             }
-        }
-        Ok(())
-    });
+            Ok(move || {
+                observed_stop.set(Some(stop.request_stop()));
+                Err(NonZeroU32::MIN)
+            })
+        },
+        |reservation| {
+            reservation.submit_fixture(
+                admission,
+                component_provider,
+                move |config, provider, control| {
+                    observed_provider
+                        .set(provider.retirement_witness())
+                        .map_err(|_| Failed::from(Failure::Control))?;
+                    component_failure(config, provider, control)
+                },
+                hooks,
+            )?;
+            // Submission already succeeded. Subsequent fixture failures are retained as
+            // setup facts; they must not be misreported as a NotSubmitted disposition.
+            setup = gate.wait();
+            if setup.is_ok() {
+                match slot.custody.try_lock() {
+                    Ok(guard) => custody_guard = Some(guard),
+                    Err(_) => setup = Err(Failure::Control),
+                }
+            }
+            if setup.is_ok() && matches!(stop_case, StopGateCase::Poisoned) {
+                // The retirement gate follows facts.record; component_failure has
+                // already dropped Control, so this fault cannot change its result.
+                setup = match stop_to_poison.take() {
+                    Some(stop) => poison_stop_gate(&stop),
+                    None => Err(Failure::Control),
+                };
+            }
+            Ok(())
+        },
+    );
     let live_config = config_lifetime.strong_count();
     let live_provider = provider_lifetime.get().map(Weak::strong_count);
     let retained_running_handle = custody_guard
@@ -1257,29 +1328,22 @@ fn synchronous_facade_collection_contention_retains_unconfirmed_actual_job() -> 
     let observation = slot.observer().poll_until(Instant::now() + WAIT);
     let second_submission = slot.submit_with(
         second,
-        &ADMISSION,
+        admission,
         component_provider,
         component_failure,
         Hooks::none(),
     );
     drop(custody_guard);
     let released = gate.release();
-    let state_after_release = slot.observer().poll_until(Instant::now() + WAIT);
-    let joined = match state_after_release {
-        Observation::Running(_) => collect_available(slot),
-        Observation::Joined | Observation::Taken => Ok(()),
-        _ => Err(CollectError::Control),
-    };
+    let joined: Result<(), CollectError> = collect_released_facade(slot);
     let known = slot.take_result();
     released?;
     setup?;
     if watchdog.load(Ordering::Acquire) {
         return Err(Failure::Control);
     }
-    assert!(
-        matches!(facade, Err(RunFailed::Collection(CollectError::Busy))),
-        "KE-FACADE-01-collection-refusal-is-unconfirmed"
-    );
+    let observed: ObservedInvocation = facade.map_err(|_| Failure::Control)?;
+    assert_unconfirmed_report(observed, stop_at_close.get(), stop_case)?;
     assert!(
         retained_running_handle,
         "KE-FACADE-01-collection-refusal-retains-actual-handle"
@@ -1294,7 +1358,67 @@ fn synchronous_facade_collection_contention_retains_unconfirmed_actual_job() -> 
     assert!(outcome.retired);
     assert_eq!(config_lifetime.strong_count(), 0);
     assert_eq!(provider_lifetime.get().map(Weak::strong_count), Some(0));
-    assert!(matches!(ADMISSION.claim(), Err(Failure::ProcessUsed)));
+    assert!(matches!(admission.claim(), Err(Failure::ProcessUsed)));
+    Ok(())
+}
+
+/// Both healthy and poisoned Stop gates retain the same actual job and primary failure.
+/// # Errors
+/// Preserve setup, bounded release and actual join failures in either case.
+/// # Panics
+/// Reject a lost fallback failure, altered original result or retained worker resources.
+#[test]
+fn synchronous_facade_collection_contention_retains_unconfirmed_actual_job() -> Result<(), Failure>
+{
+    static SLOT: LazyLock<WorkerSlot> = LazyLock::new(WorkerSlot::new);
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    static POISONED_SLOT: LazyLock<WorkerSlot> = LazyLock::new(WorkerSlot::new);
+    static POISONED_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    assert_collection_contention(&SLOT, &ADMISSION, StopGateCase::Healthy)?;
+    assert_collection_contention(&POISONED_SLOT, &POISONED_ADMISSION, StopGateCase::Poisoned)
+}
+
+/// Observe the actual collection refusal without inventing a joined result.
+/// # Errors
+/// Refuse an erroneous success projection of the still-unconfirmed observation.
+/// # Panics
+/// Fail if the collection label or the independent observer close status is changed.
+fn assert_unconfirmed_report(
+    observed: ObservedInvocation,
+    close_stop: Option<Result<StopDisposition, Failure>>,
+    stop_case: StopGateCase,
+) -> Result<(), Failure> {
+    assert!(
+        matches!(
+            observed.result,
+            Err(RunFailed::Collection(CollectError::Busy))
+        ),
+        "KE-FACADE-01-collection-refusal-is-unconfirmed"
+    );
+    assert_eq!(
+        close_stop,
+        Some(match stop_case {
+            StopGateCase::Healthy => Ok(StopDisposition::AlreadyLatched),
+            StopGateCase::Poisoned => Err(Failure::Control),
+        })
+    );
+    assert_eq!(observed.cleanup.unregistration_error, Some(NonZeroU32::MIN));
+    assert_eq!(
+        observed.cleanup.stop_failed,
+        matches!(stop_case, StopGateCase::Poisoned)
+    );
+    let Err(failure) = SourceProtectedProbeReport::from_observed(Ok(observed)) else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(failure.labels(), ("worker-collection", "busy"));
+    assert!(failure.source_policy_error().is_none());
+    assert_eq!(failure.power_unregistration_error(), Some(NonZeroU32::MIN));
+    assert_eq!(
+        failure.power_stop_failed(),
+        matches!(stop_case, StopGateCase::Poisoned)
+    );
+    assert_eq!(failure.primary_labels(), None);
+    assert!(failure.retained_configuration().is_none());
     Ok(())
 }
 
@@ -1341,7 +1465,7 @@ fn job_managed_preview_replacement_before_startup_preserves_unused_admission() -
     let config: Config =
         Config::from_managed_preview(source.capture_ke_preview().map_err(Failure::SourcePolicy)?);
     let lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
-    let (invocation, _stop): (PreparedInvocation, crate::nts_ke_experiment::StopHandle) =
+    let (invocation, _stop): (PreparedInvocation, StopHandle) =
         PreparedInvocation::prepare(config).map_err(|failure: Failed| failure.primary)?;
     let replacement: crate::SourceConfigurationSnapshot = authority
         .replace_ke_preview_configuration(&original, addresses, target)

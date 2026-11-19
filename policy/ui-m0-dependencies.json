@@ -1,16 +1,17 @@
 {
   "schema_version": 3,
-  "scope": "Merged Slint 1.18.1 fixture GUI and controlled-loopback experimental engine measurement cohort; Windows Winit/software/accessibility and Linux public custom-platform tests. Exact local spin_on, accesskit_windows and accesskit_consumer source derivatives remain separately pinned. Adds only the main engine normal local time-domain dependency; all other registry identities, primary grants, archive-file exceptions and non-engine scopes retain their reviewed boundaries. No production sample eligibility, clock authority, Windows/native execution or distribution clearance is established by this policy. Existing pinned Garde0.23.0 derive/defaults-off is now also a direct engine validation edge; registry packages, features, patches and grants remain fixed. Execution qualification is separate. Owner-requested 6 November refresh changes seven transitive patch releases; engine Tokio macros now use the separately reviewed Syn3 host closure while Garde retains Syn2. Existing feature/backend, grant, patch and native holds remain. The local consumer substitution retains its upstream MIT/Apache grants and adds original GPL3 regression tests; no feature or target-role expansion follows. The 7 November shared windows-platform owner adds only a local Garde-backed portable service lifecycle; existing registry packages, external target/host features, patches, grants and all native holds remain unchanged. The 9 November subclass lifetime repair adds only the existing windows dependency owner-thread feature, process-owned callback registration and a std-only inert facade control; it grants no Linux AccessKit backend, native execution or broader accessibility qualification. EP1 adds an explicit default-off Engine KE-association prototype; source/graph admission does not establish native TLS/provider or production acquisition qualification.",
-  "lockfile_sha256": "2ccabde33a800b745c42b4fe96dc4a6c300b1961ac87e149d313cae41fde5f2e",
+  "scope": "Merged Slint 1.18.1 fixture GUI and controlled-loopback experimental engine measurement cohort; Windows Winit/software/accessibility and Linux public custom-platform tests. Exact local spin_on, accesskit_windows and accesskit_consumer source derivatives remain separately pinned. Adds only the main engine normal local time-domain dependency; all other registry identities, primary grants, archive-file exceptions and non-engine scopes retain their reviewed boundaries. No production sample eligibility, clock authority, Windows/native execution or distribution clearance is established by this policy. Existing pinned Garde0.23.0 derive/defaults-off is now also a direct engine validation edge; registry packages, features, patches and grants remain fixed. Execution qualification is separate. Owner-requested 6 November refresh changes seven transitive patch releases; engine Tokio macros now use the separately reviewed Syn3 host closure while Garde retains Syn2. Existing feature/backend, grant, patch and native holds remain. The local consumer substitution retains its upstream MIT/Apache grants and adds original GPL3 regression tests; no feature or target-role expansion follows. The 7 November shared windows-platform owner adds only a local Garde-backed portable service lifecycle; existing registry packages, external target/host features, patches, grants and all native holds remain unchanged. The 9 November subclass lifetime repair adds only the existing windows dependency owner-thread feature, process-owned callback registration and a std-only inert facade control; it grants no Linux AccessKit backend, native execution or broader accessibility qualification. EP1 adds an explicit default-off Engine KE-association prototype; source/graph admission does not establish native TLS/provider or production acquisition qualification. The Windows observe CLI links the dependency-free native platform resume adapter. The Engine edge is Windows-only. Native callback delivery and timing qualification remain open.",
+  "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
   "manifests_sha256": {
-    "Cargo.toml": "570bf74e4682b8931172fe066c999cfbca470d2026c5455d629c942d9adfd1eb",
+    "Cargo.toml": "ad2c79c05563db00c49161671353999f8399ed67813285cd2acaa6a14c527828",
     "crates/nevrotick-ui/Cargo.toml": "3548bb4a5793a54c2da94e71aa95eb4336849702b93a455f70262a4bde2819b2",
     "crates/ntp-wire/Cargo.toml": "dc75f8a638a956217d3ecfa666a840b2ecef99c0a06dac7443ab5cf775032579",
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
     "crates/ntp-exchange/Cargo.toml": "ddcfb2276783c3583a5c69b1e9027a7f342612fe15ad177a8c05339e6333e18f",
     "crates/time-core/Cargo.toml": "8b51f9fdfb2b65c757a7ad9e9c592340e2873719db14a19fddeb6747b69bcea6",
-    "crates/nevrotick-engine/Cargo.toml": "89439a0d87f6a74f9d946b4186b01e80062d6ed3cc0709f4904aee3c3050b52c",
-    "crates/windows-platform/Cargo.toml": "0c19f455c8e186291414359f815228a2568cd49bd01bc48ed1dcebb33b654066"
+    "crates/nevrotick-engine/Cargo.toml": "aa764db36ca0cdc8af511b11ae3a17f3663a37434c20900afd0828916ac0755d",
+    "crates/windows-platform/Cargo.toml": "0c19f455c8e186291414359f815228a2568cd49bd01bc48ed1dcebb33b654066",
+    "crates/windows-platform-native/Cargo.toml": "64195ca97a7389b0317447799c0cc65ed4b75c51126728d3870abdbb1964c6a2"
   },
   "first_party_build_scripts": {
     "crates/nevrotick-ui/build.rs": "52bc9b540e36beca77e7586e09449aaf013e035d8137ced2c949b9af0ee50431"
@@ -8067,6 +8068,11 @@
           "target": [
             []
           ]
+        },
+        "windows-platform-native@0.0.0": {
+          "target": [
+            []
+          ]
         }
       },
       "metadata_features": {
@@ -12263,6 +12269,16 @@
             }
           },
           "local_features": {}
+        },
+        "windows-platform-native": {
+          "features": {},
+          "local_features": {
+            "windows-platform-native@0.0.0": {
+              "target": [
+                []
+              ]
+            }
+          }
         }
       }
     },
@@ -14580,6 +14596,11 @@
           ]
         },
         "windows-platform@0.0.0": {
+          "target": [
+            []
+          ]
+        },
+        "windows-platform-native@0.0.0": {
           "target": [
             []
           ]
@@ -18783,6 +18804,11 @@
               "target": [
                 []
               ]
+            },
+            "windows-platform-native@0.0.0": {
+              "target": [
+                []
+              ]
             }
           }
         },
@@ -18894,6 +18920,16 @@
             }
           },
           "local_features": {}
+        },
+        "windows-platform-native": {
+          "features": {},
+          "local_features": {
+            "windows-platform-native@0.0.0": {
+              "target": [
+                []
+              ]
+            }
+          }
         }
       }
     }
@@ -20938,6 +20974,11 @@
             ]
           },
           "windows-platform@0.0.0": {
+            "target": [
+              []
+            ]
+          },
+          "windows-platform-native@0.0.0": {
             "target": [
               []
             ]
@@ -25331,6 +25372,16 @@
               }
             },
             "local_features": {}
+          },
+          "windows-platform-native": {
+            "features": {},
+            "local_features": {
+              "windows-platform-native@0.0.0": {
+                "target": [
+                  []
+                ]
+              }
+            }
           }
         }
       },
@@ -27939,6 +27990,11 @@
             ]
           },
           "windows-platform@0.0.0": {
+            "target": [
+              []
+            ]
+          },
+          "windows-platform-native@0.0.0": {
             "target": [
               []
             ]
@@ -32609,6 +32665,11 @@
                 "target": [
                   []
                 ]
+              },
+              "windows-platform-native@0.0.0": {
+                "target": [
+                  []
+                ]
               }
             }
           },
@@ -32720,6 +32781,16 @@
               }
             },
             "local_features": {}
+          },
+          "windows-platform-native": {
+            "features": {},
+            "local_features": {
+              "windows-platform-native@0.0.0": {
+                "target": [
+                  []
+                ]
+              }
+            }
           }
         }
       }
@@ -32743,9 +32814,69 @@
       "minimum_age": "14 days",
       "incompatible_publish_age": "deny"
     },
-    "status": "accepted-baseline",
+    "status": "resolved",
     "baseline_lockfile_sha256": "2ccabde33a800b745c42b4fe96dc4a6c300b1961ac87e149d313cae41fde5f2e",
     "baseline_registry_sha256": "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15e68b7",
-    "resolution": null
+    "resolution": {
+      "scope": "product",
+      "baseline_lockfile_sha256": "2ccabde33a800b745c42b4fe96dc4a6c300b1961ac87e149d313cae41fde5f2e",
+      "baseline_admission_sha256": "fc127e3bd23af0f0c26497c0c7d629d9d684d38c019e1945268847442a359256",
+      "retained_exception_decisions": [],
+      "acquisition_filesystem": {
+        "bytes": 536870912,
+        "inodes": 16384,
+        "device": 134
+      },
+      "baseline_registry_sha256": "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15e68b7",
+      "candidate_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
+      "candidate_graph_sha256": "32a024ba1a3d1d3d8ff42cfe7511ef050856d8bfcfb95b4df0a947c63669003d",
+      "candidate_registry_sha256": "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15e68b7",
+      "operation": "workspace",
+      "package": null,
+      "version": null,
+      "started_utc": "2026-11-18T20:25:11Z",
+      "finished_utc": "2026-11-18T20:25:20Z",
+      "cutoff_utc": "2026-11-04T20:25:11Z",
+      "cargo_sha256": "84d55d77232a921da96bcf2e1f78532ef5c5221803aae4448d9e220d48ebd808",
+      "configuration_sha256": "0f56f93b35b5d85a490afe3d62f53511f5697465b0d18564ffee805b761232a5",
+      "manifests_sha256": {
+        "Cargo.toml": "ad2c79c05563db00c49161671353999f8399ed67813285cd2acaa6a14c527828",
+        "crates/nevrotick-engine/Cargo.toml": "aa764db36ca0cdc8af511b11ae3a17f3663a37434c20900afd0828916ac0755d",
+        "crates/nevrotick-ui/Cargo.toml": "3548bb4a5793a54c2da94e71aa95eb4336849702b93a455f70262a4bde2819b2",
+        "crates/ntp-exchange/Cargo.toml": "ddcfb2276783c3583a5c69b1e9027a7f342612fe15ad177a8c05339e6333e18f",
+        "crates/ntp-wire/Cargo.toml": "dc75f8a638a956217d3ecfa666a840b2ecef99c0a06dac7443ab5cf775032579",
+        "crates/time-core/Cargo.toml": "8b51f9fdfb2b65c757a7ad9e9c592340e2873719db14a19fddeb6747b69bcea6",
+        "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
+        "crates/windows-platform-native/Cargo.toml": "64195ca97a7389b0317447799c0cc65ed4b75c51126728d3870abdbb1964c6a2",
+        "crates/windows-platform/Cargo.toml": "0c19f455c8e186291414359f815228a2568cd49bd01bc48ed1dcebb33b654066",
+        "third-party/accesskit_consumer/Cargo.toml": "4b6bec8f0be554ffc859b58584a5a51d328ec0ebede23493ea8f7ac849c91318",
+        "third-party/accesskit_windows/Cargo.toml": "61fc6b3f480198d28b9292e3aacf098d135b4eb862bdc59eed034800b827d900",
+        "third-party/spin_on/Cargo.toml": "ebb6b87bd5f5425ecee070e57ab06933813d538488bbe176317a80638690f32b",
+        "tools/crypto-aes-siv-witness/Cargo.toml": "c1040b304ed3f2066ba7f0d2fd1c2492b292c2085cd0cbf13b59807a86ae2f5a",
+        "tools/crypto-aes-siv-witness/fuzz/Cargo.toml": "7166f8ccadec5d550990523cdddc8660c74eb7a3fbc843570851fa63cbac6753",
+        "tools/crypto-cng-lifecycle/Cargo.toml": "ffd149d4b3982586913ed75618537a0e04f85df194251c3eca5817c957b8971e",
+        "tools/crypto-cng-lifecycle/vendor/rustls-cng-crypto/Cargo.toml": "705b266c89c485ed562621a114fcc24f1638f32a4b728fac9157655bce7d5cac",
+        "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier/Cargo.toml": "f97cadbade2e2833889bfb8421737c9a4fe3a0d10adf72f6002867efe32be5e5",
+        "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier/upstream/Cargo.toml": "e3cc8a4ba76111e7c153d31ff28988117442c8f6b522b3f3b1efde9fba4509f2",
+        "tools/state-guidance/engine/Cargo.toml": "24977c21e8278af8296af5600446f0272640f442c8a8729df3c7593facf5f077",
+        "tools/state-guidance/harness/Cargo.toml": "9f53c09ee2f7730ead9694b28e67293f790edb723c31217bdcff6a561a942ea5",
+        "tools/windows-service-fixture/Cargo.toml": "fa074baee9f31ba6e2be957224af3b4cb68cc55e1546a5d0d442be1e01a20b35"
+      },
+      "command": [
+        "/toolchain/bin/cargo",
+        "update",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "failure": null,
+      "added": [],
+      "removed": [],
+      "publication": [],
+      "exception": null,
+      "metadata_inventory_sha256": "5c9cc809a97aa9d2d2474ed310fdc4fe020aac24afc4215bb5be5da62e88cb56",
+      "result_sha256": "4179f7ab37ae74436b253cdb3a84a04e7f96fb5c832c6736185efc540023793f",
+      "generated_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
+      "proposed_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db"
+    }
   }
 }

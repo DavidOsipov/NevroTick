@@ -75,6 +75,24 @@ def fixture_policy():
             "rows": rows}
 
 
+def with_native_platform(policy):
+    """Independently add one dependency-free root and its Windows-only Engine edge."""
+    value = copy.deepcopy(policy)
+    key = "windows-platform-native@0.0.0"
+    value["manifests_sha256"]["crates/windows-platform-native/Cargo.toml"] = "9" * 64
+    row_sets = [value["rows"]]
+    if "engine_ke_association" in value:
+        row_sets.append(value["engine_ke_association"]["rows"])
+    for rows in row_sets:
+        for target, row in rows.items():
+            row["local_features"][key] = {"target": [[]]}
+            row["package_scopes"]["windows-platform-native"] = {
+                "features": {}, "local_features": {key: {"target": [[]]}}}
+            if target == WINDOWS:
+                row["package_scopes"]["nevrotick-engine"]["local_features"][key] = {"target": [[]]}
+    return value
+
+
 def fixture_path_patch():
     """Independent upstream pins; derived bytes in this graph-only fixture are inert."""
     return {"name": "spin_on", "version": "0.1.1", "path": "third-party/spin_on",
@@ -201,12 +219,15 @@ def fixture_metadata(policy, target=HOST):
         nodes.append({"id": package_id, "features": policy["rows"][target]["metadata_features"][key],
                       "dependencies": [], "deps": []})
     locals_ = []
-    for name in MEMBERS:
+    members = (*MEMBERS, "windows-platform-native") if "crates/windows-platform-native/Cargo.toml" in policy["manifests_sha256"] else MEMBERS
+    for name in members:
         package_id = "path+file:///work/fixture/crates/" + name + "#0.0.0"
         locals_.append(package_id)
         packages.append({"id": package_id, "name": name, "version": "0.0.0", "source": None,
                          "license": "GPL-3.0-only" if name == "nevrotick-ui" else "GPL-2.0-only",
-                         "dependencies": [], "features": {}})
+                         "dependencies": [], "features": {}, "links": None,
+                         "manifest_path": "/work/fixture/crates/" + name + "/Cargo.toml",
+                         "targets": [{"kind": ["lib"]}]})
         nodes.append({"id": package_id, "features": [], "dependencies": [], "deps": []})
     by_key = {package["name"] + "@" + package["version"]: package for package in packages}
     by_id = {node["id"]: node for node in nodes}
@@ -237,6 +258,16 @@ def fixture_metadata(policy, target=HOST):
     edge("time-core@0.0.0", "time-domain@0.0.0")
     edge("nevrotick-engine@0.0.0", "ntp-wire@0.0.0")
     edge("nevrotick-engine@0.0.0", "time-domain@0.0.0")
+    if "windows-platform-native" in members:
+        before, after = by_key["nevrotick-engine@0.0.0"], by_key["windows-platform-native@0.0.0"]
+        before["dependencies"].append({"name": "windows-platform-native", "rename": None,
+            "req": "=0.0.0", "kind": None, "target": "cfg(windows)", "optional": False,
+            "uses_default_features": True, "features": []})
+        if target == WINDOWS:
+            node = by_id[before["id"]]
+            node["deps"].append({"name": "windows_platform_native", "pkg": after["id"],
+                                 "dep_kinds": [{"kind": None, "target": "cfg(windows)"}]})
+            node["dependencies"].append(after["id"])
     edge("ntp-exchange@0.0.0", "ntp-wire@0.0.0")
     edge("ntp-exchange@0.0.0", "time-domain@0.0.0")
     edge("ntp-exchange@0.0.0", "time-core@0.0.0", "dev")
@@ -572,13 +603,15 @@ class SlintProfileControls(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(PROFILE.Incomplete):
                 PROFILE.validate_policy_shape(changed)
 
-    def test_patch_checks_follow_all_nine_source_scopes(self):
+    def test_patch_checks_follow_all_ten_source_scopes(self):
         for lane in ("portable", "windows", "dependencies"):
             rows = VERIFY.commands(lane, schema_version=3, patched_packages=("spin_on",))
             self.assertEqual(sum(label.startswith("dependency-tree-") for label, _ in rows),
-                             18 if lane == "dependencies" else 9)
+                             20 if lane == "dependencies" else 10)
+            target = WINDOWS if lane == "windows" else HOST
+            self.assertIn("dependency-tree-windows-platform-native-" + target, dict(rows))
             if lane == "portable":
-                self.assertEqual(rows[10][0], "patch-compiler")
+                self.assertEqual(rows[11][0], "patch-compiler")
                 for name in ("product-tests:spin_on", "doctests:spin_on"):
                     command = dict(rows)[name]
                     self.assertIn("--manifest-path", command)
@@ -839,14 +872,19 @@ class SlintProfileControls(unittest.TestCase):
             self.assertIn("--offline", rows[0][1])
             self.assertIn("normal,build", rows[1][1])
             if lane == "dependencies":
-                self.assertEqual(len(rows), 20)
+                self.assertEqual(len(rows), 22)
                 for label, command in rows:
                     if label in ("dependency-" + HOST, "dependency-" + WINDOWS):
                         self.assertIn("--metadata-path", command)
             else:
-                self.assertIn(rows[9][0], ("format", "windows-compiler"))
+                self.assertIn(rows[10][0], ("format", "windows-compiler"))
             self.assertEqual(sum(label.startswith("dependency-tree-") for label, _ in rows),
-                             16 if lane == "dependencies" else 8)
+                             18 if lane == "dependencies" else 9)
+            targets = (HOST, WINDOWS) if lane == "dependencies" else (HOST if lane == "portable" else WINDOWS,)
+            for target in targets:
+                names = [label for label, _ in rows if label.startswith("dependency-tree-") and label.endswith(target)]
+                self.assertEqual(names, ["dependency-tree-" + target] + ["dependency-tree-" + name + "-" + target
+                    for name in (*MEMBERS, "windows-platform-native")])
 
     def test_deny_grants_and_duplicate_exceptions_are_exact_and_keep_other_bans(self):
         base = (ROOT / "deny.toml").read_text()
@@ -912,6 +950,72 @@ class SlintProfileControls(unittest.TestCase):
                 if failed_scope != "workspace":
                     self.assertIn("--package", observed[-1][0])
                     self.assertIn("nevrotick-ui", observed[-1][0])
+
+
+class NativePlatformProfileControls(unittest.TestCase):
+    def setUp(self):
+        self.policy = with_native_platform(fixture_policy())
+        age = patch.object(PROFILE.COOLDOWN, "validate_policy_admission")
+        age.start()
+        self.addCleanup(age.stop)
+        pin = patch.object(PROFILE, "REVIEWED_POLICY_SHA256", PROFILE.canonical_policy_sha256(self.policy))
+        pin.start()
+        self.addCleanup(pin.stop)
+
+    def test_actual_format_native_metadata_has_both_roots_and_only_windows_engine_edge(self):
+        for target in (HOST, WINDOWS):
+            with self.subTest(target=target):
+                data = fixture_metadata(self.policy, target)
+                PROFILE.validate_metadata(target, json.dumps(data), self.policy)
+                self.assertEqual(len(data["workspace_members"]), 8)
+                engine = next(p for p in data["packages"] if p["name"] == "nevrotick-engine")
+                native = next(p for p in data["packages"] if p["name"] == "windows-platform-native")
+                node = next(n for n in data["resolve"]["nodes"] if n["id"] == engine["id"])
+                self.assertEqual(native["dependencies"], [])
+                self.assertEqual(native["features"], {})
+                self.assertEqual(native["targets"], [{"kind": ["lib"]}])
+                self.assertEqual([edge for edge in engine["dependencies"] if edge["name"] == "windows-platform-native"],
+                    [{"name": "windows-platform-native", "rename": None, "req": "=0.0.0", "kind": None,
+                      "target": "cfg(windows)", "optional": False, "uses_default_features": True, "features": []}])
+                self.assertEqual(native["id"] in node["dependencies"], target == WINDOWS)
+                tree = fixture_package_trees(target)["nevrotick-engine"]
+                native_row = "`-- windows-platform-native v0.0.0 (/work/fixture/crates/windows-platform-native)|\n"
+                PROFILE.validate_tree(target, tree + (native_row if target == WINDOWS else ""),
+                                      self.policy, scope="nevrotick-engine")
+                with self.assertRaises(PROFILE.Incomplete):
+                    PROFILE.validate_tree(target, tree + ("" if target == WINDOWS else native_row),
+                                          self.policy, scope="nevrotick-engine")
+
+    def test_native_scope_refuses_foreign_features_dependencies_roles_and_target_leaks(self):
+        key = "windows-platform-native@0.0.0"
+        for change in ("gnu-engine", "missing-windows-engine", "foreign-owner", "native-feature", "native-host", "registry-edge"):
+            value = copy.deepcopy(self.policy)
+            row = value["rows"][WINDOWS]
+            if change == "gnu-engine": value["rows"][HOST]["package_scopes"]["nevrotick-engine"]["local_features"][key] = {"target": [[]]}
+            if change == "missing-windows-engine": row["package_scopes"]["nevrotick-engine"]["local_features"].pop(key)
+            if change == "foreign-owner": row["package_scopes"]["windows-platform"]["local_features"][key] = {"target": [[]]}
+            if change == "native-feature": row["local_features"][key] = {"target": [["extra"]]}
+            if change == "native-host": row["local_features"][key] = {"host": [[]]}
+            if change == "registry-edge": row["package_scopes"]["windows-platform-native"]["features"]["helper@2.0.0"] = {"target": [[]]}
+            with self.subTest(change=change), self.assertRaises(PROFILE.Incomplete):
+                PROFILE.validate_policy_shape(value)
+
+    def test_native_metadata_refuses_foreign_path_grant_features_and_execution(self):
+        for change in ("path", "grant", "declared-feature", "resolved-feature", "declaration", "edge", "build", "macro", "binary", "links"):
+            data = fixture_metadata(self.policy, WINDOWS)
+            native = next(p for p in data["packages"] if p["name"] == "windows-platform-native")
+            node = next(n for n in data["resolve"]["nodes"] if n["id"] == native["id"])
+            if change == "path": native["manifest_path"] = "/foreign/Cargo.toml"
+            if change == "grant": native["license"] = "MIT"
+            if change == "declared-feature": native["features"] = {"extra": []}
+            if change == "resolved-feature": node["features"] = ["extra"]
+            if change == "declaration": native["dependencies"] = [{"name": "helper"}]
+            if change == "edge": node["dependencies"] = [data["packages"][0]["id"]]
+            if change in ("build", "macro", "binary"):
+                native["targets"] = [{"kind": [{"build": "custom-build", "macro": "proc-macro", "binary": "bin"}[change]]}]
+            if change == "links": native["links"] = "foreign"
+            with self.subTest(change=change), self.assertRaises(PROFILE.Incomplete):
+                PROFILE.validate_metadata(WINDOWS, json.dumps(data), self.policy)
 
 
 if __name__ == "__main__":

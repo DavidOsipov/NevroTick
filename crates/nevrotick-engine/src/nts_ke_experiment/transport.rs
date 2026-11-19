@@ -14,136 +14,55 @@ use rustls::{CipherSuite, ClientConfig, ClientConnection, StreamOwned, Supported
 use zeroize::Zeroizing;
 
 use super::profile::StrictProfile;
-use super::transport_fault::{self, TransportFault};
-use super::transport_fault::{SetupStage, TlsIoStage};
+use super::transport_fault::{self, SetupStage, TlsIoStage, TransportIo};
 use super::{AssociationCandidate, AssociationOwner, ProviderScope, request::DirectionalKeys};
-use super::{
-    Config, Control, Failed, Failure, IoPhase, SCRATCH_LIMIT, encode_offer, read_response,
-};
+use super::{Config, Control, Failed, Failure, SCRATCH_LIMIT, encode_offer, read_response};
 
-/// One numeric socket whose every operation shares the original job deadlines.
+/// The actual numeric Windows socket and its original KE I/O currentness owner.
 struct DeadlineStream<'a> {
     /// Sole owned connection; destruction closes it without another job.
     socket: TcpStream,
-    /// Original immutable deadlines and serialized publication authority.
-    control: &'a Control,
-    /// Handshake uses twenty seconds; subsequent work uses the same-origin sixty.
-    phase: IoPhase,
-    /// First fault is sticky, including interruption and suppressed write errors.
-    fault: Option<TransportFault>,
-}
-
-impl DeadlineStream<'_> {
-    /// Obtain fresh remaining time, refusing all I/O after the first fault.
-    ///
-    /// # Errors
-    /// Return a nonretryable error after an earlier fault. Otherwise latch a
-    /// deadline, cancellation or control refusal and return its I/O category.
-    fn timeout(&mut self) -> io::Result<Duration> {
-        if self.fault.is_some() {
-            // Rustls retries Interrupted internally. A nonretryable subsequent
-            // error stops that loop; resolve() still reports its original cause.
-            return Err(io::ErrorKind::Other.into());
-        }
-        match self.control.remaining(self.phase) {
-            Ok(duration) => Ok(duration),
-            Err(failure) => {
-                self.fault = Some(TransportFault::Control(failure));
-                let kind = match failure {
-                    Failure::Deadline => io::ErrorKind::TimedOut,
-                    Failure::Cancelled => io::ErrorKind::Interrupted,
-                    _ => io::ErrorKind::Other,
-                };
-                Err(kind.into())
-            }
-        }
-    }
-
-    /// Latch a native refusal or reject success observed after expiry/stop.
-    ///
-    /// # Errors
-    /// Retain the supplied I/O error, or refuse a nominal success if the fresh
-    /// deadline/cancellation guard fails. No successful value escapes refusal.
-    fn completed<T>(&mut self, result: io::Result<T>) -> io::Result<T> {
-        match result {
-            Ok(value) => self.timeout().map(|_| value),
-            Err(error) => {
-                if self.fault.is_none() {
-                    self.fault = Some(TransportFault::Io(error.kind()));
-                }
-                Err(error)
-            }
-        }
-    }
-
-    /// Preserve primary TLS refusal or restore a retried/hidden transport fault.
-    ///
-    /// # Errors
-    /// Preserve a supplied TLS invalid-data failure before its best-effort alert
-    /// fault. Otherwise restore the first latched control/stage-mapped I/O cause.
-    /// With no latched fault, preserve the supplied result.
-    fn resolve<T>(
-        &self,
-        result: Result<T, Failure>,
-        stage: fn(io::ErrorKind) -> Failure,
-    ) -> Result<T, Failure> {
-        transport_fault::resolve(self.fault, result, stage)
-    }
-
-    /// Recheck current authority after CPU/native-verifier work without I/O.
-    ///
-    /// # Errors
-    /// Refuse an existing transport fault, expired deadline, cancellation or
-    /// unavailable control state; preserve the first exact failure category.
-    fn current(&mut self, stage: fn(io::ErrorKind) -> Failure) -> Result<(), Failure> {
-        let result = self
-            .timeout()
-            .map(|_| ())
-            .map_err(|error| stage(error.kind()));
-        self.resolve(result, stage)
-    }
+    /// Owns all pre/post-call observations and first-failure retention.
+    admission: TransportIo<'a>,
 }
 
 impl Read for DeadlineStream<'_> {
-    /// Set a fresh finite timeout, perform one read, then refuse late completion.
+    /// Apply the original handshake/exchange time and current definition for one read.
     ///
     /// # Errors
-    /// Propagate timeout-setting or read failure, including interruption. Refuse
-    /// any latched fault or deadline/control failure before or after the read.
+    /// Preserve timeout-setting, read or pre/post-call currentness failure.
     fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
-        let timeout = self.timeout()?;
-        let setting = self.socket.set_read_timeout(Some(timeout));
-        self.completed(setting)?;
-        let result = self.socket.read(output);
-        self.completed(result)
+        self.admission.transfer(
+            &mut self.socket,
+            |socket: &mut TcpStream, timeout: Duration| socket.set_read_timeout(Some(timeout)),
+            |socket: &mut TcpStream| socket.read(output),
+        )
     }
 }
 
 impl Write for DeadlineStream<'_> {
-    /// Set a fresh finite timeout, perform one write, then refuse late completion.
+    /// Apply the original handshake/exchange time and current definition for one write.
     ///
     /// # Errors
-    /// Propagate timeout-setting or write failure, including interruption. Refuse
-    /// any latched fault or deadline/control failure before or after the write.
+    /// Preserve timeout-setting, write or pre/post-call currentness failure.
     fn write(&mut self, input: &[u8]) -> io::Result<usize> {
-        let timeout = self.timeout()?;
-        let setting = self.socket.set_write_timeout(Some(timeout));
-        self.completed(setting)?;
-        let result = self.socket.write(input);
-        self.completed(result)
+        self.admission.transfer(
+            &mut self.socket,
+            |socket: &mut TcpStream, timeout: Duration| socket.set_write_timeout(Some(timeout)),
+            |socket: &mut TcpStream| socket.write(input),
+        )
     }
 
-    /// Flush this socket under the same guard, without resetting its deadline.
+    /// Flush under the same current definition and original deadline.
     ///
     /// # Errors
-    /// Propagate timeout-setting or flush failure. Refuse any latched fault or
-    /// deadline/control failure before or after the flush without retrying it.
+    /// Preserve timeout-setting, flush or pre/post-call currentness failure.
     fn flush(&mut self) -> io::Result<()> {
-        let timeout = self.timeout()?;
-        let setting = self.socket.set_write_timeout(Some(timeout));
-        self.completed(setting)?;
-        let result = self.socket.flush();
-        self.completed(result)
+        self.admission.transfer(
+            &mut self.socket,
+            |socket: &mut TcpStream, timeout: Duration| socket.set_write_timeout(Some(timeout)),
+            Write::flush,
+        )
     }
 }
 
@@ -295,27 +214,30 @@ fn reject_buffered(connection: &mut ClientConnection) -> Result<(), Failure> {
 /// cause. Partial owned keys/cookies drop on refusal.
 fn prepare<'a>(
     stream: &mut StreamOwned<ClientConnection, DeadlineStream<'a>>,
-    config: &'a Config,
     peer: SocketAddr,
 ) -> Result<InternalCandidate<'a>, Failure> {
+    let config: &'a Config = stream.sock.admission.config();
     let handshake = stream
         .conn
         .complete_io(&mut stream.sock)
         .map_err(|error| transport_fault::project_io(TlsIoStage::Handshake, &error));
-    stream.sock.resolve(handshake, Failure::Handshake)?;
-    stream.sock.current(Failure::Handshake)?;
+    stream
+        .sock
+        .admission
+        .resolve(handshake, Failure::Handshake)?;
+    stream.sock.admission.current(Failure::Handshake)?;
     let profile = StrictProfile::capture(&stream.conn)?;
-    stream.sock.phase = IoPhase::Exchange;
+    stream.sock.admission.begin_exchange();
     let mut storage = [0_u8; 16];
     let offer = encode_offer(&mut storage)?;
     let request = stream
         .write_all(offer.request_bytes())
         .and_then(|()| stream.flush())
         .map_err(|error| transport_fault::project_io(TlsIoStage::Request, &error));
-    stream.sock.resolve(request, Failure::Request)?;
+    stream.sock.admission.resolve(request, Failure::Request)?;
     let response = read_response(stream, config, &offer);
-    let reply = stream.sock.resolve(response, Failure::Response)?;
-    stream.sock.current(Failure::Response)?;
+    let reply = stream.sock.admission.resolve(response, Failure::Response)?;
+    stream.sock.admission.current(Failure::Response)?;
     reject_buffered(&mut stream.conn)?;
     if reply.c2s_context.context_bytes() != &[0, 0, 0, 15, 0]
         || reply.s2c_context.context_bytes() != &[0, 0, 0, 15, 1]
@@ -340,13 +262,13 @@ fn prepare<'a>(
             Some(reply.s2c_context.context_bytes()),
         )
         .map_err(|_| Failure::Exporter)?;
-    stream.sock.current(Failure::Response)?;
+    stream.sock.admission.current(Failure::Response)?;
     Ok(InternalCandidate {
         config,
-        control: stream.sock.control,
+        control: stream.sock.admission.control(),
         peer,
         udp: reply.udp,
-        expiry: stream.sock.control.expiry,
+        expiry: stream.sock.admission.control().expiry,
         profile,
         aead,
         c2s_key,
@@ -362,14 +284,14 @@ fn prepare<'a>(
 /// TLS-writer flush failure, or already-buffered post-EOM plaintext/error. A
 /// successful return reports only the local close-notify drain and flush.
 fn close(stream: &mut StreamOwned<ClientConnection, DeadlineStream<'_>>) -> Result<(), Failure> {
-    stream.sock.current(Failure::Shutdown)?;
+    stream.sock.admission.current(Failure::Shutdown)?;
     stream.conn.send_close_notify();
     while stream.conn.wants_write() {
         let written = stream
             .conn
             .write_tls(&mut stream.sock)
             .map_err(|error| transport_fault::project_io(TlsIoStage::Shutdown, &error));
-        if stream.sock.resolve(written, Failure::Shutdown)? == 0 {
+        if stream.sock.admission.resolve(written, Failure::Shutdown)? == 0 {
             return Err(Failure::Shutdown(io::ErrorKind::WriteZero));
         }
     }
@@ -378,8 +300,8 @@ fn close(stream: &mut StreamOwned<ClientConnection, DeadlineStream<'_>>) -> Resu
         .flush()
         .and_then(|()| stream.conn.writer().flush())
         .map_err(|error| transport_fault::project_io(TlsIoStage::Shutdown, &error));
-    stream.sock.resolve(flushed, Failure::Shutdown)?;
-    stream.sock.current(Failure::Shutdown)?;
+    stream.sock.admission.resolve(flushed, Failure::Shutdown)?;
+    stream.sock.admission.current(Failure::Shutdown)?;
     reject_buffered(&mut stream.conn)
 }
 
@@ -394,26 +316,22 @@ pub(super) fn establish<'a>(
     control: &'a Control,
     provider: &'a ProviderScope<'a>,
 ) -> Result<AssociationOwner<'a>, Failed> {
-    control.remaining(IoPhase::Handshake)?;
-    let timeout = control.remaining(IoPhase::Handshake)?;
-    let socket = TcpStream::connect_timeout(&config.peer, timeout)
-        .map_err(|error| Failure::Connect(error.kind()))?;
-    control.remaining(IoPhase::Handshake)?;
+    let mut admission: TransportIo<'_> = TransportIo::new(config, control);
+    let socket: TcpStream = admission.connect(|peer: SocketAddr, timeout: Duration| {
+        TcpStream::connect_timeout(&peer, timeout)
+    })?;
     let peer = socket
         .peer_addr()
         .map_err(|error| Failure::Connect(error.kind()))?;
     if peer != config.peer {
         return Err(Failure::Peer.into());
     }
-    let socket = DeadlineStream {
-        socket,
-        control,
-        phase: IoPhase::Handshake,
-        fault: None,
-    };
-    let mut stream = StreamOwned::new(connection(config)?, socket);
-    let candidate = prepare(&mut stream, config, peer);
-    let closed = close(&mut stream);
+    admission.current(Failure::Handshake)?;
+    let socket: DeadlineStream<'_> = DeadlineStream { socket, admission };
+    let mut stream: StreamOwned<ClientConnection, DeadlineStream<'_>> =
+        StreamOwned::new(connection(config)?, socket);
+    let candidate: Result<InternalCandidate<'a>, Failure> = prepare(&mut stream, peer);
+    let closed: Result<(), Failure> = close(&mut stream);
     drop(stream);
     // Retain an independently observed close refusal alongside its primary.
     match (candidate, closed) {

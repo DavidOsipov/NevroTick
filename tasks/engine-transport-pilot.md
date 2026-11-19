@@ -24954,3 +24954,1593 @@ admission and remaining per-file mutation gates stay open.
 | Windows observations | `native-default-preparation/native-observations/verification.json` | `c5736f13567870ec0329639bbe8944ea4af168825d37a6c17f5c8d4bcfaa4b3a` |
 | Independent Windows readback | `native-default-preparation/independent-native-readback.json` | `cab274298694ef69f76f9f70cd66abd87f093f494f4c0256f1d698b45f1eb4e7` |
 | Owned workspace retirement | `native-default-preparation/owned-workspace-retirement.json` | `316eb894ae72efcc5d79c4b71e4b67034da1807f5a849da71dddeb7ebaa0a3f8` |
+
+###### Automatic resume invalidation in the Windows observe CLI
+
+This W11-W02/S2.1 source child routes the automatic-resume event to the
+actual plain observe invocation under TQ-07/09 and CHECK-11/21/25/27.
+After preparing its sockets, the CLI subscribes before emitting bound
+records or executing the pilot. The safe subscription accepts one action,
+which delivers invalidation through the invocation's existing
+`ControlHandle`. An unrelated event leaves the action pending. Automatic
+resume consumes it once. The existing owner guards decide whether pending
+work can publish. A completed result keeps its historical facts.
+
+The dependency-free `windows-platform-native` leaf owns the two PowrProf
+calls. Engine and the existing portable platform crate retain
+`forbid(unsafe_code)`, as does the leaf's portable callback state module.
+The new FFI leaf uses `deny(unsafe_code)` and three item-local
+`expect(unsafe_code)` attributes covering the import block and the two
+documented calls. Callback storage lasts for the process and cannot be
+rebound. Close disarms delivery before attempting native unregistration,
+with no slot lock held across that call. Removed captures remain owned until
+the unregistration attempt finishes. The CLI preserves an earlier error and
+reports cleanup failure separately. Registration failure refuses the run
+before any bound row or packet is emitted. The native adapter is a Windows-only
+Engine dependency under both default and EP1.
+
+The detached candidate started from `2dd3f880`. The 613-input source and
+dependency admission reproduced the complete lock with zero registry
+additions or removals. The actual four target/profile graph rows passed all
+selected metadata and scoped tree validation. GNU ran two real slot tests,
+one compile-fail subscription visibility test and both CLI transport/sink
+tests. Formatting and the GNU/MSVC leaf Clippy checks passed. The Windows
+CLI passed target Clippy and the admitted release link. Static inspection
+found both registration functions in the `POWRPROF.dll` import table.
+The initial MSVC documentation lint refusal was retained and corrected.
+The four affected Python verifier suites passed all 219 controls. The
+final source readback (`d00772c2d282ef4e9af11fe0b5e45304b602abb249ab48061ddb89521a46510c`)
+matched every linked input except the qualification inventory, the approved
+baseline entry and the Engine dependency-profile test fixture. Those edits
+do not enter the Windows executable.
+
+This route acts on delivered automatic-resume notifications. Physical
+unattended delivery, delayed dispatch, sleep-to-hibernate and runtime
+mitigations still require the W11-W02 observations.
+The route supplies invalidation evidence only. Finite physical timing
+uncertainty, valid mapping issuance, Engine-to-Core admission and any
+clock effect remain separate.
+
+| Evidence under `engine-native-resume-20261119.9etBs0Pi` | Relative path | SHA-256 |
+| --- | --- | --- |
+| Leaf and CLI checks | `leaf-verification-02/verification.json` | `83c2ccf230f4b8e7755429b7c069762fc4effa2a95f0d47ca84979b61e1b391c` |
+| Local graph resolution | `graph-resolution-01/cooldown-resolution.json` | `dab93a9af1a6287719f9f9f10392083fb4d4630d354d4f53357b01d991fe04a9` |
+| Actual GNU/MSVC default and EP1 graphs | `graph-verification-01/verification.json` | `702b186b85964924f3c9d0d81cba1a16da9d4c714ad8a67b3b91ba89165c4da8` |
+| Windows release cross-link | `link-01/verification.json` | `7132cb78a5f1182311a4e8cfd21d7567431c270841b8fed212d436a65248640d` |
+
+###### Windows resume registration and close smoke
+
+The default Engine cohort now includes the Windows-only
+`processing_guard_tests::native_resume_subscription_registers_and_closes`.
+It calls the same safe subscription used by the observe CLI with an inert
+action, then requires explicit successful close. The gated launcher exposes
+one fixed test selector and preserves the four-process job bound. The 74
+portable runner controls and all 17 MSVC build lanes passed.
+
+On product `337b7bda7367ddbe76a7f3545b757473a4c73aad0b6e2badca440c0743e854b3`,
+the ordinary-user Windows lane matched all 255 independently predicted names.
+The seven runner observations matched their expected outcomes and all 13
+selected cases passed. The resume case
+executed once with the other 254 filtered and confirmed successful native
+registration and unregistration. Its job reached the four-process bound
+and recorded zero active processes after cleanup. The test neither caused
+a power transition nor executed the observe CLI. Automatic-resume delivery,
+dispatch latency, calibrated physical bounds and Core admission remain open.
+Independent readback checked the raw Windows files and the drained job.
+Retirement removed the duplicate Windows stage and temporary WSL build work
+after preserving 61 raw Windows files and all four linked image and PDB pairs.
+
+| Evidence under `engine-resume-native-smoke-20261119.xxdrjcrm` | Relative path | SHA-256 |
+| --- | --- | --- |
+| Windows cross-build and exact roster custody | `build-01/verification.json` | `7b3b5f6f68787923cd410bb52bdf7337f288dd71e3b23790580f5ae077f25ce6` |
+| Windows observations | `native-01/verification.json` | `a2c941fbfb45372f0910ae4e3247c4e65620850576ef9aa8bd49436c104eb70d` |
+| Independent readback | `independent-native-readback.json` | `159c8451a1ed400a6d885ea7487882a410ae2515e83ace4cdbd62d1201a15674` |
+| Temporary artifact retirement | `owned-workspace-retirement.json` | `e2f8c351a0d7aa318d9b2afec2c942b1a961ece4a8826f09c6b65781d4f937a6` |
+
+###### Suspend and automatic-resume invalidation
+
+Under W11-W02/S2.1, TQ-07/09 and CHECK-11/21/25/27, the plain observe
+CLI's existing power subscription accepts `PBT_APMSUSPEND` (`4`) as well
+as `PBT_APMRESUMEAUTOMATIC` (`18`). The first delivered qualifying event
+takes the one-shot action. Later duplicates and unrelated event IDs leave
+state alone. The action uses the same Engine watch, so the generation update
+takes effect at the existing write guard. An already serialized send or
+reply commit keeps its historical outcome. Explicit close still disarms the
+original action before native unregistration. The change adds no imports or
+unsafe exceptions. The [PowrProf callback contract](https://learn.microsoft.com/en-us/windows/win32/api/powerbase/nf-powerbase-powerregistersuspendresumenotification)
+names both selected IDs and leaves the setting payload unused.
+
+The focused test failed on staged tree `73ad39ee` plus the regression test,
+with exit 101 at the `first event 4` delivery assertion. The final 613-input
+product `34687713737a79a5e958b6667378c01881f24c6ff6a2d152f10e2c813976503e`
+passes both event orders, duplicate and unrelated IDs, and disarm. The
+compile-fail visibility doctest, GNU/MSVC leaf Clippy, MSVC observe Clippy,
+both GNU CLI tests, and three existing Engine series controls passed. The
+series controls cover writable and reply invalidation before the final effect
+and preservation of a historical reply after later Stop. The first focused
+GREEN attempt stopped at formatting. Only the earlier smoke test's whitespace
+changed to resolve that refusal. All eleven lanes passed on the final source,
+and the configured MSVC release link emitted `nevrotick-observe.exe` with the
+same two PowrProf imports.
+
+The earlier Windows registration/close result retains its own candidate.
+Physical event delivery and ordering across S3/S4 and Modern Standby,
+calibrated clock mapping and positive Core admission remain open.
+
+| Evidence under `engine-suspend-observer-20261119.QuwSowZh` | SHA-256 |
+| --- | --- |
+| `red-01/verification.json` | `39cbeec9debe4771a2b5e6f68f56aa753487c6c842630a18217741a671ba6ca7` |
+| `green-01/verification.json` | `473fea318f4bffc860f8fcdb03941c6d8fac4b067673a57fffc9c74fc1538ac9` |
+| `green-02/verification.json` | `9b3c6add05ef5e4eb261bda2be6a9fcd3c16a1c801bfac946fb4f833c682cc69` |
+| `link-02/verification.json` | `1da224528968c106d6b6e29b054e446474532e2a72f061ec74d42cc6ccfbf821` |
+
+###### Protected ledger chronology partition — first outcomes
+
+The isolated GNU EP1 chronology batch on the earlier published
+`2dd3f880` product executed all 650 baseline cases and 36 selected mutations.
+The full native run recorded 25 behavioral catches, seven compiler refusals,
+four survivors and zero timeouts. The raw score was 25/29 (86.21%). All 707
+retained artifact identities and every causal disposition were read back
+independently. The full 217-descriptor ledger gate remains open.
+
+The independently executed focused equality test distinguishes the
+`trailing > now` → `trailing >= now` survivor at exact processing time.
+The private retired-first guard survivors need a genuine second ordinal
+while no prior authentication exists. The remaining staged-serial/phase
+survivor needs current-caller review before any equivalence decision.
+Integrating a new test changes the roster and requires a fresh exact
+candidate binding. The earlier result and raw outcome count retain their scope.
+
+Evidence under `engine-receive-effect-guards-20261118-v1/ke-ledger-selection-preparation/chronology-partition-run-01`
+includes terminal `2e633f6440877b4016885397909e7458e1493ea3c3a7252508cc9f4685afb4fd`
+and independent causal/artifact readback
+`b036aae6ef014e18ea40b687f10a0906a2da99e665d72783dda64bca793d75d4`.
+
+The two discriminating controls now pass on the staged native adapter's
+613-input base plus the exact Engine test overlay. The managed first-successor
+case first returns reservation one, retires a genuine request at ordinal two
+with no prior authentication, and verifies both refusal of successor admission
+and a valid terminal commit. The ordinary GNU EP1 run matched its previous
+560-name roster plus both controls. All 562 ordinary cases and the original
+90 doctests passed. GNU EP1 test-target Clippy passed.
+
+The focused processing equality case detects the overstrict comparison. The
+managed ordinal-two case independently detects each of the two widened
+retired-first guards. Each fault compiled and reached its exact assertion
+with exit 101. The original healthy compiler and behavioral results are
+retained. The initial formatting refusals remain charged. These focused
+faults receive zero generated mutation credit. Independent review of the
+remaining staged serial/phase survivor found both receiving callers retain
+exclusive ledger ownership from successful charge through read-only staging
+to the final check. Both mismatch predicates are false at that check along
+those callers. A direct private-helper call with an escaped charge could make
+them differ. Keep the guard and review any exclusion against the exact next
+candidate and generated outcome. Re-admit the baseline before that campaign.
+
+| Evidence under `engine-receive-effect-guards-20261118-v1/ke-ledger-retired-ordinal-control` | Relative path | SHA-256 |
+| --- | --- | --- |
+| Healthy cases and 652-case EP1 baseline | `integrated-controls-02/healthy/verification.json` | `ae12d13731327b9715e58280047d9428083cd284f16614300b72a320615c2dbd` |
+| Exact processing equality fault | `integrated-controls-02/time-equality/verification.json` | `7c09a9d75882bbdedea0eaa95f6cb691edfa211c66a1c5c6a9a9e90ba0efbc78` |
+| Two retired-first guard faults | `integrated-controls-03/verification.json` | `d23daa6086b27d7799cb77495cfa788de5d6f18a0437f40cceb7ef5c5b0aec8d` |
+
+###### Integrated development and closed KE re-admission
+
+For CHECK-19/25/26/27, the fixed checkpoint is the exact current combined
+development result, physical KE reader admission and complete GNU KE inventory.
+The 613-input product `34687713737a79a5e958b6667378c01881f24c6ff6a2d152f10e2c813976503e`
+retains its identity after the documentation-only fast-forward to `e81d48f`.
+The combined run's complete 689-input freeze remains historical. The updated
+development plan is outside the product and affected verification inputs.
+
+| Stage and skills | Action and status | Owner and remaining condition |
+| --- | --- | --- |
+| Planning and preflight, `plan-code-change`, `qa-test-planning`, `qa-environment-preflight`, `qa-regression-selection`, `wsl-cleanup` | Executed. Reclaimed 569,266,176 bytes of obsolete audit artifacts, admitted the unchanged tools/vendor, and checked the frozen staged source and format before the combined run. | Engine coordinator. The durable floor stays 5 GiB at launch. |
+| Integrated development and review, `qa-test-orchestrator`, `qa-independent-review` | Executed. All 19 configured lanes passed on the frozen candidate. GNU executed 562 EP1 and 280 default cases in each ordinary/optimized mode, 90 EP1 and 89 default doctests, and 16 selected Core cases. Windows-target compiler and Clippy checks passed. Independent readback checked all raw lane hashes, names and custody. | Physical Windows delivery and calibrated acquisition retain their existing owners. |
+| Reader repair and qualification, `qa-failure-triage`, `qa-regression-selection`, `qa-final-qualification` | Executed. The reader requires both new ledger case names and rejects their same-count substitutes. The stale equivalence fixture omitted resolution manifests required by the current Root admission. It now copies the exact manifest selection from the admitted dependency policy. The suite's first run also hit the low-capacity `/tmp`. A direct tmpfs path then tripped reserved-path controls. All 387 reader tests passed with an isolated `/tmp` mount. Actual receipt and exact roster re-admission passed. | Engine coordinator. All 57 helper/source pins are refreshed. The unchanged graph evidence was reused after all manifest, lock, checker and raw command hashes matched. |
+| Enumeration and handoff, `qa-mutation-testing`, `qa-context-checkpoint`, `qa-independent-review` | Executed. `verify-engine-analysis.py --profile ke_association --lane enumerate --subject all --tool-admission-profile stable-core` listed all 13 GNU owners and 765 descriptors on the closed role. The 217 ledger descriptors match the prior identities. The owner exited and retired disposable work after retaining the actual listing receipts. | Ledger owner. The 90% line and 95% per-file mutation gates remain open for this candidate. Review current generation gaps, then use a bounded lease with the exact roster and inventory. The earlier failed ledger partition keeps its original result. |
+
+The reader repair changes selection and fixture custody. Native effects, UI,
+and package checks belong to their existing phase owners. Required protocol
+fuzz work retains its target-specific admission and holds. Formal work remains
+deferred under OD-10. The closed role retains empty campaign inventories and
+equivalences. The current listing supplies no generated mutation outcomes.
+
+| Evidence | SHA-256 |
+| --- | --- |
+| `engine-resume-combined-c8889a8c-20261119-v1/reports/run-01/verification.json` | `97c8ca2579c01cc22714951503d0b69f8a30eea0f385d9e01f85f2e8baa93b24` |
+| `engine-resume-combined-c8889a8c-20261119-v1/independent-combined-readback.json` | `8d373f71a1f8eba70aff07d93cf50c2bf1c729f402054a92aeea98b68c5bd1cb` |
+| `engine-resume-combined-c8889a8c-20261119-v1/closed-ke-python-readers-03.log` | `1584a34ca42fd9e087a137b51154007fd2c3aaa1a84bf93788bdd723d22dd978` |
+| `engine-ke-enumerate-c8889a8c-20261119-v1/verification.json` | `c0b9cd48dcb0ec60901a27495f4bbe3782fa2b00c8fcd3ebb14a35e99421181c` |
+| `engine-ke-enumerate-c8889a8c-20261119-v1/terminal.json` | `7de6e5c4dc01187a920ef3cf21c7b647ebfc230553d7e1f22c4b7f027aa427c8` |
+
+###### Current protected ledger line coverage and chronology retry
+
+CHECK-19/25/26/27, P2, GNU EP1 ledger only. The runs bind staged tree
+`a3055415cf0a48e2c8f197f579be86bf05cb44ba` at `e81d48f`, the 613-input
+product `34687713737a79a5e958b6667378c01881f24c6ff6a2d152f10e2c813976503e`,
+and 626 source and analysis-helper inputs. After both runs closed, `main`
+fast-forwarded to `f36d50a`. Its five guidance files are outside those inputs.
+All 30 prior staged path, mode and blob changes survived the fast-forward.
+
+| Stage and skills | Action and status | Owner and next condition |
+| --- | --- | --- |
+| Coverage, `qa-environment-preflight`, `qa-coverage-gap-analysis`, `qa-independent-review` | The configured `ke_association` coverage lane for `ke_ledger` executed all 562 ordinary cases (278 KE) and exited 0. LLVM 23.1.5 measured 1,086/1,124 executable line entries (96.62%), above the 90% gate. The outer supervisor exited 1 at closeout after comparing the analysis-tool policy SHA to the separate KE role policy SHA. Independent readback checked both correct pins, the raw export, roster and retired workspace. | Ledger line gate passed for the GNU fixture. There are 38 uncovered line entries and 64 uncovered instantiations of 300. This export provides no branch evidence. |
+| Exact chronology slice, `plan-code-change`, `qa-test-planning`, `qa-regression-selection`, `qa-mutation-testing`, `qa-failure-triage` | Run 01 stopped before listing because the private capture omitted three graph-resolution manifests. Run 02 copied them at the exact staged hashes, tested refusal on missing or altered manifests, matched the actual 36-descriptor listing, and passed the 562 ordinary and 90 doctest baseline. Tool exit 3 and verifier exit 1 retain the native timeouts. A secondary private readback also failed because the configured verifier withheld its baseline summary after exit 3. | Ledger owner. Diagnose the timeout with a bounded causal control before retrying. Keep the original failures and allowance accounting. |
+| Closeout, `qa-context-checkpoint`, `qa-independent-review`, `qa-final-qualification` | Independent readback verified all 711 retained files, the raw 652-case baseline and all 36 terminal dispositions. The worker and scratch backing were retired. The run used four workers and 579.410 of its 1,350 outer seconds across both attempts. | Mutation remains incomplete. Account for the remaining 181 descriptors in their exact five groups under a cumulative allowance. Keep the 95% file gate and public campaign closure. |
+
+The chronology partition caught 26 variants, with seven compiler-unviable,
+two test timeouts and one survivor. The three earlier survivors addressed
+by the new tests were all caught. `:437:58` (`>` to `>=`) failed the exact
+processing boundary case. `:1939:17` and `:1940:17` failed the managed
+ordinal-two successor case. The two raw timeouts in `ReceiveSpan::check`
+reached reversal assertions, then stopped at the same successor test.
+The recorded test name does not establish the stall's cause. These results
+retain their timeout classification.
+
+The `:1839:48` serial/phase survivor is equivalent for the exact current
+synchronous caller closure. Both consumers require `Pending` at charge,
+record its serial and retain exclusive ownership through read-only staging.
+A staging error returns before consuming the charge, and the current
+Control check is separate. Preserve the guard and re-review the exclusion
+if the ownership path changes. The raw result remains a survivor and no
+qualification denominator changed here. The inventory has no targeted
+capture-reading swap for `ReceiveSpan::from_read` and no targeted
+intermediate fault inside the two receive/stage entry bodies. Existing
+reversed-capture and charged-frame/byte controls supply separate evidence
+for those requirements without generated mutation credit.
+
+Structured/state-guided fuzzing retains its existing P2 target admissions.
+Native heap/handle, physical suspend/resume and calibrated capture belong
+to the Windows owners. This GNU checkpoint does not exercise those effects,
+UI or packaging. Formal work remains deferred under OD-10.
+
+| Evidence | SHA-256 |
+| --- | --- |
+| `engine-ke-ledger-coverage-a3055415-20261119-v1/independent-reconciliation.json` | `41771a847a4754d193b3b59bd59d04d40c6717e71692d0059beabb4aab540835` |
+| `engine-ke-chronology-c8889a8c-20261119-v1/run-01/terminal.json` | `70408df484c9a9eb12882da993df8af6430bd0aae4ece9c1cedaee2ff599a623` |
+| `engine-ke-chronology-c8889a8c-20261119-v1/run-02/terminal.json` | `fa389c8d4011082241ae70520d5a40dda9f90bcb74a2f0a80259aece8ecfa85b` |
+| `engine-ke-chronology-c8889a8c-20261119-v1/run-02/independent-causal-artifact-readback.json` | `7b9019f671ba3a17a96a87c4aec168e983d5b3d7b3863211ec401e5a3768db4b` |
+
+###### Ledger timeout localization and remaining selection
+
+For CHECK-19/25/26/27, `qa-failure-triage`, `qa-mutation-testing` and
+`qa-independent-review` compared the healthy frozen 613-input product
+`34687713…` and both exact native timeout diffs. All three ran the
+last-seen successor test in 6.02 seconds of libtest time. The exact
+chronology witness passed on healthy source and both fault copies failed
+its reversed-bracket assertion. The original native Test phases spent
+41.08 and 40.67 seconds recompiling before libtest reached the timeout.
+One isolated replay reproduced the unexpected rebuild with 23.75 seconds
+of Cargo time. Raw logs link the rebuild to newer dependency output
+timestamps. The cause of that ordering remains open for the owner to
+compare fingerprints and artifact timestamps across identical builds.
+Both native Timeout dispositions retain zero generated kill credit.
+The chronology owner has charged 787.183 of 1,350 seconds. The diagnostic
+worker joined and retired its temporary output.
+
+The next detached fingerprint trial ran identical no-run command pairs.
+Healthy and exact `<` to `==` fault repeats stayed fresh in 0.438 and
+0.374 seconds, with identical observed artifact metadata at both bookends.
+The 437 paired clock samples captured three 1.16–1.17 second backward
+realtime steps relative to monotonic time. These steps can invert file
+timestamp order. Attribution of the earlier rebuild requires a trace
+reaching the original Build-to-Test transition and its actual dirty units.
+Cumulative chronology accounting is 897.245 of 1,350 seconds. Both native
+timeouts retain their original status. The detached worker and scratch
+were retired.
+
+The five other groups now have exact private selectors for 181 descriptors
+(37/37/37/37/33). Their Python reader and before-effect controls passed
+with the same 652-case prerequisite. Actual listing and mutation remain
+pending the group-bound launcher and a cumulative resource allowance.
+The file's 95% mutation gate stays open.
+
+| Evidence | SHA-256 |
+| --- | --- |
+| `engine-ke-chronology-c8889a8c-20261119-v1/timeout-diagnostics-01/diagnostics.json` | `7496ca0dfadef4646db75d9a23c501402bd7a49cf5d7effc1885da9ef15ece6d` |
+| `engine-ke-chronology-c8889a8c-20261119-v1/timeout-diagnostics-01/terminal.json` | `924bb27222135b56496e231aebafc0a952ea40a0fe36d9b679a931109b003c1f` |
+| `engine-ke-chronology-c8889a8c-20261119-v1/fingerprint-diagnostics-01/diagnostics.json` | `a7bfa1bf42a5d2171dde360258be4d472ec9fae27dc3c07be3a3ec1e36df45c8` |
+| `engine-ke-chronology-c8889a8c-20261119-v1/fingerprint-diagnostics-01/terminal.json` | `139422131fd838bc8c2c40ec7cbacaadc12d7b5561022c0e0e728ba956beef13` |
+| `engine-ke-ledger-remainder-c8889a8c-20261119-v1/remainder-selection.json` | `8bf3081d1964c7de661fcc2a5aa672b9c624b01198813f10adaa16b436353869` |
+
+###### Windows KE CLI power observer
+
+W11-W02/S2.2, CHECK-11/21/25/27. The Windows KE CLI subscribes before
+submitting its one-shot worker, using the Stop endpoint from that exact
+checked preparation. A registration refusal stops before submission.
+An event arriving during registration may still allow the worker to start;
+the real startup guard then returns Cancelled before provider or process
+admission. A collection refusal requests original Stop before close and
+leaves real worker custody with the existing slot. Late Stop leaves the
+joined historical result usable. The CLI emits a separate bounded
+observer cleanup record on failure. The managed Preview and Protected
+APIs keep their existing worker entry and result contract.
+
+| Stage and skills | Action and result |
+| --- | --- |
+| Planning and implementation, `plan-code-change`, `implement-rust`, `implement-rust-contracts`, `qa-contract-tests` | Traced `ResumeWatch` to the genuine prepared Stop endpoint and shared synchronous worker/receiver. Separated CLI observation from the two Windows managed callers when MSVC exposed the return-type conflict. |
+| Controls, `qa-test-planning`, `qa-regression-selection`, `qa-positive-paths`, `qa-negative-paths`, `qa-boundary-edge-cases`, `qa-state-concurrency-lifecycle` | Four actual GNU EP1 libtest names passed. They exercise caller/registration refusal, early Cancelled plus close failure, healthy close, late historical success plus close failure, a failing output sink, and still-live custody on collection contention. |
+| Static and closeout, `qa-environment-preflight`, `qa-static-checks`, `qa-failure-triage`, `qa-independent-review`, `qa-final-qualification`, `qa-context-checkpoint` | Configured isolation, format, GNU and MSVC-target EP1 all-target Clippy passed on `8b43d4b0f921bb96eea494fe85db6db62fa620939ac8153c35710e8d923389ad` (613 inputs, `f04d14b` plus three working Rust files). Independent review checked the real callers and outcome ordering. Five earlier lint/compilation failures remain in `run-01` through `run-05`. The initial 360-second allowance charged 344.371 seconds. A separate bounded 125-second final check charged 105.695 seconds. Total 450.066/485 seconds. All owned scratch was retired. |
+
+At the focused checkpoint, the three Rust files stayed in the working tree
+for integrated development and exact closed-role re-admission. The in-module tests do not
+exercise actual power transitions, native unregister refusal or reached
+handle/memory diagnostics. `stop_failed=true` still needs a discriminator.
+Physical calibration, structured fuzzing, critical-file metrics and native
+effects retain their existing owners and gates. This slice has no raw-byte
+admission or package/UI path. Formal work remains post-V1 under OD-10.
+
+Scoped evidence `engine-ke-power-observer-20261119.CGvNJbdi/run-06/verification.json`,
+SHA-256 `127c30a125576ca86ebeb007dc83b9e2251b3aef65b71804488ba0705c719afb`.
+
+###### Windows KE CLI integrated re-admission
+
+S2.2/W11-W02, CHECK-11/19/21/25/26/27. Product
+`8b43d4b0f921bb96eea494fe85db6db62fa620939ac8153c35710e8d923389ad`
+contains 613 inputs from `0cc07635` at `f36d50a` plus the three focused
+Rust overlays. The first format preflight refused a reserved `/dev/shm`
+path before Cargo. The next launch preflight refused 5,281,595,392 bytes
+of durable free space against the 5 GiB floor. Retiring the redundant
+private source copy recovered 95,256,576 allocated bytes. The new admission
+used the exact retained format result before launching fresh format in the
+configured supervised namespace.
+
+| Stage and skills | Action and status |
+| --- | --- |
+| Selection and preflight, `qa-regression-selection`, `qa-environment-preflight`, `wsl-cleanup`, `qa-test-orchestrator` | All nine affected lanes passed with the reviewed stable-core toolchain and vendor input. The isolation control, format, GNU/MSVC all-target check and Clippy, 565 ordinary, 565 optimized and 90 annotated doctests all completed. Each ordinary mode includes 281 KE tests. The 900-second owner took 286.770 seconds, joined its monitor and retired its output. |
+| Scoped reuse, `qa-independent-review` | Ten unaffected lanes retain evidence at `34687713…`. The default feature excludes the changed KE module, the Core has no dependency on it, and non-test GNU rustdoc excludes it. The original receipt retains those commands, results and input identities. |
+| Reader and closeout, `qa-failure-triage`, `qa-final-qualification`, `qa-context-checkpoint` | Exact Main re-admission passed for all 57 role pins, the physical ordinary and doctest results and 45 retained graph commands. Independent readback matched the actual optimized names and required three new observer cases and the existing collection-contention case. All 199 verifier tests passed in an isolated `/tmp`. Both public analysis campaigns remain closed. The 90% line and 95% per-file mutation thresholds remain in force. The separate integrated capture and backing were retired after readback. |
+
+This checkpoint admits development evidence. The next entry records the
+current catalogue, scripted Windows execution and the ledger line gate.
+Physical power delivery, native observer retirement under delivered events,
+calibrated mapping and full S2.2 remain open under their existing owners.
+
+| Evidence | SHA-256 |
+| --- | --- |
+| `engine-ke-power-integrated-20261119-v1/admission.json` | `c35a8afde6e294b77407e45dd5d92b996e1545ba0c043dc0d528088b3e992d80` |
+| `engine-ke-power-integrated-20261119-v1/reports/run-01/verification.json` | `eaafced28b0da46dfb922dc3e1138e0f89e2a802b228f896de4c1bc272daf738` |
+| `engine-ke-observed-facade-readmission-8b43d4b0-v1/physical-closed-ke-admission.json` | `c6d1d1bb5fbb1b5113e595da9ebe280cd9f7ba3ebf0c019df74817c052a7cc11` |
+| `engine-ke-observed-facade-readmission-8b43d4b0-v1/main-reader-suite.log` | `8bbbe5366f6d574d2e3b4fba702f2c96e701360236c566b754acfb1d14b492fc` |
+
+###### Post-pull KE Windows execution and ledger metrics
+
+S2.2/W11-W02, CHECK-11/19/21/25/26/27. Main fast-forwarded to `ed62028`.
+The two overlapping documents merged and all 33 staged paths were
+preserved. Frozen tree `d405c8c3f00b3af94738485fa821b049e351d917` retains
+the 613-input product `8b43d4b0…`. Independent integrated review matched
+all 57 KE role pins, the actual development rosters and 45 graph lanes.
+
+| Stage and skills | Action and evidence |
+| --- | --- |
+| Admission and enumeration, `qa-environment-preflight`, `qa-mutation-testing` | Stable-core `ke_association` enumeration completed all 13 listing lanes with 775 descriptors. All 217 ledger descriptors and their rendered diffs match the preceding catalogue. All 647 descriptors outside KE core match. KE core increased from 118 to 128 and needs a fresh selection. Enumeration supplies no mutation outcome. |
+| Native integration, `qa-integration-tests`, `qa-state-concurrency-lifecycle`, `qa-independent-review` | `verify-engine-native.py --lane build` passed 17 build and PE steps on `x86_64-pc-windows-msvc`. The `--lane native` run on the authorized ordinary-user Windows 11 build 26300 host exited 0. Actual discovery matched the independent 543-name roster. All 281 flat and three nested KE cases passed. All 14 supervisory observations confirmed job cleanup with zero active members. Independent readback checked the actual logs and exact names. A fresh process census found no owned Windows process before removal of staging. The owner retired temporary WSL output and duplicate EXE/PDB files after preserving receipts and artifact identities. |
+| GNU ledger coverage, `qa-test-orchestrator`, `qa-failure-triage`, `qa-independent-review` | The configured stable-core `ke_association` ledger coverage lane exited 0 and ran all 565 selected cases, including 281 KE cases. LLVM reported 1,086/1,124 executable ledger lines covered (96.62%). The previously conflated tool-policy and role-policy hashes now have separate receipt assertions. The old healthy receipt and both swapped-hash refusals exercised those assertions before launch. The 90.613-second run stayed within its existing resource limits and the owned capture and workspace retired. |
+| Ledger group 02, `qa-mutation-testing`, `qa-regression-selection` | The independently admitted 37-descriptor group matched its actual filtered listing and ran the full 655-case baseline using four workers and the existing 90/60-second build/test bounds. Both verifier and tool returned 0 after 372.168 seconds of the 1,350-second owner lease. Raw outcomes are 14 caught, 23 compiler-unviable, zero survivors and zero timeouts. The workspaces retired. The partition carries no whole-file score. Keep the other 144 descriptors, earlier chronology timeouts and all independent outcome classification in scope for the 95% file gate. Both public campaigns remain closed. |
+
+These Windows cases exercise scripted worker and result custody. The
+default registration/close smoke retains its earlier scope. Real power
+delivery, native failure during unregister, live TLS/CNG/UDP, calibrated
+mapping and remaining source and native qualification stay open.
+
+Independent group 02 review matched the 37 actual typed rows and rendered
+diffs, all 655 executed baseline names and all 713 retained files. All 14
+behavioral catches reached mechanism-linked assertions after successful
+compilation. All 23 compiler refusals trace to their replacements and earn
+zero kill credit. No exclusion or timeout adjusted this partition's 14/14
+viable result. The earlier chronology's results retain their own candidate.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-enumerate-d405c8c3-20261119-v1/verification.json` | `2a851b490f3e445c310f645ee47cd175040f26ec9ca1b78c74864516d17b2a56` |
+| `engine-ke-enumerate-d405c8c3-20261119-v1/historical-comparison.json` | `02a7699f4d9c81fd93ae11402b710da0f8fc7b8ee083a8df53f0d86e070dc04f` |
+| `engine-ke-native-preparation-d405c8c3-20261119.odabuk0_/native-01/verification.json` | `7b495d918451f3a90441cc8b6ddcee45b796422b93fc3489bfccf1696180e8b5` |
+| `engine-ke-native-preparation-d405c8c3-20261119.odabuk0_/handoff.json` | `39c3619facbacba22c8d346d7c16dff1ab2648777130f5005b272330550d8029` |
+| `engine-ke-ledger-coverage-d405c8c3-20261119-v1/verification.json` | `1be285a1ad44bc86338900d3e8e6779652a74c6b3c654900fd4c9068415d9a48` |
+| `engine-ke-ledger-coverage-d405c8c3-20261119-v1/terminal.json` | `06d28f96680e915e1206cc8b2555d3769a7be675287b8d5a7ad45e5c371b5b0e` |
+| `engine-ke-ledger-group02-d405c8c3-20261119-v1/run-01/terminal.json` | `73de72be89f219a473d7948cbb896ad0df7c9d1b731da50165701b1251d4384d` |
+| `engine-ke-ledger-group02-d405c8c3-20261119-v1/run-01/group-02-raw-readback.json` | `d8037a6d0ec2d44fd3441d7b06d20615a69d1e77ca7a4f7146b3423701d23f90` |
+
+###### Managed Protected report preserves the joined numerical result
+
+S2.2, CHECK-6/9/11/17/25/27. The private normal-join receiver consumes
+the genuine protected history once and moves its already computed
+`Result<ExperimentalMeasurement, MeasurementRefusal>` into the existing
+`SourceProtectedProbeReport`. The public getter borrows the value with its
+original acquisition age or returns the original refusal. The Windows
+source-authorized caller still supplies `None` for the experimental profile,
+so its report carries `Unavailable`. The same resulting report retains the
+committed configuration and packet length. Abnormal retirement keeps its
+existing typed failure and sealed configuration. Preview and unmanaged
+completion cannot produce the managed Protected report. Current sample
+admission and clock authority remain with their existing owners.
+
+| Stage and skills | Action and evidence |
+| --- | --- |
+| Contract and implementation, `plan-code-change`, `implement-rust-contracts`, `implement-rust` | A detached writer used exact `d405c8c3` preimages for four files. The coordinator integrated that patch on Main and added one fixture-only file change following fresh independent review. The managed fixture supplies a fixed era-zero wall reading at each of the three capture points. The actual monotonic brackets, guarded effects and worker custody remain in use. |
+| Focus, `qa-contract-tests`, `qa-regression-selection`, `qa-failure-triage` | Five exact GNU cases passed through the real joined consumer. They cover absent model, full modeled result preservation, exact `DateScope`, denied modes and abnormal retirement. The original format refusal remains in `run-01`. The corrected run passed format and both-target all-target Clippy. The two attempts charged 115.195/360 seconds and retired owned scratch. |
+| Integration, `qa-test-orchestrator`, `qa-environment-preflight`, `qa-independent-review` | Main `ed62028` and staged `a982850d` plus five Rust working overlays produced all 613 inputs of `d5c97eb7821d414e577d9fe831e4a1dde83af7db5081232cda222ebb39a2b648`. All nine affected lanes passed. Ordinary and optimized runs each executed 567 names including 283 KE cases, and 90 annotated doctests executed. GNU/MSVC checks and Clippy passed; the 900-second owner took 252.030 seconds and joined its resource observer. Default, pure Core and non-test GNU rustdoc evidence retain their unchanged scope. |
+| Closed-role admission, `qa-contract-tests`, `qa-context-checkpoint` | The existing reader binds the two new managed controls and the retained unmanaged refusal. Independent physical readback matches the ordinary and optimized binary/name inventories, all 90 doctests, 45 retained graph commands and seven changed pins in the same 57-input role. All 199 verifier tests passed on Main, including same-count substitutions for each required case. The 90% line and 95% per-file mutation requirements remain, with both public campaigns closed. Prior raw ledger and Windows evidence retain product `8b43d4b0…`. |
+
+Live provider, calibrated mapping and numerical eligibility remain open.
+The new managed outcome is conditional fixture arithmetic or refusal. Its
+source change reaches no new cryptographic primitive, parser, UI or package
+effect. Affected metric admission and the ledger's remaining groups and
+chronology dispositions stay in the current S2.2 qualification queue. Formal
+work remains post-V1 under OD-10.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-managed-report-focus-20261119-v1/run-02/verification.json` | `d3e9192afaf75535406527c0fe91543bade999813cd6ca5a1de501d6ef354f28` |
+| `engine-ke-managed-report-integrated-20261119-v1/admission.json` | `a278c520a86a6df59c0b851694107798e1d7b992a918d365d21abdaeb9ea9bfb` |
+| `engine-ke-managed-report-integrated-20261119-v1/reports/run-01/verification.json` | `6f5527bf529bc0695f897701644d8366d62c76dd6ef96e8f75b0e7a70f1d71e2` |
+| `engine-ke-managed-report-readmission-d5c97eb7-v1/physical-closed-ke-admission.json` | `8da2166b55cd399ce6967931c998b76a624775f92b99e497a15bbda4a19c10e2` |
+| `engine-ke-managed-report-readmission-d5c97eb7-v1/main-reader-suite.log` | `7a9d0014ea72633c6ccbc5c8209fc8e6e863bd87ed72fa424ab3998174825e5d` |
+
+**Scripted Windows exit and current catalogue.** Staged tree
+`154c3178f1b1e157beb97dd2738e8a58e8da4045` at `ed62028` retains the current
+613-input product and 15 native helper inputs. `verify-engine-native.py`
+passed 17 build/PE steps in 86.353 seconds for `x86_64-pc-windows-msvc`.
+The authorized ordinary-user Windows 11 build 26300 run exited 0 in 151.250
+seconds. Exact discovery matched 545 tests, with 283 flat and three nested
+KE cases passing. Both new managed report cases and the retained unmanaged
+refusal executed. All 14 supervision records confirmed complete cleanup.
+The separate process readback found zero owned processes. The owner removed
+its Windows and WSL staging after keeping raw results and PE reads. The
+initial status-digest representation refusal preceded any build or Windows
+effect and remains in the handoff.
+
+The stable-core closed enumeration on the same staged tree completed all
+13 listing lanes in 40.033 seconds, with both public campaigns closed.
+The executed inventory contains 775 descriptors. All 714 descriptors from
+the twelve owners outside datagram match their exact predecessor descriptors
+and diffs, including all 217 ledger variants. Datagram remains at 61, with
+36 exact matches, 24 names replaced and one further same-name difference.
+The temporary capture and listing work retired. This listing ran no
+variants. The preceding ledger outcomes retain their original source and
+roster. The next selection needs the current exact 657-case prerequisite,
+the retained descriptor comparisons and separate resolution of the
+chronology timeouts. The current 90% and 95% requirements remain open.
+Physical power delivery, live provider qualification and calibrated Core
+admission remain separate exits.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-native-preparation-d5c97eb7-20261119.fdgdbwf1/native-01/verification.json` | `ab4f770c12bca7c15458d832fe09d3c1555a500cd498628c68690aefed022075` |
+| `engine-ke-native-preparation-d5c97eb7-20261119.fdgdbwf1/handoff.json` | `2d716d4b492b508978dfa36878ba3fd7a663ef69bf6a6551eb568ccb58266236` |
+| `engine-ke-enumerate-154c3178-20261119-v1/verification.json` | `9a5c0ee4ad02a7bb073f189fff46e2e30ce73b6158b6461b04d5b338df9185aa` |
+| `engine-ke-enumerate-154c3178-20261119-v1/historical-comparison.json` | `c3a34f17dfae4f4fbc53e55f37e4ab11576639d220c24cef9ea9c8bc55f9b01b` |
+| `engine-ke-enumerate-154c3178-20261119-v1/terminal.json` | `32e05b2d81755c5c04f267e3913b23515a219873fea5d6cca582ecab02d7e524` |
+
+###### Managed Protected ledger coverage and cookie-return defenses
+
+S2.2, CHECK-11/19/21/25/26/27. On staged tree `84cae8ebb46be38618e0e16b56502702857f9ff8` at `ed62028`, all 613 product inputs identify `d5c97eb7…`.
+The stable-core GNU `ke_association --lane coverage --subject all` run
+executed the full 567-case selection, including 283 KE cases. All 13
+selected executable-line gates passed at 91.55–100%. LLVM reported
+1,086/1,124 for the ledger (96.62%) and 683/699 for datagram (97.71%).
+Readback matched each owner's executable-line counts. Branch and
+unselected-file qualification remain separate.
+
+| Stage and skills | Actual outcome |
+| --- | --- |
+| Admission and enumeration, `qa-environment-preflight`, `qa-mutation-testing` | Both 37-descriptor groups matched the exact rendered current catalogue and ran their 657-case baseline (567 ordinary and 90 doctests). Each used four workers, a 90-second build and 60-second test limit, and a 1,350-second owner lease. |
+| Group 03, `qa-independent-review` | Exit 0 after 536.222 seconds, 31 behavioral catches and six compiler refusals. No survivors, timeouts or exclusions. |
+| Group 04, `qa-failure-triage`, `qa-independent-review` | Cargo-mutants exited 2 and the verifier exited 1 after 422.164 seconds. The raw result is 20 catches, 15 compiler refusals and two `return_unused` disjunction survivors. Both missed variants compiled and ran the whole suite. Neither timed out. Independent readback matched the actual baseline, patch bytes, behavior, compilation causes, raw work and resource retirement for both groups. |
+| Defensive contract, `implement-rust-contracts`, `qa-fault-recovery`, `qa-contract-tests`, `qa-regression-selection` | Valid owner paths preserve a spare pool slot and the checked byte limit during checkout. The documented structural-refusal boundary now tests each fault separately after a genuine reserve and prepare, using the existing test name and accepted exact-limit neighbor. The refusal preserves the reservation, cookie, pool and cumulative work. The production ledger is unchanged. |
+| Focused correction and sensitivity | Run 01 reached both intended refusals under the healthy owner and exposed both exact faulty replacements, then failed GNU Clippy on the empty-pool assertion. Run 02 refused two long typed bindings in format. Corrected `f5aea33a…` passed the boundary probe, format, the healthy GNU test and both-target Clippy after 140.304 seconds. Both exact mutant diffs compiled and exited 101 after the healthy test, one for excessive bytes and one for no spare slot. The three focus attempts consumed 249.699 seconds of 360. Scratch retired. |
+
+The two focused failures establish sensitivity of the corrected assertions.
+The original generated runs retain their actual results. No focused case
+earns generated mutation credit. Whole-file qualification needs the current
+catalogue and budgeted generated dispositions for the two survivors, the
+earlier chronology timeouts and the remaining groups. The 90% and 95%
+thresholds and closed public campaigns remain in force.
+
+
+
+The corrected test-only product `f5aea33aa0785de59d5d27d4ebd8a00b1f3b07e1a9d9ac79673e80d916d4de5c`
+passed all nine affected development lanes in 240.764 seconds. GNU
+ordinary and optimized rosters each executed 567 cases, including 283 KE
+cases. All 90 annotated doctests, format, and both-target check and
+Clippy passed. Independent review matched all 613 inputs, every named
+execution and both exact mutant source diffs. Physical role admission
+reconciled all 57 role pins, including the one changed ledger test file,
+and the 45 unchanged graph-command receipts. The closed role now binds
+the corrected receipt and retains the existing rosters. The integrated
+capture, worker and resource observer retired.
+
+The 199-case reader suite passed with an owned RAM directory mounted at
+the logical `/tmp` path in an isolated namespace. Earlier attempts remain
+recorded. Durable `/tmp` lacked the required 7 GiB and the direct
+`/dev/shm` path failed the distinct monitor identity expectation.
+
+Closed enumeration on staged tree `d727be92b720f9f4ec7f491e9e25daada2823db9`
+ran all 13 named listing lanes in 39.853 seconds. It matched all 775
+typed descriptors and rendered diffs, including the 217 ledger entries.
+Only the ledger test and its closed role changed in the 626-input analysis
+map. The frozen tree and work backing retired after the final bookend.
+The listing exercised no generated variant.
+
+The next generated selection is the original two `return_unused`
+descriptors at 1090:17 and 1091:17 with exact rendered diff equality.
+Group 04 consumed 422.164 seconds on its original candidate. The
+remaining original outer lease is at most 927
+whole seconds, including capture, driver startup and closeout. A reviewed
+private campaign cap at most 770 seconds preserves both original overall
+allowances, with the existing 90/60-second per-mutant bounds and 657-case
+baseline. Group 05 and its separate inputs stay queued. The earlier
+chronology timeout diagnosis identified Cargo rebuilds without establishing
+their cause or earning behavioral credit.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-coverage-84cae8e-20261119-v1/terminal.json` | `2155aec842f693a45d6e3080a93d7aabc9af8445bae2b1e4d4058e5796111be3` |
+| `engine-ke-coverage-84cae8e-20261119-v1/verification.json` | `0b05e0cf74297f4f4fde9f9c052dcfa4af04908ac345c616c5c2ca780c65371f` |
+| `engine-ke-ledger-group03-84cae8eb-20261119-v1/run-01/terminal.json` | `43494ea2a392b4830e58f710714bb629b823f3e7a98015e29d20144e0e2a8f57` |
+| `engine-ke-ledger-group04-84cae8eb-20261119-v1/run-01/terminal.json` | `5ce0fdf2448043b5ef7466ea0691c32b0a5f668346f1674c60d67a2f76160457` |
+| `engine-ke-ledger-group04-84cae8eb-20261119-v1/run-01/group-04-raw-readback.json` | `129bb8bb761f849233197eef1e9a35167c609131112e1d9ef4ee67cc8cfc9a2d` |
+| `engine-ke-ledger-return-guards-20261119-v1/run-01/verification.json` | `90b60dc9b21bc10e64eef894592868252607af89c3954a5ed345f37b575a6eb1` |
+| `engine-ke-ledger-return-guards-20261119-v1/run-02/verification.json` | `360395a29b9321d0ed99257acef5ef1e6f6178881598c8c909595095254734b4` |
+| `engine-ke-ledger-return-guards-20261119-v1/run-03/verification.json` | `ccd8c2d61edb613b047418979b593b4c79090ecc87287f7cc19857fab075d186` |
+| `engine-ke-ledger-return-integrated-20261119.82wkz94y/reports/run-01/verification.json` | `0868618701198b3e033ff0005e1994a5853986b5d41b4d898377ebc4f7f635d1` |
+| `engine-ke-ledger-closed-readmission-20261119.nEVpV3nG/physical-closed-ke-admission.json` | `9e55dd5148e66f03ced8522ae1c181ee2ca82689a9f69e0ef23c1015c7800bfe` |
+| `engine-ke-ledger-closed-readmission-20261119.nEVpV3nG/main-reader-suite-isolated.log` | `633c505f23934fd0ae99c6c967e9dd5a74d963c14cc5185810e8edba82bc9ce5` |
+| `engine-ke-enumerate-d727be92-20261119-v1/verification.json` | `1edde6d7d66bb4875f888f4be8dad7571cb6635bd5db54ef6bf489e088907f78` |
+| `engine-ke-enumerate-d727be92-20261119-v1/terminal.json` | `3f0e32e48295942d27fda66a99bd9bc23d7fb281512606c311f4b5b8db403c28` |
+
+###### Cookie-return generated continuation and Cargo timing diagnosis
+
+For CHECK-19/25/26/27, the two exact generated descriptors at 1090:17 and
+1091:17 passed the real pre-effect listing against `f2f956b` and product
+`f5aea33a…`. Cargo-mutants exited 4 in the unmodified Baseline Test. Build
+passed in 35.149 seconds. Test spent 26.61 seconds on an unexpected Cargo
+rebuild and reached its unchanged 60-second cap after 434 healthy case
+successes. No variant ran. The configured verifier exited 1. A secondary
+closeout attempted to read the absent successful baseline record. The
+independent reader verified the actual prefix, all 639 retained artifacts,
+and the inactive worker and retired backing. This attempt consumed 121.969
+seconds. Group 04 cumulative charge is 544.133 of 1,350 seconds, leaving
+at most 805 whole outer seconds. Neither this attempt nor the focused
+controls earns generated credit.
+
+The related historical chronology diagnostic ran the original Build and
+Test commands on `34687713…`, with separately owned worker targets. The
+healthy 652-case roster passed and the exact `<` to `==` fault reached
+its reversed-bracket assertion. Both Test builds stayed fresh. Five paired
+realtime backsteps were observed within phases, with none across the two
+recorded handoffs. The earlier chronology failures retain both timeouts.
+The current unmodified baseline rebuild shows that concurrent mutant workers
+are unnecessary for the symptom. The exact dependency mtime ordering that
+causes it is established only from failing Cargo logs. Attribution to a
+clock step remains unproved. Cargo 1.100 compares each unit's output
+modification times with its dependency outputs.
+[Cargo fingerprint implementation](https://doc.rust-lang.org/stable/nightly-rustc/cargo/compiler/fingerprint/index.html#mtime-comparison)
+
+Chronology has charged 1,075.617 of 1,350 seconds. The next discriminating
+observation for either bounded lane needs paired clocks and the actual
+native worker's unit-output times. Preserve the admitted build/test bounds.
+The prepared failure reader has ten synthetic controls. It treats only a
+reached, exact baseline timeout as its own incomplete outcome and keeps
+partial observations out of scores.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-ledger-group04-pair-f2f956b-20261119-v1/run-01/terminal.json` | `d73c99e524034fa840bfc9748bb00128ffa83b4d2127b09bbac3ca58efafd67b` |
+| `engine-ke-ledger-group04-pair-f2f956b-20261119-v1/independent-pair-incomplete-readback.json` | `824c811f05a60548b4a1529ffbbe68115b3934e72ac830366baa59886fb3617f` |
+| `engine-ke-chronology-c8889a8c-20261119-v1/worker-transition-diagnostics-01/terminal.json` | `4f099fc29b104211d2f1163582f57d235503d94cb9ebbab090f721b63de1577e` |
+
+
+###### Managed Protected power observation at the submission boundary
+
+W11-W02/S2.2, CHECK-11/21/25/27. The Windows managed Protected probe and
+KE CLI reserve the actual shared worker slot before registering for suspend
+or automatic resume. The reservation owns the original prepared invocation.
+Caller, occupied-slot and spent-slot refusals occur before registration.
+A refused registration releases an unspent worker reservation. The slot
+mutex is free during registration, callback, unregistration and actual join.
+The existing Builder and joined-handle custody stay with the worker owner.
+Preview uses the same reservation without activating the observer.
+
+The callback requests Stop through the original invocation's handle. A
+delivered event before reply commit prevents publication. A later event
+preserves the original joined history. Collection refusal retains actual job
+custody and reports the independent Stop refusal if one occurs. Managed
+results preserve the exact nonzero native unregistration status separately
+from original worker, operation and TLS/admission cleanup facts. The CLI's
+existing Boolean diagnostic and exit behavior are preserved. Positive mapping,
+fresh sample eligibility and observed physical delivery remain open.
+
+Independent source review traced the three production entry points and
+the sealed reservation, including pre-registration refusal without custody
+loss. Its nonblocking observer finding now has a separate locked-versus-
+reserved control. A competing actual observed facade verifies that a Busy
+result reaches neither registration nor submission. The late case records
+the state in the close callback and observes it after the test drains its
+actual slot. The source-issued managed scenario verifies sent attempt
+floors, pre-commit refusal, healthy original result, late Stop, exact
+close status, and actual provider retirement.
+
+
+The first focus attempt stopped at a missing verifier-adapter vendor input
+before compiler execution. The second passed its six selected cases before
+GNU Clippy refused the test's line count. The final test layout passed
+format, the same six GNU cases, and both-target Clippy on product
+`3633aa2ddd81188e95cd5eaed79fa09aaca9c6e49b3642b871c7435df08f2d74`.
+All nine integrated lanes passed in 239.439 seconds from staged tree
+`f2f956b` plus the exact six Rust inputs. Both EP1 test modes ran 568
+cases, including 284 KE cases. All 90 doctests ran. Actual GNU and
+MSVC-target compiler and Clippy checks passed. The closed KE role
+reconciled exactly eight changed pins of its 57, the current test roster,
+and the retained 45 graph commands. Same-count substitution of the new
+required case remains a rejection. The original metrics stay scoped to
+their respective source; the affected `ke_job` and `ke_core` owners need
+current coverage and mutation evidence alongside the unresolved ledger
+dispositions. Main campaign flags remain closed at the existing 90%/95%
+thresholds. The isolated 199-case reader suite passed on the rebound role.
+Native observer delivery, unregistration and product mapping qualification
+remain open.
+
+On staged tree `eda7b00a5080fa90b916f61d1e8515e7617a8203`, closed
+stable-core enumeration completed all 13 listings in 39.851 seconds.
+It reports 778 typed descriptors. All 217 ledger descriptors and diffs
+still match. The directly changed owners require fresh selections.
+`ke_core` has 129 current descriptors with no exact old typed identity,
+and `ke_job` has 29 with eight exact matches. Listing supplies no variant
+outcomes. Both the capture and work backing retired.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-managed-power-focus-20261119-v1/run-01/verification.json` | `5a4a0b128c80030ea8044bbbbc4c93c3d2403985c4c8fed5e15821c72b710e51` |
+| `engine-ke-managed-power-focus-20261119-v1/run-02/verification.json` | `98f0d4de6ce17e62ea9cf7389f17223dbd00a0dbdf03a52d853a52461410ea27` |
+| `engine-ke-managed-power-focus-20261119-v1/run-03/verification.json` | `13a8af31e5ed7c75619737f4eb24b3e94c21408cde3a951869f9314e46c2a81f` |
+| `engine-ke-managed-power-integrated-20261119-v1/admission.json` | `0f25a44cb37f91b769ae80e092671c712dd7e529dfe96586c7f72d5b69ec7f30` |
+| `engine-ke-managed-power-integrated-20261119-v1/reports/run-01/verification.json` | `a8bf77a6e07d94eb0364cabcbbcd07e80472d566bcf3a67241705b84cf021592` |
+| `engine-ke-managed-power-closed-readmission-20261119.mh0aeach/physical-closed-ke-admission.json` | `d90938976c0fa7a86337a09458fdb0523e1b5661b553bdcd488fcfbda4f45b73` |
+| `engine-ke-managed-power-closed-readmission-20261119.mh0aeach/main-reader-suite-isolated.log` | `2c19db914d70a552972d73089be74f512a3fe45e961a1134d771ca76e73d1a5d` |
+| `engine-ke-enumerate-eda7b00a-20261119-v1/verification.json` | `308a6655d1ad695175a37b5e1fd1d9051805d66161fafd2c718e3bd2492e6bde` |
+| `engine-ke-enumerate-eda7b00a-20261119-v1/terminal.json` | `54a447538d2e688a345286458071993d8e4515d234ce979aee0d954766f75617` |
+
+###### Managed Protected power checkpoint coverage and Windows execution
+
+For W11-W02/S2.2 and CHECK-11/19/21/25/27, staged tree
+`8a9829b59c0d01ab0f43fd3917780e114a76df1f` and product `3633aa2d…`
+passed the configured stable-core GNU line lane. All 568 selected cases
+ran, including 284 KE cases. LLVM counted 727/795 lines in `ke_core`
+(91.45%), 271/285 in `ke_job` (95.09%) and 1,087/1,124 in `ke_ledger`
+(96.71%). All 13 selected owners reached 90%. No branch counters were
+emitted. Independent review checked the exact executed names and raw
+LLVM rows. The 90.717-second lane and its owned backing retired.
+
+The fixed Windows KE runner passed 17 MSVC build steps with the existing
+x86-64-v3 profile. On the ordinary-user main host, 546 discovered names
+matched the independent prediction. All 284 flat cases passed and all
+three fixed nested outer cases passed. The new managed power fixture ran
+once. All 14 supervisor observations confirmed job teardown and zero
+active processes. Independent readback checked the original MSVC outputs,
+PE/PDB identities, native requests and raw logs. The fixture observes actual
+worker join and scripted Stop and close behavior. Physical Windows suspend
+and resume delivery, actual observer unregistration failure and healthy
+provider/TLS/UDP qualification remain open. The run made no clock, service,
+trust or protection changes.
+
+The first retirement readback stopped before deletion on an incorrect
+expected JSON count. The exact retention check used the 17 recorded build
+lanes plus the roster and verification record. Further readback matched
+all 42 retained raw Windows files. Temporary Windows stage and WSL build
+outputs retired. Four obsolete image/PDB pairs from the earlier completed
+default smoke were also retired (53,643,776 bytes). Their raw receipts and
+hashes remain.
+
+The detached stable-core GNU `ke_job` campaign used four workers, the
+existing 90/60-second case ceilings and unchanged 95% threshold. The exact
+658-case baseline passed. All 29 typed descriptors resolved in 399.440
+seconds. Twelve variants were caught, 15 were compiler-unviable and two
+survived (12/14 viable, 85.714%). No exclusion, timeout or source-policy
+opening occurred. Three catches were reached stack-overflow aborts; one
+catch exercised Linux-only fault injection. The two survivors were the
+Windows-only `native_provider` and `SubmissionReservation::try_submit`
+replacements. Existing scripted cases do not reach those entry points.
+Independent review reconciled all 29 exact diffs and 697 retained files.
+The healthy MSVC library compiled. The two exact retained diffs each
+exited 101 under the existing MSVC EP1 profile. The provider replacement
+reached E0277 since `ProviderScope` has no `Default`. The submission
+replacement removed the sole native provider call and reached the denied
+`dead_code` diagnostic. These are target-specific compiler observations
+with zero generated-kill credit. The original GNU 85.714% gate remains
+open until the existing qualification owner reconciles the target scope.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-coverage-8a9829b5-20261119-v1/verification.json` | `4906ce338dd92b8b054081e0a5f54293f1fc09c53f4c50b03c58def5a76fb3c4` |
+| `engine-ke-native-readback-8a9829b5-20261119-v1/independent-coverage-readback.json` | `842b10eece3600a31cbde05738d313693d29bae358fdad159b4a0e6455659011` |
+| `engine-ke-native-preparation-8a9829b5-20261119.5yw_3_wa/retained-build/verification.json` | `f5e60633e917915f05591664fc35478a13a3d7380bdebe6f22d053bb9f82e2c6` |
+| `engine-ke-native-preparation-8a9829b5-20261119.5yw_3_wa/native-01/verification.json` | `f30666c960a5589324e6c9a24897fb61a1707bec0f5d33ce46071c4be146235f` |
+| `engine-ke-native-readback-8a9829b5-20261119-v1/retirement-readback.json` | `85fa3f6184a8d95d92067565e946f147b90fe51f5fc85f1c7bc34fd66a14274d` |
+| `engine-ke-job-8a9829b5-20261119-v1/run-01/terminal.json` | `b39041cba8c30145cdf8089b8aaa4ab3ccc3dffbaee21e143564559279ba98f5` |
+| `engine-ke-job-msvc-controls-8a9829b5-20261119-v1/run-01/verification.json` | `b38647b7cba217dcdb37fa9c93f99cb66f932f76ea4e73323c296567d4eb1151` |
+
+###### Issued source currentness through KE transport
+
+For S2.2, BND-2, THR-21 and CHECK-6/9/25/27, the Windows KE producer now
+checks the original issued source definition at connect and at the existing
+TLS read, write, flush and local-work checkpoints. Both managed modes use
+the same owner. The producer uses the actual checked numeric peer. A
+same-values configuration replacement still invalidates the original lease.
+A refused pre-call check prevents the next adapter operation. A nominal
+success after invalidation cannot reach the returned result. An owned
+successful connect result drops on refusal. The original deadlines and
+Stop ordering, an observed first native failure, typed TLS error and distinct
+TLS cleanup result remain. The transport still retires the stream before
+publishing an association. Unmanaged mode retains its existing destination
+and deadline rules.
+
+The private shared guard releases all policy and control locks before a
+blocking native call. A configuration change may arrive after the check
+and before the system call. The new guard neither withdraws a previously
+admitted call nor establishes when Windows transmits or retires socket
+work. Actual native transport/cleanup and fresh metrics for the affected
+critical owners remain separate. No Windows execution used this successor.
+
+The causal GNU control restored the former control-only check in the actual
+shared helper. It reached three expected stale-definition assertions and
+passed the independent native-error neighbor. The repaired helper passed
+all four exact controls. They check refusal before connect, disposal of an
+owned successful connect after source cutover, rechecks after timeout and
+transfer returns, fresh local-work recheck, exact Stop/deadline precedence
+and the first observed native error. The initial healthy selection passed
+all four cases before GNU Clippy refused a single-pattern match in the test.
+The revised candidate preserves that oracle and passes all four cases,
+format and GNU/MSVC-target Clippy. Independent source review traced both
+managed constructors and the actual Windows socket and Rustls callers.
+The integrated candidate `e7671174…` uses the same 613-file product rule.
+Nine stable-core lanes exited 0 in 237.497 seconds, with 572 cases in
+each ordinary/optimized mode (288 KE each) and all 90 doctests. The first
+integrated launcher stopped before compilation because it omitted its
+systemd invocation context. The corrected attempt used existing resource
+caps. The closed role now binds the five changed source and reader inputs
+in its existing 57-pin set and reuses the 45 matching root graph commands.
+It requires the four exact new tests and still rejects same-count
+substitution. The first isolated reader suite kept a stale combined count
+assertion. Its correction distinguishes the old 658-case record from the
+current 662-case roster. The final isolated reader suite passed all 199
+cases. The two public campaigns stay closed, with their 90%/95% thresholds
+unchanged. Fresh critical-file enumeration, affected coverage and mutation,
+native source cutover and production eligibility remain open.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-transport-currentness-focus-20261119-v1/fault-01/verification.json` | `137c0c4be9018dd81bb13dd2db539b96cb24722d8c0b1d767861f6ad3572fb85` |
+| `engine-ke-transport-currentness-focus-20261119-v1/healthy-01/verification.json` | `a2b06429bd74d053c1d4bd6532617d9a4fe486e2fa843af948207c6c63e95bc8` |
+| `engine-ke-transport-currentness-focus-20261119-v1/healthy-02/verification.json` | `f57495579ecf55164e3f0c7618dd40caff3002f792f42f36dfd7c4605ae0ea69` |
+| `engine-ke-transport-currentness-integrated-20261119-v1/reports/run-01/verification.json` | `f484b35d0d6206fa5e63e7f01f458023e84b4af39f16395594a3a34c66685475` |
+| `engine-ke-transport-currentness-integrated-20261119-v1/closed-role-rebind.json` | `55ec7044d67c9cb28a9a6947a667097c409cf2e5568b284376be31626bf7a5cc` |
+| `engine-ke-transport-currentness-integrated-20261119-v1/closed-reader-suite.log` | `22fde39246969b15c63fac75d5864de8acddddce7473b913659824d442608f6c` |
+
+###### Current transport metrics and reached sensitivity gaps
+
+For CHECK-19/25/26/27, frozen tree `2bc59dfb…` and product `e7671174…`
+listed 790 generated descriptors across the same 13 owners. The
+transport-fault owner has 39, with zero exact reused typed descriptors
+and rendered diffs from the previous 27. The fixed 572-case GNU
+coverage run passed all 13 line gates. The changed transport-fault
+owner reached 283/284 executable lines (99.65%). LLVM emitted no branch
+counters and selected no Windows-only socket code. An independent
+readback matched each raw LLVM count and the complete catalogue.
+
+The private 39-variant transport-fault cohort passed its complete
+662-case baseline and entered all descriptors. Raw outcomes are one
+catch, 14 GNU compiler refusals, 22 misses and two timeouts. The
+actual tool exited 3 and the verifier exited 1. A closeout reader
+mistook the missing successful summary for a baseline timeout and
+refused on the tool exit. The independent readback matched every raw
+typed descriptor and diff, confirmed the healthy baseline's exact
+names and retained the original terminal failure.
+
+Static configuration attributes put 21 descriptors in Windows-only
+bodies. Their recorded GNU outcomes were 19 misses, one compiler
+refusal and one timeout. The 18 GNU-active descriptors had one catch,
+13 compiler refusals, three misses and one timeout. This diagnostic
+partition carries no combined score. Both timed-out test launches
+rebuilt `tokio-macros`, `tokio` and Engine after the original build
+before reaching only a prefix of the selected cases. Build logs and
+test timeouts remain the authoritative evidence. The three active
+misses are the exchange-phase transition and two first-I/O categories
+for deadline and Stop. The complete file gate remains open.
+
+The next private closeout adapter separates a verified baseline followed by
+native variant timeouts (exit 3) from a baseline-only timeout (exit 4).
+The original verifier still refuses either incomplete result. Six isolated
+controls on both retained runs and changed inputs passed. Exact baseline,
+variant, descriptor and log observations remain diagnostic and add zero
+generated credit. The canonical scoring rule is unchanged.
+
+The catalogue also confirms 29 byte-identical worker descriptors/diffs.
+The worker retains the raw GNU 12/14 result and the two exact MSVC
+compiler refusals. The current scorer accepts no combined target
+evidence for this owner. A separate admitted per-configuration
+campaign must resolve shared/target-only semantics with actual
+baselines and zero credit for compiler errors or inactive bodies.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-enumerate-2bc59df-20261119-v1/verification.json` | `c72a2bba10deb845391cc43527441c77bb2caf5c54e8451a035f95894a6385a3` |
+| `engine-ke-coverage-2bc59df-20261119-v1/exact-current-line-readback.json` | `4b4e49237853cdbbdccc4f5b981dfec0da40524d6ab5947bf14e281789795f54` |
+| `engine-ke-fault-2bc59df-20261119-v1/run-01/independent-incomplete-readback.json` | `24d4bba641b69a6d4414481c68b5cf6f532925855876836c6086b23b55a1a01b` |
+| `engine-ke-native-closeout-v2.JXFNnme2/physical-readback.json` | `6350801bec75236018e198fbe53cab25f33f301188919540dc549f1691f65b90` |
+| `engine-ke-native-closeout-v2.JXFNnme2/test-run-02.log` | `d1fb18ff012731ed37d3dd6e14287954f312a7c3f40ad5226b63814802855d1c` |
+
+###### Managed Protected successor through real loopback
+
+For S2.2 and CHECK-6/9/11/19/25/27, the existing managed worker now
+exercises both legs over real Linux loopback UDP in a test-only fixture.
+The peer observes each exact bounded request and sends independent
+fixed replies. The authenticated first reply supplies one replacement
+cookie and the carried successor allowance. The authenticated second
+reply is DENY. After actual socket and runtime retirement, the policy
+commit restricts the exact source and endpoint. Another source sharing
+that endpoint inherits only the endpoint restriction. The worker joins
+and the consumer retains the exact outcome. The peer uses fixed fixture
+material. It does not verify client authentication or establish a
+healthy native TLS/provider journey.
+
+The neighboring case deterministically replaces the source with equal
+values after the second socket and runtime retire and before commit.
+It returns the original configuration-changed cause, keeps both send
+debits and floors, publishes no DENY, and joins the peer and worker.
+The portable transport controls preserve the original exchange cutoff
+after the shorter handshake cutoff and the original deadline or Stop
+I/O category without retrying or performing the refused effect. The
+three exact retained fault hunks each reached the intended selected GNU
+test and exited 101 on its predicted assertion. The healthy tests
+exited 0. These controls change no prior generated mutation result or
+denominator.
+
+Eight exact focused tests and GNU/MSVC-target Clippy passed. The earlier
+focus attempts retain their original Clippy refusals. The first combined
+launch refused before execution on a stale private staged-tree constant.
+Nine corrected stable-core lanes on product `dd9074d0…` passed in
+243.45 seconds. Ordinary and optimized each ran 576 cases, 292 of them
+KE, and all 90 doctests ran. The complete 613-file product and exact
+new reader matched 57 role inputs, eight of them changed. Independent
+readback confirmed the four added names in both modes and all 45
+retained graph rows. The first readback compared the probe placeholder
+to the expanded command and refused. The corrected readback verifies
+the actual expanded command. All 199 isolated reader controls passed.
+
+Planning and implementation used the existing Rust and contract skills.
+Selection used the contract, boundary, lifecycle and mutation skills.
+Independent review traced the actual two sockets, join, retained
+accounting and closed source-policy acceptance from the frozen candidate.
+GNU exercised the real two-leg fixture. MSVC-target compilation ran as
+a separate lane. The ordinary production facade stays one-shot. Campaigns
+remain closed with their existing thresholds. The focused faults leave
+Windows-only transport, real effect coverage and current generated
+mutation qualification open. The next standalone provider step has
+admitted actual compiler and SDK inputs. The fixed peer and client
+quality lanes precede PE/PDB artifact builds and any healthy guest
+probe. Core-positive qualification still requires the genuine
+mapping, configuration, scale, trust and quality suppliers.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-successor-loopback-focus-20261119-v1/healthy-04/verification.json` | `414711babf74f92c0892c36db75a13ab7a35802f67084057a721e75577a28dce` |
+| `engine-ke-successor-loopback-integrated-20261119-v1/reports/run-01/verification.json` | `faed685c124471689d35e0c18805b7e81e7b16452aa0af1ae19ec5e11de14648` |
+| `engine-ke-successor-loopback-integrated-20261119-v1/closed-role-v4-output/closed-role-rebind.json` | `5273c25ddc1a8581f7a8f7f723fa086c2e4d9b70309185c84b9e8121a779316e` |
+| `engine-ke-successor-loopback-integrated-20261119-v1/closed-reader-suite-agent.log` | `9149acc088e5c811250220c4e703e99c9c0df675f3a233da0bb8b5af93d51cd2` |
+| `engine-ke-fault-witness-controls-20261119-v1/phase-01/verification.json` | `9f788298eecf2eda42fd4fc9ebc632b339ba417efd91ec96836a4b5b2e96eabd` |
+| `engine-ke-fault-witness-controls-20261119-v1/deadline-01/verification.json` | `cafcd53a8dfdd8149024eb1f0daa7dc0ad48260f901d9d539e5f5c6ae41a1343` |
+| `engine-ke-fault-witness-controls-20261119-v1/cancel-01/verification.json` | `7f3c932382485ca1aceedb7ccba6afba44cfe1b62812eec915ff78277e5b4a86` |
+
+###### Real Windows KE facade loopback handshake refusal
+
+For S2.2 and CHECK-6/9/19/21/25/27, the ordinary-user Windows
+facade consumer ran against fixed loopback on product `e7671174…`.
+The separate opt-in probe retains the old argument and entered-runtime
+refusal cases. It keeps the peer in the supervised child. A bounded
+TLS record check observes the real ClientHello and the peer half-closes
+the connection. The caller receives the expected typed handshake EOF
+with a separate response EOF during cleanup. The consumer exits 1 as
+expected and confirms peer join. No TLS association or success output
+is produced. Launcher, child and observed console processes leave the
+job empty. The fresh preflight observed 6,799 MiB available Windows RAM.
+
+The first cross-build stopped before native execution on a rustdoc
+markup lint. The corrected source passed all 20 MSVC steps and the
+native runner exited 0. All 76 isolated Python runner controls passed.
+All nine Windows observations confirmed cleanup and unchanged runtime
+inputs and settings. The exact successful build and native records
+were retained and rechecked before deleting the temporary Windows
+stage and WSL builds. This run exercises an actual native TLS transport
+failure on the earlier product snapshot and its 15 exact helper inputs.
+It leaves healthy TLS, certificate admission, live protected UDP,
+physical power delivery, native coverage and product eligibility open.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-native-eof-reader-2bc59df-20261119-v1/native-01/verification.json` | `2dcc0ee98ae800a781d3a750bf35a0c064f09925333dbb563d87e32f040705f5` |
+| `engine-native-eof-reader-2bc59df-20261119-v1/retained-success/msvc-build/verification.json` | `914b1e6ef5db1a8e40458ae5ea05d7ac0fa286b249cd024dbe33c8ef93f2ca5d` |
+| `engine-native-eof-reader-2bc59df-20261119-v1/retained-success/windows-records/facade-loopback-eof/native-supervision.json` | `03099a2abe8a7ca0c9548cae95bee4d1d856b4f5eab1af7f19f6566919f31061` |
+| `engine-native-eof-reader-2bc59df-20261119-v1/retained-success/retirement.json` | `0b7c7f0e89e5a79bf5737b822b330171a092e75f9e29abb4bf7abbe7bfe2b8e3` |
+| `engine-native-eof-reader-2bc59df-20261119-v1/retained-success/native-eof.patch` | `5ab52d01ec12ed88509cf1a5cc3f831299f850dcee81caa3b1a711f058595622` |
+
+###### Managed Protected guarded terminal timing
+
+For W11-W01/S2.1, TQ-01/08/09 and CHECK-6/11/19/21/25/27, the actual
+retired authenticated reply guard now carries its existing terminal
+monotonic observation through the single successful transfer and normal
+join into the managed Protected report. The checked receive-to-commit
+interval starts at the original receive bracket's trailing observation.
+An unavailable derived interval preserves the committed history. The
+existing numerical acquisition age still uses the original packet
+receipt, and the report remains useful when conditional measurement is
+unavailable. Neither join nor report creation samples the clock again.
+
+The exact one-nanosecond later fixture preserves that decision through
+late cancellation and Stop. A targeted substitution of the earlier
+packet-admission time reached the intended assertion and failed. The
+unchanged cutoff, early Stop, Preview and abnormal-join neighbors
+retain their existing dispositions. The Preview and protected CLI rows
+remain unchanged. No current mapping, UTC error bound, freshness,
+eligibility or clock authority follows.
+
+The first focused attempt stopped at the missing Duration import. The
+next passed the seven GNU cases and reached two strict Clippy findings.
+The correction names the private transfer representation and keeps
+the direct assertions in the selected joined and historical controls.
+The corrected focused run passed all seven cases, format and GNU/MSVC
+Clippy. The targeted substitution is a separate diagnostic witness
+with zero generated mutation credit.
+
+The integrated candidate `1161aafd…` passed all nine development lanes in
+240.880 seconds. The ordinary and optimized EP1 modes each ran 576 cases,
+including 292 KE cases, and all 90 doctests ran. The same named roster,
+57 role inputs and 45 existing graph rows were checked against the physical
+capture. All six changed inputs match the updated closed KE binding.
+The isolated analysis reader passed 199 controls. Public campaigns stay
+closed and the 90% line and 95% mutation thresholds are unchanged. The
+affected critical-file qualification and native producer/consumer gates remain
+open. This recording supplies a historical timing prerequisite for TQ-09.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-terminal-coordinate-focus-20261119-v4/healthy-01/verification.json` | `4ef4ceb1c2e4fedd154793fcdb39ad076da625ea46541fffa4dcadd6ee034a27` |
+| `engine-ke-terminal-coordinate-focus-20261119-v4/receipt-age-01/verification.json` | `ee92d63fe682daa8e9fe00358b43e1a026175855ea0930e7abec21a3a3e35d64` |
+| `engine-ke-terminal-coordinate-integrated-20261119-v4/admission.json` | `4da80932fa3c6114c52d2400eec5b90ecfd882007c1bc0b2b1b57e81a0870d5a` |
+| `engine-ke-terminal-coordinate-integrated-20261119-v4/reports/run-01/verification.json` | `fdc36e4a8580afcbd3aaba7be2ff6399caef566591ffe86cb58436b671478430` |
+| `engine-ke-terminal-coordinate-closed-readmission-20261119-v4/closed-role-rebind.json` | `f21cdfdf37710fa86b134bdae759444452ac406b35c99fa2475d4455b09796a5` |
+| `engine-ke-terminal-coordinate-closed-readmission-20261119-v4/closed-reader-suite.log` | `265b9973b814c84d3bd323f88ad1818887ee8095e1f94f97baa4e845b58e4e45` |
+
+###### Guarded terminal timing GNU coverage and managed report selection
+
+W11-W01/S2.1 and CHECK-19/21/25/27. The current product
+`1161aafd3a599d190ae7ab0e0f236e0f4d844e969cfce13c2919cb4d4a90badf`
+was captured from staged tree `a8c39613…`. The existing stable-core GNU
+EP1 selection listed 796 exact descriptors in 13 files. Datagram added
+six descriptors relative to the 790-descriptor predecessor. Full
+descriptor/diff comparison found 682 identical, 103 added names, 97
+removed names and 11 same-name differences, in datagram, ledger and
+recovery. No outcome transferred and no variant executed.
+
+The instrumented lane completed all 576 named tests, including 292 KE
+cases, with zero failed, ignored or filtered. All 13 file-line gates
+passed (91.45% to 100%). The reached timing and changed recovery
+owners measured datagram 712/739, ledger 1087/1124 and recovery 729/788.
+The raw export contains 13 exact files with no branch denominators.
+Independent review checked all 626 map inputs, 57 role pins, raw native
+listing outputs, instrumented roster and LLVM counts. Exact-zero delay
+and the defensive reverse-interval path retain separate sensitivity
+questions. The earlier targeted one-nanosecond control has no generated
+mutation credit.
+
+The code-owned KE role now selects `ke_managed_preview` for the same
+`managed_preview.rs` already in the 19-file critical inventory. The
+other profiles and prior receipts retain their historical helper bytes.
+The new role rebinds three helper/test pins, keeps the same 613-input
+product and 576/292/90 roster, and preserves 90% line and 95% mutation
+thresholds, the six-worker profile and closed campaign state. The
+isolated public reader and portable helper suites passed 199 and 188
+controls respectively. Earlier invocations used insufficient disk or
+the wrong logical temporary path and do not count.
+
+The new selector produced 82 exact managed preview descriptors on its
+own GNU listing. The first wrapper retained the native list but failed
+its final metadata lookup. The corrected wrapper completed with full
+before/after staged status and source custody. The two listing runs
+claim zero variant executions. A future whole-role mutation admission
+needs a complete 14-owner current catalogue and independently reviewed
+per-file evidence. The separate role results do not qualify Windows
+entry points or resource lifecycle, healthy native TLS/UDP, calibrated
+mapping or production Core admission.
+
+The managed-report coverage lane ran all 576 cases and exported the
+one selected file. Its measured **94/201 lines (46.77%)** failed the
+unchanged 90% gate. The child exited 1 after export and owned work was
+retired. LLVM recorded no hits for the public Preview report getters and
+formatter, the failure formatters, or the typed source and cleanup
+projections. Direct checks through the joined Preview consumer and
+known-refusal projections are next. The Windows-only facades remain a
+separate target obligation. Neither the new listing nor this failed
+coverage observation closes any managed-file mutation or release gate.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-enumerate-a8c39613-20261119-v1/verification.json` | `e6f379bbf4cbcd98da8e5272fb58a98f50b88b01fc4a39da27f2bd9343f094ae` |
+| `engine-ke-enumerate-a8c39613-20261119-v1/historical-comparison.json` | `03deaf7e64c0e40bb8c5e71f639db29b90ce7d85b677ac307a5c32ac750845ac` |
+| `engine-ke-coverage-a8c39613-20261119-v1/verification.json` | `b76b5f4987b63480ed93bff027a0a0278a0ff10d30eed81b5f1ef5094796d6eb` |
+| `engine-ke-coverage-a8c39613-20261119-v1/coverage.json` | `4c78cee17a2ac6eab6f180b20fa02aaa719f3f64733392c4b8c06c2aa31deb5c` |
+| `engine-ke-managed-metrics-20261119.xbcMjvLd/enumerate-01/terminal.json` | `1fb491025379bbe1b30c73f0e27731c130e6e7d78de21cd0b919da7c52b9a2e2` |
+| `engine-ke-managed-metrics-20261119.xbcMjvLd/enumerate-02/verification.json` | `9021f2d96415fbb9a6df4e281223e23f26846906d7371ea425cedda648099bd5` |
+| `engine-ke-managed-metrics-20261119.xbcMjvLd/enumerate-02/terminal.json` | `8bfcc38e33f8bc206300b20b4f5e942beba546143c6853162bc8e13ebff7924f` |
+| `engine-ke-managed-metrics-20261119.xbcMjvLd/test_verify_engine_analysis.log` | `f41e03c040361f1f2fc717147d163a27f1e674abe6d619c58f045364bf752db3` |
+| `engine-ke-managed-metrics-20261119.xbcMjvLd/test_portable_analysis.log` | `3df9ccc9b824392abbd5c9223362c39175e1810e4fdf66eabb4b905c649e7109` |
+| `engine-ke-managed-metrics-20261119.xbcMjvLd/coverage-01/verification.json` | `e896bbde055ba57362645df7265f126d8d6ba4fffc9a026b9410a564b8ba5944` |
+| `engine-ke-managed-metrics-20261119.xbcMjvLd/coverage-01/coverage.json` | `46c24b32f3ec2cd5299bb7e0f20377e0c341f7d369a5ac52ad3c2d7709485160` |
+| `engine-ke-managed-metrics-20261119.xbcMjvLd/coverage-01/terminal.json` | `389e18cac0fd61d77b84f348fa815a76ea514aae839b166908f396acb095d50c` |
+
+###### Managed Preview and Protected report consumers
+
+W11-W01/S2.1, CHECK-17/19/25/27. The Windows Preview facade now sends
+the actual worker result through the same consuming projection used in
+the portable tests. The projector accepts only joined managed Preview
+history, returns the original configuration and packet population, and
+preserves the original typed failure. Source capture and the original
+worker and observer calls precede the projection as before. The
+receiver supplies no timing mapping, synchronization or clock authority.
+
+Eight existing cases now exercise the reporting boundary after actual
+worker or reservation activity. The joined Preview receives its original
+configuration and independent (1 cookie, 12 cookie bytes, 140 sealed
+packet bytes) expectations, including after a postcommit replacement.
+The fixture observes no transmission. Each actual joined mode refuses
+projection as the other. A precommit replacement retains the typed
+configuration-change refusal, original debits and no history. Allowlisted
+Debug and Display outputs omit the synthetic configured identity and
+endpoints.
+
+The observed Protected facade retains the caller-context, busy,
+registration and spent-slot refusals before worker use. In the joined
+failure fixture, the original handshake failure, TLS cleanup, admission
+cleanup and observer close code remain distinguishable. The actual
+collection-contention fixture retains ownership until normal join and
+observes the earlier unconfirmed status and independent close error
+through the facade. These reached fixtures use deterministic injected
+errors and ordinary portable worker execution. Native observer
+registration, healthy TLS/UDP and clock effects retain their own gates.
+
+Independent source review found a Busy test assertion could be masked
+by the intentionally failing registration callback. The corrected test
+asserts inside the callback and admits its competing configuration before
+the callback. The first launcher omitted the systemd envelope and ran
+zero checks. The next run passed format and Windows
+target checking, then MSVC Clippy refused two late static declarations.
+The corrected candidate moves both test statics before statements.
+
+The corrected 613-input product `3195ac67…` passed all nine development
+lanes in 241.201 seconds. Both EP1 modes ran the exact 576-case roster
+with 292 KE cases and all eight updated worker cases. All 90 doctests
+ran. The 14-owner role binds the four changed Rust inputs among 57
+pins, preserves its 19-file critical inventory and reuses the same 45
+dependency-graph records. The two focused closed-role reader suites
+passed 58 controls.
+
+The managed-file stable-core GNU run completed the full 576-case
+instrumented roster. The exact file cleared the 90% line gate at
+**193/213 (90.61%)** in 90.971 seconds. Preserve the earlier 94/201
+failure on its predecessor. The raw export reports 46 of 48 functions
+and no branch denominators. The successful Protected formatter and
+the observed wrong-mode closure still lack direct execution. The
+separate Windows facade and observer boundaries require their own
+evidence.
+
+Fresh exact enumeration lists 83 variants. Line-coordinate changes
+shifted all predecessor anchors, and the new Preview projector adds
+one variant structure after accounting for those coordinates. The
+listing includes Windows-only descriptors. No listed variant ran, no
+old mutation outcome transfers, and the 95% critical-file gate remains
+open. Both public campaigns stay closed.
+
+The separate managed Protected Windows EOF candidate has a formatted
+private patch and passes 78 native-runner reader controls. This is
+preparation for the real public stale/current-revision, loopback EOF
+and observer-close path. Cross-link and native execution remain pending.
+This path needs no certificate-store change or healthy TLS prerequisite.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-managed-projection-20261119.t6ThTrGE/reports/run-01/verification.json` | `456594503e816260b780a77834afb7488660496d9b514b48efdb53966e012661` |
+| `engine-ke-managed-projection-20261119.t6ThTrGE/admission-v2.json` | `5a0ca79ee708ede6b484b9c4aa9a67d22e7299ab5a3741bfb0f60ee50930c455` |
+| `engine-ke-managed-projection-20261119.t6ThTrGE/reports/run-02/verification.json` | `6aa8783727c72508a8c6e16cbb4c765817d7e03bf0b0ef9039ab8bbbbe1ac743` |
+| `engine-ke-managed-projection-20261119.t6ThTrGE/rebind/v2/closed-role-rebind.json` | `76f6c96a8daea2624c70002401f995b9e9b7794654d856b4580a6b171782231a` |
+| `engine-ke-managed-projection-20261119.t6ThTrGE/closed-engine-role.log` | `ba66931a94c920eafce23d7eb9449f7857e109b86ed0dc54826a0f4a76d364fc` |
+| `engine-ke-managed-projection-20261119.t6ThTrGE/closed-portable-role.log` | `f9ef00017caa2702daf282381ab6c7f1ab6d560d0023b5d78f4f51e57461cbf8` |
+| `engine-ke-managed-projection-20261119.t6ThTrGE/managed-list-01/verification.json` | `76204b3d1e3defae84822430adeb5fca4e1e10189aa5d8725f8321cdb09b5d41` |
+| `engine-ke-managed-projection-20261119.t6ThTrGE/managed-coverage-01/verification.json` | `973d675b896fbf79ec1ba0c8ebedde45712f693737d11089aab28582398580c4` |
+| `engine-ke-managed-projection-20261119.t6ThTrGE/managed-coverage-01/coverage.json` | `8ef4ee61ddee6f3078f175e86f65e60015b48907f84bfa056edb2062156bee21` |
+| `engine-ke-managed-projection-20261119.t6ThTrGE/metrics-readback.json` | `c9c0f7408bac8ebbab519934606fcf60a84d2b03a7d7e8f3cca2a459eb27aff6` |
+| `engine-ke-managed-native-eof-20261119.pp1bCQ4r/formatted-handoff.json` | `7943c6b4efa80efc28c403097a4a78a354524190688bc35676e4f6127491ad36` |
+
+###### Managed Protected stale revision and Windows loopback EOF
+
+S2.2/W11-W01, CHECK-6/9/17/19/21/25/27. The new fixed opt-in
+`--facade-managed-protected-eof` uses the ordinary-user facade runner.
+It leaves the default and raw EOF selections available separately.
+The fixture installs an equal-value revised source, observes the typed
+`ConfigurationChanged` refusal for the old revision with exact
+source-policy labels and absent operation cleanup, then calls the
+current revision in the same fresh process. The actual loopback peer
+observes ClientHello, half-closes, and joins before the witness is emitted.
+
+On x64 Windows `10.0.26300.0`, the actual current call reports primary
+`handshake/unexpected-eof` and separate cleanup
+`response/unexpected-eof`. Admission cleanup and retained history
+remain absent. The facade reports no observer close error. The
+configured UDP socket receives no datagram at the post-join check.
+The process emits no stdout, reports `eligible=0 fresh_sync=0`, and
+exits successfully for this expected failure. This output does not
+independently count observer registrations or closes, prove a
+system-wide absence of UDP, or exercise power-transition delivery.
+
+All 78 reader controls and 20 MSVC cross-build steps passed on
+product `3195ac67…` with 613 product and 15 native helper inputs.
+The nine native observations passed their expected dispositions.
+The managed Job reports two authored images and two System32 console
+helpers under the existing four-process cap. All four exit, all nine
+observations finish with zero active Job processes, and the raw records
+confirm stable runtime inputs and image settings. The matching
+supervisor and launcher tokens were ordinary and non-elevated.
+The managed case's report binds the actual launched image and observes
+its inherited-token path. Cross-build and native elapsed times were
+75.942 and 84.666 seconds.
+Healthy TLS, trust, live protected UDP, native power lifecycle,
+calibrated mapping, and Core eligibility retain their own gates.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-managed-native-eof-20261119.pp1bCQ4r/reviewed-launch.json` | `c9f61a4f1bea5baa894300c10d1cfeb5980711c8d645f48fe5237146d54f1e5c` |
+| `engine-ke-managed-native-eof-20261119.pp1bCQ4r/host-preflight-03.json` | `fd2494741bf5d91d5f10ff6f45041015eb129b02afe0aa26aa7f2ecfbd14a512` |
+| `engine-ke-managed-native-eof-20261119.pp1bCQ4r/native-reader-reviewed.log` | `83876ac1f0944c73e947c7148b5db92b3fe34f6765dbabe4e8e0eb10e9d1846b` |
+| `engine-ke-managed-native-eof-20261119.pp1bCQ4r/retained-reviewed-success/msvc-build/verification.json` | `65bad2878ec03e8d0fc67f67f45788cfdad24c945582681febdb2be76f72e9e7` |
+| `engine-ke-managed-native-eof-20261119.pp1bCQ4r/native-reviewed-01/verification.json` | `add660f9e2bae5a4883ef14171b946bd95631392a3c4ab43eea83e18fe917025` |
+| `engine-ke-managed-native-eof-20261119.pp1bCQ4r/retained-reviewed-success/windows-records/facade-managed-protected-eof/native-supervision.json` | `f0e542a8f131e6cb96bc7c620dac03bbab8815dee5273a1cb788f979d9d77d25` |
+| `engine-ke-managed-native-eof-20261119.pp1bCQ4r/retained-reviewed-success/readback.json` | `f763eafd675175b420cdff44aefde4c7a19e973a1dd229a4e75fd88e8aac42be` |
+
+###### Current complete KE mutation catalogue
+
+The existing closed stable-core GNU role enumerated all 14 owners on
+`3195ac67…`. Discovery produced **879** descriptors. The 83 managed
+typed descriptors and rendered diffs match the separate single-owner
+listing exactly. All 626 reported source and helper hashes match
+this staged native candidate. The compile and native helper overlays
+sit outside that GNU input map. The original 13-owner receipts retain
+their predecessor scope.
+
+The listing completed in 39.993 seconds and retired its
+owned workspace and capture. The initial preflight, cap and fixed
+source filters remain in force. Neither public campaign was admitted.
+Proceed through the existing bounded, reviewed per-file execution
+recipe with the full catalogue as an admission prerequisite. The
+specific GNU/Windows descriptor activity and 95% mutation score
+still need their actual outcomes.
+
+| GNU discovery evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-enumerate-f5f1bb9-20261119-v1/verification.json` | `e270622f6c70a5cc3b247f2e2e53807f94e8f88d1cd97150654873da5cbcad0d` |
+| `engine-ke-enumerate-f5f1bb9-20261119-v1/terminal.json` | `9fe89446637224f2d701821ee30a3e709236535b09a9d6f66ae085f46cbafe82` |
+| `engine-ke-enumerate-f5f1bb9-20261119-v1/historical-comparison.json` | `012e79e5eccbef35df6a488af3229273f785474442ff027a271fa7f4fea1d7df` |
+
+###### Managed Preview mutation and target activity
+
+W11-W01/S2.2, CHECK-17/19/25/27. The unchanged closed GNU role supplied a
+complete 14-owner catalogue and the exact 83-descriptor `managed_preview.rs`
+selection. The private owner binds staged tree `f59bf75…` and the same
+613-input product `3195ac67…`. It preserves the exact 666-test baseline,
+four workers, one build job and one test thread per worker, zero extra
+jobserver tokens, 90/60-second phases and its 1,200-second campaign
+within the 1,350-second outer lease. Ten setup refusal controls executed
+zero product tests. Both public campaigns stay closed.
+
+The separate admitted Windows-target check compiles the original Engine
+library, each exact catalogue diff in isolation, and the restored library
+on the same EP1/MSVC target. The healthy and restored commands pass.
+The Windows-only `probe_nts_protected` and `preview_nts_ke` replacements
+both refuse at the precise `Default::default()` span with E0277 for the
+respective sealed report type. Scratch and the owner unit retired. This
+classifies active-target compiler viability with zero behavioral kills.
+It neither changes the GNU raw outcomes nor executes Windows.
+
+GNU executed all 83 descriptors on the exact 666-case baseline
+(576 ordinary and 90 doctests). It recorded **44 caught, 33
+compiler-unviable, five missed and one test timeout**. The 44/50
+build-viable catch fraction is 88.00%. Cargo-mutants returned 3 and
+the verifier returned 1. No qualification credit was issued. The
+separate MSVC refusals explain two GNU misses on inactive bodies.
+The three active misses suppress the actual cookie count, Stop-failure
+observation or typed source-policy error. The viable Preview
+retained-configuration variant timed out after 565 completed cases.
+Its Test phase rebuilt Engine and hit the 60-second limit. The
+record establishes neither a behavioral catch nor a product timeout.
+The 95% gate stays open.
+
+Independent readback matched all 83 typed descriptors and rendered
+diffs, the 666-case baseline, all 626 captured inputs and all 805
+retained files. The owner finished in 964.494 seconds. Its cgroup,
+processes and temporary RAM backing retired. Keep the raw result,
+then exercise real joined multi-cookie, collection refusal, typed
+replacement refusal and retained Preview history controls before
+renewing the admitted selected-owner campaign.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-managed-mutation-f59bf7539-20261119-v1/run-01/terminal.json` | `2e5f07fc3a14c20613c32af10ef6a346396e591a1a0ac91e444ca9cca20d86c2` |
+| `engine-ke-managed-mutation-f59bf7539-20261119-v1/run-01/ram-campaign/campaign/verification.json` | `651b55567a22fd35a2630cef16932cfbfab38aec2f38ffe8ebf9a925c207a69a` |
+| `engine-ke-managed-mutation-f59bf7539-20261119-v1/run-01/ram-campaign/campaign/work/mutation/ke_managed_preview/mutants.out/outcomes.json` | `568d9fdd3670c94b92b6aa3c4006827c6b426cee36af938d98e444ac7aead003` |
+| `engine-ke-managed-preview-msvc-controls-f59bf75-20261119-v1/run-01/verification.json` | `599c089abaa46db13828646cb95e3784cde0aaf52c16d6fd2239e5242095e21a` |
+
+###### Managed report mutation sensitivity through actual joined consumers
+
+CHECK-17/19/25/27. Source-only test changes preserve all 37 existing
+test identities and preserve the production file that generated all 83 variants.
+The real joined Preview now checks the original one-cookie population
+and a two-cookie population with 28 total bytes and the same
+140-byte sealed first-cookie packet. A Preview sealed before abnormal
+retirement retains its original configuration while the configured revision
+advances. Genuine collection contention checks both healthy
+Stop acknowledgement and actual original Stop mutex failure, then
+releases and collects the job before checking the report. The protected
+replacement cases return the exact typed refusal before send and at
+retired reply commit. The independent collection refusal reports no
+source-policy error.
+
+The first focused build failed on a redundant qualified StopHandle
+path. The second ran all five GNU cases and failed Clippy at the
+power-event test's line limit. The final candidate moved the absent
+source-error observation into the existing collection-refusal helper.
+Candidate `e17ba3fa…` passed all five exact GNU EP1 tests, sandbox
+boundary, workspace format and GNU all-target Clippy on Rust 1.100.0.
+Its source map changes only `job_tests.rs` and `managed_preview_tests.rs`
+among the 613 product inputs. All three owners retired their scratch.
+No Windows test execution is claimed for this test change.
+
+Four exact isolated substitutions compiled and each ran one case,
+which exited 101 at its intended behavioral assertion. The actual
+observations were cookie count 1 versus 2, retained configuration
+None versus the original revision, Stop-failure false versus true,
+and absent source error versus `ConfigurationChanged`. Each
+wrapper accepted only the intended diagnostic and retired its scratch.
+These are targeted sensitivity controls with zero generated kill credit.
+Keep the earlier raw GNU metrics and timeout. Independent review of
+the six prior catches whose failing names overlap the edited files
+found the actual old fault oracles still present: original one-cookie
+and postcommit tuple assertions, plus the original protected-history
+refusal before the new Preview check.
+
+The integrated `e17ba3fa…` candidate passed all nine EP1 development
+lanes, including 576 ordinary and 576 optimized cases (292 KE per mode),
+90 doctests and both GNU/MSVC check and Clippy. The closed role binds
+the two test-pin updates and that evidence, retaining its 14 owners,
+19 critical files, 45 reused graph records and closed campaigns.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `managed-oracle-healthy-f59bf75-20261119-v2/healthy-01/verification.json` | `25aa853ec410b37d71f4857ae34967b9a7db295c3966fe172f5af85668578f87` |
+| `managed-oracle-healthy-f59bf75-20261119-v3/healthy-01/verification.json` | `61b6830b0f6991f91b7563500eba6cd352aa7fd1c6e5482a18e1daf332114f8d` |
+| `managed-oracle-healthy-f59bf75-20261119-v4/healthy-01/verification.json` | `d6cdcd48909692ff0dcaa4019548b4894ba337281f34d9a0c3b4fa5489540970` |
+| `engine-ke-managed-oracle-focus-f59bf7539-20261119-v1/formatted-red-v4/count/verification.json` | `ff3ae1e6c1c5fc3743ec2c949c81ee6e1a08019937c0e457d128823b17991f41` |
+| `engine-ke-managed-oracle-focus-f59bf7539-20261119-v1/formatted-red-v4/retained/verification.json` | `b14e1664a665ab4dc692e62beb2df3cfebea917f6d6612971e2b5802b82f15ed` |
+| `engine-ke-managed-oracle-focus-f59bf7539-20261119-v1/formatted-red-v4/stop/verification.json` | `9d1e2227ecdaa5532b304346f9bf22d0c6588a2e0d1b7925a709032ed84307d8` |
+| `engine-ke-managed-oracle-focus-f59bf7539-20261119-v1/formatted-red-v4/source-policy/verification.json` | `1fc2a836904c782bb0e1d0c9207daa5e190548b4a0417c6f9a3625e650361a88` |
+| `engine-ke-managed-oracles-integrated-f59bf75-20261119-v1/reports/run-01/verification.json` | `ea34a6ef5fb3c208758f6d21dd7baff932e950acad08774a28153de4f667d3c4` |
+| `engine-ke-managed-oracles-integrated-f59bf75-20261119-v1/rebind/closed-role-rebind.json` | `3ac16896c2f95ab3b660391993f93123583d57f307a6d0b0db4bd399328adff5` |
+
+###### Current Managed Preview selected-file qualification
+
+W11-W01/S2.2, CHECK-17/19/24/25/27. The closed role bound staged tree
+`64c599d…` and 613-input product `e17ba3fa…`. Fresh stable-core GNU
+enumeration matched all 879 exact typed descriptors and rendered diffs
+across the 14 registered owners. All 626 protected source and helper
+hashes matched the expected candidate. All 576 instrumented cases ran,
+including the 292 KE cases. Managed Preview passed the 90% line gate
+at 194/213 (91.08%). The export supplies no branch denominator.
+All 83 generated descriptors replace whole function bodies. The actual
+worker and projection controls supply separate lifecycle evidence.
+The 40.010-second enumeration and 91.247-second coverage runs exited
+zero and retired the owned captures. The integrated development job
+also retired its separate approximately 90 MiB temporary capture.
+
+Independent selected-file adjudication preserves the original GNU
+native exit 3, its five raw misses and its test timeout. It admits
+44 original behavioral catches, 33 original GNU compiler refusals,
+four exact current behavioral witnesses, and two exact MSVC compiler
+refusals for Windows-only bodies. The target comparison verified the
+same source and build inputs and adds zero compiler-refusal kill credit.
+The four updated tests supply distinct behavioral witnesses for the
+three active misses and the formerly timed-out descriptor. All 83
+descriptors are accounted for. The report-only active-target gate
+passes at **48/48 (100%)** against 95%. The original GNU campaign
+retains its incomplete disposition. Public campaigns remain closed.
+Other KE owners, native Windows runtime, healthy TLS and Core admission
+retain their separate qualification gates.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-managed-oracles-integrated-f59bf75-20261119-v1/enum/verification.json` | `098107d65c7ca4995138e01d9d7dd5c0e6dcb673474fc4765e8fc0227a606135` |
+| `engine-ke-managed-oracles-integrated-f59bf75-20261119-v1/enum/terminal.json` | `95e18db3555ecaf29957a1238776cff8534762848f5b183d8ae1880af86b3abf` |
+| `engine-ke-managed-oracles-integrated-f59bf75-20261119-v1/coverage/verification.json` | `5246aa25cc344801f35bce72fc73fc4e820bbe9637f734411d4cab3216d6482a` |
+| `engine-ke-managed-oracles-integrated-f59bf75-20261119-v1/coverage/terminal.json` | `c4c7eefcb5ceeaf340d628f0c96529251f67b9b19e01c2a7c0973a0038fceea9` |
+| `engine-ke-managed-oracles-integrated-f59bf75-20261119-v1/coverage/coverage.json` | `68f9eb13d5134e4479c164f4c724a6e8e54397001d49d01c539a978426b74d49` |
+| `managed-preview-independent-readback-20261119.LDYqz67x/independent-managed-preview-adjudication.json` | `03e60733d8df92e46f0c99b1054a8458d37a2b6a7f58657550077b4dc1aca5af` |
+
+
+###### Next KE selected-file gate
+
+CHECK-19/25/26/27. The fresh catalogue matches all 29 exact `job.rs`
+descriptors and rendered diffs from the previous campaign. Use this
+catalogue for current selected GNU coverage. The historical 12/14
+GNU mutation result stays below threshold. Reconcile the changed
+worker tests and managed/recovery callers against every retained
+witness before reusing it. Replay any affected variant on the
+current 666-case baseline. Verify both Windows-only replacements
+with current MSVC healthy, exact refusal and restoration controls
+before separate active-target accounting. Compiler refusals add
+zero kills. Both campaigns remain closed.
+
+###### Current KE worker selected-file qualification
+
+CHECK-19/24/25/26/27. Current staged tree `9526ff3…` and product
+`e17ba3fa…` reuse the exact 626-input catalogue of 879 descriptors.
+All 29 worker descriptors and rendered diffs match the historical
+selection. Four prior catches depend on changed joined-worker tests.
+The renewed run selects the complete worker file on the current
+666-case ordinary/Rustdoc baseline.
+
+The instrumented GNU run executed 576 cases, including 292 KE cases.
+The current `job.rs` gate passed at **271/285 executable lines
+(95.09%)**. The export has zero branch counters. The owner retired its
+temporary source and work in 91.457 seconds.
+
+The first MSVC control run reached both intended compiler failures
+and restored source bytes. Its wrapper omitted the final restored
+compile. The renewed sequence reproduced both failures and compiled the
+original and restored library. The exact
+`native_provider` replacement reached E0277 at `job.rs:31:8` for
+`ProviderScope: Default`. The exact `try_submit` replacement left
+`native_provider` unused and reached the denied `dead_code` at
+`job.rs:30:4`. The healthy and restored outputs both emitted
+current non-test Engine MSVC metadata. The Rust 1.100.0 cross-check
+used the admitted x64-v3 EP1 configuration and retired its scratch.
+Compiler refusals contribute zero behavioral kills.
+
+
+The four-worker GNU campaign admitted the exact ordered 666-case baseline
+and attempted all 29 variants under the original 90/60-second phase limits.
+In 419.764 seconds it recorded 11 caught, 15 compiler-unviable, two misses
+on GNU-inactive bodies and one Test timeout. The native command returned 3,
+and the verifier returned 1. The timed variant passed Build, then spent
+29.60 seconds rebuilding during Test. The log recorded the selected
+stack-size case failing before its final summary. The deadline was reached
+during a later address-round case. The timeout remains in the raw result.
+The unit and RAM backing retired and the owner retained 697 raw files.
+
+The one-case exact replay passed on healthy and restored source. The
+retained `23:30` replacement failed `KE-JOB-01-selected-requested-stack-bytes`
+with 1,048,578 requested bytes against 2,097,152 expected, at the actual
+held-worker boundary. The scoped active-target review accounts for all
+29 descriptors: 11 full-run catches, one current focused witness, 15 GNU
+compiler refusals and two MSVC compiler refusals. It accepts **12/12
+viable (100%)** against 95%, with no unresolved variants or equivalents.
+The focused witness adds zero raw generated kill credit. Three separate
+full-run catches reached a worker stack-overflow abort. The reservation
+drop variant stranded the actual slot in `Phase::Submitting`, so the
+observer reported Busy and the original registration-refusal test failed.
+This selected-file result leaves the raw GNU outcome incomplete. Both
+public campaigns stay closed. Native Windows runtime and other files
+retain their own gates.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-job-coverage-9526ff3e-20261119-v1/verification.json` | `f4d35b449cd3bf3b4cc7b0ea8afb282998466b8044483a53e98559b616439571` |
+| `engine-ke-job-coverage-9526ff3e-20261119-v1/coverage.json` | `50ead2afe424305dc0e590c4953f5285fe078bf330ae6c7a14858968b2bb7c02` |
+| `engine-ke-job-msvc-controls-9526ff3-20261119-v1/run-01/verification.json` | `03dc5af8a891f8d491cebdd6578a785ffae5be47f40ab406ecfb7b060fcaddd0` |
+| `engine-ke-job-msvc-controls-9526ff3-20261119-v2/run-01/verification.json` | `61df8502ba625963f91dc24921c6fb3182994b6c5c609c7aff8b2ec95466bba4` |
+| `engine-ke-job-mutation-9526ff3e-20261119-v1/run-01/terminal.json` | `b98cabc8d062369d1bbfd5342b2551fd0f6e4e20494cf3229db09fd3ffbe55c9` |
+| `engine-ke-job-mutation-9526ff3e-20261119-v1/run-01/ram-campaign/campaign/work/mutation/ke_job/mutants.out/outcomes.json` | `c15376693f14f3e48d8220fd83b1fc6b8ed9a66976fbbab6654f829ed805142f` |
+| `engine-ke-job-stack-focus-9526ff3e-20261119-v1/run-01/verification.json` | `68c4ad9178110a6efd2a43a50619302e9ed61c837e97892986841cafaa26dcda` |
+| `job-independent-readback-20261119.GkMvZALh/independent-job-active-target-adjudication.json` | `12d3ba26357ccad40356152d48d57d1f3def4bff76c57847670b0f8bea0992ac` |
+
+
+###### Next KE datagram selected-file gate
+
+On the current catalogue, 24 of the 67 datagram descriptors match the prior
+completed 61-variant cohort exactly. GNU now reaches `Backend::bind` in
+the Linux loopback fixture. Reconcile the current target activity and run
+the selected current cohort after its 90% line check. Preserve the existing
+deterministic acceptance-equality and exact-expiry controls. Separately
+exercise a genuine history with original receive trailing observation,
+receipt processing and commit at the same instant before claiming the
+zero-delay getter boundary. The earlier history witness uses a 1 ns
+positive delay. Use the existing guarded owner and a private deterministic
+processing read if needed. Keep observed capture and commit semantics and
+re-freeze any changed test inputs before metrics.
+
+###### Guarded exact-zero protected datagram history
+
+S2.2/W11-W01, CHECK-6/11/17/19/25/27. The original receive bracket's
+trailing reading, the guarded receipt-processing time and the guarded
+final commit may be equal. A genuine joined history must report
+`Some(Duration::ZERO)` in that case. Commit-at-acceptance and
+commit-after-acceptance previously covered the ledger cutoffs and
+positive history, while the receipt processing read remained ambient.
+
+The same ledger and producer now support one fixture-only clock choice.
+It is scoped to the next ordinary stage on the actual association and
+consumed before any fallible staging. An actual idle Phase refusal
+checks that the choice clears and the prior status, pool and absent
+receipt remain intact. The real producer then stages, authenticates,
+retires and commits the reply. Receipt processing uses the original
+trailing reading under the actual Control guard in the selected fixture.
+Production samples `Instant::now` at that guard. The selected fixture
+consumes through the real bound receiver and verifies all three readings
+and zero delay. The existing ambient acquisition-age-plus-1-ns, late
+cancellation and late Stop histories still execute.
+
+The first focus wrapper took source from the base tree and stopped with
+zero lanes. The corrected wrapper bound the private overlay. The first
+healthy build then failed the denied unused-qualification lint before
+any test. The final two-file candidate `9e8c2d87…` qualified the two
+focused cases in both healthy and restored modes, including the
+acceptance and expiry neighbor. Both exact catalogue comparisons at
+`datagram.rs:873:34` compiled and the single selected history test
+exited 101 at the zero-delay assertion, with `None` against
+`Some(0ns)`. GNU and MSVC all-target Clippy passed. The eight-lane focus
+retired its scratch. Independent readback matched all source inputs,
+raw lanes and exact fault preimages. Targeted witnesses have zero raw
+generated mutation credit.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-datagram-zero-focus-de78d3e4-narrow-20261119-v1/run-01/verification.json` | `2bf4980fe8a95b66b5d3b978fae2433e22b20a8d2fb3768af49722486fbd707a` |
+| `engine-ke-datagram-zero-focus-de78d3e4-narrow-20261119-v2/run-01/verification.json` | `f5fbc7432f8e8dadf79cfa670917f750cfe9561a6f0158c959d506e02c0d741c` |
+| `engine-ke-datagram-zero-focus-de78d3e4-narrow-20261119-v3/run-01/verification.json` | `ef3b00db9531b8805fe76a29e6e331e4a20661465b7f1c7a93c0347440a6528e` |
+
+###### Exact-zero datagram development and line checkpoint
+
+The integrated `9e8c2d87…` product passed all nine EP1 lanes. It
+executed 576 cases in each ordinary and optimized mode, including 292
+KE cases per mode, and 90 doctests. Check and Clippy passed for GNU and
+the Windows target. The closed role rebind admits the same 57 inputs
+with two updated pins, 45 graph records, 14 subjects and 19 critical
+files. Both public mutation campaigns stay closed.
+
+Fresh enumeration on staged tree `48c5869d…` measured 879
+descriptors and matched all 626 bound inputs. The 13 non-ledger
+inventories, including all 67 datagram entries, matched the predecessor
+typed records and rendered diffs. The ledger still has 217 entries:
+34 exact survivors of the catalogue comparison and 183 new identities
+with 183 removed identities. This is catalogue evidence and preserves
+the prior ledger execution scope. Enumeration completed in 40.14 seconds
+and retired its capture. An initial preparation stopped before
+execution because the separately reviewed Windows task document was
+missing from the private whitelist. The resumed preparation binds all
+three verified document hashes.
+
+The current datagram GNU instrumented lane executed 576 cases,
+including 292 KE cases, and passed the 90% line gate at **714/739
+(96.62%)**. The export has zero branch counters. The owner retired its
+temporary source and work in 86.273 seconds. This checkpoint advances
+the selected datagram owner to the exact current mutation campaign.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-datagram-zero-integrated-de78d3e4-20261119-v1/reports/run-01/verification.json` | `92438202e296b099211abe66df74182713fec60d7746ee83c3ec9ff24823dfb9` |
+| `engine-ke-datagram-zero-integrated-de78d3e4-20261119-v1/rebind/closed-role-rebind.json` | `3e625514d0ddc0057d18c63fd020dba62016ae3c710648cf680aae571033bc03` |
+| `engine-ke-datagram-zero-metrics-de78d3e4-20261119-v2/enum/verification.json` | `3dd793ad30178f52c2969ab9ad2431ae3d8b77191b54c21e1cffc0570e09225b` |
+| `engine-ke-datagram-zero-metrics-de78d3e4-20261119-v2/enum/historical-comparison.json` | `7e1b0bd5a4994b55ee749d7210a8a8bec5d14e95747a6ac7c992efb99058c8fc` |
+| `engine-ke-datagram-zero-metrics-de78d3e4-20261119-v2/coverage/verification.json` | `8f3211c215192a65417cc6351c2c70ad488ba8082e9911ff12c921cc8cdd58b6` |
+| `engine-ke-datagram-zero-metrics-de78d3e4-20261119-v2/coverage/coverage.json` | `5b3d60c6ce6c88bfb5a5f1b299f1a16a492266ca1663f6f7cc81eb74c8bdb746` |
+
+###### Current protected datagram selected-file qualification
+
+S2.2/W11-W01, CHECK-19/24/25/26/27. The current closed `ke_association`
+selection bound all 626 source/helper inputs at staged tree `48c5869d…`
+and the exact 67 `datagram.rs` descriptors and rendered diffs. The
+four-worker GNU run executed the original 666-name baseline (576
+ordinary, 90 doctests) and finished all variants under the 90/60-second
+Build/Test caps and 1,350-second outer lease. Both zero-delay replacements
+failed the named assertion with `None` against `Some(0ns)` in the full
+run. Their focused predecessors supply no additional mutation credit.
+
+The raw GNU run took 603.411 seconds and exited 2; the verifier exited 1.
+It recorded 26 behavioral catches, 40 compiler refusals, one miss and
+zero timeouts. The miss is the Windows-only `reached::exchange`
+replacement at `datagram.rs:1417:9`. `Backend::bind` is exercised on GNU
+and its replacement reached the intended GNU compiler refusal. The
+MSVC control independently compiled the healthy and restored EP1
+library and refused the same exact `exchange` replacement at E0277
+(`ProtectedCompletion<'_>: Default`). This Windows-target compilation
+adds zero behavioral kills. The separate active-target review accounts
+for all 67 variants and passes **26/26 viable (100%)** against 95%.
+The raw GNU result retains its incomplete status.
+
+The worker and its RAM backing retired. The uncompressed retained
+manifest covers 773 raw artifacts. Both public campaigns remain closed.
+This selected-file gate does not establish healthy native TLS/UDP,
+calibrated timestamp delivery or production Core admission. The next
+unrun ledger selection is group 05. The 37 descriptors match the
+historical typed items and rendered hunks after an exact uniform
+five-line shift. That catalogue comparison transfers no outcomes. Keep
+the group 04/chronology partial outcomes, residual time budgets and
+current per-file gates. The acquisition supplier still needs genuine
+mapping identity/revision, whole-exchange validity, date/scale and
+independent physical error and invalidation inputs.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-datagram-mutation-48c5869d-20261119-v1/run-01/terminal.json` | `b9b92f1ac10367993a44dd30e256f754b6f8bc7d1f0b356f8ac74f1314039bde` |
+| `engine-ke-datagram-mutation-48c5869d-20261119-v1/run-01/ram-campaign/campaign/work/mutation/ke_datagram/mutants.out/outcomes.json` | `1ea884b369a041cc44127a7f5c14c5eea1eaae3055584909a8ef491ece4310eb` |
+| `engine-ke-datagram-msvc-controls-48c5869d-20261119.qj0a_doo/run-01/verification.json` | `a3e65d3b1e9902334696dcd994e4a2937bc4862c53745500263b49d89c680a8a` |
+| `datagram-independent-readback-20261119.xs56FCue/independent-datagram-active-target-adjudication.json` | `95afa277ba9d9b86b1e96d2b7bc6f5959a77e5058a7eef9cfa38857e2b905b83` |
+
+###### Current ledger GNU coverage and group 05 raw outcomes
+
+S2.2, CHECK-11/19/24/25/26/27. Staged tree `e2a1876c…` differs from the
+catalogue tree `48c5869d…` in two verified Markdown files and keeps all
+626 product and helper hashes. The selected stable-core GNU ledger
+coverage lane executed all 576 named cases, including 292 KE cases.
+The LLVM ledger row records **1115/1153 executable lines (96.70%)** and
+zero branch counters. This passes the 90% line gate. The source capture
+and owned work retired after the successful lane.
+
+The four-worker group 05 mutation run matched the actual typed and
+rendered listing for all 37 selected variants and executed the full
+666-name baseline. Baseline Build and Test took 36.308 and 44.740
+seconds; the Test recheck stayed fresh. The 598.355-second raw run
+recorded 17 behavioral catches, eight compiler refusals, seven
+completed survivors and five Test timeouts. The native exit was 3
+and the verifier exit was 1. All five timed variants compiled and
+used a fresh Test recheck. The failing prefixes reached the actual
+packet extent or pool-limit consumers before the 60-second cap.
+These prefixes carry zero mutation kill credit. The owner retired the
+worker and RAM backing and kept 713 uncompressed raw files.
+
+Independent checked-domain review supports seven current equivalence
+candidates. For the six archive variants, the irreversible attempt
+charge limits used entries to 31 before the append, the original
+allocation reserves 32, and reservation excludes both used-cookie
+histories. The real packet encoder leaves at least 128 bytes for
+non-cookie fields, so 32 sendable cookies total at most 126,976 bytes
+against the 131,072-byte limit. This strict bound also covers the two
+equality-related archive variants. The seventh variant combines
+individual pool cardinality checks; both vectors originate from
+checked constructors and transitions with at most eight entries.
+The separate aggregate disjunction has real count-only and byte-only
+refusal controls and was caught. The seven proposed dispositions
+leave the published policy and raw outcomes unchanged.
+
+The five exact operator variants now have focused witnesses through two
+existing receiver tests. Both tests passed on healthy and restored source.
+The packet-extent variant failed `raw_refusals_are_charged_before_healthy_reply`.
+The four pool-extent variants each failed
+`used_only_cookie_reply_completes_without_usable_refill`. Every variant
+exited 101 with its required `Ledger(Capacity)` refusal; the boundary
+lane and healthy/restored runs exited zero. The original five timeout
+rows keep zero raw generated kill credit.
+
+The focused owner retired its scratch in 156.609 seconds. Together with
+the original 598.355-second run, group 05 has charged **754.964 of 1,350
+seconds**, leaving at most 595 whole outer seconds. Both source and
+execution readbacks completed independently on the same candidate.
+The next unrun partition is group 06; current source-context changes
+need current descriptors and results. The 217-descriptor ledger's 95%
+gate remains open pending its remaining selections and separate exact
+equivalence admission. Public campaigns remain closed.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-ledger-coverage-e2a1876c-20261119.hD1pImtk/terminal.json` | `9e076906f0038cae9950d21bd5490c64533dc9d06dece093a2d0af8b8d634cce` |
+| `engine-ke-ledger-coverage-e2a1876c-20261119.hD1pImtk/coverage.json` | `77e1cbf6ee7f75732e48f78203cc389b84e028a999cc59cfbd6bc6f868ab7492` |
+| `engine-ke-ledger-group05-48c5869d-20261119-v1/preparation.json` | `0113ea9c3ec8c0e14d6282f60da795a6fa358975838c3ffadf9ae01af0888cd4` |
+| `engine-ke-ledger-group05-48c5869d-20261119-v1/run-01/terminal.json` | `8fc138f9e4c65c2ed34360f830d6800d752a85f511421ea682134ec9918d08ba` |
+| `engine-ke-ledger-group05-48c5869d-20261119-v1/run-01/ram-campaign/campaign/work/mutation/ke_ledger/mutants.out/outcomes.json` | `24629e92d96578c3aaee6e506e6618ea50d527f07879f07f2e440ae25846f726` |
+| `engine-ke-ledger-group05-48c5869d-20261119-v1/independent-group05-raw-readback.json` | `c3811fcabd3c419d441a9400a127fffab024d6a2eafac9995832fef35442eae0` |
+| `engine-ke-ledger-group05-timeout-focus-e2a1876c-20261119.DxJvSjpp/run-01/verification.json` | `999a1215acb48bdde595a1be37242e602053a9644487d5cc2701f8bfce6a4e43` |

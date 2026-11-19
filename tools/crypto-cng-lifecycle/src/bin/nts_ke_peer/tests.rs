@@ -3,7 +3,9 @@
 use std::ffi::OsString;
 use std::time::{Duration, Instant};
 
-use super::{Budget, Config, Failed, Failure, Flow, IO_LIMIT, RESPONSE, admit_offer, ready_line, resolve};
+use super::{
+    Budget, Config, Failed, Failure, Flow, IO_LIMIT, RESPONSE, admit_offer, ready_line, resolve,
+};
 
 /// Later alert-write refusal stays separate from the original TLS protocol error.
 #[test]
@@ -12,17 +14,26 @@ fn primary_tls_error_precedes_a_later_alert_fault() {
     let cleanup = Failure::Io(std::io::ErrorKind::BrokenPipe);
     assert_eq!(
         resolve::<()>(Some(cleanup), Err(primary)),
-        Err(Failed { primary, cleanup: Some(cleanup) })
+        Err(Failed {
+            primary,
+            cleanup: Some(cleanup)
+        })
     );
     assert_eq!(resolve::<()>(None, Err(primary)), Err(primary.into()));
-    assert_eq!(resolve::<()>(Some(primary), Err(primary)), Err(primary.into()));
+    assert_eq!(
+        resolve::<()>(Some(primary), Err(primary)),
+        Err(primary.into())
+    );
 }
 
 /// Sticky faults refuse nominal success; ordinary errors and success stay intact.
 #[test]
 fn sticky_fault_and_healthy_result_neighbors() {
     assert_eq!(resolve(None, Ok(7_u8)), Ok(7));
-    assert_eq!(resolve(Some(Failure::Deadline), Ok(7_u8)), Err(Failure::Deadline.into()));
+    assert_eq!(
+        resolve(Some(Failure::Deadline), Ok(7_u8)),
+        Err(Failure::Deadline.into())
+    );
     let refusal = Failure::Io(std::io::ErrorKind::UnexpectedEof);
     assert_eq!(resolve::<()>(None, Err(refusal)), Err(refusal.into()));
     let fault = Failure::Io(std::io::ErrorKind::BrokenPipe);
@@ -55,16 +66,79 @@ fn literal_offer_and_each_changed_byte() {
     assert_eq!(admit_offer(&[0; 17]), Err(Failure::Offer));
 }
 
-/// The sole four-byte cookie implies a132-byte untransmitted client request.
+/// Pass the exact public peer reply through the consuming KE and request readers.
+///
+/// # Errors
+/// Preserve an unexpected framing, negotiation or packet preparation refusal.
+/// # Panics
+/// A four-byte neighbor must refuse without writes; the peer's actual cookie
+/// must admit an exact 140-byte never-send request with a 100-byte AAD.
 #[test]
-fn literal_response_is_twenty_four_bytes_with_four_byte_cookie() {
+fn literal_response_cookie_prepares_the_exact_preview_shape() -> Result<(), String> {
+    use ntp_wire::{
+        FrameLimits, NtsKeCookies, NtsKeFrameLimits, NtsKeNtpv4Negotiation, NtsKeNtpv4Offer,
+        NtsRequestEncodeError, NtsRequestShape, PreparedNtsRequest, RawHeader, RawNtsKeMessage,
+        decode_fixed_header, frame_nts_ke_message, negotiate_nts_ke_ntpv4,
+        prepare_nts_client_request, read_nts_ke_ntpv4_offer,
+    };
+
+    let framing: NtsKeFrameLimits =
+        NtsKeFrameLimits::new(32, 4).map_err(|error| format!("KE limits: {error:?}"))?;
+    let framed_offer: RawNtsKeMessage<'_> = frame_nts_ke_message(&super::OFFER, framing)
+        .map_err(|error| format!("offer frame: {error:?}"))?;
+    let offer: NtsKeNtpv4Offer<'_> =
+        read_nts_ke_ntpv4_offer(&framed_offer).map_err(|error| format!("offer: {error:?}"))?;
+    let framed_reply: RawNtsKeMessage<'_> = frame_nts_ke_message(&RESPONSE, framing)
+        .map_err(|error| format!("response frame: {error:?}"))?;
+    let reply: NtsKeNtpv4Negotiation<'_> = negotiate_nts_ke_ntpv4(&offer, framed_reply)
+        .map_err(|error| format!("reply: {error:?}"))?;
+    assert_eq!((reply.server_hint(), reply.port_hint()), (None, None));
+    let mut cookies: NtsKeCookies<'_> = reply.cookies();
+    let cookie: &[u8] = cookies.next().ok_or("expected one peer cookie")?;
+    assert_eq!(cookies.next(), None);
+
+    let mut header_bytes: [u8; 48] = [0; 48];
+    header_bytes[0] = 0x23;
+    let header: RawHeader =
+        decode_fixed_header(&header_bytes).map_err(|error| format!("header: {error:?}"))?;
+    let shape: NtsRequestShape =
+        NtsRequestShape::new(16, 16, 16).map_err(|error| format!("shape: {error:?}"))?;
+    let limits: FrameLimits =
+        FrameLimits::new(140, 3).map_err(|error| format!("packet limits: {error:?}"))?;
+    let uid: [u8; 32] = [0x55; 32];
+    let mut refused: [u8; 140] = [0xa5; 140];
+    assert!(matches!(
+        prepare_nts_client_request(
+            &header,
+            &uid,
+            &[0xaa, 0xbb, 0xcc, 0xdd],
+            0,
+            shape,
+            &mut refused,
+            limits,
+        ),
+        Err(NtsRequestEncodeError::UnsupportedCookie)
+    ));
+    assert_eq!(refused, [0xa5; 140]);
+
+    let mut output: [u8; 140] = [0; 140];
+    let prepared: PreparedNtsRequest<'_> =
+        prepare_nts_client_request(&header, &uid, cookie, 0, shape, &mut output, limits)
+            .map_err(|error| format!("actual peer cookie: {error:?}"))?;
+    assert_eq!(prepared.associated_data().len(), 100);
+    // Inert shape components exercise the formatter without claiming AEAD work.
+    let packet: ntp_wire::NtsClientRequest<'_> = prepared
+        .finish(&[0; 16], &[0; 16])
+        .map_err(|error| format!("finish: {error:?}"))?;
+    assert_eq!(packet.packet_bytes().len(), 140);
     assert_eq!(
-        RESPONSE,
-        [0x80, 1, 0, 2, 0, 0, 0x80, 4, 0, 2, 0, 15, 0, 5, 0, 4,
-         0xaa, 0xbb, 0xcc, 0xdd, 0x80, 0, 0, 0]
+        RESPONSE.as_slice(),
+        [
+            0x80, 1, 0, 2, 0, 0, 0x80, 4, 0, 2, 0, 15, 0, 5, 0, 12, 0xaa, 0xbb, 0xcc, 0xdd, 0x10,
+            0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x80, 0, 0, 0,
+        ]
     );
-    let cookie_bytes = usize::from(u16::from_be_bytes([RESPONSE[14], RESPONSE[15]]));
-    assert_eq!(48 + (4 + 32) + (4 + cookie_bytes) + (4 + 4 + 16 + 16), 132);
+    Ok(())
 }
 
 /// Port zero refuses; both admitted numeric extremes have the exact ASCII form.
@@ -85,21 +159,36 @@ fn cli_has_no_optional_effect_or_case_switch() -> Result<(), Failure> {
     assert!(config.ready.is_absolute());
     let mut missing = arguments();
     let _removed = missing.pop();
-    assert!(matches!(Config::parse(missing.into_iter()), Err(Failure::Arguments)));
+    assert!(matches!(
+        Config::parse(missing.into_iter()),
+        Err(Failure::Arguments)
+    ));
     let mut extra = arguments();
     extra.push(OsString::from("healthy"));
-    assert!(matches!(Config::parse(extra.into_iter()), Err(Failure::Arguments)));
+    assert!(matches!(
+        Config::parse(extra.into_iter()),
+        Err(Failure::Arguments)
+    ));
     for value in ["relative.der", "", "é", "nul\0path"] {
         let mut invalid = arguments();
         invalid[1] = OsString::from(value);
-        assert!(matches!(Config::parse(invalid.into_iter()), Err(Failure::Arguments)));
+        assert!(matches!(
+            Config::parse(invalid.into_iter()),
+            Err(Failure::Arguments)
+        ));
     }
     let mut same = arguments();
     same[2] = same[1].clone();
-    assert!(matches!(Config::parse(same.into_iter()), Err(Failure::Arguments)));
+    assert!(matches!(
+        Config::parse(same.into_iter()),
+        Err(Failure::Arguments)
+    ));
     let mut long = arguments();
     long[1] = OsString::from("x".repeat(1025));
-    assert!(matches!(Config::parse(long.into_iter()), Err(Failure::Arguments)));
+    assert!(matches!(
+        Config::parse(long.into_iter()),
+        Err(Failure::Arguments)
+    ));
     Ok(())
 }
 
@@ -109,11 +198,17 @@ fn original_deadline_has_exact_neighbors() -> Result<(), Failure> {
     let origin = Instant::now();
     let budget = Budget::new(origin)?;
     assert_eq!(budget.poll(origin), Ok(Duration::from_millis(200)));
-    let end = origin.checked_add(Duration::from_secs(60)).ok_or(Failure::Deadline)?;
-    let before = end.checked_sub(Duration::from_nanos(1)).ok_or(Failure::Deadline)?;
+    let end = origin
+        .checked_add(Duration::from_secs(60))
+        .ok_or(Failure::Deadline)?;
+    let before = end
+        .checked_sub(Duration::from_nanos(1))
+        .ok_or(Failure::Deadline)?;
     assert_eq!(budget.poll(before), Ok(Duration::from_nanos(1)));
     assert_eq!(budget.poll(end), Err(Failure::Deadline));
-    let after = end.checked_add(Duration::from_nanos(1)).ok_or(Failure::Deadline)?;
+    let after = end
+        .checked_add(Duration::from_nanos(1))
+        .ok_or(Failure::Deadline)?;
     assert_eq!(budget.poll(after), Err(Failure::Deadline));
     Ok(())
 }

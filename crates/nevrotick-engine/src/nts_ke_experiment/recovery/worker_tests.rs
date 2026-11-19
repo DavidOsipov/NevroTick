@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Whole-call controls reuse the actual Script producer, receiving path and static slot.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
+use std::num::NonZeroU32;
 use std::sync::OnceLock;
 use std::sync::atomic::AtomicUsize;
 
@@ -19,14 +20,16 @@ use crate::nts_ke_experiment::datagram::{
     ReceivedInvocation, receive_joined, tests::managed_attempt_config,
 };
 use crate::nts_ke_experiment::job::{
-    CollectError, Hooks, JoinedOutcome, Observation, Operation, PreparedInvocation, SubmitError,
-    Termination, WorkerSlot,
+    CollectError, Hooks, JoinedOutcome, Observation, Operation, PreparedInvocation,
+    SubmissionReservation, SubmitError, Termination, WorkerSlot,
 };
 use crate::nts_ke_experiment::process::ProcessClaim;
 use crate::nts_ke_experiment::{
-    InvocationCompletion, ProtectedControlKind, RunFailed, Summary, drive_invocation_with, output,
-    run_joined_with, run_synchronously_with,
+    InvocationCompletion, ObservedInvocation, ObserverStartError, ProtectedControlKind, RunFailed,
+    Summary, drive_invocation_with, output, run_joined_with, run_observing, run_synchronously_with,
+    write_observed_run,
 };
+use crate::{SourceProtectedProbeFailure, SourceProtectedProbeReport};
 
 /// Finite component-handshake allowance, not a product/native-operation deadline.
 const WAIT: Duration = Duration::from_secs(2);
@@ -917,9 +920,26 @@ fn submit_facade_script(
     submissions: &AtomicUsize,
     producers: Arc<AtomicUsize>,
 ) -> Result<(), SubmitError> {
+    submit_reserved_facade_script(
+        slot.try_reserve(prepared),
+        admission,
+        submissions,
+        producers,
+    )
+}
+
+/// Run a permitted component submission while recording adapter and producer entry.
+///
+/// # Errors
+/// Forward a slot or actual spawn refusal without creating a substitute worker.
+fn submit_reserved_facade_script(
+    reservation: Result<SubmissionReservation, SubmitError>,
+    admission: &'static ProcessAdmission,
+    submissions: &AtomicUsize,
+    producers: Arc<AtomicUsize>,
+) -> Result<(), SubmitError> {
     submissions.fetch_add(1, Ordering::AcqRel);
-    slot.submit_fixture(
-        prepared,
+    reservation?.submit_fixture(
         admission,
         component_provider,
         move |config, provider, control| {
@@ -1026,6 +1046,500 @@ fn synchronous_facade_refuses_entered_context_before_submission_then_same_slot_s
     assert_eq!(completed_config.strong_count(), 0);
     assert!(matches!(ADMISSION.claim(), Err(Failure::ProcessUsed)));
     Ok(())
+}
+
+/// Project a pre-start refusal before any operation or observer cleanup can occur.
+/// # Errors
+/// Refuse a successful projection in a pre-start failure specimen.
+/// # Panics
+/// Fail if the original outer label is obscured or cleanup/history is invented.
+fn assert_prestart_report(
+    observed: Result<ObservedInvocation, ObserverStartError>,
+    expected: (&str, &str),
+) -> Result<(), Failure> {
+    let Err(failure) = SourceProtectedProbeReport::from_observed(observed) else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(failure.labels(), expected);
+    assert_eq!(
+        (
+            failure.primary_labels(),
+            failure.cleanup_labels(),
+            failure.admission_cleanup_labels()
+        ),
+        (None, None, None)
+    );
+    assert!(failure.source_policy_error().is_none());
+    assert!(failure.retained_configuration().is_none());
+    assert!(!failure.power_stop_failed());
+    assert_eq!(failure.power_unregistration_error(), None);
+    Ok(())
+}
+
+/// A failed power subscription refuses the actual submission adapter.
+/// # Errors
+/// Preserve checked setup and explicit draining if the facade unexpectedly submits.
+/// # Panics
+/// Fail if refusal invokes the adapter or spends the original process admission.
+#[test]
+fn observed_facade_registration_failure_refuses_submission() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let submissions: AtomicUsize = AtomicUsize::new(0);
+    let producers: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+    let registrations: Cell<usize> = Cell::new(0);
+    let entered_config: Config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
+    let entered: Result<ObservedInvocation, ObserverStartError> = runtime()?.block_on(async {
+        run_observing(
+            entered_config,
+            &SLOT,
+            |_: StopHandle| {
+                registrations.set(1);
+                Err::<fn() -> Result<(), NonZeroU32>, ()>(())
+            },
+            |reservation| {
+                submit_reserved_facade_script(
+                    Ok(reservation),
+                    &ADMISSION,
+                    &submissions,
+                    Arc::clone(&producers),
+                )
+            },
+        )
+    });
+    assert!(matches!(
+        entered,
+        Err(ObserverStartError::Preparation(RunFailed::CallerContext))
+    ));
+    assert_prestart_report(entered, ("caller-context", "entered-runtime"))?;
+    assert_eq!(registrations.get(), 0);
+    let config: Config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
+    let competing_config: Config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
+    let result: Result<ObservedInvocation, ObserverStartError> = run_observing(
+        config,
+        &SLOT,
+        |_: StopHandle| {
+            assert_eq!(SLOT.sealed_count(), Ok(0));
+            assert_eq!(
+                SLOT.observer().poll_until(Instant::now() + WAIT),
+                Observation::Busy
+            );
+            let competing: Result<ObservedInvocation, ObserverStartError> = run_observing(
+                competing_config,
+                &SLOT,
+                |_: StopHandle| {
+                    registrations.set(2);
+                    Err::<fn() -> Result<(), NonZeroU32>, ()>(())
+                },
+                |_| Err(SubmitError::Control),
+            );
+            assert!(matches!(
+                competing,
+                Err(ObserverStartError::Preparation(RunFailed::Submission(
+                    SubmitError::Busy
+                )))
+            ));
+            assert!(assert_prestart_report(competing, ("worker-submission", "busy")).is_ok());
+            assert_eq!(registrations.get(), 0);
+            assert_eq!(SLOT.collect(), Err(CollectError::Busy));
+            assert_eq!(submissions.load(Ordering::Acquire), 0);
+            Err::<fn() -> Result<(), NonZeroU32>, ()>(())
+        },
+        |reservation| {
+            submit_reserved_facade_script(Ok(reservation), &ADMISSION, &submissions, producers)
+        },
+    );
+    let state: Observation = SLOT.observer().poll_until(Instant::now() + WAIT);
+    drain_facade_observation(&SLOT, state)?;
+    assert!(matches!(result, Err(ObserverStartError::Registration)));
+    assert_prestart_report(result, ("power-registration", "unavailable"))?;
+    let mut diagnostic: Vec<u8> = Vec::new();
+    output::write_power_registration_failure(&mut diagnostic).map_err(|_| Failure::Control)?;
+    assert_eq!(diagnostic, b"scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=power-registration cause=unavailable retirement_confirmed=0\n");
+    assert_eq!(submissions.load(Ordering::Acquire), 0);
+    assert_eq!(state, Observation::Unused);
+    assert!(ADMISSION.claim().is_ok());
+    Ok(())
+}
+
+/// Deliver an event during subscription through the real facade's stop endpoint.
+/// # Errors
+/// Preserve checked setup and an unexpected facade failure.
+/// # Panics
+/// Fail if event delivery enters a producer, spends admission or loses Cancelled.
+#[test]
+fn observed_facade_early_event_cancels_the_original_worker() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let config: Config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
+    let submissions: AtomicUsize = AtomicUsize::new(0);
+    let producers: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+    let observer_closed: Cell<bool> = Cell::new(false);
+    let observed: ObservedInvocation = run_observing(
+        config,
+        &SLOT,
+        |stop| {
+            assert_eq!(stop.request_stop(), Ok(StopDisposition::Latched));
+            Ok(|| {
+                observer_closed.set(true);
+                Err(NonZeroU32::MIN)
+            })
+        },
+        |reservation| {
+            submit_reserved_facade_script(
+                Ok(reservation),
+                &ADMISSION,
+                &submissions,
+                Arc::clone(&producers),
+            )
+        },
+    )
+    .map_err(|_| Failure::Control)?;
+    assert!(
+        matches!(&observed.result, Err(RunFailed::Operation(actual)) if *actual == failed(Failure::Cancelled))
+    );
+    assert!(observer_closed.get() && !observed.cleanup.stop_failed);
+    assert_eq!(observed.cleanup.unregistration_error, Some(NonZeroU32::MIN));
+    let mut diagnostic: Vec<u8> = Vec::new();
+    let mut completed: Vec<u8> = Vec::new();
+    assert!(!write_observed_run(
+        observed,
+        &mut completed,
+        &mut diagnostic
+    ));
+    assert_eq!(completed, [0_u8; 0]);
+    assert_eq!(diagnostic, concat!(
+        "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=currentness cause=cancelled cleanup_stage=none cleanup_cause=none admission_stage=none admission_cause=none\n",
+        "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=power-cleanup stop_failed=0 unregistration_failed=1\n"
+    ).as_bytes());
+    assert_eq!(submissions.load(Ordering::Acquire), 1);
+    assert_eq!(producers.load(Ordering::Acquire), 0);
+    assert_eq!(
+        SLOT.observer().poll_until(Instant::now() + WAIT),
+        Observation::Taken
+    );
+    assert!(ADMISSION.claim().is_ok());
+    Ok(())
+}
+
+/// A normal protected result remains historical through late stop and failed close.
+/// # Errors
+/// Preserve checked setup, facade and observed late-stop failure.
+/// # Panics
+/// Fail if close precedes the actual joined take or changes the original history.
+#[test]
+fn observed_facade_late_event_preserves_joined_protected_result() -> Result<(), Failure> {
+    static SLOTS: [WorkerSlot; 3] = [const { WorkerSlot::new() }; 3];
+    static ADMISSIONS: [ProcessAdmission; 3] = [const { ProcessAdmission::new() }; 3];
+    let cases: [(bool, bool); 3] = [(false, false), (true, false), (false, true)];
+    for ((slot, admission), (late_event, reject_output)) in SLOTS.iter().zip(&ADMISSIONS).zip(cases)
+    {
+        let config: Config = Config::from_arguments(
+            [
+                "127.0.0.1:4460".into(),
+                "Time.Example".into(),
+                "--protected-datagram".into(),
+            ]
+            .into_iter(),
+        )?;
+        let submissions: AtomicUsize = AtomicUsize::new(0);
+        let producers: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+        let observed: ObservedInvocation = run_observing(
+            config,
+            slot,
+            |stop| {
+                Ok(move || {
+                    assert_eq!(
+                        slot.observer().poll_until(Instant::now() + WAIT),
+                        Observation::Taken
+                    );
+                    if late_event {
+                        assert_eq!(stop.request_stop(), Ok(StopDisposition::Latched));
+                        Err(NonZeroU32::MIN)
+                    } else {
+                        Ok(())
+                    }
+                })
+            },
+            |reservation| {
+                submit_reserved_facade_script(
+                    Ok(reservation),
+                    admission,
+                    &submissions,
+                    Arc::clone(&producers),
+                )
+            },
+        )
+        .map_err(|_| Failure::Control)?;
+        let Ok(ReceivedInvocation::Probe(completion)) = &observed.result else {
+            return Err(Failure::Control);
+        };
+        let summary: &Summary = completion.summary();
+        assert!(summary.transmitted);
+        assert_eq!((summary.cookies, summary.cookie_bytes), (1, 12));
+        assert_eq!(submissions.load(Ordering::Acquire), 1);
+        assert_eq!(producers.load(Ordering::Acquire), 1);
+        assert_eq!(
+            observed.cleanup.unregistration_error,
+            late_event.then_some(NonZeroU32::MIN)
+        );
+        assert!(!observed.cleanup.stop_failed);
+        let mut diagnostic: Vec<u8> = Vec::new();
+        if reject_output {
+            let mut rejected: [u8; 0] = [];
+            let mut sink = std::io::Cursor::new(rejected.as_mut_slice());
+            assert!(!write_observed_run(observed, &mut sink, &mut diagnostic));
+        } else {
+            let mut completed: Vec<u8> = Vec::new();
+            assert_eq!(
+                write_observed_run(observed, &mut completed, &mut diagnostic),
+                !late_event
+            );
+            assert!(completed.starts_with(b"scope=engine-ke-prototype eligible=0 fresh_sync=0 completed=1 cookies=1 cookie_bytes=12 "));
+        }
+        if late_event {
+            assert_eq!(diagnostic, b"scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=power-cleanup stop_failed=0 unregistration_failed=1\n");
+        } else {
+            assert_eq!(diagnostic, [0_u8; 0]);
+        }
+    }
+    Ok(())
+}
+
+/// Drive both real UDP legs under the actual checked config and one worker.
+/// # Errors
+/// Preserve the actual operation and cleanup outcome.
+/// # Panics
+/// Fail if the actual invocation initiates another KE, first leg or preview.
+#[cfg(target_os = "linux")]
+fn loopback_control_operation<'scope>(
+    config: &'scope Config,
+    provider: &'scope ProviderScope<'scope>,
+    control: Control,
+    remote: std::net::SocketAddr,
+    before_commit: Option<super::LoopbackBeforeCommit>,
+) -> Operation {
+    let original_expiry: Instant = control.expiry;
+    let mut producer: ScriptProducer<'_> =
+        ScriptProducer::new(config, provider, vec![Ok(())], ExchangeCase::Healthy);
+    producer.managed_loopback = Some(remote);
+    producer.before_loopback_commit = before_commit;
+    let result: Operation = drive_invocation_with(config, provider, control, &mut producer);
+    assert_eq!(
+        (
+            producer.establish_calls,
+            producer.exchange_calls,
+            producer.preview_calls
+        ),
+        (1, 1, 0)
+    );
+    assert!(matches!(
+        producer.controls.as_slice(),
+        [observed] if observed.expiry == original_expiry
+    ));
+    result
+}
+
+/// Observe request correlation, joined DENY, and policy or stale-source refusal.
+/// # Errors
+/// Preserve checked setup, peer I/O and unexpected worker operation refusals.
+/// # Panics
+/// Fail if sent work, committed history, or the exact policy effect is lost.
+#[cfg(target_os = "linux")]
+fn run_managed_loopback_control(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+    replace: bool,
+) -> Result<(), Failure> {
+    use std::io;
+    use std::net::{Ipv4Addr, SocketAddr, UdpSocket};
+
+    use crate::nts_ke_experiment::datagram::{DatagramError, tests::serve_managed_loopback};
+    use crate::{
+        KePreviewTarget, SourceAddressSet, SourceConfigurationSnapshot, SourceHandle,
+        SourcePolicyAuthority, SourcePolicyLimits,
+    };
+
+    let peer: UdpSocket = UdpSocket::bind((Ipv4Addr::LOCALHOST, 0))
+        .map_err(|error: io::Error| Failure::Datagram(DatagramError::Bind(error.kind())))?;
+    peer.set_read_timeout(Some(WAIT))
+        .map_err(|_| Failure::Control)?;
+    peer.set_write_timeout(Some(WAIT))
+        .map_err(|_| Failure::Control)?;
+    let remote: SocketAddr = peer.local_addr().map_err(|_| Failure::Endpoint)?;
+    let limits: SourcePolicyLimits =
+        SourcePolicyLimits::new(2, 2, Duration::from_millis(1), Duration::from_millis(4))
+            .map_err(Failure::SourcePolicy)?;
+    let mut authority: SourcePolicyAuthority =
+        crate::source_policy::isolated_authority(limits).map_err(Failure::SourcePolicy)?;
+    let source: SourceHandle = authority.source(0).map_err(Failure::SourcePolicy)?;
+    let alias: SourceHandle = authority.source(1).map_err(Failure::SourcePolicy)?;
+    let target: KePreviewTarget = KePreviewTarget::new(
+        SocketAddr::from((Ipv4Addr::LOCALHOST, 4460)),
+        "Time.Example",
+    )
+    .map_err(|_| Failure::Arguments)?;
+    let addresses: SourceAddressSet =
+        SourceAddressSet::new(&[remote]).map_err(Failure::SourcePolicy)?;
+    let expected: SourceConfigurationSnapshot = authority
+        .install_ke_preview_configuration(&source, addresses, target.clone())
+        .map_err(Failure::SourcePolicy)?;
+    let config: Config = Config::from_managed_protected(
+        authority
+            .authorize_protected_ke(&expected)
+            .map_err(Failure::SourcePolicy)?,
+    );
+    let config_lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
+
+    let before_commit: Option<super::LoopbackBeforeCommit> = if replace {
+        let original: SourceConfigurationSnapshot = expected.clone();
+        Some(Box::new(move || {
+            let successor: SourceConfigurationSnapshot = authority
+                .replace_ke_preview_configuration(&original, original.addresses().clone(), target)
+                .map_err(Failure::SourcePolicy)?;
+            assert!(!successor.same_configuration(&original));
+            Ok(())
+        }))
+    } else {
+        None
+    };
+    let (result, peer_result): (Result<ReceivedInvocation, RunFailed>, Result<(), Failure>) =
+        std::thread::scope(|scope| {
+            let peer_worker: std::thread::ScopedJoinHandle<'_, Result<(), Failure>> =
+                std::thread::Builder::new()
+                    .spawn_scoped(scope, || serve_managed_loopback(&peer))
+                    .map_err(|_| Failure::Control)?;
+            let result: Result<ReceivedInvocation, RunFailed> = run_joined_with(
+                config,
+                slot,
+                None,
+                |slot: &'static WorkerSlot, prepared: PreparedInvocation| {
+                    slot.submit_fixture(
+                        prepared,
+                        admission,
+                        component_provider,
+                        move |config, provider, control| {
+                            loopback_control_operation(
+                                config,
+                                provider,
+                                control,
+                                remote,
+                                before_commit,
+                            )
+                        },
+                        Hooks::none(),
+                    )
+                },
+            );
+            let peer_result: Result<(), Failure> =
+                peer_worker.join().map_err(|_| Failure::Control)?;
+            Ok::<_, Failure>((result, peer_result))
+        })?;
+
+    assert_loopback_control_outcome(result, replace, remote, &expected)?;
+    peer_result?;
+    assert_loopback_policy(&source, &alias, remote, replace)?;
+    assert_eq!(config_lifetime.strong_count(), 0);
+    let inspect_until: Instant = Instant::now().checked_add(WAIT).ok_or(Failure::Deadline)?;
+    assert_eq!(
+        slot.observer().poll_until(inspect_until),
+        Observation::Taken
+    );
+
+    peer.set_nonblocking(true).map_err(|_| Failure::Control)?;
+    assert!(matches!(
+        peer.recv_from(&mut [0_u8; 1]),
+        Err(error) if error.kind() == io::ErrorKind::WouldBlock
+    ));
+    Ok(())
+}
+
+/// Link the two real send debits and optional DENY to their direct policy records.
+/// # Errors
+/// Preserve readback failures from the actual original policy cell.
+/// # Panics
+/// Fail for missing attempt floors, a lost restriction or alias propagation.
+#[cfg(target_os = "linux")]
+fn assert_loopback_policy(
+    source: &crate::SourceHandle,
+    alias: &crate::SourceHandle,
+    remote: std::net::SocketAddr,
+    replace: bool,
+) -> Result<(), Failure> {
+    use crate::SourcePolicySnapshot;
+
+    let after: SourcePolicySnapshot = source
+        .policy_snapshot(remote)
+        .map_err(Failure::SourcePolicy)?;
+    let alias_after: SourcePolicySnapshot = alias
+        .policy_snapshot(remote)
+        .map_err(Failure::SourcePolicy)?;
+    assert_eq!(after.source().refused(), !replace);
+    assert_eq!(after.endpoint().refused(), !replace);
+    assert!(!alias_after.source().refused());
+    assert_eq!(alias_after.endpoint().refused(), !replace);
+    assert_eq!(after.source().revision(), if replace { 3 } else { 4 });
+    assert_eq!(after.endpoint().revision(), if replace { 3 } else { 4 });
+    assert!(after.source().floor().is_some());
+    assert!(after.endpoint().floor().is_some());
+    Ok(())
+}
+
+/// Require the real normally joined result or the exact currentness refusal.
+/// # Errors
+/// Preserve original unexpected operation failures and refuse the wrong disposition.
+/// # Panics
+/// Fail if history or the original refusal and its independent cleanup fields differ.
+#[cfg(target_os = "linux")]
+fn assert_loopback_control_outcome(
+    result: Result<ReceivedInvocation, RunFailed>,
+    replace: bool,
+    remote: std::net::SocketAddr,
+    expected: &crate::SourceConfigurationSnapshot,
+) -> Result<(), Failure> {
+    match (replace, result) {
+        (false, Ok(ReceivedInvocation::ProtectedControl(joined))) => {
+            let history: AppliedProtectedControl = joined.into_history();
+            assert_eq!(history.kind(), ProtectedControlKind::Deny);
+            assert_eq!(history.remote(), remote);
+            assert_eq!(history.serial(), 2);
+            assert!(history.configuration().same_configuration(expected));
+        }
+        (true, Err(RunFailed::Operation(failure))) => {
+            assert_eq!(
+                failure.primary,
+                Failure::SourcePolicy(crate::SourcePolicyError::ConfigurationChanged)
+            );
+            assert_eq!(failure.cleanup, None);
+            assert_eq!(failure.admission_cleanup, None);
+        }
+        (_, Err(RunFailed::Operation(failure))) => return Err(failure.primary),
+        _ => return Err(Failure::Control),
+    }
+    Ok(())
+}
+
+/// First protected reply earns one real-socket successor and joined exact DENY.
+/// # Errors
+/// Preserve fixture or actual worker failure.
+#[cfg(target_os = "linux")]
+#[test]
+fn managed_loopback_successor_commits_exact_deny_after_normal_join() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    run_managed_loopback_control(&SLOT, &ADMISSION, false)
+}
+
+/// Equal-value replacement after real retirement refuses the exact staged control.
+/// # Errors
+/// Preserve fixture failure or unexpected typed refusal.
+#[cfg(target_os = "linux")]
+#[test]
+fn managed_loopback_successor_refuses_same_values_replacement_before_commit() -> Result<(), Failure>
+{
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    run_managed_loopback_control(&SLOT, &ADMISSION, true)
 }
 
 /// Closed actual-owner retirement choices; neither simulates native cleanup.
@@ -1593,6 +2107,31 @@ fn facade_permanent_submission_refusal_preserves_cause_after_healthy_join() -> R
         SubmitError::Used,
         "KE-HIST-06-facade-original-submission"
     );
+    let registrations: Cell<usize> = Cell::new(0);
+    let observed_refusal: Result<ObservedInvocation, ObserverStartError> = run_observing(
+        Config::new("127.0.0.1:4460".into(), "Time.Example".into())?,
+        &SLOT,
+        |_stop: StopHandle| {
+            registrations.set(registrations.get() + 1);
+            Ok(|| Ok(()))
+        },
+        |reservation: SubmissionReservation| {
+            submit_reserved_facade_script(
+                Ok(reservation),
+                &ADMISSION,
+                &submissions,
+                Arc::clone(&producers),
+            )
+        },
+    );
+    assert!(matches!(
+        observed_refusal,
+        Err(ObserverStartError::Preparation(RunFailed::Submission(
+            SubmitError::Used
+        )))
+    ));
+    assert_prestart_report(observed_refusal, ("worker-submission", "used"))?;
+    assert_eq!(registrations.get(), 0);
     assert_eq!(submissions.load(Ordering::Acquire), 2);
     assert_eq!(producers.load(Ordering::Acquire), 1);
     assert_eq!(unsubmitted.strong_count(), 0);
@@ -1604,7 +2143,7 @@ fn facade_permanent_submission_refusal_preserves_cause_after_healthy_join() -> R
     Ok(())
 }
 
-/// Normally joined failure retains the original primary and both secondary facts.
+/// Normally joined failure retains the original primary and all three secondary facts.
 /// # Errors
 /// Preserve actual checked construction and genuine whole-call refusal.
 /// # Panics
@@ -1613,40 +2152,82 @@ fn facade_permanent_submission_refusal_preserves_cause_after_healthy_join() -> R
 fn facade_actual_operation_failure_preserves_all_original_causes() -> Result<(), Failure> {
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    let primary = Failed {
+    let primary: Failed = Failed {
         primary: Failure::Handshake(std::io::ErrorKind::ConnectionReset),
         cleanup: Some(Failure::Shutdown(std::io::ErrorKind::BrokenPipe)),
         admission_cleanup: Some(Failure::Control),
     };
-    let config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
-    let lifetime = Arc::downgrade(&config.lifetime);
-    let result = run_synchronously_with(config, &SLOT, None, |slot, prepared| {
-        slot.submit_fixture(
-            prepared,
-            &ADMISSION,
-            component_provider,
-            move |config, provider, control| {
-                let mut producer = ScriptProducer::new(
-                    config,
-                    provider,
-                    vec![Err(primary)],
-                    ExchangeCase::Healthy,
-                );
-                drive_invocation_with(config, provider, control, &mut producer)
-            },
-            Hooks::none(),
-        )
-    });
-    let Err(RunFailed::Operation(actual)) = result else {
+    let config: Config = Config::new("127.0.0.1:4460".into(), "Time.Example".into())?;
+    let lifetime: Weak<()> = Arc::downgrade(&config.lifetime);
+    let close_code: NonZeroU32 = NonZeroU32::new(5).ok_or(Failure::Control)?;
+    let closes: Cell<usize> = Cell::new(0);
+    let observed: ObservedInvocation = run_observing(
+        config,
+        &SLOT,
+        |_: StopHandle| {
+            Ok(|| {
+                closes.set(closes.get() + 1);
+                Err(close_code)
+            })
+        },
+        |reservation: SubmissionReservation| {
+            reservation.submit_fixture(
+                &ADMISSION,
+                component_provider,
+                move |config: &Config, provider: &ProviderScope<'_>, control: Control| {
+                    let mut producer: ScriptProducer<'_> = ScriptProducer::new(
+                        config,
+                        provider,
+                        vec![Err(primary)],
+                        ExchangeCase::Healthy,
+                    );
+                    drive_invocation_with(config, provider, control, &mut producer)
+                },
+                Hooks::none(),
+            )
+        },
+    )
+    .map_err(|_| Failure::Control)?;
+    let Err(RunFailed::Operation(actual)) = &observed.result else {
         return Err(Failure::Control);
     };
-    assert_eq!(actual, primary, "KE-HIST-06-facade-original-operation");
+    assert_eq!(*actual, primary, "KE-HIST-06-facade-original-operation");
+    let Err(failure) = SourceProtectedProbeReport::from_observed(Ok(observed)) else {
+        return Err(Failure::Control);
+    };
+    assert_joined_failure_report(&failure, close_code);
+    assert_eq!(closes.get(), 1);
     assert_eq!(lifetime.strong_count(), 0);
     assert_eq!(
         SLOT.observer().poll_until(Instant::now() + WAIT),
         Observation::Taken
     );
     Ok(())
+}
+
+/// Assert the specific joined failure and allowlisted output after the actual close.
+/// # Panics
+/// Fail if any disposition, cleanup status or redacted rendering changes.
+fn assert_joined_failure_report(failure: &SourceProtectedProbeFailure, close_code: NonZeroU32) {
+    assert_eq!(failure.labels(), ("handshake", "io"));
+    assert_eq!(failure.primary_labels(), Some(("handshake", "io")));
+    assert_eq!(failure.cleanup_labels(), Some(("shutdown", "io")));
+    assert_eq!(
+        failure.admission_cleanup_labels(),
+        Some(("currentness", "control"))
+    );
+    assert_eq!(failure.power_unregistration_error(), Some(close_code));
+    assert!(!failure.power_stop_failed());
+    assert!(failure.source_policy_error().is_none());
+    assert!(failure.retained_configuration().is_none());
+    assert_eq!(
+        failure.to_string(),
+        "source protected probe refused: handshake/io"
+    );
+    assert_eq!(
+        format!("{failure:?}"),
+        r#"SourceProtectedProbeFailure { stage: "handshake", cause: "io", .. }"#
+    );
 }
 
 /// The facade moves the complete abnormal outcome, including its genuine history.

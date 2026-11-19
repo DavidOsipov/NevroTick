@@ -34,6 +34,7 @@ zeroize = { version = "=1.9.1", default-features = false, features = ["alloc"], 
 # Do not add an unused direct macro dependency or call its private helpers.
 
 [target.'cfg(windows)'.dependencies]
+windows-platform-native = { version = "=0.0.0", path = "../windows-platform-native" }
 rustls = { version = "=0.23.46", default-features = false, features = ["std"], optional = true }
 rustls-cng-crypto = { version = "=0.1.2", default-features = false, optional = true }
 rustls-platform-verifier = { version = "=0.7.1", default-features = false, optional = true }

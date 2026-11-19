@@ -4,14 +4,16 @@
 use std::cell::Cell;
 use std::io;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use zeroize::Zeroizing;
 
 use super::{ActiveReceiver, Admission, Control, End, Failure, Invocation, Producer};
 use crate::nts_ke_experiment::association::ledger::{
-    LedgerError, Receipt, RequestInput, SendOutcome,
+    CookieReplacement, LedgerError, PendingSubmission, Receipt, RequestInput, SendOutcome, Status,
 };
 use crate::nts_ke_experiment::association::{AssociationCandidate, AssociationOwner};
+use crate::nts_ke_experiment::datagram::tests::commit_at_fixture_reading;
 use crate::nts_ke_experiment::datagram::tests::recovery_tests::{ExchangeCase, with_fixture};
 use crate::nts_ke_experiment::process::ProviderScope;
 use crate::nts_ke_experiment::profile::StrictProfile;
@@ -153,6 +155,81 @@ fn consuming_history_rejects_foreign_receiver_context_and_population() -> Result
     Ok(())
 }
 
+/// Refuse the actual idle stage unchanged and prove its one-shot selection is cleared.
+/// Then arm only the next genuine packet stage for the equality control.
+/// # Errors
+/// Preserve real currentness, idle-state and one-shot selection admission failures.
+/// # Panics
+/// Reject an accepted idle stage, a retained selection or changed work/cookie state.
+fn select_receipt_tail_after_phase_refusal(
+    association: &mut AssociationOwner<'_>,
+    control: &Control,
+) -> Result<(), Failure> {
+    let before: Status = association.status();
+    let population: (usize, usize) = association.cookie_population()?;
+    let remote: std::net::SocketAddr = association.check_context(control)?;
+    let backend: Arc<()> = Arc::new(());
+    association.select_next_receipt_at_read_tail_for_test()?;
+    let refused: Result<(Receipt, CookieReplacement, PendingSubmission), Failure> =
+        association.stage_observed_reply(&[], remote, &crate::SoftwareClock::capture(), &backend);
+    assert!(matches!(refused, Err(Failure::Ledger(LedgerError::Phase))));
+    assert!(!association.has_receipt_tail_selection_for_test());
+    assert_eq!(association.status(), before);
+    assert_eq!(association.cookie_population()?, population);
+    assert!(association.last_receipt().is_none());
+    association.select_next_receipt_at_read_tail_for_test()
+}
+
+/// Preserve the ambient neighbor beside one controlled coarse-tick equality.
+#[derive(Clone, Copy)]
+enum ReceiptTiming {
+    AmbientPlusOne,
+    ReceiveTailEquality,
+}
+
+/// Check the original historical delay without reading or renewing any clock.
+/// # Errors
+/// Refuse an inverted original receipt/capture relationship in the fixture.
+/// # Panics
+/// Reject lost equality, changed positive age or an absent lawful zero interval.
+fn assert_original_commit_delay(
+    history: &crate::nts_ke_experiment::datagram::ProtectedHistory,
+    timing: ReceiptTiming,
+) -> Result<(), Failure> {
+    match timing {
+        ReceiptTiming::AmbientPlusOne => {
+            assert!(history.committed_at() > history.receipt().accepted_at());
+        }
+        ReceiptTiming::ReceiveTailEquality => {
+            assert_eq!(history.committed_at(), history.receipt().accepted_at());
+        }
+    }
+    let [_, _, read_return]: [crate::SoftwareClock; 3] = history.captures();
+    let trailing: Instant = read_return.monotonic_after();
+    let original_age: Duration = history
+        .receipt()
+        .accepted_at()
+        .checked_duration_since(trailing)
+        .ok_or(Failure::Control)?;
+    match timing {
+        ReceiptTiming::AmbientPlusOne => {
+            assert_eq!(
+                history.receive_to_commit_delay(),
+                original_age.checked_add(Duration::from_nanos(1))
+            );
+        }
+        ReceiptTiming::ReceiveTailEquality => {
+            assert_eq!(history.receipt().accepted_at(), trailing);
+            assert_eq!(
+                history.receive_to_commit_delay(),
+                Some(Duration::ZERO),
+                "KE-DATAGRAM-accepted-at-receive-trailing-zero-delay"
+            );
+        }
+    }
+    Ok(())
+}
+
 /// A completed decision remains history after local cancellation or invocation Stop.
 /// # Errors
 /// Preserve genuine admission, protected exchange and the actual historical projection.
@@ -160,63 +237,85 @@ fn consuming_history_rejects_foreign_receiver_context_and_population() -> Result
 /// Fail if late stop discards/rebinds history, changes original counts or renews time.
 #[test]
 fn consuming_history_preserves_committed_facts_after_late_cancel_and_stop() -> Result<(), Failure> {
-    for stop_scope in [false, true] {
-        with_fixture(
-            &ExchangeMode::ProtectedDatagram,
-            None,
-            vec![Ok(())],
-            ExchangeCase::MultipleCookies,
-            |invocation, provider, producer| {
-                let stop = invocation.stop_handle();
-                let (control, contexts) = admitted(invocation)?;
-                let config = invocation.config;
-                let original_chart = Arc::downgrade(invocation.run_context());
-                let mut association = producer
-                    .establish(config, &control, provider)
-                    .map_err(|failure| failure.primary)?;
-                invocation.contexts = contexts;
-                let original = invocation.snapshot();
-                let mut receiving = ActiveReceiver {
-                    invocation,
-                    control: &control,
-                };
-                let binding = receiving.bind_association(&association)?;
-                let completion = producer.exchange(&mut association, &control)?;
-                let committed = completion.commit(&mut association)?;
-                let receipt = association.last_receipt().ok_or(Failure::Control)?;
-                let status = association.status();
-                if stop_scope {
-                    assert_eq!(stop.request_stop()?, StopDisposition::Latched);
-                }
-                assert_eq!(control.cancel()?, CancelOutcome::AlreadyCommitted);
-                let InvocationCompletion::Protected(history) = binding.accept(committed)? else {
-                    return Err(Failure::Control);
-                };
-                assert_eq!(history.summary().cookies, 1);
-                assert_eq!(history.summary().cookie_bytes, 12);
-                assert_eq!(history.population(), (2, 24));
-                assert_eq!(
-                    history.receipt().fields().header(),
-                    receipt.fields().header()
-                );
-                assert_eq!(history.receipt().serial(), receipt.serial());
-                assert_eq!(history.receipt().accepted_at(), receipt.accepted_at());
-                assert!(std::sync::Weak::ptr_eq(
-                    &original_chart,
-                    &Arc::downgrade(history.run_context())
-                ));
-                assert_eq!(association.status(), status);
-                let after = receiving.invocation.snapshot();
-                assert_eq!(
-                    (after.origin, after.cutoff),
-                    (original.origin, original.cutoff)
-                );
-                assert_eq!(after.end, Some(End::Completed));
-                assert_eq!(after.transactions, original.transactions);
-                assert_eq!(after.observations, original.observations);
-                Ok(())
-            },
-        )?;
+    for timing in [
+        ReceiptTiming::AmbientPlusOne,
+        ReceiptTiming::ReceiveTailEquality,
+    ] {
+        for stop_scope in [false, true] {
+            with_fixture(
+                &ExchangeMode::ProtectedDatagram,
+                None,
+                vec![Ok(())],
+                ExchangeCase::MultipleCookies,
+                |invocation, provider, producer| {
+                    let stop = invocation.stop_handle();
+                    let (control, contexts) = admitted(invocation)?;
+                    let config = invocation.config;
+                    let original_chart = Arc::downgrade(invocation.run_context());
+                    let mut association = producer
+                        .establish(config, &control, provider)
+                        .map_err(|failure| failure.primary)?;
+                    invocation.contexts = contexts;
+                    let original = invocation.snapshot();
+                    let mut receiving = ActiveReceiver {
+                        invocation,
+                        control: &control,
+                    };
+                    let binding = receiving.bind_association(&association)?;
+                    if matches!(timing, ReceiptTiming::ReceiveTailEquality) {
+                        select_receipt_tail_after_phase_refusal(&mut association, &control)?;
+                    }
+                    let completion: crate::nts_ke_experiment::datagram::ProtectedCompletion<'_> =
+                        producer.exchange(&mut association, &control)?;
+                    assert!(!association.has_receipt_tail_selection_for_test());
+                    let receipt: Receipt = association.last_receipt().ok_or(Failure::Control)?;
+                    let increment: Duration = match timing {
+                        ReceiptTiming::AmbientPlusOne => Duration::from_nanos(1),
+                        ReceiptTiming::ReceiveTailEquality => Duration::ZERO,
+                    };
+                    let sample: Instant = receipt
+                        .accepted_at()
+                        .checked_add(increment)
+                        .ok_or(Failure::Control)?;
+                    let committed =
+                        commit_at_fixture_reading(completion, &mut association, sample)?;
+                    let status = association.status();
+                    if stop_scope {
+                        assert_eq!(stop.request_stop()?, StopDisposition::Latched);
+                    }
+                    assert_eq!(control.cancel()?, CancelOutcome::AlreadyCommitted);
+                    let InvocationCompletion::Protected(history) = binding.accept(committed)?
+                    else {
+                        return Err(Failure::Control);
+                    };
+                    assert_eq!(history.summary().cookies, 1);
+                    assert_eq!(history.summary().cookie_bytes, 12);
+                    assert_eq!(history.population(), (2, 24));
+                    assert_eq!(
+                        history.receipt().fields().header(),
+                        receipt.fields().header()
+                    );
+                    assert_eq!(history.receipt().serial(), receipt.serial());
+                    assert_eq!(history.receipt().accepted_at(), receipt.accepted_at());
+                    assert_eq!(history.committed_at(), sample);
+                    assert_original_commit_delay(&history, timing)?;
+                    assert!(std::sync::Weak::ptr_eq(
+                        &original_chart,
+                        &Arc::downgrade(history.run_context())
+                    ));
+                    assert_eq!(association.status(), status);
+                    let after = receiving.invocation.snapshot();
+                    assert_eq!(
+                        (after.origin, after.cutoff),
+                        (original.origin, original.cutoff)
+                    );
+                    assert_eq!(after.end, Some(End::Completed));
+                    assert_eq!(after.transactions, original.transactions);
+                    assert_eq!(after.observations, original.observations);
+                    Ok(())
+                },
+            )?;
+        }
     }
     Ok(())
 }

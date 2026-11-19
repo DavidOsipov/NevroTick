@@ -11,8 +11,8 @@ use zeroize::Zeroizing;
 
 use super::super::{AssociationCandidate, AssociationOwner, Config, Control, DirectionalKeys};
 use super::{
-    Failure, LedgerError, Receipt, RecoveryIntent, RecoveryReason, RequestInput, RequestPhase,
-    SendOutcome, check_receive_times, refused,
+    Failure, LedgerError, Receipt, ReceiveSpan, RecoveryIntent, RecoveryReason, RequestInput,
+    RequestPhase, SendOutcome, check_receive_times, refused,
 };
 use crate::nts_ke_experiment::process::{ProcessAdmission, ProviderScope};
 use crate::nts_ke_experiment::profile::StrictProfile;
@@ -299,6 +299,54 @@ fn inclusive_receive_time_controls() -> Result<(), Failure> {
     Ok(())
 }
 
+/// Check original receive-bracket coordinates with no wall-clock timing dependence.
+/// # Errors
+/// Refuse an unrepresentable fixture coordinate.
+/// # Panics
+/// Fail if an inclusive bound becomes exclusive or error precedence changes.
+#[test]
+fn receive_span_checks_exact_capture_and_processing_boundaries() -> Result<(), Failure> {
+    let sent: Instant = Instant::now();
+    let coordinate = |nanoseconds: u64| -> Result<Instant, Failure> {
+        sent.checked_add(Duration::from_nanos(nanoseconds))
+            .ok_or(Failure::Control)
+    };
+    let before_leading: Instant = coordinate(1)?;
+    let leading: Instant = coordinate(2)?;
+    let before_processing: Instant = coordinate(3)?;
+    let processing: Instant = coordinate(4)?;
+    let before_cutoff: Instant = coordinate(5)?;
+    let cutoff: Instant = coordinate(6)?;
+    let after_cutoff: Instant = coordinate(7)?;
+    let time_error: Result<(), Failure> = Err(refused(LedgerError::Time));
+    let deadline_error: Result<(), Failure> = Err(Failure::Deadline);
+    let cases: [(&str, Instant, Instant, Result<(), Failure>); 8] = [
+        ("reversed bracket", before_leading, processing, time_error),
+        ("zero-width bracket", leading, processing, Ok(())),
+        ("one nanosecond wide", before_processing, processing, Ok(())),
+        ("at processing", processing, processing, Ok(())),
+        ("after processing", before_cutoff, processing, time_error),
+        ("before cutoff", before_cutoff, before_cutoff, Ok(())),
+        ("at cutoff", cutoff, before_cutoff, deadline_error),
+        ("after cutoff", after_cutoff, before_cutoff, deadline_error),
+    ];
+    for (scenario, trailing, now, expected) in cases {
+        let span: ReceiveSpan = ReceiveSpan { leading, trailing };
+        assert_eq!(span.check(sent, now, cutoff), expected, "{scenario}");
+    }
+
+    let future_leading: ReceiveSpan = ReceiveSpan {
+        leading: before_cutoff,
+        trailing: cutoff,
+    };
+    assert_eq!(
+        future_leading.check(sent, processing, cutoff),
+        time_error,
+        "a future leading reading takes precedence over a trailing cutoff refusal"
+    );
+    Ok(())
+}
+
 /// Check only inert replacement-helper domains with genuinely opened replies.
 ///
 /// These old pools obey the association's component bounds but do not represent
@@ -498,7 +546,106 @@ fn reservation_busy_and_explicit_return_preserve_global_credit() -> Result<(), F
         ));
         Ok(())
     })?;
-    explicit_return_at_pool_byte_limit()
+    explicit_return_at_pool_byte_limit()?;
+    structurally_inconsistent_returns_preserve_custody()
+}
+
+/// Refuse individually inconsistent pool states after a genuine preparation.
+/// # Errors
+/// Preserve genuine owner, reservation and preparation refusals.
+/// # Panics
+/// Fail if a capacity guard accepts the fault, moves the cookie or refunds work.
+fn structurally_inconsistent_returns_preserve_custody() -> Result<(), Failure> {
+    // Fault only the pool after genuine preparation; the documented structural
+    // refusal must preserve the occupied reservation without refunding work.
+    // No-spare comes first so each changed disjunction has its own first witness.
+    for (excess_bytes, population) in [
+        (false, cookies()),
+        (
+            true,
+            vec![
+                Zeroizing::new(vec![0x11; 12]),
+                Zeroizing::new(vec![0x22; 65_530]),
+                Zeroizing::new(vec![0x33; 65_530]),
+            ],
+        ),
+    ] {
+        with_owner(population, |owner, control| {
+            let ticket: super::Ticket<'_> = owner.reserve(packet_input()?)?;
+            owner.prepare(&ticket, |output| {
+                entropy(output);
+                Ok(())
+            })?;
+            let case: &str = if excess_bytes {
+                "excessive bytes"
+            } else {
+                "no spare slot"
+            };
+            if excess_bytes {
+                owner.material.cookies[0].push(0x22);
+            } else {
+                assert_eq!(owner.cookie_population()?, (0, 0));
+                owner.material.cookies = Vec::new();
+            }
+            let before: super::Status = owner.status();
+            let expiry: Instant = control.expiry;
+            let vector: *const Zeroizing<Vec<u8>> = owner.material.cookies.as_ptr();
+            let capacity: usize = owner.material.cookies.capacity();
+            let pool: Vec<(*const u8, Vec<u8>)> = owner
+                .material
+                .cookies
+                .iter()
+                .map(|body| (body.as_ptr(), body.to_vec()))
+                .collect();
+            let active: &super::Active<'_> =
+                owner.ledger.active.as_ref().ok_or(Failure::Control)?;
+            let cookie: &Zeroizing<Vec<u8>> = active.cookie.as_ref().ok_or(Failure::Control)?;
+            let body: *const u8 = cookie.as_ptr();
+            let original: Vec<u8> = cookie.to_vec();
+            let serial: usize = active.serial;
+            let uid: Option<usize> = active.uid;
+            let bytes: usize =
+                original.len() + pool.iter().map(|(_, body)| body.len()).sum::<usize>();
+            assert!(pool.len() < 8);
+            assert_eq!(bytes, if excess_bytes { 131_073 } else { 12 });
+            assert_eq!(capacity > pool.len(), excess_bytes);
+            assert_eq!(before.phase, RequestPhase::Prepared);
+            assert_eq!((before.attempts, before.uids, before.used), (31, 1, 0));
+            assert_eq!(
+                owner.return_unused(ticket),
+                Err(Failure::Ledger(LedgerError::Capacity)),
+                "refuse unused return with {case}"
+            );
+            assert_eq!(owner.status(), before);
+            assert_eq!(control.expiry, expiry);
+            assert!(std::ptr::eq(owner.material.control, control));
+            assert_eq!(owner.material.cookies.as_ptr(), vector);
+            assert_eq!(owner.material.cookies.capacity(), capacity);
+            assert_eq!(owner.material.cookies.len(), pool.len());
+            for (current, (pointer, original)) in owner.material.cookies.iter().zip(&pool) {
+                assert_eq!(current.as_ptr(), *pointer);
+                assert_eq!(current.as_slice(), original.as_slice());
+            }
+            let active: &super::Active<'_> =
+                owner.ledger.active.as_ref().ok_or(Failure::Control)?;
+            let cookie: &Zeroizing<Vec<u8>> = active.cookie.as_ref().ok_or(Failure::Control)?;
+            assert_eq!((active.serial, active.uid), (serial, uid));
+            assert_eq!(cookie.as_ptr(), body);
+            assert_eq!(cookie.as_slice(), original.as_slice());
+            assert!(matches!(
+                owner.reserve(packet_input()?),
+                Err(Failure::Ledger(LedgerError::Busy))
+            ));
+            assert_eq!(owner.status(), before);
+            assert!(owner.last_receipt().is_none());
+            assert!(matches!(
+                *control.phase.lock().map_err(|_| Failure::Control)?,
+                Phase::Published
+            ));
+            Ok(())
+        })?;
+    }
+    Ok(())
 }
 
 /// Ticket destruction and forgetting cannot manufacture rollback.

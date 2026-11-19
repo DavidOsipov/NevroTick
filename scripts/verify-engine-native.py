@@ -24,12 +24,25 @@ SELF = "scripts/verify-engine-native.py"
 LAUNCHER = "tools/windows-sandbox/gated-console-launcher.rs"
 CPU = "tools/windows-sandbox/cpu-os-v3-admission.rs"
 FACADE_CONSUMER = "tools/windows-sandbox/engine-facade-consumer.rs"
+FACADE_EOF_MODE = "facade-loopback-eof"
+FACADE_EOF_WITNESS = "facade-peer=clienthello-eof-joined\n"
+FACADE_EOF_PREFIX = "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=handshake cause=unexpected-eof "
 FACADE_CASES = {
     "facade-arguments": (2, "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=admission cause=arguments "
                          "cleanup_stage=none cleanup_cause=none admission_stage=none admission_cause=none\n"),
     "facade-entered-runtime": (1, "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=caller-context "
                                "cause=entered-runtime retirement_confirmed=0\n"),
+    FACADE_EOF_MODE: (1, FACADE_EOF_PREFIX +
+                      "cleanup_stage=none cleanup_cause=none admission_stage=none admission_cause=none\n"),
 }
+FACADE_EOF_BUFFERED = FACADE_EOF_PREFIX + ("cleanup_stage=response cleanup_cause=unexpected-eof "
+                                         "admission_stage=none admission_cause=none\n")
+MANAGED_EOF_MODE = "facade-managed-protected-eof"
+MANAGED_EOF_ROW = ("scope=managed-protected-native eligible=0 fresh_sync=0 stale=configuration-changed "
+                   "current=handshake/unexpected-eof cleanup=none admission=none retained=none "
+                   "power_stop_failed=0 observer_close_error=none peer_joined=1 owned_udp_received=0\n")
+MANAGED_EOF_BUFFERED = MANAGED_EOF_ROW.replace("cleanup=none", "cleanup=response/unexpected-eof")
+FACADE_CASES[MANAGED_EOF_MODE] = (0, MANAGED_EOF_ROW)
 TARGET = "x86_64-pc-windows-msvc"
 TEST_ROSTER_NAME = "windows-test-roster.json"
 MAX_TEST_ROSTER_BYTES = 1024 * 1024
@@ -81,6 +94,8 @@ DEFAULT_COHORT_CASES = {
     'default-session-checkpoints': 'session::tests::public_session_receiving_checkpoint_races_keep_reuse_and_retirement',
     'default-policy-receive-chronology':
         'source_policy::tests::managed_plain_reversed_receive_leaves_control_pending_until_ordered_reply',
+    'default-resume-register-close':
+        'processing_guard_tests::native_resume_subscription_registers_and_closes',
 }
 
 
@@ -106,6 +121,35 @@ def placement_cohort_requested(args):
     require(not (selected and (getattr(args, "default_cohort", False) or getattr(args, "facade_consumer", False))),
             "Placement cohort excludes default and facade selections.")
     return selected
+
+
+def facade_loopback_eof_requested(args):
+    """Add the owned loopback observation to the native facade invocation only."""
+    selected = getattr(args, "facade_loopback_eof", False)
+    require(type(selected) is bool
+            and (not selected or (args.lane == "native" and args.facade_consumer is True)),
+            "Facade loopback EOF requires the native facade cohort.")
+    return selected
+
+
+def facade_managed_protected_eof_requested(args):
+    """Select one real public managed caller independently of the raw EOF case."""
+    selected = getattr(args, "facade_managed_protected_eof", False)
+    require(type(selected) is bool
+            and (not selected or (args.lane == "native" and args.facade_consumer is True
+                                  and getattr(args, "facade_loopback_eof", False) is False)),
+            "Managed Protected EOF requires its separate native facade selection.")
+    return selected
+
+
+def facade_native_modes(loopback_eof, managed_protected_eof=False):
+    """Keep provider-free defaults; add only one explicit fixed loopback case."""
+    require(type(loopback_eof) is bool and type(managed_protected_eof) is bool
+            and not (loopback_eof and managed_protected_eof),
+            "Facade EOF selections must be separate Booleans.")
+    return tuple(mode for mode in FACADE_CASES
+                 if (mode != FACADE_EOF_MODE or loopback_eof)
+                 and (mode != MANAGED_EOF_MODE or managed_protected_eof))
 
 
 def engine_test_command(jobs, *, default_cohort=False):
@@ -1116,9 +1160,11 @@ NATIVE_JOB_OBSERVER = r"""
             case "default-policy-reenable":
             case "default-session-checkpoints":
             case "default-policy-receive-chronology":
+            case "default-resume-register-close":
             case "placement-managed-writer":
             case "placement-nominal-writer":
-            case "facade-arguments": case "facade-entered-runtime":
+            case "facade-arguments": case "facade-entered-runtime": case "facade-loopback-eof":
+            case "facade-managed-protected-eof":
             case "control-healthy": case "control-fail": case "control-wait": return 4;
             default: throw new InvalidDataException();
         }
@@ -1359,10 +1405,11 @@ def native_supervisor():
             'default-policy-reenable',
             'default-session-checkpoints',
             'default-policy-receive-chronology',
+            'default-resume-register-close',
             'placement-managed-writer','placement-nominal-writer',
             'job-native-foreign','provider-native-once','provider-native-foreign',
             'control-nested-healthy','control-nested-fail','control-nested-wait',
-            'facade-arguments','facade-entered-runtime') -or
+            'facade-arguments','facade-entered-runtime','facade-loopback-eof','facade-managed-protected-eof') -or
         $request.gate -cnotin @('good','bad','missing')) { throw 'Unadmitted console mode or gate.' }
     $childName = if ($request.mode -ceq 'cpu') { 'cpu-v3-probe.exe' }
         elseif ($request.mode -cin @('list','ke','job-native-foreign','provider-native-once','provider-native-foreign',
@@ -1371,8 +1418,9 @@ def native_supervisor():
             'default-writable-stop','default-writable-invalidate',
             'default-policy-poison','default-policy-reenable','default-session-checkpoints',
             'default-policy-receive-chronology',
+            'default-resume-register-close',
             'placement-managed-writer','placement-nominal-writer')) { 'engine-tests.exe' }
-        elseif ($request.mode -cin @('facade-arguments','facade-entered-runtime')) { 'engine-facade-consumer.exe' }
+        elseif ($request.mode -cin @('facade-arguments','facade-entered-runtime','facade-loopback-eof','facade-managed-protected-eof')) { 'engine-facade-consumer.exe' }
         else { 'gate-control.exe' }
     $child = Get-Item -LiteralPath (Join-Path $destination $childName)
     if ($child.PSIsContainer -or (($child.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)) {
@@ -1428,12 +1476,22 @@ def observed_child_pid(stderr, authored, *, mode=None):
         mode_profile(mode)
     if mode in FACADE_CASES:
         require(authored == 2, "Facade has exactly one authored child.")
-        diagnostic = FACADE_CASES[mode][1]
+        diagnostics = (FACADE_CASES[mode][1],)
         lines = stderr.splitlines(keepends=True)
-        require(len(lines) == 2 and lines.count(diagnostic) == 1,
+        if mode == FACADE_EOF_MODE:
+            diagnostics += (FACADE_EOF_BUFFERED,)
+            require(lines.count(FACADE_EOF_WITNESS) == 1
+                    and any(row in diagnostics for row in lines[:lines.index(FACADE_EOF_WITNESS)]),
+                    "Facade loopback EOF needs a joined peer witness after the real Engine refusal.")
+            lines.remove(FACADE_EOF_WITNESS)
+        if mode == MANAGED_EOF_MODE:
+            diagnostics += (MANAGED_EOF_BUFFERED,)
+        matching = [line for line in lines if line in diagnostics]
+        require(len(lines) == 2 and len(matching) == 1,
                 "Facade needs its exact diagnostic and one launcher marker.")
         # Spawned child and launcher can write either complete line first.
-        stderr = lines[1] if lines[0] == diagnostic else lines[0]
+        lines.remove(matching[0])
+        stderr = lines[0]
     match = re.fullmatch(r"launcher-child-pid=([1-9][0-9]{0,9})\n", stderr)
     require(match is not None, "Native child needs exactly one bounded PID marker.")
     pid = int(match[1])
@@ -1629,6 +1687,8 @@ def native(args, report):
     policy, source_before = PRODUCT.admit_product(ROOT)
     extras_before = {name: PRODUCT.sha256(ROOT / name) for name in EXTRAS}
     facade = getattr(args, "facade_consumer", False)
+    loopback_eof = facade_loopback_eof_requested(args)
+    managed_eof = facade_managed_protected_eof_requested(args)
     require(type(facade) is bool and build.get("facade_consumer", False) is facade,
             "Native facade selection differs from the exact build profile.")
     default = default_cohort_requested(args)
@@ -1733,8 +1793,15 @@ def native(args, report):
                                "no public network, provider adoption, service, clock or whole Core/Engine qualification.")
     if facade:
         cases = (*cases[:5], ("cpu", "cpu", "good", 0, 2),
-                 *((mode, mode, "good", facts[0], 2) for mode, facts in FACADE_CASES.items()))
+                 *((mode, mode, "good", FACADE_CASES[mode][0], 2)
+                   for mode in facade_native_modes(loopback_eof, managed_eof)))
         report["scope"] = "Two fixed production-facade refusals before provider effects; no mutation or full native qualification."
+        if loopback_eof:
+            report.update(facade_loopback_eof_observed=False,
+                          scope="Fixed facade refusals and one owned loopback ClientHello/EOF. No healthy TLS or release qualification.")
+        if managed_eof:
+            report.update(facade_managed_protected_eof_observed=False,
+                          scope="Public managed stale-definition refusal and current loopback EOF with no reported observer error; no healthy TLS, protected UDP or mapping qualification.")
     for label, mode, gate, expected_exit, expected_count in cases:
         observation = directory / label
         observation.mkdir(mode=0o700)
@@ -1801,6 +1868,8 @@ def native(args, report):
             report["required_held_tests"] = [name for name in roster["held_ke_tests"]
                                               if name not in report["completed_nested_tests"]]
         record["classification"] = "expected-rejection" if expected_exit else "completed"
+        if mode == FACADE_EOF_MODE:
+            record["peer_clienthello_eof_joined"] = True
     if (PRODUCT.admit_product(ROOT)[1] != source_before
             or {name: PRODUCT.sha256(ROOT / name) for name in EXTRAS} != extras_before
             or PRODUCT.sha256(build_path) != report["build_receipt_sha256"]
@@ -1811,6 +1880,10 @@ def native(args, report):
         raise Incomplete("Native source, images, receipt, supervisor recipe or PowerShell drifted.")
     if facade:
         report["facade_refusal_cases_complete"] = True
+        if loopback_eof:
+            report["facade_loopback_eof_observed"] = True
+        if managed_eof:
+            report["facade_managed_protected_eof_observed"] = True
     elif placement:
         require(report["completed_placement_tests"] == list(PLACEMENT_COHORT_CASES.values()),
                 "Not both fixed placement writer cases completed.")
@@ -1836,6 +1909,10 @@ def main():
                         help="Select only two fixed plain application placement writer cases.")
     parser.add_argument("--facade-consumer", action="store_true",
                         help="Select two fixed provider-free production facade refusal cases; no mutation scoring.")
+    parser.add_argument("--facade-loopback-eof", action="store_true",
+                        help="Also observe one real loopback ClientHello/EOF with the native facade consumer.")
+    parser.add_argument("--facade-managed-protected-eof", action="store_true",
+                        help="Select the public managed stale/current EOF pair instead of the raw EOF case.")
     parser.add_argument("--facade-fault", choices=tuple(row[0] for row in FACADE_FAULTS),
                         help="Build one admitted prepared overlay; no native execution or classification.")
     parser.add_argument("--jobs", type=int, choices=range(1, 13), default=6,
@@ -1848,6 +1925,8 @@ def main():
               "scope": "Bounded Windows Engine scripted KE libtest; no product or release qualification."}
     output = None
     try:
+        facade_loopback_eof_requested(args)
+        facade_managed_protected_eof_requested(args)
         require(not args.default_cohort or (args.lane in ("build", "native") and not args.facade_consumer),
                 "Default cohort requires build/native and excludes facade selections.")
         if args.default_cohort:

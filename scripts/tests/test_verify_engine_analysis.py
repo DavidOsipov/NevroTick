@@ -272,8 +272,10 @@ class EngineAnalysisTests(unittest.TestCase):
 
     def equivalence_fixture(self, root):
         """Use real product/source admission with synthetic, explicitly scoped E controls."""
-        _, current = MODULE.PRODUCT.admit_product(ROOT)
-        for name in sorted(set(current) | set(MODULE.BOUND_INPUTS) | {MODULE.POLICY}):
+        dependency, current = MODULE.PRODUCT.admit_product(ROOT)
+        cooldown = dependency.get("cooldown_admission", {}).get("resolution")
+        resolution_manifests = set(cooldown["manifests_sha256"]) if cooldown else set()
+        for name in sorted(set(current) | set(MODULE.BOUND_INPUTS) | {MODULE.POLICY} | resolution_manifests):
             target = root / name; target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / name, target)
         _, identity = MODULE.PRODUCT.admit_product(root)
@@ -2056,6 +2058,7 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         "ke_recovery": "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs",
         "ke_job": "crates/nevrotick-engine/src/nts_ke_experiment/job.rs",
         "ke_preview_target": "crates/nevrotick-engine/src/ke_preview_target.rs",
+        "ke_managed_preview": "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs",
     }
     PROBE_CALLER = "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs"
     MANAGED_PROTECTED_CASES = (
@@ -2130,20 +2133,71 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         "nts_ke_experiment::datagram::tests::recovery_tests::reversed_final_zero_cookie_capture_cannot_schedule_replacement",
         "nts_ke_experiment::datagram::tests::recovery_tests::final_zero_cookie_capture_at_cutoff_cannot_schedule_replacement",
     )
+    LEDGER_CHRONOLOGY_CASES = (
+        "nts_ke_experiment::association::ledger::tests::receive_span_checks_exact_capture_and_processing_boundaries",
+        "nts_ke_experiment::datagram::tests::managed_retired_ordinal_two_cannot_open_first_successor",
+    )
+
+    OBSERVED_FACADE_COLLECTION_CASE = (
+        "nts_ke_experiment::job::tests::"
+        "synchronous_facade_collection_contention_retains_unconfirmed_actual_job")
+    OBSERVED_FACADE_CASES = (
+        "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+        "observed_facade_registration_failure_refuses_submission",
+        "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+        "observed_facade_early_event_cancels_the_original_worker",
+        "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+        "observed_facade_late_event_preserves_joined_protected_result",
+    )
+
+    MANAGED_PROTECTED_POWER_CASE = (
+        "nts_ke_experiment::managed_preview_tests::"
+        "managed_protected_power_event_respects_reply_commit_and_join")
+
+    MANAGED_REPORT_NEW_CASES = (
+        "nts_ke_experiment::managed_preview_tests::"
+        "managed_protected_report_preserves_declared_numerical_result",
+        "nts_ke_experiment::managed_preview_tests::"
+        "managed_preview_cannot_project_a_protected_report",
+    )
+    MANAGED_REPORT_UNMANAGED_CASE = (
+        "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+        "numerics_tests::facade_protected_numerics_declared_era_zero_has_independent_math")
+
+    TRANSPORT_CURRENTNESS_CASES = (
+        "nts_ke_experiment::managed_preview_tests::"
+        "managed_ke_transport_refuses_replaced_definition_before_connect",
+        "nts_ke_experiment::managed_preview_tests::"
+        "managed_ke_transport_drops_owned_connect_on_revision_cutover",
+        "nts_ke_experiment::managed_preview_tests::"
+        "managed_ke_transport_rechecks_revision_after_each_adapter_return",
+        "nts_ke_experiment::managed_preview_tests::"
+        "managed_ke_transport_preserves_first_native_failure_after_replacement",
+    )
+
+    LOOPBACK_AND_TRANSPORT_CUTOFF_CASES = (
+        "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+        "managed_loopback_successor_commits_exact_deny_after_normal_join",
+        "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+        "managed_loopback_successor_refuses_same_values_replacement_before_commit",
+        "nts_ke_experiment::managed_preview_tests::"
+        "managed_ke_transport_exchange_uses_original_later_cutoff",
+        "nts_ke_experiment::managed_preview_tests::"
+        "managed_ke_transport_refusal_keeps_initial_io_category",
+    )
 
     class SessionReached(Exception):
         """A healthy admission reached Session; stop before any execution."""
 
     def policy_fixture(self):
-        """Independent limits; synthetic 560/276 ordinary and 90 annotated Rustdoc names."""
+        """Independent limits; synthetic 576/292 ordinary and 90 annotated Rustdoc names."""
         critical = ["crates/nevrotick-engine/src/lib.rs", *self.HOST.values(),
             "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
             "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
             self.PROBE_CALLER,
-            "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs",
             "crates/nevrotick-engine/src/source_policy.rs"]
         names = sorted([f"ordinary_fixture_{index:03}" for index in range(274)] +
-                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(245)] +
+                       [f"nts_ke_experiment::fixture_case_{index:02}" for index in range(243)] +
                        ["nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
                         "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted",
                         *self.MANAGED_PROTECTED_CASES, *self.MANAGED_SUCCESSOR_CASES,
@@ -2151,7 +2205,11 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                         *self.MANAGED_WAIT_AND_RATE_CASES, *self.FINAL_REPLY_CUTOFF_CASES,
                         *self.PLAIN_CAPTURE_CASES, *self.RECEIVE_CAPTURE_CASES, *self.RECEIVE_CHRONOLOGY_CASES,
                         self.KNOWN_RECEIVE_DEBIT_CASE, self.HEADER_AGE_CASE, self.ORDINARY_PROTECTED_RECEIVE_CASE,
-                        *self.PROTECTED_RECEIVE_EFFECT_CASES])
+                        *self.PROTECTED_RECEIVE_EFFECT_CASES, *self.LEDGER_CHRONOLOGY_CASES,
+                        *self.OBSERVED_FACADE_CASES, self.OBSERVED_FACADE_COLLECTION_CASE,
+                        *self.MANAGED_REPORT_NEW_CASES, self.MANAGED_REPORT_UNMANAGED_CASE,
+                        self.MANAGED_PROTECTED_POWER_CASE, *self.TRANSPORT_CURRENTNESS_CASES,
+                        *self.LOOPBACK_AND_TRANSPORT_CUTOFF_CASES])
         docs = sorted([f"src/lib.rs - Fixture::entered_{index:02} (line 100)" for index in range(87)]
                       + ["src/lib.rs - Example::checked (line 10)",
                          "src/lib.rs - Example::private (line 20) - compile fail",
@@ -2269,6 +2327,9 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                       MODULE.COMMON.Scope("nevrotick-engine", tuple(self.HOST.items())[:-1], MODULE.ENGINE_KE_POLICY)):
             with self.subTest(scope=scope), self.assertRaises(MODULE.Incomplete):
                 MODULE.COMMON.require_engine_ke_role(scope, self.policy)
+        self.invoke(accepted=True)
+        self.args.lane = "coverage"
+        self.args.subject = "ke_managed_preview"
         self.invoke(accepted=True)
 
     def test_source_helper_and_candidate_pin_drift_refuse_before_session(self):
@@ -2896,14 +2957,14 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
     def test_entered_blocks_require_all_current_cases_and_ke_neighbors(self):
         binding = self.policy["binding"]; names = binding["test_inventory"]
         healthy = self.execution(names)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 560)
-        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 276)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["tests_executed"], 576)
+        self.assertEqual(MODULE.validate_engine_ke_execution(healthy, binding)["ke_tests_executed"], 292)
         missing = [name for name in names if name != "nts_ke_experiment::fixture_case_00"]
         old = [name for name in names if not name.startswith("nts_ke_experiment::")]
         variants = [self.execution([]), self.execution(old), self.execution(missing),
             self.execution([*names, names[0]]), healthy.replace(" ... ok", " ... FAILED", 1),
-            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 560", "running 559"),
-            healthy.replace("test result: ok. 560 passed", "test result: ok. 559 passed"),
+            healthy.replace("0 filtered out", "1 filtered out"), healthy.replace("running 576", "running 575"),
+            healthy.replace("test result: ok. 576 passed", "test result: ok. 575 passed"),
             "\n".join(line for line in healthy.splitlines() if not line.startswith("running "))]
         for text in variants:
             with self.subTest(sample=text[-120:]), self.assertRaises(MODULE.Incomplete):
@@ -2916,7 +2977,13 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         required = ("nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
                     "numerics_tests::facade_protected_numerics_send_after_wall_step_is_not_omitted")
         current = self.policy["binding"]["test_inventory"]
-        before_effect = [name for name in current if name not in self.PROTECTED_RECEIVE_EFFECT_CASES]
+        before_loopback = [name for name in current if name not in self.LOOPBACK_AND_TRANSPORT_CUTOFF_CASES]
+        before_currentness = [name for name in before_loopback if name not in self.TRANSPORT_CURRENTNESS_CASES]
+        before_managed_power = [name for name in before_currentness if name != self.MANAGED_PROTECTED_POWER_CASE]
+        before_managed_report = [name for name in before_managed_power if name not in self.MANAGED_REPORT_NEW_CASES]
+        before_observed_facade = [name for name in before_managed_report if name not in self.OBSERVED_FACADE_CASES]
+        before_ledger = [name for name in before_observed_facade if name not in self.LEDGER_CHRONOLOGY_CASES]
+        before_effect = [name for name in before_ledger if name not in self.PROTECTED_RECEIVE_EFFECT_CASES]
         before_order = [name for name in before_effect if name != self.ORDINARY_PROTECTED_RECEIVE_CASE]
         before_age = [name for name in before_order if name != self.HEADER_AGE_CASE]
         before_debit = [name for name in before_age if name != self.KNOWN_RECEIVE_DEBIT_CASE]
@@ -2955,6 +3022,12 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             "historical_555_272": before_age,
             "historical_556_272": before_order,
             "historical_557_273": before_effect,
+            "historical_560_276": before_ledger,
+            "historical_562_278": before_observed_facade,
+            "historical_565_281": before_managed_report,
+            "historical_567_283": before_managed_power,
+            "historical_568_284": before_currentness,
+            "historical_572_288": before_loopback,
             "same_counts_missing_protected_receive": sorted(
                 [name for name in current if name != self.ORDINARY_PROTECTED_RECEIVE_CASE]
                 + ["nts_ke_experiment::other_order_case"]),
@@ -2965,7 +3038,11 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                     "nts_ke_experiment::other_receive_case" if omitted.startswith("nts_ke_experiment::")
                     else "ordinary_other_receive_case"])
                 for omitted in (*self.RECEIVE_CAPTURE_CASES, *self.RECEIVE_CHRONOLOGY_CASES,
-                                self.KNOWN_RECEIVE_DEBIT_CASE, *self.PROTECTED_RECEIVE_EFFECT_CASES)},
+                                self.KNOWN_RECEIVE_DEBIT_CASE, *self.PROTECTED_RECEIVE_EFFECT_CASES,
+                                *self.LEDGER_CHRONOLOGY_CASES, *self.OBSERVED_FACADE_CASES,
+                                self.OBSERVED_FACADE_COLLECTION_CASE, *self.MANAGED_REPORT_NEW_CASES,
+                                self.MANAGED_REPORT_UNMANAGED_CASE, self.MANAGED_PROTECTED_POWER_CASE,
+                                *self.TRANSPORT_CURRENTNESS_CASES, *self.LOOPBACK_AND_TRANSPORT_CUTOFF_CASES)},
             "current_missing_forwarding": [name for name in current if name != required],
             "same_counts_missing_forwarding": sorted(
                 [name for name in current if name != required] + ["nts_ke_experiment::other_case"]),
@@ -3043,8 +3120,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.assertEqual(MODULE.validate_engine_ke_current_doctests(rustdoc, binding)["test_names"], docs)
         combined = MODULE.validate_engine_ke_execution(ordinary + rustdoc, binding, include_doctests=True)
         self.assertEqual(combined["additional_doctests"], docs)
-        self.assertEqual(combined["tests_executed"], 650)
-        self.assertEqual(combined["ke_tests_executed"], 276)
+        self.assertEqual(combined["tests_executed"], 666)
+        self.assertEqual(combined["ke_tests_executed"], 292)
         self.assertEqual(MODULE.validate_engine_ke_execution(ordinary, binding)["test_names"], names)
         with self.assertRaises(MODULE.Incomplete):
             MODULE.validate_engine_ke_execution(ordinary + rustdoc, binding)
@@ -3324,8 +3401,8 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
             self.assertIn("--all-targets", argv)
             self.assertNotIn("build", argv)
             self.assertNotIn("run", argv)
-        self.assertEqual(report["baseline_execution"]["tests_executed"], 560)
-        self.assertEqual(report["release_execution"]["ke_tests_executed"], 276)
+        self.assertEqual(report["baseline_execution"]["tests_executed"], 576)
+        self.assertEqual(report["release_execution"]["ke_tests_executed"], 292)
         self.assertEqual(report["doctest_execution"]["compilation_only"],
                          ["src/lib.rs - Example::prepared (line 30) - compile",
                           "src/lib.rs - Example::private (line 20) - compile fail"])

@@ -168,6 +168,8 @@ enum DefaultCase {
     SessionCheckpoints,
     /// Require reverse receive chronology to leave the same request pending.
     PolicyReceiveChronology,
+    /// Register and close the real Windows resume observer in this fresh child.
+    ResumeRegisterClose,
     /// Observe the managed writer's exact placement fields and chronology refusals.
     PlacementManagedWriter,
     /// Observe the nominal writer's exact fields and independent arithmetic.
@@ -192,6 +194,7 @@ impl DefaultCase {
             Some("default-policy-reenable") => Ok(Self::PolicyReenable),
             Some("default-session-checkpoints") => Ok(Self::SessionCheckpoints),
             Some("default-policy-receive-chronology") => Ok(Self::PolicyReceiveChronology),
+            Some("default-resume-register-close") => Ok(Self::ResumeRegisterClose),
             Some("placement-managed-writer") => Ok(Self::PlacementManagedWriter),
             Some("placement-nominal-writer") => Ok(Self::PlacementNominalWriter),
             _ => Err(io::Error::other("Unadmitted launcher mode.")),
@@ -261,6 +264,11 @@ impl DefaultCase {
                 "source_policy::tests::managed_plain_reversed_receive_leaves_control_pending_until_ordered_reply",
                 "--test-threads=1",
             ],
+            Self::ResumeRegisterClose => &[
+                "--exact",
+                "processing_guard_tests::native_resume_subscription_registers_and_closes",
+                "--test-threads=1",
+            ],
             Self::PlacementManagedWriter => &[
                 "--exact",
                 "source_policy::tests::managed_header_writes_receive_to_commit_age_only_for_ordered_capture",
@@ -289,6 +297,10 @@ enum Mode {
     FacadeArguments,
     /// Reach its entered-runtime refusal before preparation or provider work.
     FacadeEnteredRuntime,
+    /// Reach real transport in the fixed facade's owned loopback EOF case.
+    FacadeLoopbackEof,
+    /// Reach the real managed stale/current definition and owned EOF caller.
+    FacadeManagedProtectedEof,
     /// Run the supervisor's bounded successful synthetic neighbor.
     ControlHealthy,
     /// Preserve the synthetic child's deliberate exit code 7.
@@ -324,6 +336,10 @@ impl Mode {
             Some(value) if value == OsStr::new("facade-entered-runtime") => {
                 Self::FacadeEnteredRuntime
             }
+            Some(value) if value == OsStr::new("facade-loopback-eof") => Self::FacadeLoopbackEof,
+            Some(value) if value == OsStr::new("facade-managed-protected-eof") => {
+                Self::FacadeManagedProtectedEof
+            }
             Some(value) if value == OsStr::new("control-healthy") => Self::ControlHealthy,
             Some(value) if value == OsStr::new("control-fail") => Self::ControlFail,
             Some(value) if value == OsStr::new("control-wait") => Self::ControlWait,
@@ -355,6 +371,10 @@ impl Mode {
             Self::DefaultCohort(case) => ("engine-tests.exe", case.arguments()),
             Self::FacadeArguments => ("engine-facade-consumer.exe", &["arguments"]),
             Self::FacadeEnteredRuntime => ("engine-facade-consumer.exe", &["entered-runtime"]),
+            Self::FacadeLoopbackEof => ("engine-facade-consumer.exe", &["loopback-eof"]),
+            Self::FacadeManagedProtectedEof => {
+                ("engine-facade-consumer.exe", &["managed-protected-eof"])
+            }
             // These required nested-child controls await their separate custody
             // qualification; the flat supervisor keeps its existing process cap.
             Self::Ke => (

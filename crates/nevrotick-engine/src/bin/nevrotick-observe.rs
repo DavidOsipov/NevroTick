@@ -14,8 +14,12 @@ use std::process::ExitCode;
 use std::time::Duration;
 
 use nevrotick_engine::{
-    Config, ControlSchedule, ExperimentalProfile, PilotError, PilotReport, execute, prepare,
+    Config, ControlHandle, ControlSchedule, ExperimentalProfile, PilotError, PilotReport,
+    PreparedPilot, execute, prepare,
 };
+
+#[cfg(windows)]
+use windows_platform_native::ResumeWatch;
 
 /// Finite command syntax or runtime failures; no rejected input is retained.
 #[derive(Debug)]
@@ -28,6 +32,15 @@ enum CliError {
     Output,
     /// A checked engine operation failed with a safe typed code.
     Pilot(PilotError),
+    /// Windows could not establish resume notification before acquisition.
+    #[cfg(windows)]
+    ResumeRegistration,
+    /// The callback was disarmed but native release failed. Keep an earlier failure.
+    #[cfg(windows)]
+    ResumeUnregistration {
+        /// Preserve the first bounded diagnostic, if observation also failed.
+        primary: Option<&'static str>,
+    },
 }
 
 impl CliError {
@@ -38,6 +51,12 @@ impl CliError {
             Self::Endpoint => "invalid_endpoint",
             Self::Output => "diagnostic_output_failed",
             Self::Pilot(error) => error.as_str(),
+            #[cfg(windows)]
+            Self::ResumeRegistration => "resume_registration_failed",
+            #[cfg(windows)]
+            Self::ResumeUnregistration { primary } => {
+                primary.unwrap_or("resume_unregistration_failed")
+            }
         }
     }
 }
@@ -247,27 +266,54 @@ fn run() -> Result<(), CliError> {
         ControlSchedule::new(args.stop_after, args.invalidate_after).map_err(CliError::Pilot)?;
     // OS entropy and synchronous socket setup precede active-control timing.
     // Their source review does not establish bounded startup latency.
-    let (pilot, control) = prepare(&config).map_err(CliError::Pilot)?;
+    let (pilot, control): (PreparedPilot, ControlHandle) =
+        prepare(&config).map_err(CliError::Pilot)?;
+    #[cfg(windows)]
+    let observer: ResumeWatch =
+        ResumeWatch::subscribe(move || control.invalidate().map_err(|_| ()))
+            .map_err(|_| CliError::ResumeRegistration)?;
+    let result: Result<PilotReport, CliError> = observe(pilot, schedule);
+    #[cfg(windows)]
+    if observer.close().is_err() {
+        let primary: Option<&'static str> = result.err().map(|error| error.as_str());
+        return Err(CliError::ResumeUnregistration { primary });
+    }
+    #[cfg(not(windows))]
+    drop(control);
+    let report: PilotReport = result?;
+    write_report(&report, &mut io::stdout().lock())
+}
+
+/// Publish the prepared endpoints before executing, under the invocation's control.
+///
+/// # Errors
+/// Preserve sink/setup and Engine errors, leaving teardown to the invocation owner.
+fn observe(pilot: PreparedPilot, schedule: ControlSchedule) -> Result<PilotReport, CliError> {
     {
-        let mut output = io::stdout().lock();
+        let mut output: io::StdoutLock<'static> = io::stdout().lock();
         for (slot, local) in pilot.local_endpoints().iter().enumerate() {
             writeln!(output, "event=bound slot={slot} local={local}")
                 .map_err(|_| CliError::Output)?;
         }
         output.flush().map_err(|_| CliError::Output)?;
     }
-    let report = execute(pilot, schedule).map_err(CliError::Pilot)?;
-    // The external request handle outlives execution and its timer cleanup.
-    drop(control);
-    write_report(&report, &mut io::stdout().lock())
+    execute(pilot, schedule).map_err(CliError::Pilot)
 }
 
 /// Return through Rust's normal process teardown; never change host clock state.
 fn main() -> ExitCode {
     match run() {
         Ok(()) => ExitCode::SUCCESS,
-        Err(error) => writeln!(io::stderr().lock(), "error={}", error.as_str())
-            .map_or(ExitCode::FAILURE, |()| ExitCode::from(2)),
+        Err(error) => {
+            let mut stderr: io::StderrLock<'static> = io::stderr().lock();
+            let result: io::Result<()> = writeln!(stderr, "error={}", error.as_str());
+            #[cfg(windows)]
+            if let CliError::ResumeUnregistration { primary: Some(_) } = error {
+                let _cleanup_written: io::Result<()> =
+                    writeln!(stderr, "cleanup=resume_unregistration_failed");
+            }
+            result.map_or(ExitCode::FAILURE, |()| ExitCode::from(2))
+        }
     }
 }
 

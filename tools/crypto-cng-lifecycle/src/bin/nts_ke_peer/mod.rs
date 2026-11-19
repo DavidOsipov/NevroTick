@@ -17,13 +17,11 @@ const POLL: Duration = Duration::from_millis(200);
 /// Independent cumulative encrypted-input and encrypted-output byte limits.
 const IO_LIMIT: usize = 65_536;
 /// Exact public NPN0 / AEAD15 / EOM offer, including critical record bits.
-const OFFER: [u8; 16] = [
-    0x80, 1, 0, 2, 0, 0, 0x80, 4, 0, 2, 0, 15, 0x80, 0, 0, 0,
-];
-/// Exact response with one public four-byte cookie; no endpoint alternative.
-const RESPONSE: [u8; 24] = [
-    0x80, 1, 0, 2, 0, 0, 0x80, 4, 0, 2, 0, 15, 0, 5, 0, 4, 0xaa, 0xbb, 0xcc, 0xdd,
-    0x80, 0, 0, 0,
+const OFFER: [u8; 16] = [0x80, 1, 0, 2, 0, 0, 0x80, 4, 0, 2, 0, 15, 0x80, 0, 0, 0];
+/// Exact response with one public twelve-byte cookie and no endpoint alternative.
+const RESPONSE: [u8; 32] = [
+    0x80, 1, 0, 2, 0, 0, 0x80, 4, 0, 2, 0, 15, 0, 5, 0, 12, 0xaa, 0xbb, 0xcc, 0xdd, 0x10, 0x20,
+    0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x80, 0, 0, 0,
 ];
 
 /// Closed failures contain no rejected path, TLS message or secret material.
@@ -70,7 +68,10 @@ struct Failed {
 impl From<Failure> for Failed {
     /// A single refusal has no independently observed cleanup cause.
     fn from(primary: Failure) -> Self {
-        Self { primary, cleanup: None }
+        Self {
+            primary,
+            cleanup: None,
+        }
     }
 }
 
@@ -241,7 +242,7 @@ pub(super) fn entry(arguments: impl Iterator<Item = OsString>) -> std::process::
     match transport::serve(config) {
         Ok(()) => {
             let mut output = std::io::stdout().lock();
-            if writeln!(output, "scope=laboratory-ke-peer completed=1 offer_bytes=16 response_bytes=24 exporters=2 peer_close=1").is_err()
+            if writeln!(output, "scope=laboratory-ke-peer completed=1 offer_bytes={} response_bytes={} exporters=2 peer_close=1", OFFER.len(), RESPONSE.len()).is_err()
                 || output.flush().is_err()
             {
                 return ExitCode::FAILURE;
@@ -257,9 +258,8 @@ pub(super) fn entry(arguments: impl Iterator<Item = OsString>) -> std::process::
 fn report(failure: Failed, code: std::process::ExitCode) -> std::process::ExitCode {
     use std::io::Write;
     let (stage, cause, readiness_cleanup) = labels(failure.primary);
-    let (cleanup_stage, cleanup_cause, _) = failure
-        .cleanup
-        .map_or(("none", "none", "none"), labels);
+    let (cleanup_stage, cleanup_cause, _) =
+        failure.cleanup.map_or(("none", "none", "none"), labels);
     let _diagnostic_result = writeln!(
         std::io::stderr().lock(),
         "stage={stage} cause={cause} cleanup_stage={cleanup_stage} cleanup_cause={cleanup_cause} readiness_cleanup_cause={readiness_cleanup}"

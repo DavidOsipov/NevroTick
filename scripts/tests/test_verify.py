@@ -523,8 +523,8 @@ class ProductAdmissionTests(unittest.TestCase):
         self.write_policy()
         VERIFY.admit_product(self.root)
 
-    def test_schema3_admits_only_pinned_ui_build_and_exact_slint_profile(self):
-        """Reach real product admission with inert source/lock controls, never Cargo."""
+    def slint_fixture(self):
+        """Prepare the existing inert schema-3 source/lock fixture without Cargo."""
         ui = self.root / "crates/nevrotick-ui/Cargo.toml"
         ui.write_text(ui.read_text().replace("[dependencies]\n", '[dependencies]\n'
             'serde={version="=1.0.229",default-features=false,features=["std"]}\n'
@@ -594,6 +594,11 @@ class ProductAdmissionTests(unittest.TestCase):
                         'source="registry+https://github.com/rust-lang/crates.io-index"\nchecksum="' + 'a' * 64 + '"\n')
         self.policy["lockfile_sha256"] = VERIFY.sha256(lock)
         self.write_policy()
+        return ui, build
+
+    def test_schema3_admits_only_pinned_ui_build_and_exact_slint_profile(self):
+        """Reach real product admission with inert source/lock controls, never Cargo."""
+        ui, build = self.slint_fixture()
         with patch.object(VERIFY.SLINT, "REVIEWED_POLICY_SHA256", VERIFY.SLINT.canonical_policy_sha256(self.policy)):
             _, inputs = VERIFY.admit_product(self.root)
             self.assertIn("crates/nevrotick-ui/build.rs", inputs)
@@ -748,6 +753,79 @@ class ProductAdmissionTests(unittest.TestCase):
         self.write_policy()
         with patch.object(VERIFY.SLINT, "REVIEWED_POLICY_SHA256", VERIFY.SLINT.canonical_policy_sha256(self.policy)):
             VERIFY.admit_product(self.root)
+
+    def native_fixture(self):
+        """Add only the independently specified native member and Windows Engine edge."""
+        self.slint_fixture()
+        directory = self.root / "crates/windows-platform-native"
+        (directory / "src").mkdir(parents=True)
+        native = directory / "Cargo.toml"
+        native.write_text('[package]\nname="windows-platform-native"\nversion="0.0.0"\nlicense.workspace=true\n[lints]\nworkspace=true\n')
+        (directory / "src/lib.rs").write_text('//! Inert native admission fixture; never compiled.\n')
+        workspace = self.root / "Cargo.toml"
+        self.assertIn(EXPECTED_MEMBERS, workspace.read_text())
+        workspace.write_text(workspace.read_text().replace(EXPECTED_MEMBERS,
+            EXPECTED_MEMBERS[:-1] + ', "crates/windows-platform-native"]'))
+        engine = self.root / "crates/nevrotick-engine/Cargo.toml"
+        engine.write_text(engine.read_text() + '\n[target.\'cfg(windows)\'.dependencies]\n'
+            'windows-platform-native={version="=0.0.0",path="../windows-platform-native"}\n')
+        lock = self.root / "Cargo.lock"
+        before = 'dependencies=["garde","getrandom 0.4.3","ntp-wire","time-domain","tokio"]'
+        self.assertEqual(lock.read_text().count(before), 1)
+        lock.write_text(lock.read_text().replace(before, before[:-1] + ',"windows-platform-native"]') +
+            '\n[[package]]\nname="windows-platform-native"\nversion="0.0.0"\n')
+        for target, row in self.policy["rows"].items():
+            key = "windows-platform-native@0.0.0"
+            row["local_features"][key] = {"target": [[]]}
+            row["package_scopes"]["windows-platform-native"] = {"features": {}, "local_features": {key: {"target": [[]]}}}
+            if target == "x86_64-pc-windows-msvc":
+                row["package_scopes"]["nevrotick-engine"]["local_features"][key] = {"target": [[]]}
+        self.policy["lockfile_sha256"] = VERIFY.sha256(lock)
+        for path in (workspace, engine, native):
+            self.policy["manifests_sha256"][str(path.relative_to(self.root))] = VERIFY.sha256(path)
+        self.write_policy()
+        return native, engine
+
+    def test_native_manifest_and_windows_only_edge_reject_effects_despite_refreshed_pins(self):
+        native, engine = self.native_fixture()
+
+        def admit(path, text):
+            path.write_text(text)
+            self.policy["manifests_sha256"][str(path.relative_to(self.root))] = VERIFY.sha256(path)
+            self.write_policy()
+            with patch.object(VERIFY.SLINT, "REVIEWED_POLICY_SHA256", VERIFY.SLINT.canonical_policy_sha256(self.policy)):
+                return VERIFY.admit_product(self.root)
+
+        healthy_native, healthy_engine = native.read_text(), engine.read_text()
+        admit(native, healthy_native)
+        for suffix in ('\n[dependencies]\nextra="=1.0.0"\n', '\n[dev-dependencies]\nextra="=1.0.0"\n',
+                       '\n[build-dependencies]\nextra="=1.0.0"\n', '\n[features]\nextra=[]\n',
+                       '\n[lib]\nproc-macro=true\n', '\n[target.\'cfg(windows)\'.dependencies]\nextra="=1.0.0"\n'):
+            with self.subTest(native=suffix), self.assertRaises(VERIFY.ENV.Incomplete):
+                admit(native, healthy_native + suffix)
+        admit(native, healthy_native)
+        build = native.parent / "build.rs"
+        build.write_text('fn main() {}\n')
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "first-party build"):
+            admit(native, healthy_native)
+        build.unlink()
+        edge = 'windows-platform-native={version="=0.0.0",path="../windows-platform-native"}'
+        variants = [healthy_engine.replace(edge, replacement) for replacement in (
+            '', edge.replace('=0.0.0', '=0.0.1'), edge.replace('../windows-platform-native', '../foreign'),
+            edge[:-1] + ',optional=true}', edge[:-1] + ',default-features=false}', edge[:-1] + ',features=["extra"]}',
+            'renamed_' + edge[:-1] + ',package="windows-platform-native"}')]
+        variants += [healthy_engine.replace("cfg(windows)", "cfg(unix)"),
+                     healthy_engine.replace(edge + '\n', '').replace('[dependencies]\n', '[dependencies]\n' + edge + '\n')]
+        for changed in variants:
+            with self.subTest(engine=changed), self.assertRaises(VERIFY.ENV.Incomplete):
+                admit(engine, changed)
+        admit(engine, healthy_engine)
+        workspace = self.root / "Cargo.toml"
+        healthy_workspace = workspace.read_text()
+        self.assertIn(', "crates/windows-platform-native"', healthy_workspace)
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "workspace members"):
+            admit(workspace, healthy_workspace.replace(', "crates/windows-platform-native"', ''))
+        admit(workspace, healthy_workspace)
 
     def test_prior_five_members_cannot_hide_engine(self):
         path = self.root / "Cargo.toml"
@@ -1866,7 +1944,7 @@ class ExecutionAccountingTests(unittest.TestCase):
     def test_portable_row_keeps_doctests_separate_and_empty_tests_fatal(self):
         rows = dict(VERIFY.commands("portable"))
         self.assertIn("--workspace", rows["compiler"])
-        for package in VERIFY.PACKAGES:
+        for package in EXPECTED_PACKAGES:
             self.assertIn("--no-tests=fail", rows["product-tests:" + package])
             self.assertIn("--lib", rows["product-tests:" + package])
             self.assertIn("--tests", rows["product-tests:" + package])
@@ -1942,6 +2020,26 @@ class ExecutionAccountingTests(unittest.TestCase):
                            [{"lane": "product-tests:ntp-wire", "tests": {"package": "nevrotick-ui", "executed": 99}}]):
             with self.subTest(records=incomplete), self.assertRaises(VERIFY.ENV.Incomplete):
                 VERIFY.summarize_test_counts(incomplete)
+
+    def test_current_native_package_requires_nonempty_ordinary_and_doc_evidence(self):
+        rows = dict(VERIFY.commands("portable", schema_version=3))
+        self.assertIn("--no-tests=fail", rows["product-tests:windows-platform-native"])
+        self.assertIn("--doc", rows["doctests:windows-platform-native"])
+        members = (*EXPECTED_PACKAGES, "windows-platform-native")
+        records = [{"lane": kind + ":" + package, "tests": {"package": package, "executed": 1}}
+                   for package in members for kind in ("product-tests", "doctests")]
+        records.extend({"lane": "optimized-tests:" + package, "tests": {"package": package, "executed": 1}}
+                       for package in ("time-domain", "ntp-exchange", "time-core", "nevrotick-engine"))
+        result = VERIFY.summarize_test_counts(records, schema_version=3)
+        self.assertEqual(result["by_package"]["windows-platform-native"], {"product-tests": 1, "doctests": 1})
+        for kind in ("product-tests", "doctests"):
+            missing = [row for row in records if row["lane"] != kind + ":windows-platform-native"]
+            with self.subTest(missing=kind), self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.summarize_test_counts(missing, schema_version=3)
+            zero = [dict(row, tests=dict(row["tests"], executed=0))
+                    if row["lane"] == kind + ":windows-platform-native" else row for row in records]
+            with self.subTest(zero=kind), self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.summarize_test_counts(zero, schema_version=3)
 
     def test_unreviewed_package_cannot_supply_test_accounting(self):
         for lane in ("product-tests:other", "doctests:other"):

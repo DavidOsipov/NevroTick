@@ -1392,6 +1392,164 @@ matched 254 names and passed all twelve exact cases, including the plain
 KoD chronology control. Live providers, remaining per-file mutation checks
 and genuine Engine-to-Core acquisition remain open.
 
+The [automatic-resume checkpoint](../../tasks/engine-transport-pilot.md#automatic-resume-invalidation-in-the-windows-observe-cli)
+connects a Windows notification to the actual observe invocation's
+control watch through a separate native platform leaf. The Windows-target
+Clippy and release link pass. All three existing unsafe-code prohibitions
+remain in force. This advances the invalidation side of W11-W02 and S2.1.
+The [Windows resume smoke](../../tasks/engine-transport-pilot.md#windows-resume-registration-and-close-smoke)
+confirms native registration and explicit close on its tested source. The
+[suspend continuation](../../tasks/engine-transport-pilot.md#suspend-and-automatic-resume-invalidation)
+routes a delivered pre-suspend event through the same one-shot callback and
+retains automatic resume. The focused checks and Windows CLI cross-link pass.
+Physical event delivery and calibrated mapping remain open.
+
+The [integrated development and closed KE re-admission](../../tasks/engine-transport-pilot.md#integrated-development-and-closed-ke-re-admission)
+passes 19 development lanes and the exact KE reader controls. Its
+GNU inventory contains 765 descriptors across 13 owners, including 217 for
+the ledger. The [current ledger checkpoint](../../tasks/engine-transport-pilot.md#current-protected-ledger-line-coverage-and-chronology-retry)
+passes the GNU line gate at 96.62%. The first 36-descriptor partition caught
+the three targeted prior survivors and retains two test timeouts and one raw
+survivor with scoped equivalence review. The ledger owner must resolve the
+timeouts and account for the other 181 descriptors under the existing 95%
+per-file gate. The [timeout diagnosis and remaining selection](../../tasks/engine-transport-pilot.md#ledger-timeout-localization-and-remaining-selection)
+locate the unexpected Cargo rebuilds and prepare the exact five remaining
+groups. The [Windows KE CLI power observer](../../tasks/engine-transport-pilot.md#windows-ke-cli-power-observer)
+binds suspend/resume notification to the original invocation's Stop. Four
+focused GNU cases and both target Clippy checks pass. The [integrated
+checkpoint](../../tasks/engine-transport-pilot.md#windows-ke-cli-integrated-re-admission)
+passes all nine affected lanes and current closed KE re-admission. GNU ran
+565 cases per ordinary and optimized mode and 90 doctests. On staged tree
+`d405c8c3` at `ed62028`, the [post-pull KE verification](../../tasks/engine-transport-pilot.md#post-pull-ke-windows-execution-and-ledger-metrics)
+records 775 listed descriptors and exact parity for all 217 ledger variants.
+All 284 scripted Windows KE cases passed, with exact discovery and confirmed
+job cleanup. The current GNU ledger line gate passes at 96.62%. The next
+37-descriptor ledger group completed its 655-case baseline and records 14
+behavioral catches and 23 compiler refusals, with zero survivors or timeouts.
+The ledger still needs the four other groups and chronology adjudication
+for its whole-file gate. Physical power delivery, live provider and the
+genuine mapping supplier remain open.
+
+The [managed Protected report checkpoint](../../tasks/engine-transport-pilot.md#managed-protected-report-preserves-the-joined-numerical-result)
+preserves the exact joined result or refusal through the existing Windows
+report. The production caller's absent profile still produces `Unavailable`.
+Five focused cases and all nine affected integrated lanes passed on
+`d5c97eb7…`, with 567 ordinary and optimized cases per mode, 90 doctests
+and current closed KE re-admission. The exact staged native run passed all
+286 scripted KE cases and confirmed cleanup. Current enumeration lists 775
+variants, including all 217 exact ledger identities and 25 datagram
+descriptors requiring current comparison. The affected owner metrics
+remain open, with both public campaigns closed.
+
+The [ledger coverage and return checkpoint](../../tasks/engine-transport-pilot.md#managed-protected-ledger-coverage-and-cookie-return-defenses)
+passes all 13 selected GNU line gates on `d5c97eb7…`. Group 03 caught
+31 of 31 viable variants. Group 04 retains two survivors, 20 catches and
+15 compiler refusals. The corrected test-only candidate `f5aea33a…`
+passes all nine affected development lanes and exact closed-role admission.
+Its fresh listing matched all 775 earlier descriptors and rendered diffs.
+Both retained mutant changes trigger the intended capacity assertions in
+focused controls. The budgeted two-descriptor generated follow-up, other
+ledger groups and chronology timeouts remain open.
+
+The [controlled KE fixture continuation](../../tasks/s0.1-crypto-feasibility.md#current-ordinary-host-parser-and-standalone-fixture-preparation)
+records four passing host parser checks and an unresolved guest inventory.
+The exact standalone vendor is available. The private lock replay needs
+current bookends and an admitted quota before fresh standalone graph
+admission. Real TLS exporter, store and handoff evidence remain open
+alongside calibrated Engine-to-Core admission.
+
+The exact [two-descriptor generated continuation](../../tasks/engine-transport-pilot.md#cookie-return-generated-continuation-and-cargo-timing-diagnosis)
+selected both intended changes. Its unmodified baseline rebuilt Cargo
+dependencies and timed out before either variant. The historical
+Build-to-Test witness reached the chronology error without the rebuild.
+Both original chronology timeouts and the latest baseline timeout remain
+open. Current evidence retains the cumulative allowances and an exact
+closeout reader for incomplete baselines.
+
+The Windows [managed Protected power observation](../../tasks/engine-transport-pilot.md#managed-protected-power-observation-at-the-submission-boundary)
+shares the real worker reservation and original Stop handle with the
+observed KE path. Stop before commit refuses publication and late Stop
+retains joined history. On product `3633aa2d…`, the configured GNU coverage
+lane ran 568 cases and passed all 13 line gates. The ordinary-user Windows
+cohort matched 546 discovered names and passed 284 flat and three fixed
+nested cases, with 14 confirmed teardown observations. Physical power
+delivery and production provider/transport qualification remain open.
+The [completed worker mutation selection](../../tasks/engine-transport-pilot.md#managed-protected-power-checkpoint-coverage-and-windows-execution)
+caught 12 of 14 viable variants (85.714%). The 95% gate remains open.
+Two Windows-only variants survived on GNU and each reached its expected
+MSVC compiler refusal. Their GNU outcomes retain zero additional credit.
+
+The [managed KE currentness child](../../tasks/engine-transport-pilot.md#issued-source-currentness-through-ke-transport)
+checks the issued source definition at TCP connect and TLS adapter
+boundaries. An obsolete definition blocks the next operation and prevents
+a stale success from being returned. The original deadlines and first
+failure stay intact. The guard spans no blocking operation.
+On `e7671174…`, all 13 GNU line gates passed. The
+[transport-fault run](../../tasks/engine-transport-pilot.md#current-transport-metrics-and-reached-sensitivity-gaps)
+left 22 misses and two timeouts. Three targeted successor controls now
+detect their exact GNU-active member faults. The whole-file 95% gate
+remains open.
+
+The [managed Protected successor](../../tasks/engine-transport-pilot.md#managed-protected-successor-through-real-loopback)
+exercises both UDP legs in the Linux test fixture. Actual join preserves
+the authenticated DENY or the stale-source refusal and the original
+debits. The integrated closed role passes nine development lanes
+with 576 cases per EP1 mode, 90 doctests and 199 reader controls.
+The [guarded terminal timing](../../tasks/engine-transport-pilot.md#managed-protected-guarded-terminal-timing)
+now reaches the joined managed Protected report alongside the original
+packet-admission age. Nine renewed EP1 lanes and 199 reader controls
+passed. The [current GNU coverage and managed report selection](../../tasks/engine-transport-pilot.md#guarded-terminal-timing-gnu-coverage-and-managed-report-selection)
+covers the previous Engine product. The original 13 line gates passed
+and the first managed-report instrumented run failed at 94/201.
+The [shared managed report projection](../../tasks/engine-transport-pilot.md#managed-preview-and-protected-report-consumers)
+now exercises actual joined Preview, refusal, cleanup and collection
+results. The renewed GNU managed-file gate passes at 193/213.
+The [complete current KE catalogue](../../tasks/engine-transport-pilot.md#current-complete-ke-mutation-catalogue)
+lists 879 descriptors across 14 owners, including the same 83
+managed descriptors. The [current Managed Preview checkpoint](../../tasks/engine-transport-pilot.md#current-managed-preview-selected-file-qualification)
+passes all nine EP1 development lanes, 194/213 executable lines
+and the selected-file 95% mutation gate. Independent adjudication
+accounts for 44 retained behavioral catches, four focused current
+witnesses, 33 GNU compiler refusals and two active MSVC compiler
+refusals. The original GNU timeout and raw result remain incomplete.
+The [current KE worker checkpoint](../../tasks/engine-transport-pilot.md#current-ke-worker-selected-file-qualification)
+passed 271/285 executable lines and the selected-file active-target
+95% mutation gate. The full GNU campaign retains its original timeout.
+The [current datagram checkpoint](../../tasks/engine-transport-pilot.md#current-protected-datagram-selected-file-qualification)
+passed 714/739 executable lines and the selected-file active-target
+mutation gate at 26/26 viable. Both exact zero-delay faults failed in
+the full GNU run. The original GNU exit 2 remains incomplete due to a
+Windows-only descriptor that received a separate current MSVC compiler
+refusal. Continue the current ledger partition and genuine supplier
+work under their existing gates. The [current ledger checkpoint](../../tasks/engine-transport-pilot.md#current-ledger-gnu-coverage-and-group-05-raw-outcomes)
+passes the current 1,115/1,153 line gate. Group 05 preserves its raw
+17 catches, eight compiler refusals, seven survivors and five timeouts.
+Focused exact receiver controls now witness all five timed variants;
+seven independently reviewed equivalence candidates await admission.
+The ledger's 95% file gate remains open through the remaining partitions.
+The [managed Windows EOF case](../../tasks/engine-transport-pilot.md#managed-protected-stale-revision-and-windows-loopback-eof)
+now passes from stale source rejection through the current loopback
+ClientHello, EOF and actual Job cleanup. Healthy TLS, live UDP,
+calibrated mapping and invalidation retain their own gates.
+The prior product also passed the bounded
+[Windows handshake EOF observation](../../tasks/engine-transport-pilot.md#real-windows-ke-facade-loopback-handshake-refusal)
+through the real facade. Healthy native TLS, live protected UDP,
+fresh per-owner mutation and production Core admission remain open.
+
+Both [strict standalone KE target policies](../../tasks/s0.1-crypto-feasibility.md#strict-standalone-ke-dependency-policy)
+passed on private lock `68401c62…` after admitting the exact Syn duplicate
+already scoped in the Engine graph. All 114 registry identities match.
+The [standalone peer and client quality check](../../tasks/s0.1-crypto-feasibility.md#standalone-peer-and-client-quality-before-artifact-cross-link)
+passed 12 actual lanes and 30 test executions after a narrow peer
+ownership and lint repair. The [current healthy KE inputs](../../tasks/s0.1-crypto-feasibility.md#current-healthy-ke-inputs-and-fixed-windows-cross-links)
+repair the four-byte fixture refusal and pass the renewed quality lanes.
+Both fixed Windows EXE/PDB pairs passed cross-link and artifact readback.
+The collector binds their exact images and current output. The
+[current synthetic PKI](../../tasks/s0.1-crypto-feasibility.md#current-synthetic-offline-ke-pki-preparation)
+passed offline signatures, strict name and chain, missing-CRL refusal
+and key binding. The exact guest profile and healthy provider/TLS/UDP
+gates follow.
+
 **Published preceding product child — 17 November 2026:**
 [Managed restriction visibility](../../tasks/engine-transport-pilot.md#consumer-boundary-reinforcement--17-november-2026)
 is implemented and development-verified on `861987c9…`. Source handles and managed

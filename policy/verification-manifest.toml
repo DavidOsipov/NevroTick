@@ -1,10 +1,11 @@
 # UI-M0, pure wire/domain/exchange/core owners and the bounded loopback engine pilot.
 # This inventory records scope, not completed coverage or mutation qualification.
 schema_version = 1
-status = "seven-member-scope-recorded-qualification-candidate-specific"
+status = "eight-member-scope-recorded-qualification-candidate-specific"
 security_module_minimum_executable_line_percent = 90
 critical_file_minimum_mutation_percent = 95
 security_modules = [
+    { name = "windows-resume-observation", package = "windows-platform-native", files = ["crates/windows-platform-native/src/resume_slot.rs", "crates/windows-platform-native/src/windows_resume.rs"], scope = "one-shot automatic-resume delivery and disarm before PowrProf retirement for the observe CLI; selected GNU slot controls and Windows source/link checks require exact candidate evidence; runtime delivery, calibrated mapping, services and clock authority remain separate" },
     { name = "engine-ke-preview-target", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/ke_preview_target.rs"], scope = "checked numeric loopback TLS destination and literal verification identity for diagnostic and source-owned KE Preview; candidate-specific EP1 metrics belong to tasks/engine-transport-pilot.md" },
     { name = "engine-source-owned-ke-preview", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs"], scope = "source-owned never-send Preview facade and normal-joined history or distinct failure projection; candidate-specific EP1 qualification belongs to tasks/engine-transport-pilot.md" },
     { name = "engine-managed-source-policy", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/source_policy.rs"], scope = "bounded same-process laboratory source and canonical endpoint KoD ownership, irreversible send allowance, current-revision re-enable and actual UDP send/receive guards; candidate-specific qualification belongs to tasks/engine-transport-pilot.md; no protected NTS integration, production configuration, persistence, calibrated freshness, native or clock authority" },
@@ -100,6 +101,8 @@ critical_files = [
     "crates/windows-platform/src/privilege_observation.rs",
     "crates/windows-platform/src/scm.rs",
     "crates/windows-platform/src/service.rs",
+    "crates/windows-platform-native/src/resume_slot.rs",
+    "crates/windows-platform-native/src/windows_resume.rs",
     "crates/time-core/src/conditioned_fit.rs",
     "crates/time-core/src/conditioned_fit/arithmetic.rs",
     "crates/time-core/src/conditioned_window.rs",
@@ -164,6 +167,8 @@ critical_files = [
     "crates/time-core/src/combination/lifecycle/chart.rs",
 ]
 feature_matrix = [
+    { package = "windows-platform-native", target = "x86_64-unknown-linux-gnu", scope = "portable automatic-resume slot behavior and compile-fail check for Windows-only subscription", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "windows-platform-native", target = "x86_64-pc-windows-msvc", scope = "native resume adapter linked by the observe CLI; actual resume delivery and teardown qualification remain separate", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "windows-platform", target = "x86_64-unknown-linux-gnu", scope = "portable shared service lifecycle model, integration contracts and doctests; actual SCM and service qualification remain open", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "windows-platform", target = "x86_64-pc-windows-msvc", scope = "shared pure service lifecycle library/test-consumer compilation; no SCM adapter, native execution, provisioning or installed lifecycle qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "nevrotick-engine", target = "x86_64-unknown-linux-gnu", scope = "laboratory loopback engine library and observe CLI, runtime-boundary tests, doctests and separate real entrypoint observations; no production acquisition qualification", dependency_owner = "policy/ui-m0-dependencies.json" },

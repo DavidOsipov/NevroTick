@@ -17,7 +17,9 @@ use rustls::{HandshakeKind, ProtocolVersion, ServerConfig, ServerConnection, Str
 use rustls_cng_crypto::ShutdownHandle;
 use zeroize::Zeroizing;
 
-use super::{Budget, Config, Failed, Failure, Flow, OFFER, RESPONSE, admit_offer, ready_line, resolve};
+use super::{
+    Budget, Config, Failed, Failure, Flow, OFFER, RESPONSE, admit_offer, ready_line, resolve,
+};
 
 /// Maximum admitted public certificate or private PKCS8 extent.
 const DER_LIMIT: u64 = 16 * 1024;
@@ -84,9 +86,12 @@ fn read_der(path: &Path) -> Result<Zeroizing<Vec<u8>>, Failure> {
     }
     let length = usize::try_from(held.len()).map_err(|_| Failure::Input)?;
     let mut bytes = Zeroizing::new(Vec::new());
-    bytes.try_reserve_exact(length).map_err(|_| Failure::Input)?;
+    bytes
+        .try_reserve_exact(length)
+        .map_err(|_| Failure::Input)?;
     bytes.resize(length, 0);
-    file.read_exact(bytes.as_mut()).map_err(|_| Failure::Input)?;
+    file.read_exact(bytes.as_mut())
+        .map_err(|_| Failure::Input)?;
     let mut extra = Zeroizing::new([0_u8; 1]);
     if file.read(extra.as_mut()).map_err(|_| Failure::Input)? != 0
         || stamp(&file.metadata().map_err(|_| Failure::Input)?) != stamp(&held)
@@ -167,7 +172,10 @@ impl BudgetIo {
 
     /// Preserve the original typed fault, including a suppressed nominal success.
     fn settle<T>(&self, result: io::Result<T>) -> Result<T, Failed> {
-        resolve(self.fault, result.map_err(|error| Failure::Io(error.kind())))
+        resolve(
+            self.fault,
+            result.map_err(|error| Failure::Io(error.kind())),
+        )
     }
 
     /// Latch the first socket refusal without retaining its native message.
@@ -180,10 +188,13 @@ impl BudgetIo {
 
     /// Obtain a positive capped buffer size before a native socket operation.
     fn amount(&mut self, flow: Flow, length: usize) -> io::Result<usize> {
-        self.budget.allowance(flow).map(|left| left.min(length)).map_err(|failure| {
-            self.fault = Some(failure);
-            io::ErrorKind::Other.into()
-        })
+        self.budget
+            .allowance(flow)
+            .map(|left| left.min(length))
+            .map_err(|failure| {
+                self.fault = Some(failure);
+                io::ErrorKind::Other.into()
+            })
     }
 }
 
@@ -205,7 +216,13 @@ impl Read for BudgetIo {
                     self.guard()?;
                     return Ok(actual);
                 }
-                Err(error) if matches!(error.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut | io::ErrorKind::Interrupted) => {}
+                Err(error)
+                    if matches!(
+                        error.kind(),
+                        io::ErrorKind::WouldBlock
+                            | io::ErrorKind::TimedOut
+                            | io::ErrorKind::Interrupted
+                    ) => {}
                 Err(error) => return self.refuse(error),
             }
         }
@@ -230,7 +247,13 @@ impl Write for BudgetIo {
                     self.guard()?;
                     return Ok(actual);
                 }
-                Err(error) if matches!(error.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut | io::ErrorKind::Interrupted) => {}
+                Err(error)
+                    if matches!(
+                        error.kind(),
+                        io::ErrorKind::WouldBlock
+                            | io::ErrorKind::TimedOut
+                            | io::ErrorKind::Interrupted
+                    ) => {}
                 Err(error) => return self.refuse(error),
             }
         }
@@ -252,20 +275,23 @@ fn connection(certificate: &Path, key: &Path) -> Result<ServerConnection, Failur
     let key = read_der(key)?;
     let certificate = CertificateDer::from(std::mem::take(&mut *certificate));
     let mut provider_key = Zeroizing::new(Vec::new());
-    provider_key.try_reserve_exact(key.len()).map_err(|_| Failure::Input)?;
+    provider_key
+        .try_reserve_exact(key.len())
+        .map_err(|_| Failure::Input)?;
     provider_key.extend_from_slice(&key);
     // The public CNG API consumes an owned DER copy with no wiping Drop. Retire
     // the original read buffer explicitly; provider DER/native copies remain
     // unqualified. This fixture uses only a disposable synthetic signing key.
-    let mut config = ServerConfig::builder_with_provider(Arc::new(rustls_cng_crypto::default_provider()))
-        .with_protocol_versions(&[&rustls::version::TLS13])
-        .map_err(|_| Failure::Tls)?
-        .with_no_client_auth()
-        .with_single_cert(
-            vec![certificate],
-            PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(std::mem::take(&mut *provider_key))),
-        )
-        .map_err(|_| Failure::Tls)?;
+    let mut config =
+        ServerConfig::builder_with_provider(Arc::new(rustls_cng_crypto::default_provider()))
+            .with_protocol_versions(&[&rustls::version::TLS13])
+            .map_err(|_| Failure::Tls)?
+            .with_no_client_auth()
+            .with_single_cert(
+                vec![certificate],
+                PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(std::mem::take(&mut *provider_key))),
+            )
+            .map_err(|_| Failure::Tls)?;
     drop(key);
     config.alpn_protocols = vec![b"ntske/1".to_vec()];
     config.send_tls13_tickets = 0;
@@ -300,7 +326,10 @@ fn close(stream: &mut StreamOwned<ServerConnection, BudgetIo>) -> Result<(), Fai
         if stream.sock.settle(read)? == 0 {
             return Err(Failure::Closure.into());
         }
-        let state = stream.conn.process_new_packets().map_err(|_| Failure::Tls)?;
+        let state = stream
+            .conn
+            .process_new_packets()
+            .map_err(|_| Failure::Tls)?;
         if state.plaintext_bytes_to_read() != 0 {
             return Err(Failure::Offer.into());
         }
@@ -312,18 +341,36 @@ fn close(stream: &mut StreamOwned<ServerConnection, BudgetIo>) -> Result<(), Fai
 
 /// Own one listener/connection/config; return no TLS or key owner to the caller.
 fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
+    let Config {
+        certificate,
+        key,
+        ready,
+    } = config;
     let budget = Budget::new(origin)?;
-    let mut connection = connection(&config.certificate, &config.key)?;
+    let mut connection = connection(&certificate, &key)?;
     budget.poll(Instant::now())?;
-    let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).map_err(|error| Failure::Io(error.kind()))?;
-    listener.set_nonblocking(true).map_err(|error| Failure::Io(error.kind()))?;
-    let port = listener.local_addr().map_err(|error| Failure::Io(error.kind()))?.port();
-    publish_ready(&config.ready, port)?;
+    let listener =
+        TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).map_err(|error| Failure::Io(error.kind()))?;
+    listener
+        .set_nonblocking(true)
+        .map_err(|error| Failure::Io(error.kind()))?;
+    let port = listener
+        .local_addr()
+        .map_err(|error| Failure::Io(error.kind()))?
+        .port();
+    publish_ready(&ready, port)?;
     let (socket, peer) = loop {
         let pause = budget.poll(Instant::now())?;
         match listener.accept() {
             Ok(accepted) => break accepted,
-            Err(error) if matches!(error.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::Interrupted) => std::thread::sleep(pause),
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::WouldBlock | io::ErrorKind::Interrupted
+                ) =>
+            {
+                std::thread::sleep(pause);
+            }
             Err(error) => return Err(Failure::Io(error.kind()).into()),
         }
     };
@@ -331,14 +378,23 @@ fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
     if peer.ip() != IpAddr::V4(Ipv4Addr::LOCALHOST) {
         return Err(Failure::Arguments.into());
     }
-    socket.set_nonblocking(false).map_err(|error| Failure::Io(error.kind()))?;
-    let mut socket = BudgetIo { socket, budget, fault: None };
+    socket
+        .set_nonblocking(false)
+        .map_err(|error| Failure::Io(error.kind()))?;
+    let mut socket = BudgetIo {
+        socket,
+        budget,
+        fault: None,
+    };
     let handshake = connection.complete_io(&mut socket);
     socket.settle(handshake)?;
     if connection.is_handshaking()
         || connection.protocol_version() != Some(ProtocolVersion::TLSv1_3)
         || connection.alpn_protocol() != Some(b"ntske/1".as_slice())
-        || !matches!(connection.handshake_kind(), Some(HandshakeKind::Full | HandshakeKind::FullWithHelloRetryRequest))
+        || !matches!(
+            connection.handshake_kind(),
+            Some(HandshakeKind::Full | HandshakeKind::FullWithHelloRetryRequest)
+        )
     {
         return Err(Failure::Tls.into());
     }
@@ -347,8 +403,22 @@ fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
     let received = stream.read_exact(&mut offer);
     stream.sock.settle(received)?;
     admit_offer(&offer)?;
-    let c2s = stream.conn.export_keying_material(Zeroizing::new([0_u8; 32]), b"EXPORTER-network-time-security", Some(&[0, 0, 0, 15, 0])).map_err(|_| Failure::Tls)?;
-    let s2c = stream.conn.export_keying_material(Zeroizing::new([0_u8; 32]), b"EXPORTER-network-time-security", Some(&[0, 0, 0, 15, 1])).map_err(|_| Failure::Tls)?;
+    let c2s = stream
+        .conn
+        .export_keying_material(
+            Zeroizing::new([0_u8; 32]),
+            b"EXPORTER-network-time-security",
+            Some(&[0, 0, 0, 15, 0]),
+        )
+        .map_err(|_| Failure::Tls)?;
+    let s2c = stream
+        .conn
+        .export_keying_material(
+            Zeroizing::new([0_u8; 32]),
+            b"EXPORTER-network-time-security",
+            Some(&[0, 0, 0, 15, 1]),
+        )
+        .map_err(|_| Failure::Tls)?;
     drop((c2s, s2c));
     let sent = stream.write_all(&RESPONSE).and_then(|()| stream.flush());
     stream.sock.settle(sent)?;

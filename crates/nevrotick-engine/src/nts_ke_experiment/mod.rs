@@ -9,6 +9,8 @@
 use std::ffi::OsString;
 use std::io::{self, Read};
 use std::net::{IpAddr, SocketAddr};
+#[cfg(any(windows, test))]
+use std::num::NonZeroU32;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
@@ -20,6 +22,8 @@ use ntp_wire::{
     NtsKeRequestEncodeError, encode_nts_ke_ntpv4_request, negotiate_nts_ke_ntpv4,
 };
 use rustls_pki_types::ServerName;
+#[cfg(windows)]
+use windows_platform_native::{ResumeUnregistrationError, ResumeWatch};
 use zeroize::Zeroizing;
 
 mod association;
@@ -437,13 +441,6 @@ impl StopHandle {
     /// Latch stop once without claiming that any admitted operation returned.
     /// # Errors
     /// Refuse an unavailable scope lock with the existing closed control cause.
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "the selected stop endpoint currently has only component-controller callers"
-        )
-    )]
     fn request_stop(&self) -> Result<StopDisposition, Failure> {
         let mut stopped = self.scope.stopped.lock().map_err(|_| Failure::Control)?;
         let disposition = if *stopped {
@@ -1176,13 +1173,100 @@ fn drive_invocation_with<'scope, P: recovery::Producer>(
     }
 }
 
-/// Delegate the actual Windows caller to the mandatory synchronous facade owner.
+/// Run a managed invocation under its existing source-owner controls.
 /// # Errors
 /// Preserve caller-context, submission, collection and joined operation dispositions.
 #[cfg(windows)]
 fn run(config: Config) -> Result<datagram::ReceivedCompletion, RunFailed> {
-    run_synchronously_with(config, &PROCESS_WORKER, None, |slot, prepared| {
-        slot.try_submit(prepared)
+    let (prepared, _stop): (job::PreparedInvocation, StopHandle) = prepare_synchronous(config)?;
+    receive_probe(collect_prepared(
+        prepared,
+        &PROCESS_WORKER,
+        None,
+        |slot, prepared| slot.try_reserve(prepared)?.try_submit(),
+    ))
+}
+
+/// Wire the observed Windows invocation to its original one-shot stop scope.
+/// # Errors
+/// Preserve caller-context, preparation and registration refusal before submission.
+#[cfg(windows)]
+fn run_with_power_observer(config: Config) -> Result<ObservedInvocation, ObserverStartError> {
+    run_observing(
+        config,
+        &PROCESS_WORKER,
+        |stop| {
+            let watch: ResumeWatch =
+                ResumeWatch::subscribe(move || stop.request_stop().map(|_| ()).map_err(|_| ()))
+                    .map_err(|_| ())?;
+            Ok(move || watch.close().map_err(ResumeUnregistrationError::code))
+        },
+        job::SubmissionReservation::try_submit,
+    )
+}
+
+/// Keep the joined or unconfirmed invocation separately from observer failures.
+#[cfg(any(windows, test))]
+struct ObservedInvocation {
+    /// Existing worker result. Cancellation and observer close never alter it.
+    result: Result<datagram::ReceivedInvocation, RunFailed>,
+    /// Observer results, independent of the worker's retained result.
+    cleanup: PowerObserverCleanup,
+}
+
+/// Closed observer cleanup facts, retaining the exact native status on refusal.
+#[cfg(any(windows, test))]
+#[derive(Clone, Copy, Default)]
+struct PowerObserverCleanup {
+    /// The actual stop scope could not be latched after collection refusal.
+    stop_failed: bool,
+    /// Exact nonzero status from consuming close after disarm.
+    unregistration_error: Option<NonZeroU32>,
+}
+
+/// Failures before an observed invocation can submit the actual worker.
+#[cfg(any(windows, test))]
+enum ObserverStartError {
+    /// Caller context, original checked preparation or slot reservation refused.
+    Preparation(RunFailed),
+    /// The power observer did not register.
+    Registration,
+}
+
+/// Register only after reserving the actual worker slot and release it on refusal.
+/// The observer and worker share the original Stop scope. Collection refusal
+/// requests Stop before disarm while the slot retains the actual worker.
+///
+/// # Errors
+/// Preserve caller, preparation and slot refusal before registration, or an
+/// observer registration refusal before submission.
+#[cfg(any(windows, test))]
+fn run_observing<Close: FnOnce() -> Result<(), NonZeroU32>>(
+    config: Config,
+    slot: &'static job::WorkerSlot,
+    subscribe: impl FnOnce(StopHandle) -> Result<Close, ()>,
+    submit: impl FnOnce(job::SubmissionReservation) -> Result<(), job::SubmitError>,
+) -> Result<ObservedInvocation, ObserverStartError> {
+    let (prepared, stop): (job::PreparedInvocation, StopHandle) =
+        prepare_synchronous(config).map_err(ObserverStartError::Preparation)?;
+    let reservation: job::SubmissionReservation =
+        slot.try_reserve(prepared)
+            .map_err(|error: job::SubmitError| {
+                ObserverStartError::Preparation(RunFailed::Submission(error))
+            })?;
+    let close: Close = subscribe(stop.clone()).map_err(|()| ObserverStartError::Registration)?;
+    let result: Result<datagram::ReceivedInvocation, RunFailed> = submit(reservation)
+        .map_err(RunFailed::Submission)
+        .and_then(|()| receive_submitted(slot, None));
+    let stop_failed: bool =
+        matches!(&result, Err(RunFailed::Collection(_))) && stop.request_stop().is_err();
+    let unregistration_error: Option<NonZeroU32> = close().err();
+    Ok(ObservedInvocation {
+        result,
+        cleanup: PowerObserverCleanup {
+            stop_failed,
+            unregistration_error,
+        },
     })
 }
 
@@ -1196,7 +1280,7 @@ fn run(config: Config) -> Result<datagram::ReceivedCompletion, RunFailed> {
 /// # Errors
 /// Keep pre-submit caller refusal distinct from submission, unconfirmed collection,
 /// normally retired operation failure and actual joined abnormal termination.
-#[cfg(any(windows, test))]
+#[cfg(test)]
 fn run_synchronously_with(
     config: Config,
     slot: &'static job::WorkerSlot,
@@ -1206,7 +1290,17 @@ fn run_synchronously_with(
         job::PreparedInvocation,
     ) -> Result<(), job::SubmitError>,
 ) -> Result<datagram::ReceivedCompletion, RunFailed> {
-    match run_joined_with(config, slot, profile, submit)? {
+    receive_probe(run_joined_with(config, slot, profile, submit))
+}
+
+/// Project a normal probe from the joined invocation under its existing contract.
+/// # Errors
+/// Preserve original failure or refuse a fixture-only protected control.
+#[cfg(any(windows, test))]
+fn receive_probe(
+    received: Result<datagram::ReceivedInvocation, RunFailed>,
+) -> Result<datagram::ReceivedCompletion, RunFailed> {
+    match received? {
         datagram::ReceivedInvocation::Probe(completion) => Ok(completion),
         #[cfg(test)]
         datagram::ReceivedInvocation::ProtectedControl(_) => {
@@ -1218,7 +1312,7 @@ fn run_synchronously_with(
 /// Share actual preparation, collect, and sealed take with the private control fixture.
 /// # Errors
 /// Preserve caller-context, submission, collection, operation or abnormal retirement failure.
-#[cfg(any(windows, test))]
+#[cfg(test)]
 fn run_joined_with(
     config: Config,
     slot: &'static job::WorkerSlot,
@@ -1228,14 +1322,49 @@ fn run_joined_with(
         job::PreparedInvocation,
     ) -> Result<(), job::SubmitError>,
 ) -> Result<datagram::ReceivedInvocation, RunFailed> {
+    let (prepared, _stop): (job::PreparedInvocation, StopHandle) = prepare_synchronous(config)?;
+    collect_prepared(prepared, slot, profile, submit)
+}
+
+/// Prepare one checked invocation and its own stop endpoint outside Tokio.
+/// # Errors
+/// Refuse an entered runtime or the original preparation failure.
+#[cfg(any(windows, test))]
+fn prepare_synchronous(config: Config) -> Result<(job::PreparedInvocation, StopHandle), RunFailed> {
     if tokio::runtime::Handle::try_current().is_ok() {
         return Err(RunFailed::CallerContext);
     }
-    let (prepared, _stop) =
-        job::PreparedInvocation::prepare(config).map_err(RunFailed::Preparation)?;
+    job::PreparedInvocation::prepare(config).map_err(RunFailed::Preparation)
+}
+
+/// Submit and consume only after the existing worker confirms actual join.
+/// # Errors
+/// Preserve submission, collection, operation or abnormal retirement failure.
+#[cfg(any(windows, test))]
+fn collect_prepared(
+    prepared: job::PreparedInvocation,
+    slot: &'static job::WorkerSlot,
+    profile: Option<crate::ExperimentalProfile>,
+    submit: impl FnOnce(
+        &'static job::WorkerSlot,
+        job::PreparedInvocation,
+    ) -> Result<(), job::SubmitError>,
+) -> Result<datagram::ReceivedInvocation, RunFailed> {
     submit(slot, prepared).map_err(RunFailed::Submission)?;
+    receive_submitted(slot, profile)
+}
+
+/// Receive only after the actual worker submission adapter succeeds.
+///
+/// # Errors
+/// Preserve collection and joined operation or retirement failures.
+#[cfg(any(windows, test))]
+fn receive_submitted(
+    slot: &'static job::WorkerSlot,
+    profile: Option<crate::ExperimentalProfile>,
+) -> Result<datagram::ReceivedInvocation, RunFailed> {
     slot.collect().map_err(RunFailed::Collection)?;
-    let joined = slot.take_for_receiving().map_err(RunFailed::Collection)?;
+    let joined: job::ReceivingOutcome = slot.take_for_receiving().map_err(RunFailed::Collection)?;
     datagram::receive_joined(joined, profile)
 }
 
@@ -1246,6 +1375,8 @@ enum RunFailed {
     CallerContext,
     /// No submission occurred because original checked preparation failed.
     Preparation(Failed),
+    /// No worker was submitted because power observation could not be established.
+    PowerRegistration,
     /// No completed job is inferred from submission refusal.
     Submission(job::SubmitError),
     /// Completion/retirement is unconfirmed; permanent actual job custody remains.
@@ -1467,6 +1598,7 @@ mod output {
         fn worker(failure: &RunFailed) -> io::Result<Self> {
             let (stage, cause, retired) = match failure {
                 RunFailed::CallerContext => ("caller-context", "entered-runtime", false),
+                RunFailed::PowerRegistration => ("power-registration", "unavailable", false),
                 RunFailed::Preparation(operation) | RunFailed::Operation(operation) => {
                     return Self::failure(operation);
                 }
@@ -1501,9 +1633,16 @@ mod output {
                     joined.retired,
                 ),
             };
-            let mut bytes = [0; RECORD_BYTES];
-            let used = {
-                let mut record = Cursor::new(bytes.as_mut_slice());
+            Self::worker_status(stage, cause, retired)
+        }
+
+        /// Encode one fixed worker or pre-submission observation status.
+        /// # Errors
+        /// Reject an oversized or unrepresentable record before writing to a sink.
+        fn worker_status(stage: &str, cause: &str, retired: bool) -> io::Result<Self> {
+            let mut bytes: [u8; RECORD_BYTES] = [0; RECORD_BYTES];
+            let used: usize = {
+                let mut record: Cursor<&mut [u8]> = Cursor::new(bytes.as_mut_slice());
                 writeln!(
                     record,
                     "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage={stage} cause={cause} retirement_confirmed={}",
@@ -1573,6 +1712,64 @@ mod output {
         }
         Ok(())
     }
+
+    /// Report the observer's registration refusal before any worker submission.
+    /// # Errors
+    /// Preserve encoding/write/flush failure.
+    pub(super) fn write_power_registration_failure(output: &mut impl Write) -> io::Result<()> {
+        Record::worker_status("power-registration", "unavailable", false)?.write_to(output)
+    }
+
+    /// Report observer teardown separately from actual worker completion.
+    /// # Errors
+    /// Preserve the original write/flush failure without any retry.
+    pub(super) fn write_power_cleanup(
+        stop_failed: bool,
+        close_failed: bool,
+        output: &mut impl Write,
+    ) -> io::Result<()> {
+        let mut bytes: [u8; RECORD_BYTES] = [0; RECORD_BYTES];
+        let used: usize = {
+            let mut record: Cursor<&mut [u8]> = Cursor::new(bytes.as_mut_slice());
+            writeln!(
+                record,
+                "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=power-cleanup stop_failed={} unregistration_failed={}",
+                u8::from(stop_failed),
+                u8::from(close_failed)
+            )?;
+            usize::try_from(record.position())
+                .map_err(|_| io::Error::other("bounded CLI record length is unrepresentable"))?
+        };
+        Record { bytes, used }.write_to(output)
+    }
+}
+
+/// Project the existing result and a separate observer failure, if observed.
+/// Return whether observation and output both completed successfully. A refused
+/// sink never causes a retry or changes the already-owned acquisition result.
+#[cfg(any(windows, test))]
+fn write_observed_run(
+    observed: ObservedInvocation,
+    output: &mut impl io::Write,
+    diagnostics: &mut impl io::Write,
+) -> bool {
+    let ObservedInvocation { result, cleanup }: ObservedInvocation = observed;
+    let completed: bool = match receive_probe(result) {
+        Ok(completion) => output::write_completion(&completion.projection(), output).is_ok(),
+        Err(failure) => {
+            if output::write_run_failure(&failure, diagnostics).is_err() {
+                return false;
+            }
+            false
+        }
+    };
+    let close_failed: bool = cleanup.unregistration_error.is_some();
+    if cleanup.stop_failed || close_failed {
+        let _diagnostic: io::Result<()> =
+            output::write_power_cleanup(cleanup.stop_failed, close_failed, diagnostics);
+        return false;
+    }
+    completed
 }
 
 /// Admit two bounded CLI arguments and an optional exact protected-datagram flag.
@@ -1588,14 +1785,18 @@ pub(super) fn entry(mut arguments: impl Iterator<Item = OsString>) -> std::proce
         Ok(config) => config,
         Err(primary) => return report_failure(&Failed::from(primary), ExitCode::from(2)),
     };
-    match run(config) {
-        Ok(completion) => {
-            let mut output = io::stdout().lock();
-            if output::write_completion(&completion.projection(), &mut output).is_err() {
-                return ExitCode::FAILURE;
-            }
-            ExitCode::SUCCESS
+    let observed: ObservedInvocation = match run_with_power_observer(config) {
+        Ok(observed) => observed,
+        Err(ObserverStartError::Preparation(failure)) => return report_run_failure(&failure),
+        Err(ObserverStartError::Registration) => {
+            let _diagnostic: io::Result<()> =
+                output::write_power_registration_failure(&mut io::stderr().lock());
+            return ExitCode::FAILURE;
         }
-        Err(failure) => report_run_failure(&failure),
+    };
+    if write_observed_run(observed, &mut io::stdout().lock(), &mut io::stderr().lock()) {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
     }
 }

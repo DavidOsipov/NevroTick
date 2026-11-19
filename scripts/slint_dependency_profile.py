@@ -62,11 +62,15 @@ _COOLDOWN_SPEC.loader.exec_module(COOLDOWN)
 
 # Exact private build/test cohort. Source, role and primary-grant evidence is
 # recorded in S0.5; supplemental conveyance obligations remain explicitly open.
-REVIEWED_POLICY_SHA256: str | None = "a2a4d3b89d3efae6e221e9985886152a6d726cd3d63b929ab42deb37246f13fb"
+REVIEWED_POLICY_SHA256: str | None = "fbdc3b1ed77a6285aab70c191eefc27ec9bcd86ca6a5750e0ef4adb7b2be7e95"
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 TARGETS = (HOST_TARGET, WINDOWS_TARGET)
-MEMBERS = ("nevrotick-ui", "ntp-wire", "time-domain", "ntp-exchange", "time-core", "nevrotick-engine", "windows-platform")
+LEGACY_MEMBERS = ("nevrotick-ui", "ntp-wire", "time-domain", "ntp-exchange", "time-core", "nevrotick-engine", "windows-platform")
+NATIVE_PACKAGE = "windows-platform-native"
+NATIVE_ID = NATIVE_PACKAGE + "@0.0.0"
+NATIVE_MANIFEST = "crates/" + NATIVE_PACKAGE + "/Cargo.toml"
+MEMBERS = (*LEGACY_MEMBERS, NATIVE_PACKAGE)
 PATCH_NAME = "spin_on"
 PATCH_ID = "spin_on@0.1.1"
 PATCH_PATH = "third-party/spin_on"
@@ -208,7 +212,8 @@ LOCAL_SCOPE_MEMBERS = {"nevrotick-ui": {"nevrotick-ui"}, "ntp-wire": {"ntp-wire"
                        "time-domain": {"time-domain"}, "time-core": {"time-core", "time-domain"},
                        "ntp-exchange": {"ntp-exchange", "ntp-wire", "time-domain", "time-core"},
                        "nevrotick-engine": {"nevrotick-engine", "ntp-wire", "time-domain"},
-                       "windows-platform": {"windows-platform"}}
+                       "windows-platform": {"windows-platform"},
+                       NATIVE_PACKAGE: {NATIVE_PACKAGE}}
 UI_BUILD = "crates/nevrotick-ui/build.rs"
 REGISTRY = "registry+https://github.com/rust-lang/crates.io-index"
 MAX_POLICY_BYTES = 2 * 1024 * 1024
@@ -284,9 +289,16 @@ def duplicate_identities(features: dict) -> list[str]:
     return sorted(item for item in features if names.count(item.split("@", 1)[0]) > 1)
 
 
+def policy_members(policy: dict) -> tuple[str, ...]:
+    """Retain the exact historical cohort; the reviewed digest owns current adoption."""
+    manifests = policy.get("manifests_sha256")
+    return MEMBERS if type(manifests) is dict and NATIVE_MANIFEST in manifests else LEGACY_MEMBERS
+
+
 def package_scopes(policy: dict) -> tuple[str, ...]:
     """Keep admitted product scopes and Spin's standalone scope; AccessKit has none."""
-    return (*MEMBERS, PATCH_NAME) if PATCH_NAME in patch_names(policy) else MEMBERS
+    members = policy_members(policy)
+    return (*members, PATCH_NAME) if PATCH_NAME in patch_names(policy) else members
 
 
 def selected_records(policy: dict) -> dict[str, dict]:
@@ -322,9 +334,13 @@ def first_party_dependency(policy: dict) -> dict | None:
     return record
 
 
-def profile_locals(profile: str, *, scope: str = "workspace") -> dict:
+def profile_locals(profile: str, *, scope: str = "workspace", target: str = HOST_TARGET,
+                   native: bool = True) -> dict:
     """Require exact first-party features and keep dependency locals out of roots."""
-    members = MEMBERS if scope == "workspace" else LOCAL_SCOPE_MEMBERS[scope]
+    members = (set(MEMBERS if native else LEGACY_MEMBERS) if scope == "workspace"
+               else set(LOCAL_SCOPE_MEMBERS[scope]))
+    if native and scope == "nevrotick-engine" and target == WINDOWS_TARGET:
+        members.add(NATIVE_PACKAGE)
     result = {name + "@0.0.0": {"target": [[]]} for name in members}
     if profile == EP1_PROFILE and (scope == "workspace" or scope == "nevrotick-engine"):
         result["nevrotick-engine@0.0.0"] = {"target": [[EP1_FEATURE]]}
@@ -373,7 +389,7 @@ def validate_policy_shape(policy: dict) -> None:
     except (COOLDOWN.Incomplete, KeyError, TypeError) as error:
         raise Incomplete("Incomplete cooldown graph admission: " + str(error)) from error
     manifests = policy["manifests_sha256"]
-    expected = {"Cargo.toml", *("crates/" + name + "/Cargo.toml" for name in MEMBERS)}
+    expected = {"Cargo.toml", *("crates/" + name + "/Cargo.toml" for name in policy_members(policy))}
     if (type(manifests) is not dict or set(manifests) != expected
             or not all(_hash(value) for value in manifests.values())
             or type(policy["first_party_build_scripts"]) is not dict
@@ -470,7 +486,8 @@ def validate_policy_shape(policy: dict) -> None:
         features, locals_, metadata = row["features"], row["local_features"], row["metadata_features"]
         if (type(features) is not dict or not set(features) <= set(selected)
                 or not features or not all(_roles(value) for value in features.values())
-                or type(locals_) is not dict or locals_ != profile_locals(profile)
+                or type(locals_) is not dict or locals_ != profile_locals(
+                    profile, target=target, native=NATIVE_PACKAGE in policy_members(policy))
                 or type(metadata) is not dict or not set(features) <= set(metadata)
                 or not set(metadata) <= selected.keys() | inert.keys()
                 or not all(_features(value) for value in metadata.values())):
@@ -525,12 +542,15 @@ def validate_policy_shape(policy: dict) -> None:
                 if scope != {"features": {PATCH_ID: {"target": [[]]}}, "local_features": {}}:
                     raise Incomplete("The standalone patched package scope must remain dependency/feature-free.")
                 continue
-            local = profile_locals(profile, scope=name)
+            local = profile_locals(profile, scope=name, target=target,
+                                   native=NATIVE_PACKAGE in policy_members(policy))
             if (type(scope) is not dict or set(scope) != {"features", "local_features"}
                     or scope["local_features"] != local or type(scope["features"]) is not dict
                     or not set(scope["features"]) <= set(features)
                     or not all(_roles(value) for value in scope["features"].values())):
                 raise Incomplete("Package scope has unreviewed roots, roles or selected sources.")
+            if name == NATIVE_PACKAGE and scope["features"]:
+                raise Incomplete("The native platform adapter must remain dependency-free.")
             for key, roles in scope["features"].items():
                 for role, values in roles.items():
                     admitted = {feature for feature_set in features[key].get(role, []) for feature in feature_set}
@@ -636,9 +656,25 @@ def validate_metadata(target: str, output: str, policy: dict, *, profile: str = 
                 raise Incomplete("The first-party nonmember acquired a foreign path, grant, feature or execution role.")
             locals_[key] = []
         elif package["source"] is None:
-            if (key not in LOCAL_IDENTITIES or key in locals_
+            local_identities = {name + "@0.0.0" for name in policy_members(policy)}
+            if (key not in local_identities or key in locals_
                     or package.get("license") != ("GPL-3.0-only" if key == "nevrotick-ui@0.0.0" else "GPL-2.0-only")):
                 raise Incomplete("Unreviewed local owner or first-party licence in Cargo metadata.")
+            if key == NATIVE_ID:
+                workspace_root = data.get("workspace_root")
+                targets = package.get("targets")
+                if (type(workspace_root) is not str or not workspace_root.startswith("/")
+                        or package.get("manifest_path") != workspace_root.rstrip("/") + "/" + NATIVE_MANIFEST
+                        or package.get("features") != {}
+                        or package.get("dependencies") != []
+                        or nodes[package_id]["features"] != []
+                        or nodes[package_id].get("dependencies") != []
+                        or nodes[package_id].get("deps") != []
+                        or package.get("links") is not None
+                        or type(targets) is not list or not targets
+                        or any(type(item) is not dict or item.get("kind") != ["lib"]
+                               for item in targets)):
+                    raise Incomplete("The native platform adapter acquired a foreign path, feature, dependency or execution role.")
             locals_[key] = nodes[package_id]["features"]
         else:
             if (package["source"] != REGISTRY or key not in records or key in registry or key in patches
@@ -662,7 +698,7 @@ def validate_metadata(target: str, output: str, policy: dict, *, profile: str = 
             or locals_ != expected_locals
             or type(data.get("workspace_members")) is not list
             or not all(type(value) is str for value in data["workspace_members"])
-            or len(set(data["workspace_members"])) != len(MEMBERS)
+            or len(set(data["workspace_members"])) != len(policy_members(policy))
             or set(data["workspace_members"]) != {package["id"] for package in data["packages"]
                                                  if package["source"] is None and identity(package) in LOCAL_IDENTITIES}):
         raise Incomplete("Actual Cargo metadata differs from its reviewed overapproximation.")
@@ -690,7 +726,8 @@ def validate_tree(target: str, output: str, policy: dict, *, scope: str = "works
         raise Incomplete("Unknown Cargo package selection scope.")
     row = full_row if scope == "workspace" else full_row["package_scopes"][scope]
     expected = {**row["features"], **row["local_features"]}
-    expected_roots = LOCAL_IDENTITIES if scope == "workspace" else {PATCH_ID if scope == PATCH_NAME else scope + "@0.0.0"}
+    expected_roots = ({name + "@0.0.0" for name in policy_members(policy)} if scope == "workspace"
+                      else {PATCH_ID if scope == PATCH_NAME else scope + "@0.0.0"})
     selected = selected_records(policy)
     patches = patch_records(policy)
     stack, builds, templates, roots, occurrences = {}, {}, {}, set(), set()

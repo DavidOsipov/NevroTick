@@ -4,9 +4,11 @@
 //! Public fixed component material establishes no TLS, certificate, exporter or
 //! Windows-provider success. Protected controls use the closed datagram backend.
 
+use std::cell::Cell;
 use std::ffi::OsString;
+use std::io;
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
-use std::num::NonZeroU64;
+use std::num::{NonZeroU32, NonZeroU64};
 use std::sync::mpsc::{Receiver, SyncSender, TrySendError, sync_channel};
 use std::sync::{Arc, Weak};
 use std::time::{Duration, Instant};
@@ -17,17 +19,28 @@ use super::association::{AssociationCandidate, AssociationOwner};
 use super::datagram::tests::{managed_component_exchange, managed_component_keys};
 use super::datagram::{ProtectedCompletion, ReceivedCompletion};
 use super::handoff::ManagedPreviewHistory;
-use super::job::{Hooks, Observation, Operation, PreparedInvocation, Termination, WorkerSlot};
-use super::managed_preview::SourceProtectedProbeFailure;
+use super::job::{
+    Hooks, Observation, Operation, PreparedInvocation, SubmissionReservation, Termination,
+    WorkerSlot,
+};
+use super::managed_preview::{
+    SourceKePreviewFailure, SourceKePreviewReport, SourceProtectedProbeFailure,
+    SourceProtectedProbeReport, protected_report,
+};
 use super::process::{ProcessAdmission, ProcessClaim, ProviderScope};
 use super::profile::StrictProfile;
 use super::recovery::{End, Invocation, Producer, Snapshot, Step, step_with};
 use super::request::DirectionalKeys;
-use super::{Config, Control, Failed, Failure, RunFailed, Summary, output, run_synchronously_with};
+use super::transport_fault::TransportIo;
+use super::{
+    Config, Control, Failed, Failure, RunFailed, StopDisposition, StopHandle, Summary, output,
+    run_observing, run_synchronously_with,
+};
 use crate::source_policy::{FixtureRequest, SourceBinding, fixture_control, fixture_send};
 use crate::{
-    KePreviewTarget, KePreviewTargetError, SourceConfigurationSnapshot, SourceHandle,
-    SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits, SourcePolicySnapshot,
+    ExperimentalMeasurement, ExperimentalProfile, KePreviewTarget, KePreviewTargetError,
+    MeasurementRefusal, SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority,
+    SourcePolicyError, SourcePolicyLimits, SourcePolicySnapshot,
 };
 
 /// Finite component observation only; it supplies no product operation deadline.
@@ -44,6 +57,8 @@ const ALTERNATE_UDP: SocketAddr = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::LOC
 enum Scenario {
     /// Complete under the genuine unchanged definition.
     Healthy,
+    /// Retain two distinct cookies while sealing only the original first cookie.
+    TwoCookies,
     /// Replace the actual issued revision while entropy is outside all guards.
     ReplaceDuringEntropy,
     /// Replace after complete material preparation, before the real publisher.
@@ -121,6 +136,380 @@ fn issued(scenario: Scenario) -> Result<Issued, Failure> {
     })
 }
 
+impl Issued {
+    /// Capture a checked KE input for the actual issued revision.
+    ///
+    /// # Errors
+    /// Preserve the real source owner refusal.
+    fn transport_config(&self) -> Result<Config, Failure> {
+        self.authority
+            .authorize_protected_ke(&self.configuration)
+            .map(Config::from_managed_protected)
+            .map_err(Failure::SourcePolicy)
+    }
+
+    /// Replace the actual definition while retaining the TLS and UDP values.
+    ///
+    /// # Errors
+    /// Preserve real policy failure during replacement.
+    /// # Panics
+    /// Fail if the issuer did not create a distinct same-values revision.
+    fn replace_transport_definition(&mut self) -> Result<(), Failure> {
+        let replacement: SourceConfigurationSnapshot = self
+            .authority
+            .replace_ke_preview_configuration(
+                &self.configuration,
+                self.configuration.addresses().clone(),
+                self.target.clone(),
+            )
+            .map_err(Failure::SourcePolicy)?;
+        assert_eq!(replacement.addresses().len(), 1);
+        assert!(replacement.addresses().allows(self.allowed));
+        assert!(!replacement.same_configuration(&self.configuration));
+        self.configuration = replacement;
+        Ok(())
+    }
+}
+
+/// Refuse an obsolete configuration before the connect adapter sees its peer.
+///
+/// # Errors
+/// Preserve real fixture issuance and any rejected healthy connect.
+/// # Panics
+/// Fail if an equal-target replacement reaches connect or masks prior cancellation.
+#[test]
+fn managed_ke_transport_refuses_replaced_definition_before_connect() -> Result<(), Failure> {
+    let mut fixture: Issued = issued(Scenario::Healthy)?;
+    let original: Config = fixture.transport_config()?;
+    fixture.replace_transport_definition()?;
+
+    let control: Control = Control::new(Instant::now())?;
+    let mut stale: TransportIo<'_> = TransportIo::new(&original, &control);
+    let calls: Cell<usize> = Cell::new(0);
+    let refused: Result<(), Failure> = stale.connect(|_: SocketAddr, _: Duration| {
+        calls.set(calls.get() + 1);
+        Ok(())
+    });
+    assert_eq!(
+        refused,
+        Err(Failure::SourcePolicy(
+            SourcePolicyError::ConfigurationChanged
+        ))
+    );
+    assert_eq!(calls.get(), 0);
+
+    let cancellation: super::CancelOutcome = control.cancel()?;
+    assert_eq!(cancellation, super::CancelOutcome::Cancelled);
+    let mut stopped: TransportIo<'_> = TransportIo::new(&original, &control);
+    assert_eq!(
+        stopped.connect(|_: SocketAddr, _: Duration| {
+            calls.set(calls.get() + 1);
+            Ok(())
+        }),
+        Err(Failure::Cancelled)
+    );
+    assert_eq!(calls.get(), 0);
+
+    let expired_origin: Instant = Instant::now()
+        .checked_sub(super::HANDSHAKE_TIME)
+        .ok_or(Failure::Deadline)?;
+    let expired: Control = Control::new(expired_origin)?;
+    let mut late: TransportIo<'_> = TransportIo::new(&original, &expired);
+    assert_eq!(
+        late.connect(|_: SocketAddr, _: Duration| {
+            calls.set(calls.get() + 1);
+            Ok(())
+        }),
+        Err(Failure::Deadline)
+    );
+    assert_eq!(calls.get(), 0);
+
+    let current: Config = fixture.transport_config()?;
+    let next: Control = Control::new(Instant::now())?;
+    let mut authorized: TransportIo<'_> = TransportIo::new(&current, &next);
+    let peer: SocketAddr = authorized.connect(|peer: SocketAddr, timeout: Duration| {
+        assert!(!timeout.is_zero());
+        calls.set(calls.get() + 1);
+        Ok(peer)
+    })?;
+    assert_eq!(peer, fixture.target.peer());
+    assert_eq!(calls.get(), 1);
+    Ok(())
+}
+
+/// Observe exactly one destruction of a successfully returned adapter object.
+struct ConnectedWitness<'a> {
+    /// The test's independent destruction count.
+    drops: &'a Cell<usize>,
+}
+
+impl Drop for ConnectedWitness<'_> {
+    fn drop(&mut self) {
+        self.drops.set(self.drops.get() + 1);
+    }
+}
+
+/// Retire an owned connect result if its original source changes in flight.
+///
+/// # Errors
+/// Preserve real fixture issuance and any unexpected replacement failure.
+/// # Panics
+/// Fail if the stale connection escapes, is leaked or is retired more than once.
+#[test]
+fn managed_ke_transport_drops_owned_connect_on_revision_cutover() -> Result<(), Failure> {
+    let mut fixture: Issued = issued(Scenario::Healthy)?;
+    let config: Config = fixture.transport_config()?;
+    let control: Control = Control::new(Instant::now())?;
+    let mut transport: TransportIo<'_> = TransportIo::new(&config, &control);
+    let drops: Cell<usize> = Cell::new(0);
+    let replacement: Cell<Option<Result<(), Failure>>> = Cell::new(None);
+    let connected: Result<ConnectedWitness<'_>, Failure> =
+        transport.connect(|peer: SocketAddr, timeout: Duration| {
+            assert_eq!(peer, fixture.target.peer());
+            assert!(!timeout.is_zero() && timeout <= super::HANDSHAKE_TIME);
+            replacement.set(Some(fixture.replace_transport_definition()));
+            Ok(ConnectedWitness { drops: &drops })
+        });
+    replacement.get().ok_or(Failure::Control)??;
+    assert!(matches!(
+        &connected,
+        Err(Failure::SourcePolicy(
+            SourcePolicyError::ConfigurationChanged
+        ))
+    ));
+    assert_eq!(
+        drops.get(),
+        1,
+        "post-connect refusal retired the returned object"
+    );
+    drop(connected);
+    assert_eq!(drops.get(), 1);
+    Ok(())
+}
+
+/// Place a same-values replacement relative to one shared transport transfer.
+#[derive(Clone, Copy)]
+enum TransportReplacement {
+    /// The timeout adapter returns after the source changes.
+    Timeout,
+    /// The I/O adapter returns after the source changes.
+    Operation,
+    /// Preserve an ordinary complete transfer.
+    None,
+}
+
+/// Follow the real transport checkpoints on each side of an admitted adapter call.
+///
+/// # Errors
+/// Preserve real source admission or an unexpected native/checkpoint refusal.
+/// # Panics
+/// Fail on a stale issued revision, an extra effect or a lost healthy result.
+#[test]
+fn managed_ke_transport_rechecks_revision_after_each_adapter_return() -> Result<(), Failure> {
+    for (replacement, expected_calls) in [
+        (TransportReplacement::Timeout, 0_usize),
+        (TransportReplacement::Operation, 1),
+        (TransportReplacement::None, 1),
+    ] {
+        let mut fixture: Issued = issued(Scenario::Healthy)?;
+        let config: Config = fixture.transport_config()?;
+        let control: Control = Control::new(Instant::now())?;
+        let mut transport: TransportIo<'_> = TransportIo::new(&config, &control);
+        transport.begin_exchange();
+        let replacement_result: Cell<Option<Result<(), Failure>>> = Cell::new(None);
+        let timeout_calls: Cell<usize> = Cell::new(0);
+        let operation_calls: Cell<usize> = Cell::new(0);
+        let result: io::Result<usize> = transport.transfer(
+            &mut fixture,
+            |fixture: &mut Issued, timeout: Duration| {
+                assert!(!timeout.is_zero());
+                timeout_calls.set(timeout_calls.get() + 1);
+                if matches!(replacement, TransportReplacement::Timeout) {
+                    replacement_result.set(Some(fixture.replace_transport_definition()));
+                }
+                Ok(())
+            },
+            |fixture: &mut Issued| {
+                operation_calls.set(operation_calls.get() + 1);
+                if matches!(replacement, TransportReplacement::Operation) {
+                    replacement_result.set(Some(fixture.replace_transport_definition()));
+                }
+                Ok(7_usize)
+            },
+        );
+        let expected: Result<usize, Failure> = if let Some(changed) = replacement_result.get() {
+            changed?;
+            Err(Failure::SourcePolicy(
+                SourcePolicyError::ConfigurationChanged,
+            ))
+        } else {
+            assert!(matches!(replacement, TransportReplacement::None));
+            Ok(7_usize)
+        };
+        assert_eq!(
+            transport.resolve(
+                result.map_err(|error: io::Error| Failure::Request(error.kind())),
+                Failure::Request
+            ),
+            expected
+        );
+        assert_eq!(timeout_calls.get(), 1);
+        assert_eq!(operation_calls.get(), expected_calls);
+        if let Err(stale) = expected {
+            let refused: io::Result<()> = transport.transfer(
+                &mut fixture,
+                |_: &mut Issued, _: Duration| {
+                    timeout_calls.set(timeout_calls.get() + 1);
+                    Ok(())
+                },
+                |_: &mut Issued| {
+                    operation_calls.set(operation_calls.get() + 1);
+                    Ok(())
+                },
+            );
+            assert_eq!(
+                refused.err().map(|error: io::Error| error.kind()),
+                Some(io::ErrorKind::Other)
+            );
+            assert_eq!(transport.current(Failure::Shutdown), Err(stale));
+            assert_eq!(timeout_calls.get(), 1);
+            assert_eq!(operation_calls.get(), expected_calls);
+        } else {
+            fixture.replace_transport_definition()?;
+            assert_eq!(
+                transport.current(Failure::Response),
+                Err(Failure::SourcePolicy(
+                    SourcePolicyError::ConfigurationChanged
+                ))
+            );
+            assert_eq!(operation_calls.get(), 1);
+        }
+    }
+    Ok(())
+}
+
+/// Exchange work retains its original longer cutoff after the handshake window.
+/// # Errors
+/// Preserve fixture/source admission and any unexpected transfer refusal.
+/// # Panics
+/// Fail if the old handshake cutoff survives the phase transition or the
+/// exchange timeout is refreshed relative to the original invocation.
+#[test]
+fn managed_ke_transport_exchange_uses_original_later_cutoff() -> Result<(), Failure> {
+    let fixture: Issued = issued(Scenario::Healthy)?;
+    let config: Config = fixture.transport_config()?;
+    let origin: Instant = Instant::now()
+        .checked_sub(super::HANDSHAKE_TIME)
+        .ok_or(Failure::Deadline)?;
+    let control: Control = Control::new(origin)?;
+    let mut handshake: TransportIo<'_> = TransportIo::new(&config, &control);
+    assert_eq!(
+        handshake.current(Failure::Handshake),
+        Err(Failure::Deadline)
+    );
+
+    let mut exchange: TransportIo<'_> = TransportIo::new(&config, &control);
+    exchange.begin_exchange();
+    let limit: Duration = control.expiry.saturating_duration_since(Instant::now());
+    let mut configured: Option<Duration> = None;
+    let received: io::Result<u8> = exchange.transfer(
+        &mut configured,
+        |observed: &mut Option<Duration>, timeout: Duration| {
+            *observed = Some(timeout);
+            Ok(())
+        },
+        |observed: &mut Option<Duration>| {
+            assert!(observed.is_some_and(|value: Duration| !value.is_zero() && value <= limit));
+            Ok(7)
+        },
+    );
+    assert_eq!(received.map_err(|error: io::Error| error.kind()), Ok(7));
+    Ok(())
+}
+
+/// Deadline and Stop keep their initial adapter categories and block later I/O.
+/// # Errors
+/// Preserve admitted fixture, source or cancellation failures.
+/// # Panics
+/// Fail if the checker loses the first I/O category or enters either adapter.
+#[test]
+fn managed_ke_transport_refusal_keeps_initial_io_category() -> Result<(), Failure> {
+    let fixture: Issued = issued(Scenario::Healthy)?;
+    let config: Config = fixture.transport_config()?;
+    let expired_origin: Instant = Instant::now()
+        .checked_sub(super::HANDSHAKE_TIME)
+        .ok_or(Failure::Deadline)?;
+    let stopped: Control = Control::new(Instant::now())?;
+    assert_eq!(stopped.cancel()?, super::CancelOutcome::Cancelled);
+    for (control, cause, kind) in [
+        (
+            Control::new(expired_origin)?,
+            Failure::Deadline,
+            io::ErrorKind::TimedOut,
+        ),
+        (stopped, Failure::Cancelled, io::ErrorKind::Interrupted),
+    ] {
+        let mut owner: TransportIo<'_> = TransportIo::new(&config, &control);
+        let mut seen: u8 = 0;
+        let attempt = |transport: &mut TransportIo<'_>, count: &mut u8| {
+            transport
+                .transfer(
+                    count,
+                    |called: &mut u8, _: Duration| {
+                        *called += 1;
+                        Ok(())
+                    },
+                    |called: &mut u8| {
+                        *called += 1;
+                        Ok(())
+                    },
+                )
+                .map_err(|error: io::Error| error.kind())
+        };
+        assert_eq!(attempt(&mut owner, &mut seen), Err(kind));
+        assert_eq!(attempt(&mut owner, &mut seen), Err(io::ErrorKind::Other));
+        assert_eq!(owner.current(Failure::Response), Err(cause));
+        assert_eq!(seen, 0);
+    }
+    Ok(())
+}
+
+/// A later revision change leaves the independently latched native error primary.
+///
+/// # Errors
+/// Preserve real source issuance, original Control or replacement errors.
+/// # Panics
+/// Fail if later stale context rewrites the earlier native refusal.
+#[test]
+fn managed_ke_transport_preserves_first_native_failure_after_replacement() -> Result<(), Failure> {
+    let mut fixture: Issued = issued(Scenario::Healthy)?;
+    let config: Config = fixture.transport_config()?;
+    let control: Control = Control::new(Instant::now())?;
+    let mut transport: TransportIo<'_> = TransportIo::new(&config, &control);
+    let operation_calls: Cell<usize> = Cell::new(0);
+    let changed: Cell<Option<Result<(), Failure>>> = Cell::new(None);
+    let result: io::Result<()> = transport.transfer(
+        &mut fixture,
+        |_: &mut Issued, _: Duration| Ok(()),
+        |fixture: &mut Issued| {
+            operation_calls.set(operation_calls.get() + 1);
+            changed.set(Some(fixture.replace_transport_definition()));
+            Err(io::ErrorKind::BrokenPipe.into())
+        },
+    );
+    changed.get().ok_or(Failure::Control)??;
+    assert_eq!(
+        result.err().map(|error: io::Error| error.kind()),
+        Some(io::ErrorKind::BrokenPipe)
+    );
+    assert_eq!(
+        transport.current(Failure::Request),
+        Err(Failure::Request(io::ErrorKind::BrokenPipe))
+    );
+    assert_eq!(operation_calls.get(), 1);
+    Ok(())
+}
+
 /// One actual component producer; every context still comes from the issuer.
 struct PreviewProducer {
     /// Real authority moved to the worker for the entropy-boundary replacement.
@@ -131,6 +520,8 @@ struct PreviewProducer {
     target: KePreviewTarget,
     /// Explicit test action, with no authority-bearing data.
     scenario: Scenario,
+    /// Observer's original Stop capability, delivered after protected retirement if set.
+    stop_before_reply_commit: Option<StopHandle>,
     /// Genuine newer snapshot returned by the actual replacement transaction.
     replacement: Option<SourceConfigurationSnapshot>,
     /// Actual establishment/entropy/protected-operation/jitter entries.
@@ -169,7 +560,7 @@ impl Producer for PreviewProducer {
         assert_eq!(config.peer, self.target.peer());
         assert_eq!(config.identity, self.target.identity());
         let candidate: AssociationCandidate<'tx> =
-            component_candidate(config, control, provider, COMPONENT_UDP);
+            component_candidate(config, control, provider, COMPONENT_UDP, self.scenario);
         if matches!(self.scenario, Scenario::ReplaceBeforePublication) {
             self.replace_definition().map_err(Failed::from)?;
         }
@@ -196,6 +587,9 @@ impl Producer for PreviewProducer {
         if matches!(self.scenario, Scenario::ProtectedBeforeReplyCommit) {
             self.replace_definition()?;
         }
+        if let Some(stop) = self.stop_before_reply_commit.take() {
+            assert_eq!(stop.request_stop(), Ok(StopDisposition::Latched));
+        }
         Ok(completion)
     }
 
@@ -221,6 +615,7 @@ fn component_candidate<'a>(
     control: &'a Control,
     provider: &'a ProviderScope<'a>,
     udp: SocketAddr,
+    scenario: Scenario,
 ) -> AssociationCandidate<'a> {
     let profile: StrictProfile = StrictProfile::component();
     let keys: DirectionalKeys = if matches!(&config.mode, super::ExchangeMode::ManagedProtected(_))
@@ -229,7 +624,14 @@ fn component_candidate<'a>(
     } else {
         DirectionalKeys::new(Zeroizing::new([0x11_u8; 32]), Zeroizing::new([0x22_u8; 32]))
     };
-    let cookies: Vec<Zeroizing<Vec<u8>>> = vec![Zeroizing::new(vec![0xa5_u8; 12])];
+    let cookies: Vec<Zeroizing<Vec<u8>>> = if matches!(scenario, Scenario::TwoCookies) {
+        vec![
+            Zeroizing::new(vec![0xa5_u8; 12]),
+            Zeroizing::new(vec![0xb6_u8; 16]),
+        ]
+    } else {
+        vec![Zeroizing::new(vec![0xa5_u8; 12])]
+    };
     AssociationCandidate::new(config, control, provider, udp, profile, keys, cookies)
 }
 
@@ -245,7 +647,8 @@ fn with_owner(
     let admission: ProcessAdmission = ProcessAdmission::new();
     let claim: ProcessClaim<'_> = admission.claim()?;
     let provider: ProviderScope<'_> = ProviderScope::component(claim);
-    let candidate: AssociationCandidate<'_> = component_candidate(config, &control, &provider, udp);
+    let candidate: AssociationCandidate<'_> =
+        component_candidate(config, &control, &provider, udp, Scenario::Healthy);
     let mut owner: AssociationOwner<'_> =
         AssociationOwner::receive(config, &control, &provider, candidate)?;
     exercise(&mut owner, &control)
@@ -421,7 +824,7 @@ fn run(
     admission: &'static ProcessAdmission,
     scenario: Scenario,
 ) -> Result<Run, Failure> {
-    run_with_hooks(slot, admission, scenario, Hooks::none())
+    run_with_hooks(slot, admission, scenario, Hooks::none(), None)
 }
 
 /// Install the selected worker hook while exercising the real source and joined result.
@@ -434,6 +837,7 @@ fn run_with_hooks(
     admission: &'static ProcessAdmission,
     scenario: Scenario,
     hooks: Hooks,
+    profile: Option<ExperimentalProfile>,
 ) -> Result<Run, Failure> {
     let fixture: Issued = issued(scenario)?;
     let expected: SourceConfigurationSnapshot = fixture.configuration.clone();
@@ -458,6 +862,7 @@ fn run_with_hooks(
         configuration: fixture.configuration,
         target: fixture.target,
         scenario,
+        stop_before_reply_commit: None,
         replacement: None,
         calls: [0; 4],
     };
@@ -465,7 +870,7 @@ fn run_with_hooks(
     let result: Result<ReceivedCompletion, RunFailed> = run_synchronously_with(
         config,
         slot,
-        None,
+        profile,
         move |actual_slot: &'static WorkerSlot, prepared: PreparedInvocation| {
             actual_slot.submit_fixture(
                 prepared,
@@ -573,29 +978,40 @@ fn assert_work_coordinates(work: &Work) {
 fn assert_history(
     completion: ReceivedCompletion,
     expected: &SourceConfigurationSnapshot,
+    counts: (usize, usize, usize),
 ) -> Result<(), Failure> {
     assert!(completion.protected().is_none());
-    let history: Box<ManagedPreviewHistory> = completion.into_managed_preview()?;
-    let summary: &Summary = history.summary();
-    assert!(history.configuration().same_configuration(expected));
+    assert!(!completion.summary().transmitted);
+    let report: SourceKePreviewReport = SourceKePreviewReport::from_run(Ok(completion))
+        .map_err(|_: SourceKePreviewFailure| Failure::Control)?;
+    assert!(report.configuration().same_configuration(expected));
     assert_eq!(
-        (summary.cookies, summary.cookie_bytes, summary.packet_bytes),
-        (1, 12, 140)
+        (
+            report.cookie_count(),
+            report.cookie_bytes(),
+            report.packet_bytes()
+        ),
+        counts
     );
-    assert!(!summary.transmitted);
+    assert_eq!(
+        format!("{report:?}"),
+        "SourceKePreviewReport { joined: true, transmitted: false, .. }"
+    );
     Ok(())
 }
 
-/// An issued legal definition crosses the actual worker/sealer/joined receiver once.
+/// Inspect one actual healthy joined Preview without deriving its count oracle.
 /// # Errors
 /// Preserve actual issuer, worker, provider and managed receiving refusal.
 /// # Panics
 /// Reject a missing healthy completion, changed counts or reset work.
-#[test]
-fn managed_ke_preview_worker_healthy_preserves_issued_history() -> Result<(), Failure> {
-    static SLOT: WorkerSlot = WorkerSlot::new();
-    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    let run: Run = run(&SLOT, &ADMISSION, Scenario::Healthy)?;
+fn assert_healthy_preview(
+    slot: &'static WorkerSlot,
+    admission: &'static ProcessAdmission,
+    scenario: Scenario,
+    counts: (usize, usize, usize),
+) -> Result<(), Failure> {
+    let run: Run = run(slot, admission, scenario)?;
     assert!(
         run.outcome.is_ok(),
         "issued legal Preview must complete through its actual joined receiver"
@@ -603,7 +1019,7 @@ fn managed_ke_preview_worker_healthy_preserves_issued_history() -> Result<(), Fa
     let completion: ReceivedCompletion = run
         .outcome
         .map_err(|failure: RunFailed| operation_primary(&failure))?;
-    assert_history(completion, &run.expected)?;
+    assert_history(completion, &run.expected, counts)?;
     assert_eq!(run.work.calls, [1, 1, 0, 0]);
     assert_eq!(
         (
@@ -619,6 +1035,28 @@ fn managed_ke_preview_worker_healthy_preserves_issued_history() -> Result<(), Fa
     Ok(())
 }
 
+/// Both checked cookie populations cross the actual worker/sealer/joined receiver.
+/// # Errors
+/// Preserve actual issuer, worker, provider and managed receiving refusal.
+/// # Panics
+/// Reject a changed population or packet extent and any reset work accounting.
+#[test]
+fn managed_ke_preview_worker_healthy_preserves_issued_history() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    static TWO_COOKIE_SLOT: WorkerSlot = WorkerSlot::new();
+    static TWO_COOKIE_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    assert_healthy_preview(&SLOT, &ADMISSION, Scenario::Healthy, (1, 12, 140))?;
+    // The first twelve-byte cookie determines the sealed packet extent; both
+    // independently specified bodies remain in the checked population summary.
+    assert_healthy_preview(
+        &TWO_COOKIE_SLOT,
+        &TWO_COOKIE_ADMISSION,
+        Scenario::TwoCookies,
+        (2, 28, 140),
+    )
+}
+
 /// A protected source commits under its original definition, then retains that history.
 /// # Errors
 /// Preserve actual issuer, worker, adapter or joined receiving refusal.
@@ -632,19 +1070,298 @@ fn managed_protected_worker_preserves_committed_definition_through_join() -> Res
     let completion: ReceivedCompletion = run
         .outcome
         .map_err(|failure: RunFailed| operation_primary(&failure))?;
-    let (configuration, summary): (SourceConfigurationSnapshot, Summary) =
-        completion.into_managed_protected()?;
-    assert!(summary.transmitted);
-    assert!(configuration.same_configuration(&run.expected));
+    let original_packet_bytes: usize = completion.summary().packet_bytes;
+    assert!(completion.summary().transmitted);
+    let report: SourceProtectedProbeReport = protected_report(completion)?;
+    assert!(report.configuration().same_configuration(&run.expected));
+    assert_eq!(report.measurement(), Err(MeasurementRefusal::Unavailable));
+    assert_eq!(report.packet_bytes(), original_packet_bytes);
     assert_eq!(run.work.calls, [1, 0, 1, 0]);
     assert_eq!(run.work.after.end, Some(End::Completed));
     let newer: &SourceConfigurationSnapshot =
         run.work.replacement.as_ref().ok_or(Failure::Control)?;
-    assert!(!newer.same_configuration(&configuration));
+    assert!(!newer.same_configuration(report.configuration()));
     Ok(())
 }
 
-/// A real post-record panic retains only the already committed source revision.
+/// Delivery positions relative to an actual source-issued Protected result.
+#[derive(Clone, Copy)]
+enum PowerEventTiming {
+    /// Retain ordinary joined behavior without event delivery.
+    NoEvent,
+    /// Deliver after protected adapter retirement, before the actual reply commit.
+    BeforeReplyCommit,
+    /// Deliver after the actual joined take, while closing the observer.
+    AfterJoin,
+}
+
+/// Follow the observer's original Stop clone through the real managed worker and report.
+///
+/// # Errors
+/// Preserve source-issued setup and genuine worker or observation failure.
+/// # Panics
+/// Reject late rewriting, false completion, lost close code or an uncharged send.
+#[test]
+fn managed_protected_power_event_respects_reply_commit_and_join() -> Result<(), Failure> {
+    static SLOTS: [WorkerSlot; 3] = [const { WorkerSlot::new() }; 3];
+    static ADMISSIONS: [ProcessAdmission; 3] = [const { ProcessAdmission::new() }; 3];
+    let timings: [PowerEventTiming; 3] = [
+        PowerEventTiming::NoEvent,
+        PowerEventTiming::BeforeReplyCommit,
+        PowerEventTiming::AfterJoin,
+    ];
+    let close_error: NonZeroU32 = NonZeroU32::new(5).ok_or(Failure::Control)?;
+    for ((slot, admission), timing) in SLOTS.iter().zip(&ADMISSIONS).zip(timings) {
+        let fixture: Issued = issued(Scenario::ProtectedAfterCommit)?;
+        let expected: SourceConfigurationSnapshot = fixture.configuration.clone();
+        let config: Config = Config::from_managed_protected(
+            fixture
+                .authority
+                .authorize_protected_ke(&expected)
+                .map_err(Failure::SourcePolicy)?,
+        );
+        let stop_at_commit: Cell<Option<StopHandle>> = Cell::new(None);
+        let close_state: Cell<Option<Observation>> = Cell::new(None);
+        let late_stop: Cell<Option<Result<StopDisposition, Failure>>> = Cell::new(None);
+        let (observed, receiver): (SyncSender<Work>, Receiver<Work>) = sync_channel(1);
+        let result: Result<SourceProtectedProbeReport, SourceProtectedProbeFailure> =
+            SourceProtectedProbeReport::from_observed(run_observing(
+                config,
+                slot,
+                |stop: StopHandle| {
+                    if matches!(timing, PowerEventTiming::BeforeReplyCommit) {
+                        stop_at_commit.set(Some(stop.clone()));
+                    }
+                    let closed: &Cell<Option<Observation>> = &close_state;
+                    let late_stop: &Cell<Option<Result<StopDisposition, Failure>>> = &late_stop;
+                    Ok(move || {
+                        closed.set(Some(slot.observer().poll_until(Instant::now() + WAIT)));
+                        if matches!(timing, PowerEventTiming::AfterJoin) {
+                            late_stop.set(Some(stop.request_stop()));
+                        }
+                        match timing {
+                            PowerEventTiming::NoEvent => Ok(()),
+                            PowerEventTiming::BeforeReplyCommit | PowerEventTiming::AfterJoin => {
+                                Err(close_error)
+                            }
+                        }
+                    })
+                },
+                |reservation: SubmissionReservation| {
+                    let producer: PreviewProducer = PreviewProducer {
+                        authority: fixture.authority,
+                        configuration: fixture.configuration,
+                        target: fixture.target,
+                        scenario: Scenario::ProtectedAfterCommit,
+                        stop_before_reply_commit: stop_at_commit.take(),
+                        replacement: None,
+                        calls: [0; 4],
+                    };
+                    reservation.submit_fixture(
+                        admission,
+                        component_provider,
+                        move |config: &Config, provider: &ProviderScope<'_>, control: Control| {
+                            component_operation(config, provider, control, producer, &observed)
+                        },
+                        Hooks::none(),
+                    )
+                },
+            ));
+        drain(slot, slot.observer().poll_until(Instant::now() + WAIT))?;
+        assert_eq!(close_state.get(), Some(Observation::Taken));
+        assert_eq!(
+            late_stop.get(),
+            matches!(timing, PowerEventTiming::AfterJoin).then_some(Ok(StopDisposition::Latched))
+        );
+        let work: Work = receiver.recv_timeout(WAIT).map_err(|_| Failure::Control)?;
+        assert_eq!(work.calls, [1, 0, 1, 0]);
+        assert_eq!(work.provider_lifetime.strong_count(), 0);
+        let policy: SourcePolicySnapshot = fixture
+            .source
+            .policy_snapshot(fixture.allowed)
+            .map_err(Failure::SourcePolicy)?;
+        assert!(policy.source().floor().is_some() && policy.endpoint().floor().is_some());
+        if matches!(timing, PowerEventTiming::BeforeReplyCommit) {
+            let Err(refusal) = result else {
+                return Err(Failure::Control);
+            };
+            assert_eq!(refusal.labels(), ("currentness", "cancelled"));
+            assert_eq!(refusal.power_unregistration_error(), Some(close_error));
+            assert!(!refusal.power_stop_failed());
+            assert!(refusal.retained_configuration().is_none());
+        } else {
+            let report: SourceProtectedProbeReport = result.map_err(|_| Failure::Control)?;
+            assert!(report.configuration().same_configuration(&expected));
+            assert_eq!(report.measurement(), Err(MeasurementRefusal::Unavailable));
+            assert_eq!(
+                report.power_unregistration_error(),
+                matches!(timing, PowerEventTiming::AfterJoin).then_some(close_error)
+            );
+            let replacement: &SourceConfigurationSnapshot =
+                work.replacement.as_ref().ok_or(Failure::Control)?;
+            assert!(!replacement.same_configuration(report.configuration()));
+        }
+    }
+    Ok(())
+}
+
+/// Preserve exact declared numerical outcomes beside the original managed history.
+/// # Errors
+/// Preserve actual issuer, worker, packet or checked-profile refusal.
+/// # Panics
+/// Reject a substituted numerical result, changed age or widened declared dates.
+#[test]
+fn managed_protected_report_preserves_declared_numerical_result() -> Result<(), Failure> {
+    static BROAD_SLOT: WorkerSlot = WorkerSlot::new();
+    static BROAD_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    static NARROW_SLOT: WorkerSlot = WorkerSlot::new();
+    static NARROW_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    for (slot, admission, latest, refusal) in [
+        (&BROAD_SLOT, &BROAD_ADMISSION, u64::from(u32::MAX), None),
+        (
+            &NARROW_SLOT,
+            &NARROW_ADMISSION,
+            0,
+            Some(MeasurementRefusal::DateScope),
+        ),
+    ] {
+        let profile: ExperimentalProfile =
+            ExperimentalProfile::new(0, latest, 30_000_000_000).map_err(|_| Failure::Control)?;
+        let run: Run = run_with_hooks(
+            slot,
+            admission,
+            Scenario::ProtectedAfterCommit,
+            Hooks::none(),
+            Some(profile),
+        )?;
+        let completion: ReceivedCompletion = run
+            .outcome
+            .map_err(|failure: RunFailed| operation_primary(&failure))?;
+        let protected = completion.protected().ok_or(Failure::Control)?;
+        let history = protected.history();
+        let accepted_at: Instant = history.receipt().accepted_at();
+        let committed_at: Instant = history.committed_at();
+        assert!(accepted_at <= committed_at && committed_at < run.work.before.cutoff);
+        let original: Result<ExperimentalMeasurement, MeasurementRefusal> =
+            *protected.measurement();
+        assert_eq!(original.as_ref().err().copied(), refusal);
+        let [_, _, read_return]: [crate::SoftwareClock; 3] = history.captures();
+        let trailing: Instant = read_return.monotonic_after();
+        assert!(trailing <= accepted_at);
+        let expected_delay: Option<Duration> = committed_at.checked_duration_since(trailing);
+        assert!(expected_delay.is_some());
+        if let Ok(measurement) = original {
+            assert_eq!(
+                Some(measurement.acquisition_age()),
+                accepted_at.checked_duration_since(trailing)
+            );
+        }
+        let original_packet_bytes: usize = completion.summary().packet_bytes;
+        assert!(completion.summary().transmitted);
+        let report: SourceProtectedProbeReport = protected_report(completion)?;
+        assert_eq!(report.measurement().copied(), original);
+        assert_eq!(report.committed_at(), committed_at);
+        assert_eq!(report.receive_to_commit_delay(), expected_delay);
+        assert!(report.configuration().same_configuration(&run.expected));
+        assert_eq!(report.packet_bytes(), original_packet_bytes);
+        assert_eq!(run.work.calls, [1, 0, 1, 0]);
+    }
+    Ok(())
+}
+
+/// A genuine joined result cannot project through the other report mode.
+/// # Errors
+/// Preserve the original source-owned worker or Preview refusal.
+/// # Panics
+/// Reject projecting one genuine joined mode as the other.
+#[test]
+fn managed_preview_cannot_project_a_protected_report() -> Result<(), Failure> {
+    static PREVIEW_SLOT: WorkerSlot = WorkerSlot::new();
+    static PREVIEW_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    static PROTECTED_SLOT: WorkerSlot = WorkerSlot::new();
+    static PROTECTED_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let preview: Run = run(&PREVIEW_SLOT, &PREVIEW_ADMISSION, Scenario::Healthy)?;
+    let completion: ReceivedCompletion = preview
+        .outcome
+        .map_err(|failure: RunFailed| operation_primary(&failure))?;
+    assert!(matches!(
+        protected_report(completion),
+        Err(Failure::Control)
+    ));
+    assert_eq!(preview.work.calls, [1, 1, 0, 0]);
+    let protected: Run = run(
+        &PROTECTED_SLOT,
+        &PROTECTED_ADMISSION,
+        Scenario::ProtectedAfterCommit,
+    )?;
+    let completion: ReceivedCompletion = protected
+        .outcome
+        .map_err(|failure: RunFailed| operation_primary(&failure))?;
+    assert!(completion.protected().is_some());
+    assert!(completion.summary().transmitted);
+    let Err(refusal): Result<SourceKePreviewReport, SourceKePreviewFailure> =
+        SourceKePreviewReport::from_run(Ok(completion))
+    else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(refusal.labels(), ("currentness", "control"));
+    assert_eq!(refusal.primary_labels(), Some(("currentness", "control")));
+    assert!(refusal.retained_configuration().is_none());
+    assert_eq!(protected.work.calls, [1, 0, 1, 0]);
+    Ok(())
+}
+
+/// Preserve a genuine Preview's committed history after actual abnormal retirement.
+/// # Errors
+/// Preserve unexpected operation, observation or absent sealed history.
+/// # Panics
+/// Reject normal success, absent original history or substitution of the new revision.
+fn assert_preview_abnormal_join_history() -> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let mut hooks: Hooks = Hooks::none();
+    hooks.before_retire = Some(Box::new(|| {
+        std::panic::resume_unwind(Box::new("managed Preview fixture after record"));
+    }));
+    let run: Run = run_with_hooks(&SLOT, &ADMISSION, Scenario::ReplaceAfterCommit, hooks, None)?;
+    let Err(failure) = run.outcome else {
+        return Err(Failure::Control);
+    };
+    let RunFailed::Abnormal(joined) = &failure else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(joined.termination, Termination::Panicked);
+    assert!(!joined.retired);
+    assert_eq!(SLOT.sealed_count().map_err(|_| Failure::Control)?, 1);
+    assert_eq!(run.work.calls, [1, 1, 0, 0]);
+    assert_eq!(run.work.after.end, Some(End::Completed));
+    let Err(projection): Result<SourceKePreviewReport, SourceKePreviewFailure> =
+        SourceKePreviewReport::from_run(Err(failure))
+    else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(projection.labels(), ("worker-termination", "panicked"));
+    assert!(projection.primary_labels().is_none());
+    assert_eq!(
+        projection.retained_configuration().map(
+            |original: &SourceConfigurationSnapshot| original.same_configuration(&run.expected)
+        ),
+        Some(true),
+        "managed Preview retains the original configuration after abnormal join"
+    );
+    let newer: &SourceConfigurationSnapshot =
+        run.work.replacement.as_ref().ok_or(Failure::Control)?;
+    let current: SourceConfigurationSnapshot = run
+        .source
+        .configuration_snapshot()
+        .map_err(Failure::SourcePolicy)?
+        .ok_or(Failure::Control)?;
+    assert!(current.same_configuration(newer));
+    assert!(!run.expected.same_configuration(&current));
+    Ok(())
+}
+
+/// Real post-record panics retain only each mode's already committed source revision.
 /// # Errors
 /// Preserve unexpected operation, observation or absent sealed history.
 /// # Panics
@@ -657,7 +1374,13 @@ fn managed_protected_abnormal_join_preserves_sealed_configuration() -> Result<()
     hooks.before_retire = Some(Box::new(|| {
         std::panic::resume_unwind(Box::new("managed protected fixture after record"));
     }));
-    let run: Run = run_with_hooks(&SLOT, &ADMISSION, Scenario::ProtectedAfterCommit, hooks)?;
+    let run: Run = run_with_hooks(
+        &SLOT,
+        &ADMISSION,
+        Scenario::ProtectedAfterCommit,
+        hooks,
+        None,
+    )?;
     let Err(failure) = run.outcome else {
         return Err(Failure::Control);
     };
@@ -686,7 +1409,7 @@ fn managed_protected_abnormal_join_preserves_sealed_configuration() -> Result<()
         .ok_or(Failure::Control)?;
     assert!(current.same_configuration(newer));
     assert!(!original.same_configuration(&current));
-    Ok(())
+    assert_preview_abnormal_join_history()
 }
 
 /// A same-byte replacement refuses the guarded send or the final retired reply.
@@ -721,6 +1444,10 @@ fn managed_protected_worker_refuses_replacement_at_both_effects() -> Result<(), 
         assert!(run.work.replacement.is_some());
         let projected: SourceProtectedProbeFailure =
             SourceProtectedProbeFailure::from_run_failure(RunFailed::Operation(failure));
+        assert_eq!(
+            projected.source_policy_error(),
+            Some(SourcePolicyError::ConfigurationChanged)
+        );
         assert!(projected.retained_configuration().is_none());
     }
     Ok(())
@@ -804,7 +1531,7 @@ fn managed_ke_preview_worker_entropy_replacement_retains_failure_and_charges() -
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
     let run: Run = run(&SLOT, &ADMISSION, Scenario::ReplaceDuringEntropy)?;
-    let Err(RunFailed::Operation(failure)) = run.outcome else {
+    let Err(RunFailed::Operation(failure)) = &run.outcome else {
         return Err(Failure::Control);
     };
     assert_eq!(
@@ -812,7 +1539,29 @@ fn managed_ke_preview_worker_entropy_replacement_retains_failure_and_charges() -
         Failure::SourcePolicy(SourcePolicyError::ConfigurationChanged)
     );
     assert!(failure.cleanup.is_none() && failure.admission_cleanup.is_none());
-    assert_eq!(run.work.last_failure, Some(failure));
+    assert_eq!(run.work.last_failure, Some(*failure));
+    let Err(refusal): Result<SourceKePreviewReport, SourceKePreviewFailure> =
+        SourceKePreviewReport::from_run(run.outcome)
+    else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(
+        refusal.source_policy_error(),
+        Some(SourcePolicyError::ConfigurationChanged)
+    );
+    assert_eq!(refusal.labels(), ("source-policy", "refused"));
+    assert_eq!(refusal.primary_labels(), Some(("source-policy", "refused")));
+    assert!(refusal.cleanup_labels().is_none());
+    assert!(refusal.admission_cleanup_labels().is_none());
+    assert!(refusal.retained_configuration().is_none());
+    assert_eq!(
+        format!("{refusal:?}"),
+        r#"SourceKePreviewFailure { stage: "source-policy", cause: "refused", .. }"#
+    );
+    assert_eq!(
+        refusal.to_string(),
+        "source KE Preview refused: source-policy/refused"
+    );
     assert_eq!(run.work.calls, [1, 1, 0, 0]);
     assert_eq!(
         (
@@ -927,7 +1676,7 @@ fn managed_ke_preview_worker_postcommit_replacement_preserves_original_history()
     let newer: &SourceConfigurationSnapshot =
         run.work.replacement.as_ref().ok_or(Failure::Control)?;
     assert!(!newer.same_configuration(&run.expected));
-    assert_history(completion, &run.expected)?;
+    assert_history(completion, &run.expected, (1, 12, 140))?;
     assert!(
         run.source
             .capture_ke_preview()

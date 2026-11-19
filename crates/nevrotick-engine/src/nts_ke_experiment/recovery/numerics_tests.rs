@@ -536,7 +536,12 @@ fn facade_protected_numerics_declared_era_zero_has_independent_math() -> Result<
     };
     assert_eq!(carrier.profile(), Some(&profile));
     assert_output(&observed.completion, "nominal_software", "none")?;
-    assert_independent_math(&observed)
+    assert_independent_math(&observed)?;
+    assert!(matches!(
+        crate::nts_ke_experiment::managed_preview::protected_report(observed.completion),
+        Err(Failure::Control)
+    ));
+    Ok(())
 }
 
 /// The actual receiving path must consume the original send-after capture.

@@ -61,17 +61,34 @@ def changed_policy():
 
 
 class GraphAgeControls(unittest.TestCase):
-    def test_exact_current_accepted_baseline_remains_accepted_without_age_reclassification(self):
+    def test_original_accepted_baseline_remains_a_separate_age_decision(self):
         value = policy()
+        value["lockfile_sha256"] = AGE.BASELINE_LOCK
+        value["cooldown_admission"] = AGE.baseline_admission()
         AGE.validate_policy_admission(value)
-        AGE.validate_root_admission(ROOT, value)
         self.assertEqual(value["cooldown_admission"], AGE.baseline_admission())
 
-    def test_only_age_subrecord_was_added_to_accepted_registry_graph(self):
+    def test_current_local_adapter_has_resolved_full_lock_without_registry_delta(self):
         value = policy()
+        AGE.validate_root_admission(ROOT, value)
         self.assertEqual(AGE.canonical(AGE.policy_records(value)),
             "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15e68b7")
-        self.assertEqual(sha((ROOT / "Cargo.lock").read_bytes()), AGE.BASELINE_LOCK)
+        lock = (ROOT / "Cargo.lock").read_bytes()
+        self.assertNotEqual(sha(lock), AGE.BASELINE_LOCK)
+        record = value["cooldown_admission"]["resolution"]
+        self.assertEqual(value["cooldown_admission"]["status"], "resolved")
+        self.assertEqual(record["baseline_lockfile_sha256"], AGE.BASELINE_LOCK)
+        self.assertEqual(record["candidate_lockfile_sha256"], sha(lock))
+        self.assertEqual(record["candidate_graph_sha256"], AGE.canonical(AGE.lock_document(lock)))
+        self.assertEqual((record["added"], record["removed"], record["publication"]), ([], [], []))
+        packages = tomllib.loads(lock.decode())["package"]
+        self.assertEqual([p for p in packages if p["name"] == "windows-platform-native"],
+                         [{"name": "windows-platform-native", "version": "0.0.0"}])
+        self.assertIn("windows-platform-native", next(p for p in packages if p["name"] == "nevrotick-engine")["dependencies"])
+        forged = copy.deepcopy(value)
+        forged["cooldown_admission"] = AGE.baseline_admission()
+        with self.assertRaises(AGE.Incomplete):
+            AGE.validate_policy_admission(forged)
 
     def test_relabelled_new_version_or_lock_is_not_grandfathered(self):
         for field in ("version", "checksum", "lock"):
@@ -140,6 +157,7 @@ class GraphAgeControls(unittest.TestCase):
     def test_actual_manifest_change_cannot_publish_unchanged_baseline(self):
         value = policy()
         value["manifests_sha256"]["Cargo.toml"] = "f" * 64
+        value["cooldown_admission"]["resolution"]["manifests_sha256"]["Cargo.toml"] = "f" * 64
         AGE.validate_policy_admission(value)
         with self.assertRaisesRegex(AGE.Incomplete, "manifest"):
             AGE.validate_root_admission(ROOT, value)
@@ -151,7 +169,7 @@ class GraphAgeControls(unittest.TestCase):
         changed = original.replace(b' "garde",', b' "ryu",', 1)
         self.assertNotEqual(original, changed)
         self.assertEqual(AGE.registry_records(original), AGE.registry_records(changed))
-        record.update(candidate_lockfile_sha256=AGE.BASELINE_LOCK, generated_lockfile_sha256=AGE.BASELINE_LOCK,
+        record.update(candidate_lockfile_sha256=sha(original), generated_lockfile_sha256=sha(original),
             candidate_registry_sha256=AGE.canonical(AGE.policy_records(value)),
             candidate_graph_sha256=AGE.canonical(AGE.lock_document(original)), added=[], removed=[], publication=[],
             cargo_sha256=json.loads((ROOT / "policy/tool-manifest.json").read_text())["rust"]["linux_binary_sha256"]["cargo"],
@@ -295,12 +313,13 @@ class ChildBoundaryControls(unittest.TestCase):
             AGE.validate_policy_admission(second)
         checkpoint = {"lockfile_sha256": first["lockfile_sha256"], "registry_sha256": AGE.canonical(AGE.policy_records(first)),
                       "exception_decisions": ["OD04-RETAINED-YOUNG-RYU"]}
+        accepted = copy.deepcopy(AGE.APPROVED_BASELINES)
         with patch.dict(AGE.APPROVED_BASELINES, {first_id: checkpoint}):
             AGE.validate_policy_admission(second)
             record["retained_exception_decisions"] = []
             with self.assertRaisesRegex(AGE.Incomplete, "prior exception"):
                 AGE.validate_policy_admission(second)
-        self.assertEqual(AGE.APPROVED_BASELINES, {})
+        self.assertEqual(AGE.APPROVED_BASELINES, accepted)
 
     def test_symlinked_output_ancestor_refuses_before_any_publication(self):
         snapshot = AGE._load("output_ancestor_control", ROOT / "scripts/advisory_snapshot.py")

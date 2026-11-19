@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Restore bounded transport causes without losing an earlier TLS refusal.
+//! Admit the actual KE transport calls and preserve original failure causes.
 
 use std::io;
+use std::net::SocketAddr;
+use std::time::{Duration, Instant};
 
-use super::Failure;
+use super::{Config, ConfigurationGuard, Control, ControlGuard, Failure, IoPhase};
 
 /// Actual I/O projection site; it selects both native failure and public label.
 #[cfg(any(windows, test))]
@@ -193,10 +195,159 @@ pub(super) fn response_error(error: &io::Error) -> Failure {
     }
 }
 
+/// Currentness and first-fault owner for the actual blocking KE adapter.
+pub(super) struct TransportIo<'a> {
+    /// Original endpoint, verification identity and optional live source binding.
+    config: &'a Config,
+    /// Same invocation's immutable deadlines and Stop authority.
+    control: &'a Control,
+    /// Handshake uses the original short cutoff; KE uses the original full cutoff.
+    phase: IoPhase,
+    /// First transport refusal, including one retried or suppressed by TLS.
+    fault: Option<TransportFault>,
+}
+
+impl<'a> TransportIo<'a> {
+    /// Pair only the original checked configuration and its invocation.
+    pub(super) const fn new(config: &'a Config, control: &'a Control) -> Self {
+        Self {
+            config,
+            control,
+            phase: IoPhase::Handshake,
+            fault: None,
+        }
+    }
+
+    /// Retain the exact checked configuration for final association construction.
+    #[cfg(windows)]
+    pub(super) const fn config(&self) -> &'a Config {
+        self.config
+    }
+
+    /// Retain the exact original Control for final association construction.
+    #[cfg(windows)]
+    pub(super) const fn control(&self) -> &'a Control {
+        self.control
+    }
+
+    /// Select the original full KE window after handshake, without refreshing it.
+    pub(super) fn begin_exchange(&mut self) {
+        self.phase = IoPhase::Exchange;
+    }
+
+    /// Read fresh time with the current issued definition, retaining no lock.
+    ///
+    /// # Errors
+    /// Preserve Stop/deadline precedence, then refuse unavailable or stale source.
+    fn remaining(&self) -> Result<Duration, Failure> {
+        let control: ControlGuard<'_, '_> = self.control.guard()?;
+        control.remaining(self.phase, Instant::now())?;
+        let current: ConfigurationGuard<'_> = self.config.bind_guard(control, None)?;
+        current.remaining(self.phase, Instant::now())
+    }
+
+    /// Take a fresh observation or keep all further adapter operations closed.
+    ///
+    /// # Errors
+    /// Retain the first admitted failure through the adapter's I/O error category.
+    /// Later library retry attempts receive a nonretryable kind.
+    fn timeout(&mut self) -> io::Result<Duration> {
+        if self.fault.is_some() {
+            return Err(io::ErrorKind::Other.into());
+        }
+        self.remaining().map_err(|failure: Failure| {
+            self.fault = Some(TransportFault::Control(failure));
+            let kind: io::ErrorKind = match failure {
+                Failure::Deadline => io::ErrorKind::TimedOut,
+                Failure::Cancelled => io::ErrorKind::Interrupted,
+                _ => io::ErrorKind::Other,
+            };
+            kind.into()
+        })
+    }
+
+    /// Treat an actual error as primary, or re-admit a success after native return.
+    ///
+    /// # Errors
+    /// Retain a native failure or discard an owned result refused by the new
+    /// observation. This method does not cancel or acknowledge in-flight work.
+    fn completed<T>(&mut self, result: io::Result<T>) -> io::Result<T> {
+        match result {
+            Ok(value) => self.timeout().map(|_| value),
+            Err(error) => {
+                if self.fault.is_none() {
+                    self.fault = Some(TransportFault::Io(error.kind()));
+                }
+                Err(error)
+            }
+        }
+    }
+
+    /// Connect once to the exact original configured numeric peer.
+    ///
+    /// # Errors
+    /// Refuse stale/cancelled/expired work before or after the blocking call;
+    /// preserve a native connect failure. Guards span no native call.
+    pub(super) fn connect<T>(
+        &mut self,
+        adapter: impl FnOnce(SocketAddr, Duration) -> io::Result<T>,
+    ) -> Result<T, Failure> {
+        let result: Result<T, Failure> = self
+            .timeout()
+            .and_then(|timeout: Duration| {
+                let connected: io::Result<T> = adapter(self.config.peer, timeout);
+                self.completed(connected)
+            })
+            .map_err(|error: io::Error| Failure::Connect(error.kind()));
+        self.resolve(result, Failure::Connect)
+    }
+
+    /// Set the finite timeout, then attempt one I/O operation through this owner.
+    /// Both adapters run outside effect locks. A successful timeout-setting call
+    /// must pass a fresh check before the I/O begins.
+    ///
+    /// # Errors
+    /// Preserve the earliest native or currentness refusal without another call.
+    pub(super) fn transfer<S, T>(
+        &mut self,
+        socket: &mut S,
+        set_timeout: impl FnOnce(&mut S, Duration) -> io::Result<()>,
+        operation: impl FnOnce(&mut S) -> io::Result<T>,
+    ) -> io::Result<T> {
+        let timeout: Duration = self.timeout()?;
+        self.completed(set_timeout(socket, timeout))?;
+        self.completed(operation(socket))
+    }
+
+    /// Preserve a typed TLS refusal or the independently retained first fault.
+    ///
+    /// # Errors
+    /// Return the bounded earlier refusal rather than a library retry's result.
+    pub(super) fn resolve<T>(
+        &self,
+        result: Result<T, Failure>,
+        stage: fn(io::ErrorKind) -> Failure,
+    ) -> Result<T, Failure> {
+        resolve(self.fault, result, stage)
+    }
+
+    /// Recheck currentness after local work without requesting native I/O.
+    ///
+    /// # Errors
+    /// Preserve the original fault or the fresh time/Stop/definition refusal.
+    pub(super) fn current(&mut self, stage: fn(io::ErrorKind) -> Failure) -> Result<(), Failure> {
+        let result: Result<(), Failure> = self
+            .timeout()
+            .map(|_| ())
+            .map_err(|error: io::Error| stage(error.kind()));
+        self.resolve(result, stage)
+    }
+}
+
 /// The first transport refusal survives libraries that retry or suppress errors.
 #[derive(Clone, Copy)]
 pub(super) enum TransportFault {
-    /// The original monotonic/cancellation guard closed this job.
+    /// The original time, Stop or configuration guard closed this job.
     Control(Failure),
     /// One native operation failed; no later native operation is admitted.
     Io(io::ErrorKind),

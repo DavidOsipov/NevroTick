@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange", "crates/time-core", "crates/nevrotick-engine", "crates/windows-platform"]
+members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange", "crates/time-core", "crates/nevrotick-engine", "crates/windows-platform", "crates/windows-platform-native"]
 exclude = ["third-party/spin_on", "third-party/accesskit_windows", "third-party/accesskit_consumer", "tools/crypto-cng-lifecycle/vendor/rustls-cng-crypto", "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier", "tools/crypto-aes-siv-witness"]
 resolver = "3"
 

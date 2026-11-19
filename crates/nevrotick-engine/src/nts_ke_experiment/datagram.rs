@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! One private protected UDP operation after genuine association publication.
 //!
-//! The Windows backend owns its socket through synchronous syscall returns. The
-//! deterministic backend exercises the same owner without opening a socket.
+//! The native backend owns its socket through synchronous syscall returns. A Linux
+//! loopback fixture and the deterministic backend use the same receiving owner.
 //! Neither historical completion nor software-clock captures confer eligibility.
 
 use std::io;
@@ -16,16 +16,16 @@ pub(super) enum DatagramError {
     /// Current-thread runtime construction failed.
     Runtime(io::ErrorKind),
     /// One bounded loopback socket could not be bound.
-    #[cfg(windows)]
+    #[cfg(any(windows, all(test, target_os = "linux")))]
     Bind(io::ErrorKind),
     /// The socket could not become nonblocking.
-    #[cfg(windows)]
+    #[cfg(any(windows, all(test, target_os = "linux")))]
     Nonblocking(io::ErrorKind),
     /// The actual local endpoint could not be captured/admitted.
-    #[cfg(windows)]
+    #[cfg(any(windows, all(test, target_os = "linux")))]
     Local(io::ErrorKind),
     /// Tokio could not register the owned nonblocking socket.
-    #[cfg(windows)]
+    #[cfg(any(windows, all(test, target_os = "linux")))]
     Registration(io::ErrorKind),
     /// A readiness wait failed without establishing datagram consumption.
     Readiness(io::ErrorKind),
@@ -38,14 +38,14 @@ pub(super) enum DatagramError {
 }
 
 #[cfg(any(windows, test))]
-/// Concrete Windows operation and the identical deterministic receiving path.
+/// Concrete socket operation and its deterministic receiving neighbors.
 mod reached {
     use std::io;
     use std::net::SocketAddr;
     use std::sync::Arc;
-    use std::time::Instant;
+    use std::time::{Duration, Instant};
 
-    #[cfg(windows)]
+    #[cfg(any(windows, all(test, target_os = "linux")))]
     use tokio::net::UdpSocket;
     use zeroize::Zeroizing;
 
@@ -130,7 +130,7 @@ mod reached {
     /// A native socket is never cloned, exported or reconstructed from endpoints.
     pub(super) enum Io {
         /// Sole runtime-registered native socket.
-        #[cfg(windows)]
+        #[cfg(any(windows, all(test, target_os = "linux")))]
         Native(UdpSocket),
         /// Closed public-material component cases; never a TLS/native substitute.
         #[cfg(test)]
@@ -166,8 +166,8 @@ mod reached {
         /// Bind and register exactly one actual same-family loopback socket.
         /// # Errors
         /// Preserve bounded bind, nonblocking, local-endpoint and registration causes.
-        #[cfg(windows)]
-        fn bind(remote: SocketAddr) -> Result<Self, Failure> {
+        #[cfg(any(windows, all(test, target_os = "linux")))]
+        pub(super) fn bind(remote: SocketAddr) -> Result<Self, Failure> {
             use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, UdpSocket as StdSocket};
 
             let ip = match remote {
@@ -200,7 +200,7 @@ mod reached {
         async fn ready(&mut self, interest: Interest, control: &Control) -> Result<(), Failure> {
             control.remaining(IoPhase::Exchange)?;
             match &mut self.io {
-                #[cfg(windows)]
+                #[cfg(any(windows, all(test, target_os = "linux")))]
                 Io::Native(socket) => match interest {
                     Interest::Write => socket.writable().await,
                     Interest::Read => socket.readable().await,
@@ -224,7 +224,7 @@ mod reached {
             association.check_send_owner(&ticket, control)?;
             #[cfg(test)]
             match &mut self.io {
-                #[cfg(windows)]
+                #[cfg(any(windows, all(test, target_os = "linux")))]
                 Io::Native(_) => {}
                 Io::Script(script) => script.before_guard(control)?,
             }
@@ -241,7 +241,7 @@ mod reached {
         /// Observe one synchronous return before interpreting any packet bytes.
         fn receive(&mut self, buffer: &mut [u8; RECEIVE_BYTES]) -> (Read, SoftwareClock) {
             match &mut self.io {
-                #[cfg(windows)]
+                #[cfg(any(windows, all(test, target_os = "linux")))]
                 Io::Native(socket) => {
                     let result = socket.try_recv_from(buffer);
                     let observed = SoftwareClock::capture();
@@ -307,7 +307,7 @@ mod reached {
             let before: SoftwareClock = SoftwareClock::capture();
             #[cfg(test)]
             let before: SoftwareClock = match &backend.io {
-                #[cfg(windows)]
+                #[cfg(any(windows, all(test, target_os = "linux")))]
                 Io::Native(_) => before,
                 Io::Script(script) => script.observe_send_before(before),
             };
@@ -316,7 +316,7 @@ mod reached {
             let stamp: Option<ProtectedSendStamp> =
                 guard.reserve(remote, &backend.identity, before.monotonic_after())?;
             let (outcome, cancel_after): (SendOutcome, bool) = match &mut backend.io {
-                #[cfg(windows)]
+                #[cfg(any(windows, all(test, target_os = "linux")))]
                 Io::Native(socket) => (
                     match socket.try_send_to(packet, remote) {
                         Ok(length) => SendOutcome::Completed(length),
@@ -334,7 +334,7 @@ mod reached {
             // Preserve completed-send custody before any fixture refusal or Stop.
             #[cfg(test)]
             match &backend.io {
-                #[cfg(windows)]
+                #[cfg(any(windows, all(test, target_os = "linux")))]
                 Io::Native(_) => {}
                 Io::Script(script) => {
                     let after: SoftwareClock = script.observe_send_after(after)?;
@@ -517,6 +517,8 @@ mod reached {
         operation: OperationHistory<'control>,
         /// Original submitted socket identity, taken from the guarded ledger transfer.
         identity: Arc<()>,
+        /// The exact guarded terminal processing observation.
+        committed_at: Instant,
         /// Historical managed configuration, checked at both original effects.
         configuration: Option<SourceConfigurationSnapshot>,
     }
@@ -535,6 +537,8 @@ mod reached {
         summary: Summary,
         /// Genuine original authenticated header, ordinal and packet-admission time.
         receipt: Receipt,
+        /// The guarded terminal decision, separate from the receipt age reference.
+        committed_at: Instant,
         /// Checked historical pool entries/bytes, including duplicate entries.
         /// Distinct from initial KE counts; grants no availability or reuse authority.
         population: (usize, usize),
@@ -632,6 +636,15 @@ mod reached {
         Protected(ReceivedProtectedNumerics),
     }
 
+    /// Transfer the admitted fields needed by the joined managed report.
+    type ManagedProtectedProjection = (
+        SourceConfigurationSnapshot,
+        Summary,
+        Instant,
+        Option<Duration>,
+        Result<ExperimentalMeasurement, MeasurementRefusal>,
+    );
+
     impl ReceivedCompletion {
         /// Preserve the existing CLI projection without publishing numerical authority.
         pub(in super::super) const fn summary(&self) -> &Summary {
@@ -665,7 +678,7 @@ mod reached {
         /// Refuse an unmanaged or no-send result.
         pub(in super::super) fn into_managed_protected(
             self,
-        ) -> Result<(SourceConfigurationSnapshot, Summary), Failure> {
+        ) -> Result<ManagedProtectedProjection, Failure> {
             let ReceivedState::Protected(received) = self.inner else {
                 return Err(Failure::Control);
             };
@@ -676,7 +689,13 @@ mod reached {
                 history,
                 configuration,
             }: ManagedProtectedHistory = *managed;
-            Ok((configuration, *history.summary()))
+            Ok((
+                configuration,
+                *history.summary(),
+                history.committed_at(),
+                history.receive_to_commit_delay(),
+                received.measurement,
+            ))
         }
 
         /// Borrow only genuine protected history for actual-owner component controls.
@@ -842,6 +861,21 @@ mod reached {
             &self.summary
         }
 
+        /// Return the existing terminal processing observation from the original guard.
+        pub(in super::super) const fn committed_at(&self) -> Instant {
+            self.committed_at
+        }
+
+        /// Derive only the original monotonic receive-trailing to commit interval.
+        /// A refused derivation leaves the committed historical result intact.
+        pub(in super::super) fn receive_to_commit_delay(&self) -> Option<Duration> {
+            let trailing: Instant = self.read_return.monotonic_after();
+            if self.committed_at < trailing {
+                return None;
+            }
+            self.committed_at.checked_duration_since(trailing)
+        }
+
         /// Inspect original authenticated bits/time for actual-owner component controls.
         #[cfg(test)]
         pub(in super::super) const fn receipt(&self) -> Receipt {
@@ -951,11 +985,12 @@ mod reached {
                 .map(|lease: &ProtectedEndpoint| lease.configuration().ok_or(Failure::Control))
                 .transpose()?
                 .cloned();
-            let identity: Arc<()> =
+            let (identity, committed_at): (Arc<()>, Instant) =
                 association.commit_retired_reply(reply, RetiredCommit::Terminal, observe_now)?;
             Ok(CommittedProtected {
                 operation: history,
                 identity,
+                committed_at,
                 configuration,
             })
         }
@@ -1053,6 +1088,7 @@ mod reached {
                     transmitted: true,
                 },
                 receipt,
+                committed_at: self.committed_at,
                 population: (cookies, cookie_bytes),
                 send_before,
                 send_after,
@@ -1148,12 +1184,12 @@ mod reached {
         packet_bytes: usize,
     }
 
-    /// The caller selects whether the already-authenticated scripted leg can return a control.
+    /// The fixture selects whether an already authenticated leg can return a control.
     #[derive(Clone, Copy)]
     enum ReceiveMode {
         /// Existing ordinary one-shot and component paths.
         Ordinary,
-        /// The closed scripted successor permits both admitted dispositions.
+        /// The admitted successor permits either bounded disposition.
         #[cfg(test)]
         ProtectedSuccessor,
     }
@@ -1444,9 +1480,9 @@ mod reached {
         })
     }
 
-    /// Drive only the closed Script backend for either private successor disposition.
+    /// Keep the fixed script constructor confined to the existing component controls.
     /// # Errors
-    /// Preserve original continuation, adapter, charged receive and policy refusals.
+    /// Preserve the common driver's admission, operation and retirement refusals.
     #[cfg(test)]
     pub(super) fn exchange_successor_mixed<'control>(
         association: &mut AssociationOwner<'_>,
@@ -1454,12 +1490,27 @@ mod reached {
         fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
         make_script: impl FnOnce(SocketAddr) -> Script,
     ) -> Result<RetiredProtectedSuccessor<'control>, Failure> {
+        exchange_successor_mixed_with(association, control, fill, |remote: SocketAddr| {
+            Ok(super::tests::backend(remote, make_script(remote)))
+        })
+    }
+
+    /// Drive the selected bounded fixture backend for either private successor disposition.
+    /// # Errors
+    /// Preserve original continuation, adapter, charged receive and policy refusals.
+    #[cfg(test)]
+    pub(super) fn exchange_successor_mixed_with<'control>(
+        association: &mut AssociationOwner<'_>,
+        control: &'control Control,
+        fill: impl FnOnce(&mut [u8; 56]) -> Result<(), Failure>,
+        make_backend: impl FnOnce(SocketAddr) -> Result<Backend, Failure>,
+    ) -> Result<RetiredProtectedSuccessor<'control>, Failure> {
         let mut attempts: Attempts = association.take_authenticated_successor(control)?;
         let selected: SelectedOperation<'control> = retire_operation(
             association,
             control,
             fill,
-            |remote: SocketAddr| Ok(super::tests::backend(remote, make_script(remote))),
+            make_backend,
             &mut attempts,
             ReceiveMode::ProtectedSuccessor,
         )?;

@@ -1,0 +1,12 @@
+[package]
+name = "windows-platform-native"
+version = "0.0.0"
+publish = false
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Narrow native observation adapters for NevroTick's Windows processes"
+
+[lints]
+workspace = true

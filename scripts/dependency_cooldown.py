@@ -33,7 +33,14 @@ APPROVED_EXCEPTIONS: dict[str, str] = {}
 # A graph owner accepting an update registers its three-hash checkpoint in the
 # same code review as the existing policy pin. This stores no duplicate graph.
 # Prior concrete exception IDs stay attached to that exact accepted checkpoint.
-APPROVED_BASELINES: dict[str, dict] = {}
+APPROVED_BASELINES: dict[str, dict] = {
+    # The native observation leaf adds exactly one local package and one Windows edge.
+    "6109f9e3dddb5a48ac3b078e1ca56f1cd7f98ae04d6f39fcd5fa115a01f25308": {
+        "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
+        "registry_sha256": BASELINE_REGISTRY,
+        "exception_decisions": [],
+    },
+}
 MAX_LOCK_BYTES = 4 * 1024 * 1024
 MAX_RECORD_BYTES = 2 * 1024 * 1024
 MAX_MANIFEST_BYTES = 512 * 1024

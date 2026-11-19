@@ -27,11 +27,21 @@ HASH = "a" * 64
 REQUEST = {"image_sha256": HASH, "child_sha256": HASH, "gate": "good", "mode": "control-healthy",
            "image_path": "C:\\fixture\\NevroTick-" + "a" * 32 + ".exe"}
 CONSOLE = "C:\\Windows\\System32\\conhost.exe"
+FACADE_EOF_MODE = "facade-loopback-eof"
+FACADE_EOF_PEER = "facade-peer=clienthello-eof-joined\n"
+FACADE_EOF_ROW = ("scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=handshake cause=unexpected-eof "
+                  "cleanup_stage=none cleanup_cause=none admission_stage=none admission_cause=none\n")
+MANAGED_EOF_MODE = "facade-managed-protected-eof"
+MANAGED_EOF_ROW = ("scope=managed-protected-native eligible=0 fresh_sync=0 stale=configuration-changed "
+                   "current=handshake/unexpected-eof cleanup=none admission=none retained=none "
+                   "power_stop_failed=0 observer_close_error=none peer_joined=1 owned_udp_received=0\n")
 FACADE_ROWS = {
     "facade-arguments": "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=admission cause=arguments "
                         "cleanup_stage=none cleanup_cause=none admission_stage=none admission_cause=none\n",
     "facade-entered-runtime": "scope=engine-ke-prototype eligible=0 fresh_sync=0 stage=caller-context "
                               "cause=entered-runtime retirement_confirmed=0\n",
+    FACADE_EOF_MODE: FACADE_EOF_ROW + FACADE_EOF_PEER,
+    MANAGED_EOF_MODE: MANAGED_EOF_ROW,
 }
 
 
@@ -102,8 +112,9 @@ def nested_observation(mode="job-native-foreign", helpers=3):
 def facade_observation(mode, helpers=1):
     """Fixed ordinary-child evidence and independent no-effect diagnostic facts."""
     value = observation(helpers=helpers)
-    value["status"] = "incomplete"
-    value["execution"]["exit_code"] = 2 if mode == "facade-arguments" else 1
+    value["status"] = "completed" if mode == MANAGED_EOF_MODE else "incomplete"
+    value["execution"]["exit_code"] = (2 if mode == "facade-arguments" else
+                                        0 if mode == MANAGED_EOF_MODE else 1)
     value["execution"]["stderr"] += FACADE_ROWS[mode]
     for event in value["execution"]["job_events"]:
         if event["kind"] == 6 and event["pid"] == 13:
@@ -1148,7 +1159,7 @@ class DefaultEngineCohortAdmission(unittest.TestCase):
     def test_default_chronology_must_be_in_both_exact_rosters(self):
         mode = "default-policy-receive-chronology"
         name = "source_policy::tests::managed_plain_reversed_receive_leaves_control_pending_until_ordered_reply"
-        self.assertEqual(len(NATIVE.DEFAULT_COHORT_CASES), 12)
+        self.assertEqual(len(NATIVE.DEFAULT_COHORT_CASES), 13)
         self.assertEqual(NATIVE.DEFAULT_COHORT_CASES[mode], name)
         value = self.roster()
         self.assertIs(self.admit(value), value)
@@ -1156,6 +1167,28 @@ class DefaultEngineCohortAdmission(unittest.TestCase):
             omitted = dict(value, **{key: [item for item in value[key] if item != name]})
             with self.subTest(roster=key), self.assertRaises(NATIVE.Incomplete):
                 self.admit(omitted)
+
+    def test_resume_smoke_is_real_windows_only_and_required_in_both_rosters(self):
+        mode = "default-resume-register-close"
+        name = "processing_guard_tests::native_resume_subscription_registers_and_closes"
+        self.assertEqual(NATIVE.DEFAULT_COHORT_CASES[mode], name)
+        self.assertEqual(NATIVE.mode_profile(mode), (4, 2, "engine-tests.exe"))
+        value = self.roster()
+        self.assertIs(self.admit(value), value)
+        for key in ("selected_default_tests", "tests"):
+            omitted = dict(value, **{key: [item for item in value[key] if item != name]})
+            with self.subTest(roster=key), self.assertRaises(NATIVE.Incomplete):
+                self.admit(omitted)
+        source = (ROOT / "crates/nevrotick-engine/tests/private/processing_guards.rs").read_text()
+        body = source.split("fn native_resume_subscription_registers_and_closes()", 1)[1].split(
+            "/// Require a reviewed known-valid pure product result", 1)[0]
+        prefix = source.split("fn native_resume_subscription_registers_and_closes()", 1)[0]
+        self.assertTrue(prefix.rstrip().endswith("#[cfg(windows)]\n#[test]"))
+        self.assertIn("ResumeWatch::subscribe(|| Ok(()))", body)
+        self.assertIn(".close()", body)
+        self.assertIn("error.code()", body)
+        self.assertNotIn("notify(", body)
+        self.assertNotIn("sleep(", body)
 
     def test_default_result_requires_one_exact_success_and_full_filtered_count(self):
         value = self.roster()
@@ -1610,16 +1643,97 @@ class FacadeConsoleAdmission(unittest.TestCase):
 
     def check(self, value, mode, **kwargs):
         return NATIVE.validate_console(value, dict(REQUEST, mode=mode), HASH, HASH,
-                                       expected_exit=2 if mode == "facade-arguments" else 1, **kwargs)
+                                       expected_exit=(2 if mode == "facade-arguments" else
+                                                      0 if mode == MANAGED_EOF_MODE else 1), **kwargs)
 
-    def test_only_two_fixed_facade_modes_use_the_four_process_profile(self):
+    def test_only_fixed_facade_modes_use_the_four_process_profile(self):
         for mode in FACADE_ROWS:
             self.assertEqual(NATIVE.mode_profile(mode), (4, 2, "engine-facade-consumer.exe"))
-        for mode in ("facade", "facade-arguments-extra", "facade-entered-runtime-extra", True, None, ["facade-arguments"]):
+        for mode in ("facade", "facade-arguments-extra", "facade-entered-runtime-extra",
+                     "facade-loopback-eof-extra", "facade-managed-protected-eof-extra",
+                     True, None, ["facade-arguments"]):
             with self.subTest(mode=mode), self.assertRaises(NATIVE.Incomplete):
                 NATIVE.mode_profile(mode)
         self.assertEqual(NATIVE.mode_profile("ke"), (4, 2, "engine-tests.exe"))
         self.assertEqual(NATIVE.mode_profile("control-healthy"), (4, 2, "gate-control.exe"))
+
+    def test_actual_transport_is_opt_in_to_native_facade(self):
+        ordinary = ("facade-arguments", "facade-entered-runtime")
+        self.assertEqual(NATIVE.facade_native_modes(False), ordinary)
+        self.assertEqual(NATIVE.facade_native_modes(True), (*ordinary, FACADE_EOF_MODE))
+        for lane, facade in (("build", True), ("native", False), ("prepare-facade-faults", True)):
+            args = NATIVE.argparse.Namespace(lane=lane, facade_consumer=facade, facade_loopback_eof=True)
+            with self.subTest(lane=lane, facade=facade), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.facade_loopback_eof_requested(args)
+        args = NATIVE.argparse.Namespace(lane="native", facade_consumer=True, facade_loopback_eof=True)
+        self.assertTrue(NATIVE.facade_loopback_eof_requested(args))
+
+    def test_managed_public_caller_is_separate_opt_in_under_unchanged_limits(self):
+        ordinary = ("facade-arguments", "facade-entered-runtime")
+        self.assertEqual(NATIVE.facade_native_modes(False, True), (*ordinary, MANAGED_EOF_MODE))
+        self.assertEqual(NATIVE.mode_profile(MANAGED_EOF_MODE), (4, 2, "engine-facade-consumer.exe"))
+        for raw, managed in ((True, True), (False, "true"), (0, True), (False, None)):
+            with self.subTest(raw=raw, managed=managed), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.facade_native_modes(raw, managed)
+        for lane, facade, raw in (("build", True, False), ("native", False, False),
+                                  ("native", True, True), ("prepare-facade-faults", True, False)):
+            args = NATIVE.argparse.Namespace(lane=lane, facade_consumer=facade,
+                facade_loopback_eof=raw, facade_managed_protected_eof=True)
+            with self.subTest(lane=lane, facade=facade, raw=raw), self.assertRaises(NATIVE.Incomplete):
+                NATIVE.facade_managed_protected_eof_requested(args)
+        args = NATIVE.argparse.Namespace(lane="native", facade_consumer=True,
+            facade_loopback_eof=False, facade_managed_protected_eof=True)
+        self.assertTrue(NATIVE.facade_managed_protected_eof_requested(args))
+        args.facade_managed_protected_eof = 1
+        with self.assertRaises(NATIVE.Incomplete):
+            NATIVE.facade_managed_protected_eof_requested(args)
+
+    def test_managed_witness_keeps_stale_eof_join_udp_and_cleanup_independent(self):
+        marker = "launcher-child-pid=13\n"
+        value = facade_observation(MANAGED_EOF_MODE)
+        self.assertIs(self.check(value, MANAGED_EOF_MODE), value["execution"])
+        buffered = MANAGED_EOF_ROW.replace("cleanup=none", "cleanup=response/unexpected-eof")
+        value["execution"]["stderr"] = marker + buffered
+        self.assertIs(self.check(value, MANAGED_EOF_MODE), value["execution"])
+        for old, new in (("stale=configuration-changed", "stale=accepted"),
+                         ("current=handshake/unexpected-eof", "current=success"),
+                         ("cleanup=none", "cleanup=shutdown/io"),
+                         ("admission=none", "admission=io"),
+                         ("retained=none", "retained=configuration"),
+                         ("power_stop_failed=0", "power_stop_failed=1"),
+                         ("observer_close_error=none", "observer_close_error=5"),
+                         ("peer_joined=1", "peer_joined=0"),
+                         ("owned_udp_received=0", "owned_udp_received=1")):
+            value["execution"]["stderr"] = marker + MANAGED_EOF_ROW.replace(old, new)
+            with self.subTest(field=old), self.assertRaises(NATIVE.Incomplete):
+                self.check(value, MANAGED_EOF_MODE)
+        for stderr in (marker + FACADE_EOF_ROW + FACADE_EOF_PEER,
+                       marker + MANAGED_EOF_ROW + MANAGED_EOF_ROW,
+                       marker + MANAGED_EOF_ROW + "facade-consumer-stage=managed-outcome\n"):
+            value["execution"]["stderr"] = stderr
+            with self.subTest(stderr=stderr), self.assertRaises(NATIVE.Incomplete):
+                self.check(value, MANAGED_EOF_MODE)
+
+    def test_loopback_requires_real_handshake_result_and_joined_peer_witness(self):
+        marker = "launcher-child-pid=13\n"
+        buffered = FACADE_EOF_ROW.replace("cleanup_stage=none cleanup_cause=none",
+                                         "cleanup_stage=response cleanup_cause=unexpected-eof")
+        value = facade_observation(FACADE_EOF_MODE)
+        with self.subTest(phase="buffered-eof-secondary"):
+            value["execution"]["stderr"] = buffered + marker + FACADE_EOF_PEER
+            self.assertIs(self.check(value, FACADE_EOF_MODE), value["execution"])
+        for stderr in (
+            marker + FACADE_EOF_ROW,
+            marker + FACADE_EOF_PEER + FACADE_EOF_ROW,
+            marker + FACADE_EOF_ROW + FACADE_EOF_PEER * 2,
+            marker + FACADE_EOF_ROW.replace("stage=handshake", "stage=connect") + FACADE_EOF_PEER,
+            marker + buffered.replace("admission_cause=none", "admission_cause=io") + FACADE_EOF_PEER,
+            marker + buffered.replace("cleanup_stage=response", "cleanup_stage=shutdown") + FACADE_EOF_PEER,
+            marker + FACADE_EOF_ROW + "facade-consumer-stage=peer-drain\n",
+        ):
+            value["execution"]["stderr"] = stderr
+            with self.subTest(stderr=stderr), self.assertRaises(NATIVE.Incomplete):
+                self.check(value, FACADE_EOF_MODE)
 
     def test_pid_marker_and_exact_facade_row_allow_either_arrival_order(self):
         for mode, row in FACADE_ROWS.items():
@@ -1671,7 +1785,7 @@ class FacadeConsoleAdmission(unittest.TestCase):
                 elif fault == "joined": result["event_reader_joined"] = False
                 elif fault == "token": result["child_token"]["elevated"] = True
                 elif fault == "stdout": result["stdout"] = "invented success\n"
-                else: result["exit_code"] = 0
+                else: result["exit_code"] = 1 if mode == MANAGED_EOF_MODE else 0
                 with self.subTest(mode=mode, fault=fault), self.assertRaises(NATIVE.Incomplete):
                     self.check(value, mode)
 

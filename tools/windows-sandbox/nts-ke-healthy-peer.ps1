@@ -275,7 +275,7 @@ function Admit-Labels([string]$Text, [bool]$Peer) {
     $pattern = if ($Peer) {
         '\Astage=([a-z-]+) cause=([a-z-]+) cleanup_stage=([a-z-]+) cleanup_cause=([a-z-]+) readiness_cleanup_cause=([a-z-]+)\n\z'
     } else {
-        '\Astage=([a-z-]+) cause=([a-z-]+) cleanup_stage=([a-z-]+) cleanup_cause=([a-z-]+) admission_stage=([a-z-]+) admission_cause=([a-z-]+)\n\z'
+        '\Ascope=engine-ke-prototype eligible=0 fresh_sync=0 stage=([a-z-]+) cause=([a-z-]+) cleanup_stage=([a-z-]+) cleanup_cause=([a-z-]+) admission_stage=([a-z-]+) admission_cause=([a-z-]+)\n\z'
     }
     if ($Text -cnotmatch $pattern) { throw 'ke-controller:diagnostic-shape' }
     $groups = @($Matches[1], $Matches[2], $Matches[3], $Matches[4], $Matches[5])
@@ -345,8 +345,8 @@ function Run-Pair([string]$Case, [string]$ServerIdentity, [bool]$Healthy, [long]
     if ($Healthy) {
         if ($client.ExitCode -ne 0 -or $peer.ExitCode -ne 0 -or
             $raw['client-stderr'].Text -cne '' -or $raw['peer-stderr'].Text -cne '' -or
-            $raw['client-stdout'].Text -cne "scope=laboratory-ke completed=1 cookies=1 cookie_bytes=4 sealed_packet_bytes=132 transmitted=0 native_cleanup_qualified=0`n" -or
-            $raw['peer-stdout'].Text -cne "scope=laboratory-ke-peer completed=1 offer_bytes=16 response_bytes=24 exporters=2 peer_close=1`n") {
+            $raw['client-stdout'].Text -cne "scope=engine-ke-prototype eligible=0 fresh_sync=0 completed=1 cookies=1 cookie_bytes=12 sealed_packet_bytes=140 transmitted=0 native_cleanup_qualified=0 numerical=not_attempted numerical_reason=none`n" -or
+            $raw['peer-stdout'].Text -cne "scope=laboratory-ke-peer completed=1 offer_bytes=16 response_bytes=32 exporters=2 peer_close=1`n") {
             throw 'ke-controller:healthy-output'
         }
     } else {
@@ -398,7 +398,8 @@ try {
     foreach ($pin in @($ControllerSha256, $ClientSha256, $PeerSha256, $RootSha256, $LeafSha256, $KeySha256, $CrlSha256)) {
         if ($pin -cnotmatch '\A[0-9a-f]{64}\z') { throw 'ke-controller:hash-arguments' }
     }
-    if ($ClientSha256 -cne '39d2c7f7c8a094115a1d221c87f89f457dcc2e50c89b346e1c9d0975ab15f625' -or
+    if ($ClientSha256 -cne '1baea41f1d979bb5cf44dd3e3906d8cbd22b9745d3fed1d6af46bb5e9d44db47' -or
+        $PeerSha256 -cne '28c1597133beeb1c7ce9d66e3189d0b2346d1d0ec467b296a8a2a9b12a22c35e' -or
         [Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
         [Environment]::UserName -cne 'WDAGUtilityAccount' -or
         [Environment]::OSVersion.Version.Build -ne 26100 -or -not [Environment]::Is64BitProcess) {

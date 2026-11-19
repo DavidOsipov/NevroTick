@@ -3,11 +3,16 @@
 
 use std::error::Error;
 use std::fmt;
+use std::num::NonZeroU32;
+use std::time::{Duration, Instant};
 
 use super::{
-    Failed, Failure, InvocationCompletion, RunFailed, failure_labels, handoff, io_label, job,
+    Failed, Failure, InvocationCompletion, ObservedInvocation, ObserverStartError,
+    PowerObserverCleanup, RunFailed, failure_labels, handoff, io_label, job, receive_probe,
 };
-use crate::{SourceConfigurationSnapshot, SourcePolicyError};
+use crate::{
+    ExperimentalMeasurement, MeasurementRefusal, SourceConfigurationSnapshot, SourcePolicyError,
+};
 
 /// A genuine managed Preview completed and its actual worker returned and joined.
 ///
@@ -20,6 +25,22 @@ pub struct SourceKePreviewReport {
 }
 
 impl SourceKePreviewReport {
+    /// Consume the genuine normally joined managed Preview result.
+    /// # Errors
+    /// Preserve the original run refusal or reject another completion mode.
+    pub(super) fn from_run(
+        result: Result<super::datagram::ReceivedCompletion, RunFailed>,
+    ) -> Result<Self, SourceKePreviewFailure> {
+        let received: super::datagram::ReceivedCompletion =
+            result.map_err(|failure: RunFailed| SourceKePreviewFailure { failure })?;
+        let history: Box<handoff::ManagedPreviewHistory> = received
+            .into_managed_preview()
+            .map_err(|failure: Failure| SourceKePreviewFailure {
+                failure: RunFailed::Operation(Failed::from(failure)),
+            })?;
+        Ok(Self { history })
+    }
+
     /// Borrow the exact configuration checked by the original final packet commit.
     #[must_use]
     pub const fn configuration(&self) -> &SourceConfigurationSnapshot {
@@ -67,6 +88,7 @@ impl SourceKePreviewFailure {
     pub fn labels(&self) -> (&'static str, &'static str) {
         match &self.failure {
             RunFailed::CallerContext => ("caller-context", "entered-runtime"),
+            RunFailed::PowerRegistration => ("power-registration", "unavailable"),
             RunFailed::Preparation(operation) | RunFailed::Operation(operation) => {
                 failure_labels(operation.primary)
             }
@@ -108,7 +130,10 @@ impl SourceKePreviewFailure {
                 Some(Err(failure)) => Some(failure),
                 Some(Ok(_)) | None => None,
             },
-            RunFailed::CallerContext | RunFailed::Submission(_) | RunFailed::Collection(_) => None,
+            RunFailed::CallerContext
+            | RunFailed::PowerRegistration
+            | RunFailed::Submission(_)
+            | RunFailed::Collection(_) => None,
         }
     }
 
@@ -196,9 +221,72 @@ pub struct SourceProtectedProbeReport {
     configuration: SourceConfigurationSnapshot,
     /// Observed local protected request extent, without peer-delivery claims.
     packet_bytes: usize,
+    /// Original monotonic observation admitted by the guarded terminal commit.
+    committed_at: Instant,
+    /// Checked elapsed monotonic duration from original receive trailing to commit.
+    receive_to_commit_delay: Option<Duration>,
+    /// Original conditional arithmetic or refusal from the same joined packet history.
+    measurement: Result<ExperimentalMeasurement, MeasurementRefusal>,
+    /// A failed observer close leaves the original joined report intact.
+    power_unregistration_error: Option<NonZeroU32>,
 }
 
 impl SourceProtectedProbeReport {
+    /// Consume only the genuine normally joined managed Protected result.
+    /// # Errors
+    /// Refuse another completion mode without manufacturing managed history.
+    fn from_completion(
+        result: super::datagram::ReceivedCompletion,
+        cleanup: PowerObserverCleanup,
+    ) -> Result<Self, Failure> {
+        let (configuration, summary, committed_at, receive_to_commit_delay, measurement): (
+            SourceConfigurationSnapshot,
+            super::Summary,
+            Instant,
+            Option<Duration>,
+            Result<ExperimentalMeasurement, MeasurementRefusal>,
+        ) = result.into_managed_protected()?;
+        Ok(Self {
+            configuration,
+            packet_bytes: summary.packet_bytes,
+            committed_at,
+            receive_to_commit_delay,
+            measurement,
+            power_unregistration_error: cleanup.unregistration_error,
+        })
+    }
+
+    /// Keep the actual worker outcome and independently observed power cleanup.
+    ///
+    /// # Errors
+    /// Preserve pre-submission, worker or joined-mode refusal with its cleanup facts.
+    pub(super) fn from_observed(
+        observed: Result<ObservedInvocation, ObserverStartError>,
+    ) -> Result<Self, SourceProtectedProbeFailure> {
+        let ObservedInvocation { result, cleanup }: ObservedInvocation =
+            observed.map_err(|error: ObserverStartError| {
+                SourceProtectedProbeFailure::from_run_failure(match error {
+                    ObserverStartError::Preparation(failure) => failure,
+                    ObserverStartError::Registration => RunFailed::PowerRegistration,
+                })
+            })?;
+        let completion: super::datagram::ReceivedCompletion = receive_probe(result)
+            .map_err(|failure| SourceProtectedProbeFailure::with_cleanup(failure, cleanup))?;
+        Self::from_completion(completion, cleanup).map_err(|failure| {
+            SourceProtectedProbeFailure::with_cleanup(
+                RunFailed::Operation(Failed::from(failure)),
+                cleanup,
+            )
+        })
+    }
+
+    /// Return the exact nonzero power observer unregistration status on failure.
+    /// An observer failure does not change the admitted configuration or measurement.
+    #[must_use]
+    pub const fn power_unregistration_error(&self) -> Option<NonZeroU32> {
+        self.power_unregistration_error
+    }
+
     /// The configuration admitted at the original protected reply commit.
     #[must_use]
     pub const fn configuration(&self) -> &SourceConfigurationSnapshot {
@@ -210,6 +298,41 @@ impl SourceProtectedProbeReport {
     pub const fn packet_bytes(&self) -> usize {
         self.packet_bytes
     }
+
+    /// Return the process-local monotonic observation accepted by the original
+    /// guarded reply commit. The measurement keeps its original packet receipt
+    /// as its age reference. This historical observation grants no current authority.
+    #[must_use]
+    pub const fn committed_at(&self) -> Instant {
+        self.committed_at
+    }
+
+    /// Return the checked monotonic interval from the original receive bracket's
+    /// trailing observation to the guarded terminal decision, when representable.
+    /// This historical delay is independent of numerical measurement or eligibility.
+    #[must_use]
+    pub const fn receive_to_commit_delay(&self) -> Option<Duration> {
+        self.receive_to_commit_delay
+    }
+
+    /// Borrow the original conditional nominal arithmetic, without refreshing its age.
+    /// Neither success nor protected completion supplies current sample eligibility.
+    ///
+    /// # Errors
+    /// Preserve the original absent mapping, capture, date, protocol or arithmetic refusal.
+    pub fn measurement(&self) -> Result<&ExperimentalMeasurement, MeasurementRefusal> {
+        self.measurement.as_ref().map_err(|reason| *reason)
+    }
+}
+
+/// Forward actual joined component results through the private production projection.
+/// # Errors
+/// Preserve refusal of an unmanaged or no-send completion.
+#[cfg(test)]
+pub(super) fn protected_report(
+    result: super::datagram::ReceivedCompletion,
+) -> Result<SourceProtectedProbeReport, Failure> {
+    SourceProtectedProbeReport::from_completion(result, PowerObserverCleanup::default())
 }
 
 impl fmt::Debug for SourceProtectedProbeReport {
@@ -219,52 +342,76 @@ impl fmt::Debug for SourceProtectedProbeReport {
 }
 
 /// Bounded source, worker or operation refusal from the explicit protected probe.
-pub struct SourceProtectedProbeFailure(
+#[must_use = "inspect the original Protected failure and independent cleanup observations"]
+pub struct SourceProtectedProbeFailure {
     /// Shared typed worker and operation failure projection.
-    SourceKePreviewFailure,
-);
+    worker: SourceKePreviewFailure,
+    /// Independent cleanup after observer registration succeeded.
+    cleanup: PowerObserverCleanup,
+}
 
 impl SourceProtectedProbeFailure {
     /// Preserve the actual worker or operation failure without projecting success.
-    pub(super) const fn from_run_failure(failure: RunFailed) -> Self {
-        Self(SourceKePreviewFailure { failure })
+    pub(super) fn from_run_failure(failure: RunFailed) -> Self {
+        Self::with_cleanup(failure, PowerObserverCleanup::default())
+    }
+
+    /// Attach the observed secondary facts without changing the original failure.
+    fn with_cleanup(failure: RunFailed, cleanup: PowerObserverCleanup) -> Self {
+        Self {
+            worker: SourceKePreviewFailure { failure },
+            cleanup,
+        }
+    }
+
+    /// Whether requesting Stop after an unconfirmed collection failed.
+    #[must_use]
+    pub const fn power_stop_failed(&self) -> bool {
+        self.cleanup.stop_failed
+    }
+
+    /// Return the exact nonzero power observer unregistration status on failure.
+    #[must_use]
+    pub const fn power_unregistration_error(&self) -> Option<NonZeroU32> {
+        self.cleanup.unregistration_error
     }
 
     /// The closed labels for the original outer failure.
     #[must_use]
     pub fn labels(&self) -> (&'static str, &'static str) {
-        self.0.labels()
+        self.worker.labels()
     }
 
     /// The original operation failure even if worker retirement also fails.
     #[must_use]
     pub fn primary_labels(&self) -> Option<(&'static str, &'static str)> {
-        self.0.primary_labels()
+        self.worker.primary_labels()
     }
 
     /// The independent TLS cleanup refusal, when observed.
     #[must_use]
     pub fn cleanup_labels(&self) -> Option<(&'static str, &'static str)> {
-        self.0.cleanup_labels()
+        self.worker.cleanup_labels()
     }
 
     /// The independent operation-admission cleanup refusal, when observed.
     #[must_use]
     pub fn admission_cleanup_labels(&self) -> Option<(&'static str, &'static str)> {
-        self.0.admission_cleanup_labels()
+        self.worker.admission_cleanup_labels()
     }
 
     /// The original typed source policy refusal when that owner denied the operation.
     #[must_use]
     pub fn source_policy_error(&self) -> Option<SourcePolicyError> {
-        self.0.source_policy_error()
+        self.worker.source_policy_error()
     }
 
     /// Borrow the committed revision from a sealed managed result after abnormal join.
     /// This is historical data and grants no current authority or joined success.
     #[must_use]
     pub fn retained_configuration(&self) -> Option<&SourceConfigurationSnapshot> {
-        let Some(InvocationCompletion::ManagedProtected(history)) = self.0.retained_completion()
+        let Some(InvocationCompletion::ManagedProtected(history)) =
+            self.worker.retained_completion()
         else {
             return None;
         };
@@ -298,9 +445,10 @@ impl crate::SourcePolicyAuthority {
     ///
     /// The installed definition supplies TLS and UDP inputs. Shares the original
     /// experimental worker slot and permits no retry, clock effect or plain fallback.
+    /// A delivered suspend or automatic-resume event requests Stop on that invocation.
     ///
     /// # Errors
-    /// Preserve configuration, source/endpoint, caller, worker and exchange refusals.
+    /// Preserve source, caller, worker, observer registration and exchange refusals.
     pub fn probe_nts_protected(
         &self,
         expected: &SourceConfigurationSnapshot,
@@ -313,19 +461,7 @@ impl crate::SourcePolicyAuthority {
                 )))
             })?;
         let config: super::Config = super::Config::from_managed_protected(source);
-        let result: super::datagram::ReceivedCompletion =
-            super::run(config).map_err(SourceProtectedProbeFailure::from_run_failure)?;
-        let (configuration, summary): (SourceConfigurationSnapshot, super::Summary) = result
-            .into_managed_protected()
-            .map_err(|failure: Failure| {
-                SourceProtectedProbeFailure::from_run_failure(RunFailed::Operation(Failed::from(
-                    failure,
-                )))
-            })?;
-        Ok(SourceProtectedProbeReport {
-            configuration,
-            packet_bytes: summary.packet_bytes,
-        })
+        SourceProtectedProbeReport::from_observed(super::run_with_power_observer(config))
     }
 }
 
@@ -347,13 +483,6 @@ impl crate::SourceHandle {
                 failure: RunFailed::Preparation(Failed::from(Failure::SourcePolicy(error))),
             })?;
         let config: super::Config = super::Config::from_managed_preview(context);
-        let received: super::datagram::ReceivedCompletion =
-            super::run(config).map_err(|failure: RunFailed| SourceKePreviewFailure { failure })?;
-        let history: Box<handoff::ManagedPreviewHistory> = received
-            .into_managed_preview()
-            .map_err(|failure: Failure| SourceKePreviewFailure {
-                failure: RunFailed::Operation(Failed::from(failure)),
-            })?;
-        Ok(SourceKePreviewReport { history })
+        SourceKePreviewReport::from_run(super::run(config))
     }
 }

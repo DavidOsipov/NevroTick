@@ -5634,8 +5634,8 @@ def execute_address_profile(args, report: dict) -> None:
 ENGINE_KE_POLICY = COMMON.ENGINE_KE_POLICY
 ENGINE_KE_HOST_SUBJECTS = dict(COMMON.ENGINE_KE_SUBJECTS)
 ENGINE_KE_SCOPE = COMMON.Scope("nevrotick-engine", COMMON.ENGINE_KE_SUBJECTS, ENGINE_KE_POLICY)
-ENGINE_KE_ORDINARY_COUNT = 560
-ENGINE_KE_CASE_COUNT = 276
+ENGINE_KE_ORDINARY_COUNT = 576
+ENGINE_KE_CASE_COUNT = 292
 ENGINE_KE_DOCTEST_COUNT = 90
 ENGINE_KE_DOCTEST_NAME = re.compile(
     r"[^\r\n]+[.]rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile(?: fail)?)?"
@@ -5698,6 +5698,50 @@ ENGINE_PROTECTED_RECEIVE_EFFECT_TESTS = frozenset((
     "nts_ke_experiment::datagram::tests::retired_completion_commit_respects_acceptance_and_expiry",
     "nts_ke_experiment::datagram::tests::recovery_tests::reversed_final_zero_cookie_capture_cannot_schedule_replacement",
     "nts_ke_experiment::datagram::tests::recovery_tests::final_zero_cookie_capture_at_cutoff_cannot_schedule_replacement",
+))
+ENGINE_KE_LEDGER_CHRONOLOGY_TESTS = frozenset((
+    "nts_ke_experiment::association::ledger::tests::receive_span_checks_exact_capture_and_processing_boundaries",
+    "nts_ke_experiment::datagram::tests::managed_retired_ordinal_two_cannot_open_first_successor",
+))
+ENGINE_KE_OBSERVED_FACADE_TESTS = frozenset((
+    "nts_ke_experiment::managed_preview_tests::"
+    "managed_protected_power_event_respects_reply_commit_and_join",
+    "nts_ke_experiment::job::tests::"
+    "synchronous_facade_collection_contention_retains_unconfirmed_actual_job",
+    "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+    "observed_facade_registration_failure_refuses_submission",
+    "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+    "observed_facade_early_event_cancels_the_original_worker",
+    "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+    "observed_facade_late_event_preserves_joined_protected_result",
+))
+ENGINE_KE_MANAGED_REPORT_TESTS = frozenset((
+    "nts_ke_experiment::managed_preview_tests::"
+    "managed_protected_report_preserves_declared_numerical_result",
+    "nts_ke_experiment::managed_preview_tests::"
+    "managed_preview_cannot_project_a_protected_report",
+    "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+    "numerics_tests::facade_protected_numerics_declared_era_zero_has_independent_math",
+))
+ENGINE_KE_TRANSPORT_CURRENTNESS_TESTS = frozenset((
+    "nts_ke_experiment::managed_preview_tests::"
+    "managed_ke_transport_refuses_replaced_definition_before_connect",
+    "nts_ke_experiment::managed_preview_tests::"
+    "managed_ke_transport_drops_owned_connect_on_revision_cutover",
+    "nts_ke_experiment::managed_preview_tests::"
+    "managed_ke_transport_rechecks_revision_after_each_adapter_return",
+    "nts_ke_experiment::managed_preview_tests::"
+    "managed_ke_transport_preserves_first_native_failure_after_replacement",
+))
+ENGINE_KE_LOOPBACK_AND_TRANSPORT_CUTOFF_TESTS = frozenset((
+    "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+    "managed_loopback_successor_commits_exact_deny_after_normal_join",
+    "nts_ke_experiment::datagram::tests::recovery_tests::worker_tests::"
+    "managed_loopback_successor_refuses_same_values_replacement_before_commit",
+    "nts_ke_experiment::managed_preview_tests::"
+    "managed_ke_transport_exchange_uses_original_later_cutoff",
+    "nts_ke_experiment::managed_preview_tests::"
+    "managed_ke_transport_refusal_keeps_initial_io_category",
 ))
 ENGINE_KE_TEST_SOURCES = (
     "crates/nevrotick-engine/src/nts_ke_experiment/tests.rs",
@@ -5915,10 +5959,17 @@ def validate_engine_ke_inventory(names: object) -> list[str]:
             or ENGINE_KNOWN_RECEIVE_DEBIT_TEST not in names
             or ENGINE_HEADER_AGE_TEST not in names
             or ENGINE_ORDINARY_PROTECTED_RECEIVE_TEST not in names
-            or not ENGINE_PROTECTED_RECEIVE_EFFECT_TESTS.issubset(names)):
+            or not ENGINE_PROTECTED_RECEIVE_EFFECT_TESTS.issubset(names)
+            or not ENGINE_KE_LEDGER_CHRONOLOGY_TESTS.issubset(names)
+            or not ENGINE_KE_OBSERVED_FACADE_TESTS.issubset(names)
+            or not ENGINE_KE_MANAGED_REPORT_TESTS.issubset(names)
+            or not ENGINE_KE_TRANSPORT_CURRENTNESS_TESTS.issubset(names)
+            or not ENGINE_KE_LOOPBACK_AND_TRANSPORT_CUTOFF_TESTS.issubset(names)):
         raise Incomplete(
             f"Engine KE requires all {ENGINE_KE_ORDINARY_COUNT} actual Engine tests including its "
-            f"{ENGINE_KE_CASE_COUNT} KE cases and all required send, cutoff, chronology, receive debit, header age, ordinary protected receipt and final-effect regressions.")
+            f"{ENGINE_KE_CASE_COUNT} KE cases and the required send, cutoff, chronology, receive debit, header age, "
+            "ordinary protected receipt, final-effect, ledger chronology, observed facade, managed report and "
+            "transport currentness, phase, and loopback successor regressions.")
     return names
 
 

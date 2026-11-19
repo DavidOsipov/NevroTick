@@ -40,9 +40,10 @@ ADVISORY = importlib.util.module_from_spec(ADVISORY_SPEC)
 ADVISORY_SPEC.loader.exec_module(ADVISORY)
 PACKAGE = "nevrotick-ui"
 MEMBER = "crates/nevrotick-ui"
-PACKAGES = {PACKAGE: MEMBER, "ntp-wire": "crates/ntp-wire", "time-domain": "crates/time-domain",
+LEGACY_PACKAGES = {PACKAGE: MEMBER, "ntp-wire": "crates/ntp-wire", "time-domain": "crates/time-domain",
             "ntp-exchange": "crates/ntp-exchange", "time-core": "crates/time-core",
             "nevrotick-engine": "crates/nevrotick-engine", "windows-platform": "crates/windows-platform"}
+PACKAGES = {**LEGACY_PACKAGES, SLINT.NATIVE_PACKAGE: "crates/" + SLINT.NATIVE_PACKAGE}
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 REGISTRY_VERSIONS = {
     "castaway": "0.2.4", "cfg-if": "1.0.5", "compact_str": "0.9.1", "garde": "0.23.0",
@@ -193,7 +194,7 @@ def validate_dependency_policy(policy: dict) -> None:
             or policy["schema_version"] != 2 or type(policy["scope"]) is not str
             or not 0 < len(policy["scope"]) <= 8192):
         raise ENV.Incomplete("Unadmitted dependency policy schema.")
-    manifests = {"Cargo.toml", *(member + "/Cargo.toml" for member in PACKAGES.values())}
+    manifests = {"Cargo.toml", *(member + "/Cargo.toml" for member in LEGACY_PACKAGES.values())}
     if (type(policy["lockfile_sha256"]) is not str
             or not re.fullmatch(r"[0-9a-f]{64}", policy["lockfile_sha256"])
             or type(policy["manifests_sha256"]) is not dict
@@ -292,7 +293,7 @@ def validate_dependency_metadata(target: str, output: str, policy: dict, *, prof
         if type(name) is not str or type(version) is not str or "source" not in package:
             raise ENV.Incomplete("Dependency metadata package identity is malformed.")
         if package.get("source") is None:
-            if name not in PACKAGES or version != "0.0.0" or name in locals_seen:
+            if name not in LEGACY_PACKAGES or version != "0.0.0" or name in locals_seen:
                 raise ENV.Incomplete("Dependency metadata contains an unreviewed local owner.")
             locals_seen.add(name)
         else:
@@ -307,7 +308,7 @@ def validate_dependency_metadata(target: str, output: str, policy: dict, *, prof
                     or len(features) > 256 or len(set(features)) != len(features)):
                 raise ENV.Incomplete("Dependency metadata features are malformed.")
             selected[identity] = sorted(features)
-    if (package_ids != set(nodes) or locals_seen != set(PACKAGES)
+    if (package_ids != set(nodes) or locals_seen != set(LEGACY_PACKAGES)
             or selected != policy["rows"][target]["features"]):
         raise ENV.Incomplete("Actual dependency target packages/features differ from admission.")
     return {"target": target, "external_packages": sorted(selected), "features": selected}
@@ -470,7 +471,10 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
         STRICT.read_configuration(root)
     except STRICT.ENV.Incomplete as error:
         raise ENV.Incomplete(str(error)) from error
-    for member_path in (root / member for member in PACKAGES.values()):
+    policy = read_dependency_policy(root / "policy/ui-m0-dependencies.json")
+    native_adapter = policy.get("schema_version") == 3 and SLINT.NATIVE_PACKAGE in SLINT.policy_members(policy)
+    product_packages = PACKAGES if native_adapter else LEGACY_PACKAGES
+    for member_path in (root / member for member in product_packages.values()):
         if (not member_path.resolve().is_relative_to(root.resolve())
                 or any(path.is_symlink() for path in (root / "crates", member_path))):
             raise ENV.Incomplete("Linked product ancestors are not admitted.")
@@ -479,9 +483,8 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     ENV.require_cargo_configuration(tomllib.loads((root / ".cargo/config.toml").read_text()))
     workspace = tomllib.loads((root / "Cargo.toml").read_text())
     fragment = tomllib.loads((root / "policy/rust-workspace.toml").read_text())
-    if workspace.get("workspace", {}).get("members") != list(PACKAGES.values()):
+    if workspace.get("workspace", {}).get("members") != list(product_packages.values()):
         raise ENV.Incomplete("Expected exactly the reviewed UI-M0, wire, domain, exchange, core, engine and platform workspace members.")
-    policy = read_dependency_policy(root / "policy/ui-m0-dependencies.json")
     validate_dependency_policy(policy)
     slint_profile = policy["schema_version"] == 3
     patches = policy.get("patched_packages", [])
@@ -500,7 +503,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             or workspace.get("profile") != fragment["profile"]):
         raise ENV.Incomplete("Workspace lint/profile policy differs from its owner.")
     local_packages = set()
-    for package, directory in PACKAGES.items():
+    for package, directory in product_packages.items():
         member = tomllib.loads((root / directory / "Cargo.toml").read_text())
         if (member.get("package", {}).get("name") != package
                 or member.get("lints") != {"workspace": True}):
@@ -573,6 +576,10 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                 raise ENV.Incomplete("The UI requires only its exact reviewed baseline dependencies, defaults and target features.")
         if package == "ntp-wire" and set(member) != {"package", "lints"}:
             raise ENV.Incomplete("The pure NTP-wire member may not add dependencies, features or targets.")
+        if package == SLINT.NATIVE_PACKAGE and (
+                set(member) != {"package", "lints"} or member["package"].get("version") != "0.0.0"
+                or "links" in member["package"]):
+            raise ENV.Incomplete("The native platform adapter requires its dependency-free manifest without features or execution roles.")
         if package in {"time-domain", "time-core", "windows-platform"}:
             required = {"garde": {"version": "=0.23.0", "default-features": False, "features": ["derive"]}}
             if package == "time-core":
@@ -605,7 +612,11 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                           "features": ["rt", "net", "time", "sync", "macros"]},
             }
             required_keys = {"package", "lints", "dependencies", "bin"}
-            expected_target = None
+            expected_target = {"cfg(windows)": {"dependencies": {
+                SLINT.NATIVE_PACKAGE: {"version": "=0.0.0", "path": "../" + SLINT.NATIVE_PACKAGE},
+            }}} if native_adapter else None
+            if native_adapter:
+                required_keys.add("target")
             if SLINT.EP1_FIELD in policy:
                 required.update({
                     SLINT.EP1_AES_NAME: {"version": "=0.0.0", "path": "../../tools/crypto-aes-siv-witness",
@@ -615,18 +626,21 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                     "zeroize": {"version": "=1.9.1", "default-features": False,
                         "features": ["alloc"], "optional": True},
                 })
-                expected_target = {"cfg(windows)": {"dependencies": {
+                if expected_target is None:
+                    expected_target = {"cfg(windows)": {"dependencies": {}}}
+                expected_target["cfg(windows)"]["dependencies"].update({
                     "rustls": {"version": "=0.23.46", "default-features": False, "features": ["std"], "optional": True},
                     "rustls-cng-crypto": {"version": "=0.1.2", "default-features": False, "optional": True},
                     "rustls-platform-verifier": {"version": "=0.7.1", "default-features": False, "optional": True},
-                }}}
+                })
                 expected_feature = {SLINT.EP1_FEATURE: ["dep:" + name for name in
                     (SLINT.EP1_AES_NAME, "rustls-pki-types", "zeroize", "rustls", "rustls-cng-crypto", "rustls-platform-verifier")]}
                 if (member.get("features") != expected_feature or member.get("target") != expected_target
                         or member.get("dependencies") != required):
                     raise ENV.Incomplete("The Engine prototype requires its exact default-off feature and Windows-only provider graph.")
                 declarations = [member["dependencies"][name] for name in (SLINT.EP1_AES_NAME, "rustls-pki-types", "zeroize")]
-                declarations += list(member["target"]["cfg(windows)"]["dependencies"].values())
+                declarations += [member["target"]["cfg(windows)"]["dependencies"][name]
+                                 for name in ("rustls", "rustls-cng-crypto", "rustls-platform-verifier")]
                 if any(type(item.get(field)) is not bool for item in declarations
                        for field in ("default-features", "optional")):
                     raise ENV.Incomplete("The Engine prototype requires boolean optional/default feature declarations.")
@@ -634,6 +648,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             if (set(member) != required_keys
                     or member["package"].get("version") != "0.0.0"
                     or member.get("dependencies") != required
+                    or member.get("target") != expected_target
                     or type(member["dependencies"]["garde"].get("default-features")) is not bool
                     or type(member["dependencies"]["getrandom"].get("default-features")) is not bool
                     or type(member["dependencies"]["tokio"].get("default-features")) is not bool
@@ -647,7 +662,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     if policy.get("lockfile_sha256") != sha256(root / "Cargo.lock"):
         raise ENV.Incomplete("The product lockfile differs from its dependency admission.")
     manifests = {name: sha256(root / name)
-                 for name in ("Cargo.toml", *(member + "/Cargo.toml" for member in PACKAGES.values()))}
+                 for name in ("Cargo.toml", *(member + "/Cargo.toml" for member in product_packages.values()))}
     if policy.get("manifests_sha256") != manifests:
         raise ENV.Incomplete("Product manifest/features differ from the reviewed dependency admission.")
     require_root_cooldown_admission(root, policy)
@@ -661,6 +676,8 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     engine_random = ("getrandom 0.4.3" if sum(p["name"] == "getrandom" for p in packages) > 1
                      else "getrandom")
     engine_edges = ["garde", engine_random, "ntp-wire", "time-domain", "tokio"]
+    if native_adapter:
+        engine_edges.append(SLINT.NATIVE_PACKAGE)
     if dependency:
         engine_edges = sorted([*engine_edges, SLINT.EP1_AES_NAME, "rustls", "rustls-cng-crypto",
                                "rustls-pki-types", "rustls-platform-verifier", "zeroize"])
@@ -669,7 +686,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     if (external != expected or len([p for p in packages if "source" in p]) != len(expected)
             or len(local) != len(local_packages)
             or {(p["name"], p["version"]) for p in local} != local_packages
-            or any(p.get("dependencies") for p in local if p["name"] == "ntp-wire")
+            or any(p.get("dependencies") for p in local if p["name"] in {"ntp-wire", SLINT.NATIVE_PACKAGE})
             or any(p.get("dependencies") != ["garde"] for p in local if p["name"] == "time-domain")
             or any(p.get("dependencies") != ["garde", "time-domain"] for p in local if p["name"] == "time-core")
             # Cargo.lock combines dependency kinds; the manifest guard above owns their roles.
@@ -690,7 +707,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
         inputs.update(admit_patched_source(root, record))
     if dependency:
         inputs.update(admit_first_party_dependency(root, dependency))
-    for member in PACKAGES.values():
+    for member in product_packages.values():
         for name, digest in inventory(root / member).items():
             if (name.endswith("Cargo.toml") and name != "Cargo.toml") or ".cargo" in Path(name).parts:
                 raise ENV.Incomplete("Unexpected nested manifest or Cargo configuration.")
@@ -1142,6 +1159,16 @@ def commands(lane: str, *, schema_version: int = 2,
                                           "--frozen", "--jobs", "6", "--doc"]),
                 ])
         ordinary = commands(lane)
+        if lane == "portable":
+            ordinary.extend([
+                ("product-tests:" + SLINT.NATIVE_PACKAGE,
+                 [*cargo, "nextest", "run", "--package", SLINT.NATIVE_PACKAGE,
+                  "--frozen", "--build-jobs", "12", "--lib", "--tests",
+                  "--user-config-file", "none", "--no-tests=fail"]),
+                ("doctests:" + SLINT.NATIVE_PACKAGE,
+                 [*cargo, "test", "--package", SLINT.NATIVE_PACKAGE,
+                  "--frozen", "--jobs", "12", "--doc"]),
+            ])
         if profile == SLINT.EP1_PROFILE:
             for _, command in ordinary:
                 if command[0] == "cargo" and ("--workspace" in command
@@ -1167,10 +1194,10 @@ def commands(lane: str, *, schema_version: int = 2,
                                          str(TEST_BUILD_JOBS) if package in BOUNDED_TEST_BUILD_PACKAGES else "12",
                                          "--lib", "--tests",
                                          "--user-config-file", "none", "--no-tests=fail"])
-            for package in PACKAGES
+            for package in LEGACY_PACKAGES
         ] + [("doctests:" + package, [*cargo, "test", "--package", package,
                                       "--frozen", "--jobs", "12", "--doc"])
-             for package in PACKAGES] + [
+             for package in LEGACY_PACKAGES] + [
             ("optimized-tests:" + package, [*cargo, "nextest", "run", "--package", package,
                                            "--cargo-profile", "release", "--frozen", "--build-jobs",
                                            str(TEST_BUILD_JOBS) if package in BOUNDED_TEST_BUILD_PACKAGES else "12",
@@ -1404,13 +1431,17 @@ def clear_test_report(lane: str, work: Path) -> None:
         report.unlink(missing_ok=True)
 
 
-def summarize_test_counts(records: list[dict], *, patched_packages: tuple[str, ...] = ()) -> dict:
+def summarize_test_counts(records: list[dict], *, patched_packages: tuple[str, ...] = (),
+                          schema_version: int = 2) -> dict:
     """Require ordinary, doctest and selected optimized evidence before aggregating."""
     if type(patched_packages) is not tuple or patched_packages not in SLINT.PATCH_NAME_SETS:
         raise ENV.Incomplete("Unknown patched test-accounting owner.")
+    if type(schema_version) is not int or schema_version not in (2, 3):
+        raise ENV.Incomplete("Unknown product test-accounting schema.")
     # AccessKit is selected only by the Windows GUI graph, never a standalone test owner.
     standalone = (SLINT.PATCH_NAME,) if SLINT.PATCH_NAME in patched_packages else ()
-    counts = {package: {} for package in (*PACKAGES, *standalone)}
+    members = PACKAGES if schema_version == 3 else LEGACY_PACKAGES
+    counts = {package: {} for package in (*members, *standalone)}
     for record in records:
         kind, _, package = record["lane"].partition(":")
         if kind not in {"product-tests", "doctests", "optimized-tests"}:
@@ -1751,7 +1782,8 @@ def execute(root: Path, args, report: dict) -> None:
             run("slint-capture-build", slint_capture_build_command())
             run("slint-capture", ["/work/target/debug/examples/capture"])
         if args.lane == "portable":
-            report["test_counts"] = summarize_test_counts(report["lanes"], patched_packages=patched_names)
+            report["test_counts"] = summarize_test_counts(
+                report["lanes"], patched_packages=patched_names, schema_version=policy["schema_version"])
         final_source = admit_product(root)[1]
         if sdk_inputs:
             final_source[SDK.POLICY] = sha256(root / SDK.POLICY)

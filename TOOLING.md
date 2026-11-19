@@ -2381,11 +2381,14 @@ are frozen with the build; native discovery cannot supply its own expected list.
 The explicit `--default-cohort` on both lanes selects a separate closed
 guard/lifecycle child with empty Engine features (`--no-default-features`). Its
 strict independent roster uses `selected_default_tests` instead of KE fields,
-contains the complete Windows library names and must select all twelve exact
-code-owned cases. The KE and facade selections stay separate. Each default
+contains the complete Windows library names and must select all thirteen exact
+code-owned cases, including Windows power-notification registration and close.
+The KE and facade selections stay separate. Each default
 case executes once with its exact name and all other library cases filtered.
-The fixed nineteen observations retain the four-process bound and the
+The twenty current observations retain the four-process bound and the
 job, stream, handle and event cleanup requirements. The
+[19 November resume registration and close exit](tasks/engine-transport-pilot.md#windows-resume-registration-and-close-smoke)
+records all thirteen passes after exact 255-name Windows discovery. The
 [18 November default exit](tasks/engine-transport-pilot.md#engine-receive-chronology--scripted-windows-default)
 records all twelve passes, including the plain KoD receive chronology case,
 after exact 254-name Windows discovery. The

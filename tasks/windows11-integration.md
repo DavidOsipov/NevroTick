@@ -281,6 +281,32 @@ SLA or driver-setting change is selected here. Device configuration stays with
 the authorized lifecycle owner, without broader engine privileges or host-policy
 changes. Existing matching CHECK gates own release acceptance.
 
+**Current Windows clock source check.** The admitted installed Rust 1.100.0
+`rust-src` matches the reviewed 1.99.1 Windows clock files byte for byte:
+
+| Source under `library/std/src` | SHA-256 |
+| --- | --- |
+| `sys/time/windows.rs` | `3e344b796c406f5446dc0d31bb7737302723f21b4c606ed2b30794731e9b53de` |
+| `sys/pal/windows/time.rs` | `59ba46af23ba2c12507bbb96d11bf76abe53df11397bd1baac8f864b378b6b1e` |
+| `sys/helpers/mod.rs`, `mul_div_u64` function body | `fe740b3000d7e86bea56ab4631bed2786e2a2d8af581df1d7bf07a3f23112668` |
+
+For nonnegative admitted counter values, positive common frequency and
+the source arithmetic fit conditions (including the fixed epoch offset),
+Windows `Instant` stores the floored QPC-to-nanosecond conversion plus
+that offset. The conversion truncates each endpoint by less than 1 ns.
+Subtracting two coordinates cancels the offset and leaves an arithmetic
+representation error strictly between −1 ns and +1 ns. The current
+`check_capture_order` compares the original `Instant` coordinates before
+subtraction, so the standard library's small-backward-subtraction
+tolerance cannot hide a reversed coordinate from admission.
+
+This source result supports TQ-01 representation and ordering review.
+Finite capture-placement error, mapping validity, physical error and
+UTC traceability still require the qualified independent reference,
+uncertainty envelope and invalidation owner in the
+[existing supplier contract](engine-transport-pilot.md#w11-w01-finite-capturemapping-supplier-contract--8-november-2026).
+The protected numerical caller continues to provide no mapping.
+
 ##### Documentation review and validation — 18 November 2026
 
 **Candidate and decision:** documentation-only change across 11 Markdown files,
@@ -371,6 +397,25 @@ generation invalidation. A separately timed owned wake can distinguish parked
 driver delay from a faulty final guard. CHECK-27 retains progress/stop, CHECK-21
 reached resource observations, and existing CHECK-10/11/12 retain clock/mapping
 effects. No timer-resolution workaround or native execution is admitted here.
+
+**Observe CLI source child — 19 November 2026.** The
+[resume integration checkpoint](engine-transport-pilot.md#automatic-resume-invalidation-in-the-windows-observe-cli)
+connects automatic resume to the actual invocation's existing control watch.
+The native platform leaf owns PowrProf registration and retirement. Both Engine
+crate roots and the portable platform crate retain `forbid(unsafe_code)`.
+The leaf closes the one-shot callback slot before native unregister. Delayed
+callbacks can reach only permanent storage and cannot reach another invocation.
+This is the TQ-07/09 delivery and control path. The
+[Windows smoke](engine-transport-pilot.md#windows-resume-registration-and-close-smoke)
+observed successful registration and explicit close with an inert callback.
+Native transition coverage, delivered-event scheduling, calibrated mapping
+and production admission remain open under their existing owners.
+
+The [suspend continuation](engine-transport-pilot.md#suspend-and-automatic-resume-invalidation)
+uses the same invocation guard on a delivered pre-suspend notification. The
+first qualifying event consumes the action. The focused controls and Windows
+CLI cross-link pass. The actual transition and scheduling checks below remain
+open.
 
 **Controls/exit:** pure traces distinguish elapsed freshness from active work;
 healthy recovery accepts fresh results while stale ones fail. Later permitted

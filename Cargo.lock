@@ -2817,6 +2817,7 @@ dependencies = [
  "rustls-platform-verifier",
  "time-domain",
  "tokio",
+ "windows-platform-native",
  "zeroize",
 ]
 
@@ -5589,6 +5590,10 @@ version = "0.0.0"
 dependencies = [
  "garde",
 ]
+
+[[package]]
+name = "windows-platform-native"
+version = "0.0.0"
 
 [[package]]
 name = "windows-result"

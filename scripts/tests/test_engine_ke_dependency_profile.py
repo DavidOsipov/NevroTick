@@ -15,6 +15,33 @@ SPEC.loader.exec_module(FIXTURE)
 VERIFY, PROFILE = FIXTURE.VERIFY, FIXTURE.PROFILE
 
 
+def without_native_lanes(test, rows, lane):
+    """Check the complete independently specified delta before historical comparison."""
+    package = "windows-platform-native"
+    cargo = ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
+             "--config", 'source.reviewed.directory="/vendor"']
+    targets = (FIXTURE.HOST, FIXTURE.WINDOWS) if lane == "dependencies" else (
+        FIXTURE.HOST if lane == "portable" else FIXTURE.WINDOWS,)
+    expected = {
+        "dependency-tree-" + package + "-" + target:
+            [*cargo, "tree", "--frozen", "--offline", "--target", target,
+             "--package", package, "--edges", "normal,build,dev", "--prefix", "indent",
+             "--charset", "ascii", "--format", "{p}|{f}"]
+        for target in targets}
+    if lane == "portable":
+        expected.update({
+            "product-tests:" + package: [*cargo, "nextest", "run", "--package", package,
+                "--frozen", "--build-jobs", "12", "--lib", "--tests",
+                "--user-config-file", "none", "--no-tests=fail"],
+            "doctests:" + package: [*cargo, "test", "--package", package,
+                "--frozen", "--jobs", "12", "--doc"],
+        })
+    actual = [(label, command) for label, command in rows if package in label]
+    test.assertEqual(len(actual), len(expected))
+    test.assertEqual(dict(actual), expected)
+    return [(label, command) for label, command in rows if label not in expected]
+
+
 class EngineKeProfileControls(unittest.TestCase):
     def test_explicit_profile_selects_both_targets_and_exact_feature(self):
         rows = VERIFY.commands("dependencies", schema_version=3, profile="engine-ke-association")
@@ -63,9 +90,10 @@ class EngineKeProfileControls(unittest.TestCase):
         for (schema, patches, lane), digest in expected.items():
             rows = VERIFY.commands(lane, schema_version=schema, patched_packages=patches)
             with self.subTest(schema=schema, patches=patches, lane=lane):
-                # Restored pre-upgrade worker settings match these exact
-                # historical command bytes; no normalization is admitted.
-                actual = hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode()).hexdigest()
+                compared = without_native_lanes(self, rows, lane) if schema == 3 else rows
+                # Remove only the separately checked exact adapter lanes;
+                # every retained historical byte and its order must match.
+                actual = hashlib.sha256(json.dumps(compared, separators=(",", ":")).encode()).hexdigest()
                 self.assertEqual(actual, digest)
                 self.assertEqual(rows, VERIFY.commands(lane, schema_version=schema,
                     patched_packages=patches, profile="default"))
@@ -134,8 +162,15 @@ class EngineKeProfileControls(unittest.TestCase):
                     self.assertEqual(original, ordinary[label])
         graph = VERIFY.commands("dependencies", schema_version=3,
                                 patched_packages=patches, profile="engine-ke-association")
-        self.assertEqual(hashlib.sha256(json.dumps(graph, separators=(",", ":")).encode()).hexdigest(),
+        compared = without_native_lanes(self, graph, "dependencies")
+        self.assertEqual(hashlib.sha256(json.dumps(compared, separators=(",", ":")).encode()).hexdigest(),
                          "ed0422b68a97aa87d8641d270fa370feb013c47ebdf8fc63984018b8e6010fa0")
+
+    def test_native_lanes_remain_exact_and_feature_free_in_both_profiles(self):
+        for profile in ("default", "engine-ke-association"):
+            for lane in ("dependencies", "portable", "windows"):
+                with self.subTest(profile=profile, lane=lane):
+                    without_native_lanes(self, VERIFY.commands(lane, schema_version=3, profile=profile), lane)
 
     def test_profile_still_requires_product_and_matching_policy_before_execution(self):
         import argparse
@@ -284,6 +319,26 @@ class EngineKeAdmissionControls(unittest.TestCase):
         self.pin = patch.object(PROFILE, "REVIEWED_POLICY_SHA256", PROFILE.canonical_policy_sha256(self.policy))
         self.pin.start()
         self.addCleanup(self.pin.stop)
+
+    def test_native_closure_stays_target_specific_in_default_and_ep1(self):
+        value = FIXTURE.with_native_platform(self.policy)
+        key = "windows-platform-native@0.0.0"
+        with patch.object(PROFILE, "REVIEWED_POLICY_SHA256", PROFILE.canonical_policy_sha256(value)):
+            PROFILE.validate_policy(value)
+            for profile, rows in (("default", value["rows"]),
+                                  ("engine-ke-association", value["engine_ke_association"]["rows"])):
+                for target in (FIXTURE.HOST, FIXTURE.WINDOWS):
+                    with self.subTest(profile=profile, target=target):
+                        local = rows[target]["package_scopes"]["nevrotick-engine"]["local_features"]
+                        self.assertEqual(key in local, target == FIXTURE.WINDOWS)
+                        data = (prototype_metadata(value, target) if profile == "engine-ke-association"
+                                else FIXTURE.fixture_metadata(value, target))
+                        PROFILE.validate_metadata(target, json.dumps(data), value, profile=profile)
+                bad = copy.deepcopy(value)
+                selected = bad["rows"] if profile == "default" else bad["engine_ke_association"]["rows"]
+                selected[FIXTURE.HOST]["package_scopes"]["nevrotick-engine"]["local_features"][key] = {"target": [[]]}
+                with self.assertRaises(PROFILE.Incomplete):
+                    PROFILE.validate_policy_shape(bad)
 
     def test_prototype_and_default_rows_have_distinct_healthy_consumers(self):
         PROFILE.validate_policy(self.policy)

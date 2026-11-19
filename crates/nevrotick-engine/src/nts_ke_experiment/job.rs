@@ -111,7 +111,7 @@ impl Facts {
 /// Closed submission failure; no variant acknowledges a completed operation.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum SubmitError {
-    /// The slot gate is temporarily held; no second job is queued.
+    /// Another owner holds the gate or a pending reservation; no job is queued.
     Busy,
     /// This permanent slot has already attempted submission.
     Used,
@@ -210,11 +210,11 @@ pub(super) enum Observation {
     NotSubmitted(SubmitError),
 }
 
-/// Irreversible slot phase; handles exist only here or in the explicit collector.
+/// Slot phase; handles exist only here or in the explicit collector.
 enum Phase {
     /// No submission has been attempted.
     Unused,
-    /// Handle/result capacity reserved while Builder submission is serialized.
+    /// Exclusive reservation, including the subsequent Builder transaction.
     Submitting,
     /// The one actual handle remains in permanent custody.
     Running(JoinHandle<Result<(), Failure>>),
@@ -315,34 +315,39 @@ impl WorkerSlot {
         }
     }
 
-    /// Submit exactly one real Native invocation; no entered Tokio context is inherited.
+    /// Own the original input and the sole submission position before any registration.
+    ///
     /// # Errors
-    /// Refuse slot contention/reuse or typed pre-spawn failure without creating a job.
-    #[cfg(windows)]
-    pub(super) fn try_submit(
+    /// Refuse contention, prior use or unavailable custody without spawning a worker.
+    pub(super) fn try_reserve(
         &'static self,
         prepared: PreparedInvocation,
-    ) -> Result<(), SubmitError> {
-        self.submit_with(
-            prepared,
-            &super::PROCESS_ADMISSION,
-            native_provider,
-            |config, provider, control| {
-                super::drive_invocation_with(
-                    config,
-                    provider,
-                    control,
-                    &mut super::recovery::Native,
-                )
-            },
-            Hooks::none(),
-        )
+    ) -> Result<SubmissionReservation, SubmitError> {
+        let mut custody: std::sync::MutexGuard<'_, Custody> = match self.custody.try_lock() {
+            Ok(custody) => custody,
+            Err(TryLockError::WouldBlock) => return Err(SubmitError::Busy),
+            Err(TryLockError::Poisoned(_)) => return Err(SubmitError::Control),
+        };
+        match custody.phase {
+            Phase::Unused => custody.phase = Phase::Submitting,
+            Phase::Submitting => return Err(SubmitError::Busy),
+            Phase::Running(_)
+            | Phase::Joining
+            | Phase::Joined(_)
+            | Phase::Taken
+            | Phase::NotSubmitted(_) => return Err(SubmitError::Used),
+        }
+        Ok(SubmissionReservation {
+            slot: self,
+            prepared: Some(prepared),
+        })
     }
 
-    /// Reserve fixed custody before the actual Builder spawn/handle-install transaction.
-    /// The selected provider and operation execute only on the one ordinary worker.
+    /// Reserve and submit an actual component worker through the same slot as production.
+    ///
     /// # Errors
-    /// Refuse contention, reuse, poisoned custody or spawn without a queued alternative.
+    /// Preserve the real reservation and spawn refusals.
+    #[cfg(test)]
     fn submit_with<F>(
         &'static self,
         prepared: PreparedInvocation,
@@ -354,48 +359,8 @@ impl WorkerSlot {
     where
         F: for<'a> FnOnce(&'a Config, &'a ProviderScope<'a>, Control) -> Operation + Send + 'static,
     {
-        let mut custody = match self.custody.try_lock() {
-            Ok(custody) => custody,
-            Err(TryLockError::WouldBlock) => return Err(SubmitError::Busy),
-            Err(TryLockError::Poisoned(_)) => return Err(SubmitError::Control),
-        };
-        if !matches!(custody.phase, Phase::Unused) {
-            return Err(SubmitError::Used);
-        }
-        custody.phase = Phase::Submitting;
-        #[cfg(test)]
-        if let Some(kind) = hooks.spawn_refusal {
-            let failure = SubmitError::Spawn(kind);
-            custody.phase = Phase::NotSubmitted(failure);
-            return Err(failure);
-        }
-        let builder = thread::Builder::new().stack_size(STACK_BYTES);
-        #[cfg(all(test, target_os = "linux", target_env = "gnu", target_arch = "x86_64"))]
-        let builder = match hooks.stack_request {
-            StackRequest::Selected => builder,
-            StackRequest::InvalidAligned => builder.stack_size(1usize << 63),
-        };
-        let submitted = builder.spawn(move || {
-            run_prepared_with(
-                prepared,
-                admission,
-                make_provider,
-                execute,
-                &self.facts,
-                hooks,
-            )
-        });
-        match submitted {
-            Ok(handle) => {
-                custody.phase = Phase::Running(handle);
-                Ok(())
-            }
-            Err(error) => {
-                let failure = SubmitError::Spawn(error.kind());
-                custody.phase = Phase::NotSubmitted(failure);
-                Err(failure)
-            }
-        }
+        self.try_reserve(prepared)?
+            .start_with(admission, make_provider, execute, hooks)
     }
 
     /// Forward sibling component controls through the one private submission kernel.
@@ -555,6 +520,119 @@ impl WorkerSlot {
             .try_lock()
             .map(|custody| usize::from(custody.sealed_panic.is_some()))
             .map_err(|_| CollectError::Busy)
+    }
+}
+
+/// One unspent submission position paired with its original checked Control.
+#[must_use = "submit this reservation or release its unused worker position"]
+pub(super) struct SubmissionReservation {
+    /// The actual process-lifetime worker slot, without a held lock.
+    slot: &'static WorkerSlot,
+    /// Present until the Builder transaction consumes the original input.
+    prepared: Option<PreparedInvocation>,
+}
+
+impl SubmissionReservation {
+    /// Submit exactly one real Native invocation; no entered Tokio context is inherited.
+    /// # Errors
+    /// Preserve unavailable custody or typed spawn refusal without creating a job.
+    #[cfg(windows)]
+    pub(super) fn try_submit(self) -> Result<(), SubmitError> {
+        self.start_with(
+            &super::PROCESS_ADMISSION,
+            native_provider,
+            |config, provider, control| {
+                super::drive_invocation_with(
+                    config,
+                    provider,
+                    control,
+                    &mut super::recovery::Native,
+                )
+            },
+            Hooks::none(),
+        )
+    }
+
+    /// Spend this reservation in the actual Builder spawn/handle-install transaction.
+    /// The selected provider and operation execute only on the one ordinary worker.
+    /// # Errors
+    /// Refuse poisoned custody or spawn without a queued alternative.
+    fn start_with<F>(
+        mut self,
+        admission: &'static ProcessAdmission,
+        make_provider: for<'a> fn(ProcessClaim<'a>) -> Result<ProviderScope<'a>, Failure>,
+        execute: F,
+        hooks: Hooks,
+    ) -> Result<(), SubmitError>
+    where
+        F: for<'a> FnOnce(&'a Config, &'a ProviderScope<'a>, Control) -> Operation + Send + 'static,
+    {
+        let slot: &'static WorkerSlot = self.slot;
+        let mut custody: std::sync::MutexGuard<'_, Custody> =
+            slot.custody.lock().map_err(|_| SubmitError::Control)?;
+        let prepared: PreparedInvocation = self.prepared.take().ok_or(SubmitError::Control)?;
+        #[cfg(test)]
+        if let Some(kind) = hooks.spawn_refusal {
+            let failure = SubmitError::Spawn(kind);
+            custody.phase = Phase::NotSubmitted(failure);
+            return Err(failure);
+        }
+        let builder = thread::Builder::new().stack_size(STACK_BYTES);
+        #[cfg(all(test, target_os = "linux", target_env = "gnu", target_arch = "x86_64"))]
+        let builder = match hooks.stack_request {
+            StackRequest::Selected => builder,
+            StackRequest::InvalidAligned => builder.stack_size(1usize << 63),
+        };
+        let submitted = builder.spawn(move || {
+            run_prepared_with(
+                prepared,
+                admission,
+                make_provider,
+                execute,
+                &slot.facts,
+                hooks,
+            )
+        });
+        match submitted {
+            Ok(handle) => {
+                custody.phase = Phase::Running(handle);
+                Ok(())
+            }
+            Err(error) => {
+                let failure = SubmitError::Spawn(error.kind());
+                custody.phase = Phase::NotSubmitted(failure);
+                Err(failure)
+            }
+        }
+    }
+
+    /// Spend the real reservation with a component worker.
+    ///
+    /// # Errors
+    /// Preserve the actual submission refusal.
+    #[cfg(test)]
+    pub(super) fn submit_fixture<F>(
+        self,
+        admission: &'static ProcessAdmission,
+        make_provider: for<'a> fn(ProcessClaim<'a>) -> Result<ProviderScope<'a>, Failure>,
+        execute: F,
+        hooks: Hooks,
+    ) -> Result<(), SubmitError>
+    where
+        F: for<'a> FnOnce(&'a Config, &'a ProviderScope<'a>, Control) -> Operation + Send + 'static,
+    {
+        self.start_with(admission, make_provider, execute, hooks)
+    }
+}
+
+impl Drop for SubmissionReservation {
+    fn drop(&mut self) {
+        // Before spending the original input there is no worker to retire.
+        if self.prepared.is_some()
+            && let Ok(mut custody) = self.slot.custody.lock()
+        {
+            custody.phase = Phase::Unused;
+        }
     }
 }
 

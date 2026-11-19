@@ -957,6 +957,21 @@ pub(super) struct Snapshot {
     pub(super) end: Option<End>,
 }
 
+/// Optional fixture action after genuine socket retirement and before commit.
+#[cfg(all(test, target_os = "linux"))]
+pub(super) type LoopbackBeforeCommit = Box<dyn FnOnce() -> Result<(), Failure> + Send>;
+
+/// Explicit selection for the private managed successor controls.
+#[cfg(test)]
+#[cfg_attr(not(target_os = "linux"), derive(Clone, Copy))]
+pub(super) enum ManagedSuccessorFixture {
+    /// The existing deterministic adapter supplies the named scripted response.
+    Scripted(ProtectedControlKind),
+    /// The same concrete socket adapter uses the separate software fixture peer.
+    #[cfg(target_os = "linux")]
+    Loopback(Option<LoopbackBeforeCommit>),
+}
+
 /// Private static adapter: native production and Script exercise one owner.
 pub(super) trait Producer {
     /// Establish one checked association borrowing only these actual inputs.
@@ -982,7 +997,7 @@ pub(super) trait Producer {
 
     /// Select the fixed two-request managed control fixture in component builds.
     #[cfg(test)]
-    fn scripted_managed_control(&self) -> Option<ProtectedControlKind> {
+    fn managed_successor_fixture(&mut self) -> Option<ManagedSuccessorFixture> {
         None
     }
 
@@ -1082,20 +1097,34 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
     /// Preserve genuine first-leg commit, carried credit, subsequent receive
     /// or final authority refusals without changing association ownership.
     #[cfg(test)]
-    fn receive_scripted_managed_control<P: Producer>(
+    fn receive_managed_successor_fixture<P: Producer>(
         &mut self,
         association: &mut AssociationOwner<'control>,
         producer: &mut P,
-        kind: ProtectedControlKind,
+        fixture: ManagedSuccessorFixture,
     ) -> Result<InvocationCompletion, Failure> {
-        use super::datagram::{RetiredProtectedSuccessor, tests::scripted_managed_successor};
+        use super::datagram::{RetiredProtectedSuccessor, tests};
 
         let control: &'control Control = self.control;
         let first: ProtectedCompletion<'control> = producer.exchange(association, control)?;
         first.commit_for_successor(association)?;
         let receiving: BoundProtectedReceiver<'_, '_, '_, '_> =
             self.bind_association(association)?;
-        match scripted_managed_successor(association, control, kind)? {
+        let retired: RetiredProtectedSuccessor<'_> = match fixture {
+            ManagedSuccessorFixture::Scripted(kind) => {
+                tests::scripted_managed_successor(association, control, kind)?
+            }
+            #[cfg(target_os = "linux")]
+            ManagedSuccessorFixture::Loopback(before_commit) => {
+                let retired: RetiredProtectedSuccessor<'_> =
+                    tests::loopback_managed_successor(association, control)?;
+                if let Some(before_commit) = before_commit {
+                    before_commit()?;
+                }
+                retired
+            }
+        };
+        match retired {
             RetiredProtectedSuccessor::Ordinary(completion) => {
                 receiving.accept(completion.commit(association)?)
             }
@@ -1118,9 +1147,9 @@ impl<'owner, 'control, 'scope> ActiveReceiver<'owner, 'control, 'scope> {
         if matches!(
             self.invocation.config.mode,
             ExchangeMode::ManagedProtected(_)
-        ) && let Some(kind) = producer.scripted_managed_control()
+        ) && let Some(fixture) = producer.managed_successor_fixture()
         {
-            return self.receive_scripted_managed_control(association, producer, kind);
+            return self.receive_managed_successor_fixture(association, producer, fixture);
         }
         self.receive_protected(association, |owner| producer.exchange(owner, control))
     }

@@ -4512,6 +4512,7 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
             ("ke_recovery", "crates/nevrotick-engine/src/nts_ke_experiment/recovery.rs"),
             ("ke_job", "crates/nevrotick-engine/src/nts_ke_experiment/job.rs"),
             ("ke_preview_target", "crates/nevrotick-engine/src/ke_preview_target.rs"),
+            ("ke_managed_preview", "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs"),
         )
         expected_critical = (
             "crates/nevrotick-engine/src/lib.rs",
@@ -4519,24 +4520,23 @@ class EngineKeEquivalenceAdmissionTests(unittest.TestCase):
             "crates/nevrotick-engine/src/nts_ke_experiment/profile.rs",
             "crates/nevrotick-engine/src/nts_ke_experiment/transport.rs",
             "tools/crypto-cng-lifecycle/src/bin/nts-ke-probe.rs",
-            "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview.rs",
             "crates/nevrotick-engine/src/source_policy.rs",
         )
         self.assertEqual(MODULE.ENGINE_KE_SUBJECTS, expected_subjects)
         self.assertEqual(MODULE.ENGINE_KE_CRITICAL, expected_critical)
-        self.assertEqual(len(expected_subjects), 13)
+        self.assertEqual(len(expected_subjects), 14)
         self.assertEqual(len(set(expected_critical)), 19)
-        self.assertEqual(self.scope.select("ke_preview_target"), dict(expected_subjects[-1:]))
+        self.assertEqual(self.scope.select("ke_managed_preview"), dict(expected_subjects[-1:]))
         policy = {**self.policy, "mutation_equivalences": []}
         MODULE.require_engine_ke_role(self.scope, policy)
         self.assertFalse(policy["campaigns_admitted"])
         self.assertEqual(policy["mutation_inventories"], {})
-        for unsupported in ("ke_managed_preview", "source_policy", *expected_critical[-2:]):
+        for unsupported in ("source_policy", *expected_critical[-2:]):
             with self.subTest(unmeasured_subject=unsupported), self.assertRaises(MODULE.Incomplete):
                 self.scope.select(unsupported)
         for subjects in (expected_subjects[:-1], expected_subjects[1:],
                          tuple(reversed(expected_subjects)),
-                         (*expected_subjects[:-1], ("ke_preview_target", expected_critical[-2])),
+                         (*expected_subjects[:-1], ("ke_managed_preview", expected_critical[-2])),
                          (*expected_subjects, expected_subjects[-1])):
             changed = MODULE.Scope(self.scope.package, subjects, self.scope.policy)
             forged = {**policy, "subjects": dict(subjects)}

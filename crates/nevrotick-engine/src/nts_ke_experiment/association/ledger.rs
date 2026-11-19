@@ -624,6 +624,9 @@ pub(in super::super) struct LedgerState<'a> {
     /// Only the private first-request retired commit can create this witness.
     #[cfg(test)]
     prior_authentication: Option<PriorAuthentication>,
+    /// One fixture-only next-stage clock choice; taken before any fallible staging.
+    #[cfg(test)]
+    next_receipt_at_read_tail: bool,
     /// The first coalesced intent, available for one explicit take.
     recovery: Option<RecoveryIntent>,
     /// Sticky even after the intent is taken; repeated calls cannot mint more.
@@ -655,6 +658,8 @@ impl LedgerState<'_> {
             last: None,
             #[cfg(test)]
             prior_authentication: None,
+            #[cfg(test)]
+            next_receipt_at_read_tail: false,
             recovery: None,
             recovery_issued: false,
             previous: None,
@@ -1464,12 +1469,21 @@ impl<'a> AssociationOwner<'a> {
         read: &SoftwareClock,
         backend: &Arc<()>,
     ) -> Result<(Receipt, CookieReplacement, PendingSubmission), Failure> {
+        #[cfg(test)]
+        let at_read_tail: bool = std::mem::take(&mut self.ledger.next_receipt_at_read_tail);
         let (receipt, replacement, submission): (Receipt, CookieReplacement, SubmissionOrigin) =
             self.receive_reply_with(
                 raw,
                 remote,
                 ReceiveSpan::from_read(read),
                 Some(backend),
+                || {
+                    #[cfg(test)]
+                    if at_read_tail {
+                        return read.monotonic_after();
+                    }
+                    Instant::now()
+                },
                 |_, receipt, replacement, submission| (receipt, replacement, submission),
             )?;
         match submission {
@@ -1477,6 +1491,30 @@ impl<'a> AssociationOwner<'a> {
             #[cfg(test)]
             SubmissionOrigin::Component => Err(refused(LedgerError::Ticket)),
         }
+    }
+
+    /// Arm one fixed fixture observation on this actual idle association.
+    /// No caller can supply a timestamp or select a production clock.
+    /// # Errors
+    /// Refuse closed authority, an active request or an already armed selection.
+    #[cfg(test)]
+    pub(in super::super) fn select_next_receipt_at_read_tail_for_test(
+        &mut self,
+    ) -> Result<(), Failure> {
+        let control: &Control = self.material.control;
+        control.with_published(|_| {
+            if self.ledger.active.is_some() || self.ledger.next_receipt_at_read_tail {
+                return Err(Failure::Control);
+            }
+            self.ledger.next_receipt_at_read_tail = true;
+            Ok(())
+        })
+    }
+
+    /// Observe only whether the one-shot fixture selection remains unconsumed.
+    #[cfg(test)]
+    pub(in super::super) const fn has_receipt_tail_selection_for_test(&self) -> bool {
+        self.ledger.next_receipt_at_read_tail
     }
 
     /// Charge once before selecting an ordinary response or a narrow protected control.
@@ -1526,6 +1564,7 @@ impl<'a> AssociationOwner<'a> {
                     &charged,
                     staged,
                     span,
+                    Instant::now,
                     |_, receipt, replacement, submission| (receipt, replacement, submission),
                 )?;
                 match submission {
@@ -1692,6 +1731,7 @@ impl<'a> AssociationOwner<'a> {
                 trailing: arrival,
             },
             None,
+            Instant::now,
             |owner, receipt, replacement, _submission| {
                 (receipt, owner.apply_replacement(replacement))
             },
@@ -1761,6 +1801,7 @@ impl<'a> AssociationOwner<'a> {
         remote: SocketAddr,
         span: ReceiveSpan,
         backend: Option<&Arc<()>>,
+        observe_now: impl FnOnce() -> Instant,
         admit: impl FnOnce(&mut Self, Receipt, CookieReplacement, SubmissionOrigin) -> T,
     ) -> Result<T, Failure> {
         let charged: ChargedReply = self.charge_reply(raw.len(), backend)?;
@@ -1776,7 +1817,7 @@ impl<'a> AssociationOwner<'a> {
         .inspect_err(|&error: &Failure| {
             self.reject_staging(error, charged.sent_at, span);
         })?;
-        self.consume_staged_reply(&charged, staged, span, admit)
+        self.consume_staged_reply(&charged, staged, span, observe_now, admit)
     }
 
     /// Check the extent and submitter of a datagram after its exact ledger debit.
@@ -1818,6 +1859,7 @@ impl<'a> AssociationOwner<'a> {
         charged: &ChargedReply,
         staged: StagedReplacement,
         span: ReceiveSpan,
+        observe_now: impl FnOnce() -> Instant,
         admit: impl FnOnce(&mut Self, Receipt, CookieReplacement, SubmissionOrigin) -> T,
     ) -> Result<T, Failure> {
         let control: &Control = self.material.control;
@@ -1829,7 +1871,7 @@ impl<'a> AssociationOwner<'a> {
         }: StagedReplacement = staged;
         let result: Result<T, Failure> = (|| {
             let guard: super::super::ControlGuard<'_, '_> = control.guard()?;
-            let now: Instant = Instant::now();
+            let now: Instant = observe_now();
             guard.published(now)?;
             let active: &mut Active<'_> = self
                 .ledger
@@ -1913,7 +1955,9 @@ impl<'a> AssociationOwner<'a> {
     /// The receipt's serial is the charged reservation ordinal, not a new identity.
     /// No later charged attempt may follow it, including a failed or returned one.
     /// Only this admitted transfer installs replacement cookies in the live pool.
-    /// The observer only samples the processing clock under the original guards.
+    /// Return the original submission identity and the single admitted processing
+    /// observation from under the original guards. The caller distinguishes a
+    /// terminal commit from the private first-request disposition.
     /// # Errors
     /// Refuse foreign/stale context, an active slot, or a noncurrent receipt/ordinal
     /// or processing time outside the accepted receipt and original cutoff.
@@ -1923,7 +1967,7 @@ impl<'a> AssociationOwner<'a> {
         reply: RetiredReply<'_>,
         disposition: RetiredCommit,
         observe_now: impl FnOnce() -> Instant,
-    ) -> Result<Arc<()>, Failure> {
+    ) -> Result<(Arc<()>, Instant), Failure> {
         let (control, receipt, replacement, submission): RetiredReplyParts<'_> = reply.into_parts();
         if !std::ptr::eq(control, self.material.control) {
             return Err(Failure::Control);
@@ -1967,7 +2011,7 @@ impl<'a> AssociationOwner<'a> {
         let retired: [CookiePool; 2] = self.apply_replacement(replacement);
         drop(guard);
         drop(retired);
-        Ok(identity)
+        Ok((identity, now))
     }
 
     /// After a private first commit, only the original remaining driver can run.

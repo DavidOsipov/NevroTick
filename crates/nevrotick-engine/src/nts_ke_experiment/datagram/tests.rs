@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Public-material deterministic cases, with no UDP/TLS/native qualification.
+//! Public-material component cases and Linux UDP loopback. No TLS or CNG evidence.
 
 #[path = "../recovery/tests.rs"]
 pub(in crate::nts_ke_experiment) mod recovery_tests;
@@ -9,7 +9,7 @@ use std::io;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, TryLockError};
-use std::time::{Duration, Instant, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use nevrotick_s115_aes_siv_fixture::staged::StagedDecryptError;
 use zeroize::Zeroizing;
@@ -109,6 +109,8 @@ pub(super) struct Script {
     send: ScriptSend,
     /// Optional fixed sample at the final pre-send capture position.
     send_before: Option<SoftwareClock>,
+    /// Optional closed fixture date, independent of the actual host clock.
+    fixed_utc: Option<SystemTime>,
     /// Optional genuine same-byte replacement after readiness and before final custody.
     replace_before_guard: Option<GuardReplacement>,
     send_calls: usize,
@@ -140,6 +142,7 @@ impl Script {
             read_after_final: None,
             send,
             send_before: None,
+            fixed_utc: None,
             replace_before_guard: None,
             send_calls: 0,
             receive_calls: 0,
@@ -248,10 +251,11 @@ impl Script {
 
     /// Return the fixed pre-send sample when that fixture selected one.
     pub(super) const fn observe_send_before(&self, captured: SoftwareClock) -> SoftwareClock {
-        match self.send_before {
+        let captured: SoftwareClock = match self.send_before {
             Some(before) => before,
             None => captured,
-        }
+        };
+        self.fixture_wall(captured)
     }
 
     /// Inject only the closed UTC fault; retain the actual captured monotonic bracket.
@@ -262,6 +266,7 @@ impl Script {
         &self,
         captured: SoftwareClock,
     ) -> Result<SoftwareClock, Failure> {
+        let captured: SoftwareClock = self.fixture_wall(captured);
         if matches!(self.send, ScriptSend::AfterWallStep) {
             let utc = captured
                 .utc()
@@ -284,11 +289,20 @@ impl Script {
         let trailing: Option<Instant> = self
             .read_after
             .or_else(|| self.read_after_final.filter(|_| self.reads.is_empty()));
-        match trailing {
+        let captured: SoftwareClock = match trailing {
             Some(mono_after) => SoftwareClock {
                 mono_after,
                 ..captured
             },
+            None => captured,
+        };
+        self.fixture_wall(captured)
+    }
+
+    /// Substitute only wall readings, preserving the actual monotonic brackets.
+    const fn fixture_wall(&self, captured: SoftwareClock) -> SoftwareClock {
+        match self.fixed_utc {
+            Some(utc) => SoftwareClock { utc, ..captured },
             None => captured,
         }
     }
@@ -453,13 +467,17 @@ pub(in crate::nts_ke_experiment) fn managed_component_exchange<'a>(
             entropy(output)
         },
         |peer: SocketAddr| {
-            Ok(backend(
-                peer,
-                Script::new(
-                    ScriptSend::Full,
-                    vec![ScriptRead::Packet(fixtures::HEALTHY, peer)],
-                ),
-            ))
+            let mut script: Script = Script::new(
+                ScriptSend::Full,
+                vec![ScriptRead::Packet(fixtures::HEALTHY, peer)],
+            );
+            // Fixed era-zero date shared by the admitted and refused model cases.
+            script.fixed_utc = Some(
+                UNIX_EPOCH
+                    .checked_add(Duration::from_secs(1_700_000_000))
+                    .ok_or(Failure::Control)?,
+            );
+            Ok(backend(peer, script))
         },
     )
 }
@@ -468,16 +486,16 @@ pub(in crate::nts_ke_experiment) fn managed_component_exchange<'a>(
 /// # Errors
 /// Refuse accidental native ownership instead of panicking or touching its socket.
 #[cfg_attr(
-    not(windows),
+    not(any(windows, target_os = "linux")),
     expect(
         clippy::unnecessary_wraps,
-        reason = "Windows has a fallible native-backend branch; GNU component builds contain only the scripted backend."
+        reason = "Other targets retain the fallible signature of the Windows and Linux script inspector."
     )
 )]
 fn script(backend: &Backend) -> Result<&Script, Failure> {
     match &backend.io {
         Io::Script(script) => Ok(script),
-        #[cfg(windows)]
+        #[cfg(any(windows, target_os = "linux"))]
         Io::Native(_) => Err(Failure::Control),
     }
 }
@@ -2397,6 +2415,104 @@ pub(in crate::nts_ke_experiment) fn scripted_managed_successor<'control>(
     )
 }
 
+/// Run the first ordinary leg through the actual socket and retirement.
+/// # Errors
+/// Preserve the original admission, socket, driver and receiving refusal.
+#[cfg(target_os = "linux")]
+pub(in crate::nts_ke_experiment) fn loopback_managed_first<'control>(
+    association: &mut AssociationOwner<'_>,
+    control: &'control Control,
+) -> Result<super::ProtectedCompletion<'control>, Failure> {
+    exchange_with(association, control, entropy, Backend::bind)
+}
+
+/// Run the admitted second leg through the exact same socket path.
+/// # Errors
+/// Preserve the continuation, adapter, budget and charged receive refusals.
+#[cfg(target_os = "linux")]
+pub(in crate::nts_ke_experiment) fn loopback_managed_successor<'control>(
+    association: &mut AssociationOwner<'_>,
+    control: &'control Control,
+) -> Result<RetiredProtectedSuccessor<'control>, Failure> {
+    super::reached::exchange_successor_mixed_with(
+        association,
+        control,
+        successor_entropy,
+        Backend::bind,
+    )
+}
+
+/// Receive and check an actual protected client packet against fixed wire facts.
+/// The peer owns its configured read timeout and accepts only its loopback client.
+/// # Errors
+/// Preserve the actual receive error or refuse a mismatched fixed request.
+/// # Panics
+/// Fail if an actual request is incomplete, plain or has the wrong correlation.
+#[cfg(target_os = "linux")]
+fn loopback_request(
+    peer: &std::net::UdpSocket,
+    wire: u64,
+    uid: &[u8],
+    cookie: &[u8; 12],
+) -> Result<SocketAddr, Failure> {
+    let mut packet: [u8; 253] = [0; 253];
+    let (length, client): (usize, SocketAddr) = peer
+        .recv_from(&mut packet)
+        .map_err(|error: io::Error| Failure::Datagram(DatagramError::Receive(error.kind())))?;
+    assert!(client.ip().is_loopback());
+    assert_ne!(client.port(), 0);
+    assert_eq!(length, 252);
+    assert_eq!(packet.first(), Some(&0x23));
+    assert_eq!(packet.get(40..48), Some(wire.to_be_bytes().as_slice()));
+    assert_eq!(packet.get(48..52), Some([1, 4, 0, 36].as_slice()));
+    assert_eq!(packet.get(52..84), Some(uid));
+    assert_eq!(packet.get(84..88), Some([2, 4, 0, 16].as_slice()));
+    assert_eq!(packet.get(88..100), Some(cookie.as_slice()));
+    let placeholders: &[u8] = packet.get(100..212).ok_or(Failure::Control)?;
+    let placeholder: [u8; 16] = [3, 4, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    let (fields, remainder): (&[[u8; 16]], &[u8]) = placeholders.as_chunks();
+    assert_eq!(remainder, []);
+    assert!(fields.iter().all(|field: &[u8; 16]| *field == placeholder));
+    assert_eq!(packet.get(212..216), Some([4, 4, 0, 40].as_slice()));
+    Ok(client)
+}
+
+/// Send an independently sealed public vector on the admitted peer socket.
+/// # Errors
+/// Preserve the actual send error or refuse a short send.
+/// # Panics
+/// Fail if an actual send completes only part of the fixed vector.
+#[cfg(target_os = "linux")]
+fn send_loopback_reply(
+    peer: &std::net::UdpSocket,
+    client: SocketAddr,
+    response: &[u8],
+) -> Result<(), Failure> {
+    let sent: usize = peer
+        .send_to(response, client)
+        .map_err(|error: io::Error| Failure::Ledger(LedgerError::Send(error.kind())))?;
+    assert_eq!(sent, response.len());
+    Ok(())
+}
+
+/// Run the independent peer for exactly two requests under finite socket timeouts.
+/// # Errors
+/// Preserve either leg's peer I/O failure.
+#[cfg(target_os = "linux")]
+pub(in crate::nts_ke_experiment) fn serve_managed_loopback(
+    peer: &std::net::UdpSocket,
+) -> Result<(), Failure> {
+    let first: SocketAddr = loopback_request(peer, 0x1122_3344_5566_7788, &C2S, &[0x11; 12])?;
+    send_loopback_reply(peer, first, fixtures::HEALTHY)?;
+    let second_uid: &[u8] = PROTECTED_DENY.get(52..84).ok_or(Failure::Control)?;
+    let replacement: [u8; 12] = [
+        0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab,
+    ];
+    let second: SocketAddr =
+        loopback_request(peer, 0x8899_aabb_ccdd_eeff, second_uid, &replacement)?;
+    send_loopback_reply(peer, second, &PROTECTED_DENY)
+}
+
 /// Two separately retired requests use exactly one worker-local association allowance.
 /// # Errors
 /// Preserve actual issuer, both exchange paths or the terminal commit refusal.
@@ -2475,6 +2591,84 @@ fn managed_retired_first_request_allows_one_same_association_successor() -> Resu
                 assert_eq!(owner.cookie_population()?, (0, 0));
                 assert_successor_refused(owner, control, Failure::Ledger(LedgerError::Ticket));
             }
+            assert_eq!(control.expiry, expiry);
+            Ok(())
+        })?;
+    }
+    Ok(())
+}
+
+/// A returned reservation spends its ordinal without establishing authentication.
+/// # Errors
+/// Preserve actual reservation, retirement and healthy terminal commit failures.
+/// # Panics
+/// Fail if ordinal two can install a first successor or its refusal changes custody.
+#[test]
+fn managed_retired_ordinal_two_cannot_open_first_successor() -> Result<(), Failure> {
+    for terminal in [false, true] {
+        with_managed_successor(|owner, control, _remote, _authority, _source| {
+            let expiry: Instant = control.expiry;
+            let ticket: Ticket<'_> = owner.reserve(RequestInput::Observed)?;
+            owner.return_unused(ticket)?;
+            assert_eq!(
+                owner.status(),
+                Status {
+                    phase: RequestPhase::Idle,
+                    attempts: 31,
+                    frames: 32,
+                    bytes: 131_072,
+                    available: 1,
+                    used: 0,
+                    uids: 0,
+                }
+            );
+            assert!(owner.last_receipt().is_none());
+            assert_eq!(owner.cookie_population()?, (1, 12));
+
+            let completion: super::ProtectedCompletion<'_> =
+                first_managed_exchange(owner, control, 0)?;
+            let receipt: Receipt = completion.history().receipt;
+            let retired: Status = owner.status();
+            assert_eq!(receipt.serial(), 2);
+            assert_eq!(completion.remaining_attempts(), 61);
+            assert!(tokio::runtime::Handle::try_current().is_err());
+            assert_eq!(
+                retired,
+                Status {
+                    phase: RequestPhase::Idle,
+                    attempts: 30,
+                    frames: 31,
+                    bytes: 131_072 - fixtures::HEALTHY.len(),
+                    available: 0,
+                    used: 1,
+                    uids: 1,
+                }
+            );
+            assert_eq!(owner.cookie_population()?, (0, 0));
+            assert_successor_refused(owner, control, Failure::Control);
+
+            if terminal {
+                assert!(completion.commit(owner)?.into_summary().transmitted);
+                assert_eq!(
+                    owner.status(),
+                    Status {
+                        available: 1,
+                        ..retired
+                    }
+                );
+                assert_eq!(owner.cookie_population()?, (1, 12));
+                assert_eq!(control.cancel()?, CancelOutcome::AlreadyCommitted);
+            } else {
+                assert_eq!(
+                    completion.commit_for_successor(owner),
+                    Err(Failure::Control)
+                );
+                assert_eq!(owner.status(), retired);
+                assert_eq!(owner.cookie_population()?, (0, 0));
+                assert_successor_refused(owner, control, Failure::Control);
+                assert_eq!(control.cancel()?, CancelOutcome::Cancelled);
+            }
+            assert!(owner.last_receipt() == Some(receipt));
             assert_eq!(control.expiry, expiry);
             Ok(())
         })?;
@@ -4349,6 +4543,17 @@ fn retired_completion_expiry_refuses_wrapper_and_final_commit() -> Result<(), Fa
     })
 }
 
+/// Pass one exact fixture reading to the real retired commit and historical receiver.
+/// # Errors
+/// Preserve the actual guarded ledger refusal.
+pub(in crate::nts_ke_experiment) fn commit_at_fixture_reading<'control>(
+    completion: super::ProtectedCompletion<'control>,
+    association: &mut AssociationOwner<'_>,
+    sample: Instant,
+) -> Result<super::CommittedProtected<'control>, Failure> {
+    completion.commit_observing(association, || sample)
+}
+
 /// Exercise the real retired commit at its inclusive acceptance and exclusive expiry.
 /// # Errors
 /// Preserve checked owner construction, fixture admission and state observation.
@@ -4410,7 +4615,7 @@ fn retired_completion_commit_respects_acceptance_and_expiry() -> Result<(), Fail
                 }
             };
             let result: Result<(), Failure> =
-                completion.commit_observing(owner, || sample).map(drop);
+                commit_at_fixture_reading(completion, owner, sample).map(drop);
             let (available, expected_pool, cancellation): (usize, (usize, usize), CancelOutcome) =
                 if expected.is_ok() {
                     (1, (1, 12), CancelOutcome::AlreadyCommitted)

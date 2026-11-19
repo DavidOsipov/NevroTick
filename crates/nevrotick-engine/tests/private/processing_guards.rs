@@ -10,6 +10,32 @@ use std::io::Read;
 use std::path::PathBuf;
 use std::process::{Child, Command, ExitStatus, Stdio};
 
+/// Observe the real Windows registration and explicit native close in one fresh process.
+/// No event is injected and the delivered action has no host or transport effect.
+/// # Errors
+/// Preserve a diagnosed native registration or unregistration refusal.
+#[cfg(windows)]
+#[test]
+fn native_resume_subscription_registers_and_closes() -> Result<(), Box<dyn Error>> {
+    use windows_platform_native::{
+        ResumeRegistrationError, ResumeUnregistrationError, ResumeWatch,
+    };
+
+    let observer: ResumeWatch =
+        ResumeWatch::subscribe(|| Ok(())).map_err(|error: ResumeRegistrationError| {
+            io::Error::other(format!("native resume registration refused: {error:?}"))
+        })?;
+    observer
+        .close()
+        .map_err(|error: ResumeUnregistrationError| {
+            io::Error::other(format!(
+                "native resume unregistration refused: {}",
+                error.code()
+            ))
+        })?;
+    Ok(())
+}
+
 /// Require a reviewed known-valid pure product result without exposing its error.
 /// # Errors
 /// Return the original typed result after the independent success witness.
