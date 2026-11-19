@@ -113,6 +113,8 @@ enum Scenario {
     ProtectedBeforeReplyCommit,
     /// Replace a protected source after commit, before joined reconstruction.
     ProtectedAfterCommit,
+    /// Replace the committed smeared definition before the numerical receiver.
+    ProtectedSmearedAfterCommit,
     /// Retain an authenticated nonzero peer leap claim through the same replacement.
     ProtectedLeapWarningAfterCommit(ProtectedLeapWarning),
 }
@@ -125,6 +127,7 @@ impl Scenario {
             Self::ProtectedBeforeSend
                 | Self::ProtectedBeforeReplyCommit
                 | Self::ProtectedAfterCommit
+                | Self::ProtectedSmearedAfterCommit
                 | Self::ProtectedLeapWarningAfterCommit(_)
         )
     }
@@ -170,15 +173,18 @@ fn issued(scenario: Scenario) -> Result<Issued, Failure> {
     let configuration: SourceConfigurationSnapshot = authority
         .install_ke_preview_configuration(&source, addresses, target.clone())
         .map_err(Failure::SourcePolicy)?;
-    let configuration: SourceConfigurationSnapshot = if matches!(
-        scenario,
-        Scenario::ProtectedAfterCommit | Scenario::ProtectedLeapWarningAfterCommit(_)
-    ) {
-        authority
-            .replace_source_scale(&configuration, SourceScale::UnsmearedUtc)
-            .map_err(Failure::SourcePolicy)?
-    } else {
-        configuration
+    let declared_scale: Option<SourceScale> = match scenario {
+        Scenario::ProtectedAfterCommit | Scenario::ProtectedLeapWarningAfterCommit(_) => {
+            Some(SourceScale::UnsmearedUtc)
+        }
+        Scenario::ProtectedSmearedAfterCommit => Some(SourceScale::Smeared),
+        _ => None,
+    };
+    let configuration: SourceConfigurationSnapshot = match declared_scale {
+        Some(scale) => authority
+            .replace_source_scale(&configuration, scale)
+            .map_err(Failure::SourcePolicy)?,
+        None => configuration,
     };
     Ok(Issued {
         authority,
@@ -833,6 +839,14 @@ fn component_operation<'scope>(
     let outcome: Result<Step, Failed> = step_with(&mut invocation, &mut producer);
     if matches!(&outcome, Ok(Step::Complete(_))) {
         match producer.scenario {
+            Scenario::ProtectedSmearedAfterCommit => {
+                producer.replacement = Some(
+                    producer
+                        .authority
+                        .replace_source_scale(&producer.configuration, SourceScale::UnsmearedUtc)
+                        .map_err(Failure::SourcePolicy)?,
+                );
+            }
             Scenario::ProtectedLeapWarningAfterCommit(
                 ProtectedLeapWarning::DeletionAfterUnsynchronized,
             ) => {
@@ -1367,24 +1381,34 @@ fn managed_protected_report_preserves_declared_numerical_result() -> Result<(), 
     static BROAD_ADMISSION: ProcessAdmission = ProcessAdmission::new();
     static NARROW_SLOT: WorkerSlot = WorkerSlot::new();
     static NARROW_ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    for (slot, admission, latest, refusal) in [
-        (&BROAD_SLOT, &BROAD_ADMISSION, u64::from(u32::MAX), None),
+    static SMEARED_SLOT: WorkerSlot = WorkerSlot::new();
+    static SMEARED_ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    for (slot, admission, scenario, latest, refusal) in [
+        (
+            &BROAD_SLOT,
+            &BROAD_ADMISSION,
+            Scenario::ProtectedAfterCommit,
+            u64::from(u32::MAX),
+            None,
+        ),
         (
             &NARROW_SLOT,
             &NARROW_ADMISSION,
+            Scenario::ProtectedAfterCommit,
             0,
-            Some(MeasurementRefusal::DateScope),
+            Some("date_scope"),
+        ),
+        (
+            &SMEARED_SLOT,
+            &SMEARED_ADMISSION,
+            Scenario::ProtectedSmearedAfterCommit,
+            u64::from(u32::MAX),
+            Some("source_scale_conflict"),
         ),
     ] {
         let profile: ExperimentalProfile =
             ExperimentalProfile::new(0, latest, 30_000_000_000).map_err(|_| Failure::Control)?;
-        let run: Run = run_with_hooks(
-            slot,
-            admission,
-            Scenario::ProtectedAfterCommit,
-            Hooks::none(),
-            Some(profile),
-        )?;
+        let run: Run = run_with_hooks(slot, admission, scenario, Hooks::none(), Some(profile))?;
         let completion: ReceivedCompletion = run
             .outcome
             .map_err(|failure: RunFailed| operation_primary(&failure))?;
@@ -1395,7 +1419,14 @@ fn managed_protected_report_preserves_declared_numerical_result() -> Result<(), 
         assert!(accepted_at <= committed_at && committed_at < run.work.before.cutoff);
         let original: Result<ExperimentalMeasurement, MeasurementRefusal> =
             *protected.measurement();
-        assert_eq!(original.as_ref().err().copied(), refusal);
+        assert_eq!(
+            original
+                .as_ref()
+                .err()
+                .copied()
+                .map(MeasurementRefusal::as_str),
+            refusal
+        );
         let [_, _, read_return]: [crate::SoftwareClock; 3] = history.captures();
         let trailing: Instant = read_return.monotonic_after();
         assert!(trailing <= accepted_at);
@@ -1415,6 +1446,19 @@ fn managed_protected_report_preserves_declared_numerical_result() -> Result<(), 
         assert_eq!(report.committed_at(), committed_at);
         assert_eq!(report.receive_to_commit_delay(), expected_delay);
         assert!(report.configuration().same_configuration(&run.expected));
+        if matches!(scenario, Scenario::ProtectedSmearedAfterCommit) {
+            assert_eq!(
+                report.configuration().declared_scale(),
+                SourceScale::Smeared
+            );
+            let current: SourceConfigurationSnapshot = run
+                .source
+                .configuration_snapshot()
+                .map_err(Failure::SourcePolicy)?
+                .ok_or(Failure::Control)?;
+            assert_eq!(current.declared_scale(), SourceScale::UnsmearedUtc);
+            assert!(!current.same_configuration(report.configuration()));
+        }
         assert_eq!(report.packet_bytes(), original_packet_bytes);
         assert_eq!(run.work.calls, [1, 0, 1, 0]);
     }

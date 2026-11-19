@@ -2913,6 +2913,14 @@ impl LivePolicy {
         }
     }
 
+    /// Borrow the configuration originally bound to this slot for conditional arithmetic.
+    pub(super) fn source_configuration(&self) -> Option<&SourceConfigurationSnapshot> {
+        match &self.mode {
+            LiveMode::UnmanagedLab => None,
+            LiveMode::Managed(live) => live.binding.context.configuration(),
+        }
+    }
+
     /// Receiving check for a setup result before any request can be driven.
     /// Identity is actual root/source/endpoint custody, not a copied label.
     pub(super) fn belongs_to(&self, mode: &SourceMode) -> bool {

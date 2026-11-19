@@ -27409,3 +27409,123 @@ qualification boundaries in the existing workstream.
 | `verification.json` | `2795bc8ed665a9d1a442847bd92b7c8a1fc51959635085e81a9114141b6fcfbd` |
 | `enumerate/verification.json` | `b59d6ca800b057e0508b9c26ae772b9a8029f049a7090553c777944fada5fc3e` |
 | `coverage/verification.json` | `b472bf746d2f6b09b92a264d55bef589cc6b902fbd63a55478579636e67f9247` |
+
+###### Managed TLS cleanup preserves separate failures
+
+S2.2, BND-2 and CHECK-9/21/25/27. The signed baseline
+`c790ea56256bf0c9c42a015910162d6cd9f47aad` already prevents a transport
+operation after the original fault latch closes. Establishment used to
+attempt the close path afterward and report that same latch as a separate
+cleanup refusal. The managed failure report could therefore repeat an
+original source-policy, deadline or native transport failure.
+
+Establishment now inspects the existing latch before attempting close.
+A preparation failure that already reports that latch keeps only its
+primary cause. A typed TLS primary can still retain a separate failure
+observed while attempting the TLS alert. When no earlier fault blocked close,
+the actual close operation still contributes its own result. A newly observed
+close refusal still blocks candidate publication. The stream retires before
+the single decision to return a failure or hand off the association.
+
+The native regression uses one issued managed configuration and the original
+observed worker and joined report. A bounded loopback peer reads the
+`ClientHello`, waits for native read admission, replaces the original
+configuration with equal values at a new revision and releases the read.
+The oracle requires the original `ConfigurationChanged` failure with no
+duplicate cleanup, no retained association or UDP, peer EOF and joined
+worker and observer retirement. The notification is immediately before
+the socket read. The case targets replacement between read admission
+and the post-read guard. Replacing a source during a confirmed blocked syscall
+and faulting the close-notify drain remain separate observations. An external
+wall bound owns the test process.
+
+The first isolated build linked the predecessor regression image. The
+fixed-source strict MSVC Clippy lane refused four test-fixture lint issues,
+so that build ended incomplete before linking the fixed image. The revised
+fixture borrows the original snapshot and receiver and explicitly retires the
+listener. No product change was needed for those lint corrections. The original
+build receipts remain under the same evidence owner.
+
+The revised 620-input candidate `df1e9cd3…` passed the configured isolated
+MSVC EP1 Clippy check and test link on Rust 1.100.0. The matching predecessor
+`b8a94b86…` linked with the identical fixture and transport behavior from
+`c790ea5`. Tool, vendor, graph and v3 target inputs matched the previous
+development checkpoint. The owned build workspace retired after artifact
+readback.
+
+On ordinary-user Windows build 26300, the same exact ignored test ran once
+per image in separate processes. The first main-host memory check stopped
+at 1,105 MB. After build retirement, the admitted observation was 3,095 MB
+against the 2,048 MB floor. The process supervisor used a 30-second wait
+and required stream EOF. The predecessor exited 101 at the cleanup
+assertion after retaining the expected `ConfigurationChanged` primary
+and observing peer EOF. It reported a second source-policy refusal.
+The repaired image exited zero. The original failure stood alone, and
+worker take, observer close and zero UDP assertions all passed. Both
+processes and the native staging directory retired. Independent readback
+matched both current input maps, image hashes, exact selector, raw output
+and final cleanup.
+
+The result closes this duplicate-report regression on the tested native
+path. Actual new close-drain failure, the healthy public one-leg exchange
+and installed-service trust retain their existing acceptance cases.
+The coverage and mutation roles still bind the preceding candidate; current
+critical-file qualification stays open.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119/managed-close-01` | SHA-256 |
+| --- | --- |
+| `build-01/verification.json` | `ea0ebd553f5ed70d2ab01bd0d19e1056c1654cb8a4e01cc0651f3083dbd86e19` |
+| `build-02/verification.json` | `52143b6f9ab067a0aa1820a6ccc3ffa61f2bc34e47c1e6117e3e77c7c4aaf3b8` |
+| `native-preflight-02.json` | `78eaaa8aa188826cd783fd6170aac853443d2b21425a9c9d53478f5efe6a3e65` |
+| `native-01/verification.json` | `e333c49c2a3b77145870fb87a8edaec30c995e863ca9acc25984a153a1c354c1` |
+
+###### Original source scale constrains experimental arithmetic
+
+S2.1/W11-W01 TQ-08/09, S1.4, REQ-8/11/14 and CHECK-6/7/8/11/14/25/27.
+The experimental profile declares nominal unsmeared software UTC. Plain
+managed staging and joined protected arithmetic used to accept the profile
+even with an explicit smeared declaration from the actual issued source.
+
+The common numerical owner now checks the original source configuration
+after requiring the experimental profile and ordinary header. The plain
+caller borrows the snapshot bound to the pending request. The protected
+caller borrows it from the actual joined historical result. Either reports
+`source_scale_conflict` for an explicitly smeared source. Original captures,
+packet facts, source revision, cookies, budget accounting and the history
+commit retain their existing meaning. An unknown or absent source declaration
+still allows the existing explicitly conditional experiment. An absent
+profile still yields `mapping_unavailable`. The current Windows facade
+continues to supply no experimental profile. Calibrated mapping, true date
+and production eligibility retain separate owners.
+
+The run pairs an actual managed plain loopback series and a joined protected
+worker result with unsmeared neighbors, a missing-profile neighbor and an
+original smeared source replaced by an unsmeared revision. Exact packet
+facts, nominal peer coordinates, age and joined result custody are observed.
+The first predecessor build refused an unnecessary qualification in the test
+before any execution. The narrow fixture correction preserves its assertions.
+
+The first executable predecessor selection reached the protected assertion.
+The plain fixture's inherited one-second polling floor exceeded its 500 ms
+request budget and the peer timed out. The corrected fixture uses the
+neighboring controlled loopback bounds of 1–4 ms. Both exact EP1 cases then
+exited 101 at the intended assertion. The predecessor produced arithmetic
+where the oracle required `source_scale_conflict`.
+
+On the repaired 620-input product
+`9787ca8da2b8c768edc89e116568c71a9243bb7cfd4d1a85cf00001651989a89`,
+both EP1 cases passed and the exact default-profile case passed. The
+isolation boundary and GNU EP1 Clippy also passed. Independent readback
+matched every input, both causal changes, all five raw lane hashes and
+the executed names. Temporary build backing retired. The earlier two
+incomplete runs retain their original outcomes, and the source-scale
+controls carry zero generated-mutation credit. The same combined product
+also passed the isolated MSVC EP1 Clippy and boundary lanes. The focused
+Windows execution stays scoped to the earlier exact TLS repair image.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119/source-scale-conflict-01` | SHA-256 |
+| --- | --- |
+| `run-01/verification.json` | `a0d97bd054f179d38635acd9dca97afd220709e21147572de0d1b9ce9268d3ea` |
+| `run-02/verification.json` | `8d6d8f41545cbe19f7ad6734f72da43a8a5fba4a331c939b18fab0de587e79fc` |
+| `run-03/verification.json` | `21ba8b44d70bd797f0510f7af102199e64dfb733b57aa8b6a5f3c9589f489657` |
+| `msvc-check-01/verification.json` | `b4e3d78388cb06f3c8adff21f4e197914de87dc32134afba4774eb3376ceed2d` |

@@ -37,7 +37,11 @@ impl Read for DeadlineStream<'_> {
         self.admission.transfer(
             &mut self.socket,
             |socket: &mut TcpStream, timeout: Duration| socket.set_read_timeout(Some(timeout)),
-            |socket: &mut TcpStream| socket.read(output),
+            |socket: &mut TcpStream| {
+                #[cfg(test)]
+                managed_close_fixture::signal_native_read(socket)?;
+                socket.read(output)
+            },
         )
     }
 }
@@ -390,17 +394,27 @@ fn establish_with_time<'a>(
     let mut stream: StreamOwned<ClientConnection, DeadlineStream<'_>> =
         StreamOwned::new(connection(config, wall_time)?, socket);
     let candidate: Result<InternalCandidate<'a>, Failure> = prepare(&mut stream, peer);
-    let closed: Result<(), Failure> = close(&mut stream);
+    let retained_fault: Option<Failure> = stream
+        .sock
+        .admission
+        .resolve(Ok(()), Failure::Shutdown)
+        .err();
+    let close_failure: Option<Failure> = match (&candidate, retained_fault) {
+        (_, None) => close(&mut stream).err(),
+        // A typed TLS error can take precedence over a separate alert I/O fault.
+        (Err(Failure::Tls(_)) | Ok(_), Some(failure)) => Some(failure),
+        // Preparation already reports the fault that prevents close from starting.
+        (Err(_), Some(_)) => None,
+    };
     drop(stream);
-    // Retain an independently observed close refusal alongside its primary.
-    match (candidate, closed) {
-        (Err(primary), Err(cleanup)) => Err(Failed {
+    match (candidate, close_failure) {
+        (Err(primary), cleanup) => Err(Failed {
             primary,
-            cleanup: Some(cleanup),
+            cleanup,
             admission_cleanup: None,
         }),
-        (Err(primary), Ok(())) | (Ok(_), Err(primary)) => Err(primary.into()),
-        (Ok(candidate), Ok(())) => candidate.publish(provider).map_err(Failed::from),
+        (Ok(_), Some(primary)) => Err(primary.into()),
+        (Ok(candidate), None) => candidate.publish(provider).map_err(Failed::from),
     }
 }
 
@@ -441,6 +455,9 @@ mod tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod managed_close_fixture;
 
 #[cfg(test)]
 mod certificate_time_fixture {

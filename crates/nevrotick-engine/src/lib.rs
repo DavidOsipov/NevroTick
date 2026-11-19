@@ -691,7 +691,8 @@ impl TransportFacts {
     /// Borrow conditional nominal arithmetic or its bounded refusal.
     ///
     /// # Errors
-    /// Preserve absent/inconsistent mapping, date/era, protocol or arithmetic refusal.
+    /// Preserve absent/inconsistent mapping, conflicting source scale, date/era,
+    /// protocol or arithmetic refusal.
     pub fn measurement(&self) -> Result<&ExperimentalMeasurement, MeasurementRefusal> {
         self.measurement.as_ref().map_err(|reason| *reason)
     }
@@ -1495,8 +1496,9 @@ fn stage_reply(
         peer: source,
         local: slot.local,
         header,
-        measurement: measurement::measure(
+        measurement: measurement::measure_for_source(
             slot.profile,
+            slot.policy.source_configuration(),
             sent.before,
             sent.after,
             read,

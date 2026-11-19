@@ -1595,6 +1595,16 @@ The selected GNU KE coverage lane passes all 14 line gates. The refreshed
 889-descriptor catalogue requires exact mutation reconciliation. Renew
 default-graph metrics and continue the bounded per-file work under their
 existing owners and admission requirements.
+The [managed TLS cleanup repair](../../tasks/engine-transport-pilot.md#managed-tls-cleanup-preserves-separate-failures)
+distinguishes the original transport latch from an independently observed
+shutdown failure. Its native stale-revision case reproduced the duplicate
+on the predecessor and passed on the repaired image. A failure originating
+during the certificate-bearing close drain remains a separate case.
+The [source-scale guard](../../tasks/engine-transport-pilot.md#original-source-scale-constrains-experimental-arithmetic)
+uses the configuration originally sealed for each exchange. The managed
+plain and joined protected controls pass, retaining packet and history
+facts when a smeared declaration refuses the unsmeared experiment.
+Current per-file qualification and production mapping remain open.
 The [guarded terminal timing](../../tasks/engine-transport-pilot.md#managed-protected-guarded-terminal-timing)
 now reaches the joined managed Protected report alongside the original
 packet-admission age. Nine renewed EP1 lanes and 199 reader controls

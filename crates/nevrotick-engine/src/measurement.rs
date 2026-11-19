@@ -20,7 +20,7 @@ use time_domain::{
     UtcCoordinateQ32, exchange_arithmetic, unfold_ntp,
 };
 
-use super::{SoftwareClock, TransportFacts};
+use super::{SoftwareClock, SourceConfigurationSnapshot, SourceScale, TransportFacts};
 
 /// Exact scale of an NTP fractional second.
 const Q32_SCALE: i128 = 1_i128 << 32;
@@ -53,6 +53,8 @@ pub enum MeasurementRefusal {
     Arithmetic,
     /// The inert header is not an ordinary, nonzero-timestamp time reply.
     Protocol,
+    /// The original source declares a smeared scale incompatible with the experiment.
+    SourceScaleConflict,
 }
 
 impl MeasurementRefusal {
@@ -69,6 +71,7 @@ impl MeasurementRefusal {
             Self::EraAmbiguous => "era_ambiguous",
             Self::Arithmetic => "arithmetic",
             Self::Protocol => "not_time_reply",
+            Self::SourceScaleConflict => "source_scale_conflict",
         }
     }
 }
@@ -439,25 +442,30 @@ pub(super) fn application_elapsed_bounds(
 
 /// Stage a fixed-size conditional measurement, without effects or clock reads.
 ///
-/// Header structure is checked again at this numerical consumer. Current source,
-/// socket, token, generation, cancellation and deadline ownership remain with the
-/// unique caller and must be rechecked at final commit. Profile absence and any
-/// refusal leave the supplied immutable inputs unchanged. Successful arithmetic
-/// never asserts continuity, authentication, wire accuracy or statistical weight.
+/// The producer supplies only the configuration originally bound to this exchange.
+/// An explicit smeared declaration contradicts the unsmeared experiment. An absent
+/// or unknown declaration preserves the existing conditional arithmetic. Current
+/// source, socket, token, generation, cancellation and deadline ownership remain
+/// with the caller. Success represents only conditional nominal arithmetic.
 ///
 /// # Errors
-/// Returns fixed refusal classes for missing context, invalid ordinary headers,
-/// capture ordering, observed discontinuity, date scope, era or checked arithmetic.
-pub(crate) fn measure(
+/// Requires a profile and ordinary header before checking the declared source scale.
+/// Preserves capture ordering, observed discontinuity, date scope, era and arithmetic
+/// refusals. Failure does not change the original inputs.
+pub(crate) fn measure_for_source(
     profile: Option<ExperimentalProfile>,
+    configuration: Option<&SourceConfigurationSnapshot>,
     send_before: SoftwareClock,
     send_after: SoftwareClock,
     read: SoftwareClock,
     processing: Instant,
     header: RawHeader,
 ) -> Result<ExperimentalMeasurement, MeasurementRefusal> {
-    let profile = profile.ok_or(MeasurementRefusal::Unavailable)?;
+    let profile: ExperimentalProfile = profile.ok_or(MeasurementRefusal::Unavailable)?;
     require_time_reply(header)?;
+    if configuration.is_some_and(|original| original.declared_scale() == SourceScale::Smeared) {
+        return Err(MeasurementRefusal::SourceScaleConflict);
+    }
     let capture_span: ApplicationCaptureSpan =
         check_capture_order(send_before, send_after, read, processing)?;
     let t1 = convert_wall(capture_span.first.utc)?;
@@ -511,6 +519,29 @@ pub(crate) fn measure(
         acquisition_age,
         software_window,
     })
+}
+
+/// Exercise the same numerical owner with explicit unmanaged fixture captures.
+/// # Errors
+/// Preserve every refusal of the actual measurement owner.
+#[cfg(test)]
+pub(crate) fn measure(
+    profile: Option<ExperimentalProfile>,
+    send_before: SoftwareClock,
+    send_after: SoftwareClock,
+    read: SoftwareClock,
+    processing: Instant,
+    header: RawHeader,
+) -> Result<ExperimentalMeasurement, MeasurementRefusal> {
+    measure_for_source(
+        profile,
+        None,
+        send_before,
+        send_after,
+        read,
+        processing,
+        header,
+    )
 }
 
 /// Admit only ordinary version-four server replies before numerical conversion.

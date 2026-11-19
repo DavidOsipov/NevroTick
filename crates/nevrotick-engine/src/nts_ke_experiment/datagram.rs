@@ -839,9 +839,14 @@ mod reached {
             }
         };
         let original: &ProtectedHistory = history.observation();
+        let configuration: Option<&SourceConfigurationSnapshot> = match &history {
+            JoinedProtectedHistory::Diagnostic(_) => None,
+            JoinedProtectedHistory::Managed(managed) => Some(managed.configuration()),
+        };
         let measurement: Result<ExperimentalMeasurement, MeasurementRefusal> =
-            crate::measurement::measure(
+            crate::measurement::measure_for_source(
                 profile,
+                configuration,
                 original.send_before,
                 original.send_after,
                 original.read_return,

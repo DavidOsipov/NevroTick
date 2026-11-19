@@ -250,6 +250,94 @@ fn source_configuration_parallel_public_sessions_and_reordered_round_share_revis
     Ok(())
 }
 
+/// Keep valid original packets while refusing a conflicting installed scale.
+/// # Errors
+/// Preserve checked source preparation, joined loopback replies and healthy measurement.
+/// # Panics
+/// Reject incompatible arithmetic, modified history or loss of the healthy control.
+#[test]
+fn source_configuration_smeared_scale_refuses_only_experimental_measurement() -> Check<()> {
+    let mut authority: SourcePolicyAuthority = isolated_authority(SourcePolicyLimits::new(
+        1,
+        1,
+        Duration::from_millis(1),
+        Duration::from_millis(4),
+    )?)?;
+    let source: SourceHandle = authority.source(0)?;
+    let peer: std::net::UdpSocket = std::net::UdpSocket::bind(endpoint(0))?;
+    let endpoint: SocketAddr = peer.local_addr()?;
+    let unknown: SourceConfigurationSnapshot =
+        authority.install_source_configuration(&source, SourceAddressSet::new(&[endpoint])?)?;
+    let profile: crate::ExperimentalProfile =
+        crate::ExperimentalProfile::new(3_000_000_000, 4_500_000_000, 30_000_000_000)?;
+    let mut unknown_session: AcquisitionSession =
+        source.session(series_config(endpoint, 500)?.with_experimental_profile(profile))?;
+    let unknown_report: AcquisitionReport =
+        snapshot_public_session_exchange(&mut unknown_session, &peer, None, 3)?;
+    let unsmeared: SourceConfigurationSnapshot =
+        authority.replace_source_scale(&unknown, SourceScale::UnsmearedUtc)?;
+    let mut healthy_session: AcquisitionSession =
+        source.session(series_config(endpoint, 500)?.with_experimental_profile(profile))?;
+    let healthy_report: AcquisitionReport =
+        snapshot_public_session_exchange(&mut healthy_session, &peer, None, 3)?;
+    let smeared: SourceConfigurationSnapshot =
+        authority.replace_source_scale(&unsmeared, SourceScale::Smeared)?;
+    let mut unprofiled_session: AcquisitionSession =
+        source.session(series_config(endpoint, 500)?)?;
+    let unprofiled_report: AcquisitionReport =
+        snapshot_public_session_exchange(&mut unprofiled_session, &peer, None, 3)?;
+    let mut smeared_session: AcquisitionSession =
+        source.session(series_config(endpoint, 500)?.with_experimental_profile(profile))?;
+    let smeared_report: AcquisitionReport =
+        snapshot_public_session_exchange(&mut smeared_session, &peer, None, 3)?;
+    let renewed: SourceConfigurationSnapshot =
+        authority.replace_source_scale(&smeared, SourceScale::UnsmearedUtc)?;
+
+    for (report, expected, refusal) in [
+        (&unknown_report, &unknown, None),
+        (&healthy_report, &unsmeared, None),
+        (&unprofiled_report, &smeared, Some("mapping_unavailable")),
+        (&smeared_report, &smeared, Some("source_scale_conflict")),
+    ] {
+        committed_configuration(report, expected)?;
+        for attempt in report.series().attempts() {
+            let slot: &SlotReport = attempt.report().ok_or("actual slot absent")?;
+            let facts: &crate::TransportFacts = slot.facts().ok_or("actual packet facts absent")?;
+            assert_eq!(
+                (facts.peer_receive_bits(), facts.peer_transmit_bits()),
+                (1, 2)
+            );
+            let trailing: Instant = facts.read_return().monotonic_after();
+            assert!(facts.send_after().monotonic_after() <= trailing);
+            assert!(trailing <= facts.processing());
+            let result: Result<&crate::ExperimentalMeasurement, crate::MeasurementRefusal> =
+                facts.measurement();
+            assert_eq!(
+                result
+                    .as_ref()
+                    .err()
+                    .copied()
+                    .map(crate::MeasurementRefusal::as_str),
+                refusal
+            );
+            if refusal.is_none() {
+                let measured: &crate::ExperimentalMeasurement = result?;
+                let [_, t2, t3, _]: [time_domain::UtcCoordinateQ32; 4] = measured.coordinates();
+                assert_eq!(
+                    (t2.ticks(), t3.ticks()),
+                    ((1_i128 << 64) + 1, (1_i128 << 64) + 2)
+                );
+                assert_eq!(
+                    Some(measured.acquisition_age()),
+                    facts.processing().checked_duration_since(trailing)
+                );
+            }
+        }
+    }
+    assert!(renewed.same_configuration(&installed(&source)?));
+    Ok(())
+}
+
 /// Reject an outside peer through both actual public producers before slot publication.
 /// # Errors
 /// Preserve checked roots, operation plans, retained facts and healthy preparation.
