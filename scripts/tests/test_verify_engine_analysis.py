@@ -2333,18 +2333,19 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.invoke(accepted=True)
 
     def test_source_helper_and_candidate_pin_drift_refuse_before_session(self):
-        cutoff_sources = ("crates/nevrotick-engine/tests/private/processing_guards.rs",
-                          "crates/nevrotick-engine/tests/private/series.rs")
+        bound_sources = ("crates/nevrotick-engine/tests/private/processing_guards.rs",
+                         "crates/nevrotick-engine/tests/private/series.rs",
+                         "tools/crypto-cng-lifecycle/Cargo.lock")
         for name in ("scripts/portable-analysis.py", "scripts/analysis-controls.py",
                      "scripts/check-analysis.py",
                      "crates/nevrotick-engine/src/nts_ke_experiment/association.rs",
                      "crates/nevrotick-engine/src/nts_ke_experiment/recovery/numerics_tests.rs",
-                     *cutoff_sources):
+                     *bound_sources):
             path = self.root / name; original = path.read_bytes()
             path.write_bytes(original + b"changed bytes\n")
             with self.subTest(source=name): self.invoke()
             path.write_bytes(original)
-        for name in cutoff_sources:
+        for name in bound_sources:
             bad = copy.deepcopy(self.policy)
             del bad["binding"]["inputs_sha256"][name]
             with self.subTest(missing=name), self.assertRaisesRegex(MODULE.Incomplete, "source/helper inputs differ"):
@@ -4543,6 +4544,7 @@ class EngineKeFixtureLaneTests(unittest.TestCase):
         with patch.object(MODULE, "ROOT", support.root), \
                 patch.object(MODULE.PRODUCT, "admit_product", return_value=(support.fixture_dependency, support.identity)), \
                 patch.object(MODULE.COMMON, "Session", Session), \
+                patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=7516192768)), \
                 patch.object(MODULE, "validate_engine_ke_policy", side_effect=AssertionError("stale ordinary binding used")):
             MODULE.execute_engine_ke_fixtures(support.args, report)
         self.assertEqual(calls, [("fixture-tree", ["cargo", "tree", "--package", "nevrotick-s115-aes-siv-fixture",
@@ -4639,6 +4641,7 @@ class EngineKeFixtureLaneTests(unittest.TestCase):
         report = {}
         with patch.object(MODULE, "ROOT", support.root), \
                 patch.object(MODULE.PRODUCT, "admit_product", return_value=(support.fixture_dependency, support.identity)), \
+                patch.object(MODULE.shutil, "disk_usage", return_value=SimpleNamespace(free=7516192768)), \
                 patch.object(MODULE.COMMON, "Session", Session):
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.execute_engine_ke_fixtures(support.args, report)

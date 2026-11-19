@@ -1,0 +1,78 @@
+# Standalone KE fixture dependency policy for x86_64-unknown-linux-gnu.
+# The current admitted graph has 114 registry packages and one local native leaf.
+# Use the matching explicit target from README.md.
+# Source and dependency admission does not establish native provider qualification.
+# Owned CNG lifecycle fixture only; not product/provider adoption.
+# Exact source/grants and target graph: tasks/s0.1-crypto-feasibility.md, S47-S49.
+# No ring/AWS-LC/private-root exception; exact Windows-link pair only.
+# Validated against cargo-deny 0.20.2, not rolling example schemas.
+# Run every admitted target/feature row, including build/dev dependencies.
+# Exact package grants and build owners were reviewed under CHECK-26.
+# Re-admit this profile when its lock, features, sources or execution owners change.
+[graph]
+all-features = false
+no-default-features = false
+
+[output]
+feature-depth = 2
+
+[advisories]
+db-urls = ["https://github.com/RustSec/advisory-db"]
+unmaintained = "all"
+unsound = "all"
+yanked = "deny"
+disable-yank-checking = false
+maximum-db-staleness = "P1D"
+unused-ignored-advisory = "deny"
+ignore = []
+
+[licenses]
+allow = ["GPL-2.0-only", "MIT", "Unicode-3.0"]
+confidence-threshold = 1.0
+include-dev = true
+include-build = true
+unused-allowed-license = "deny"
+unused-license-exception = "deny"
+exceptions = [{ crate = "ryu@=1.0.23", allow = ["BSL-1.0"] }]
+
+[licenses.private]
+ignore = false
+
+[bans]
+multiple-versions = "deny"
+multiple-versions-include-dev = true
+wildcards = "deny"
+allow-wildcard-paths = false
+highlight = "all"
+deny = [
+    { crate = "ring", reason = "Architecture OPEN-1: exact crypto/native license graph remains held." },
+    { crate = "aws-lc-rs", reason = "Architecture OPEN-1: exact crypto/native license graph remains held." },
+    { crate = "aws-lc-sys", reason = "Architecture OPEN-1: exact crypto/native license graph remains held." },
+    { crate = "aws-lc-fips-sys", reason = "Architecture OPEN-1: AWS-LC native graph remains held." },
+]
+skip = [{ crate = "syn@=2.0.119", reason = "Inherited exact Engine EP1 host syn pair; package checksums, payload maps, parents and feature roles match the accepted root review." }, { crate = "syn@=3.0.9", reason = "Inherited exact Engine EP1 host syn pair; package checksums, payload maps, parents and feature roles match the accepted root review." }]
+skip-tree = []
+
+[bans.build]
+# Each exception needs a reviewed exact package/checksum and execution boundary.
+allow-build-scripts = ["getrandom@0.4.3", "libc@0.2.191", "proc-macro2@1.0.107", "quote@1.0.47", "rustversion@1.0.23"]
+executables = "deny"
+interpreted = "deny"
+enable-builtin-globs = true
+include-dependencies = true
+include-workspace = true
+include-archives = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
+required-git-spec = "rev"
+# An approved origin can legitimately be absent from a particular feature row.
+unused-allowed-source = "allow"
+unused-allowed-org = "deny"
+
+# Presence only: upstream CI helpers, unreachable from this normal build.
+# Their network/install effects are not admitted for execution.
+# Bind all three exact bytes; archive/cohort and no-build-owner guards still apply.

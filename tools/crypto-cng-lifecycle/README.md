@@ -81,6 +81,25 @@ secret-erasure or cleanup qualification. CRYPTO-01–04 and provider/product ado
 open. Existing native memory/lifecycle requirements apply to any later admitted
 Windows experiment.
 
+## Standalone locked graph and dependency policies
+
+This workspace has its own committed `Cargo.lock`. Its Engine dependency includes
+the local `windows-platform-native` package on Windows. The registry cohort is
+unchanged by that local dependency. Use the committed lock for frozen checks.
+
+`deny.toml` selects the reviewed Windows dependency policy. `deny-gnu.toml`
+selects the portable policy, including its different build owners and licences.
+Inside the admitted offline environment with matching vendor and current
+advisory metadata, run from this directory with the explicit matching target:
+
+```sh
+cargo deny --frozen --offline --target x86_64-pc-windows-msvc --no-default-features --config deny.toml check --deny warnings all
+cargo deny --frozen --offline --target x86_64-unknown-linux-gnu --no-default-features --config deny-gnu.toml check --deny warnings all
+```
+
+The existing CRYPTO-01/02/04 task owns frozen compilation, PE artifact readback
+and the separate native trust, handshake, closure and restoration qualification.
+
 ## Bounded ordinary-validation KE producer source
 
 **11 November Engine continuation:** the live CLI delegates to Engine. Its

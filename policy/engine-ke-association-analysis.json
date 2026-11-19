@@ -97,7 +97,7 @@
     ],
     "inputs_sha256": {
       "scripts/verify-engine-analysis.py": "5fc054441322ea779e3617aafec8d6133f42d987ddc51a5183ad5dee29e62368",
-      "scripts/tests/test_verify_engine_analysis.py": "dd901c7d3058d10c2178091edd1e0854deb80f09772c44339e84db2ae2cc08ca",
+      "scripts/tests/test_verify_engine_analysis.py": "11e878a2ece4f7be736100b0698e598a002e7dd3648813827894b686b72c105d",
       "crates/nevrotick-engine/src/lib.rs": "6e62315240c0329aa343bfd201fe05eecdcd2d9268f5dcd3f887355d7a253ece",
       "crates/nevrotick-engine/src/nts_ke_experiment/mod.rs": "a9b4d948e683706773b097dc5c2a4bc08eac45f0bb4b4c957bfd7f6938e2fcf0",
       "crates/nevrotick-engine/src/nts_ke_experiment/association.rs": "d4c55979302d54e90d55e1ea5560fa29239cbd4591e7cd759379dc6614073e93",
@@ -152,7 +152,7 @@
       "Cargo.lock": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
       "crates/nevrotick-engine/Cargo.toml": "aa764db36ca0cdc8af511b11ae3a17f3663a37434c20900afd0828916ac0755d",
       "tools/crypto-cng-lifecycle/Cargo.toml": "ffd149d4b3982586913ed75618537a0e04f85df194251c3eca5817c957b8971e",
-      "tools/crypto-cng-lifecycle/Cargo.lock": "86bd5f239d7260a25482935936ab1cb14ad5a90e40868f0509a55adaa45afe48"
+      "tools/crypto-cng-lifecycle/Cargo.lock": "68401c62e766e3136aa2a35e03808be501953299704cce86ebdbf5068d47195d"
     },
     "ordinary_evidence": {
       "path": "/home/david_osipov/.local/share/nevrotick/engine-ke-datagram-zero-integrated-de78d3e4-20261119-v1/reports/run-01/verification.json",

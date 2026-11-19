@@ -1404,6 +1404,11 @@ routes a delivered pre-suspend event through the same one-shot callback and
 retains automatic resume. The focused checks and Windows CLI cross-link pass.
 Physical event delivery and calibrated mapping remain open.
 
+W11-W02 also owns the native leaf's separate 90% executable-line and
+95%-per-critical-file mutation exits. Its [current qualification scope](../../tasks/windows11-integration.md#w11-w02-reconcile-sleep-timers-and-clock-presentation)
+retains target/FFI gaps and the one-attempt-per-process constraint for later
+W11-W05/S3.1 integration. These gates remain open alongside physical delivery.
+
 The [integrated development and closed KE re-admission](../../tasks/engine-transport-pilot.md#integrated-development-and-closed-ke-re-admission)
 passes 19 development lanes and the exact KE reader controls. Its
 GNU inventory contains 765 descriptors across 13 owners, including 217 for
@@ -1558,6 +1563,14 @@ The collector binds their exact images and current output. The
 passed offline signatures, strict name and chain, missing-CRL refusal
 and key binding. The exact guest profile and healthy provider/TLS/UDP
 gates follow.
+
+The [canonical standalone integration](../../tasks/s0.1-crypto-feasibility.md#canonical-standalone-build-integration--19-november-2026)
+now includes the admitted local native package and Engine edge in the committed
+standalone lock, plus the two reviewed target policies. The stale lock's actual
+frozen refusal and repaired GNU/MSVC graph, check and release builds passed.
+All 199 Engine reader regressions pass and the unchanged product identity is
+admitted. Native TLS, measurement suppliers and the separate native-leaf
+qualification retain their open exits.
 
 **Published preceding product child — 17 November 2026:**
 [Managed restriction visibility](../../tasks/engine-transport-pilot.md#consumer-boundary-reinforcement--17-november-2026)

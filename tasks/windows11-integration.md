@@ -381,12 +381,12 @@ sleep-to-hibernation transition; no power callback promises execution by a deadl
 **Tokio selected-version refinement — 9 November 2026:** the
 [Windows follow-up](../docs/supporting-reviews/windows-os-integration-risk-research.md#91-suspend-can-delay-delivery-after-an-elapsed-deadline)
 traces Tokio 1.54.1/Mio 1.2.4 to the existing IOCP/QPC distinction. Mio #2006
-remains open; Tokio #8344 was closed unmerged. The engine's final elapsed-time
-guards reject overdue results once polled, but its stop/invalidation Sleeps use
-that same driver and it has no native automatic-resume observer. An externally
-invoked control update can wake it; that is no implemented resume integration.
-The lab's 30-second cap is no qualified service-stop bound. This is new exact-pin
-evidence for this existing owner, not a newly missing architectural contract.
+remains open; Tokio #8344 was closed unmerged. At that reviewed checkpoint,
+the engine's final elapsed-time guards rejected overdue results once polled,
+and its stop/invalidation Sleeps used that same driver. An external control
+update could wake it. Native resume integration was still open; the 19 November
+source child below records the later observer. The lab's 30-second cap supplied
+no qualified service-stop bound. These source observations retain that checkpoint.
 
 Carry the actual resume-to-generation/control consumer into S2.1/S2.2 and
 W11-W05/S3.1 as reached. When native execution is permitted, pair a healthy
@@ -410,6 +410,22 @@ This is the TQ-07/09 delivery and control path. The
 observed successful registration and explicit close with an inert callback.
 Native transition coverage, delivered-event scheduling, calibrated mapping
 and production admission remain open under their existing owners.
+
+**Native leaf qualification owner and exit.** W11-W02's platform adapter owner
+owns the `windows-resume-observation` security module and both critical files,
+`resume_slot.rs` and `windows_resume.rs`. CHECK-19/24/25/27 require a current
+target-specific inventory, at least 90% executable-line coverage and at least
+95% mutation per critical file, with explicit ungenerated FFI scope. The Engine
+metrics do not supply these leaf results. This acceptance remains open.
+
+The same owner retains delivered-event, duplicate/delayed notification, disarm,
+registration/retirement failure and actual resource observations under
+CHECK-11/21/25/27. Controlled callbacks and an inert registration smoke retain
+their narrower scopes. Physical S3/S4/Modern Standby cases require the owned
+Windows laboratory and its recovery arrangement. The slot holds its mutex while
+delivering the action; no callback or cancellation latency bound is qualified.
+W11-W05/S3.1 must explicitly account for one registration attempt per process,
+including after registration failure or close, before a service consumes it.
 
 The [suspend continuation](engine-transport-pilot.md#suspend-and-automatic-resume-invalidation)
 uses the same invocation guard on a delivered pre-suspend notification. The
