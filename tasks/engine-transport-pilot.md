@@ -26544,3 +26544,92 @@ equivalence admission. Public campaigns remain closed.
 | `engine-ke-ledger-group05-48c5869d-20261119-v1/run-01/ram-campaign/campaign/work/mutation/ke_ledger/mutants.out/outcomes.json` | `24629e92d96578c3aaee6e506e6618ea50d527f07879f07f2e440ae25846f726` |
 | `engine-ke-ledger-group05-48c5869d-20261119-v1/independent-group05-raw-readback.json` | `c3811fcabd3c419d441a9400a127fffab024d6a2eafac9995832fef35442eae0` |
 | `engine-ke-ledger-group05-timeout-focus-e2a1876c-20261119.DxJvSjpp/run-01/verification.json` | `999a1215acb48bdde595a1be37242e602053a9644487d5cc2701f8bfce6a4e43` |
+
+###### Final ledger partition and current receiver witnesses
+
+S2.2, CHECK-11/19/24/25/26/27. Published `a1303d8` retains the 613-input
+`9e8c2d87…` product and all 626 analysis inputs from the current catalogue.
+The exact group 06 filtered listing selected 33 current descriptors and
+rendered diffs. Both changed whole-body variants reached primary GNU
+E0277 diagnostics in their actual replacement. No prior outcome was
+transferred for those changed source contexts.
+
+The four-worker run passed the exact 666-name baseline and recorded terminal dispositions for all
+33 variants in 554.329 seconds: 21 caught, eight compiler-unviable,
+zero survivors and four Test timeouts. The native exit 3 and verifier
+exit 1 retain those timeouts. Each compiled successfully and reached
+receiver failures before the Test cap. Independent readback matched all
+705 retained files, the source and variant identities, real phase results
+and worker/RAM-backing retirement.
+
+The same actual `used_only_cookie_reply_completes_without_usable_refill`
+case then passed on healthy and restored source and failed all four
+isolated exact variants. Their required causes were `Ledger(Phase)`,
+`Ledger(Capacity)`, `Ledger(Endpoint)` and `Ledger(Ticket)` through the
+actual ledger receive path. The Phase refusal precedes debit; the other
+three follow the original charge. All faults exited 101, with six total selected test
+executions. The 162.265-second focused run retired its scratch. It
+adds zero raw generated kills and preserves all four original timeouts.
+Using the observed 162.341-second focused service lifetime charges
+716.670 of 1,350 seconds and leaves at most 633 whole outer seconds. The full ledger gate still requires current cross-
+partition reconciliation and the remaining earlier dispositions.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-ledger-group06-e2a1876c-20261119-v1/run-01/terminal.json` | `8f8547300f79ec12c11c2ab8b6c42ed51d8eb70513baf49411016b646ec04b1d` |
+| `engine-ke-ledger-group06-e2a1876c-20261119-v1/independent-group06-raw-readback.json` | `a9be40447e6395962e7ca8f69495197660e8525614f6d041a0f539a10b1f8fe8` |
+| `engine-ke-ledger-group06-timeout-focus-a1303d8-20261119.5Nvm98ki/run-01/verification.json` | `a84b3e95b692917ebf0c9300cd364a24f976a72daf96af633c525fd798e851e4` |
+
+###### Current chronology reversal witnesses
+
+CHECK-11/19/25/26/27. The exact original chronology comparison and
+Boolean replacements still match the current full rendered hunks. The
+existing `receive_span_checks_exact_capture_and_processing_boundaries`
+case passed on healthy and restored `a1303d8` source. Both isolated
+faults compiled and exited 101 at the original reversed-bracket assertion:
+`Ok(())` against required `Err(Ledger(Time))`. The four selected test
+executions and boundary control completed in 123.846 seconds. The
+worker and its owned scratch retired.
+
+The original two timeouts stay recorded with zero additional raw kill
+credit. Charge at least the 123.920-second actual service runtime to the
+prior 1,075.617 seconds, retaining at most 150 whole outer seconds.
+This closes the focused reversal witnesses. It grants no current outcome
+reuse for the thirteen other changed-context chronology descriptors,
+including the separate serial/phase equivalence candidate.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-chronology-focus-a1303d8-20261119.y7U6f7aB/preparation.json` | `d0e2719516c405ccc940080b1db95f93ebc96f72a53e71643611071e9e675f55` |
+| `engine-ke-chronology-focus-a1303d8-20261119.y7U6f7aB/run-01/verification.json` | `60a961ccae43838fd564ecb40270a2731d271a1106b12f61cc014213ef53d458` |
+| `engine-ke-ledger-group06-e2a1876c-20261119-v1/independent-ledger217-readiness-a1303d8-v2.md` | `31d4c11287f13bbd13c67fb3375e4f7670b245d4111c5332017cc5fe4b380cad` |
+
+###### Current generated cookie-return pair
+
+S2.2, CHECK-11/19/25/26/27. The current generated continuation matched
+both exact catalogue replacements at `ledger.rs:1095:17` and `1096:17`
+on `a1303d8`. All 666 baseline names passed. Each variant compiled
+and failed the existing real reservation/prepare/explicit-return case
+at its independent byte-capacity or spare-slot expectation. Cargo-mutants
+and the verifier exited zero, with **two caught of two viable** and
+zero survivors, compiler refusals or timeouts in this selected pair.
+
+The owner retained 643 raw artifacts and retired the worker and RAM
+backing. This run charged 192.498 seconds to the earlier 544.133,
+for a cumulative 736.631 of 1,350 seconds, leaving at most 613 whole
+outer seconds. The original two survivors and baseline timeout retain
+their original candidate and raw outcomes. This pair supplies their
+current generated dispositions. The ledger's full 217-descriptor gate
+still requires the complete source/caller/diagnostic reconciliation,
+including thirteen changed-context chronology counterparts and eight
+separately reviewed equivalence candidates. Both public campaigns stay
+closed. Production mapping, native TLS/UDP and release gates retain
+their existing owners.
+
+| Evidence under `~/.local/share/nevrotick` | SHA-256 |
+| --- | --- |
+| `engine-ke-ledger-group04-pair-a1303d8-20261119-v1/preparation.json` | `8e5a3017f25c16ac7f9830619cf2396f1502fd4cc1675f6332d0209b93c071fc` |
+| `engine-ke-ledger-group04-pair-a1303d8-20261119-v1/run-01/terminal.json` | `3a33531d59c664aac172dff5c0ff7814be873ff2bb608fd24c5f1f57d3b53fa4` |
+| `engine-ke-ledger-group04-pair-a1303d8-20261119-v1/run-01/ram-campaign/campaign/work/mutation/ke_ledger/mutants.out/outcomes.json` | `6bc36fb007fa8d21e576e8b77b8ebc55a3151977c65ef03f76658b406f705196` |
+| `engine-ke-ledger-group04-pair-a1303d8-20261119-v1/independent-group04-pair-raw-readback.json` | `bcc40e8a9e8457b069368a4c3cf153cbf6d8f5ffd6c5564d9db2c34fcf9ecbb0` |
+| `engine-ke-ledger-group06-timeout-focus-a1303d8-20261119.5Nvm98ki/independent-four-focus-readback.json` | `c81768055fd1b23fcbadf8e1caf3e814c566dcf467052fdfb8516d2cb9cbbf3d` |

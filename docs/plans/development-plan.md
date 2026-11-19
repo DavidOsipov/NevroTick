@@ -1526,7 +1526,16 @@ passes the current 1,115/1,153 line gate. Group 05 preserves its raw
 17 catches, eight compiler refusals, seven survivors and five timeouts.
 Focused exact receiver controls now witness all five timed variants;
 seven independently reviewed equivalence candidates await admission.
-The ledger's 95% file gate remains open through the remaining partitions.
+The [last ledger partition and receiver witnesses](../../tasks/engine-transport-pilot.md#final-ledger-partition-and-current-receiver-witnesses)
+record current group 06 at 21 catches, eight compiler refusals and four
+timeouts, with all four exact receiver witnesses subsequently observed.
+The [current chronology replay](../../tasks/engine-transport-pilot.md#current-chronology-reversal-witnesses)
+reaches both intended reversed-bracket failures. The [generated
+cookie-return pair](../../tasks/engine-transport-pilot.md#current-generated-cookie-return-pair)
+passes on the current baseline with two behavioral catches. The full
+217-descriptor ledger gate still needs caller/diagnostic reconciliation,
+thirteen changed-context chronology counterparts and exact equivalence
+admission. Historical failures and cumulative allowances stay recorded.
 The [managed Windows EOF case](../../tasks/engine-transport-pilot.md#managed-protected-stale-revision-and-windows-loopback-eof)
 now passes from stale source rejection through the current loopback
 ClientHello, EOF and actual Job cleanup. Healthy TLS, live UDP,
