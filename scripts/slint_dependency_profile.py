@@ -62,7 +62,7 @@ _COOLDOWN_SPEC.loader.exec_module(COOLDOWN)
 
 # Exact private build/test cohort. Source, role and primary-grant evidence is
 # recorded in S0.5; supplemental conveyance obligations remain explicitly open.
-REVIEWED_POLICY_SHA256: str | None = "fbdc3b1ed77a6285aab70c191eefc27ec9bcd86ca6a5750e0ef4adb7b2be7e95"
+REVIEWED_POLICY_SHA256: str | None = "b9f0c9742109550c1da2c2f8095ee976db384e98672cbd259f60a95e28dbd58d"
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 TARGETS = (HOST_TARGET, WINDOWS_TARGET)
@@ -617,6 +617,20 @@ def _decode_metadata(output: str) -> dict:
     return data
 
 
+def _native_target_inventory(workspace_root: str, targets: object) -> bool:
+    """Admit the exact observation library and its one test-only target."""
+    package = workspace_root.rstrip("/") + "/crates/" + NATIVE_PACKAGE
+    library = {"kind": ["lib"], "crate_types": ["lib"], "name": "windows_platform_native",
+               "src_path": package + "/src/lib.rs", "edition": "2024",
+               "doc": True, "doctest": True, "test": True}
+    lifecycle = {"kind": ["test"], "crate_types": ["bin"], "name": "subscription_lifecycle",
+                 "src_path": package + "/tests/subscription_lifecycle.rs", "edition": "2024",
+                 "doc": False, "doctest": False, "test": True}
+    return (type(targets) is list and len(targets) == 2 and library in targets and lifecycle in targets
+            and all(type(item) is dict and all(type(item[field]) is bool for field in ("doc", "doctest", "test"))
+                    for item in targets))
+
+
 def validate_metadata(target: str, output: str, policy: dict, *, profile: str = "default") -> dict:
     """Validate the frozen metadata overapproximation without selecting its extras."""
     validate_policy(policy)
@@ -671,9 +685,7 @@ def validate_metadata(target: str, output: str, policy: dict, *, profile: str = 
                         or nodes[package_id].get("dependencies") != []
                         or nodes[package_id].get("deps") != []
                         or package.get("links") is not None
-                        or type(targets) is not list or not targets
-                        or any(type(item) is not dict or item.get("kind") != ["lib"]
-                               for item in targets)):
+                        or not _native_target_inventory(workspace_root, targets)):
                     raise Incomplete("The native platform adapter acquired a foreign path, feature, dependency or execution role.")
             locals_[key] = nodes[package_id]["features"]
         else:

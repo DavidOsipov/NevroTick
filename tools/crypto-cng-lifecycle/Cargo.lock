@@ -415,6 +415,7 @@ dependencies = [
 name = "nevrotick-crypto-cng-lifecycle"
 version = "0.0.0"
 dependencies = [
+ "aes-siv",
  "nevrotick-engine",
  "nevrotick-s115-aes-siv-fixture",
  "ntp-wire",

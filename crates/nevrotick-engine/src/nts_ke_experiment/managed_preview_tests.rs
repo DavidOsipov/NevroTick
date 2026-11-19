@@ -31,6 +31,7 @@ use super::process::{ProcessAdmission, ProcessClaim, ProviderScope};
 use super::profile::StrictProfile;
 use super::recovery::{End, Invocation, Producer, Snapshot, Step, step_with};
 use super::request::DirectionalKeys;
+use super::response::fixtures;
 use super::transport_fault::TransportIo;
 use super::{
     Config, Control, Failed, Failure, RunFailed, StopDisposition, StopHandle, Summary, output,
@@ -40,8 +41,23 @@ use crate::source_policy::{FixtureRequest, SourceBinding, fixture_control, fixtu
 use crate::{
     ExperimentalMeasurement, ExperimentalProfile, KePreviewTarget, KePreviewTargetError,
     MeasurementRefusal, SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority,
-    SourcePolicyError, SourcePolicyLimits, SourcePolicySnapshot,
+    SourcePolicyError, SourcePolicyLimits, SourcePolicySnapshot, SourceScale,
 };
+
+/// Public LI=1 neighbor of HEALTHY, sealed with cryptography 41.0.7 AESSIV.
+/// The independent generator first reproduced HEALTHY with the same public
+/// key, nonce, UID and plaintext, then sealed the header with LI=1.
+const LEAP_ANNOUNCED_REPLY: &[u8] = &[
+    0x64, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+    0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa,
+    0x01, 0x04, 0x00, 0x24, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
+    0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b,
+    0x1c, 0x1d, 0x1e, 0x1f, 0x04, 0x04, 0x00, 0x38, 0x00, 0x10, 0x00, 0x20, 0x10, 0x11, 0x12, 0x13,
+    0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0xef, 0x05, 0xee, 0x46,
+    0xb2, 0x20, 0x92, 0x67, 0x3b, 0x83, 0x69, 0xf1, 0xdc, 0x44, 0x6f, 0x17, 0xa8, 0xdb, 0x1e, 0xea,
+    0x8d, 0x66, 0x67, 0x1a, 0x39, 0xa2, 0xaf, 0x21, 0xf4, 0x11, 0x64, 0x2b,
+];
 
 /// Finite component observation only; it supplies no product operation deadline.
 const WAIT: Duration = Duration::from_secs(2);
@@ -73,6 +89,8 @@ enum Scenario {
     ProtectedBeforeReplyCommit,
     /// Replace a protected source after commit, before joined reconstruction.
     ProtectedAfterCommit,
+    /// Retain an authenticated nonzero peer leap claim through the same replacement.
+    ProtectedLeapWarningAfterCommit,
 }
 
 impl Scenario {
@@ -83,6 +101,7 @@ impl Scenario {
             Self::ProtectedBeforeSend
                 | Self::ProtectedBeforeReplyCommit
                 | Self::ProtectedAfterCommit
+                | Self::ProtectedLeapWarningAfterCommit
         )
     }
 }
@@ -127,6 +146,16 @@ fn issued(scenario: Scenario) -> Result<Issued, Failure> {
     let configuration: SourceConfigurationSnapshot = authority
         .install_ke_preview_configuration(&source, addresses, target.clone())
         .map_err(Failure::SourcePolicy)?;
+    let configuration: SourceConfigurationSnapshot = if matches!(
+        scenario,
+        Scenario::ProtectedAfterCommit | Scenario::ProtectedLeapWarningAfterCommit
+    ) {
+        authority
+            .replace_source_scale(&configuration, SourceScale::UnsmearedUtc)
+            .map_err(Failure::SourcePolicy)?
+    } else {
+        configuration
+    };
     Ok(Issued {
         authority,
         source,
@@ -576,8 +605,14 @@ impl Producer for PreviewProducer {
         if !self.scenario.protected() {
             return Err(Failure::Control);
         }
+        let reply: &'static [u8] =
+            if matches!(self.scenario, Scenario::ProtectedLeapWarningAfterCommit) {
+                LEAP_ANNOUNCED_REPLY
+            } else {
+                fixtures::HEALTHY
+            };
         let completion: ProtectedCompletion<'tx> =
-            managed_component_exchange(association, control, || {
+            managed_component_exchange(association, control, reply, || {
                 if matches!(self.scenario, Scenario::ProtectedBeforeSend) {
                     self.replace_definition()?;
                 }
@@ -585,7 +620,11 @@ impl Producer for PreviewProducer {
             })?;
         assert_eq!(association.cookie_population()?, (0, 0));
         if matches!(self.scenario, Scenario::ProtectedBeforeReplyCommit) {
-            self.replace_definition()?;
+            self.replacement = Some(
+                self.authority
+                    .replace_source_scale(&self.configuration, SourceScale::Smeared)
+                    .map_err(Failure::SourcePolicy)?,
+            );
         }
         if let Some(stop) = self.stop_before_reply_commit.take() {
             assert_eq!(stop.request_stop(), Ok(StopDisposition::Latched));
@@ -753,7 +792,9 @@ fn component_operation<'scope>(
     let outcome: Result<Step, Failed> = step_with(&mut invocation, &mut producer);
     if matches!(
         producer.scenario,
-        Scenario::ReplaceAfterCommit | Scenario::ProtectedAfterCommit
+        Scenario::ReplaceAfterCommit
+            | Scenario::ProtectedAfterCommit
+            | Scenario::ProtectedLeapWarningAfterCommit
     ) && matches!(&outcome, Ok(Step::Complete(_)))
     {
         producer.replace_definition().map_err(Failed::from)?;
@@ -1066,7 +1107,7 @@ fn managed_ke_preview_worker_healthy_preserves_issued_history() -> Result<(), Fa
 fn managed_protected_worker_preserves_committed_definition_through_join() -> Result<(), Failure> {
     static SLOT: WorkerSlot = WorkerSlot::new();
     static ADMISSION: ProcessAdmission = ProcessAdmission::new();
-    let run: Run = run(&SLOT, &ADMISSION, Scenario::ProtectedAfterCommit)?;
+    let run: Run = run(&SLOT, &ADMISSION, Scenario::ProtectedLeapWarningAfterCommit)?;
     let completion: ReceivedCompletion = run
         .outcome
         .map_err(|failure: RunFailed| operation_primary(&failure))?;
@@ -1074,6 +1115,11 @@ fn managed_protected_worker_preserves_committed_definition_through_join() -> Res
     assert!(completion.summary().transmitted);
     let report: SourceProtectedProbeReport = protected_report(completion)?;
     assert!(report.configuration().same_configuration(&run.expected));
+    assert_eq!(
+        report.configuration().declared_scale(),
+        SourceScale::UnsmearedUtc
+    );
+    assert_eq!(report.leap_indicator(), 1);
     assert_eq!(report.measurement(), Err(MeasurementRefusal::Unavailable));
     assert_eq!(report.packet_bytes(), original_packet_bytes);
     assert_eq!(run.work.calls, [1, 0, 1, 0]);
@@ -1081,6 +1127,7 @@ fn managed_protected_worker_preserves_committed_definition_through_join() -> Res
     let newer: &SourceConfigurationSnapshot =
         run.work.replacement.as_ref().ok_or(Failure::Control)?;
     assert!(!newer.same_configuration(report.configuration()));
+    assert_eq!(newer.declared_scale(), SourceScale::Unknown);
     Ok(())
 }
 
@@ -1259,6 +1306,7 @@ fn managed_protected_report_preserves_declared_numerical_result() -> Result<(), 
         let original_packet_bytes: usize = completion.summary().packet_bytes;
         assert!(completion.summary().transmitted);
         let report: SourceProtectedProbeReport = protected_report(completion)?;
+        assert_eq!(report.leap_indicator(), 0);
         assert_eq!(report.measurement().copied(), original);
         assert_eq!(report.committed_at(), committed_at);
         assert_eq!(report.receive_to_commit_delay(), expected_delay);
@@ -1412,7 +1460,7 @@ fn managed_protected_abnormal_join_preserves_sealed_configuration() -> Result<()
     assert_preview_abnormal_join_history()
 }
 
-/// A same-byte replacement refuses the guarded send or the final retired reply.
+/// A replacement with unchanged endpoints refuses the guarded send or final reply.
 /// # Errors
 /// Preserve unexpected worker or lack of any failure.
 /// # Panics
@@ -1441,7 +1489,16 @@ fn managed_protected_worker_refuses_replacement_at_both_effects() -> Result<(), 
         );
         assert_eq!(run.work.calls, [1, 0, 1, 0]);
         assert_eq!(run.work.after.end, Some(End::Failure));
-        assert!(run.work.replacement.is_some());
+        let replacement: &SourceConfigurationSnapshot =
+            run.work.replacement.as_ref().ok_or(Failure::Control)?;
+        let expected_scale: SourceScale =
+            if matches!(scenario, Scenario::ProtectedBeforeReplyCommit) {
+                SourceScale::Smeared
+            } else {
+                SourceScale::Unknown
+            };
+        assert_eq!(replacement.declared_scale(), expected_scale);
+        assert!(!replacement.same_configuration(&run.expected));
         let projected: SourceProtectedProbeFailure =
             SourceProtectedProbeFailure::from_run_failure(RunFailed::Operation(failure));
         assert_eq!(

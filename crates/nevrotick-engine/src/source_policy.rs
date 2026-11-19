@@ -45,6 +45,19 @@ static PROCESS_POLICY: OnceLock<Arc<PolicyCell>> = OnceLock::new();
 pub(crate) use configuration::SourceContext;
 pub use configuration::{SourceAddressSet, SourceConfigurationSnapshot};
 
+/// Time scale explicitly declared by the source's configuration authority.
+/// A declaration supplies historical provenance only. It cannot authenticate
+/// a peer, establish a mapping or date, or qualify a measurement.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SourceScale {
+    /// The authority declared that the source serves unsmeared UTC.
+    UnsmearedUtc,
+    /// The authority declared that the source smears leap events.
+    Smeared,
+    /// No scale is established by this configuration.
+    Unknown,
+}
+
 /// Sealed configuration construction and issuance within the actual policy owner.
 mod configuration {
     use std::{fmt, num::NonZeroU64, sync::Arc};
@@ -53,7 +66,7 @@ mod configuration {
 
     use super::{
         EndpointKey, PolicyGuard, RecordKey, SocketAddr, SourceHandle, SourceIdentity,
-        SourcePolicyAuthority, SourcePolicyError,
+        SourcePolicyAuthority, SourcePolicyError, SourceScale,
     };
 
     /// Checked, complete allowed endpoints for one numeric laboratory source.
@@ -187,10 +200,11 @@ mod configuration {
     ///
     /// A consumer may retain and inspect genuine issued history.
     /// ```
-    /// use nevrotick_engine::SourceConfigurationSnapshot;
-    /// fn inspect(snapshot: &SourceConfigurationSnapshot) {
+    /// use nevrotick_engine::{SourceConfigurationSnapshot, SourceScale};
+    /// fn inspect(snapshot: &SourceConfigurationSnapshot) -> SourceScale {
     ///     assert!(!snapshot.addresses().is_empty());
     ///     assert!(snapshot.same_configuration(&snapshot.clone()));
+    ///     snapshot.declared_scale()
     /// }
     /// ```
     ///
@@ -199,6 +213,14 @@ mod configuration {
     /// use nevrotick_engine::SourceConfigurationSnapshot;
     /// fn retag(snapshot: &mut SourceConfigurationSnapshot) {
     ///     snapshot.revision = std::num::NonZeroU64::MIN;
+    /// }
+    /// ```
+    ///
+    /// A declaration can change only by issuing an actual new configuration.
+    /// ```compile_fail,E0616
+    /// use nevrotick_engine::{SourceConfigurationSnapshot, SourceScale};
+    /// fn retag(snapshot: &mut SourceConfigurationSnapshot) {
+    ///     snapshot.scale = SourceScale::UnsmearedUtc;
     /// }
     /// ```
     ///
@@ -216,6 +238,8 @@ mod configuration {
         revision: NonZeroU64,
         /// Immutable definition coupled to this source/revision by the sole issuer.
         addresses: SourceAddressSet,
+        /// Original scale declaration, bound to this same immutable revision.
+        scale: SourceScale,
         /// Optional immutable KE target, issued in the same revision as the UDP set.
         /// Numeric-only installation/replacement deliberately supplies None.
         #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
@@ -235,15 +259,23 @@ mod configuration {
             &self.addresses
         }
 
+        /// Return the original declaration without inferring scale from packets
+        /// or reading a later configuration.
+        #[must_use]
+        pub const fn declared_scale(&self) -> SourceScale {
+            self.scale
+        }
+
         /// Compare actual source/revision identity, not endpoint-set value equality.
         #[must_use]
         pub fn same_configuration(&self, other: &Self) -> bool {
-            // The private issuer binds addresses and any KE target immutably to
-            // source/revision. They are excluded from this identity comparison.
+            // The issuer binds addresses, scale and any KE target immutably to
+            // source/revision. Only the identity participates in this comparison.
             let Self {
                 source,
                 revision,
                 addresses: _,
+                scale: _,
                 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
                     preview_target: _,
             } = self;
@@ -251,6 +283,7 @@ mod configuration {
                 source: other_source,
                 revision: other_revision,
                 addresses: _,
+                scale: _,
                 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
                     preview_target: _,
             } = other;
@@ -410,6 +443,8 @@ mod configuration {
     struct Definition {
         /// The complete original allowed UDP endpoints.
         addresses: SourceAddressSet,
+        /// Declaration provided by the authority for this exact definition.
+        scale: SourceScale,
         /// None withdraws KE without changing the numeric source definition.
         #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
         preview_target: Option<crate::KePreviewTarget>,
@@ -481,6 +516,7 @@ mod configuration {
             source: config.source.clone(),
             revision,
             addresses: definition.addresses,
+            scale: definition.scale,
             #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
             preview_target: definition.preview_target,
         };
@@ -499,6 +535,7 @@ mod configuration {
     ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
         let definition: Definition = Definition {
             addresses,
+            scale: SourceScale::Unknown,
             #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
             preview_target: None,
         };
@@ -515,8 +552,30 @@ mod configuration {
     ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
         let definition: Definition = Definition {
             addresses,
+            scale: SourceScale::Unknown,
             #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
             preview_target: None,
+        };
+        publish(
+            authority,
+            &ConfigurationUpdate::Replace(expected),
+            definition,
+        )
+    }
+
+    /// Stage a scale-only replacement of the actual expected definition.
+    /// # Errors
+    /// Preserve foreign/stale refusal and sticky revision exhaustion in publication.
+    pub(super) fn replace_scale(
+        authority: &mut SourcePolicyAuthority,
+        expected: &SourceConfigurationSnapshot,
+        scale: SourceScale,
+    ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
+        let definition: Definition = Definition {
+            addresses: expected.addresses.clone(),
+            scale,
+            #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
+            preview_target: expected.preview_target.clone(),
         };
         publish(
             authority,
@@ -537,6 +596,7 @@ mod configuration {
     ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
         let definition: Definition = Definition {
             addresses,
+            scale: SourceScale::Unknown,
             preview_target: Some(target),
         };
         publish(authority, &ConfigurationUpdate::Install(source), definition)
@@ -554,6 +614,7 @@ mod configuration {
     ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
         let definition: Definition = Definition {
             addresses,
+            scale: SourceScale::Unknown,
             preview_target: Some(target),
         };
         publish(
@@ -1798,6 +1859,22 @@ impl SourcePolicyAuthority {
         addresses: SourceAddressSet,
     ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
         configuration::replace(self, expected, addresses)
+    }
+
+    /// Replace the declared time scale of the actual current source revision.
+    /// The addresses, KE target and restrictions retain their existing values.
+    /// A fresh revision fences pending work. Completed facts retain their original
+    /// declaration. Installing or replacing endpoints or a KE target initializes
+    /// the new definition to [`SourceScale::Unknown`].
+    /// # Errors
+    /// Preserve stale and foreign refusal, unavailable custody and sticky revision
+    /// exhaustion through the same configuration publication path.
+    pub fn replace_source_scale(
+        &mut self,
+        expected: &SourceConfigurationSnapshot,
+        scale: SourceScale,
+    ) -> Result<SourceConfigurationSnapshot, SourcePolicyError> {
+        configuration::replace_scale(self, expected, scale)
     }
 
     /// Install checked KE and UDP inputs together for this actual catalogue source.

@@ -4,7 +4,7 @@
 //! Source-owned KE Preview controls: S2.2; CHECK-6/9/21/25/27.
 
 use super::*;
-use crate::{PilotError, SourceAddressSet, SourceConfigurationSnapshot};
+use crate::{PilotError, SourceAddressSet, SourceConfigurationSnapshot, SourceScale};
 
 /// Preserve the explicit operation inputs independently of installed peer membership.
 /// # Errors
@@ -168,7 +168,8 @@ fn committed_configuration(
         assert!(
             facts
                 .source_configuration()
-                .is_some_and(|actual| actual.same_configuration(expected))
+                .is_some_and(|actual| actual.same_configuration(expected)
+                    && actual.declared_scale() == expected.declared_scale())
         );
     }
     Ok(())
@@ -193,10 +194,15 @@ fn source_configuration_parallel_public_sessions_and_reordered_round_share_revis
     let f_peer = std::net::UdpSocket::bind(endpoint(0))?;
     let e = e_peer.local_addr()?;
     let f = f_peer.local_addr()?;
-    let a_configuration =
+    let original_a: SourceConfigurationSnapshot =
         authority.install_source_configuration(&a, SourceAddressSet::new(&[e, f])?)?;
-    let b_configuration =
+    assert_eq!(original_a.declared_scale(), SourceScale::Unknown);
+    let a_configuration: SourceConfigurationSnapshot =
+        authority.replace_source_scale(&original_a, SourceScale::UnsmearedUtc)?;
+    assert_eq!(a_configuration.declared_scale(), SourceScale::UnsmearedUtc);
+    let b_configuration: SourceConfigurationSnapshot =
         authority.install_source_configuration(&b, SourceAddressSet::new(&[e])?)?;
+    assert_eq!(b_configuration.declared_scale(), SourceScale::Unknown);
     let mut ae = a.session(series_config(e, 400)?)?;
     let profile = crate::ExperimentalProfile::new(3_000_000_000, 4_500_000_000, 30_000_000_000)?;
     let mut af = a.session(series_config(f, 500)?.with_experimental_profile(profile))?;
@@ -220,13 +226,15 @@ fn source_configuration_parallel_public_sessions_and_reordered_round_share_revis
     assert!(
         facts
             .source_configuration()
-            .is_some_and(|actual| actual.same_configuration(&a_configuration))
+            .is_some_and(|actual| actual.same_configuration(&a_configuration)
+                && actual.declared_scale() == SourceScale::UnsmearedUtc)
     );
     assert!(a_configuration.same_configuration(&installed(&a)?));
     assert!(b_configuration.same_configuration(&installed(&b)?));
     let replacement = authority
         .replace_source_configuration(&a_configuration, SourceAddressSet::new(&[f, e])?)?;
     assert!(!replacement.same_configuration(&a_configuration));
+    assert_eq!(replacement.declared_scale(), SourceScale::Unknown);
     // Later replacement cannot rewrite an already returned successful acquisition.
     committed_configuration(&initial_history, &a_configuration)?;
     committed_configuration(&alternate_result, &a_configuration)?;
@@ -304,11 +312,19 @@ fn source_configuration_first_install_and_equal_replace_retire_old_prepared_plan
         let (prepared, control) = session.prepare()?;
         let before = restrictions(&source, endpoint)?;
         let current = match source.configuration_snapshot()? {
-            Some(previous) => authority
-                .replace_source_configuration(&previous, SourceAddressSet::new(&[endpoint])?)?,
+            Some(previous) => authority.replace_source_scale(&previous, SourceScale::Smeared)?,
             None => authority
                 .install_source_configuration(&source, SourceAddressSet::new(&[endpoint])?)?,
         };
+        assert_eq!(
+            current.declared_scale(),
+            if initially_installed {
+                SourceScale::Smeared
+            } else {
+                SourceScale::Unknown
+            }
+        );
+        assert!(current.addresses().allows(endpoint));
         let report = prepared.execute(&crate::ControlSchedule::new(None, None)?)?;
         assert_eq!(report.series().end(), crate::SeriesEnd::Failure);
         assert_eq!(
@@ -480,6 +496,41 @@ fn ke_preview_check(
     guard.check(peer)
 }
 
+/// Replace just the declaration and verify the actual KE admission on both revisions.
+/// # Errors
+/// Preserve any unexpected issuer, capture or refreshed guard failure.
+/// # Panics
+/// Reject a changed KE target, lost original declaration or stale guard bypass.
+#[cfg(feature = "ke-association-prototype")]
+fn replace_ke_scale(
+    authority: &mut SourcePolicyAuthority,
+    source: &SourceHandle,
+    original: &ConfiguredKePreview,
+    peer: SocketAddr,
+) -> Check<SourceConfigurationSnapshot> {
+    let first: &SourceConfigurationSnapshot = original.snapshot();
+    let declared: SourceConfigurationSnapshot =
+        authority.replace_source_scale(first, SourceScale::UnsmearedUtc)?;
+    assert_eq!(first.declared_scale(), SourceScale::Unknown);
+    assert_eq!(declared.declared_scale(), SourceScale::UnsmearedUtc);
+    let refreshed: ConfiguredKePreview = source.capture_ke_preview()?;
+    assert!(refreshed.snapshot().same_configuration(&declared));
+    assert_eq!(
+        (refreshed.target().peer(), refreshed.target().identity()),
+        (endpoint(4460), "localhost")
+    );
+    assert_eq!(
+        ke_preview_check(original, Some(peer)),
+        Err(SourcePolicyError::ConfigurationChanged)
+    );
+    assert!(matches!(
+        authority.replace_source_scale(first, SourceScale::Smeared),
+        Err(SourcePolicyError::ConfigurationChanged)
+    ));
+    ke_preview_check(&refreshed, Some(peer))?;
+    Ok(declared)
+}
+
 /// Issue KE only from the actual catalogue, then withdraw or exhaust its revision.
 /// # Errors
 /// Preserve real target/set construction, authority operations and healthy custody.
@@ -500,6 +551,10 @@ fn source_configuration_ke_preview_issuance_withdrawal_and_exhaustion() -> Check
     let foreign_source: SourceHandle = foreign.source(0)?;
     let foreign_snapshot: SourceConfigurationSnapshot =
         foreign.install_source_configuration(&foreign_source, SourceAddressSet::new(&[peer])?)?;
+    assert!(matches!(
+        authority.replace_source_scale(&foreign_snapshot, SourceScale::Smeared),
+        Err(SourcePolicyError::Foreign)
+    ));
     assert!(matches!(
         authority.install_ke_preview_configuration(
             &foreign_source,
@@ -528,8 +583,10 @@ fn source_configuration_ke_preview_issuance_withdrawal_and_exhaustion() -> Check
         (endpoint(4460), "localhost")
     );
     ke_preview_check(&original, Some(peer))?;
+    let declared: SourceConfigurationSnapshot =
+        replace_ke_scale(&mut authority, &source, &original, peer)?;
     let numeric: SourceConfigurationSnapshot =
-        authority.replace_source_configuration(&first, SourceAddressSet::new(&[peer])?)?;
+        authority.replace_source_configuration(&declared, SourceAddressSet::new(&[peer])?)?;
     assert!(matches!(
         source.capture_ke_preview(),
         Err(SourcePolicyError::ConfigurationChanged)
@@ -544,6 +601,7 @@ fn source_configuration_ke_preview_issuance_withdrawal_and_exhaustion() -> Check
         target.clone(),
     )?;
     assert!(!restored.same_configuration(&first));
+    assert_eq!(restored.declared_scale(), SourceScale::Unknown);
     let maximum: SourceConfigurationSnapshot = force_configuration_revision_max_for_test(&source)?;
     let at_maximum: ConfiguredKePreview = source.capture_ke_preview()?;
     assert!(at_maximum.snapshot().same_configuration(&maximum));

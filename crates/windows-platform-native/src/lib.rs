@@ -19,7 +19,11 @@ use windows_platform_native::ResumeWatch;
 #[forbid(unsafe_code)]
 mod resume_slot;
 #[cfg(windows)]
+mod windows_adjustment;
+#[cfg(windows)]
 mod windows_resume;
 
+#[cfg(windows)]
+pub use windows_adjustment::{ClockAdjustment, read_clock_adjustment};
 #[cfg(windows)]
 pub use windows_resume::{ResumeRegistrationError, ResumeUnregistrationError, ResumeWatch};

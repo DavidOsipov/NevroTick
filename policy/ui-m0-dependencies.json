@@ -32815,17 +32815,17 @@
       "incompatible_publish_age": "deny"
     },
     "status": "resolved",
-    "baseline_lockfile_sha256": "2ccabde33a800b745c42b4fe96dc4a6c300b1961ac87e149d313cae41fde5f2e",
+    "baseline_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
     "baseline_registry_sha256": "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15e68b7",
     "resolution": {
       "scope": "product",
-      "baseline_lockfile_sha256": "2ccabde33a800b745c42b4fe96dc4a6c300b1961ac87e149d313cae41fde5f2e",
-      "baseline_admission_sha256": "fc127e3bd23af0f0c26497c0c7d629d9d684d38c019e1945268847442a359256",
+      "baseline_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
+      "baseline_admission_sha256": "6109f9e3dddb5a48ac3b078e1ca56f1cd7f98ae04d6f39fcd5fa115a01f25308",
       "retained_exception_decisions": [],
       "acquisition_filesystem": {
         "bytes": 536870912,
         "inodes": 16384,
-        "device": 134
+        "device": 121
       },
       "baseline_registry_sha256": "622bd793fc19f6edea04a104463028739ec80a842da17a04981ff5b7d15e68b7",
       "candidate_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
@@ -32834,9 +32834,9 @@
       "operation": "workspace",
       "package": null,
       "version": null,
-      "started_utc": "2026-11-18T20:25:11Z",
-      "finished_utc": "2026-11-18T20:25:20Z",
-      "cutoff_utc": "2026-11-04T20:25:11Z",
+      "started_utc": "2026-11-19T10:53:31Z",
+      "finished_utc": "2026-11-19T10:53:38Z",
+      "cutoff_utc": "2026-11-05T10:53:31Z",
       "cargo_sha256": "84d55d77232a921da96bcf2e1f78532ef5c5221803aae4448d9e220d48ebd808",
       "configuration_sha256": "0f56f93b35b5d85a490afe3d62f53511f5697465b0d18564ffee805b761232a5",
       "manifests_sha256": {
@@ -32854,7 +32854,7 @@
         "third-party/spin_on/Cargo.toml": "ebb6b87bd5f5425ecee070e57ab06933813d538488bbe176317a80638690f32b",
         "tools/crypto-aes-siv-witness/Cargo.toml": "c1040b304ed3f2066ba7f0d2fd1c2492b292c2085cd0cbf13b59807a86ae2f5a",
         "tools/crypto-aes-siv-witness/fuzz/Cargo.toml": "7166f8ccadec5d550990523cdddc8660c74eb7a3fbc843570851fa63cbac6753",
-        "tools/crypto-cng-lifecycle/Cargo.toml": "ffd149d4b3982586913ed75618537a0e04f85df194251c3eca5817c957b8971e",
+        "tools/crypto-cng-lifecycle/Cargo.toml": "a571ddbf4c22c0f88428da281c050aacaa13ac768f2adc2dab3faf7fd33f8c9e",
         "tools/crypto-cng-lifecycle/vendor/rustls-cng-crypto/Cargo.toml": "705b266c89c485ed562621a114fcc24f1638f32a4b728fac9157655bce7d5cac",
         "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier/Cargo.toml": "f97cadbade2e2833889bfb8421737c9a4fe3a0d10adf72f6002867efe32be5e5",
         "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier/upstream/Cargo.toml": "e3cc8a4ba76111e7c153d31ff28988117442c8f6b522b3f3b1efde9fba4509f2",
@@ -32873,8 +32873,8 @@
       "removed": [],
       "publication": [],
       "exception": null,
-      "metadata_inventory_sha256": "5c9cc809a97aa9d2d2474ed310fdc4fe020aac24afc4215bb5be5da62e88cb56",
-      "result_sha256": "4179f7ab37ae74436b253cdb3a84a04e7f96fb5c832c6736185efc540023793f",
+      "metadata_inventory_sha256": "a0a0d97712905a887513e9d59b49ddc19c074cd2ca0c9507b3c9600e2d409d1d",
+      "result_sha256": "048f2f177dac25ae1d080e9a6cc4d7c8d2c0b25eb309d53b6241c31d22cbab7a",
       "generated_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
       "proposed_lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db"
     }

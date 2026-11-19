@@ -56,7 +56,7 @@ def changed_policy():
         "exception": None, "metadata_inventory_sha256": "7" * 64, "result_sha256": "8" * 64,
         "generated_lockfile_sha256": "2" * 64, "proposed_lockfile_sha256": None}
     record["publication"][0]["index_record_sha256"] = AGE.canonical(record["publication"][0]["index_record"])
-    value["cooldown_admission"].update(status="resolved", resolution=record)
+    value["cooldown_admission"] = dict(AGE.baseline_admission(), status="resolved", resolution=record)
     return value
 
 
@@ -68,7 +68,7 @@ class GraphAgeControls(unittest.TestCase):
         AGE.validate_policy_admission(value)
         self.assertEqual(value["cooldown_admission"], AGE.baseline_admission())
 
-    def test_current_local_adapter_has_resolved_full_lock_without_registry_delta(self):
+    def test_current_standalone_manifest_reuses_the_accepted_full_root_lock(self):
         value = policy()
         AGE.validate_root_admission(ROOT, value)
         self.assertEqual(AGE.canonical(AGE.policy_records(value)),
@@ -77,7 +77,10 @@ class GraphAgeControls(unittest.TestCase):
         self.assertNotEqual(sha(lock), AGE.BASELINE_LOCK)
         record = value["cooldown_admission"]["resolution"]
         self.assertEqual(value["cooldown_admission"]["status"], "resolved")
-        self.assertEqual(record["baseline_lockfile_sha256"], AGE.BASELINE_LOCK)
+        self.assertEqual(record["baseline_lockfile_sha256"], sha(lock))
+        prior = AGE.accepted_checkpoint(record["baseline_admission_sha256"])
+        self.assertEqual(prior["lockfile_sha256"], record["baseline_lockfile_sha256"])
+        self.assertEqual(prior["registry_sha256"], record["baseline_registry_sha256"])
         self.assertEqual(record["candidate_lockfile_sha256"], sha(lock))
         self.assertEqual(record["candidate_graph_sha256"], AGE.canonical(AGE.lock_document(lock)))
         self.assertEqual((record["added"], record["removed"], record["publication"]), ([], [], []))
@@ -164,21 +167,15 @@ class GraphAgeControls(unittest.TestCase):
 
     def test_actual_full_lock_rewiring_invalidates_record_even_with_same_registry_versions(self):
         value = policy()
-        record = changed_policy()["cooldown_admission"]["resolution"]
+        record = value["cooldown_admission"]["resolution"]
         original = (ROOT / "Cargo.lock").read_bytes()
         changed = original.replace(b' "garde",', b' "ryu",', 1)
         self.assertNotEqual(original, changed)
         self.assertEqual(AGE.registry_records(original), AGE.registry_records(changed))
-        record.update(candidate_lockfile_sha256=sha(original), generated_lockfile_sha256=sha(original),
-            candidate_registry_sha256=AGE.canonical(AGE.policy_records(value)),
-            candidate_graph_sha256=AGE.canonical(AGE.lock_document(original)), added=[], removed=[], publication=[],
-            cargo_sha256=json.loads((ROOT / "policy/tool-manifest.json").read_text())["rust"]["linux_binary_sha256"]["cargo"],
-            configuration_sha256=sha((ROOT / ".cargo/config.toml").read_bytes()), manifests_sha256=value["manifests_sha256"])
-        value["cooldown_admission"].update(status="resolved", resolution=record)
         AGE.validate_root_admission(ROOT, value)
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            for name in (*value["manifests_sha256"], ".cargo/config.toml", "policy/tool-manifest.json"):
+            for name in (*record["manifests_sha256"], ".cargo/config.toml", "policy/tool-manifest.json"):
                 destination = root / name
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_bytes((ROOT / name).read_bytes())

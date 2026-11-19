@@ -640,6 +640,7 @@ mod reached {
     type ManagedProtectedProjection = (
         SourceConfigurationSnapshot,
         Summary,
+        u8,
         Instant,
         Option<Duration>,
         Result<ExperimentalMeasurement, MeasurementRefusal>,
@@ -692,6 +693,7 @@ mod reached {
             Ok((
                 configuration,
                 *history.summary(),
+                history.receipt.fields().header().leap_indicator(),
                 history.committed_at(),
                 history.receive_to_commit_delay(),
                 received.measurement,

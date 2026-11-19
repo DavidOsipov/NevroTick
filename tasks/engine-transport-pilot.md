@@ -25037,6 +25037,14 @@ after preserving 61 raw Windows files and all four linked image and PDB pairs.
 | Independent readback | `independent-native-readback.json` | `159c8451a1ed400a6d885ea7487882a410ae2515e83ace4cdbd62d1201a15674` |
 | Temporary artifact retirement | `owned-workspace-retirement.json` | `e2f8c351a0d7aa318d9b2afec2c942b1a961ece4a8826f09c6b65781d4f937a6` |
 
+The [current W11-W02 continuation](windows11-integration.md#w11-w02-windows-callback-and-subscription-observations--19-november-2026)
+reuses this runner and independently matches all 255 names on product
+`420e8749…`. All 13 cases pass. The real registration case also observes
+`AlreadyUsed` before and after explicit close. The first attempt's
+pre-launch resource refusal and the separate MSVC leaf metrics are
+recorded at W11-W02. The KE-wide source binding remains at its earlier
+candidate and needs reconciliation with the test-only delta for fresh gates.
+
 ###### Suspend and automatic-resume invalidation
 
 Under W11-W02/S2.1, TQ-07/09 and CHECK-11/21/25/27, the plain observe
@@ -26604,6 +26612,19 @@ including the separate serial/phase equivalence candidate.
 | `engine-ke-chronology-focus-a1303d8-20261119.y7U6f7aB/run-01/verification.json` | `60a961ccae43838fd564ecb40270a2731d271a1106b12f61cc014213ef53d458` |
 | `engine-ke-ledger-group06-e2a1876c-20261119-v1/independent-ledger217-readiness-a1303d8-v2.md` | `31d4c11287f13bbd13c67fb3375e4f7670b245d4111c5332017cc5fe4b380cad` |
 
+At the published `8fc623f` candidate, independent review verified reuse of
+two exact GNU/EP1 group 02 build-only compiler refusals at
+`ledger.rs:170:9` and `235:9`. Both exited 101 with primary `E0277` at
+the substituted `Instant` value. The current descriptors, diffs and
+compiler inventory match. The external
+`engine-ke-ledger-group06-e2a1876c-20261119-v1/independent-group02-two-instant-refusals-reuse-8fc623f-v1.json`
+record has SHA-256
+`4026c0fdeee15d2cb707bd7110bd5074933d364bcc3464cb3e37b3bf07ed4a41`.
+This adds zero behavioral catches. For the newer slot-test candidate,
+preserve this scope until the full input binding is reconciled. Select the
+retired-commit controls at `1989:16` only if exact admission and the existing
+150-second outer allowance cover setup through cleanup.
+
 ###### Current generated cookie-return pair
 
 S2.2, CHECK-11/19/25/26/27. The current generated continuation matched
@@ -26633,3 +26654,490 @@ their existing owners.
 | `engine-ke-ledger-group04-pair-a1303d8-20261119-v1/run-01/ram-campaign/campaign/work/mutation/ke_ledger/mutants.out/outcomes.json` | `6bc36fb007fa8d21e576e8b77b8ebc55a3151977c65ef03f76658b406f705196` |
 | `engine-ke-ledger-group04-pair-a1303d8-20261119-v1/independent-group04-pair-raw-readback.json` | `bcc40e8a9e8457b069368a4c3cf153cbf6d8f5ffd6c5564d9db2c34fcf9ecbb0` |
 | `engine-ke-ledger-group06-timeout-focus-a1303d8-20261119.5Nvm98ki/independent-four-focus-readback.json` | `c81768055fd1b23fcbadf8e1caf3e814c566dcf467052fdfb8516d2cb9cbbf3d` |
+
+###### Actual observe CLI capture bracket witness — W11-W01, 19 November 2026
+
+TQ-01/08/09 and CHECK-6/11/14/21/24/25/27. The linked current staged
+`f0903d99` candidate has 615 checked Root product inputs
+`dde78e2c87a143804407cf2a2f3e0092cb5d719954c5c5d6633d72547f6cc681`.
+The existing strict MSVC release link and isolation control passed. The
+actual AMD64 console image hashes to
+`54c2b4de76b41e21b7d323988f57a7637225078c0541883962edca84ab3a6823`.
+
+The selected Windows Sandbox build 26100 ran one `nevrotick-observe.exe`
+with two owned IPv4 loopback peers, a 1,500 ms query lifetime and no
+experimental profile. The exact guest controller and malformed parser
+control were checked before dispatch. Each peer received one 48-byte request
+from the named CLI socket and sent one valid ordinary response. Each
+actual CLI response reports one complete header and no rejection, retains
+its original capture bounds and remains mapping-unavailable, unauthenticated
+and ineligible. The complete child and guest exits were zero. Both output
+pipes reached EOF, and retirement closed the owned process and sockets.
+The host retained the bounded raw receipt and removed the exact copies
+from the mappings, leaving two empty per-run mappings.
+
+At the observed QPC frequency of 10 MHz, the peer held one reply for
+at least 25 ms after its receive returned. Its separately recorded
+receive-return to pre-send span was 49.5493 ms, inside the original
+Engine interval whose lower and upper bounds were 300.1113 ms and
+300.1135 ms. The immediate peer's inner span was 0.1259 ms, inside
+287.9283–287.9293 ms. The external reader inferred both comparisons
+from the raw QPC counter values and the actual CLI lines. Both passed
+without using the declared 202 ns allowance for cross-thread ordering
+ambiguity and integer conversion. Changing the bound slot's address,
+reversing a peer bracket or moving a peer span outside the actual interval
+each reached the corresponding independent reader refusal. Windows
+Stopwatch and the pinned Rust Instant use the same QPC time base, with
+separate observer and application call sites.
+[Microsoft QPC semantics](https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps)
+and [Rust 1.100 Windows clock implementation](https://github.com/rust-lang/rust/blob/1.100.0/library/std/src/sys/time/windows.rs).
+
+This verifies interval containment and the actual CLI's truthful result
+on the selected virtual Windows loopback. The reported intervals include
+application scheduling and observation placement. Physical packet timing,
+external UTC or rate calibration, production issuance and physical power
+event delivery still need their independent inputs and evidence. The
+prepared guest's active network route continues to hold trust-store and
+TLS/CRL qualification. The loopback witness staged only its exact
+controller and image, wrote its bounded output, and changed no trust,
+clock, service or host settings.
+
+| Evidence under `~/.local/share/nevrotick/engine-app-capture-guest-witness-20261119` | SHA-256 |
+| --- | --- |
+| `link-01/verification.json` | `a953c099ca2f10107f9f98c7c3647529e12ef2e536219038f57883c36f92d823` |
+| `native-01/verification.json` | `71a12ae4bc8e32e1df68ae1434de4964ad0a28b3cdb285d88fdb5a8dd2d7b1cd` |
+| `native-01/engine-observe-timing.json` | `4919a3e81d15a38f1aff46cc99db862ea2c27f190c340d8d7b266f7c5a824aeb` |
+
+###### Retired reply acceptance-time witnesses — 19 November 2026
+
+S2.2, CHECK-11/19/25/26/27. The current `f0903d99` product and exact
+rendered `ledger.rs:1989:16` variants reached the existing
+`retired_completion_commit_respects_acceptance_and_expiry` test through
+the actual owner. The original and restored source pass. At exact
+acceptance they publish one 12-byte replacement. Before acceptance
+they return `Ledger(Time)` and keep the live replacement pool empty.
+Both isolated variants compile. `<` → `<=` exits 101 at exact acceptance
+with the premature time refusal and empty pool. `<` → `>` exits 101
+one nanosecond before acceptance with success and one 12-byte cookie
+instead of the required refusal. The latter run re-admits the exact
+same-candidate healthy and restored raw results and executes only
+its own changed source. Both workers confirm owned scratch retirement.
+
+The first service used 87.688 seconds and the second 50.953 seconds.
+The cumulative charge is 1,338.258 of 1,350 seconds, leaving 11 whole
+outer seconds. These four focused test executions establish the two
+causal witnesses. Generated mutation credit is zero. The original
+campaign timeouts and miss accounting retain their actual status.
+Further generated reconciliation requires its existing complete
+admission and resource floor.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119` | SHA-256 |
+| --- | --- |
+| `ledger-retired-acceptance-f0903d99/verification.json` | `f7efa37523c5022f7e5aed6d84122bffaeda7941e1d81986c8d4744f04583ea4` |
+| `ledger-retired-acceptance-gt-f0903d99/verification.json` | `71f7857b03ab9a01a8fbb3ec712fe0664c4f6da9014957a80063ac80e8ace613` |
+
+###### Four retained ledger compiler refusals reconciled
+
+S2.2 and CHECK-11/19/24/25/26/27. Readback on `51ffa7e` with staged
+tree `a7b7b67e` matched all 615 product inputs for `dde78e2c…`. Two
+group 02 replacements still require `Default` for `std::time::Instant`
+in `RecoveryIntent::not_before` and `Receipt::accepted_at`. In group 06,
+the whole-body default replacements still require `Default` for the
+three checked `stage_observed_reply` result members and the unbounded
+`receive_reply_with<T>` result. All four exact typed descriptors and
+rendered hunks match the retained catalogue and apply to current source.
+Each raw GNU EP1 build exited 101 with primary `E0277` on the changed
+body. The compiler inventory, relevant root Cargo inputs and admitted
+vendor identity match. Independent review checked current type ownership
+and unchanged compiler obligations.
+
+The developer readback carries these four structural refusals forward
+for adjudication. It earns zero behavioral kills and leaves the original
+217 descriptors, raw outcomes and closed campaign policy intact. The
+configured reader has no row-level historical import. No compiler or
+test ran for this reconciliation. The chronology lease remains at 11
+whole seconds. Reclaiming 13 historical source exports with exact
+retained copies freed 290,271,232 bytes on WSL. The 7 GiB campaign floor
+still needs additional free space before fresh enumeration.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119` | SHA-256 |
+| --- | --- |
+| `ledger-four-compiler-reuses-a7b7b67e-01.json` | `d27fef6ac4eed04a5be87231027790e44425347106edfce739f333f14f7b549c` |
+| `retired-duplicate-source-copies-02.json` | `db08fd0a1fedbee0bfdab6a5a1dabae3b22e1bd99bda06906ad0ee862af809a4` |
+
+###### Source-scale declaration on the installed revision
+
+S2.1/W11-W01 and S1.4, REQ-8/11/14, CHECK-6/7/8/11/14/25/27 and
+TQ-08/09. The existing policy authority can declare unsmeared UTC,
+smear or unknown on its actual source. A declaration replaces the
+expected current revision using the same locked publication as other
+configuration changes. A foreign or stale snapshot cannot publish it.
+The transaction retains addresses, the checked KE target and the
+separate source and endpoint restrictions. A complete numeric or KE
+replacement starts with unknown scale until explicitly declared again.
+
+The plain series and address-round results and the joined protected
+report already retain the actual installed snapshot. They now expose
+its original declaration even after replacement. A scale-only change
+fences an old prepared plain session and refuses the real protected
+reply commit after the scripted transport has retired. The full
+replacement at pre-send and the postcommit historical report remain
+valid neighboring controls. The code adds no source-scale inference
+from peer replies and no change to production eligibility. The current
+configuration publisher owns laboratory metadata. Approved production
+configuration ingress, trusted full date and scale policy, finite
+calibration, mapping invalidation and Core admission still need their
+actual owners and evidence.
+
+The first GNU attempt ran three default and six EP1 behavioral cases
+and four configuration doctests successfully. Clippy rejected the
+expanded KE test at 105 lines. The test-only split preserves its
+assertions and adds the reset-to-unknown observation for full KE
+replacement. On `51ffa7e`, staged base `78338a4`, the resulting
+615-input product `5fc32aac…` passed the same three default and six
+EP1 behavioral cases, four doctests, GNU EP1 Clippy and MSVC-target
+Engine checks.
+The optimized attempt's compiler exited on SIGKILL under the bootstrap
+90-second per-process CPU setting, before any selected case executed.
+Both workers retired their owned scratch. Both incomplete attempts
+remain recorded. Independent source review confirmed the actual stale
+and historical consumers and unchanged eligibility guards.
+
+The **combined development run** passed all 19 existing lanes on the
+same `5fc32aac…` product. It ran 280 default and 576 EP1 cases in each
+ordinary and optimized mode, including 292 KE cases per EP1 mode.
+It ran 90 default and 91 EP1 doctests and 16 selected Core executions.
+GNU and MSVC-target compiler and Clippy checks, formatting, isolation
+and GNU rustdoc passed. The first combined preparation refused the
+overlapping documentation context before execution. The corrected
+preparation retained the frozen documentation in the protected map
+and pinned the two live drafts separately. The existing 240-second
+CPU and 300-second wall optimized compilation allowance and target
+retirement ran unchanged. The worker exited zero, its observer joined,
+no memory or task stop fired, and the exact scratch was retired.
+
+On the original readers, the older source-policy roster and KE Rustdoc
+selection refused the current binding. Both historical bindings still
+admitted their original evidence. The updated source-policy reader checked
+all 19 physical lane logs and the updated KE reader reread all three EP1
+logs under the exact terminal receipt. Both verified the changed Rustdoc
+identities and the four-input Rust delta, retaining the earlier graph's
+own product and lock identity. The installed readback admitted both
+current development roles and retained both historical results.
+
+Seven focused reader controls passed for roster, graph and custody
+admission. All 458 controls across the Engine reader, portable analysis,
+dependency-graph and Slint profile suites passed. The workspace strict
+policy check passed. Independent review matched 615 current product
+inputs and the 47 source-policy and 57 KE source/helper bindings and
+confirmed the earlier acceptance criteria. Both public campaigns stay
+closed. The 90% executable-line and 95% critical-file mutation gates
+remain open where affected. The current qualification profile still
+requires 7 GiB of free work space at startup. The prepared native KE
+fixture retains its earlier candidate scope.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119` | SHA-256 |
+| --- | --- |
+| `source-scale-development-01/verification.json` | `10086f4bfdafd985831a8bec88455c022e0a4d183f56d050d4a94872457eb2d9` |
+| `source-scale-development-02/verification.json` | `2f14d521490e039837bccbb57cf1ac1f107907a7599f350dca883bfd7d451b46` |
+| `source-scale-combined-preparation-01/admission.json` | `cf025d23e8a01905b1ecb2ae3eac3263c72933ba85308dd57252c4ae73bb190d` |
+| `source-scale-combined-preparation-01/reports/run-01/verification.json` | `87e79bc74d146527ee2e4c9d9ebd1d78f8de9ebac4aa9f71bfbb3f1d63474f6b` |
+| `source-scale-combined-preparation-01/coordinator-readback.json` | `9038097ee5a10be5a4001dde4ef834b4089e947da3b042479f512cf600ace1d6` |
+| `source-scale-combined-preparation-01/cleanup.json` | `4626f607b820cb55cec809d81b596e70d796c42fdb7c4b396884cb651bb01c6d` |
+| `source-scale-combined-preparation-01/closed-reader-baseline-01/verification.json` | `e2f58f3423c07a9517d73487253176a4e1b71bc31dc2ae4e54991faf000ff4fd` |
+| `source-scale-combined-preparation-01/legacy-reader-healthy-01.json` | `3f41e3a37b3f47330c100663482d51e7ecc4b767a7c1c3a65e4c1bf23ed1621c` |
+| `source-scale-combined-preparation-01/closed-role-actual-readback-01.json` | `04e27451b4521ba0280cedcc7db8ce1c5dd8f9477c05c6c90873110d5929fd77` |
+| `source-scale-combined-preparation-01/combined-role-reader-controls-01.log` | `35abe4ef06cfb28e1daf937f5b097458ed78506d663ea9b3dd0543618f3992bd` |
+
+###### Original authenticated leap indicator in the managed report
+
+S2.1/W11-W01 and [S1.4 LP-C04–06](s1.4-leap-policy.md#independent-case-matrix),
+REQ-8/14 and CHECK-7/8/11/14/25/27. The joined managed result now retains
+the raw LI from the original authenticated receipt alongside the original
+configuration, time and measurement outcome. The public getter exposes
+only the accepted two-bit claim. LI=3 still refuses an ordinary protected
+reply. The existing configuration identity, commit checks, chronology, work
+charges, absence of a measurement profile and redacted output retain their
+contracts. The historical claim grants no authority to select a UTC scale,
+interpret a calendar event or admit a sample.
+
+The independently sealed LI=1 control joins after replacing its
+unsmeared UTC configuration. It preserves the old definition and LI=1
+while measurement remains unavailable. The LI=0 control observes zero
+with both a numerical result and a date refusal. Existing reached controls
+check a valid tag on LI=3 before observing header refusal, and check
+authenticated-input alteration. A deliberate constant-zero substitution
+in a detached copy compiled and failed the actual LI=1 receiving assertion
+with exit 101. The exact restored source passed all six named EP1 cases.
+
+Rust contracts and independent review traced the original receipt to the
+consuming projection. Scoped regression selection used the existing
+stable-core GNU/MSVC target and vendor admission. Initial formatting
+refused one test expression before Rust execution. The corrected
+615-input candidate `8a5ca1e8…` from `51ffa7e` and staged base
+`936232ba` passed the configured isolation control, formatting, all 91
+GNU EP1 doctests, GNU and MSVC-target Clippy, and MSVC-target Rustdoc.
+The workspace strict policy check passed. Both attempts retired their
+owned scratch. Independent review matched the raw inputs and result
+identities to the current source.
+
+This closes the report's LI retention development slice. The closed
+Engine role bindings retain their `5fc32aac…` product identity.
+Full current-profile rebinding, affected 90%/95% metric gates, native
+exchange and end-to-end leap admission remain open. Full LP-C04 still
+needs independent date and mapping suppliers, segment/guard integration
+and actual fresh quorum observations.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119/raw-leap-01` | SHA-256 |
+| --- | --- |
+| `check-01/verification.json` | `e5f76287e3a55cd5f3e7de6425081a1901391c267e36fed1d7772dea6b6261ea` |
+| `check-02/verification.json` | `c1dca75e7de0f7e7ee3f8d7cf65f2f3dcec01fddeffdc5c59ab0e7707d5a9f84` |
+| `check-02/source.patch` | `0c480148355d2a1787fc4064b8c4966b5968e25cd384a8eeab92e93fca3d858d` |
+
+###### Windows adjustment-mode observation around acquisition
+
+W11-W01/TQ-07/08, CHECK-6/11/14/21/25/27. The intended backend in architecture
+§10.1 includes [GetSystemTimeAdjustmentPrecise](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeadjustmentprecise).
+Use the existing Windows native leaf to preserve the two raw words, mode
+and immediately captured read failures. Bracket both observations around
+the actual bounded observe invocation and retain their original monotonic
+order through a dedicated opt-in report. An observed difference challenges
+continuity across the brackets. Equal results or read failures provide
+no continuity or calibration guarantee. Retain original packet timestamps,
+default output, primary errors and the present ineligibility boundary.
+
+The Windows native leaf calls the getter once per observation and captures
+the original Win32 code immediately on failure. The existing observe CLI
+accepts the single optional pair `--clock-adjustment raw` in addition to its
+six original pairs. GNU refuses this option before socket or entropy work.
+On Windows the reads bracket the actual Engine execute call. The result
+keeps the original resume-watch cleanup and primary error precedence.
+The opt-in report has two finite read records and one summary with
+`mapping=unavailable`. An unordered bracket omits offsets and leaves the
+summary unavailable. The mapping, clock and source authority boundaries
+remain separate.
+
+The 618-input product `bfc89aa8…` from `51ffa7e` and staged base
+`99296775` passed seven focused lanes under the configured isolation,
+pinned Rust 1.100.0, unchanged vendor graph and frozen xwin inputs. Eight
+GNU binary cases and two real process cases passed. They covered the
+seventh pair, exact legacy output and refusals, changed values and mode,
+paired read failures and preserved operation outcome. GNU and MSVC-target
+Clippy, format, strict workspace policy and the MSVC release link passed.
+Independent PE inspection resolved the getter to
+`api-ms-win-core-sysinfo-l1-2-4.dll` with the existing image hardening
+declarations. The earlier setup and three lint failures remain in checks
+01–04. All owned build scratch retired.
+
+The exact linked image completed separate default and opt-in runs on the
+offline Windows Sandbox build 26100, through the existing guest login.
+Both controlled IPv4 loopback peers completed in each case. The independent
+reader verified the original output shape, raw launch and child completion,
+bounded streams, actual peer timing containment and cleanup. The raw run
+reported two ordered observations of words `10000000` and `10000000` with
+periodic adjustment disabled. Its summary was `equal` with mapping
+unavailable. The raw reader rejected forged summaries, reversed order and
+read refusal in its derived controls. Both runs left empty staging mappings.
+
+Native mismatch and error behavior on the supported release families, the
+affected 90% line and 95% critical-file mutation gates, physical calibration,
+trusted date and a current mapping issuer remain open. This observation
+advances the existing acquisition owner.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119/adjustment-observation-01` | SHA-256 |
+| --- | --- |
+| `check-05/verification.json` | `33300f25aedad93559d105fb15e2b72c49a29305c78188b7edb10403519e365d` |
+| `check-05/nevrotick-observe.exe` | `6de5beb94dff71962bd8363cfab6629920ed9978dfe6a07ffba19416ce9c236b` |
+| `native-loopback-01/verification.json` | `e31e2f879a147b680c775d5b5d3d691ef5b9539d2979df35c193b9d4b91d2630` |
+
+###### Combined adjustment development checks
+
+W11-W01/TQ-07/08 and CHECK-6/11/21/25/27. The 618-input `bfc89aa8…`
+product from `51ffa7e` and staged tree `cb43cb74` passed the bounded 19-lane
+combined development run. GNU executed 284 default and 580 EP1 cases in
+each of ordinary and optimized modes, 90 default and 91 EP1 doctests, and
+16 selected Core cases across both modes. EP1 included 292 KE cases per mode.
+The boundary, format, GNU lint and Rustdoc, and Windows MSVC cross-check
+and Clippy lanes passed. The run exited zero in 369.393 seconds of measured
+work with zero resource stop events. Its limit remained 2,400 seconds
+and 6 GiB; peak charged memory was 1,967,198,208 bytes.
+
+Independent readback confirmed 1,925 named executions, all 19 raw command and
+status bindings, the frozen product and tool inputs, and actual session
+retirement. The owner removed the two exact tmpfs roots after the unit exited.
+The earlier standalone Sandbox result keeps its own artifact scope. The
+closed-role readers still bind the source-scale predecessor. Rebind current
+development evidence before the affected 90% line and 95% per-file mutation
+campaigns. Production capture/mapping, independent date and current
+Engine-to-Core admission remain open.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119/adjustment-combined-01` | SHA-256 |
+| --- | --- |
+| `admission.json` | `6fe0c5b02274f9d585d328bc48d9896105d3f308d85ab498d8a1918ab15df31e` |
+| `reports/run-01/verification.json` | `dacae5017bb461dad559ce83ba452bf884ae893394fcdc3096d3a56cf1871d5b` |
+| `wrapper-cleanup.json` | `99aa4be4be6f6c364506da74bee2661c6c59966e50251975fa08f8355ecb643c` |
+
+###### Checked ordinary TLS certificate-time provider
+
+OPEN-8, W11-W01/S2.2 and CHECK-8/9/25/27. The pinned Rustls 0.23.46
+default provider calls `UnixTime::now()`. Pinned pki-types 1.15.1 unwraps
+`SystemTime::now().duration_since(UNIX_EPOCH)`. A pre-1970 system date can
+therefore panic before the selected Windows verifier checks its supported
+date range. The Engine already projects Rustls `FailedToGetCurrentTime`
+into its typed `LocalClock` cause.
+
+The actual TLS configuration now installs a private fallible local wall-time
+provider through `builder_with_details`. Each Rustls callback samples the
+current local wall clock and returns `None` if epoch conversion fails.
+Only the test build can supply a fixed observation. The ordinary Windows
+verifier, TLS 1.3 suite order, server identity, ALPN and disabled resumption
+still reach the same configured connection. This supplies ordinary local
+certificate time. Trusted date, provisional recovery and production mapping
+retain their existing owners.
+
+The 618-input `6a11abbe…` candidate from staged base `cf828d6b` passed the
+configured isolation control, format, MSVC EP1 Clippy and both exact libtest
+links. The second image reinstates the pinned unchecked conversion against
+the same injected observation as a targeted fault control. In the offline
+Windows guest that image failed the intended test with exit 101 and
+`SystemTimeError(100ns)`. The repaired image passed the actual configured
+callback at epoch minus 100 ns, the epoch, and epoch plus one second and
+100 ns. The existing Windows typed transport test also passed, covering
+`FailedToGetCurrentTime` and native neighbors at all four I/O stages.
+
+The first launcher attempt printed the expected panic but lost the child
+exit code. Its result remains incomplete. The second launcher acquired
+the correct exit codes and caught a zero-test projector selection. The
+corrected exact `windows_tests` selection then passed. Both earlier
+failures and their mapping cleanup are retained. The final run reaped
+each child before reading its bounded captures and left empty mappings.
+Independent source review found no changed verifier or TLS policy.
+
+These controls exercise the configured callback and typed projector. The
+later certificate-bearing pair below reaches the real handshake. The
+transport-file metrics and production date/mapping admission remain open.
+The earlier 19-lane and five-case native receipts keep their original scope.
+Current closed-role admission needs rebinding before dependent metric campaigns.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119/tls-local-wall-check-01` | SHA-256 |
+| --- | --- |
+| `build-01/verification.json` | `6a5128ea8c33c8e654824b0700556a7237d9f5d1456fa24ac413867469158bf8` |
+| `guest-01/verification.json` | `9c933f927f5b325bb313efe1381ca254f8fb92ada2df598082c95fce8a3b7681` |
+| `guest-01/cleanup.json` | `c150d0d2a38534faf42c004f1e43b6660cd1b71edfc67513978951a7a930724d` |
+| `guest-02/verification.json` | `bbbc2792cad54d5d0c62f572bfb673d4ff9ebea44f93694bb96ab3d3a3345ef7` |
+| `guest-02/cleanup.json` | `e6c97b8949e07e0b9fe6d81952d4d9c682e08cb6971847df45d51307b1021536` |
+| `guest-03/verification.json` | `e5d5ce3d3f3be026b43e1f285619fccf268f648fc82d7316ee41fd9cc61feb09` |
+
+###### Transport fault Windows mutation adjudication
+
+CHECK-19/25/26/27. The `6a11abbe…` product from staged tree `13bcabac`
+retains the exact `transport_fault.rs` bytes that generated the earlier
+39-descriptor catalogue. Independent reconstruction reproduced every
+registered source hunk. All 39 bodies are present in the Windows EP1
+configuration. The selection contains 17 generated functions and retains
+the original 95% per-file threshold.
+
+The current Windows image first passed 18 exact component cases, comprising
+eight shared transport-fault tests, four Windows projector/response tests
+and six managed transport consumers. The same selection ran against every
+runnable variant and the restored source. Each native process completed
+before its two streams were read. All 19 runnable variants exited 101 at
+their intended assertions. The restored image passed all 18 cases and
+exited zero. This is 378 named executions across baseline, variants and
+restoration, with 28 causal assertion failures in the faulted cases.
+
+The other 20 variants were compiler-unviable. Independent diagnostic review
+confirmed eleven missing Default bounds, five dead-code refusals, two
+unused-import variants, one unused variable and one invalid let-chain.
+Every primary location belongs to the mutated owner. These variants receive
+zero behavioral credit. The registered Windows viable score is **19/19
+(100%)**, with zero survivors, timeouts or exclusions. The original GNU
+misses and interrupted outcomes retain their own scope and status.
+
+The first compiler attempt stopped after its two healthy setup lanes because
+the private driver reused the index-hash variable as a catalogue counter.
+Its 43.378 seconds remain charged. The corrected attempt finished all 39
+variants and restored linkage in 524.429 seconds. The recorded build and
+native allowance consumed 663.046 of 1,260 seconds. Independent reviews
+matched all variant source/diff/image hashes, 42 raw compiler lanes,
+40 native captures, the actual exits and all selected names. Compiler
+scratch retired, guest mappings were emptied, and the owner deleted
+278,784,000 bytes of completed variant images after review. The exact
+healthy callback image remains available.
+
+This closes the registered Windows component mutation selection.
+`TransportIo::new` has no generated variant. Individual guard ordering,
+first-fault overwrite and grouped classification alternatives still need
+their independent behavioral controls. The portable response branch,
+Windows executable-line coverage, actual TLS/socket/provider completion
+and canonical closed-role admission retain their own exits. This run
+changes neither public campaign admission nor production/native release
+qualification.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119/fault-msvc-39-01` | SHA-256 |
+| --- | --- |
+| `baseline-01/verification.json` | `515791379789255cb13cecc234cd5a934e4622a09adab694d6e4e35ad40e2211` |
+| `build-01/verification.json` | `afc7efc9a7bcc04a8e5834174f9b241ee265eea309c09861d461b6161bdce078` |
+| `build-02/verification.json` | `2ff574df87cadd0bd89e147a6fba5d6a05394504f590bb3ace338dcde74c5490` |
+| `native-01/verification.json` | `c5bc0f0510e21f5f395f19d756dfbc916d838fe52ad00bf606607543b4dba7b2` |
+| `retired-variant-images.json` | `24c5c6669f975e01273435f64eed13a4926d6582ceb452ebc7feefde6e28e2dc` |
+
+###### Certificate-bearing Windows clock refusals and shutdown attribution
+
+OPEN-8, S2.2 and CHECK-8/9/25/27. The Rust contracts, crypto, integration,
+Windows Sandbox and lifecycle skills apply to the actual Windows transport.
+The component clock checks above stop at the time callback and error
+projector. This pair enters the real Engine `establish` path and the pinned
+standalone CNG peer. Each process owns its original native provider and
+socket lifetime. The current synthetic leaf and key are used only by its
+isolated KE peer. One private client image substitutes the epoch-minus-100-ns
+observation through the existing test field. The second uses ordinary local
+time. Both preserve the actual verifier and check the unchanged publication
+phase after retirement. Inputs and images were admitted by hash, and the
+guest collector observed each loopback listener's original peer owner.
+
+The first dispatch refused the input list before starting a child. The
+second reached the guest but the peer exited before readiness with `io/io`.
+Its process was reaped, and the store and scratch checks passed. The next
+dispatch reused the four fixed environment values from the earlier working
+collector. Both attempts remain incomplete and their mappings were emptied.
+
+On `6a11abbe…`, both certificate-bearing handshakes reached their intended
+primary refusals. Injected time returned `Handshake/LocalClock`. Ordinary
+time returned `Handshake/Certificate(Issuer)`. Each also recorded a `Shutdown`
+error with the same cause. Pinned Rustls 0.23.46 `Writer::flush` checks the
+stored TLS error without performing I/O. Engine interpreted that repeated
+error as a second failure.
+
+The repair removes this cached-error check only from `close`. The existing
+record drain, guarded socket flush, currentness checks and buffered read
+still determine the shutdown result. On `b4c3ddff…` the two fixture images
+passed format, Windows-target Clippy and exact links. Both executed their
+one named test on Windows and retained the same primary with `cleanup=None`.
+Each peer exited with its expected I/O refusal before KE completion. The
+four child processes were reaped, all eight captures reached EOF, and the
+physical CurrentUser Root and CA inventories matched. Scratch removal and
+empty mappings were verified. The guest clock was left untouched.
+
+Three further cases in the same ordinary fixture image passed on Windows.
+They preserve TLS refusal precedence over alert-write and alert-deadline
+faults and preserve both typed and native response-read failures. Independent
+review matched the original and repaired primary causes, actual child exits,
+stream hashes, store snapshots and both fixture inputs. The two superseded
+fixture images were retired after review.
+
+The 39-descriptor Windows transport-fault result above retains its original
+candidate scope. Fresh per-file metrics, a healthy authenticated run with
+the repaired image, far-future date handling, installed-service trust and
+production date/mapping admission retain their existing exits.
+
+| Evidence under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119` | SHA-256 |
+| --- | --- |
+| `tls-certificate-handshake-01/build-01/verification.json` | `3d1d408aab8cfe86559551087564393a9b499e26f7c32a28e7a7bdf97b224ea6` |
+| `tls-certificate-handshake-01/native-01/verification.json` | `b655a6c5575b74051e0343d720309750370b8c7f03dadc79bc3a16b039e2d97e` |
+| `tls-certificate-handshake-01/native-02/verification.json` | `ea6e4b1dc22adca744959dee9f7ffb13e6136264c40d63a4fa322836f26fff2b` |
+| `tls-certificate-handshake-01/native-03/verification.json` | `08bb5115cfdd0d3e60e508639d9408b0732ab1f4ec5c5b4ca2bdf3de2bb14550` |
+| `tls-certificate-handshake-01/superseded-fixture-images-retired.json` | `09929551949bf32d7c1eb0fc96f5a68f28ece94961094e77690d61e6fcfd98ec` |
+| `tls-certificate-cleanup-01/build-01/verification.json` | `c6e25d034dd57cb9144dc7baa980e75279406da3f2b8087f6e61617bcaa95e59` |
+| `tls-certificate-cleanup-01/native-01/verification.json` | `3f5799f893c105cea5faaf7857ab1b4e82951bf19092981e1dbdecf1fb77fb3d` |
+| `tls-certificate-cleanup-01/cleanup-neighbors-01/verification.json` | `aae7c5e3e6527e8f20a330463089fe3e651e294fc0b154e765956220e3a7874c` |

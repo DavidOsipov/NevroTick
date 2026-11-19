@@ -148,18 +148,42 @@ try {
             $rootAttributes = [IO.File]::GetAttributes($scratch)
             if (($rootAttributes -band [IO.FileAttributes]::Directory) -eq 0 -or
                 ($rootAttributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'scratch-root' }
-            $entries = [Collections.Generic.List[string]]::new()
+            # CodeDom may put temporary files in one ordinary subdirectory.
+            # Inventory the entire owned tree before removing any entry.
+            $entries = [Collections.Generic.List[object]]::new()
+            $directories = [Collections.Generic.Queue[string]]::new()
+            $directories.Enqueue($scratch)
             [long]$total = 0
-            foreach ($path in [IO.Directory]::EnumerateFileSystemEntries($scratch)) {
-                if ($entries.Count -ge 64) { throw 'scratch-count' }
-                $attributes = [IO.File]::GetAttributes($path)
-                if (($attributes -band ([IO.FileAttributes]::Directory -bor
-                    [IO.FileAttributes]::ReparsePoint)) -ne 0) { throw 'scratch-kind' }
-                $total += [IO.FileInfo]::new($path).Length
-                if ($total -gt 8388608) { throw 'scratch-bytes' }
-                $entries.Add($path)
+            while ($directories.Count -ne 0) {
+                $directory = $directories.Dequeue()
+                $attributes = [IO.File]::GetAttributes($directory)
+                if (($attributes -band [IO.FileAttributes]::Directory) -eq 0 -or
+                    ($attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'scratch-kind' }
+                foreach ($path in [IO.Directory]::EnumerateFileSystemEntries($directory)) {
+                    if ($entries.Count -ge 64) { throw 'scratch-count' }
+                    $attributes = [IO.File]::GetAttributes($path)
+                    if (($attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'scratch-kind' }
+                    $isDirectory = ($attributes -band [IO.FileAttributes]::Directory) -ne 0
+                    if ($isDirectory) {
+                        if ($directory -cne $scratch) { throw 'scratch-depth' }
+                        $directories.Enqueue($path)
+                    } else {
+                        $total += [IO.FileInfo]::new($path).Length
+                        if ($total -gt 8388608) { throw 'scratch-bytes' }
+                    }
+                    $entries.Add([pscustomobject]@{ Path = $path; Directory = $isDirectory })
+                }
             }
-            foreach ($path in $entries) { [IO.File]::Delete($path) }
+            for ($index = $entries.Count - 1; $index -ge 0; $index--) {
+                $entry = $entries[$index]
+                $attributes = [IO.File]::GetAttributes($entry.Path)
+                if (($attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or
+                    (($attributes -band [IO.FileAttributes]::Directory) -ne 0) -ne $entry.Directory) {
+                    throw 'scratch-kind'
+                }
+                if ($entry.Directory) { [IO.Directory]::Delete($entry.Path, $false) }
+                else { [IO.File]::Delete($entry.Path) }
+            }
             [IO.Directory]::Delete($scratch, $false)
         } catch { $cleanup.Add('owned-compiler-scratch') }
     }

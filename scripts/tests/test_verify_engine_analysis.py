@@ -2269,23 +2269,27 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.args = SimpleNamespace(profile="ke_association", lane="baseline", subject="all",
             tool_admission_profile="stable-core", output_dir=self.base / "new-output", vendor_dir=self.base / "vendor")
 
-    def write_ep1_reference(self):
+    def write_ep1_reference(self, *, optimized=False):
         """Provide independently named, explicitly synthetic successful lane documents."""
         binding = self.policy["binding"]
         path = self.base / "ordinary_evidence.json"
         prefix = ["cargo", "test", "--package", "nevrotick-engine", "--frozen", "--jobs", "6",
                   "--features", "ke-association-prototype"]
         lanes = []
-        for lane, selectors, names in (
+        selection = [
             ("ep1-ordinary", ["--lib", "--tests"], binding["test_inventory"]),
             ("ep1-doctests", ["--doc"], binding["doctest_inventory"]),
-        ):
+        ]
+        if optimized:
+            selection.append(("ep1-optimized", ["--release", "--lib", "--tests"], binding["test_inventory"]))
+        for lane, selectors, names in selection:
             raw = path.with_name(lane + ".json")
             output = self.execution(names)
             cases = names
-            if lane == "ep1-ordinary":
+            if lane != "ep1-doctests":
                 binary = "unittests src/lib.rs"
-                output = f"     Running {binary} (/work/target/debug/synthetic-engine)\n" + output
+                profile = "release" if lane == "ep1-optimized" else "debug"
+                output = f"     Running {binary} (/work/target/{profile}/synthetic-engine)\n" + output
                 cases = [{"package": "nevrotick-engine", "binary": binary, "name": name} for name in names]
             raw.write_text(json.dumps({"command": [*prefix, *selectors, "--", "--test-threads=1"],
                                        "exit_code": 0, "failure": None, "output": output}))
@@ -2293,6 +2297,9 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
                           "exit_code": 0, "failure": None, "tests_executed": len(names), "cases": cases})
         receipt = {"status": "passed", "mode": "combined", "inputs": self.identity,
                    "candidate_sha256": independent_digest(self.identity), "lanes": lanes}
+        if optimized:
+            receipt["predecessor_graph"] = dict(binding["root_graph_evidence"])
+            lanes.append({"lane": "format", "exit_code": 0, "failure": None})
         path.write_text(json.dumps(receipt))
         binding["ordinary_evidence"] = {"path": str(path), "sha256": MODULE.PRODUCT.sha256(path)}
 
@@ -3215,6 +3222,203 @@ class EngineKeAnalysisRoleTests(unittest.TestCase):
         self.invoke()
         binding["doctest_inventory"] = previous
         self.invoke(accepted=True)
+
+    @contextmanager
+    def source_scale_reference(self):
+        """Exercise the new candidate branch using declared synthetic source and lane evidence."""
+        changed = (
+            "crates/nevrotick-engine/src/lib.rs",
+            "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview_tests.rs",
+            "crates/nevrotick-engine/src/source_policy.rs",
+            "crates/nevrotick-engine/tests/private/source_configuration.rs",
+        )
+        previous = self.identity | {name: "d" * 64 for name in changed}
+        self.identity = previous | {name: "f" * 64 for name in changed}
+        binding = self.policy["binding"]
+        legacy = binding["doctest_inventory"]
+        docs = sorted([*legacy, "crates/nevrotick-engine/src/source_policy.rs - "
+                       "source_policy::configuration::SourceConfigurationSnapshot (line 220) - compile fail"])
+        binding.update(candidate_sha256=independent_digest(self.identity), source_file_count=len(self.identity),
+                       doctest_inventory=docs)
+        graph_path = Path(binding["root_graph_evidence"]["path"])
+        graph_path.write_text(json.dumps({
+            "status": "passed", "changed_tree_outputs": [],
+            "product_digest": independent_digest(previous), "product_input_sha256": previous,
+            "lockfile_sha256": previous["Cargo.lock"],
+            "lanes": [{"label": f"synthetic-graph-{index}", "exit_code": 0} for index in range(45)],
+        }))
+        pin = hashlib.sha256(graph_path.read_bytes()).hexdigest()
+        binding["root_graph_evidence"]["sha256"] = pin
+        self.write_ep1_reference(optimized=True)
+        cases = sorted(("unittests src/lib.rs", name) for name in binding["test_inventory"])
+        with patch.multiple(
+                MODULE, ENGINE_KE_SOURCE_SCALE_CANDIDATE=independent_digest(self.identity),
+                ENGINE_KE_SOURCE_SCALE_TERMINAL_SHA256=binding["ordinary_evidence"]["sha256"],
+                ENGINE_KE_SOURCE_SCALE_DOCTEST_DIGEST=independent_digest(docs),
+                ENGINE_KE_SOURCE_SCALE_CASE_DIGEST=independent_digest(cases),
+                ENGINE_KE_SOURCE_SCALE_GRAPH_PREDECESSOR=independent_digest(previous),
+                ENGINE_KE_SOURCE_SCALE_GRAPH_SHA256=pin):
+            yield binding, legacy
+
+    def test_source_scale_requires_its_exact_91_docs_at_execution_and_retirement(self):
+        with self.source_scale_reference() as (binding, legacy):
+            current = binding["doctest_inventory"]
+            self.assertEqual(MODULE.validate_engine_ke_doctest_inventory(legacy), legacy)
+            self.assertEqual(MODULE.validate_engine_ke_policy(self.policy), binding)
+            ordinary = self.execution(binding["test_inventory"])
+            rustdoc = self.execution(current)
+            execution = MODULE.validate_engine_ke_execution(ordinary + rustdoc, binding, include_doctests=True)
+            self.assertEqual(execution["tests_executed"], 667)
+            self.assertEqual(MODULE.validate_engine_ke_current_doctests(rustdoc, binding)["test_names"], current)
+            replaced = sorted(name.replace("(line 220)", "(line 221)") for name in current)
+            for docs in (legacy, replaced):
+                invalid = binding | {"doctest_inventory": docs}
+                with self.subTest(count=len(docs)), self.assertRaisesRegex(MODULE.Incomplete, "annotated Rustdoc inventory"):
+                    MODULE.validate_engine_ke_policy(self.policy | {"binding": invalid})
+                with self.assertRaisesRegex(MODULE.Incomplete, "annotated Rustdoc inventory"):
+                    MODULE.validate_engine_ke_current_doctests(self.execution(docs), invalid)
+                with self.assertRaisesRegex(MODULE.Incomplete, "annotated Rustdoc inventory"):
+                    MODULE.validate_engine_ke_execution(ordinary + self.execution(docs), invalid,
+                                                        include_doctests=True)
+
+            debug_session, debug_report, debug, kept = self.debug_retirement_fixture()
+            release_session, release_report, release = self.release_retirement_fixture()
+            for retire, session, report, cache in (
+                    (MODULE.retire_engine_ke_debug_target, debug_session, debug_report, debug),
+                    (MODULE.retire_engine_ke_release_target, release_session, release_report, release)):
+                invalid = self.policy | {"binding": binding | {"doctest_inventory": replaced}}
+                with self.assertRaisesRegex(MODULE.Incomplete, "annotated Rustdoc inventory"):
+                    retire(session, invalid, report)
+                self.assertTrue(cache.is_dir())
+                retire(session, self.policy, report)
+                self.assertFalse(cache.exists())
+            for path in kept:
+                self.assertEqual(path.read_bytes(), b"unchanged synthetic sentinel")
+
+    def test_source_scale_optimized_evidence_rejects_omission_default_and_substitution(self):
+        with self.source_scale_reference() as (binding, _legacy):
+            self.invoke(accepted=True)
+            receipt_path = Path(binding["ordinary_evidence"]["path"])
+            raw_path = receipt_path.with_name("ep1-optimized.json")
+            accepted = MODULE.admit_engine_ke_evidence(binding)
+            self.assertEqual(accepted["ep1-optimized"], hashlib.sha256(raw_path.read_bytes()).hexdigest())
+            for case, reason in (
+                    ("absent", "one physical row"),
+                    ("ordinary-command", "fixed successful EP1 command"),
+                    ("empty", "native block declaration or summary is unmatched"),
+                    ("default-only", "exact admitted ordinary"),
+                    ("same-count", "exact admitted ordinary")):
+                with self.subTest(case=case):
+                    self.write_ep1_reference(optimized=True)
+                    receipt = json.loads(receipt_path.read_bytes())
+                    row = next(row for row in receipt["lanes"] if row["lane"] == "ep1-optimized")
+                    raw = json.loads(raw_path.read_bytes())
+                    if case == "absent":
+                        receipt["lanes"].remove(row)
+                    elif case == "ordinary-command":
+                        raw["command"].remove("--release")
+                    else:
+                        names = binding["test_inventory"]
+                        if case == "empty":
+                            names = []
+                        elif case == "default-only":
+                            names = [name for name in names if not name.startswith("nts_ke_experiment::")]
+                        else:
+                            names = ["substitute_for_original"] + names[1:]
+                        raw["output"] = ("     Running unittests src/lib.rs (/work/target/release/synthetic-engine)\n"
+                                         + self.execution(names))
+                        row["tests_executed"] = len(names)
+                        row["cases"] = [{"package": "nevrotick-engine", "binary": "unittests src/lib.rs", "name": name}
+                                        for name in names]
+                    raw_path.write_text(json.dumps(raw))
+                    row["sha256"] = hashlib.sha256(raw_path.read_bytes()).hexdigest()
+                    receipt_path.write_text(json.dumps(receipt))
+                    binding["ordinary_evidence"]["sha256"] = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
+                    with patch.object(MODULE, "ENGINE_KE_SOURCE_SCALE_TERMINAL_SHA256",
+                                      binding["ordinary_evidence"]["sha256"]):
+                        with self.assertRaisesRegex(MODULE.Incomplete, reason):
+                            MODULE.admit_engine_ke_evidence(binding)
+                        self.invoke()
+                    self.assertFalse(self.args.output_dir.exists())
+
+    def test_source_scale_same_name_wrong_binary_refuses_each_ordinary_mode(self):
+        with self.source_scale_reference() as (binding, _legacy):
+            names = binding["test_inventory"]
+            terminal_path = Path(binding["ordinary_evidence"]["path"])
+            for lane, profile in (("ep1-ordinary", "debug"), ("ep1-optimized", "release")):
+                with self.subTest(lane=lane):
+                    self.write_ep1_reference(optimized=True)
+                    receipt = json.loads(terminal_path.read_bytes())
+                    row = next(row for row in receipt["lanes"] if row["lane"] == lane)
+                    raw_path = terminal_path.with_name(lane + ".json")
+                    raw = json.loads(raw_path.read_bytes())
+                    raw["output"] = (f"     Running unittests src/lib.rs (/work/target/{profile}/synthetic-engine)\n"
+                                     + self.execution(names[:-1])
+                                     + f"     Running tests/foreign.rs (/work/target/{profile}/synthetic-foreign)\n"
+                                     + self.execution(names[-1:]))
+                    row["cases"][-1]["binary"] = "tests/foreign.rs"
+                    raw_path.write_text(json.dumps(raw))
+                    row["sha256"] = hashlib.sha256(raw_path.read_bytes()).hexdigest()
+                    terminal_path.write_text(json.dumps(receipt))
+                    binding["ordinary_evidence"]["sha256"] = hashlib.sha256(terminal_path.read_bytes()).hexdigest()
+                    with patch.object(MODULE, "ENGINE_KE_SOURCE_SCALE_TERMINAL_SHA256",
+                                      binding["ordinary_evidence"]["sha256"]):
+                        with self.assertRaisesRegex(MODULE.Incomplete, "executed binary and case identities differ"):
+                            MODULE.admit_engine_ke_evidence(binding)
+                        self.invoke()
+
+    def test_source_scale_terminal_pin_and_graph_association_are_mandatory(self):
+        with self.source_scale_reference() as (binding, _legacy):
+            self.invoke(accepted=True)
+            terminal_path = Path(binding["ordinary_evidence"]["path"])
+            receipt = json.loads(terminal_path.read_bytes())
+            receipt["lanes"].pop()
+            terminal_path.write_text(json.dumps(receipt))
+            binding["ordinary_evidence"]["sha256"] = hashlib.sha256(terminal_path.read_bytes()).hexdigest()
+            with self.assertRaisesRegex(MODULE.Incomplete, "exact combined terminal receipt"):
+                MODULE.admit_engine_ke_evidence(binding)
+            self.invoke()
+
+            self.write_ep1_reference(optimized=True)
+            receipt = json.loads(terminal_path.read_bytes())
+            receipt["predecessor_graph"]["sha256"] = "e" * 64
+            terminal_path.write_text(json.dumps(receipt))
+            binding["ordinary_evidence"]["sha256"] = hashlib.sha256(terminal_path.read_bytes()).hexdigest()
+            with patch.object(MODULE, "ENGINE_KE_SOURCE_SCALE_TERMINAL_SHA256",
+                              binding["ordinary_evidence"]["sha256"]):
+                with self.assertRaisesRegex(MODULE.Incomplete, "terminal names a different predecessor graph"):
+                    MODULE.admit_engine_ke_evidence(binding)
+                self.invoke()
+            self.assertFalse(self.args.output_dir.exists())
+
+    def test_source_scale_graph_reuse_rejects_new_pin_and_wrong_input_delta(self):
+        with self.source_scale_reference() as (binding, _legacy):
+            self.invoke(accepted=True)
+            graph = binding["root_graph_evidence"]
+            graph_path = Path(graph["path"])
+            old_pin = graph["sha256"]
+            graph_bytes = graph_path.read_bytes()
+            graph_path.write_bytes(graph_bytes + b" ")
+            graph["sha256"] = hashlib.sha256(graph_path.read_bytes()).hexdigest()
+            with self.assertRaisesRegex(MODULE.Incomplete, "exact predecessor graph receipt"):
+                MODULE.admit_engine_ke_evidence(binding)
+
+            report = json.loads(graph_bytes)
+            previous = report["product_input_sha256"]
+            changed = "crates/nevrotick-engine/src/source_policy.rs"
+            previous[changed] = self.identity[changed]
+            report["product_digest"] = independent_digest(previous)
+            graph_path.write_text(json.dumps(report))
+            graph["sha256"] = hashlib.sha256(graph_path.read_bytes()).hexdigest()
+            # Isolate the exact-delta refusal from the preceding bytes/digest checks.
+            with patch.multiple(MODULE, ENGINE_KE_SOURCE_SCALE_GRAPH_SHA256=graph["sha256"],
+                                ENGINE_KE_SOURCE_SCALE_GRAPH_PREDECESSOR=report["product_digest"]):
+                with self.assertRaisesRegex(MODULE.Incomplete, "unchanged-input reuse boundary"):
+                    MODULE.admit_engine_ke_evidence(binding)
+            self.assertFalse(self.args.output_dir.exists())
+            graph_path.write_bytes(graph_bytes)
+            graph["sha256"] = old_pin
+            self.invoke(accepted=True)
 
     def test_ep1_typed_native_observations_refuse_before_session(self):
         """Numeric equality cannot replace literal native status/count types."""
@@ -6145,6 +6349,163 @@ class EngineSourcePolicyAnalysisRoleTests(unittest.TestCase):
                           sorted(name if name != case else "nts_ke_experiment::other_order_case" for name in ep1)):
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.source_policy_ep1_execution(self.execution(wrong), binding)
+
+    def source_scale_combined_fixture(self):
+        """Declare a complete synthetic combined run without using the reader as an oracle."""
+        directory = self.base / "source-scale" / "reports" / "run-01"
+        directory.mkdir(parents=True)
+        terminal_path = directory / "verification.json"
+
+        def write_json(path, data):
+            path.write_text(json.dumps(data))
+            return hashlib.sha256(path.read_bytes()).hexdigest()
+
+        identity = self.identity.copy()
+        candidate = independent_digest(identity)
+        previous = {**identity, self.OWNERS["source_policy"]: "e" * 64}
+        previous_digest = independent_digest(previous)
+        prior = directory / "previous.json"
+        prior_digest = write_json(prior, {"status": "passed", "candidate_sha256": previous_digest,
+                                         "inputs": previous})
+        graph = directory / "previous-graph.json"
+        graph_digest = write_json(graph, {"status": "passed", "product_digest": previous_digest,
+                                           "product_input_sha256": previous})
+        overlay = directory / "source.patch"
+        overlay.write_bytes(b"synthetic source-scale overlay")
+        overlay_digest = hashlib.sha256(overlay.read_bytes()).hexdigest()
+        focus = directory / "focus.json"
+        focus_digest = write_json(focus, {"status": "incomplete", "candidate_sha256": candidate,
+                                         "inputs": identity, "owned_scratch_retired": True,
+                                         "patch_sha256": overlay_digest})
+        ordinary = sorted(self.ordinary + [
+            f"source_policy::tests::scale_fixture_{index}" for index in range(6)])
+        ep1 = sorted(ordinary + ["nts_ke_experiment::synthetic_protected_commit"])
+        privacy = ("crates/nevrotick-engine/src/source_policy.rs - "
+                   "source_policy::configuration::SourceConfigurationSnapshot (line 220) - compile fail")
+        docs = sorted([*self.docs, privacy])
+        ep1_docs = sorted([*docs, "crates/nevrotick-engine/src/ke_preview_target.rs - "
+                                 "ke_preview_target::KePreviewTarget (line 33) - compile fail"])
+        rosters = {"default-ordinary": ordinary, "default-optimized": ordinary, "default-doctests": docs,
+                   "ep1-ordinary": ep1, "ep1-optimized": ep1, "ep1-doctests": ep1_docs}
+        labels = ("boundary-control", "format", "msvc-check", "msvc-clippy", "gnu-check", "gnu-default-clippy",
+                  "gnu-clippy", "core-clippy", "ep1-ordinary", "ep1-doctests", "default-ordinary",
+                  "default-doctests", "core-library-ordinary", "core-phase-plan-ordinary", "gnu-rustdoc",
+                  "ep1-optimized", "default-optimized", "core-library-optimized", "core-phase-plan-optimized")
+        retire = ("msvc-clippy", "gnu-rustdoc", "core-phase-plan-optimized")
+        sandbox = ["/usr/bin/bwrap", "--unshare-all"]
+        binary = "unittests src/lib.rs"
+        running = f"     Running {binary} (/work/target/deps/synthetic)\n"
+        lanes, recipe = [], []
+        for label in labels:
+            raw_path = directory / f"{label}.json"
+            command, expected, output, row = ["cargo", label], [], "", {}
+            if label == "boundary-control":
+                kind = "boundary"
+                command = ["/usr/bin/python3", "-c", "synthetic boundary control"]
+                output = "ANALYSIS_BOUNDARY_OK\n"
+            elif label in rosters or label.startswith(("core-library-", "core-phase-plan-")):
+                names = rosters.get(label, ["selected_core_fixture"])
+                kind = "doctests" if label.endswith("-doctests") else "engine" if label in rosters else "core"
+                expected = names if kind == "doctests" else [[binary, name] for name in names]
+                output = ("" if kind == "doctests" else running) + self.execution(names)
+                row = {"tests_executed": len(names),
+                       "cases": [{"package": "nevrotick-engine", "binary": binary, "name": name}
+                                 for name in names] if kind == "engine" else names}
+            else:
+                kind = "exit"
+            raw = {"command": command, "sandbox_command": [*sandbox, "--", *command],
+                   "output": output, "exit_code": 0, "failure": None}
+            lanes.append({"lane": label, "sha256": write_json(raw_path, raw),
+                          "exit_code": 0, "failure": None, **row})
+            recipe.append([label, command, kind, expected, label in retire])
+        capture = {
+            "head": "1" * 40, "staged_tree": "2" * 40, "index_sha256": "3" * 64, "candidate_sha256": candidate,
+            "protected": {"reader.py": "4" * 64, **identity}, "inputs": identity, "compiler": "synthetic Rust",
+            "tool_inventories": [], "vendor_identity_sha256": independent_digest({}), "wall_seconds": 2400,
+            "live_doc_sha256": {"task": "5" * 64}, "frozen_doc_sha256": {"task": "6" * 64},
+            "campaigns_admitted": False, "lanes": recipe,
+            "combined_development_reference": {"path": str(prior), "sha256": prior_digest},
+            "focused_incomplete_reference": {"path": str(focus), "sha256": focus_digest},
+            "predecessor_graph": {"path": str(graph), "sha256": graph_digest},
+        }
+        manifest_digest = write_json(directory.parents[1] / "admission.json", capture)
+        report = {name: capture[name] for name in ("candidate_sha256", "staged_tree", "protected", "inputs",
+            "compiler", "tool_inventories", "live_doc_sha256", "frozen_doc_sha256", "predecessor_graph")}
+        report.update(status="passed", mode="combined", capture_sha256=manifest_digest,
+            main_admission={"posture": "verified-staged-base-and-exact-overlay", "head": capture["head"],
+                            "tree": capture["staged_tree"], "index_sha256": capture["index_sha256"]},
+            staged_index_sha256=capture["index_sha256"], vendor_identity={}, cargo_home_config_sha256="7" * 64,
+            prior_failed_development_sha256=focus_digest, repair_patch_sha256=overlay_digest,
+            overlay_patch_sha256=overlay_digest, reference_sha256=prior_digest, public_campaigns_admitted=False,
+            metrics="not performed", native_windows_execution="not performed", elapsed_seconds=10,
+            peak_memory_bytes=1024, tasks_events="max 0", invocation_id="9" * 32,
+            owned_work_allocated=True, owned_work_retired=True,
+            resource_observer_joined=True, memory_events=dict.fromkeys(("max", "oom", "oom_kill", "oom_group_kill"), "0"),
+            lanes=lanes, cache_retirement=list(retire))
+        binding = {**self.policy["binding"], "candidate_sha256": candidate,
+                   "test_inventory": ordinary, "doctest_inventory": docs,
+                   "development_evidence": {"path": str(terminal_path),
+                                            "sha256": write_json(terminal_path, report)}}
+        pins = {"SOURCE_POLICY_SOURCE_SCALE_CANDIDATE": candidate,
+                "SOURCE_POLICY_SOURCE_SCALE_MANIFEST": manifest_digest,
+                "SOURCE_POLICY_SOURCE_SCALE_BOUNDARY": lanes[0]["sha256"],
+                "SOURCE_POLICY_SOURCE_SCALE_CARGO_HOME": "7" * 64,
+                "SOURCE_POLICY_SOURCE_SCALE_OVERLAY": {self.OWNERS["source_policy"]},
+                "SOURCE_POLICY_SOURCE_SCALE_ROSTER": {key: (len(names), independent_digest(names))
+                    for key, names in rosters.items() if not key.endswith("-optimized")}}
+        return binding, identity, report, terminal_path, pins, write_json
+
+    def test_source_scale_requires_exact_current_combined_and_owned_lineage(self):
+        binding, identity, report, path, pins, write_json = self.source_scale_combined_fixture()
+
+        def admit(updated):
+            binding["development_evidence"]["sha256"] = write_json(path, updated)
+            return MODULE.admit_source_policy_development(binding, identity)
+
+        with patch.multiple(MODULE, **pins):
+            self.assertEqual(len(admit(report)), 25)
+            with self.assertRaisesRegex(MODULE.Incomplete, "candidate binding differs"):
+                MODULE.admit_source_policy_development(binding, {})
+            for changes, expected_error in (
+                    ({"owned_work_retired": False}, "terminal custody"),
+                    ({"memory_events": None}, "terminal custody"),
+                    ({"frozen_doc_sha256": report["live_doc_sha256"]}, "terminal custody"),
+                    ({"public_campaigns_admitted": True}, "terminal custody"),
+                    ({"overlay_patch_sha256": "8" * 64}, "predecessor lineage"),
+                    ({"lanes": report["lanes"][:-1]}, "19 physical lanes")):
+                with self.subTest(changed=list(changes)), self.assertRaisesRegex(MODULE.Incomplete, expected_error):
+                    admit({**report, **changes})
+
+    def test_source_scale_rejects_hash_valid_wrong_optimized_and_doctest_observations(self):
+        binding, identity, report, path, pins, write_json = self.source_scale_combined_fixture()
+        with patch.multiple(MODULE, **pins):
+            for label, error, sabotage in (
+                    ("ep1-optimized", "block declaration", lambda text: self.execution([])),
+                    ("ep1-optimized", "EP1 execution", lambda text: json.loads(
+                        path.with_name("default-ordinary.json").read_bytes())["output"]),
+                    ("ep1-optimized", "EP1 execution", lambda text: text.replace(
+                        "synthetic_protected_commit", "foreign_protected_commit")),
+                    ("ep1-optimized", "identities differ by binary", lambda text: text.replace(
+                        "unittests src/lib.rs", "tests/foreign.rs")),
+                    ("default-doctests", "compiler examples differ", lambda text: text.replace("(line 220)", "(line 221)")),
+                    ("ep1-doctests", "compiler examples differ", lambda text: text.replace("(line 220)", "(line 221)"))):
+                with self.subTest(label=label, error=error):
+                    raw_path = path.with_name(f"{label}.json")
+                    original = raw_path.read_bytes()
+                    try:
+                        raw = json.loads(original)
+                        raw["output"] = sabotage(raw["output"])
+                        changed_digest = write_json(raw_path, raw)
+                        changed = {**report, "lanes": [
+                            {**row, "sha256": changed_digest} if row["lane"] == label else row
+                            for row in report["lanes"]]}
+                        binding["development_evidence"]["sha256"] = write_json(path, changed)
+                        with self.assertRaisesRegex(MODULE.Incomplete, error):
+                            MODULE.admit_source_policy_development(binding, identity)
+                    finally:
+                        raw_path.write_bytes(original)
+            binding["development_evidence"]["sha256"] = write_json(path, report)
+            self.assertEqual(len(MODULE.admit_source_policy_development(binding, identity)), 25)
 
     def test_application_placement_keeps_ordinary_names_and_checks_both_shifted_doc_graphs(self):
         ordinary = sorted([*self.ordinary] + [

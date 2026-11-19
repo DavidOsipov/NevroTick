@@ -221,6 +221,8 @@ pub struct SourceProtectedProbeReport {
     configuration: SourceConfigurationSnapshot,
     /// Observed local protected request extent, without peer-delivery claims.
     packet_bytes: usize,
+    /// Original authenticated peer leap indicator, with unsynchronized replies excluded.
+    leap_indicator: u8,
     /// Original monotonic observation admitted by the guarded terminal commit.
     committed_at: Instant,
     /// Checked elapsed monotonic duration from original receive trailing to commit.
@@ -239,9 +241,17 @@ impl SourceProtectedProbeReport {
         result: super::datagram::ReceivedCompletion,
         cleanup: PowerObserverCleanup,
     ) -> Result<Self, Failure> {
-        let (configuration, summary, committed_at, receive_to_commit_delay, measurement): (
+        let (
+            configuration,
+            summary,
+            leap_indicator,
+            committed_at,
+            receive_to_commit_delay,
+            measurement,
+        ): (
             SourceConfigurationSnapshot,
             super::Summary,
+            u8,
             Instant,
             Option<Duration>,
             Result<ExperimentalMeasurement, MeasurementRefusal>,
@@ -249,6 +259,7 @@ impl SourceProtectedProbeReport {
         Ok(Self {
             configuration,
             packet_bytes: summary.packet_bytes,
+            leap_indicator,
             committed_at,
             receive_to_commit_delay,
             measurement,
@@ -297,6 +308,15 @@ impl SourceProtectedProbeReport {
     #[must_use]
     pub const fn packet_bytes(&self) -> usize {
         self.packet_bytes
+    }
+
+    /// Return the original authenticated reply's leap indicator (0, 1 or 2).
+    ///
+    /// This historical peer claim is independent of source scale and measurement
+    /// availability. It grants no calendar, current sample or actuation authority.
+    #[must_use]
+    pub const fn leap_indicator(&self) -> u8 {
+        self.leap_indicator
     }
 
     /// Return the process-local monotonic observation accepted by the original

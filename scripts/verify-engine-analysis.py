@@ -5284,7 +5284,7 @@ def _admit_engine_ke_retirement_execution(policy: dict, execution: object) -> No
     """Require exact ordinary execution evidence before retiring either cache."""
     binding = policy.get("binding")
     names = validate_engine_ke_inventory(binding.get("test_inventory") if type(binding) is dict else None)
-    validate_engine_ke_doctest_inventory(binding.get("doctest_inventory"))
+    validate_engine_ke_doctest_inventory(binding.get("doctest_inventory"), candidate=binding.get("candidate_sha256"))
     records = execution.get("test_names") if type(execution) is dict else None
     if (type(records) is not list or len(records) != ENGINE_KE_ORDINARY_COUNT
             or any(type(name) is not str for name in records)
@@ -5637,6 +5637,18 @@ ENGINE_KE_SCOPE = COMMON.Scope("nevrotick-engine", COMMON.ENGINE_KE_SUBJECTS, EN
 ENGINE_KE_ORDINARY_COUNT = 576
 ENGINE_KE_CASE_COUNT = 292
 ENGINE_KE_DOCTEST_COUNT = 90
+ENGINE_KE_SOURCE_SCALE_CANDIDATE = "5fc32aace7312d232a753325ccb124d104c74d7426c26d8a89ded0b8aa17f045"
+ENGINE_KE_SOURCE_SCALE_TERMINAL_SHA256 = "87e79bc74d146527ee2e4c9d9ebd1d78f8de9ebac4aa9f71bfbb3f1d63474f6b"
+ENGINE_KE_SOURCE_SCALE_DOCTEST_DIGEST = "f40e89f48370695701eea46bc046187451fd50adedada6a3517ee48240397e55"
+ENGINE_KE_SOURCE_SCALE_CASE_DIGEST = "7924f239b872233b1993e4b4e317e5e9d2c1c9cad8ae73252c82e07db8029322"
+ENGINE_KE_SOURCE_SCALE_GRAPH_PREDECESSOR = "dde78e2c87a143804407cf2a2f3e0092cb5d719954c5c5d6633d72547f6cc681"
+ENGINE_KE_SOURCE_SCALE_GRAPH_SHA256 = "4e3cf68485bcf74e88727e6620ec7b83c7b110023818a2ce6a46240fd99f8ef8"
+ENGINE_KE_SOURCE_SCALE_GRAPH_DELTA = frozenset((
+    "crates/nevrotick-engine/src/lib.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview_tests.rs",
+    "crates/nevrotick-engine/src/source_policy.rs",
+    "crates/nevrotick-engine/tests/private/source_configuration.rs",
+))
 ENGINE_KE_DOCTEST_NAME = re.compile(
     r"[^\r\n]+[.]rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile(?: fail)?)?"
 )
@@ -5973,12 +5985,15 @@ def validate_engine_ke_inventory(names: object) -> list[str]:
     return names
 
 
-def validate_engine_ke_doctest_inventory(names: object) -> list[str]:
-    """Require the live roster with its exact source lines and execution annotations."""
-    if (type(names) is not list or len(names) != ENGINE_KE_DOCTEST_COUNT
+def validate_engine_ke_doctest_inventory(names: object, *, candidate: object = None) -> list[str]:
+    """Require the candidate's complete Rustdoc roster with original annotations."""
+    source_scale = candidate == ENGINE_KE_SOURCE_SCALE_CANDIDATE
+    count = 91 if source_scale else ENGINE_KE_DOCTEST_COUNT
+    if (type(names) is not list or len(names) != count
             or any(type(name) is not str or len(name) > 4096 or ENGINE_KE_DOCTEST_NAME.fullmatch(name) is None
                    for name in names)
-            or names != sorted(set(names))):
+            or names != sorted(set(names))
+            or (source_scale and COMMON.canonical_sha256(names) != ENGINE_KE_SOURCE_SCALE_DOCTEST_DIGEST)):
         raise Incomplete("Engine KE requires its complete exact annotated Rustdoc inventory.")
     return names
 
@@ -6000,7 +6015,7 @@ def validate_engine_ke_policy(policy: dict, *, campaign: bool = False) -> dict:
             or any(type(value) is not str or re.fullmatch(r"[a-f0-9]{64}", value) is None for value in pins.values())):
         raise Incomplete("Engine KE source/helper inputs differ from the exact fixed set.")
     validate_engine_ke_inventory(binding["test_inventory"])
-    validate_engine_ke_doctest_inventory(binding["doctest_inventory"])
+    validate_engine_ke_doctest_inventory(binding["doctest_inventory"], candidate=binding["candidate_sha256"])
     for key in ("ordinary_evidence", "root_graph_evidence"):
         evidence = binding[key]
         if (type(evidence) is not dict or set(evidence) != {"path", "sha256"}
@@ -6016,7 +6031,9 @@ def validate_engine_ke_policy(policy: dict, *, campaign: bool = False) -> dict:
 def validate_engine_ke_execution(text: str, binding: dict, *, include_doctests: bool = False) -> dict:
     """Verify exact ordinary execution, including the complete Rustdoc roster for mutation."""
     ordinary = validate_engine_ke_inventory(binding["test_inventory"])
-    docs = validate_engine_ke_doctest_inventory(binding.get("doctest_inventory")) if include_doctests else []
+    docs = (validate_engine_ke_doctest_inventory(binding.get("doctest_inventory"),
+                                                 candidate=binding.get("candidate_sha256"))
+            if include_doctests else [])
     records = read_successful_address_records(text)
     if sorted(records) != sorted([*ordinary, *docs]):
         raise Incomplete("Engine KE execution differs from the exact admitted ordinary and selected Rustdoc identities.")
@@ -6039,7 +6056,9 @@ def validate_engine_ke_doctests(text: str) -> dict:
 def validate_engine_ke_current_doctests(text: str, binding: dict) -> dict:
     """Require actual Rustdoc observations for every exact live annotated identity."""
     executed = validate_engine_ke_doctests(text)
-    if sorted(executed["test_names"]) != validate_engine_ke_doctest_inventory(binding.get("doctest_inventory")):
+    names = validate_engine_ke_doctest_inventory(binding.get("doctest_inventory"),
+                                                 candidate=binding.get("candidate_sha256"))
+    if sorted(executed["test_names"]) != names:
         raise Incomplete("Engine KE Rustdoc execution differs from the exact admitted roster.")
     return executed
 
@@ -6060,8 +6079,11 @@ def engine_ke_development_ordinary_cases(text: str) -> list[dict[str, str]]:
 
 
 def admit_engine_ke_evidence(binding: dict) -> dict:
-    """Readmit the current development receipt and its two fixed EP1 logs on both bookends."""
+    """Readmit the current development receipt and its required physical EP1 logs."""
     evidence = binding["ordinary_evidence"]
+    source_scale = binding["candidate_sha256"] == ENGINE_KE_SOURCE_SCALE_CANDIDATE
+    if source_scale and evidence["sha256"] != ENGINE_KE_SOURCE_SCALE_TERMINAL_SHA256:
+        raise Incomplete("Engine KE source-scale requires the exact combined terminal receipt.")
     path = Path(evidence["path"])
     receipt = read_json(path, maximum=8 * 1024**2, expected_sha256=evidence["sha256"],
                         owned_evidence=True)
@@ -6076,10 +6098,13 @@ def admit_engine_ke_evidence(binding: dict) -> dict:
     result = {"ordinary_evidence": evidence["sha256"]}
     cargo = ["cargo", "test", "--package", "nevrotick-engine", "--frozen", "--jobs", "6",
              "--features", "ke-association-prototype"]
-    for lane, selectors, validate in (
+    required = [
         ("ep1-ordinary", ["--lib", "--tests"], validate_engine_ke_execution),
         ("ep1-doctests", ["--doc"], validate_engine_ke_current_doctests),
-    ):
+    ]
+    if source_scale:
+        required.append(("ep1-optimized", ["--release", "--lib", "--tests"], validate_engine_ke_execution))
+    for lane, selectors, validate in required:
         rows = [row for row in lanes if row.get("lane") == lane]
         if len(rows) != 1:
             raise Incomplete("Engine KE development reference requires one physical row per selected EP1 lane.")
@@ -6096,17 +6121,47 @@ def admit_engine_ke_evidence(binding: dict) -> dict:
                 or "failure" not in raw or raw["failure"] is not None or type(raw.get("output")) is not str):
             raise Incomplete("Engine KE development raw lane differs from its fixed successful EP1 command.")
         execution = validate(raw["output"], binding)
-        cases = (engine_ke_development_ordinary_cases(raw["output"]) if lane == "ep1-ordinary"
-                 else execution["test_names"])
+        cases = (execution["test_names"] if lane == "ep1-doctests"
+                 else engine_ke_development_ordinary_cases(raw["output"]))
         if row["tests_executed"] != execution["tests_executed"] or row["cases"] != cases:
             raise Incomplete("Engine KE development EP1 row differs from the physical executed identities.")
+        if source_scale and lane != "ep1-doctests":
+            pairs = sorted((case["binary"], case["name"]) for case in cases)
+            if COMMON.canonical_sha256(pairs) != ENGINE_KE_SOURCE_SCALE_CASE_DIGEST:
+                raise Incomplete("Engine KE source-scale executed binary and case identities differ.")
         result[lane] = row["sha256"]
     graph = binding["root_graph_evidence"]
-    raw = COMMON.read_analysis_bytes(Path(graph["path"]), maximum=COMMON.ANALYSIS_JSON_MAX_BYTES)
-    result["root_graph_evidence"] = hashlib.sha256(raw).hexdigest()
-    if result["root_graph_evidence"] != graph["sha256"]:
-        raise Incomplete("Engine KE root graph reference bytes changed.")
+    graph_path = Path(graph["path"])
+    if source_scale:
+        admit_engine_ke_source_scale_graph(graph_path, graph["sha256"], identity)
+        if receipt.get("predecessor_graph") != graph:
+            raise Incomplete("Engine KE source-scale terminal names a different predecessor graph.")
+        result["root_graph_evidence"] = ENGINE_KE_SOURCE_SCALE_GRAPH_SHA256
+    else:
+        raw = COMMON.read_analysis_bytes(graph_path, maximum=COMMON.ANALYSIS_JSON_MAX_BYTES)
+        result["root_graph_evidence"] = hashlib.sha256(raw).hexdigest()
+        if result["root_graph_evidence"] != graph["sha256"]:
+            raise Incomplete("Engine KE root graph reference bytes changed.")
     return result
+
+
+def admit_engine_ke_source_scale_graph(path: Path, pin: str, current: dict) -> None:
+    """Keep the original graph receipt and check its exact four-Rust-file reuse boundary."""
+    if pin != ENGINE_KE_SOURCE_SCALE_GRAPH_SHA256:
+        raise Incomplete("Engine KE source-scale requires the exact predecessor graph receipt.")
+    graph = read_json(path, maximum=COMMON.ANALYSIS_JSON_MAX_BYTES, expected_sha256=pin, owned_evidence=True)
+    previous = graph.get("product_input_sha256")
+    lanes = graph.get("lanes")
+    if (graph.get("status") != "passed" or graph.get("changed_tree_outputs") != []
+            or graph.get("product_digest") != ENGINE_KE_SOURCE_SCALE_GRAPH_PREDECESSOR
+            or type(previous) is not dict or previous.keys() != current.keys()
+            or COMMON.canonical_sha256(previous) != ENGINE_KE_SOURCE_SCALE_GRAPH_PREDECESSOR
+            or "Cargo.lock" not in current or graph.get("lockfile_sha256") != current["Cargo.lock"]
+            or {name for name in current if current[name] != previous[name]} != ENGINE_KE_SOURCE_SCALE_GRAPH_DELTA
+            or type(lanes) is not list or len(lanes) != 45
+            or any(type(row) is not dict or type(row.get("exit_code")) is not int
+                   or row["exit_code"] != 0 for row in lanes)):
+        raise Incomplete("Engine KE source-scale predecessor graph or unchanged-input reuse boundary differs.")
 
 
 def engine_ke_provider_contract_examples(original: bytes) -> list[dict]:
@@ -6635,7 +6690,10 @@ def execute_engine_ke_profile(args, report: dict) -> None:
                   source_context_scope="Historical Tool preparation reference; current Root identity is candidate_sha256/source_sha256",
                   candidate_sha256=binding["candidate_sha256"],
                   ordinary_reference=binding["ordinary_evidence"],
-                  ordinary_reference_scope="Exact current development receipt and physical EP1 ordinary/Rustdoc rosters; metrics require their own actual execution.",
+                  ordinary_reference_scope=(
+                      "Exact combined terminal and predecessor graph; physical EP1 ordinary, optimized and Rustdoc rosters."
+                      if binding["candidate_sha256"] == ENGINE_KE_SOURCE_SCALE_CANDIDATE else
+                      "Exact current development receipt and physical EP1 ordinary/Rustdoc rosters; metrics require their own actual execution."),
                   pending_metric_owners=[name for name in COMMON.ENGINE_KE_CRITICAL if name not in ENGINE_KE_HOST_SUBJECTS.values()],
                   pending_windows="StrictProfile::capture, transport, provider shutdown and Windows-only control/error arms",
                   generation_gap_policy="Reconcile every constructor, generic helper, Garde expansion and atomic guard against actual descriptors; no manual-control kill credit.")
@@ -6842,6 +6900,22 @@ SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_ROSTER = {
     **SOURCE_POLICY_APPLICATION_PLACEMENT_ROSTER,
     "ep1-ordinary": (560, "c401b5b1f770c4a7b187fedcf9326e20ce485a09cbac1f49e97bafccdfbd3a3b"),
 }
+SOURCE_POLICY_SOURCE_SCALE_CANDIDATE = "5fc32aace7312d232a753325ccb124d104c74d7426c26d8a89ded0b8aa17f045"
+SOURCE_POLICY_SOURCE_SCALE_MANIFEST = "cf025d23e8a01905b1ecb2ae3eac3263c72933ba85308dd57252c4ae73bb190d"
+SOURCE_POLICY_SOURCE_SCALE_BOUNDARY = "2055347cbcc606094bf089a72090a5ff06c0932b4fb96bfb7cf308a36de8e3e7"
+SOURCE_POLICY_SOURCE_SCALE_CARGO_HOME = "c9f613cefbacfe54d325a6823c1721eafaf6013236aca3b002411880fcbb9d00"
+SOURCE_POLICY_SOURCE_SCALE_OVERLAY = frozenset((
+    "crates/nevrotick-engine/src/lib.rs",
+    "crates/nevrotick-engine/src/nts_ke_experiment/managed_preview_tests.rs",
+    "crates/nevrotick-engine/src/source_policy.rs",
+    "crates/nevrotick-engine/tests/private/source_configuration.rs",
+))
+SOURCE_POLICY_SOURCE_SCALE_ROSTER = {
+    "default-ordinary": SOURCE_POLICY_HEADER_AGE_ROSTER["default-ordinary"],
+    "default-doctests": (90, "ebff9da9a5f427dd6086bb8733b1c646f6812654e6eef3163c1a682830cf39a6"),
+    "ep1-ordinary": (576, "61bdfced5c6df7bc5ee77f7b6e492a9ec701f80afa500c237acd825d1f0934c5"),
+    "ep1-doctests": (91, "f40e89f48370695701eea46bc046187451fd50adedada6a3517ee48240397e55"),
+}
 SOURCE_POLICY_SNAPSHOT_TESTS = frozenset(
     "source_policy::tests::policy_snapshot_" + name for name in (
         "canonical_aliases_and_unknown_reads_do_not_allocate",
@@ -6937,6 +7011,8 @@ SOURCE_POLICY_BOUND_INPUTS = tuple(dict.fromkeys((
 
 def source_policy_combined_roster(candidate: object) -> tuple[dict, int] | None:
     """Select the roster and private-case count for the exact combined product."""
+    if candidate == SOURCE_POLICY_SOURCE_SCALE_CANDIDATE:
+        return SOURCE_POLICY_SOURCE_SCALE_ROSTER, 74
     if candidate == SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_CANDIDATE:
         return SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_ROSTER, 74
     if candidate == SOURCE_POLICY_APPLICATION_PLACEMENT_CANDIDATE:
@@ -6973,6 +7049,9 @@ def source_policy_test_inventory(binding: dict) -> tuple[list[str], list[str]]:
     selected = [name for name in ordinary if name.startswith("source_policy::tests::")]
     kod_docs = [name for name in docs if name.startswith(
         "crates/nevrotick-engine/src/source_policy.rs - ")]
+    compiler_count, negative_count = (
+        (19, 14) if binding.get("candidate_sha256") == SOURCE_POLICY_SOURCE_SCALE_CANDIDATE
+        else (18, 13))
     if (len(selected) != (combined[1] if combined else 68)
             or "source_policy::tests::public_policy_diagnostics_are_literal_bounded_and_redacted" not in ordinary
             or "source_policy::tests::public_managed_setup_exhausts_64_stale_hints_without_a_send_or_refund" not in ordinary
@@ -6980,9 +7059,10 @@ def source_policy_test_inventory(binding: dict) -> tuple[list[str], list[str]]:
             or not SOURCE_POLICY_SNAPSHOT_TESTS <= set(selected)
             or not SOURCE_POLICY_PROVENANCE_TESTS <= set(ordinary)
             or not SOURCE_POLICY_CONFIGURATION_TESTS <= set(ordinary)
-            or len(kod_docs) != 18 or sum(name.endswith(" - compile fail") for name in kod_docs) != 13):
+            or len(kod_docs) != compiler_count
+            or sum(name.endswith(" - compile fail") for name in kod_docs) != negative_count):
         raise Incomplete("Source-policy roster must retain all controls, public diagnostics, the setup budget, "
-                         "snapshots, source provenance, configuration cases and eighteen compiler examples.")
+                         f"snapshots, source provenance, configuration cases and {compiler_count} compiler examples.")
     return ordinary, docs
 
 
@@ -7822,6 +7902,8 @@ def admit_source_policy_observer(reference: dict, path: Path) -> dict:
 
 def source_policy_combined_evidence(candidate: str) -> tuple[str, str]:
     """Select the pinned manifest and raw boundary for this combined candidate."""
+    if candidate == SOURCE_POLICY_SOURCE_SCALE_CANDIDATE:
+        return SOURCE_POLICY_SOURCE_SCALE_MANIFEST, SOURCE_POLICY_SOURCE_SCALE_BOUNDARY
     if candidate == SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_CANDIDATE:
         return SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_MANIFEST, SOURCE_POLICY_RECEIVE_EFFECT_GUARDS_BOUNDARY
     if candidate == SOURCE_POLICY_APPLICATION_PLACEMENT_CANDIDATE:
@@ -8078,6 +8160,13 @@ def admit_source_policy_capture_development(binding: dict, identity: dict, path:
             reference, SOURCE_POLICY_PROTECTED_ORDER_FOCUSED_COUNT, SOURCE_POLICY_PROTECTED_ORDER_FOCUSED))
     elif receive:
         admitted.update(admit_source_policy_receive_focus(capture_path, capture, reference))
+    return {**admitted, **admit_source_policy_capture_rows(path, lanes, recipe, binding, sandbox_prefix)}
+
+
+def admit_source_policy_capture_rows(path: Path, lanes: list, recipe: list, binding: dict,
+                                     sandbox_prefix: list[str]) -> dict:
+    """Read and validate each physical lane against the admitted ordered recipe."""
+    admitted = {}
     for row, selected in zip(lanes, recipe, strict=True):
         lane = selected["label"]
         digest = row.get("sha256")
@@ -8088,6 +8177,97 @@ def admit_source_policy_capture_development(binding: dict, identity: dict, path:
         validate_source_policy_capture_lane(row, selected, raw, binding, sandbox_prefix)
         admitted[str(raw_path)] = digest
     return admitted
+
+
+def admit_source_policy_scale_lineage(capture: dict, reference: dict, identity: dict) -> dict:
+    """Verify the actual scale overlay, failed focused run, and retained graph lineage."""
+    admitted, lineage = {}, {}
+    for key in ("combined_development_reference", "focused_incomplete_reference", "predecessor_graph"):
+        pinned = capture[key]
+        prior_path = Path(pinned["path"])
+        lineage[key] = read_json(prior_path, maximum=8 * 1024**2, expected_sha256=pinned["sha256"],
+                                 owned_evidence=True)
+        admitted[str(prior_path)] = pinned["sha256"]
+    focus_ref = capture["focused_incomplete_reference"]
+    focus = lineage["focused_incomplete_reference"]
+    focus_patch = Path(focus_ref["path"]).with_name("source.patch")
+    patch_digest = hashlib.sha256(COMMON.read_analysis_bytes(focus_patch, maximum=1024**2)).hexdigest()
+    prior = lineage["combined_development_reference"]
+    previous = prior["inputs"]
+    graph = lineage["predecessor_graph"]
+    if (reference.get("prior_failed_development_sha256") != focus_ref["sha256"]
+            or reference.get("repair_patch_sha256") != patch_digest
+            or reference.get("overlay_patch_sha256") != patch_digest or focus["patch_sha256"] != patch_digest
+            or focus["status"] != "incomplete" or focus["owned_scratch_retired"] is not True
+            or focus["candidate_sha256"] != capture["candidate_sha256"] or focus["inputs"] != identity
+            or reference.get("reference_sha256") != capture["combined_development_reference"]["sha256"]
+            or reference.get("predecessor_graph") != capture["predecessor_graph"]
+            or prior["status"] != "passed" or graph["status"] != "passed"
+            or graph["product_input_sha256"] != previous or graph["product_digest"] != prior["candidate_sha256"]
+            or identity.keys() != previous.keys()
+            or {name for name, digest in identity.items() if digest != previous[name]} != SOURCE_POLICY_SOURCE_SCALE_OVERLAY):
+        raise Incomplete("Source-scale development focused overlay or predecessor lineage differs.")
+    admitted[str(focus_patch)] = patch_digest
+    return admitted
+
+
+def admit_source_policy_scale_development(binding: dict, identity: dict, path: Path) -> dict:
+    """Admit the source-scale overlay from its exact combined development producer."""
+    if (len(path.parents) < 3 or path.name != "verification.json" or path.parent.name != "run-01"
+            or path.parents[1].name != "reports"):
+        raise Incomplete("Source-scale development requires the fixed combined receipt layout.")
+    manifest, boundary_sha = source_policy_combined_evidence(binding["candidate_sha256"])
+    capture_path = path.parents[2] / "admission.json"
+    capture = read_json(capture_path, maximum=1024**2, expected_sha256=manifest, owned_evidence=True)
+    evidence_sha = binding["development_evidence"]["sha256"]
+    reference = read_json(path, maximum=8 * 1024**2, expected_sha256=evidence_sha, owned_evidence=True)
+    expected_main = {
+        "posture": "verified-staged-base-and-exact-overlay", "head": capture["head"],
+        "tree": capture["staged_tree"], "index_sha256": capture["index_sha256"],
+    }
+    elapsed, peak = reference.get("elapsed_seconds"), reference.get("peak_memory_bytes")
+    memory_events, invocation = reference.get("memory_events"), reference.get("invocation_id")
+    if (reference.get("status") != "passed" or reference.get("mode") != "combined"
+            or reference.get("capture_sha256") != manifest
+            or reference.get("candidate_sha256") != capture["candidate_sha256"]
+            or capture["candidate_sha256"] != binding["candidate_sha256"]
+            or reference.get("inputs") != identity or capture["inputs"] != identity
+            or reference.get("protected") != capture["protected"] or reference.get("main_admission") != expected_main
+            or reference.get("staged_tree") != capture["staged_tree"]
+            or reference.get("staged_index_sha256") != capture["index_sha256"]
+            or reference.get("compiler") != capture["compiler"]
+            or reference.get("tool_inventories") != capture["tool_inventories"]
+            or COMMON.canonical_sha256(reference.get("vendor_identity")) != capture["vendor_identity_sha256"]
+            or reference.get("cargo_home_config_sha256") != SOURCE_POLICY_SOURCE_SCALE_CARGO_HOME
+            or reference.get("live_doc_sha256") != capture["live_doc_sha256"]
+            or reference.get("frozen_doc_sha256") != capture["frozen_doc_sha256"]
+            or reference.get("native_windows_execution") != "not performed"
+            or reference.get("metrics") != "not performed"
+            or reference.get("public_campaigns_admitted") is not False or capture["campaigns_admitted"] is not False
+            or any(reference.get(key) is not True for key in (
+                "resource_observer_joined", "owned_work_allocated", "owned_work_retired"))
+            or reference.get("tasks_events") != "max 0" or type(memory_events) is not dict
+            or any(memory_events.get(key) != "0" for key in ("max", "oom", "oom_kill", "oom_group_kill"))
+            or type(invocation) is not str or re.fullmatch(r"[a-f0-9]{32}", invocation) is None
+            or type(elapsed) not in (int, float) or not 0 < elapsed <= capture["wall_seconds"] == 2400
+            or type(peak) is not int or not 0 < peak <= 6 * 1024**3
+            or {"active_lane", "error", "final_custody_error"} & reference.keys()):
+        raise Incomplete("Source-scale development lacks exact passing terminal custody.")
+
+    recipe = [dict(label=label, command=command, kind=kind, expected=expected, retire=retire)
+              for label, command, kind, expected, retire in capture["lanes"]]
+    lanes = reference.get("lanes")
+    if (type(lanes) is not list or len(lanes) != 19 or len(recipe) != 19
+            or any(type(row) is not dict for row in lanes)
+            or [row.get("lane") for row in lanes] != [row["label"] for row in recipe]
+            or reference.get("cache_retirement") != [row["label"] for row in recipe if row["retire"]]):
+        raise Incomplete("Source-scale development requires all 19 physical lanes.")
+    boundary = read_json(path.with_name("boundary-control.json"), maximum=4 * 1024**2,
+                         expected_sha256=boundary_sha, owned_evidence=True)
+    sandbox_prefix = boundary["sandbox_command"][:-len(boundary["command"])-1]
+    return {str(path): evidence_sha, str(capture_path): manifest,
+            **admit_source_policy_scale_lineage(capture, reference, identity),
+            **admit_source_policy_capture_rows(path, lanes, recipe, binding, sandbox_prefix)}
 
 
 def admit_source_policy_development(binding: dict, identity: dict) -> dict:
@@ -8104,6 +8284,8 @@ def admit_source_policy_development(binding: dict, identity: dict) -> dict:
             or source_policy_combined_roster(binding["candidate_sha256"]) is not None):
         if binding["candidate_sha256"] != actual_candidate:
             raise Incomplete("Source-policy capture development candidate binding differs.")
+        if actual_candidate == SOURCE_POLICY_SOURCE_SCALE_CANDIDATE:
+            return admit_source_policy_scale_development(binding, identity, path)
         return admit_source_policy_capture_development(binding, identity, path)
     reference = read_json(path, maximum=4 * 1024**2, expected_sha256=evidence["sha256"])
     if (PRODUCT.sha256(path) != evidence["sha256"] or reference.get("status") != "workload-passed"
@@ -8182,7 +8364,10 @@ def execute_source_policy_profile(args, report: dict) -> None:
                   full_critical_files=list(SOURCE_POLICY_SUBJECTS.values()),
                   scope="Selected managed laboratory KoD owners; no NTS, native or product qualification",
                   dependency_profile="default", development_reference=binding["development_evidence"],
-                  development_reference_scope="Prior-source development only; current helpers/manifest and metric results retain their own admission.",
+                  development_reference_scope=(
+                      "Exact current 19-lane development; helpers and metric results retain separate admission."
+                      if binding["candidate_sha256"] == SOURCE_POLICY_SOURCE_SCALE_CANDIDATE else
+                      "Prior-source development only; current helpers/manifest and metric results retain their own admission."),
                   pending_qualification="Generation gaps, independent outcomes, EP1/native/production and other critical owners remain separate.")
     session = COMMON.Session(ROOT, selected, report, SOURCE_POLICY_SCOPE, policy, SOURCE_POLICY_BOUND_INPUTS)
     try:

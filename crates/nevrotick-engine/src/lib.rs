@@ -91,7 +91,7 @@ pub use session::{
 pub use source_policy::{
     SourceAddressSet, SourceConfigurationSnapshot, SourceHandle, SourceIdentity,
     SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits, SourcePolicySnapshot,
-    SourcePolicyTarget, SourceRestrictionSnapshot,
+    SourcePolicyTarget, SourceRestrictionSnapshot, SourceScale,
 };
 
 use ntp_wire::{FrameLimits, RawHeader, frame_no_legacy_mac_datagram};

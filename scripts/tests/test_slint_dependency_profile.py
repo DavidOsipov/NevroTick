@@ -222,12 +222,22 @@ def fixture_metadata(policy, target=HOST):
     members = (*MEMBERS, "windows-platform-native") if "crates/windows-platform-native/Cargo.toml" in policy["manifests_sha256"] else MEMBERS
     for name in members:
         package_id = "path+file:///work/fixture/crates/" + name + "#0.0.0"
+        targets = [{"kind": ["lib"]}]
+        if name == "windows-platform-native":
+            targets = [
+                {"kind": ["lib"], "crate_types": ["lib"], "name": "windows_platform_native",
+                 "src_path": "/work/fixture/crates/windows-platform-native/src/lib.rs",
+                 "edition": "2024", "doc": True, "doctest": True, "test": True},
+                {"kind": ["test"], "crate_types": ["bin"], "name": "subscription_lifecycle",
+                 "src_path": "/work/fixture/crates/windows-platform-native/tests/subscription_lifecycle.rs",
+                 "edition": "2024", "doc": False, "doctest": False, "test": True},
+            ]
         locals_.append(package_id)
         packages.append({"id": package_id, "name": name, "version": "0.0.0", "source": None,
                          "license": "GPL-3.0-only" if name == "nevrotick-ui" else "GPL-2.0-only",
                          "dependencies": [], "features": {}, "links": None,
                          "manifest_path": "/work/fixture/crates/" + name + "/Cargo.toml",
-                         "targets": [{"kind": ["lib"]}]})
+                         "targets": targets})
         nodes.append({"id": package_id, "features": [], "dependencies": [], "deps": []})
     by_key = {package["name"] + "@" + package["version"]: package for package in packages}
     by_id = {node["id"]: node for node in nodes}
@@ -973,7 +983,8 @@ class NativePlatformProfileControls(unittest.TestCase):
                 node = next(n for n in data["resolve"]["nodes"] if n["id"] == engine["id"])
                 self.assertEqual(native["dependencies"], [])
                 self.assertEqual(native["features"], {})
-                self.assertEqual(native["targets"], [{"kind": ["lib"]}])
+                self.assertEqual([(row["name"], row["kind"]) for row in native["targets"]],
+                                 [("windows_platform_native", ["lib"]), ("subscription_lifecycle", ["test"])])
                 self.assertEqual([edge for edge in engine["dependencies"] if edge["name"] == "windows-platform-native"],
                     [{"name": "windows-platform-native", "rename": None, "req": "=0.0.0", "kind": None,
                       "target": "cfg(windows)", "optional": False, "uses_default_features": True, "features": []}])
@@ -1001,7 +1012,9 @@ class NativePlatformProfileControls(unittest.TestCase):
                 PROFILE.validate_policy_shape(value)
 
     def test_native_metadata_refuses_foreign_path_grant_features_and_execution(self):
-        for change in ("path", "grant", "declared-feature", "resolved-feature", "declaration", "edge", "build", "macro", "binary", "links"):
+        for change in ("path", "grant", "declared-feature", "resolved-feature", "declaration", "edge",
+                       "build", "macro", "binary", "links", "test-missing", "test-duplicate",
+                       "test-path", "test-kind", "test-boolean"):
             data = fixture_metadata(self.policy, WINDOWS)
             native = next(p for p in data["packages"] if p["name"] == "windows-platform-native")
             node = next(n for n in data["resolve"]["nodes"] if n["id"] == native["id"])
@@ -1012,8 +1025,14 @@ class NativePlatformProfileControls(unittest.TestCase):
             if change == "declaration": native["dependencies"] = [{"name": "helper"}]
             if change == "edge": node["dependencies"] = [data["packages"][0]["id"]]
             if change in ("build", "macro", "binary"):
-                native["targets"] = [{"kind": [{"build": "custom-build", "macro": "proc-macro", "binary": "bin"}[change]]}]
+                native["targets"].append(
+                    {"kind": [{"build": "custom-build", "macro": "proc-macro", "binary": "bin"}[change]]})
             if change == "links": native["links"] = "foreign"
+            if change == "test-missing": native["targets"].pop()
+            if change == "test-duplicate": native["targets"][0] = native["targets"][1]
+            if change == "test-path": native["targets"][1]["src_path"] = "/foreign/subscription_lifecycle.rs"
+            if change == "test-kind": native["targets"][1]["kind"] = ["bin"]
+            if change == "test-boolean": native["targets"][1]["test"] = 1
             with self.subTest(change=change), self.assertRaises(PROFILE.Incomplete):
                 PROFILE.validate_metadata(WINDOWS, json.dumps(data), self.policy)
 

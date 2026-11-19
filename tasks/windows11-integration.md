@@ -281,6 +281,16 @@ SLA or driver-setting change is selected here. Device configuration stays with
 the authorized lifecycle owner, without broader engine privileges or host-policy
 changes. Existing matching CHECK gates own release acceptance.
 
+**Actual application capture comparison, 19 November 2026.** The
+[Engine witness](engine-transport-pilot.md#actual-observe-cli-capture-bracket-witness--w11-w01-19-november-2026)
+covers two matched source/receiver intervals through the real observe CLI on
+the selected Windows Sandbox. The independently recorded peer intervals
+satisfy the reported application lower bounds on the shared QPC clock.
+Both reports remain mapping-unavailable and ineligible. This reaches the
+selected virtual application path under TQ-01/08/09. Finite physical
+errors, independent UTC, qualified invalidation and Client/Server release
+evidence remain open.
+
 **Current Windows clock source check.** The admitted installed Rust 1.100.0
 `rust-src` matches the reviewed 1.99.1 Windows clock files byte for byte:
 
@@ -426,6 +436,239 @@ Windows laboratory and its recovery arrangement. The slot holds its mutex while
 delivering the action; no callback or cancellation latency bound is qualified.
 W11-W05/S3.1 must explicitly account for one registration attempt per process,
 including after registration failure or close, before a service consumes it.
+
+#### W11-W02 portable resume slot metrics — 19 November 2026
+
+CHECK-19/24/25/27. On `8fc623f`, the isolated Rust 1.100.0 GNU/default
+baseline ran two slot tests and reported 58/64 lines. The raw regions showed
+that the pre-bind return and lock-poison refusal were unexercised.
+The new controls check pre-bind inactivity, exactly-once consumption of a
+refused action, lock ownership inside delivery, and capture custody on poison.
+
+The frozen 613-input candidate `184a9daac268dbd3790062b3fd1227bff0d0f58bf02ebba11643a3b9fc11c971`
+differs from `8fc623f` only in the inline slot tests. Root lock, native
+implementation and feature graph are unchanged. Five GNU ordinary and five
+optimized tests, the GNU visibility doctest, and GNU/MSVC Clippy passed.
+The GNU per-file result is 115/126 (91.27%), including inline tests. The
+report covers `resume_slot.rs`; it provides no LLVM branch counts or Windows
+execution. The full GNU slot inventory produced six descriptors. One reached
+execution and was caught, four failed strict lint compilation and one also
+failed the `Action: Default` requirement. The viable score is 1/1, with zero
+survivors or timeouts. Compiler refusals add zero behavioral catches.
+
+Two separate controls compiled and exited 101 at their intended assertions.
+Releasing the lock before delivery failed the lock-ownership observation.
+Delivering after poison returned `Ok(())` when the test expected
+`Err(())`. The unchanged ordinary run passed both tests. These two
+controls add no credit to the generated inventory. Independent review
+matched all 613 candidate hashes, the raw locations and the compiler
+versus behavioral dispositions. Earlier setup refusals for tool PATH,
+the reserved workspace mount and the read-only fault build, plus the
+first candidate's similar-name lint failure, retain their original logs.
+
+The Windows-source listing has eight descriptors. Its execution, target
+coverage, mutation gate, registration/retirement error observations and
+physical transition delivery remain open. The one viable generated slot
+descriptor covers the event filter. It does not generate lock lifetime,
+poison recovery or native ABI faults. Keep the earlier Engine KE-wide
+source binding at its original candidate and reconcile the test-only delta
+before using that current-candidate gate.
+
+The next native child should keep the real registration and close in the
+existing Engine smoke process. Use a separate fresh leaf process for the
+direct callback controls and the matching MSVC LLVM profile. Observe native
+error and one-shot retirement through their actual owners before claiming
+the Windows file's gates.
+
+| Evidence under `~/.local/share/nevrotick/native-leaf-metrics-20261119.S0htVns7/` | SHA-256 |
+| --- | --- |
+| `current/inputs.json` | `cebfef55c3d31932728f6358851bfa4f86d41b3c5d7dc9c575d1564629f72b85` |
+| `current/coverage.raw.json` | `f32cd407dcd1d52af1f6aa6c1f88f1ebb357b7b8f772a794c008c092e3138907` |
+| `current-mutation/mutants.out/outcomes.json` | `200e32c6c82b6c444607bf83e743f1219383a46deba2faf01efe04a5454a57c3` |
+| `current-focus/unlock-before-delivery.json` | `07163707d0dd2b9dd03c46a0da894c0c5160854152d9fe04cbb9c84cc68eb4cd` |
+| `current-focus/deliver-after-poison.json` | `b0c17532e5e6623f36a1a1610c38c08ff258dc697096f289f964371d18049e40` |
+
+#### W11-W02 Windows callback and subscription observations — 19 November 2026
+
+CHECK-19/21/24/25/27. The 613-input product
+`420e87491ce60e43df06e92bcfa728d64f48640407a91903ef597e592532aca7`
+adds a test in the Windows leaf and extends the existing Engine smoke.
+The production code and Cargo inputs retain their original bytes. The
+Engine test uses real PowrProf registration and explicit close. A second
+observer receives `AlreadyUsed` before and after close. The separate leaf
+process calls the production callback through the static descriptor with
+events 7, 4, 18 and 4. It expects statuses 0, 31, 0 and 0, one invocation
+of its inert failing action, and an empty slot on disarm.
+
+The existing Engine runner passed all 17 MSVC build lanes. Its first native
+attempt stopped before process launch at 1,472,240 KiB available RAM. A
+fresh observation of the same counter showed 6,562,416 KiB. The unchanged
+build then passed the expected gate controls, exact 255-name discovery,
+and all 13 selected Windows cases. The two leaf builds retain the v3
+flags. The LLVM build adds only `-C instrument-coverage`. GNU slot evidence
+reuses the byte-identical slot tests and excludes the Windows-only additions.
+MSVC leaf Clippy, both exact six-name discoveries and both six-test runs
+passed. Independent review verified the image and symbol hashes, ordinary
+user token, and Job drainage for each observed run.
+
+Pinned LLVM read the profile from the instrumented six-test run. The
+profile's PID and image match that child's observation. `resume_slot.rs`
+reached 115/126 lines (91.27%). `windows_resume.rs` reached 22/63 (34.92%).
+These include inline tests. LLVM emitted no branch counts. Registration
+and close ran in the uninstrumented Engine process. Thus the Windows
+adapter line gate remains open, alongside its 95% mutation gate,
+native failure/retirement evidence and physical transition observations.
+Use an instrumented actual subscriber and safe, typed failure controls
+for the uncovered paths. Continue to keep direct callback and physical
+event observations distinct.
+
+The first leaf producer linked the ordinary test image but its reader
+rejected Cargo's short `rustc` spelling. The next producer accepts both
+spellings only under the admitted sandbox PATH and verifies the complete
+target flag vector. Both attempts retain their original outcomes.
+
+All eight exact generated Windows descriptors were built under the
+unchanged MSVC target and strict lints. Six produced source-attributed
+compiler refusals. Two linked and remain unexecuted: inversion of the
+subscription guard and an empty `ResumeWatch::drop`. The actual healthy
+registration case supplies an oracle for the former. For the latter,
+exercise implicit Drop in a fresh process and observe disarm before
+process teardown. Charge no behavioral kills to this compiler-only run.
+
+| Evidence under `~/.local/share/nevrotick/engine-resume-native-current-20261119.VVojgKic/` | SHA-256 |
+| --- | --- |
+| `build-01/verification.json` | `bf7777f0197086e67dd70445e7c7eb9830e36f553a30a8733797c4fc633802c1` |
+| `native-01/verification.json` | `a7c74e241b3b689cb53cc0ebd6952e1a33755cb803cb02671f295222be8dad5b` |
+| `native-02/verification.json` | `c413acc8ef87d27f415d20e51f93244f8970265c2f662287023bd4d037353f8f` |
+| `leaf-build-02/verification.json` | `bb2621dc7fc40ac939656c9eacf81ec54ca3eb7637051d828fd32c66929401e2` |
+| `leaf-launch-build-01/verification.json` | `01f7ea15351a23ab91e05ca35b1a9faf8a17a7f3efd1273d43c566bf57949ac0` |
+| `leaf-native-01/verification.json` | `5cef33a8285d44f06784a5d96316ff9b9f06bb70020f24b7bf3ef02db36a0b31` |
+| `leaf-coverage-01/verification.json` | `14d049dcb02e57758cee7bc130e67b36169004c14356ebf444a211e058642756` |
+| `leaf-active-target/verification.json` | `b8196396012575758e99ca02696597a823163c7982e04b0ef27213ed7f4779a9` |
+
+#### W11-W02 implicit Drop and viable mutation results — 19 November 2026
+
+CHECK-21/24/25/27. The 614-input candidate
+`0997b2b458ea8c73c02d9dbd962297abd8d6a3295baf33289a75944111101c43`
+adds the Windows-only `subscription_lifecycle` integration test. Its own
+process owns the sole registration. The native callback records delivery
+before destroying its capture. When the watch leaves scope, the test
+requires retirement of an undelivered capture and one remaining reference
+before harness teardown. An external notification observed during that
+interval reports interruption and supplies no mutation credit.
+
+The healthy ordinary and instrumented MSVC images each ran the one exact
+test successfully. GNU and MSVC Clippy passed for the integration target.
+The original generated guard inversion failed with
+`AlreadyUsed` at initial registration. The original empty Drop failed at
+the post-drop armed-capture assertion. Both had native exit 101 and a
+drained Job. Their complete source maps differ from the healthy fixture
+only in the selected mutation. The earlier library build refusals retain
+their six source-attributed dispositions since the new integration target
+does not enter that library test build. The selected Windows descriptor
+inventory has **2 caught of 2 viable**, six compiler refusals, and zero
+survivors, timeouts or exclusions. The generated per-file gate passes for
+that inventory. A dropped capture is observable even though Drop does
+not return the status of native unregistration.
+
+Pinned LLVM merged the callback and healthy lifecycle profiles with
+their exact images. The earlier callback unit profile covers unchanged
+library source and target inputs. Only the separate integration file
+entered the product map. `windows_resume.rs` reached **49/63 lines
+(77.78%)**, up from 22/63 in the callback run. `resume_slot.rs` stays
+115/126. LLVM emitted no branch counts. The Windows adapter line gate is
+still open. Explicit close, duplicate admission and the handle-already-taken
+return need instrumented execution. The registration failure, missing-handle
+and retirement-status paths need safe typed fault controls. Preserve the
+separate physical transition and teardown work.
+
+| Evidence under `~/.local/share/nevrotick/engine-resume-native-current-20261119.VVojgKic/` | SHA-256 |
+| --- | --- |
+| `leaf-lifecycle-build-01/verification.json` | `ab71bb745fdb0777fe58b7f112585aff74d673a6bb77616855c4df5612a39785` |
+| `drop-native-01/verification.json` | `79e321e3d030ce38db9be01a3742e14d02f8dcab33a911e8a7e64715e20c463d` |
+| `leaf-lifecycle-coverage-01/verification.json` | `1521c258c434ace0201b28eb3f585e38017a787b5373a96e896650c68d0e3a19` |
+| `leaf-lifecycle-lint-01/verification.json` | `c8d83c11591c7ad02da06b82b9b8d9ccb80179ae7f0a356a71bbcf4f110d1d74` |
+
+#### W11-W02 instrumented close and typed failure handling — 19 November 2026
+
+CHECK-19/21/24/25/27. On the 614-input `0997b2b4…` predecessor, the exact
+Engine native close test passed with 254 cases filtered. Merging its
+instrumented data with the callback and implicit Drop data raised
+`windows_resume.rs` to 53/63 lines. The first close cross-link refused
+the stable tool identity comparison before compilation. Its replacement
+compares the complete serialized identity. The first three-profile
+readout exceeded the output limit when exporting Engine instantiations.
+The scoped export keeps both owner files and omits per-function output.
+
+The current 615-input candidate
+`59fca1490b7b999352275a8d9e72a15a5d76c18a27d44831b8fd0dbf14a4cfc2`
+keeps the exact PowrProf ABI and the public subscription API. Two private
+helpers own completion and retirement. A nonzero status takes precedence
+over the handle output. A missing handle after a success status also
+disarms the already consumed slot. Retirement takes the handle, disarms
+delivery, holds the capture through the unregister attempt, and preserves
+the exact status without retry. Local fixture tokens exercise those paths
+without crossing the FFI boundary.
+
+GNU and MSVC leaf Clippy and all three instrumented MSVC links passed.
+The Windows runs passed all nine leaf tests, the one real Engine close
+test, and the one implicit Drop test in separate, drained Jobs. The
+fresh merge uses only these three profiles. The unchanged file-summary
+line gate passes at **115/126 (91.27%)** for `resume_slot.rs` and
+**78/79 (98.73%)** for `windows_resume.rs`. LLVM reported no branch
+counts. The first readout incorrectly required its source annotation and
+file-summary denominators to match. The fixed readout preserves both
+observations and gates on the file summary. The annotations show 28/28 and
+60/60 production lines respectively. They have a different denominator.
+Forced statuses qualify Rust-side handling. Actual PowrProf fault delivery
+and physical suspend/resume remain open.
+
+The fresh ten-descriptor inventory covers the two new helpers and the
+previous adapter responsibilities. All ten were compiled under ordinary
+MSVC settings. Eight produced source-attributed compiler refusals. Both
+ordinary healthy images ran their exact selected tests successfully. The
+viable guard inversion returned `AlreadyUsed` at initial subscription,
+and the empty Drop left the undelivered capture armed. Each failed at the
+intended assertion with native exit 101 in a drained Job. The selected
+current adapter mutation gate passes at **2/2 viable**, with no survivors,
+timeouts or exclusions. Compiler refusals add zero behavioral catches.
+The slot's production code and GNU test inputs are byte-identical to the
+earlier scoped slot mutation run.
+
+| Evidence under `~/.local/share/nevrotick/engine-resume-native-current-20261119.VVojgKic/` | SHA-256 |
+| --- | --- |
+| `close-native-01/verification.json` | `0eba966cf4684ba2a798f5b2c5c7eb0bba37c0fcd669ea415bbd6b5b448141ba` |
+| `leaf-explicit-close-coverage-02/verification.json` | `4b53d9672c44439eadd4d30a87ab2c5a6c99df8559e22c72f5b584c6692b905b` |
+| `resume-reducer-build-01/verification.json` | `1aa9ceb7b323fc23ff4ae191ba01cad0911436db0755422daabf748deb3fe2ce` |
+| `resume-reducer-native-01/verification.json` | `5fbc3c29c5f5f93598123f9fc17a536be47ae538975bd1a7cd2c23101efe4de2` |
+| `resume-reducer-coverage-02/verification.json` | `2c103940b9afdac5e6864a95d18d08def2187be8f8b446fc601414ed9937b4cd` |
+| `resume-reducer-catalogue-01/verification.json` | `465f7cfb4554276306bf75bcf27f26ff4cb1427cbbe83317371283319ad93123` |
+| `resume-reducer-active-build-01/verification.json` | `28623096c42f42623f1204b8082684fd3325a0891cd6bc440463591952d748c1` |
+| `resume-reducer-active-native-01/verification.json` | `ce3d06db68c5f98dd84e8cb2ad42271ef7b8b0625e4c624b00c091dfd100d697` |
+
+#### W11-W02 scoped metrics on the integrated source
+
+CHECK-19/21/24/25/27. Between `59fca149…` and the integrated
+615-input `dde78e2c…` candidate, the only changed inputs are the UI
+dependency policy and two dependency-checker scripts. The current graph
+replay confirms the same dependency-tree outputs in all four rows. Both
+registered native sources, their test consumers and all 15 supplemental
+build inputs match the retained receipts. The lock, compiler inventory
+and vendor identity also match.
+
+The selected per-file evidence therefore carries forward with its
+recorded scope. The MSVC executable-line gates pass at 115/126 for the
+slot and 78/79 for the adapter. The GNU slot inventory caught its sole
+viable variant. The MSVC adapter inventory caught both viable variants.
+The receipts retain the five GNU and eight MSVC compiler refusals and
+the original source identities. LLVM emitted no branch counts. The
+separate slot lock and poison controls add zero generated kills.
+
+The readback is `native-resume-leaf-source-reconciliation-01.json`
+under `~/.local/share/nevrotick/crypto-cng-protected-runtime-20261119`,
+SHA-256 `02c3f01fa00accc19fe50a1a0ef2a4f5168a227ba11bd2cdb6d75ec246f37221`.
+No new native workload ran. Physical delivery, callback latency, actual
+PowrProf fault delivery and long-lived service reuse remain open.
 
 The [suspend continuation](engine-transport-pilot.md#suspend-and-automatic-resume-invalidation)
 uses the same invocation guard on a delivered pre-suspend notification. The

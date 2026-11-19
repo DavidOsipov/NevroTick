@@ -242,8 +242,9 @@ function Poll-Children {
         }
     }
     foreach ($child in $state.children) {
-        if ($child.Started -and -not $child.Reaped -and $child.Process.HasExited) {
-            if (-not $child.Process.WaitForExit(0)) { throw 'ke-controller:reap-state' }
+        # The process handle must signal before we acquire completion custody.
+        # A wait that returns false leaves this child pending for the next poll.
+        if ($child.Started -and -not $child.Reaped -and $child.Process.WaitForExit(0)) {
             $child.ExitCode = $child.Process.ExitCode; $child.Reaped = $true
         }
     }

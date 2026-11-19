@@ -4,11 +4,15 @@
 //! paths, plaintext, certificates and exporter bytes never enter diagnostics.
 
 use std::ffi::OsString;
+use std::num::NonZeroU16;
 use std::path::{Component, PathBuf};
 use std::time::{Duration, Instant};
 
 #[cfg(windows)]
 mod transport;
+
+mod protected_packet;
+mod protected_udp;
 
 /// Entire peer lifetime, measured from the original invocation before setup.
 const LIFETIME: Duration = Duration::from_secs(60);
@@ -24,6 +28,22 @@ const RESPONSE: [u8; 32] = [
     0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x80, 0, 0, 0,
 ];
 
+/// Encode the already-bound port before the single terminal NTS-KE record.
+///
+/// The one-cookie offer and saved peer address stay the same. The caller
+/// supplies the actual local socket port. This function performs no I/O.
+fn protected_response(port: NonZeroU16) -> [u8; 38] {
+    let [high, low]: [u8; 2] = port.get().to_be_bytes();
+    let (parameters, end): (&[u8], &[u8]) = RESPONSE.split_at(28);
+    let mut response: [u8; 38] = [0; 38];
+    let (prefix, suffix): (&mut [u8], &mut [u8]) = response.split_at_mut(28);
+    let (port_record, terminal): (&mut [u8], &mut [u8]) = suffix.split_at_mut(6);
+    prefix.copy_from_slice(parameters);
+    port_record.copy_from_slice(&[0, 7, 0, 2, high, low]);
+    terminal.copy_from_slice(end);
+    response
+}
+
 /// Closed failures contain no rejected path, TLS message or secret material.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Failure {
@@ -37,6 +57,10 @@ enum Failure {
     Offer,
     /// A native operation refused; retain only its typed I/O category.
     Io(std::io::ErrorKind),
+    /// The selected packet could not be admitted or sealed.
+    Datagram(protected_packet::PacketFailure),
+    /// The provider could not fill the reply nonce.
+    Entropy,
     /// DER/key admission or fallible bounded allocation refused.
     #[cfg(windows)]
     Input,
@@ -77,6 +101,9 @@ impl From<Failure> for Failed {
 
 /// Preserve a TLS invalid-data error before a later best-effort alert fault.
 /// Otherwise a sticky fault refuses even nominal success; no fault keeps result.
+///
+/// # Errors
+/// Preserve the original protocol or sticky transport refusal and any cleanup cause.
 fn resolve<T>(fault: Option<Failure>, result: Result<T, Failure>) -> Result<T, Failed> {
     match result {
         Err(primary @ Failure::Io(std::io::ErrorKind::InvalidData)) => Err(Failed {
@@ -90,7 +117,16 @@ fn resolve<T>(fault: Option<Failure>, result: Result<T, Failure>) -> Result<T, F
     }
 }
 
-/// Three admitted local path representations; actual files require native checks.
+/// Select the exact one-connection laboratory behavior.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Mode {
+    /// Complete KE and TLS close without a UDP socket.
+    Ke,
+    /// Use the same TLS session for a single protected loopback exchange.
+    Protected,
+}
+
+/// Admitted mode and local path representations.
 struct Config {
     /// Public leaf DER, copied into the owned guest's private work directory.
     certificate: PathBuf,
@@ -98,19 +134,30 @@ struct Config {
     key: PathBuf,
     /// New private-NTFS readiness record; never an existing record or mapped share.
     ready: PathBuf,
+    /// Explicitly selected operation.
+    mode: Mode,
 }
 
 impl Config {
-    /// Admit exactly three distinct bounded absolute ASCII paths before effects.
+    /// Admit three distinct bounded paths and an optional exact final mode flag.
+    ///
+    /// # Errors
+    /// Refuse the argument count, malformed paths, or duplicate paths.
     fn parse(mut arguments: impl Iterator<Item = OsString>) -> Result<Self, Failure> {
-        let (Some(_program), Some(certificate), Some(key), Some(ready), None) = (
-            arguments.next(),
+        let (Some(_program), Some(certificate), Some(key), Some(ready)) = (
             arguments.next(),
             arguments.next(),
             arguments.next(),
             arguments.next(),
         ) else {
             return Err(Failure::Arguments);
+        };
+        let mode: Mode = match arguments.next() {
+            None => Mode::Ke,
+            Some(flag) if flag == "--protected-datagram" && arguments.next().is_none() => {
+                Mode::Protected
+            }
+            Some(_) => return Err(Failure::Arguments),
         };
         let certificate = checked_path(certificate)?;
         let key = checked_path(key)?;
@@ -122,11 +169,15 @@ impl Config {
             certificate,
             key,
             ready,
+            mode,
         })
     }
 }
 
 /// Bound one path before conversion; reject relative/parent/root-only spellings.
+///
+/// # Errors
+/// Refuse empty, oversized, non-ASCII, NUL-containing or unsupported paths.
 fn checked_path(value: OsString) -> Result<PathBuf, Failure> {
     if value.is_empty()
         || value.len() > 1024
@@ -149,6 +200,9 @@ fn checked_path(value: OsString) -> Result<PathBuf, Failure> {
 }
 
 /// Only the fixed public offer authorizes sending the fixed public reply.
+///
+/// # Errors
+/// Refuse any difference from the exact admitted offer.
 fn admit_offer(bytes: &[u8]) -> Result<(), Failure> {
     if bytes == OFFER {
         Ok(())
@@ -158,6 +212,9 @@ fn admit_offer(bytes: &[u8]) -> Result<(), Failure> {
 }
 
 /// Serialize only a nonzero numeric port into at most eleven ASCII bytes.
+///
+/// # Errors
+/// Refuse port zero.
 fn ready_line(port: u16) -> Result<String, Failure> {
     if port == 0 {
         return Err(Failure::Arguments);
@@ -186,6 +243,9 @@ struct Budget {
 
 impl Budget {
     /// Construct one finite lifetime without effects or a refreshed origin.
+    ///
+    /// # Errors
+    /// Refuse an unrepresentable deadline.
     fn new(origin: Instant) -> Result<Self, Failure> {
         Ok(Self {
             deadline: origin.checked_add(LIFETIME).ok_or(Failure::Deadline)?,
@@ -195,6 +255,9 @@ impl Budget {
     }
 
     /// Return a positive poll timeout, refusing equality and late observation.
+    ///
+    /// # Errors
+    /// Refuse an observation at or after the original deadline.
     fn poll(&self, now: Instant) -> Result<Duration, Failure> {
         let left = self
             .deadline
@@ -205,6 +268,9 @@ impl Budget {
     }
 
     /// Limit the next syscall's actual buffer before any socket operation.
+    ///
+    /// # Errors
+    /// Refuse an exhausted or inconsistent byte counter.
     fn allowance(&self, flow: Flow) -> Result<usize, Failure> {
         let count = match flow {
             Flow::Read => self.read,
@@ -217,6 +283,9 @@ impl Budget {
     }
 
     /// Account actual bytes atomically; failure preserves the prior counter.
+    ///
+    /// # Errors
+    /// Refuse a count above the cap or an unrepresentable sum.
     fn charge(&mut self, flow: Flow, amount: usize) -> Result<(), Failure> {
         let count = match flow {
             Flow::Read => &mut self.read,
@@ -239,17 +308,31 @@ pub(super) fn entry(arguments: impl Iterator<Item = OsString>) -> std::process::
         Ok(config) => config,
         Err(failure) => return report(failure.into(), ExitCode::from(2)),
     };
+    let mode: Mode = config.mode;
     match transport::serve(config) {
         Ok(()) => {
-            let mut output = std::io::stdout().lock();
-            if writeln!(output, "scope=laboratory-ke-peer completed=1 offer_bytes={} response_bytes={} exporters=2 peer_close=1", OFFER.len(), RESPONSE.len()).is_err()
-                || output.flush().is_err()
+            let mut output: std::io::StdoutLock<'_> = std::io::stdout().lock();
+            if writeln!(output, "{}", completion_line(mode))
+                .and_then(|()| output.flush())
+                .is_err()
             {
                 return ExitCode::FAILURE;
             }
             ExitCode::SUCCESS
         }
         Err(failure) => report(failure, ExitCode::FAILURE),
+    }
+}
+
+/// Project only the fixed observation for a successfully completed mode.
+fn completion_line(mode: Mode) -> &'static str {
+    match mode {
+        Mode::Ke => {
+            "scope=laboratory-ke-peer completed=1 offer_bytes=16 response_bytes=32 exporters=2 peer_close=1"
+        }
+        Mode::Protected => {
+            "scope=laboratory-ke-peer-protected completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=1 udp_sent=1"
+        }
     }
 }
 
@@ -278,12 +361,28 @@ fn labels(failure: Failure) -> (&'static str, &'static str, &'static str) {
         Failure::Input => ("input", "file", "none"),
         Failure::Tls => ("tls", "refused", "none"),
         Failure::Closure => ("closure", "missing-notify", "none"),
+        Failure::Datagram(cause) => ("protected-datagram", packet_label(cause), "none"),
+        Failure::Entropy => ("protected-datagram", "entropy", "none"),
         Failure::Io(kind) => ("io", io_label(kind), "none"),
         Failure::Ready { primary, cleanup } => (
             "readiness",
             io_label(primary),
             cleanup.map_or("none", io_label),
         ),
+    }
+}
+
+/// Map packet refusals to fixed diagnostic labels.
+#[cfg(windows)]
+fn packet_label(cause: protected_packet::PacketFailure) -> &'static str {
+    use protected_packet::PacketFailure;
+
+    match cause {
+        PacketFailure::Length => "length",
+        PacketFailure::Header => "header",
+        PacketFailure::Shape => "shape",
+        PacketFailure::Authentication => "authentication",
+        PacketFailure::Seal => "seal",
     }
 }
 

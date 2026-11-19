@@ -457,6 +457,7 @@ pub(in crate::nts_ke_experiment) fn managed_component_keys() -> DirectionalKeys 
 pub(in crate::nts_ke_experiment) fn managed_component_exchange<'a>(
     association: &mut AssociationOwner<'a>,
     control: &'a Control,
+    reply: &'static [u8],
     before_send: impl FnOnce() -> Result<(), Failure>,
 ) -> Result<super::ProtectedCompletion<'a>, Failure> {
     exchange_with(
@@ -467,10 +468,8 @@ pub(in crate::nts_ke_experiment) fn managed_component_exchange<'a>(
             entropy(output)
         },
         |peer: SocketAddr| {
-            let mut script: Script = Script::new(
-                ScriptSend::Full,
-                vec![ScriptRead::Packet(fixtures::HEALTHY, peer)],
-            );
+            let mut script: Script =
+                Script::new(ScriptSend::Full, vec![ScriptRead::Packet(reply, peer)]);
             // Fixed era-zero date shared by the admitted and refused model cases.
             script.fixed_utc = Some(
                 UNIX_EPOCH

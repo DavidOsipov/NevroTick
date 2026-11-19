@@ -1337,10 +1337,18 @@ fn cli_argument_boundary_rejections() -> Check<()> {
         &["--peer", "not-an-endpoint"][..],
         &["--stop-after-ms", "0", "--stop-after-ms", "0"][..],
         &["--invalidate-after-ms", "0", "--invalidate-after-ms", "0"][..],
+        &["--clock-adjustment", "write"][..],
+        &["--clock-adjustment", "raw", "--clock-adjustment", "raw"][..],
     ] {
         let mut arguments = base.to_vec();
         arguments.extend_from_slice(extra);
         argument_rejection(&arguments, "invalid_arguments")?;
+    }
+    #[cfg(not(windows))]
+    {
+        let mut arguments = base.to_vec();
+        arguments.extend(["--clock-adjustment", "raw"]);
+        argument_rejection(&arguments, "clock_adjustment_unavailable")?;
     }
     argument_rejection(
         &[

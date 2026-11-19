@@ -75,6 +75,44 @@ impl ResumeUnregistrationError {
     }
 }
 
+/// Accept the registering owner's output only on native success with a handle.
+/// The slot must have consumed its one registration attempt.
+///
+/// # Errors
+/// Preserve a nonzero native status or a missing handle and disarm delivery.
+fn complete_registration<H>(
+    slot: &ResumeSlot,
+    status: u32,
+    handle: Option<H>,
+) -> Result<H, ResumeRegistrationError> {
+    let result: Result<H, ResumeRegistrationError> = match NonZeroU32::new(status) {
+        Some(error) => Err(ResumeRegistrationError::Native(error)),
+        None => handle.ok_or(ResumeRegistrationError::MissingHandle),
+    };
+    if result.is_err() {
+        drop(slot.disarm());
+    }
+    result
+}
+
+/// Consume the matching handle before the single unregister attempt.
+/// Disarm first and retain the retired capture until the attempt returns.
+///
+/// # Errors
+/// Preserve the nonzero status without restoring the handle or action.
+fn retire_registration<H>(
+    slot: &ResumeSlot,
+    handle: &mut Option<H>,
+    unregister: impl FnOnce(H) -> u32,
+) -> Result<(), ResumeUnregistrationError> {
+    let Some(handle) = handle.take() else {
+        return Ok(());
+    };
+    let _retired: Option<Action> = slot.disarm();
+    let status: u32 = unregister(handle);
+    NonZeroU32::new(status).map_or(Ok(()), |error| Err(ResumeUnregistrationError(error)))
+}
+
 /// The one owned handle, kept on the subscribing thread.
 #[must_use = "retain the watch through observation and close it to check native retirement"]
 pub struct ResumeWatch {
@@ -112,17 +150,10 @@ impl ResumeWatch {
                 &raw mut handle,
             )
         };
-        if let Some(error) = NonZeroU32::new(status) {
-            drop(SLOT.disarm());
-            return Err(ResumeRegistrationError::Native(error));
-        }
-        if let Some(handle) = NonNull::new(handle) {
-            return Ok(Self {
-                handle: Some(handle),
-            });
-        }
-        drop(SLOT.disarm());
-        Err(ResumeRegistrationError::MissingHandle)
+        let handle: NonNull<c_void> = complete_registration(&SLOT, status, NonNull::new(handle))?;
+        Ok(Self {
+            handle: Some(handle),
+        })
     }
 
     /// Disarm delivery and attempt exactly one native unregistration.
@@ -142,15 +173,11 @@ impl ResumeWatch {
         reason = "Retire only the unique handle returned by PowrProf"
     )]
     fn release(&mut self) -> Result<(), ResumeUnregistrationError> {
-        let Some(handle) = self.handle.take() else {
-            return Ok(());
-        };
-        // Keep arbitrary capture destructors out of native retirement.
-        let _retired: Option<Action> = SLOT.disarm();
-        // SAFETY: Handle came from successful registration and is consumed
-        // here. The static callback and descriptor outlive delayed notifications.
-        let status: u32 = unsafe { PowerUnregisterSuspendResumeNotification(handle.as_ptr()) };
-        NonZeroU32::new(status).map_or(Ok(()), |error| Err(ResumeUnregistrationError(error)))
+        retire_registration(&SLOT, &mut self.handle, |handle: NonNull<c_void>| {
+            // SAFETY: Handle came from successful registration and is consumed
+            // here. The static callback and descriptor outlive delayed notifications.
+            unsafe { PowerUnregisterSuspendResumeNotification(handle.as_ptr()) }
+        })
     }
 }
 
@@ -158,5 +185,42 @@ impl Drop for ResumeWatch {
     fn drop(&mut self) {
         // Ordinary callers close explicitly. Unwinding still disarms the slot.
         let _released: Result<(), ResumeUnregistrationError> = self.release();
+    }
+}
+
+#[cfg(test)]
+#[path = "windows_resume_tests.rs"]
+mod fault_tests;
+
+#[cfg(test)]
+mod tests {
+    use std::ptr::null;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use super::{PARAMETERS, SLOT};
+
+    /// Exercise the production callback in a fresh process without OS registration.
+    ///
+    /// # Panics
+    /// Fail if unrelated or late events invoke the action, if delivery fails to
+    /// report its Windows error code, or if failure leaves the action armed.
+    #[test]
+    fn callback_reports_failure_and_consumes_its_action() {
+        let deliveries: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+        let observed: Arc<AtomicUsize> = Arc::clone(&deliveries);
+        assert!(SLOT.bind(Box::new(move || {
+            let _previous: usize = observed.fetch_add(1, Ordering::Relaxed);
+            Err(())
+        })));
+
+        assert_eq!((PARAMETERS.callback)(null(), 7, null()), 0);
+        assert_eq!(deliveries.load(Ordering::Relaxed), 0);
+        assert_eq!((PARAMETERS.callback)(null(), 4, null()), 31);
+        assert_eq!(deliveries.load(Ordering::Relaxed), 1);
+        assert_eq!((PARAMETERS.callback)(null(), 18, null()), 0);
+        assert!(SLOT.disarm().is_none());
+        assert_eq!((PARAMETERS.callback)(null(), 4, null()), 0);
+        assert_eq!(deliveries.load(Ordering::Relaxed), 1);
     }
 }

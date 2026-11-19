@@ -4,10 +4,14 @@ use std::ffi::OsString;
 use std::time::{Duration, Instant};
 
 use super::{
-    Budget, Config, Failed, Failure, Flow, IO_LIMIT, RESPONSE, admit_offer, ready_line, resolve,
+    Budget, Config, Failed, Failure, Flow, IO_LIMIT, Mode, RESPONSE, admit_offer, completion_line,
+    ready_line, resolve,
 };
 
 /// Later alert-write refusal stays separate from the original TLS protocol error.
+///
+/// # Panics
+/// Fail if the primary error or distinct cleanup failure is lost.
 #[test]
 fn primary_tls_error_precedes_a_later_alert_fault() {
     let primary = Failure::Io(std::io::ErrorKind::InvalidData);
@@ -27,6 +31,9 @@ fn primary_tls_error_precedes_a_later_alert_fault() {
 }
 
 /// Sticky faults refuse nominal success; ordinary errors and success stay intact.
+///
+/// # Panics
+/// Fail if resolution changes a healthy or sticky-fault outcome.
 #[test]
 fn sticky_fault_and_healthy_result_neighbors() {
     assert_eq!(resolve(None, Ok(7_u8)), Ok(7));
@@ -53,6 +60,9 @@ fn arguments() -> Vec<OsString> {
 }
 
 /// All critical-bit, type, length and algorithm positions must match literally.
+///
+/// # Panics
+/// Fail if the exact offer refuses or any altered byte is ignored.
 #[test]
 fn literal_offer_and_each_changed_byte() {
     let expected = [0x80, 1, 0, 2, 0, 0, 0x80, 4, 0, 2, 0, 15, 0x80, 0, 0, 0];
@@ -141,7 +151,52 @@ fn literal_response_cookie_prepares_the_exact_preview_shape() -> Result<(), Stri
     Ok(())
 }
 
+/// The actual negotiation reader receives one port record before EOM.
+///
+/// # Errors
+/// Preserve an offer, framing or negotiation refusal.
+/// # Panics
+/// Fail if the literal records, accepted port or cookie count differ.
+#[test]
+fn protected_response_advertises_exact_port_and_original_cookie() -> Result<(), String> {
+    use std::num::NonZeroU16;
+
+    use ntp_wire::{
+        NtsKeFrameLimits, NtsKeNtpv4Negotiation, NtsKeNtpv4Offer, RawNtsKeMessage,
+        frame_nts_ke_message, negotiate_nts_ke_ntpv4, read_nts_ke_ntpv4_offer,
+    };
+
+    let frame_limits: NtsKeFrameLimits =
+        NtsKeFrameLimits::new(38, 5).map_err(|error| format!("KE limits: {error:?}"))?;
+    let framed_offer: RawNtsKeMessage<'_> = frame_nts_ke_message(&super::OFFER, frame_limits)
+        .map_err(|error| format!("offer frame: {error:?}"))?;
+    let offer: NtsKeNtpv4Offer<'_> =
+        read_nts_ke_ntpv4_offer(&framed_offer).map_err(|error| format!("offer: {error:?}"))?;
+    let port: NonZeroU16 = NonZeroU16::new(49_666).ok_or("expected nonzero UDP port")?;
+    let response: [u8; 38] = super::protected_response(port);
+    assert_eq!(
+        response,
+        [
+            0x80, 1, 0, 2, 0, 0, 0x80, 4, 0, 2, 0, 15, 0, 5, 0, 12, 0xaa, 0xbb, 0xcc, 0xdd, 0x10,
+            0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0, 7, 0, 2, 0xc2, 0x02, 0x80, 0, 0, 0,
+        ],
+    );
+    let frame: RawNtsKeMessage<'_> = frame_nts_ke_message(&response, frame_limits)
+        .map_err(|error| format!("response frame: {error:?}"))?;
+    let negotiated: NtsKeNtpv4Negotiation<'_> = negotiate_nts_ke_ntpv4(&offer, frame)
+        .map_err(|error| format!("response negotiation: {error:?}"))?;
+    assert_eq!(negotiated.port_hint(), Some(49_666));
+    assert_eq!(negotiated.server_hint(), None);
+    assert_eq!(negotiated.cookie_count(), 1);
+    Ok(())
+}
+
 /// Port zero refuses; both admitted numeric extremes have the exact ASCII form.
+///
+/// # Errors
+/// Preserve an admitted neighbor's serialization failure.
+/// # Panics
+/// Fail if zero is admitted or either exact ASCII representation differs.
 #[test]
 fn readiness_port_is_bounded_and_has_no_optional_fields() -> Result<(), Failure> {
     assert_eq!(ready_line(0), Err(Failure::Arguments));
@@ -151,12 +206,18 @@ fn readiness_port_is_bounded_and_has_no_optional_fields() -> Result<(), Failure>
 }
 
 /// Exact argument shape succeeds; missing, extra, relative and aliased paths fail.
+///
+/// # Errors
+/// Preserve failure to admit the healthy arguments.
+/// # Panics
+/// Fail if an invalid argument set is admitted or a checked path is relative.
 #[test]
-fn cli_has_no_optional_effect_or_case_switch() -> Result<(), Failure> {
-    let config = Config::parse(arguments().into_iter())?;
+fn cli_requires_paths_and_at_most_one_exact_final_mode() -> Result<(), Failure> {
+    let config: Config = Config::parse(arguments().into_iter())?;
     assert!(config.certificate.is_absolute());
     assert!(config.key.is_absolute());
     assert!(config.ready.is_absolute());
+    assert_eq!(config.mode, Mode::Ke);
     let mut missing = arguments();
     let _removed = missing.pop();
     assert!(matches!(
@@ -167,6 +228,17 @@ fn cli_has_no_optional_effect_or_case_switch() -> Result<(), Failure> {
     extra.push(OsString::from("healthy"));
     assert!(matches!(
         Config::parse(extra.into_iter()),
+        Err(Failure::Arguments)
+    ));
+    let mut protected: Vec<OsString> = arguments();
+    protected.push(OsString::from("--protected-datagram"));
+    assert_eq!(
+        Config::parse(protected.clone().into_iter())?.mode,
+        Mode::Protected
+    );
+    protected.push(OsString::from("--protected-datagram"));
+    assert!(matches!(
+        Config::parse(protected.into_iter()),
         Err(Failure::Arguments)
     ));
     for value in ["relative.der", "", "é", "nul\0path"] {
@@ -192,7 +264,28 @@ fn cli_has_no_optional_effect_or_case_switch() -> Result<(), Failure> {
     Ok(())
 }
 
+/// Project the two completed outcomes with independent exact line contracts.
+///
+/// # Panics
+/// Fail on a changed default line or missing protected observation.
+#[test]
+fn completion_keeps_default_exact_and_protected_distinct() {
+    assert_eq!(
+        completion_line(Mode::Ke),
+        "scope=laboratory-ke-peer completed=1 offer_bytes=16 response_bytes=32 exporters=2 peer_close=1"
+    );
+    assert_eq!(
+        completion_line(Mode::Protected),
+        "scope=laboratory-ke-peer-protected completed=1 offer_bytes=16 response_bytes=38 exporters=2 peer_close=1 udp_received=1 udp_sent=1"
+    );
+}
+
 /// Polls never renew the origin; equality and later times both refuse.
+///
+/// # Errors
+/// Preserve refusal to construct the original budget.
+/// # Panics
+/// Fail if the remaining wait or exact deadline boundary differs.
 #[test]
 fn original_deadline_has_exact_neighbors() -> Result<(), Failure> {
     let origin = Instant::now();
@@ -214,6 +307,11 @@ fn original_deadline_has_exact_neighbors() -> Result<(), Failure> {
 }
 
 /// Each direction independently accepts its cap; overflow preserves old counts.
+///
+/// # Errors
+/// Preserve an unexpected refusal of a valid byte charge.
+/// # Panics
+/// Fail if a counter exceeds its cap or changes the other allowance.
 #[test]
 fn actual_byte_caps_have_independent_healthy_neighbors() -> Result<(), Failure> {
     let mut budget = Budget::new(Instant::now())?;

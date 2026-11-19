@@ -1371,8 +1371,67 @@ The exact `978691a8` product passed the focused controls and all 19 combined
 lanes with 1,869 named executions. Both role bindings remain closed.
 The [plain Windows writer tests](../../tasks/engine-transport-pilot.md#plain-capture-placement-windows-writer-tests--w11-w01)
 passed both bounded loopback cases after exact 254-name discovery on the
-observed ordinary-user host. Native CLI, calibrated mapping and current
-coverage and mutation gates remain open.
+observed ordinary-user host. The [actual native observe witness](../../tasks/engine-transport-pilot.md#actual-observe-cli-capture-bracket-witness--w11-w01-19-november-2026)
+ran the current staged release image with two controlled IPv4 loopback peers
+in an owned Windows guest. Both measured peer spans fit the matching Engine
+bounds on the shared QPC clock. Both reports remained ineligible with no
+mapping. External calibration, production admission, complete native
+qualification and current coverage and mutation gates remain open.
+
+The [source-scale declaration](../../tasks/engine-transport-pilot.md#source-scale-declaration-on-the-installed-revision)
+binds explicit scale provenance to the actual laboratory configuration
+revision. The actual protected reply owner refused publication after a
+scale-only replacement. All 19 combined development lanes
+passed on `5fc32aac…` with 1,909 named executions. Both readers admitted
+the current development evidence with campaigns closed, and all 458
+combined reader and dependency-graph controls passed. The affected
+per-file metrics remain open. Trusted date,
+calibrated mapping and production eligibility still require actual
+suppliers.
+
+The [managed authenticated LI report](../../tasks/engine-transport-pilot.md#original-authenticated-leap-indicator-in-the-managed-report)
+retains the original peer claim beside the committed source configuration
+even when measurement is unavailable. On `8a5ca1e8…`, the forced-zero
+control failed the LI=1 assertion and all six restored EP1 cases passed.
+GNU and MSVC-target Clippy and the selected Rustdoc lanes passed. Current
+profile rebinding, metrics, native exchange and end-to-end leap admission
+remain separate.
+
+The [Windows adjustment observation](../../tasks/engine-transport-pilot.md#windows-adjustment-mode-observation-around-acquisition)
+reaches the actual bounded observe invocation and retains both raw reads
+around acquisition. Candidate `bfc89aa8…` passed seven focused lanes and
+separate native default and opt-in loopback cases on build 26100. The
+native read reported equal words and mode with mapping unavailable.
+Its [combined development checkpoint](../../tasks/engine-transport-pilot.md#combined-adjustment-development-checks)
+passed all 19 lanes and 1,925 named executions. Current role rebinding,
+metrics, physical uncertainty, date and mapping admission remain open.
+The [offline TLS checkpoint](../../tasks/s0.1-crypto-feasibility.md#offline-guest-startup-and-temporary-trust-interruption)
+retains the observed untrusted refusal and independently verified store
+and scratch cleanup after the confirmation deadline. The [five-case native
+fixture](../../tasks/s0.1-crypto-feasibility.md#five-case-offline-windows-ke-and-protected-udp-checkpoint)
+passed the three verifier refusals, healthy KE, and healthy protected UDP
+on its pinned Windows images after correcting the collector's process wait.
+Guest trust restoration was verified. Production measurement admission,
+SAC-enabled operation and release qualification stay open.
+
+The [ordinary TLS clock provider](../../tasks/engine-transport-pilot.md#checked-ordinary-tls-certificate-time-provider)
+now refuses pre-Unix-epoch readings through the configured Rustls callback.
+MSVC Clippy, exact links and the Windows callback/projector controls passed
+on `6a11abbe…`. The unchecked conversion control reproduced the panic.
+The [certificate-bearing Windows pair](../../tasks/engine-transport-pilot.md#certificate-bearing-windows-clock-refusals-and-shutdown-attribution)
+then observed `Handshake/LocalClock` and `Handshake/Certificate(Issuer)`
+through the real Engine transport. It exposed a duplicate shutdown error
+from Rustls's cached failure. Both native cases pass on the repaired
+`b4c3ddff…` product with their original causes and no duplicate shutdown
+error. Current metrics and genuine date/mapping suppliers remain open.
+
+The [transport-fault Windows adjudication](../../tasks/engine-transport-pilot.md#transport-fault-windows-mutation-adjudication)
+ran the complete 39-descriptor registered selection on that same product.
+All 19 runnable variants failed causal assertions, 20 were compiler-unviable,
+and the restored 18-case baseline passed. The Windows viable score is
+19/19 with zero survivors or timeouts. Current Windows line coverage,
+ungenerated behavior, canonical role admission and production/native
+qualification remain open.
 
 The [Engine receive-effect chronology checkpoint](../../tasks/engine-transport-pilot.md#engine-receive-chronology-at-policy-commit-and-recovery-boundaries)
 binds managed plain KoD effects to the reserved send, protected cookie
@@ -1405,9 +1464,23 @@ retains automatic resume. The focused checks and Windows CLI cross-link pass.
 Physical event delivery and calibrated mapping remain open.
 
 W11-W02 also owns the native leaf's separate 90% executable-line and
-95%-per-critical-file mutation exits. Its [current qualification scope](../../tasks/windows11-integration.md#w11-w02-reconcile-sleep-timers-and-clock-presentation)
-retains target/FFI gaps and the one-attempt-per-process constraint for later
-W11-W05/S3.1 integration. These gates remain open alongside physical delivery.
+95%-per-critical-file mutation exits. The [portable slot checkpoint](../../tasks/windows11-integration.md#w11-w02-portable-resume-slot-metrics--19-november-2026)
+passes its GNU line gate and catches the only viable generated slot variant.
+The [Windows continuation](../../tasks/windows11-integration.md#w11-w02-windows-callback-and-subscription-observations--19-november-2026)
+passes the real registration, close and repeated-attempt smoke and all six
+native leaf tests in both ordinary and instrumented builds. The
+[implicit Drop continuation](../../tasks/windows11-integration.md#w11-w02-implicit-drop-and-viable-mutation-results--19-november-2026)
+caught both viable Windows adapter variants on its predecessor. The
+[current typed failure and instrumented close checkpoint](../../tasks/windows11-integration.md#w11-w02-instrumented-close-and-typed-failure-handling--19-november-2026)
+passes the two Windows line gates at 115/126 and 78/79. It observes actual
+registration, close and implicit Drop plus forced Rust-side failure status
+handling. Its fresh Windows adapter mutation inventory records two viable
+catches and eight compiler refusals. Physical delivery and actual native
+fault observation remain with W11-W02. The one-attempt-per-process
+constraint remains with W11-W05/S3.1.
+The [integrated leaf readback](../../tasks/windows11-integration.md#w11-w02-scoped-metrics-on-the-integrated-source)
+carries forward the two selected line and mutation results after matching
+their source, test, toolchain and dependency inputs.
 
 The [integrated development and closed KE re-admission](../../tasks/engine-transport-pilot.md#integrated-development-and-closed-ke-re-admission)
 passes 19 development lanes and the exact KE reader controls. Its
@@ -1469,7 +1542,11 @@ dependencies and timed out before either variant. The historical
 Build-to-Test witness reached the chronology error without the rebuild.
 Both original chronology timeouts and the latest baseline timeout remain
 open. Current evidence retains the cumulative allowances and an exact
-closeout reader for incomplete baselines.
+closeout reader for incomplete baselines. The
+[retired reply acceptance-time witnesses](../../tasks/engine-transport-pilot.md#retired-reply-acceptance-time-witnesses--19-november-2026)
+caught both isolated ledger comparison faults at the actual commit decision
+and live pool assertion. This focused evidence carries zero generated credit.
+The chronology allowance has 11 whole seconds remaining.
 
 The Windows [managed Protected power observation](../../tasks/engine-transport-pilot.md#managed-protected-power-observation-at-the-submission-boundary)
 shares the real worker reservation and original Stop handle with the
@@ -1541,6 +1618,9 @@ passes on the current baseline with two behavioral catches. The full
 217-descriptor ledger gate still needs caller/diagnostic reconciliation,
 thirteen changed-context chronology counterparts and exact equivalence
 admission. Historical failures and cumulative allowances stay recorded.
+The [current four-row compiler readback](../../tasks/engine-transport-pilot.md#four-retained-ledger-compiler-refusals-reconciled)
+reconciles four retained structural refusals with the integrated source.
+The broad enumeration still needs the existing 7 GiB durable-space floor.
 The [managed Windows EOF case](../../tasks/engine-transport-pilot.md#managed-protected-stale-revision-and-windows-loopback-eof)
 now passes from stale source rejection through the current loopback
 ClientHello, EOF and actual Job cleanup. Healthy TLS, live UDP,
@@ -1571,6 +1651,19 @@ frozen refusal and repaired GNU/MSVC graph, check and release builds passed.
 All 199 Engine reader regressions pass and the unchanged product identity is
 admitted. Native TLS, measurement suppliers and the separate native-leaf
 qualification retain their open exits.
+
+The [combined protected-peer and root graph checkpoint](../../tasks/s0.1-crypto-feasibility.md#combined-protected-peer-and-root-graph-admission--19-november-2026)
+adds the opt-in protected loopback peer, integrates its standalone AES-SIV
+edge, and verifies the complete default and EP1 root graphs against the
+unchanged root lock. The graph validator admits the exact native lifecycle
+integration test. Both standalone target policies and release links pass.
+The root Engine EP1 ordinary, optimized and doctest lanes passed on
+all 615 bound inputs. The five-case native collector passed its parser check
+before the later [offline execution and restoration checkpoint](../../tasks/s0.1-crypto-feasibility.md#five-case-offline-windows-ke-and-protected-udp-checkpoint).
+The [offline guest preflight](../../tasks/s0.1-crypto-feasibility.md#offline-guest-admission-preflight--19-november-2026)
+pins all nine inputs and the offline launch profile. The initial prepared
+guest had a default network route. The successful run used the replacement
+offline guest with the x64 Visual C++ v14 runtime and effective isolation.
 
 **Published preceding product child — 17 November 2026:**
 [Managed restriction visibility](../../tasks/engine-transport-pilot.md#consumer-boundary-reinforcement--17-november-2026)

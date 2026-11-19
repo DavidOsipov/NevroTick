@@ -7,7 +7,7 @@
 
 #![forbid(unsafe_code)]
 
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::io::{self, Write};
 use std::net::SocketAddr;
 use std::process::ExitCode;
@@ -19,7 +19,11 @@ use nevrotick_engine::{
 };
 
 #[cfg(windows)]
-use windows_platform_native::ResumeWatch;
+use windows_platform_native::{ClockAdjustment, ResumeWatch, read_clock_adjustment};
+
+#[cfg(any(windows, test))]
+#[path = "nevrotick_observe/adjustment_observation.rs"]
+mod adjustment_observation;
 
 /// Finite command syntax or runtime failures; no rejected input is retained.
 #[derive(Debug)]
@@ -32,6 +36,9 @@ enum CliError {
     Output,
     /// A checked engine operation failed with a safe typed code.
     Pilot(PilotError),
+    /// The requested raw adjustment read needs the native Windows adapter.
+    #[cfg(not(windows))]
+    AdjustmentUnavailable,
     /// Windows could not establish resume notification before acquisition.
     #[cfg(windows)]
     ResumeRegistration,
@@ -51,6 +58,8 @@ impl CliError {
             Self::Endpoint => "invalid_endpoint",
             Self::Output => "diagnostic_output_failed",
             Self::Pilot(error) => error.as_str(),
+            #[cfg(not(windows))]
+            Self::AdjustmentUnavailable => "clock_adjustment_unavailable",
             #[cfg(windows)]
             Self::ResumeRegistration => "resume_registration_failed",
             #[cfg(windows)]
@@ -73,18 +82,20 @@ struct Arguments {
     invalidate_after: Option<Duration>,
     /// Explicit caller-declared experimental dates and software-clock model.
     experimental_profile: Option<ExperimentalProfile>,
+    /// Request two read-only Windows adjustment observations.
+    observe_adjustment: bool,
 }
 
-/// Private allowance for at most six option/value pairs in this one CLI parse.
+/// Private allowance for at most seven option/value pairs in this one CLI parse.
 struct ArgumentBudget {
     /// Unconsumed complete-pair allowance; exhaustion can never wrap or reset.
     remaining_pairs: u8,
 }
 
 impl ArgumentBudget {
-    /// Establish the CLI's fixed twelve-atom allowance without reading input.
+    /// Establish the CLI's fixed fourteen-atom allowance without reading input.
     fn for_cli() -> Self {
-        Self { remaining_pairs: 6 }
+        Self { remaining_pairs: 7 }
     }
 
     /// Charge one raw option before decoding it or fetching its paired value.
@@ -126,7 +137,7 @@ fn argument_text(value: &OsStr, kind: ArgumentTextKind) -> Result<&str, CliError
     value.to_str().ok_or(CliError::Arguments)
 }
 
-/// Parse at most twelve bounded arguments without retaining raw caller strings.
+/// Parse at most fourteen bounded arguments without retaining raw caller strings.
 ///
 /// No network, file or clock mutation occurs. Endpoint meaning and timeout bounds
 /// are admitted later through Config, which direct library callers also require.
@@ -134,13 +145,13 @@ fn argument_text(value: &OsStr, kind: ArgumentTextKind) -> Result<&str, CliError
 /// # Errors
 /// Reject missing/repeated options, oversized or non-text arguments, invalid
 /// numeric endpoints and disallowed decimal duration syntax.
-fn arguments() -> Result<Arguments, CliError> {
-    let mut raw = std::env::args_os().skip(1);
+fn arguments(mut raw: impl Iterator<Item = OsString>) -> Result<Arguments, CliError> {
     let mut peers = Vec::with_capacity(2);
     let mut timeout = None;
     let mut stop_after = None;
     let mut invalidate_after = None;
     let mut experimental_profile = None;
+    let mut observe_adjustment: bool = false;
     let mut budget = ArgumentBudget::for_cli();
     while let Some(option) = raw.next() {
         budget.charge_pair()?;
@@ -163,6 +174,9 @@ fn arguments() -> Result<Arguments, CliError> {
             "--experimental-clock" if experimental_profile.is_none() => {
                 experimental_profile = Some(clock_profile(value)?);
             }
+            "--clock-adjustment" if value == "raw" && !observe_adjustment => {
+                observe_adjustment = true;
+            }
             _ => return Err(CliError::Arguments),
         }
     }
@@ -172,6 +186,7 @@ fn arguments() -> Result<Arguments, CliError> {
         stop_after,
         invalidate_after,
         experimental_profile,
+        observe_adjustment,
     })
 }
 
@@ -256,7 +271,11 @@ fn write_report(report: &PilotReport, output: &mut impl Write) -> Result<(), Cli
 /// Return syntax, checked-plan, startup, executor or diagnostic sink failures.
 /// Per-slot transport outcomes remain explicit bounded report values.
 fn run() -> Result<(), CliError> {
-    let args = arguments()?;
+    let args: Arguments = arguments(std::env::args_os().skip(1))?;
+    #[cfg(not(windows))]
+    if args.observe_adjustment {
+        return Err(CliError::AdjustmentUnavailable);
+    }
     let config = Config::new(args.peers, args.timeout).map_err(CliError::Pilot)?;
     let config = match args.experimental_profile {
         Some(profile) => config.with_experimental_profile(profile),
@@ -272,7 +291,12 @@ fn run() -> Result<(), CliError> {
     let observer: ResumeWatch =
         ResumeWatch::subscribe(move || control.invalidate().map_err(|_| ()))
             .map_err(|_| CliError::ResumeRegistration)?;
-    let result: Result<PilotReport, CliError> = observe(pilot, schedule);
+    let result: Result<ObservedPilot, CliError> = observe(
+        pilot,
+        schedule,
+        #[cfg(windows)]
+        args.observe_adjustment,
+    );
     #[cfg(windows)]
     if observer.close().is_err() {
         let primary: Option<&'static str> = result.err().map(|error| error.as_str());
@@ -280,15 +304,49 @@ fn run() -> Result<(), CliError> {
     }
     #[cfg(not(windows))]
     drop(control);
-    let report: PilotReport = result?;
-    write_report(&report, &mut io::stdout().lock())
+    let completed: ObservedPilot = result?;
+    let mut output: io::StdoutLock<'static> = io::stdout().lock();
+    #[cfg(windows)]
+    if let Some(adjustment) = completed.adjustment {
+        adjustment
+            .write(&mut output)
+            .map_err(|_| CliError::Output)?;
+    }
+    write_report(&completed.report, &mut output)
+}
+
+/// The actual pilot result with its optional native observation from the same invocation.
+struct ObservedPilot {
+    /// The original result after the actual engine runtime returned.
+    report: PilotReport,
+    /// Two raw reads around that specific Windows invocation, when requested.
+    #[cfg(windows)]
+    adjustment: Option<adjustment_observation::AdjustmentObservation>,
+}
+
+/// Forward one native read into the CLI's bounded historical projection.
+///
+/// # Errors
+/// Preserve the original native error code, including an unreported code of zero.
+#[cfg(windows)]
+fn read_adjustment() -> Result<adjustment_observation::AdjustmentState, u32> {
+    let state: ClockAdjustment = read_clock_adjustment()?;
+    Ok(adjustment_observation::AdjustmentState {
+        adjustment: state.adjustment(),
+        increment: state.increment(),
+        periodic_adjustment_disabled: state.periodic_adjustment_disabled(),
+    })
 }
 
 /// Publish the prepared endpoints before executing, under the invocation's control.
 ///
 /// # Errors
 /// Preserve sink/setup and Engine errors, leaving teardown to the invocation owner.
-fn observe(pilot: PreparedPilot, schedule: ControlSchedule) -> Result<PilotReport, CliError> {
+fn observe(
+    pilot: PreparedPilot,
+    schedule: ControlSchedule,
+    #[cfg(windows)] include_adjustment: bool,
+) -> Result<ObservedPilot, CliError> {
     {
         let mut output: io::StdoutLock<'static> = io::stdout().lock();
         for (slot, local) in pilot.local_endpoints().iter().enumerate() {
@@ -297,7 +355,22 @@ fn observe(pilot: PreparedPilot, schedule: ControlSchedule) -> Result<PilotRepor
         }
         output.flush().map_err(|_| CliError::Output)?;
     }
-    execute(pilot, schedule).map_err(CliError::Pilot)
+    #[cfg(windows)]
+    if include_adjustment {
+        let (report, reading): (
+            Result<PilotReport, PilotError>,
+            adjustment_observation::AdjustmentObservation,
+        ) = adjustment_observation::observe(read_adjustment, || execute(pilot, schedule));
+        return Ok(ObservedPilot {
+            report: report.map_err(CliError::Pilot)?,
+            adjustment: Some(reading),
+        });
+    }
+    Ok(ObservedPilot {
+        report: execute(pilot, schedule).map_err(CliError::Pilot)?,
+        #[cfg(windows)]
+        adjustment: None,
+    })
 }
 
 /// Return through Rust's normal process teardown; never change host clock state.
@@ -321,3 +394,7 @@ fn main() -> ExitCode {
 #[cfg(test)]
 #[path = "../../tests/private/argument_guards.rs"]
 mod argument_guard_tests;
+
+#[cfg(test)]
+#[path = "../../tests/private/adjustment_observation.rs"]
+mod adjustment_observation_tests;

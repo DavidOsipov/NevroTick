@@ -10,10 +10,12 @@ use std::io::Read;
 use std::path::PathBuf;
 use std::process::{Child, Command, ExitStatus, Stdio};
 
-/// Observe the real Windows registration and explicit native close in one fresh process.
-/// No event is injected and the delivered action has no host or transport effect.
+/// Observe native registration, close and one-shot admission in a fresh process.
+/// All actions are inert. No event is injected.
 /// # Errors
 /// Preserve a diagnosed native registration or unregistration refusal.
+/// # Panics
+/// Fail if an attempted second observer replaces or reopens the process slot.
 #[cfg(windows)]
 #[test]
 fn native_resume_subscription_registers_and_closes() -> Result<(), Box<dyn Error>> {
@@ -25,6 +27,12 @@ fn native_resume_subscription_registers_and_closes() -> Result<(), Box<dyn Error
         ResumeWatch::subscribe(|| Ok(())).map_err(|error: ResumeRegistrationError| {
             io::Error::other(format!("native resume registration refused: {error:?}"))
         })?;
+    let during_registration: Result<ResumeWatch, ResumeRegistrationError> =
+        ResumeWatch::subscribe(|| Ok(()));
+    assert!(matches!(
+        during_registration,
+        Err(ResumeRegistrationError::AlreadyUsed)
+    ));
     observer
         .close()
         .map_err(|error: ResumeUnregistrationError| {
@@ -33,6 +41,12 @@ fn native_resume_subscription_registers_and_closes() -> Result<(), Box<dyn Error
                 error.code()
             ))
         })?;
+    let after_close: Result<ResumeWatch, ResumeRegistrationError> =
+        ResumeWatch::subscribe(|| Ok(()));
+    assert!(matches!(
+        after_close,
+        Err(ResumeRegistrationError::AlreadyUsed)
+    ));
     Ok(())
 }
 

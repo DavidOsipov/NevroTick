@@ -1,7 +1,7 @@
-//! One-connection Windows TLS/KE laboratory peer; not a product time server.
+//! One-connection Windows TLS/KE laboratory peer.
 //!
-//! Only an independently admitted guest job may execute this fixture. No trust
-//! store, clock, service, UDP or external address is changed by this executable.
+//! Only an independently admitted guest job may execute this fixture. The
+//! explicit protected mode exchanges one authenticated IPv4 loopback datagram.
 
 #![forbid(unsafe_code)]
 

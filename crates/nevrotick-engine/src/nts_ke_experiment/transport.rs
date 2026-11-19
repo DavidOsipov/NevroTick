@@ -7,10 +7,12 @@
 use std::io::{self, Read, Write};
 use std::net::{SocketAddr, TcpStream};
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 
 use ntp_wire::{NtsKeAccumulatorError, NtsKeFrameError};
+use rustls::time_provider::TimeProvider;
 use rustls::{CipherSuite, ClientConfig, ClientConnection, StreamOwned, SupportedCipherSuite};
+use rustls_pki_types::UnixTime;
 use zeroize::Zeroizing;
 
 use super::profile::StrictProfile;
@@ -139,14 +141,46 @@ fn suite_priority(suite: CipherSuite) -> u8 {
     }
 }
 
-/// Construct explicit CNG/TLS13 and the ordinary OS verifier, with no extra roots.
+/// Read the ordinary local wall clock for the TLS certificate check.
+#[derive(Debug)]
+struct LocalWallTime {
+    /// Deterministic callback input, absent from the ordinary production provider.
+    #[cfg(test)]
+    fixture_time: Option<SystemTime>,
+}
+
+impl LocalWallTime {
+    /// Select ordinary local wall time for each Rustls callback.
+    const fn system() -> Self {
+        Self {
+            #[cfg(test)]
+            fixture_time: None,
+        }
+    }
+}
+
+impl TimeProvider for LocalWallTime {
+    /// Return Unix seconds for a representable wall reading, or `None` before 1970.
+    fn current_time(&self) -> Option<UnixTime> {
+        #[cfg(not(test))]
+        let observed: SystemTime = SystemTime::now();
+        #[cfg(test)]
+        let observed: SystemTime = self.fixture_time.unwrap_or_else(SystemTime::now);
+        observed
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .ok()
+            .map(UnixTime::since_unix_epoch)
+    }
+}
+
+/// Configure explicit CNG/TLS13 and the ordinary OS verifier, with no extra roots.
 ///
 /// # Errors
-/// Return `Failure::TlsSetup` if the provider suite set, ordinary verifier, TLS
-/// builder or client constructor refuses. Return `Failure::Allocation` if a
-/// bounded application-owned ALPN allocation fails.
-fn connection(config: &Config) -> Result<ClientConnection, Failure> {
-    let mut provider = rustls_cng_crypto::default_provider();
+/// Return `Failure::TlsSetup` if the provider suite set, ordinary verifier or TLS
+/// builder refuses. Return `Failure::Allocation` if a bounded application-owned
+/// ALPN allocation fails.
+fn client_config(wall_time: LocalWallTime) -> Result<ClientConfig, Failure> {
+    let mut provider: rustls::crypto::CryptoProvider = rustls_cng_crypto::default_provider();
     provider
         .cipher_suites
         .sort_unstable_by_key(|suite| suite_priority(suite.suite()));
@@ -162,16 +196,17 @@ fn connection(config: &Config) -> Result<ClientConnection, Failure> {
     {
         return Err(Failure::TlsSetup(SetupStage::ProviderSuites));
     }
-    let provider = Arc::new(provider);
-    let verifier = rustls_platform_verifier::Verifier::new(Arc::clone(&provider))
-        .map_err(|_| Failure::TlsSetup(SetupStage::Verifier))?;
-    let mut tls = ClientConfig::builder_with_provider(provider)
+    let provider: Arc<rustls::crypto::CryptoProvider> = Arc::new(provider);
+    let verifier: rustls_platform_verifier::Verifier =
+        rustls_platform_verifier::Verifier::new(Arc::clone(&provider))
+            .map_err(|_| Failure::TlsSetup(SetupStage::Verifier))?;
+    let mut tls: ClientConfig = ClientConfig::builder_with_details(provider, Arc::new(wall_time))
         .with_protocol_versions(&[&rustls::version::TLS13])
         .map_err(|_| Failure::TlsSetup(SetupStage::ProtocolVersions))?
         .dangerous()
         .with_custom_certificate_verifier(Arc::new(verifier))
         .with_no_client_auth();
-    let mut alpn = Vec::new();
+    let mut alpn: Vec<u8> = Vec::new();
     alpn.try_reserve_exact(7).map_err(|_| Failure::Allocation)?;
     alpn.extend_from_slice(b"ntske/1");
     tls.alpn_protocols
@@ -180,8 +215,18 @@ fn connection(config: &Config) -> Result<ClientConnection, Failure> {
     tls.alpn_protocols.push(alpn);
     tls.resumption = rustls::client::Resumption::disabled();
     tls.enable_early_data = false;
-    let mut connection = ClientConnection::new(Arc::new(tls), config.server_name.clone())
-        .map_err(|_| Failure::TlsSetup(SetupStage::ClientConnection))?;
+    Ok(tls)
+}
+
+/// Construct the actual ordinary TLS connection with fresh local wall reads.
+///
+/// # Errors
+/// Preserve configuration or client-construction refusal.
+fn connection(config: &Config) -> Result<ClientConnection, Failure> {
+    let tls: ClientConfig = client_config(LocalWallTime::system())?;
+    let mut connection: ClientConnection =
+        ClientConnection::new(Arc::new(tls), config.server_name.clone())
+            .map_err(|_| Failure::TlsSetup(SetupStage::ClientConnection))?;
     // This caps Rustls outgoing application buffering, not all TLS allocations.
     connection.set_buffer_limit(Some(SCRATCH_LIMIT));
     Ok(connection)
@@ -280,8 +325,8 @@ fn prepare<'a>(
 /// Queue and fully drain close-notify without restarting a failed handshake.
 ///
 /// # Errors
-/// Refuse a known transport/currentness fault, TLS-write zero/failure, socket or
-/// TLS-writer flush failure, or already-buffered post-EOM plaintext/error. A
+/// Refuse a known transport/currentness fault, TLS-write zero/failure, socket
+/// flush failure, or already-buffered post-EOM plaintext/error. A
 /// successful return reports only the local close-notify drain and flush.
 fn close(stream: &mut StreamOwned<ClientConnection, DeadlineStream<'_>>) -> Result<(), Failure> {
     stream.sock.admission.current(Failure::Shutdown)?;
@@ -295,10 +340,11 @@ fn close(stream: &mut StreamOwned<ClientConnection, DeadlineStream<'_>>) -> Resu
             return Err(Failure::Shutdown(io::ErrorKind::WriteZero));
         }
     }
+    // Rustls Writer::flush only replays a stored fatal TLS error. The close
+    // result describes the record drain and the underlying writer's flush.
     let flushed = stream
         .sock
         .flush()
-        .and_then(|()| stream.conn.writer().flush())
         .map_err(|error| transport_fault::project_io(TlsIoStage::Shutdown, &error));
     stream.sock.admission.resolve(flushed, Failure::Shutdown)?;
     stream.sock.admission.current(Failure::Shutdown)?;
@@ -342,5 +388,43 @@ pub(super) fn establish<'a>(
         }),
         (Err(primary), Ok(())) | (Ok(_), Err(primary)) => Err(primary.into()),
         (Ok(candidate), Ok(())) => candidate.publish(provider).map_err(Failed::from),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Failure, LocalWallTime, client_config};
+    use rustls::ClientConfig;
+    use rustls_pki_types::UnixTime;
+    use std::time::{Duration, SystemTime};
+
+    /// Reach the configured Rustls callback without changing the OS clock.
+    ///
+    /// # Errors
+    /// Preserve any unexpected ordinary TLS configuration refusal.
+    /// # Panics
+    /// Fail if the callback accepts a pre-epoch date, refuses either healthy
+    /// neighbor or changes the whole-second conversion.
+    #[test]
+    fn configured_local_wall_time_checks_the_unix_epoch() -> Result<(), Failure> {
+        let epoch: SystemTime = SystemTime::UNIX_EPOCH;
+        // Windows SystemTime represents multiples of 100 ns.
+        let cases: [(SystemTime, Option<u64>); 3] = [
+            (epoch - Duration::from_nanos(100), None),
+            (epoch, Some(0)),
+            (epoch + Duration::new(1, 100), Some(1)),
+        ];
+        for (observed, expected_seconds) in cases {
+            let config: ClientConfig = client_config(LocalWallTime {
+                fixture_time: Some(observed),
+            })?;
+            let actual_seconds: Option<u64> = config
+                .time_provider
+                .current_time()
+                .as_ref()
+                .map(UnixTime::as_secs);
+            assert_eq!(actual_seconds, expected_seconds);
+        }
+        Ok(())
     }
 }

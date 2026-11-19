@@ -12,13 +12,15 @@ use std::path::{Component, Path, Prefix};
 use std::sync::Arc;
 use std::time::Instant;
 
+use rustls::crypto::SecureRandom;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
 use rustls::{HandshakeKind, ProtocolVersion, ServerConfig, ServerConnection, StreamOwned};
 use rustls_cng_crypto::ShutdownHandle;
 use zeroize::Zeroizing;
 
 use super::{
-    Budget, Config, Failed, Failure, Flow, OFFER, RESPONSE, admit_offer, ready_line, resolve,
+    Budget, Config, Failed, Failure, Flow, Mode, OFFER, RESPONSE, admit_offer, protected_response,
+    protected_udp::ProtectedUdp, ready_line, resolve,
 };
 
 /// Maximum admitted public certificate or private PKCS8 extent.
@@ -41,6 +43,9 @@ fn stamp(info: &Metadata) -> (u32, u64, u64, u64) {
 }
 
 /// Require a local drive path with existing non-reparse directory ancestors.
+///
+/// # Errors
+/// Refuse unsupported drive syntax or a missing or reparse ancestor.
 fn check_parent(path: &Path) -> Result<(), Failure> {
     if !matches!(
         path.components().next(),
@@ -62,6 +67,9 @@ fn check_parent(path: &Path) -> Result<(), Failure> {
 /// Read one nonempty admitted extent into a wiping buffer under a held handle.
 /// File sharing prevents ordinary concurrent writes/deletes; no directory-race or
 /// elimination-of-all-provider-copy guarantee follows from these observations.
+///
+/// # Errors
+/// Refuse unreadable, changed, unsupported or oversized input.
 fn read_der(path: &Path) -> Result<Zeroizing<Vec<u8>>, Failure> {
     check_parent(path)?;
     let before = fs::symlink_metadata(path).map_err(|_| Failure::Input)?;
@@ -104,6 +112,9 @@ fn read_der(path: &Path) -> Result<Zeroizing<Vec<u8>>, Failure> {
 
 /// Publish only a complete new readiness record; never overwrite a destination.
 /// Hard-link publication requires private NTFS, rather than a mapped output share.
+///
+/// # Errors
+/// Refuse unsafe paths, invalid ports, or failed publication or cleanup.
 fn publish_ready(path: &Path, port: u16) -> Result<(), Failure> {
     check_parent(path)?;
     let contents = ready_line(port)?;
@@ -152,6 +163,9 @@ struct BudgetIo {
 
 impl BudgetIo {
     /// Refuse old faults or expiration before an operation, returning a poll cap.
+    ///
+    /// # Errors
+    /// Return the sticky fault or refuse a reached deadline.
     fn guard(&mut self) -> io::Result<std::time::Duration> {
         if self.fault.is_some() {
             return Err(io::ErrorKind::Other.into());
@@ -163,6 +177,9 @@ impl BudgetIo {
     }
 
     /// Convert a budget refusal into a sticky nonretryable I/O failure.
+    ///
+    /// # Errors
+    /// Latch and report a cumulative byte-budget refusal.
     fn account(&mut self, flow: Flow, amount: usize) -> io::Result<()> {
         self.budget.charge(flow, amount).map_err(|failure| {
             self.fault = Some(failure);
@@ -171,6 +188,9 @@ impl BudgetIo {
     }
 
     /// Preserve the original typed fault, including a suppressed nominal success.
+    ///
+    /// # Errors
+    /// Propagate the selected I/O failure and any distinct cleanup fault.
     fn settle<T>(&self, result: io::Result<T>) -> Result<T, Failed> {
         resolve(
             self.fault,
@@ -179,6 +199,9 @@ impl BudgetIo {
     }
 
     /// Latch the first socket refusal without retaining its native message.
+    ///
+    /// # Errors
+    /// Return the supplied I/O failure and latch its closed kind when first.
     fn refuse<T>(&mut self, error: io::Error) -> io::Result<T> {
         if self.fault.is_none() {
             self.fault = Some(Failure::Io(error.kind()));
@@ -187,6 +210,9 @@ impl BudgetIo {
     }
 
     /// Obtain a positive capped buffer size before a native socket operation.
+    ///
+    /// # Errors
+    /// Latch and report an exhausted byte allowance.
     fn amount(&mut self, flow: Flow, length: usize) -> io::Result<usize> {
         self.budget
             .allowance(flow)
@@ -270,6 +296,9 @@ impl Write for BudgetIo {
 }
 
 /// Create the strict server profile with the already selected CNG provider.
+///
+/// # Errors
+/// Refuse invalid DER, allocation failure or unsupported TLS configuration.
 fn connection(certificate: &Path, key: &Path) -> Result<ServerConnection, Failure> {
     let mut certificate = read_der(certificate)?;
     let key = read_der(key)?;
@@ -304,6 +333,9 @@ fn connection(certificate: &Path, key: &Path) -> Result<ServerConnection, Failur
 }
 
 /// Drain the local TLS close-notify before awaiting the client's actual alert.
+///
+/// # Errors
+/// Preserve I/O, deadline or TLS refusal and reject extra application data.
 fn close(stream: &mut StreamOwned<ServerConnection, BudgetIo>) -> Result<(), Failed> {
     stream.conn.send_close_notify();
     while stream.conn.wants_write() {
@@ -340,11 +372,15 @@ fn close(stream: &mut StreamOwned<ServerConnection, BudgetIo>) -> Result<(), Fai
 }
 
 /// Own one listener/connection/config; return no TLS or key owner to the caller.
+///
+/// # Errors
+/// Preserve input, setup, TLS, deadline and selected exchange failures.
 fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
     let Config {
         certificate,
         key,
         ready,
+        mode,
     } = config;
     let budget = Budget::new(origin)?;
     let mut connection = connection(&certificate, &key)?;
@@ -358,6 +394,11 @@ fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
         .local_addr()
         .map_err(|error| Failure::Io(error.kind()))?
         .port();
+    let udp: Option<ProtectedUdp> = match mode {
+        Mode::Ke => None,
+        Mode::Protected => Some(ProtectedUdp::bind(&budget)?),
+    };
+    budget.poll(Instant::now())?;
     publish_ready(&ready, port)?;
     let (socket, peer) = loop {
         let pause = budget.poll(Instant::now())?;
@@ -398,12 +439,23 @@ fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
     {
         return Err(Failure::Tls.into());
     }
-    let mut stream = StreamOwned::new(connection, socket);
-    let mut offer = [0_u8; OFFER.len()];
-    let received = stream.read_exact(&mut offer);
+    finish_exchange(StreamOwned::new(connection, socket), udp)
+}
+
+/// Complete KE and TLS close under the original budget. Protected mode then
+/// uses these same-session exporters for one request on the advertised socket.
+///
+/// # Errors
+/// Preserve KE, close, provider, deadline and datagram refusals.
+fn finish_exchange(
+    mut stream: StreamOwned<ServerConnection, BudgetIo>,
+    udp: Option<ProtectedUdp>,
+) -> Result<(), Failed> {
+    let mut offer: [u8; OFFER.len()] = [0; OFFER.len()];
+    let received: io::Result<()> = stream.read_exact(&mut offer);
     stream.sock.settle(received)?;
     admit_offer(&offer)?;
-    let c2s = stream
+    let c2s: Zeroizing<[u8; 32]> = stream
         .conn
         .export_keying_material(
             Zeroizing::new([0_u8; 32]),
@@ -411,7 +463,7 @@ fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
             Some(&[0, 0, 0, 15, 0]),
         )
         .map_err(|_| Failure::Tls)?;
-    let s2c = stream
+    let s2c: Zeroizing<[u8; 32]> = stream
         .conn
         .export_keying_material(
             Zeroizing::new([0_u8; 32]),
@@ -419,10 +471,42 @@ fn serve_owned(config: Config, origin: Instant) -> Result<(), Failed> {
             Some(&[0, 0, 0, 15, 1]),
         )
         .map_err(|_| Failure::Tls)?;
-    drop((c2s, s2c));
-    let sent = stream.write_all(&RESPONSE).and_then(|()| stream.flush());
+    match udp {
+        None => {
+            drop((c2s, s2c));
+            write_and_close(&mut stream, &RESPONSE)
+        }
+        Some(socket) => {
+            let response: [u8; 38] = protected_response(socket.port());
+            write_and_close(&mut stream, &response)?;
+            let StreamOwned { conn, sock } = stream;
+            let BudgetIo {
+                budget,
+                socket: tcp,
+                fault: _,
+            } = sock;
+            drop((conn, tcp));
+            socket.exchange(&budget, &c2s, &s2c, |nonce: &mut [u8; 16]| {
+                rustls_cng_crypto::SecureRandom
+                    .fill(nonce)
+                    .map_err(|_| Failure::Entropy)
+            })?;
+            Ok(())
+        }
+    }
+}
+
+/// Write one admitted KE response, flush, and complete the TLS close.
+///
+/// # Errors
+/// Refuse failed transport, missing peer close or expired completion.
+fn write_and_close(
+    stream: &mut StreamOwned<ServerConnection, BudgetIo>,
+    response: &[u8],
+) -> Result<(), Failed> {
+    let sent: io::Result<()> = stream.write_all(response).and_then(|()| stream.flush());
     stream.sock.settle(sent)?;
-    close(&mut stream)?;
+    close(stream)?;
     stream.sock.budget.poll(Instant::now())?;
     Ok(())
 }

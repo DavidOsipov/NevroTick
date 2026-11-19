@@ -34,6 +34,12 @@ APPROVED_EXCEPTIONS: dict[str, str] = {}
 # same code review as the existing policy pin. This stores no duplicate graph.
 # Prior concrete exception IDs stay attached to that exact accepted checkpoint.
 APPROVED_BASELINES: dict[str, dict] = {
+    # Keep the same root graph after admitting the laboratory peer manifest.
+    "130f428b965e1629ae848089611efcfe96dfd1265f3d324f2b78731e347e6a30": {
+        "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
+        "registry_sha256": BASELINE_REGISTRY,
+        "exception_decisions": [],
+    },
     # The native observation leaf adds exactly one local package and one Windows edge.
     "6109f9e3dddb5a48ac3b078e1ca56f1cd7f98ae04d6f39fcd5fa115a01f25308": {
         "lockfile_sha256": "26dd7d3427afd0b0907c48afc1bc6017bdd0242f1748884f7e2d848132c4e5db",
