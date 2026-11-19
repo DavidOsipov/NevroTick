@@ -1,6 +1,6 @@
 ---
 name: "qa-state-concurrency-lifecycle"
-description: "Verify NevroTick asynchronous state, concurrency, cancellation and resource ownership with deterministic scenarios and conditional Shuttle or Loom schedule exploration."
+description: "Test asynchronous state, concurrency, cancellation and resource ownership with deterministic scenarios; use Shuttle or Loom schedule exploration only when admitted."
 ---
 
 # Test timing, cancellation and ownership

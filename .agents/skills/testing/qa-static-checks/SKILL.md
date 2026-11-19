@@ -1,6 +1,6 @@
 ---
 name: "qa-static-checks"
-description: "Select and validate NevroTick Rust and verification-Python static enforcement, Clippy, source policy and CodeQL evidence for admitted inputs and targets."
+description: "Select and validate static enforcement for Rust code and Python verification helpers, including Clippy, source policy and CodeQL on admitted inputs and targets."
 ---
 
 # Verify static enforcement

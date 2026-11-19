@@ -1,6 +1,6 @@
 ---
 name: "implement-native-ui"
-description: "Implement or review NevroTick Slint UI, Windows adapters, status presentation, keyboard and focus behavior, accessibility and localization."
+description: "Implement or review native UI behavior in Slint and Windows adapters: status, keyboard, focus, accessibility and localization."
 ---
 
 # Implement native UI

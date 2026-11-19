@@ -1,6 +1,6 @@
 ---
 name: "winapp-ui-automation"
-description: "Use an available, qualified Windows winapp CLI to inspect and exercise a specific native application through UI Automation, then verify its observed state. Supplements NevroTick accessibility and executable UI tests."
+description: "Inspect and exercise a specific native Windows app through UI Automation using an available, qualified winapp CLI; verify observed state. Supplements qa-accessibility and qa-e2e-tests."
 license: "MIT"
 ---
 

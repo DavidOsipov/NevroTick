@@ -1,6 +1,6 @@
 ---
 name: "plan-independent-review"
-description: "Independently review a NevroTick plan or revised stage for missing consumers, unsafe assumptions, weak evidence and unavailable prerequisites; return ready, revise or blocked for that stage."
+description: "Independently review a plan or revised stage for missing consumers, unsafe assumptions, weak evidence and unavailable prerequisites. Return ready, revise or blocked for that stage."
 ---
 
 # Review a plan's next stage

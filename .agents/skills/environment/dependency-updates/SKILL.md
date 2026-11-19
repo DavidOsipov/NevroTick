@@ -1,6 +1,6 @@
 ---
 name: "dependency-updates"
-description: "Research, update and qualify a bounded NevroTick Cargo dependency cohort, including features, MSRV, Windows support, licenses and supply-chain changes."
+description: "Research, update and qualify a bounded Cargo dependency set: features, MSRV, Windows support, licenses and supply-chain changes."
 ---
 
 # Rust dependency updates

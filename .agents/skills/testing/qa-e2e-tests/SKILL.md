@@ -1,6 +1,6 @@
 ---
 name: "qa-e2e-tests"
-description: "Test a NevroTick user or service journey through built executable entry points and actual observable Windows results."
+description: "Test user or service journeys through built executable entry points and observable Windows results."
 ---
 
 # Exercise complete Windows journeys

@@ -1,6 +1,6 @@
 ---
 name: "qa-black-box-acceptance"
-description: "Independently assess a frozen NevroTick candidate against known input and output facts after system stabilization or when input-to-output acceptance is requested."
+description: "Independently check known input/output facts on a frozen candidate after system or data-pipeline stabilization, or when input-to-output acceptance is requested."
 ---
 
 # Accept integrated input-to-output behavior

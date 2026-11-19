@@ -1,6 +1,6 @@
 ---
 name: "qa-integration-tests"
-description: "Verify NevroTick behavior across real Rust modules, processes, protocol peers or persistence adapters at an explicitly chosen integration boundary."
+description: "Test behavior across real Rust modules, processes, protocol peers or persistence adapters at a declared integration boundary."
 ---
 
 # Test real collaborator boundaries

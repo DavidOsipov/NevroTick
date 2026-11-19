@@ -1,6 +1,6 @@
 ---
 name: "qa-data-flow-analysis"
-description: "Audit NevroTick Rust data, control and lifecycle chains against invariants using source-backed slices, qualified CodeQL paths and independent counterexamples."
+description: "Audit Rust data, control and lifecycle paths against invariants with source-backed slices and independent counterexamples; add qualified CodeQL when needed."
 ---
 
 # Analyze Rust source-to-sink paths

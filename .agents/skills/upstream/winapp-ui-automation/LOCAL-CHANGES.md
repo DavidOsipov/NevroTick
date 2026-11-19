@@ -72,3 +72,8 @@ packaging tooling to the current complete hardened MSIX plan, without adopting
 the tool or changing execution authority. The earlier bullet records its
 historical adaptation only. Original source hashes, immutable pin and MIT notice
 remain unchanged; the installed-file inventory records these local bytes.
+
+19 November 2026: shortened the discovery description and named
+`qa-accessibility` and `qa-e2e-tests` as companion owners. Available, qualified
+winapp use and observed-state verification remain explicit. Skill instructions,
+upstream source hashes, immutable pin and MIT notice remain unchanged.

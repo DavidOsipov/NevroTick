@@ -42,7 +42,7 @@ and evidence, with shared decisions and integration reconciled centrally.
 | Choose or run testing and qualification | [Testing guide](testing/README.md) |
 | Challenge scheduling races, generated histories or Python admission semantics | [Tool-selection guide](testing/references/generated-testing-selection.md), then [lifecycle](testing/qa-state-concurrency-lifecycle/SKILL.md), [model](testing/qa-model-based-testing/SKILL.md) or [property](testing/qa-property-based-testing/SKILL.md) testing; extensive conditional tool manuals preserve admission and evidence limits |
 | Explore semantic states that revisit familiar code paths | [qa-state-guided-fuzzing](testing/qa-state-guided-fuzzing/SKILL.md), with an independent transition oracle |
-| Evaluate new or materially revised skill instructions on actual agent work | [qa-skill-evaluations](testing/qa-skill-evaluations/SKILL.md) |
+| Evaluate new or materially revised skills, or demonstrated agent failures; wording-only edits need no campaign | [qa-skill-evaluations](testing/qa-skill-evaluations/SKILL.md) |
 | Investigate native heap/handle faults or retained resources | [Windows memory diagnostics](testing/references/windows-memory.md), then [resource QA](testing/qa-performance-resources/SKILL.md) for retention |
 | Audit logical data/state chains or trace Rust inputs and secrets to effects | [qa-data-flow-analysis](testing/qa-data-flow-analysis/SKILL.md) |
 | Assess or change Cargo dependencies | [dependency-updates](environment/dependency-updates/SKILL.md) |

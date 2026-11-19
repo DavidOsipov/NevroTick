@@ -1,6 +1,6 @@
 ---
 name: "manage-windows-sandbox"
-description: "Prepare and manage owned Windows Sandbox sessions for NevroTick agents working from Windows or WSL: select a version-compatible control path, protect the host and active WSL jobs, stage minimal inputs, run bounded guest experiments, export evidence and dispose of the guest. Use for Sandbox configuration, CLI automation, troubleshooting and lab readiness; not ordinary portable Rust work or host cleanup."
+description: "Manage owned Windows Sandbox labs from Windows or WSL: configuration, CLI automation, troubleshooting, readiness, bounded experiments, evidence export and disposal. Use version-compatible controls; protect host and active WSL jobs. Excludes portable Rust work and host cleanup."
 ---
 
 # Manage Windows Sandbox

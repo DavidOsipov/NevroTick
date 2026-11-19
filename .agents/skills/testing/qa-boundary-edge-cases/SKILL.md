@@ -1,6 +1,6 @@
 ---
 name: "qa-boundary-edge-cases"
-description: "Build explicit just-below, exact and just-above NevroTick boundary cases for time, resources, representation and lifecycle rules."
+description: "Build just-below, exact and just-above cases for time, resource, representation and lifecycle boundaries."
 ---
 
 # Test exact boundary neighbors

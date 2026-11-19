@@ -1,6 +1,6 @@
 ---
 name: "qa-test-planning"
-description: "Design a bounded, requirement-grounded test plan for a NevroTick behavior or change before choosing fixtures, environments and tools."
+description: "Design a bounded test plan from requirements for a behavior or change before choosing fixtures, environments and tools."
 ---
 
 # Plan Rust and Windows tests

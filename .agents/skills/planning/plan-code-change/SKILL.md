@@ -1,6 +1,6 @@
 ---
 name: "plan-code-change"
-description: "Plan or resume NevroTick Rust features, fixes, migrations or refactors with uncertain impact; give understood small changes a concise in-chat plan."
+description: "Plan or resume development changes with uncertain impact across Rust, UI, dependencies, builds and packaging; give understood small changes a concise in-chat plan."
 ---
 
 # Plan a NevroTick change

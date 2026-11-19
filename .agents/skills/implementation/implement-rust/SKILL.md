@@ -1,6 +1,6 @@
 ---
 name: "implement-rust"
-description: "Implement, refactor or review NevroTick Rust logic, stable API choices, ownership, typed errors, safe diagnostics, recovery, state, concurrency and Windows adapter boundaries."
+description: "Implement, refactor or review Rust logic: stable APIs, ownership, typed errors, safe diagnostics, recovery, state, concurrency and Windows adapter boundaries."
 ---
 
 # Implement Rust

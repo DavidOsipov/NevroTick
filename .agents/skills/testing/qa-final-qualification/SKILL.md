@@ -1,6 +1,6 @@
 ---
 name: "qa-final-qualification"
-description: "Assess final NevroTick verification evidence against a declared scope and exact candidate without promoting plans, skips or host checks into release passes."
+description: "Assess final verification evidence for the exact candidate and declared scope; plans, skips and host checks are not release passes."
 ---
 
 # Qualify the observed candidate

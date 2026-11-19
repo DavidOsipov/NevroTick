@@ -1,6 +1,6 @@
 ---
 name: "qa-structured-fuzzing"
-description: "Run or design a bounded NevroTick fuzz target for structured IPC/configuration, NTP/NTS parsing or numeric conversion with useful seeds and explicit oracles."
+description: "Design or run bounded fuzz targets for structured IPC, configuration, NTP and NTS parsing, or numeric conversion with useful seeds and independent oracles."
 ---
 
 # Fuzz actual parsers and conversions

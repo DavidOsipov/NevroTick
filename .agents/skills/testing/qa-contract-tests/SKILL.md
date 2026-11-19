@@ -1,6 +1,6 @@
 ---
 name: "qa-contract-tests"
-description: "Verify NevroTick function/module preconditions, postconditions, mandatory validation, strict wire admission and consumer compatibility through actual callers."
+description: "Verify function and module preconditions, postconditions, mandatory validation, strict wire admission and consumer compatibility through actual callers."
 ---
 
 # Test function, module and wire contracts

@@ -19,7 +19,7 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 | [qa-black-box-acceptance](qa-black-box-acceptance/SKILL.md) | Independently assess a frozen NevroTick candidate against known input and output facts after system stabilization or when input-to-output acceptance is requested. |
 | [qa-final-qualification](qa-final-qualification/SKILL.md) | Assess final NevroTick verification evidence against a declared scope and exact candidate without promoting plans, skips or host checks into release passes. |
 | [qa-pre-commit](qa-pre-commit/SKILL.md) | Review or prepare NevroTick staged content with preserved user staging and verification tied to the complete intended Git candidate. |
-| [qa-skill-evaluations](qa-skill-evaluations/SKILL.md) | Evaluate material skill changes using isolated agent tasks, independent graders and observable code/test outcomes. |
+| [qa-skill-evaluations](qa-skill-evaluations/SKILL.md) | Evaluate new or materially revised skills, or demonstrated agent failures, using isolated tasks and independent outcome checks; wording-only edits need no campaign. |
 
 ## Choose a behavior/evidence layer
 
@@ -27,13 +27,13 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 | --- | --- |
 | [qa-unit-tests](qa-unit-tests/SKILL.md) | Write or review focused Rust unit tests for NevroTick numerical, domain and state logic using independent expectations and controlled effects. |
 | [qa-component-tests](qa-component-tests/SKILL.md) | Verify a bounded NevroTick component such as a controller, IPC client or native view with explicit collaborator and platform limits. |
-| [qa-contract-tests](qa-contract-tests/SKILL.md) | Verify strict NevroTick IPC, configuration, domain-construction and consumer compatibility contracts through their actual admitted paths. |
+| [qa-contract-tests](qa-contract-tests/SKILL.md) | Verify function and module preconditions, postconditions, mandatory validation, strict wire admission and consumer compatibility through actual callers. |
 | [qa-integration-tests](qa-integration-tests/SKILL.md) | Verify NevroTick behavior across real Rust modules, processes, protocol peers or persistence adapters at an explicitly chosen integration boundary. |
 | [qa-e2e-tests](qa-e2e-tests/SKILL.md) | Test a NevroTick user or service journey through built executable entry points and actual observable Windows results. |
 | [qa-positive-paths](qa-positive-paths/SKILL.md) | Choose positive controls and expected successful NevroTick paths that prevent rejection-only or disabled-effect implementations from appearing correct. |
 | [qa-negative-paths](qa-negative-paths/SKILL.md) | Test NevroTick invalid inputs, unavailable collaborators and denied operations for correct error, atomicity and forbidden-effect behavior. |
 | [qa-boundary-edge-cases](qa-boundary-edge-cases/SKILL.md) | Build explicit just-below, exact and just-above NevroTick boundary cases for time, resources, representation and lifecycle rules. |
-| [qa-adversarial-inputs](qa-adversarial-inputs/SKILL.md) | Design bounded hostile NevroTick input cases that challenge the actual protocol, IPC, persistence and resource admission path. |
+| [qa-adversarial-inputs](qa-adversarial-inputs/SKILL.md) | Design bounded hostile NevroTick input cases that challenge the actual UI, protocol, IPC, persistence and resource admission path. |
 | [qa-security-boundaries](qa-security-boundaries/SKILL.md) | Test NevroTick trust boundaries using real caller identity, current guards and observable protected effects. |
 | [qa-state-concurrency-lifecycle](qa-state-concurrency-lifecycle/SKILL.md) | Verify asynchronous state, cancellation and resource ownership; select conditional Shuttle/Loom exploration for a specific scheduling gap. |
 | [qa-fault-recovery](qa-fault-recovery/SKILL.md) | Test NevroTick controlled failures for bounded recovery, preserved authority, durable state and honest status. |
@@ -48,7 +48,7 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 | [qa-state-guided-fuzzing](qa-state-guided-fuzzing/SKILL.md) | Compare real coverage with bounded semantic-state feedback through one actual-target driver and an independent transition oracle. |
 | [qa-mutation-testing](qa-mutation-testing/SKILL.md) | Use a bounded NevroTick mutation campaign to assess behavioral assertions, preserving the architecture per-critical-file gate and honest outcome accounting. |
 | [qa-golden-fixture-parity](qa-golden-fixture-parity/SKILL.md) | Compare NevroTick golden outputs or differential results from pinned references with independent semantic facts and a tested comparator. |
-| [qa-static-checks](qa-static-checks/SKILL.md) | Select and validate NevroTick compiler, Clippy, source-policy, bounded static analysis and CodeQL data-flow evidence for the actual target/features. |
+| [qa-static-checks](qa-static-checks/SKILL.md) | Select and validate static enforcement for Rust code and Python verification helpers, including Clippy, source policy and CodeQL on admitted inputs and targets. |
 | [qa-data-flow-analysis](qa-data-flow-analysis/SKILL.md) | Audit Rust input, state and lifecycle chains against invariants with source-backed slices, change-based reuse and qualified CodeQL paths. |
 | [qa-package-artifacts](qa-package-artifacts/SKILL.md) | Verify emitted NevroTick binaries, selected complete-package contents, metadata, provenance and submitted/Store-delivered MSIX consistency independently of source configuration. |
 | [qa-accessibility](qa-accessibility/SKILL.md) | Assess NevroTick native control semantics, keyboard use, Narrator behavior and accessibility error/status communication. |

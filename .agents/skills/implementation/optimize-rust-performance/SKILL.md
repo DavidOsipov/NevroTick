@@ -1,6 +1,6 @@
 ---
 name: "optimize-rust-performance"
-description: "Profile and optimize NevroTick Rust/Windows CPU, allocation, latency, wakeups, startup or binary-size bottlenecks with comparable before/after measurements and preserved correctness/security contracts. Use for a performance regression or explicit optimization task; resource assessment alone belongs to qa-performance-resources."
+description: "Profile and optimize Rust and Windows CPU, allocation, latency, wakeups, startup or binary-size bottlenecks for regressions or explicit optimization. Use comparable before/after measurements; preserve correctness and security contracts. Resource assessment alone uses qa-performance-resources."
 ---
 
 # Optimize Rust and Windows costs

@@ -1,6 +1,6 @@
 ---
 name: "qa-system-stabilization"
-description: "Resolve NevroTick multi-stage or uncertain-coupling failures through finite obligation mapping, causal repair and integrated acceptance."
+description: "Resolve failures spanning stages or unclear dependencies through a finite acceptance set, causal repair and integrated acceptance of the declared scope."
 ---
 
 # Stabilize a bounded system flow

@@ -1,6 +1,6 @@
 ---
 name: "qa-mutation-testing"
-description: "Use a bounded NevroTick mutation campaign to assess behavioral assertions, preserving the architecture per-critical-file gate and honest outcome accounting."
+description: "Assess behavioral assertions with bounded mutation testing, preserving each critical file's required gate and accurate outcome accounting."
 ---
 
 # Assess critical test sensitivity

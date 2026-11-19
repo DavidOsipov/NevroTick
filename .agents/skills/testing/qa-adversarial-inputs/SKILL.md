@@ -1,6 +1,6 @@
 ---
 name: "qa-adversarial-inputs"
-description: "Design bounded hostile NevroTick input cases that challenge the actual protocol, IPC, persistence and resource admission path."
+description: "Design bounded hostile inputs for actual UI, protocol, IPC, persistence and resource admission paths."
 ---
 
 # Challenge hostile input admission

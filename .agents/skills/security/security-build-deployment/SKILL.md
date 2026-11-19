@@ -1,6 +1,6 @@
 ---
 name: "security-build-deployment"
-description: "Implement or review NevroTick Cargo and CI trust, final Windows binary protections, Store MSIX delivery authority and reversible complete-package lifecycle."
+description: "Implement or review Cargo and CI trust, final Windows binary protections, Store MSIX delivery authority and reversible lifecycle of the complete package."
 ---
 
 # Preserve trust through the complete Windows package

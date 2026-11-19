@@ -1,6 +1,6 @@
 ---
 name: "qa-skill-evaluations"
-description: "Evaluate whether NevroTick skill instructions improve an agent's implementation, review or testing behavior using isolated tasks and independent outcome checks; use when creating or materially revising skills."
+description: "Evaluate new or materially revised skills, or demonstrated agent failures, through isolated tasks and independent outcome checks; wording-only edits need no campaign."
 ---
 
 # Evaluate skill behavior

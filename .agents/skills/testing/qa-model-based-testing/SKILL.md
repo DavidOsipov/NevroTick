@@ -1,6 +1,6 @@
 ---
 name: "qa-model-based-testing"
-description: "Test NevroTick controller, authority and recovery sequences against an independent transition model, with conditional proptest-state-machine generation and shrinking."
+description: "Compare controller, authority and recovery sequences with an independent transition model; use proptest-state-machine generation and shrinking only when admitted."
 ---
 
 # Compare state transitions with an independent model

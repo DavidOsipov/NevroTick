@@ -1,6 +1,6 @@
 ---
 name: "qa-test-orchestrator"
-description: "Coordinate a substantial NevroTick verification task across Rust, protocol, Windows, UI and package evidence without imposing a full suite on local work."
+description: "Coordinate substantial Rust, protocol, Windows, UI and package verification; route understood local changes directly to focused checks."
 ---
 
 # Orchestrate NevroTick verification

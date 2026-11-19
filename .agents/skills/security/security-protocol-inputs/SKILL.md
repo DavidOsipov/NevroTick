@@ -1,6 +1,6 @@
 ---
 name: "security-protocol-inputs"
-description: "Implement or review bounded NevroTick NTP/NTS parsing, DNS and negotiated destinations, configuration admission, protected-file reads and persistence resource limits."
+description: "Implement or review bounded NTP/NTS parsing, DNS and negotiated-destination policy, configuration admission, protected-file reads and persistence resource limits."
 ---
 
 # Admit protocol and stored input before state mutation

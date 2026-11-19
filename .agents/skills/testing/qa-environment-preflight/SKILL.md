@@ -1,6 +1,6 @@
 ---
 name: "qa-environment-preflight"
-description: "Establish tool, Cargo, target, Windows-machine and fixture readiness for selected NevroTick checks before substantial execution."
+description: "Check readiness of tools, Cargo, targets, Windows machines and fixtures for selected checks before substantial execution."
 ---
 
 # Check verification readiness

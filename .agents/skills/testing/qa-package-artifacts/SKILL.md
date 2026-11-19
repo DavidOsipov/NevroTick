@@ -1,6 +1,6 @@
 ---
 name: "qa-package-artifacts"
-description: "Verify emitted NevroTick binaries, complete MSIX contents, metadata, provenance and Store-delivered consistency independently of source configuration."
+description: "Independently verify emitted Windows binaries and complete MSIX packages: metadata, signatures, provenance, lifecycle and actual Store-delivered artifacts."
 ---
 
 # Inspect built Windows artifacts

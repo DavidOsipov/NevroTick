@@ -1,6 +1,6 @@
 ---
 name: "security-local-ipc"
-description: "Implement or review NevroTick local IPC endpoint identity, Windows named-pipe permissions, bounded messages, per-operation authorization and current-generation effects."
+description: "Implement or review local IPC endpoint identity, Windows named-pipe permissions, bounded messages, per-operation authorization and current-generation effect guards."
 ---
 
 # Secure local request-to-effect flow

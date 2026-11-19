@@ -1,6 +1,6 @@
 ---
 name: "implement-slint"
-description: "Implement, review or debug NevroTick Slint .slint components and Rust adapters: build integration, properties and callbacks, models, UI-thread ownership, Windows lifecycle, resources, testing and dependency admission. Use for Slint-specific work alongside implement-native-ui."
+description: "Implement, review or debug Slint .slint components and Rust adapters: build integration, properties, callbacks, models, UI-thread ownership, Windows lifecycle, resources, tests and dependency admission. Use alongside implement-native-ui."
 ---
 
 # Implement Slint

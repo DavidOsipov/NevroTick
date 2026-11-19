@@ -1,6 +1,6 @@
 ---
 name: "qa-context-checkpoint"
-description: "Checkpoint or resume substantial NevroTick verification with current scope, evidence, owners, live effects and consumed budgets intact."
+description: "Checkpoint or resume substantial verification with scope, evidence, owners, live effects and consumed budgets intact."
 ---
 
 # Preserve verification continuity

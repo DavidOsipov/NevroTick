@@ -1,6 +1,6 @@
 ---
 name: "qa-failure-triage"
-description: "Classify a NevroTick failed check causally before changing production behavior, assertions, fixtures or environment."
+description: "Diagnose failed checks before changing production behavior, assertions, fixtures or the environment."
 ---
 
 # Diagnose verification failures

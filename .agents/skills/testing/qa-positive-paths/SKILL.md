@@ -1,6 +1,6 @@
 ---
 name: "qa-positive-paths"
-description: "Choose positive controls and expected successful NevroTick paths that prevent rejection-only or disabled-effect implementations from appearing correct."
+description: "Choose successful paths and positive controls that catch implementations which reject everything or never perform required effects."
 ---
 
 # Verify legitimate successful behavior

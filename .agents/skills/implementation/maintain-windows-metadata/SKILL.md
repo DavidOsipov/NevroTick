@@ -1,6 +1,6 @@
 ---
 name: "maintain-windows-metadata"
-description: "Harvest, reconcile, store, generate and independently verify NevroTick product, Cargo, SCM, PE VERSIONINFO, MSIX, event-catalogue, conditional MSI and Store metadata. Use for field inventories, missing Windows details, publisher/version/locale drift, packaging authoring, public build information and release metadata completeness."
+description: "Collect, reconcile, store, generate and independently verify product, Cargo, SCM, PE VERSIONINFO, MSIX, event-catalogue, conditional MSI and Store metadata. Use for field inventories and gaps, publisher, version or locale drift, packaging authoring, public build information and release completeness."
 ---
 
 # Maintain Windows metadata

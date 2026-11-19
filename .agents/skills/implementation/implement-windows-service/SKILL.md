@@ -1,6 +1,6 @@
 ---
 name: "implement-windows-service"
-description: "Create, harden, diagnose or change NevroTick Windows services: SCM startup/status, identities, management admission, shutdown/recovery, service logging and measured resource costs. Use for service lifecycle or installation work; ordinary Rust logic and unrelated Windows adapters retain their own workflows."
+description: "Create, harden, diagnose or change Windows services: SCM startup and status, identities, management admission, shutdown, recovery, logging and measured resource costs. Use for service lifecycle or installation; excludes ordinary Rust logic and unrelated Windows adapters."
 ---
 
 # Implement and manage Windows services

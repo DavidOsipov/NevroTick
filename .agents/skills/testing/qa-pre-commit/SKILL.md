@@ -1,6 +1,6 @@
 ---
 name: "qa-pre-commit"
-description: "Review or prepare NevroTick staged content with preserved user staging and verification tied to the complete intended Git candidate."
+description: "Review or prepare staged content while preserving user staging and verifying the complete intended Git candidate."
 ---
 
 # Review a commit candidate faithfully

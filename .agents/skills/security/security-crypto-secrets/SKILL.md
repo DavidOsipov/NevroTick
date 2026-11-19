@@ -1,6 +1,6 @@
 ---
 name: "security-crypto-secrets"
-description: "Implement or review NevroTick TLS/NTS trust, crypto-provider and RNG choices, NTS keys/cookies, protected secret persistence and isolated wrong-date recovery."
+description: "Implement or review TLS/NTS trust, crypto-provider and RNG choices, NTS keys and cookies, protected secret persistence and isolated wrong-date recovery."
 ---
 
 # Preserve the actual cryptographic trust basis
